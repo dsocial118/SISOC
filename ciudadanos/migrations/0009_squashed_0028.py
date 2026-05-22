@@ -10,6 +10,7 @@ import django.utils.timezone
 
 # --- RunPython: 0009_remove_alerta_categoria_... ---
 
+
 def migrate_nacionalidades(apps, schema_editor):
     connection = schema_editor.connection
     quote = schema_editor.quote_name
@@ -83,15 +84,22 @@ def safe_cleanup(apps, schema_editor):
         if not table_exists(table):
             return False
         with connection.cursor() as cursor:
-            return column in [col.name for col in connection.introspection.get_table_description(cursor, table)]
+            return column in [
+                col.name
+                for col in connection.introspection.get_table_description(cursor, table)
+            ]
 
     def drop_column_if_exists(table: str, column: str) -> None:
         if column_exists(table, column):
-            schema_editor.execute(f"ALTER TABLE {quote(table)} DROP COLUMN {quote(column)}")
+            schema_editor.execute(
+                f"ALTER TABLE {quote(table)} DROP COLUMN {quote(column)}"
+            )
 
     def add_column_if_missing(table: str, column: str, definition_sql: str) -> None:
         if table_exists(table) and not column_exists(table, column):
-            schema_editor.execute(f"ALTER TABLE {quote(table)} ADD COLUMN {definition_sql}")
+            schema_editor.execute(
+                f"ALTER TABLE {quote(table)} ADD COLUMN {definition_sql}"
+            )
 
     def drop_index_if_exists(table: str, index_name: str) -> None:
         if not table_exists(table):
@@ -108,7 +116,9 @@ def safe_cleanup(apps, schema_editor):
             constraints = connection.introspection.get_constraints(cursor, table)
         if index_name not in constraints:
             cols_sql = ", ".join(quote(col) for col in columns)
-            schema_editor.execute(f"CREATE INDEX {quote(index_name)} ON {quote(table)} ({cols_sql})")
+            schema_editor.execute(
+                f"CREATE INDEX {quote(index_name)} ON {quote(table)} ({cols_sql})"
+            )
 
     def drop_fk_constraints(table: str, column: str) -> None:
         if not table_exists(table):
@@ -117,7 +127,9 @@ def safe_cleanup(apps, schema_editor):
             constraints = connection.introspection.get_constraints(cursor, table)
         for name, details in constraints.items():
             if column in details.get("columns", []) and details.get("foreign_key"):
-                schema_editor.execute(f"ALTER TABLE {quote(table)} DROP FOREIGN KEY {quote(name)}")
+                schema_editor.execute(
+                    f"ALTER TABLE {quote(table)} DROP FOREIGN KEY {quote(name)}"
+                )
 
     def drop_unique_constraints(table: str, column: str) -> None:
         if not table_exists(table):
@@ -126,7 +138,9 @@ def safe_cleanup(apps, schema_editor):
             constraints = connection.introspection.get_constraints(cursor, table)
         for name, details in constraints.items():
             if details.get("unique") and column in details.get("columns", []):
-                schema_editor.execute(f"ALTER TABLE {quote(table)} DROP INDEX {quote(name)}")
+                schema_editor.execute(
+                    f"ALTER TABLE {quote(table)} DROP INDEX {quote(name)}"
+                )
 
     def migrate_tipo_documento() -> None:
         table = "ciudadanos_ciudadano"
@@ -142,7 +156,9 @@ def safe_cleanup(apps, schema_editor):
         if not has_fk_col and has_text_col:
             return
 
-        add_column_if_missing(table, text_col, f"{quote(text_col)} VARCHAR(20) NOT NULL DEFAULT 'DNI'")
+        add_column_if_missing(
+            table, text_col, f"{quote(text_col)} VARCHAR(20) NOT NULL DEFAULT 'DNI'"
+        )
 
         if table_exists("ciudadanos_tipodocumento"):
             schema_editor.execute(
@@ -188,8 +204,14 @@ def safe_cleanup(apps, schema_editor):
         schema_editor.execute("SET FOREIGN_KEY_CHECKS=1;")
 
     drop_ciudadano_columns = [
-        "circuito_id", "demo_centro_familia_id", "escalera_manzana",
-        "estado_id", "estado_civil_id", "latitud", "longitud", "torre_pasillo",
+        "circuito_id",
+        "demo_centro_familia_id",
+        "escalera_manzana",
+        "estado_id",
+        "estado_civil_id",
+        "latitud",
+        "longitud",
+        "torre_pasillo",
     ]
     if drop_ciudadano_columns:
         schema_editor.execute("SET FOREIGN_KEY_CHECKS=0;")
@@ -198,25 +220,38 @@ def safe_cleanup(apps, schema_editor):
             drop_column_if_exists("ciudadanos_ciudadano", column)
         schema_editor.execute("SET FOREIGN_KEY_CHECKS=1;")
 
-    add_column_if_missing("ciudadanos_ciudadano", "activo", "activo BOOL NOT NULL DEFAULT 1")
+    add_column_if_missing(
+        "ciudadanos_ciudadano", "activo", "activo BOOL NOT NULL DEFAULT 1"
+    )
     add_column_if_missing("ciudadanos_ciudadano", "barrio", "barrio VARCHAR(100) NULL")
 
     drop_index_if_exists("ciudadanos_ciudadano", "ciudadanos__apellid_8f0c3b_idx")
     drop_index_if_exists("ciudadanos_ciudadano", "ciudadanos__fecha_n_aa8772_idx")
     drop_index_if_exists("ciudadanos_ciudadano", "ciudadanos__observa_517ba3_idx")
-    add_index_if_missing("ciudadanos_ciudadano", "ciudadanos__apellid_02f758_idx", ["apellido", "nombre"])
+    add_index_if_missing(
+        "ciudadanos_ciudadano", "ciudadanos__apellid_02f758_idx", ["apellido", "nombre"]
+    )
 
     drop_column_if_exists("ciudadanos_grupofamiliar", "vinculo_inverso")
-    add_column_if_missing("ciudadanos_grupofamiliar", "creado", "creado DATETIME(6) NULL")
-    add_column_if_missing("ciudadanos_grupofamiliar", "modificado", "modificado DATETIME(6) NULL")
+    add_column_if_missing(
+        "ciudadanos_grupofamiliar", "creado", "creado DATETIME(6) NULL"
+    )
+    add_column_if_missing(
+        "ciudadanos_grupofamiliar", "modificado", "modificado DATETIME(6) NULL"
+    )
     schema_editor.execute(
         f"UPDATE {quote('ciudadanos_grupofamiliar')} SET {quote('creado')} = COALESCE({quote('creado')}, CURRENT_TIMESTAMP(6)), {quote('modificado')} = COALESCE({quote('modificado')}, CURRENT_TIMESTAMP(6))"
     )
-    add_index_if_missing("ciudadanos_grupofamiliar", "ciudadanos__ciudada_0b736a_idx", ["ciudadano_1_id"])
-    add_index_if_missing("ciudadanos_grupofamiliar", "ciudadanos__ciudada_547f88_idx", ["ciudadano_2_id"])
+    add_index_if_missing(
+        "ciudadanos_grupofamiliar", "ciudadanos__ciudada_0b736a_idx", ["ciudadano_1_id"]
+    )
+    add_index_if_missing(
+        "ciudadanos_grupofamiliar", "ciudadanos__ciudada_547f88_idx", ["ciudadano_2_id"]
+    )
 
 
 # --- RunPython: 0012_fix_ciudadano_datetime_fields ---
+
 
 def ensure_datetime_columns(apps, schema_editor):
     connection = schema_editor.connection
@@ -247,6 +282,7 @@ def ensure_datetime_columns(apps, schema_editor):
 
 # --- RunPython: 0013_fix_grupofamiliar_text_fields ---
 
+
 def ensure_grupofamiliar_text_fields(apps, schema_editor):
     connection = schema_editor.connection
     if connection.vendor != "mysql":
@@ -262,11 +298,16 @@ def ensure_grupofamiliar_text_fields(apps, schema_editor):
         if not table_exists(table):
             return False
         with connection.cursor() as cursor:
-            return column in [col.name for col in connection.introspection.get_table_description(cursor, table)]
+            return column in [
+                col.name
+                for col in connection.introspection.get_table_description(cursor, table)
+            ]
 
     def add_column_if_missing(table: str, column: str, definition_sql: str) -> None:
         if table_exists(table) and not column_exists(table, column):
-            schema_editor.execute(f"ALTER TABLE {quote(table)} ADD COLUMN {definition_sql}")
+            schema_editor.execute(
+                f"ALTER TABLE {quote(table)} ADD COLUMN {definition_sql}"
+            )
 
     def drop_fk_constraints(table: str, column: str) -> None:
         if not table_exists(table):
@@ -275,7 +316,9 @@ def ensure_grupofamiliar_text_fields(apps, schema_editor):
             constraints = connection.introspection.get_constraints(cursor, table)
         for name, details in constraints.items():
             if column in details.get("columns", []) and details.get("foreign_key"):
-                schema_editor.execute(f"ALTER TABLE {quote(table)} DROP FOREIGN KEY {quote(name)}")
+                schema_editor.execute(
+                    f"ALTER TABLE {quote(table)} DROP FOREIGN KEY {quote(name)}"
+                )
 
     def drop_unique_constraints(table: str, column: str) -> None:
         if not table_exists(table):
@@ -284,16 +327,22 @@ def ensure_grupofamiliar_text_fields(apps, schema_editor):
             constraints = connection.introspection.get_constraints(cursor, table)
         for name, details in constraints.items():
             if details.get("unique") and column in details.get("columns", []):
-                schema_editor.execute(f"ALTER TABLE {quote(table)} DROP INDEX {quote(name)}")
+                schema_editor.execute(
+                    f"ALTER TABLE {quote(table)} DROP INDEX {quote(name)}"
+                )
 
     def drop_column_if_exists(table: str, column: str) -> None:
         if table_exists(table) and column_exists(table, column):
-            schema_editor.execute(f"ALTER TABLE {quote(table)} DROP COLUMN {quote(column)}")
+            schema_editor.execute(
+                f"ALTER TABLE {quote(table)} DROP COLUMN {quote(column)}"
+            )
 
     table = "ciudadanos_grupofamiliar"
 
     add_column_if_missing(table, "vinculo", f"{quote('vinculo')} VARCHAR(20) NULL")
-    add_column_if_missing(table, "estado_relacion", f"{quote('estado_relacion')} VARCHAR(20) NULL")
+    add_column_if_missing(
+        table, "estado_relacion", f"{quote('estado_relacion')} VARCHAR(20) NULL"
+    )
 
     if column_exists(table, "vinculo") and column_exists(table, "vinculo_id"):
         if table_exists("ciudadanos_vinculofamiliar"):
@@ -310,7 +359,9 @@ def ensure_grupofamiliar_text_fields(apps, schema_editor):
         drop_unique_constraints(table, "vinculo_id")
         drop_column_if_exists(table, "vinculo_id")
 
-    if column_exists(table, "estado_relacion") and column_exists(table, "estado_relacion_id"):
+    if column_exists(table, "estado_relacion") and column_exists(
+        table, "estado_relacion_id"
+    ):
         if table_exists("ciudadanos_estadorelacion"):
             schema_editor.execute(
                 f"""
@@ -327,6 +378,7 @@ def ensure_grupofamiliar_text_fields(apps, schema_editor):
 
 
 # --- RunPython: 0014_remove_ciudadano_estado_column ---
+
 
 def drop_estado_column(apps, schema_editor):
     connection = schema_editor.connection
@@ -366,6 +418,7 @@ def drop_estado_column(apps, schema_editor):
 
 # --- RunPython: 0015_cleanup_ciudadano_legacy_columns ---
 
+
 def drop_legacy_columns(apps, schema_editor):
     connection = schema_editor.connection
     if connection.vendor == "sqlite":
@@ -390,7 +443,9 @@ def drop_legacy_columns(apps, schema_editor):
             constraints = connection.introspection.get_constraints(cursor, table)
         for name, details in constraints.items():
             if column in details.get("columns", []) and details.get("foreign_key"):
-                schema_editor.execute(f"ALTER TABLE {quote(table)} DROP FOREIGN KEY {quote(name)}")
+                schema_editor.execute(
+                    f"ALTER TABLE {quote(table)} DROP FOREIGN KEY {quote(name)}"
+                )
 
     def drop_column_if_exists(column: str) -> None:
         if not column_exists(column):
@@ -399,14 +454,20 @@ def drop_legacy_columns(apps, schema_editor):
         schema_editor.execute(f"ALTER TABLE {quote(table)} DROP COLUMN {quote(column)}")
 
     legacy_columns = [
-        "demo_centro_familia", "demo_centro_familia_id", "estado", "estado_id",
-        "circuito_id", "escalera_manzana", "torre_pasillo",
+        "demo_centro_familia",
+        "demo_centro_familia_id",
+        "estado",
+        "estado_id",
+        "circuito_id",
+        "escalera_manzana",
+        "torre_pasillo",
     ]
     for column in legacy_columns:
         drop_column_if_exists(column)
 
 
 # --- RunPython: 0016_add_ciudadano_etapa1_fields ---
+
 
 def add_ciudadano_fields(apps, schema_editor):
     Ciudadano = apps.get_model("ciudadanos", "Ciudadano")
@@ -419,11 +480,43 @@ def add_ciudadano_fields(apps, schema_editor):
         return any(col.name == name for col in columns)
 
     fields = [
-        ("latitud", models.DecimalField(blank=True, decimal_places=6, max_digits=9, null=True)),
-        ("longitud", models.DecimalField(blank=True, decimal_places=6, max_digits=9, null=True)),
-        ("estado_civil", models.CharField(blank=True, choices=[("soltero", "Soltero/a"), ("casado", "Casado/a"), ("divorciado", "Divorciado/a"), ("viudo", "Viudo/a"), ("union_convivencial", "Unión convivencial")], max_length=20, null=True)),
+        (
+            "latitud",
+            models.DecimalField(blank=True, decimal_places=6, max_digits=9, null=True),
+        ),
+        (
+            "longitud",
+            models.DecimalField(blank=True, decimal_places=6, max_digits=9, null=True),
+        ),
+        (
+            "estado_civil",
+            models.CharField(
+                blank=True,
+                choices=[
+                    ("soltero", "Soltero/a"),
+                    ("casado", "Casado/a"),
+                    ("divorciado", "Divorciado/a"),
+                    ("viudo", "Viudo/a"),
+                    ("union_convivencial", "Unión convivencial"),
+                ],
+                max_length=20,
+                null=True,
+            ),
+        ),
         ("cuil_cuit", models.CharField(blank=True, max_length=13, null=True)),
-        ("origen_dato", models.CharField(choices=[("anses", "ANSES"), ("renaper", "RENAPER"), ("manual", "Carga Manual"), ("migracion", "Migración")], default="manual", max_length=20)),
+        (
+            "origen_dato",
+            models.CharField(
+                choices=[
+                    ("anses", "ANSES"),
+                    ("renaper", "RENAPER"),
+                    ("manual", "Carga Manual"),
+                    ("migracion", "Migración"),
+                ],
+                default="manual",
+                max_length=20,
+            ),
+        ),
     ]
 
     for name, field in fields:
@@ -436,15 +529,25 @@ def add_ciudadano_fields(apps, schema_editor):
 
 # --- RunPython: 0021_ensure_ciudadano_geo_columns ---
 
+
 def ensure_ciudadano_geo_columns(apps, schema_editor):
     connection = schema_editor.connection
     Ciudadano = apps.get_model("ciudadanos", "Ciudadano")
     table = Ciudadano._meta.db_table
 
     with connection.cursor() as cursor:
-        columns = {col.name for col in connection.introspection.get_table_description(cursor, table)}
+        columns = {
+            col.name
+            for col in connection.introspection.get_table_description(cursor, table)
+        }
 
-    for field_name in ("latitud", "longitud", "estado_civil", "cuil_cuit", "origen_dato"):
+    for field_name in (
+        "latitud",
+        "longitud",
+        "estado_civil",
+        "cuil_cuit",
+        "origen_dato",
+    ):
         if field_name in columns:
             continue
         schema_editor.add_field(Ciudadano, Ciudadano._meta.get_field(field_name))
@@ -454,13 +557,44 @@ class Migration(migrations.Migration):
 
     atomic = False
 
-    replaces = [('ciudadanos', '0009_remove_alerta_categoria_remove_archivo_ciudadano_and_more'), ('ciudadanos', '0010_historialciudadanoprogramas_ciudadanoprograma'), ('ciudadanos', '0011_alter_ciudadanoprograma_fecha_creado'), ('ciudadanos', '0012_fix_ciudadano_datetime_fields'), ('ciudadanos', '0013_fix_grupofamiliar_text_fields'), ('ciudadanos', '0014_remove_ciudadano_estado_column'), ('ciudadanos', '0015_cleanup_ciudadano_legacy_columns'), ('ciudadanos', '0016_add_ciudadano_etapa1_fields'), ('ciudadanos', '0017_programatransferencia'), ('ciudadanos', '0018_historialtransferencia'), ('ciudadanos', '0019_interaccion'), ('ciudadanos', '0020_remove_historialtransferencia_unique_historial_ciudadano_mes_anio_and_more'), ('ciudadanos', '0021_ensure_ciudadano_geo_columns'), ('ciudadanos', '0022_alter_ciudadano_managers_and_more'), ('ciudadanos', '0027_alter_ciudadano_telefono_longitud'), ('ciudadanos', '0023_ciudadano_identidad_fase1'), ('ciudadanos', '0024_ciudadano_revision_identidad_permission'), ('ciudadanos', '0025_alter_ciudadano_fecha_nacimiento_nullable'), ('ciudadanos', '0023_optimize_listado_ciudadanos_indexes'), ('ciudadanos', '0026_merge_0023_optimize_listado_ciudadanos_indexes_0025_alter_ciudadano_fecha_nacimiento_nullable'), ('ciudadanos', '0028_merge_20260505_1126')]
+    replaces = [
+        (
+            "ciudadanos",
+            "0009_remove_alerta_categoria_remove_archivo_ciudadano_and_more",
+        ),
+        ("ciudadanos", "0010_historialciudadanoprogramas_ciudadanoprograma"),
+        ("ciudadanos", "0011_alter_ciudadanoprograma_fecha_creado"),
+        ("ciudadanos", "0012_fix_ciudadano_datetime_fields"),
+        ("ciudadanos", "0013_fix_grupofamiliar_text_fields"),
+        ("ciudadanos", "0014_remove_ciudadano_estado_column"),
+        ("ciudadanos", "0015_cleanup_ciudadano_legacy_columns"),
+        ("ciudadanos", "0016_add_ciudadano_etapa1_fields"),
+        ("ciudadanos", "0017_programatransferencia"),
+        ("ciudadanos", "0018_historialtransferencia"),
+        ("ciudadanos", "0019_interaccion"),
+        (
+            "ciudadanos",
+            "0020_remove_historialtransferencia_unique_historial_ciudadano_mes_anio_and_more",
+        ),
+        ("ciudadanos", "0021_ensure_ciudadano_geo_columns"),
+        ("ciudadanos", "0022_alter_ciudadano_managers_and_more"),
+        ("ciudadanos", "0027_alter_ciudadano_telefono_longitud"),
+        ("ciudadanos", "0023_ciudadano_identidad_fase1"),
+        ("ciudadanos", "0024_ciudadano_revision_identidad_permission"),
+        ("ciudadanos", "0025_alter_ciudadano_fecha_nacimiento_nullable"),
+        ("ciudadanos", "0023_optimize_listado_ciudadanos_indexes"),
+        (
+            "ciudadanos",
+            "0026_merge_0023_optimize_listado_ciudadanos_indexes_0025_alter_ciudadano_fecha_nacimiento_nullable",
+        ),
+        ("ciudadanos", "0028_merge_20260505_1126"),
+    ]
 
     dependencies = [
-        ('core', '0001_squashed_0007'),
+        ("core", "0001_squashed_0007"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ('ciudadanos', '0001_squashed_0008'),
-        ('comedores', '0001_squashed_0023'),
+        ("ciudadanos", "0001_squashed_0008"),
+        ("comedores", "0001_squashed_0023"),
     ]
 
     operations = [
@@ -471,19 +605,32 @@ class Migration(migrations.Migration):
                     reverse_code=migrations.RunPython.noop,
                 ),
                 migrations.AlterField(
-                    model_name='ciudadano',
-                    name='nacionalidad',
-                    field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to='core.nacionalidad'),
+                    model_name="ciudadano",
+                    name="nacionalidad",
+                    field=models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        to="core.nacionalidad",
+                    ),
                 ),
                 migrations.AlterField(
-                    model_name='ciudadanoprograma',
-                    name='programas',
-                    field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='programa_ciudadano', to='core.programa'),
+                    model_name="ciudadanoprograma",
+                    name="programas",
+                    field=models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="programa_ciudadano",
+                        to="core.programa",
+                    ),
                 ),
                 migrations.AlterField(
-                    model_name='historialciudadanoprogramas',
-                    name='programa',
-                    field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='hist_prog_ciudadano', to='core.programa'),
+                    model_name="historialciudadanoprogramas",
+                    name="programa",
+                    field=models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="hist_prog_ciudadano",
+                        to="core.programa",
+                    ),
                 ),
                 migrations.RunPython(
                     code=safe_cleanup,
@@ -492,743 +639,825 @@ class Migration(migrations.Migration):
             ],
             state_operations=[
                 migrations.RemoveField(
-                    model_name='alerta',
-                    name='categoria',
+                    model_name="alerta",
+                    name="categoria",
                 ),
                 migrations.RemoveField(
-                    model_name='archivo',
-                    name='ciudadano',
+                    model_name="archivo",
+                    name="ciudadano",
                 ),
                 migrations.RemoveField(
-                    model_name='categoriaalerta',
-                    name='dimension',
+                    model_name="categoriaalerta",
+                    name="dimension",
                 ),
                 migrations.DeleteModel(
-                    name='Condicion',
+                    name="Condicion",
                 ),
                 migrations.RemoveField(
-                    model_name='derivacion',
-                    name='alertas',
+                    model_name="derivacion",
+                    name="alertas",
                 ),
                 migrations.RemoveField(
-                    model_name='derivacion',
-                    name='ciudadano',
+                    model_name="derivacion",
+                    name="ciudadano",
                 ),
                 migrations.RemoveField(
-                    model_name='derivacion',
-                    name='estado',
+                    model_name="derivacion",
+                    name="estado",
                 ),
                 migrations.RemoveField(
-                    model_name='derivacion',
-                    name='importancia',
+                    model_name="derivacion",
+                    name="importancia",
                 ),
                 migrations.RemoveField(
-                    model_name='derivacion',
-                    name='motivo_rechazo',
+                    model_name="derivacion",
+                    name="motivo_rechazo",
                 ),
                 migrations.RemoveField(
-                    model_name='derivacion',
-                    name='organismo',
+                    model_name="derivacion",
+                    name="organismo",
                 ),
                 migrations.RemoveField(
-                    model_name='derivacion',
-                    name='programa',
+                    model_name="derivacion",
+                    name="programa",
                 ),
                 migrations.RemoveField(
-                    model_name='derivacion',
-                    name='programa_solicitante',
+                    model_name="derivacion",
+                    name="programa_solicitante",
                 ),
                 migrations.RemoveField(
-                    model_name='derivacion',
-                    name='usuario',
+                    model_name="derivacion",
+                    name="usuario",
                 ),
                 migrations.RemoveField(
-                    model_name='dimensioneconomia',
-                    name='ciudadano',
+                    model_name="dimensioneconomia",
+                    name="ciudadano",
                 ),
                 migrations.RemoveField(
-                    model_name='dimensioneconomia',
-                    name='planes',
+                    model_name="dimensioneconomia",
+                    name="planes",
                 ),
                 migrations.RemoveField(
-                    model_name='dimensioneducacion',
-                    name='area_curso',
+                    model_name="dimensioneducacion",
+                    name="area_curso",
                 ),
                 migrations.RemoveField(
-                    model_name='dimensioneducacion',
-                    name='area_oficio',
+                    model_name="dimensioneducacion",
+                    name="area_oficio",
                 ),
                 migrations.RemoveField(
-                    model_name='dimensioneducacion',
-                    name='asiste_escuela',
+                    model_name="dimensioneducacion",
+                    name="asiste_escuela",
                 ),
                 migrations.RemoveField(
-                    model_name='dimensioneducacion',
-                    name='ciclo',
+                    model_name="dimensioneducacion",
+                    name="ciclo",
                 ),
                 migrations.RemoveField(
-                    model_name='dimensioneducacion',
-                    name='ciudadano',
+                    model_name="dimensioneducacion",
+                    name="ciudadano",
                 ),
                 migrations.RemoveField(
-                    model_name='dimensioneducacion',
-                    name='estado_nivel',
+                    model_name="dimensioneducacion",
+                    name="estado_nivel",
                 ),
                 migrations.RemoveField(
-                    model_name='dimensioneducacion',
-                    name='gestion',
+                    model_name="dimensioneducacion",
+                    name="gestion",
                 ),
                 migrations.RemoveField(
-                    model_name='dimensioneducacion',
-                    name='grado',
+                    model_name="dimensioneducacion",
+                    name="grado",
                 ),
                 migrations.RemoveField(
-                    model_name='dimensioneducacion',
-                    name='institucion',
+                    model_name="dimensioneducacion",
+                    name="institucion",
                 ),
                 migrations.RemoveField(
-                    model_name='dimensioneducacion',
-                    name='localidadInstitucion',
+                    model_name="dimensioneducacion",
+                    name="localidadInstitucion",
                 ),
                 migrations.RemoveField(
-                    model_name='dimensioneducacion',
-                    name='max_nivel',
+                    model_name="dimensioneducacion",
+                    name="max_nivel",
                 ),
                 migrations.RemoveField(
-                    model_name='dimensioneducacion',
-                    name='municipioInstitucion',
+                    model_name="dimensioneducacion",
+                    name="municipioInstitucion",
                 ),
                 migrations.RemoveField(
-                    model_name='dimensioneducacion',
-                    name='nivel_incompleto',
+                    model_name="dimensioneducacion",
+                    name="nivel_incompleto",
                 ),
                 migrations.RemoveField(
-                    model_name='dimensioneducacion',
-                    name='provinciaInstitucion',
+                    model_name="dimensioneducacion",
+                    name="provinciaInstitucion",
                 ),
                 migrations.RemoveField(
-                    model_name='dimensioneducacion',
-                    name='sin_educacion_formal',
+                    model_name="dimensioneducacion",
+                    name="sin_educacion_formal",
                 ),
                 migrations.RemoveField(
-                    model_name='dimensioneducacion',
-                    name='turno',
+                    model_name="dimensioneducacion",
+                    name="turno",
                 ),
                 migrations.RemoveField(
-                    model_name='dimensionfamilia',
-                    name='ciudadano',
+                    model_name="dimensionfamilia",
+                    name="ciudadano",
                 ),
                 migrations.RemoveField(
-                    model_name='dimensionsalud',
-                    name='ciudadano',
+                    model_name="dimensionsalud",
+                    name="ciudadano",
                 ),
                 migrations.RemoveField(
-                    model_name='dimensionsalud',
-                    name='frecuencia_controles_medicos',
+                    model_name="dimensionsalud",
+                    name="frecuencia_controles_medicos",
                 ),
                 migrations.RemoveField(
-                    model_name='dimensionsalud',
-                    name='lugares_atencion',
+                    model_name="dimensionsalud",
+                    name="lugares_atencion",
                 ),
                 migrations.RemoveField(
-                    model_name='dimensiontrabajo',
-                    name='Tiempobusqueda_laboral',
+                    model_name="dimensiontrabajo",
+                    name="Tiempobusqueda_laboral",
                 ),
                 migrations.RemoveField(
-                    model_name='dimensiontrabajo',
-                    name='actividadRealizadaComo',
+                    model_name="dimensiontrabajo",
+                    name="actividadRealizadaComo",
                 ),
                 migrations.RemoveField(
-                    model_name='dimensiontrabajo',
-                    name='aportesJubilacion',
+                    model_name="dimensiontrabajo",
+                    name="aportesJubilacion",
                 ),
                 migrations.RemoveField(
-                    model_name='dimensiontrabajo',
-                    name='ciudadano',
+                    model_name="dimensiontrabajo",
+                    name="ciudadano",
                 ),
                 migrations.RemoveField(
-                    model_name='dimensiontrabajo',
-                    name='duracionTrabajo',
+                    model_name="dimensiontrabajo",
+                    name="duracionTrabajo",
                 ),
                 migrations.RemoveField(
-                    model_name='dimensiontrabajo',
-                    name='modo_contratacion',
+                    model_name="dimensiontrabajo",
+                    name="modo_contratacion",
                 ),
                 migrations.RemoveField(
-                    model_name='dimensiontrabajo',
-                    name='nobusqueda_laboral',
+                    model_name="dimensiontrabajo",
+                    name="nobusqueda_laboral",
                 ),
                 migrations.RemoveField(
-                    model_name='dimensionvivienda',
-                    name='agua',
+                    model_name="dimensionvivienda",
+                    name="agua",
                 ),
                 migrations.RemoveField(
-                    model_name='dimensionvivienda',
-                    name='cant_ambientes',
+                    model_name="dimensionvivienda",
+                    name="cant_ambientes",
                 ),
                 migrations.RemoveField(
-                    model_name='dimensionvivienda',
-                    name='ciudadano',
+                    model_name="dimensionvivienda",
+                    name="ciudadano",
                 ),
                 migrations.RemoveField(
-                    model_name='dimensionvivienda',
-                    name='desague',
+                    model_name="dimensionvivienda",
+                    name="desague",
                 ),
                 migrations.RemoveField(
-                    model_name='dimensionvivienda',
-                    name='gas',
+                    model_name="dimensionvivienda",
+                    name="gas",
                 ),
                 migrations.RemoveField(
-                    model_name='dimensionvivienda',
-                    name='hay_banio',
+                    model_name="dimensionvivienda",
+                    name="hay_banio",
                 ),
                 migrations.RemoveField(
-                    model_name='dimensionvivienda',
-                    name='material',
+                    model_name="dimensionvivienda",
+                    name="material",
                 ),
                 migrations.RemoveField(
-                    model_name='dimensionvivienda',
-                    name='pisos',
+                    model_name="dimensionvivienda",
+                    name="pisos",
                 ),
                 migrations.RemoveField(
-                    model_name='dimensionvivienda',
-                    name='posesion',
+                    model_name="dimensionvivienda",
+                    name="posesion",
                 ),
                 migrations.RemoveField(
-                    model_name='dimensionvivienda',
-                    name='techos',
+                    model_name="dimensionvivienda",
+                    name="techos",
                 ),
                 migrations.RemoveField(
-                    model_name='dimensionvivienda',
-                    name='tipo',
+                    model_name="dimensionvivienda",
+                    name="tipo",
                 ),
                 migrations.RemoveField(
-                    model_name='dimensionvivienda',
-                    name='ubicacion_vivienda',
+                    model_name="dimensionvivienda",
+                    name="ubicacion_vivienda",
                 ),
                 migrations.RemoveField(
-                    model_name='grupohogar',
-                    name='ciudadano_1Hogar',
+                    model_name="grupohogar",
+                    name="ciudadano_1Hogar",
                 ),
                 migrations.RemoveField(
-                    model_name='grupohogar',
-                    name='ciudadano_2Hogar',
+                    model_name="grupohogar",
+                    name="ciudadano_2Hogar",
                 ),
                 migrations.RemoveField(
-                    model_name='grupohogar',
-                    name='estado_relacion',
+                    model_name="grupohogar",
+                    name="estado_relacion",
                 ),
                 migrations.RemoveField(
-                    model_name='historialalerta',
-                    name='alerta',
+                    model_name="historialalerta",
+                    name="alerta",
                 ),
                 migrations.RemoveField(
-                    model_name='historialalerta',
-                    name='ciudadano',
+                    model_name="historialalerta",
+                    name="ciudadano",
                 ),
                 migrations.RemoveField(
-                    model_name='historialalerta',
-                    name='creada_por',
+                    model_name="historialalerta",
+                    name="creada_por",
                 ),
                 migrations.RemoveField(
-                    model_name='historialalerta',
-                    name='eliminada_por',
+                    model_name="historialalerta",
+                    name="eliminada_por",
                 ),
                 migrations.RemoveField(
-                    model_name='intervencion',
-                    name='ciudadano',
+                    model_name="intervencion",
+                    name="ciudadano",
                 ),
                 migrations.RemoveField(
-                    model_name='intervencion',
-                    name='direccion',
+                    model_name="intervencion",
+                    name="direccion",
                 ),
                 migrations.RemoveField(
-                    model_name='intervencion',
-                    name='estado',
+                    model_name="intervencion",
+                    name="estado",
                 ),
                 migrations.RemoveField(
-                    model_name='intervencion',
-                    name='subintervencion',
+                    model_name="intervencion",
+                    name="subintervencion",
                 ),
                 migrations.RemoveField(
-                    model_name='intervencion',
-                    name='tipo_intervencion',
+                    model_name="intervencion",
+                    name="tipo_intervencion",
                 ),
                 migrations.RemoveField(
-                    model_name='intervencion',
-                    name='usuario',
+                    model_name="intervencion",
+                    name="usuario",
                 ),
                 migrations.RemoveField(
-                    model_name='llamado',
-                    name='ciudadano',
+                    model_name="llamado",
+                    name="ciudadano",
                 ),
                 migrations.RemoveField(
-                    model_name='llamado',
-                    name='estado',
+                    model_name="llamado",
+                    name="estado",
                 ),
                 migrations.RemoveField(
-                    model_name='llamado',
-                    name='programas_llamados',
+                    model_name="llamado",
+                    name="programas_llamados",
                 ),
                 migrations.RemoveField(
-                    model_name='llamado',
-                    name='subtipo_llamado',
+                    model_name="llamado",
+                    name="subtipo_llamado",
                 ),
                 migrations.RemoveField(
-                    model_name='llamado',
-                    name='tipo_llamado',
+                    model_name="llamado",
+                    name="tipo_llamado",
                 ),
                 migrations.RemoveField(
-                    model_name='llamado',
-                    name='usuario',
+                    model_name="llamado",
+                    name="usuario",
                 ),
                 migrations.RemoveField(
-                    model_name='organismo',
-                    name='localidad',
+                    model_name="organismo",
+                    name="localidad",
                 ),
                 migrations.RemoveField(
-                    model_name='organismo',
-                    name='tipo',
+                    model_name="organismo",
+                    name="tipo",
                 ),
                 migrations.RemoveField(
-                    model_name='plansocial',
-                    name='jurisdiccion',
+                    model_name="plansocial",
+                    name="jurisdiccion",
                 ),
                 migrations.RemoveField(
-                    model_name='programa',
-                    name='subsecretaria',
+                    model_name="programa",
+                    name="subsecretaria",
                 ),
                 migrations.RemoveField(
-                    model_name='subintervencion',
-                    name='subintervencion',
+                    model_name="subintervencion",
+                    name="subintervencion",
                 ),
                 migrations.RemoveField(
-                    model_name='subsecretarias',
-                    name='secretaria',
+                    model_name="subsecretarias",
+                    name="secretaria",
                 ),
                 migrations.RemoveField(
-                    model_name='subtipollamado',
-                    name='tipo_llamado',
+                    model_name="subtipollamado",
+                    name="tipo_llamado",
                 ),
                 migrations.RemoveField(
-                    model_name='tipollamado',
-                    name='programas_llamados',
+                    model_name="tipollamado",
+                    name="programas_llamados",
                 ),
                 migrations.AlterModelOptions(
-                    name='ciudadano',
-                    options={'ordering': ['apellido', 'nombre']},
+                    name="ciudadano",
+                    options={"ordering": ["apellido", "nombre"]},
                 ),
                 migrations.AlterModelOptions(
-                    name='grupofamiliar',
-                    options={'ordering': ['ciudadano_1', 'ciudadano_2']},
+                    name="grupofamiliar",
+                    options={"ordering": ["ciudadano_1", "ciudadano_2"]},
                 ),
                 migrations.RemoveIndex(
-                    model_name='ciudadano',
-                    name='ciudadanos__apellid_8f0c3b_idx',
+                    model_name="ciudadano",
+                    name="ciudadanos__apellid_8f0c3b_idx",
                 ),
                 migrations.RemoveIndex(
-                    model_name='ciudadano',
-                    name='ciudadanos__fecha_n_aa8772_idx',
+                    model_name="ciudadano",
+                    name="ciudadanos__fecha_n_aa8772_idx",
                 ),
                 migrations.RemoveIndex(
-                    model_name='ciudadano',
-                    name='ciudadanos__observa_517ba3_idx',
+                    model_name="ciudadano",
+                    name="ciudadanos__observa_517ba3_idx",
                 ),
                 migrations.RemoveIndex(
-                    model_name='grupofamiliar',
-                    name='ciudadanos__ciudada_0b736a_idx',
+                    model_name="grupofamiliar",
+                    name="ciudadanos__ciudada_0b736a_idx",
                 ),
                 migrations.RemoveIndex(
-                    model_name='grupofamiliar',
-                    name='ciudadanos__ciudada_547f88_idx',
+                    model_name="grupofamiliar",
+                    name="ciudadanos__ciudada_547f88_idx",
                 ),
                 migrations.RemoveField(
-                    model_name='ciudadano',
-                    name='alertas',
+                    model_name="ciudadano",
+                    name="alertas",
                 ),
                 migrations.RemoveField(
-                    model_name='ciudadano',
-                    name='circuito',
+                    model_name="ciudadano",
+                    name="circuito",
                 ),
                 migrations.RemoveField(
-                    model_name='ciudadano',
-                    name='demo_centro_familia',
+                    model_name="ciudadano",
+                    name="demo_centro_familia",
                 ),
                 migrations.RemoveField(
-                    model_name='ciudadano',
-                    name='escalera_manzana',
+                    model_name="ciudadano",
+                    name="escalera_manzana",
                 ),
                 migrations.RemoveField(
-                    model_name='ciudadano',
-                    name='estado',
+                    model_name="ciudadano",
+                    name="estado",
                 ),
                 migrations.RemoveField(
-                    model_name='ciudadano',
-                    name='estado_civil',
+                    model_name="ciudadano",
+                    name="estado_civil",
                 ),
                 migrations.RemoveField(
-                    model_name='ciudadano',
-                    name='latitud',
+                    model_name="ciudadano",
+                    name="latitud",
                 ),
                 migrations.RemoveField(
-                    model_name='ciudadano',
-                    name='longitud',
+                    model_name="ciudadano",
+                    name="longitud",
                 ),
                 migrations.RemoveField(
-                    model_name='ciudadano',
-                    name='torre_pasillo',
+                    model_name="ciudadano",
+                    name="torre_pasillo",
                 ),
                 migrations.RemoveField(
-                    model_name='grupofamiliar',
-                    name='vinculo_inverso',
+                    model_name="grupofamiliar",
+                    name="vinculo_inverso",
                 ),
                 migrations.AddField(
-                    model_name='ciudadano',
-                    name='activo',
+                    model_name="ciudadano",
+                    name="activo",
                     field=models.BooleanField(default=True),
                 ),
                 migrations.AddField(
-                    model_name='ciudadano',
-                    name='barrio',
+                    model_name="ciudadano",
+                    name="barrio",
                     field=models.CharField(blank=True, max_length=100, null=True),
                 ),
                 migrations.AddField(
-                    model_name='grupofamiliar',
-                    name='creado',
-                    field=models.DateTimeField(default=django.utils.timezone.now, editable=False),
+                    model_name="grupofamiliar",
+                    name="creado",
+                    field=models.DateTimeField(
+                        default=django.utils.timezone.now, editable=False
+                    ),
                 ),
                 migrations.AddField(
-                    model_name='grupofamiliar',
-                    name='modificado',
+                    model_name="grupofamiliar",
+                    name="modificado",
                     field=models.DateTimeField(auto_now=True),
                 ),
                 migrations.AlterField(
-                    model_name='ciudadano',
-                    name='altura',
+                    model_name="ciudadano",
+                    name="altura",
                     field=models.CharField(blank=True, max_length=10, null=True),
                 ),
                 migrations.AlterField(
-                    model_name='ciudadano',
-                    name='codigo_postal',
+                    model_name="ciudadano",
+                    name="codigo_postal",
                     field=models.CharField(blank=True, max_length=12, null=True),
                 ),
                 migrations.AlterField(
-                    model_name='ciudadano',
-                    name='creado',
-                    field=models.DateTimeField(default=django.utils.timezone.now, editable=False),
+                    model_name="ciudadano",
+                    name="creado",
+                    field=models.DateTimeField(
+                        default=django.utils.timezone.now, editable=False
+                    ),
                 ),
                 migrations.AlterField(
-                    model_name='ciudadano',
-                    name='creado_por',
-                    field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='ciudadano_creado_por', to=settings.AUTH_USER_MODEL),
+                    model_name="ciudadano",
+                    name="creado_por",
+                    field=models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="ciudadano_creado_por",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
                 ),
                 migrations.AlterField(
-                    model_name='ciudadano',
-                    name='documento',
-                    field=models.PositiveBigIntegerField(null=True, validators=[django.core.validators.MinValueValidator(1)]),
+                    model_name="ciudadano",
+                    name="documento",
+                    field=models.PositiveBigIntegerField(
+                        null=True,
+                        validators=[django.core.validators.MinValueValidator(1)],
+                    ),
                 ),
                 migrations.AlterField(
-                    model_name='ciudadano',
-                    name='modificado',
+                    model_name="ciudadano",
+                    name="modificado",
                     field=models.DateTimeField(auto_now=True),
                 ),
                 migrations.AlterField(
-                    model_name='ciudadano',
-                    name='modificado_por',
-                    field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='ciudadano_modificado_por', to=settings.AUTH_USER_MODEL),
+                    model_name="ciudadano",
+                    name="modificado_por",
+                    field=models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="ciudadano_modificado_por",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
                 ),
                 migrations.AlterField(
-                    model_name='ciudadano',
-                    name='nacionalidad',
-                    field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to='core.nacionalidad'),
+                    model_name="ciudadano",
+                    name="nacionalidad",
+                    field=models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        to="core.nacionalidad",
+                    ),
                 ),
                 migrations.AlterField(
-                    model_name='ciudadano',
-                    name='observaciones',
+                    model_name="ciudadano",
+                    name="observaciones",
                     field=models.TextField(blank=True, null=True),
                 ),
                 migrations.AlterField(
-                    model_name='ciudadano',
-                    name='piso_departamento',
+                    model_name="ciudadano",
+                    name="piso_departamento",
                     field=models.CharField(blank=True, max_length=50, null=True),
                 ),
                 migrations.AlterField(
-                    model_name='ciudadano',
-                    name='sexo',
-                    field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to='core.sexo'),
+                    model_name="ciudadano",
+                    name="sexo",
+                    field=models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        to="core.sexo",
+                    ),
                 ),
                 migrations.AlterField(
-                    model_name='ciudadano',
-                    name='telefono',
+                    model_name="ciudadano",
+                    name="telefono",
                     field=models.CharField(blank=True, max_length=30, null=True),
                 ),
                 migrations.AlterField(
-                    model_name='ciudadano',
-                    name='telefono_alternativo',
+                    model_name="ciudadano",
+                    name="telefono_alternativo",
                     field=models.CharField(blank=True, max_length=30, null=True),
                 ),
                 migrations.AlterField(
-                    model_name='ciudadano',
-                    name='tipo_documento',
-                    field=models.CharField(choices=[('DNI', 'DNI'), ('CUIT', 'CUIT'), ('PASAPORTE', 'Pasaporte'), ('LE', 'Libreta de enrolamiento')], default='DNI', max_length=20),
+                    model_name="ciudadano",
+                    name="tipo_documento",
+                    field=models.CharField(
+                        choices=[
+                            ("DNI", "DNI"),
+                            ("CUIT", "CUIT"),
+                            ("PASAPORTE", "Pasaporte"),
+                            ("LE", "Libreta de enrolamiento"),
+                        ],
+                        default="DNI",
+                        max_length=20,
+                    ),
                 ),
                 migrations.AlterField(
-                    model_name='grupofamiliar',
-                    name='ciudadano_1',
-                    field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='relaciones_salientes', to='ciudadanos.ciudadano'),
+                    model_name="grupofamiliar",
+                    name="ciudadano_1",
+                    field=models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="relaciones_salientes",
+                        to="ciudadanos.ciudadano",
+                    ),
                 ),
                 migrations.AlterField(
-                    model_name='grupofamiliar',
-                    name='ciudadano_2',
-                    field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='relaciones_entrantes', to='ciudadanos.ciudadano'),
+                    model_name="grupofamiliar",
+                    name="ciudadano_2",
+                    field=models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="relaciones_entrantes",
+                        to="ciudadanos.ciudadano",
+                    ),
                 ),
                 migrations.AlterField(
-                    model_name='grupofamiliar',
-                    name='conviven',
+                    model_name="grupofamiliar",
+                    name="conviven",
                     field=models.BooleanField(default=False),
                 ),
                 migrations.AlterField(
-                    model_name='grupofamiliar',
-                    name='cuidador_principal',
+                    model_name="grupofamiliar",
+                    name="cuidador_principal",
                     field=models.BooleanField(default=False),
                 ),
                 migrations.AlterField(
-                    model_name='grupofamiliar',
-                    name='estado_relacion',
-                    field=models.CharField(blank=True, choices=[('bueno', 'Bueno'), ('regular', 'Regular'), ('conflictivo', 'Conflictivo')], max_length=20, null=True),
+                    model_name="grupofamiliar",
+                    name="estado_relacion",
+                    field=models.CharField(
+                        blank=True,
+                        choices=[
+                            ("bueno", "Bueno"),
+                            ("regular", "Regular"),
+                            ("conflictivo", "Conflictivo"),
+                        ],
+                        max_length=20,
+                        null=True,
+                    ),
                 ),
                 migrations.AlterField(
-                    model_name='grupofamiliar',
-                    name='observaciones',
+                    model_name="grupofamiliar",
+                    name="observaciones",
                     field=models.TextField(blank=True, null=True),
                 ),
                 migrations.AlterField(
-                    model_name='grupofamiliar',
-                    name='vinculo',
-                    field=models.CharField(blank=True, choices=[('PADRE/MADRE', 'Padre/Madre'), ('HIJO/A', 'Hijo/a'), ('PAREJA', 'Pareja'), ('HERMANO/A', 'Hermano/a'), ('TUTOR/A', 'Tutor/a'), ('OTRO', 'Otro')], max_length=20, null=True),
+                    model_name="grupofamiliar",
+                    name="vinculo",
+                    field=models.CharField(
+                        blank=True,
+                        choices=[
+                            ("PADRE/MADRE", "Padre/Madre"),
+                            ("HIJO/A", "Hijo/a"),
+                            ("PAREJA", "Pareja"),
+                            ("HERMANO/A", "Hermano/a"),
+                            ("TUTOR/A", "Tutor/a"),
+                            ("OTRO", "Otro"),
+                        ],
+                        max_length=20,
+                        null=True,
+                    ),
                 ),
                 migrations.AddIndex(
-                    model_name='ciudadano',
-                    index=models.Index(fields=['apellido', 'nombre'], name='ciudadanos__apellid_02f758_idx'),
+                    model_name="ciudadano",
+                    index=models.Index(
+                        fields=["apellido", "nombre"],
+                        name="ciudadanos__apellid_02f758_idx",
+                    ),
                 ),
                 migrations.AddIndex(
-                    model_name='grupofamiliar',
-                    index=models.Index(fields=['ciudadano_1'], name='ciudadanos__ciudada_0b736a_idx'),
+                    model_name="grupofamiliar",
+                    index=models.Index(
+                        fields=["ciudadano_1"], name="ciudadanos__ciudada_0b736a_idx"
+                    ),
                 ),
                 migrations.AddIndex(
-                    model_name='grupofamiliar',
-                    index=models.Index(fields=['ciudadano_2'], name='ciudadanos__ciudada_547f88_idx'),
+                    model_name="grupofamiliar",
+                    index=models.Index(
+                        fields=["ciudadano_2"], name="ciudadanos__ciudada_547f88_idx"
+                    ),
                 ),
                 migrations.AlterField(
-                    model_name='ciudadanoprograma',
-                    name='programas',
-                    field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='programa_ciudadano', to='core.programa'),
+                    model_name="ciudadanoprograma",
+                    name="programas",
+                    field=models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="programa_ciudadano",
+                        to="core.programa",
+                    ),
                 ),
                 migrations.AlterField(
-                    model_name='historialciudadanoprogramas',
-                    name='programa',
-                    field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='hist_prog_ciudadano', to='core.programa'),
+                    model_name="historialciudadanoprogramas",
+                    name="programa",
+                    field=models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="hist_prog_ciudadano",
+                        to="core.programa",
+                    ),
                 ),
                 migrations.DeleteModel(
-                    name='ActividadRealizada',
+                    name="ActividadRealizada",
                 ),
                 migrations.DeleteModel(
-                    name='Agua',
+                    name="Agua",
                 ),
                 migrations.DeleteModel(
-                    name='Alerta',
+                    name="Alerta",
                 ),
                 migrations.DeleteModel(
-                    name='AportesJubilacion',
+                    name="AportesJubilacion",
                 ),
                 migrations.DeleteModel(
-                    name='Archivo',
+                    name="Archivo",
                 ),
                 migrations.DeleteModel(
-                    name='AreaCurso',
+                    name="AreaCurso",
                 ),
                 migrations.DeleteModel(
-                    name='AsisteEscuela',
+                    name="AsisteEscuela",
                 ),
                 migrations.DeleteModel(
-                    name='CantidadAmbientes',
+                    name="CantidadAmbientes",
                 ),
                 migrations.DeleteModel(
-                    name='CategoriaAlerta',
+                    name="CategoriaAlerta",
                 ),
                 migrations.DeleteModel(
-                    name='CentrosSalud',
+                    name="CentrosSalud",
                 ),
                 migrations.DeleteModel(
-                    name='Circuito',
+                    name="Circuito",
                 ),
                 migrations.DeleteModel(
-                    name='Derivacion',
+                    name="Derivacion",
                 ),
                 migrations.DeleteModel(
-                    name='Desague',
+                    name="Desague",
                 ),
                 migrations.DeleteModel(
-                    name='Dimension',
+                    name="Dimension",
                 ),
                 migrations.DeleteModel(
-                    name='DimensionEconomia',
+                    name="DimensionEconomia",
                 ),
                 migrations.DeleteModel(
-                    name='DimensionEducacion',
+                    name="DimensionEducacion",
                 ),
                 migrations.DeleteModel(
-                    name='DimensionFamilia',
+                    name="DimensionFamilia",
                 ),
                 migrations.DeleteModel(
-                    name='DimensionSalud',
+                    name="DimensionSalud",
                 ),
                 migrations.DeleteModel(
-                    name='DimensionTrabajo',
+                    name="DimensionTrabajo",
                 ),
                 migrations.DeleteModel(
-                    name='DimensionVivienda',
+                    name="DimensionVivienda",
                 ),
                 migrations.DeleteModel(
-                    name='Direccion',
+                    name="Direccion",
                 ),
                 migrations.DeleteModel(
-                    name='DuracionTrabajo',
+                    name="DuracionTrabajo",
                 ),
                 migrations.DeleteModel(
-                    name='EstadoCivil',
+                    name="EstadoCivil",
                 ),
                 migrations.DeleteModel(
-                    name='EstadoDerivacion',
+                    name="EstadoDerivacion",
                 ),
                 migrations.DeleteModel(
-                    name='EstadoIntervencion',
+                    name="EstadoIntervencion",
                 ),
                 migrations.DeleteModel(
-                    name='EstadoLlamado',
+                    name="EstadoLlamado",
                 ),
                 migrations.DeleteModel(
-                    name='EstadoNivelEducativo',
+                    name="EstadoNivelEducativo",
                 ),
                 migrations.DeleteModel(
-                    name='EstadoRelacion',
+                    name="EstadoRelacion",
                 ),
                 migrations.DeleteModel(
-                    name='Frecuencia',
+                    name="Frecuencia",
                 ),
                 migrations.DeleteModel(
-                    name='Gas',
+                    name="Gas",
                 ),
                 migrations.DeleteModel(
-                    name='Grado',
+                    name="Grado",
                 ),
                 migrations.DeleteModel(
-                    name='GrupoHogar',
+                    name="GrupoHogar",
                 ),
                 migrations.DeleteModel(
-                    name='HistorialAlerta',
+                    name="HistorialAlerta",
                 ),
                 migrations.DeleteModel(
-                    name='Importancia',
+                    name="Importancia",
                 ),
                 migrations.DeleteModel(
-                    name='Inodoro',
+                    name="Inodoro",
                 ),
                 migrations.DeleteModel(
-                    name='InstitucionEducativas',
+                    name="InstitucionEducativas",
                 ),
                 migrations.DeleteModel(
-                    name='Intervencion',
+                    name="Intervencion",
                 ),
                 migrations.DeleteModel(
-                    name='Jurisdiccion',
+                    name="Jurisdiccion",
                 ),
                 migrations.DeleteModel(
-                    name='Llamado',
+                    name="Llamado",
                 ),
                 migrations.DeleteModel(
-                    name='ModoContratacion',
+                    name="ModoContratacion",
                 ),
                 migrations.DeleteModel(
-                    name='MotivoNivelIncompleto',
+                    name="MotivoNivelIncompleto",
                 ),
                 migrations.DeleteModel(
-                    name='Nacionalidad',
+                    name="Nacionalidad",
                 ),
                 migrations.DeleteModel(
-                    name='NivelEducativo',
+                    name="NivelEducativo",
                 ),
                 migrations.DeleteModel(
-                    name='NobusquedaLaboral',
+                    name="NobusquedaLaboral",
                 ),
                 migrations.DeleteModel(
-                    name='Organismo',
+                    name="Organismo",
                 ),
                 migrations.DeleteModel(
-                    name='PlanSocial',
+                    name="PlanSocial",
                 ),
                 migrations.DeleteModel(
-                    name='Programa',
+                    name="Programa",
                 ),
                 migrations.DeleteModel(
-                    name='ProgramasLlamados',
+                    name="ProgramasLlamados",
                 ),
                 migrations.DeleteModel(
-                    name='Rechazo',
+                    name="Rechazo",
                 ),
                 migrations.DeleteModel(
-                    name='Secretarias',
+                    name="Secretarias",
                 ),
                 migrations.DeleteModel(
-                    name='SubIntervencion',
+                    name="SubIntervencion",
                 ),
                 migrations.DeleteModel(
-                    name='Subsecretarias',
+                    name="Subsecretarias",
                 ),
                 migrations.DeleteModel(
-                    name='SubtipoLlamado',
+                    name="SubtipoLlamado",
                 ),
                 migrations.DeleteModel(
-                    name='TiempoBusquedaLaboral',
+                    name="TiempoBusquedaLaboral",
                 ),
                 migrations.DeleteModel(
-                    name='TipoConstruccionVivienda',
+                    name="TipoConstruccionVivienda",
                 ),
                 migrations.DeleteModel(
-                    name='TipoDocumento',
+                    name="TipoDocumento",
                 ),
                 migrations.DeleteModel(
-                    name='TipoGestion',
+                    name="TipoGestion",
                 ),
                 migrations.DeleteModel(
-                    name='TipoIntervencion',
+                    name="TipoIntervencion",
                 ),
                 migrations.DeleteModel(
-                    name='TipoLlamado',
+                    name="TipoLlamado",
                 ),
                 migrations.DeleteModel(
-                    name='TipoOrganismo',
+                    name="TipoOrganismo",
                 ),
                 migrations.DeleteModel(
-                    name='TipoPisosVivienda',
+                    name="TipoPisosVivienda",
                 ),
                 migrations.DeleteModel(
-                    name='TipoPosesionVivienda',
+                    name="TipoPosesionVivienda",
                 ),
                 migrations.DeleteModel(
-                    name='TipoTechoVivienda',
+                    name="TipoTechoVivienda",
                 ),
                 migrations.DeleteModel(
-                    name='TipoVivienda',
+                    name="TipoVivienda",
                 ),
                 migrations.DeleteModel(
-                    name='Turno',
+                    name="Turno",
                 ),
                 migrations.DeleteModel(
-                    name='UbicacionVivienda',
+                    name="UbicacionVivienda",
                 ),
                 migrations.DeleteModel(
-                    name='VinculoFamiliar',
+                    name="VinculoFamiliar",
                 ),
             ],
         ),
@@ -1237,8 +1466,8 @@ class Migration(migrations.Migration):
             reverse_code=migrations.RunPython.noop,
         ),
         migrations.AlterField(
-            model_name='ciudadanoprograma',
-            name='fecha_creado',
+            model_name="ciudadanoprograma",
+            name="fecha_creado",
             field=models.DateTimeField(auto_now_add=True),
         ),
         migrations.RunPython(
@@ -1266,242 +1495,506 @@ class Migration(migrations.Migration):
             ],
             state_operations=[
                 migrations.AddField(
-                    model_name='ciudadano',
-                    name='latitud',
-                    field=models.DecimalField(blank=True, decimal_places=6, max_digits=9, null=True),
+                    model_name="ciudadano",
+                    name="latitud",
+                    field=models.DecimalField(
+                        blank=True, decimal_places=6, max_digits=9, null=True
+                    ),
                 ),
                 migrations.AddField(
-                    model_name='ciudadano',
-                    name='longitud',
-                    field=models.DecimalField(blank=True, decimal_places=6, max_digits=9, null=True),
+                    model_name="ciudadano",
+                    name="longitud",
+                    field=models.DecimalField(
+                        blank=True, decimal_places=6, max_digits=9, null=True
+                    ),
                 ),
                 migrations.AddField(
-                    model_name='ciudadano',
-                    name='estado_civil',
-                    field=models.CharField(blank=True, choices=[('soltero', 'Soltero/a'), ('casado', 'Casado/a'), ('divorciado', 'Divorciado/a'), ('viudo', 'Viudo/a'), ('union_convivencial', 'Unión convivencial')], max_length=20, null=True),
+                    model_name="ciudadano",
+                    name="estado_civil",
+                    field=models.CharField(
+                        blank=True,
+                        choices=[
+                            ("soltero", "Soltero/a"),
+                            ("casado", "Casado/a"),
+                            ("divorciado", "Divorciado/a"),
+                            ("viudo", "Viudo/a"),
+                            ("union_convivencial", "Unión convivencial"),
+                        ],
+                        max_length=20,
+                        null=True,
+                    ),
                 ),
                 migrations.AddField(
-                    model_name='ciudadano',
-                    name='cuil_cuit',
+                    model_name="ciudadano",
+                    name="cuil_cuit",
                     field=models.CharField(blank=True, max_length=13, null=True),
                 ),
                 migrations.AddField(
-                    model_name='ciudadano',
-                    name='origen_dato',
-                    field=models.CharField(choices=[('anses', 'ANSES'), ('renaper', 'RENAPER'), ('manual', 'Carga Manual'), ('migracion', 'Migración')], default='manual', max_length=20),
+                    model_name="ciudadano",
+                    name="origen_dato",
+                    field=models.CharField(
+                        choices=[
+                            ("anses", "ANSES"),
+                            ("renaper", "RENAPER"),
+                            ("manual", "Carga Manual"),
+                            ("migracion", "Migración"),
+                        ],
+                        default="manual",
+                        max_length=20,
+                    ),
                 ),
             ],
         ),
         migrations.CreateModel(
-            name='ProgramaTransferencia',
+            name="ProgramaTransferencia",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('tipo', models.CharField(choices=[('auh', 'AUH'), ('prestacion_alimentar', 'Prestación Alimentar'), ('centro_familia', 'Centro de Familia'), ('comedor', 'Asiste a comedor'), ('aduana', 'Aduana')], max_length=30)),
-                ('categoria', models.CharField(choices=[('directa', 'Transferencia Directa'), ('indirecta', 'Transferencia Indirecta')], max_length=20)),
-                ('monto', models.DecimalField(blank=True, decimal_places=2, max_digits=10, null=True)),
-                ('cantidad_texto', models.CharField(blank=True, help_text="Ej: '2 colchones'", max_length=100, null=True)),
-                ('activo', models.BooleanField(default=True)),
-                ('creado', models.DateTimeField(default=django.utils.timezone.now, editable=False)),
-                ('modificado', models.DateTimeField(auto_now=True)),
-                ('ciudadano', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='programas_transferencia', to='ciudadanos.ciudadano')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "tipo",
+                    models.CharField(
+                        choices=[
+                            ("auh", "AUH"),
+                            ("prestacion_alimentar", "Prestación Alimentar"),
+                            ("centro_familia", "Centro de Familia"),
+                            ("comedor", "Asiste a comedor"),
+                            ("aduana", "Aduana"),
+                        ],
+                        max_length=30,
+                    ),
+                ),
+                (
+                    "categoria",
+                    models.CharField(
+                        choices=[
+                            ("directa", "Transferencia Directa"),
+                            ("indirecta", "Transferencia Indirecta"),
+                        ],
+                        max_length=20,
+                    ),
+                ),
+                (
+                    "monto",
+                    models.DecimalField(
+                        blank=True, decimal_places=2, max_digits=10, null=True
+                    ),
+                ),
+                (
+                    "cantidad_texto",
+                    models.CharField(
+                        blank=True,
+                        help_text="Ej: '2 colchones'",
+                        max_length=100,
+                        null=True,
+                    ),
+                ),
+                ("activo", models.BooleanField(default=True)),
+                (
+                    "creado",
+                    models.DateTimeField(
+                        default=django.utils.timezone.now, editable=False
+                    ),
+                ),
+                ("modificado", models.DateTimeField(auto_now=True)),
+                (
+                    "ciudadano",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="programas_transferencia",
+                        to="ciudadanos.ciudadano",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Programa de Transferencia',
-                'verbose_name_plural': 'Programas de Transferencia',
-                'ordering': ['categoria', 'tipo'],
+                "verbose_name": "Programa de Transferencia",
+                "verbose_name_plural": "Programas de Transferencia",
+                "ordering": ["categoria", "tipo"],
             },
         ),
         migrations.CreateModel(
-            name='HistorialTransferencia',
+            name="HistorialTransferencia",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('mes', models.IntegerField()),
-                ('anio', models.IntegerField()),
-                ('monto_auh', models.DecimalField(decimal_places=2, default=0, max_digits=10)),
-                ('monto_prestacion_alimentar', models.DecimalField(decimal_places=2, default=0, max_digits=10)),
-                ('monto_centro_familia', models.DecimalField(decimal_places=2, default=0, max_digits=10)),
-                ('monto_comedor', models.DecimalField(decimal_places=2, default=0, max_digits=10)),
-                ('creado', models.DateTimeField(default=django.utils.timezone.now, editable=False)),
-                ('modificado', models.DateTimeField(auto_now=True)),
-                ('ciudadano', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='historial_transferencias', to='ciudadanos.ciudadano')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("mes", models.IntegerField()),
+                ("anio", models.IntegerField()),
+                (
+                    "monto_auh",
+                    models.DecimalField(decimal_places=2, default=0, max_digits=10),
+                ),
+                (
+                    "monto_prestacion_alimentar",
+                    models.DecimalField(decimal_places=2, default=0, max_digits=10),
+                ),
+                (
+                    "monto_centro_familia",
+                    models.DecimalField(decimal_places=2, default=0, max_digits=10),
+                ),
+                (
+                    "monto_comedor",
+                    models.DecimalField(decimal_places=2, default=0, max_digits=10),
+                ),
+                (
+                    "creado",
+                    models.DateTimeField(
+                        default=django.utils.timezone.now, editable=False
+                    ),
+                ),
+                ("modificado", models.DateTimeField(auto_now=True)),
+                (
+                    "ciudadano",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="historial_transferencias",
+                        to="ciudadanos.ciudadano",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Historial de Transferencia',
-                'verbose_name_plural': 'Historial de Transferencias',
-                'ordering': ['-anio', '-mes'],
+                "verbose_name": "Historial de Transferencia",
+                "verbose_name_plural": "Historial de Transferencias",
+                "ordering": ["-anio", "-mes"],
             },
         ),
         migrations.AddConstraint(
-            model_name='historialtransferencia',
-            constraint=models.UniqueConstraint(fields=('ciudadano', 'mes', 'anio'), name='unique_historial_ciudadano_mes_anio'),
+            model_name="historialtransferencia",
+            constraint=models.UniqueConstraint(
+                fields=("ciudadano", "mes", "anio"),
+                name="unique_historial_ciudadano_mes_anio",
+            ),
         ),
         migrations.CreateModel(
-            name='Interaccion',
+            name="Interaccion",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('tipo', models.CharField(help_text='Ej: Rendición de cuentas, Contacto por teléfono, Relevamiento', max_length=255)),
-                ('fecha', models.DateField()),
-                ('estado', models.CharField(choices=[('completo', 'Completo'), ('en_plan', 'En Plan'), ('pendiente', 'Pendiente')], default='pendiente', max_length=20)),
-                ('notas', models.TextField(blank=True, null=True)),
-                ('creado', models.DateTimeField(default=django.utils.timezone.now, editable=False)),
-                ('modificado', models.DateTimeField(auto_now=True)),
-                ('ciudadano', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='interacciones', to='ciudadanos.ciudadano')),
-                ('responsable', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "tipo",
+                    models.CharField(
+                        help_text="Ej: Rendición de cuentas, Contacto por teléfono, Relevamiento",
+                        max_length=255,
+                    ),
+                ),
+                ("fecha", models.DateField()),
+                (
+                    "estado",
+                    models.CharField(
+                        choices=[
+                            ("completo", "Completo"),
+                            ("en_plan", "En Plan"),
+                            ("pendiente", "Pendiente"),
+                        ],
+                        default="pendiente",
+                        max_length=20,
+                    ),
+                ),
+                ("notas", models.TextField(blank=True, null=True)),
+                (
+                    "creado",
+                    models.DateTimeField(
+                        default=django.utils.timezone.now, editable=False
+                    ),
+                ),
+                ("modificado", models.DateTimeField(auto_now=True)),
+                (
+                    "ciudadano",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="interacciones",
+                        to="ciudadanos.ciudadano",
+                    ),
+                ),
+                (
+                    "responsable",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Interacción',
-                'verbose_name_plural': 'Interacciones',
-                'ordering': ['-fecha'],
+                "verbose_name": "Interacción",
+                "verbose_name_plural": "Interacciones",
+                "ordering": ["-fecha"],
             },
         ),
         migrations.RemoveConstraint(
-            model_name='historialtransferencia',
-            name='unique_historial_ciudadano_mes_anio',
+            model_name="historialtransferencia",
+            name="unique_historial_ciudadano_mes_anio",
         ),
         migrations.AlterField(
-            model_name='historialtransferencia',
-            name='anio',
-            field=models.IntegerField(validators=[django.core.validators.MinValueValidator(2000)]),
+            model_name="historialtransferencia",
+            name="anio",
+            field=models.IntegerField(
+                validators=[django.core.validators.MinValueValidator(2000)]
+            ),
         ),
         migrations.AlterField(
-            model_name='historialtransferencia',
-            name='mes',
-            field=models.IntegerField(validators=[django.core.validators.MinValueValidator(1), django.core.validators.MaxValueValidator(12)]),
+            model_name="historialtransferencia",
+            name="mes",
+            field=models.IntegerField(
+                validators=[
+                    django.core.validators.MinValueValidator(1),
+                    django.core.validators.MaxValueValidator(12),
+                ]
+            ),
         ),
         migrations.AlterUniqueTogether(
-            name='historialtransferencia',
-            unique_together={('ciudadano', 'mes', 'anio')},
+            name="historialtransferencia",
+            unique_together={("ciudadano", "mes", "anio")},
         ),
         migrations.RunPython(
             code=ensure_ciudadano_geo_columns,
             reverse_code=migrations.RunPython.noop,
         ),
         migrations.AlterModelManagers(
-            name='ciudadano',
+            name="ciudadano",
             managers=[
-                ('objects', core.soft_delete.base.SoftDeleteManager()),
-                ('all_objects', core.soft_delete.base.SoftDeleteManager(include_deleted=True)),
+                ("objects", core.soft_delete.base.SoftDeleteManager()),
+                (
+                    "all_objects",
+                    core.soft_delete.base.SoftDeleteManager(include_deleted=True),
+                ),
             ],
         ),
         migrations.AlterModelManagers(
-            name='grupofamiliar',
+            name="grupofamiliar",
             managers=[
-                ('objects', core.soft_delete.base.SoftDeleteManager()),
-                ('all_objects', core.soft_delete.base.SoftDeleteManager(include_deleted=True)),
+                ("objects", core.soft_delete.base.SoftDeleteManager()),
+                (
+                    "all_objects",
+                    core.soft_delete.base.SoftDeleteManager(include_deleted=True),
+                ),
             ],
         ),
         migrations.AddField(
-            model_name='ciudadano',
-            name='deleted_at',
+            model_name="ciudadano",
+            name="deleted_at",
             field=models.DateTimeField(blank=True, db_index=True, null=True),
         ),
         migrations.AddField(
-            model_name='ciudadano',
-            name='deleted_by',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='+', to=settings.AUTH_USER_MODEL),
+            model_name="ciudadano",
+            name="deleted_by",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name="+",
+                to=settings.AUTH_USER_MODEL,
+            ),
         ),
         migrations.AddField(
-            model_name='grupofamiliar',
-            name='deleted_at',
+            model_name="grupofamiliar",
+            name="deleted_at",
             field=models.DateTimeField(blank=True, db_index=True, null=True),
         ),
         migrations.AddField(
-            model_name='grupofamiliar',
-            name='deleted_by',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='+', to=settings.AUTH_USER_MODEL),
+            model_name="grupofamiliar",
+            name="deleted_by",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name="+",
+                to=settings.AUTH_USER_MODEL,
+            ),
         ),
         migrations.AlterField(
-            model_name='ciudadano',
-            name='telefono',
+            model_name="ciudadano",
+            name="telefono",
             field=models.CharField(blank=True, max_length=50, null=True),
         ),
         migrations.AlterField(
-            model_name='ciudadano',
-            name='telefono_alternativo',
+            model_name="ciudadano",
+            name="telefono_alternativo",
             field=models.CharField(blank=True, max_length=50, null=True),
         ),
         migrations.SeparateDatabaseAndState(
             state_operations=[
                 migrations.AlterUniqueTogether(
-                    name='ciudadano',
+                    name="ciudadano",
                     unique_together=set(),
                 ),
             ],
         ),
         migrations.AddField(
-            model_name='ciudadano',
-            name='tipo_registro_identidad',
-            field=models.CharField(choices=[('ESTANDAR', 'Estándar'), ('SIN_DNI', 'Sin DNI'), ('DNI_NO_VALIDADO_RENAPER', 'DNI no validado por RENAPER')], db_index=True, default='ESTANDAR', max_length=30),
+            model_name="ciudadano",
+            name="tipo_registro_identidad",
+            field=models.CharField(
+                choices=[
+                    ("ESTANDAR", "Estándar"),
+                    ("SIN_DNI", "Sin DNI"),
+                    ("DNI_NO_VALIDADO_RENAPER", "DNI no validado por RENAPER"),
+                ],
+                db_index=True,
+                default="ESTANDAR",
+                max_length=30,
+            ),
         ),
         migrations.AddField(
-            model_name='ciudadano',
-            name='estado_validacion_renaper',
-            field=models.CharField(choices=[('NO_CONSULTADO', 'No consultado'), ('VALIDADO', 'Validado'), ('NO_VALIDADO', 'No validado')], db_index=True, default='NO_CONSULTADO', max_length=20),
+            model_name="ciudadano",
+            name="estado_validacion_renaper",
+            field=models.CharField(
+                choices=[
+                    ("NO_CONSULTADO", "No consultado"),
+                    ("VALIDADO", "Validado"),
+                    ("NO_VALIDADO", "No validado"),
+                ],
+                db_index=True,
+                default="NO_CONSULTADO",
+                max_length=20,
+            ),
         ),
         migrations.AddField(
-            model_name='ciudadano',
-            name='fecha_validacion_renaper',
+            model_name="ciudadano",
+            name="fecha_validacion_renaper",
             field=models.DateTimeField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='ciudadano',
-            name='datos_renaper',
+            model_name="ciudadano",
+            name="datos_renaper",
             field=models.JSONField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='ciudadano',
-            name='motivo_sin_dni',
-            field=models.CharField(blank=True, choices=[('NO_REGISTRADO_NACER', 'No fue registrado al nacer'), ('MENOR_SIN_DOCUMENTO', 'Menor de edad sin documento tramitado'), ('EXTRANJERO_SIN_DNI', 'Extranjero sin DNI argentino'), ('DOCUMENTO_EXTRAVIADO', 'Documento extraviado o en trámite'), ('VULNERABILIDAD_EXTREMA', 'Víctima de violencia / vulnerabilidad extrema'), ('OTRO', 'Otro')], max_length=30, null=True),
+            model_name="ciudadano",
+            name="motivo_sin_dni",
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    ("NO_REGISTRADO_NACER", "No fue registrado al nacer"),
+                    ("MENOR_SIN_DOCUMENTO", "Menor de edad sin documento tramitado"),
+                    ("EXTRANJERO_SIN_DNI", "Extranjero sin DNI argentino"),
+                    ("DOCUMENTO_EXTRAVIADO", "Documento extraviado o en trámite"),
+                    (
+                        "VULNERABILIDAD_EXTREMA",
+                        "Víctima de violencia / vulnerabilidad extrema",
+                    ),
+                    ("OTRO", "Otro"),
+                ],
+                max_length=30,
+                null=True,
+            ),
         ),
         migrations.AddField(
-            model_name='ciudadano',
-            name='motivo_sin_dni_descripcion',
+            model_name="ciudadano",
+            name="motivo_sin_dni_descripcion",
             field=models.TextField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='ciudadano',
-            name='motivo_no_validacion_renaper',
-            field=models.CharField(blank=True, choices=[('ERROR_TRANSCRIPCION', 'Errores en la transcripción de datos manuales'), ('RENAPER_DESACTUALIZADO', 'Cambios recientes en RENAPER aún no reflejados'), ('DOC_NO_ACTUALIZADA', 'Documentación del usuario no actualizada'), ('ERROR_TIPOGRAFICO', 'Errores tipográficos en el ingreso de datos'), ('MULTIPLES_IDENTIDADES', 'Personas con múltiples identidades o nombres'), ('CAMBIO_NOMBRE_LEGAL', 'Cambios de nombre legal no registrados en RENAPER'), ('DIFERENCIA_FORMATO_NOMBRE', 'Diferencias en el formato o tipo de nombre'), ('DISCREPANCIA_FECHA_NACIMIENTO', 'Discrepancias en fechas de nacimiento o partidas'), ('OTRO', 'Otro')], max_length=30, null=True),
+            model_name="ciudadano",
+            name="motivo_no_validacion_renaper",
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    (
+                        "ERROR_TRANSCRIPCION",
+                        "Errores en la transcripción de datos manuales",
+                    ),
+                    (
+                        "RENAPER_DESACTUALIZADO",
+                        "Cambios recientes en RENAPER aún no reflejados",
+                    ),
+                    ("DOC_NO_ACTUALIZADA", "Documentación del usuario no actualizada"),
+                    (
+                        "ERROR_TIPOGRAFICO",
+                        "Errores tipográficos en el ingreso de datos",
+                    ),
+                    (
+                        "MULTIPLES_IDENTIDADES",
+                        "Personas con múltiples identidades o nombres",
+                    ),
+                    (
+                        "CAMBIO_NOMBRE_LEGAL",
+                        "Cambios de nombre legal no registrados en RENAPER",
+                    ),
+                    (
+                        "DIFERENCIA_FORMATO_NOMBRE",
+                        "Diferencias en el formato o tipo de nombre",
+                    ),
+                    (
+                        "DISCREPANCIA_FECHA_NACIMIENTO",
+                        "Discrepancias en fechas de nacimiento o partidas",
+                    ),
+                    ("OTRO", "Otro"),
+                ],
+                max_length=30,
+                null=True,
+            ),
         ),
         migrations.AddField(
-            model_name='ciudadano',
-            name='motivo_no_validacion_descripcion',
+            model_name="ciudadano",
+            name="motivo_no_validacion_descripcion",
             field=models.TextField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='ciudadano',
-            name='requiere_revision_manual',
+            model_name="ciudadano",
+            name="requiere_revision_manual",
             field=models.BooleanField(db_index=True, default=False),
         ),
         migrations.AddField(
-            model_name='ciudadano',
-            name='identificador_interno',
+            model_name="ciudadano",
+            name="identificador_interno",
             field=models.CharField(blank=True, max_length=50, null=True, unique=True),
         ),
         migrations.AddField(
-            model_name='ciudadano',
-            name='documento_unico_key',
+            model_name="ciudadano",
+            name="documento_unico_key",
             field=models.CharField(blank=True, max_length=60, null=True, unique=True),
         ),
         migrations.AlterModelOptions(
-            name='ciudadano',
-            options={'ordering': ['apellido', 'nombre'], 'permissions': [('revision_identidad', 'Puede revisar y cerrar casos de identidad pendientes')]},
+            name="ciudadano",
+            options={
+                "ordering": ["apellido", "nombre"],
+                "permissions": [
+                    (
+                        "revision_identidad",
+                        "Puede revisar y cerrar casos de identidad pendientes",
+                    )
+                ],
+            },
         ),
         migrations.AlterField(
-            model_name='ciudadano',
-            name='fecha_nacimiento',
+            model_name="ciudadano",
+            name="fecha_nacimiento",
             field=models.DateField(blank=True, null=True),
         ),
         migrations.AddIndex(
-            model_name='ciudadano',
-            index=models.Index(fields=['deleted_at', 'id'], name='ciud_delid_idx'),
+            model_name="ciudadano",
+            index=models.Index(fields=["deleted_at", "id"], name="ciud_delid_idx"),
         ),
         migrations.AddIndex(
-            model_name='ciudadano',
-            index=models.Index(fields=['deleted_at', 'provincia', 'id'], name='ciud_delprov_id_idx'),
+            model_name="ciudadano",
+            index=models.Index(
+                fields=["deleted_at", "provincia", "id"], name="ciud_delprov_id_idx"
+            ),
         ),
         migrations.AddIndex(
-            model_name='ciudadano',
-            index=models.Index(fields=['deleted_at', 'documento'], name='ciud_deldoc_idx'),
+            model_name="ciudadano",
+            index=models.Index(
+                fields=["deleted_at", "documento"], name="ciud_deldoc_idx"
+            ),
         ),
     ]

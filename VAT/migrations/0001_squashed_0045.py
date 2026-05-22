@@ -55,9 +55,7 @@ def _remove_columns_if_exist(apps, schema_editor):
     table_name = plan_model._meta.db_table
     for col in ("version", "frecuencia"):
         if _column_exists(schema_editor, table_name, col):
-            schema_editor.execute(
-                f"ALTER TABLE `{table_name}` DROP COLUMN `{col}`"
-            )
+            schema_editor.execute(f"ALTER TABLE `{table_name}` DROP COLUMN `{col}`")
 
 
 def _raise_if_ambiguous_title_plan_rows(ambiguous_rows):
@@ -260,9 +258,7 @@ def _drop_titulo_sector_subsector(apps, schema_editor):
         """
     )
     for (index_name,) in cursor.fetchall():
-        cursor.execute(
-            f"ALTER TABLE `VAT_tituloreferencia` DROP INDEX `{index_name}`"
-        )
+        cursor.execute(f"ALTER TABLE `VAT_tituloreferencia` DROP INDEX `{index_name}`")
     for column_name in ("sector_id", "subsector_id"):
         cursor.execute(
             """
@@ -290,10 +286,7 @@ def _drop_curso_columns_if_present(apps, schema_editor):
         if table_name not in introspection.table_names(cursor):
             return
         description = introspection.get_table_description(cursor, table_name)
-        existing = {
-            getattr(column, "name", column[0])
-            for column in description
-        }
+        existing = {getattr(column, "name", column[0]) for column in description}
     for column_name in columns:
         if column_name in existing:
             field = curso_model._meta.get_field(column_name)
@@ -338,9 +331,8 @@ def _has_null_ubicaciones(schema_editor, table_name):
 def enforce_comisioncurso_ubicacion_not_null_if_safe(apps, schema_editor):
     ComisionCurso = apps.get_model("VAT", "ComisionCurso")
     InstitucionUbicacion = apps.get_model("VAT", "InstitucionUbicacion")
-    if (
-        schema_editor.connection.vendor == "mysql"
-        and _has_null_ubicaciones(schema_editor, ComisionCurso._meta.db_table)
+    if schema_editor.connection.vendor == "mysql" and _has_null_ubicaciones(
+        schema_editor, ComisionCurso._meta.db_table
     ):
         return
     from_field = models.ForeignKey(
@@ -459,1599 +451,3923 @@ class Migration(migrations.Migration):
     atomic = False
     initial = True
 
-    replaces = [('VAT', '0001_initial'), ('VAT', '0002_remove_centro_faro_asociado_remove_centro_tipo'), ('VAT', '0003_add_encuentro_asistencia_fechas_actividad'), ('VAT', '0004_alter_centro_referente'), ('VAT', '0005_remove_cabal_models'), ('VAT', '0006_autoridadinstitucional_comision_comisionhorario_and_more'), ('VAT', '0007_voucherparametria_voucher_parametria'), ('VAT', '0008_voucherparametria_renovacion'), ('VAT', '0009_voucher_asignado_por'), ('VAT', '0010_remove_ofertainstitucional_aprobacion_inet_and_more'), ('VAT', '0011_ofertainstitucional_costo'), ('VAT', '0012_asistenciasesion'), ('VAT', '0013_voucherparametria_inscripcion_unica_activa'), ('VAT', '0014_institucionubicacion_nombre_ubicacion'), ('VAT', '0015_institucionidentificadorhist_ubicacion'), ('VAT', '0016_centro_campos_ubicacion_contacto_ampliado'), ('VAT', '0017_centro_remove_legacy_fields'), ('VAT', '0018_curso_comisioncurso'), ('VAT', '0019_alter_comisioncurso_managers_alter_curso_managers'), ('VAT', '0020_alter_planversioncurricular_options_and_more'), ('VAT', '0021_invert_titulo_plan_relation'), ('VAT', '0022_remove_tituloreferencia_sector_subsector'), ('VAT', '0023_ofertainstitucional_voucher_parametrias'), ('VAT', '0024_remove_curso_cupo_fechas'), ('VAT', '0025_alter_curso_options'), ('VAT', '0026_curso_costo_creditos_curso_programa_and_more'), ('VAT', '0027_curso_plan_estudio'), ('VAT', '0028_comisionhorario_comision_curso_and_more'), ('VAT', '0029_planversioncurricular_provincia'), ('VAT', '0030_alter_centro_referente_cfp_group'), ('VAT', '0031_remove_curso_programa'), ('VAT', '0032_move_curso_ubicacion_to_comisioncurso'), ('VAT', '0033_planversioncurricular_nombre'), ('VAT', '0034_institucioncontacto_documento'), ('VAT', '0035_merge_autoridades_into_contactos_and_remove_model'), ('VAT', '0036_alter_institucioncontacto_options_and_more'), ('VAT', '0037_planversioncurricular_provincia_activo_idx'), ('VAT', '0038_curso_prioritario'), ('VAT', '0039_comision_lista_espera'), ('VAT', '0040_curso_inscripcion_libre_solicitudinscripcionpublica'), ('VAT', '0041_alter_solicitudinscripcionpublica_managers'), ('VAT', '0042_alter_inscripcion_programa'), ('VAT', '0043_alter_curso_inscripcion_libre'), ('VAT', '0044_centro_listado_indexes'), ('VAT', '0045_centro_referentes_revisores')]
+    replaces = [
+        ("VAT", "0001_initial"),
+        ("VAT", "0002_remove_centro_faro_asociado_remove_centro_tipo"),
+        ("VAT", "0003_add_encuentro_asistencia_fechas_actividad"),
+        ("VAT", "0004_alter_centro_referente"),
+        ("VAT", "0005_remove_cabal_models"),
+        ("VAT", "0006_autoridadinstitucional_comision_comisionhorario_and_more"),
+        ("VAT", "0007_voucherparametria_voucher_parametria"),
+        ("VAT", "0008_voucherparametria_renovacion"),
+        ("VAT", "0009_voucher_asignado_por"),
+        ("VAT", "0010_remove_ofertainstitucional_aprobacion_inet_and_more"),
+        ("VAT", "0011_ofertainstitucional_costo"),
+        ("VAT", "0012_asistenciasesion"),
+        ("VAT", "0013_voucherparametria_inscripcion_unica_activa"),
+        ("VAT", "0014_institucionubicacion_nombre_ubicacion"),
+        ("VAT", "0015_institucionidentificadorhist_ubicacion"),
+        ("VAT", "0016_centro_campos_ubicacion_contacto_ampliado"),
+        ("VAT", "0017_centro_remove_legacy_fields"),
+        ("VAT", "0018_curso_comisioncurso"),
+        ("VAT", "0019_alter_comisioncurso_managers_alter_curso_managers"),
+        ("VAT", "0020_alter_planversioncurricular_options_and_more"),
+        ("VAT", "0021_invert_titulo_plan_relation"),
+        ("VAT", "0022_remove_tituloreferencia_sector_subsector"),
+        ("VAT", "0023_ofertainstitucional_voucher_parametrias"),
+        ("VAT", "0024_remove_curso_cupo_fechas"),
+        ("VAT", "0025_alter_curso_options"),
+        ("VAT", "0026_curso_costo_creditos_curso_programa_and_more"),
+        ("VAT", "0027_curso_plan_estudio"),
+        ("VAT", "0028_comisionhorario_comision_curso_and_more"),
+        ("VAT", "0029_planversioncurricular_provincia"),
+        ("VAT", "0030_alter_centro_referente_cfp_group"),
+        ("VAT", "0031_remove_curso_programa"),
+        ("VAT", "0032_move_curso_ubicacion_to_comisioncurso"),
+        ("VAT", "0033_planversioncurricular_nombre"),
+        ("VAT", "0034_institucioncontacto_documento"),
+        ("VAT", "0035_merge_autoridades_into_contactos_and_remove_model"),
+        ("VAT", "0036_alter_institucioncontacto_options_and_more"),
+        ("VAT", "0037_planversioncurricular_provincia_activo_idx"),
+        ("VAT", "0038_curso_prioritario"),
+        ("VAT", "0039_comision_lista_espera"),
+        ("VAT", "0040_curso_inscripcion_libre_solicitudinscripcionpublica"),
+        ("VAT", "0041_alter_solicitudinscripcionpublica_managers"),
+        ("VAT", "0042_alter_inscripcion_programa"),
+        ("VAT", "0043_alter_curso_inscripcion_libre"),
+        ("VAT", "0044_centro_listado_indexes"),
+        ("VAT", "0045_centro_referentes_revisores"),
+    ]
 
     dependencies = [
-        ('organizaciones', '0001_squashed_0010'),
-        ('ciudadanos', '0009_squashed_0028'),
-        ('core', '0008_programa_organismo_programa_descripcion'),
+        ("organizaciones", "0001_squashed_0010"),
+        ("ciudadanos", "0009_squashed_0028"),
+        ("core", "0008_programa_organismo_programa_descripcion"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='PadronBeneficiarios',
+            name="PadronBeneficiarios",
             fields=[
-                ('cuil', models.CharField(db_column='CUITBenef', max_length=20)),
-                ('dni', models.CharField(db_column='DNIBenef', max_length=20, primary_key=True, serialize=False)),
-                ('genero', models.CharField(db_column='Sexo', max_length=1)),
-                ('provincia_tabla', models.CharField(blank=True, db_column='Provincia', max_length=100, null=True)),
-                ('municipio_tabla', models.CharField(blank=True, db_column='Municipio', max_length=100, null=True)),
+                ("cuil", models.CharField(db_column="CUITBenef", max_length=20)),
+                (
+                    "dni",
+                    models.CharField(
+                        db_column="DNIBenef",
+                        max_length=20,
+                        primary_key=True,
+                        serialize=False,
+                    ),
+                ),
+                ("genero", models.CharField(db_column="Sexo", max_length=1)),
+                (
+                    "provincia_tabla",
+                    models.CharField(
+                        blank=True, db_column="Provincia", max_length=100, null=True
+                    ),
+                ),
+                (
+                    "municipio_tabla",
+                    models.CharField(
+                        blank=True, db_column="Municipio", max_length=100, null=True
+                    ),
+                ),
             ],
             options={
-                'db_table': 'vat_padron_beneficiarios',
-                'managed': False,
+                "db_table": "vat_padron_beneficiarios",
+                "managed": False,
             },
         ),
         migrations.CreateModel(
-            name='Actividad',
+            name="Actividad",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('deleted_at', models.DateTimeField(blank=True, db_index=True, null=True)),
-                ('nombre', models.CharField(max_length=200, verbose_name='Nombre de la Actividad')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "deleted_at",
+                    models.DateTimeField(blank=True, db_index=True, null=True),
+                ),
+                (
+                    "nombre",
+                    models.CharField(
+                        max_length=200, verbose_name="Nombre de la Actividad"
+                    ),
+                ),
             ],
             managers=[
-                ('objects', core.soft_delete.base.SoftDeleteManager()),
-                ('all_objects', core.soft_delete.base.SoftDeleteManager(include_deleted=True)),
+                ("objects", core.soft_delete.base.SoftDeleteManager()),
+                (
+                    "all_objects",
+                    core.soft_delete.base.SoftDeleteManager(include_deleted=True),
+                ),
             ],
         ),
         migrations.CreateModel(
-            name='ActividadCentro',
+            name="ActividadCentro",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('deleted_at', models.DateTimeField(blank=True, db_index=True, null=True)),
-                ('cantidad_personas', models.PositiveIntegerField(verbose_name='Cantidad Estimada de Participantes')),
-                ('horariosdesde', models.TimeField()),
-                ('horarioshasta', models.TimeField(blank=True, null=True)),
-                ('precio', models.PositiveIntegerField(blank=True, null=True, verbose_name='PrecioActividad')),
-                ('estado', models.CharField(choices=[('planificada', 'Planificada'), ('en_curso', 'En curso'), ('finalizada', 'Finalizada')], default='planificada', max_length=20, verbose_name='Estado')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "deleted_at",
+                    models.DateTimeField(blank=True, db_index=True, null=True),
+                ),
+                (
+                    "cantidad_personas",
+                    models.PositiveIntegerField(
+                        verbose_name="Cantidad Estimada de Participantes"
+                    ),
+                ),
+                ("horariosdesde", models.TimeField()),
+                ("horarioshasta", models.TimeField(blank=True, null=True)),
+                (
+                    "precio",
+                    models.PositiveIntegerField(
+                        blank=True, null=True, verbose_name="PrecioActividad"
+                    ),
+                ),
+                (
+                    "estado",
+                    models.CharField(
+                        choices=[
+                            ("planificada", "Planificada"),
+                            ("en_curso", "En curso"),
+                            ("finalizada", "Finalizada"),
+                        ],
+                        default="planificada",
+                        max_length=20,
+                        verbose_name="Estado",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Actividad del Centro',
-                'verbose_name_plural': 'Actividades por Centro',
+                "verbose_name": "Actividad del Centro",
+                "verbose_name_plural": "Actividades por Centro",
             },
             managers=[
-                ('objects', core.soft_delete.base.SoftDeleteManager()),
-                ('all_objects', core.soft_delete.base.SoftDeleteManager(include_deleted=True)),
+                ("objects", core.soft_delete.base.SoftDeleteManager()),
+                (
+                    "all_objects",
+                    core.soft_delete.base.SoftDeleteManager(include_deleted=True),
+                ),
             ],
         ),
         migrations.CreateModel(
-            name='Beneficiario',
+            name="Beneficiario",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('deleted_at', models.DateTimeField(blank=True, db_index=True, null=True)),
-                ('cuil', models.BigIntegerField(unique=True)),
-                ('dni', models.PositiveIntegerField(unique=True)),
-                ('apellido', models.CharField(max_length=100)),
-                ('nombre', models.CharField(max_length=100)),
-                ('genero', models.CharField(choices=[('F', 'Femenino'), ('M', 'Masculino'), ('X', 'Otro/No binario')], max_length=20)),
-                ('fecha_nacimiento', models.DateField()),
-                ('provincia_tabla', models.CharField(blank=True, max_length=100, null=True)),
-                ('municipio_tabla', models.CharField(blank=True, max_length=100, null=True)),
-                ('localidad_tabla', models.CharField(blank=True, max_length=150, null=True)),
-                ('domicilio', models.CharField(max_length=255)),
-                ('codigo_postal', models.IntegerField(blank=True, null=True)),
-                ('calle', models.CharField(max_length=150)),
-                ('altura', models.IntegerField(blank=True, null=True)),
-                ('piso_vivienda', models.CharField(blank=True, max_length=10, null=True)),
-                ('departamento_vivienda', models.CharField(blank=True, max_length=10, null=True)),
-                ('barrio', models.CharField(blank=True, max_length=100, null=True)),
-                ('monoblock', models.CharField(blank=True, max_length=100, null=True)),
-                ('prefijo_celular', models.CharField(blank=True, max_length=4, null=True)),
-                ('numero_celular', models.CharField(blank=True, max_length=12, null=True)),
-                ('prefijo_telefono_fijo', models.CharField(blank=True, max_length=4, null=True)),
-                ('numero_telefono_fijo', models.CharField(blank=True, max_length=12, null=True)),
-                ('correo_electronico', models.EmailField(blank=True, max_length=150, null=True)),
-                ('estado_academico', models.BooleanField(default=False)),
-                ('nivel_educativo_actual', models.CharField(blank=True, choices=[('Jardín', 'Jardín'), ('Primario', 'Primario'), ('Secundario', 'Secundario')], max_length=20, null=True)),
-                ('maximo_nivel_educativo', models.CharField(choices=[('Sin instrucción', 'Sin instrucción'), ('Jardín incompleto', 'Jardín incompleto'), ('Jardín completo', 'Jardín completo'), ('Primario incompleto', 'Primario incompleto'), ('Primario completo', 'Primario completo'), ('Secundario incompleto', 'Secundario incompleto'), ('Secundario completo', 'Secundario completo')], max_length=50)),
-                ('institucion_academica', models.CharField(blank=True, max_length=150, null=True)),
-                ('actividad_preferida', models.JSONField(blank=True, default=list)),
-                ('actividades_extracurriculares', models.BooleanField(default=False)),
-                ('fecha_creado', models.DateTimeField(default=django.utils.timezone.now)),
-                ('fecha_modificado', models.DateTimeField(auto_now=True)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "deleted_at",
+                    models.DateTimeField(blank=True, db_index=True, null=True),
+                ),
+                ("cuil", models.BigIntegerField(unique=True)),
+                ("dni", models.PositiveIntegerField(unique=True)),
+                ("apellido", models.CharField(max_length=100)),
+                ("nombre", models.CharField(max_length=100)),
+                (
+                    "genero",
+                    models.CharField(
+                        choices=[
+                            ("F", "Femenino"),
+                            ("M", "Masculino"),
+                            ("X", "Otro/No binario"),
+                        ],
+                        max_length=20,
+                    ),
+                ),
+                ("fecha_nacimiento", models.DateField()),
+                (
+                    "provincia_tabla",
+                    models.CharField(blank=True, max_length=100, null=True),
+                ),
+                (
+                    "municipio_tabla",
+                    models.CharField(blank=True, max_length=100, null=True),
+                ),
+                (
+                    "localidad_tabla",
+                    models.CharField(blank=True, max_length=150, null=True),
+                ),
+                ("domicilio", models.CharField(max_length=255)),
+                ("codigo_postal", models.IntegerField(blank=True, null=True)),
+                ("calle", models.CharField(max_length=150)),
+                ("altura", models.IntegerField(blank=True, null=True)),
+                (
+                    "piso_vivienda",
+                    models.CharField(blank=True, max_length=10, null=True),
+                ),
+                (
+                    "departamento_vivienda",
+                    models.CharField(blank=True, max_length=10, null=True),
+                ),
+                ("barrio", models.CharField(blank=True, max_length=100, null=True)),
+                ("monoblock", models.CharField(blank=True, max_length=100, null=True)),
+                (
+                    "prefijo_celular",
+                    models.CharField(blank=True, max_length=4, null=True),
+                ),
+                (
+                    "numero_celular",
+                    models.CharField(blank=True, max_length=12, null=True),
+                ),
+                (
+                    "prefijo_telefono_fijo",
+                    models.CharField(blank=True, max_length=4, null=True),
+                ),
+                (
+                    "numero_telefono_fijo",
+                    models.CharField(blank=True, max_length=12, null=True),
+                ),
+                (
+                    "correo_electronico",
+                    models.EmailField(blank=True, max_length=150, null=True),
+                ),
+                ("estado_academico", models.BooleanField(default=False)),
+                (
+                    "nivel_educativo_actual",
+                    models.CharField(
+                        blank=True,
+                        choices=[
+                            ("Jardín", "Jardín"),
+                            ("Primario", "Primario"),
+                            ("Secundario", "Secundario"),
+                        ],
+                        max_length=20,
+                        null=True,
+                    ),
+                ),
+                (
+                    "maximo_nivel_educativo",
+                    models.CharField(
+                        choices=[
+                            ("Sin instrucción", "Sin instrucción"),
+                            ("Jardín incompleto", "Jardín incompleto"),
+                            ("Jardín completo", "Jardín completo"),
+                            ("Primario incompleto", "Primario incompleto"),
+                            ("Primario completo", "Primario completo"),
+                            ("Secundario incompleto", "Secundario incompleto"),
+                            ("Secundario completo", "Secundario completo"),
+                        ],
+                        max_length=50,
+                    ),
+                ),
+                (
+                    "institucion_academica",
+                    models.CharField(blank=True, max_length=150, null=True),
+                ),
+                ("actividad_preferida", models.JSONField(blank=True, default=list)),
+                ("actividades_extracurriculares", models.BooleanField(default=False)),
+                (
+                    "fecha_creado",
+                    models.DateTimeField(default=django.utils.timezone.now),
+                ),
+                ("fecha_modificado", models.DateTimeField(auto_now=True)),
             ],
             options={
-                'ordering': ['apellido', 'nombre'],
+                "ordering": ["apellido", "nombre"],
             },
             managers=[
-                ('objects', core.soft_delete.base.SoftDeleteManager()),
-                ('all_objects', core.soft_delete.base.SoftDeleteManager(include_deleted=True)),
+                ("objects", core.soft_delete.base.SoftDeleteManager()),
+                (
+                    "all_objects",
+                    core.soft_delete.base.SoftDeleteManager(include_deleted=True),
+                ),
             ],
         ),
         migrations.CreateModel(
-            name='BeneficiarioResponsable',
+            name="BeneficiarioResponsable",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('deleted_at', models.DateTimeField(blank=True, db_index=True, null=True)),
-                ('vinculo_parental', models.CharField(choices=[('Padre/Madre', 'Padre/Madre'), ('Tutor/Tutora', 'Tutor/Tutora')], max_length=50)),
-                ('fecha_creado', models.DateTimeField(default=django.utils.timezone.now)),
-                ('fecha_modificado', models.DateTimeField(auto_now=True)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "deleted_at",
+                    models.DateTimeField(blank=True, db_index=True, null=True),
+                ),
+                (
+                    "vinculo_parental",
+                    models.CharField(
+                        choices=[
+                            ("Padre/Madre", "Padre/Madre"),
+                            ("Tutor/Tutora", "Tutor/Tutora"),
+                        ],
+                        max_length=50,
+                    ),
+                ),
+                (
+                    "fecha_creado",
+                    models.DateTimeField(default=django.utils.timezone.now),
+                ),
+                ("fecha_modificado", models.DateTimeField(auto_now=True)),
             ],
             options={
-                'verbose_name': 'Vínculo Beneficiario-Responsable',
-                'verbose_name_plural': 'Vínculos Beneficiario-Responsable',
+                "verbose_name": "Vínculo Beneficiario-Responsable",
+                "verbose_name_plural": "Vínculos Beneficiario-Responsable",
             },
             managers=[
-                ('objects', core.soft_delete.base.SoftDeleteManager()),
-                ('all_objects', core.soft_delete.base.SoftDeleteManager(include_deleted=True)),
+                ("objects", core.soft_delete.base.SoftDeleteManager()),
+                (
+                    "all_objects",
+                    core.soft_delete.base.SoftDeleteManager(include_deleted=True),
+                ),
             ],
         ),
         migrations.CreateModel(
-            name='BeneficiariosResponsablesRenaper',
+            name="BeneficiariosResponsablesRenaper",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('iD_TRAMITE_PRINCIPAL', models.CharField(blank=True, max_length=50, null=True)),
-                ('iD_TRAMITE_TARJETA_REIMPRESA', models.CharField(blank=True, max_length=50, null=True)),
-                ('dni', models.CharField(blank=True, max_length=20, null=True)),
-                ('genero', models.CharField(blank=True, max_length=20, null=True)),
-                ('ejemplar', models.CharField(blank=True, max_length=5, null=True)),
-                ('vencimiento', models.CharField(blank=True, max_length=20, null=True)),
-                ('emision', models.CharField(blank=True, max_length=20, null=True)),
-                ('apellido', models.CharField(blank=True, max_length=100, null=True)),
-                ('nombres', models.CharField(blank=True, max_length=100, null=True)),
-                ('fechaNacimiento', models.CharField(blank=True, max_length=20, null=True)),
-                ('cuil', models.CharField(blank=True, max_length=20, null=True)),
-                ('calle', models.CharField(blank=True, max_length=150, null=True)),
-                ('numero', models.CharField(blank=True, max_length=20, null=True)),
-                ('piso', models.CharField(blank=True, max_length=10, null=True)),
-                ('departamento', models.CharField(blank=True, max_length=10, null=True)),
-                ('cpostal', models.CharField(blank=True, max_length=20, null=True)),
-                ('barrio', models.CharField(blank=True, max_length=100, null=True)),
-                ('monoblock', models.CharField(blank=True, max_length=100, null=True)),
-                ('ciudad', models.CharField(blank=True, max_length=100, null=True)),
-                ('municipio', models.CharField(blank=True, max_length=100, null=True)),
-                ('provincia', models.CharField(blank=True, max_length=100, null=True)),
-                ('pais', models.CharField(blank=True, max_length=100, null=True)),
-                ('codigoError', models.CharField(blank=True, max_length=20, null=True)),
-                ('codigof', models.CharField(blank=True, max_length=20, null=True)),
-                ('mensaf', models.CharField(blank=True, max_length=255, null=True)),
-                ('origenf', models.CharField(blank=True, max_length=100, null=True)),
-                ('fechaf', models.CharField(blank=True, max_length=20, null=True)),
-                ('idciudadano', models.CharField(blank=True, max_length=50, null=True)),
-                ('nroError', models.CharField(blank=True, max_length=20, null=True)),
-                ('descripcionError', models.CharField(blank=True, max_length=255, null=True)),
-                ('tipo', models.CharField(blank=True, max_length=50, null=True)),
-                ('fecha_creado', models.DateTimeField(auto_now_add=True)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "iD_TRAMITE_PRINCIPAL",
+                    models.CharField(blank=True, max_length=50, null=True),
+                ),
+                (
+                    "iD_TRAMITE_TARJETA_REIMPRESA",
+                    models.CharField(blank=True, max_length=50, null=True),
+                ),
+                ("dni", models.CharField(blank=True, max_length=20, null=True)),
+                ("genero", models.CharField(blank=True, max_length=20, null=True)),
+                ("ejemplar", models.CharField(blank=True, max_length=5, null=True)),
+                ("vencimiento", models.CharField(blank=True, max_length=20, null=True)),
+                ("emision", models.CharField(blank=True, max_length=20, null=True)),
+                ("apellido", models.CharField(blank=True, max_length=100, null=True)),
+                ("nombres", models.CharField(blank=True, max_length=100, null=True)),
+                (
+                    "fechaNacimiento",
+                    models.CharField(blank=True, max_length=20, null=True),
+                ),
+                ("cuil", models.CharField(blank=True, max_length=20, null=True)),
+                ("calle", models.CharField(blank=True, max_length=150, null=True)),
+                ("numero", models.CharField(blank=True, max_length=20, null=True)),
+                ("piso", models.CharField(blank=True, max_length=10, null=True)),
+                (
+                    "departamento",
+                    models.CharField(blank=True, max_length=10, null=True),
+                ),
+                ("cpostal", models.CharField(blank=True, max_length=20, null=True)),
+                ("barrio", models.CharField(blank=True, max_length=100, null=True)),
+                ("monoblock", models.CharField(blank=True, max_length=100, null=True)),
+                ("ciudad", models.CharField(blank=True, max_length=100, null=True)),
+                ("municipio", models.CharField(blank=True, max_length=100, null=True)),
+                ("provincia", models.CharField(blank=True, max_length=100, null=True)),
+                ("pais", models.CharField(blank=True, max_length=100, null=True)),
+                ("codigoError", models.CharField(blank=True, max_length=20, null=True)),
+                ("codigof", models.CharField(blank=True, max_length=20, null=True)),
+                ("mensaf", models.CharField(blank=True, max_length=255, null=True)),
+                ("origenf", models.CharField(blank=True, max_length=100, null=True)),
+                ("fechaf", models.CharField(blank=True, max_length=20, null=True)),
+                ("idciudadano", models.CharField(blank=True, max_length=50, null=True)),
+                ("nroError", models.CharField(blank=True, max_length=20, null=True)),
+                (
+                    "descripcionError",
+                    models.CharField(blank=True, max_length=255, null=True),
+                ),
+                ("tipo", models.CharField(blank=True, max_length=50, null=True)),
+                ("fecha_creado", models.DateTimeField(auto_now_add=True)),
             ],
         ),
         migrations.CreateModel(
-            name='CabalArchivo',
+            name="CabalArchivo",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('archivo', models.FileField(upload_to='vat_informes_cabal/')),
-                ('nombre_original', models.CharField(max_length=255)),
-                ('fecha_subida', models.DateTimeField(auto_now_add=True)),
-                ('advertencia_nombre_duplicado', models.BooleanField(default=False)),
-                ('total_filas', models.PositiveIntegerField(default=0)),
-                ('total_validas', models.PositiveIntegerField(default=0)),
-                ('total_invalidas', models.PositiveIntegerField(default=0)),
-                ('usuario', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='vat_archivos_cabal', to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("archivo", models.FileField(upload_to="vat_informes_cabal/")),
+                ("nombre_original", models.CharField(max_length=255)),
+                ("fecha_subida", models.DateTimeField(auto_now_add=True)),
+                ("advertencia_nombre_duplicado", models.BooleanField(default=False)),
+                ("total_filas", models.PositiveIntegerField(default=0)),
+                ("total_validas", models.PositiveIntegerField(default=0)),
+                ("total_invalidas", models.PositiveIntegerField(default=0)),
+                (
+                    "usuario",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.PROTECT,
+                        related_name="vat_archivos_cabal",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Archivo CABAL',
-                'verbose_name_plural': 'Archivos CABAL',
+                "verbose_name": "Archivo CABAL",
+                "verbose_name_plural": "Archivos CABAL",
             },
         ),
         migrations.CreateModel(
-            name='Centro',
+            name="Centro",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('deleted_at', models.DateTimeField(blank=True, db_index=True, null=True)),
-                ('nombre', models.CharField(max_length=200)),
-                ('tipo', models.CharField(choices=[('faro', 'faro'), ('adherido', 'Adherido')], max_length=20)),
-                ('codigo', models.CharField(max_length=20, unique=True)),
-                ('foto', models.ImageField(blank=True, null=True, upload_to='vat_centros/')),
-                ('activo', models.BooleanField(default=True)),
-                ('calle', models.CharField(blank=True, max_length=255, null=True)),
-                ('numero', models.PositiveIntegerField(blank=True, null=True)),
-                ('domicilio_actividad', models.CharField(max_length=255, verbose_name='Domicilio de actividades')),
-                ('telefono', models.CharField(max_length=50, verbose_name='Teléfono')),
-                ('celular', models.CharField(max_length=50, verbose_name='Celular')),
-                ('correo', models.EmailField(max_length=100, verbose_name='Correo electrónico')),
-                ('sitio_web', models.URLField(blank=True, null=True, verbose_name='Sitio web')),
-                ('link_redes', models.URLField(blank=True, null=True, verbose_name='Redes sociales')),
-                ('nombre_referente', models.CharField(max_length=100, verbose_name='Nombre del responsable')),
-                ('apellido_referente', models.CharField(max_length=100, verbose_name='Apellido del responsable')),
-                ('telefono_referente', models.CharField(max_length=50, verbose_name='Teléfono del responsable')),
-                ('correo_referente', models.EmailField(max_length=100, verbose_name='Correo del responsable')),
-                ('deleted_by', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='+', to=settings.AUTH_USER_MODEL)),
-                ('faro_asociado', models.ForeignKey(blank=True, limit_choices_to={'activo': True, 'tipo': 'faro'}, null=True, on_delete=django.db.models.deletion.SET_NULL, to='VAT.centro')),
-                ('localidad', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='vat_centros', to='core.localidad')),
-                ('municipio', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='vat_centros', to='core.municipio')),
-                ('organizacion_asociada', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='vat_centros', to='organizaciones.organizacion')),
-                ('provincia', models.ForeignKey(null=True, on_delete=django.db.models.deletion.PROTECT, related_name='vat_centros', to='core.provincia')),
-                ('referente', models.ForeignKey(limit_choices_to={'groups__name': 'ReferenteCentro'}, null=True, on_delete=django.db.models.deletion.PROTECT, related_name='vat_centros', to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "deleted_at",
+                    models.DateTimeField(blank=True, db_index=True, null=True),
+                ),
+                ("nombre", models.CharField(max_length=200)),
+                (
+                    "tipo",
+                    models.CharField(
+                        choices=[("faro", "faro"), ("adherido", "Adherido")],
+                        max_length=20,
+                    ),
+                ),
+                ("codigo", models.CharField(max_length=20, unique=True)),
+                (
+                    "foto",
+                    models.ImageField(blank=True, null=True, upload_to="vat_centros/"),
+                ),
+                ("activo", models.BooleanField(default=True)),
+                ("calle", models.CharField(blank=True, max_length=255, null=True)),
+                ("numero", models.PositiveIntegerField(blank=True, null=True)),
+                (
+                    "domicilio_actividad",
+                    models.CharField(
+                        max_length=255, verbose_name="Domicilio de actividades"
+                    ),
+                ),
+                ("telefono", models.CharField(max_length=50, verbose_name="Teléfono")),
+                ("celular", models.CharField(max_length=50, verbose_name="Celular")),
+                (
+                    "correo",
+                    models.EmailField(
+                        max_length=100, verbose_name="Correo electrónico"
+                    ),
+                ),
+                (
+                    "sitio_web",
+                    models.URLField(blank=True, null=True, verbose_name="Sitio web"),
+                ),
+                (
+                    "link_redes",
+                    models.URLField(
+                        blank=True, null=True, verbose_name="Redes sociales"
+                    ),
+                ),
+                (
+                    "nombre_referente",
+                    models.CharField(
+                        max_length=100, verbose_name="Nombre del responsable"
+                    ),
+                ),
+                (
+                    "apellido_referente",
+                    models.CharField(
+                        max_length=100, verbose_name="Apellido del responsable"
+                    ),
+                ),
+                (
+                    "telefono_referente",
+                    models.CharField(
+                        max_length=50, verbose_name="Teléfono del responsable"
+                    ),
+                ),
+                (
+                    "correo_referente",
+                    models.EmailField(
+                        max_length=100, verbose_name="Correo del responsable"
+                    ),
+                ),
+                (
+                    "deleted_by",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="+",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    "faro_asociado",
+                    models.ForeignKey(
+                        blank=True,
+                        limit_choices_to={"activo": True, "tipo": "faro"},
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        to="VAT.centro",
+                    ),
+                ),
+                (
+                    "localidad",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="vat_centros",
+                        to="core.localidad",
+                    ),
+                ),
+                (
+                    "municipio",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="vat_centros",
+                        to="core.municipio",
+                    ),
+                ),
+                (
+                    "organizacion_asociada",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="vat_centros",
+                        to="organizaciones.organizacion",
+                    ),
+                ),
+                (
+                    "provincia",
+                    models.ForeignKey(
+                        null=True,
+                        on_delete=django.db.models.deletion.PROTECT,
+                        related_name="vat_centros",
+                        to="core.provincia",
+                    ),
+                ),
+                (
+                    "referente",
+                    models.ForeignKey(
+                        limit_choices_to={"groups__name": "ReferenteCentro"},
+                        null=True,
+                        on_delete=django.db.models.deletion.PROTECT,
+                        related_name="vat_centros",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
             managers=[
-                ('objects', core.soft_delete.base.SoftDeleteManager()),
-                ('all_objects', core.soft_delete.base.SoftDeleteManager(include_deleted=True)),
+                ("objects", core.soft_delete.base.SoftDeleteManager()),
+                (
+                    "all_objects",
+                    core.soft_delete.base.SoftDeleteManager(include_deleted=True),
+                ),
             ],
         ),
         migrations.CreateModel(
-            name='ParticipanteActividad',
+            name="ParticipanteActividad",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('deleted_at', models.DateTimeField(blank=True, db_index=True, null=True)),
-                ('estado', models.CharField(choices=[('inscrito', 'Inscrito'), ('lista_espera', 'Lista de Espera'), ('dado_baja', 'Dado de Baja')], default='inscrito', max_length=20, verbose_name='Estado de Inscripción')),
-                ('fecha_registro', models.DateTimeField(auto_now_add=True, verbose_name='Fecha de Registro')),
-                ('fecha_modificacion', models.DateTimeField(auto_now=True, verbose_name='Fecha de Última Modificación')),
-                ('actividad_centro', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='VAT.actividadcentro', verbose_name='Actividad del Centro')),
-                ('ciudadano', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='vat_participaciones', to='ciudadanos.ciudadano', verbose_name='Ciudadano')),
-                ('deleted_by', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='+', to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "deleted_at",
+                    models.DateTimeField(blank=True, db_index=True, null=True),
+                ),
+                (
+                    "estado",
+                    models.CharField(
+                        choices=[
+                            ("inscrito", "Inscrito"),
+                            ("lista_espera", "Lista de Espera"),
+                            ("dado_baja", "Dado de Baja"),
+                        ],
+                        default="inscrito",
+                        max_length=20,
+                        verbose_name="Estado de Inscripción",
+                    ),
+                ),
+                (
+                    "fecha_registro",
+                    models.DateTimeField(
+                        auto_now_add=True, verbose_name="Fecha de Registro"
+                    ),
+                ),
+                (
+                    "fecha_modificacion",
+                    models.DateTimeField(
+                        auto_now=True, verbose_name="Fecha de Última Modificación"
+                    ),
+                ),
+                (
+                    "actividad_centro",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="VAT.actividadcentro",
+                        verbose_name="Actividad del Centro",
+                    ),
+                ),
+                (
+                    "ciudadano",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="vat_participaciones",
+                        to="ciudadanos.ciudadano",
+                        verbose_name="Ciudadano",
+                    ),
+                ),
+                (
+                    "deleted_by",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="+",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Participante',
-                'verbose_name_plural': 'Participantes',
+                "verbose_name": "Participante",
+                "verbose_name_plural": "Participantes",
             },
             managers=[
-                ('objects', core.soft_delete.base.SoftDeleteManager()),
-                ('all_objects', core.soft_delete.base.SoftDeleteManager(include_deleted=True)),
+                ("objects", core.soft_delete.base.SoftDeleteManager()),
+                (
+                    "all_objects",
+                    core.soft_delete.base.SoftDeleteManager(include_deleted=True),
+                ),
             ],
         ),
         migrations.CreateModel(
-            name='Responsable',
+            name="Responsable",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('deleted_at', models.DateTimeField(blank=True, db_index=True, null=True)),
-                ('vinculo_parental', models.CharField(choices=[('Padre/Madre', 'Padre/Madre'), ('Tutor/Tutora', 'Tutor/Tutora')], max_length=50)),
-                ('cuil', models.BigIntegerField(unique=True)),
-                ('dni', models.PositiveIntegerField(unique=True)),
-                ('apellido', models.CharField(max_length=100)),
-                ('nombre', models.CharField(max_length=100)),
-                ('genero', models.CharField(choices=[('F', 'Femenino'), ('M', 'Masculino'), ('X', 'Otro/No binario')], max_length=20)),
-                ('fecha_nacimiento', models.DateField()),
-                ('codigo_postal', models.IntegerField(blank=True, null=True)),
-                ('calle', models.CharField(max_length=150)),
-                ('altura', models.IntegerField(blank=True, null=True)),
-                ('piso_vivienda', models.CharField(blank=True, max_length=10, null=True)),
-                ('departamento_vivienda', models.CharField(blank=True, max_length=10, null=True)),
-                ('barrio', models.CharField(blank=True, max_length=100, null=True)),
-                ('monoblock', models.CharField(blank=True, max_length=100, null=True)),
-                ('prefijo_celular', models.CharField(blank=True, max_length=4, null=True)),
-                ('numero_celular', models.CharField(blank=True, max_length=12, null=True)),
-                ('prefijo_telefono_fijo', models.CharField(blank=True, max_length=4, null=True)),
-                ('numero_telefono_fijo', models.CharField(blank=True, max_length=12, null=True)),
-                ('correo_electronico', models.EmailField(blank=True, max_length=150, null=True)),
-                ('fecha_creado', models.DateTimeField(default=django.utils.timezone.now)),
-                ('fecha_modificado', models.DateTimeField(auto_now=True)),
-                ('creado_por', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.PROTECT, related_name='vat_responsables_creados', to=settings.AUTH_USER_MODEL)),
-                ('deleted_by', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='+', to=settings.AUTH_USER_MODEL)),
-                ('localidad', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.PROTECT, related_name='vat_responsables', to='core.localidad')),
-                ('municipio', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.PROTECT, related_name='vat_responsables', to='core.municipio')),
-                ('provincia', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.PROTECT, related_name='vat_responsables', to='core.provincia')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "deleted_at",
+                    models.DateTimeField(blank=True, db_index=True, null=True),
+                ),
+                (
+                    "vinculo_parental",
+                    models.CharField(
+                        choices=[
+                            ("Padre/Madre", "Padre/Madre"),
+                            ("Tutor/Tutora", "Tutor/Tutora"),
+                        ],
+                        max_length=50,
+                    ),
+                ),
+                ("cuil", models.BigIntegerField(unique=True)),
+                ("dni", models.PositiveIntegerField(unique=True)),
+                ("apellido", models.CharField(max_length=100)),
+                ("nombre", models.CharField(max_length=100)),
+                (
+                    "genero",
+                    models.CharField(
+                        choices=[
+                            ("F", "Femenino"),
+                            ("M", "Masculino"),
+                            ("X", "Otro/No binario"),
+                        ],
+                        max_length=20,
+                    ),
+                ),
+                ("fecha_nacimiento", models.DateField()),
+                ("codigo_postal", models.IntegerField(blank=True, null=True)),
+                ("calle", models.CharField(max_length=150)),
+                ("altura", models.IntegerField(blank=True, null=True)),
+                (
+                    "piso_vivienda",
+                    models.CharField(blank=True, max_length=10, null=True),
+                ),
+                (
+                    "departamento_vivienda",
+                    models.CharField(blank=True, max_length=10, null=True),
+                ),
+                ("barrio", models.CharField(blank=True, max_length=100, null=True)),
+                ("monoblock", models.CharField(blank=True, max_length=100, null=True)),
+                (
+                    "prefijo_celular",
+                    models.CharField(blank=True, max_length=4, null=True),
+                ),
+                (
+                    "numero_celular",
+                    models.CharField(blank=True, max_length=12, null=True),
+                ),
+                (
+                    "prefijo_telefono_fijo",
+                    models.CharField(blank=True, max_length=4, null=True),
+                ),
+                (
+                    "numero_telefono_fijo",
+                    models.CharField(blank=True, max_length=12, null=True),
+                ),
+                (
+                    "correo_electronico",
+                    models.EmailField(blank=True, max_length=150, null=True),
+                ),
+                (
+                    "fecha_creado",
+                    models.DateTimeField(default=django.utils.timezone.now),
+                ),
+                ("fecha_modificado", models.DateTimeField(auto_now=True)),
+                (
+                    "creado_por",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.PROTECT,
+                        related_name="vat_responsables_creados",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    "deleted_by",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="+",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    "localidad",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.PROTECT,
+                        related_name="vat_responsables",
+                        to="core.localidad",
+                    ),
+                ),
+                (
+                    "municipio",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.PROTECT,
+                        related_name="vat_responsables",
+                        to="core.municipio",
+                    ),
+                ),
+                (
+                    "provincia",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.PROTECT,
+                        related_name="vat_responsables",
+                        to="core.provincia",
+                    ),
+                ),
             ],
             options={
-                'ordering': ['apellido', 'nombre'],
+                "ordering": ["apellido", "nombre"],
             },
             managers=[
-                ('objects', core.soft_delete.base.SoftDeleteManager()),
-                ('all_objects', core.soft_delete.base.SoftDeleteManager(include_deleted=True)),
+                ("objects", core.soft_delete.base.SoftDeleteManager()),
+                (
+                    "all_objects",
+                    core.soft_delete.base.SoftDeleteManager(include_deleted=True),
+                ),
             ],
         ),
         migrations.CreateModel(
-            name='ParticipanteActividadHistorial',
+            name="ParticipanteActividadHistorial",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('estado_anterior', models.CharField(blank=True, choices=[('inscrito', 'Inscrito'), ('lista_espera', 'Lista de Espera'), ('dado_baja', 'Dado de Baja')], max_length=20, null=True, verbose_name='Estado Anterior')),
-                ('estado_nuevo', models.CharField(choices=[('inscrito', 'Inscrito'), ('lista_espera', 'Lista de Espera'), ('dado_baja', 'Dado de Baja')], max_length=20, verbose_name='Estado Nuevo')),
-                ('fecha_cambio', models.DateTimeField(auto_now_add=True, verbose_name='Fecha de Cambio')),
-                ('participante', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='historial', to='VAT.participanteactividad')),
-                ('usuario', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='vat_historial_participantes', to=settings.AUTH_USER_MODEL, verbose_name='Usuario que realizó el cambio')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "estado_anterior",
+                    models.CharField(
+                        blank=True,
+                        choices=[
+                            ("inscrito", "Inscrito"),
+                            ("lista_espera", "Lista de Espera"),
+                            ("dado_baja", "Dado de Baja"),
+                        ],
+                        max_length=20,
+                        null=True,
+                        verbose_name="Estado Anterior",
+                    ),
+                ),
+                (
+                    "estado_nuevo",
+                    models.CharField(
+                        choices=[
+                            ("inscrito", "Inscrito"),
+                            ("lista_espera", "Lista de Espera"),
+                            ("dado_baja", "Dado de Baja"),
+                        ],
+                        max_length=20,
+                        verbose_name="Estado Nuevo",
+                    ),
+                ),
+                (
+                    "fecha_cambio",
+                    models.DateTimeField(
+                        auto_now_add=True, verbose_name="Fecha de Cambio"
+                    ),
+                ),
+                (
+                    "participante",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="historial",
+                        to="VAT.participanteactividad",
+                    ),
+                ),
+                (
+                    "usuario",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.PROTECT,
+                        related_name="vat_historial_participantes",
+                        to=settings.AUTH_USER_MODEL,
+                        verbose_name="Usuario que realizó el cambio",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Historial de Inscripción',
-                'verbose_name_plural': 'Historial de Inscripciones',
-                'ordering': ['-fecha_cambio'],
+                "verbose_name": "Historial de Inscripción",
+                "verbose_name_plural": "Historial de Inscripciones",
+                "ordering": ["-fecha_cambio"],
             },
         ),
         migrations.CreateModel(
-            name='InformeCabalRegistro',
+            name="InformeCabalRegistro",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('nro_tarjeta', models.CharField(max_length=50)),
-                ('nro_auto', models.CharField(max_length=50)),
-                ('mti', models.CharField(max_length=20)),
-                ('nro_comercio', models.CharField(max_length=50)),
-                ('razon_social', models.CharField(blank=True, max_length=255)),
-                ('importe', models.DecimalField(blank=True, decimal_places=2, max_digits=14, null=True)),
-                ('fecha_trx', models.DateField(blank=True, null=True)),
-                ('moneda_origen', models.CharField(blank=True, max_length=10)),
-                ('importe_mon_origen', models.DecimalField(blank=True, decimal_places=2, max_digits=14, null=True)),
-                ('importe_pesos', models.DecimalField(blank=True, decimal_places=2, max_digits=14, null=True)),
-                ('cant_cuotas', models.IntegerField(blank=True, null=True)),
-                ('motivo_rechazo', models.CharField(blank=True, max_length=50)),
-                ('desc_motivo_rechazo', models.CharField(blank=True, max_length=255)),
-                ('disponibles', models.CharField(blank=True, max_length=50)),
-                ('no_coincidente', models.BooleanField(default=False)),
-                ('fila_numero', models.PositiveIntegerField(default=0)),
-                ('archivo', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='registros', to='VAT.cabalarchivo')),
-                ('centro', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='vat_registros_cabal', to='VAT.centro')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("nro_tarjeta", models.CharField(max_length=50)),
+                ("nro_auto", models.CharField(max_length=50)),
+                ("mti", models.CharField(max_length=20)),
+                ("nro_comercio", models.CharField(max_length=50)),
+                ("razon_social", models.CharField(blank=True, max_length=255)),
+                (
+                    "importe",
+                    models.DecimalField(
+                        blank=True, decimal_places=2, max_digits=14, null=True
+                    ),
+                ),
+                ("fecha_trx", models.DateField(blank=True, null=True)),
+                ("moneda_origen", models.CharField(blank=True, max_length=10)),
+                (
+                    "importe_mon_origen",
+                    models.DecimalField(
+                        blank=True, decimal_places=2, max_digits=14, null=True
+                    ),
+                ),
+                (
+                    "importe_pesos",
+                    models.DecimalField(
+                        blank=True, decimal_places=2, max_digits=14, null=True
+                    ),
+                ),
+                ("cant_cuotas", models.IntegerField(blank=True, null=True)),
+                ("motivo_rechazo", models.CharField(blank=True, max_length=50)),
+                ("desc_motivo_rechazo", models.CharField(blank=True, max_length=255)),
+                ("disponibles", models.CharField(blank=True, max_length=50)),
+                ("no_coincidente", models.BooleanField(default=False)),
+                ("fila_numero", models.PositiveIntegerField(default=0)),
+                (
+                    "archivo",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="registros",
+                        to="VAT.cabalarchivo",
+                    ),
+                ),
+                (
+                    "centro",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="vat_registros_cabal",
+                        to="VAT.centro",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Registro CABAL',
-                'verbose_name_plural': 'Registros CABAL',
+                "verbose_name": "Registro CABAL",
+                "verbose_name_plural": "Registros CABAL",
             },
         ),
         migrations.CreateModel(
-            name='Categoria',
+            name="Categoria",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('deleted_at', models.DateTimeField(blank=True, db_index=True, null=True)),
-                ('nombre', models.CharField(max_length=100, verbose_name='Nombre de la Categoría')),
-                ('deleted_by', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='+', to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "deleted_at",
+                    models.DateTimeField(blank=True, db_index=True, null=True),
+                ),
+                (
+                    "nombre",
+                    models.CharField(
+                        max_length=100, verbose_name="Nombre de la Categoría"
+                    ),
+                ),
+                (
+                    "deleted_by",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="+",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Categoría',
-                'verbose_name_plural': 'Categorías',
+                "verbose_name": "Categoría",
+                "verbose_name_plural": "Categorías",
             },
             managers=[
-                ('objects', core.soft_delete.base.SoftDeleteManager()),
-                ('all_objects', core.soft_delete.base.SoftDeleteManager(include_deleted=True)),
+                ("objects", core.soft_delete.base.SoftDeleteManager()),
+                (
+                    "all_objects",
+                    core.soft_delete.base.SoftDeleteManager(include_deleted=True),
+                ),
             ],
         ),
         migrations.AddConstraint(
-            model_name='beneficiariosresponsablesrenaper',
-            constraint=models.UniqueConstraint(fields=('dni', 'genero', 'tipo'), name='vat_unique_dni_genero_tipo'),
+            model_name="beneficiariosresponsablesrenaper",
+            constraint=models.UniqueConstraint(
+                fields=("dni", "genero", "tipo"), name="vat_unique_dni_genero_tipo"
+            ),
         ),
         migrations.AddField(
-            model_name='beneficiarioresponsable',
-            name='beneficiario',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='VAT.beneficiario'),
+            model_name="beneficiarioresponsable",
+            name="beneficiario",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE, to="VAT.beneficiario"
+            ),
         ),
         migrations.AddField(
-            model_name='beneficiarioresponsable',
-            name='deleted_by',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='+', to=settings.AUTH_USER_MODEL),
+            model_name="beneficiarioresponsable",
+            name="deleted_by",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name="+",
+                to=settings.AUTH_USER_MODEL,
+            ),
         ),
         migrations.AddField(
-            model_name='beneficiarioresponsable',
-            name='responsable',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='VAT.responsable'),
+            model_name="beneficiarioresponsable",
+            name="responsable",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE, to="VAT.responsable"
+            ),
         ),
         migrations.AddField(
-            model_name='beneficiario',
-            name='actividades_detalle',
-            field=models.ManyToManyField(blank=True, to='VAT.actividad'),
+            model_name="beneficiario",
+            name="actividades_detalle",
+            field=models.ManyToManyField(blank=True, to="VAT.actividad"),
         ),
         migrations.AddField(
-            model_name='beneficiario',
-            name='creado_por',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.PROTECT, related_name='vat_beneficiarios_creados', to=settings.AUTH_USER_MODEL),
+            model_name="beneficiario",
+            name="creado_por",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.PROTECT,
+                related_name="vat_beneficiarios_creados",
+                to=settings.AUTH_USER_MODEL,
+            ),
         ),
         migrations.AddField(
-            model_name='beneficiario',
-            name='deleted_by',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='+', to=settings.AUTH_USER_MODEL),
+            model_name="beneficiario",
+            name="deleted_by",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name="+",
+                to=settings.AUTH_USER_MODEL,
+            ),
         ),
         migrations.AddField(
-            model_name='beneficiario',
-            name='localidad',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.PROTECT, related_name='vat_beneficiarios', to='core.localidad'),
+            model_name="beneficiario",
+            name="localidad",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.PROTECT,
+                related_name="vat_beneficiarios",
+                to="core.localidad",
+            ),
         ),
         migrations.AddField(
-            model_name='beneficiario',
-            name='municipio',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.PROTECT, related_name='vat_beneficiarios', to='core.municipio'),
+            model_name="beneficiario",
+            name="municipio",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.PROTECT,
+                related_name="vat_beneficiarios",
+                to="core.municipio",
+            ),
         ),
         migrations.AddField(
-            model_name='beneficiario',
-            name='provincia',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.PROTECT, related_name='vat_beneficiarios', to='core.provincia'),
+            model_name="beneficiario",
+            name="provincia",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.PROTECT,
+                related_name="vat_beneficiarios",
+                to="core.provincia",
+            ),
         ),
         migrations.AddField(
-            model_name='beneficiario',
-            name='responsable',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='beneficiarios', to='VAT.responsable'),
+            model_name="beneficiario",
+            name="responsable",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.PROTECT,
+                related_name="beneficiarios",
+                to="VAT.responsable",
+            ),
         ),
         migrations.AddField(
-            model_name='actividadcentro',
-            name='actividad',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='VAT.actividad', verbose_name='Actividad'),
+            model_name="actividadcentro",
+            name="actividad",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                to="VAT.actividad",
+                verbose_name="Actividad",
+            ),
         ),
         migrations.AddField(
-            model_name='actividadcentro',
-            name='centro',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='VAT.centro', verbose_name='Centro'),
+            model_name="actividadcentro",
+            name="centro",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                to="VAT.centro",
+                verbose_name="Centro",
+            ),
         ),
         migrations.AddField(
-            model_name='actividadcentro',
-            name='deleted_by',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='+', to=settings.AUTH_USER_MODEL),
+            model_name="actividadcentro",
+            name="deleted_by",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name="+",
+                to=settings.AUTH_USER_MODEL,
+            ),
         ),
         migrations.AddField(
-            model_name='actividadcentro',
-            name='dias',
-            field=models.ManyToManyField(blank=True, related_name='vat_DiaActividad', to='core.dia'),
+            model_name="actividadcentro",
+            name="dias",
+            field=models.ManyToManyField(
+                blank=True, related_name="vat_DiaActividad", to="core.dia"
+            ),
         ),
         migrations.AddField(
-            model_name='actividadcentro',
-            name='sexoact',
-            field=models.ManyToManyField(blank=True, related_name='vat_sexoactividad', to='core.sexo', verbose_name='Actividad Dirigida a '),
+            model_name="actividadcentro",
+            name="sexoact",
+            field=models.ManyToManyField(
+                blank=True,
+                related_name="vat_sexoactividad",
+                to="core.sexo",
+                verbose_name="Actividad Dirigida a ",
+            ),
         ),
         migrations.AddField(
-            model_name='actividad',
-            name='categoria',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='VAT.categoria', verbose_name='Categoría'),
+            model_name="actividad",
+            name="categoria",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                to="VAT.categoria",
+                verbose_name="Categoría",
+            ),
         ),
         migrations.AddField(
-            model_name='actividad',
-            name='deleted_by',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='+', to=settings.AUTH_USER_MODEL),
+            model_name="actividad",
+            name="deleted_by",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name="+",
+                to=settings.AUTH_USER_MODEL,
+            ),
         ),
         migrations.AddIndex(
-            model_name='participanteactividad',
-            index=models.Index(fields=['actividad_centro'], name='vat_part_actcentro_idx'),
+            model_name="participanteactividad",
+            index=models.Index(
+                fields=["actividad_centro"], name="vat_part_actcentro_idx"
+            ),
         ),
         migrations.AddIndex(
-            model_name='participanteactividad',
-            index=models.Index(fields=['estado'], name='vat_part_estado_idx'),
+            model_name="participanteactividad",
+            index=models.Index(fields=["estado"], name="vat_part_estado_idx"),
         ),
         migrations.AddIndex(
-            model_name='informecabalregistro',
-            index=models.Index(fields=['archivo'], name='vat_icr_archivo_idx'),
+            model_name="informecabalregistro",
+            index=models.Index(fields=["archivo"], name="vat_icr_archivo_idx"),
         ),
         migrations.AddIndex(
-            model_name='informecabalregistro',
-            index=models.Index(fields=['centro'], name='vat_icr_centro_idx'),
+            model_name="informecabalregistro",
+            index=models.Index(fields=["centro"], name="vat_icr_centro_idx"),
         ),
         migrations.AddIndex(
-            model_name='informecabalregistro',
-            index=models.Index(fields=['nro_comercio'], name='vat_icr_nrocom_idx'),
+            model_name="informecabalregistro",
+            index=models.Index(fields=["nro_comercio"], name="vat_icr_nrocom_idx"),
         ),
         migrations.AddIndex(
-            model_name='informecabalregistro',
-            index=models.Index(fields=['fecha_trx'], name='vat_icr_fechatrx_idx'),
+            model_name="informecabalregistro",
+            index=models.Index(fields=["fecha_trx"], name="vat_icr_fechatrx_idx"),
         ),
         migrations.AddIndex(
-            model_name='centro',
-            index=models.Index(fields=['nombre'], name='vat_centro_nombre_idx'),
+            model_name="centro",
+            index=models.Index(fields=["nombre"], name="vat_centro_nombre_idx"),
         ),
         migrations.AddIndex(
-            model_name='categoria',
-            index=models.Index(fields=['nombre'], name='vat_categ_nombre_idx'),
+            model_name="categoria",
+            index=models.Index(fields=["nombre"], name="vat_categ_nombre_idx"),
         ),
         migrations.AddIndex(
-            model_name='cabalarchivo',
-            index=models.Index(fields=['fecha_subida'], name='vat_cabal_fecha_idx'),
+            model_name="cabalarchivo",
+            index=models.Index(fields=["fecha_subida"], name="vat_cabal_fecha_idx"),
         ),
         migrations.AddIndex(
-            model_name='cabalarchivo',
-            index=models.Index(fields=['nombre_original'], name='vat_cabal_nombre_idx'),
+            model_name="cabalarchivo",
+            index=models.Index(fields=["nombre_original"], name="vat_cabal_nombre_idx"),
         ),
         migrations.AddIndex(
-            model_name='actividadcentro',
-            index=models.Index(fields=['centro', 'estado'], name='vat_actcentro_ce_idx'),
+            model_name="actividadcentro",
+            index=models.Index(
+                fields=["centro", "estado"], name="vat_actcentro_ce_idx"
+            ),
         ),
         migrations.AddIndex(
-            model_name='actividadcentro',
-            index=models.Index(fields=['estado'], name='vat_actcentro_estado_idx'),
+            model_name="actividadcentro",
+            index=models.Index(fields=["estado"], name="vat_actcentro_estado_idx"),
         ),
         migrations.AddIndex(
-            model_name='actividad',
-            index=models.Index(fields=['nombre'], name='vat_actividad_nombre_idx'),
+            model_name="actividad",
+            index=models.Index(fields=["nombre"], name="vat_actividad_nombre_idx"),
         ),
         migrations.RemoveField(
-            model_name='centro',
-            name='faro_asociado',
+            model_name="centro",
+            name="faro_asociado",
         ),
         migrations.RemoveField(
-            model_name='centro',
-            name='tipo',
+            model_name="centro",
+            name="tipo",
         ),
         migrations.AddField(
-            model_name='actividadcentro',
-            name='fecha_fin',
-            field=models.DateField(blank=True, null=True, verbose_name='Fecha de fin'),
+            model_name="actividadcentro",
+            name="fecha_fin",
+            field=models.DateField(blank=True, null=True, verbose_name="Fecha de fin"),
         ),
         migrations.AddField(
-            model_name='actividadcentro',
-            name='fecha_inicio',
-            field=models.DateField(blank=True, null=True, verbose_name='Fecha de inicio'),
+            model_name="actividadcentro",
+            name="fecha_inicio",
+            field=models.DateField(
+                blank=True, null=True, verbose_name="Fecha de inicio"
+            ),
         ),
         migrations.CreateModel(
-            name='Encuentro',
+            name="Encuentro",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('numero_encuentro', models.PositiveIntegerField(verbose_name='Número de encuentro')),
-                ('fecha', models.DateField(verbose_name='Fecha')),
-                ('hora_inicio', models.TimeField(verbose_name='Hora de inicio')),
-                ('hora_fin', models.TimeField(blank=True, null=True, verbose_name='Hora de fin')),
-                ('estado', models.CharField(choices=[('programado', 'Programado'), ('realizado', 'Realizado'), ('cancelado', 'Cancelado')], default='programado', max_length=20, verbose_name='Estado')),
-                ('observaciones', models.TextField(blank=True, null=True, verbose_name='Observaciones')),
-                ('actividad_centro', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='encuentros', to='VAT.actividadcentro', verbose_name='Actividad del Centro')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "numero_encuentro",
+                    models.PositiveIntegerField(verbose_name="Número de encuentro"),
+                ),
+                ("fecha", models.DateField(verbose_name="Fecha")),
+                ("hora_inicio", models.TimeField(verbose_name="Hora de inicio")),
+                (
+                    "hora_fin",
+                    models.TimeField(blank=True, null=True, verbose_name="Hora de fin"),
+                ),
+                (
+                    "estado",
+                    models.CharField(
+                        choices=[
+                            ("programado", "Programado"),
+                            ("realizado", "Realizado"),
+                            ("cancelado", "Cancelado"),
+                        ],
+                        default="programado",
+                        max_length=20,
+                        verbose_name="Estado",
+                    ),
+                ),
+                (
+                    "observaciones",
+                    models.TextField(
+                        blank=True, null=True, verbose_name="Observaciones"
+                    ),
+                ),
+                (
+                    "actividad_centro",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="encuentros",
+                        to="VAT.actividadcentro",
+                        verbose_name="Actividad del Centro",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Encuentro',
-                'verbose_name_plural': 'Encuentros',
-                'ordering': ['fecha', 'hora_inicio'],
+                "verbose_name": "Encuentro",
+                "verbose_name_plural": "Encuentros",
+                "ordering": ["fecha", "hora_inicio"],
             },
         ),
         migrations.CreateModel(
-            name='Asistencia',
+            name="Asistencia",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('estado', models.CharField(choices=[('presente', 'Presente'), ('ausente', 'Ausente'), ('justificado', 'Justificado')], default='ausente', max_length=20, verbose_name='Estado de asistencia')),
-                ('hora_registro', models.DateTimeField(auto_now_add=True, verbose_name='Hora de registro')),
-                ('observaciones', models.TextField(blank=True, null=True, verbose_name='Observaciones')),
-                ('encuentro', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='asistencias', to='VAT.encuentro', verbose_name='Encuentro')),
-                ('participante', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='asistencias', to='VAT.participanteactividad', verbose_name='Participante')),
-                ('registrado_por', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='vat_asistencias_registradas', to=settings.AUTH_USER_MODEL, verbose_name='Registrado por')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "estado",
+                    models.CharField(
+                        choices=[
+                            ("presente", "Presente"),
+                            ("ausente", "Ausente"),
+                            ("justificado", "Justificado"),
+                        ],
+                        default="ausente",
+                        max_length=20,
+                        verbose_name="Estado de asistencia",
+                    ),
+                ),
+                (
+                    "hora_registro",
+                    models.DateTimeField(
+                        auto_now_add=True, verbose_name="Hora de registro"
+                    ),
+                ),
+                (
+                    "observaciones",
+                    models.TextField(
+                        blank=True, null=True, verbose_name="Observaciones"
+                    ),
+                ),
+                (
+                    "encuentro",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="asistencias",
+                        to="VAT.encuentro",
+                        verbose_name="Encuentro",
+                    ),
+                ),
+                (
+                    "participante",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="asistencias",
+                        to="VAT.participanteactividad",
+                        verbose_name="Participante",
+                    ),
+                ),
+                (
+                    "registrado_por",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.PROTECT,
+                        related_name="vat_asistencias_registradas",
+                        to=settings.AUTH_USER_MODEL,
+                        verbose_name="Registrado por",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Asistencia',
-                'verbose_name_plural': 'Asistencias',
+                "verbose_name": "Asistencia",
+                "verbose_name_plural": "Asistencias",
             },
         ),
         migrations.AddConstraint(
-            model_name='asistencia',
-            constraint=models.UniqueConstraint(fields=('encuentro', 'participante'), name='vat_unique_asistencia_encuentro_participante'),
+            model_name="asistencia",
+            constraint=models.UniqueConstraint(
+                fields=("encuentro", "participante"),
+                name="vat_unique_asistencia_encuentro_participante",
+            ),
         ),
         migrations.AlterField(
-            model_name='centro',
-            name='referente',
-            field=models.ForeignKey(limit_choices_to={'groups__name': 'ReferenteCentroVAT'}, null=True, on_delete=django.db.models.deletion.PROTECT, related_name='vat_centros', to=settings.AUTH_USER_MODEL),
+            model_name="centro",
+            name="referente",
+            field=models.ForeignKey(
+                limit_choices_to={"groups__name": "ReferenteCentroVAT"},
+                null=True,
+                on_delete=django.db.models.deletion.PROTECT,
+                related_name="vat_centros",
+                to=settings.AUTH_USER_MODEL,
+            ),
         ),
         migrations.DeleteModel(
-            name='InformeCabalRegistro',
+            name="InformeCabalRegistro",
         ),
         migrations.DeleteModel(
-            name='CabalArchivo',
+            name="CabalArchivo",
         ),
         migrations.CreateModel(
-            name='AutoridadInstitucional',
+            name="AutoridadInstitucional",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('nombre_completo', models.CharField(max_length=255, verbose_name='Nombre Completo')),
-                ('dni', models.CharField(max_length=20, verbose_name='DNI')),
-                ('cargo', models.CharField(max_length=100, verbose_name='Cargo')),
-                ('email', models.EmailField(blank=True, max_length=254, null=True)),
-                ('telefono', models.CharField(blank=True, max_length=50, null=True)),
-                ('es_actual', models.BooleanField(default=True, verbose_name='Es la Autoridad Actual')),
-                ('vigencia_desde', models.DateField(auto_now_add=True, verbose_name='Vigencia Desde')),
-                ('vigencia_hasta', models.DateField(blank=True, null=True, verbose_name='Vigencia Hasta')),
-                ('fecha_creacion', models.DateTimeField(auto_now_add=True)),
-                ('fecha_modificacion', models.DateTimeField(auto_now=True)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "nombre_completo",
+                    models.CharField(max_length=255, verbose_name="Nombre Completo"),
+                ),
+                ("dni", models.CharField(max_length=20, verbose_name="DNI")),
+                ("cargo", models.CharField(max_length=100, verbose_name="Cargo")),
+                ("email", models.EmailField(blank=True, max_length=254, null=True)),
+                ("telefono", models.CharField(blank=True, max_length=50, null=True)),
+                (
+                    "es_actual",
+                    models.BooleanField(
+                        default=True, verbose_name="Es la Autoridad Actual"
+                    ),
+                ),
+                (
+                    "vigencia_desde",
+                    models.DateField(auto_now_add=True, verbose_name="Vigencia Desde"),
+                ),
+                (
+                    "vigencia_hasta",
+                    models.DateField(
+                        blank=True, null=True, verbose_name="Vigencia Hasta"
+                    ),
+                ),
+                ("fecha_creacion", models.DateTimeField(auto_now_add=True)),
+                ("fecha_modificacion", models.DateTimeField(auto_now=True)),
             ],
             options={
-                'verbose_name': 'Autoridad de Institución',
-                'verbose_name_plural': 'Autoridades de Institución',
-                'ordering': ['-es_actual', '-vigencia_desde'],
+                "verbose_name": "Autoridad de Institución",
+                "verbose_name_plural": "Autoridades de Institución",
+                "ordering": ["-es_actual", "-vigencia_desde"],
             },
         ),
         migrations.CreateModel(
-            name='Comision',
+            name="Comision",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('deleted_at', models.DateTimeField(blank=True, db_index=True, null=True)),
-                ('codigo_comision', models.CharField(max_length=50, unique=True, verbose_name='Código de Comisión')),
-                ('nombre', models.CharField(max_length=255, verbose_name='Nombre')),
-                ('fecha_inicio', models.DateField(verbose_name='Fecha de Inicio')),
-                ('fecha_fin', models.DateField(verbose_name='Fecha de Fin')),
-                ('cupo', models.PositiveIntegerField(verbose_name='Cupo Total')),
-                ('estado', models.CharField(choices=[('planificada', 'Planificada'), ('activa', 'Activa'), ('cerrada', 'Cerrada'), ('suspendida', 'Suspendida')], default='planificada', max_length=20, verbose_name='Estado')),
-                ('observaciones', models.TextField(blank=True, null=True, verbose_name='Observaciones')),
-                ('fecha_creacion', models.DateTimeField(auto_now_add=True)),
-                ('fecha_modificacion', models.DateTimeField(auto_now=True)),
-                ('deleted_by', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='+', to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "deleted_at",
+                    models.DateTimeField(blank=True, db_index=True, null=True),
+                ),
+                (
+                    "codigo_comision",
+                    models.CharField(
+                        max_length=50, unique=True, verbose_name="Código de Comisión"
+                    ),
+                ),
+                ("nombre", models.CharField(max_length=255, verbose_name="Nombre")),
+                ("fecha_inicio", models.DateField(verbose_name="Fecha de Inicio")),
+                ("fecha_fin", models.DateField(verbose_name="Fecha de Fin")),
+                ("cupo", models.PositiveIntegerField(verbose_name="Cupo Total")),
+                (
+                    "estado",
+                    models.CharField(
+                        choices=[
+                            ("planificada", "Planificada"),
+                            ("activa", "Activa"),
+                            ("cerrada", "Cerrada"),
+                            ("suspendida", "Suspendida"),
+                        ],
+                        default="planificada",
+                        max_length=20,
+                        verbose_name="Estado",
+                    ),
+                ),
+                (
+                    "observaciones",
+                    models.TextField(
+                        blank=True, null=True, verbose_name="Observaciones"
+                    ),
+                ),
+                ("fecha_creacion", models.DateTimeField(auto_now_add=True)),
+                ("fecha_modificacion", models.DateTimeField(auto_now=True)),
+                (
+                    "deleted_by",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="+",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Comisión',
-                'verbose_name_plural': 'Comisiones',
-                'ordering': ['codigo_comision'],
+                "verbose_name": "Comisión",
+                "verbose_name_plural": "Comisiones",
+                "ordering": ["codigo_comision"],
             },
             managers=[
-                ('objects', core.soft_delete.base.SoftDeleteManager()),
-                ('all_objects', core.soft_delete.base.SoftDeleteManager(include_deleted=True)),
+                ("objects", core.soft_delete.base.SoftDeleteManager()),
+                (
+                    "all_objects",
+                    core.soft_delete.base.SoftDeleteManager(include_deleted=True),
+                ),
             ],
         ),
         migrations.CreateModel(
-            name='ComisionHorario',
+            name="ComisionHorario",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('hora_desde', models.TimeField(verbose_name='Hora Desde')),
-                ('hora_hasta', models.TimeField(verbose_name='Hora Hasta')),
-                ('aula_espacio', models.CharField(blank=True, max_length=100, null=True, verbose_name='Aula/Espacio')),
-                ('vigente', models.BooleanField(default=True, verbose_name='Vigente')),
-                ('fecha_creacion', models.DateTimeField(auto_now_add=True)),
-                ('fecha_modificacion', models.DateTimeField(auto_now=True)),
-                ('comision', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='horarios', to='VAT.comision', verbose_name='Comisión')),
-                ('dia_semana', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='horarios_comisiones', to='core.dia', verbose_name='Día de la Semana')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("hora_desde", models.TimeField(verbose_name="Hora Desde")),
+                ("hora_hasta", models.TimeField(verbose_name="Hora Hasta")),
+                (
+                    "aula_espacio",
+                    models.CharField(
+                        blank=True,
+                        max_length=100,
+                        null=True,
+                        verbose_name="Aula/Espacio",
+                    ),
+                ),
+                ("vigente", models.BooleanField(default=True, verbose_name="Vigente")),
+                ("fecha_creacion", models.DateTimeField(auto_now_add=True)),
+                ("fecha_modificacion", models.DateTimeField(auto_now=True)),
+                (
+                    "comision",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="horarios",
+                        to="VAT.comision",
+                        verbose_name="Comisión",
+                    ),
+                ),
+                (
+                    "dia_semana",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.PROTECT,
+                        related_name="horarios_comisiones",
+                        to="core.dia",
+                        verbose_name="Día de la Semana",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Horario de Comisión',
-                'verbose_name_plural': 'Horarios de Comisión',
-                'ordering': ['comision', 'dia_semana', 'hora_desde'],
+                "verbose_name": "Horario de Comisión",
+                "verbose_name_plural": "Horarios de Comisión",
+                "ordering": ["comision", "dia_semana", "hora_desde"],
             },
         ),
         migrations.CreateModel(
-            name='Evaluacion',
+            name="Evaluacion",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('tipo', models.CharField(choices=[('parcial', 'Parcial'), ('final', 'Final'), ('integradora', 'Integradora'), ('recuperatorio', 'Recuperatorio')], max_length=20, verbose_name='Tipo de Evaluación')),
-                ('nombre', models.CharField(max_length=255, verbose_name='Nombre de la Evaluación')),
-                ('descripcion', models.TextField(blank=True, null=True, verbose_name='Descripción')),
-                ('fecha', models.DateField(verbose_name='Fecha de la Evaluación')),
-                ('es_final', models.BooleanField(default=False, verbose_name='Es Evaluación Final')),
-                ('ponderacion', models.DecimalField(decimal_places=2, default=100, help_text='Ponderación en la calificación final (%)', max_digits=5, verbose_name='Ponderación (%)')),
-                ('observaciones', models.TextField(blank=True, null=True, verbose_name='Observaciones')),
-                ('fecha_creacion', models.DateTimeField(auto_now_add=True)),
-                ('fecha_modificacion', models.DateTimeField(auto_now=True)),
-                ('comision', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='evaluaciones', to='VAT.comision', verbose_name='Comisión')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "tipo",
+                    models.CharField(
+                        choices=[
+                            ("parcial", "Parcial"),
+                            ("final", "Final"),
+                            ("integradora", "Integradora"),
+                            ("recuperatorio", "Recuperatorio"),
+                        ],
+                        max_length=20,
+                        verbose_name="Tipo de Evaluación",
+                    ),
+                ),
+                (
+                    "nombre",
+                    models.CharField(
+                        max_length=255, verbose_name="Nombre de la Evaluación"
+                    ),
+                ),
+                (
+                    "descripcion",
+                    models.TextField(blank=True, null=True, verbose_name="Descripción"),
+                ),
+                ("fecha", models.DateField(verbose_name="Fecha de la Evaluación")),
+                (
+                    "es_final",
+                    models.BooleanField(
+                        default=False, verbose_name="Es Evaluación Final"
+                    ),
+                ),
+                (
+                    "ponderacion",
+                    models.DecimalField(
+                        decimal_places=2,
+                        default=100,
+                        help_text="Ponderación en la calificación final (%)",
+                        max_digits=5,
+                        verbose_name="Ponderación (%)",
+                    ),
+                ),
+                (
+                    "observaciones",
+                    models.TextField(
+                        blank=True, null=True, verbose_name="Observaciones"
+                    ),
+                ),
+                ("fecha_creacion", models.DateTimeField(auto_now_add=True)),
+                ("fecha_modificacion", models.DateTimeField(auto_now=True)),
+                (
+                    "comision",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="evaluaciones",
+                        to="VAT.comision",
+                        verbose_name="Comisión",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Evaluación',
-                'verbose_name_plural': 'Evaluaciones',
-                'ordering': ['comision', 'fecha'],
+                "verbose_name": "Evaluación",
+                "verbose_name_plural": "Evaluaciones",
+                "ordering": ["comision", "fecha"],
             },
         ),
         migrations.CreateModel(
-            name='Inscripcion',
+            name="Inscripcion",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('deleted_at', models.DateTimeField(blank=True, db_index=True, null=True)),
-                ('estado', models.CharField(choices=[('pre_inscripta', 'Pre-inscripta'), ('inscripta', 'Inscripta'), ('validada_presencial', 'Validada Presencial'), ('completada', 'Completada'), ('abandonada', 'Abandonada'), ('rechazada', 'Rechazada')], default='pre_inscripta', max_length=30, verbose_name='Estado')),
-                ('origen_canal', models.CharField(choices=[('front_publico', 'Front Público'), ('backoffice', 'Backoffice'), ('api', 'API'), ('importacion', 'Importación')], default='backoffice', max_length=30, verbose_name='Origen del Canal')),
-                ('fecha_inscripcion', models.DateTimeField(auto_now_add=True, verbose_name='Fecha de Inscripción')),
-                ('fecha_validacion_presencial', models.DateTimeField(blank=True, null=True, verbose_name='Fecha de Validación Presencial')),
-                ('observaciones', models.TextField(blank=True, null=True, verbose_name='Observaciones')),
-                ('fecha_creacion', models.DateTimeField(auto_now_add=True)),
-                ('fecha_modificacion', models.DateTimeField(auto_now=True)),
-                ('ciudadano', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='inscripciones_vat', to='ciudadanos.ciudadano', verbose_name='Ciudadano')),
-                ('comision', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='inscripciones', to='VAT.comision', verbose_name='Comisión')),
-                ('deleted_by', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='+', to=settings.AUTH_USER_MODEL)),
-                ('programa', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='inscripciones_vat', to='core.programa', verbose_name='Programa')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "deleted_at",
+                    models.DateTimeField(blank=True, db_index=True, null=True),
+                ),
+                (
+                    "estado",
+                    models.CharField(
+                        choices=[
+                            ("pre_inscripta", "Pre-inscripta"),
+                            ("inscripta", "Inscripta"),
+                            ("validada_presencial", "Validada Presencial"),
+                            ("completada", "Completada"),
+                            ("abandonada", "Abandonada"),
+                            ("rechazada", "Rechazada"),
+                        ],
+                        default="pre_inscripta",
+                        max_length=30,
+                        verbose_name="Estado",
+                    ),
+                ),
+                (
+                    "origen_canal",
+                    models.CharField(
+                        choices=[
+                            ("front_publico", "Front Público"),
+                            ("backoffice", "Backoffice"),
+                            ("api", "API"),
+                            ("importacion", "Importación"),
+                        ],
+                        default="backoffice",
+                        max_length=30,
+                        verbose_name="Origen del Canal",
+                    ),
+                ),
+                (
+                    "fecha_inscripcion",
+                    models.DateTimeField(
+                        auto_now_add=True, verbose_name="Fecha de Inscripción"
+                    ),
+                ),
+                (
+                    "fecha_validacion_presencial",
+                    models.DateTimeField(
+                        blank=True,
+                        null=True,
+                        verbose_name="Fecha de Validación Presencial",
+                    ),
+                ),
+                (
+                    "observaciones",
+                    models.TextField(
+                        blank=True, null=True, verbose_name="Observaciones"
+                    ),
+                ),
+                ("fecha_creacion", models.DateTimeField(auto_now_add=True)),
+                ("fecha_modificacion", models.DateTimeField(auto_now=True)),
+                (
+                    "ciudadano",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.PROTECT,
+                        related_name="inscripciones_vat",
+                        to="ciudadanos.ciudadano",
+                        verbose_name="Ciudadano",
+                    ),
+                ),
+                (
+                    "comision",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="inscripciones",
+                        to="VAT.comision",
+                        verbose_name="Comisión",
+                    ),
+                ),
+                (
+                    "deleted_by",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="+",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    "programa",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.PROTECT,
+                        related_name="inscripciones_vat",
+                        to="core.programa",
+                        verbose_name="Programa",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Inscripción',
-                'verbose_name_plural': 'Inscripciones',
-                'ordering': ['-fecha_inscripcion'],
-            },
-            managers=[
-                ('objects', core.soft_delete.base.SoftDeleteManager()),
-                ('all_objects', core.soft_delete.base.SoftDeleteManager(include_deleted=True)),
-            ],
-        ),
-        migrations.CreateModel(
-            name='InscripcionOferta',
-            fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('deleted_at', models.DateTimeField(blank=True, db_index=True, null=True)),
-                ('estado', models.CharField(choices=[('inscrito', 'Inscrito'), ('lista_espera', 'Lista de Espera'), ('completado', 'Completado'), ('abandonado', 'Abandonado'), ('rechazado', 'Rechazado')], default='inscrito', max_length=20, verbose_name='Estado')),
-                ('fecha_inscripcion', models.DateTimeField(auto_now_add=True)),
-                ('fecha_modificacion', models.DateTimeField(auto_now=True)),
-                ('ciudadano', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='vat_inscripciones_oferta', to='ciudadanos.ciudadano', verbose_name='Ciudadano')),
-                ('deleted_by', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='+', to=settings.AUTH_USER_MODEL)),
-                ('inscrito_por', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='vat_inscripciones_oferta_realizadas', to=settings.AUTH_USER_MODEL, verbose_name='Inscrito por')),
-                ('oferta', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='inscripciones_oferta', to='VAT.comision', verbose_name='Comisión')),
-            ],
-            options={
-                'verbose_name': 'Inscripción a Comisión',
-                'verbose_name_plural': 'Inscripciones a Comisiones',
-                'ordering': ['-fecha_inscripcion'],
-            },
-            managers=[
-                ('objects', core.soft_delete.base.SoftDeleteManager()),
-                ('all_objects', core.soft_delete.base.SoftDeleteManager(include_deleted=True)),
-            ],
-        ),
-        migrations.CreateModel(
-            name='InstitucionContacto',
-            fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('tipo', models.CharField(choices=[('email', 'Email'), ('telefono', 'Teléfono'), ('celular', 'Celular'), ('sitio_web', 'Sitio Web'), ('redes_sociales', 'Redes Sociales')], max_length=20, verbose_name='Tipo de Contacto')),
-                ('valor', models.CharField(max_length=255, verbose_name='Valor')),
-                ('es_principal', models.BooleanField(default=False, verbose_name='Es Principal')),
-                ('observaciones', models.TextField(blank=True, null=True, verbose_name='Observaciones')),
-                ('vigencia_desde', models.DateField(auto_now_add=True, verbose_name='Vigencia Desde')),
-                ('vigencia_hasta', models.DateField(blank=True, null=True, verbose_name='Vigencia Hasta')),
-                ('fecha_creacion', models.DateTimeField(auto_now_add=True)),
-                ('fecha_modificacion', models.DateTimeField(auto_now=True)),
-            ],
-            options={
-                'verbose_name': 'Contacto de Institución',
-                'verbose_name_plural': 'Contactos de Institución',
-                'ordering': ['-es_principal', 'tipo'],
-            },
-        ),
-        migrations.CreateModel(
-            name='InstitucionIdentificadorHist',
-            fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('tipo_identificador', models.CharField(choices=[('cuie', 'CUIE'), ('cue', 'CUE'), ('codigo_provincial', 'Código Provincial'), ('ruc', 'RUC'), ('cuit', 'CUIT'), ('otro', 'Otro')], max_length=20, verbose_name='Tipo de Identificador')),
-                ('valor_identificador', models.CharField(max_length=100, verbose_name='Valor del Identificador')),
-                ('rol_institucional', models.CharField(blank=True, choices=[('sede', 'Sede'), ('anexo', 'Anexo'), ('polo', 'Polo'), ('centro_de_formacion', 'Centro de Formación')], max_length=50, null=True, verbose_name='Rol Institucional')),
-                ('es_actual', models.BooleanField(default=True, verbose_name='Es Actual')),
-                ('vigencia_desde', models.DateField(auto_now_add=True, verbose_name='Vigencia Desde')),
-                ('vigencia_hasta', models.DateField(blank=True, null=True, verbose_name='Vigencia Hasta')),
-                ('motivo', models.CharField(blank=True, max_length=200, null=True, verbose_name='Motivo del Cambio')),
-                ('fecha_creacion', models.DateTimeField(auto_now_add=True)),
-                ('fecha_modificacion', models.DateTimeField(auto_now=True)),
-            ],
-            options={
-                'verbose_name': 'Identificador Histórico de Institución',
-                'verbose_name_plural': 'Identificadores Históricos de Institución',
-                'ordering': ['-es_actual', '-vigencia_desde'],
-            },
-        ),
-        migrations.CreateModel(
-            name='InstitucionUbicacion',
-            fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('rol_ubicacion', models.CharField(choices=[('sede_principal', 'Sede Principal'), ('anexo', 'Anexo'), ('dependencia', 'Dependencia'), ('punto_de_atencion', 'Punto de Atención')], max_length=50, verbose_name='Rol de Ubicación')),
-                ('domicilio', models.CharField(blank=True, max_length=255, null=True, verbose_name='Domicilio')),
-                ('es_principal', models.BooleanField(default=False, verbose_name='Es Principal')),
-                ('latitud', models.DecimalField(blank=True, decimal_places=6, max_digits=9, null=True)),
-                ('longitud', models.DecimalField(blank=True, decimal_places=6, max_digits=9, null=True)),
-                ('observaciones', models.TextField(blank=True, null=True, verbose_name='Observaciones')),
-                ('vigencia_desde', models.DateField(auto_now_add=True, verbose_name='Vigencia Desde')),
-                ('vigencia_hasta', models.DateField(blank=True, null=True, verbose_name='Vigencia Hasta')),
-                ('fecha_creacion', models.DateTimeField(auto_now_add=True)),
-                ('fecha_modificacion', models.DateTimeField(auto_now=True)),
-            ],
-            options={
-                'verbose_name': 'Ubicación de Institución',
-                'verbose_name_plural': 'Ubicaciones de Institución',
-                'ordering': ['-es_principal', 'rol_ubicacion'],
-            },
-        ),
-        migrations.CreateModel(
-            name='ModalidadCursada',
-            fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('nombre', models.CharField(max_length=100, verbose_name='Nombre de la modalidad')),
-                ('descripcion', models.TextField(blank=True, null=True, verbose_name='Descripción')),
-                ('activo', models.BooleanField(default=True, verbose_name='Activo')),
-            ],
-            options={
-                'verbose_name': 'Modalidad de Cursado',
-                'verbose_name_plural': 'Modalidades de Cursado',
-                'ordering': ['nombre'],
-            },
-        ),
-        migrations.CreateModel(
-            name='ModalidadInstitucional',
-            fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('nombre', models.CharField(max_length=100, verbose_name='Nombre de la modalidad')),
-                ('descripcion', models.TextField(blank=True, null=True, verbose_name='Descripción')),
-                ('activo', models.BooleanField(default=True, verbose_name='Activo')),
-                ('fecha_creacion', models.DateTimeField(auto_now_add=True)),
-                ('fecha_modificacion', models.DateTimeField(auto_now=True)),
-            ],
-            options={
-                'verbose_name': 'Modalidad Institucional',
-                'verbose_name_plural': 'Modalidades Institucionales',
-                'ordering': ['nombre'],
-            },
-        ),
-        migrations.CreateModel(
-            name='OfertaInstitucional',
-            fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('deleted_at', models.DateTimeField(blank=True, db_index=True, null=True)),
-                ('nombre_local', models.CharField(blank=True, max_length=255, verbose_name='Nombre Local (si aplica)')),
-                ('ciclo_lectivo', models.IntegerField(verbose_name='Ciclo Lectivo')),
-                ('plan_externo_id', models.CharField(blank=True, max_length=100, null=True, verbose_name='ID Plan Externo')),
-                ('estado', models.CharField(choices=[('planificada', 'Planificada'), ('aprobada', 'Aprobada'), ('publicada', 'Publicada'), ('cerrada', 'Cerrada'), ('cancelada', 'Cancelada')], default='planificada', max_length=20, verbose_name='Estado de Oferta')),
-                ('aprobacion_jurisdiccion', models.BooleanField(default=False, verbose_name='Aprobación de Jurisdicción')),
-                ('aprobacion_inet', models.BooleanField(default=False, verbose_name='Aprobación INET')),
-                ('fecha_publicacion', models.DateField(blank=True, null=True, verbose_name='Fecha de Publicación')),
-                ('observaciones', models.TextField(blank=True, null=True, verbose_name='Observaciones')),
-                ('fecha_creacion', models.DateTimeField(auto_now_add=True)),
-                ('fecha_modificacion', models.DateTimeField(auto_now=True)),
-            ],
-            options={
-                'verbose_name': 'Oferta Institucional',
-                'verbose_name_plural': 'Ofertas Institucionales',
-                'ordering': ['-ciclo_lectivo'],
-            },
-            managers=[
-                ('objects', core.soft_delete.base.SoftDeleteManager()),
-                ('all_objects', core.soft_delete.base.SoftDeleteManager(include_deleted=True)),
-            ],
-        ),
-        migrations.CreateModel(
-            name='PlanVersionCurricular',
-            fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('deleted_at', models.DateTimeField(blank=True, db_index=True, null=True)),
-                ('normativa', models.CharField(blank=True, max_length=200, null=True, verbose_name='Normativa')),
-                ('version', models.CharField(blank=True, max_length=50, null=True, verbose_name='Versión')),
-                ('horas_reloj', models.PositiveIntegerField(blank=True, null=True, verbose_name='Horas Reloj')),
-                ('nivel_requerido', models.CharField(blank=True, max_length=100, null=True, verbose_name='Nivel Requerido')),
-                ('nivel_certifica', models.CharField(blank=True, max_length=100, null=True, verbose_name='Nivel que Certifica')),
-                ('frecuencia', models.CharField(blank=True, max_length=100, null=True, verbose_name='Frecuencia')),
-                ('activo', models.BooleanField(default=True, verbose_name='Activo')),
-                ('deleted_by', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='+', to=settings.AUTH_USER_MODEL)),
-                ('modalidad_cursada', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='planes', to='VAT.modalidadcursada', verbose_name='Modalidad de Cursado')),
-            ],
-            options={
-                'verbose_name': 'Plan / Versión Curricular',
-                'verbose_name_plural': 'Planes / Versiones Curriculares',
-                'ordering': ['titulo_referencia', 'modalidad_cursada'],
-            },
-            managers=[
-                ('objects', core.soft_delete.base.SoftDeleteManager()),
-                ('all_objects', core.soft_delete.base.SoftDeleteManager(include_deleted=True)),
-            ],
-        ),
-        migrations.CreateModel(
-            name='ResultadoEvaluacion',
-            fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('deleted_at', models.DateTimeField(blank=True, db_index=True, null=True)),
-                ('calificacion', models.DecimalField(blank=True, decimal_places=2, max_digits=5, null=True, verbose_name='Calificación')),
-                ('aprobo', models.BooleanField(blank=True, null=True, verbose_name='¿Aprobó?')),
-                ('observaciones', models.TextField(blank=True, null=True, verbose_name='Observaciones')),
-                ('fecha_registro', models.DateTimeField(auto_now_add=True, verbose_name='Fecha de Registro')),
-                ('fecha_creacion', models.DateTimeField(auto_now_add=True)),
-                ('fecha_modificacion', models.DateTimeField(auto_now=True)),
-                ('deleted_by', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='+', to=settings.AUTH_USER_MODEL)),
-                ('evaluacion', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='resultados', to='VAT.evaluacion', verbose_name='Evaluación')),
-                ('inscripcion', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='resultados_evaluacion', to='VAT.inscripcion', verbose_name='Inscripción')),
-                ('registrado_por', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='evaluaciones_registradas', to=settings.AUTH_USER_MODEL, verbose_name='Registrado por')),
-            ],
-            options={
-                'verbose_name': 'Resultado de Evaluación',
-                'verbose_name_plural': 'Resultados de Evaluación',
-                'ordering': ['-fecha_registro'],
+                "verbose_name": "Inscripción",
+                "verbose_name_plural": "Inscripciones",
+                "ordering": ["-fecha_inscripcion"],
             },
             managers=[
-                ('objects', core.soft_delete.base.SoftDeleteManager()),
-                ('all_objects', core.soft_delete.base.SoftDeleteManager(include_deleted=True)),
+                ("objects", core.soft_delete.base.SoftDeleteManager()),
+                (
+                    "all_objects",
+                    core.soft_delete.base.SoftDeleteManager(include_deleted=True),
+                ),
             ],
         ),
         migrations.CreateModel(
-            name='Sector',
+            name="InscripcionOferta",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('deleted_at', models.DateTimeField(blank=True, db_index=True, null=True)),
-                ('nombre', models.CharField(max_length=100, verbose_name='Nombre del sector')),
-                ('descripcion', models.TextField(blank=True, null=True, verbose_name='Descripción')),
-                ('deleted_by', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='+', to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "deleted_at",
+                    models.DateTimeField(blank=True, db_index=True, null=True),
+                ),
+                (
+                    "estado",
+                    models.CharField(
+                        choices=[
+                            ("inscrito", "Inscrito"),
+                            ("lista_espera", "Lista de Espera"),
+                            ("completado", "Completado"),
+                            ("abandonado", "Abandonado"),
+                            ("rechazado", "Rechazado"),
+                        ],
+                        default="inscrito",
+                        max_length=20,
+                        verbose_name="Estado",
+                    ),
+                ),
+                ("fecha_inscripcion", models.DateTimeField(auto_now_add=True)),
+                ("fecha_modificacion", models.DateTimeField(auto_now=True)),
+                (
+                    "ciudadano",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.PROTECT,
+                        related_name="vat_inscripciones_oferta",
+                        to="ciudadanos.ciudadano",
+                        verbose_name="Ciudadano",
+                    ),
+                ),
+                (
+                    "deleted_by",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="+",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    "inscrito_por",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.PROTECT,
+                        related_name="vat_inscripciones_oferta_realizadas",
+                        to=settings.AUTH_USER_MODEL,
+                        verbose_name="Inscrito por",
+                    ),
+                ),
+                (
+                    "oferta",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="inscripciones_oferta",
+                        to="VAT.comision",
+                        verbose_name="Comisión",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Sector',
-                'verbose_name_plural': 'Sectores',
-                'ordering': ['nombre'],
+                "verbose_name": "Inscripción a Comisión",
+                "verbose_name_plural": "Inscripciones a Comisiones",
+                "ordering": ["-fecha_inscripcion"],
             },
             managers=[
-                ('objects', core.soft_delete.base.SoftDeleteManager()),
-                ('all_objects', core.soft_delete.base.SoftDeleteManager(include_deleted=True)),
+                ("objects", core.soft_delete.base.SoftDeleteManager()),
+                (
+                    "all_objects",
+                    core.soft_delete.base.SoftDeleteManager(include_deleted=True),
+                ),
             ],
         ),
         migrations.CreateModel(
-            name='SesionComision',
+            name="InstitucionContacto",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('numero_sesion', models.PositiveIntegerField(verbose_name='Número de sesión')),
-                ('fecha', models.DateField(verbose_name='Fecha')),
-                ('estado', models.CharField(choices=[('programada', 'Programada'), ('realizada', 'Realizada'), ('cancelada', 'Cancelada')], default='programada', max_length=20, verbose_name='Estado')),
-                ('observaciones', models.TextField(blank=True, null=True, verbose_name='Observaciones')),
-                ('fecha_creacion', models.DateTimeField(auto_now_add=True)),
-                ('comision', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='sesiones', to='VAT.comision', verbose_name='Comisión')),
-                ('horario', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='sesiones', to='VAT.comisionhorario', verbose_name='Horario')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "tipo",
+                    models.CharField(
+                        choices=[
+                            ("email", "Email"),
+                            ("telefono", "Teléfono"),
+                            ("celular", "Celular"),
+                            ("sitio_web", "Sitio Web"),
+                            ("redes_sociales", "Redes Sociales"),
+                        ],
+                        max_length=20,
+                        verbose_name="Tipo de Contacto",
+                    ),
+                ),
+                ("valor", models.CharField(max_length=255, verbose_name="Valor")),
+                (
+                    "es_principal",
+                    models.BooleanField(default=False, verbose_name="Es Principal"),
+                ),
+                (
+                    "observaciones",
+                    models.TextField(
+                        blank=True, null=True, verbose_name="Observaciones"
+                    ),
+                ),
+                (
+                    "vigencia_desde",
+                    models.DateField(auto_now_add=True, verbose_name="Vigencia Desde"),
+                ),
+                (
+                    "vigencia_hasta",
+                    models.DateField(
+                        blank=True, null=True, verbose_name="Vigencia Hasta"
+                    ),
+                ),
+                ("fecha_creacion", models.DateTimeField(auto_now_add=True)),
+                ("fecha_modificacion", models.DateTimeField(auto_now=True)),
             ],
             options={
-                'verbose_name': 'Sesión de Comisión',
-                'verbose_name_plural': 'Sesiones de Comisión',
-                'ordering': ['fecha', 'horario__hora_desde'],
+                "verbose_name": "Contacto de Institución",
+                "verbose_name_plural": "Contactos de Institución",
+                "ordering": ["-es_principal", "tipo"],
             },
         ),
         migrations.CreateModel(
-            name='Subsector',
+            name="InstitucionIdentificadorHist",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('deleted_at', models.DateTimeField(blank=True, db_index=True, null=True)),
-                ('nombre', models.CharField(max_length=100, verbose_name='Nombre del subsector')),
-                ('descripcion', models.TextField(blank=True, null=True, verbose_name='Descripción')),
-                ('deleted_by', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='+', to=settings.AUTH_USER_MODEL)),
-                ('sector', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='subsectores', to='VAT.sector', verbose_name='Sector')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "tipo_identificador",
+                    models.CharField(
+                        choices=[
+                            ("cuie", "CUIE"),
+                            ("cue", "CUE"),
+                            ("codigo_provincial", "Código Provincial"),
+                            ("ruc", "RUC"),
+                            ("cuit", "CUIT"),
+                            ("otro", "Otro"),
+                        ],
+                        max_length=20,
+                        verbose_name="Tipo de Identificador",
+                    ),
+                ),
+                (
+                    "valor_identificador",
+                    models.CharField(
+                        max_length=100, verbose_name="Valor del Identificador"
+                    ),
+                ),
+                (
+                    "rol_institucional",
+                    models.CharField(
+                        blank=True,
+                        choices=[
+                            ("sede", "Sede"),
+                            ("anexo", "Anexo"),
+                            ("polo", "Polo"),
+                            ("centro_de_formacion", "Centro de Formación"),
+                        ],
+                        max_length=50,
+                        null=True,
+                        verbose_name="Rol Institucional",
+                    ),
+                ),
+                (
+                    "es_actual",
+                    models.BooleanField(default=True, verbose_name="Es Actual"),
+                ),
+                (
+                    "vigencia_desde",
+                    models.DateField(auto_now_add=True, verbose_name="Vigencia Desde"),
+                ),
+                (
+                    "vigencia_hasta",
+                    models.DateField(
+                        blank=True, null=True, verbose_name="Vigencia Hasta"
+                    ),
+                ),
+                (
+                    "motivo",
+                    models.CharField(
+                        blank=True,
+                        max_length=200,
+                        null=True,
+                        verbose_name="Motivo del Cambio",
+                    ),
+                ),
+                ("fecha_creacion", models.DateTimeField(auto_now_add=True)),
+                ("fecha_modificacion", models.DateTimeField(auto_now=True)),
             ],
             options={
-                'verbose_name': 'Subsector',
-                'verbose_name_plural': 'Subsectores',
-                'ordering': ['sector', 'nombre'],
+                "verbose_name": "Identificador Histórico de Institución",
+                "verbose_name_plural": "Identificadores Históricos de Institución",
+                "ordering": ["-es_actual", "-vigencia_desde"],
+            },
+        ),
+        migrations.CreateModel(
+            name="InstitucionUbicacion",
+            fields=[
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "rol_ubicacion",
+                    models.CharField(
+                        choices=[
+                            ("sede_principal", "Sede Principal"),
+                            ("anexo", "Anexo"),
+                            ("dependencia", "Dependencia"),
+                            ("punto_de_atencion", "Punto de Atención"),
+                        ],
+                        max_length=50,
+                        verbose_name="Rol de Ubicación",
+                    ),
+                ),
+                (
+                    "domicilio",
+                    models.CharField(
+                        blank=True, max_length=255, null=True, verbose_name="Domicilio"
+                    ),
+                ),
+                (
+                    "es_principal",
+                    models.BooleanField(default=False, verbose_name="Es Principal"),
+                ),
+                (
+                    "latitud",
+                    models.DecimalField(
+                        blank=True, decimal_places=6, max_digits=9, null=True
+                    ),
+                ),
+                (
+                    "longitud",
+                    models.DecimalField(
+                        blank=True, decimal_places=6, max_digits=9, null=True
+                    ),
+                ),
+                (
+                    "observaciones",
+                    models.TextField(
+                        blank=True, null=True, verbose_name="Observaciones"
+                    ),
+                ),
+                (
+                    "vigencia_desde",
+                    models.DateField(auto_now_add=True, verbose_name="Vigencia Desde"),
+                ),
+                (
+                    "vigencia_hasta",
+                    models.DateField(
+                        blank=True, null=True, verbose_name="Vigencia Hasta"
+                    ),
+                ),
+                ("fecha_creacion", models.DateTimeField(auto_now_add=True)),
+                ("fecha_modificacion", models.DateTimeField(auto_now=True)),
+            ],
+            options={
+                "verbose_name": "Ubicación de Institución",
+                "verbose_name_plural": "Ubicaciones de Institución",
+                "ordering": ["-es_principal", "rol_ubicacion"],
+            },
+        ),
+        migrations.CreateModel(
+            name="ModalidadCursada",
+            fields=[
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "nombre",
+                    models.CharField(
+                        max_length=100, verbose_name="Nombre de la modalidad"
+                    ),
+                ),
+                (
+                    "descripcion",
+                    models.TextField(blank=True, null=True, verbose_name="Descripción"),
+                ),
+                ("activo", models.BooleanField(default=True, verbose_name="Activo")),
+            ],
+            options={
+                "verbose_name": "Modalidad de Cursado",
+                "verbose_name_plural": "Modalidades de Cursado",
+                "ordering": ["nombre"],
+            },
+        ),
+        migrations.CreateModel(
+            name="ModalidadInstitucional",
+            fields=[
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "nombre",
+                    models.CharField(
+                        max_length=100, verbose_name="Nombre de la modalidad"
+                    ),
+                ),
+                (
+                    "descripcion",
+                    models.TextField(blank=True, null=True, verbose_name="Descripción"),
+                ),
+                ("activo", models.BooleanField(default=True, verbose_name="Activo")),
+                ("fecha_creacion", models.DateTimeField(auto_now_add=True)),
+                ("fecha_modificacion", models.DateTimeField(auto_now=True)),
+            ],
+            options={
+                "verbose_name": "Modalidad Institucional",
+                "verbose_name_plural": "Modalidades Institucionales",
+                "ordering": ["nombre"],
+            },
+        ),
+        migrations.CreateModel(
+            name="OfertaInstitucional",
+            fields=[
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "deleted_at",
+                    models.DateTimeField(blank=True, db_index=True, null=True),
+                ),
+                (
+                    "nombre_local",
+                    models.CharField(
+                        blank=True,
+                        max_length=255,
+                        verbose_name="Nombre Local (si aplica)",
+                    ),
+                ),
+                ("ciclo_lectivo", models.IntegerField(verbose_name="Ciclo Lectivo")),
+                (
+                    "plan_externo_id",
+                    models.CharField(
+                        blank=True,
+                        max_length=100,
+                        null=True,
+                        verbose_name="ID Plan Externo",
+                    ),
+                ),
+                (
+                    "estado",
+                    models.CharField(
+                        choices=[
+                            ("planificada", "Planificada"),
+                            ("aprobada", "Aprobada"),
+                            ("publicada", "Publicada"),
+                            ("cerrada", "Cerrada"),
+                            ("cancelada", "Cancelada"),
+                        ],
+                        default="planificada",
+                        max_length=20,
+                        verbose_name="Estado de Oferta",
+                    ),
+                ),
+                (
+                    "aprobacion_jurisdiccion",
+                    models.BooleanField(
+                        default=False, verbose_name="Aprobación de Jurisdicción"
+                    ),
+                ),
+                (
+                    "aprobacion_inet",
+                    models.BooleanField(default=False, verbose_name="Aprobación INET"),
+                ),
+                (
+                    "fecha_publicacion",
+                    models.DateField(
+                        blank=True, null=True, verbose_name="Fecha de Publicación"
+                    ),
+                ),
+                (
+                    "observaciones",
+                    models.TextField(
+                        blank=True, null=True, verbose_name="Observaciones"
+                    ),
+                ),
+                ("fecha_creacion", models.DateTimeField(auto_now_add=True)),
+                ("fecha_modificacion", models.DateTimeField(auto_now=True)),
+            ],
+            options={
+                "verbose_name": "Oferta Institucional",
+                "verbose_name_plural": "Ofertas Institucionales",
+                "ordering": ["-ciclo_lectivo"],
             },
             managers=[
-                ('objects', core.soft_delete.base.SoftDeleteManager()),
-                ('all_objects', core.soft_delete.base.SoftDeleteManager(include_deleted=True)),
+                ("objects", core.soft_delete.base.SoftDeleteManager()),
+                (
+                    "all_objects",
+                    core.soft_delete.base.SoftDeleteManager(include_deleted=True),
+                ),
             ],
         ),
         migrations.CreateModel(
-            name='TituloReferencia',
+            name="PlanVersionCurricular",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('deleted_at', models.DateTimeField(blank=True, db_index=True, null=True)),
-                ('codigo_referencia', models.CharField(blank=True, max_length=50, null=True, verbose_name='Código de Referencia')),
-                ('nombre', models.CharField(max_length=200, verbose_name='Nombre del título')),
-                ('descripcion', models.TextField(blank=True, null=True, verbose_name='Descripción')),
-                ('activo', models.BooleanField(default=True, verbose_name='Activo')),
-                ('deleted_by', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='+', to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "deleted_at",
+                    models.DateTimeField(blank=True, db_index=True, null=True),
+                ),
+                (
+                    "normativa",
+                    models.CharField(
+                        blank=True, max_length=200, null=True, verbose_name="Normativa"
+                    ),
+                ),
+                (
+                    "version",
+                    models.CharField(
+                        blank=True, max_length=50, null=True, verbose_name="Versión"
+                    ),
+                ),
+                (
+                    "horas_reloj",
+                    models.PositiveIntegerField(
+                        blank=True, null=True, verbose_name="Horas Reloj"
+                    ),
+                ),
+                (
+                    "nivel_requerido",
+                    models.CharField(
+                        blank=True,
+                        max_length=100,
+                        null=True,
+                        verbose_name="Nivel Requerido",
+                    ),
+                ),
+                (
+                    "nivel_certifica",
+                    models.CharField(
+                        blank=True,
+                        max_length=100,
+                        null=True,
+                        verbose_name="Nivel que Certifica",
+                    ),
+                ),
+                (
+                    "frecuencia",
+                    models.CharField(
+                        blank=True, max_length=100, null=True, verbose_name="Frecuencia"
+                    ),
+                ),
+                ("activo", models.BooleanField(default=True, verbose_name="Activo")),
+                (
+                    "deleted_by",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="+",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    "modalidad_cursada",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.PROTECT,
+                        related_name="planes",
+                        to="VAT.modalidadcursada",
+                        verbose_name="Modalidad de Cursado",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Título de Referencia',
-                'verbose_name_plural': 'Títulos de Referencia',
-                'ordering': ['nombre'],
+                "verbose_name": "Plan / Versión Curricular",
+                "verbose_name_plural": "Planes / Versiones Curriculares",
+                "ordering": ["titulo_referencia", "modalidad_cursada"],
             },
             managers=[
-                ('objects', core.soft_delete.base.SoftDeleteManager()),
-                ('all_objects', core.soft_delete.base.SoftDeleteManager(include_deleted=True)),
+                ("objects", core.soft_delete.base.SoftDeleteManager()),
+                (
+                    "all_objects",
+                    core.soft_delete.base.SoftDeleteManager(include_deleted=True),
+                ),
             ],
         ),
         migrations.CreateModel(
-            name='Voucher',
+            name="ResultadoEvaluacion",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('deleted_at', models.DateTimeField(blank=True, db_index=True, null=True)),
-                ('cantidad_inicial', models.PositiveIntegerField(verbose_name='Cantidad Inicial')),
-                ('cantidad_usada', models.PositiveIntegerField(default=0, verbose_name='Cantidad Usada')),
-                ('cantidad_disponible', models.PositiveIntegerField(verbose_name='Cantidad Disponible')),
-                ('fecha_asignacion', models.DateField(auto_now_add=True, verbose_name='Fecha de Asignación')),
-                ('fecha_vencimiento', models.DateField(verbose_name='Fecha de Vencimiento')),
-                ('estado', models.CharField(choices=[('activo', 'Activo'), ('vencido', 'Vencido'), ('agotado', 'Agotado'), ('cancelado', 'Cancelado')], default='activo', max_length=20, verbose_name='Estado')),
-                ('fecha_creacion', models.DateTimeField(auto_now_add=True)),
-                ('fecha_modificacion', models.DateTimeField(auto_now=True)),
-                ('ciudadano', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='vat_vouchers', to='ciudadanos.ciudadano', verbose_name='Ciudadano')),
-                ('deleted_by', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='+', to=settings.AUTH_USER_MODEL)),
-                ('programa', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='vat_vouchers', to='core.programa', verbose_name='Programa')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "deleted_at",
+                    models.DateTimeField(blank=True, db_index=True, null=True),
+                ),
+                (
+                    "calificacion",
+                    models.DecimalField(
+                        blank=True,
+                        decimal_places=2,
+                        max_digits=5,
+                        null=True,
+                        verbose_name="Calificación",
+                    ),
+                ),
+                (
+                    "aprobo",
+                    models.BooleanField(blank=True, null=True, verbose_name="¿Aprobó?"),
+                ),
+                (
+                    "observaciones",
+                    models.TextField(
+                        blank=True, null=True, verbose_name="Observaciones"
+                    ),
+                ),
+                (
+                    "fecha_registro",
+                    models.DateTimeField(
+                        auto_now_add=True, verbose_name="Fecha de Registro"
+                    ),
+                ),
+                ("fecha_creacion", models.DateTimeField(auto_now_add=True)),
+                ("fecha_modificacion", models.DateTimeField(auto_now=True)),
+                (
+                    "deleted_by",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="+",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    "evaluacion",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="resultados",
+                        to="VAT.evaluacion",
+                        verbose_name="Evaluación",
+                    ),
+                ),
+                (
+                    "inscripcion",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="resultados_evaluacion",
+                        to="VAT.inscripcion",
+                        verbose_name="Inscripción",
+                    ),
+                ),
+                (
+                    "registrado_por",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.PROTECT,
+                        related_name="evaluaciones_registradas",
+                        to=settings.AUTH_USER_MODEL,
+                        verbose_name="Registrado por",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Voucher',
-                'verbose_name_plural': 'Vouchers',
-                'ordering': ['-fecha_asignacion'],
+                "verbose_name": "Resultado de Evaluación",
+                "verbose_name_plural": "Resultados de Evaluación",
+                "ordering": ["-fecha_registro"],
             },
             managers=[
-                ('objects', core.soft_delete.base.SoftDeleteManager()),
-                ('all_objects', core.soft_delete.base.SoftDeleteManager(include_deleted=True)),
+                ("objects", core.soft_delete.base.SoftDeleteManager()),
+                (
+                    "all_objects",
+                    core.soft_delete.base.SoftDeleteManager(include_deleted=True),
+                ),
             ],
         ),
         migrations.CreateModel(
-            name='VoucherLog',
+            name="Sector",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('tipo_evento', models.CharField(choices=[('asignacion', 'Asignación'), ('recarga', 'Recarga'), ('uso', 'Uso'), ('vencimiento', 'Vencimiento'), ('cancelacion', 'Cancelación')], max_length=20, verbose_name='Tipo de Evento')),
-                ('cantidad_afectada', models.IntegerField(verbose_name='Cantidad Afectada')),
-                ('fecha_evento', models.DateTimeField(auto_now_add=True, verbose_name='Fecha del Evento')),
-                ('detalles', models.JSONField(blank=True, default=dict, verbose_name='Detalles Adicionales')),
-                ('usuario', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='vat_logs_voucher', to=settings.AUTH_USER_MODEL, verbose_name='Usuario')),
-                ('voucher', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='logs', to='VAT.voucher', verbose_name='Voucher')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "deleted_at",
+                    models.DateTimeField(blank=True, db_index=True, null=True),
+                ),
+                (
+                    "nombre",
+                    models.CharField(max_length=100, verbose_name="Nombre del sector"),
+                ),
+                (
+                    "descripcion",
+                    models.TextField(blank=True, null=True, verbose_name="Descripción"),
+                ),
+                (
+                    "deleted_by",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="+",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Log de Voucher',
-                'verbose_name_plural': 'Logs de Voucher',
-                'ordering': ['-fecha_evento'],
-            },
-        ),
-        migrations.CreateModel(
-            name='VoucherRecarga',
-            fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('deleted_at', models.DateTimeField(blank=True, db_index=True, null=True)),
-                ('cantidad', models.PositiveIntegerField(verbose_name='Cantidad Recargada')),
-                ('fecha_recarga', models.DateTimeField(auto_now_add=True, verbose_name='Fecha de Recarga')),
-                ('motivo', models.CharField(choices=[('automatica', 'Recarga Automática'), ('manual', 'Recarga Manual'), ('ajuste', 'Ajuste'), ('compensacion', 'Compensación')], max_length=20, verbose_name='Motivo de Recarga')),
-                ('autorizado_por', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='vat_recargas_voucher', to=settings.AUTH_USER_MODEL, verbose_name='Autorizado por')),
-                ('deleted_by', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='+', to=settings.AUTH_USER_MODEL)),
-                ('voucher', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='recargas', to='VAT.voucher', verbose_name='Voucher')),
-            ],
-            options={
-                'verbose_name': 'Recarga de Voucher',
-                'verbose_name_plural': 'Recargas de Voucher',
-                'ordering': ['-fecha_recarga'],
-            },
-            managers=[
-                ('objects', core.soft_delete.base.SoftDeleteManager()),
-                ('all_objects', core.soft_delete.base.SoftDeleteManager(include_deleted=True)),
-            ],
-        ),
-        migrations.CreateModel(
-            name='VoucherUso',
-            fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('deleted_at', models.DateTimeField(blank=True, db_index=True, null=True)),
-                ('cantidad_usada', models.PositiveIntegerField(verbose_name='Cantidad Usada')),
-                ('fecha_uso', models.DateTimeField(auto_now_add=True, verbose_name='Fecha de Uso')),
-                ('deleted_by', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='+', to=settings.AUTH_USER_MODEL)),
-                ('inscripcion_oferta', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='vat_voucher_usos', to='VAT.inscripcionoferta', verbose_name='Inscripción a Oferta')),
-                ('voucher', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='usos', to='VAT.voucher', verbose_name='Voucher')),
-            ],
-            options={
-                'verbose_name': 'Uso de Voucher',
-                'verbose_name_plural': 'Usos de Voucher',
-                'ordering': ['-fecha_uso'],
+                "verbose_name": "Sector",
+                "verbose_name_plural": "Sectores",
+                "ordering": ["nombre"],
             },
             managers=[
-                ('objects', core.soft_delete.base.SoftDeleteManager()),
-                ('all_objects', core.soft_delete.base.SoftDeleteManager(include_deleted=True)),
+                ("objects", core.soft_delete.base.SoftDeleteManager()),
+                (
+                    "all_objects",
+                    core.soft_delete.base.SoftDeleteManager(include_deleted=True),
+                ),
+            ],
+        ),
+        migrations.CreateModel(
+            name="SesionComision",
+            fields=[
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "numero_sesion",
+                    models.PositiveIntegerField(verbose_name="Número de sesión"),
+                ),
+                ("fecha", models.DateField(verbose_name="Fecha")),
+                (
+                    "estado",
+                    models.CharField(
+                        choices=[
+                            ("programada", "Programada"),
+                            ("realizada", "Realizada"),
+                            ("cancelada", "Cancelada"),
+                        ],
+                        default="programada",
+                        max_length=20,
+                        verbose_name="Estado",
+                    ),
+                ),
+                (
+                    "observaciones",
+                    models.TextField(
+                        blank=True, null=True, verbose_name="Observaciones"
+                    ),
+                ),
+                ("fecha_creacion", models.DateTimeField(auto_now_add=True)),
+                (
+                    "comision",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="sesiones",
+                        to="VAT.comision",
+                        verbose_name="Comisión",
+                    ),
+                ),
+                (
+                    "horario",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="sesiones",
+                        to="VAT.comisionhorario",
+                        verbose_name="Horario",
+                    ),
+                ),
+            ],
+            options={
+                "verbose_name": "Sesión de Comisión",
+                "verbose_name_plural": "Sesiones de Comisión",
+                "ordering": ["fecha", "horario__hora_desde"],
+            },
+        ),
+        migrations.CreateModel(
+            name="Subsector",
+            fields=[
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "deleted_at",
+                    models.DateTimeField(blank=True, db_index=True, null=True),
+                ),
+                (
+                    "nombre",
+                    models.CharField(
+                        max_length=100, verbose_name="Nombre del subsector"
+                    ),
+                ),
+                (
+                    "descripcion",
+                    models.TextField(blank=True, null=True, verbose_name="Descripción"),
+                ),
+                (
+                    "deleted_by",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="+",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    "sector",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="subsectores",
+                        to="VAT.sector",
+                        verbose_name="Sector",
+                    ),
+                ),
+            ],
+            options={
+                "verbose_name": "Subsector",
+                "verbose_name_plural": "Subsectores",
+                "ordering": ["sector", "nombre"],
+            },
+            managers=[
+                ("objects", core.soft_delete.base.SoftDeleteManager()),
+                (
+                    "all_objects",
+                    core.soft_delete.base.SoftDeleteManager(include_deleted=True),
+                ),
+            ],
+        ),
+        migrations.CreateModel(
+            name="TituloReferencia",
+            fields=[
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "deleted_at",
+                    models.DateTimeField(blank=True, db_index=True, null=True),
+                ),
+                (
+                    "codigo_referencia",
+                    models.CharField(
+                        blank=True,
+                        max_length=50,
+                        null=True,
+                        verbose_name="Código de Referencia",
+                    ),
+                ),
+                (
+                    "nombre",
+                    models.CharField(max_length=200, verbose_name="Nombre del título"),
+                ),
+                (
+                    "descripcion",
+                    models.TextField(blank=True, null=True, verbose_name="Descripción"),
+                ),
+                ("activo", models.BooleanField(default=True, verbose_name="Activo")),
+                (
+                    "deleted_by",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="+",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+            ],
+            options={
+                "verbose_name": "Título de Referencia",
+                "verbose_name_plural": "Títulos de Referencia",
+                "ordering": ["nombre"],
+            },
+            managers=[
+                ("objects", core.soft_delete.base.SoftDeleteManager()),
+                (
+                    "all_objects",
+                    core.soft_delete.base.SoftDeleteManager(include_deleted=True),
+                ),
+            ],
+        ),
+        migrations.CreateModel(
+            name="Voucher",
+            fields=[
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "deleted_at",
+                    models.DateTimeField(blank=True, db_index=True, null=True),
+                ),
+                (
+                    "cantidad_inicial",
+                    models.PositiveIntegerField(verbose_name="Cantidad Inicial"),
+                ),
+                (
+                    "cantidad_usada",
+                    models.PositiveIntegerField(
+                        default=0, verbose_name="Cantidad Usada"
+                    ),
+                ),
+                (
+                    "cantidad_disponible",
+                    models.PositiveIntegerField(verbose_name="Cantidad Disponible"),
+                ),
+                (
+                    "fecha_asignacion",
+                    models.DateField(
+                        auto_now_add=True, verbose_name="Fecha de Asignación"
+                    ),
+                ),
+                (
+                    "fecha_vencimiento",
+                    models.DateField(verbose_name="Fecha de Vencimiento"),
+                ),
+                (
+                    "estado",
+                    models.CharField(
+                        choices=[
+                            ("activo", "Activo"),
+                            ("vencido", "Vencido"),
+                            ("agotado", "Agotado"),
+                            ("cancelado", "Cancelado"),
+                        ],
+                        default="activo",
+                        max_length=20,
+                        verbose_name="Estado",
+                    ),
+                ),
+                ("fecha_creacion", models.DateTimeField(auto_now_add=True)),
+                ("fecha_modificacion", models.DateTimeField(auto_now=True)),
+                (
+                    "ciudadano",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="vat_vouchers",
+                        to="ciudadanos.ciudadano",
+                        verbose_name="Ciudadano",
+                    ),
+                ),
+                (
+                    "deleted_by",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="+",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    "programa",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.PROTECT,
+                        related_name="vat_vouchers",
+                        to="core.programa",
+                        verbose_name="Programa",
+                    ),
+                ),
+            ],
+            options={
+                "verbose_name": "Voucher",
+                "verbose_name_plural": "Vouchers",
+                "ordering": ["-fecha_asignacion"],
+            },
+            managers=[
+                ("objects", core.soft_delete.base.SoftDeleteManager()),
+                (
+                    "all_objects",
+                    core.soft_delete.base.SoftDeleteManager(include_deleted=True),
+                ),
+            ],
+        ),
+        migrations.CreateModel(
+            name="VoucherLog",
+            fields=[
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "tipo_evento",
+                    models.CharField(
+                        choices=[
+                            ("asignacion", "Asignación"),
+                            ("recarga", "Recarga"),
+                            ("uso", "Uso"),
+                            ("vencimiento", "Vencimiento"),
+                            ("cancelacion", "Cancelación"),
+                        ],
+                        max_length=20,
+                        verbose_name="Tipo de Evento",
+                    ),
+                ),
+                (
+                    "cantidad_afectada",
+                    models.IntegerField(verbose_name="Cantidad Afectada"),
+                ),
+                (
+                    "fecha_evento",
+                    models.DateTimeField(
+                        auto_now_add=True, verbose_name="Fecha del Evento"
+                    ),
+                ),
+                (
+                    "detalles",
+                    models.JSONField(
+                        blank=True, default=dict, verbose_name="Detalles Adicionales"
+                    ),
+                ),
+                (
+                    "usuario",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.PROTECT,
+                        related_name="vat_logs_voucher",
+                        to=settings.AUTH_USER_MODEL,
+                        verbose_name="Usuario",
+                    ),
+                ),
+                (
+                    "voucher",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="logs",
+                        to="VAT.voucher",
+                        verbose_name="Voucher",
+                    ),
+                ),
+            ],
+            options={
+                "verbose_name": "Log de Voucher",
+                "verbose_name_plural": "Logs de Voucher",
+                "ordering": ["-fecha_evento"],
+            },
+        ),
+        migrations.CreateModel(
+            name="VoucherRecarga",
+            fields=[
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "deleted_at",
+                    models.DateTimeField(blank=True, db_index=True, null=True),
+                ),
+                (
+                    "cantidad",
+                    models.PositiveIntegerField(verbose_name="Cantidad Recargada"),
+                ),
+                (
+                    "fecha_recarga",
+                    models.DateTimeField(
+                        auto_now_add=True, verbose_name="Fecha de Recarga"
+                    ),
+                ),
+                (
+                    "motivo",
+                    models.CharField(
+                        choices=[
+                            ("automatica", "Recarga Automática"),
+                            ("manual", "Recarga Manual"),
+                            ("ajuste", "Ajuste"),
+                            ("compensacion", "Compensación"),
+                        ],
+                        max_length=20,
+                        verbose_name="Motivo de Recarga",
+                    ),
+                ),
+                (
+                    "autorizado_por",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.PROTECT,
+                        related_name="vat_recargas_voucher",
+                        to=settings.AUTH_USER_MODEL,
+                        verbose_name="Autorizado por",
+                    ),
+                ),
+                (
+                    "deleted_by",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="+",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    "voucher",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="recargas",
+                        to="VAT.voucher",
+                        verbose_name="Voucher",
+                    ),
+                ),
+            ],
+            options={
+                "verbose_name": "Recarga de Voucher",
+                "verbose_name_plural": "Recargas de Voucher",
+                "ordering": ["-fecha_recarga"],
+            },
+            managers=[
+                ("objects", core.soft_delete.base.SoftDeleteManager()),
+                (
+                    "all_objects",
+                    core.soft_delete.base.SoftDeleteManager(include_deleted=True),
+                ),
+            ],
+        ),
+        migrations.CreateModel(
+            name="VoucherUso",
+            fields=[
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "deleted_at",
+                    models.DateTimeField(blank=True, db_index=True, null=True),
+                ),
+                (
+                    "cantidad_usada",
+                    models.PositiveIntegerField(verbose_name="Cantidad Usada"),
+                ),
+                (
+                    "fecha_uso",
+                    models.DateTimeField(
+                        auto_now_add=True, verbose_name="Fecha de Uso"
+                    ),
+                ),
+                (
+                    "deleted_by",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="+",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    "inscripcion_oferta",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="vat_voucher_usos",
+                        to="VAT.inscripcionoferta",
+                        verbose_name="Inscripción a Oferta",
+                    ),
+                ),
+                (
+                    "voucher",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="usos",
+                        to="VAT.voucher",
+                        verbose_name="Voucher",
+                    ),
+                ),
+            ],
+            options={
+                "verbose_name": "Uso de Voucher",
+                "verbose_name_plural": "Usos de Voucher",
+                "ordering": ["-fecha_uso"],
+            },
+            managers=[
+                ("objects", core.soft_delete.base.SoftDeleteManager()),
+                (
+                    "all_objects",
+                    core.soft_delete.base.SoftDeleteManager(include_deleted=True),
+                ),
             ],
         ),
         migrations.RemoveField(
-            model_name='actividad',
-            name='categoria',
+            model_name="actividad",
+            name="categoria",
         ),
         migrations.RemoveField(
-            model_name='actividad',
-            name='deleted_by',
+            model_name="actividad",
+            name="deleted_by",
         ),
         migrations.RemoveField(
-            model_name='actividadcentro',
-            name='actividad',
+            model_name="actividadcentro",
+            name="actividad",
         ),
         migrations.RemoveField(
-            model_name='actividadcentro',
-            name='centro',
+            model_name="actividadcentro",
+            name="centro",
         ),
         migrations.RemoveField(
-            model_name='actividadcentro',
-            name='deleted_by',
+            model_name="actividadcentro",
+            name="deleted_by",
         ),
         migrations.RemoveField(
-            model_name='actividadcentro',
-            name='dias',
+            model_name="actividadcentro",
+            name="dias",
         ),
         migrations.RemoveField(
-            model_name='actividadcentro',
-            name='sexoact',
+            model_name="actividadcentro",
+            name="sexoact",
         ),
         migrations.RemoveField(
-            model_name='asistencia',
-            name='encuentro',
+            model_name="asistencia",
+            name="encuentro",
         ),
         migrations.RemoveField(
-            model_name='asistencia',
-            name='participante',
+            model_name="asistencia",
+            name="participante",
         ),
         migrations.RemoveField(
-            model_name='asistencia',
-            name='registrado_por',
+            model_name="asistencia",
+            name="registrado_por",
         ),
         migrations.RemoveField(
-            model_name='beneficiario',
-            name='actividades_detalle',
+            model_name="beneficiario",
+            name="actividades_detalle",
         ),
         migrations.RemoveField(
-            model_name='beneficiario',
-            name='creado_por',
+            model_name="beneficiario",
+            name="creado_por",
         ),
         migrations.RemoveField(
-            model_name='beneficiario',
-            name='deleted_by',
+            model_name="beneficiario",
+            name="deleted_by",
         ),
         migrations.RemoveField(
-            model_name='beneficiario',
-            name='localidad',
+            model_name="beneficiario",
+            name="localidad",
         ),
         migrations.RemoveField(
-            model_name='beneficiario',
-            name='municipio',
+            model_name="beneficiario",
+            name="municipio",
         ),
         migrations.RemoveField(
-            model_name='beneficiario',
-            name='provincia',
+            model_name="beneficiario",
+            name="provincia",
         ),
         migrations.RemoveField(
-            model_name='beneficiario',
-            name='responsable',
+            model_name="beneficiario",
+            name="responsable",
         ),
         migrations.RemoveField(
-            model_name='beneficiarioresponsable',
-            name='beneficiario',
+            model_name="beneficiarioresponsable",
+            name="beneficiario",
         ),
         migrations.RemoveField(
-            model_name='beneficiarioresponsable',
-            name='deleted_by',
+            model_name="beneficiarioresponsable",
+            name="deleted_by",
         ),
         migrations.RemoveField(
-            model_name='beneficiarioresponsable',
-            name='responsable',
+            model_name="beneficiarioresponsable",
+            name="responsable",
         ),
         migrations.DeleteModel(
-            name='BeneficiariosResponsablesRenaper',
+            name="BeneficiariosResponsablesRenaper",
         ),
         migrations.RemoveField(
-            model_name='categoria',
-            name='deleted_by',
+            model_name="categoria",
+            name="deleted_by",
         ),
         migrations.RemoveField(
-            model_name='encuentro',
-            name='actividad_centro',
+            model_name="encuentro",
+            name="actividad_centro",
         ),
         migrations.RemoveField(
-            model_name='participanteactividad',
-            name='actividad_centro',
+            model_name="participanteactividad",
+            name="actividad_centro",
         ),
         migrations.RemoveField(
-            model_name='participanteactividad',
-            name='ciudadano',
+            model_name="participanteactividad",
+            name="ciudadano",
         ),
         migrations.RemoveField(
-            model_name='participanteactividad',
-            name='deleted_by',
+            model_name="participanteactividad",
+            name="deleted_by",
         ),
         migrations.RemoveField(
-            model_name='participanteactividadhistorial',
-            name='participante',
+            model_name="participanteactividadhistorial",
+            name="participante",
         ),
         migrations.RemoveField(
-            model_name='participanteactividadhistorial',
-            name='usuario',
+            model_name="participanteactividadhistorial",
+            name="usuario",
         ),
         migrations.RemoveField(
-            model_name='responsable',
-            name='creado_por',
+            model_name="responsable",
+            name="creado_por",
         ),
         migrations.RemoveField(
-            model_name='responsable',
-            name='deleted_by',
+            model_name="responsable",
+            name="deleted_by",
         ),
         migrations.RemoveField(
-            model_name='responsable',
-            name='localidad',
+            model_name="responsable",
+            name="localidad",
         ),
         migrations.RemoveField(
-            model_name='responsable',
-            name='municipio',
+            model_name="responsable",
+            name="municipio",
         ),
         migrations.RemoveField(
-            model_name='responsable',
-            name='provincia',
+            model_name="responsable",
+            name="provincia",
         ),
         migrations.DeleteModel(
-            name='PadronBeneficiarios',
+            name="PadronBeneficiarios",
         ),
         migrations.AddField(
-            model_name='centro',
-            name='clase_institucion',
-            field=models.CharField(blank=True, max_length=50, null=True, verbose_name='Clase de Institución'),
+            model_name="centro",
+            name="clase_institucion",
+            field=models.CharField(
+                blank=True,
+                max_length=50,
+                null=True,
+                verbose_name="Clase de Institución",
+            ),
         ),
         migrations.AddField(
-            model_name='centro',
-            name='fecha_alta',
-            field=models.DateField(blank=True, null=True, verbose_name='Fecha de Alta'),
+            model_name="centro",
+            name="fecha_alta",
+            field=models.DateField(blank=True, null=True, verbose_name="Fecha de Alta"),
         ),
         migrations.AddField(
-            model_name='centro',
-            name='situacion',
-            field=models.CharField(blank=True, max_length=50, null=True, verbose_name='Situación'),
+            model_name="centro",
+            name="situacion",
+            field=models.CharField(
+                blank=True, max_length=50, null=True, verbose_name="Situación"
+            ),
         ),
         migrations.AddField(
-            model_name='centro',
-            name='tipo_gestion',
-            field=models.CharField(blank=True, max_length=50, null=True, verbose_name='Tipo de Gestión'),
+            model_name="centro",
+            name="tipo_gestion",
+            field=models.CharField(
+                blank=True, max_length=50, null=True, verbose_name="Tipo de Gestión"
+            ),
         ),
         migrations.DeleteModel(
-            name='Actividad',
+            name="Actividad",
         ),
         migrations.DeleteModel(
-            name='ActividadCentro',
+            name="ActividadCentro",
         ),
         migrations.DeleteModel(
-            name='Asistencia',
+            name="Asistencia",
         ),
         migrations.DeleteModel(
-            name='Beneficiario',
+            name="Beneficiario",
         ),
         migrations.DeleteModel(
-            name='BeneficiarioResponsable',
+            name="BeneficiarioResponsable",
         ),
         migrations.DeleteModel(
-            name='Categoria',
+            name="Categoria",
         ),
         migrations.DeleteModel(
-            name='Encuentro',
+            name="Encuentro",
         ),
         migrations.DeleteModel(
-            name='ParticipanteActividad',
+            name="ParticipanteActividad",
         ),
         migrations.DeleteModel(
-            name='ParticipanteActividadHistorial',
+            name="ParticipanteActividadHistorial",
         ),
         migrations.DeleteModel(
-            name='Responsable',
+            name="Responsable",
         ),
         migrations.AddField(
-            model_name='planversioncurricular',
-            name='titulo_referencia',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='planes', to='VAT.tituloreferencia', verbose_name='Título de Referencia'),
+            model_name="planversioncurricular",
+            name="titulo_referencia",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.PROTECT,
+                related_name="planes",
+                to="VAT.tituloreferencia",
+                verbose_name="Título de Referencia",
+            ),
         ),
         migrations.AddField(
-            model_name='ofertainstitucional',
-            name='centro',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='ofertas_institucionales', to='VAT.centro', verbose_name='Centro'),
+            model_name="ofertainstitucional",
+            name="centro",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="ofertas_institucionales",
+                to="VAT.centro",
+                verbose_name="Centro",
+            ),
         ),
         migrations.AddField(
-            model_name='ofertainstitucional',
-            name='deleted_by',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='+', to=settings.AUTH_USER_MODEL),
+            model_name="ofertainstitucional",
+            name="deleted_by",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name="+",
+                to=settings.AUTH_USER_MODEL,
+            ),
         ),
         migrations.AddField(
-            model_name='ofertainstitucional',
-            name='plan_curricular',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='ofertas_institucionales', to='VAT.planversioncurricular', verbose_name='Plan Curricular'),
+            model_name="ofertainstitucional",
+            name="plan_curricular",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.PROTECT,
+                related_name="ofertas_institucionales",
+                to="VAT.planversioncurricular",
+                verbose_name="Plan Curricular",
+            ),
         ),
         migrations.AddField(
-            model_name='ofertainstitucional',
-            name='programa',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='ofertas_vat', to='core.programa', verbose_name='Programa'),
+            model_name="ofertainstitucional",
+            name="programa",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.PROTECT,
+                related_name="ofertas_vat",
+                to="core.programa",
+                verbose_name="Programa",
+            ),
         ),
         migrations.AddField(
-            model_name='institucionubicacion',
-            name='centro',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='ubicaciones', to='VAT.centro', verbose_name='Centro'),
+            model_name="institucionubicacion",
+            name="centro",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="ubicaciones",
+                to="VAT.centro",
+                verbose_name="Centro",
+            ),
         ),
         migrations.AddField(
-            model_name='institucionubicacion',
-            name='localidad',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='instituciones_ubicacion', to='core.localidad', verbose_name='Localidad'),
+            model_name="institucionubicacion",
+            name="localidad",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.PROTECT,
+                related_name="instituciones_ubicacion",
+                to="core.localidad",
+                verbose_name="Localidad",
+            ),
         ),
         migrations.AddField(
-            model_name='institucionidentificadorhist',
-            name='centro',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='identificadores_hist', to='VAT.centro', verbose_name='Centro'),
+            model_name="institucionidentificadorhist",
+            name="centro",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="identificadores_hist",
+                to="VAT.centro",
+                verbose_name="Centro",
+            ),
         ),
         migrations.AddField(
-            model_name='institucioncontacto',
-            name='centro',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='contactos_adicionales', to='VAT.centro', verbose_name='Centro'),
+            model_name="institucioncontacto",
+            name="centro",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="contactos_adicionales",
+                to="VAT.centro",
+                verbose_name="Centro",
+            ),
         ),
         migrations.AddField(
-            model_name='comision',
-            name='oferta',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='comisiones', to='VAT.ofertainstitucional', verbose_name='Oferta Institucional'),
+            model_name="comision",
+            name="oferta",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="comisiones",
+                to="VAT.ofertainstitucional",
+                verbose_name="Oferta Institucional",
+            ),
         ),
         migrations.AddField(
-            model_name='comision',
-            name='ubicacion',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.PROTECT, related_name='comisiones', to='VAT.institucionubicacion', verbose_name='Ubicación'),
+            model_name="comision",
+            name="ubicacion",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.PROTECT,
+                related_name="comisiones",
+                to="VAT.institucionubicacion",
+                verbose_name="Ubicación",
+            ),
         ),
         migrations.AddField(
-            model_name='autoridadinstitucional',
-            name='centro',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='autoridades', to='VAT.centro', verbose_name='Centro'),
+            model_name="autoridadinstitucional",
+            name="centro",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="autoridades",
+                to="VAT.centro",
+                verbose_name="Centro",
+            ),
         ),
         migrations.AddField(
-            model_name='centro',
-            name='modalidad_institucional',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='vat_centros', to='VAT.modalidadinstitucional', verbose_name='Modalidad Institucional'),
+            model_name="centro",
+            name="modalidad_institucional",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name="vat_centros",
+                to="VAT.modalidadinstitucional",
+                verbose_name="Modalidad Institucional",
+            ),
         ),
         migrations.AddIndex(
-            model_name='voucheruso',
-            index=models.Index(fields=['voucher', 'fecha_uso'], name='vat_vuso_vouch_fecha_idx'),
+            model_name="voucheruso",
+            index=models.Index(
+                fields=["voucher", "fecha_uso"], name="vat_vuso_vouch_fecha_idx"
+            ),
         ),
         migrations.AddIndex(
-            model_name='voucherlog',
-            index=models.Index(fields=['voucher', 'fecha_evento'], name='vat_vlog_vouch_fecha_idx'),
+            model_name="voucherlog",
+            index=models.Index(
+                fields=["voucher", "fecha_evento"], name="vat_vlog_vouch_fecha_idx"
+            ),
         ),
         migrations.AddIndex(
-            model_name='voucherlog',
-            index=models.Index(fields=['tipo_evento'], name='vat_vlog_tipo_evt_idx'),
+            model_name="voucherlog",
+            index=models.Index(fields=["tipo_evento"], name="vat_vlog_tipo_evt_idx"),
         ),
         migrations.AddIndex(
-            model_name='voucher',
-            index=models.Index(fields=['ciudadano', 'estado'], name='vat_vouch_ciud_est_idx'),
+            model_name="voucher",
+            index=models.Index(
+                fields=["ciudadano", "estado"], name="vat_vouch_ciud_est_idx"
+            ),
         ),
         migrations.AddIndex(
-            model_name='voucher',
-            index=models.Index(fields=['estado'], name='vat_voucher_estado_idx'),
+            model_name="voucher",
+            index=models.Index(fields=["estado"], name="vat_voucher_estado_idx"),
         ),
         migrations.AddIndex(
-            model_name='voucher',
-            index=models.Index(fields=['fecha_vencimiento'], name='vat_voucher_vencimiento_idx'),
+            model_name="voucher",
+            index=models.Index(
+                fields=["fecha_vencimiento"], name="vat_voucher_vencimiento_idx"
+            ),
         ),
         migrations.AddIndex(
-            model_name='tituloreferencia',
-            index=models.Index(fields=['nombre'], name='vat_titref_nombre_idx'),
+            model_name="tituloreferencia",
+            index=models.Index(fields=["nombre"], name="vat_titref_nombre_idx"),
         ),
         migrations.AddIndex(
-            model_name='subsector',
-            index=models.Index(fields=['nombre'], name='vat_subsector_nombre_idx'),
+            model_name="subsector",
+            index=models.Index(fields=["nombre"], name="vat_subsector_nombre_idx"),
         ),
         migrations.AlterUniqueTogether(
-            name='subsector',
-            unique_together={('sector', 'nombre')},
+            name="subsector",
+            unique_together={("sector", "nombre")},
         ),
         migrations.AddIndex(
-            model_name='sesioncomision',
-            index=models.Index(fields=['comision', 'estado'], name='vat_sesion_comision_estado_idx'),
+            model_name="sesioncomision",
+            index=models.Index(
+                fields=["comision", "estado"], name="vat_sesion_comision_estado_idx"
+            ),
         ),
         migrations.AlterUniqueTogether(
-            name='sesioncomision',
-            unique_together={('comision', 'horario', 'fecha')},
+            name="sesioncomision",
+            unique_together={("comision", "horario", "fecha")},
         ),
         migrations.AddIndex(
-            model_name='sector',
-            index=models.Index(fields=['nombre'], name='vat_sector_nombre_idx'),
+            model_name="sector",
+            index=models.Index(fields=["nombre"], name="vat_sector_nombre_idx"),
         ),
         migrations.AddIndex(
-            model_name='resultadoevaluacion',
-            index=models.Index(fields=['evaluacion', 'aprobo'], name='vat_reseval_eval_apr_idx'),
+            model_name="resultadoevaluacion",
+            index=models.Index(
+                fields=["evaluacion", "aprobo"], name="vat_reseval_eval_apr_idx"
+            ),
         ),
         migrations.AlterUniqueTogether(
-            name='resultadoevaluacion',
-            unique_together={('evaluacion', 'inscripcion')},
+            name="resultadoevaluacion",
+            unique_together={("evaluacion", "inscripcion")},
         ),
         migrations.AlterUniqueTogether(
-            name='planversioncurricular',
-            unique_together={('titulo_referencia', 'modalidad_cursada', 'version')},
+            name="planversioncurricular",
+            unique_together={("titulo_referencia", "modalidad_cursada", "version")},
         ),
         migrations.AddIndex(
-            model_name='ofertainstitucional',
-            index=models.Index(fields=['centro', 'estado'], name='vat_ofeinst_ce_est_idx'),
+            model_name="ofertainstitucional",
+            index=models.Index(
+                fields=["centro", "estado"], name="vat_ofeinst_ce_est_idx"
+            ),
         ),
         migrations.AddIndex(
-            model_name='ofertainstitucional',
-            index=models.Index(fields=['estado'], name='vat_ofeinst_estado_idx'),
+            model_name="ofertainstitucional",
+            index=models.Index(fields=["estado"], name="vat_ofeinst_estado_idx"),
         ),
         migrations.AlterUniqueTogether(
-            name='ofertainstitucional',
-            unique_together={('centro', 'plan_curricular', 'ciclo_lectivo')},
+            name="ofertainstitucional",
+            unique_together={("centro", "plan_curricular", "ciclo_lectivo")},
         ),
         migrations.AlterUniqueTogether(
-            name='institucionubicacion',
-            unique_together={('centro', 'localidad', 'rol_ubicacion')},
+            name="institucionubicacion",
+            unique_together={("centro", "localidad", "rol_ubicacion")},
         ),
         migrations.AlterUniqueTogether(
-            name='institucionidentificadorhist',
-            unique_together={('centro', 'tipo_identificador', 'valor_identificador')},
+            name="institucionidentificadorhist",
+            unique_together={("centro", "tipo_identificador", "valor_identificador")},
         ),
         migrations.AlterUniqueTogether(
-            name='institucioncontacto',
-            unique_together={('centro', 'tipo', 'valor')},
+            name="institucioncontacto",
+            unique_together={("centro", "tipo", "valor")},
         ),
         migrations.AddIndex(
-            model_name='inscripcionoferta',
-            index=models.Index(fields=['oferta', 'estado'], name='vat_inscofe_ofe_est_idx'),
+            model_name="inscripcionoferta",
+            index=models.Index(
+                fields=["oferta", "estado"], name="vat_inscofe_ofe_est_idx"
+            ),
         ),
         migrations.AddIndex(
-            model_name='inscripcionoferta',
-            index=models.Index(fields=['estado'], name='vat_inscofe_estado_idx'),
+            model_name="inscripcionoferta",
+            index=models.Index(fields=["estado"], name="vat_inscofe_estado_idx"),
         ),
         migrations.AlterUniqueTogether(
-            name='inscripcionoferta',
-            unique_together={('oferta', 'ciudadano')},
+            name="inscripcionoferta",
+            unique_together={("oferta", "ciudadano")},
         ),
         migrations.AddIndex(
-            model_name='inscripcion',
-            index=models.Index(fields=['comision', 'estado'], name='vat_insc_com_est_idx'),
+            model_name="inscripcion",
+            index=models.Index(
+                fields=["comision", "estado"], name="vat_insc_com_est_idx"
+            ),
         ),
         migrations.AddIndex(
-            model_name='inscripcion',
-            index=models.Index(fields=['ciudadano', 'estado'], name='vat_insc_ciu_est_idx'),
+            model_name="inscripcion",
+            index=models.Index(
+                fields=["ciudadano", "estado"], name="vat_insc_ciu_est_idx"
+            ),
         ),
         migrations.AlterUniqueTogether(
-            name='inscripcion',
-            unique_together={('ciudadano', 'comision')},
+            name="inscripcion",
+            unique_together={("ciudadano", "comision")},
         ),
         migrations.AddIndex(
-            model_name='evaluacion',
-            index=models.Index(fields=['comision', 'tipo'], name='vat_eval_com_tipo_idx'),
+            model_name="evaluacion",
+            index=models.Index(
+                fields=["comision", "tipo"], name="vat_eval_com_tipo_idx"
+            ),
         ),
         migrations.AlterUniqueTogether(
-            name='comisionhorario',
-            unique_together={('comision', 'dia_semana', 'hora_desde', 'hora_hasta')},
+            name="comisionhorario",
+            unique_together={("comision", "dia_semana", "hora_desde", "hora_hasta")},
         ),
         migrations.AddIndex(
-            model_name='comision',
-            index=models.Index(fields=['oferta', 'estado'], name='vat_comision_oferta_estado_idx'),
+            model_name="comision",
+            index=models.Index(
+                fields=["oferta", "estado"], name="vat_comision_oferta_estado_idx"
+            ),
         ),
         migrations.CreateModel(
-            name='VoucherParametria',
+            name="VoucherParametria",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('nombre', models.CharField(max_length=200, verbose_name='Nombre')),
-                ('descripcion', models.TextField(blank=True, verbose_name='Descripción')),
-                ('cantidad_inicial', models.PositiveIntegerField(verbose_name='Créditos por ciudadano')),
-                ('fecha_vencimiento', models.DateField(verbose_name='Fecha de vencimiento')),
-                ('activa', models.BooleanField(default=True, verbose_name='Activa')),
-                ('fecha_creacion', models.DateTimeField(auto_now_add=True)),
-                ('programa', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='vat_voucher_parametrias', to='core.programa', verbose_name='Programa')),
-                ('creado_por', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='vat_voucher_parametrias_creadas', to=settings.AUTH_USER_MODEL, verbose_name='Creado por')),
-                ('renovacion_mensual', models.BooleanField(default=False, verbose_name='Renovación mensual')),
-                ('cantidad_renovacion', models.PositiveIntegerField(blank=True, help_text='Si está vacío se usa la cantidad inicial.', null=True, verbose_name='Créditos en cada renovación')),
-                ('renovacion_tipo', models.CharField(choices=[('suma', 'Sumar al saldo existente'), ('reinicia', 'Reiniciar al valor configurado')], default='suma', max_length=10, verbose_name='Tipo de renovación')),
-                ('inscripcion_unica_activa', models.BooleanField(default=False, help_text='Si está activado, el ciudadano solo puede tener una inscripción activa a la vez en comisiones de este programa. Debe completar o abandonar la inscripción actual antes de inscribirse en otra.', verbose_name='Inscripción única activa')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("nombre", models.CharField(max_length=200, verbose_name="Nombre")),
+                (
+                    "descripcion",
+                    models.TextField(blank=True, verbose_name="Descripción"),
+                ),
+                (
+                    "cantidad_inicial",
+                    models.PositiveIntegerField(verbose_name="Créditos por ciudadano"),
+                ),
+                (
+                    "fecha_vencimiento",
+                    models.DateField(verbose_name="Fecha de vencimiento"),
+                ),
+                ("activa", models.BooleanField(default=True, verbose_name="Activa")),
+                ("fecha_creacion", models.DateTimeField(auto_now_add=True)),
+                (
+                    "programa",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.PROTECT,
+                        related_name="vat_voucher_parametrias",
+                        to="core.programa",
+                        verbose_name="Programa",
+                    ),
+                ),
+                (
+                    "creado_por",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.PROTECT,
+                        related_name="vat_voucher_parametrias_creadas",
+                        to=settings.AUTH_USER_MODEL,
+                        verbose_name="Creado por",
+                    ),
+                ),
+                (
+                    "renovacion_mensual",
+                    models.BooleanField(
+                        default=False, verbose_name="Renovación mensual"
+                    ),
+                ),
+                (
+                    "cantidad_renovacion",
+                    models.PositiveIntegerField(
+                        blank=True,
+                        help_text="Si está vacío se usa la cantidad inicial.",
+                        null=True,
+                        verbose_name="Créditos en cada renovación",
+                    ),
+                ),
+                (
+                    "renovacion_tipo",
+                    models.CharField(
+                        choices=[
+                            ("suma", "Sumar al saldo existente"),
+                            ("reinicia", "Reiniciar al valor configurado"),
+                        ],
+                        default="suma",
+                        max_length=10,
+                        verbose_name="Tipo de renovación",
+                    ),
+                ),
+                (
+                    "inscripcion_unica_activa",
+                    models.BooleanField(
+                        default=False,
+                        help_text="Si está activado, el ciudadano solo puede tener una inscripción activa a la vez en comisiones de este programa. Debe completar o abandonar la inscripción actual antes de inscribirse en otra.",
+                        verbose_name="Inscripción única activa",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Parametría de Voucher',
-                'verbose_name_plural': 'Parametrías de Voucher',
-                'ordering': ['-fecha_creacion'],
+                "verbose_name": "Parametría de Voucher",
+                "verbose_name_plural": "Parametrías de Voucher",
+                "ordering": ["-fecha_creacion"],
             },
         ),
         migrations.AddField(
-            model_name='voucher',
-            name='parametria',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.PROTECT, related_name='vouchers', to='VAT.voucherparametria', verbose_name='Parametría'),
+            model_name="voucher",
+            name="parametria",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.PROTECT,
+                related_name="vouchers",
+                to="VAT.voucherparametria",
+                verbose_name="Parametría",
+            ),
         ),
         migrations.AddField(
-            model_name='voucher',
-            name='asignado_por',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.PROTECT, related_name='vat_vouchers_asignados', to=settings.AUTH_USER_MODEL, verbose_name='Asignado por'),
+            model_name="voucher",
+            name="asignado_por",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.PROTECT,
+                related_name="vat_vouchers_asignados",
+                to=settings.AUTH_USER_MODEL,
+                verbose_name="Asignado por",
+            ),
         ),
         migrations.RemoveField(
-            model_name='ofertainstitucional',
-            name='aprobacion_inet',
+            model_name="ofertainstitucional",
+            name="aprobacion_inet",
         ),
         migrations.RemoveField(
-            model_name='ofertainstitucional',
-            name='aprobacion_jurisdiccion',
+            model_name="ofertainstitucional",
+            name="aprobacion_jurisdiccion",
         ),
         migrations.AddField(
-            model_name='ofertainstitucional',
-            name='usa_voucher',
-            field=models.BooleanField(default=False, help_text='Si está activo, al inscribirse un ciudadano se valida y descuenta un crédito de su voucher.', verbose_name='Usa Voucher'),
+            model_name="ofertainstitucional",
+            name="usa_voucher",
+            field=models.BooleanField(
+                default=False,
+                help_text="Si está activo, al inscribirse un ciudadano se valida y descuenta un crédito de su voucher.",
+                verbose_name="Usa Voucher",
+            ),
         ),
         migrations.AddField(
-            model_name='ofertainstitucional',
-            name='costo',
-            field=models.DecimalField(decimal_places=2, default=0, help_text='Costo del curso en pesos. 0 = gratuito.', max_digits=10, verbose_name='Costo'),
+            model_name="ofertainstitucional",
+            name="costo",
+            field=models.DecimalField(
+                decimal_places=2,
+                default=0,
+                help_text="Costo del curso en pesos. 0 = gratuito.",
+                max_digits=10,
+                verbose_name="Costo",
+            ),
         ),
         migrations.CreateModel(
-            name='AsistenciaSesion',
+            name="AsistenciaSesion",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('presente', models.BooleanField(default=False, verbose_name='Presente')),
-                ('observaciones', models.TextField(blank=True, null=True, verbose_name='Observaciones')),
-                ('fecha_registro', models.DateTimeField(auto_now_add=True, verbose_name='Fecha de Registro')),
-                ('inscripcion', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='asistencias', to='VAT.inscripcion', verbose_name='Inscripción')),
-                ('registrado_por', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='asistencias_registradas', to=settings.AUTH_USER_MODEL, verbose_name='Registrado por')),
-                ('sesion', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='asistencias', to='VAT.sesioncomision', verbose_name='Sesión')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "presente",
+                    models.BooleanField(default=False, verbose_name="Presente"),
+                ),
+                (
+                    "observaciones",
+                    models.TextField(
+                        blank=True, null=True, verbose_name="Observaciones"
+                    ),
+                ),
+                (
+                    "fecha_registro",
+                    models.DateTimeField(
+                        auto_now_add=True, verbose_name="Fecha de Registro"
+                    ),
+                ),
+                (
+                    "inscripcion",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="asistencias",
+                        to="VAT.inscripcion",
+                        verbose_name="Inscripción",
+                    ),
+                ),
+                (
+                    "registrado_por",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.PROTECT,
+                        related_name="asistencias_registradas",
+                        to=settings.AUTH_USER_MODEL,
+                        verbose_name="Registrado por",
+                    ),
+                ),
+                (
+                    "sesion",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="asistencias",
+                        to="VAT.sesioncomision",
+                        verbose_name="Sesión",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Asistencia a Sesión',
-                'verbose_name_plural': 'Asistencias a Sesiones',
-                'indexes': [models.Index(fields=['sesion', 'presente'], name='vat_asist_ses_pres_idx')],
-                'unique_together': {('sesion', 'inscripcion')},
+                "verbose_name": "Asistencia a Sesión",
+                "verbose_name_plural": "Asistencias a Sesiones",
+                "indexes": [
+                    models.Index(
+                        fields=["sesion", "presente"], name="vat_asist_ses_pres_idx"
+                    )
+                ],
+                "unique_together": {("sesion", "inscripcion")},
             },
         ),
         migrations.AddField(
-            model_name='institucionubicacion',
-            name='nombre_ubicacion',
-            field=models.CharField(blank=True, help_text='Ejemplo: Sede Centro, Anexo Norte, Punto Barrio Sur.', max_length=120, null=True, verbose_name='Nombre de Ubicación'),
+            model_name="institucionubicacion",
+            name="nombre_ubicacion",
+            field=models.CharField(
+                blank=True,
+                help_text="Ejemplo: Sede Centro, Anexo Norte, Punto Barrio Sur.",
+                max_length=120,
+                null=True,
+                verbose_name="Nombre de Ubicación",
+            ),
         ),
         migrations.AddField(
-            model_name='institucionidentificadorhist',
-            name='ubicacion',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='identificadores_hist', to='VAT.institucionubicacion', verbose_name='Ubicación asociada'),
+            model_name="institucionidentificadorhist",
+            name="ubicacion",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name="identificadores_hist",
+                to="VAT.institucionubicacion",
+                verbose_name="Ubicación asociada",
+            ),
         ),
         migrations.AddField(
-            model_name='centro',
-            name='codigo_postal',
-            field=models.CharField(blank=True, max_length=20, null=True, verbose_name='Código Postal'),
+            model_name="centro",
+            name="codigo_postal",
+            field=models.CharField(
+                blank=True, max_length=20, null=True, verbose_name="Código Postal"
+            ),
         ),
         migrations.AddField(
-            model_name='centro',
-            name='entre_calles',
-            field=models.CharField(blank=True, max_length=255, null=True, verbose_name='Entre Calles'),
+            model_name="centro",
+            name="entre_calles",
+            field=models.CharField(
+                blank=True, max_length=255, null=True, verbose_name="Entre Calles"
+            ),
         ),
         migrations.AddField(
-            model_name='centro',
-            name='lote',
-            field=models.CharField(blank=True, max_length=100, null=True, verbose_name='Lote'),
+            model_name="centro",
+            name="lote",
+            field=models.CharField(
+                blank=True, max_length=100, null=True, verbose_name="Lote"
+            ),
         ),
         migrations.AddField(
-            model_name='centro',
-            name='manzana',
-            field=models.CharField(blank=True, max_length=100, null=True, verbose_name='Manzana'),
+            model_name="centro",
+            name="manzana",
+            field=models.CharField(
+                blank=True, max_length=100, null=True, verbose_name="Manzana"
+            ),
         ),
         migrations.AddField(
-            model_name='institucioncontacto',
-            name='email_contacto',
-            field=models.EmailField(blank=True, max_length=254, null=True, verbose_name='Correo del Contacto'),
+            model_name="institucioncontacto",
+            name="email_contacto",
+            field=models.EmailField(
+                blank=True,
+                max_length=254,
+                null=True,
+                verbose_name="Correo del Contacto",
+            ),
         ),
         migrations.AddField(
-            model_name='institucioncontacto',
-            name='nombre_contacto',
-            field=models.CharField(blank=True, max_length=255, null=True, verbose_name='Nombre del Contacto'),
+            model_name="institucioncontacto",
+            name="nombre_contacto",
+            field=models.CharField(
+                blank=True,
+                max_length=255,
+                null=True,
+                verbose_name="Nombre del Contacto",
+            ),
         ),
         migrations.AddField(
-            model_name='institucioncontacto',
-            name='rol_area',
-            field=models.CharField(blank=True, max_length=100, null=True, verbose_name='Rol / Área'),
+            model_name="institucioncontacto",
+            name="rol_area",
+            field=models.CharField(
+                blank=True, max_length=100, null=True, verbose_name="Rol / Área"
+            ),
         ),
         migrations.AddField(
-            model_name='institucioncontacto',
-            name='telefono_contacto',
-            field=models.CharField(blank=True, max_length=50, null=True, verbose_name='Teléfono del Contacto'),
+            model_name="institucioncontacto",
+            name="telefono_contacto",
+            field=models.CharField(
+                blank=True,
+                max_length=50,
+                null=True,
+                verbose_name="Teléfono del Contacto",
+            ),
         ),
         migrations.RemoveField(
-            model_name='centro',
-            name='fecha_alta',
+            model_name="centro",
+            name="fecha_alta",
         ),
         migrations.RemoveField(
-            model_name='centro',
-            name='foto',
+            model_name="centro",
+            name="foto",
         ),
         migrations.RemoveField(
-            model_name='centro',
-            name='link_redes',
+            model_name="centro",
+            name="link_redes",
         ),
         migrations.RemoveField(
-            model_name='centro',
-            name='modalidad_institucional',
+            model_name="centro",
+            name="modalidad_institucional",
         ),
         migrations.RemoveField(
-            model_name='centro',
-            name='organizacion_asociada',
+            model_name="centro",
+            name="organizacion_asociada",
         ),
         migrations.CreateModel(
-            name='Curso',
+            name="Curso",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('deleted_at', models.DateTimeField(blank=True, db_index=True, null=True)),
-                ('nombre', models.CharField(max_length=255, verbose_name='Nombre')),
-                ('fecha_inicio', models.DateField(verbose_name='Fecha de Inicio')),
-                ('fecha_fin', models.DateField(verbose_name='Fecha de Fin')),
-                ('cupo_total', models.PositiveIntegerField(verbose_name='Cupo Total')),
-                ('estado', models.CharField(choices=[('planificado', 'Planificado'), ('activo', 'Activo'), ('finalizado', 'Finalizado'), ('cancelado', 'Cancelado')], default='planificado', max_length=20, verbose_name='Estado')),
-                ('observaciones', models.TextField(blank=True, null=True, verbose_name='Observaciones')),
-                ('fecha_creacion', models.DateTimeField(auto_now_add=True)),
-                ('fecha_modificacion', models.DateTimeField(auto_now=True)),
-                ('centro', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='cursos', to='VAT.centro', verbose_name='Centro')),
-                ('deleted_by', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='+', to=settings.AUTH_USER_MODEL)),
-                ('modalidad', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='cursos', to='VAT.modalidadcursada', verbose_name='Modalidad')),
-                ('ubicacion', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='cursos', to='VAT.institucionubicacion', verbose_name='Ubicación')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "deleted_at",
+                    models.DateTimeField(blank=True, db_index=True, null=True),
+                ),
+                ("nombre", models.CharField(max_length=255, verbose_name="Nombre")),
+                ("fecha_inicio", models.DateField(verbose_name="Fecha de Inicio")),
+                ("fecha_fin", models.DateField(verbose_name="Fecha de Fin")),
+                ("cupo_total", models.PositiveIntegerField(verbose_name="Cupo Total")),
+                (
+                    "estado",
+                    models.CharField(
+                        choices=[
+                            ("planificado", "Planificado"),
+                            ("activo", "Activo"),
+                            ("finalizado", "Finalizado"),
+                            ("cancelado", "Cancelado"),
+                        ],
+                        default="planificado",
+                        max_length=20,
+                        verbose_name="Estado",
+                    ),
+                ),
+                (
+                    "observaciones",
+                    models.TextField(
+                        blank=True, null=True, verbose_name="Observaciones"
+                    ),
+                ),
+                ("fecha_creacion", models.DateTimeField(auto_now_add=True)),
+                ("fecha_modificacion", models.DateTimeField(auto_now=True)),
+                (
+                    "centro",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="cursos",
+                        to="VAT.centro",
+                        verbose_name="Centro",
+                    ),
+                ),
+                (
+                    "deleted_by",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="+",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    "modalidad",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.PROTECT,
+                        related_name="cursos",
+                        to="VAT.modalidadcursada",
+                        verbose_name="Modalidad",
+                    ),
+                ),
+                (
+                    "ubicacion",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.PROTECT,
+                        related_name="cursos",
+                        to="VAT.institucionubicacion",
+                        verbose_name="Ubicación",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Curso',
-                'verbose_name_plural': 'Cursos',
-                'ordering': ['-fecha_inicio', 'nombre'],
+                "verbose_name": "Curso",
+                "verbose_name_plural": "Cursos",
+                "ordering": ["-fecha_inicio", "nombre"],
             },
         ),
         migrations.CreateModel(
-            name='ComisionCurso',
+            name="ComisionCurso",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('deleted_at', models.DateTimeField(blank=True, db_index=True, null=True)),
-                ('codigo_comision', models.CharField(max_length=50, verbose_name='Código de Comisión')),
-                ('nombre', models.CharField(max_length=255, verbose_name='Nombre')),
-                ('cupo_total', models.PositiveIntegerField(verbose_name='Cupo Total')),
-                ('fecha_inicio', models.DateField(verbose_name='Fecha de Inicio')),
-                ('fecha_fin', models.DateField(verbose_name='Fecha de Fin')),
-                ('estado', models.CharField(choices=[('planificada', 'Planificada'), ('activa', 'Activa'), ('cerrada', 'Cerrada'), ('suspendida', 'Suspendida')], default='planificada', max_length=20, verbose_name='Estado')),
-                ('observaciones', models.TextField(blank=True, null=True, verbose_name='Observaciones')),
-                ('fecha_creacion', models.DateTimeField(auto_now_add=True)),
-                ('fecha_modificacion', models.DateTimeField(auto_now=True)),
-                ('curso', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='comisiones', to='VAT.curso', verbose_name='Curso')),
-                ('deleted_by', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='+', to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "deleted_at",
+                    models.DateTimeField(blank=True, db_index=True, null=True),
+                ),
+                (
+                    "codigo_comision",
+                    models.CharField(max_length=50, verbose_name="Código de Comisión"),
+                ),
+                ("nombre", models.CharField(max_length=255, verbose_name="Nombre")),
+                ("cupo_total", models.PositiveIntegerField(verbose_name="Cupo Total")),
+                ("fecha_inicio", models.DateField(verbose_name="Fecha de Inicio")),
+                ("fecha_fin", models.DateField(verbose_name="Fecha de Fin")),
+                (
+                    "estado",
+                    models.CharField(
+                        choices=[
+                            ("planificada", "Planificada"),
+                            ("activa", "Activa"),
+                            ("cerrada", "Cerrada"),
+                            ("suspendida", "Suspendida"),
+                        ],
+                        default="planificada",
+                        max_length=20,
+                        verbose_name="Estado",
+                    ),
+                ),
+                (
+                    "observaciones",
+                    models.TextField(
+                        blank=True, null=True, verbose_name="Observaciones"
+                    ),
+                ),
+                ("fecha_creacion", models.DateTimeField(auto_now_add=True)),
+                ("fecha_modificacion", models.DateTimeField(auto_now=True)),
+                (
+                    "curso",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="comisiones",
+                        to="VAT.curso",
+                        verbose_name="Curso",
+                    ),
+                ),
+                (
+                    "deleted_by",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="+",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Comisión de Curso',
-                'verbose_name_plural': 'Comisiones de Curso',
-                'ordering': ['codigo_comision'],
-                'unique_together': {('curso', 'codigo_comision')},
+                "verbose_name": "Comisión de Curso",
+                "verbose_name_plural": "Comisiones de Curso",
+                "ordering": ["codigo_comision"],
+                "unique_together": {("curso", "codigo_comision")},
             },
         ),
         migrations.AddIndex(
-            model_name='curso',
-            index=models.Index(fields=['centro', 'estado'], name='vat_curso_centro_estado_idx'),
+            model_name="curso",
+            index=models.Index(
+                fields=["centro", "estado"], name="vat_curso_centro_estado_idx"
+            ),
         ),
         migrations.AddIndex(
-            model_name='curso',
-            index=models.Index(fields=['estado'], name='vat_curso_estado_idx'),
+            model_name="curso",
+            index=models.Index(fields=["estado"], name="vat_curso_estado_idx"),
         ),
         migrations.AddIndex(
-            model_name='comisioncurso',
-            index=models.Index(fields=['curso', 'estado'], name='vat_comcurso_curso_estado_idx'),
+            model_name="comisioncurso",
+            index=models.Index(
+                fields=["curso", "estado"], name="vat_comcurso_curso_estado_idx"
+            ),
         ),
         migrations.AlterModelManagers(
-            name='comisioncurso',
+            name="comisioncurso",
             managers=[
-                ('objects', core.soft_delete.base.SoftDeleteManager()),
-                ('all_objects', core.soft_delete.base.SoftDeleteManager(include_deleted=True)),
+                ("objects", core.soft_delete.base.SoftDeleteManager()),
+                (
+                    "all_objects",
+                    core.soft_delete.base.SoftDeleteManager(include_deleted=True),
+                ),
             ],
         ),
         migrations.AlterModelManagers(
-            name='curso',
+            name="curso",
             managers=[
-                ('objects', core.soft_delete.base.SoftDeleteManager()),
-                ('all_objects', core.soft_delete.base.SoftDeleteManager(include_deleted=True)),
+                ("objects", core.soft_delete.base.SoftDeleteManager()),
+                (
+                    "all_objects",
+                    core.soft_delete.base.SoftDeleteManager(include_deleted=True),
+                ),
             ],
         ),
         migrations.AlterModelOptions(
-            name='planversioncurricular',
-            options={'ordering': ['titulo_referencia', 'modalidad_cursada'], 'verbose_name': 'Plan de Estudio', 'verbose_name_plural': 'Planes de Estudio'},
+            name="planversioncurricular",
+            options={
+                "ordering": ["titulo_referencia", "modalidad_cursada"],
+                "verbose_name": "Plan de Estudio",
+                "verbose_name_plural": "Planes de Estudio",
+            },
         ),
         migrations.SeparateDatabaseAndState(
             database_operations=[
@@ -2062,14 +4378,28 @@ class Migration(migrations.Migration):
             ],
             state_operations=[
                 migrations.AddField(
-                    model_name='planversioncurricular',
-                    name='sector',
-                    field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.PROTECT, related_name='planes_estudio', to='VAT.sector', verbose_name='Sector'),
+                    model_name="planversioncurricular",
+                    name="sector",
+                    field=models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.PROTECT,
+                        related_name="planes_estudio",
+                        to="VAT.sector",
+                        verbose_name="Sector",
+                    ),
                 ),
                 migrations.AddField(
-                    model_name='planversioncurricular',
-                    name='subsector',
-                    field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.PROTECT, related_name='planes_estudio', to='VAT.subsector', verbose_name='Subsector'),
+                    model_name="planversioncurricular",
+                    name="subsector",
+                    field=models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.PROTECT,
+                        related_name="planes_estudio",
+                        to="VAT.subsector",
+                        verbose_name="Subsector",
+                    ),
                 ),
             ],
         ),
@@ -2078,19 +4408,36 @@ class Migration(migrations.Migration):
             reverse_code=migrations.RunPython.noop,
         ),
         migrations.AlterField(
-            model_name='planversioncurricular',
-            name='sector',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='planes_estudio', to='VAT.sector', verbose_name='Sector'),
+            model_name="planversioncurricular",
+            name="sector",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.PROTECT,
+                related_name="planes_estudio",
+                to="VAT.sector",
+                verbose_name="Sector",
+            ),
         ),
         migrations.AlterField(
-            model_name='planversioncurricular',
-            name='subsector',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.PROTECT, related_name='planes_estudio', to='VAT.subsector', verbose_name='Subsector'),
+            model_name="planversioncurricular",
+            name="subsector",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.PROTECT,
+                related_name="planes_estudio",
+                to="VAT.subsector",
+                verbose_name="Subsector",
+            ),
         ),
         migrations.AlterField(
-            model_name='ofertainstitucional',
-            name='plan_curricular',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='ofertas_institucionales', to='VAT.planversioncurricular', verbose_name='Plan de Estudio'),
+            model_name="ofertainstitucional",
+            name="plan_curricular",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.PROTECT,
+                related_name="ofertas_institucionales",
+                to="VAT.planversioncurricular",
+                verbose_name="Plan de Estudio",
+            ),
         ),
         migrations.SeparateDatabaseAndState(
             database_operations=[
@@ -2101,32 +4448,36 @@ class Migration(migrations.Migration):
             ],
             state_operations=[
                 migrations.RemoveField(
-                    model_name='planversioncurricular',
-                    name='frecuencia',
+                    model_name="planversioncurricular",
+                    name="frecuencia",
                 ),
                 migrations.RemoveField(
-                    model_name='planversioncurricular',
-                    name='version',
+                    model_name="planversioncurricular",
+                    name="version",
                 ),
             ],
         ),
         migrations.SeparateDatabaseAndState(
             state_operations=[
                 migrations.AlterUniqueTogether(
-                    name='planversioncurricular',
-                    unique_together={('titulo_referencia', 'modalidad_cursada')},
+                    name="planversioncurricular",
+                    unique_together={("titulo_referencia", "modalidad_cursada")},
                 ),
             ],
         ),
         migrations.SeparateDatabaseAndState(
             state_operations=[
                 migrations.AlterUniqueTogether(
-                    name='planversioncurricular',
+                    name="planversioncurricular",
                     unique_together=set(),
                 ),
                 migrations.AlterModelOptions(
-                    name='planversioncurricular',
-                    options={'ordering': ['sector', 'modalidad_cursada'], 'verbose_name': 'Plan de Estudio', 'verbose_name_plural': 'Planes de Estudio'},
+                    name="planversioncurricular",
+                    options={
+                        "ordering": ["sector", "modalidad_cursada"],
+                        "verbose_name": "Plan de Estudio",
+                        "verbose_name_plural": "Planes de Estudio",
+                    },
                 ),
             ],
         ),
@@ -2139,9 +4490,16 @@ class Migration(migrations.Migration):
             ],
             state_operations=[
                 migrations.AddField(
-                    model_name='tituloreferencia',
-                    name='plan_estudio',
-                    field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='titulos', to='VAT.planversioncurricular', verbose_name='Plan de Estudio'),
+                    model_name="tituloreferencia",
+                    name="plan_estudio",
+                    field=models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="titulos",
+                        to="VAT.planversioncurricular",
+                        verbose_name="Plan de Estudio",
+                    ),
                 ),
             ],
         ),
@@ -2158,8 +4516,8 @@ class Migration(migrations.Migration):
             ],
             state_operations=[
                 migrations.RemoveField(
-                    model_name='planversioncurricular',
-                    name='titulo_referencia',
+                    model_name="planversioncurricular",
+                    name="titulo_referencia",
                 ),
             ],
         ),
@@ -2168,9 +4526,15 @@ class Migration(migrations.Migration):
             reverse_code=migrations.RunPython.noop,
         ),
         migrations.AddField(
-            model_name='ofertainstitucional',
-            name='voucher_parametrias',
-            field=models.ManyToManyField(blank=True, help_text='Parametrías de voucher permitidas para esta oferta.', related_name='ofertas_institucionales', to='VAT.voucherparametria', verbose_name='Vouchers habilitados'),
+            model_name="ofertainstitucional",
+            name="voucher_parametrias",
+            field=models.ManyToManyField(
+                blank=True,
+                help_text="Parametrías de voucher permitidas para esta oferta.",
+                related_name="ofertas_institucionales",
+                to="VAT.voucherparametria",
+                verbose_name="Vouchers habilitados",
+            ),
         ),
         migrations.SeparateDatabaseAndState(
             database_operations=[
@@ -2181,82 +4545,162 @@ class Migration(migrations.Migration):
             ],
             state_operations=[
                 migrations.RemoveField(
-                    model_name='curso',
-                    name='cupo_total',
+                    model_name="curso",
+                    name="cupo_total",
                 ),
                 migrations.RemoveField(
-                    model_name='curso',
-                    name='fecha_fin',
+                    model_name="curso",
+                    name="fecha_fin",
                 ),
                 migrations.RemoveField(
-                    model_name='curso',
-                    name='fecha_inicio',
+                    model_name="curso",
+                    name="fecha_inicio",
                 ),
             ],
         ),
         migrations.AlterModelOptions(
-            name='curso',
-            options={'ordering': ['-fecha_creacion', 'nombre'], 'verbose_name': 'Curso', 'verbose_name_plural': 'Cursos'},
+            name="curso",
+            options={
+                "ordering": ["-fecha_creacion", "nombre"],
+                "verbose_name": "Curso",
+                "verbose_name_plural": "Cursos",
+            },
         ),
         migrations.AddField(
-            model_name='curso',
-            name='costo_creditos',
-            field=models.PositiveIntegerField(default=1, help_text='Cantidad de créditos a debitar por inscripción cuando usa voucher.', verbose_name='Costo en créditos'),
+            model_name="curso",
+            name="costo_creditos",
+            field=models.PositiveIntegerField(
+                default=1,
+                help_text="Cantidad de créditos a debitar por inscripción cuando usa voucher.",
+                verbose_name="Costo en créditos",
+            ),
         ),
         migrations.AddField(
-            model_name='curso',
-            name='usa_voucher',
-            field=models.BooleanField(default=False, help_text='Si está activo, las inscripciones del curso validan y descuentan créditos de voucher.', verbose_name='Usa Voucher'),
+            model_name="curso",
+            name="usa_voucher",
+            field=models.BooleanField(
+                default=False,
+                help_text="Si está activo, las inscripciones del curso validan y descuentan créditos de voucher.",
+                verbose_name="Usa Voucher",
+            ),
         ),
         migrations.AddField(
-            model_name='curso',
-            name='voucher_parametrias',
-            field=models.ManyToManyField(blank=True, help_text='Parametrías de voucher permitidas para este curso.', related_name='cursos', to='VAT.voucherparametria', verbose_name='Vouchers habilitados'),
+            model_name="curso",
+            name="voucher_parametrias",
+            field=models.ManyToManyField(
+                blank=True,
+                help_text="Parametrías de voucher permitidas para este curso.",
+                related_name="cursos",
+                to="VAT.voucherparametria",
+                verbose_name="Vouchers habilitados",
+            ),
         ),
         migrations.AddField(
-            model_name='curso',
-            name='plan_estudio',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.PROTECT, related_name='cursos', to='VAT.planversioncurricular', verbose_name='Plan de Estudio'),
+            model_name="curso",
+            name="plan_estudio",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.PROTECT,
+                related_name="cursos",
+                to="VAT.planversioncurricular",
+                verbose_name="Plan de Estudio",
+            ),
         ),
         migrations.AddField(
-            model_name='comisionhorario',
-            name='comision_curso',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='horarios', to='VAT.comisioncurso', verbose_name='Comisión de Curso'),
+            model_name="comisionhorario",
+            name="comision_curso",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="horarios",
+                to="VAT.comisioncurso",
+                verbose_name="Comisión de Curso",
+            ),
         ),
         migrations.AddField(
-            model_name='inscripcion',
-            name='comision_curso',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='inscripciones', to='VAT.comisioncurso', verbose_name='Comisión de Curso'),
+            model_name="inscripcion",
+            name="comision_curso",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="inscripciones",
+                to="VAT.comisioncurso",
+                verbose_name="Comisión de Curso",
+            ),
         ),
         migrations.AddField(
-            model_name='sesioncomision',
-            name='comision_curso',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='sesiones', to='VAT.comisioncurso', verbose_name='Comisión de Curso'),
+            model_name="sesioncomision",
+            name="comision_curso",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="sesiones",
+                to="VAT.comisioncurso",
+                verbose_name="Comisión de Curso",
+            ),
         ),
         migrations.AlterField(
-            model_name='comisionhorario',
-            name='comision',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='horarios', to='VAT.comision', verbose_name='Comisión'),
+            model_name="comisionhorario",
+            name="comision",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="horarios",
+                to="VAT.comision",
+                verbose_name="Comisión",
+            ),
         ),
         migrations.AlterField(
-            model_name='inscripcion',
-            name='comision',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='inscripciones', to='VAT.comision', verbose_name='Comisión'),
+            model_name="inscripcion",
+            name="comision",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="inscripciones",
+                to="VAT.comision",
+                verbose_name="Comisión",
+            ),
         ),
         migrations.AlterField(
-            model_name='sesioncomision',
-            name='comision',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='sesiones', to='VAT.comision', verbose_name='Comisión'),
+            model_name="sesioncomision",
+            name="comision",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="sesiones",
+                to="VAT.comision",
+                verbose_name="Comisión",
+            ),
         ),
         migrations.AddField(
-            model_name='planversioncurricular',
-            name='provincia',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.PROTECT, related_name='vat_planes_estudio', to='core.provincia', verbose_name='Provincia'),
+            model_name="planversioncurricular",
+            name="provincia",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.PROTECT,
+                related_name="vat_planes_estudio",
+                to="core.provincia",
+                verbose_name="Provincia",
+            ),
         ),
         migrations.AlterField(
-            model_name='centro',
-            name='referente',
-            field=models.ForeignKey(limit_choices_to={'groups__name': 'CFP'}, null=True, on_delete=django.db.models.deletion.PROTECT, related_name='vat_centros', to=settings.AUTH_USER_MODEL),
+            model_name="centro",
+            name="referente",
+            field=models.ForeignKey(
+                limit_choices_to={"groups__name": "CFP"},
+                null=True,
+                on_delete=django.db.models.deletion.PROTECT,
+                related_name="vat_centros",
+                to=settings.AUTH_USER_MODEL,
+            ),
         ),
         migrations.SeparateDatabaseAndState(
             database_operations=[
@@ -2267,9 +4711,16 @@ class Migration(migrations.Migration):
             ],
             state_operations=[
                 migrations.AddField(
-                    model_name='comisioncurso',
-                    name='ubicacion',
-                    field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.PROTECT, related_name='comisiones_curso', to='VAT.institucionubicacion', verbose_name='Ubicación'),
+                    model_name="comisioncurso",
+                    name="ubicacion",
+                    field=models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.PROTECT,
+                        related_name="comisiones_curso",
+                        to="VAT.institucionubicacion",
+                        verbose_name="Ubicación",
+                    ),
                 ),
             ],
         ),
@@ -2286,28 +4737,33 @@ class Migration(migrations.Migration):
             ],
             state_operations=[
                 migrations.AlterField(
-                    model_name='comisioncurso',
-                    name='ubicacion',
-                    field=models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='comisiones_curso', to='VAT.institucionubicacion', verbose_name='Ubicación'),
+                    model_name="comisioncurso",
+                    name="ubicacion",
+                    field=models.ForeignKey(
+                        on_delete=django.db.models.deletion.PROTECT,
+                        related_name="comisiones_curso",
+                        to="VAT.institucionubicacion",
+                        verbose_name="Ubicación",
+                    ),
                 ),
             ],
         ),
         migrations.RemoveField(
-            model_name='curso',
-            name='ubicacion',
+            model_name="curso",
+            name="ubicacion",
         ),
         migrations.AddField(
-            model_name='planversioncurricular',
-            name='nombre',
-            field=models.CharField(blank=True, default='', max_length=200),
+            model_name="planversioncurricular",
+            name="nombre",
+            field=models.CharField(blank=True, default="", max_length=200),
         ),
         migrations.RunPython(
             code=copy_plan_names_from_titles,
             reverse_code=clear_copied_plan_names,
         ),
         migrations.AddField(
-            model_name='institucioncontacto',
-            name='documento',
+            model_name="institucioncontacto",
+            name="documento",
             field=models.CharField(blank=True, max_length=20, null=True),
         ),
         migrations.RunPython(
@@ -2315,101 +4771,270 @@ class Migration(migrations.Migration):
             reverse_code=migrations.RunPython.noop,
         ),
         migrations.DeleteModel(
-            name='AutoridadInstitucional',
+            name="AutoridadInstitucional",
         ),
         migrations.AlterModelOptions(
-            name='institucioncontacto',
-            options={'ordering': ['-es_principal', 'nombre_contacto', 'rol_area'], 'verbose_name': 'Contacto de Institución', 'verbose_name_plural': 'Contactos de Institución'},
+            name="institucioncontacto",
+            options={
+                "ordering": ["-es_principal", "nombre_contacto", "rol_area"],
+                "verbose_name": "Contacto de Institución",
+                "verbose_name_plural": "Contactos de Institución",
+            },
         ),
         migrations.AlterField(
-            model_name='institucioncontacto',
-            name='documento',
-            field=models.CharField(blank=True, max_length=20, null=True, verbose_name='Documento'),
+            model_name="institucioncontacto",
+            name="documento",
+            field=models.CharField(
+                blank=True, max_length=20, null=True, verbose_name="Documento"
+            ),
         ),
         migrations.AlterField(
-            model_name='institucioncontacto',
-            name='nombre_contacto',
-            field=models.CharField(blank=True, max_length=255, null=True, verbose_name='Nombre y apellido del responsable'),
+            model_name="institucioncontacto",
+            name="nombre_contacto",
+            field=models.CharField(
+                blank=True,
+                max_length=255,
+                null=True,
+                verbose_name="Nombre y apellido del responsable",
+            ),
         ),
         migrations.AddIndex(
-            model_name='planversioncurricular',
-            index=models.Index(fields=['provincia', 'activo'], name='vat_plan_prov_act_idx'),
+            model_name="planversioncurricular",
+            index=models.Index(
+                fields=["provincia", "activo"], name="vat_plan_prov_act_idx"
+            ),
         ),
         migrations.AddField(
-            model_name='curso',
-            name='prioritario',
-            field=models.BooleanField(db_index=True, default=False, help_text='Marca si el curso debe destacarse como prioritario en las consultas operativas.', verbose_name='Prioritario'),
+            model_name="curso",
+            name="prioritario",
+            field=models.BooleanField(
+                db_index=True,
+                default=False,
+                help_text="Marca si el curso debe destacarse como prioritario en las consultas operativas.",
+                verbose_name="Prioritario",
+            ),
         ),
         migrations.AddField(
-            model_name='comision',
-            name='acepta_lista_espera',
-            field=models.BooleanField(default=False, help_text='Si está activo, cuando la comisión se quede sin cupos las nuevas inscripciones pasan a espera.', verbose_name='Acepta Lista de Espera'),
+            model_name="comision",
+            name="acepta_lista_espera",
+            field=models.BooleanField(
+                default=False,
+                help_text="Si está activo, cuando la comisión se quede sin cupos las nuevas inscripciones pasan a espera.",
+                verbose_name="Acepta Lista de Espera",
+            ),
         ),
         migrations.AddField(
-            model_name='comisioncurso',
-            name='acepta_lista_espera',
-            field=models.BooleanField(default=False, help_text='Si está activo, cuando la comisión se quede sin cupos las nuevas inscripciones pasan a espera.', verbose_name='Acepta Lista de Espera'),
+            model_name="comisioncurso",
+            name="acepta_lista_espera",
+            field=models.BooleanField(
+                default=False,
+                help_text="Si está activo, cuando la comisión se quede sin cupos las nuevas inscripciones pasan a espera.",
+                verbose_name="Acepta Lista de Espera",
+            ),
         ),
         migrations.AlterField(
-            model_name='inscripcion',
-            name='estado',
-            field=models.CharField(choices=[('pre_inscripta', 'Pre-inscripta'), ('en_espera', 'En Espera'), ('inscripta', 'Inscripta'), ('validada_presencial', 'Validada Presencial'), ('completada', 'Completada'), ('abandonada', 'Abandonada'), ('rechazada', 'Rechazada')], default='pre_inscripta', max_length=30, verbose_name='Estado'),
+            model_name="inscripcion",
+            name="estado",
+            field=models.CharField(
+                choices=[
+                    ("pre_inscripta", "Pre-inscripta"),
+                    ("en_espera", "En Espera"),
+                    ("inscripta", "Inscripta"),
+                    ("validada_presencial", "Validada Presencial"),
+                    ("completada", "Completada"),
+                    ("abandonada", "Abandonada"),
+                    ("rechazada", "Rechazada"),
+                ],
+                default="pre_inscripta",
+                max_length=30,
+                verbose_name="Estado",
+            ),
         ),
         migrations.CreateModel(
-            name='SolicitudInscripcionPublica',
+            name="SolicitudInscripcionPublica",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('deleted_at', models.DateTimeField(blank=True, db_index=True, null=True)),
-                ('estado', models.CharField(choices=[('pendiente', 'Pendiente'), ('vinculada', 'Vinculada'), ('convertida', 'Convertida'), ('rechazada', 'Rechazada')], default='pendiente', max_length=20, verbose_name='Estado')),
-                ('origen_canal', models.CharField(choices=[('front_publico', 'Front Público'), ('backoffice', 'Backoffice'), ('api', 'API'), ('importacion', 'Importación')], default='front_publico', max_length=30, verbose_name='Origen del Canal')),
-                ('datos_postulante', models.JSONField(blank=True, default=dict, verbose_name='Datos del postulante')),
-                ('observaciones', models.TextField(blank=True, null=True, verbose_name='Observaciones')),
-                ('fecha_creacion', models.DateTimeField(auto_now_add=True)),
-                ('fecha_modificacion', models.DateTimeField(auto_now=True)),
-                ('ciudadano', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.PROTECT, related_name='solicitudes_publicas_vat', to='ciudadanos.ciudadano', verbose_name='Ciudadano')),
-                ('comision_curso', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='solicitudes_publicas', to='VAT.comisioncurso', verbose_name='Comisión de Curso')),
-                ('deleted_by', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='+', to=settings.AUTH_USER_MODEL)),
-                ('inscripcion', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='solicitudes_publicas', to='VAT.inscripcion', verbose_name='Inscripción vinculada')),
-                ('programa', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.PROTECT, related_name='solicitudes_publicas_vat', to='core.programa', verbose_name='Programa')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "deleted_at",
+                    models.DateTimeField(blank=True, db_index=True, null=True),
+                ),
+                (
+                    "estado",
+                    models.CharField(
+                        choices=[
+                            ("pendiente", "Pendiente"),
+                            ("vinculada", "Vinculada"),
+                            ("convertida", "Convertida"),
+                            ("rechazada", "Rechazada"),
+                        ],
+                        default="pendiente",
+                        max_length=20,
+                        verbose_name="Estado",
+                    ),
+                ),
+                (
+                    "origen_canal",
+                    models.CharField(
+                        choices=[
+                            ("front_publico", "Front Público"),
+                            ("backoffice", "Backoffice"),
+                            ("api", "API"),
+                            ("importacion", "Importación"),
+                        ],
+                        default="front_publico",
+                        max_length=30,
+                        verbose_name="Origen del Canal",
+                    ),
+                ),
+                (
+                    "datos_postulante",
+                    models.JSONField(
+                        blank=True, default=dict, verbose_name="Datos del postulante"
+                    ),
+                ),
+                (
+                    "observaciones",
+                    models.TextField(
+                        blank=True, null=True, verbose_name="Observaciones"
+                    ),
+                ),
+                ("fecha_creacion", models.DateTimeField(auto_now_add=True)),
+                ("fecha_modificacion", models.DateTimeField(auto_now=True)),
+                (
+                    "ciudadano",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.PROTECT,
+                        related_name="solicitudes_publicas_vat",
+                        to="ciudadanos.ciudadano",
+                        verbose_name="Ciudadano",
+                    ),
+                ),
+                (
+                    "comision_curso",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="solicitudes_publicas",
+                        to="VAT.comisioncurso",
+                        verbose_name="Comisión de Curso",
+                    ),
+                ),
+                (
+                    "deleted_by",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="+",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    "inscripcion",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="solicitudes_publicas",
+                        to="VAT.inscripcion",
+                        verbose_name="Inscripción vinculada",
+                    ),
+                ),
+                (
+                    "programa",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.PROTECT,
+                        related_name="solicitudes_publicas_vat",
+                        to="core.programa",
+                        verbose_name="Programa",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Solicitud pública de inscripción',
-                'verbose_name_plural': 'Solicitudes públicas de inscripción',
-                'ordering': ['-fecha_creacion'],
-                'indexes': [models.Index(fields=['comision_curso', 'estado'], name='vat_sol_pub_com_est_idx'), models.Index(fields=['ciudadano', 'estado'], name='vat_sol_pub_ciu_est_idx')],
+                "verbose_name": "Solicitud pública de inscripción",
+                "verbose_name_plural": "Solicitudes públicas de inscripción",
+                "ordering": ["-fecha_creacion"],
+                "indexes": [
+                    models.Index(
+                        fields=["comision_curso", "estado"],
+                        name="vat_sol_pub_com_est_idx",
+                    ),
+                    models.Index(
+                        fields=["ciudadano", "estado"], name="vat_sol_pub_ciu_est_idx"
+                    ),
+                ],
             },
             managers=[
-                ('objects', core.soft_delete.base.SoftDeleteManager()),
-                ('all_objects', core.soft_delete.base.SoftDeleteManager(include_deleted=True)),
+                ("objects", core.soft_delete.base.SoftDeleteManager()),
+                (
+                    "all_objects",
+                    core.soft_delete.base.SoftDeleteManager(include_deleted=True),
+                ),
             ],
         ),
         migrations.AlterField(
-            model_name='inscripcion',
-            name='programa',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.PROTECT, related_name='inscripciones_vat', to='core.programa', verbose_name='Programa'),
+            model_name="inscripcion",
+            name="programa",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.PROTECT,
+                related_name="inscripciones_vat",
+                to="core.programa",
+                verbose_name="Programa",
+            ),
         ),
         migrations.AddField(
-            model_name='curso',
-            name='inscripcion_libre',
-            field=models.BooleanField(default=False, help_text='Si está activo, el curso admite altas públicas aunque el ciudadano no exista todavía en SISOC.', verbose_name='Inscripción libre'),
+            model_name="curso",
+            name="inscripcion_libre",
+            field=models.BooleanField(
+                default=False,
+                help_text="Si está activo, el curso admite altas públicas aunque el ciudadano no exista todavía en SISOC.",
+                verbose_name="Inscripción libre",
+            ),
         ),
         migrations.AddIndex(
-            model_name='centro',
-            index=models.Index(fields=['provincia', 'id'], name='vat_centro_prov_id_idx'),
+            model_name="centro",
+            index=models.Index(
+                fields=["provincia", "id"], name="vat_centro_prov_id_idx"
+            ),
         ),
         migrations.AddIndex(
-            model_name='centro',
-            index=models.Index(fields=['referente', 'id'], name='vat_centro_ref_id_idx'),
+            model_name="centro",
+            index=models.Index(
+                fields=["referente", "id"], name="vat_centro_ref_id_idx"
+            ),
         ),
         migrations.AddField(
-            model_name='centro',
-            name='referentes',
-            field=models.ManyToManyField(blank=True, limit_choices_to={'groups__name': 'CFP'}, related_name='vat_centros_referente', to=settings.AUTH_USER_MODEL),
+            model_name="centro",
+            name="referentes",
+            field=models.ManyToManyField(
+                blank=True,
+                limit_choices_to={"groups__name": "CFP"},
+                related_name="vat_centros_referente",
+                to=settings.AUTH_USER_MODEL,
+            ),
         ),
         migrations.AddField(
-            model_name='centro',
-            name='revisores',
-            field=models.ManyToManyField(blank=True, limit_choices_to={'groups__name': 'CFPRevisor'}, related_name='vat_centros_revisor', to=settings.AUTH_USER_MODEL),
+            model_name="centro",
+            name="revisores",
+            field=models.ManyToManyField(
+                blank=True,
+                limit_choices_to={"groups__name": "CFPRevisor"},
+                related_name="vat_centros_revisor",
+                to=settings.AUTH_USER_MODEL,
+            ),
         ),
         migrations.RunPython(
             code=copy_legacy_referente_to_referentes,

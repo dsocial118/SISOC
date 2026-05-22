@@ -84,7 +84,10 @@ class Migration(migrations.Migration):
             ],
             managers=[
                 ("objects", duplas.models.DuplaManager()),
-                ("all_objects", core.soft_delete.SoftDeleteManager(include_deleted=True)),
+                (
+                    "all_objects",
+                    core.soft_delete.SoftDeleteManager(include_deleted=True),
+                ),
             ],
         ),
     ]

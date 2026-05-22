@@ -112,30 +112,68 @@ class Migration(migrations.Migration):
     atomic = False
     initial = True
 
-    replaces = [('audittrail', '0001_initial'), ('audittrail', '0002_auditlog_performance_indexes'), ('audittrail', '0003_auditentrymeta_permissions')]
+    replaces = [
+        ("audittrail", "0001_initial"),
+        ("audittrail", "0002_auditlog_performance_indexes"),
+        ("audittrail", "0003_auditentrymeta_permissions"),
+    ]
 
     dependencies = [
-        ('auditlog', '__first__'),
+        ("auditlog", "__first__"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='AuditEntryMeta',
+            name="AuditEntryMeta",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('actor_username_snapshot', models.CharField(blank=True, default='', max_length=150)),
-                ('actor_full_name_snapshot', models.CharField(blank=True, default='', max_length=255)),
-                ('actor_display_snapshot', models.CharField(blank=True, default='', max_length=255)),
-                ('source', models.CharField(blank=True, db_index=True, default='', max_length=64)),
-                ('batch_key', models.CharField(blank=True, db_index=True, default='', max_length=255)),
-                ('extra', models.JSONField(blank=True, default=dict)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('log_entry', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, related_name='audittrail_meta', to='auditlog.logentry')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "actor_username_snapshot",
+                    models.CharField(blank=True, default="", max_length=150),
+                ),
+                (
+                    "actor_full_name_snapshot",
+                    models.CharField(blank=True, default="", max_length=255),
+                ),
+                (
+                    "actor_display_snapshot",
+                    models.CharField(blank=True, default="", max_length=255),
+                ),
+                (
+                    "source",
+                    models.CharField(
+                        blank=True, db_index=True, default="", max_length=64
+                    ),
+                ),
+                (
+                    "batch_key",
+                    models.CharField(
+                        blank=True, db_index=True, default="", max_length=255
+                    ),
+                ),
+                ("extra", models.JSONField(blank=True, default=dict)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                (
+                    "log_entry",
+                    models.OneToOneField(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="audittrail_meta",
+                        to="auditlog.logentry",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Metadata de auditoría',
-                'verbose_name_plural': 'Metadatas de auditoría',
+                "verbose_name": "Metadata de auditoría",
+                "verbose_name_plural": "Metadatas de auditoría",
             },
         ),
         migrations.RunPython(
@@ -143,7 +181,13 @@ class Migration(migrations.Migration):
             remove_mysql_auditlog_indexes,
         ),
         migrations.AlterModelOptions(
-            name='auditentrymeta',
-            options={'permissions': (('export_auditlog', 'Puede exportar resultados de auditoría'),), 'verbose_name': 'Metadata de auditoría', 'verbose_name_plural': 'Metadatas de auditoría'},
+            name="auditentrymeta",
+            options={
+                "permissions": (
+                    ("export_auditlog", "Puede exportar resultados de auditoría"),
+                ),
+                "verbose_name": "Metadata de auditoría",
+                "verbose_name_plural": "Metadatas de auditoría",
+            },
         ),
     ]

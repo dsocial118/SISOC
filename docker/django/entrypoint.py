@@ -104,16 +104,14 @@ def fix_migration_history():
         )
         with conn.cursor() as cur:
             cur.execute(
-                "SELECT 1 FROM django_migrations "
-                "WHERE app=%s AND name=%s",
+                "SELECT 1 FROM django_migrations " "WHERE app=%s AND name=%s",
                 ("ciudadanos", "0028_merge_20260420_0000"),
             )
             has_ghost = cur.fetchone() is not None
             if not has_ghost:
                 return
             cur.execute(
-                "SELECT 1 FROM django_migrations "
-                "WHERE app=%s AND name=%s",
+                "SELECT 1 FROM django_migrations " "WHERE app=%s AND name=%s",
                 ("ciudadanos", "0028_merge_20260505_1126"),
             )
             already_recorded = cur.fetchone() is not None

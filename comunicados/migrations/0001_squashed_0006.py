@@ -25,7 +25,15 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name="Comunicado",
             fields=[
-                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
                 ("titulo", models.CharField(max_length=255, verbose_name="Título")),
                 ("cuerpo", models.TextField(verbose_name="Cuerpo")),
                 (
@@ -41,11 +49,34 @@ class Migration(migrations.Migration):
                         verbose_name="Estado",
                     ),
                 ),
-                ("destacado", models.BooleanField(default=False, verbose_name="Destacado")),
-                ("fecha_creacion", models.DateTimeField(auto_now_add=True, verbose_name="Fecha de creación")),
-                ("fecha_publicacion", models.DateTimeField(blank=True, null=True, verbose_name="Fecha de publicación")),
-                ("fecha_vencimiento", models.DateTimeField(blank=True, null=True, verbose_name="Fecha de vencimiento")),
-                ("fecha_ultima_modificacion", models.DateTimeField(auto_now=True, verbose_name="Fecha última modificación")),
+                (
+                    "destacado",
+                    models.BooleanField(default=False, verbose_name="Destacado"),
+                ),
+                (
+                    "fecha_creacion",
+                    models.DateTimeField(
+                        auto_now_add=True, verbose_name="Fecha de creación"
+                    ),
+                ),
+                (
+                    "fecha_publicacion",
+                    models.DateTimeField(
+                        blank=True, null=True, verbose_name="Fecha de publicación"
+                    ),
+                ),
+                (
+                    "fecha_vencimiento",
+                    models.DateTimeField(
+                        blank=True, null=True, verbose_name="Fecha de vencimiento"
+                    ),
+                ),
+                (
+                    "fecha_ultima_modificacion",
+                    models.DateTimeField(
+                        auto_now=True, verbose_name="Fecha última modificación"
+                    ),
+                ),
                 (
                     "usuario_creador",
                     models.ForeignKey(
@@ -75,7 +106,12 @@ class Migration(migrations.Migration):
                         verbose_name="Comedores destinatarios",
                     ),
                 ),
-                ("para_todos_comedores", models.BooleanField(default=False, verbose_name="Enviar a todos los comedores")),
+                (
+                    "para_todos_comedores",
+                    models.BooleanField(
+                        default=False, verbose_name="Enviar a todos los comedores"
+                    ),
+                ),
                 (
                     "tipo",
                     models.CharField(
@@ -111,10 +147,33 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name="ComunicadoAdjunto",
             fields=[
-                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
-                ("archivo", models.FileField(upload_to="comunicados/adjuntos/", verbose_name="Archivo")),
-                ("nombre_original", models.CharField(blank=True, max_length=255, verbose_name="Nombre original")),
-                ("fecha_subida", models.DateTimeField(auto_now_add=True, verbose_name="Fecha de subida")),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "archivo",
+                    models.FileField(
+                        upload_to="comunicados/adjuntos/", verbose_name="Archivo"
+                    ),
+                ),
+                (
+                    "nombre_original",
+                    models.CharField(
+                        blank=True, max_length=255, verbose_name="Nombre original"
+                    ),
+                ),
+                (
+                    "fecha_subida",
+                    models.DateTimeField(
+                        auto_now_add=True, verbose_name="Fecha de subida"
+                    ),
+                ),
                 (
                     "comunicado",
                     models.ForeignKey(

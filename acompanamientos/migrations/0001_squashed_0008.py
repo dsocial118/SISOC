@@ -34,7 +34,9 @@ def migrar_acompaniamientos(apps, schema_editor):
     Acompanamiento = apps.get_model("acompanamientos", "Acompanamiento")
     Hitos = apps.get_model("acompanamientos", "Hitos")
 
-    for admision in Admision.objects.filter(enviado_acompaniamiento=True).order_by("id"):
+    for admision in Admision.objects.filter(enviado_acompaniamiento=True).order_by(
+        "id"
+    ):
         nro = admision.numero_convenio or (
             str(admision.convenio_numero) if admision.convenio_numero else ""
         )
@@ -43,7 +45,9 @@ def migrar_acompaniamientos(apps, schema_editor):
             defaults={"nro_convenio": nro},
         )
 
-    for hito in Hitos.objects.filter(comedor__isnull=False, acompanamiento__isnull=True):
+    for hito in Hitos.objects.filter(
+        comedor__isnull=False, acompanamiento__isnull=True
+    ):
         acompanamiento = (
             Acompanamiento.objects.filter(admision__comedor_id=hito.comedor_id)
             .order_by("-admision__id")
@@ -90,76 +94,276 @@ class Migration(migrations.Migration):
 
     initial = True
 
-    replaces = [('acompanamientos', '0001_initial'), ('acompanamientos', '0002_informacionrelevante_fecha_creacion'), ('acompanamientos', '0003_hitos_capacitacion_sincronica_y_fch'), ('acompanamientos', '0004_acompanamiento_model'), ('acompanamientos', '0005_acompanamiento_data_migration'), ('acompanamientos', '0006_alter_acompanamiento_id'), ('acompanamientos', '0007_hitos_cleanup_comedor'), ('acompanamientos', '0008_hitos_backfill')]
+    replaces = [
+        ("acompanamientos", "0001_initial"),
+        ("acompanamientos", "0002_informacionrelevante_fecha_creacion"),
+        ("acompanamientos", "0003_hitos_capacitacion_sincronica_y_fch"),
+        ("acompanamientos", "0004_acompanamiento_model"),
+        ("acompanamientos", "0005_acompanamiento_data_migration"),
+        ("acompanamientos", "0006_alter_acompanamiento_id"),
+        ("acompanamientos", "0007_hitos_cleanup_comedor"),
+        ("acompanamientos", "0008_hitos_backfill"),
+    ]
 
     dependencies = [
-        ('comedores', '0001_squashed_0023'),
-        ('admisiones', '0001_squashed_0058'),
+        ("comedores", "0001_squashed_0023"),
+        ("admisiones", "0001_squashed_0058"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='HitosIntervenciones',
+            name="HitosIntervenciones",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('intervencion', models.CharField(max_length=255)),
-                ('subintervencion', models.CharField(max_length=255)),
-                ('hito', models.CharField(max_length=255)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("intervencion", models.CharField(max_length=255)),
+                ("subintervencion", models.CharField(max_length=255)),
+                ("hito", models.CharField(max_length=255)),
             ],
         ),
         migrations.CreateModel(
-            name='Prestacion',
+            name="Prestacion",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('dia', models.CharField(choices=[('lunes', 'Lunes'), ('martes', 'Martes'), ('miercoles', 'Miércoles'), ('jueves', 'Jueves'), ('viernes', 'Viernes'), ('sabado', 'Sábado'), ('domingo', 'Domingo')], max_length=20)),
-                ('desayuno', models.BooleanField(default=False)),
-                ('almuerzo', models.BooleanField(default=False)),
-                ('merienda', models.BooleanField(default=False)),
-                ('cena', models.BooleanField(default=False)),
-                ('comedor', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='comedores.comedor')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "dia",
+                    models.CharField(
+                        choices=[
+                            ("lunes", "Lunes"),
+                            ("martes", "Martes"),
+                            ("miercoles", "Miércoles"),
+                            ("jueves", "Jueves"),
+                            ("viernes", "Viernes"),
+                            ("sabado", "Sábado"),
+                            ("domingo", "Domingo"),
+                        ],
+                        max_length=20,
+                    ),
+                ),
+                ("desayuno", models.BooleanField(default=False)),
+                ("almuerzo", models.BooleanField(default=False)),
+                ("merienda", models.BooleanField(default=False)),
+                ("cena", models.BooleanField(default=False)),
+                (
+                    "comedor",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="comedores.comedor",
+                    ),
+                ),
             ],
         ),
         migrations.CreateModel(
-            name='InformacionRelevante',
+            name="InformacionRelevante",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('numero_expediente', models.CharField(max_length=255)),
-                ('numero_resolucion', models.CharField(max_length=255)),
-                ('vencimiento_mandato', models.DateField()),
-                ('if_relevamiento', models.CharField(max_length=255)),
-                ('comedor', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, to='comedores.comedor')),
-                ('fecha_creacion', models.DateTimeField(auto_now_add=True, null=True)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("numero_expediente", models.CharField(max_length=255)),
+                ("numero_resolucion", models.CharField(max_length=255)),
+                ("vencimiento_mandato", models.DateField()),
+                ("if_relevamiento", models.CharField(max_length=255)),
+                (
+                    "comedor",
+                    models.OneToOneField(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="comedores.comedor",
+                    ),
+                ),
+                ("fecha_creacion", models.DateTimeField(auto_now_add=True, null=True)),
             ],
         ),
         migrations.CreateModel(
-            name='Hitos',
+            name="Hitos",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('fecha', models.DateTimeField(blank=True, default=django.utils.timezone.now)),
-                ('retiro_tarjeta', models.BooleanField(default=False, verbose_name='Retiro de Tarjeta')),
-                ('habilitacion_tarjeta', models.BooleanField(default=False, verbose_name='Habilitación de tarjeta')),
-                ('alta_usuario_plataforma', models.BooleanField(default=False, verbose_name='Alta de usuario en plataforma')),
-                ('capacitacion_realizada', models.BooleanField(default=False, verbose_name='Capacitación Sincrónica Realizada')),
-                ('notificacion_acreditacion_1', models.BooleanField(default=False, verbose_name='Notificación de primera acreditación')),
-                ('notificacion_acreditacion_2', models.BooleanField(default=False, verbose_name='Notificación de acreditación mes 2')),
-                ('notificacion_acreditacion_3', models.BooleanField(default=False, verbose_name='Notificación de acreditación mes 3')),
-                ('notificacion_acreditacion_4', models.BooleanField(default=False, verbose_name='Notificación de acreditación mes 4')),
-                ('notificacion_acreditacion_5', models.BooleanField(default=False, verbose_name='Notificación de acreditación mes 5')),
-                ('notificacion_acreditacion_6', models.BooleanField(default=False, verbose_name='Notificación de acreditación mes 6')),
-                ('nomina_entregada_inicial', models.BooleanField(default=False, verbose_name='Nómina entregada inicial')),
-                ('nomina_alta_baja_2', models.BooleanField(default=False, verbose_name='Nómina Alta/baja mes 2')),
-                ('nomina_alta_baja_3', models.BooleanField(default=False, verbose_name='Nómina Alta/baja mes 3')),
-                ('nomina_alta_baja_4', models.BooleanField(default=False, verbose_name='Nómina Alta/baja mes 4')),
-                ('nomina_alta_baja_5', models.BooleanField(default=False, verbose_name='Nómina Alta/baja mes 5')),
-                ('nomina_alta_baja_6', models.BooleanField(default=False, verbose_name='Nómina Alta/baja mes 6')),
-                ('certificado_prestaciones_1', models.BooleanField(default=False, verbose_name='Certificado mensual de prestaciones mes: 1')),
-                ('certificado_prestaciones_2', models.BooleanField(default=False, verbose_name='Certificado mensual de prestaciones mes: 2')),
-                ('certificado_prestaciones_3', models.BooleanField(default=False, verbose_name='Certificado mensual de prestaciones mes: 3')),
-                ('certificado_prestaciones_4', models.BooleanField(default=False, verbose_name='Certificado mensual de prestaciones mes: 4')),
-                ('certificado_prestaciones_5', models.BooleanField(default=False, verbose_name='Certificado mensual de prestaciones mes: 5')),
-                ('certificado_prestaciones_6', models.BooleanField(default=False, verbose_name='Certificado mensual de prestaciones mes: 6')),
-                ('comedor', models.OneToOneField(null=True, on_delete=django.db.models.deletion.SET_NULL, to='comedores.comedor')),
-                ('capacitacion_fch_realizada', models.BooleanField(default=False, verbose_name='Capacitación Formando Capital Humano Realizada')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "fecha",
+                    models.DateTimeField(blank=True, default=django.utils.timezone.now),
+                ),
+                (
+                    "retiro_tarjeta",
+                    models.BooleanField(
+                        default=False, verbose_name="Retiro de Tarjeta"
+                    ),
+                ),
+                (
+                    "habilitacion_tarjeta",
+                    models.BooleanField(
+                        default=False, verbose_name="Habilitación de tarjeta"
+                    ),
+                ),
+                (
+                    "alta_usuario_plataforma",
+                    models.BooleanField(
+                        default=False, verbose_name="Alta de usuario en plataforma"
+                    ),
+                ),
+                (
+                    "capacitacion_realizada",
+                    models.BooleanField(
+                        default=False, verbose_name="Capacitación Sincrónica Realizada"
+                    ),
+                ),
+                (
+                    "notificacion_acreditacion_1",
+                    models.BooleanField(
+                        default=False,
+                        verbose_name="Notificación de primera acreditación",
+                    ),
+                ),
+                (
+                    "notificacion_acreditacion_2",
+                    models.BooleanField(
+                        default=False, verbose_name="Notificación de acreditación mes 2"
+                    ),
+                ),
+                (
+                    "notificacion_acreditacion_3",
+                    models.BooleanField(
+                        default=False, verbose_name="Notificación de acreditación mes 3"
+                    ),
+                ),
+                (
+                    "notificacion_acreditacion_4",
+                    models.BooleanField(
+                        default=False, verbose_name="Notificación de acreditación mes 4"
+                    ),
+                ),
+                (
+                    "notificacion_acreditacion_5",
+                    models.BooleanField(
+                        default=False, verbose_name="Notificación de acreditación mes 5"
+                    ),
+                ),
+                (
+                    "notificacion_acreditacion_6",
+                    models.BooleanField(
+                        default=False, verbose_name="Notificación de acreditación mes 6"
+                    ),
+                ),
+                (
+                    "nomina_entregada_inicial",
+                    models.BooleanField(
+                        default=False, verbose_name="Nómina entregada inicial"
+                    ),
+                ),
+                (
+                    "nomina_alta_baja_2",
+                    models.BooleanField(
+                        default=False, verbose_name="Nómina Alta/baja mes 2"
+                    ),
+                ),
+                (
+                    "nomina_alta_baja_3",
+                    models.BooleanField(
+                        default=False, verbose_name="Nómina Alta/baja mes 3"
+                    ),
+                ),
+                (
+                    "nomina_alta_baja_4",
+                    models.BooleanField(
+                        default=False, verbose_name="Nómina Alta/baja mes 4"
+                    ),
+                ),
+                (
+                    "nomina_alta_baja_5",
+                    models.BooleanField(
+                        default=False, verbose_name="Nómina Alta/baja mes 5"
+                    ),
+                ),
+                (
+                    "nomina_alta_baja_6",
+                    models.BooleanField(
+                        default=False, verbose_name="Nómina Alta/baja mes 6"
+                    ),
+                ),
+                (
+                    "certificado_prestaciones_1",
+                    models.BooleanField(
+                        default=False,
+                        verbose_name="Certificado mensual de prestaciones mes: 1",
+                    ),
+                ),
+                (
+                    "certificado_prestaciones_2",
+                    models.BooleanField(
+                        default=False,
+                        verbose_name="Certificado mensual de prestaciones mes: 2",
+                    ),
+                ),
+                (
+                    "certificado_prestaciones_3",
+                    models.BooleanField(
+                        default=False,
+                        verbose_name="Certificado mensual de prestaciones mes: 3",
+                    ),
+                ),
+                (
+                    "certificado_prestaciones_4",
+                    models.BooleanField(
+                        default=False,
+                        verbose_name="Certificado mensual de prestaciones mes: 4",
+                    ),
+                ),
+                (
+                    "certificado_prestaciones_5",
+                    models.BooleanField(
+                        default=False,
+                        verbose_name="Certificado mensual de prestaciones mes: 5",
+                    ),
+                ),
+                (
+                    "certificado_prestaciones_6",
+                    models.BooleanField(
+                        default=False,
+                        verbose_name="Certificado mensual de prestaciones mes: 6",
+                    ),
+                ),
+                (
+                    "comedor",
+                    models.OneToOneField(
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        to="comedores.comedor",
+                    ),
+                ),
+                (
+                    "capacitacion_fch_realizada",
+                    models.BooleanField(
+                        default=False,
+                        verbose_name="Capacitación Formando Capital Humano Realizada",
+                    ),
+                ),
             ],
         ),
         migrations.RunPython(
@@ -167,58 +371,98 @@ class Migration(migrations.Migration):
             revertir_hitos_intervenciones,
         ),
         migrations.CreateModel(
-            name='Acompanamiento',
+            name="Acompanamiento",
             fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('nro_convenio', models.CharField(blank=True, default='', max_length=100)),
-                ('fecha_creacion', models.DateTimeField(auto_now_add=True)),
-                ('admision', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, related_name='acompanamiento', to='admisiones.admision')),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "nro_convenio",
+                    models.CharField(blank=True, default="", max_length=100),
+                ),
+                ("fecha_creacion", models.DateTimeField(auto_now_add=True)),
+                (
+                    "admision",
+                    models.OneToOneField(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="acompanamiento",
+                        to="admisiones.admision",
+                    ),
+                ),
             ],
         ),
         migrations.RemoveField(
-            model_name='informacionrelevante',
-            name='comedor',
+            model_name="informacionrelevante",
+            name="comedor",
         ),
         migrations.AddField(
-            model_name='informacionrelevante',
-            name='acompanamiento',
-            field=models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, related_name='informacion_relevante', to='acompanamientos.acompanamiento'),
+            model_name="informacionrelevante",
+            name="acompanamiento",
+            field=models.OneToOneField(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="informacion_relevante",
+                to="acompanamientos.acompanamiento",
+            ),
         ),
         migrations.RemoveField(
-            model_name='prestacion',
-            name='comedor',
+            model_name="prestacion",
+            name="comedor",
         ),
         migrations.AddField(
-            model_name='prestacion',
-            name='acompanamiento',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='prestaciones', to='acompanamientos.acompanamiento'),
+            model_name="prestacion",
+            name="acompanamiento",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="prestaciones",
+                to="acompanamientos.acompanamiento",
+            ),
         ),
         migrations.AddField(
-            model_name='hitos',
-            name='acompanamiento',
-            field=models.OneToOneField(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='hitos', to='acompanamientos.acompanamiento'),
+            model_name="hitos",
+            name="acompanamiento",
+            field=models.OneToOneField(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name="hitos",
+                to="acompanamientos.acompanamiento",
+            ),
         ),
         migrations.RunPython(
             migrar_acompaniamientos,
             revertir_acompaniamientos,
         ),
         migrations.AlterField(
-            model_name='acompanamiento',
-            name='id',
-            field=models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID'),
+            model_name="acompanamiento",
+            name="id",
+            field=models.BigAutoField(
+                auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+            ),
         ),
         migrations.RunPython(
             borrar_hitos_huerfanos,
             migrations.RunPython.noop,
         ),
         migrations.AlterField(
-            model_name='hitos',
-            name='acompanamiento',
-            field=models.OneToOneField(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='hitos', to='acompanamientos.acompanamiento'),
+            model_name="hitos",
+            name="acompanamiento",
+            field=models.OneToOneField(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name="hitos",
+                to="acompanamientos.acompanamiento",
+            ),
         ),
         migrations.RemoveField(
-            model_name='hitos',
-            name='comedor',
+            model_name="hitos",
+            name="comedor",
         ),
         migrations.RunPython(
             crear_acompaniamientos_y_hitos_faltantes,

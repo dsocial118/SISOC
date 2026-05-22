@@ -91,7 +91,10 @@ class Migration(migrations.Migration):
     replaces = [
         ("intervenciones", "0001_initial"),
         ("intervenciones", "0002_alter_intervencion_fecha"),
-        ("intervenciones", "0003_alter_intervencion_managers_intervencion_deleted_at_and_more"),
+        (
+            "intervenciones",
+            "0003_alter_intervencion_managers_intervencion_deleted_at_and_more",
+        ),
         ("intervenciones", "0004_tipointervencion_programa"),
         ("intervenciones", "0005_tipointervencion_capacitacion_sincronica_y_fch"),
     ]
@@ -107,7 +110,15 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name="TipoContacto",
             fields=[
-                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
                 ("nombre", models.CharField(max_length=255)),
             ],
             options={
@@ -119,7 +130,15 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name="TipoDestinatario",
             fields=[
-                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
                 ("nombre", models.CharField(max_length=255)),
             ],
             options={
@@ -131,7 +150,15 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name="TipoIntervencion",
             fields=[
-                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
                 ("nombre", models.CharField(max_length=255)),
                 (
                     "programa",
@@ -154,7 +181,15 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name="SubIntervencion",
             fields=[
-                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
                 ("nombre", models.CharField(max_length=255)),
                 (
                     "tipo_intervencion",
@@ -177,17 +212,37 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name="Intervencion",
             fields=[
-                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
                 (
                     "fecha",
                     models.DateTimeField(
                         default=django.utils.timezone.now,
-                        validators=[intervenciones.models.intervenciones.validar_rango_anio_fecha],
+                        validators=[
+                            intervenciones.models.intervenciones.validar_rango_anio_fecha
+                        ],
                         verbose_name="Fecha y hora de intervención",
                     ),
                 ),
-                ("observaciones", models.TextField(blank=True, null=True, verbose_name="Observaciones")),
-                ("tiene_documentacion", models.BooleanField(default=False, verbose_name="Documentación adjunta")),
+                (
+                    "observaciones",
+                    models.TextField(
+                        blank=True, null=True, verbose_name="Observaciones"
+                    ),
+                ),
+                (
+                    "tiene_documentacion",
+                    models.BooleanField(
+                        default=False, verbose_name="Documentación adjunta"
+                    ),
+                ),
                 (
                     "documentacion",
                     models.FileField(
@@ -244,7 +299,10 @@ class Migration(migrations.Migration):
                         verbose_name="Tipo de intervención",
                     ),
                 ),
-                ("deleted_at", models.DateTimeField(blank=True, db_index=True, null=True)),
+                (
+                    "deleted_at",
+                    models.DateTimeField(blank=True, db_index=True, null=True),
+                ),
                 (
                     "deleted_by",
                     models.ForeignKey(
@@ -261,14 +319,22 @@ class Migration(migrations.Migration):
                 "verbose_name_plural": "Intervenciones",
                 "ordering": ["-fecha"],
                 "indexes": [
-                    models.Index(fields=["comedor"], name="intervencio_comedor_c80504_idx"),
+                    models.Index(
+                        fields=["comedor"], name="intervencio_comedor_c80504_idx"
+                    ),
                     models.Index(fields=["fecha"], name="intervencio_fecha_69e8fa_idx"),
-                    models.Index(fields=["tipo_intervencion"], name="intervencio_tipo_in_38d798_idx"),
+                    models.Index(
+                        fields=["tipo_intervencion"],
+                        name="intervencio_tipo_in_38d798_idx",
+                    ),
                 ],
             },
             managers=[
                 ("objects", core.soft_delete.SoftDeleteManager()),
-                ("all_objects", core.soft_delete.SoftDeleteManager(include_deleted=True)),
+                (
+                    "all_objects",
+                    core.soft_delete.SoftDeleteManager(include_deleted=True),
+                ),
             ],
         ),
         migrations.RunPython(seed_programa_tipointervencion, migrations.RunPython.noop),

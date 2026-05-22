@@ -11,11 +11,15 @@ import django.utils.timezone
 
 # --- 0008_migrate_legacy_cdi_tables ---
 
+
 def _column_names(cursor, connection, table_name):
     description = connection.introspection.get_table_description(cursor, table_name)
     return {column.name for column in description}
 
-def _copy_rows_with_mapping(cursor, connection, source_table, target_table, column_mapping):
+
+def _copy_rows_with_mapping(
+    cursor, connection, source_table, target_table, column_mapping
+):
     source_columns = _column_names(cursor, connection, source_table)
     target_columns = _column_names(cursor, connection, target_table)
     mapped_columns = [
@@ -35,7 +39,9 @@ def _copy_rows_with_mapping(cursor, connection, source_table, target_table, colu
     source_select_columns = ", ".join(
         quote_name(source_column) for source_column, _ in mapped_columns
     )
-    source_rows_query = f"SELECT {source_select_columns} FROM {quote_name(source_table)}"
+    source_rows_query = (
+        f"SELECT {source_select_columns} FROM {quote_name(source_table)}"
+    )
     cursor.execute(source_rows_query)
     source_rows = cursor.fetchall()
     insert_target_columns = [target_column for _, target_column in mapped_columns]
@@ -64,6 +70,7 @@ def _copy_rows_with_mapping(cursor, connection, source_table, target_table, colu
         insert_values = [row_data[column] for column in insert_target_columns]
         cursor.execute(insert_query, insert_values)
         existing_target_ids.add(row_id)
+
 
 def migrate_legacy_cdi_tables(apps, schema_editor):
     connection = schema_editor.connection
@@ -156,20 +163,28 @@ def migrate_legacy_cdi_tables(apps, schema_editor):
             ),
         ]
         for source_table, target_table, column_mapping in table_mappings:
-            if source_table not in existing_tables or target_table not in existing_tables:
+            if (
+                source_table not in existing_tables
+                or target_table not in existing_tables
+            ):
                 continue
             cursor.execute(f"SELECT 1 FROM {quote_name(source_table)} LIMIT 1")
             if cursor.fetchone() is None:
                 continue
-            _copy_rows_with_mapping(cursor, connection, source_table, target_table, column_mapping)
+            _copy_rows_with_mapping(
+                cursor, connection, source_table, target_table, column_mapping
+            )
+
 
 # --- 0010_centrodeinfancia_cdi_code_formulariocdi_and_more ---
+
 
 def populate_cdi_codes(apps, schema_editor):
     CentroDeInfancia = apps.get_model("centrodeinfancia", "CentroDeInfancia")
     for centro in CentroDeInfancia.objects.filter(cdi_code__isnull=True).iterator():
         centro.cdi_code = f"CDI-{centro.pk:06d}"
         centro.save(update_fields=["cdi_code"])
+
 
 # --- 0016_alter_formulariocdi_options_and_more ---
 
@@ -194,12 +209,14 @@ UNIQUE_CONSTRAINT_RENAMES = (
     ),
 )
 
+
 def _build_unique_sql(table_name, constraint_name, columns):
     columns_sql = ", ".join(columns)
     return (
         f"ALTER TABLE {table_name} "
         f"ADD CONSTRAINT {constraint_name} UNIQUE ({columns_sql})"
     )
+
 
 def sync_unique_constraint_names(apps, schema_editor):
     if schema_editor.connection.vendor != "mysql":
@@ -220,11 +237,13 @@ def sync_unique_constraint_names(apps, schema_editor):
             )
             continue
         if any(
-            constraint.get("unique") and tuple(constraint.get("columns") or ()) == columns
+            constraint.get("unique")
+            and tuple(constraint.get("columns") or ()) == columns
             for constraint in table_constraints.values()
         ):
             continue
         schema_editor.execute(_build_unique_sql(table_name, new_name, columns))
+
 
 def reverse_sync_unique_constraint_names(apps, schema_editor):
     if schema_editor.connection.vendor != "mysql":
@@ -245,16 +264,20 @@ def reverse_sync_unique_constraint_names(apps, schema_editor):
             )
             continue
         if any(
-            constraint.get("unique") and tuple(constraint.get("columns") or ()) == columns
+            constraint.get("unique")
+            and tuple(constraint.get("columns") or ()) == columns
             for constraint in table_constraints.values()
         ):
             continue
         schema_editor.execute(_build_unique_sql(table_name, old_name, columns))
 
+
 # --- 0019_formulariocdi_departamentos_ipi ---
+
 
 def _normalizar_nombre(valor):
     return " ".join((valor or "").strip().split()).casefold()
+
 
 def migrar_departamentos_formulario_cdi(apps, schema_editor):
     FormularioCDI = apps.get_model("centrodeinfancia", "FormularioCDI")
@@ -274,17 +297,25 @@ def migrar_departamentos_formulario_cdi(apps, schema_editor):
             if departamento_cdi_id:
                 formulario.departamento_cdi_fk_id = departamento_cdi_id
                 updates.append("departamento_cdi_fk")
-        if formulario.provincia_organizacion_id and formulario.departamento_organizacion:
+        if (
+            formulario.provincia_organizacion_id
+            and formulario.departamento_organizacion
+        ):
             clave_organizacion = (
                 formulario.provincia_organizacion_id,
                 _normalizar_nombre(formulario.departamento_organizacion),
             )
-            departamento_organizacion_id = departamentos_por_provincia.get(clave_organizacion)
+            departamento_organizacion_id = departamentos_por_provincia.get(
+                clave_organizacion
+            )
             if departamento_organizacion_id:
-                formulario.departamento_organizacion_fk_id = departamento_organizacion_id
+                formulario.departamento_organizacion_fk_id = (
+                    departamento_organizacion_id
+                )
                 updates.append("departamento_organizacion_fk")
         if updates:
             formulario.save(update_fields=updates)
+
 
 def revertir_departamentos_formulario_cdi(apps, schema_editor):
     FormularioCDI = apps.get_model("centrodeinfancia", "FormularioCDI")
@@ -297,31 +328,63 @@ def revertir_departamentos_formulario_cdi(apps, schema_editor):
             formulario.departamento_cdi = formulario.departamento_cdi_fk.nombre
             updates.append("departamento_cdi")
         if formulario.departamento_organizacion_fk_id:
-            formulario.departamento_organizacion = formulario.departamento_organizacion_fk.nombre
+            formulario.departamento_organizacion = (
+                formulario.departamento_organizacion_fk.nombre
+            )
             updates.append("departamento_organizacion")
         if updates:
             formulario.save(update_fields=updates)
 
+
 # --- 0021_centrodeinfancia_ambito_and_more ---
 
 MESES_MAP = {
-    "ENE": "enero", "FEB": "febrero", "MAR": "marzo", "ABR": "abril",
-    "MAY": "mayo", "JUN": "junio", "JUL": "julio", "AGO": "agosto",
-    "SET": "septiembre", "SEP": "septiembre", "OCT": "octubre",
-    "NOV": "noviembre", "DIC": "diciembre",
-    "enero": "enero", "febrero": "febrero", "marzo": "marzo", "abril": "abril",
-    "mayo": "mayo", "junio": "junio", "julio": "julio", "agosto": "agosto",
-    "septiembre": "septiembre", "octubre": "octubre", "noviembre": "noviembre",
+    "ENE": "enero",
+    "FEB": "febrero",
+    "MAR": "marzo",
+    "ABR": "abril",
+    "MAY": "mayo",
+    "JUN": "junio",
+    "JUL": "julio",
+    "AGO": "agosto",
+    "SET": "septiembre",
+    "SEP": "septiembre",
+    "OCT": "octubre",
+    "NOV": "noviembre",
+    "DIC": "diciembre",
+    "enero": "enero",
+    "febrero": "febrero",
+    "marzo": "marzo",
+    "abril": "abril",
+    "mayo": "mayo",
+    "junio": "junio",
+    "julio": "julio",
+    "agosto": "agosto",
+    "septiembre": "septiembre",
+    "octubre": "octubre",
+    "noviembre": "noviembre",
     "diciembre": "diciembre",
 }
 
 DIA_MAP = {
-    "LUNES": "lunes", "MARTES": "martes", "MIERCOLES": "miercoles",
-    "MIÉRCOLES": "miercoles", "JUEVES": "jueves", "VIERNES": "viernes",
-    "SABADO": "sabado", "SÁBADO": "sabado", "DOMINGO": "domingo",
-    "lunes": "lunes", "martes": "martes", "miercoles": "miercoles",
-    "miércoles": "miercoles", "jueves": "jueves", "viernes": "viernes",
-    "sabado": "sabado", "sábado": "sabado", "domingo": "domingo",
+    "LUNES": "lunes",
+    "MARTES": "martes",
+    "MIERCOLES": "miercoles",
+    "MIÉRCOLES": "miercoles",
+    "JUEVES": "jueves",
+    "VIERNES": "viernes",
+    "SABADO": "sabado",
+    "SÁBADO": "sabado",
+    "DOMINGO": "domingo",
+    "lunes": "lunes",
+    "martes": "martes",
+    "miercoles": "miercoles",
+    "miércoles": "miercoles",
+    "jueves": "jueves",
+    "viernes": "viernes",
+    "sabado": "sabado",
+    "sábado": "sabado",
+    "domingo": "domingo",
 }
 
 MODALIDAD_GESTION_MAP = {
@@ -336,6 +399,7 @@ MODALIDAD_GESTION_MAP = {
     "otra": "otra",
 }
 
+
 def _normalizar_lista(values, mapping):
     if not isinstance(values, list):
         return []
@@ -349,11 +413,13 @@ def _normalizar_lista(values, mapping):
         vistos.add(normalized)
     return normalizados
 
+
 def _solo_digitos(value):
     if value in (None, ""):
         return None
     digits = "".join(ch for ch in str(value) if ch.isdigit())
     return digits or None
+
 
 def migrar_datos_existentes(apps, schema_editor):
     CentroDeInfancia = apps.get_model("centrodeinfancia", "CentroDeInfancia")
@@ -401,6 +467,7 @@ def migrar_datos_existentes(apps, schema_editor):
                     },
                 )
 
+
 # --- 0026_oferta_servicio_multiple ---
 
 OFERTA_SERVICIOS = [
@@ -411,6 +478,7 @@ OFERTA_SERVICIOS = [
     ("cuatro_anos", "4 años"),
     ("multiedad", "Multiedad"),
 ]
+
 
 def forwards_migrate_oferta_servicios(apps, schema_editor):
     CentroDeInfancia = apps.get_model("centrodeinfancia", "CentroDeInfancia")
@@ -430,134 +498,387 @@ def forwards_migrate_oferta_servicios(apps, schema_editor):
         if oferta:
             centro.oferta_servicios_m2m.set([oferta])
 
+
 class Migration(migrations.Migration):
 
     atomic = False
     initial = True
 
-    replaces = [('centrodeinfancia', '0001_initial'), ('centrodeinfancia', '0002_alter_centrodeinfancia_managers_and_more'), ('centrodeinfancia', '0003_centrodeinfancia_calle_and_more'), ('centrodeinfancia', '0004_observacioncentroinfancia'), ('centrodeinfancia', '0005_observacioncentroinfancia_deleted_by'), ('centrodeinfancia', '0006_alter_observacioncentroinfancia_managers_and_more'), ('centrodeinfancia', '0007_centrodeinfancia_apellido_referente'), ('centrodeinfancia', '0008_migrate_legacy_cdi_tables'), ('centrodeinfancia', '0009_centrodeinfancia_numero'), ('centrodeinfancia', '0010_centrodeinfancia_cdi_code_formulariocdi_and_more'), ('centrodeinfancia', '0011_alter_formulariocdi_electrical_safety_and_more'), ('centrodeinfancia', '0012_trabajador'), ('centrodeinfancia', '0013_alter_trabajador_managers'), ('centrodeinfancia', '0014_update_verbose_names_centros_desarrollo_infantil'), ('centrodeinfancia', '0015_refactor_formulario_cdi_campos_en_espanol'), ('centrodeinfancia', '0016_alter_formulariocdi_options_and_more'), ('centrodeinfancia', '0017_departamentoipi_centrodeinfancia_departamento'), ('centrodeinfancia', '0018_alter_formulariocdiwaitlistbyagegroup_grupo_etario'), ('centrodeinfancia', '0019_formulariocdi_departamentos_ipi'), ('centrodeinfancia', '0020_alter_formulariocdi_cobertura_educadora_titulo_habilitante_and_more'), ('centrodeinfancia', '0021_centrodeinfancia_ambito_and_more'), ('centrodeinfancia', '0022_alter_centrodeinfancia_ambito_and_more'), ('centrodeinfancia', '0021_expandir_nomina_cdi'), ('centrodeinfancia', '0023_merge_0021_expandir_nomina_cdi_0022_alter_centrodeinfancia_ambito_and_more'), ('centrodeinfancia', '0024_alter_centrodeinfancia_nombre'), ('centrodeinfancia', '0025_alter_centrodeinfancia_fecha_inicio_and_more'), ('centrodeinfancia', '0026_oferta_servicio_multiple'), ('centrodeinfancia', '0024_intervencioncentroinfancia_creado_por'), ('centrodeinfancia', '0025_alter_intervencioncentroinfancia_creado_por'), ('centrodeinfancia', '0027_merge_20260427_1431'), ('centrodeinfancia', '0028_alter_formulariocdi_condiciones_almacenamiento_leche_humana')]
+    replaces = [
+        ("centrodeinfancia", "0001_initial"),
+        ("centrodeinfancia", "0002_alter_centrodeinfancia_managers_and_more"),
+        ("centrodeinfancia", "0003_centrodeinfancia_calle_and_more"),
+        ("centrodeinfancia", "0004_observacioncentroinfancia"),
+        ("centrodeinfancia", "0005_observacioncentroinfancia_deleted_by"),
+        ("centrodeinfancia", "0006_alter_observacioncentroinfancia_managers_and_more"),
+        ("centrodeinfancia", "0007_centrodeinfancia_apellido_referente"),
+        ("centrodeinfancia", "0008_migrate_legacy_cdi_tables"),
+        ("centrodeinfancia", "0009_centrodeinfancia_numero"),
+        ("centrodeinfancia", "0010_centrodeinfancia_cdi_code_formulariocdi_and_more"),
+        ("centrodeinfancia", "0011_alter_formulariocdi_electrical_safety_and_more"),
+        ("centrodeinfancia", "0012_trabajador"),
+        ("centrodeinfancia", "0013_alter_trabajador_managers"),
+        ("centrodeinfancia", "0014_update_verbose_names_centros_desarrollo_infantil"),
+        ("centrodeinfancia", "0015_refactor_formulario_cdi_campos_en_espanol"),
+        ("centrodeinfancia", "0016_alter_formulariocdi_options_and_more"),
+        ("centrodeinfancia", "0017_departamentoipi_centrodeinfancia_departamento"),
+        ("centrodeinfancia", "0018_alter_formulariocdiwaitlistbyagegroup_grupo_etario"),
+        ("centrodeinfancia", "0019_formulariocdi_departamentos_ipi"),
+        (
+            "centrodeinfancia",
+            "0020_alter_formulariocdi_cobertura_educadora_titulo_habilitante_and_more",
+        ),
+        ("centrodeinfancia", "0021_centrodeinfancia_ambito_and_more"),
+        ("centrodeinfancia", "0022_alter_centrodeinfancia_ambito_and_more"),
+        ("centrodeinfancia", "0021_expandir_nomina_cdi"),
+        (
+            "centrodeinfancia",
+            "0023_merge_0021_expandir_nomina_cdi_0022_alter_centrodeinfancia_ambito_and_more",
+        ),
+        ("centrodeinfancia", "0024_alter_centrodeinfancia_nombre"),
+        ("centrodeinfancia", "0025_alter_centrodeinfancia_fecha_inicio_and_more"),
+        ("centrodeinfancia", "0026_oferta_servicio_multiple"),
+        ("centrodeinfancia", "0024_intervencioncentroinfancia_creado_por"),
+        ("centrodeinfancia", "0025_alter_intervencioncentroinfancia_creado_por"),
+        ("centrodeinfancia", "0027_merge_20260427_1431"),
+        (
+            "centrodeinfancia",
+            "0028_alter_formulariocdi_condiciones_almacenamiento_leche_humana",
+        ),
+    ]
 
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ('intervenciones', '0001_squashed_0005'),
-        ('ciudadanos', '0009_squashed_0028'),
-        ('organizaciones', '0001_squashed_0010'),
-        ('core', '0008_programa_organismo_programa_descripcion'),
+        ("intervenciones", "0001_squashed_0005"),
+        ("ciudadanos", "0009_squashed_0028"),
+        ("organizaciones", "0001_squashed_0010"),
+        ("core", "0008_programa_organismo_programa_descripcion"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='CentroDeInfancia',
+            name="CentroDeInfancia",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('nombre', models.CharField(max_length=255)),
-                ('fecha_creacion', models.DateTimeField(auto_now_add=True)),
-                ('organizacion', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to='organizaciones.organizacion')),
-                ('deleted_at', models.DateTimeField(blank=True, db_index=True, null=True)),
-                ('deleted_by', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='+', to=settings.AUTH_USER_MODEL)),
-                ('calle', models.CharField(blank=True, max_length=255, null=True)),
-                ('email_referente', models.EmailField(blank=True, max_length=254, null=True)),
-                ('fecha_inicio', models.DateField(blank=True, null=True)),
-                ('localidad', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to='core.localidad')),
-                ('municipio', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to='core.municipio')),
-                ('nombre_referente', models.CharField(blank=True, max_length=255, null=True)),
-                ('provincia', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.PROTECT, to='core.provincia')),
-                ('telefono', models.CharField(blank=True, max_length=50, null=True)),
-                ('telefono_referente', models.CharField(blank=True, max_length=50, null=True)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("nombre", models.CharField(max_length=255)),
+                ("fecha_creacion", models.DateTimeField(auto_now_add=True)),
+                (
+                    "organizacion",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        to="organizaciones.organizacion",
+                    ),
+                ),
+                (
+                    "deleted_at",
+                    models.DateTimeField(blank=True, db_index=True, null=True),
+                ),
+                (
+                    "deleted_by",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="+",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                ("calle", models.CharField(blank=True, max_length=255, null=True)),
+                (
+                    "email_referente",
+                    models.EmailField(blank=True, max_length=254, null=True),
+                ),
+                ("fecha_inicio", models.DateField(blank=True, null=True)),
+                (
+                    "localidad",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        to="core.localidad",
+                    ),
+                ),
+                (
+                    "municipio",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        to="core.municipio",
+                    ),
+                ),
+                (
+                    "nombre_referente",
+                    models.CharField(blank=True, max_length=255, null=True),
+                ),
+                (
+                    "provincia",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.PROTECT,
+                        to="core.provincia",
+                    ),
+                ),
+                ("telefono", models.CharField(blank=True, max_length=50, null=True)),
+                (
+                    "telefono_referente",
+                    models.CharField(blank=True, max_length=50, null=True),
+                ),
             ],
             options={
-                'verbose_name': 'Centro de Infancia',
-                'verbose_name_plural': 'Centros de Infancia',
-                'ordering': ['nombre'],
+                "verbose_name": "Centro de Infancia",
+                "verbose_name_plural": "Centros de Infancia",
+                "ordering": ["nombre"],
             },
             managers=[
-                ('objects', core.soft_delete.base.SoftDeleteManager()),
-                ('all_objects', core.soft_delete.base.SoftDeleteManager(include_deleted=True)),
+                ("objects", core.soft_delete.base.SoftDeleteManager()),
+                (
+                    "all_objects",
+                    core.soft_delete.base.SoftDeleteManager(include_deleted=True),
+                ),
             ],
         ),
         migrations.CreateModel(
-            name='IntervencionCentroInfancia',
+            name="IntervencionCentroInfancia",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('fecha', models.DateTimeField(default=django.utils.timezone.now)),
-                ('observaciones', models.TextField(blank=True, null=True)),
-                ('tiene_documentacion', models.BooleanField(default=False)),
-                ('documentacion', models.FileField(blank=True, null=True, upload_to='documentacion/')),
-                ('centro', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='intervenciones', to='centrodeinfancia.centrodeinfancia')),
-                ('destinatario', models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, to='intervenciones.tipodestinatario', verbose_name='Destinatario')),
-                ('forma_contacto', models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, to='intervenciones.tipocontacto', verbose_name='Forma de contacto')),
-                ('subintervencion', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to='intervenciones.subintervencion', verbose_name='Sub-tipo de intervención')),
-                ('tipo_intervencion', models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, to='intervenciones.tipointervencion', verbose_name='Tipo de intervención')),
-                ('deleted_at', models.DateTimeField(blank=True, db_index=True, null=True)),
-                ('deleted_by', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='+', to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("fecha", models.DateTimeField(default=django.utils.timezone.now)),
+                ("observaciones", models.TextField(blank=True, null=True)),
+                ("tiene_documentacion", models.BooleanField(default=False)),
+                (
+                    "documentacion",
+                    models.FileField(blank=True, null=True, upload_to="documentacion/"),
+                ),
+                (
+                    "centro",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="intervenciones",
+                        to="centrodeinfancia.centrodeinfancia",
+                    ),
+                ),
+                (
+                    "destinatario",
+                    models.ForeignKey(
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        to="intervenciones.tipodestinatario",
+                        verbose_name="Destinatario",
+                    ),
+                ),
+                (
+                    "forma_contacto",
+                    models.ForeignKey(
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        to="intervenciones.tipocontacto",
+                        verbose_name="Forma de contacto",
+                    ),
+                ),
+                (
+                    "subintervencion",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        to="intervenciones.subintervencion",
+                        verbose_name="Sub-tipo de intervención",
+                    ),
+                ),
+                (
+                    "tipo_intervencion",
+                    models.ForeignKey(
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        to="intervenciones.tipointervencion",
+                        verbose_name="Tipo de intervención",
+                    ),
+                ),
+                (
+                    "deleted_at",
+                    models.DateTimeField(blank=True, db_index=True, null=True),
+                ),
+                (
+                    "deleted_by",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="+",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Intervención Centro de Infancia',
-                'verbose_name_plural': 'Intervenciones Centro de Infancia',
-                'ordering': ['-fecha'],
+                "verbose_name": "Intervención Centro de Infancia",
+                "verbose_name_plural": "Intervenciones Centro de Infancia",
+                "ordering": ["-fecha"],
             },
             managers=[
-                ('objects', core.soft_delete.base.SoftDeleteManager()),
-                ('all_objects', core.soft_delete.base.SoftDeleteManager(include_deleted=True)),
+                ("objects", core.soft_delete.base.SoftDeleteManager()),
+                (
+                    "all_objects",
+                    core.soft_delete.base.SoftDeleteManager(include_deleted=True),
+                ),
             ],
         ),
         migrations.CreateModel(
-            name='NominaCentroInfancia',
+            name="NominaCentroInfancia",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('fecha', models.DateTimeField(auto_now_add=True)),
-                ('estado', models.CharField(choices=[('activo', 'Activo'), ('pendiente', 'Pendiente'), ('baja', 'Baja')], default='pendiente', max_length=20)),
-                ('observaciones', models.TextField(blank=True, null=True)),
-                ('centro', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='nominas', to='centrodeinfancia.centrodeinfancia')),
-                ('ciudadano', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='nominas_centros_infancia', to='ciudadanos.ciudadano')),
-                ('deleted_at', models.DateTimeField(blank=True, db_index=True, null=True)),
-                ('deleted_by', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='+', to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("fecha", models.DateTimeField(auto_now_add=True)),
+                (
+                    "estado",
+                    models.CharField(
+                        choices=[
+                            ("activo", "Activo"),
+                            ("pendiente", "Pendiente"),
+                            ("baja", "Baja"),
+                        ],
+                        default="pendiente",
+                        max_length=20,
+                    ),
+                ),
+                ("observaciones", models.TextField(blank=True, null=True)),
+                (
+                    "centro",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="nominas",
+                        to="centrodeinfancia.centrodeinfancia",
+                    ),
+                ),
+                (
+                    "ciudadano",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="nominas_centros_infancia",
+                        to="ciudadanos.ciudadano",
+                    ),
+                ),
+                (
+                    "deleted_at",
+                    models.DateTimeField(blank=True, db_index=True, null=True),
+                ),
+                (
+                    "deleted_by",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="+",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Nómina Centro de Infancia',
-                'verbose_name_plural': 'Nóminas Centro de Infancia',
-                'ordering': ['-fecha'],
+                "verbose_name": "Nómina Centro de Infancia",
+                "verbose_name_plural": "Nóminas Centro de Infancia",
+                "ordering": ["-fecha"],
             },
             managers=[
-                ('objects', core.soft_delete.base.SoftDeleteManager()),
-                ('all_objects', core.soft_delete.base.SoftDeleteManager(include_deleted=True)),
+                ("objects", core.soft_delete.base.SoftDeleteManager()),
+                (
+                    "all_objects",
+                    core.soft_delete.base.SoftDeleteManager(include_deleted=True),
+                ),
             ],
         ),
         migrations.CreateModel(
-            name='ObservacionCentroInfancia',
+            name="ObservacionCentroInfancia",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('is_deleted', models.BooleanField(default=False, editable=False)),
-                ('deleted_at', models.DateTimeField(blank=True, null=True)),
-                ('observador', models.CharField(blank=True, max_length=255)),
-                ('fecha_visita', models.DateTimeField(blank=True, default=django.utils.timezone.now)),
-                ('observacion', models.TextField()),
-                ('centro', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='observaciones', to='centrodeinfancia.centrodeinfancia')),
-                ('deleted_by', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='+', to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("is_deleted", models.BooleanField(default=False, editable=False)),
+                ("deleted_at", models.DateTimeField(blank=True, null=True)),
+                ("observador", models.CharField(blank=True, max_length=255)),
+                (
+                    "fecha_visita",
+                    models.DateTimeField(blank=True, default=django.utils.timezone.now),
+                ),
+                ("observacion", models.TextField()),
+                (
+                    "centro",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="observaciones",
+                        to="centrodeinfancia.centrodeinfancia",
+                    ),
+                ),
+                (
+                    "deleted_by",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="+",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Observación Centro de Infancia',
-                'verbose_name_plural': 'Observaciones Centro de Infancia',
-                'indexes': [models.Index(fields=['centro'], name='centrodeinf_centro__720bd9_idx')],
+                "verbose_name": "Observación Centro de Infancia",
+                "verbose_name_plural": "Observaciones Centro de Infancia",
+                "indexes": [
+                    models.Index(
+                        fields=["centro"], name="centrodeinf_centro__720bd9_idx"
+                    )
+                ],
             },
             managers=[
-                ('objects', core.soft_delete.base.SoftDeleteManager()),
-                ('all_objects', core.soft_delete.base.SoftDeleteManager(include_deleted=True)),
+                ("objects", core.soft_delete.base.SoftDeleteManager()),
+                (
+                    "all_objects",
+                    core.soft_delete.base.SoftDeleteManager(include_deleted=True),
+                ),
             ],
         ),
-        
         migrations.RemoveField(
-            model_name='observacioncentroinfancia',
-            name='is_deleted',
+            model_name="observacioncentroinfancia",
+            name="is_deleted",
         ),
         migrations.AlterField(
-            model_name='observacioncentroinfancia',
-            name='deleted_at',
+            model_name="observacioncentroinfancia",
+            name="deleted_at",
             field=models.DateTimeField(blank=True, db_index=True, null=True),
         ),
         migrations.AddField(
-            model_name='centrodeinfancia',
-            name='apellido_referente',
+            model_name="centrodeinfancia",
+            name="apellido_referente",
             field=models.CharField(blank=True, max_length=255, null=True),
         ),
         migrations.RunPython(
@@ -565,867 +886,2284 @@ class Migration(migrations.Migration):
             reverse_code=migrations.RunPython.noop,
         ),
         migrations.AddField(
-            model_name='centrodeinfancia',
-            name='numero',
+            model_name="centrodeinfancia",
+            name="numero",
             field=models.CharField(blank=True, max_length=50, null=True),
         ),
         migrations.AddField(
-            model_name='centrodeinfancia',
-            name='cdi_code',
-            field=models.CharField(blank=True, max_length=32, null=True, unique=True, verbose_name='Codigo CDI'),
+            model_name="centrodeinfancia",
+            name="cdi_code",
+            field=models.CharField(
+                blank=True,
+                max_length=32,
+                null=True,
+                unique=True,
+                verbose_name="Codigo CDI",
+            ),
         ),
         migrations.RunPython(
             code=populate_cdi_codes,
             reverse_code=migrations.RunPython.noop,
         ),
         migrations.CreateModel(
-            name='FormularioCDI',
+            name="FormularioCDI",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('deleted_at', models.DateTimeField(blank=True, db_index=True, null=True)),
-                ('source_form_version', models.PositiveIntegerField(default=1)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('survey_date', models.DateField(blank=True, null=True)),
-                ('respondent_full_name', models.CharField(blank=True, max_length=255, null=True)),
-                ('respondent_role', models.CharField(blank=True, max_length=255, null=True)),
-                ('respondent_email', models.EmailField(blank=True, max_length=255, null=True)),
-                ('cdi_name', models.CharField(blank=True, max_length=255, null=True)),
-                ('cdi_code', models.CharField(blank=True, db_index=True, max_length=32, null=True)),
-                ('cdi_department', models.CharField(blank=True, max_length=255, null=True)),
-                ('cdi_street', models.CharField(blank=True, max_length=255, null=True)),
-                ('cdi_door_number', models.CharField(blank=True, max_length=255, null=True)),
-                ('cdi_postal_code', models.CharField(blank=True, max_length=12, null=True)),
-                ('cdi_geo_latitude', models.DecimalField(blank=True, decimal_places=6, max_digits=8, null=True, validators=[django.core.validators.MinValueValidator(-90), django.core.validators.MaxValueValidator(90)])),
-                ('cdi_geo_longitude', models.DecimalField(blank=True, decimal_places=6, max_digits=9, null=True, validators=[django.core.validators.MinValueValidator(-180), django.core.validators.MaxValueValidator(180)])),
-                ('cdi_phone', models.CharField(blank=True, max_length=20, null=True, validators=[django.core.validators.RegexValidator(message='Ingrese un telefono valido con formato 054-011-40333588.', regex='^\\d{2,4}-\\d{2,4}-\\d{6,8}$')])),
-                ('cdi_email', models.EmailField(blank=True, max_length=255, null=True)),
-                ('cdi_contact_first_name', models.CharField(blank=True, max_length=255, null=True)),
-                ('cdi_contact_last_name', models.CharField(blank=True, max_length=255, null=True)),
-                ('cdi_contact_phone', models.CharField(blank=True, max_length=20, null=True, validators=[django.core.validators.RegexValidator(message='Ingrese un telefono valido con formato 054-011-40333588.', regex='^\\d{2,4}-\\d{2,4}-\\d{6,8}$')])),
-                ('cdi_contact_email', models.EmailField(blank=True, max_length=255, null=True)),
-                ('operation_months', models.JSONField(blank=True, default=list)),
-                ('operation_days', models.JSONField(blank=True, default=list)),
-                ('opening_time', models.TimeField(blank=True, null=True)),
-                ('closing_time', models.TimeField(blank=True, null=True)),
-                ('workday_type', models.CharField(blank=True, choices=[('simple_single_shift', 'Jornada simple'), ('multiple_simple_shifts', 'Dos o mas jornadas simples'), ('full_double_same_group', 'Jornada completa/doble'), ('other', 'Otra')], max_length=64, null=True)),
-                ('workday_type_other', models.CharField(blank=True, max_length=255, null=True)),
-                ('total_children_count', models.PositiveIntegerField(blank=True, null=True)),
-                ('total_staff_count', models.PositiveIntegerField(blank=True, null=True)),
-                ('management_mode', models.CharField(blank=True, choices=[('gobierno_nacional', 'Gobierno nacional'), ('gobierno_provincial', 'Gobierno provincial'), ('gobierno_municipal', 'Gobierno municipal'), ('ong', 'Ong'), ('cogestion_provincial_municipal', 'Cogestion provincial municipal'), ('cogestion_ong_provincial_municipal', 'Cogestion ong provincial municipal'), ('otra', 'Otra')], max_length=64, null=True)),
-                ('management_mode_other', models.CharField(blank=True, max_length=255, null=True)),
-                ('managing_organization_name', models.CharField(blank=True, max_length=1000, null=True)),
-                ('managing_organization_cuit', models.CharField(blank=True, max_length=13, null=True, validators=[django.core.validators.RegexValidator(message='Ingrese un CUIT valido con formato 20-12345678-3.', regex='^\\d{2}-\\d{8}-\\d{1}$')])),
-                ('org_department', models.CharField(blank=True, max_length=255, null=True)),
-                ('org_street', models.CharField(blank=True, max_length=255, null=True)),
-                ('org_number', models.PositiveIntegerField(blank=True, null=True)),
-                ('org_postal_code', models.CharField(blank=True, max_length=12, null=True)),
-                ('org_building', models.CharField(blank=True, max_length=255, null=True)),
-                ('org_floor', models.CharField(blank=True, max_length=255, null=True)),
-                ('org_apartment', models.CharField(blank=True, max_length=255, null=True)),
-                ('org_office', models.CharField(blank=True, max_length=255, null=True)),
-                ('org_phone', models.CharField(blank=True, max_length=20, null=True, validators=[django.core.validators.RegexValidator(message='Ingrese un telefono valido con formato 054-011-40333588.', regex='^\\d{2,4}-\\d{2,4}-\\d{6,8}$')])),
-                ('org_email', models.EmailField(blank=True, max_length=255, null=True)),
-                ('org_contact_first_name', models.CharField(blank=True, max_length=255, null=True)),
-                ('org_contact_last_name', models.CharField(blank=True, max_length=255, null=True)),
-                ('org_contact_phone', models.CharField(blank=True, max_length=20, null=True, validators=[django.core.validators.RegexValidator(message='Ingrese un telefono valido con formato 054-011-40333588.', regex='^\\d{2,4}-\\d{2,4}-\\d{6,8}$')])),
-                ('org_contact_email', models.EmailField(blank=True, max_length=255, null=True)),
-                ('tenure_mode', models.CharField(blank=True, choices=[('propio', 'Propio'), ('alquilado', 'Alquilado'), ('cedido_gubernamental', 'Cedido gubernamental'), ('cedido_privado', 'Cedido privado'), ('comodato', 'Comodato'), ('ocupado_de_hecho', 'Ocupado de hecho'), ('otra', 'Otra')], max_length=64, null=True)),
-                ('tenure_mode_other', models.CharField(blank=True, max_length=255, null=True)),
-                ('exclusive_space_use', models.BooleanField(blank=True, null=True)),
-                ('room_count_excluding_service_areas', models.PositiveIntegerField(blank=True, null=True)),
-                ('electricity_access', models.CharField(blank=True, choices=[('red_formal', 'Red formal'), ('red_informal', 'Red informal'), ('generacion_propia_motor', 'Generacion propia motor'), ('generacion_propia_otros', 'Generacion propia otros'), ('sin_electricidad', 'Sin electricidad')], max_length=64, null=True)),
-                ('electrical_safety', models.CharField(blank=True, choices=[('cumple_y_revision_mayor_a_un_ano', 'Cumple y revision mayor a un ano'), ('cumple_y_revision_anual', 'Cumple y revision anual'), ('cumple_sin_revisiones', 'Cumple sin revisiones'), ('cumple_solo_zonas_ninos_sin_revisiones', 'Cumple solo zonas ninos sin revisiones'), ('no_cumple_sin_revisiones', 'No cumple sin revisiones')], max_length=64, null=True)),
-                ('water_access', models.CharField(blank=True, choices=[('caneria_dentro_cdi', 'Caneria dentro cdi'), ('fuera_cdi_dentro_terreno', 'Fuera cdi dentro terreno'), ('fuera_del_terreno', 'Fuera del terreno'), ('sin_agua', 'Sin agua')], max_length=64, null=True)),
-                ('safe_drinking_water_source', models.CharField(blank=True, choices=[('red_o_embotellada_segura', 'Red o embotellada segura'), ('pozo_analisis_vigente', 'Pozo analisis vigente'), ('pozo_analisis_vencido_o_sin_control', 'Pozo analisis vencido o sin control'), ('otra_con_proceso_sin_garantia_formal', 'Otra con proceso sin garantia formal'), ('otra_sin_info_potabilizacion', 'Otra sin info potabilizacion')], max_length=64, null=True)),
-                ('excreta_disposal', models.CharField(blank=True, choices=[('red_publica_cloaca', 'Red publica cloaca'), ('camara_septica_pozo_ciego', 'Camara septica pozo ciego'), ('solo_pozo_ciego', 'Solo pozo ciego'), ('hoyo_tierra', 'Hoyo tierra'), ('sin_sistema', 'Sin sistema')], max_length=64, null=True)),
-                ('has_fire_extinguishers_current', models.BooleanField(blank=True, null=True)),
-                ('first_aid_kit_status', models.CharField(blank=True, choices=[('completo_todas_salas_ok_vigente_fuera_alcance', 'Completo todas salas ok vigente fuera alcance'), ('incompleto_todas_salas_ok_vigente_fuera_alcance', 'Incompleto todas salas ok vigente fuera alcance'), ('unico_completo_compartido_ok_vigente_fuera_alcance', 'Unico completo compartido ok vigente fuera alcance'), ('incompleto_compartido_o_mal_estado_o_vencido', 'Incompleto compartido o mal estado o vencido'), ('no_tienen_o_al_alcance_ninos', 'No tienen o al alcance ninos')], max_length=128, null=True)),
-                ('has_working_computer', models.BooleanField(blank=True, null=True)),
-                ('internet_access_quality_staff', models.CharField(blank=True, choices=[('alta_velocidad_con_acceso_personal', 'Alta velocidad con acceso personal'), ('estable_con_acceso_personal', 'Estable con acceso personal'), ('estable_sin_acceso_personal', 'Estable sin acceso personal'), ('mala_calidad_con_acceso_personal', 'Mala calidad con acceso personal'), ('sin_servicio', 'Sin servicio')], max_length=128, null=True)),
-                ('has_kitchen_space', models.CharField(blank=True, choices=[('si', 'Si'), ('no', 'No'), ('no_sabe_no_responde', 'No sabe / No responde')], max_length=32, null=True)),
-                ('cooking_fuel', models.CharField(blank=True, choices=[('gas_red', 'Gas red'), ('gas_granel_tubo_garrafa', 'Gas granel tubo garrafa'), ('electricidad', 'Electricidad'), ('lena_o_carbon', 'Lena o carbon'), ('no_utiliza', 'No utiliza')], max_length=64, null=True)),
-                ('has_outdoor_space', models.CharField(blank=True, choices=[('si', 'Si'), ('no', 'No'), ('no_responde', 'No responde')], max_length=32, null=True)),
-                ('has_outdoor_playground', models.CharField(blank=True, choices=[('si', 'Si'), ('no', 'No'), ('no_responde', 'No responde')], max_length=32, null=True)),
-                ('evacuation_plan_and_drills', models.CharField(blank=True, choices=[('protocolo_escrito_y_2_simulacros_o_mas', 'Protocolo escrito y 2 simulacros o mas'), ('protocolo_escrito_y_simulacros_sin_frecuencia', 'Protocolo escrito y simulacros sin frecuencia'), ('protocolo_escrito_sin_simulacros', 'Protocolo escrito sin simulacros'), ('practicas_informales_sin_protocolo', 'Practicas informales sin protocolo'), ('sin_protocolo', 'Sin protocolo')], max_length=128, null=True)),
-                ('first_aid_training_coverage', models.CharField(blank=True, choices=[('todo_personal_certificado', 'Todo personal certificado'), ('entre_70_y_99', 'Entre 70 y 99'), ('entre_40_y_69', 'Entre 40 y 69'), ('menos_40', 'Menos 40'), ('ninguno', 'Ninguno')], max_length=64, null=True)),
-                ('emergency_medical_service', models.CharField(blank=True, choices=[('servicio_y_cobertura_identificada', 'Servicio y cobertura identificada'), ('servicio_sin_cobertura_identificada', 'Servicio sin cobertura identificada'), ('sin_servicio_con_cobertura_identificada', 'Sin servicio con cobertura identificada'), ('sin_servicio_con_cobertura_parcial', 'Sin servicio con cobertura parcial'), ('sin_servicio_y_sin_cobertura', 'Sin servicio y sin cobertura')], max_length=64, null=True)),
-                ('health_protocol_items', models.JSONField(blank=True, default=list)),
-                ('meals_provided', models.JSONField(blank=True, default=list)),
-                ('meals_provided_other', models.CharField(blank=True, max_length=255, null=True)),
-                ('menu_preparation_quality', models.CharField(blank=True, choices=[('nutricionista_indicaciones_y_frescos', 'Nutricionista indicaciones y frescos'), ('nutricionista_indicaciones_a_veces_sin_frescos', 'Nutricionista indicaciones a veces sin frescos'), ('no_siempre_nutricionista_parcial_y_mixto', 'No siempre nutricionista parcial y mixto'), ('sin_nutricionista_pocas_indicaciones_procesados', 'Sin nutricionista pocas indicaciones procesados'), ('sin_nutricionista_ultraprocesados', 'Sin nutricionista ultraprocesados')], max_length=128, null=True)),
-                ('menu_periodic_evaluation', models.CharField(blank=True, choices=[('periodica_todas_necesidades_y_patrones_y_personal_capacitado', 'Periodica todas necesidades y patrones y personal capacitado'), ('periodica_mayoria_necesidades_y_algunos_patrones', 'Periodica mayoria necesidades y algunos patrones'), ('ocasional_parcial_y_capacitacion_esporadica', 'Ocasional parcial y capacitacion esporadica'), ('rara_vez_limitada_sin_patrones', 'Rara vez limitada sin patrones'), ('no_evalua', 'No evalua')], max_length=128, null=True)),
-                ('food_handling_training_coverage', models.CharField(blank=True, choices=[('todo_personal_anmat', 'Todo personal anmat'), ('entre_70_y_99', 'Entre 70 y 99'), ('entre_40_y_60', 'Entre 40 y 60'), ('menos_40', 'Menos 40'), ('ninguno', 'Ninguno')], max_length=64, null=True)),
-                ('breast_milk_storage_conditions', models.CharField(blank=True, choices=[('heladera_exclusiva_identificada_y_rotulada', 'Heladera exclusiva identificada y rotulada'), ('heladera_compartida_sector_exclusivo_identificada_y_rotulada', 'Heladera compartida sector exclusivo identificada y rotulada'), ('heladera_exclusiva_identificada_sin_fecha', 'Heladera exclusiva identificada sin fecha'), ('heladera_compartida_sector_exclusivo_identificada_sin_fecha', 'Heladera compartida sector exclusivo identificada sin fecha'), ('sin_espacio_exclusivo_ni_identificacion', 'Sin espacio exclusivo ni identificacion')], max_length=128, null=True)),
-                ('breastfeeding_awareness_actions', models.CharField(blank=True, choices=[('dos_o_mas_anuales_todas_familias', 'Dos o mas anuales todas familias'), ('una_anual_todas_familias', 'Una anual todas familias'), ('una_anual_alcance_limitado', 'Una anual alcance limitado'), ('muy_ocasionales_limitadas', 'Muy ocasionales limitadas'), ('ninguna', 'Ninguna')], max_length=64, null=True)),
-                ('has_waitlist_registry', models.CharField(blank=True, choices=[('si', 'Si'), ('no', 'No'), ('ns_nc', 'NS/NC')], max_length=16, null=True)),
-                ('has_admission_prioritization_tool', models.BooleanField(blank=True, null=True)),
-                ('children_with_disabilities_count', models.PositiveIntegerField(blank=True, null=True)),
-                ('children_specific_ethnicity_count', models.PositiveIntegerField(blank=True, null=True)),
-                ('has_entry_exit_staff', models.CharField(blank=True, choices=[('si', 'Si'), ('no', 'No'), ('ns_nc', 'NS/NC')], max_length=16, null=True)),
-                ('family_communication_frequency', models.CharField(blank=True, choices=[('reuniones_mensuales_y_canales_formales', 'Reuniones mensuales y canales formales'), ('reuniones_trimestrales_y_canales_formales', 'Reuniones trimestrales y canales formales'), ('reuniones_semestrales_y_algunos_canales', 'Reuniones semestrales y algunos canales'), ('reuniones_anuales_sin_canales', 'Reuniones anuales sin canales'), ('sin_reuniones_ni_canales', 'Sin reuniones ni canales')], max_length=128, null=True)),
-                ('parenting_workshops_frequency', models.CharField(blank=True, choices=[('trimestral_o_mas', 'Trimestral o mas'), ('cada_4_a_6_meses', 'Cada 4 a 6 meses'), ('una_vez_al_ano', 'Una vez al ano'), ('esporadica', 'Esporadica'), ('no_se_realizan', 'No se realizan')], max_length=64, null=True)),
-                ('actions_promoting_rights_access', models.CharField(blank=True, choices=[('si', 'Si'), ('no', 'No'), ('ns_nc', 'NS/NC')], max_length=16, null=True)),
-                ('actions_against_rights_violations', models.CharField(blank=True, choices=[('si', 'Si'), ('no', 'No'), ('ns_nc', 'NS/NC')], max_length=16, null=True)),
-                ('networking_level', models.CharField(blank=True, choices=[('red_mapeo_mesas_trimestral_o_mas', 'Red mapeo mesas trimestral o mas'), ('red_mapeo_mesas_semestral', 'Red mapeo mesas semestral'), ('sin_red_con_mapeo_y_mesas', 'Sin red con mapeo y mesas'), ('sin_red_sin_mesas_con_mapeo', 'Sin red sin mesas con mapeo'), ('sin_red_ni_mapeo', 'Sin red ni mapeo')], max_length=128, null=True)),
-                ('rights_violation_protocol', models.CharField(blank=True, choices=[('protocolo_revision_periodica_mayoria_conoce', 'Protocolo revision periodica mayoria conoce'), ('protocolo_revision_periodica_menos_mitad', 'Protocolo revision periodica menos mitad'), ('protocolo_sin_revision_mayoria_conoce', 'Protocolo sin revision mayoria conoce'), ('protocolo_sin_revision_menos_mitad', 'Protocolo sin revision menos mitad'), ('no_existe', 'No existe')], max_length=128, null=True)),
-                ('technical_team_level', models.CharField(blank=True, choices=[('completo_mas_20_horas', 'Completo mas 20 horas'), ('perfiles_diversos_15_19_horas', 'Perfiles diversos 15 19 horas'), ('al_menos_un_perfil_o_10_14_horas', 'Al menos un perfil o 10 14 horas'), ('limitado_un_perfil_o_9_o_menos', 'Limitado un perfil o 9 o menos'), ('sin_equipo', 'Sin equipo')], max_length=64, null=True)),
-                ('child_development_record_frequency', models.CharField(blank=True, choices=[('mensual', 'Mensual'), ('trimestral', 'Trimestral'), ('semestral', 'Semestral'), ('anual', 'Anual'), ('no_registra', 'No registra')], max_length=32, null=True)),
-                ('family_info_record_frequency', models.CharField(blank=True, choices=[('mensual', 'Mensual'), ('trimestral', 'Trimestral'), ('semestral', 'Semestral'), ('anual', 'Anual'), ('no_registra', 'No registra')], max_length=32, null=True)),
-                ('health_vaccine_record_frequency', models.CharField(blank=True, choices=[('mensual', 'Mensual'), ('trimestral', 'Trimestral'), ('semestral', 'Semestral'), ('anual', 'Anual'), ('no_registra', 'No registra')], max_length=32, null=True)),
-                ('socioeducational_project_participants', models.CharField(blank=True, choices=[('conduccion_sala_equipo_auxiliar_familias_comunidad', 'Conduccion sala equipo auxiliar familias comunidad'), ('conduccion_sala_equipo_familias', 'Conduccion sala equipo familias'), ('conduccion_sala_equipo', 'Conduccion sala equipo'), ('conduccion_y_o_equipo', 'Conduccion y o equipo'), ('no_tienen', 'No tienen')], max_length=128, null=True)),
-                ('classroom_activity_planning', models.CharField(blank=True, choices=[('semanal_en_marco_mensual_o_semestral_y_anual', 'Semanal en marco mensual o semestral y anual'), ('semanal_en_marco_mensual_o_semestral_sin_anual', 'Semanal en marco mensual o semestral sin anual'), ('semanal_en_marco_anual', 'Semanal en marco anual'), ('solo_semanal', 'Solo semanal'), ('no_planifican', 'No planifican')], max_length=128, null=True)),
-                ('integral_planning', models.CharField(blank=True, choices=[('intereses_caracteristicas_necesidades_e_integralidad', 'Intereses caracteristicas necesidades e integralidad'), ('solo_intereses_caracteristicas_necesidades', 'Solo intereses caracteristicas necesidades'), ('solo_integralidad', 'Solo integralidad'), ('ninguno', 'Ninguno'), ('no_planifican', 'No planifican')], max_length=128, null=True)),
-                ('direction_training_in_early_childhood', models.CharField(blank=True, choices=[('titulo_superior_completo_especifico', 'Titulo superior completo especifico'), ('carrera_75_o_mas_o_posgrados', 'Carrera 75 o mas o posgrados'), ('cursando_formacion_formal', 'Cursando formacion formal'), ('solo_cursos_cortos', 'Solo cursos cortos'), ('sin_formacion', 'Sin formacion')], max_length=64, null=True)),
-                ('pedagogical_pairs_coverage', models.CharField(blank=True, choices=[('todas', 'Todas'), ('mayoria', 'Mayoria'), ('algunas', 'Algunas'), ('muy_pocas', 'Muy pocas'), ('ninguna', 'Ninguna')], max_length=32, null=True)),
-                ('qualified_teacher_coverage', models.CharField(blank=True, choices=[('todas', 'Todas'), ('mayoria', 'Mayoria'), ('algunas', 'Algunas'), ('muy_pocas', 'Muy pocas')], max_length=32, null=True)),
-                ('assistant_training_coverage', models.CharField(blank=True, choices=[('todos', 'Todos'), ('mayoria', 'Mayoria'), ('algunos', 'Algunos'), ('muy_pocos', 'Muy pocos'), ('ninguno', 'Ninguno')], max_length=32, null=True)),
-                ('main_hiring_mode', models.CharField(blank=True, choices=[('permanente', 'Permanente'), ('temporal', 'Temporal'), ('beca_o_pasantia', 'Beca o pasantia'), ('programa_social_insercion', 'Programa social insercion'), ('voluntario_u_otra', 'Voluntario u otra')], max_length=64, null=True)),
-                ('meetings_teaching_staff_frequency', models.CharField(blank=True, choices=[('mensual', 'Mensual'), ('trimestral', 'Trimestral'), ('semestral', 'Semestral'), ('anual', 'Anual'), ('no_se_realizan', 'No se realizan')], max_length=32, null=True)),
-                ('meetings_non_teaching_staff_frequency', models.CharField(blank=True, choices=[('mensual', 'Mensual'), ('trimestral', 'Trimestral'), ('semestral', 'Semestral'), ('anual', 'Anual'), ('no_se_realizan', 'No se realizan')], max_length=32, null=True)),
-                ('meetings_all_staff_frequency', models.CharField(blank=True, choices=[('mensual', 'Mensual'), ('trimestral', 'Trimestral'), ('semestral', 'Semestral'), ('anual', 'Anual'), ('no_se_realizan', 'No se realizan')], max_length=32, null=True)),
-                ('training_instances_all_staff_last_3y', models.CharField(blank=True, choices=[('seis_o_mas', 'Seis o mas'), ('cuatro_o_cinco', 'Cuatro o cinco'), ('dos_o_tres', 'Dos o tres'), ('una', 'Una'), ('ninguna', 'Ninguna')], max_length=32, null=True)),
-                ('training_instances_room_staff_last_3y', models.CharField(blank=True, choices=[('seis_o_mas', 'Seis o mas'), ('cuatro_o_cinco', 'Cuatro o cinco'), ('dos_o_tres', 'Dos o tres'), ('una', 'Una'), ('ninguna', 'Ninguna')], max_length=32, null=True)),
-                ('training_instances_technical_team_last_3y', models.CharField(blank=True, choices=[('seis_o_mas', 'Seis o mas'), ('cuatro_o_cinco', 'Cuatro o cinco'), ('dos_o_tres', 'Dos o tres'), ('una', 'Una'), ('ninguna', 'Ninguna')], max_length=32, null=True)),
-                ('training_instances_kitchen_staff_last_3y', models.CharField(blank=True, choices=[('seis_o_mas', 'Seis o mas'), ('cuatro_o_cinco', 'Cuatro o cinco'), ('dos_o_tres', 'Dos o tres'), ('una', 'Una'), ('ninguna', 'Ninguna'), ('no_aplica', 'No aplica')], max_length=32, null=True)),
-                ('cdi_locality', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='+', to='core.localidad')),
-                ('cdi_municipality', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='+', to='core.municipio')),
-                ('cdi_province', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.PROTECT, related_name='+', to='core.provincia')),
-                ('centro', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='formularios', to='centrodeinfancia.centrodeinfancia')),
-                ('created_by', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='formularios_cdi_creados', to=settings.AUTH_USER_MODEL)),
-                ('deleted_by', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='+', to=settings.AUTH_USER_MODEL)),
-                ('org_locality', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='+', to='core.localidad')),
-                ('org_municipality', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='+', to='core.municipio')),
-                ('org_province', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.PROTECT, related_name='+', to='core.provincia')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "deleted_at",
+                    models.DateTimeField(blank=True, db_index=True, null=True),
+                ),
+                ("source_form_version", models.PositiveIntegerField(default=1)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                ("survey_date", models.DateField(blank=True, null=True)),
+                (
+                    "respondent_full_name",
+                    models.CharField(blank=True, max_length=255, null=True),
+                ),
+                (
+                    "respondent_role",
+                    models.CharField(blank=True, max_length=255, null=True),
+                ),
+                (
+                    "respondent_email",
+                    models.EmailField(blank=True, max_length=255, null=True),
+                ),
+                ("cdi_name", models.CharField(blank=True, max_length=255, null=True)),
+                (
+                    "cdi_code",
+                    models.CharField(
+                        blank=True, db_index=True, max_length=32, null=True
+                    ),
+                ),
+                (
+                    "cdi_department",
+                    models.CharField(blank=True, max_length=255, null=True),
+                ),
+                ("cdi_street", models.CharField(blank=True, max_length=255, null=True)),
+                (
+                    "cdi_door_number",
+                    models.CharField(blank=True, max_length=255, null=True),
+                ),
+                (
+                    "cdi_postal_code",
+                    models.CharField(blank=True, max_length=12, null=True),
+                ),
+                (
+                    "cdi_geo_latitude",
+                    models.DecimalField(
+                        blank=True,
+                        decimal_places=6,
+                        max_digits=8,
+                        null=True,
+                        validators=[
+                            django.core.validators.MinValueValidator(-90),
+                            django.core.validators.MaxValueValidator(90),
+                        ],
+                    ),
+                ),
+                (
+                    "cdi_geo_longitude",
+                    models.DecimalField(
+                        blank=True,
+                        decimal_places=6,
+                        max_digits=9,
+                        null=True,
+                        validators=[
+                            django.core.validators.MinValueValidator(-180),
+                            django.core.validators.MaxValueValidator(180),
+                        ],
+                    ),
+                ),
+                (
+                    "cdi_phone",
+                    models.CharField(
+                        blank=True,
+                        max_length=20,
+                        null=True,
+                        validators=[
+                            django.core.validators.RegexValidator(
+                                message="Ingrese un telefono valido con formato 054-011-40333588.",
+                                regex="^\\d{2,4}-\\d{2,4}-\\d{6,8}$",
+                            )
+                        ],
+                    ),
+                ),
+                ("cdi_email", models.EmailField(blank=True, max_length=255, null=True)),
+                (
+                    "cdi_contact_first_name",
+                    models.CharField(blank=True, max_length=255, null=True),
+                ),
+                (
+                    "cdi_contact_last_name",
+                    models.CharField(blank=True, max_length=255, null=True),
+                ),
+                (
+                    "cdi_contact_phone",
+                    models.CharField(
+                        blank=True,
+                        max_length=20,
+                        null=True,
+                        validators=[
+                            django.core.validators.RegexValidator(
+                                message="Ingrese un telefono valido con formato 054-011-40333588.",
+                                regex="^\\d{2,4}-\\d{2,4}-\\d{6,8}$",
+                            )
+                        ],
+                    ),
+                ),
+                (
+                    "cdi_contact_email",
+                    models.EmailField(blank=True, max_length=255, null=True),
+                ),
+                ("operation_months", models.JSONField(blank=True, default=list)),
+                ("operation_days", models.JSONField(blank=True, default=list)),
+                ("opening_time", models.TimeField(blank=True, null=True)),
+                ("closing_time", models.TimeField(blank=True, null=True)),
+                (
+                    "workday_type",
+                    models.CharField(
+                        blank=True,
+                        choices=[
+                            ("simple_single_shift", "Jornada simple"),
+                            ("multiple_simple_shifts", "Dos o mas jornadas simples"),
+                            ("full_double_same_group", "Jornada completa/doble"),
+                            ("other", "Otra"),
+                        ],
+                        max_length=64,
+                        null=True,
+                    ),
+                ),
+                (
+                    "workday_type_other",
+                    models.CharField(blank=True, max_length=255, null=True),
+                ),
+                (
+                    "total_children_count",
+                    models.PositiveIntegerField(blank=True, null=True),
+                ),
+                (
+                    "total_staff_count",
+                    models.PositiveIntegerField(blank=True, null=True),
+                ),
+                (
+                    "management_mode",
+                    models.CharField(
+                        blank=True,
+                        choices=[
+                            ("gobierno_nacional", "Gobierno nacional"),
+                            ("gobierno_provincial", "Gobierno provincial"),
+                            ("gobierno_municipal", "Gobierno municipal"),
+                            ("ong", "Ong"),
+                            (
+                                "cogestion_provincial_municipal",
+                                "Cogestion provincial municipal",
+                            ),
+                            (
+                                "cogestion_ong_provincial_municipal",
+                                "Cogestion ong provincial municipal",
+                            ),
+                            ("otra", "Otra"),
+                        ],
+                        max_length=64,
+                        null=True,
+                    ),
+                ),
+                (
+                    "management_mode_other",
+                    models.CharField(blank=True, max_length=255, null=True),
+                ),
+                (
+                    "managing_organization_name",
+                    models.CharField(blank=True, max_length=1000, null=True),
+                ),
+                (
+                    "managing_organization_cuit",
+                    models.CharField(
+                        blank=True,
+                        max_length=13,
+                        null=True,
+                        validators=[
+                            django.core.validators.RegexValidator(
+                                message="Ingrese un CUIT valido con formato 20-12345678-3.",
+                                regex="^\\d{2}-\\d{8}-\\d{1}$",
+                            )
+                        ],
+                    ),
+                ),
+                (
+                    "org_department",
+                    models.CharField(blank=True, max_length=255, null=True),
+                ),
+                ("org_street", models.CharField(blank=True, max_length=255, null=True)),
+                ("org_number", models.PositiveIntegerField(blank=True, null=True)),
+                (
+                    "org_postal_code",
+                    models.CharField(blank=True, max_length=12, null=True),
+                ),
+                (
+                    "org_building",
+                    models.CharField(blank=True, max_length=255, null=True),
+                ),
+                ("org_floor", models.CharField(blank=True, max_length=255, null=True)),
+                (
+                    "org_apartment",
+                    models.CharField(blank=True, max_length=255, null=True),
+                ),
+                ("org_office", models.CharField(blank=True, max_length=255, null=True)),
+                (
+                    "org_phone",
+                    models.CharField(
+                        blank=True,
+                        max_length=20,
+                        null=True,
+                        validators=[
+                            django.core.validators.RegexValidator(
+                                message="Ingrese un telefono valido con formato 054-011-40333588.",
+                                regex="^\\d{2,4}-\\d{2,4}-\\d{6,8}$",
+                            )
+                        ],
+                    ),
+                ),
+                ("org_email", models.EmailField(blank=True, max_length=255, null=True)),
+                (
+                    "org_contact_first_name",
+                    models.CharField(blank=True, max_length=255, null=True),
+                ),
+                (
+                    "org_contact_last_name",
+                    models.CharField(blank=True, max_length=255, null=True),
+                ),
+                (
+                    "org_contact_phone",
+                    models.CharField(
+                        blank=True,
+                        max_length=20,
+                        null=True,
+                        validators=[
+                            django.core.validators.RegexValidator(
+                                message="Ingrese un telefono valido con formato 054-011-40333588.",
+                                regex="^\\d{2,4}-\\d{2,4}-\\d{6,8}$",
+                            )
+                        ],
+                    ),
+                ),
+                (
+                    "org_contact_email",
+                    models.EmailField(blank=True, max_length=255, null=True),
+                ),
+                (
+                    "tenure_mode",
+                    models.CharField(
+                        blank=True,
+                        choices=[
+                            ("propio", "Propio"),
+                            ("alquilado", "Alquilado"),
+                            ("cedido_gubernamental", "Cedido gubernamental"),
+                            ("cedido_privado", "Cedido privado"),
+                            ("comodato", "Comodato"),
+                            ("ocupado_de_hecho", "Ocupado de hecho"),
+                            ("otra", "Otra"),
+                        ],
+                        max_length=64,
+                        null=True,
+                    ),
+                ),
+                (
+                    "tenure_mode_other",
+                    models.CharField(blank=True, max_length=255, null=True),
+                ),
+                ("exclusive_space_use", models.BooleanField(blank=True, null=True)),
+                (
+                    "room_count_excluding_service_areas",
+                    models.PositiveIntegerField(blank=True, null=True),
+                ),
+                (
+                    "electricity_access",
+                    models.CharField(
+                        blank=True,
+                        choices=[
+                            ("red_formal", "Red formal"),
+                            ("red_informal", "Red informal"),
+                            ("generacion_propia_motor", "Generacion propia motor"),
+                            ("generacion_propia_otros", "Generacion propia otros"),
+                            ("sin_electricidad", "Sin electricidad"),
+                        ],
+                        max_length=64,
+                        null=True,
+                    ),
+                ),
+                (
+                    "electrical_safety",
+                    models.CharField(
+                        blank=True,
+                        choices=[
+                            (
+                                "cumple_y_revision_mayor_a_un_ano",
+                                "Cumple y revision mayor a un ano",
+                            ),
+                            ("cumple_y_revision_anual", "Cumple y revision anual"),
+                            ("cumple_sin_revisiones", "Cumple sin revisiones"),
+                            (
+                                "cumple_solo_zonas_ninos_sin_revisiones",
+                                "Cumple solo zonas ninos sin revisiones",
+                            ),
+                            ("no_cumple_sin_revisiones", "No cumple sin revisiones"),
+                        ],
+                        max_length=64,
+                        null=True,
+                    ),
+                ),
+                (
+                    "water_access",
+                    models.CharField(
+                        blank=True,
+                        choices=[
+                            ("caneria_dentro_cdi", "Caneria dentro cdi"),
+                            ("fuera_cdi_dentro_terreno", "Fuera cdi dentro terreno"),
+                            ("fuera_del_terreno", "Fuera del terreno"),
+                            ("sin_agua", "Sin agua"),
+                        ],
+                        max_length=64,
+                        null=True,
+                    ),
+                ),
+                (
+                    "safe_drinking_water_source",
+                    models.CharField(
+                        blank=True,
+                        choices=[
+                            ("red_o_embotellada_segura", "Red o embotellada segura"),
+                            ("pozo_analisis_vigente", "Pozo analisis vigente"),
+                            (
+                                "pozo_analisis_vencido_o_sin_control",
+                                "Pozo analisis vencido o sin control",
+                            ),
+                            (
+                                "otra_con_proceso_sin_garantia_formal",
+                                "Otra con proceso sin garantia formal",
+                            ),
+                            (
+                                "otra_sin_info_potabilizacion",
+                                "Otra sin info potabilizacion",
+                            ),
+                        ],
+                        max_length=64,
+                        null=True,
+                    ),
+                ),
+                (
+                    "excreta_disposal",
+                    models.CharField(
+                        blank=True,
+                        choices=[
+                            ("red_publica_cloaca", "Red publica cloaca"),
+                            ("camara_septica_pozo_ciego", "Camara septica pozo ciego"),
+                            ("solo_pozo_ciego", "Solo pozo ciego"),
+                            ("hoyo_tierra", "Hoyo tierra"),
+                            ("sin_sistema", "Sin sistema"),
+                        ],
+                        max_length=64,
+                        null=True,
+                    ),
+                ),
+                (
+                    "has_fire_extinguishers_current",
+                    models.BooleanField(blank=True, null=True),
+                ),
+                (
+                    "first_aid_kit_status",
+                    models.CharField(
+                        blank=True,
+                        choices=[
+                            (
+                                "completo_todas_salas_ok_vigente_fuera_alcance",
+                                "Completo todas salas ok vigente fuera alcance",
+                            ),
+                            (
+                                "incompleto_todas_salas_ok_vigente_fuera_alcance",
+                                "Incompleto todas salas ok vigente fuera alcance",
+                            ),
+                            (
+                                "unico_completo_compartido_ok_vigente_fuera_alcance",
+                                "Unico completo compartido ok vigente fuera alcance",
+                            ),
+                            (
+                                "incompleto_compartido_o_mal_estado_o_vencido",
+                                "Incompleto compartido o mal estado o vencido",
+                            ),
+                            (
+                                "no_tienen_o_al_alcance_ninos",
+                                "No tienen o al alcance ninos",
+                            ),
+                        ],
+                        max_length=128,
+                        null=True,
+                    ),
+                ),
+                ("has_working_computer", models.BooleanField(blank=True, null=True)),
+                (
+                    "internet_access_quality_staff",
+                    models.CharField(
+                        blank=True,
+                        choices=[
+                            (
+                                "alta_velocidad_con_acceso_personal",
+                                "Alta velocidad con acceso personal",
+                            ),
+                            (
+                                "estable_con_acceso_personal",
+                                "Estable con acceso personal",
+                            ),
+                            (
+                                "estable_sin_acceso_personal",
+                                "Estable sin acceso personal",
+                            ),
+                            (
+                                "mala_calidad_con_acceso_personal",
+                                "Mala calidad con acceso personal",
+                            ),
+                            ("sin_servicio", "Sin servicio"),
+                        ],
+                        max_length=128,
+                        null=True,
+                    ),
+                ),
+                (
+                    "has_kitchen_space",
+                    models.CharField(
+                        blank=True,
+                        choices=[
+                            ("si", "Si"),
+                            ("no", "No"),
+                            ("no_sabe_no_responde", "No sabe / No responde"),
+                        ],
+                        max_length=32,
+                        null=True,
+                    ),
+                ),
+                (
+                    "cooking_fuel",
+                    models.CharField(
+                        blank=True,
+                        choices=[
+                            ("gas_red", "Gas red"),
+                            ("gas_granel_tubo_garrafa", "Gas granel tubo garrafa"),
+                            ("electricidad", "Electricidad"),
+                            ("lena_o_carbon", "Lena o carbon"),
+                            ("no_utiliza", "No utiliza"),
+                        ],
+                        max_length=64,
+                        null=True,
+                    ),
+                ),
+                (
+                    "has_outdoor_space",
+                    models.CharField(
+                        blank=True,
+                        choices=[
+                            ("si", "Si"),
+                            ("no", "No"),
+                            ("no_responde", "No responde"),
+                        ],
+                        max_length=32,
+                        null=True,
+                    ),
+                ),
+                (
+                    "has_outdoor_playground",
+                    models.CharField(
+                        blank=True,
+                        choices=[
+                            ("si", "Si"),
+                            ("no", "No"),
+                            ("no_responde", "No responde"),
+                        ],
+                        max_length=32,
+                        null=True,
+                    ),
+                ),
+                (
+                    "evacuation_plan_and_drills",
+                    models.CharField(
+                        blank=True,
+                        choices=[
+                            (
+                                "protocolo_escrito_y_2_simulacros_o_mas",
+                                "Protocolo escrito y 2 simulacros o mas",
+                            ),
+                            (
+                                "protocolo_escrito_y_simulacros_sin_frecuencia",
+                                "Protocolo escrito y simulacros sin frecuencia",
+                            ),
+                            (
+                                "protocolo_escrito_sin_simulacros",
+                                "Protocolo escrito sin simulacros",
+                            ),
+                            (
+                                "practicas_informales_sin_protocolo",
+                                "Practicas informales sin protocolo",
+                            ),
+                            ("sin_protocolo", "Sin protocolo"),
+                        ],
+                        max_length=128,
+                        null=True,
+                    ),
+                ),
+                (
+                    "first_aid_training_coverage",
+                    models.CharField(
+                        blank=True,
+                        choices=[
+                            ("todo_personal_certificado", "Todo personal certificado"),
+                            ("entre_70_y_99", "Entre 70 y 99"),
+                            ("entre_40_y_69", "Entre 40 y 69"),
+                            ("menos_40", "Menos 40"),
+                            ("ninguno", "Ninguno"),
+                        ],
+                        max_length=64,
+                        null=True,
+                    ),
+                ),
+                (
+                    "emergency_medical_service",
+                    models.CharField(
+                        blank=True,
+                        choices=[
+                            (
+                                "servicio_y_cobertura_identificada",
+                                "Servicio y cobertura identificada",
+                            ),
+                            (
+                                "servicio_sin_cobertura_identificada",
+                                "Servicio sin cobertura identificada",
+                            ),
+                            (
+                                "sin_servicio_con_cobertura_identificada",
+                                "Sin servicio con cobertura identificada",
+                            ),
+                            (
+                                "sin_servicio_con_cobertura_parcial",
+                                "Sin servicio con cobertura parcial",
+                            ),
+                            (
+                                "sin_servicio_y_sin_cobertura",
+                                "Sin servicio y sin cobertura",
+                            ),
+                        ],
+                        max_length=64,
+                        null=True,
+                    ),
+                ),
+                ("health_protocol_items", models.JSONField(blank=True, default=list)),
+                ("meals_provided", models.JSONField(blank=True, default=list)),
+                (
+                    "meals_provided_other",
+                    models.CharField(blank=True, max_length=255, null=True),
+                ),
+                (
+                    "menu_preparation_quality",
+                    models.CharField(
+                        blank=True,
+                        choices=[
+                            (
+                                "nutricionista_indicaciones_y_frescos",
+                                "Nutricionista indicaciones y frescos",
+                            ),
+                            (
+                                "nutricionista_indicaciones_a_veces_sin_frescos",
+                                "Nutricionista indicaciones a veces sin frescos",
+                            ),
+                            (
+                                "no_siempre_nutricionista_parcial_y_mixto",
+                                "No siempre nutricionista parcial y mixto",
+                            ),
+                            (
+                                "sin_nutricionista_pocas_indicaciones_procesados",
+                                "Sin nutricionista pocas indicaciones procesados",
+                            ),
+                            (
+                                "sin_nutricionista_ultraprocesados",
+                                "Sin nutricionista ultraprocesados",
+                            ),
+                        ],
+                        max_length=128,
+                        null=True,
+                    ),
+                ),
+                (
+                    "menu_periodic_evaluation",
+                    models.CharField(
+                        blank=True,
+                        choices=[
+                            (
+                                "periodica_todas_necesidades_y_patrones_y_personal_capacitado",
+                                "Periodica todas necesidades y patrones y personal capacitado",
+                            ),
+                            (
+                                "periodica_mayoria_necesidades_y_algunos_patrones",
+                                "Periodica mayoria necesidades y algunos patrones",
+                            ),
+                            (
+                                "ocasional_parcial_y_capacitacion_esporadica",
+                                "Ocasional parcial y capacitacion esporadica",
+                            ),
+                            (
+                                "rara_vez_limitada_sin_patrones",
+                                "Rara vez limitada sin patrones",
+                            ),
+                            ("no_evalua", "No evalua"),
+                        ],
+                        max_length=128,
+                        null=True,
+                    ),
+                ),
+                (
+                    "food_handling_training_coverage",
+                    models.CharField(
+                        blank=True,
+                        choices=[
+                            ("todo_personal_anmat", "Todo personal anmat"),
+                            ("entre_70_y_99", "Entre 70 y 99"),
+                            ("entre_40_y_60", "Entre 40 y 60"),
+                            ("menos_40", "Menos 40"),
+                            ("ninguno", "Ninguno"),
+                        ],
+                        max_length=64,
+                        null=True,
+                    ),
+                ),
+                (
+                    "breast_milk_storage_conditions",
+                    models.CharField(
+                        blank=True,
+                        choices=[
+                            (
+                                "heladera_exclusiva_identificada_y_rotulada",
+                                "Heladera exclusiva identificada y rotulada",
+                            ),
+                            (
+                                "heladera_compartida_sector_exclusivo_identificada_y_rotulada",
+                                "Heladera compartida sector exclusivo identificada y rotulada",
+                            ),
+                            (
+                                "heladera_exclusiva_identificada_sin_fecha",
+                                "Heladera exclusiva identificada sin fecha",
+                            ),
+                            (
+                                "heladera_compartida_sector_exclusivo_identificada_sin_fecha",
+                                "Heladera compartida sector exclusivo identificada sin fecha",
+                            ),
+                            (
+                                "sin_espacio_exclusivo_ni_identificacion",
+                                "Sin espacio exclusivo ni identificacion",
+                            ),
+                        ],
+                        max_length=128,
+                        null=True,
+                    ),
+                ),
+                (
+                    "breastfeeding_awareness_actions",
+                    models.CharField(
+                        blank=True,
+                        choices=[
+                            (
+                                "dos_o_mas_anuales_todas_familias",
+                                "Dos o mas anuales todas familias",
+                            ),
+                            ("una_anual_todas_familias", "Una anual todas familias"),
+                            (
+                                "una_anual_alcance_limitado",
+                                "Una anual alcance limitado",
+                            ),
+                            ("muy_ocasionales_limitadas", "Muy ocasionales limitadas"),
+                            ("ninguna", "Ninguna"),
+                        ],
+                        max_length=64,
+                        null=True,
+                    ),
+                ),
+                (
+                    "has_waitlist_registry",
+                    models.CharField(
+                        blank=True,
+                        choices=[("si", "Si"), ("no", "No"), ("ns_nc", "NS/NC")],
+                        max_length=16,
+                        null=True,
+                    ),
+                ),
+                (
+                    "has_admission_prioritization_tool",
+                    models.BooleanField(blank=True, null=True),
+                ),
+                (
+                    "children_with_disabilities_count",
+                    models.PositiveIntegerField(blank=True, null=True),
+                ),
+                (
+                    "children_specific_ethnicity_count",
+                    models.PositiveIntegerField(blank=True, null=True),
+                ),
+                (
+                    "has_entry_exit_staff",
+                    models.CharField(
+                        blank=True,
+                        choices=[("si", "Si"), ("no", "No"), ("ns_nc", "NS/NC")],
+                        max_length=16,
+                        null=True,
+                    ),
+                ),
+                (
+                    "family_communication_frequency",
+                    models.CharField(
+                        blank=True,
+                        choices=[
+                            (
+                                "reuniones_mensuales_y_canales_formales",
+                                "Reuniones mensuales y canales formales",
+                            ),
+                            (
+                                "reuniones_trimestrales_y_canales_formales",
+                                "Reuniones trimestrales y canales formales",
+                            ),
+                            (
+                                "reuniones_semestrales_y_algunos_canales",
+                                "Reuniones semestrales y algunos canales",
+                            ),
+                            (
+                                "reuniones_anuales_sin_canales",
+                                "Reuniones anuales sin canales",
+                            ),
+                            ("sin_reuniones_ni_canales", "Sin reuniones ni canales"),
+                        ],
+                        max_length=128,
+                        null=True,
+                    ),
+                ),
+                (
+                    "parenting_workshops_frequency",
+                    models.CharField(
+                        blank=True,
+                        choices=[
+                            ("trimestral_o_mas", "Trimestral o mas"),
+                            ("cada_4_a_6_meses", "Cada 4 a 6 meses"),
+                            ("una_vez_al_ano", "Una vez al ano"),
+                            ("esporadica", "Esporadica"),
+                            ("no_se_realizan", "No se realizan"),
+                        ],
+                        max_length=64,
+                        null=True,
+                    ),
+                ),
+                (
+                    "actions_promoting_rights_access",
+                    models.CharField(
+                        blank=True,
+                        choices=[("si", "Si"), ("no", "No"), ("ns_nc", "NS/NC")],
+                        max_length=16,
+                        null=True,
+                    ),
+                ),
+                (
+                    "actions_against_rights_violations",
+                    models.CharField(
+                        blank=True,
+                        choices=[("si", "Si"), ("no", "No"), ("ns_nc", "NS/NC")],
+                        max_length=16,
+                        null=True,
+                    ),
+                ),
+                (
+                    "networking_level",
+                    models.CharField(
+                        blank=True,
+                        choices=[
+                            (
+                                "red_mapeo_mesas_trimestral_o_mas",
+                                "Red mapeo mesas trimestral o mas",
+                            ),
+                            ("red_mapeo_mesas_semestral", "Red mapeo mesas semestral"),
+                            ("sin_red_con_mapeo_y_mesas", "Sin red con mapeo y mesas"),
+                            (
+                                "sin_red_sin_mesas_con_mapeo",
+                                "Sin red sin mesas con mapeo",
+                            ),
+                            ("sin_red_ni_mapeo", "Sin red ni mapeo"),
+                        ],
+                        max_length=128,
+                        null=True,
+                    ),
+                ),
+                (
+                    "rights_violation_protocol",
+                    models.CharField(
+                        blank=True,
+                        choices=[
+                            (
+                                "protocolo_revision_periodica_mayoria_conoce",
+                                "Protocolo revision periodica mayoria conoce",
+                            ),
+                            (
+                                "protocolo_revision_periodica_menos_mitad",
+                                "Protocolo revision periodica menos mitad",
+                            ),
+                            (
+                                "protocolo_sin_revision_mayoria_conoce",
+                                "Protocolo sin revision mayoria conoce",
+                            ),
+                            (
+                                "protocolo_sin_revision_menos_mitad",
+                                "Protocolo sin revision menos mitad",
+                            ),
+                            ("no_existe", "No existe"),
+                        ],
+                        max_length=128,
+                        null=True,
+                    ),
+                ),
+                (
+                    "technical_team_level",
+                    models.CharField(
+                        blank=True,
+                        choices=[
+                            ("completo_mas_20_horas", "Completo mas 20 horas"),
+                            (
+                                "perfiles_diversos_15_19_horas",
+                                "Perfiles diversos 15 19 horas",
+                            ),
+                            (
+                                "al_menos_un_perfil_o_10_14_horas",
+                                "Al menos un perfil o 10 14 horas",
+                            ),
+                            (
+                                "limitado_un_perfil_o_9_o_menos",
+                                "Limitado un perfil o 9 o menos",
+                            ),
+                            ("sin_equipo", "Sin equipo"),
+                        ],
+                        max_length=64,
+                        null=True,
+                    ),
+                ),
+                (
+                    "child_development_record_frequency",
+                    models.CharField(
+                        blank=True,
+                        choices=[
+                            ("mensual", "Mensual"),
+                            ("trimestral", "Trimestral"),
+                            ("semestral", "Semestral"),
+                            ("anual", "Anual"),
+                            ("no_registra", "No registra"),
+                        ],
+                        max_length=32,
+                        null=True,
+                    ),
+                ),
+                (
+                    "family_info_record_frequency",
+                    models.CharField(
+                        blank=True,
+                        choices=[
+                            ("mensual", "Mensual"),
+                            ("trimestral", "Trimestral"),
+                            ("semestral", "Semestral"),
+                            ("anual", "Anual"),
+                            ("no_registra", "No registra"),
+                        ],
+                        max_length=32,
+                        null=True,
+                    ),
+                ),
+                (
+                    "health_vaccine_record_frequency",
+                    models.CharField(
+                        blank=True,
+                        choices=[
+                            ("mensual", "Mensual"),
+                            ("trimestral", "Trimestral"),
+                            ("semestral", "Semestral"),
+                            ("anual", "Anual"),
+                            ("no_registra", "No registra"),
+                        ],
+                        max_length=32,
+                        null=True,
+                    ),
+                ),
+                (
+                    "socioeducational_project_participants",
+                    models.CharField(
+                        blank=True,
+                        choices=[
+                            (
+                                "conduccion_sala_equipo_auxiliar_familias_comunidad",
+                                "Conduccion sala equipo auxiliar familias comunidad",
+                            ),
+                            (
+                                "conduccion_sala_equipo_familias",
+                                "Conduccion sala equipo familias",
+                            ),
+                            ("conduccion_sala_equipo", "Conduccion sala equipo"),
+                            ("conduccion_y_o_equipo", "Conduccion y o equipo"),
+                            ("no_tienen", "No tienen"),
+                        ],
+                        max_length=128,
+                        null=True,
+                    ),
+                ),
+                (
+                    "classroom_activity_planning",
+                    models.CharField(
+                        blank=True,
+                        choices=[
+                            (
+                                "semanal_en_marco_mensual_o_semestral_y_anual",
+                                "Semanal en marco mensual o semestral y anual",
+                            ),
+                            (
+                                "semanal_en_marco_mensual_o_semestral_sin_anual",
+                                "Semanal en marco mensual o semestral sin anual",
+                            ),
+                            ("semanal_en_marco_anual", "Semanal en marco anual"),
+                            ("solo_semanal", "Solo semanal"),
+                            ("no_planifican", "No planifican"),
+                        ],
+                        max_length=128,
+                        null=True,
+                    ),
+                ),
+                (
+                    "integral_planning",
+                    models.CharField(
+                        blank=True,
+                        choices=[
+                            (
+                                "intereses_caracteristicas_necesidades_e_integralidad",
+                                "Intereses caracteristicas necesidades e integralidad",
+                            ),
+                            (
+                                "solo_intereses_caracteristicas_necesidades",
+                                "Solo intereses caracteristicas necesidades",
+                            ),
+                            ("solo_integralidad", "Solo integralidad"),
+                            ("ninguno", "Ninguno"),
+                            ("no_planifican", "No planifican"),
+                        ],
+                        max_length=128,
+                        null=True,
+                    ),
+                ),
+                (
+                    "direction_training_in_early_childhood",
+                    models.CharField(
+                        blank=True,
+                        choices=[
+                            (
+                                "titulo_superior_completo_especifico",
+                                "Titulo superior completo especifico",
+                            ),
+                            (
+                                "carrera_75_o_mas_o_posgrados",
+                                "Carrera 75 o mas o posgrados",
+                            ),
+                            ("cursando_formacion_formal", "Cursando formacion formal"),
+                            ("solo_cursos_cortos", "Solo cursos cortos"),
+                            ("sin_formacion", "Sin formacion"),
+                        ],
+                        max_length=64,
+                        null=True,
+                    ),
+                ),
+                (
+                    "pedagogical_pairs_coverage",
+                    models.CharField(
+                        blank=True,
+                        choices=[
+                            ("todas", "Todas"),
+                            ("mayoria", "Mayoria"),
+                            ("algunas", "Algunas"),
+                            ("muy_pocas", "Muy pocas"),
+                            ("ninguna", "Ninguna"),
+                        ],
+                        max_length=32,
+                        null=True,
+                    ),
+                ),
+                (
+                    "qualified_teacher_coverage",
+                    models.CharField(
+                        blank=True,
+                        choices=[
+                            ("todas", "Todas"),
+                            ("mayoria", "Mayoria"),
+                            ("algunas", "Algunas"),
+                            ("muy_pocas", "Muy pocas"),
+                        ],
+                        max_length=32,
+                        null=True,
+                    ),
+                ),
+                (
+                    "assistant_training_coverage",
+                    models.CharField(
+                        blank=True,
+                        choices=[
+                            ("todos", "Todos"),
+                            ("mayoria", "Mayoria"),
+                            ("algunos", "Algunos"),
+                            ("muy_pocos", "Muy pocos"),
+                            ("ninguno", "Ninguno"),
+                        ],
+                        max_length=32,
+                        null=True,
+                    ),
+                ),
+                (
+                    "main_hiring_mode",
+                    models.CharField(
+                        blank=True,
+                        choices=[
+                            ("permanente", "Permanente"),
+                            ("temporal", "Temporal"),
+                            ("beca_o_pasantia", "Beca o pasantia"),
+                            ("programa_social_insercion", "Programa social insercion"),
+                            ("voluntario_u_otra", "Voluntario u otra"),
+                        ],
+                        max_length=64,
+                        null=True,
+                    ),
+                ),
+                (
+                    "meetings_teaching_staff_frequency",
+                    models.CharField(
+                        blank=True,
+                        choices=[
+                            ("mensual", "Mensual"),
+                            ("trimestral", "Trimestral"),
+                            ("semestral", "Semestral"),
+                            ("anual", "Anual"),
+                            ("no_se_realizan", "No se realizan"),
+                        ],
+                        max_length=32,
+                        null=True,
+                    ),
+                ),
+                (
+                    "meetings_non_teaching_staff_frequency",
+                    models.CharField(
+                        blank=True,
+                        choices=[
+                            ("mensual", "Mensual"),
+                            ("trimestral", "Trimestral"),
+                            ("semestral", "Semestral"),
+                            ("anual", "Anual"),
+                            ("no_se_realizan", "No se realizan"),
+                        ],
+                        max_length=32,
+                        null=True,
+                    ),
+                ),
+                (
+                    "meetings_all_staff_frequency",
+                    models.CharField(
+                        blank=True,
+                        choices=[
+                            ("mensual", "Mensual"),
+                            ("trimestral", "Trimestral"),
+                            ("semestral", "Semestral"),
+                            ("anual", "Anual"),
+                            ("no_se_realizan", "No se realizan"),
+                        ],
+                        max_length=32,
+                        null=True,
+                    ),
+                ),
+                (
+                    "training_instances_all_staff_last_3y",
+                    models.CharField(
+                        blank=True,
+                        choices=[
+                            ("seis_o_mas", "Seis o mas"),
+                            ("cuatro_o_cinco", "Cuatro o cinco"),
+                            ("dos_o_tres", "Dos o tres"),
+                            ("una", "Una"),
+                            ("ninguna", "Ninguna"),
+                        ],
+                        max_length=32,
+                        null=True,
+                    ),
+                ),
+                (
+                    "training_instances_room_staff_last_3y",
+                    models.CharField(
+                        blank=True,
+                        choices=[
+                            ("seis_o_mas", "Seis o mas"),
+                            ("cuatro_o_cinco", "Cuatro o cinco"),
+                            ("dos_o_tres", "Dos o tres"),
+                            ("una", "Una"),
+                            ("ninguna", "Ninguna"),
+                        ],
+                        max_length=32,
+                        null=True,
+                    ),
+                ),
+                (
+                    "training_instances_technical_team_last_3y",
+                    models.CharField(
+                        blank=True,
+                        choices=[
+                            ("seis_o_mas", "Seis o mas"),
+                            ("cuatro_o_cinco", "Cuatro o cinco"),
+                            ("dos_o_tres", "Dos o tres"),
+                            ("una", "Una"),
+                            ("ninguna", "Ninguna"),
+                        ],
+                        max_length=32,
+                        null=True,
+                    ),
+                ),
+                (
+                    "training_instances_kitchen_staff_last_3y",
+                    models.CharField(
+                        blank=True,
+                        choices=[
+                            ("seis_o_mas", "Seis o mas"),
+                            ("cuatro_o_cinco", "Cuatro o cinco"),
+                            ("dos_o_tres", "Dos o tres"),
+                            ("una", "Una"),
+                            ("ninguna", "Ninguna"),
+                            ("no_aplica", "No aplica"),
+                        ],
+                        max_length=32,
+                        null=True,
+                    ),
+                ),
+                (
+                    "cdi_locality",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="+",
+                        to="core.localidad",
+                    ),
+                ),
+                (
+                    "cdi_municipality",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="+",
+                        to="core.municipio",
+                    ),
+                ),
+                (
+                    "cdi_province",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.PROTECT,
+                        related_name="+",
+                        to="core.provincia",
+                    ),
+                ),
+                (
+                    "centro",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="formularios",
+                        to="centrodeinfancia.centrodeinfancia",
+                    ),
+                ),
+                (
+                    "created_by",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="formularios_cdi_creados",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    "deleted_by",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="+",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    "org_locality",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="+",
+                        to="core.localidad",
+                    ),
+                ),
+                (
+                    "org_municipality",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="+",
+                        to="core.municipio",
+                    ),
+                ),
+                (
+                    "org_province",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.PROTECT,
+                        related_name="+",
+                        to="core.provincia",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Formulario CDI',
-                'verbose_name_plural': 'Formularios CDI',
-                'ordering': ['-survey_date', '-created_at', '-id'],
+                "verbose_name": "Formulario CDI",
+                "verbose_name_plural": "Formularios CDI",
+                "ordering": ["-survey_date", "-created_at", "-id"],
             },
             managers=[
-                ('objects', core.soft_delete.base.SoftDeleteManager()),
-                ('all_objects', core.soft_delete.base.SoftDeleteManager(include_deleted=True)),
+                ("objects", core.soft_delete.base.SoftDeleteManager()),
+                (
+                    "all_objects",
+                    core.soft_delete.base.SoftDeleteManager(include_deleted=True),
+                ),
             ],
         ),
         migrations.CreateModel(
-            name='FormularioCDIRoomDistribution',
+            name="FormularioCDIRoomDistribution",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('deleted_at', models.DateTimeField(blank=True, db_index=True, null=True)),
-                ('age_group', models.CharField(choices=[('lactantes', 'Lactantes'), ('deambuladores', 'Deambuladores'), ('dos_anos', 'Dos años'), ('tres_anos', 'Tres años'), ('cuatro_anos', 'Cuatro años'), ('multiedad', 'Multiedad')], max_length=32)),
-                ('room_count', models.PositiveIntegerField(blank=True, null=True)),
-                ('exclusive_area_m2', models.DecimalField(blank=True, decimal_places=2, max_digits=10, null=True)),
-                ('children_count', models.PositiveIntegerField(blank=True, null=True)),
-                ('staff_count', models.PositiveIntegerField(blank=True, null=True)),
-                ('deleted_by', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='+', to=settings.AUTH_USER_MODEL)),
-                ('formulario', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='room_distribution_rows', to='centrodeinfancia.formulariocdi')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "deleted_at",
+                    models.DateTimeField(blank=True, db_index=True, null=True),
+                ),
+                (
+                    "age_group",
+                    models.CharField(
+                        choices=[
+                            ("lactantes", "Lactantes"),
+                            ("deambuladores", "Deambuladores"),
+                            ("dos_anos", "Dos años"),
+                            ("tres_anos", "Tres años"),
+                            ("cuatro_anos", "Cuatro años"),
+                            ("multiedad", "Multiedad"),
+                        ],
+                        max_length=32,
+                    ),
+                ),
+                ("room_count", models.PositiveIntegerField(blank=True, null=True)),
+                (
+                    "exclusive_area_m2",
+                    models.DecimalField(
+                        blank=True, decimal_places=2, max_digits=10, null=True
+                    ),
+                ),
+                ("children_count", models.PositiveIntegerField(blank=True, null=True)),
+                ("staff_count", models.PositiveIntegerField(blank=True, null=True)),
+                (
+                    "deleted_by",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="+",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    "formulario",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="room_distribution_rows",
+                        to="centrodeinfancia.formulariocdi",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Formulario CDI - Distribucion de salas',
-                'verbose_name_plural': 'Formulario CDI - Distribucion de salas',
+                "verbose_name": "Formulario CDI - Distribucion de salas",
+                "verbose_name_plural": "Formulario CDI - Distribucion de salas",
             },
             managers=[
-                ('objects', core.soft_delete.base.SoftDeleteManager()),
-                ('all_objects', core.soft_delete.base.SoftDeleteManager(include_deleted=True)),
+                ("objects", core.soft_delete.base.SoftDeleteManager()),
+                (
+                    "all_objects",
+                    core.soft_delete.base.SoftDeleteManager(include_deleted=True),
+                ),
             ],
         ),
         migrations.CreateModel(
-            name='FormularioCDIWaitlistByAgeGroup',
+            name="FormularioCDIWaitlistByAgeGroup",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('deleted_at', models.DateTimeField(blank=True, db_index=True, null=True)),
-                ('age_group', models.CharField(choices=[('lactantes', 'Lactantes'), ('deambuladores', 'Deambuladores'), ('un_ano', 'Un año'), ('dos_anos', 'Dos años'), ('tres_anos', 'Tres años'), ('cuatro_anos', 'Cuatro años')], max_length=32)),
-                ('waitlist_count', models.PositiveIntegerField(blank=True, null=True)),
-                ('deleted_by', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='+', to=settings.AUTH_USER_MODEL)),
-                ('formulario', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='waitlist_rows', to='centrodeinfancia.formulariocdi')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "deleted_at",
+                    models.DateTimeField(blank=True, db_index=True, null=True),
+                ),
+                (
+                    "age_group",
+                    models.CharField(
+                        choices=[
+                            ("lactantes", "Lactantes"),
+                            ("deambuladores", "Deambuladores"),
+                            ("un_ano", "Un año"),
+                            ("dos_anos", "Dos años"),
+                            ("tres_anos", "Tres años"),
+                            ("cuatro_anos", "Cuatro años"),
+                        ],
+                        max_length=32,
+                    ),
+                ),
+                ("waitlist_count", models.PositiveIntegerField(blank=True, null=True)),
+                (
+                    "deleted_by",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="+",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    "formulario",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="waitlist_rows",
+                        to="centrodeinfancia.formulariocdi",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Formulario CDI - Lista de espera',
-                'verbose_name_plural': 'Formulario CDI - Lista de espera',
+                "verbose_name": "Formulario CDI - Lista de espera",
+                "verbose_name_plural": "Formulario CDI - Lista de espera",
             },
             managers=[
-                ('objects', core.soft_delete.base.SoftDeleteManager()),
-                ('all_objects', core.soft_delete.base.SoftDeleteManager(include_deleted=True)),
+                ("objects", core.soft_delete.base.SoftDeleteManager()),
+                (
+                    "all_objects",
+                    core.soft_delete.base.SoftDeleteManager(include_deleted=True),
+                ),
             ],
         ),
         migrations.CreateModel(
-            name='FormularioCDIArticulationFrequency',
+            name="FormularioCDIArticulationFrequency",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('deleted_at', models.DateTimeField(blank=True, db_index=True, null=True)),
-                ('institution_type', models.CharField(choices=[('servicio_promocion_proteccion_local', 'Servicio de promocion y proteccion local'), ('servicio_promocion_proteccion_zonal', 'Servicio de promocion y proteccion zonal'), ('salud_caps_hospital_municipal', 'Salud CAPS/Hospital municipal'), ('salud_hospital_provincial', 'Salud hospital provincial'), ('educacion_jardin_maternal', 'Educacion jardin maternal'), ('educacion_escuela_primaria', 'Educacion escuela primaria'), ('desarrollo_social_municipal', 'Desarrollo social municipal'), ('desarrollo_social_provincial', 'Desarrollo social provincial'), ('justicia_juzgado', 'Justicia/Juzgado'), ('cultura_juegotecas', 'Cultura/Juegotecas'), ('cultura_espacios_comunitarios', 'Cultura/Espacios comunitarios'), ('cultura_iglesias', 'Cultura/Iglesias'), ('seguridad_policia', 'Seguridad/Policia'), ('seguridad_social_anses', 'Seguridad social/ANSES'), ('identidad_renaper', 'Identidad/RENAPER')], max_length=64)),
-                ('frequency', models.CharField(blank=True, choices=[('trimestral', 'Trimestral'), ('semestral', 'Semestral'), ('anual', 'Anual'), ('no_se_articula', 'No se articula')], max_length=32, null=True)),
-                ('deleted_by', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='+', to=settings.AUTH_USER_MODEL)),
-                ('formulario', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='articulation_rows', to='centrodeinfancia.formulariocdi')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "deleted_at",
+                    models.DateTimeField(blank=True, db_index=True, null=True),
+                ),
+                (
+                    "institution_type",
+                    models.CharField(
+                        choices=[
+                            (
+                                "servicio_promocion_proteccion_local",
+                                "Servicio de promocion y proteccion local",
+                            ),
+                            (
+                                "servicio_promocion_proteccion_zonal",
+                                "Servicio de promocion y proteccion zonal",
+                            ),
+                            (
+                                "salud_caps_hospital_municipal",
+                                "Salud CAPS/Hospital municipal",
+                            ),
+                            ("salud_hospital_provincial", "Salud hospital provincial"),
+                            ("educacion_jardin_maternal", "Educacion jardin maternal"),
+                            (
+                                "educacion_escuela_primaria",
+                                "Educacion escuela primaria",
+                            ),
+                            (
+                                "desarrollo_social_municipal",
+                                "Desarrollo social municipal",
+                            ),
+                            (
+                                "desarrollo_social_provincial",
+                                "Desarrollo social provincial",
+                            ),
+                            ("justicia_juzgado", "Justicia/Juzgado"),
+                            ("cultura_juegotecas", "Cultura/Juegotecas"),
+                            (
+                                "cultura_espacios_comunitarios",
+                                "Cultura/Espacios comunitarios",
+                            ),
+                            ("cultura_iglesias", "Cultura/Iglesias"),
+                            ("seguridad_policia", "Seguridad/Policia"),
+                            ("seguridad_social_anses", "Seguridad social/ANSES"),
+                            ("identidad_renaper", "Identidad/RENAPER"),
+                        ],
+                        max_length=64,
+                    ),
+                ),
+                (
+                    "frequency",
+                    models.CharField(
+                        blank=True,
+                        choices=[
+                            ("trimestral", "Trimestral"),
+                            ("semestral", "Semestral"),
+                            ("anual", "Anual"),
+                            ("no_se_articula", "No se articula"),
+                        ],
+                        max_length=32,
+                        null=True,
+                    ),
+                ),
+                (
+                    "deleted_by",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="+",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    "formulario",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="articulation_rows",
+                        to="centrodeinfancia.formulariocdi",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Formulario CDI - Articulacion institucional',
-                'verbose_name_plural': 'Formulario CDI - Articulacion institucional',
+                "verbose_name": "Formulario CDI - Articulacion institucional",
+                "verbose_name_plural": "Formulario CDI - Articulacion institucional",
             },
             managers=[
-                ('objects', core.soft_delete.base.SoftDeleteManager()),
-                ('all_objects', core.soft_delete.base.SoftDeleteManager(include_deleted=True)),
+                ("objects", core.soft_delete.base.SoftDeleteManager()),
+                (
+                    "all_objects",
+                    core.soft_delete.base.SoftDeleteManager(include_deleted=True),
+                ),
             ],
         ),
         migrations.AddConstraint(
-            model_name='formulariocdiroomdistribution',
-            constraint=models.UniqueConstraint(fields=('formulario', 'age_group'), name='uniq_formulario_cdi_room_distribution_age_group'),
+            model_name="formulariocdiroomdistribution",
+            constraint=models.UniqueConstraint(
+                fields=("formulario", "age_group"),
+                name="uniq_formulario_cdi_room_distribution_age_group",
+            ),
         ),
         migrations.AddConstraint(
-            model_name='formulariocdiwaitlistbyagegroup',
-            constraint=models.UniqueConstraint(fields=('formulario', 'age_group'), name='uniq_formulario_cdi_waitlist_age_group'),
+            model_name="formulariocdiwaitlistbyagegroup",
+            constraint=models.UniqueConstraint(
+                fields=("formulario", "age_group"),
+                name="uniq_formulario_cdi_waitlist_age_group",
+            ),
         ),
         migrations.AddConstraint(
-            model_name='formulariocdiarticulationfrequency',
-            constraint=models.UniqueConstraint(fields=('formulario', 'institution_type'), name='uniq_formulario_cdi_articulation_institution'),
+            model_name="formulariocdiarticulationfrequency",
+            constraint=models.UniqueConstraint(
+                fields=("formulario", "institution_type"),
+                name="uniq_formulario_cdi_articulation_institution",
+            ),
         ),
         migrations.CreateModel(
-            name='Trabajador',
+            name="Trabajador",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('deleted_at', models.DateTimeField(blank=True, db_index=True, null=True)),
-                ('nombre', models.CharField(max_length=255)),
-                ('apellido', models.CharField(max_length=255)),
-                ('telefono', models.CharField(blank=True, max_length=50, null=True)),
-                ('rol', models.CharField(choices=[('profesor', 'Profesor'), ('director', 'Director'), ('administrativo', 'Administrativo')], max_length=20)),
-                ('deleted_by', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='+', to=settings.AUTH_USER_MODEL)),
-                ('centro', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='trabajadores', to='centrodeinfancia.centrodeinfancia')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "deleted_at",
+                    models.DateTimeField(blank=True, db_index=True, null=True),
+                ),
+                ("nombre", models.CharField(max_length=255)),
+                ("apellido", models.CharField(max_length=255)),
+                ("telefono", models.CharField(blank=True, max_length=50, null=True)),
+                (
+                    "rol",
+                    models.CharField(
+                        choices=[
+                            ("profesor", "Profesor"),
+                            ("director", "Director"),
+                            ("administrativo", "Administrativo"),
+                        ],
+                        max_length=20,
+                    ),
+                ),
+                (
+                    "deleted_by",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="+",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    "centro",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="trabajadores",
+                        to="centrodeinfancia.centrodeinfancia",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Trabajador',
-                'verbose_name_plural': 'Trabajadores',
-                'ordering': ['apellido', 'nombre'],
+                "verbose_name": "Trabajador",
+                "verbose_name_plural": "Trabajadores",
+                "ordering": ["apellido", "nombre"],
             },
             managers=[
-                ('objects', core.soft_delete.base.SoftDeleteManager()),
-                ('all_objects', core.soft_delete.base.SoftDeleteManager(include_deleted=True)),
+                ("objects", core.soft_delete.base.SoftDeleteManager()),
+                (
+                    "all_objects",
+                    core.soft_delete.base.SoftDeleteManager(include_deleted=True),
+                ),
             ],
         ),
         migrations.AlterModelOptions(
-            name='centrodeinfancia',
-            options={'ordering': ['nombre'], 'verbose_name': 'Centro de Desarrollo Infantil', 'verbose_name_plural': 'Centros de Desarrollo Infantil'},
+            name="centrodeinfancia",
+            options={
+                "ordering": ["nombre"],
+                "verbose_name": "Centro de Desarrollo Infantil",
+                "verbose_name_plural": "Centros de Desarrollo Infantil",
+            },
         ),
         migrations.RenameField(
-            model_name='centrodeinfancia',
-            old_name='cdi_code',
-            new_name='codigo_cdi',
+            model_name="centrodeinfancia",
+            old_name="cdi_code",
+            new_name="codigo_cdi",
         ),
         migrations.RenameField(
-            model_name='formulariocdi',
-            old_name='survey_date',
-            new_name='fecha_relevamiento',
+            model_name="formulariocdi",
+            old_name="survey_date",
+            new_name="fecha_relevamiento",
         ),
         migrations.RenameField(
-            model_name='formulariocdi',
-            old_name='respondent_full_name',
-            new_name='nombre_completo_respondente',
+            model_name="formulariocdi",
+            old_name="respondent_full_name",
+            new_name="nombre_completo_respondente",
         ),
         migrations.RenameField(
-            model_name='formulariocdi',
-            old_name='respondent_role',
-            new_name='rol_respondente',
+            model_name="formulariocdi",
+            old_name="respondent_role",
+            new_name="rol_respondente",
         ),
         migrations.RenameField(
-            model_name='formulariocdi',
-            old_name='respondent_email',
-            new_name='email_respondente',
+            model_name="formulariocdi",
+            old_name="respondent_email",
+            new_name="email_respondente",
         ),
         migrations.RenameField(
-            model_name='formulariocdi',
-            old_name='cdi_name',
-            new_name='nombre_cdi',
+            model_name="formulariocdi",
+            old_name="cdi_name",
+            new_name="nombre_cdi",
         ),
         migrations.RenameField(
-            model_name='formulariocdi',
-            old_name='cdi_code',
-            new_name='codigo_cdi',
+            model_name="formulariocdi",
+            old_name="cdi_code",
+            new_name="codigo_cdi",
         ),
         migrations.RenameField(
-            model_name='formulariocdi',
-            old_name='cdi_province',
-            new_name='provincia_cdi',
+            model_name="formulariocdi",
+            old_name="cdi_province",
+            new_name="provincia_cdi",
         ),
         migrations.RenameField(
-            model_name='formulariocdi',
-            old_name='cdi_department',
-            new_name='departamento_cdi',
+            model_name="formulariocdi",
+            old_name="cdi_department",
+            new_name="departamento_cdi",
         ),
         migrations.RenameField(
-            model_name='formulariocdi',
-            old_name='cdi_municipality',
-            new_name='municipio_cdi',
+            model_name="formulariocdi",
+            old_name="cdi_municipality",
+            new_name="municipio_cdi",
         ),
         migrations.RenameField(
-            model_name='formulariocdi',
-            old_name='cdi_locality',
-            new_name='localidad_cdi',
+            model_name="formulariocdi",
+            old_name="cdi_locality",
+            new_name="localidad_cdi",
         ),
         migrations.RenameField(
-            model_name='formulariocdi',
-            old_name='cdi_street',
-            new_name='calle_cdi',
+            model_name="formulariocdi",
+            old_name="cdi_street",
+            new_name="calle_cdi",
         ),
         migrations.RenameField(
-            model_name='formulariocdi',
-            old_name='cdi_door_number',
-            new_name='numero_puerta_cdi',
+            model_name="formulariocdi",
+            old_name="cdi_door_number",
+            new_name="numero_puerta_cdi",
         ),
         migrations.RenameField(
-            model_name='formulariocdi',
-            old_name='cdi_postal_code',
-            new_name='codigo_postal_cdi',
+            model_name="formulariocdi",
+            old_name="cdi_postal_code",
+            new_name="codigo_postal_cdi",
         ),
         migrations.RenameField(
-            model_name='formulariocdi',
-            old_name='cdi_geo_latitude',
-            new_name='latitud_geografica_cdi',
+            model_name="formulariocdi",
+            old_name="cdi_geo_latitude",
+            new_name="latitud_geografica_cdi",
         ),
         migrations.RenameField(
-            model_name='formulariocdi',
-            old_name='cdi_geo_longitude',
-            new_name='longitud_geografica_cdi',
+            model_name="formulariocdi",
+            old_name="cdi_geo_longitude",
+            new_name="longitud_geografica_cdi",
         ),
         migrations.RenameField(
-            model_name='formulariocdi',
-            old_name='cdi_phone',
-            new_name='telefono_cdi',
+            model_name="formulariocdi",
+            old_name="cdi_phone",
+            new_name="telefono_cdi",
         ),
         migrations.RenameField(
-            model_name='formulariocdi',
-            old_name='cdi_email',
-            new_name='email_cdi',
+            model_name="formulariocdi",
+            old_name="cdi_email",
+            new_name="email_cdi",
         ),
         migrations.RenameField(
-            model_name='formulariocdi',
-            old_name='cdi_contact_first_name',
-            new_name='nombre_referente_cdi',
+            model_name="formulariocdi",
+            old_name="cdi_contact_first_name",
+            new_name="nombre_referente_cdi",
         ),
         migrations.RenameField(
-            model_name='formulariocdi',
-            old_name='cdi_contact_last_name',
-            new_name='apellido_referente_cdi',
+            model_name="formulariocdi",
+            old_name="cdi_contact_last_name",
+            new_name="apellido_referente_cdi",
         ),
         migrations.RenameField(
-            model_name='formulariocdi',
-            old_name='cdi_contact_phone',
-            new_name='telefono_referente_cdi',
+            model_name="formulariocdi",
+            old_name="cdi_contact_phone",
+            new_name="telefono_referente_cdi",
         ),
         migrations.RenameField(
-            model_name='formulariocdi',
-            old_name='cdi_contact_email',
-            new_name='email_referente_cdi',
+            model_name="formulariocdi",
+            old_name="cdi_contact_email",
+            new_name="email_referente_cdi",
         ),
         migrations.RenameField(
-            model_name='formulariocdi',
-            old_name='operation_months',
-            new_name='meses_funcionamiento',
+            model_name="formulariocdi",
+            old_name="operation_months",
+            new_name="meses_funcionamiento",
         ),
         migrations.RenameField(
-            model_name='formulariocdi',
-            old_name='operation_days',
-            new_name='dias_funcionamiento',
+            model_name="formulariocdi",
+            old_name="operation_days",
+            new_name="dias_funcionamiento",
         ),
         migrations.RenameField(
-            model_name='formulariocdi',
-            old_name='opening_time',
-            new_name='horario_apertura',
+            model_name="formulariocdi",
+            old_name="opening_time",
+            new_name="horario_apertura",
         ),
         migrations.RenameField(
-            model_name='formulariocdi',
-            old_name='closing_time',
-            new_name='horario_cierre',
+            model_name="formulariocdi",
+            old_name="closing_time",
+            new_name="horario_cierre",
         ),
         migrations.RenameField(
-            model_name='formulariocdi',
-            old_name='workday_type',
-            new_name='tipo_jornada',
+            model_name="formulariocdi",
+            old_name="workday_type",
+            new_name="tipo_jornada",
         ),
         migrations.RenameField(
-            model_name='formulariocdi',
-            old_name='workday_type_other',
-            new_name='tipo_jornada_otra',
+            model_name="formulariocdi",
+            old_name="workday_type_other",
+            new_name="tipo_jornada_otra",
         ),
         migrations.RenameField(
-            model_name='formulariocdi',
-            old_name='total_children_count',
-            new_name='cantidad_total_ninos',
+            model_name="formulariocdi",
+            old_name="total_children_count",
+            new_name="cantidad_total_ninos",
         ),
         migrations.RenameField(
-            model_name='formulariocdi',
-            old_name='total_staff_count',
-            new_name='cantidad_total_personal',
+            model_name="formulariocdi",
+            old_name="total_staff_count",
+            new_name="cantidad_total_personal",
         ),
         migrations.RenameField(
-            model_name='formulariocdi',
-            old_name='management_mode',
-            new_name='modalidad_gestion',
+            model_name="formulariocdi",
+            old_name="management_mode",
+            new_name="modalidad_gestion",
         ),
         migrations.RenameField(
-            model_name='formulariocdi',
-            old_name='management_mode_other',
-            new_name='modalidad_gestion_otra',
+            model_name="formulariocdi",
+            old_name="management_mode_other",
+            new_name="modalidad_gestion_otra",
         ),
         migrations.RenameField(
-            model_name='formulariocdi',
-            old_name='managing_organization_name',
-            new_name='nombre_organizacion_gestora',
+            model_name="formulariocdi",
+            old_name="managing_organization_name",
+            new_name="nombre_organizacion_gestora",
         ),
         migrations.RenameField(
-            model_name='formulariocdi',
-            old_name='managing_organization_cuit',
-            new_name='cuit_organizacion_gestora',
+            model_name="formulariocdi",
+            old_name="managing_organization_cuit",
+            new_name="cuit_organizacion_gestora",
         ),
         migrations.RenameField(
-            model_name='formulariocdi',
-            old_name='org_province',
-            new_name='provincia_organizacion',
+            model_name="formulariocdi",
+            old_name="org_province",
+            new_name="provincia_organizacion",
         ),
         migrations.RenameField(
-            model_name='formulariocdi',
-            old_name='org_department',
-            new_name='departamento_organizacion',
+            model_name="formulariocdi",
+            old_name="org_department",
+            new_name="departamento_organizacion",
         ),
         migrations.RenameField(
-            model_name='formulariocdi',
-            old_name='org_municipality',
-            new_name='municipio_organizacion',
+            model_name="formulariocdi",
+            old_name="org_municipality",
+            new_name="municipio_organizacion",
         ),
         migrations.RenameField(
-            model_name='formulariocdi',
-            old_name='org_locality',
-            new_name='localidad_organizacion',
+            model_name="formulariocdi",
+            old_name="org_locality",
+            new_name="localidad_organizacion",
         ),
         migrations.RenameField(
-            model_name='formulariocdi',
-            old_name='org_street',
-            new_name='calle_organizacion',
+            model_name="formulariocdi",
+            old_name="org_street",
+            new_name="calle_organizacion",
         ),
         migrations.RenameField(
-            model_name='formulariocdi',
-            old_name='org_number',
-            new_name='numero_organizacion',
+            model_name="formulariocdi",
+            old_name="org_number",
+            new_name="numero_organizacion",
         ),
         migrations.RenameField(
-            model_name='formulariocdi',
-            old_name='org_postal_code',
-            new_name='codigo_postal_organizacion',
+            model_name="formulariocdi",
+            old_name="org_postal_code",
+            new_name="codigo_postal_organizacion",
         ),
         migrations.RenameField(
-            model_name='formulariocdi',
-            old_name='org_building',
-            new_name='edificio_organizacion',
+            model_name="formulariocdi",
+            old_name="org_building",
+            new_name="edificio_organizacion",
         ),
         migrations.RenameField(
-            model_name='formulariocdi',
-            old_name='org_floor',
-            new_name='piso_organizacion',
+            model_name="formulariocdi",
+            old_name="org_floor",
+            new_name="piso_organizacion",
         ),
         migrations.RenameField(
-            model_name='formulariocdi',
-            old_name='org_apartment',
-            new_name='departamento_domicilio_organizacion',
+            model_name="formulariocdi",
+            old_name="org_apartment",
+            new_name="departamento_domicilio_organizacion",
         ),
         migrations.RenameField(
-            model_name='formulariocdi',
-            old_name='org_office',
-            new_name='oficina_organizacion',
+            model_name="formulariocdi",
+            old_name="org_office",
+            new_name="oficina_organizacion",
         ),
         migrations.RenameField(
-            model_name='formulariocdi',
-            old_name='org_phone',
-            new_name='telefono_organizacion',
+            model_name="formulariocdi",
+            old_name="org_phone",
+            new_name="telefono_organizacion",
         ),
         migrations.RenameField(
-            model_name='formulariocdi',
-            old_name='org_email',
-            new_name='email_organizacion',
+            model_name="formulariocdi",
+            old_name="org_email",
+            new_name="email_organizacion",
         ),
         migrations.RenameField(
-            model_name='formulariocdi',
-            old_name='org_contact_first_name',
-            new_name='nombre_referente_organizacion',
+            model_name="formulariocdi",
+            old_name="org_contact_first_name",
+            new_name="nombre_referente_organizacion",
         ),
         migrations.RenameField(
-            model_name='formulariocdi',
-            old_name='org_contact_last_name',
-            new_name='apellido_referente_organizacion',
+            model_name="formulariocdi",
+            old_name="org_contact_last_name",
+            new_name="apellido_referente_organizacion",
         ),
         migrations.RenameField(
-            model_name='formulariocdi',
-            old_name='org_contact_phone',
-            new_name='telefono_referente_organizacion',
+            model_name="formulariocdi",
+            old_name="org_contact_phone",
+            new_name="telefono_referente_organizacion",
         ),
         migrations.RenameField(
-            model_name='formulariocdi',
-            old_name='org_contact_email',
-            new_name='email_referente_organizacion',
+            model_name="formulariocdi",
+            old_name="org_contact_email",
+            new_name="email_referente_organizacion",
         ),
         migrations.RenameField(
-            model_name='formulariocdi',
-            old_name='tenure_mode',
-            new_name='modalidad_tenencia',
+            model_name="formulariocdi",
+            old_name="tenure_mode",
+            new_name="modalidad_tenencia",
         ),
         migrations.RenameField(
-            model_name='formulariocdi',
-            old_name='tenure_mode_other',
-            new_name='modalidad_tenencia_otra',
+            model_name="formulariocdi",
+            old_name="tenure_mode_other",
+            new_name="modalidad_tenencia_otra",
         ),
         migrations.RenameField(
-            model_name='formulariocdi',
-            old_name='exclusive_space_use',
-            new_name='uso_exclusivo_espacio',
+            model_name="formulariocdi",
+            old_name="exclusive_space_use",
+            new_name="uso_exclusivo_espacio",
         ),
         migrations.RenameField(
-            model_name='formulariocdi',
-            old_name='room_count_excluding_service_areas',
-            new_name='cantidad_ambientes_sin_areas_servicio',
+            model_name="formulariocdi",
+            old_name="room_count_excluding_service_areas",
+            new_name="cantidad_ambientes_sin_areas_servicio",
         ),
         migrations.RenameField(
-            model_name='formulariocdi',
-            old_name='electricity_access',
-            new_name='acceso_energia',
+            model_name="formulariocdi",
+            old_name="electricity_access",
+            new_name="acceso_energia",
         ),
         migrations.RenameField(
-            model_name='formulariocdi',
-            old_name='electrical_safety',
-            new_name='seguridad_electrica',
-        ),
-        migrations.AlterField(
-            model_name='formulariocdi',
-            name='seguridad_electrica',
-            field=models.CharField(blank=True, choices=[('cumple_y_revision_mayor_a_un_ano', 'Cumple y revision mayor a un año'), ('cumple_y_revision_anual', 'Cumple y revision anual'), ('cumple_sin_revisiones', 'Cumple sin revisiones'), ('cumple_solo_zonas_ninos_sin_revisiones', 'Cumple solo zonas niños sin revisiones'), ('no_cumple_sin_revisiones', 'No cumple sin revisiones')], max_length=64, null=True),
-        ),
-        migrations.RenameField(
-            model_name='formulariocdi',
-            old_name='water_access',
-            new_name='acceso_agua',
-        ),
-        migrations.RenameField(
-            model_name='formulariocdi',
-            old_name='safe_drinking_water_source',
-            new_name='fuente_agua_segura_consumo',
-        ),
-        migrations.RenameField(
-            model_name='formulariocdi',
-            old_name='excreta_disposal',
-            new_name='eliminacion_excretas',
-        ),
-        migrations.RenameField(
-            model_name='formulariocdi',
-            old_name='has_fire_extinguishers_current',
-            new_name='tiene_extintores_vigentes',
-        ),
-        migrations.RenameField(
-            model_name='formulariocdi',
-            old_name='first_aid_kit_status',
-            new_name='estado_botiquin_primeros_auxilios',
+            model_name="formulariocdi",
+            old_name="electrical_safety",
+            new_name="seguridad_electrica",
         ),
         migrations.AlterField(
-            model_name='formulariocdi',
-            name='estado_botiquin_primeros_auxilios',
-            field=models.CharField(blank=True, choices=[('completo_todas_salas_ok_vigente_fuera_alcance', 'Completo todas salas ok vigente fuera alcance'), ('incompleto_todas_salas_ok_vigente_fuera_alcance', 'Incompleto todas salas ok vigente fuera alcance'), ('unico_completo_compartido_ok_vigente_fuera_alcance', 'Unico completo compartido ok vigente fuera alcance'), ('incompleto_compartido_o_mal_estado_o_vencido', 'Incompleto compartido o mal estado o vencido'), ('no_tienen_o_al_alcance_ninos', 'No tienen o al alcance niños')], max_length=128, null=True),
+            model_name="formulariocdi",
+            name="seguridad_electrica",
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    (
+                        "cumple_y_revision_mayor_a_un_ano",
+                        "Cumple y revision mayor a un año",
+                    ),
+                    ("cumple_y_revision_anual", "Cumple y revision anual"),
+                    ("cumple_sin_revisiones", "Cumple sin revisiones"),
+                    (
+                        "cumple_solo_zonas_ninos_sin_revisiones",
+                        "Cumple solo zonas niños sin revisiones",
+                    ),
+                    ("no_cumple_sin_revisiones", "No cumple sin revisiones"),
+                ],
+                max_length=64,
+                null=True,
+            ),
         ),
         migrations.RenameField(
-            model_name='formulariocdi',
-            old_name='has_working_computer',
-            new_name='tiene_computadora_funcionando',
+            model_name="formulariocdi",
+            old_name="water_access",
+            new_name="acceso_agua",
         ),
         migrations.RenameField(
-            model_name='formulariocdi',
-            old_name='internet_access_quality_staff',
-            new_name='acceso_internet_personal',
+            model_name="formulariocdi",
+            old_name="safe_drinking_water_source",
+            new_name="fuente_agua_segura_consumo",
         ),
         migrations.RenameField(
-            model_name='formulariocdi',
-            old_name='has_kitchen_space',
-            new_name='tiene_espacio_cocina',
+            model_name="formulariocdi",
+            old_name="excreta_disposal",
+            new_name="eliminacion_excretas",
         ),
         migrations.RenameField(
-            model_name='formulariocdi',
-            old_name='cooking_fuel',
-            new_name='combustible_cocinar',
+            model_name="formulariocdi",
+            old_name="has_fire_extinguishers_current",
+            new_name="tiene_extintores_vigentes",
         ),
         migrations.RenameField(
-            model_name='formulariocdi',
-            old_name='has_outdoor_space',
-            new_name='tiene_espacio_exterior',
-        ),
-        migrations.RenameField(
-            model_name='formulariocdi',
-            old_name='has_outdoor_playground',
-            new_name='tiene_juegos_exteriores',
-        ),
-        migrations.RenameField(
-            model_name='formulariocdi',
-            old_name='evacuation_plan_and_drills',
-            new_name='plan_evacuacion_y_simulacros',
-        ),
-        migrations.RenameField(
-            model_name='formulariocdi',
-            old_name='first_aid_training_coverage',
-            new_name='cobertura_capacitacion_primeros_auxilios',
-        ),
-        migrations.RenameField(
-            model_name='formulariocdi',
-            old_name='emergency_medical_service',
-            new_name='servicio_emergencia_medica',
-        ),
-        migrations.RenameField(
-            model_name='formulariocdi',
-            old_name='health_protocol_items',
-            new_name='items_protocolo_salud',
-        ),
-        migrations.RenameField(
-            model_name='formulariocdi',
-            old_name='meals_provided',
-            new_name='prestaciones_alimentarias',
-        ),
-        migrations.RenameField(
-            model_name='formulariocdi',
-            old_name='meals_provided_other',
-            new_name='prestaciones_alimentarias_otra',
-        ),
-        migrations.RenameField(
-            model_name='formulariocdi',
-            old_name='menu_preparation_quality',
-            new_name='calidad_elaboracion_menu',
-        ),
-        migrations.RenameField(
-            model_name='formulariocdi',
-            old_name='menu_periodic_evaluation',
-            new_name='evaluacion_periodica_menu',
-        ),
-        migrations.RenameField(
-            model_name='formulariocdi',
-            old_name='food_handling_training_coverage',
-            new_name='cobertura_capacitacion_manipulacion_alimentos',
-        ),
-        migrations.RenameField(
-            model_name='formulariocdi',
-            old_name='breast_milk_storage_conditions',
-            new_name='condiciones_almacenamiento_leche_humana',
-        ),
-        migrations.RenameField(
-            model_name='formulariocdi',
-            old_name='breastfeeding_awareness_actions',
-            new_name='acciones_sensibilizacion_lactancia',
-        ),
-        migrations.RenameField(
-            model_name='formulariocdi',
-            old_name='has_waitlist_registry',
-            new_name='tiene_registro_lista_espera',
-        ),
-        migrations.RenameField(
-            model_name='formulariocdi',
-            old_name='has_admission_prioritization_tool',
-            new_name='tiene_instrumento_priorizacion_ingreso',
-        ),
-        migrations.RenameField(
-            model_name='formulariocdi',
-            old_name='children_with_disabilities_count',
-            new_name='cantidad_ninos_discapacidad',
-        ),
-        migrations.RenameField(
-            model_name='formulariocdi',
-            old_name='children_specific_ethnicity_count',
-            new_name='cantidad_ninos_etnia_especifica',
-        ),
-        migrations.RenameField(
-            model_name='formulariocdi',
-            old_name='has_entry_exit_staff',
-            new_name='tiene_personal_entrada_salida',
-        ),
-        migrations.RenameField(
-            model_name='formulariocdi',
-            old_name='family_communication_frequency',
-            new_name='frecuencia_comunicacion_familias',
-        ),
-        migrations.RenameField(
-            model_name='formulariocdi',
-            old_name='parenting_workshops_frequency',
-            new_name='frecuencia_talleres_crianza',
+            model_name="formulariocdi",
+            old_name="first_aid_kit_status",
+            new_name="estado_botiquin_primeros_auxilios",
         ),
         migrations.AlterField(
-            model_name='formulariocdi',
-            name='frecuencia_talleres_crianza',
-            field=models.CharField(blank=True, choices=[('trimestral_o_mas', 'Trimestral o mas'), ('cada_4_a_6_meses', 'Cada 4 a 6 meses'), ('una_vez_al_ano', 'Una vez al año'), ('esporadica', 'Esporadica'), ('no_se_realizan', 'No se realizan')], max_length=64, null=True),
+            model_name="formulariocdi",
+            name="estado_botiquin_primeros_auxilios",
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    (
+                        "completo_todas_salas_ok_vigente_fuera_alcance",
+                        "Completo todas salas ok vigente fuera alcance",
+                    ),
+                    (
+                        "incompleto_todas_salas_ok_vigente_fuera_alcance",
+                        "Incompleto todas salas ok vigente fuera alcance",
+                    ),
+                    (
+                        "unico_completo_compartido_ok_vigente_fuera_alcance",
+                        "Unico completo compartido ok vigente fuera alcance",
+                    ),
+                    (
+                        "incompleto_compartido_o_mal_estado_o_vencido",
+                        "Incompleto compartido o mal estado o vencido",
+                    ),
+                    ("no_tienen_o_al_alcance_ninos", "No tienen o al alcance niños"),
+                ],
+                max_length=128,
+                null=True,
+            ),
         ),
         migrations.RenameField(
-            model_name='formulariocdi',
-            old_name='actions_promoting_rights_access',
-            new_name='realiza_acciones_promocion_acceso_derechos',
+            model_name="formulariocdi",
+            old_name="has_working_computer",
+            new_name="tiene_computadora_funcionando",
         ),
         migrations.RenameField(
-            model_name='formulariocdi',
-            old_name='actions_against_rights_violations',
-            new_name='realiza_acciones_acompanamiento_vulneracion_derechos',
+            model_name="formulariocdi",
+            old_name="internet_access_quality_staff",
+            new_name="acceso_internet_personal",
         ),
         migrations.RenameField(
-            model_name='formulariocdi',
-            old_name='networking_level',
-            new_name='nivel_trabajo_red',
+            model_name="formulariocdi",
+            old_name="has_kitchen_space",
+            new_name="tiene_espacio_cocina",
         ),
         migrations.RenameField(
-            model_name='formulariocdi',
-            old_name='rights_violation_protocol',
-            new_name='protocolo_vulneracion_derechos',
+            model_name="formulariocdi",
+            old_name="cooking_fuel",
+            new_name="combustible_cocinar",
         ),
         migrations.RenameField(
-            model_name='formulariocdi',
-            old_name='technical_team_level',
-            new_name='nivel_equipo_tecnico',
+            model_name="formulariocdi",
+            old_name="has_outdoor_space",
+            new_name="tiene_espacio_exterior",
         ),
         migrations.RenameField(
-            model_name='formulariocdi',
-            old_name='child_development_record_frequency',
-            new_name='frecuencia_registro_desarrollo_nino',
+            model_name="formulariocdi",
+            old_name="has_outdoor_playground",
+            new_name="tiene_juegos_exteriores",
         ),
         migrations.RenameField(
-            model_name='formulariocdi',
-            old_name='family_info_record_frequency',
-            new_name='frecuencia_registro_informacion_familiar',
+            model_name="formulariocdi",
+            old_name="evacuation_plan_and_drills",
+            new_name="plan_evacuacion_y_simulacros",
         ),
         migrations.RenameField(
-            model_name='formulariocdi',
-            old_name='health_vaccine_record_frequency',
-            new_name='frecuencia_registro_salud_vacunas',
+            model_name="formulariocdi",
+            old_name="first_aid_training_coverage",
+            new_name="cobertura_capacitacion_primeros_auxilios",
         ),
         migrations.RenameField(
-            model_name='formulariocdi',
-            old_name='socioeducational_project_participants',
-            new_name='participantes_proyecto_socioeducativo',
+            model_name="formulariocdi",
+            old_name="emergency_medical_service",
+            new_name="servicio_emergencia_medica",
         ),
         migrations.RenameField(
-            model_name='formulariocdi',
-            old_name='classroom_activity_planning',
-            new_name='planificacion_actividades_sala',
+            model_name="formulariocdi",
+            old_name="health_protocol_items",
+            new_name="items_protocolo_salud",
         ),
         migrations.RenameField(
-            model_name='formulariocdi',
-            old_name='integral_planning',
-            new_name='planificacion_integral',
+            model_name="formulariocdi",
+            old_name="meals_provided",
+            new_name="prestaciones_alimentarias",
         ),
         migrations.RenameField(
-            model_name='formulariocdi',
-            old_name='direction_training_in_early_childhood',
-            new_name='formacion_direccion_primera_infancia',
+            model_name="formulariocdi",
+            old_name="meals_provided_other",
+            new_name="prestaciones_alimentarias_otra",
         ),
         migrations.RenameField(
-            model_name='formulariocdi',
-            old_name='pedagogical_pairs_coverage',
-            new_name='cobertura_duplas_pedagogicas',
+            model_name="formulariocdi",
+            old_name="menu_preparation_quality",
+            new_name="calidad_elaboracion_menu",
         ),
         migrations.RenameField(
-            model_name='formulariocdi',
-            old_name='qualified_teacher_coverage',
-            new_name='cobertura_educadora_titulo_habilitante',
+            model_name="formulariocdi",
+            old_name="menu_periodic_evaluation",
+            new_name="evaluacion_periodica_menu",
         ),
         migrations.RenameField(
-            model_name='formulariocdi',
-            old_name='assistant_training_coverage',
-            new_name='cobertura_formacion_auxiliares',
+            model_name="formulariocdi",
+            old_name="food_handling_training_coverage",
+            new_name="cobertura_capacitacion_manipulacion_alimentos",
         ),
         migrations.RenameField(
-            model_name='formulariocdi',
-            old_name='main_hiring_mode',
-            new_name='modalidad_contratacion_principal',
+            model_name="formulariocdi",
+            old_name="breast_milk_storage_conditions",
+            new_name="condiciones_almacenamiento_leche_humana",
         ),
         migrations.RenameField(
-            model_name='formulariocdi',
-            old_name='meetings_teaching_staff_frequency',
-            new_name='frecuencia_reuniones_personal_sala',
+            model_name="formulariocdi",
+            old_name="breastfeeding_awareness_actions",
+            new_name="acciones_sensibilizacion_lactancia",
         ),
         migrations.RenameField(
-            model_name='formulariocdi',
-            old_name='meetings_non_teaching_staff_frequency',
-            new_name='frecuencia_reuniones_personal_no_docente',
+            model_name="formulariocdi",
+            old_name="has_waitlist_registry",
+            new_name="tiene_registro_lista_espera",
         ),
         migrations.RenameField(
-            model_name='formulariocdi',
-            old_name='meetings_all_staff_frequency',
-            new_name='frecuencia_reuniones_todo_personal',
+            model_name="formulariocdi",
+            old_name="has_admission_prioritization_tool",
+            new_name="tiene_instrumento_priorizacion_ingreso",
         ),
         migrations.RenameField(
-            model_name='formulariocdi',
-            old_name='training_instances_all_staff_last_3y',
-            new_name='instancias_capacitacion_todo_personal_ultimos_3_anios',
+            model_name="formulariocdi",
+            old_name="children_with_disabilities_count",
+            new_name="cantidad_ninos_discapacidad",
         ),
         migrations.RenameField(
-            model_name='formulariocdi',
-            old_name='training_instances_room_staff_last_3y',
-            new_name='instancias_capacitacion_personal_sala_ultimos_3_anios',
+            model_name="formulariocdi",
+            old_name="children_specific_ethnicity_count",
+            new_name="cantidad_ninos_etnia_especifica",
         ),
         migrations.RenameField(
-            model_name='formulariocdi',
-            old_name='training_instances_technical_team_last_3y',
-            new_name='instancias_capacitacion_equipo_tecnico_ultimos_3_anios',
+            model_name="formulariocdi",
+            old_name="has_entry_exit_staff",
+            new_name="tiene_personal_entrada_salida",
         ),
         migrations.RenameField(
-            model_name='formulariocdi',
-            old_name='training_instances_kitchen_staff_last_3y',
-            new_name='instancias_capacitacion_personal_cocina_ultimos_3_anios',
+            model_name="formulariocdi",
+            old_name="family_communication_frequency",
+            new_name="frecuencia_comunicacion_familias",
         ),
         migrations.RenameField(
-            model_name='formulariocdiroomdistribution',
-            old_name='age_group',
-            new_name='grupo_etario',
+            model_name="formulariocdi",
+            old_name="parenting_workshops_frequency",
+            new_name="frecuencia_talleres_crianza",
+        ),
+        migrations.AlterField(
+            model_name="formulariocdi",
+            name="frecuencia_talleres_crianza",
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    ("trimestral_o_mas", "Trimestral o mas"),
+                    ("cada_4_a_6_meses", "Cada 4 a 6 meses"),
+                    ("una_vez_al_ano", "Una vez al año"),
+                    ("esporadica", "Esporadica"),
+                    ("no_se_realizan", "No se realizan"),
+                ],
+                max_length=64,
+                null=True,
+            ),
         ),
         migrations.RenameField(
-            model_name='formulariocdiroomdistribution',
-            old_name='room_count',
-            new_name='cantidad_salas',
+            model_name="formulariocdi",
+            old_name="actions_promoting_rights_access",
+            new_name="realiza_acciones_promocion_acceso_derechos",
         ),
         migrations.RenameField(
-            model_name='formulariocdiroomdistribution',
-            old_name='exclusive_area_m2',
-            new_name='superficie_exclusiva_m2',
+            model_name="formulariocdi",
+            old_name="actions_against_rights_violations",
+            new_name="realiza_acciones_acompanamiento_vulneracion_derechos",
         ),
         migrations.RenameField(
-            model_name='formulariocdiroomdistribution',
-            old_name='children_count',
-            new_name='cantidad_ninos',
+            model_name="formulariocdi",
+            old_name="networking_level",
+            new_name="nivel_trabajo_red",
         ),
         migrations.RenameField(
-            model_name='formulariocdiroomdistribution',
-            old_name='staff_count',
-            new_name='cantidad_personal_sala',
+            model_name="formulariocdi",
+            old_name="rights_violation_protocol",
+            new_name="protocolo_vulneracion_derechos",
         ),
         migrations.RenameField(
-            model_name='formulariocdiwaitlistbyagegroup',
-            old_name='age_group',
-            new_name='grupo_etario',
+            model_name="formulariocdi",
+            old_name="technical_team_level",
+            new_name="nivel_equipo_tecnico",
         ),
         migrations.RenameField(
-            model_name='formulariocdiwaitlistbyagegroup',
-            old_name='waitlist_count',
-            new_name='cantidad_demanda_insatisfecha',
+            model_name="formulariocdi",
+            old_name="child_development_record_frequency",
+            new_name="frecuencia_registro_desarrollo_nino",
         ),
         migrations.RenameField(
-            model_name='formulariocdiarticulationfrequency',
-            old_name='institution_type',
-            new_name='tipo_institucion',
+            model_name="formulariocdi",
+            old_name="family_info_record_frequency",
+            new_name="frecuencia_registro_informacion_familiar",
         ),
         migrations.RenameField(
-            model_name='formulariocdiarticulationfrequency',
-            old_name='frequency',
-            new_name='frecuencia',
+            model_name="formulariocdi",
+            old_name="health_vaccine_record_frequency",
+            new_name="frecuencia_registro_salud_vacunas",
+        ),
+        migrations.RenameField(
+            model_name="formulariocdi",
+            old_name="socioeducational_project_participants",
+            new_name="participantes_proyecto_socioeducativo",
+        ),
+        migrations.RenameField(
+            model_name="formulariocdi",
+            old_name="classroom_activity_planning",
+            new_name="planificacion_actividades_sala",
+        ),
+        migrations.RenameField(
+            model_name="formulariocdi",
+            old_name="integral_planning",
+            new_name="planificacion_integral",
+        ),
+        migrations.RenameField(
+            model_name="formulariocdi",
+            old_name="direction_training_in_early_childhood",
+            new_name="formacion_direccion_primera_infancia",
+        ),
+        migrations.RenameField(
+            model_name="formulariocdi",
+            old_name="pedagogical_pairs_coverage",
+            new_name="cobertura_duplas_pedagogicas",
+        ),
+        migrations.RenameField(
+            model_name="formulariocdi",
+            old_name="qualified_teacher_coverage",
+            new_name="cobertura_educadora_titulo_habilitante",
+        ),
+        migrations.RenameField(
+            model_name="formulariocdi",
+            old_name="assistant_training_coverage",
+            new_name="cobertura_formacion_auxiliares",
+        ),
+        migrations.RenameField(
+            model_name="formulariocdi",
+            old_name="main_hiring_mode",
+            new_name="modalidad_contratacion_principal",
+        ),
+        migrations.RenameField(
+            model_name="formulariocdi",
+            old_name="meetings_teaching_staff_frequency",
+            new_name="frecuencia_reuniones_personal_sala",
+        ),
+        migrations.RenameField(
+            model_name="formulariocdi",
+            old_name="meetings_non_teaching_staff_frequency",
+            new_name="frecuencia_reuniones_personal_no_docente",
+        ),
+        migrations.RenameField(
+            model_name="formulariocdi",
+            old_name="meetings_all_staff_frequency",
+            new_name="frecuencia_reuniones_todo_personal",
+        ),
+        migrations.RenameField(
+            model_name="formulariocdi",
+            old_name="training_instances_all_staff_last_3y",
+            new_name="instancias_capacitacion_todo_personal_ultimos_3_anios",
+        ),
+        migrations.RenameField(
+            model_name="formulariocdi",
+            old_name="training_instances_room_staff_last_3y",
+            new_name="instancias_capacitacion_personal_sala_ultimos_3_anios",
+        ),
+        migrations.RenameField(
+            model_name="formulariocdi",
+            old_name="training_instances_technical_team_last_3y",
+            new_name="instancias_capacitacion_equipo_tecnico_ultimos_3_anios",
+        ),
+        migrations.RenameField(
+            model_name="formulariocdi",
+            old_name="training_instances_kitchen_staff_last_3y",
+            new_name="instancias_capacitacion_personal_cocina_ultimos_3_anios",
+        ),
+        migrations.RenameField(
+            model_name="formulariocdiroomdistribution",
+            old_name="age_group",
+            new_name="grupo_etario",
+        ),
+        migrations.RenameField(
+            model_name="formulariocdiroomdistribution",
+            old_name="room_count",
+            new_name="cantidad_salas",
+        ),
+        migrations.RenameField(
+            model_name="formulariocdiroomdistribution",
+            old_name="exclusive_area_m2",
+            new_name="superficie_exclusiva_m2",
+        ),
+        migrations.RenameField(
+            model_name="formulariocdiroomdistribution",
+            old_name="children_count",
+            new_name="cantidad_ninos",
+        ),
+        migrations.RenameField(
+            model_name="formulariocdiroomdistribution",
+            old_name="staff_count",
+            new_name="cantidad_personal_sala",
+        ),
+        migrations.RenameField(
+            model_name="formulariocdiwaitlistbyagegroup",
+            old_name="age_group",
+            new_name="grupo_etario",
+        ),
+        migrations.RenameField(
+            model_name="formulariocdiwaitlistbyagegroup",
+            old_name="waitlist_count",
+            new_name="cantidad_demanda_insatisfecha",
+        ),
+        migrations.RenameField(
+            model_name="formulariocdiarticulationfrequency",
+            old_name="institution_type",
+            new_name="tipo_institucion",
+        ),
+        migrations.RenameField(
+            model_name="formulariocdiarticulationfrequency",
+            old_name="frequency",
+            new_name="frecuencia",
         ),
         migrations.AlterModelOptions(
-            name='formulariocdi',
-            options={'ordering': ['-fecha_relevamiento', '-created_at', '-id'], 'verbose_name': 'Formulario CDI', 'verbose_name_plural': 'Formularios CDI'},
+            name="formulariocdi",
+            options={
+                "ordering": ["-fecha_relevamiento", "-created_at", "-id"],
+                "verbose_name": "Formulario CDI",
+                "verbose_name_plural": "Formularios CDI",
+            },
         ),
         migrations.AlterModelOptions(
-            name='intervencioncentroinfancia',
-            options={'ordering': ['-fecha'], 'verbose_name': 'Intervención Centro de Desarrollo Infantil', 'verbose_name_plural': 'Intervenciones Centro de Desarrollo Infantil'},
+            name="intervencioncentroinfancia",
+            options={
+                "ordering": ["-fecha"],
+                "verbose_name": "Intervención Centro de Desarrollo Infantil",
+                "verbose_name_plural": "Intervenciones Centro de Desarrollo Infantil",
+            },
         ),
         migrations.AlterModelOptions(
-            name='nominacentroinfancia',
-            options={'ordering': ['-fecha'], 'verbose_name': 'Nómina Centro de Desarrollo Infantil', 'verbose_name_plural': 'Nóminas Centro de Desarrollo Infantil'},
+            name="nominacentroinfancia",
+            options={
+                "ordering": ["-fecha"],
+                "verbose_name": "Nómina Centro de Desarrollo Infantil",
+                "verbose_name_plural": "Nóminas Centro de Desarrollo Infantil",
+            },
         ),
         migrations.AlterModelOptions(
-            name='observacioncentroinfancia',
-            options={'verbose_name': 'Observación Centro de Desarrollo Infantil', 'verbose_name_plural': 'Observaciones Centro de Desarrollo Infantil'},
+            name="observacioncentroinfancia",
+            options={
+                "verbose_name": "Observación Centro de Desarrollo Infantil",
+                "verbose_name_plural": "Observaciones Centro de Desarrollo Infantil",
+            },
         ),
         migrations.SeparateDatabaseAndState(
             database_operations=[
@@ -1436,452 +3174,1587 @@ class Migration(migrations.Migration):
             ],
             state_operations=[
                 migrations.RemoveConstraint(
-                    model_name='formulariocdiarticulationfrequency',
-                    name='uniq_formulario_cdi_articulation_institution',
+                    model_name="formulariocdiarticulationfrequency",
+                    name="uniq_formulario_cdi_articulation_institution",
                 ),
                 migrations.AddConstraint(
-                    model_name='formulariocdiarticulationfrequency',
-                    constraint=models.UniqueConstraint(fields=('formulario', 'tipo_institucion'), name='uniq_formulario_cdi_articulacion_tipo_institucion'),
+                    model_name="formulariocdiarticulationfrequency",
+                    constraint=models.UniqueConstraint(
+                        fields=("formulario", "tipo_institucion"),
+                        name="uniq_formulario_cdi_articulacion_tipo_institucion",
+                    ),
                 ),
             ],
         ),
         migrations.SeparateDatabaseAndState(
             state_operations=[
                 migrations.RemoveConstraint(
-                    model_name='formulariocdiroomdistribution',
-                    name='uniq_formulario_cdi_room_distribution_age_group',
+                    model_name="formulariocdiroomdistribution",
+                    name="uniq_formulario_cdi_room_distribution_age_group",
                 ),
                 migrations.AddConstraint(
-                    model_name='formulariocdiroomdistribution',
-                    constraint=models.UniqueConstraint(fields=('formulario', 'grupo_etario'), name='uniq_formulario_cdi_distribucion_salas_grupo_etario'),
+                    model_name="formulariocdiroomdistribution",
+                    constraint=models.UniqueConstraint(
+                        fields=("formulario", "grupo_etario"),
+                        name="uniq_formulario_cdi_distribucion_salas_grupo_etario",
+                    ),
                 ),
             ],
         ),
         migrations.SeparateDatabaseAndState(
             state_operations=[
                 migrations.RemoveConstraint(
-                    model_name='formulariocdiwaitlistbyagegroup',
-                    name='uniq_formulario_cdi_waitlist_age_group',
+                    model_name="formulariocdiwaitlistbyagegroup",
+                    name="uniq_formulario_cdi_waitlist_age_group",
                 ),
                 migrations.AddConstraint(
-                    model_name='formulariocdiwaitlistbyagegroup',
-                    constraint=models.UniqueConstraint(fields=('formulario', 'grupo_etario'), name='uniq_formulario_cdi_waitlist_grupo_etario'),
+                    model_name="formulariocdiwaitlistbyagegroup",
+                    constraint=models.UniqueConstraint(
+                        fields=("formulario", "grupo_etario"),
+                        name="uniq_formulario_cdi_waitlist_grupo_etario",
+                    ),
                 ),
             ],
         ),
         migrations.AlterField(
-            model_name='formulariocdi',
-            name='acceso_agua',
-            field=models.CharField(blank=True, choices=[('caneria_dentro_cdi', 'Por cañería dentro del CDI'), ('fuera_cdi_dentro_terreno', 'Fuera del CDI pero dentro del terreno'), ('fuera_del_terreno', 'Fuera del terreno'), ('sin_agua', 'No tiene agua')], max_length=64, null=True),
+            model_name="formulariocdi",
+            name="acceso_agua",
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    ("caneria_dentro_cdi", "Por cañería dentro del CDI"),
+                    (
+                        "fuera_cdi_dentro_terreno",
+                        "Fuera del CDI pero dentro del terreno",
+                    ),
+                    ("fuera_del_terreno", "Fuera del terreno"),
+                    ("sin_agua", "No tiene agua"),
+                ],
+                max_length=64,
+                null=True,
+            ),
         ),
         migrations.AlterField(
-            model_name='formulariocdi',
-            name='acceso_energia',
-            field=models.CharField(blank=True, choices=[('red_formal', 'Red formal'), ('red_informal', 'Red informal'), ('generacion_propia_motor', 'Por generación propia a motor / grupo electrógeno'), ('generacion_propia_otros', 'Por generación propia por otros medios (solar, eólica)'), ('sin_electricidad', 'No tiene electricidad')], max_length=64, null=True),
+            model_name="formulariocdi",
+            name="acceso_energia",
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    ("red_formal", "Red formal"),
+                    ("red_informal", "Red informal"),
+                    (
+                        "generacion_propia_motor",
+                        "Por generación propia a motor / grupo electrógeno",
+                    ),
+                    (
+                        "generacion_propia_otros",
+                        "Por generación propia por otros medios (solar, eólica)",
+                    ),
+                    ("sin_electricidad", "No tiene electricidad"),
+                ],
+                max_length=64,
+                null=True,
+            ),
         ),
         migrations.AlterField(
-            model_name='formulariocdi',
-            name='acceso_internet_personal',
-            field=models.CharField(blank=True, choices=[('alta_velocidad_con_acceso_personal', 'El CDI cuenta con un servicio de internet de alta velocidad al que accede el personal'), ('estable_con_acceso_personal', 'El CDI cuenta con un servicio de internet relativamente estable al que accede el personal'), ('estable_sin_acceso_personal', 'El CDI cuenta con un servicio de internet relativamente estable al que accede el personal'), ('mala_calidad_con_acceso_personal', 'El CDI cuenta con un servicio de internet de mala calidad al que accede el personal'), ('sin_servicio', 'El CDI no cuenta con un servicio de internet')], max_length=128, null=True),
+            model_name="formulariocdi",
+            name="acceso_internet_personal",
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    (
+                        "alta_velocidad_con_acceso_personal",
+                        "El CDI cuenta con un servicio de internet de alta velocidad al que accede el personal",
+                    ),
+                    (
+                        "estable_con_acceso_personal",
+                        "El CDI cuenta con un servicio de internet relativamente estable al que accede el personal",
+                    ),
+                    (
+                        "estable_sin_acceso_personal",
+                        "El CDI cuenta con un servicio de internet relativamente estable al que accede el personal",
+                    ),
+                    (
+                        "mala_calidad_con_acceso_personal",
+                        "El CDI cuenta con un servicio de internet de mala calidad al que accede el personal",
+                    ),
+                    ("sin_servicio", "El CDI no cuenta con un servicio de internet"),
+                ],
+                max_length=128,
+                null=True,
+            ),
         ),
         migrations.AlterField(
-            model_name='formulariocdi',
-            name='acciones_sensibilizacion_lactancia',
-            field=models.CharField(blank=True, choices=[('dos_o_mas_anuales_todas_familias', 'Se realizan dos o más acciones anuales con alcance a todas las familias.'), ('una_anual_todas_familias', 'Se realiza una acción anual con alcance a todas las familias.'), ('una_anual_alcance_limitado', 'Se realizan acciones muy ocasionales y con alcance limitado a las familias.'), ('muy_ocasionales_limitadas', 'Se realizan acciones muy ocasionales y con alcance limitado a las familias.'), ('ninguna', 'No se realizan acciones de información y sensibilización sobre lactancia.')], max_length=64, null=True),
+            model_name="formulariocdi",
+            name="acciones_sensibilizacion_lactancia",
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    (
+                        "dos_o_mas_anuales_todas_familias",
+                        "Se realizan dos o más acciones anuales con alcance a todas las familias.",
+                    ),
+                    (
+                        "una_anual_todas_familias",
+                        "Se realiza una acción anual con alcance a todas las familias.",
+                    ),
+                    (
+                        "una_anual_alcance_limitado",
+                        "Se realizan acciones muy ocasionales y con alcance limitado a las familias.",
+                    ),
+                    (
+                        "muy_ocasionales_limitadas",
+                        "Se realizan acciones muy ocasionales y con alcance limitado a las familias.",
+                    ),
+                    (
+                        "ninguna",
+                        "No se realizan acciones de información y sensibilización sobre lactancia.",
+                    ),
+                ],
+                max_length=64,
+                null=True,
+            ),
         ),
         migrations.AlterField(
-            model_name='formulariocdi',
-            name='calidad_elaboracion_menu',
-            field=models.CharField(blank=True, choices=[('nutricionista_indicaciones_y_frescos', 'El menú es elaborado por nutricionista, respetando indicaciones para la preparación de alimentos e incluyendo alimentos frescos o mínimamente procesados.'), ('nutricionista_indicaciones_a_veces_sin_frescos', 'El menú es elaborado por nutricionista, respeta indicaciones, pero a veces no incluye alimentos frescos o mínimamente procesados.'), ('no_siempre_nutricionista_parcial_y_mixto', 'El menú no siempre es elaborado por nutricionista; respeta parcialmente las indicaciones y combina alimentos frescos con procesados.'), ('sin_nutricionista_pocas_indicaciones_procesados', 'El menú no es elaborado por nutricionista, respeta pocas indicaciones y predominan los alimentos procesados'), ('sin_nutricionista_ultraprocesados', 'El menú no es elaborado por nutricionista y utiliza alimentos ultraprocesados')], max_length=128, null=True),
+            model_name="formulariocdi",
+            name="calidad_elaboracion_menu",
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    (
+                        "nutricionista_indicaciones_y_frescos",
+                        "El menú es elaborado por nutricionista, respetando indicaciones para la preparación de alimentos e incluyendo alimentos frescos o mínimamente procesados.",
+                    ),
+                    (
+                        "nutricionista_indicaciones_a_veces_sin_frescos",
+                        "El menú es elaborado por nutricionista, respeta indicaciones, pero a veces no incluye alimentos frescos o mínimamente procesados.",
+                    ),
+                    (
+                        "no_siempre_nutricionista_parcial_y_mixto",
+                        "El menú no siempre es elaborado por nutricionista; respeta parcialmente las indicaciones y combina alimentos frescos con procesados.",
+                    ),
+                    (
+                        "sin_nutricionista_pocas_indicaciones_procesados",
+                        "El menú no es elaborado por nutricionista, respeta pocas indicaciones y predominan los alimentos procesados",
+                    ),
+                    (
+                        "sin_nutricionista_ultraprocesados",
+                        "El menú no es elaborado por nutricionista y utiliza alimentos ultraprocesados",
+                    ),
+                ],
+                max_length=128,
+                null=True,
+            ),
         ),
         migrations.AlterField(
-            model_name='formulariocdi',
-            name='cobertura_capacitacion_manipulacion_alimentos',
-            field=models.CharField(blank=True, choices=[('todo_personal_anmat', 'Todo el personal de cocina y comedor tiene capacitaciones y carnet emitido por ANMAT'), ('entre_70_y_99', 'Entre el 70% y el 99% del personal tiene capacitaciones y carnet emitido por ANMAT'), ('entre_40_y_60', 'Entre el 40% y el 60% del personal tiene capacitaciones y carnet emitido por ANMAT'), ('menos_40', 'Menos del 40% del personal tiene capacitaciones y carnet emitido por ANMAT'), ('ninguno', 'Ningún integrante del personal tiene capacitaciones ni carnet emitido por ANMAT')], max_length=64, null=True),
+            model_name="formulariocdi",
+            name="cobertura_capacitacion_manipulacion_alimentos",
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    (
+                        "todo_personal_anmat",
+                        "Todo el personal de cocina y comedor tiene capacitaciones y carnet emitido por ANMAT",
+                    ),
+                    (
+                        "entre_70_y_99",
+                        "Entre el 70% y el 99% del personal tiene capacitaciones y carnet emitido por ANMAT",
+                    ),
+                    (
+                        "entre_40_y_60",
+                        "Entre el 40% y el 60% del personal tiene capacitaciones y carnet emitido por ANMAT",
+                    ),
+                    (
+                        "menos_40",
+                        "Menos del 40% del personal tiene capacitaciones y carnet emitido por ANMAT",
+                    ),
+                    (
+                        "ninguno",
+                        "Ningún integrante del personal tiene capacitaciones ni carnet emitido por ANMAT",
+                    ),
+                ],
+                max_length=64,
+                null=True,
+            ),
         ),
         migrations.AlterField(
-            model_name='formulariocdi',
-            name='cobertura_capacitacion_primeros_auxilios',
-            field=models.CharField(blank=True, choices=[('todo_personal_certificado', 'Todo el personal cuenta con capacitaciones en primeros auxilios certificadas (Cruz Roja, Bomberos, otros)'), ('entre_70_y_99', 'Del 70% al 99% del personal cuenta con capacitaciones en primeros auxilios certificadas'), ('entre_40_y_69', 'Del 40% al 69% del personal cuenta con capacitaciones en primeros auxilios certificadas'), ('menos_40', 'Menos del 40% del personal cuenta con capacitaciones en primeros auxilios certificadas'), ('ninguno', 'El personal no tiene capacitaciones en primeros auxilios certificadas')], max_length=64, null=True),
+            model_name="formulariocdi",
+            name="cobertura_capacitacion_primeros_auxilios",
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    (
+                        "todo_personal_certificado",
+                        "Todo el personal cuenta con capacitaciones en primeros auxilios certificadas (Cruz Roja, Bomberos, otros)",
+                    ),
+                    (
+                        "entre_70_y_99",
+                        "Del 70% al 99% del personal cuenta con capacitaciones en primeros auxilios certificadas",
+                    ),
+                    (
+                        "entre_40_y_69",
+                        "Del 40% al 69% del personal cuenta con capacitaciones en primeros auxilios certificadas",
+                    ),
+                    (
+                        "menos_40",
+                        "Menos del 40% del personal cuenta con capacitaciones en primeros auxilios certificadas",
+                    ),
+                    (
+                        "ninguno",
+                        "El personal no tiene capacitaciones en primeros auxilios certificadas",
+                    ),
+                ],
+                max_length=64,
+                null=True,
+            ),
         ),
         migrations.AlterField(
-            model_name='formulariocdi',
-            name='cobertura_duplas_pedagogicas',
-            field=models.CharField(blank=True, choices=[('todas', 'Sí, en todas las salas trabajan en dupla'), ('mayoria', 'Sí, en la mayoría de las salas trabajan en dupla'), ('algunas', 'Solo en algunas salas trabajan en dupla'), ('muy_pocas', 'Muy pocas salas trabajan en duplas'), ('ninguna', 'No se trabaja en duplas en ninguna sala')], max_length=32, null=True),
+            model_name="formulariocdi",
+            name="cobertura_duplas_pedagogicas",
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    ("todas", "Sí, en todas las salas trabajan en dupla"),
+                    ("mayoria", "Sí, en la mayoría de las salas trabajan en dupla"),
+                    ("algunas", "Solo en algunas salas trabajan en dupla"),
+                    ("muy_pocas", "Muy pocas salas trabajan en duplas"),
+                    ("ninguna", "No se trabaja en duplas en ninguna sala"),
+                ],
+                max_length=32,
+                null=True,
+            ),
         ),
         migrations.AlterField(
-            model_name='formulariocdi',
-            name='cobertura_educadora_titulo_habilitante',
-            field=models.CharField(blank=True, choices=[('todas', 'Sí, en todas las salas una educadora cuenta cn título habilitante de nivel inicial'), ('mayoria', 'Sí, en la mayoría de las salas una educadora cuenta con título habilitante de nivel inicial'), ('algunas', 'Solo en algunas salas una educadora cuenta con título habilitante de nivel inicial'), ('muy_pocas', 'Muy pocas salas tienen una educadora con título habilitante')], max_length=32, null=True),
+            model_name="formulariocdi",
+            name="cobertura_educadora_titulo_habilitante",
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    (
+                        "todas",
+                        "Sí, en todas las salas una educadora cuenta cn título habilitante de nivel inicial",
+                    ),
+                    (
+                        "mayoria",
+                        "Sí, en la mayoría de las salas una educadora cuenta con título habilitante de nivel inicial",
+                    ),
+                    (
+                        "algunas",
+                        "Solo en algunas salas una educadora cuenta con título habilitante de nivel inicial",
+                    ),
+                    (
+                        "muy_pocas",
+                        "Muy pocas salas tienen una educadora con título habilitante",
+                    ),
+                ],
+                max_length=32,
+                null=True,
+            ),
         ),
         migrations.AlterField(
-            model_name='formulariocdi',
-            name='cobertura_formacion_auxiliares',
-            field=models.CharField(blank=True, choices=[('todos', 'Todos los auxiliares cuentan con formación específica en primera infancia'), ('mayoria', 'La mayoría de los auxiliares cuentan con formación específica en primera infancia'), ('algunos', 'Algunos auxiliares cuentan con formación específica en primera infancia'), ('muy_pocos', 'Muy pocos auxiliares cuentan con formación específica en primera infancia'), ('ninguno', 'Ningún auxiliar cuenta con formación en primera infancia')], max_length=32, null=True),
+            model_name="formulariocdi",
+            name="cobertura_formacion_auxiliares",
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    (
+                        "todos",
+                        "Todos los auxiliares cuentan con formación específica en primera infancia",
+                    ),
+                    (
+                        "mayoria",
+                        "La mayoría de los auxiliares cuentan con formación específica en primera infancia",
+                    ),
+                    (
+                        "algunos",
+                        "Algunos auxiliares cuentan con formación específica en primera infancia",
+                    ),
+                    (
+                        "muy_pocos",
+                        "Muy pocos auxiliares cuentan con formación específica en primera infancia",
+                    ),
+                    (
+                        "ninguno",
+                        "Ningún auxiliar cuenta con formación en primera infancia",
+                    ),
+                ],
+                max_length=32,
+                null=True,
+            ),
         ),
         migrations.AlterField(
-            model_name='formulariocdi',
-            name='combustible_cocinar',
-            field=models.CharField(blank=True, choices=[('gas_red', 'Gas de red'), ('gas_granel_tubo_garrafa', 'Gas a granel, tubo o en garrafa'), ('electricidad', 'Electricidad'), ('lena_o_carbon', 'Leña o carbon'), ('no_utiliza', 'No utiliza combustible para cocinar')], max_length=64, null=True),
+            model_name="formulariocdi",
+            name="combustible_cocinar",
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    ("gas_red", "Gas de red"),
+                    ("gas_granel_tubo_garrafa", "Gas a granel, tubo o en garrafa"),
+                    ("electricidad", "Electricidad"),
+                    ("lena_o_carbon", "Leña o carbon"),
+                    ("no_utiliza", "No utiliza combustible para cocinar"),
+                ],
+                max_length=64,
+                null=True,
+            ),
         ),
         migrations.AlterField(
-            model_name='formulariocdi',
-            name='condiciones_almacenamiento_leche_humana',
-            field=models.CharField(blank=True, choices=[('heladera_exclusiva_identificada_y_rotulada', 'Se conserva en heladera exclusiva, identificada por niño/a y rotulada con fecha de extracción.'), ('heladera_compartida_sector_exclusivo_identificada_y_rotulada', 'Se conserva en heladera compartida, en un sector exclusivo, identificada por niño/a y rotulada con fecha de extracción.'), ('heladera_exclusiva_identificada_sin_fecha', 'Se conserva en heladera exclusiva, identificada por niño/a pero sin rotulación con fecha de extracción.'), ('heladera_compartida_sector_exclusivo_identificada_sin_fecha', 'Se conserva en heladera compartida, en un sector exclusivo, identificada por niño/a pero sin rotulación con fecha de extracción.'), ('sin_espacio_exclusivo_ni_identificacion', 'No se conserva en espacio exclusivo ni se identifica por niño/a.')], max_length=128, null=True),
+            model_name="formulariocdi",
+            name="condiciones_almacenamiento_leche_humana",
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    (
+                        "heladera_exclusiva_identificada_y_rotulada",
+                        "Se conserva en heladera exclusiva, identificada por niño/a y rotulada con fecha de extracción.",
+                    ),
+                    (
+                        "heladera_compartida_sector_exclusivo_identificada_y_rotulada",
+                        "Se conserva en heladera compartida, en un sector exclusivo, identificada por niño/a y rotulada con fecha de extracción.",
+                    ),
+                    (
+                        "heladera_exclusiva_identificada_sin_fecha",
+                        "Se conserva en heladera exclusiva, identificada por niño/a pero sin rotulación con fecha de extracción.",
+                    ),
+                    (
+                        "heladera_compartida_sector_exclusivo_identificada_sin_fecha",
+                        "Se conserva en heladera compartida, en un sector exclusivo, identificada por niño/a pero sin rotulación con fecha de extracción.",
+                    ),
+                    (
+                        "sin_espacio_exclusivo_ni_identificacion",
+                        "No se conserva en espacio exclusivo ni se identifica por niño/a.",
+                    ),
+                ],
+                max_length=128,
+                null=True,
+            ),
         ),
         migrations.AlterField(
-            model_name='formulariocdi',
-            name='eliminacion_excretas',
-            field=models.CharField(blank=True, choices=[('red_publica_cloaca', 'A red pública (cloaca)'), ('camara_septica_pozo_ciego', 'A cámara séptica y pozo ciego'), ('solo_pozo_ciego', 'Sólo a pozo ciego'), ('hoyo_tierra', 'A hoyo o excavación en la tierra'), ('sin_sistema', 'No tiene sistema de eliminación de excretas')], max_length=64, null=True),
+            model_name="formulariocdi",
+            name="eliminacion_excretas",
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    ("red_publica_cloaca", "A red pública (cloaca)"),
+                    ("camara_septica_pozo_ciego", "A cámara séptica y pozo ciego"),
+                    ("solo_pozo_ciego", "Sólo a pozo ciego"),
+                    ("hoyo_tierra", "A hoyo o excavación en la tierra"),
+                    ("sin_sistema", "No tiene sistema de eliminación de excretas"),
+                ],
+                max_length=64,
+                null=True,
+            ),
         ),
         migrations.AlterField(
-            model_name='formulariocdi',
-            name='estado_botiquin_primeros_auxilios',
-            field=models.CharField(blank=True, choices=[('completo_todas_salas_ok_vigente_fuera_alcance', 'Cuentan con botiquín completo de primeros auxilios en todas las salas, en buena conservación y con insumos dentro de la fecha de vencimiento; fuera del alcance de los niños'), ('incompleto_todas_salas_ok_vigente_fuera_alcance', 'Cuentan con botiquín incompleto de primeros auxilios en todas las salas, en buena conservación y con insumos dentro de la fecha de vencimiento; fuera del alcance de los niños'), ('unico_completo_compartido_ok_vigente_fuera_alcance', 'Cuentan con un único botiquín completo de primeros auxilios compartido por las salas, en buena conservación y con insumos dentro de la fecha de vencimiento; fuera del alcance de los niños'), ('incompleto_compartido_o_mal_estado_o_vencido', 'Cuentan con botiquín incompleto de primeros auxilios compartido por las salas y/o los insumos se encuentran en mala conservación y fuera de la fecha de vencimiento'), ('no_tienen_o_al_alcance_ninos', 'No cuentan con botiquín de primeros auxilios o el botiquín está al alcance de los niños')], max_length=128, null=True),
+            model_name="formulariocdi",
+            name="estado_botiquin_primeros_auxilios",
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    (
+                        "completo_todas_salas_ok_vigente_fuera_alcance",
+                        "Cuentan con botiquín completo de primeros auxilios en todas las salas, en buena conservación y con insumos dentro de la fecha de vencimiento; fuera del alcance de los niños",
+                    ),
+                    (
+                        "incompleto_todas_salas_ok_vigente_fuera_alcance",
+                        "Cuentan con botiquín incompleto de primeros auxilios en todas las salas, en buena conservación y con insumos dentro de la fecha de vencimiento; fuera del alcance de los niños",
+                    ),
+                    (
+                        "unico_completo_compartido_ok_vigente_fuera_alcance",
+                        "Cuentan con un único botiquín completo de primeros auxilios compartido por las salas, en buena conservación y con insumos dentro de la fecha de vencimiento; fuera del alcance de los niños",
+                    ),
+                    (
+                        "incompleto_compartido_o_mal_estado_o_vencido",
+                        "Cuentan con botiquín incompleto de primeros auxilios compartido por las salas y/o los insumos se encuentran en mala conservación y fuera de la fecha de vencimiento",
+                    ),
+                    (
+                        "no_tienen_o_al_alcance_ninos",
+                        "No cuentan con botiquín de primeros auxilios o el botiquín está al alcance de los niños",
+                    ),
+                ],
+                max_length=128,
+                null=True,
+            ),
         ),
         migrations.AlterField(
-            model_name='formulariocdi',
-            name='evaluacion_periodica_menu',
-            field=models.CharField(blank=True, choices=[('periodica_todas_necesidades_y_patrones_y_personas', 'El menú se evalúa periódicamente; contempla todas las necesidades nutricionales y patrones alimentarios; el personal está capacitado para su implementación.'), ('periodica_mayoria_necesidades_y_algunos_patrones', 'El menú se evalúa periódicamente; contempla la mayoría de las necesidades nutricionales y algunos patrones alimentarios; el personal cuenta con capacitación básica.'), ('ocasional_parcial_y_capacitacion_esporadica', 'El menú se evalúa de manera ocasional; contempla parcialmente las necesidades nutricionales y no incluye todos los patrones alimentarios; las capacitaciones al personal son esporádicas.'), ('rara_vez_limitada_sin_patrones', 'El menú rara vez se evalúa; contempla de manera limitada las necesidades nutricionales y no considera patrones alimentarios; el personal carece de capacitación específica.'), ('no_evalua', 'El menú no se evalúa; no contempla necesidades nutricionales ni patrones alimentarios; el personal no cuenta con capacitación.')], max_length=128, null=True),
+            model_name="formulariocdi",
+            name="evaluacion_periodica_menu",
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    (
+                        "periodica_todas_necesidades_y_patrones_y_personas",
+                        "El menú se evalúa periódicamente; contempla todas las necesidades nutricionales y patrones alimentarios; el personal está capacitado para su implementación.",
+                    ),
+                    (
+                        "periodica_mayoria_necesidades_y_algunos_patrones",
+                        "El menú se evalúa periódicamente; contempla la mayoría de las necesidades nutricionales y algunos patrones alimentarios; el personal cuenta con capacitación básica.",
+                    ),
+                    (
+                        "ocasional_parcial_y_capacitacion_esporadica",
+                        "El menú se evalúa de manera ocasional; contempla parcialmente las necesidades nutricionales y no incluye todos los patrones alimentarios; las capacitaciones al personal son esporádicas.",
+                    ),
+                    (
+                        "rara_vez_limitada_sin_patrones",
+                        "El menú rara vez se evalúa; contempla de manera limitada las necesidades nutricionales y no considera patrones alimentarios; el personal carece de capacitación específica.",
+                    ),
+                    (
+                        "no_evalua",
+                        "El menú no se evalúa; no contempla necesidades nutricionales ni patrones alimentarios; el personal no cuenta con capacitación.",
+                    ),
+                ],
+                max_length=128,
+                null=True,
+            ),
         ),
         migrations.RunSQL(
             sql="UPDATE centrodeinfancia_formulariocdi SET evaluacion_periodica_menu = 'periodica_todas_necesidades_y_patrones_y_personas' WHERE evaluacion_periodica_menu = 'periodica_todas_necesidades_y_patrones_y_personal_capacitado'",
             reverse_sql="UPDATE centrodeinfancia_formulariocdi SET evaluacion_periodica_menu = 'periodica_todas_necesidades_y_patrones_y_personal_capacitado' WHERE evaluacion_periodica_menu = 'periodica_todas_necesidades_y_patrones_y_personas'",
         ),
         migrations.AlterField(
-            model_name='formulariocdi',
-            name='formacion_direccion_primera_infancia',
-            field=models.CharField(blank=True, choices=[('titulo_superior_completo_especifico', 'Posee título universitario o terciario completo de carreras específicas en primera infancia (ej. Educación Inicial, Trabajo Social, Psicología, Psicopedagogía, Estimulación Temprana u otras afines).'), ('carrera_75_o_mas_o_posgrados', 'Posee al menos el 75% de una carrera superior en temáticas vinculadas a la infancia o cuenta con posgrados/cursos de especialización acreditados.'), ('cursando_formacion_formal', 'Se encuentra actualmente cursando una carrera o formación formal relacionada con la primera infancia.'), ('solo_cursos_cortos', 'Ha realizado solo cursos o capacitaciones cortas no sistemáticas en temas de infancia.'), ('sin_formacion', 'No posee formación superior ni capacitaciones en temáticas vinculadas a la infancia.')], max_length=64, null=True),
+            model_name="formulariocdi",
+            name="formacion_direccion_primera_infancia",
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    (
+                        "titulo_superior_completo_especifico",
+                        "Posee título universitario o terciario completo de carreras específicas en primera infancia (ej. Educación Inicial, Trabajo Social, Psicología, Psicopedagogía, Estimulación Temprana u otras afines).",
+                    ),
+                    (
+                        "carrera_75_o_mas_o_posgrados",
+                        "Posee al menos el 75% de una carrera superior en temáticas vinculadas a la infancia o cuenta con posgrados/cursos de especialización acreditados.",
+                    ),
+                    (
+                        "cursando_formacion_formal",
+                        "Se encuentra actualmente cursando una carrera o formación formal relacionada con la primera infancia.",
+                    ),
+                    (
+                        "solo_cursos_cortos",
+                        "Ha realizado solo cursos o capacitaciones cortas no sistemáticas en temas de infancia.",
+                    ),
+                    (
+                        "sin_formacion",
+                        "No posee formación superior ni capacitaciones en temáticas vinculadas a la infancia.",
+                    ),
+                ],
+                max_length=64,
+                null=True,
+            ),
         ),
         migrations.AlterField(
-            model_name='formulariocdi',
-            name='frecuencia_comunicacion_familias',
-            field=models.CharField(blank=True, choices=[('reuniones_mensuales_y_canales_formales', 'Se realizan reuniones mensuales con las familias y existen canales de comunicación formales (ej. cuaderno, cartelera, mensajes institucionales, plataforma).'), ('reuniones_trimestrales_y_canales_formales', 'Se realizan reuniones trimestrales y existen canales formales de comunicación.'), ('reuniones_semestrales_y_algunos_canales', 'Se realizan reuniones semestrales y solo algunos canales de comunicación formal funcionan regularmente.'), ('reuniones_anuales_sin_canales', 'Se realizan reuniones anuales y no se dispone de canales formales de comunicación.'), ('sin_reuniones_ni_canales', 'No se realizan reuniones con familias ni existen canales formales de comunicación.')], max_length=128, null=True),
+            model_name="formulariocdi",
+            name="frecuencia_comunicacion_familias",
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    (
+                        "reuniones_mensuales_y_canales_formales",
+                        "Se realizan reuniones mensuales con las familias y existen canales de comunicación formales (ej. cuaderno, cartelera, mensajes institucionales, plataforma).",
+                    ),
+                    (
+                        "reuniones_trimestrales_y_canales_formales",
+                        "Se realizan reuniones trimestrales y existen canales formales de comunicación.",
+                    ),
+                    (
+                        "reuniones_semestrales_y_algunos_canales",
+                        "Se realizan reuniones semestrales y solo algunos canales de comunicación formal funcionan regularmente.",
+                    ),
+                    (
+                        "reuniones_anuales_sin_canales",
+                        "Se realizan reuniones anuales y no se dispone de canales formales de comunicación.",
+                    ),
+                    (
+                        "sin_reuniones_ni_canales",
+                        "No se realizan reuniones con familias ni existen canales formales de comunicación.",
+                    ),
+                ],
+                max_length=128,
+                null=True,
+            ),
         ),
         migrations.AlterField(
-            model_name='formulariocdi',
-            name='frecuencia_talleres_crianza',
-            field=models.CharField(blank=True, choices=[('trimestral_o_mas', 'Se realizan al menos cada tres meses'), ('cada_4_a_6_meses', 'Se realizan cada cuatro a seis meses'), ('una_vez_al_ano', 'Se realiza al menos una vez al año'), ('esporadica', 'Se realizan de manera esporádica, no todos los años'), ('no_se_realizan', 'No se realizan talleres de crianza ni charlas con profesionales')], max_length=64, null=True),
+            model_name="formulariocdi",
+            name="frecuencia_talleres_crianza",
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    ("trimestral_o_mas", "Se realizan al menos cada tres meses"),
+                    ("cada_4_a_6_meses", "Se realizan cada cuatro a seis meses"),
+                    ("una_vez_al_ano", "Se realiza al menos una vez al año"),
+                    (
+                        "esporadica",
+                        "Se realizan de manera esporádica, no todos los años",
+                    ),
+                    (
+                        "no_se_realizan",
+                        "No se realizan talleres de crianza ni charlas con profesionales",
+                    ),
+                ],
+                max_length=64,
+                null=True,
+            ),
         ),
         migrations.AlterField(
-            model_name='formulariocdi',
-            name='fuente_agua_segura_consumo',
-            field=models.CharField(blank=True, choices=[('red_o_embotellada_segura', 'Agua de red o embotellada – considerada segura para el consumo.'), ('pozo_analisis_vigente', 'Agua de pozo con análisis vigente – con aprobación de laboratorio en los últimos 2 años o potabilizada según métodos recomendados.'), ('pozo_analisis_vencido_o_sin_control', 'Agua de pozo con análisis vencido o sin control – con aprobación de laboratorio de más de 2 años o sin análisis disponible.'), ('otra_con_proceso_sin_garantia_formal', 'Otra fuente de agua con información parcial – existe algún proceso de potabilización pero sin garantía formal.'), ('otra_sin_info_potabilizacion', 'Otra fuente de agua sin información sobre su potabilización – no se puede asegurar que sea apta para consumo.')], max_length=64, null=True),
+            model_name="formulariocdi",
+            name="fuente_agua_segura_consumo",
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    (
+                        "red_o_embotellada_segura",
+                        "Agua de red o embotellada – considerada segura para el consumo.",
+                    ),
+                    (
+                        "pozo_analisis_vigente",
+                        "Agua de pozo con análisis vigente – con aprobación de laboratorio en los últimos 2 años o potabilizada según métodos recomendados.",
+                    ),
+                    (
+                        "pozo_analisis_vencido_o_sin_control",
+                        "Agua de pozo con análisis vencido o sin control – con aprobación de laboratorio de más de 2 años o sin análisis disponible.",
+                    ),
+                    (
+                        "otra_con_proceso_sin_garantia_formal",
+                        "Otra fuente de agua con información parcial – existe algún proceso de potabilización pero sin garantía formal.",
+                    ),
+                    (
+                        "otra_sin_info_potabilizacion",
+                        "Otra fuente de agua sin información sobre su potabilización – no se puede asegurar que sea apta para consumo.",
+                    ),
+                ],
+                max_length=64,
+                null=True,
+            ),
         ),
         migrations.AlterField(
-            model_name='formulariocdi',
-            name='modalidad_contratacion_principal',
-            field=models.CharField(blank=True, choices=[('permanente', 'La mayor proporción de personal tiene Contratación permanente'), ('temporal', 'La mayor proporción de personal tiene Contratación temporal'), ('beca_o_pasantia', 'La mayor proporción de personal tiene Beca o pasantía'), ('programa_social_insercion', 'La mayor proporción de personal tiene Programa social de inserción laboral'), ('voluntario_u_otra', 'La mayor proporción de personal es voluntario u otra modalidad')], max_length=64, null=True),
+            model_name="formulariocdi",
+            name="modalidad_contratacion_principal",
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    (
+                        "permanente",
+                        "La mayor proporción de personal tiene Contratación permanente",
+                    ),
+                    (
+                        "temporal",
+                        "La mayor proporción de personal tiene Contratación temporal",
+                    ),
+                    (
+                        "beca_o_pasantia",
+                        "La mayor proporción de personal tiene Beca o pasantía",
+                    ),
+                    (
+                        "programa_social_insercion",
+                        "La mayor proporción de personal tiene Programa social de inserción laboral",
+                    ),
+                    (
+                        "voluntario_u_otra",
+                        "La mayor proporción de personal es voluntario u otra modalidad",
+                    ),
+                ],
+                max_length=64,
+                null=True,
+            ),
         ),
         migrations.AlterField(
-            model_name='formulariocdi',
-            name='modalidad_gestion',
-            field=models.CharField(blank=True, choices=[('gobierno_nacional', 'Gobierno nacional'), ('gobierno_provincial', 'Gobierno provincial'), ('gobierno_municipal', 'Gobierno municipal'), ('ong', 'ONG (incluye organizaciones sociales, movimientos sociales, grupos comunitarios o barriales, etc.)'), ('cogestion_provincial_municipal', 'Co-gestión: Gob. Provincial y municipal'), ('cogestion_ong_provincial_municipal', 'Co-gestión: ONG/Gob. Provincial/municipal'), ('otra', 'Otra')], max_length=64, null=True),
+            model_name="formulariocdi",
+            name="modalidad_gestion",
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    ("gobierno_nacional", "Gobierno nacional"),
+                    ("gobierno_provincial", "Gobierno provincial"),
+                    ("gobierno_municipal", "Gobierno municipal"),
+                    (
+                        "ong",
+                        "ONG (incluye organizaciones sociales, movimientos sociales, grupos comunitarios o barriales, etc.)",
+                    ),
+                    (
+                        "cogestion_provincial_municipal",
+                        "Co-gestión: Gob. Provincial y municipal",
+                    ),
+                    (
+                        "cogestion_ong_provincial_municipal",
+                        "Co-gestión: ONG/Gob. Provincial/municipal",
+                    ),
+                    ("otra", "Otra"),
+                ],
+                max_length=64,
+                null=True,
+            ),
         ),
         migrations.AlterField(
-            model_name='formulariocdi',
-            name='modalidad_tenencia',
-            field=models.CharField(blank=True, choices=[('propio', 'Propio'), ('alquilado', 'Alquilado'), ('cedido_gubernamental', 'Cedido o prestado por ente gubernamental (Municipio / Comuna / Provincia)'), ('cedido_privado', 'Cedido o prestado por un privado'), ('comodato', 'Comodato'), ('ocupado_de_hecho', 'Ocupado de hecho'), ('otra', 'Otra')], max_length=64, null=True),
+            model_name="formulariocdi",
+            name="modalidad_tenencia",
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    ("propio", "Propio"),
+                    ("alquilado", "Alquilado"),
+                    (
+                        "cedido_gubernamental",
+                        "Cedido o prestado por ente gubernamental (Municipio / Comuna / Provincia)",
+                    ),
+                    ("cedido_privado", "Cedido o prestado por un privado"),
+                    ("comodato", "Comodato"),
+                    ("ocupado_de_hecho", "Ocupado de hecho"),
+                    ("otra", "Otra"),
+                ],
+                max_length=64,
+                null=True,
+            ),
         ),
         migrations.AlterField(
-            model_name='formulariocdi',
-            name='nivel_equipo_tecnico',
-            field=models.CharField(blank=True, choices=[('completo_mas_20_horas', 'El CDI cuenta con un equipo técnico completo y más de 20 horas semanales de trabajo.'), ('perfiles_diversos_15_19_horas', 'El CDI cuenta con un equipo técnico con perfiles diversos (al menos dos de los sugeridos) y entre 15 y 19 horas semanales de trabajo.'), ('al_menos_un_perfil_o_10_14_horas', 'El CDI cuenta con un equipo técnico con al menos un perfil profesional y/o con entre 10 y 14 horas semanales de trabajo.'), ('limitado_un_perfil_o_9_o_menos', 'El CDI cuenta con un equipo técnico limitado (un solo perfil profesional) y/o 9 horas o menos de trabajo semanal.'), ('sin_equipo', 'El CDI no cuenta con equipo técnico.')], max_length=64, null=True),
+            model_name="formulariocdi",
+            name="nivel_equipo_tecnico",
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    (
+                        "completo_mas_20_horas",
+                        "El CDI cuenta con un equipo técnico completo y más de 20 horas semanales de trabajo.",
+                    ),
+                    (
+                        "perfiles_diversos_15_19_horas",
+                        "El CDI cuenta con un equipo técnico con perfiles diversos (al menos dos de los sugeridos) y entre 15 y 19 horas semanales de trabajo.",
+                    ),
+                    (
+                        "al_menos_un_perfil_o_10_14_horas",
+                        "El CDI cuenta con un equipo técnico con al menos un perfil profesional y/o con entre 10 y 14 horas semanales de trabajo.",
+                    ),
+                    (
+                        "limitado_un_perfil_o_9_o_menos",
+                        "El CDI cuenta con un equipo técnico limitado (un solo perfil profesional) y/o 9 horas o menos de trabajo semanal.",
+                    ),
+                    ("sin_equipo", "El CDI no cuenta con equipo técnico."),
+                ],
+                max_length=64,
+                null=True,
+            ),
         ),
         migrations.AlterField(
-            model_name='formulariocdi',
-            name='nivel_trabajo_red',
-            field=models.CharField(blank=True, choices=[('red_mapeo_mesas_trimestral_o_mas', 'Trabaja en red con otras instituciones, cuenta con mapeo de actores y participa en mesas intersectoriales con reuniones trimestrales o más frecuentes.'), ('red_mapeo_mesas_semestral', 'Trabaja en red con otras instituciones, cuenta con mapeo de actores y participa en mesas intersectoriales con reuniones semestrales.'), ('sin_red_con_mapeo_y_mesas', 'No trabaja en red con otras instituciones, pero cuenta con mapeo de actores y participa en mesas intersectoriales al menos semestralmente.'), ('sin_red_sin_mesas_con_mapeo', 'No trabaja en red con otras instituciones, no participa en mesas intersectoriales, pero cuenta con mapeo de actores'), ('sin_red_ni_mapeo', 'No trabaja en red con instituciones ni cuenta con mapeo de actores de primera infancia.')], max_length=128, null=True),
+            model_name="formulariocdi",
+            name="nivel_trabajo_red",
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    (
+                        "red_mapeo_mesas_trimestral_o_mas",
+                        "Trabaja en red con otras instituciones, cuenta con mapeo de actores y participa en mesas intersectoriales con reuniones trimestrales o más frecuentes.",
+                    ),
+                    (
+                        "red_mapeo_mesas_semestral",
+                        "Trabaja en red con otras instituciones, cuenta con mapeo de actores y participa en mesas intersectoriales con reuniones semestrales.",
+                    ),
+                    (
+                        "sin_red_con_mapeo_y_mesas",
+                        "No trabaja en red con otras instituciones, pero cuenta con mapeo de actores y participa en mesas intersectoriales al menos semestralmente.",
+                    ),
+                    (
+                        "sin_red_sin_mesas_con_mapeo",
+                        "No trabaja en red con otras instituciones, no participa en mesas intersectoriales, pero cuenta con mapeo de actores",
+                    ),
+                    (
+                        "sin_red_ni_mapeo",
+                        "No trabaja en red con instituciones ni cuenta con mapeo de actores de primera infancia.",
+                    ),
+                ],
+                max_length=128,
+                null=True,
+            ),
         ),
         migrations.AlterField(
-            model_name='formulariocdi',
-            name='participantes_proyecto_socioeducativo',
-            field=models.CharField(blank=True, choices=[('conduccion_sala_equipo_auxiliar_familias_comunidad', 'Participan la conducción, el personal de sala, el equipo técnico, el personal auxiliar, las familias y actores comunitarios'), ('conduccion_sala_equipo_familias', 'Participan la conducción, el personal de sala, el equipo técnico y las familias'), ('conduccion_sala_equipo', 'Participan la conducción, el personal de sala y el equipo técnico'), ('conduccion_y_o_equipo', 'Participan la conducción y/o el equipo técnico'), ('no_tienen', 'No tienen proyecto socioeducativo institucional')], max_length=128, null=True),
+            model_name="formulariocdi",
+            name="participantes_proyecto_socioeducativo",
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    (
+                        "conduccion_sala_equipo_auxiliar_familias_comunidad",
+                        "Participan la conducción, el personal de sala, el equipo técnico, el personal auxiliar, las familias y actores comunitarios",
+                    ),
+                    (
+                        "conduccion_sala_equipo_familias",
+                        "Participan la conducción, el personal de sala, el equipo técnico y las familias",
+                    ),
+                    (
+                        "conduccion_sala_equipo",
+                        "Participan la conducción, el personal de sala y el equipo técnico",
+                    ),
+                    (
+                        "conduccion_y_o_equipo",
+                        "Participan la conducción y/o el equipo técnico",
+                    ),
+                    ("no_tienen", "No tienen proyecto socioeducativo institucional"),
+                ],
+                max_length=128,
+                null=True,
+            ),
         ),
         migrations.AlterField(
-            model_name='formulariocdi',
-            name='plan_evacuacion_y_simulacros',
-            field=models.CharField(blank=True, choices=[('protocolo_escrito_y_2_simulacros_o_mas', 'Hay un protocolo de evacuación por escrito y realizan simulacros al menos dos veces por año .'), ('protocolo_escrito_y_simulacros_sin_frecuencia', 'Hay un protocolo de evacuación por escrito y se realizan simulacros, aunque no con la frecuencia estipulada.'), ('protocolo_escrito_sin_simulacros', 'Hay un protocolo de evacuación por escrito y no se realizan simulacros.'), ('practicas_informales_sin_protocolo', 'Solo hay prácticas informales sin protocolos escritos.'), ('sin_protocolo', 'No hay protocolo de evacuación.')], max_length=128, null=True),
+            model_name="formulariocdi",
+            name="plan_evacuacion_y_simulacros",
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    (
+                        "protocolo_escrito_y_2_simulacros_o_mas",
+                        "Hay un protocolo de evacuación por escrito y realizan simulacros al menos dos veces por año .",
+                    ),
+                    (
+                        "protocolo_escrito_y_simulacros_sin_frecuencia",
+                        "Hay un protocolo de evacuación por escrito y se realizan simulacros, aunque no con la frecuencia estipulada.",
+                    ),
+                    (
+                        "protocolo_escrito_sin_simulacros",
+                        "Hay un protocolo de evacuación por escrito y no se realizan simulacros.",
+                    ),
+                    (
+                        "practicas_informales_sin_protocolo",
+                        "Solo hay prácticas informales sin protocolos escritos.",
+                    ),
+                    ("sin_protocolo", "No hay protocolo de evacuación."),
+                ],
+                max_length=128,
+                null=True,
+            ),
         ),
         migrations.AlterField(
-            model_name='formulariocdi',
-            name='planificacion_actividades_sala',
-            field=models.CharField(blank=True, choices=[('semanal_en_marco_mensual_o_semestral_y_anual', 'Se diseñan actividades semanales enmarcadas en planificaciones más amplias (mensuales o semestrales) y en un plan anual.'), ('semanal_en_marco_mensual_o_semestral_sin_anual', 'Se diseñan actividades semanales enmarcadas en planificaciones más amplias (mensuales o semestrales), pero sin plan anual.'), ('semanal_en_marco_anual', 'Se diseñan actividades semanales enmarcadas únicamente en un plan anual.'), ('solo_semanal', 'Se diseñan únicamente actividades semanales, sin articulación con planificaciones más amplias.'), ('no_planifican', 'No se realizan planificaciones de actividades.')], max_length=128, null=True),
+            model_name="formulariocdi",
+            name="planificacion_actividades_sala",
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    (
+                        "semanal_en_marco_mensual_o_semestral_y_anual",
+                        "Se diseñan actividades semanales enmarcadas en planificaciones más amplias (mensuales o semestrales) y en un plan anual.",
+                    ),
+                    (
+                        "semanal_en_marco_mensual_o_semestral_sin_anual",
+                        "Se diseñan actividades semanales enmarcadas en planificaciones más amplias (mensuales o semestrales), pero sin plan anual.",
+                    ),
+                    (
+                        "semanal_en_marco_anual",
+                        "Se diseñan actividades semanales enmarcadas únicamente en un plan anual.",
+                    ),
+                    (
+                        "solo_semanal",
+                        "Se diseñan únicamente actividades semanales, sin articulación con planificaciones más amplias.",
+                    ),
+                    ("no_planifican", "No se realizan planificaciones de actividades."),
+                ],
+                max_length=128,
+                null=True,
+            ),
         ),
         migrations.AlterField(
-            model_name='formulariocdi',
-            name='planificacion_integral',
-            field=models.CharField(blank=True, choices=[('intereses_caracteristicas_necesidades_e_integralidad', 'Sí, se tienen en cuenta intereses, características, necesidades e integralidad de contenidos'), ('solo_intereses_caracteristicas_necesidades', 'Solo se tienen en cuenta los intereses, características y necesidades del grupo'), ('solo_integralidad', 'Solo se tiene en cuenta la integralidad de los contenidos'), ('ninguno', 'No se tienen en cuenta los intereses, características, necesidades ni integralidad de los contenidos'), ('no_planifican', 'No se realizan planificaciones')], max_length=128, null=True),
+            model_name="formulariocdi",
+            name="planificacion_integral",
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    (
+                        "intereses_caracteristicas_necesidades_e_integralidad",
+                        "Sí, se tienen en cuenta intereses, características, necesidades e integralidad de contenidos",
+                    ),
+                    (
+                        "solo_intereses_caracteristicas_necesidades",
+                        "Solo se tienen en cuenta los intereses, características y necesidades del grupo",
+                    ),
+                    (
+                        "solo_integralidad",
+                        "Solo se tiene en cuenta la integralidad de los contenidos",
+                    ),
+                    (
+                        "ninguno",
+                        "No se tienen en cuenta los intereses, características, necesidades ni integralidad de los contenidos",
+                    ),
+                    ("no_planifican", "No se realizan planificaciones"),
+                ],
+                max_length=128,
+                null=True,
+            ),
         ),
         migrations.AlterField(
-            model_name='formulariocdi',
-            name='protocolo_vulneracion_derechos',
-            field=models.CharField(blank=True, choices=[('protocolo_revision_periodica_mayoria_conoce', 'El CDI cuenta con protocolos específicos de intervención para la actuación ante sospecha o vulneración de derechos de los niños, que se revisan periódicamente y es conocido por más de la mitad del personal'), ('protocolo_revision_periodica_menos_mitad', 'El CDI cuenta con protocolos específicos de intervención para la actuación ante sospecha o vulneración de derechos de los niños, que se revisan periódicamente y es conocido por menos de la mitad del personal'), ('protocolo_sin_revision_mayoria_conoce', 'El CDI cuenta con protocolos específicos de intervención para la actuación ante sospecha o vulneración de derechos de los niños, que no tiene revisiones periódicas y es conocido por la más de la mitad del personal'), ('protocolo_sin_revision_menos_mitad', 'El CDI cuenta con protocolos específicos de intervención para la actuación ante sospecha o vulneración de derechos de los niños, que no tiene revisiones periódicas y es conocido por menos de la mitad del personal'), ('no_existe', 'El CDI no cuenta con protocolos específicos de intervención para la actuación ante sospecha o vulneración de derechos de los niños.')], max_length=128, null=True),
+            model_name="formulariocdi",
+            name="protocolo_vulneracion_derechos",
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    (
+                        "protocolo_revision_periodica_mayoria_conoce",
+                        "El CDI cuenta con protocolos específicos de intervención para la actuación ante sospecha o vulneración de derechos de los niños, que se revisan periódicamente y es conocido por más de la mitad del personal",
+                    ),
+                    (
+                        "protocolo_revision_periodica_menos_mitad",
+                        "El CDI cuenta con protocolos específicos de intervención para la actuación ante sospecha o vulneración de derechos de los niños, que se revisan periódicamente y es conocido por menos de la mitad del personal",
+                    ),
+                    (
+                        "protocolo_sin_revision_mayoria_conoce",
+                        "El CDI cuenta con protocolos específicos de intervención para la actuación ante sospecha o vulneración de derechos de los niños, que no tiene revisiones periódicas y es conocido por la más de la mitad del personal",
+                    ),
+                    (
+                        "protocolo_sin_revision_menos_mitad",
+                        "El CDI cuenta con protocolos específicos de intervención para la actuación ante sospecha o vulneración de derechos de los niños, que no tiene revisiones periódicas y es conocido por menos de la mitad del personal",
+                    ),
+                    (
+                        "no_existe",
+                        "El CDI no cuenta con protocolos específicos de intervención para la actuación ante sospecha o vulneración de derechos de los niños.",
+                    ),
+                ],
+                max_length=128,
+                null=True,
+            ),
         ),
         migrations.AlterField(
-            model_name='formulariocdi',
-            name='seguridad_electrica',
-            field=models.CharField(blank=True, choices=[('cumple_y_revision_mayor_a_un_ano', 'La instalación eléctrica cumple con normas de seguridad y tiene revisiones con una frecuencia mayor al año'), ('cumple_y_revision_anual', 'La instalación eléctrica cumple con normas de seguridad y tiene revisiones periódicas anuales'), ('cumple_sin_revisiones', 'La instalación eléctrica cumple con normas de seguridad y no tiene revisiones periódicas'), ('cumple_solo_zonas_ninos_sin_revisiones', 'La instalación eléctrica cumple con normas de seguridad únicamente en las zonas donde circulan los niños y no tiene revisiones periódicas'), ('no_cumple_sin_revisiones', 'La instalación eléctrica no cumple con normas de seguridad y no tiene revisiones periódicas')], max_length=64, null=True),
+            model_name="formulariocdi",
+            name="seguridad_electrica",
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    (
+                        "cumple_y_revision_mayor_a_un_ano",
+                        "La instalación eléctrica cumple con normas de seguridad y tiene revisiones con una frecuencia mayor al año",
+                    ),
+                    (
+                        "cumple_y_revision_anual",
+                        "La instalación eléctrica cumple con normas de seguridad y tiene revisiones periódicas anuales",
+                    ),
+                    (
+                        "cumple_sin_revisiones",
+                        "La instalación eléctrica cumple con normas de seguridad y no tiene revisiones periódicas",
+                    ),
+                    (
+                        "cumple_solo_zonas_ninos_sin_revisiones",
+                        "La instalación eléctrica cumple con normas de seguridad únicamente en las zonas donde circulan los niños y no tiene revisiones periódicas",
+                    ),
+                    (
+                        "no_cumple_sin_revisiones",
+                        "La instalación eléctrica no cumple con normas de seguridad y no tiene revisiones periódicas",
+                    ),
+                ],
+                max_length=64,
+                null=True,
+            ),
         ),
         migrations.AlterField(
-            model_name='formulariocdi',
-            name='servicio_emergencia_medica',
-            field=models.CharField(blank=True, choices=[('servicio_y_cobertura_identificada', 'Tienen servicio de emergencia médica y la cobertura de cada niño está identificada.'), ('servicio_sin_cobertura_identificada', 'Tienen servicio de emergencia médica, pero la cobertura de cada niño no está identificada.'), ('sin_servicio_con_cobertura_identificada', 'No tienen servicio de emergencia médica, pero sí la cobertura identificada por niño.'), ('sin_servicio_con_cobertura_parcial', 'No tienen servicio de emergencia médica y la cobertura está identificada sólo parcialmente.'), ('sin_servicio_y_sin_cobertura', 'No tienen servicio de emergencia médica ni la cobertura de cada niño identificada.')], max_length=64, null=True),
+            model_name="formulariocdi",
+            name="servicio_emergencia_medica",
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    (
+                        "servicio_y_cobertura_identificada",
+                        "Tienen servicio de emergencia médica y la cobertura de cada niño está identificada.",
+                    ),
+                    (
+                        "servicio_sin_cobertura_identificada",
+                        "Tienen servicio de emergencia médica, pero la cobertura de cada niño no está identificada.",
+                    ),
+                    (
+                        "sin_servicio_con_cobertura_identificada",
+                        "No tienen servicio de emergencia médica, pero sí la cobertura identificada por niño.",
+                    ),
+                    (
+                        "sin_servicio_con_cobertura_parcial",
+                        "No tienen servicio de emergencia médica y la cobertura está identificada sólo parcialmente.",
+                    ),
+                    (
+                        "sin_servicio_y_sin_cobertura",
+                        "No tienen servicio de emergencia médica ni la cobertura de cada niño identificada.",
+                    ),
+                ],
+                max_length=64,
+                null=True,
+            ),
         ),
         migrations.AlterField(
-            model_name='formulariocdi',
-            name='tipo_jornada',
-            field=models.CharField(blank=True, choices=[('simple_single_shift', 'Jornada simple (un solo turno con un único grupo de niños)'), ('multiple_simple_shifts', 'Dos o más jornadas simples (dos o más turnos a los que asisten distintos grupos de niños)'), ('full_double_same_group', 'Jornada completa/doble (dos o más turnos a los que asiste un mismo grupo de niños)'), ('other', 'Otra')], max_length=64, null=True),
+            model_name="formulariocdi",
+            name="tipo_jornada",
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    (
+                        "simple_single_shift",
+                        "Jornada simple (un solo turno con un único grupo de niños)",
+                    ),
+                    (
+                        "multiple_simple_shifts",
+                        "Dos o más jornadas simples (dos o más turnos a los que asisten distintos grupos de niños)",
+                    ),
+                    (
+                        "full_double_same_group",
+                        "Jornada completa/doble (dos o más turnos a los que asiste un mismo grupo de niños)",
+                    ),
+                    ("other", "Otra"),
+                ],
+                max_length=64,
+                null=True,
+            ),
         ),
         migrations.AlterField(
-            model_name='formulariocdiarticulationfrequency',
-            name='formulario',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='filas_articulacion', to='centrodeinfancia.formulariocdi'),
+            model_name="formulariocdiarticulationfrequency",
+            name="formulario",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="filas_articulacion",
+                to="centrodeinfancia.formulariocdi",
+            ),
         ),
         migrations.AlterField(
-            model_name='formulariocdiroomdistribution',
-            name='formulario',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='filas_distribucion_salas', to='centrodeinfancia.formulariocdi'),
+            model_name="formulariocdiroomdistribution",
+            name="formulario",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="filas_distribucion_salas",
+                to="centrodeinfancia.formulariocdi",
+            ),
         ),
         migrations.AlterField(
-            model_name='formulariocdiroomdistribution',
-            name='grupo_etario',
-            field=models.CharField(choices=[('lactantes', 'Lactantes'), ('deambuladores', 'Deambuladores'), ('dos_anos', 'Dos años'), ('tres_anos', 'Tres años'), ('cuatro_anos', 'Cuatro Años'), ('multiedad', 'Multiedad')], max_length=32),
+            model_name="formulariocdiroomdistribution",
+            name="grupo_etario",
+            field=models.CharField(
+                choices=[
+                    ("lactantes", "Lactantes"),
+                    ("deambuladores", "Deambuladores"),
+                    ("dos_anos", "Dos años"),
+                    ("tres_anos", "Tres años"),
+                    ("cuatro_anos", "Cuatro Años"),
+                    ("multiedad", "Multiedad"),
+                ],
+                max_length=32,
+            ),
         ),
         migrations.AlterField(
-            model_name='formulariocdiwaitlistbyagegroup',
-            name='formulario',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='filas_demanda_insatisfecha', to='centrodeinfancia.formulariocdi'),
+            model_name="formulariocdiwaitlistbyagegroup",
+            name="formulario",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="filas_demanda_insatisfecha",
+                to="centrodeinfancia.formulariocdi",
+            ),
         ),
         migrations.AlterField(
-            model_name='formulariocdiwaitlistbyagegroup',
-            name='grupo_etario',
-            field=models.CharField(choices=[('lactantes', 'Lactantes'), ('deambuladores', 'Deambuladores'), ('un_ano', 'Un año'), ('dos_anos', 'dos años'), ('tres_anos', 'tres años'), ('cuatro_anos', 'cuatro años')], max_length=32),
+            model_name="formulariocdiwaitlistbyagegroup",
+            name="grupo_etario",
+            field=models.CharField(
+                choices=[
+                    ("lactantes", "Lactantes"),
+                    ("deambuladores", "Deambuladores"),
+                    ("un_ano", "Un año"),
+                    ("dos_anos", "dos años"),
+                    ("tres_anos", "tres años"),
+                    ("cuatro_anos", "cuatro años"),
+                ],
+                max_length=32,
+            ),
         ),
         migrations.AlterField(
-            model_name='intervencioncentroinfancia',
-            name='subintervencion',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to='intervenciones.subintervencion', verbose_name='Sub-tipo de intervención'),
+            model_name="intervencioncentroinfancia",
+            name="subintervencion",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                to="intervenciones.subintervencion",
+                verbose_name="Sub-tipo de intervención",
+            ),
         ),
         migrations.AlterField(
-            model_name='intervencioncentroinfancia',
-            name='tipo_intervencion',
-            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, to='intervenciones.tipointervencion', verbose_name='Tipo de intervención'),
+            model_name="intervencioncentroinfancia",
+            name="tipo_intervencion",
+            field=models.ForeignKey(
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                to="intervenciones.tipointervencion",
+                verbose_name="Tipo de intervención",
+            ),
         ),
         migrations.CreateModel(
-            name='DepartamentoIpi',
+            name="DepartamentoIpi",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('codigo_departamento', models.CharField(max_length=10, unique=True)),
-                ('nombre', models.CharField(max_length=255)),
-                ('tamano_demografico', models.CharField(blank=True, max_length=255, null=True)),
-                ('decil_ipi', models.PositiveSmallIntegerField(blank=True, null=True)),
-                ('nivel_inequidad_ipi', models.CharField(blank=True, max_length=64, null=True)),
-                ('porcentaje_ninos_lista_espera_cdi', models.DecimalField(blank=True, decimal_places=15, max_digits=20, null=True)),
-                ('poblacion_0_a_4_anios', models.PositiveIntegerField(blank=True, null=True)),
-                ('porcentaje_poblacion_0_a_4_anios', models.DecimalField(blank=True, decimal_places=15, max_digits=20, null=True)),
-                ('porcentaje_poblacion_0_a_4_anios_con_nbi', models.DecimalField(blank=True, decimal_places=15, max_digits=20, null=True)),
-                ('porcentaje_poblacion_0_a_4_anios_hogares_monoparentales', models.DecimalField(blank=True, decimal_places=15, max_digits=20, null=True)),
-                ('tasa_natalidad_2018', models.DecimalField(blank=True, decimal_places=15, max_digits=20, null=True)),
-                ('tasa_mortalidad_infantil_2018', models.DecimalField(blank=True, decimal_places=15, max_digits=20, null=True)),
-                ('porcentaje_familias_barrios_populares', models.DecimalField(blank=True, decimal_places=15, max_digits=20, null=True)),
-                ('cantidad_barrios_populares', models.PositiveIntegerField(blank=True, null=True)),
-                ('cantidad_asistentes_cdi', models.PositiveIntegerField(blank=True, null=True)),
-                ('cantidad_ninos_lista_espera_cdi', models.PositiveIntegerField(blank=True, null=True)),
-                ('poblacion_0_a_4_anios_hogares_monoparentales', models.PositiveIntegerField(blank=True, null=True)),
-                ('poblacion_0_a_4_anios_con_nbi', models.PositiveIntegerField(blank=True, null=True)),
-                ('total_hogares_censo_2010', models.PositiveIntegerField(blank=True, null=True)),
-                ('poblacion_total', models.PositiveIntegerField(blank=True, null=True)),
-                ('cantidad_familias_barrios_populares', models.PositiveIntegerField(blank=True, null=True)),
-                ('cantidad_establecimientos_nivel_inicial', models.PositiveIntegerField(blank=True, null=True)),
-                ('tasa_establecimientos_cada_mil_ninos', models.DecimalField(blank=True, decimal_places=15, max_digits=20, null=True)),
-                ('provincia', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='departamentos_ipi', to='core.provincia')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("codigo_departamento", models.CharField(max_length=10, unique=True)),
+                ("nombre", models.CharField(max_length=255)),
+                (
+                    "tamano_demografico",
+                    models.CharField(blank=True, max_length=255, null=True),
+                ),
+                ("decil_ipi", models.PositiveSmallIntegerField(blank=True, null=True)),
+                (
+                    "nivel_inequidad_ipi",
+                    models.CharField(blank=True, max_length=64, null=True),
+                ),
+                (
+                    "porcentaje_ninos_lista_espera_cdi",
+                    models.DecimalField(
+                        blank=True, decimal_places=15, max_digits=20, null=True
+                    ),
+                ),
+                (
+                    "poblacion_0_a_4_anios",
+                    models.PositiveIntegerField(blank=True, null=True),
+                ),
+                (
+                    "porcentaje_poblacion_0_a_4_anios",
+                    models.DecimalField(
+                        blank=True, decimal_places=15, max_digits=20, null=True
+                    ),
+                ),
+                (
+                    "porcentaje_poblacion_0_a_4_anios_con_nbi",
+                    models.DecimalField(
+                        blank=True, decimal_places=15, max_digits=20, null=True
+                    ),
+                ),
+                (
+                    "porcentaje_poblacion_0_a_4_anios_hogares_monoparentales",
+                    models.DecimalField(
+                        blank=True, decimal_places=15, max_digits=20, null=True
+                    ),
+                ),
+                (
+                    "tasa_natalidad_2018",
+                    models.DecimalField(
+                        blank=True, decimal_places=15, max_digits=20, null=True
+                    ),
+                ),
+                (
+                    "tasa_mortalidad_infantil_2018",
+                    models.DecimalField(
+                        blank=True, decimal_places=15, max_digits=20, null=True
+                    ),
+                ),
+                (
+                    "porcentaje_familias_barrios_populares",
+                    models.DecimalField(
+                        blank=True, decimal_places=15, max_digits=20, null=True
+                    ),
+                ),
+                (
+                    "cantidad_barrios_populares",
+                    models.PositiveIntegerField(blank=True, null=True),
+                ),
+                (
+                    "cantidad_asistentes_cdi",
+                    models.PositiveIntegerField(blank=True, null=True),
+                ),
+                (
+                    "cantidad_ninos_lista_espera_cdi",
+                    models.PositiveIntegerField(blank=True, null=True),
+                ),
+                (
+                    "poblacion_0_a_4_anios_hogares_monoparentales",
+                    models.PositiveIntegerField(blank=True, null=True),
+                ),
+                (
+                    "poblacion_0_a_4_anios_con_nbi",
+                    models.PositiveIntegerField(blank=True, null=True),
+                ),
+                (
+                    "total_hogares_censo_2010",
+                    models.PositiveIntegerField(blank=True, null=True),
+                ),
+                ("poblacion_total", models.PositiveIntegerField(blank=True, null=True)),
+                (
+                    "cantidad_familias_barrios_populares",
+                    models.PositiveIntegerField(blank=True, null=True),
+                ),
+                (
+                    "cantidad_establecimientos_nivel_inicial",
+                    models.PositiveIntegerField(blank=True, null=True),
+                ),
+                (
+                    "tasa_establecimientos_cada_mil_ninos",
+                    models.DecimalField(
+                        blank=True, decimal_places=15, max_digits=20, null=True
+                    ),
+                ),
+                (
+                    "provincia",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.PROTECT,
+                        related_name="departamentos_ipi",
+                        to="core.provincia",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Departamento IPI',
-                'verbose_name_plural': 'Departamentos IPI',
-                'ordering': ['provincia__nombre', 'nombre'],
+                "verbose_name": "Departamento IPI",
+                "verbose_name_plural": "Departamentos IPI",
+                "ordering": ["provincia__nombre", "nombre"],
             },
         ),
         migrations.AddField(
-            model_name='centrodeinfancia',
-            name='departamento',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.PROTECT, to='centrodeinfancia.departamentoipi', verbose_name='Departamento'),
+            model_name="centrodeinfancia",
+            name="departamento",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.PROTECT,
+                to="centrodeinfancia.departamentoipi",
+                verbose_name="Departamento",
+            ),
         ),
         migrations.AddConstraint(
-            model_name='departamentoipi',
-            constraint=models.UniqueConstraint(fields=('provincia', 'nombre'), name='uniq_departamento_ipi_provincia_nombre'),
+            model_name="departamentoipi",
+            constraint=models.UniqueConstraint(
+                fields=("provincia", "nombre"),
+                name="uniq_departamento_ipi_provincia_nombre",
+            ),
         ),
         migrations.AlterField(
-            model_name='formulariocdiwaitlistbyagegroup',
-            name='grupo_etario',
-            field=models.CharField(choices=[('lactantes', 'Lactantes'), ('deambuladores', 'Deambuladores'), ('un_ano', 'Un año'), ('dos_anos', 'Dos años'), ('tres_anos', 'Tres años'), ('cuatro_anos', 'Cuatro años')], max_length=32),
+            model_name="formulariocdiwaitlistbyagegroup",
+            name="grupo_etario",
+            field=models.CharField(
+                choices=[
+                    ("lactantes", "Lactantes"),
+                    ("deambuladores", "Deambuladores"),
+                    ("un_ano", "Un año"),
+                    ("dos_anos", "Dos años"),
+                    ("tres_anos", "Tres años"),
+                    ("cuatro_anos", "Cuatro años"),
+                ],
+                max_length=32,
+            ),
         ),
         migrations.AddField(
-            model_name='formulariocdi',
-            name='departamento_cdi_fk',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='+', to='centrodeinfancia.departamentoipi'),
+            model_name="formulariocdi",
+            name="departamento_cdi_fk",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name="+",
+                to="centrodeinfancia.departamentoipi",
+            ),
         ),
         migrations.AddField(
-            model_name='formulariocdi',
-            name='departamento_organizacion_fk',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='+', to='centrodeinfancia.departamentoipi'),
+            model_name="formulariocdi",
+            name="departamento_organizacion_fk",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name="+",
+                to="centrodeinfancia.departamentoipi",
+            ),
         ),
         migrations.RunPython(
             code=migrar_departamentos_formulario_cdi,
             reverse_code=revertir_departamentos_formulario_cdi,
         ),
         migrations.RemoveField(
-            model_name='formulariocdi',
-            name='departamento_cdi',
+            model_name="formulariocdi",
+            name="departamento_cdi",
         ),
         migrations.RemoveField(
-            model_name='formulariocdi',
-            name='departamento_organizacion',
+            model_name="formulariocdi",
+            name="departamento_organizacion",
         ),
         migrations.RenameField(
-            model_name='formulariocdi',
-            old_name='departamento_cdi_fk',
-            new_name='departamento_cdi',
+            model_name="formulariocdi",
+            old_name="departamento_cdi_fk",
+            new_name="departamento_cdi",
         ),
         migrations.RenameField(
-            model_name='formulariocdi',
-            old_name='departamento_organizacion_fk',
-            new_name='departamento_organizacion',
+            model_name="formulariocdi",
+            old_name="departamento_organizacion_fk",
+            new_name="departamento_organizacion",
         ),
         migrations.AlterField(
-            model_name='formulariocdi',
-            name='cobertura_educadora_titulo_habilitante',
-            field=models.CharField(blank=True, choices=[('todas', 'Sí, en todas las salas una educadora cuenta con título habilitante de nivel inicial'), ('mayoria', 'Sí, en la mayoría de las salas una educadora cuenta con título habilitante de nivel inicial'), ('algunas', 'Solo en algunas salas una educadora cuenta con título habilitante de nivel inicial'), ('muy_pocas', 'Muy pocas salas tienen una educadora con título habilitante')], max_length=32, null=True),
+            model_name="formulariocdi",
+            name="cobertura_educadora_titulo_habilitante",
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    (
+                        "todas",
+                        "Sí, en todas las salas una educadora cuenta con título habilitante de nivel inicial",
+                    ),
+                    (
+                        "mayoria",
+                        "Sí, en la mayoría de las salas una educadora cuenta con título habilitante de nivel inicial",
+                    ),
+                    (
+                        "algunas",
+                        "Solo en algunas salas una educadora cuenta con título habilitante de nivel inicial",
+                    ),
+                    (
+                        "muy_pocas",
+                        "Muy pocas salas tienen una educadora con título habilitante",
+                    ),
+                ],
+                max_length=32,
+                null=True,
+            ),
         ),
         migrations.AlterField(
-            model_name='formulariocdi',
-            name='telefono_cdi',
-            field=models.CharField(blank=True, max_length=20, null=True, validators=[django.core.validators.RegexValidator(message='Ingrese un teléfono válido: solo números o grupos numéricos separados por guiones.', regex='^\\d+(?:-\\d+)*$')]),
+            model_name="formulariocdi",
+            name="telefono_cdi",
+            field=models.CharField(
+                blank=True,
+                max_length=20,
+                null=True,
+                validators=[
+                    django.core.validators.RegexValidator(
+                        message="Ingrese un teléfono válido: solo números o grupos numéricos separados por guiones.",
+                        regex="^\\d+(?:-\\d+)*$",
+                    )
+                ],
+            ),
         ),
         migrations.AlterField(
-            model_name='formulariocdi',
-            name='telefono_organizacion',
-            field=models.CharField(blank=True, max_length=20, null=True, validators=[django.core.validators.RegexValidator(message='Ingrese un teléfono válido: solo números o grupos numéricos separados por guiones.', regex='^\\d+(?:-\\d+)*$')]),
+            model_name="formulariocdi",
+            name="telefono_organizacion",
+            field=models.CharField(
+                blank=True,
+                max_length=20,
+                null=True,
+                validators=[
+                    django.core.validators.RegexValidator(
+                        message="Ingrese un teléfono válido: solo números o grupos numéricos separados por guiones.",
+                        regex="^\\d+(?:-\\d+)*$",
+                    )
+                ],
+            ),
         ),
         migrations.AlterField(
-            model_name='formulariocdi',
-            name='telefono_referente_cdi',
-            field=models.CharField(blank=True, max_length=20, null=True, validators=[django.core.validators.RegexValidator(message='Ingrese un teléfono válido: solo números o grupos numéricos separados por guiones.', regex='^\\d+(?:-\\d+)*$')]),
+            model_name="formulariocdi",
+            name="telefono_referente_cdi",
+            field=models.CharField(
+                blank=True,
+                max_length=20,
+                null=True,
+                validators=[
+                    django.core.validators.RegexValidator(
+                        message="Ingrese un teléfono válido: solo números o grupos numéricos separados por guiones.",
+                        regex="^\\d+(?:-\\d+)*$",
+                    )
+                ],
+            ),
         ),
         migrations.AlterField(
-            model_name='formulariocdi',
-            name='telefono_referente_organizacion',
-            field=models.CharField(blank=True, max_length=20, null=True, validators=[django.core.validators.RegexValidator(message='Ingrese un teléfono válido: solo números o grupos numéricos separados por guiones.', regex='^\\d+(?:-\\d+)*$')]),
+            model_name="formulariocdi",
+            name="telefono_referente_organizacion",
+            field=models.CharField(
+                blank=True,
+                max_length=20,
+                null=True,
+                validators=[
+                    django.core.validators.RegexValidator(
+                        message="Ingrese un teléfono válido: solo números o grupos numéricos separados por guiones.",
+                        regex="^\\d+(?:-\\d+)*$",
+                    )
+                ],
+            ),
         ),
         migrations.AddField(
-            model_name='centrodeinfancia',
-            name='ambito',
-            field=models.CharField(choices=[('sin_informacion', 'Sin informaciÃ³n'), ('rural', 'Rural'), ('urbano', 'Urbano')], default='sin_informacion', max_length=32, verbose_name='Ã\x81mbito'),
+            model_name="centrodeinfancia",
+            name="ambito",
+            field=models.CharField(
+                choices=[
+                    ("sin_informacion", "Sin información"),
+                    ("rural", "Rural"),
+                    ("urbano", "Urbano"),
+                ],
+                default="sin_informacion",
+                max_length=32,
+                verbose_name="Ã\x81mbito",
+            ),
         ),
         migrations.AddField(
-            model_name='centrodeinfancia',
-            name='codigo_postal',
-            field=models.PositiveBigIntegerField(blank=True, null=True, validators=[django.core.validators.MinValueValidator(0), django.core.validators.MaxValueValidator(9999999999)], verbose_name='CÃ³digo postal'),
+            model_name="centrodeinfancia",
+            name="codigo_postal",
+            field=models.PositiveBigIntegerField(
+                blank=True,
+                null=True,
+                validators=[
+                    django.core.validators.MinValueValidator(0),
+                    django.core.validators.MaxValueValidator(9999999999),
+                ],
+                verbose_name="Código postal",
+            ),
         ),
         migrations.AddField(
-            model_name='centrodeinfancia',
-            name='cuit_organizacion_gestiona',
-            field=models.CharField(blank=True, max_length=11, null=True, validators=[django.core.validators.RegexValidator(message='Ingrese un CUIT vÃ¡lido de 11 dÃ\xadgitos.', regex='^\\d{11}$')], verbose_name='CUIT del organismo u organizaciÃ³n que gestiona'),
+            model_name="centrodeinfancia",
+            name="cuit_organizacion_gestiona",
+            field=models.CharField(
+                blank=True,
+                max_length=11,
+                null=True,
+                validators=[
+                    django.core.validators.RegexValidator(
+                        message="Ingrese un CUIT válido de 11 dÃ\xadgitos.",
+                        regex="^\\d{11}$",
+                    )
+                ],
+                verbose_name="CUIT del organismo u organización que gestiona",
+            ),
         ),
         migrations.AddField(
-            model_name='centrodeinfancia',
-            name='dias_funcionamiento',
+            model_name="centrodeinfancia",
+            name="dias_funcionamiento",
             field=models.JSONField(blank=True, default=list),
         ),
         migrations.AddField(
-            model_name='centrodeinfancia',
-            name='latitud',
-            field=models.DecimalField(blank=True, decimal_places=6, max_digits=8, null=True, validators=[django.core.validators.MinValueValidator(-90), django.core.validators.MaxValueValidator(90)]),
+            model_name="centrodeinfancia",
+            name="latitud",
+            field=models.DecimalField(
+                blank=True,
+                decimal_places=6,
+                max_digits=8,
+                null=True,
+                validators=[
+                    django.core.validators.MinValueValidator(-90),
+                    django.core.validators.MaxValueValidator(90),
+                ],
+            ),
         ),
         migrations.AddField(
-            model_name='centrodeinfancia',
-            name='longitud',
-            field=models.DecimalField(blank=True, decimal_places=6, max_digits=9, null=True, validators=[django.core.validators.MinValueValidator(-180), django.core.validators.MaxValueValidator(180)]),
+            model_name="centrodeinfancia",
+            name="longitud",
+            field=models.DecimalField(
+                blank=True,
+                decimal_places=6,
+                max_digits=9,
+                null=True,
+                validators=[
+                    django.core.validators.MinValueValidator(-180),
+                    django.core.validators.MaxValueValidator(180),
+                ],
+            ),
         ),
         migrations.AddField(
-            model_name='centrodeinfancia',
-            name='mail',
-            field=core.fields.UnicodeEmailField(blank=True, max_length=254, null=True, verbose_name='Mail'),
+            model_name="centrodeinfancia",
+            name="mail",
+            field=core.fields.UnicodeEmailField(
+                blank=True, max_length=254, null=True, verbose_name="Mail"
+            ),
         ),
         migrations.AddField(
-            model_name='centrodeinfancia',
-            name='meses_funcionamiento',
+            model_name="centrodeinfancia",
+            name="meses_funcionamiento",
             field=models.JSONField(blank=True, default=list),
         ),
         migrations.AddField(
-            model_name='centrodeinfancia',
-            name='modalidad_gestion',
-            field=models.CharField(blank=True, choices=[('gobierno_nacional', 'Gobierno nacional'), ('gobierno_provincial', 'Gobierno provincial'), ('gobierno_municipal', 'Gobierno municipal'), ('gestion_privada', 'GestiÃ³n privada (Organizaciones con fines de lucro)'), ('gestion_tercer_sector', 'GestiÃ³n Tercer Sector (Organizaciones sin fines de lucro; incluye organizaciones no gubernamentales, organizaciones sociales, movimientos sociales, grupos comunitarios o barriales, etc.)'), ('cogestion_provincial_municipal', 'Co-gestiÃ³n: Gob. Provincial y municipal'), ('cogestion_ong_provincial_municipal', 'Co-gestiÃ³n: ONG/Gob. Provincial/municipal'), ('otra', 'Otra: especificar')], max_length=64, null=True),
+            model_name="centrodeinfancia",
+            name="modalidad_gestion",
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    ("gobierno_nacional", "Gobierno nacional"),
+                    ("gobierno_provincial", "Gobierno provincial"),
+                    ("gobierno_municipal", "Gobierno municipal"),
+                    (
+                        "gestion_privada",
+                        "Gestión privada (Organizaciones con fines de lucro)",
+                    ),
+                    (
+                        "gestion_tercer_sector",
+                        "Gestión Tercer Sector (Organizaciones sin fines de lucro; incluye organizaciones no gubernamentales, organizaciones sociales, movimientos sociales, grupos comunitarios o barriales, etc.)",
+                    ),
+                    (
+                        "cogestion_provincial_municipal",
+                        "Co-gestión: Gob. Provincial y municipal",
+                    ),
+                    (
+                        "cogestion_ong_provincial_municipal",
+                        "Co-gestión: ONG/Gob. Provincial/municipal",
+                    ),
+                    ("otra", "Otra: especificar"),
+                ],
+                max_length=64,
+                null=True,
+            ),
         ),
         migrations.AddField(
-            model_name='centrodeinfancia',
-            name='modalidad_gestion_otra',
+            model_name="centrodeinfancia",
+            name="modalidad_gestion_otra",
             field=models.CharField(blank=True, max_length=255, null=True),
         ),
         migrations.AddField(
-            model_name='centrodeinfancia',
-            name='oferta_servicios',
-            field=models.CharField(blank=True, choices=[('lactantes', 'Lactantes'), ('deambuladores', 'Deambuladores'), ('dos_anos', '2 aÃ±os'), ('tres_anos', '3 aÃ±os'), ('cuatro_anos', '4 aÃ±os'), ('multiedad', 'Multiedad')], max_length=64, null=True),
+            model_name="centrodeinfancia",
+            name="oferta_servicios",
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    ("lactantes", "Lactantes"),
+                    ("deambuladores", "Deambuladores"),
+                    ("dos_anos", "2 años"),
+                    ("tres_anos", "3 años"),
+                    ("cuatro_anos", "4 años"),
+                    ("multiedad", "Multiedad"),
+                ],
+                max_length=64,
+                null=True,
+            ),
         ),
         migrations.AddField(
-            model_name='centrodeinfancia',
-            name='tipo_jornada',
-            field=models.CharField(blank=True, choices=[('simple_single_shift', 'Jornada simple (un solo turno con un Ãºnico grupo de niÃ±os)'), ('multiple_simple_shifts', 'Dos o mÃ¡s jornadas simples (dos o mÃ¡s turnos a los que asisten distintos grupos de niÃ±os)'), ('full_double_same_group', 'Jornada completa/doble (dos o mÃ¡s turnos a los que asiste un mismo grupo de niÃ±os)'), ('other', 'Otra (especificar)')], max_length=64, null=True),
+            model_name="centrodeinfancia",
+            name="tipo_jornada",
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    (
+                        "simple_single_shift",
+                        "Jornada simple (un solo turno con un único grupo de niños)",
+                    ),
+                    (
+                        "multiple_simple_shifts",
+                        "Dos o más jornadas simples (dos o más turnos a los que asisten distintos grupos de niños)",
+                    ),
+                    (
+                        "full_double_same_group",
+                        "Jornada completa/doble (dos o más turnos a los que asiste un mismo grupo de niños)",
+                    ),
+                    ("other", "Otra (especificar)"),
+                ],
+                max_length=64,
+                null=True,
+            ),
         ),
         migrations.AddField(
-            model_name='centrodeinfancia',
-            name='tipo_jornada_otra',
+            model_name="centrodeinfancia",
+            name="tipo_jornada_otra",
             field=models.CharField(blank=True, max_length=255, null=True),
         ),
         migrations.AddField(
-            model_name='centrodeinfancia',
-            name='organizacion_texto',
-            field=models.CharField(blank=True, max_length=1000, null=True, verbose_name='DenominaciÃ³n del organismo u organizaciÃ³n que gestiona'),
+            model_name="centrodeinfancia",
+            name="organizacion_texto",
+            field=models.CharField(
+                blank=True,
+                max_length=1000,
+                null=True,
+                verbose_name="Denominación del organismo u organización que gestiona",
+            ),
         ),
         migrations.AddField(
-            model_name='formulariocdi',
-            name='ambito',
-            field=models.CharField(blank=True, choices=[('sin_informacion', 'Sin informaciÃ³n'), ('rural', 'Rural'), ('urbano', 'Urbano')], default='sin_informacion', max_length=32),
+            model_name="formulariocdi",
+            name="ambito",
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    ("sin_informacion", "Sin información"),
+                    ("rural", "Rural"),
+                    ("urbano", "Urbano"),
+                ],
+                default="sin_informacion",
+                max_length=32,
+            ),
         ),
         migrations.AddField(
-            model_name='formulariocdi',
-            name='oferta_servicios',
-            field=models.CharField(blank=True, choices=[('lactantes', 'Lactantes'), ('deambuladores', 'Deambuladores'), ('dos_anos', '2 aÃ±os'), ('tres_anos', '3 aÃ±os'), ('cuatro_anos', '4 aÃ±os'), ('multiedad', 'Multiedad')], max_length=64, null=True),
+            model_name="formulariocdi",
+            name="oferta_servicios",
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    ("lactantes", "Lactantes"),
+                    ("deambuladores", "Deambuladores"),
+                    ("dos_anos", "2 años"),
+                    ("tres_anos", "3 años"),
+                    ("cuatro_anos", "4 años"),
+                    ("multiedad", "Multiedad"),
+                ],
+                max_length=64,
+                null=True,
+            ),
         ),
         migrations.CreateModel(
-            name='FormularioCDIHorarioFuncionamiento',
+            name="FormularioCDIHorarioFuncionamiento",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('dia', models.CharField(choices=[('lunes', 'Lunes'), ('martes', 'Martes'), ('miercoles', 'MiÃ©rcoles'), ('jueves', 'Jueves'), ('viernes', 'Viernes'), ('sabado', 'SÃ¡bado'), ('domingo', 'Domingo')], max_length=16)),
-                ('hora_apertura', models.TimeField(blank=True, null=True)),
-                ('hora_cierre', models.TimeField(blank=True, null=True)),
-                ('formulario', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='horarios_funcionamiento', to='centrodeinfancia.formulariocdi')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "dia",
+                    models.CharField(
+                        choices=[
+                            ("lunes", "Lunes"),
+                            ("martes", "Martes"),
+                            ("miercoles", "Miércoles"),
+                            ("jueves", "Jueves"),
+                            ("viernes", "Viernes"),
+                            ("sabado", "Sábado"),
+                            ("domingo", "Domingo"),
+                        ],
+                        max_length=16,
+                    ),
+                ),
+                ("hora_apertura", models.TimeField(blank=True, null=True)),
+                ("hora_cierre", models.TimeField(blank=True, null=True)),
+                (
+                    "formulario",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="horarios_funcionamiento",
+                        to="centrodeinfancia.formulariocdi",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Horario de funcionamiento del formulario CDI',
-                'verbose_name_plural': 'Horarios de funcionamiento del formulario CDI',
-                'ordering': ['id'],
+                "verbose_name": "Horario de funcionamiento del formulario CDI",
+                "verbose_name_plural": "Horarios de funcionamiento del formulario CDI",
+                "ordering": ["id"],
             },
         ),
         migrations.CreateModel(
-            name='CentroDeInfanciaHorarioFuncionamiento',
+            name="CentroDeInfanciaHorarioFuncionamiento",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('dia', models.CharField(choices=[('lunes', 'Lunes'), ('martes', 'Martes'), ('miercoles', 'MiÃ©rcoles'), ('jueves', 'Jueves'), ('viernes', 'Viernes'), ('sabado', 'SÃ¡bado'), ('domingo', 'Domingo')], max_length=16)),
-                ('hora_apertura', models.TimeField(blank=True, null=True)),
-                ('hora_cierre', models.TimeField(blank=True, null=True)),
-                ('centro', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='horarios_funcionamiento', to='centrodeinfancia.centrodeinfancia')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "dia",
+                    models.CharField(
+                        choices=[
+                            ("lunes", "Lunes"),
+                            ("martes", "Martes"),
+                            ("miercoles", "Miércoles"),
+                            ("jueves", "Jueves"),
+                            ("viernes", "Viernes"),
+                            ("sabado", "Sábado"),
+                            ("domingo", "Domingo"),
+                        ],
+                        max_length=16,
+                    ),
+                ),
+                ("hora_apertura", models.TimeField(blank=True, null=True)),
+                ("hora_cierre", models.TimeField(blank=True, null=True)),
+                (
+                    "centro",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="horarios_funcionamiento",
+                        to="centrodeinfancia.centrodeinfancia",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Horario de funcionamiento del CDI',
-                'verbose_name_plural': 'Horarios de funcionamiento del CDI',
-                'ordering': ['id'],
+                "verbose_name": "Horario de funcionamiento del CDI",
+                "verbose_name_plural": "Horarios de funcionamiento del CDI",
+                "ordering": ["id"],
             },
         ),
         migrations.RunPython(
@@ -1889,376 +4762,781 @@ class Migration(migrations.Migration):
             reverse_code=migrations.RunPython.noop,
         ),
         migrations.RemoveField(
-            model_name='centrodeinfancia',
-            name='organizacion',
+            model_name="centrodeinfancia",
+            name="organizacion",
         ),
         migrations.RenameField(
-            model_name='centrodeinfancia',
-            old_name='organizacion_texto',
-            new_name='organizacion',
+            model_name="centrodeinfancia",
+            old_name="organizacion_texto",
+            new_name="organizacion",
         ),
         migrations.AlterField(
-            model_name='formulariocdi',
-            name='codigo_postal_cdi',
-            field=models.PositiveBigIntegerField(blank=True, null=True, validators=[django.core.validators.MinValueValidator(0), django.core.validators.MaxValueValidator(9999999999)]),
+            model_name="formulariocdi",
+            name="codigo_postal_cdi",
+            field=models.PositiveBigIntegerField(
+                blank=True,
+                null=True,
+                validators=[
+                    django.core.validators.MinValueValidator(0),
+                    django.core.validators.MaxValueValidator(9999999999),
+                ],
+            ),
         ),
         migrations.AlterField(
-            model_name='formulariocdi',
-            name='cuit_organizacion_gestora',
-            field=models.CharField(blank=True, max_length=11, null=True, validators=[django.core.validators.RegexValidator(message='Ingrese un CUIT vÃ¡lido de 11 dÃ\xadgitos.', regex='^\\d{11}$')]),
+            model_name="formulariocdi",
+            name="cuit_organizacion_gestora",
+            field=models.CharField(
+                blank=True,
+                max_length=11,
+                null=True,
+                validators=[
+                    django.core.validators.RegexValidator(
+                        message="Ingrese un CUIT válido de 11 dÃ\xadgitos.",
+                        regex="^\\d{11}$",
+                    )
+                ],
+            ),
         ),
         migrations.AlterField(
-            model_name='formulariocdi',
-            name='modalidad_gestion',
-            field=models.CharField(blank=True, choices=[('gobierno_nacional', 'Gobierno nacional'), ('gobierno_provincial', 'Gobierno provincial'), ('gobierno_municipal', 'Gobierno municipal'), ('gestion_privada', 'GestiÃ³n privada (Organizaciones con fines de lucro)'), ('gestion_tercer_sector', 'GestiÃ³n Tercer Sector (Organizaciones sin fines de lucro; incluye organizaciones no gubernamentales, organizaciones sociales, movimientos sociales, grupos comunitarios o barriales, etc.)'), ('cogestion_provincial_municipal', 'Co-gestiÃ³n: Gob. Provincial y municipal'), ('cogestion_ong_provincial_municipal', 'Co-gestiÃ³n: ONG/Gob. Provincial/municipal'), ('otra', 'Otra: especificar')], max_length=64, null=True),
+            model_name="formulariocdi",
+            name="modalidad_gestion",
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    ("gobierno_nacional", "Gobierno nacional"),
+                    ("gobierno_provincial", "Gobierno provincial"),
+                    ("gobierno_municipal", "Gobierno municipal"),
+                    (
+                        "gestion_privada",
+                        "Gestión privada (Organizaciones con fines de lucro)",
+                    ),
+                    (
+                        "gestion_tercer_sector",
+                        "Gestión Tercer Sector (Organizaciones sin fines de lucro; incluye organizaciones no gubernamentales, organizaciones sociales, movimientos sociales, grupos comunitarios o barriales, etc.)",
+                    ),
+                    (
+                        "cogestion_provincial_municipal",
+                        "Co-gestión: Gob. Provincial y municipal",
+                    ),
+                    (
+                        "cogestion_ong_provincial_municipal",
+                        "Co-gestión: ONG/Gob. Provincial/municipal",
+                    ),
+                    ("otra", "Otra: especificar"),
+                ],
+                max_length=64,
+                null=True,
+            ),
         ),
         migrations.AlterField(
-            model_name='formulariocdi',
-            name='tipo_jornada',
-            field=models.CharField(blank=True, choices=[('simple_single_shift', 'Jornada simple (un solo turno con un Ãºnico grupo de niÃ±os)'), ('multiple_simple_shifts', 'Dos o mÃ¡s jornadas simples (dos o mÃ¡s turnos a los que asisten distintos grupos de niÃ±os)'), ('full_double_same_group', 'Jornada completa/doble (dos o mÃ¡s turnos a los que asiste un mismo grupo de niÃ±os)'), ('other', 'Otra (especificar)')], max_length=64, null=True),
+            model_name="formulariocdi",
+            name="tipo_jornada",
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    (
+                        "simple_single_shift",
+                        "Jornada simple (un solo turno con un único grupo de niños)",
+                    ),
+                    (
+                        "multiple_simple_shifts",
+                        "Dos o más jornadas simples (dos o más turnos a los que asisten distintos grupos de niños)",
+                    ),
+                    (
+                        "full_double_same_group",
+                        "Jornada completa/doble (dos o más turnos a los que asiste un mismo grupo de niños)",
+                    ),
+                    ("other", "Otra (especificar)"),
+                ],
+                max_length=64,
+                null=True,
+            ),
         ),
         migrations.AddConstraint(
-            model_name='formulariocdihorariofuncionamiento',
-            constraint=models.UniqueConstraint(fields=('formulario', 'dia'), name='uniq_formulario_cdi_horario_funcionamiento_dia'),
+            model_name="formulariocdihorariofuncionamiento",
+            constraint=models.UniqueConstraint(
+                fields=("formulario", "dia"),
+                name="uniq_formulario_cdi_horario_funcionamiento_dia",
+            ),
         ),
         migrations.AddConstraint(
-            model_name='centrodeinfanciahorariofuncionamiento',
-            constraint=models.UniqueConstraint(fields=('centro', 'dia'), name='uniq_cdi_horario_funcionamiento_dia'),
+            model_name="centrodeinfanciahorariofuncionamiento",
+            constraint=models.UniqueConstraint(
+                fields=("centro", "dia"), name="uniq_cdi_horario_funcionamiento_dia"
+            ),
         ),
         migrations.AlterField(
-            model_name='centrodeinfancia',
-            name='ambito',
-            field=models.CharField(choices=[('sin_informacion', 'Sin información'), ('rural', 'Rural'), ('urbano', 'Urbano')], default='sin_informacion', max_length=32, verbose_name='Ámbito'),
+            model_name="centrodeinfancia",
+            name="ambito",
+            field=models.CharField(
+                choices=[
+                    ("sin_informacion", "Sin información"),
+                    ("rural", "Rural"),
+                    ("urbano", "Urbano"),
+                ],
+                default="sin_informacion",
+                max_length=32,
+                verbose_name="Ámbito",
+            ),
         ),
         migrations.AlterField(
-            model_name='centrodeinfancia',
-            name='codigo_postal',
-            field=models.PositiveBigIntegerField(blank=True, null=True, validators=[django.core.validators.MinValueValidator(0), django.core.validators.MaxValueValidator(9999999999)], verbose_name='Código postal'),
+            model_name="centrodeinfancia",
+            name="codigo_postal",
+            field=models.PositiveBigIntegerField(
+                blank=True,
+                null=True,
+                validators=[
+                    django.core.validators.MinValueValidator(0),
+                    django.core.validators.MaxValueValidator(9999999999),
+                ],
+                verbose_name="Código postal",
+            ),
         ),
         migrations.AlterField(
-            model_name='centrodeinfancia',
-            name='cuit_organizacion_gestiona',
-            field=models.CharField(blank=True, max_length=11, null=True, validators=[django.core.validators.RegexValidator(message='Ingrese un CUIT válido de 11 dígitos.', regex='^\\d{11}$')], verbose_name='CUIT del organismo u organización que gestiona'),
+            model_name="centrodeinfancia",
+            name="cuit_organizacion_gestiona",
+            field=models.CharField(
+                blank=True,
+                max_length=11,
+                null=True,
+                validators=[
+                    django.core.validators.RegexValidator(
+                        message="Ingrese un CUIT válido de 11 dígitos.",
+                        regex="^\\d{11}$",
+                    )
+                ],
+                verbose_name="CUIT del organismo u organización que gestiona",
+            ),
         ),
         migrations.AlterField(
-            model_name='centrodeinfancia',
-            name='modalidad_gestion',
-            field=models.CharField(blank=True, choices=[('gobierno_nacional', 'Gobierno nacional'), ('gobierno_provincial', 'Gobierno provincial'), ('gobierno_municipal', 'Gobierno municipal'), ('gestion_privada', 'Gestión privada (Organizaciones con fines de lucro)'), ('gestion_tercer_sector', 'Gestión Tercer Sector (Organizaciones sin fines de lucro; incluye organizaciones no gubernamentales, organizaciones sociales, movimientos sociales, grupos comunitarios o barriales, etc.)'), ('cogestion_provincial_municipal', 'Co-gestión: Gob. Provincial y municipal'), ('cogestion_ong_provincial_municipal', 'Co-gestión: ONG/Gob. Provincial/municipal'), ('otra', 'Otra: especificar')], max_length=64, null=True),
+            model_name="centrodeinfancia",
+            name="modalidad_gestion",
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    ("gobierno_nacional", "Gobierno nacional"),
+                    ("gobierno_provincial", "Gobierno provincial"),
+                    ("gobierno_municipal", "Gobierno municipal"),
+                    (
+                        "gestion_privada",
+                        "Gestión privada (Organizaciones con fines de lucro)",
+                    ),
+                    (
+                        "gestion_tercer_sector",
+                        "Gestión Tercer Sector (Organizaciones sin fines de lucro; incluye organizaciones no gubernamentales, organizaciones sociales, movimientos sociales, grupos comunitarios o barriales, etc.)",
+                    ),
+                    (
+                        "cogestion_provincial_municipal",
+                        "Co-gestión: Gob. Provincial y municipal",
+                    ),
+                    (
+                        "cogestion_ong_provincial_municipal",
+                        "Co-gestión: ONG/Gob. Provincial/municipal",
+                    ),
+                    ("otra", "Otra: especificar"),
+                ],
+                max_length=64,
+                null=True,
+            ),
         ),
         migrations.AlterField(
-            model_name='centrodeinfancia',
-            name='oferta_servicios',
-            field=models.CharField(blank=True, choices=[('lactantes', 'Lactantes'), ('deambuladores', 'Deambuladores'), ('dos_anos', '2 años'), ('tres_anos', '3 años'), ('cuatro_anos', '4 años'), ('multiedad', 'Multiedad')], max_length=64, null=True),
+            model_name="centrodeinfancia",
+            name="oferta_servicios",
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    ("lactantes", "Lactantes"),
+                    ("deambuladores", "Deambuladores"),
+                    ("dos_anos", "2 años"),
+                    ("tres_anos", "3 años"),
+                    ("cuatro_anos", "4 años"),
+                    ("multiedad", "Multiedad"),
+                ],
+                max_length=64,
+                null=True,
+            ),
         ),
         migrations.AlterField(
-            model_name='centrodeinfancia',
-            name='organizacion',
-            field=models.CharField(blank=True, max_length=1000, null=True, verbose_name='Denominación del organismo u organización que gestiona'),
+            model_name="centrodeinfancia",
+            name="organizacion",
+            field=models.CharField(
+                blank=True,
+                max_length=1000,
+                null=True,
+                verbose_name="Denominación del organismo u organización que gestiona",
+            ),
         ),
         migrations.AlterField(
-            model_name='centrodeinfancia',
-            name='tipo_jornada',
-            field=models.CharField(blank=True, choices=[('simple_single_shift', 'Jornada simple (un solo turno con un único grupo de niños)'), ('multiple_simple_shifts', 'Dos o más jornadas simples (dos o más turnos a los que asisten distintos grupos de niños)'), ('full_double_same_group', 'Jornada completa/doble (dos o más turnos a los que asiste un mismo grupo de niños)'), ('other', 'Otra (especificar)')], max_length=64, null=True),
+            model_name="centrodeinfancia",
+            name="tipo_jornada",
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    (
+                        "simple_single_shift",
+                        "Jornada simple (un solo turno con un único grupo de niños)",
+                    ),
+                    (
+                        "multiple_simple_shifts",
+                        "Dos o más jornadas simples (dos o más turnos a los que asisten distintos grupos de niños)",
+                    ),
+                    (
+                        "full_double_same_group",
+                        "Jornada completa/doble (dos o más turnos a los que asiste un mismo grupo de niños)",
+                    ),
+                    ("other", "Otra (especificar)"),
+                ],
+                max_length=64,
+                null=True,
+            ),
         ),
         migrations.AlterField(
-            model_name='centrodeinfanciahorariofuncionamiento',
-            name='dia',
-            field=models.CharField(choices=[('lunes', 'Lunes'), ('martes', 'Martes'), ('miercoles', 'Miércoles'), ('jueves', 'Jueves'), ('viernes', 'Viernes'), ('sabado', 'Sábado'), ('domingo', 'Domingo')], max_length=16),
+            model_name="centrodeinfanciahorariofuncionamiento",
+            name="dia",
+            field=models.CharField(
+                choices=[
+                    ("lunes", "Lunes"),
+                    ("martes", "Martes"),
+                    ("miercoles", "Miércoles"),
+                    ("jueves", "Jueves"),
+                    ("viernes", "Viernes"),
+                    ("sabado", "Sábado"),
+                    ("domingo", "Domingo"),
+                ],
+                max_length=16,
+            ),
         ),
         migrations.AlterField(
-            model_name='formulariocdi',
-            name='ambito',
-            field=models.CharField(blank=True, choices=[('sin_informacion', 'Sin información'), ('rural', 'Rural'), ('urbano', 'Urbano')], default='sin_informacion', max_length=32),
+            model_name="formulariocdi",
+            name="ambito",
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    ("sin_informacion", "Sin información"),
+                    ("rural", "Rural"),
+                    ("urbano", "Urbano"),
+                ],
+                default="sin_informacion",
+                max_length=32,
+            ),
         ),
         migrations.AlterField(
-            model_name='formulariocdi',
-            name='cuit_organizacion_gestora',
-            field=models.CharField(blank=True, max_length=11, null=True, validators=[django.core.validators.RegexValidator(message='Ingrese un CUIT válido de 11 dígitos.', regex='^\\d{11}$')]),
+            model_name="formulariocdi",
+            name="cuit_organizacion_gestora",
+            field=models.CharField(
+                blank=True,
+                max_length=11,
+                null=True,
+                validators=[
+                    django.core.validators.RegexValidator(
+                        message="Ingrese un CUIT válido de 11 dígitos.",
+                        regex="^\\d{11}$",
+                    )
+                ],
+            ),
         ),
         migrations.AlterField(
-            model_name='formulariocdi',
-            name='modalidad_gestion',
-            field=models.CharField(blank=True, choices=[('gobierno_nacional', 'Gobierno nacional'), ('gobierno_provincial', 'Gobierno provincial'), ('gobierno_municipal', 'Gobierno municipal'), ('gestion_privada', 'Gestión privada (Organizaciones con fines de lucro)'), ('gestion_tercer_sector', 'Gestión Tercer Sector (Organizaciones sin fines de lucro; incluye organizaciones no gubernamentales, organizaciones sociales, movimientos sociales, grupos comunitarios o barriales, etc.)'), ('cogestion_provincial_municipal', 'Co-gestión: Gob. Provincial y municipal'), ('cogestion_ong_provincial_municipal', 'Co-gestión: ONG/Gob. Provincial/municipal'), ('otra', 'Otra: especificar')], max_length=64, null=True),
+            model_name="formulariocdi",
+            name="modalidad_gestion",
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    ("gobierno_nacional", "Gobierno nacional"),
+                    ("gobierno_provincial", "Gobierno provincial"),
+                    ("gobierno_municipal", "Gobierno municipal"),
+                    (
+                        "gestion_privada",
+                        "Gestión privada (Organizaciones con fines de lucro)",
+                    ),
+                    (
+                        "gestion_tercer_sector",
+                        "Gestión Tercer Sector (Organizaciones sin fines de lucro; incluye organizaciones no gubernamentales, organizaciones sociales, movimientos sociales, grupos comunitarios o barriales, etc.)",
+                    ),
+                    (
+                        "cogestion_provincial_municipal",
+                        "Co-gestión: Gob. Provincial y municipal",
+                    ),
+                    (
+                        "cogestion_ong_provincial_municipal",
+                        "Co-gestión: ONG/Gob. Provincial/municipal",
+                    ),
+                    ("otra", "Otra: especificar"),
+                ],
+                max_length=64,
+                null=True,
+            ),
         ),
         migrations.AlterField(
-            model_name='formulariocdi',
-            name='oferta_servicios',
-            field=models.CharField(blank=True, choices=[('lactantes', 'Lactantes'), ('deambuladores', 'Deambuladores'), ('dos_anos', '2 años'), ('tres_anos', '3 años'), ('cuatro_anos', '4 años'), ('multiedad', 'Multiedad')], max_length=64, null=True),
+            model_name="formulariocdi",
+            name="oferta_servicios",
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    ("lactantes", "Lactantes"),
+                    ("deambuladores", "Deambuladores"),
+                    ("dos_anos", "2 años"),
+                    ("tres_anos", "3 años"),
+                    ("cuatro_anos", "4 años"),
+                    ("multiedad", "Multiedad"),
+                ],
+                max_length=64,
+                null=True,
+            ),
         ),
         migrations.AlterField(
-            model_name='formulariocdi',
-            name='tipo_jornada',
-            field=models.CharField(blank=True, choices=[('simple_single_shift', 'Jornada simple (un solo turno con un único grupo de niños)'), ('multiple_simple_shifts', 'Dos o más jornadas simples (dos o más turnos a los que asisten distintos grupos de niños)'), ('full_double_same_group', 'Jornada completa/doble (dos o más turnos a los que asiste un mismo grupo de niños)'), ('other', 'Otra (especificar)')], max_length=64, null=True),
+            model_name="formulariocdi",
+            name="tipo_jornada",
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    (
+                        "simple_single_shift",
+                        "Jornada simple (un solo turno con un único grupo de niños)",
+                    ),
+                    (
+                        "multiple_simple_shifts",
+                        "Dos o más jornadas simples (dos o más turnos a los que asisten distintos grupos de niños)",
+                    ),
+                    (
+                        "full_double_same_group",
+                        "Jornada completa/doble (dos o más turnos a los que asiste un mismo grupo de niños)",
+                    ),
+                    ("other", "Otra (especificar)"),
+                ],
+                max_length=64,
+                null=True,
+            ),
         ),
         migrations.AlterField(
-            model_name='formulariocdihorariofuncionamiento',
-            name='dia',
-            field=models.CharField(choices=[('lunes', 'Lunes'), ('martes', 'Martes'), ('miercoles', 'Miércoles'), ('jueves', 'Jueves'), ('viernes', 'Viernes'), ('sabado', 'Sábado'), ('domingo', 'Domingo')], max_length=16),
+            model_name="formulariocdihorariofuncionamiento",
+            name="dia",
+            field=models.CharField(
+                choices=[
+                    ("lunes", "Lunes"),
+                    ("martes", "Martes"),
+                    ("miercoles", "Miércoles"),
+                    ("jueves", "Jueves"),
+                    ("viernes", "Viernes"),
+                    ("sabado", "Sábado"),
+                    ("domingo", "Domingo"),
+                ],
+                max_length=16,
+            ),
         ),
         migrations.AddField(
-            model_name='nominacentroinfancia',
-            name='adulto_responsable_apellido',
+            model_name="nominacentroinfancia",
+            name="adulto_responsable_apellido",
             field=models.CharField(blank=True, max_length=255, null=True),
         ),
         migrations.AddField(
-            model_name='nominacentroinfancia',
-            name='adulto_responsable_dni',
+            model_name="nominacentroinfancia",
+            name="adulto_responsable_dni",
             field=models.PositiveBigIntegerField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='nominacentroinfancia',
-            name='adulto_responsable_nombre',
+            model_name="nominacentroinfancia",
+            name="adulto_responsable_nombre",
             field=models.CharField(blank=True, max_length=255, null=True),
         ),
         migrations.AddField(
-            model_name='nominacentroinfancia',
-            name='adulto_responsable_parentesco',
+            model_name="nominacentroinfancia",
+            name="adulto_responsable_parentesco",
             field=models.CharField(blank=True, max_length=255, null=True),
         ),
         migrations.AddField(
-            model_name='nominacentroinfancia',
-            name='adulto_responsable_telefono',
+            model_name="nominacentroinfancia",
+            name="adulto_responsable_telefono",
             field=models.CharField(blank=True, max_length=50, null=True),
         ),
         migrations.AddField(
-            model_name='nominacentroinfancia',
-            name='apellido',
+            model_name="nominacentroinfancia",
+            name="apellido",
             field=models.CharField(blank=True, max_length=255, null=True),
         ),
         migrations.AddField(
-            model_name='nominacentroinfancia',
-            name='calendario_vacunacion_al_dia',
+            model_name="nominacentroinfancia",
+            name="calendario_vacunacion_al_dia",
             field=models.BooleanField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='nominacentroinfancia',
-            name='calle_domicilio',
+            model_name="nominacentroinfancia",
+            name="calle_domicilio",
             field=models.CharField(blank=True, max_length=255, null=True),
         ),
         migrations.AddField(
-            model_name='nominacentroinfancia',
-            name='departamento_domicilio',
+            model_name="nominacentroinfancia",
+            name="departamento_domicilio",
             field=models.CharField(blank=True, max_length=50, null=True),
         ),
         migrations.AddField(
-            model_name='nominacentroinfancia',
-            name='discapacidad_tipo',
-            field=models.CharField(blank=True, choices=[('motora', 'Motora'), ('visual', 'Visual'), ('auditiva', 'Auditiva'), ('intelectual', 'Intelectual'), ('mental', 'Mental'), ('visceral', 'Visceral'), ('multiple', 'Múltiple'), ('ns_nc', 'Ns/Nc')], max_length=32, null=True),
+            model_name="nominacentroinfancia",
+            name="discapacidad_tipo",
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    ("motora", "Motora"),
+                    ("visual", "Visual"),
+                    ("auditiva", "Auditiva"),
+                    ("intelectual", "Intelectual"),
+                    ("mental", "Mental"),
+                    ("visceral", "Visceral"),
+                    ("multiple", "Múltiple"),
+                    ("ns_nc", "Ns/Nc"),
+                ],
+                max_length=32,
+                null=True,
+            ),
         ),
         migrations.AddField(
-            model_name='nominacentroinfancia',
-            name='dni',
+            model_name="nominacentroinfancia",
+            name="dni",
             field=models.PositiveBigIntegerField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='nominacentroinfancia',
-            name='fecha_nacimiento',
+            model_name="nominacentroinfancia",
+            name="fecha_nacimiento",
             field=models.DateField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='nominacentroinfancia',
-            name='habla_lengua_originaria_hogar',
-            field=models.CharField(blank=True, choices=[('si', 'Si'), ('no', 'No'), ('ns_nc', 'Ns/Nc')], max_length=16, null=True),
+            model_name="nominacentroinfancia",
+            name="habla_lengua_originaria_hogar",
+            field=models.CharField(
+                blank=True,
+                choices=[("si", "Si"), ("no", "No"), ("ns_nc", "Ns/Nc")],
+                max_length=16,
+                null=True,
+            ),
         ),
         migrations.AddField(
-            model_name='nominacentroinfancia',
-            name='altura_domicilio',
+            model_name="nominacentroinfancia",
+            name="altura_domicilio",
             field=models.PositiveIntegerField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='nominacentroinfancia',
-            name='localidad_domicilio',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='+', to='core.localidad'),
+            model_name="nominacentroinfancia",
+            name="localidad_domicilio",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name="+",
+                to="core.localidad",
+            ),
         ),
         migrations.AddField(
-            model_name='nominacentroinfancia',
-            name='municipio_domicilio',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='+', to='core.municipio'),
+            model_name="nominacentroinfancia",
+            name="municipio_domicilio",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name="+",
+                to="core.municipio",
+            ),
         ),
         migrations.AddField(
-            model_name='nominacentroinfancia',
-            name='nacionalidad',
+            model_name="nominacentroinfancia",
+            name="nacionalidad",
             field=models.CharField(blank=True, max_length=255, null=True),
         ),
         migrations.AddField(
-            model_name='nominacentroinfancia',
-            name='nombre',
+            model_name="nominacentroinfancia",
+            name="nombre",
             field=models.CharField(blank=True, max_length=255, null=True),
         ),
         migrations.AddField(
-            model_name='nominacentroinfancia',
-            name='pertenece_pueblo_originario',
-            field=models.CharField(blank=True, choices=[('si', 'Si'), ('no', 'No'), ('ns_nc', 'Ns/Nc')], max_length=16, null=True),
+            model_name="nominacentroinfancia",
+            name="pertenece_pueblo_originario",
+            field=models.CharField(
+                blank=True,
+                choices=[("si", "Si"), ("no", "No"), ("ns_nc", "Ns/Nc")],
+                max_length=16,
+                null=True,
+            ),
         ),
         migrations.AddField(
-            model_name='nominacentroinfancia',
-            name='peso',
-            field=models.DecimalField(blank=True, decimal_places=2, max_digits=6, null=True),
+            model_name="nominacentroinfancia",
+            name="peso",
+            field=models.DecimalField(
+                blank=True, decimal_places=2, max_digits=6, null=True
+            ),
         ),
         migrations.AddField(
-            model_name='nominacentroinfancia',
-            name='piso_domicilio',
+            model_name="nominacentroinfancia",
+            name="piso_domicilio",
             field=models.CharField(blank=True, max_length=50, null=True),
         ),
         migrations.AddField(
-            model_name='nominacentroinfancia',
-            name='posee_cud',
+            model_name="nominacentroinfancia",
+            name="posee_cud",
             field=models.BooleanField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='nominacentroinfancia',
-            name='posee_obra_social',
+            model_name="nominacentroinfancia",
+            name="posee_obra_social",
             field=models.BooleanField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='nominacentroinfancia',
-            name='provincia_domicilio',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='+', to='core.provincia'),
+            model_name="nominacentroinfancia",
+            name="provincia_domicilio",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name="+",
+                to="core.provincia",
+            ),
         ),
         migrations.AddField(
-            model_name='nominacentroinfancia',
-            name='pueblo_originario_cual',
+            model_name="nominacentroinfancia",
+            name="pueblo_originario_cual",
             field=models.CharField(blank=True, max_length=255, null=True),
         ),
         migrations.AddField(
-            model_name='nominacentroinfancia',
-            name='recibe_apoyo_discapacidad',
+            model_name="nominacentroinfancia",
+            name="recibe_apoyo_discapacidad",
             field=models.BooleanField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='nominacentroinfancia',
-            name='responsable_legal_1_apellido',
+            model_name="nominacentroinfancia",
+            name="responsable_legal_1_apellido",
             field=models.CharField(blank=True, max_length=255, null=True),
         ),
         migrations.AddField(
-            model_name='nominacentroinfancia',
-            name='responsable_legal_1_dni',
+            model_name="nominacentroinfancia",
+            name="responsable_legal_1_dni",
             field=models.PositiveBigIntegerField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='nominacentroinfancia',
-            name='responsable_legal_1_nombre',
+            model_name="nominacentroinfancia",
+            name="responsable_legal_1_nombre",
             field=models.CharField(blank=True, max_length=255, null=True),
         ),
         migrations.AddField(
-            model_name='nominacentroinfancia',
-            name='responsable_legal_1_percibe_alimenta',
-            field=models.CharField(blank=True, choices=[('si', 'Si'), ('no', 'No'), ('ns_nc', 'Ns/Nc')], max_length=16, null=True),
+            model_name="nominacentroinfancia",
+            name="responsable_legal_1_percibe_alimenta",
+            field=models.CharField(
+                blank=True,
+                choices=[("si", "Si"), ("no", "No"), ("ns_nc", "Ns/Nc")],
+                max_length=16,
+                null=True,
+            ),
         ),
         migrations.AddField(
-            model_name='nominacentroinfancia',
-            name='responsable_legal_1_percibe_auh',
-            field=models.CharField(blank=True, choices=[('si', 'Si'), ('no', 'No'), ('ns_nc', 'Ns/Nc')], max_length=16, null=True),
+            model_name="nominacentroinfancia",
+            name="responsable_legal_1_percibe_auh",
+            field=models.CharField(
+                blank=True,
+                choices=[("si", "Si"), ("no", "No"), ("ns_nc", "Ns/Nc")],
+                max_length=16,
+                null=True,
+            ),
         ),
         migrations.AddField(
-            model_name='nominacentroinfancia',
-            name='responsable_legal_1_telefono',
+            model_name="nominacentroinfancia",
+            name="responsable_legal_1_telefono",
             field=models.PositiveBigIntegerField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='nominacentroinfancia',
-            name='responsable_legal_2_apellido',
+            model_name="nominacentroinfancia",
+            name="responsable_legal_2_apellido",
             field=models.CharField(blank=True, max_length=255, null=True),
         ),
         migrations.AddField(
-            model_name='nominacentroinfancia',
-            name='responsable_legal_2_dni',
+            model_name="nominacentroinfancia",
+            name="responsable_legal_2_dni",
             field=models.PositiveBigIntegerField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='nominacentroinfancia',
-            name='responsable_legal_2_nombre',
+            model_name="nominacentroinfancia",
+            name="responsable_legal_2_nombre",
             field=models.CharField(blank=True, max_length=255, null=True),
         ),
         migrations.AddField(
-            model_name='nominacentroinfancia',
-            name='responsable_legal_2_percibe_alimenta',
-            field=models.CharField(blank=True, choices=[('si', 'Si'), ('no', 'No'), ('ns_nc', 'Ns/Nc')], max_length=16, null=True),
+            model_name="nominacentroinfancia",
+            name="responsable_legal_2_percibe_alimenta",
+            field=models.CharField(
+                blank=True,
+                choices=[("si", "Si"), ("no", "No"), ("ns_nc", "Ns/Nc")],
+                max_length=16,
+                null=True,
+            ),
         ),
         migrations.AddField(
-            model_name='nominacentroinfancia',
-            name='responsable_legal_2_percibe_auh',
-            field=models.CharField(blank=True, choices=[('si', 'Si'), ('no', 'No'), ('ns_nc', 'Ns/Nc')], max_length=16, null=True),
+            model_name="nominacentroinfancia",
+            name="responsable_legal_2_percibe_auh",
+            field=models.CharField(
+                blank=True,
+                choices=[("si", "Si"), ("no", "No"), ("ns_nc", "Ns/Nc")],
+                max_length=16,
+                null=True,
+            ),
         ),
         migrations.AddField(
-            model_name='nominacentroinfancia',
-            name='responsable_legal_2_telefono',
+            model_name="nominacentroinfancia",
+            name="responsable_legal_2_telefono",
             field=models.PositiveBigIntegerField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='nominacentroinfancia',
-            name='sala',
+            model_name="nominacentroinfancia",
+            name="sala",
             field=models.CharField(blank=True, max_length=255, null=True),
         ),
         migrations.AddField(
-            model_name='nominacentroinfancia',
-            name='sexo',
-            field=models.CharField(blank=True, choices=[('Femenino', 'Femenino'), ('Masculino', 'Masculino'), ('X', 'X')], max_length=20, null=True),
+            model_name="nominacentroinfancia",
+            name="sexo",
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    ("Femenino", "Femenino"),
+                    ("Masculino", "Masculino"),
+                    ("X", "X"),
+                ],
+                max_length=20,
+                null=True,
+            ),
         ),
         migrations.AddField(
-            model_name='nominacentroinfancia',
-            name='talla',
+            model_name="nominacentroinfancia",
+            name="talla",
             field=models.CharField(blank=True, max_length=50, null=True),
         ),
         migrations.AddField(
-            model_name='nominacentroinfancia',
-            name='tiene_discapacidad',
-            field=models.CharField(blank=True, choices=[('si', 'Si'), ('no', 'No'), ('ns_nc', 'Ns/Nc')], max_length=16, null=True),
+            model_name="nominacentroinfancia",
+            name="tiene_discapacidad",
+            field=models.CharField(
+                blank=True,
+                choices=[("si", "Si"), ("no", "No"), ("ns_nc", "Ns/Nc")],
+                max_length=16,
+                null=True,
+            ),
         ),
         migrations.AlterField(
-            model_name='centrodeinfancia',
-            name='nombre',
-            field=models.CharField(max_length=255, verbose_name='Nombre del CDI'),
+            model_name="centrodeinfancia",
+            name="nombre",
+            field=models.CharField(max_length=255, verbose_name="Nombre del CDI"),
         ),
         migrations.AlterField(
-            model_name='centrodeinfancia',
-            name='fecha_inicio',
-            field=models.DateField(blank=True, null=True, validators=[django.core.validators.MinValueValidator(datetime.date(1990, 1, 1))], verbose_name='Año de inicio de actividades del CDI'),
+            model_name="centrodeinfancia",
+            name="fecha_inicio",
+            field=models.DateField(
+                blank=True,
+                null=True,
+                validators=[
+                    django.core.validators.MinValueValidator(datetime.date(1990, 1, 1))
+                ],
+                verbose_name="Año de inicio de actividades del CDI",
+            ),
         ),
         migrations.AlterField(
-            model_name='centrodeinfancia',
-            name='organizacion',
-            field=models.CharField(blank=True, max_length=1000, null=True, verbose_name='Denominación del organismo u organización que gestiona el CDI'),
+            model_name="centrodeinfancia",
+            name="organizacion",
+            field=models.CharField(
+                blank=True,
+                max_length=1000,
+                null=True,
+                verbose_name="Denominación del organismo u organización que gestiona el CDI",
+            ),
         ),
         migrations.CreateModel(
-            name='OfertaServicio',
+            name="OfertaServicio",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('codigo', models.CharField(choices=[('lactantes', 'Lactantes'), ('deambuladores', 'Deambuladores'), ('dos_anos', '2 años'), ('tres_anos', '3 años'), ('cuatro_anos', '4 años'), ('multiedad', 'Multiedad')], max_length=32, unique=True)),
-                ('orden', models.PositiveSmallIntegerField(default=0)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "codigo",
+                    models.CharField(
+                        choices=[
+                            ("lactantes", "Lactantes"),
+                            ("deambuladores", "Deambuladores"),
+                            ("dos_anos", "2 años"),
+                            ("tres_anos", "3 años"),
+                            ("cuatro_anos", "4 años"),
+                            ("multiedad", "Multiedad"),
+                        ],
+                        max_length=32,
+                        unique=True,
+                    ),
+                ),
+                ("orden", models.PositiveSmallIntegerField(default=0)),
             ],
             options={
-                'verbose_name': 'Oferta de servicio del CDI',
-                'verbose_name_plural': 'Ofertas de servicio del CDI',
-                'ordering': ['orden', 'codigo'],
+                "verbose_name": "Oferta de servicio del CDI",
+                "verbose_name_plural": "Ofertas de servicio del CDI",
+                "ordering": ["orden", "codigo"],
             },
         ),
         migrations.AddField(
-            model_name='centrodeinfancia',
-            name='oferta_servicios_m2m',
-            field=models.ManyToManyField(blank=True, related_name='centros', to='centrodeinfancia.ofertaservicio'),
+            model_name="centrodeinfancia",
+            name="oferta_servicios_m2m",
+            field=models.ManyToManyField(
+                blank=True, related_name="centros", to="centrodeinfancia.ofertaservicio"
+            ),
         ),
         migrations.RunPython(
             code=forwards_migrate_oferta_servicios,
             reverse_code=migrations.RunPython.noop,
         ),
         migrations.RemoveField(
-            model_name='centrodeinfancia',
-            name='oferta_servicios',
+            model_name="centrodeinfancia",
+            name="oferta_servicios",
         ),
         migrations.RenameField(
-            model_name='centrodeinfancia',
-            old_name='oferta_servicios_m2m',
-            new_name='oferta_servicios',
+            model_name="centrodeinfancia",
+            old_name="oferta_servicios_m2m",
+            new_name="oferta_servicios",
         ),
         migrations.AddField(
-            model_name='intervencioncentroinfancia',
-            name='creado_por',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to=settings.AUTH_USER_MODEL, verbose_name='Creado por'),
+            model_name="intervencioncentroinfancia",
+            name="creado_por",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                to=settings.AUTH_USER_MODEL,
+                verbose_name="Creado por",
+            ),
         ),
         migrations.AlterField(
-            model_name='formulariocdi',
-            name='condiciones_almacenamiento_leche_humana',
-            field=models.CharField(blank=True, choices=[('heladera_exclusiva_identificada_y_rotulada', 'Se conserva en heladera exclusiva, identificada por niño/a y rotulada con fecha de extracción.'), ('heladera_compartida_sector_exclusivo_identificada_y_rotulada', 'Se conserva en heladera compartida, en un sector exclusivo, identificada por niño/a y rotulada con fecha de extracción.'), ('heladera_exclusiva_identificada_sin_fecha', 'Se conserva en heladera exclusiva, identificada por niño/a pero sin rotulación con fecha de extracción.'), ('heladera_compartida_sector_exclusivo_identificada_sin_fecha', 'Se conserva en heladera compartida, en un sector exclusivo, identificada por niño/a pero sin rotulación con fecha de extracción.'), ('sin_espacio_exclusivo_ni_identificacion', 'No se conserva en espacio exclusivo ni se identifica por niño/a.'), ('no_aplica_o_no_se_realiza_conservación_de_leche_humana', 'No aplica o no se realiza conservación de leche humana')], max_length=128, null=True),
+            model_name="formulariocdi",
+            name="condiciones_almacenamiento_leche_humana",
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    (
+                        "heladera_exclusiva_identificada_y_rotulada",
+                        "Se conserva en heladera exclusiva, identificada por niño/a y rotulada con fecha de extracción.",
+                    ),
+                    (
+                        "heladera_compartida_sector_exclusivo_identificada_y_rotulada",
+                        "Se conserva en heladera compartida, en un sector exclusivo, identificada por niño/a y rotulada con fecha de extracción.",
+                    ),
+                    (
+                        "heladera_exclusiva_identificada_sin_fecha",
+                        "Se conserva en heladera exclusiva, identificada por niño/a pero sin rotulación con fecha de extracción.",
+                    ),
+                    (
+                        "heladera_compartida_sector_exclusivo_identificada_sin_fecha",
+                        "Se conserva en heladera compartida, en un sector exclusivo, identificada por niño/a pero sin rotulación con fecha de extracción.",
+                    ),
+                    (
+                        "sin_espacio_exclusivo_ni_identificacion",
+                        "No se conserva en espacio exclusivo ni se identifica por niño/a.",
+                    ),
+                    (
+                        "no_aplica_o_no_se_realiza_conservación_de_leche_humana",
+                        "No aplica o no se realiza conservación de leche humana",
+                    ),
+                ],
+                max_length=128,
+                null=True,
+            ),
         ),
     ]

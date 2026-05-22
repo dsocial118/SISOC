@@ -7,6 +7,7 @@ import django.db.models.deletion
 
 # --- RunPython: 0024_nomina_switch_comedor_to_admision ---
 
+
 def asignar_admision_a_nominas(apps, schema_editor):
     Nomina = apps.get_model("comedores", "Nomina")
     Admision = apps.get_model("admisiones", "Admision")
@@ -32,20 +33,27 @@ def asignar_admision_a_nominas(apps, schema_editor):
                 admision=admision
             )
 
+
 # --- RunPython: 0028_nomina_estado_espera ---
+
 
 def pendiente_a_espera(apps, schema_editor):
     Nomina = apps.get_model("comedores", "Nomina")
     Nomina.objects.filter(estado="pendiente").update(estado="espera")
 
+
 def espera_a_pendiente(apps, schema_editor):
     Nomina = apps.get_model("comedores", "Nomina")
     Nomina.objects.filter(estado="espera").update(estado="pendiente")
 
+
 # --- RunPython: 0030_colaboradores_espacio ---
 
+
 def cargar_actividades_colaborador(apps, schema_editor):
-    ActividadColaboradorEspacio = apps.get_model("comedores", "ActividadColaboradorEspacio")
+    ActividadColaboradorEspacio = apps.get_model(
+        "comedores", "ActividadColaboradorEspacio"
+    )
     actividades = [
         {"orden": 1, "alias": "COM", "nombre": "Compras"},
         {"orden": 2, "alias": "LIM", "nombre": "Limpieza"},
@@ -63,8 +71,11 @@ def cargar_actividades_colaborador(apps, schema_editor):
             defaults={"orden": actividad["orden"], "activo": True},
         )
 
+
 def revertir_actividades_colaborador(apps, schema_editor):
-    ActividadColaboradorEspacio = apps.get_model("comedores", "ActividadColaboradorEspacio")
+    ActividadColaboradorEspacio = apps.get_model(
+        "comedores", "ActividadColaboradorEspacio"
+    )
     ActividadColaboradorEspacio.objects.filter(
         nombre__in=[
             "Compras",
@@ -78,11 +89,14 @@ def revertir_actividades_colaborador(apps, schema_editor):
         ]
     ).delete()
 
+
 # --- RunPython: 0030_programas_usa_admision_para_nomina ---
+
 
 def backfill_programas_sin_admision_para_nomina(apps, schema_editor):
     programas_model = apps.get_model("comedores", "Programas")
     programas_model.objects.filter(id__in=[3, 4]).update(usa_admision_para_nomina=False)
+
 
 # --- RunPython: 0033_rename_comedores_a_comedor_89ef7d_idx_... ---
 
@@ -104,11 +118,15 @@ INDEX_RENAMES = (
     ),
 )
 
+
 def _get_constraint_names(schema_editor, table_name):
     with schema_editor.connection.cursor() as cursor:
         return set(
-            schema_editor.connection.introspection.get_constraints(cursor, table_name).keys()
+            schema_editor.connection.introspection.get_constraints(
+                cursor, table_name
+            ).keys()
         )
+
 
 def _sync_audit_index_names(apps, schema_editor, renames):
     model = apps.get_model("comedores", "AuditColaboradorEspacio")
@@ -127,8 +145,10 @@ def _sync_audit_index_names(apps, schema_editor, renames):
         constraint_names.discard(old_name)
         constraint_names.add(new_name)
 
+
 def forward_sync_audit_index_names(apps, schema_editor):
     _sync_audit_index_names(apps, schema_editor, INDEX_RENAMES)
+
 
 def backward_sync_audit_index_names(apps, schema_editor):
     reverse_renames = tuple(
@@ -136,282 +156,664 @@ def backward_sync_audit_index_names(apps, schema_editor):
     )
     _sync_audit_index_names(apps, schema_editor, reverse_renames)
 
+
 class Migration(migrations.Migration):
 
     replaces = [
-        ('comedores', '0024_nomina_switch_comedor_to_admision'),
-        ('comedores', '0025_nomina_comedores_n_admisio_b94ec3_idx'),
-        ('comedores', '0026_remove_nomina_comedores_n_admisio_b94ec3_idx'),
-        ('comedores', '0027_comedor_es_judicializado'),
-        ('comedores', '0028_nomina_estado_espera'),
-        ('comedores', '0029_nomina_comedor_directo'),
-        ('comedores', '0030_colaboradores_espacio'),
-        ('comedores', '0031_rename_comedores_c_comedor_6a9f95_idx_comedores_c_comedor_50396a_idx_and_more'),
-        ('comedores', '0031_audit_colaborador_espacio'),
-        ('comedores', '0032_merge_20260326_1545'),
-        ('comedores', '0030_programas_usa_admision_para_nomina'),
-        ('comedores', '0033_merge_20260329_1458'),
-        ('comedores', '0034_rename_comedores_a_comedor_89ef7d_idx_comedores_a_comedor_4b1714_idx_and_more'),
-        ('comedores', '0033_rename_comedores_a_comedor_89ef7d_idx_comedores_a_comedor_4b1714_idx_and_more'),
-        ('comedores', '0034_merge_20260329_0001'),
-        ('comedores', '0035_merge_20260331_1500'),
-        ('comedores', '0036_capacitacion_comedor_certificado'),
-        ('comedores', '0037_imagencomedor_origen'),
-        ('comedores', '0038_comedordatosconveniopnud'),
-        ('comedores', '0039_cursoappmobile'),
-        ('comedores', '0040_alter_cursoappmobile_managers_and_more'),
-        ('comedores', '0041_cursoappmobile_es_recomendado'),
+        ("comedores", "0024_nomina_switch_comedor_to_admision"),
+        ("comedores", "0025_nomina_comedores_n_admisio_b94ec3_idx"),
+        ("comedores", "0026_remove_nomina_comedores_n_admisio_b94ec3_idx"),
+        ("comedores", "0027_comedor_es_judicializado"),
+        ("comedores", "0028_nomina_estado_espera"),
+        ("comedores", "0029_nomina_comedor_directo"),
+        ("comedores", "0030_colaboradores_espacio"),
+        (
+            "comedores",
+            "0031_rename_comedores_c_comedor_6a9f95_idx_comedores_c_comedor_50396a_idx_and_more",
+        ),
+        ("comedores", "0031_audit_colaborador_espacio"),
+        ("comedores", "0032_merge_20260326_1545"),
+        ("comedores", "0030_programas_usa_admision_para_nomina"),
+        ("comedores", "0033_merge_20260329_1458"),
+        (
+            "comedores",
+            "0034_rename_comedores_a_comedor_89ef7d_idx_comedores_a_comedor_4b1714_idx_and_more",
+        ),
+        (
+            "comedores",
+            "0033_rename_comedores_a_comedor_89ef7d_idx_comedores_a_comedor_4b1714_idx_and_more",
+        ),
+        ("comedores", "0034_merge_20260329_0001"),
+        ("comedores", "0035_merge_20260331_1500"),
+        ("comedores", "0036_capacitacion_comedor_certificado"),
+        ("comedores", "0037_imagencomedor_origen"),
+        ("comedores", "0038_comedordatosconveniopnud"),
+        ("comedores", "0039_cursoappmobile"),
+        ("comedores", "0040_alter_cursoappmobile_managers_and_more"),
+        ("comedores", "0041_cursoappmobile_es_recomendado"),
     ]
 
     dependencies = [
-        ('ciudadanos', '0021_ensure_ciudadano_geo_columns'),
-        ('comedores', '0001_squashed_0023'),
+        ("ciudadanos", "0021_ensure_ciudadano_geo_columns"),
+        ("comedores", "0001_squashed_0023"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ('admisiones', '0001_squashed_0058'),
+        ("admisiones", "0001_squashed_0058"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='nomina',
-            name='admision',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='nominas', to='admisiones.admision'),
+            model_name="nomina",
+            name="admision",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name="nominas",
+                to="admisiones.admision",
+            ),
         ),
         migrations.RunPython(
             code=asignar_admision_a_nominas,
             reverse_code=migrations.RunPython.noop,
         ),
         migrations.RemoveField(
-            model_name='nomina',
-            name='comedor',
+            model_name="nomina",
+            name="comedor",
         ),
         migrations.SeparateDatabaseAndState(
             state_operations=[
                 migrations.RemoveIndex(
-                    model_name='nomina',
-                    name='comedores_n_comedor_2179d8_idx',
+                    model_name="nomina",
+                    name="comedores_n_comedor_2179d8_idx",
                 ),
             ],
         ),
         migrations.AddIndex(
-            model_name='nomina',
-            index=models.Index(fields=['admision'], name='comedores_n_admisio_b94ec3_idx'),
+            model_name="nomina",
+            index=models.Index(
+                fields=["admision"], name="comedores_n_admisio_b94ec3_idx"
+            ),
         ),
         migrations.RemoveIndex(
-            model_name='nomina',
-            name='comedores_n_admisio_b94ec3_idx',
+            model_name="nomina",
+            name="comedores_n_admisio_b94ec3_idx",
         ),
         migrations.AddField(
-            model_name='comedor',
-            name='es_judicializado',
-            field=models.BooleanField(blank=True, null=True, verbose_name='¿Es judicializado?'),
+            model_name="comedor",
+            name="es_judicializado",
+            field=models.BooleanField(
+                blank=True, null=True, verbose_name="¿Es judicializado?"
+            ),
         ),
         migrations.RunPython(
             code=pendiente_a_espera,
             reverse_code=espera_a_pendiente,
         ),
         migrations.AlterField(
-            model_name='nomina',
-            name='estado',
-            field=models.CharField(choices=[('activo', 'Activo'), ('espera', 'En espera'), ('baja', 'Baja')], default='activo', max_length=20),
+            model_name="nomina",
+            name="estado",
+            field=models.CharField(
+                choices=[
+                    ("activo", "Activo"),
+                    ("espera", "En espera"),
+                    ("baja", "Baja"),
+                ],
+                default="activo",
+                max_length=20,
+            ),
         ),
         migrations.AddField(
-            model_name='nomina',
-            name='comedor',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='nominas_directas', to='comedores.comedor', verbose_name='Comedor (acceso directo)'),
+            model_name="nomina",
+            name="comedor",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name="nominas_directas",
+                to="comedores.comedor",
+                verbose_name="Comedor (acceso directo)",
+            ),
         ),
         migrations.CreateModel(
-            name='ActividadColaboradorEspacio',
+            name="ActividadColaboradorEspacio",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('alias', models.CharField(max_length=10)),
-                ('nombre', models.CharField(max_length=255)),
-                ('orden', models.PositiveSmallIntegerField(default=0)),
-                ('activo', models.BooleanField(default=True)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("alias", models.CharField(max_length=10)),
+                ("nombre", models.CharField(max_length=255)),
+                ("orden", models.PositiveSmallIntegerField(default=0)),
+                ("activo", models.BooleanField(default=True)),
             ],
             options={
-                'verbose_name': 'Actividad de colaborador del espacio',
-                'verbose_name_plural': 'Actividades de colaboradores del espacio',
-                'ordering': ['orden', 'id'],
+                "verbose_name": "Actividad de colaborador del espacio",
+                "verbose_name_plural": "Actividades de colaboradores del espacio",
+                "ordering": ["orden", "id"],
             },
         ),
         migrations.CreateModel(
-            name='ColaboradorEspacio',
+            name="ColaboradorEspacio",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('genero', models.CharField(choices=[('V', 'Varón'), ('M', 'Mujer'), ('VT', 'Varón Trans'), ('MT', 'Mujer Trans'), ('TR', 'Travesti'), ('OT', 'Otros'), ('ND', 'No declara')], default='ND', max_length=2)),
-                ('codigo_telefono', models.CharField(blank=True, max_length=10, null=True)),
-                ('numero_telefono', models.CharField(blank=True, max_length=20, null=True)),
-                ('fecha_alta', models.DateField()),
-                ('fecha_baja', models.DateField(blank=True, null=True)),
-                ('fecha_creado', models.DateTimeField(auto_now_add=True)),
-                ('fecha_modificado', models.DateTimeField(auto_now=True)),
-                ('ciudadano', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='colaboraciones_espacio', to='ciudadanos.ciudadano')),
-                ('comedor', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='colaboradores_espacio', to='comedores.comedor')),
-                ('creado_por', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='colaboradores_espacio_creados', to=settings.AUTH_USER_MODEL)),
-                ('modificado_por', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='colaboradores_espacio_modificados', to=settings.AUTH_USER_MODEL)),
-                ('actividades', models.ManyToManyField(blank=True, related_name='colaboradores', to='comedores.actividadcolaboradorespacio')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "genero",
+                    models.CharField(
+                        choices=[
+                            ("V", "Varón"),
+                            ("M", "Mujer"),
+                            ("VT", "Varón Trans"),
+                            ("MT", "Mujer Trans"),
+                            ("TR", "Travesti"),
+                            ("OT", "Otros"),
+                            ("ND", "No declara"),
+                        ],
+                        default="ND",
+                        max_length=2,
+                    ),
+                ),
+                (
+                    "codigo_telefono",
+                    models.CharField(blank=True, max_length=10, null=True),
+                ),
+                (
+                    "numero_telefono",
+                    models.CharField(blank=True, max_length=20, null=True),
+                ),
+                ("fecha_alta", models.DateField()),
+                ("fecha_baja", models.DateField(blank=True, null=True)),
+                ("fecha_creado", models.DateTimeField(auto_now_add=True)),
+                ("fecha_modificado", models.DateTimeField(auto_now=True)),
+                (
+                    "ciudadano",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="colaboraciones_espacio",
+                        to="ciudadanos.ciudadano",
+                    ),
+                ),
+                (
+                    "comedor",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="colaboradores_espacio",
+                        to="comedores.comedor",
+                    ),
+                ),
+                (
+                    "creado_por",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="colaboradores_espacio_creados",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    "modificado_por",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="colaboradores_espacio_modificados",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    "actividades",
+                    models.ManyToManyField(
+                        blank=True,
+                        related_name="colaboradores",
+                        to="comedores.actividadcolaboradorespacio",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Colaborador del espacio',
-                'verbose_name_plural': 'Colaboradores del espacio',
-                'ordering': ['ciudadano__apellido', 'ciudadano__nombre', '-id'],
+                "verbose_name": "Colaborador del espacio",
+                "verbose_name_plural": "Colaboradores del espacio",
+                "ordering": ["ciudadano__apellido", "ciudadano__nombre", "-id"],
             },
         ),
         migrations.AddConstraint(
-            model_name='actividadcolaboradorespacio',
-            constraint=models.UniqueConstraint(fields=('alias', 'nombre'), name='uniq_actividad_colaborador_espacio_alias_nombre'),
+            model_name="actividadcolaboradorespacio",
+            constraint=models.UniqueConstraint(
+                fields=("alias", "nombre"),
+                name="uniq_actividad_colaborador_espacio_alias_nombre",
+            ),
         ),
         migrations.AddConstraint(
-            model_name='colaboradorespacio',
-            constraint=models.UniqueConstraint(fields=('comedor', 'ciudadano'), name='uniq_colaborador_espacio_por_comedor_ciudadano'),
+            model_name="colaboradorespacio",
+            constraint=models.UniqueConstraint(
+                fields=("comedor", "ciudadano"),
+                name="uniq_colaborador_espacio_por_comedor_ciudadano",
+            ),
         ),
         migrations.AddIndex(
-            model_name='colaboradorespacio',
-            index=models.Index(fields=['comedor', 'fecha_baja'], name='comedores_c_comedor_50396a_idx'),
+            model_name="colaboradorespacio",
+            index=models.Index(
+                fields=["comedor", "fecha_baja"], name="comedores_c_comedor_50396a_idx"
+            ),
         ),
         migrations.AddIndex(
-            model_name='colaboradorespacio',
-            index=models.Index(fields=['ciudadano'], name='comedores_c_ciudada_1b9c51_idx'),
+            model_name="colaboradorespacio",
+            index=models.Index(
+                fields=["ciudadano"], name="comedores_c_ciudada_1b9c51_idx"
+            ),
         ),
         migrations.RunPython(
             code=cargar_actividades_colaborador,
             reverse_code=revertir_actividades_colaborador,
         ),
-        
-        
         migrations.RemoveConstraint(
-            model_name='colaboradorespacio',
-            name='uniq_colaborador_espacio_por_comedor_ciudadano',
+            model_name="colaboradorespacio",
+            name="uniq_colaborador_espacio_por_comedor_ciudadano",
         ),
         migrations.CreateModel(
-            name='AuditColaboradorEspacio',
+            name="AuditColaboradorEspacio",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('accion', models.CharField(choices=[('create', 'Alta'), ('update', 'Edición'), ('delete', 'Baja')], db_index=True, max_length=20)),
-                ('changed_at', models.DateTimeField(auto_now_add=True, db_index=True)),
-                ('snapshot_antes', models.JSONField(blank=True, null=True)),
-                ('snapshot_despues', models.JSONField(blank=True, null=True)),
-                ('metadata', models.JSONField(blank=True, default=dict)),
-                ('changed_by', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='colaboradores_espacio_audit_logs', to=settings.AUTH_USER_MODEL)),
-                ('ciudadano', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='colaboraciones_audit_logs', to='ciudadanos.ciudadano')),
-                ('colaborador', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='audit_logs', to='comedores.colaboradorespacio')),
-                ('comedor', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='colaboradores_audit_logs', to='comedores.comedor')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "accion",
+                    models.CharField(
+                        choices=[
+                            ("create", "Alta"),
+                            ("update", "Edición"),
+                            ("delete", "Baja"),
+                        ],
+                        db_index=True,
+                        max_length=20,
+                    ),
+                ),
+                ("changed_at", models.DateTimeField(auto_now_add=True, db_index=True)),
+                ("snapshot_antes", models.JSONField(blank=True, null=True)),
+                ("snapshot_despues", models.JSONField(blank=True, null=True)),
+                ("metadata", models.JSONField(blank=True, default=dict)),
+                (
+                    "changed_by",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="colaboradores_espacio_audit_logs",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    "ciudadano",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="colaboraciones_audit_logs",
+                        to="ciudadanos.ciudadano",
+                    ),
+                ),
+                (
+                    "colaborador",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="audit_logs",
+                        to="comedores.colaboradorespacio",
+                    ),
+                ),
+                (
+                    "comedor",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="colaboradores_audit_logs",
+                        to="comedores.comedor",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Auditoría de colaborador del espacio',
-                'verbose_name_plural': 'Auditorías de colaboradores del espacio',
-                'ordering': ['-changed_at', '-id'],
-                'indexes': [
-                    models.Index(fields=['comedor', 'changed_at'], name='comedores_a_comedor_4b1714_idx'),
-                    models.Index(fields=['ciudadano', 'changed_at'], name='comedores_a_ciudada_80944f_idx'),
-                    models.Index(fields=['accion', 'changed_at'], name='comedores_a_accion_7893a2_idx'),
+                "verbose_name": "Auditoría de colaborador del espacio",
+                "verbose_name_plural": "Auditorías de colaboradores del espacio",
+                "ordering": ["-changed_at", "-id"],
+                "indexes": [
+                    models.Index(
+                        fields=["comedor", "changed_at"],
+                        name="comedores_a_comedor_4b1714_idx",
+                    ),
+                    models.Index(
+                        fields=["ciudadano", "changed_at"],
+                        name="comedores_a_ciudada_80944f_idx",
+                    ),
+                    models.Index(
+                        fields=["accion", "changed_at"],
+                        name="comedores_a_accion_7893a2_idx",
+                    ),
                 ],
             },
         ),
         migrations.AddField(
-            model_name='programas',
-            name='usa_admision_para_nomina',
-            field=models.BooleanField(default=True, help_text='Cuando es False, la nómina del comedor se gestiona de forma directa sin depender de admisiones.', verbose_name='¿Usa admisión para nómina?'),
+            model_name="programas",
+            name="usa_admision_para_nomina",
+            field=models.BooleanField(
+                default=True,
+                help_text="Cuando es False, la nómina del comedor se gestiona de forma directa sin depender de admisiones.",
+                verbose_name="¿Usa admisión para nómina?",
+            ),
         ),
         migrations.RunPython(
             code=backfill_programas_sin_admision_para_nomina,
             reverse_code=migrations.RunPython.noop,
         ),
         migrations.CreateModel(
-            name='CapacitacionComedorCertificado',
+            name="CapacitacionComedorCertificado",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('capacitacion', models.CharField(choices=[('creacion_usuario_plataforma', 'Creación de Usuario en Plataforma Alimentar Comunidad'), ('criterios_nutricionales', 'Criterios Nutricionales - Alimentar Comunidad'), ('gastos_accesorios_6', 'Gastos Accesorios 6% - Resolución 650/25 - Alimentar Comunidad'), ('pautas_higiene', 'Pautas de Higiene - Alimentar Comunidad'), ('rendicion_cuentas_650_25', 'Rendición de Cuentas Resolución 650/25 - Alimentar Comunidad'), ('retiro_uso_tarjeta', 'Retiro y Uso de la Tarjeta Alimentar Comunidad'), ('seguridad_cocina', 'Seguridad en la Cocina - Alimentar Comunidad'), ('uso_plataforma_consulta_saldo_comprobantes', 'Uso de Plataforma Alimentar Comunidad: Cómo consultar saldo y subir comprobantes')], max_length=80)),
-                ('estado', models.CharField(choices=[('sin_presentar', 'SIN PRESENTAR'), ('presentado', 'PRESENTADO'), ('rechazado', 'RECHAZADO'), ('aceptado', 'ACEPTADO')], default='sin_presentar', max_length=20)),
-                ('archivo', models.FileField(blank=True, null=True, upload_to='comedores/capacitaciones/')),
-                ('observacion', models.TextField(blank=True, null=True)),
-                ('fecha_presentacion', models.DateTimeField(blank=True, null=True)),
-                ('fecha_revision', models.DateTimeField(blank=True, null=True)),
-                ('creado', models.DateTimeField(auto_now_add=True)),
-                ('modificado', models.DateTimeField(auto_now=True)),
-                ('comedor', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='certificados_capacitacion', to='comedores.comedor')),
-                ('presentado_por', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='certificados_capacitacion_presentados', to=settings.AUTH_USER_MODEL)),
-                ('revisado_por', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='certificados_capacitacion_revisados', to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "capacitacion",
+                    models.CharField(
+                        choices=[
+                            (
+                                "creacion_usuario_plataforma",
+                                "Creación de Usuario en Plataforma Alimentar Comunidad",
+                            ),
+                            (
+                                "criterios_nutricionales",
+                                "Criterios Nutricionales - Alimentar Comunidad",
+                            ),
+                            (
+                                "gastos_accesorios_6",
+                                "Gastos Accesorios 6% - Resolución 650/25 - Alimentar Comunidad",
+                            ),
+                            (
+                                "pautas_higiene",
+                                "Pautas de Higiene - Alimentar Comunidad",
+                            ),
+                            (
+                                "rendicion_cuentas_650_25",
+                                "Rendición de Cuentas Resolución 650/25 - Alimentar Comunidad",
+                            ),
+                            (
+                                "retiro_uso_tarjeta",
+                                "Retiro y Uso de la Tarjeta Alimentar Comunidad",
+                            ),
+                            (
+                                "seguridad_cocina",
+                                "Seguridad en la Cocina - Alimentar Comunidad",
+                            ),
+                            (
+                                "uso_plataforma_consulta_saldo_comprobantes",
+                                "Uso de Plataforma Alimentar Comunidad: Cómo consultar saldo y subir comprobantes",
+                            ),
+                        ],
+                        max_length=80,
+                    ),
+                ),
+                (
+                    "estado",
+                    models.CharField(
+                        choices=[
+                            ("sin_presentar", "SIN PRESENTAR"),
+                            ("presentado", "PRESENTADO"),
+                            ("rechazado", "RECHAZADO"),
+                            ("aceptado", "ACEPTADO"),
+                        ],
+                        default="sin_presentar",
+                        max_length=20,
+                    ),
+                ),
+                (
+                    "archivo",
+                    models.FileField(
+                        blank=True, null=True, upload_to="comedores/capacitaciones/"
+                    ),
+                ),
+                ("observacion", models.TextField(blank=True, null=True)),
+                ("fecha_presentacion", models.DateTimeField(blank=True, null=True)),
+                ("fecha_revision", models.DateTimeField(blank=True, null=True)),
+                ("creado", models.DateTimeField(auto_now_add=True)),
+                ("modificado", models.DateTimeField(auto_now=True)),
+                (
+                    "comedor",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="certificados_capacitacion",
+                        to="comedores.comedor",
+                    ),
+                ),
+                (
+                    "presentado_por",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="certificados_capacitacion_presentados",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    "revisado_por",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="certificados_capacitacion_revisados",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Certificado de Capacitación del Comedor',
-                'verbose_name_plural': 'Certificados de Capacitaciones del Comedor',
-                'ordering': ['comedor_id', 'capacitacion'],
+                "verbose_name": "Certificado de Capacitación del Comedor",
+                "verbose_name_plural": "Certificados de Capacitaciones del Comedor",
+                "ordering": ["comedor_id", "capacitacion"],
             },
         ),
         migrations.AddConstraint(
-            model_name='capacitacioncomedorcertificado',
-            constraint=models.UniqueConstraint(fields=('comedor', 'capacitacion'), name='uniq_certificado_capacitacion_por_comedor'),
+            model_name="capacitacioncomedorcertificado",
+            constraint=models.UniqueConstraint(
+                fields=("comedor", "capacitacion"),
+                name="uniq_certificado_capacitacion_por_comedor",
+            ),
         ),
         migrations.AddField(
-            model_name='imagencomedor',
-            name='origen',
-            field=models.CharField(choices=[('web', 'Web'), ('mobile', 'Mobile')], default='web', max_length=10),
+            model_name="imagencomedor",
+            name="origen",
+            field=models.CharField(
+                choices=[("web", "Web"), ("mobile", "Mobile")],
+                default="web",
+                max_length=10,
+            ),
         ),
         migrations.CreateModel(
-            name='ComedorDatosConvenioPnud',
+            name="ComedorDatosConvenioPnud",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('monto_total_conveniado', models.DecimalField(blank=True, decimal_places=2, max_digits=14, null=True)),
-                ('nro_convenio', models.CharField(blank=True, max_length=120, null=True)),
-                ('monto_total_convenio_por_espacio', models.DecimalField(blank=True, decimal_places=2, max_digits=14, null=True)),
-                ('prestaciones_financiadas_mensuales', models.PositiveIntegerField(blank=True, null=True)),
-                ('personas_conveniadas', models.PositiveIntegerField(blank=True, null=True)),
-                ('cantidad_modulos', models.PositiveIntegerField(blank=True, null=True)),
-                ('actualizado_en', models.DateTimeField(auto_now=True)),
-                ('comedor', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, related_name='datos_convenio_pnud', to='comedores.comedor')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "monto_total_conveniado",
+                    models.DecimalField(
+                        blank=True, decimal_places=2, max_digits=14, null=True
+                    ),
+                ),
+                (
+                    "nro_convenio",
+                    models.CharField(blank=True, max_length=120, null=True),
+                ),
+                (
+                    "monto_total_convenio_por_espacio",
+                    models.DecimalField(
+                        blank=True, decimal_places=2, max_digits=14, null=True
+                    ),
+                ),
+                (
+                    "prestaciones_financiadas_mensuales",
+                    models.PositiveIntegerField(blank=True, null=True),
+                ),
+                (
+                    "personas_conveniadas",
+                    models.PositiveIntegerField(blank=True, null=True),
+                ),
+                (
+                    "cantidad_modulos",
+                    models.PositiveIntegerField(blank=True, null=True),
+                ),
+                ("actualizado_en", models.DateTimeField(auto_now=True)),
+                (
+                    "comedor",
+                    models.OneToOneField(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="datos_convenio_pnud",
+                        to="comedores.comedor",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Datos del Convenio PNUD',
-                'verbose_name_plural': 'Datos del Convenio PNUD',
+                "verbose_name": "Datos del Convenio PNUD",
+                "verbose_name_plural": "Datos del Convenio PNUD",
             },
         ),
         migrations.CreateModel(
-            name='CursoAppMobile',
+            name="CursoAppMobile",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('deleted_at', models.DateTimeField(blank=True, db_index=True, editable=False, null=True)),
-                ('nombre', models.CharField(max_length=255)),
-                ('link', models.URLField(max_length=500)),
-                ('imagen', models.ImageField(blank=True, null=True, upload_to='comedores/cursos_app_mobile/')),
-                ('descripcion', models.CharField(blank=True, max_length=300, null=True)),
-                ('programa_objetivo', models.CharField(choices=[('pnud', 'PNUD'), ('alimentar_comunidad', 'Alimentar Comunidad'), ('ambos', 'PNUD y Alimentar Comunidad')], default='pnud', max_length=30)),
-                ('activo', models.BooleanField(default=True)),
-                ('orden', models.PositiveIntegerField(default=0)),
-                ('fecha_creacion', models.DateTimeField(auto_now_add=True)),
-                ('fecha_modificacion', models.DateTimeField(auto_now=True)),
-                ('creado_por', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='cursos_app_mobile_creados', to=settings.AUTH_USER_MODEL)),
-                ('modificado_por', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='cursos_app_mobile_modificados', to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "deleted_at",
+                    models.DateTimeField(
+                        blank=True, db_index=True, editable=False, null=True
+                    ),
+                ),
+                ("nombre", models.CharField(max_length=255)),
+                ("link", models.URLField(max_length=500)),
+                (
+                    "imagen",
+                    models.ImageField(
+                        blank=True, null=True, upload_to="comedores/cursos_app_mobile/"
+                    ),
+                ),
+                (
+                    "descripcion",
+                    models.CharField(blank=True, max_length=300, null=True),
+                ),
+                (
+                    "programa_objetivo",
+                    models.CharField(
+                        choices=[
+                            ("pnud", "PNUD"),
+                            ("alimentar_comunidad", "Alimentar Comunidad"),
+                            ("ambos", "PNUD y Alimentar Comunidad"),
+                        ],
+                        default="pnud",
+                        max_length=30,
+                    ),
+                ),
+                ("activo", models.BooleanField(default=True)),
+                ("orden", models.PositiveIntegerField(default=0)),
+                ("fecha_creacion", models.DateTimeField(auto_now_add=True)),
+                ("fecha_modificacion", models.DateTimeField(auto_now=True)),
+                (
+                    "creado_por",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="cursos_app_mobile_creados",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    "modificado_por",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="cursos_app_mobile_modificados",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Curso App Mobile',
-                'verbose_name_plural': 'Cursos App Mobile',
-                'ordering': ['orden', 'nombre', 'id'],
-                'indexes': [
-                    models.Index(fields=['programa_objetivo', 'activo'], name='comedores_c_program_729666_idx'),
-                    models.Index(fields=['orden', 'nombre'], name='comedores_c_orden_115719_idx'),
+                "verbose_name": "Curso App Mobile",
+                "verbose_name_plural": "Cursos App Mobile",
+                "ordering": ["orden", "nombre", "id"],
+                "indexes": [
+                    models.Index(
+                        fields=["programa_objetivo", "activo"],
+                        name="comedores_c_program_729666_idx",
+                    ),
+                    models.Index(
+                        fields=["orden", "nombre"], name="comedores_c_orden_115719_idx"
+                    ),
                 ],
             },
             managers=[
-                ('objects', core.soft_delete.base.SoftDeleteManager()),
-                ('all_objects', core.soft_delete.base.SoftDeleteManager(include_deleted=True)),
+                ("objects", core.soft_delete.base.SoftDeleteManager()),
+                (
+                    "all_objects",
+                    core.soft_delete.base.SoftDeleteManager(include_deleted=True),
+                ),
             ],
         ),
-        
-        
         migrations.AddField(
-            model_name='cursoappmobile',
-            name='deleted_by',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='+', to=settings.AUTH_USER_MODEL),
+            model_name="cursoappmobile",
+            name="deleted_by",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name="+",
+                to=settings.AUTH_USER_MODEL,
+            ),
         ),
         migrations.AlterField(
-            model_name='cursoappmobile',
-            name='deleted_at',
+            model_name="cursoappmobile",
+            name="deleted_at",
             field=models.DateTimeField(blank=True, db_index=True, null=True),
         ),
         migrations.AddField(
-            model_name='cursoappmobile',
-            name='es_recomendado',
+            model_name="cursoappmobile",
+            name="es_recomendado",
             field=models.BooleanField(default=False),
         ),
     ]

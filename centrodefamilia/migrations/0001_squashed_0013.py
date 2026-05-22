@@ -35,9 +35,9 @@ class Migration(migrations.Migration):
     ]
 
     dependencies = [
-        ('ciudadanos', '0001_squashed_0008'),
-        ('organizaciones', '0001_squashed_0010'),
-        ('core', '0001_squashed_0007'),
+        ("ciudadanos", "0001_squashed_0008"),
+        ("organizaciones", "0001_squashed_0010"),
+        ("core", "0001_squashed_0007"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 

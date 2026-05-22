@@ -90,6 +90,7 @@ CATALOGO_ACTIVIDADES_INICIAL = [
     ("Salud", "Aeroyoga"),
 ]
 
+
 def cargar_catalogo_actividades(apps, schema_editor):
     CatalogoActividadPWA = apps.get_model("pwa", "CatalogoActividadPWA")
     for categoria, actividad in CATALOGO_ACTIVIDADES_INICIAL:
@@ -99,6 +100,7 @@ def cargar_catalogo_actividades(apps, schema_editor):
             defaults={"activo": True},
         )
 
+
 def revertir_catalogo_actividades(apps, schema_editor):
     CatalogoActividadPWA = apps.get_model("pwa", "CatalogoActividadPWA")
     for categoria, actividad in CATALOGO_ACTIVIDADES_INICIAL:
@@ -107,11 +109,13 @@ def revertir_catalogo_actividades(apps, schema_editor):
             actividad=actividad,
         ).delete()
 
+
 # --- 0011_actividadespaciopwa_hora_inicio_hora_fin ---
 
 TIME_RANGE_REGEX = re.compile(
     r"^(?P<start>\d{1,2}:\d{2})(?:\s*(?:a|-)\s*(?P<end>\d{1,2}:\d{2}))?$"
 )
+
 
 def _parse_schedule(raw_value):
     value = (raw_value or "").strip()
@@ -124,6 +128,7 @@ def _parse_schedule(raw_value):
     end_raw = match.group("end")
     end_time = datetime.strptime(end_raw, "%H:%M").time() if end_raw else None
     return start_time, end_time
+
 
 def _infer_end_time(start_time, raw_duration):
     duration = (raw_duration or "").strip().lower()
@@ -140,6 +145,7 @@ def _infer_end_time(start_time, raw_duration):
         return None
     start_dt = datetime.combine(datetime.today().date(), start_time)
     return (start_dt + timedelta(minutes=total_minutes)).time()
+
 
 def forwards(apps, schema_editor):
     ActividadEspacioPWA = apps.get_model("pwa", "ActividadEspacioPWA")
@@ -161,6 +167,7 @@ def forwards(apps, schema_editor):
         )
         actividad.save(update_fields=["hora_inicio", "hora_fin", "horario_actividad"])
 
+
 def backwards(apps, schema_editor):
     ActividadEspacioPWA = apps.get_model("pwa", "ActividadEspacioPWA")
     for actividad in ActividadEspacioPWA.objects.all().iterator():
@@ -171,7 +178,9 @@ def backwards(apps, schema_editor):
             )
             actividad.save(update_fields=["horario_actividad"])
 
+
 # --- 0014_pushsubscriptionpwa_endpoint_hash ---
+
 
 def populate_push_subscription_endpoint_hash(apps, schema_editor):
     PushSubscriptionPWA = apps.get_model("pwa", "PushSubscriptionPWA")
@@ -183,309 +192,725 @@ def populate_push_subscription_endpoint_hash(apps, schema_editor):
         ).hexdigest()
         subscription.save(update_fields=["endpoint", "endpoint_hash"])
 
+
 class Migration(migrations.Migration):
 
     initial = True
 
-    replaces = [('pwa', '0001_initial'), ('pwa', '0002_rename_pwa_auditor_user_id_52e452_idx_pwa_auditor_user_id_951231_idx_and_more'), ('pwa', '0003_colaboradores_espacio_pwa'), ('pwa', '0004_mysql_colaborador_unique_fix'), ('pwa', '0005_actividades_pwa'), ('pwa', '0006_nominaespaciopwa'), ('pwa', '0007_auditoriaoperacionpwa'), ('pwa', '0008_lecturamensajepwa'), ('pwa', '0009_registroasistencianominapwa'), ('pwa', '0010_actividadespaciopwa_duracion_actividad'), ('pwa', '0011_actividadespaciopwa_hora_inicio_hora_fin'), ('pwa', '0012_remove_actividadespaciopwa_duracion_actividad'), ('pwa', '0013_pushsubscriptionpwa'), ('pwa', '0014_pushsubscriptionpwa_endpoint_hash'), ('pwa', '0015_nominaobservacionpwa')]
+    replaces = [
+        ("pwa", "0001_initial"),
+        (
+            "pwa",
+            "0002_rename_pwa_auditor_user_id_52e452_idx_pwa_auditor_user_id_951231_idx_and_more",
+        ),
+        ("pwa", "0003_colaboradores_espacio_pwa"),
+        ("pwa", "0004_mysql_colaborador_unique_fix"),
+        ("pwa", "0005_actividades_pwa"),
+        ("pwa", "0006_nominaespaciopwa"),
+        ("pwa", "0007_auditoriaoperacionpwa"),
+        ("pwa", "0008_lecturamensajepwa"),
+        ("pwa", "0009_registroasistencianominapwa"),
+        ("pwa", "0010_actividadespaciopwa_duracion_actividad"),
+        ("pwa", "0011_actividadespaciopwa_hora_inicio_hora_fin"),
+        ("pwa", "0012_remove_actividadespaciopwa_duracion_actividad"),
+        ("pwa", "0013_pushsubscriptionpwa"),
+        ("pwa", "0014_pushsubscriptionpwa_endpoint_hash"),
+        ("pwa", "0015_nominaobservacionpwa"),
+    ]
 
     dependencies = [
-        ('comunicados', '0001_squashed_0006'),
-        ('core', '0001_squashed_0007'),
-        ('comedores', '0024_squashed_0041'),
+        ("comunicados", "0001_squashed_0006"),
+        ("core", "0001_squashed_0007"),
+        ("comedores", "0024_squashed_0041"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='AuditoriaSesionPWA',
+            name="AuditoriaSesionPWA",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('username_intentado', models.CharField(blank=True, max_length=150, null=True)),
-                ('evento', models.CharField(choices=[('login_ok', 'Login exitoso'), ('login_error', 'Login fallido'), ('logout', 'Logout'), ('token_invalido', 'Token inválido'), ('me_ok', 'Consulta de contexto')], max_length=30)),
-                ('resultado', models.CharField(choices=[('ok', 'OK'), ('error', 'Error')], max_length=10)),
-                ('fecha_evento', models.DateTimeField(auto_now_add=True, db_index=True)),
-                ('ip', models.GenericIPAddressField(blank=True, null=True)),
-                ('user_agent', models.CharField(blank=True, max_length=512, null=True)),
-                ('path', models.CharField(max_length=255)),
-                ('metodo_http', models.CharField(max_length=10)),
-                ('codigo_respuesta', models.PositiveSmallIntegerField(blank=True, null=True)),
-                ('motivo_error', models.CharField(blank=True, max_length=255, null=True)),
-                ('session_id', models.UUIDField(db_index=True, default=uuid.uuid4, editable=False)),
-                ('rol_pwa_snapshot', models.JSONField(blank=True, default=list)),
-                ('comedor_ids_snapshot', models.JSONField(blank=True, default=list)),
-                ('app_version', models.CharField(blank=True, max_length=50, null=True)),
-                ('platform', models.CharField(blank=True, max_length=30, null=True)),
-                ('is_standalone', models.BooleanField(blank=True, null=True)),
-                ('user', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='auditorias_pwa', to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "username_intentado",
+                    models.CharField(blank=True, max_length=150, null=True),
+                ),
+                (
+                    "evento",
+                    models.CharField(
+                        choices=[
+                            ("login_ok", "Login exitoso"),
+                            ("login_error", "Login fallido"),
+                            ("logout", "Logout"),
+                            ("token_invalido", "Token inválido"),
+                            ("me_ok", "Consulta de contexto"),
+                        ],
+                        max_length=30,
+                    ),
+                ),
+                (
+                    "resultado",
+                    models.CharField(
+                        choices=[("ok", "OK"), ("error", "Error")], max_length=10
+                    ),
+                ),
+                (
+                    "fecha_evento",
+                    models.DateTimeField(auto_now_add=True, db_index=True),
+                ),
+                ("ip", models.GenericIPAddressField(blank=True, null=True)),
+                ("user_agent", models.CharField(blank=True, max_length=512, null=True)),
+                ("path", models.CharField(max_length=255)),
+                ("metodo_http", models.CharField(max_length=10)),
+                (
+                    "codigo_respuesta",
+                    models.PositiveSmallIntegerField(blank=True, null=True),
+                ),
+                (
+                    "motivo_error",
+                    models.CharField(blank=True, max_length=255, null=True),
+                ),
+                (
+                    "session_id",
+                    models.UUIDField(db_index=True, default=uuid.uuid4, editable=False),
+                ),
+                ("rol_pwa_snapshot", models.JSONField(blank=True, default=list)),
+                ("comedor_ids_snapshot", models.JSONField(blank=True, default=list)),
+                ("app_version", models.CharField(blank=True, max_length=50, null=True)),
+                ("platform", models.CharField(blank=True, max_length=30, null=True)),
+                ("is_standalone", models.BooleanField(blank=True, null=True)),
+                (
+                    "user",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="auditorias_pwa",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Auditoría sesión PWA',
-                'verbose_name_plural': 'Auditorías sesiones PWA',
-                'indexes': [models.Index(fields=['user', 'fecha_evento'], name='pwa_auditor_user_id_951231_idx'), models.Index(fields=['evento', 'fecha_evento'], name='pwa_auditor_evento_5c0ad0_idx'), models.Index(fields=['resultado', 'fecha_evento'], name='pwa_auditor_resulta_ae14a4_idx')],
+                "verbose_name": "Auditoría sesión PWA",
+                "verbose_name_plural": "Auditorías sesiones PWA",
+                "indexes": [
+                    models.Index(
+                        fields=["user", "fecha_evento"],
+                        name="pwa_auditor_user_id_951231_idx",
+                    ),
+                    models.Index(
+                        fields=["evento", "fecha_evento"],
+                        name="pwa_auditor_evento_5c0ad0_idx",
+                    ),
+                    models.Index(
+                        fields=["resultado", "fecha_evento"],
+                        name="pwa_auditor_resulta_ae14a4_idx",
+                    ),
+                ],
             },
         ),
-        
-        
-        
         migrations.CreateModel(
-            name='ColaboradorEspacioPWA',
+            name="ColaboradorEspacioPWA",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('nombre', models.CharField(max_length=100)),
-                ('apellido', models.CharField(max_length=100)),
-                ('dni', models.CharField(max_length=8)),
-                ('telefono', models.CharField(max_length=30)),
-                ('email', models.EmailField(max_length=255)),
-                ('rol_funcion', models.CharField(max_length=150)),
-                ('activo', models.BooleanField(default=True)),
-                ('fecha_creacion', models.DateTimeField(auto_now_add=True)),
-                ('fecha_actualizacion', models.DateTimeField(auto_now=True)),
-                ('fecha_baja', models.DateTimeField(blank=True, null=True)),
-                ('actualizado_por', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='colaboradores_pwa_actualizados', to=settings.AUTH_USER_MODEL)),
-                ('comedor', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='colaboradores_pwa', to='comedores.comedor')),
-                ('creado_por', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='colaboradores_pwa_creados', to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("nombre", models.CharField(max_length=100)),
+                ("apellido", models.CharField(max_length=100)),
+                ("dni", models.CharField(max_length=8)),
+                ("telefono", models.CharField(max_length=30)),
+                ("email", models.EmailField(max_length=255)),
+                ("rol_funcion", models.CharField(max_length=150)),
+                ("activo", models.BooleanField(default=True)),
+                ("fecha_creacion", models.DateTimeField(auto_now_add=True)),
+                ("fecha_actualizacion", models.DateTimeField(auto_now=True)),
+                ("fecha_baja", models.DateTimeField(blank=True, null=True)),
+                (
+                    "actualizado_por",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="colaboradores_pwa_actualizados",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    "comedor",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="colaboradores_pwa",
+                        to="comedores.comedor",
+                    ),
+                ),
+                (
+                    "creado_por",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="colaboradores_pwa_creados",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Colaborador PWA',
-                'verbose_name_plural': 'Colaboradores PWA',
-                'ordering': ('apellido', 'nombre', '-id'),
+                "verbose_name": "Colaborador PWA",
+                "verbose_name_plural": "Colaboradores PWA",
+                "ordering": ("apellido", "nombre", "-id"),
             },
         ),
         migrations.AddConstraint(
-            model_name='colaboradorespaciopwa',
-            constraint=models.UniqueConstraint(condition=models.Q(('activo', True)), fields=('comedor', 'dni'), name='uniq_colaborador_pwa_dni_activo_por_comedor'),
+            model_name="colaboradorespaciopwa",
+            constraint=models.UniqueConstraint(
+                condition=models.Q(("activo", True)),
+                fields=("comedor", "dni"),
+                name="uniq_colaborador_pwa_dni_activo_por_comedor",
+            ),
         ),
         migrations.AddIndex(
-            model_name='colaboradorespaciopwa',
-            index=models.Index(fields=['comedor', 'activo'], name='pwa_colab_comedor_activo_idx'),
+            model_name="colaboradorespaciopwa",
+            index=models.Index(
+                fields=["comedor", "activo"], name="pwa_colab_comedor_activo_idx"
+            ),
         ),
         migrations.AddIndex(
-            model_name='colaboradorespaciopwa',
-            index=models.Index(fields=['comedor', 'dni'], name='pwa_colab_comedor_dni_idx'),
+            model_name="colaboradorespaciopwa",
+            index=models.Index(
+                fields=["comedor", "dni"], name="pwa_colab_comedor_dni_idx"
+            ),
         ),
         migrations.SeparateDatabaseAndState(
             state_operations=[
                 migrations.RemoveConstraint(
-                    model_name='colaboradorespaciopwa',
-                    name='uniq_colaborador_pwa_dni_activo_por_comedor',
+                    model_name="colaboradorespaciopwa",
+                    name="uniq_colaborador_pwa_dni_activo_por_comedor",
                 ),
             ],
         ),
         migrations.AddConstraint(
-            model_name='colaboradorespaciopwa',
-            constraint=models.UniqueConstraint(fields=('comedor', 'dni'), name='uniq_colaborador_pwa_dni_por_comedor'),
+            model_name="colaboradorespaciopwa",
+            constraint=models.UniqueConstraint(
+                fields=("comedor", "dni"), name="uniq_colaborador_pwa_dni_por_comedor"
+            ),
         ),
         migrations.CreateModel(
-            name='CatalogoActividadPWA',
+            name="CatalogoActividadPWA",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('categoria', models.CharField(max_length=120)),
-                ('actividad', models.CharField(max_length=180)),
-                ('activo', models.BooleanField(default=True)),
-                ('fecha_creacion', models.DateTimeField(auto_now_add=True)),
-                ('fecha_actualizacion', models.DateTimeField(auto_now=True)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("categoria", models.CharField(max_length=120)),
+                ("actividad", models.CharField(max_length=180)),
+                ("activo", models.BooleanField(default=True)),
+                ("fecha_creacion", models.DateTimeField(auto_now_add=True)),
+                ("fecha_actualizacion", models.DateTimeField(auto_now=True)),
             ],
             options={
-                'verbose_name': 'Catalogo Actividad PWA',
-                'verbose_name_plural': 'Catalogo Actividades PWA',
-                'ordering': ('categoria', 'actividad', 'id'),
+                "verbose_name": "Catalogo Actividad PWA",
+                "verbose_name_plural": "Catalogo Actividades PWA",
+                "ordering": ("categoria", "actividad", "id"),
             },
         ),
         migrations.CreateModel(
-            name='ActividadEspacioPWA',
+            name="ActividadEspacioPWA",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('horario_actividad', models.CharField(max_length=60)),
-                ('activo', models.BooleanField(default=True)),
-                ('fecha_alta', models.DateTimeField(auto_now_add=True)),
-                ('fecha_actualizacion', models.DateTimeField(auto_now=True)),
-                ('fecha_baja', models.DateTimeField(blank=True, null=True)),
-                ('actualizado_por', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='actividades_pwa_actualizadas', to=settings.AUTH_USER_MODEL)),
-                ('catalogo_actividad', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='actividades_espacio', to='pwa.catalogoactividadpwa')),
-                ('comedor', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='actividades_pwa', to='comedores.comedor')),
-                ('creado_por', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='actividades_pwa_creadas', to=settings.AUTH_USER_MODEL)),
-                ('dia_actividad', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='actividades_pwa', to='core.dia')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("horario_actividad", models.CharField(max_length=60)),
+                ("activo", models.BooleanField(default=True)),
+                ("fecha_alta", models.DateTimeField(auto_now_add=True)),
+                ("fecha_actualizacion", models.DateTimeField(auto_now=True)),
+                ("fecha_baja", models.DateTimeField(blank=True, null=True)),
+                (
+                    "actualizado_por",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="actividades_pwa_actualizadas",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    "catalogo_actividad",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.PROTECT,
+                        related_name="actividades_espacio",
+                        to="pwa.catalogoactividadpwa",
+                    ),
+                ),
+                (
+                    "comedor",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="actividades_pwa",
+                        to="comedores.comedor",
+                    ),
+                ),
+                (
+                    "creado_por",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="actividades_pwa_creadas",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    "dia_actividad",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.PROTECT,
+                        related_name="actividades_pwa",
+                        to="core.dia",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Actividad Espacio PWA',
-                'verbose_name_plural': 'Actividades Espacio PWA',
-                'ordering': ('-fecha_alta', '-id'),
+                "verbose_name": "Actividad Espacio PWA",
+                "verbose_name_plural": "Actividades Espacio PWA",
+                "ordering": ("-fecha_alta", "-id"),
             },
         ),
         migrations.CreateModel(
-            name='InscriptoActividadEspacioPWA',
+            name="InscriptoActividadEspacioPWA",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('activo', models.BooleanField(default=True)),
-                ('fecha_alta', models.DateTimeField(auto_now_add=True)),
-                ('fecha_actualizacion', models.DateTimeField(auto_now=True)),
-                ('fecha_baja', models.DateTimeField(blank=True, null=True)),
-                ('actividad_espacio', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='inscriptos', to='pwa.actividadespaciopwa')),
-                ('actualizado_por', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='inscriptos_actividad_pwa_actualizados', to=settings.AUTH_USER_MODEL)),
-                ('creado_por', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='inscriptos_actividad_pwa_creados', to=settings.AUTH_USER_MODEL)),
-                ('nomina', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='inscripciones_actividad_pwa', to='comedores.nomina')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("activo", models.BooleanField(default=True)),
+                ("fecha_alta", models.DateTimeField(auto_now_add=True)),
+                ("fecha_actualizacion", models.DateTimeField(auto_now=True)),
+                ("fecha_baja", models.DateTimeField(blank=True, null=True)),
+                (
+                    "actividad_espacio",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="inscriptos",
+                        to="pwa.actividadespaciopwa",
+                    ),
+                ),
+                (
+                    "actualizado_por",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="inscriptos_actividad_pwa_actualizados",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    "creado_por",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="inscriptos_actividad_pwa_creados",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    "nomina",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.PROTECT,
+                        related_name="inscripciones_actividad_pwa",
+                        to="comedores.nomina",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Inscripto Actividad Espacio PWA',
-                'verbose_name_plural': 'Inscriptos Actividad Espacio PWA',
-                'ordering': ('-fecha_alta', '-id'),
+                "verbose_name": "Inscripto Actividad Espacio PWA",
+                "verbose_name_plural": "Inscriptos Actividad Espacio PWA",
+                "ordering": ("-fecha_alta", "-id"),
             },
         ),
         migrations.AddConstraint(
-            model_name='catalogoactividadpwa',
-            constraint=models.UniqueConstraint(fields=('categoria', 'actividad'), name='uniq_catalogo_actividad_pwa_categoria_actividad'),
+            model_name="catalogoactividadpwa",
+            constraint=models.UniqueConstraint(
+                fields=("categoria", "actividad"),
+                name="uniq_catalogo_actividad_pwa_categoria_actividad",
+            ),
         ),
         migrations.AddIndex(
-            model_name='catalogoactividadpwa',
-            index=models.Index(fields=['categoria'], name='pwa_cat_act_categoria_idx'),
+            model_name="catalogoactividadpwa",
+            index=models.Index(fields=["categoria"], name="pwa_cat_act_categoria_idx"),
         ),
         migrations.AddIndex(
-            model_name='catalogoactividadpwa',
-            index=models.Index(fields=['activo'], name='pwa_cat_act_activo_idx'),
+            model_name="catalogoactividadpwa",
+            index=models.Index(fields=["activo"], name="pwa_cat_act_activo_idx"),
         ),
         migrations.AddIndex(
-            model_name='actividadespaciopwa',
-            index=models.Index(fields=['comedor', 'activo'], name='pwa_act_esp_com_activo_idx'),
+            model_name="actividadespaciopwa",
+            index=models.Index(
+                fields=["comedor", "activo"], name="pwa_act_esp_com_activo_idx"
+            ),
         ),
         migrations.AddIndex(
-            model_name='actividadespaciopwa',
-            index=models.Index(fields=['catalogo_actividad'], name='pwa_act_esp_catalogo_idx'),
+            model_name="actividadespaciopwa",
+            index=models.Index(
+                fields=["catalogo_actividad"], name="pwa_act_esp_catalogo_idx"
+            ),
         ),
         migrations.AddConstraint(
-            model_name='inscriptoactividadespaciopwa',
-            constraint=models.UniqueConstraint(fields=('actividad_espacio', 'nomina', 'activo'), name='uniq_inscripto_actividad_nomina_estado_pwa'),
+            model_name="inscriptoactividadespaciopwa",
+            constraint=models.UniqueConstraint(
+                fields=("actividad_espacio", "nomina", "activo"),
+                name="uniq_inscripto_actividad_nomina_estado_pwa",
+            ),
         ),
         migrations.AddIndex(
-            model_name='inscriptoactividadespaciopwa',
-            index=models.Index(fields=['actividad_espacio', 'activo'], name='pwa_insc_act_activo_idx'),
+            model_name="inscriptoactividadespaciopwa",
+            index=models.Index(
+                fields=["actividad_espacio", "activo"], name="pwa_insc_act_activo_idx"
+            ),
         ),
         migrations.AddIndex(
-            model_name='inscriptoactividadespaciopwa',
-            index=models.Index(fields=['nomina', 'activo'], name='pwa_insc_nomina_activo_idx'),
+            model_name="inscriptoactividadespaciopwa",
+            index=models.Index(
+                fields=["nomina", "activo"], name="pwa_insc_nomina_activo_idx"
+            ),
         ),
         migrations.RunPython(
             code=cargar_catalogo_actividades,
             reverse_code=revertir_catalogo_actividades,
         ),
         migrations.CreateModel(
-            name='NominaEspacioPWA',
+            name="NominaEspacioPWA",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('asistencia_alimentaria', models.BooleanField(default=True)),
-                ('asistencia_actividades', models.BooleanField(default=False)),
-                ('es_indocumentado', models.BooleanField(default=False)),
-                ('identificador_interno', models.CharField(blank=True, max_length=40, null=True)),
-                ('activo', models.BooleanField(default=True)),
-                ('fecha_alta', models.DateTimeField(auto_now_add=True)),
-                ('fecha_actualizacion', models.DateTimeField(auto_now=True)),
-                ('fecha_baja', models.DateTimeField(blank=True, null=True)),
-                ('actualizado_por', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='nominas_pwa_actualizadas', to=settings.AUTH_USER_MODEL)),
-                ('creado_por', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='nominas_pwa_creadas', to=settings.AUTH_USER_MODEL)),
-                ('nomina', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, related_name='perfil_pwa', to='comedores.nomina')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("asistencia_alimentaria", models.BooleanField(default=True)),
+                ("asistencia_actividades", models.BooleanField(default=False)),
+                ("es_indocumentado", models.BooleanField(default=False)),
+                (
+                    "identificador_interno",
+                    models.CharField(blank=True, max_length=40, null=True),
+                ),
+                ("activo", models.BooleanField(default=True)),
+                ("fecha_alta", models.DateTimeField(auto_now_add=True)),
+                ("fecha_actualizacion", models.DateTimeField(auto_now=True)),
+                ("fecha_baja", models.DateTimeField(blank=True, null=True)),
+                (
+                    "actualizado_por",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="nominas_pwa_actualizadas",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    "creado_por",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="nominas_pwa_creadas",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    "nomina",
+                    models.OneToOneField(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="perfil_pwa",
+                        to="comedores.nomina",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Nomina Espacio PWA',
-                'verbose_name_plural': 'Nominas Espacio PWA',
-                'indexes': [models.Index(fields=['activo'], name='pwa_nomina_activo_idx'), models.Index(fields=['asistencia_alimentaria', 'asistencia_actividades'], name='pwa_nomina_asistencia_idx'), models.Index(fields=['es_indocumentado'], name='pwa_nomina_indoc_idx')],
+                "verbose_name": "Nomina Espacio PWA",
+                "verbose_name_plural": "Nominas Espacio PWA",
+                "indexes": [
+                    models.Index(fields=["activo"], name="pwa_nomina_activo_idx"),
+                    models.Index(
+                        fields=["asistencia_alimentaria", "asistencia_actividades"],
+                        name="pwa_nomina_asistencia_idx",
+                    ),
+                    models.Index(
+                        fields=["es_indocumentado"], name="pwa_nomina_indoc_idx"
+                    ),
+                ],
             },
         ),
         migrations.CreateModel(
-            name='AuditoriaOperacionPWA',
+            name="AuditoriaOperacionPWA",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('entidad', models.CharField(db_index=True, max_length=50)),
-                ('entidad_id', models.PositiveIntegerField(db_index=True)),
-                ('accion', models.CharField(choices=[('create', 'Alta'), ('update', 'Edicion'), ('delete', 'Baja'), ('activate', 'Reactivacion'), ('deactivate', 'Desactivacion')], db_index=True, max_length=20)),
-                ('fecha_evento', models.DateTimeField(auto_now_add=True, db_index=True)),
-                ('snapshot_antes', models.JSONField(blank=True, null=True)),
-                ('snapshot_despues', models.JSONField(blank=True, null=True)),
-                ('metadata', models.JSONField(blank=True, default=dict)),
-                ('comedor', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='auditorias_operacion_pwa', to='comedores.comedor')),
-                ('user', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='auditorias_operacion_pwa', to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("entidad", models.CharField(db_index=True, max_length=50)),
+                ("entidad_id", models.PositiveIntegerField(db_index=True)),
+                (
+                    "accion",
+                    models.CharField(
+                        choices=[
+                            ("create", "Alta"),
+                            ("update", "Edicion"),
+                            ("delete", "Baja"),
+                            ("activate", "Reactivacion"),
+                            ("deactivate", "Desactivacion"),
+                        ],
+                        db_index=True,
+                        max_length=20,
+                    ),
+                ),
+                (
+                    "fecha_evento",
+                    models.DateTimeField(auto_now_add=True, db_index=True),
+                ),
+                ("snapshot_antes", models.JSONField(blank=True, null=True)),
+                ("snapshot_despues", models.JSONField(blank=True, null=True)),
+                ("metadata", models.JSONField(blank=True, default=dict)),
+                (
+                    "comedor",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="auditorias_operacion_pwa",
+                        to="comedores.comedor",
+                    ),
+                ),
+                (
+                    "user",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="auditorias_operacion_pwa",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Auditoria operacion PWA',
-                'verbose_name_plural': 'Auditorias operaciones PWA',
-                'indexes': [models.Index(fields=['comedor', 'fecha_evento'], name='pwa_auditor_comedor_7aab3b_idx'), models.Index(fields=['entidad', 'entidad_id', 'fecha_evento'], name='pwa_auditor_entidad_206fc7_idx'), models.Index(fields=['accion', 'fecha_evento'], name='pwa_auditor_accion_ee36b2_idx')],
+                "verbose_name": "Auditoria operacion PWA",
+                "verbose_name_plural": "Auditorias operaciones PWA",
+                "indexes": [
+                    models.Index(
+                        fields=["comedor", "fecha_evento"],
+                        name="pwa_auditor_comedor_7aab3b_idx",
+                    ),
+                    models.Index(
+                        fields=["entidad", "entidad_id", "fecha_evento"],
+                        name="pwa_auditor_entidad_206fc7_idx",
+                    ),
+                    models.Index(
+                        fields=["accion", "fecha_evento"],
+                        name="pwa_auditor_accion_ee36b2_idx",
+                    ),
+                ],
             },
         ),
         migrations.CreateModel(
-            name='LecturaMensajePWA',
+            name="LecturaMensajePWA",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('visto', models.BooleanField(default=False)),
-                ('fecha_visto', models.DateTimeField(blank=True, null=True)),
-                ('fecha_creacion', models.DateTimeField(auto_now_add=True)),
-                ('fecha_actualizacion', models.DateTimeField(auto_now=True)),
-                ('comedor', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='lecturas_mensajes_pwa', to='comedores.comedor')),
-                ('comunicado', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='lecturas_pwa', to='comunicados.comunicado')),
-                ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='lecturas_mensajes_pwa', to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("visto", models.BooleanField(default=False)),
+                ("fecha_visto", models.DateTimeField(blank=True, null=True)),
+                ("fecha_creacion", models.DateTimeField(auto_now_add=True)),
+                ("fecha_actualizacion", models.DateTimeField(auto_now=True)),
+                (
+                    "comedor",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="lecturas_mensajes_pwa",
+                        to="comedores.comedor",
+                    ),
+                ),
+                (
+                    "comunicado",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="lecturas_pwa",
+                        to="comunicados.comunicado",
+                    ),
+                ),
+                (
+                    "user",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="lecturas_mensajes_pwa",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Lectura mensaje PWA',
-                'verbose_name_plural': 'Lecturas mensajes PWA',
-                'ordering': ('-fecha_visto', '-fecha_creacion', '-id'),
+                "verbose_name": "Lectura mensaje PWA",
+                "verbose_name_plural": "Lecturas mensajes PWA",
+                "ordering": ("-fecha_visto", "-fecha_creacion", "-id"),
             },
         ),
         migrations.AddConstraint(
-            model_name='lecturamensajepwa',
-            constraint=models.UniqueConstraint(fields=('comunicado', 'comedor', 'user'), name='uniq_lectura_mensaje_pwa_por_usuario_espacio'),
+            model_name="lecturamensajepwa",
+            constraint=models.UniqueConstraint(
+                fields=("comunicado", "comedor", "user"),
+                name="uniq_lectura_mensaje_pwa_por_usuario_espacio",
+            ),
         ),
         migrations.AddIndex(
-            model_name='lecturamensajepwa',
-            index=models.Index(fields=['comedor', 'user', 'visto'], name='pwa_msg_read_com_user_seen_idx'),
+            model_name="lecturamensajepwa",
+            index=models.Index(
+                fields=["comedor", "user", "visto"],
+                name="pwa_msg_read_com_user_seen_idx",
+            ),
         ),
         migrations.AddIndex(
-            model_name='lecturamensajepwa',
-            index=models.Index(fields=['comunicado', 'user'], name='pwa_msg_read_msg_user_idx'),
+            model_name="lecturamensajepwa",
+            index=models.Index(
+                fields=["comunicado", "user"], name="pwa_msg_read_msg_user_idx"
+            ),
         ),
         migrations.AddIndex(
-            model_name='lecturamensajepwa',
-            index=models.Index(fields=['fecha_visto'], name='pwa_msg_read_seen_at_idx'),
+            model_name="lecturamensajepwa",
+            index=models.Index(fields=["fecha_visto"], name="pwa_msg_read_seen_at_idx"),
         ),
         migrations.CreateModel(
-            name='RegistroAsistenciaNominaPWA',
+            name="RegistroAsistenciaNominaPWA",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('periodicidad', models.CharField(choices=[('mensual', 'Mensual')], default='mensual', max_length=20)),
-                ('periodo_referencia', models.DateField(help_text='Fecha ancla del período. Para mensual se usa el primer día del mes.')),
-                ('fecha_toma_asistencia', models.DateTimeField(auto_now_add=True, db_index=True)),
-                ('metadata', models.JSONField(blank=True, default=dict)),
-                ('nomina', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='registros_asistencia_pwa', to='comedores.nomina')),
-                ('tomado_por', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='asistencias_nomina_pwa_registradas', to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "periodicidad",
+                    models.CharField(
+                        choices=[("mensual", "Mensual")],
+                        default="mensual",
+                        max_length=20,
+                    ),
+                ),
+                (
+                    "periodo_referencia",
+                    models.DateField(
+                        help_text="Fecha ancla del período. Para mensual se usa el primer día del mes."
+                    ),
+                ),
+                (
+                    "fecha_toma_asistencia",
+                    models.DateTimeField(auto_now_add=True, db_index=True),
+                ),
+                ("metadata", models.JSONField(blank=True, default=dict)),
+                (
+                    "nomina",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="registros_asistencia_pwa",
+                        to="comedores.nomina",
+                    ),
+                ),
+                (
+                    "tomado_por",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="asistencias_nomina_pwa_registradas",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Registro Asistencia Nómina PWA',
-                'verbose_name_plural': 'Registros Asistencia Nómina PWA',
-                'ordering': ('-periodo_referencia', '-fecha_toma_asistencia', '-id'),
+                "verbose_name": "Registro Asistencia Nómina PWA",
+                "verbose_name_plural": "Registros Asistencia Nómina PWA",
+                "ordering": ("-periodo_referencia", "-fecha_toma_asistencia", "-id"),
             },
         ),
         migrations.AddConstraint(
-            model_name='registroasistencianominapwa',
-            constraint=models.UniqueConstraint(fields=('nomina', 'periodicidad', 'periodo_referencia'), name='uniq_pwa_asistencia_nomina_periodo'),
+            model_name="registroasistencianominapwa",
+            constraint=models.UniqueConstraint(
+                fields=("nomina", "periodicidad", "periodo_referencia"),
+                name="uniq_pwa_asistencia_nomina_periodo",
+            ),
         ),
         migrations.AddIndex(
-            model_name='registroasistencianominapwa',
-            index=models.Index(fields=['nomina', 'periodicidad', 'periodo_referencia'], name='pwa_nom_asis_nom_per_idx'),
+            model_name="registroasistencianominapwa",
+            index=models.Index(
+                fields=["nomina", "periodicidad", "periodo_referencia"],
+                name="pwa_nom_asis_nom_per_idx",
+            ),
         ),
         migrations.AddIndex(
-            model_name='registroasistencianominapwa',
-            index=models.Index(fields=['periodicidad', 'periodo_referencia'], name='pwa_nom_asis_periodo_idx'),
+            model_name="registroasistencianominapwa",
+            index=models.Index(
+                fields=["periodicidad", "periodo_referencia"],
+                name="pwa_nom_asis_periodo_idx",
+            ),
         ),
         migrations.AddField(
-            model_name='actividadespaciopwa',
-            name='duracion_actividad',
+            model_name="actividadespaciopwa",
+            name="duracion_actividad",
             field=models.CharField(blank=True, max_length=60, null=True),
         ),
         migrations.AddField(
-            model_name='actividadespaciopwa',
-            name='hora_fin',
+            model_name="actividadespaciopwa",
+            name="hora_fin",
             field=models.TimeField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='actividadespaciopwa',
-            name='hora_inicio',
+            model_name="actividadespaciopwa",
+            name="hora_inicio",
             field=models.TimeField(blank=True, null=True),
         ),
         migrations.RunPython(
@@ -493,30 +918,60 @@ class Migration(migrations.Migration):
             reverse_code=backwards,
         ),
         migrations.RemoveField(
-            model_name='actividadespaciopwa',
-            name='duracion_actividad',
+            model_name="actividadespaciopwa",
+            name="duracion_actividad",
         ),
         migrations.CreateModel(
-            name='PushSubscriptionPWA',
+            name="PushSubscriptionPWA",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('endpoint', models.URLField(max_length=500, unique=True)),
-                ('p256dh', models.CharField(max_length=255)),
-                ('auth', models.CharField(max_length=255)),
-                ('content_encoding', models.CharField(default='aes128gcm', max_length=30)),
-                ('user_agent', models.CharField(blank=True, max_length=512, null=True)),
-                ('activo', models.BooleanField(default=True)),
-                ('fecha_creacion', models.DateTimeField(auto_now_add=True)),
-                ('fecha_actualizacion', models.DateTimeField(auto_now=True)),
-                ('fecha_baja', models.DateTimeField(blank=True, null=True)),
-                ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='push_subscriptions_pwa', to=settings.AUTH_USER_MODEL)),
-                ('endpoint_hash', models.CharField(blank=True, editable=False, max_length=64, null=True)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("endpoint", models.URLField(max_length=500, unique=True)),
+                ("p256dh", models.CharField(max_length=255)),
+                ("auth", models.CharField(max_length=255)),
+                (
+                    "content_encoding",
+                    models.CharField(default="aes128gcm", max_length=30),
+                ),
+                ("user_agent", models.CharField(blank=True, max_length=512, null=True)),
+                ("activo", models.BooleanField(default=True)),
+                ("fecha_creacion", models.DateTimeField(auto_now_add=True)),
+                ("fecha_actualizacion", models.DateTimeField(auto_now=True)),
+                ("fecha_baja", models.DateTimeField(blank=True, null=True)),
+                (
+                    "user",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="push_subscriptions_pwa",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    "endpoint_hash",
+                    models.CharField(
+                        blank=True, editable=False, max_length=64, null=True
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Suscripción push PWA',
-                'verbose_name_plural': 'Suscripciones push PWA',
-                'ordering': ('-fecha_actualizacion', '-id'),
-                'indexes': [models.Index(fields=['user', 'activo'], name='pwa_push_user_activo_idx'), models.Index(fields=['fecha_actualizacion'], name='pwa_push_updated_at_idx')],
+                "verbose_name": "Suscripción push PWA",
+                "verbose_name_plural": "Suscripciones push PWA",
+                "ordering": ("-fecha_actualizacion", "-id"),
+                "indexes": [
+                    models.Index(
+                        fields=["user", "activo"], name="pwa_push_user_activo_idx"
+                    ),
+                    models.Index(
+                        fields=["fecha_actualizacion"], name="pwa_push_updated_at_idx"
+                    ),
+                ],
             },
         ),
         migrations.RunPython(
@@ -524,29 +979,60 @@ class Migration(migrations.Migration):
             reverse_code=migrations.RunPython.noop,
         ),
         migrations.AlterField(
-            model_name='pushsubscriptionpwa',
-            name='endpoint',
+            model_name="pushsubscriptionpwa",
+            name="endpoint",
             field=models.URLField(max_length=500),
         ),
         migrations.AlterField(
-            model_name='pushsubscriptionpwa',
-            name='endpoint_hash',
+            model_name="pushsubscriptionpwa",
+            name="endpoint_hash",
             field=models.CharField(editable=False, max_length=64, unique=True),
         ),
         migrations.CreateModel(
-            name='NominaObservacionPWA',
+            name="NominaObservacionPWA",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('texto', models.TextField()),
-                ('fecha_creacion', models.DateTimeField(auto_now_add=True, db_index=True)),
-                ('creada_por', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='observaciones_nomina_pwa_creadas', to=settings.AUTH_USER_MODEL)),
-                ('nomina', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='observaciones_pwa', to='comedores.nomina')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("texto", models.TextField()),
+                (
+                    "fecha_creacion",
+                    models.DateTimeField(auto_now_add=True, db_index=True),
+                ),
+                (
+                    "creada_por",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="observaciones_nomina_pwa_creadas",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    "nomina",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="observaciones_pwa",
+                        to="comedores.nomina",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Observación Nómina PWA',
-                'verbose_name_plural': 'Observaciones Nómina PWA',
-                'ordering': ('-fecha_creacion', '-id'),
-                'indexes': [models.Index(fields=['nomina', 'fecha_creacion'], name='pwa_nom_obs_idx')],
+                "verbose_name": "Observación Nómina PWA",
+                "verbose_name_plural": "Observaciones Nómina PWA",
+                "ordering": ("-fecha_creacion", "-id"),
+                "indexes": [
+                    models.Index(
+                        fields=["nomina", "fecha_creacion"], name="pwa_nom_obs_idx"
+                    )
+                ],
             },
         ),
     ]

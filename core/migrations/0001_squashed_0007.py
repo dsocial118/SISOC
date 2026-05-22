@@ -5,8 +5,8 @@ import django.db.models.deletion
 
 def migrate_programa_from_ciudadanos(apps, schema_editor):
     try:
-        programa_old = apps.get_model('ciudadanos', 'Programa')
-        programa_new = apps.get_model('core', 'Programa')
+        programa_old = apps.get_model("ciudadanos", "Programa")
+        programa_new = apps.get_model("core", "Programa")
         for old in programa_old.objects.all():
             programa_new.objects.create(
                 id=old.id,
@@ -53,31 +53,75 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name="Dia",
             fields=[
-                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
                 ("nombre", models.CharField(max_length=255)),
             ],
-            options={"verbose_name": "Dia", "verbose_name_plural": "Dias", "ordering": ["id"]},
+            options={
+                "verbose_name": "Dia",
+                "verbose_name_plural": "Dias",
+                "ordering": ["id"],
+            },
         ),
         migrations.CreateModel(
             name="Mes",
             fields=[
-                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
                 ("nombre", models.CharField(max_length=255)),
             ],
-            options={"verbose_name": "Mes", "verbose_name_plural": "Meses", "ordering": ["id"]},
+            options={
+                "verbose_name": "Mes",
+                "verbose_name_plural": "Meses",
+                "ordering": ["id"],
+            },
         ),
         migrations.CreateModel(
             name="Provincia",
             fields=[
-                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
                 ("nombre", models.CharField(max_length=255, unique=True)),
             ],
-            options={"verbose_name": "Provincia", "verbose_name_plural": "Provincia", "ordering": ["id"]},
+            options={
+                "verbose_name": "Provincia",
+                "verbose_name_plural": "Provincia",
+                "ordering": ["id"],
+            },
         ),
         migrations.CreateModel(
             name="Sexo",
             fields=[
-                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
                 ("sexo", models.CharField(max_length=10)),
             ],
             options={"verbose_name": "Sexo", "verbose_name_plural": "Sexos"},
@@ -85,70 +129,144 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name="Turno",
             fields=[
-                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
                 ("nombre", models.CharField(max_length=255)),
             ],
-            options={"verbose_name": "Turno", "verbose_name_plural": "Turnos", "ordering": ["id"]},
+            options={
+                "verbose_name": "Turno",
+                "verbose_name_plural": "Turnos",
+                "ordering": ["id"],
+            },
         ),
         migrations.CreateModel(
             name="Municipio",
             fields=[
-                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
                 ("nombre", models.CharField(max_length=255)),
                 (
                     "provincia",
                     models.ForeignKey(
-                        blank=True, null=True,
+                        blank=True,
+                        null=True,
                         on_delete=django.db.models.deletion.CASCADE,
                         to="core.provincia",
                     ),
                 ),
             ],
             options={
-                "verbose_name": "Municipio", "verbose_name_plural": "Municipio",
-                "ordering": ["id"], "unique_together": {("nombre", "provincia")},
+                "verbose_name": "Municipio",
+                "verbose_name_plural": "Municipio",
+                "ordering": ["id"],
+                "unique_together": {("nombre", "provincia")},
             },
         ),
         migrations.CreateModel(
             name="Localidad",
             fields=[
-                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
                 ("nombre", models.CharField(max_length=255)),
                 (
                     "municipio",
                     models.ForeignKey(
-                        blank=True, null=True,
+                        blank=True,
+                        null=True,
                         on_delete=django.db.models.deletion.CASCADE,
                         to="core.municipio",
                     ),
                 ),
             ],
-            options={"verbose_name": "Localidad", "verbose_name_plural": "Localidad", "unique_together": {("nombre", "municipio")}},
+            options={
+                "verbose_name": "Localidad",
+                "verbose_name_plural": "Localidad",
+                "unique_together": {("nombre", "municipio")},
+            },
         ),
         migrations.CreateModel(
             name="Programa",
             fields=[
-                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
                 ("nombre", models.CharField(max_length=255, unique=True)),
                 ("estado", models.BooleanField(default=True)),
-                ("observaciones", models.CharField(blank=True, max_length=500, null=True)),
+                (
+                    "observaciones",
+                    models.CharField(blank=True, max_length=500, null=True),
+                ),
             ],
-            options={"verbose_name": "Programa", "verbose_name_plural": "Programas", "ordering": ["nombre"]},
+            options={
+                "verbose_name": "Programa",
+                "verbose_name_plural": "Programas",
+                "ordering": ["nombre"],
+            },
         ),
-        migrations.RunPython(migrate_programa_from_ciudadanos, migrations.RunPython.noop),
+        migrations.RunPython(
+            migrate_programa_from_ciudadanos, migrations.RunPython.noop
+        ),
         migrations.CreateModel(
             name="Nacionalidad",
             fields=[
-                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
                 ("nacionalidad", models.CharField(max_length=50)),
             ],
-            options={"verbose_name": "Nacionalidad", "verbose_name_plural": "Nacionalidades"},
+            options={
+                "verbose_name": "Nacionalidad",
+                "verbose_name_plural": "Nacionalidades",
+            },
         ),
-        migrations.RunPython(migrate_nacionalidad_from_ciudadanos, migrations.RunPython.noop),
+        migrations.RunPython(
+            migrate_nacionalidad_from_ciudadanos, migrations.RunPython.noop
+        ),
         migrations.CreateModel(
             name="FiltroFavorito",
             fields=[
-                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
                 ("seccion", models.CharField(max_length=100)),
                 ("nombre", models.CharField(max_length=120)),
                 ("filtros", models.JSONField(default=dict)),
@@ -174,7 +292,15 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name="PreferenciaColumnas",
             fields=[
-                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
                 ("listado", models.CharField(max_length=150)),
                 ("columnas", models.JSONField(default=list)),
                 ("fecha_creacion", models.DateTimeField(auto_now_add=True)),
@@ -200,7 +326,15 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name="MontoPrestacionPrograma",
             fields=[
-                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
                 (
                     "programa",
                     models.ForeignKey(
@@ -210,12 +344,58 @@ class Migration(migrations.Migration):
                         verbose_name="Programa",
                     ),
                 ),
-                ("desayuno_valor", models.DecimalField(blank=True, decimal_places=2, max_digits=10, null=True, verbose_name="Valor desayuno")),
-                ("almuerzo_valor", models.DecimalField(blank=True, decimal_places=2, max_digits=10, null=True, verbose_name="Valor almuerzo")),
-                ("merienda_valor", models.DecimalField(blank=True, decimal_places=2, max_digits=10, null=True, verbose_name="Valor merienda")),
-                ("cena_valor", models.DecimalField(blank=True, decimal_places=2, max_digits=10, null=True, verbose_name="Valor cena")),
-                ("fecha_creacion", models.DateTimeField(auto_now_add=True, verbose_name="Fecha de creación")),
-                ("fecha_modificacion", models.DateTimeField(auto_now=True, verbose_name="Fecha de modificación")),
+                (
+                    "desayuno_valor",
+                    models.DecimalField(
+                        blank=True,
+                        decimal_places=2,
+                        max_digits=10,
+                        null=True,
+                        verbose_name="Valor desayuno",
+                    ),
+                ),
+                (
+                    "almuerzo_valor",
+                    models.DecimalField(
+                        blank=True,
+                        decimal_places=2,
+                        max_digits=10,
+                        null=True,
+                        verbose_name="Valor almuerzo",
+                    ),
+                ),
+                (
+                    "merienda_valor",
+                    models.DecimalField(
+                        blank=True,
+                        decimal_places=2,
+                        max_digits=10,
+                        null=True,
+                        verbose_name="Valor merienda",
+                    ),
+                ),
+                (
+                    "cena_valor",
+                    models.DecimalField(
+                        blank=True,
+                        decimal_places=2,
+                        max_digits=10,
+                        null=True,
+                        verbose_name="Valor cena",
+                    ),
+                ),
+                (
+                    "fecha_creacion",
+                    models.DateTimeField(
+                        auto_now_add=True, verbose_name="Fecha de creación"
+                    ),
+                ),
+                (
+                    "fecha_modificacion",
+                    models.DateTimeField(
+                        auto_now=True, verbose_name="Fecha de modificación"
+                    ),
+                ),
                 (
                     "usuario_creador",
                     models.ForeignKey(
@@ -224,7 +404,11 @@ class Migration(migrations.Migration):
                     ),
                 ),
             ],
-            options={"verbose_name": "Prestación", "verbose_name_plural": "Prestaciones", "ordering": ["id"]},
+            options={
+                "verbose_name": "Prestación",
+                "verbose_name_plural": "Prestaciones",
+                "ordering": ["id"],
+            },
         ),
         migrations.AddConstraint(
             model_name="montoprestacionprograma",

@@ -13,9 +13,10 @@ logger = logging.getLogger("django")
 
 # --- RunPython: 0003_assign_provincia_to_test_user ---
 
+
 def assign_provincia_to_test_user(apps, schema_editor):
     User = get_user_model()
-    Profile = apps.get_model('users', 'Profile')
+    Profile = apps.get_model("users", "Profile")
     try:
         user = User.objects.get(username="ProvinciaCeliaquia")
         profile, created = Profile.objects.get_or_create(user=user)
@@ -27,9 +28,10 @@ def assign_provincia_to_test_user(apps, schema_editor):
     except Exception as e:
         logger.exception("Error al asignar provincia: %s", e)
 
+
 def reverse_assign_provincia(apps, schema_editor):
     User = get_user_model()
-    Profile = apps.get_model('users', 'Profile')
+    Profile = apps.get_model("users", "Profile")
     try:
         user = User.objects.get(username="ProvinciaCeliaquia")
         profile = Profile.objects.get(user=user)
@@ -39,87 +41,115 @@ def reverse_assign_provincia(apps, schema_editor):
     except (User.DoesNotExist, Profile.DoesNotExist):
         pass
 
+
 # --- RunPython: 0007_create_coordinador_gestion_group ---
+
 
 def create_coordinador_gestion_group(apps, schema_editor):
     from django.contrib.auth.models import Group
+
     Group.objects.get_or_create(name="Coordinador Gestion")
+
 
 def remove_coordinador_gestion_group(apps, schema_editor):
     from django.contrib.auth.models import Group
+
     Group.objects.filter(name="Coordinador Gestion").delete()
+
 
 # --- RunPython: 0009_remove_coordinador_and_rename_group ---
 
+
 def rename_coordinador_group(apps, schema_editor):
-    Group = apps.get_model('auth', 'Group')
+    Group = apps.get_model("auth", "Group")
     try:
-        group = Group.objects.get(name='Coordinador Gestion')
-        group.name = 'Coordinador Equipo Tecnico'
+        group = Group.objects.get(name="Coordinador Gestion")
+        group.name = "Coordinador Equipo Tecnico"
         group.save()
     except Group.DoesNotExist:
         pass
 
+
 def reverse_rename_coordinador_group(apps, schema_editor):
-    Group = apps.get_model('auth', 'Group')
+    Group = apps.get_model("auth", "Group")
     try:
-        group = Group.objects.get(name='Coordinador Equipo Tecnico')
-        group.name = 'Coordinador Gestion'
+        group = Group.objects.get(name="Coordinador Equipo Tecnico")
+        group.name = "Coordinador Gestion"
         group.save()
     except Group.DoesNotExist:
         pass
+
 
 # --- RunPython: 0010_remove_coordinador_if_exists ---
 
+
 def remove_coordinador_field_if_exists(apps, schema_editor):
-    if schema_editor.connection.vendor == 'mysql':
+    if schema_editor.connection.vendor == "mysql":
         with schema_editor.connection.cursor() as cursor:
-            cursor.execute("""
+            cursor.execute(
+                """
                 SELECT COUNT(*)
                 FROM information_schema.COLUMNS
                 WHERE TABLE_SCHEMA = DATABASE()
                 AND TABLE_NAME = 'users_profile'
                 AND COLUMN_NAME = 'coordinador_id'
-            """)
+            """
+            )
             exists = cursor.fetchone()[0] > 0
 
             if exists:
-                cursor.execute("""
+                cursor.execute(
+                    """
                     SELECT CONSTRAINT_NAME
                     FROM information_schema.KEY_COLUMN_USAGE
                     WHERE TABLE_SCHEMA = DATABASE()
                     AND TABLE_NAME = 'users_profile'
                     AND COLUMN_NAME = 'coordinador_id'
                     AND REFERENCED_TABLE_NAME IS NOT NULL
-                """)
+                """
+                )
                 fk_result = cursor.fetchone()
                 if fk_result:
                     cursor.execute(
                         f"ALTER TABLE `users_profile` DROP FOREIGN KEY `{fk_result[0]}`"
                     )
-                cursor.execute("ALTER TABLE `users_profile` DROP COLUMN `coordinador_id`")
+                cursor.execute(
+                    "ALTER TABLE `users_profile` DROP COLUMN `coordinador_id`"
+                )
+
 
 # --- RunPython: 0012_cleanup_unused_groups ---
 
 UNUSED_GROUPS = [
-    "Usuario Listar", "Admin Ver Expedientes", "Técnico Ver Tareas Asignadas",
-    "Provincia Ver Estado Pago", "Provincia Crear Expediente",
-    "Provincia Ver Lista Aprobados", "Provincia Cargar Formulario",
-    "Provincia Finalizar Expediente", "Admin Asignar Técnico",
-    "Técnico Subir Cruces", "Técnico Validar Resultado Cruce",
-    "Técnico Registrar Informe Pago", "ApiCentroFamilia",
+    "Usuario Listar",
+    "Admin Ver Expedientes",
+    "Técnico Ver Tareas Asignadas",
+    "Provincia Ver Estado Pago",
+    "Provincia Crear Expediente",
+    "Provincia Ver Lista Aprobados",
+    "Provincia Cargar Formulario",
+    "Provincia Finalizar Expediente",
+    "Admin Asignar Técnico",
+    "Técnico Subir Cruces",
+    "Técnico Validar Resultado Cruce",
+    "Técnico Registrar Informe Pago",
+    "ApiCentroFamilia",
 ]
+
 
 def remove_unused_groups(apps, schema_editor):
     Group = apps.get_model("auth", "Group")
     Group.objects.filter(name__in=UNUSED_GROUPS).delete()
+
 
 def restore_unused_groups(apps, schema_editor):
     Group = apps.get_model("auth", "Group")
     for group_name in UNUSED_GROUPS:
         Group.objects.get_or_create(name=group_name)
 
+
 # --- RunPython: 0014_bootstrap_group_permissions ---
+
 
 def bootstrap_group_permissions(apps, schema_editor):
     Group = apps.get_model("auth", "Group")
@@ -154,6 +184,7 @@ def bootstrap_group_permissions(apps, schema_editor):
 
         group.permissions.add(permission)
 
+
 # --- RunPython: 0015_assign_bootstrap_group_permissions ---
 
 LEGACY_ALIAS_TO_PERMISSION_CODES = {
@@ -186,11 +217,28 @@ LEGACY_ALIAS_TO_PERMISSION_CODES = {
     "Comedores Relevamiento Crear": ("relevamientos.add_relevamiento",),
     "Comedores Relevamiento Detalle": ("relevamientos.view_relevamiento",),
     "Comedores Relevamiento Editar": ("relevamientos.change_relevamiento",),
-    "Tecnico Comedor": ("comedores.view_comedor", "admisiones.view_admision", "acompanamientos.view_informacionrelevante"),
-    "Abogado Dupla": ("comedores.view_comedor", "admisiones.view_admision", "acompanamientos.view_informacionrelevante"),
-    "Area Legales": ("comedores.view_comedor", "admisiones.view_admision", "acompanamientos.view_informacionrelevante", "expedientespagos.view_expedientepago"),
+    "Tecnico Comedor": (
+        "comedores.view_comedor",
+        "admisiones.view_admision",
+        "acompanamientos.view_informacionrelevante",
+    ),
+    "Abogado Dupla": (
+        "comedores.view_comedor",
+        "admisiones.view_admision",
+        "acompanamientos.view_informacionrelevante",
+    ),
+    "Area Legales": (
+        "comedores.view_comedor",
+        "admisiones.view_admision",
+        "acompanamientos.view_informacionrelevante",
+        "expedientespagos.view_expedientepago",
+    ),
     "Area Contable": ("comedores.view_comedor", "expedientespagos.view_expedientepago"),
-    "Coordinador Equipo Tecnico": ("comedores.view_comedor", "admisiones.view_admision", "acompanamientos.view_informacionrelevante"),
+    "Coordinador Equipo Tecnico": (
+        "comedores.view_comedor",
+        "admisiones.view_admision",
+        "acompanamientos.view_informacionrelevante",
+    ),
     "Coordinador general": ("comedores.view_comedor",),
     "Coordinador Gestion": ("comedores.view_comedor",),
     "Acompanamiento Listar": ("acompanamientos.view_informacionrelevante",),
@@ -208,11 +256,21 @@ LEGACY_ALIAS_TO_PERMISSION_CODES = {
     "Centro de Infancia Eliminar": ("centrodeinfancia.delete_centrodeinfancia",),
     "Centro de Infancia Nomina Ver": ("centrodeinfancia.view_nominacentroinfancia",),
     "Centro de Infancia Nomina Crear": ("centrodeinfancia.add_nominacentroinfancia",),
-    "Centro de Infancia Nomina Editar": ("centrodeinfancia.change_nominacentroinfancia",),
-    "Centro de Infancia Nomina Borrar": ("centrodeinfancia.delete_nominacentroinfancia",),
-    "Centro de Infancia Intervencion Crear": ("centrodeinfancia.add_intervencioncentroinfancia",),
-    "Centro de Infancia Intervencion Editar": ("centrodeinfancia.change_intervencioncentroinfancia",),
-    "Centro de Infancia Intervencion Borrar": ("centrodeinfancia.delete_intervencioncentroinfancia",),
+    "Centro de Infancia Nomina Editar": (
+        "centrodeinfancia.change_nominacentroinfancia",
+    ),
+    "Centro de Infancia Nomina Borrar": (
+        "centrodeinfancia.delete_nominacentroinfancia",
+    ),
+    "Centro de Infancia Intervencion Crear": (
+        "centrodeinfancia.add_intervencioncentroinfancia",
+    ),
+    "Centro de Infancia Intervencion Editar": (
+        "centrodeinfancia.change_intervencioncentroinfancia",
+    ),
+    "Centro de Infancia Intervencion Borrar": (
+        "centrodeinfancia.delete_intervencioncentroinfancia",
+    ),
     "Importar Expediente": ("importarexpediente.view_archivosimportados",),
     "Comunicado Crear": ("comunicados.add_comunicado",),
     "Comunicado Editar": ("comunicados.change_comunicado",),
@@ -237,26 +295,70 @@ LEGACY_ALIAS_TO_PERMISSION_CODES = {
 }
 
 GROUP_BOOTSTRAP_ALIASES = {
-    "Admin": ("Admin", "Usuario Ver", "Usuario Crear", "Usuario Editar", "Usuario Eliminar", "Grupos Ver", "auth.add_group", "auth.change_group", "Exportar a csv"),
-    "Administrador": ("Administrador", "Usuario Ver", "Usuario Crear", "Usuario Editar", "Usuario Eliminar", "Grupos Ver", "auth.add_group", "auth.change_group", "Exportar a csv"),
-    "superadmin": ("superadmin", "Usuario Ver", "Usuario Crear", "Usuario Editar", "Usuario Eliminar", "Grupos Ver", "auth.add_group", "auth.change_group", "Exportar a csv"),
+    "Admin": (
+        "Admin",
+        "Usuario Ver",
+        "Usuario Crear",
+        "Usuario Editar",
+        "Usuario Eliminar",
+        "Grupos Ver",
+        "auth.add_group",
+        "auth.change_group",
+        "Exportar a csv",
+    ),
+    "Administrador": (
+        "Administrador",
+        "Usuario Ver",
+        "Usuario Crear",
+        "Usuario Editar",
+        "Usuario Eliminar",
+        "Grupos Ver",
+        "auth.add_group",
+        "auth.change_group",
+        "Exportar a csv",
+    ),
+    "superadmin": (
+        "superadmin",
+        "Usuario Ver",
+        "Usuario Crear",
+        "Usuario Editar",
+        "Usuario Eliminar",
+        "Grupos Ver",
+        "auth.add_group",
+        "auth.change_group",
+        "Exportar a csv",
+    ),
     "Comedores": ("Comedores Ver",),
     "Comedores Listar": ("Comedores Ver",),
-    "Tecnico Comedor": ("Tecnico Comedor", "Comedores Ver", "Comedores Relevamiento Ver", "Comedores Intervencion Ver", "Comedores Nomina Ver", "Acompanamiento Listar"),
+    "Tecnico Comedor": (
+        "Tecnico Comedor",
+        "Comedores Ver",
+        "Comedores Relevamiento Ver",
+        "Comedores Intervencion Ver",
+        "Comedores Nomina Ver",
+        "Acompanamiento Listar",
+    ),
     "Abogado Dupla": ("Abogado Dupla", "Comedores Ver", "Acompanamiento Listar"),
     "Area Legales": ("Area Legales", "Comedores Ver", "Acompanamiento Listar"),
     "Area Contable": ("Area Contable", "Comedores Ver"),
-    "Coordinador Equipo Tecnico": ("Coordinador Equipo Tecnico", "Comedores Ver", "Acompanamiento Listar", "Comedores Relevamiento Ver"),
+    "Coordinador Equipo Tecnico": (
+        "Coordinador Equipo Tecnico",
+        "Comedores Ver",
+        "Acompanamiento Listar",
+        "Comedores Relevamiento Ver",
+    ),
     "Coordinador general": ("Coordinador general", "Comedores Ver"),
     "ReferenteCentro": ("ReferenteCentro", "CDF SSE"),
     "Dashboard Centrodefamilia": ("Dashboard Centrodefamilia", "CDF SSE"),
 }
+
 
 def _legacy_permission_code(alias):
     base = f"role_{slugify(alias).replace('-', '_')}"[:100]
     if not base or base == "role_":
         base = "role_group"
     return f"auth.{base}"
+
 
 def _permission_codes_for_alias(alias):
     if not alias:
@@ -268,6 +370,7 @@ def _permission_codes_for_alias(alias):
         return mapped
     return (_legacy_permission_code(alias),)
 
+
 def _permission_codes_for_group(group_name):
     aliases = GROUP_BOOTSTRAP_ALIASES.get(group_name, (group_name,))
     result = []
@@ -278,6 +381,7 @@ def _permission_codes_for_group(group_name):
                 seen.add(code)
                 result.append(code)
     return result
+
 
 def assign_bootstrap_group_permissions(apps, schema_editor):
     Group = apps.get_model("auth", "Group")
@@ -300,6 +404,7 @@ def assign_bootstrap_group_permissions(apps, schema_editor):
         if permissions:
             group.permissions.add(*permissions)
 
+
 # --- RunPython: 0016_bootstrap_formulario_cdi_permissions ---
 
 GROUP_PERMISSION_MAP_CDI = {
@@ -308,6 +413,7 @@ GROUP_PERMISSION_MAP_CDI = {
     "Centro de Infancia Formulario Editar": ("centrodeinfancia.change_formulariocdi",),
     "Centro de Infancia Formulario Borrar": ("centrodeinfancia.delete_formulariocdi",),
 }
+
 
 def bootstrap_formulario_cdi_permissions(apps, schema_editor):
     Group = apps.get_model("auth", "Group")
@@ -327,7 +433,9 @@ def bootstrap_formulario_cdi_permissions(apps, schema_editor):
         if permissions:
             group.permissions.add(*permissions)
 
+
 # --- RunPython: 0023_rename_vat_sse_group_to_cfpinet ---
+
 
 def rename_vat_sse_group_to_cfpinet(apps, schema_editor):
     Group = apps.get_model("auth", "Group")
@@ -346,7 +454,9 @@ def rename_vat_sse_group_to_cfpinet(apps, schema_editor):
     new_group.user_set.add(*old_group.user_set.all())
     old_group.delete()
 
+
 # --- RunPython: 0024_rename_vat_secondary_groups_to_cfp ---
+
 
 def _rename_or_merge_group(Group, old_name, new_name):
     old_group = Group.objects.filter(name=old_name).first()
@@ -361,16 +471,19 @@ def _rename_or_merge_group(Group, old_name, new_name):
     new_group.user_set.add(*old_group.user_set.all())
     old_group.delete()
 
+
 def rename_vat_secondary_groups_to_cfp(apps, schema_editor):
     Group = apps.get_model("auth", "Group")
     _rename_or_merge_group(Group, "Provincia VAT", "CFPJuridicccion")
     _rename_or_merge_group(Group, "ReferenteCentroVAT", "CFP")
+
 
 # --- RunPython: 0026_admin_bulk_credentials_permission ---
 
 BULK_CRED_PERMISSION_CODENAME = "role_enviar_credenciales_masivas"
 BULK_CRED_PERMISSION_NAME = "Enviar credenciales masivas"
 BULK_CRED_ADMIN_GROUP = "Admin"
+
 
 def assign_bulk_credentials_permission(apps, schema_editor):
     Group = apps.get_model("auth", "Group")
@@ -391,32 +504,93 @@ def assign_bulk_credentials_permission(apps, schema_editor):
     if admin_group:
         admin_group.permissions.add(permission)
 
+
 class Migration(migrations.Migration):
 
     atomic = False
     initial = True
 
-    replaces = [('users', '0001_initial'), ('users', '0002_profile_es_usuario_provincial_profile_provincia'), ('users', '0003_assign_provincia_to_test_user'), ('users', '0004_profile_rol'), ('users', '0005_profile_fecha_creacion'), ('users', '0006_add_coordinador_to_profile'), ('users', '0007_create_coordinador_gestion_group'), ('users', '0008_add_es_coordinador_and_duplas'), ('users', '0009_remove_coordinador_and_rename_group'), ('users', '0010_remove_coordinador_if_exists'), ('users', '0011_accesocomedorpwa_and_more'), ('users', '0012_cleanup_unused_groups'), ('users', '0013_profile_password_security_fields'), ('users', '0014_bootstrap_group_permissions'), ('users', '0015_assign_bootstrap_group_permissions'), ('users', '0016_bootstrap_formulario_cdi_permissions'), ('users', '0017_accesocomedorpwa_tipo_asociacion_and_more'), ('users', '0018_profile_temporary_password_plaintext'), ('users', '0019_accesocomedorpwa_fecha_baja_and_audit'), ('users', '0020_rename_users_audit_user_74b57d_idx_users_audit_user_id_0e2825_idx_and_more'), ('users', '0017_profile_delegation_scope_fields'), ('users', '0021_merge_20260330_0757'), ('users', '0022_profile_temporary_password_plaintext'), ('users', '0023_rename_vat_sse_group_to_cfpinet'), ('users', '0024_rename_vat_secondary_groups_to_cfp'), ('users', '0021_profile_password_reset_requested_at'), ('users', '0023_merge_20260331_1500'), ('users', '0025_merge_20260404_0000'), ('users', '0026_admin_bulk_credentials_permission'), ('users', '0027_bulk_credentials_jobs'), ('users', '0028_rename_users_bulk_status_dfc1d3_idx_users_bulkc_status_7d2f67_idx_and_more')]
+    replaces = [
+        ("users", "0001_initial"),
+        ("users", "0002_profile_es_usuario_provincial_profile_provincia"),
+        ("users", "0003_assign_provincia_to_test_user"),
+        ("users", "0004_profile_rol"),
+        ("users", "0005_profile_fecha_creacion"),
+        ("users", "0006_add_coordinador_to_profile"),
+        ("users", "0007_create_coordinador_gestion_group"),
+        ("users", "0008_add_es_coordinador_and_duplas"),
+        ("users", "0009_remove_coordinador_and_rename_group"),
+        ("users", "0010_remove_coordinador_if_exists"),
+        ("users", "0011_accesocomedorpwa_and_more"),
+        ("users", "0012_cleanup_unused_groups"),
+        ("users", "0013_profile_password_security_fields"),
+        ("users", "0014_bootstrap_group_permissions"),
+        ("users", "0015_assign_bootstrap_group_permissions"),
+        ("users", "0016_bootstrap_formulario_cdi_permissions"),
+        ("users", "0017_accesocomedorpwa_tipo_asociacion_and_more"),
+        ("users", "0018_profile_temporary_password_plaintext"),
+        ("users", "0019_accesocomedorpwa_fecha_baja_and_audit"),
+        (
+            "users",
+            "0020_rename_users_audit_user_74b57d_idx_users_audit_user_id_0e2825_idx_and_more",
+        ),
+        ("users", "0017_profile_delegation_scope_fields"),
+        ("users", "0021_merge_20260330_0757"),
+        ("users", "0022_profile_temporary_password_plaintext"),
+        ("users", "0023_rename_vat_sse_group_to_cfpinet"),
+        ("users", "0024_rename_vat_secondary_groups_to_cfp"),
+        ("users", "0021_profile_password_reset_requested_at"),
+        ("users", "0023_merge_20260331_1500"),
+        ("users", "0025_merge_20260404_0000"),
+        ("users", "0026_admin_bulk_credentials_permission"),
+        ("users", "0027_bulk_credentials_jobs"),
+        (
+            "users",
+            "0028_rename_users_bulk_status_dfc1d3_idx_users_bulkc_status_7d2f67_idx_and_more",
+        ),
+    ]
 
     dependencies = [
-        ('core', '0001_squashed_0007'),
-        ('duplas', '0001_squashed_0003'),
+        ("core", "0001_squashed_0007"),
+        ("duplas", "0001_squashed_0003"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ('organizaciones', '0001_squashed_0010'),
-        ('comedores', '0024_squashed_0041'),
-        ('centrodeinfancia', '0010_centrodeinfancia_cdi_code_formulariocdi_and_more'),
-        ('auth', '0012_alter_user_first_name_max_length'),
+        ("organizaciones", "0001_squashed_0010"),
+        ("comedores", "0024_squashed_0041"),
+        ("centrodeinfancia", "0010_centrodeinfancia_cdi_code_formulariocdi_and_more"),
+        ("auth", "0012_alter_user_first_name_max_length"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='Profile',
+            name="Profile",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('dark_mode', models.BooleanField(default=True)),
-                ('user', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL)),
-                ('es_usuario_provincial', models.BooleanField(default=False)),
-                ('provincia', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to='core.provincia')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("dark_mode", models.BooleanField(default=True)),
+                (
+                    "user",
+                    models.OneToOneField(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                ("es_usuario_provincial", models.BooleanField(default=False)),
+                (
+                    "provincia",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        to="core.provincia",
+                    ),
+                ),
             ],
         ),
         migrations.RunPython(
@@ -424,33 +598,52 @@ class Migration(migrations.Migration):
             reverse_code=reverse_assign_provincia,
         ),
         migrations.AddField(
-            model_name='profile',
-            name='rol',
+            model_name="profile",
+            name="rol",
             field=models.CharField(blank=True, max_length=100, null=True),
         ),
         migrations.AddField(
-            model_name='profile',
-            name='fecha_creacion',
+            model_name="profile",
+            name="fecha_creacion",
             field=models.DateTimeField(auto_now_add=True, null=True),
         ),
         migrations.AddField(
-            model_name='profile',
-            name='coordinador',
-            field=models.ForeignKey(blank=True, help_text='Coordinador asignado a este técnico', limit_choices_to={'groups__name': 'Coordinador Gestion'}, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='tecnicos_coordinados', to=settings.AUTH_USER_MODEL, verbose_name='Coordinador de Gestión'),
+            model_name="profile",
+            name="coordinador",
+            field=models.ForeignKey(
+                blank=True,
+                help_text="Coordinador asignado a este técnico",
+                limit_choices_to={"groups__name": "Coordinador Gestion"},
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name="tecnicos_coordinados",
+                to=settings.AUTH_USER_MODEL,
+                verbose_name="Coordinador de Gestión",
+            ),
         ),
         migrations.RunPython(
             code=create_coordinador_gestion_group,
             reverse_code=remove_coordinador_gestion_group,
         ),
         migrations.AddField(
-            model_name='profile',
-            name='duplas_asignadas',
-            field=models.ManyToManyField(blank=True, help_text='Duplas (equipos técnicos) asignadas a este coordinador', related_name='coordinadores', to='duplas.dupla', verbose_name='Duplas asignadas'),
+            model_name="profile",
+            name="duplas_asignadas",
+            field=models.ManyToManyField(
+                blank=True,
+                help_text="Duplas (equipos técnicos) asignadas a este coordinador",
+                related_name="coordinadores",
+                to="duplas.dupla",
+                verbose_name="Duplas asignadas",
+            ),
         ),
         migrations.AddField(
-            model_name='profile',
-            name='es_coordinador',
-            field=models.BooleanField(default=False, help_text='Marca si este usuario es coordinador de gestión', verbose_name='Es Coordinador de Gestión'),
+            model_name="profile",
+            name="es_coordinador",
+            field=models.BooleanField(
+                default=False,
+                help_text="Marca si este usuario es coordinador de gestión",
+                verbose_name="Es Coordinador de Gestión",
+            ),
         ),
         migrations.RunPython(
             code=rename_coordinador_group,
@@ -465,51 +658,113 @@ class Migration(migrations.Migration):
             ],
             state_operations=[
                 migrations.RemoveField(
-                    model_name='profile',
-                    name='coordinador',
+                    model_name="profile",
+                    name="coordinador",
                 ),
             ],
         ),
         migrations.CreateModel(
-            name='AccesoComedorPWA',
+            name="AccesoComedorPWA",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('rol', models.CharField(choices=[('representante', 'Representante'), ('operador', 'Operador')], max_length=20)),
-                ('activo', models.BooleanField(default=True)),
-                ('fecha_creacion', models.DateTimeField(auto_now_add=True)),
-                ('fecha_actualizacion', models.DateTimeField(auto_now=True)),
-                ('comedor', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='accesos_pwa', to='comedores.comedor')),
-                ('creado_por', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='accesos_pwa_creados', to=settings.AUTH_USER_MODEL)),
-                ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='accesos_pwa', to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "rol",
+                    models.CharField(
+                        choices=[
+                            ("representante", "Representante"),
+                            ("operador", "Operador"),
+                        ],
+                        max_length=20,
+                    ),
+                ),
+                ("activo", models.BooleanField(default=True)),
+                ("fecha_creacion", models.DateTimeField(auto_now_add=True)),
+                ("fecha_actualizacion", models.DateTimeField(auto_now=True)),
+                (
+                    "comedor",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="accesos_pwa",
+                        to="comedores.comedor",
+                    ),
+                ),
+                (
+                    "creado_por",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="accesos_pwa_creados",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    "user",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="accesos_pwa",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Acceso PWA a comedor',
-                'verbose_name_plural': 'Accesos PWA a comedor',
-                'indexes': [models.Index(fields=['user', 'activo'], name='users_acces_user_id_509e83_idx'), models.Index(fields=['comedor', 'rol', 'activo'], name='users_acces_comedor_e0726d_idx'), models.Index(fields=['creado_por', 'activo'], name='users_acces_creado__c110ef_idx')],
+                "verbose_name": "Acceso PWA a comedor",
+                "verbose_name_plural": "Accesos PWA a comedor",
+                "indexes": [
+                    models.Index(
+                        fields=["user", "activo"], name="users_acces_user_id_509e83_idx"
+                    ),
+                    models.Index(
+                        fields=["comedor", "rol", "activo"],
+                        name="users_acces_comedor_e0726d_idx",
+                    ),
+                    models.Index(
+                        fields=["creado_por", "activo"],
+                        name="users_acces_creado__c110ef_idx",
+                    ),
+                ],
             },
         ),
         migrations.AddConstraint(
-            model_name='accesocomedorpwa',
-            constraint=models.UniqueConstraint(fields=('user', 'comedor'), name='unique_pwa_user_comedor'),
+            model_name="accesocomedorpwa",
+            constraint=models.UniqueConstraint(
+                fields=("user", "comedor"), name="unique_pwa_user_comedor"
+            ),
         ),
         migrations.RunPython(
             code=remove_unused_groups,
             reverse_code=restore_unused_groups,
         ),
         migrations.AddField(
-            model_name='profile',
-            name='initial_password_expires_at',
-            field=models.DateTimeField(blank=True, null=True, verbose_name='Expira contraseña inicial en'),
+            model_name="profile",
+            name="initial_password_expires_at",
+            field=models.DateTimeField(
+                blank=True, null=True, verbose_name="Expira contraseña inicial en"
+            ),
         ),
         migrations.AddField(
-            model_name='profile',
-            name='must_change_password',
-            field=models.BooleanField(default=False, help_text='Obliga al usuario a actualizar la contraseña en su próximo login web.', verbose_name='Debe cambiar contraseña'),
+            model_name="profile",
+            name="must_change_password",
+            field=models.BooleanField(
+                default=False,
+                help_text="Obliga al usuario a actualizar la contraseña en su próximo login web.",
+                verbose_name="Debe cambiar contraseña",
+            ),
         ),
         migrations.AddField(
-            model_name='profile',
-            name='password_changed_at',
-            field=models.DateTimeField(blank=True, null=True, verbose_name='Contraseña actualizada en'),
+            model_name="profile",
+            name="password_changed_at",
+            field=models.DateTimeField(
+                blank=True, null=True, verbose_name="Contraseña actualizada en"
+            ),
         ),
         migrations.RunPython(
             code=bootstrap_group_permissions,
@@ -524,61 +779,167 @@ class Migration(migrations.Migration):
             reverse_code=migrations.RunPython.noop,
         ),
         migrations.AddField(
-            model_name='accesocomedorpwa',
-            name='organizacion',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.PROTECT, related_name='accesos_pwa', to='organizaciones.organizacion'),
+            model_name="accesocomedorpwa",
+            name="organizacion",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.PROTECT,
+                related_name="accesos_pwa",
+                to="organizaciones.organizacion",
+            ),
         ),
         migrations.AddField(
-            model_name='accesocomedorpwa',
-            name='tipo_asociacion',
-            field=models.CharField(choices=[('organizacion', 'Organización'), ('espacio', 'Espacio')], default='espacio', max_length=20),
+            model_name="accesocomedorpwa",
+            name="tipo_asociacion",
+            field=models.CharField(
+                choices=[("organizacion", "Organización"), ("espacio", "Espacio")],
+                default="espacio",
+                max_length=20,
+            ),
         ),
         migrations.AddIndex(
-            model_name='accesocomedorpwa',
-            index=models.Index(fields=['organizacion', 'activo'], name='users_acces_organiz_e9365d_idx'),
+            model_name="accesocomedorpwa",
+            index=models.Index(
+                fields=["organizacion", "activo"], name="users_acces_organiz_e9365d_idx"
+            ),
         ),
         migrations.AddField(
-            model_name='accesocomedorpwa',
-            name='fecha_baja',
+            model_name="accesocomedorpwa",
+            name="fecha_baja",
             field=models.DateTimeField(blank=True, null=True),
         ),
         migrations.CreateModel(
-            name='AuditAccesoComedorPWA',
+            name="AuditAccesoComedorPWA",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('accion', models.CharField(choices=[('create', 'Alta'), ('reactivate', 'Reactivación'), ('deactivate', 'Baja')], db_index=True, max_length=20)),
-                ('fecha_evento', models.DateTimeField(auto_now_add=True, db_index=True)),
-                ('metadata', models.JSONField(blank=True, default=dict)),
-                ('acceso', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='audit_logs', to='users.accesocomedorpwa')),
-                ('actor', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='accesos_pwa_audit_eventos', to=settings.AUTH_USER_MODEL)),
-                ('comedor', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='accesos_pwa_audit_logs', to='comedores.comedor')),
-                ('organizacion', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='accesos_pwa_audit_logs', to='organizaciones.organizacion')),
-                ('user', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='accesos_pwa_audit_logs', to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "accion",
+                    models.CharField(
+                        choices=[
+                            ("create", "Alta"),
+                            ("reactivate", "Reactivación"),
+                            ("deactivate", "Baja"),
+                        ],
+                        db_index=True,
+                        max_length=20,
+                    ),
+                ),
+                (
+                    "fecha_evento",
+                    models.DateTimeField(auto_now_add=True, db_index=True),
+                ),
+                ("metadata", models.JSONField(blank=True, default=dict)),
+                (
+                    "acceso",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="audit_logs",
+                        to="users.accesocomedorpwa",
+                    ),
+                ),
+                (
+                    "actor",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="accesos_pwa_audit_eventos",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    "comedor",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="accesos_pwa_audit_logs",
+                        to="comedores.comedor",
+                    ),
+                ),
+                (
+                    "organizacion",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="accesos_pwa_audit_logs",
+                        to="organizaciones.organizacion",
+                    ),
+                ),
+                (
+                    "user",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="accesos_pwa_audit_logs",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Auditoría de acceso PWA',
-                'verbose_name_plural': 'Auditorías de accesos PWA',
-                'ordering': ['-fecha_evento', '-id'],
-                'indexes': [models.Index(fields=['user', 'fecha_evento'], name='users_audit_user_id_0e2825_idx'), models.Index(fields=['comedor', 'fecha_evento'], name='users_audit_comedor_fa16b0_idx'), models.Index(fields=['accion', 'fecha_evento'], name='users_audit_accion_71bafe_idx')],
+                "verbose_name": "Auditoría de acceso PWA",
+                "verbose_name_plural": "Auditorías de accesos PWA",
+                "ordering": ["-fecha_evento", "-id"],
+                "indexes": [
+                    models.Index(
+                        fields=["user", "fecha_evento"],
+                        name="users_audit_user_id_0e2825_idx",
+                    ),
+                    models.Index(
+                        fields=["comedor", "fecha_evento"],
+                        name="users_audit_comedor_fa16b0_idx",
+                    ),
+                    models.Index(
+                        fields=["accion", "fecha_evento"],
+                        name="users_audit_accion_71bafe_idx",
+                    ),
+                ],
             },
         ),
-        
-        
-        
         migrations.AddField(
-            model_name='profile',
-            name='grupos_asignables',
-            field=models.ManyToManyField(blank=True, help_text='Define qué grupos puede asignar este usuario al crear/editar otros usuarios.', related_name='perfiles_delegadores', to='auth.group', verbose_name='Grupos que puede asignar'),
+            model_name="profile",
+            name="grupos_asignables",
+            field=models.ManyToManyField(
+                blank=True,
+                help_text="Define qué grupos puede asignar este usuario al crear/editar otros usuarios.",
+                related_name="perfiles_delegadores",
+                to="auth.group",
+                verbose_name="Grupos que puede asignar",
+            ),
         ),
         migrations.AddField(
-            model_name='profile',
-            name='roles_asignables',
-            field=models.ManyToManyField(blank=True, help_text='Permisos auth.role_* que este usuario puede asignar a terceros.', related_name='perfiles_roles_delegables', to='auth.permission', verbose_name='Roles que puede asignar'),
+            model_name="profile",
+            name="roles_asignables",
+            field=models.ManyToManyField(
+                blank=True,
+                help_text="Permisos auth.role_* que este usuario puede asignar a terceros.",
+                related_name="perfiles_roles_delegables",
+                to="auth.permission",
+                verbose_name="Roles que puede asignar",
+            ),
         ),
         migrations.AddField(
-            model_name='profile',
-            name='temporary_password_plaintext',
-            field=models.CharField(blank=True, max_length=128, null=True, verbose_name='Contraseña temporal visible'),
+            model_name="profile",
+            name="temporary_password_plaintext",
+            field=models.CharField(
+                blank=True,
+                max_length=128,
+                null=True,
+                verbose_name="Contraseña temporal visible",
+            ),
         ),
         migrations.RunPython(
             code=rename_vat_sse_group_to_cfpinet,
@@ -589,73 +950,172 @@ class Migration(migrations.Migration):
             reverse_code=migrations.RunPython.noop,
         ),
         migrations.AddField(
-            model_name='profile',
-            name='password_reset_requested_at',
-            field=models.DateTimeField(blank=True, help_text='Se completa cuando un usuario mobile solicita desde la app que un administrador genere una nueva contraseña temporal.', null=True, verbose_name='Reset de contraseña solicitado en'),
+            model_name="profile",
+            name="password_reset_requested_at",
+            field=models.DateTimeField(
+                blank=True,
+                help_text="Se completa cuando un usuario mobile solicita desde la app que un administrador genere una nueva contraseña temporal.",
+                null=True,
+                verbose_name="Reset de contraseña solicitado en",
+            ),
         ),
         migrations.RunPython(
             code=assign_bulk_credentials_permission,
             reverse_code=migrations.RunPython.noop,
         ),
         migrations.CreateModel(
-            name='BulkCredentialsJob',
+            name="BulkCredentialsJob",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('archivo', models.FileField(upload_to=users.models.bulk_credentials_job_upload_to)),
-                ('original_filename', models.CharField(max_length=255)),
-                ('send_type', models.CharField(db_index=True, max_length=32)),
-                ('status', models.CharField(choices=[('pending', 'Pendiente'), ('processing', 'Procesando'), ('completed', 'Completado'), ('failed', 'Fallido')], db_index=True, default='pending', max_length=20)),
-                ('total_rows', models.PositiveIntegerField(default=0)),
-                ('processed_rows', models.PositiveIntegerField(default=0)),
-                ('sent_rows', models.PositiveIntegerField(default=0)),
-                ('updated_password_rows', models.PositiveIntegerField(default=0)),
-                ('unchanged_password_rows', models.PositiveIntegerField(default=0)),
-                ('rejected_rows', models.PositiveIntegerField(default=0)),
-                ('next_row_index', models.PositiveIntegerField(default=0)),
-                ('last_successful_row', models.PositiveIntegerField(blank=True, null=True)),
-                ('last_successful_username', models.CharField(blank=True, max_length=150)),
-                ('last_attempted_row', models.PositiveIntegerField(blank=True, null=True)),
-                ('last_attempted_username', models.CharField(blank=True, max_length=150)),
-                ('last_error_message', models.TextField(blank=True)),
-                ('last_error_at', models.DateTimeField(blank=True, null=True)),
-                ('resume_count', models.PositiveIntegerField(default=0)),
-                ('requested_at', models.DateTimeField(auto_now_add=True, db_index=True)),
-                ('started_at', models.DateTimeField(blank=True, null=True)),
-                ('finished_at', models.DateTimeField(blank=True, null=True)),
-                ('last_activity_at', models.DateTimeField(blank=True, db_index=True, null=True)),
-                ('requested_by', models.ForeignKey(on_delete=django.db.models.deletion.DO_NOTHING, related_name='bulk_credentials_jobs', to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "archivo",
+                    models.FileField(
+                        upload_to=users.models.bulk_credentials_job_upload_to
+                    ),
+                ),
+                ("original_filename", models.CharField(max_length=255)),
+                ("send_type", models.CharField(db_index=True, max_length=32)),
+                (
+                    "status",
+                    models.CharField(
+                        choices=[
+                            ("pending", "Pendiente"),
+                            ("processing", "Procesando"),
+                            ("completed", "Completado"),
+                            ("failed", "Fallido"),
+                        ],
+                        db_index=True,
+                        default="pending",
+                        max_length=20,
+                    ),
+                ),
+                ("total_rows", models.PositiveIntegerField(default=0)),
+                ("processed_rows", models.PositiveIntegerField(default=0)),
+                ("sent_rows", models.PositiveIntegerField(default=0)),
+                ("updated_password_rows", models.PositiveIntegerField(default=0)),
+                ("unchanged_password_rows", models.PositiveIntegerField(default=0)),
+                ("rejected_rows", models.PositiveIntegerField(default=0)),
+                ("next_row_index", models.PositiveIntegerField(default=0)),
+                (
+                    "last_successful_row",
+                    models.PositiveIntegerField(blank=True, null=True),
+                ),
+                (
+                    "last_successful_username",
+                    models.CharField(blank=True, max_length=150),
+                ),
+                (
+                    "last_attempted_row",
+                    models.PositiveIntegerField(blank=True, null=True),
+                ),
+                (
+                    "last_attempted_username",
+                    models.CharField(blank=True, max_length=150),
+                ),
+                ("last_error_message", models.TextField(blank=True)),
+                ("last_error_at", models.DateTimeField(blank=True, null=True)),
+                ("resume_count", models.PositiveIntegerField(default=0)),
+                (
+                    "requested_at",
+                    models.DateTimeField(auto_now_add=True, db_index=True),
+                ),
+                ("started_at", models.DateTimeField(blank=True, null=True)),
+                ("finished_at", models.DateTimeField(blank=True, null=True)),
+                (
+                    "last_activity_at",
+                    models.DateTimeField(blank=True, db_index=True, null=True),
+                ),
+                (
+                    "requested_by",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.DO_NOTHING,
+                        related_name="bulk_credentials_jobs",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Lote de credenciales masivas',
-                'verbose_name_plural': 'Lotes de credenciales masivas',
-                'ordering': ['-requested_at', '-id'],
-                'indexes': [models.Index(fields=['status', 'requested_at'], name='users_bulkc_status_7d2f67_idx'), models.Index(fields=['requested_by', 'requested_at'], name='users_bulkc_request_2f0831_idx')],
+                "verbose_name": "Lote de credenciales masivas",
+                "verbose_name_plural": "Lotes de credenciales masivas",
+                "ordering": ["-requested_at", "-id"],
+                "indexes": [
+                    models.Index(
+                        fields=["status", "requested_at"],
+                        name="users_bulkc_status_7d2f67_idx",
+                    ),
+                    models.Index(
+                        fields=["requested_by", "requested_at"],
+                        name="users_bulkc_request_2f0831_idx",
+                    ),
+                ],
             },
         ),
         migrations.CreateModel(
-            name='BulkCredentialsJobRow',
+            name="BulkCredentialsJobRow",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('fila', models.PositiveIntegerField()),
-                ('usuario', models.CharField(blank=True, max_length=150)),
-                ('mail_destino', models.EmailField(blank=True, max_length=254)),
-                ('status', models.CharField(choices=[('sent', 'Enviada'), ('failed', 'Fallida')], db_index=True, max_length=20)),
-                ('mensaje', models.TextField(blank=True)),
-                ('password_actualizada', models.BooleanField(default=False)),
-                ('attempts', models.PositiveIntegerField(default=0)),
-                ('processed_at', models.DateTimeField(blank=True, db_index=True, null=True)),
-                ('job', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='rows', to='users.bulkcredentialsjob')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("fila", models.PositiveIntegerField()),
+                ("usuario", models.CharField(blank=True, max_length=150)),
+                ("mail_destino", models.EmailField(blank=True, max_length=254)),
+                (
+                    "status",
+                    models.CharField(
+                        choices=[("sent", "Enviada"), ("failed", "Fallida")],
+                        db_index=True,
+                        max_length=20,
+                    ),
+                ),
+                ("mensaje", models.TextField(blank=True)),
+                ("password_actualizada", models.BooleanField(default=False)),
+                ("attempts", models.PositiveIntegerField(default=0)),
+                (
+                    "processed_at",
+                    models.DateTimeField(blank=True, db_index=True, null=True),
+                ),
+                (
+                    "job",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="rows",
+                        to="users.bulkcredentialsjob",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Resultado de fila de credenciales masivas',
-                'verbose_name_plural': 'Resultados de filas de credenciales masivas',
-                'ordering': ['fila', 'id'],
-                'indexes': [models.Index(fields=['job', 'status'], name='users_bulkc_job_id_af9261_idx'), models.Index(fields=['job', 'processed_at'], name='users_bulkc_job_id_3d3e77_idx')],
-                'constraints': [models.UniqueConstraint(fields=('job', 'fila'), name='users_bulk_credentials_job_row_unique')],
+                "verbose_name": "Resultado de fila de credenciales masivas",
+                "verbose_name_plural": "Resultados de filas de credenciales masivas",
+                "ordering": ["fila", "id"],
+                "indexes": [
+                    models.Index(
+                        fields=["job", "status"], name="users_bulkc_job_id_af9261_idx"
+                    ),
+                    models.Index(
+                        fields=["job", "processed_at"],
+                        name="users_bulkc_job_id_3d3e77_idx",
+                    ),
+                ],
+                "constraints": [
+                    models.UniqueConstraint(
+                        fields=("job", "fila"),
+                        name="users_bulk_credentials_job_row_unique",
+                    )
+                ],
             },
         ),
-        
-        
-        
-        
     ]

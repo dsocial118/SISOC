@@ -10,7 +10,10 @@ class Migration(migrations.Migration):
 
     replaces = [
         ("organizaciones", "0001_initial"),
-        ("organizaciones", "0002_organizacion_domicilio_organizacion_localidad_and_more"),
+        (
+            "organizaciones",
+            "0002_organizacion_domicilio_organizacion_localidad_and_more",
+        ),
         ("organizaciones", "0003_alter_organizacion_localidad_and_more"),
         ("organizaciones", "0004_organizacion_municipio"),
         ("organizaciones", "0005_remove_organizacion_tipo_organizacion"),
@@ -32,7 +35,15 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name="RolFirmante",
             fields=[
-                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
                 ("nombre", models.CharField(max_length=255, unique=True)),
             ],
             options={
@@ -44,9 +55,20 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name="TipoEntidad",
             fields=[
-                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
                 ("nombre", models.CharField(max_length=255, unique=True)),
-                ("descripcion", models.CharField(blank=True, max_length=255, null=True)),
+                (
+                    "descripcion",
+                    models.CharField(blank=True, max_length=255, null=True),
+                ),
             ],
             options={
                 "verbose_name": "Tipo de Entidad",
@@ -57,7 +79,15 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name="TipoOrganizacion",
             fields=[
-                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
                 ("nombre", models.CharField(max_length=255, unique=True)),
             ],
             options={
@@ -69,7 +99,15 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name="SubtipoEntidad",
             fields=[
-                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
                 ("nombre", models.CharField(max_length=255, unique=True)),
                 (
                     "tipo_entidad",
@@ -91,9 +129,22 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name="Organizacion",
             fields=[
-                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
                 ("nombre", models.CharField(max_length=255)),
-                ("sigla", models.CharField(blank=True, max_length=30, null=True, verbose_name="Sigla")),
+                (
+                    "sigla",
+                    models.CharField(
+                        blank=True, max_length=30, null=True, verbose_name="Sigla"
+                    ),
+                ),
                 (
                     "cuit",
                     models.BigIntegerField(
@@ -156,9 +207,18 @@ class Migration(migrations.Migration):
                         to="organizaciones.subtipoentidad",
                     ),
                 ),
-                ("fecha_vencimiento", models.DateTimeField(default=django.utils.timezone.now, verbose_name="Fecha de vencimiento")),
+                (
+                    "fecha_vencimiento",
+                    models.DateTimeField(
+                        default=django.utils.timezone.now,
+                        verbose_name="Fecha de vencimiento",
+                    ),
+                ),
                 ("fecha_creacion", models.DateTimeField(auto_now_add=True, null=True)),
-                ("deleted_at", models.DateTimeField(blank=True, db_index=True, null=True)),
+                (
+                    "deleted_at",
+                    models.DateTimeField(blank=True, db_index=True, null=True),
+                ),
                 (
                     "deleted_by",
                     models.ForeignKey(
@@ -177,7 +237,10 @@ class Migration(migrations.Migration):
             },
             managers=[
                 ("objects", core.soft_delete.SoftDeleteManager()),
-                ("all_objects", core.soft_delete.SoftDeleteManager(include_deleted=True)),
+                (
+                    "all_objects",
+                    core.soft_delete.SoftDeleteManager(include_deleted=True),
+                ),
             ],
         ),
         migrations.AddIndex(
@@ -187,7 +250,15 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name="Firmante",
             fields=[
-                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
                 ("nombre", models.CharField(max_length=255)),
                 (
                     "cuit",
@@ -218,7 +289,10 @@ class Migration(migrations.Migration):
                         to="organizaciones.rolfirmante",
                     ),
                 ),
-                ("deleted_at", models.DateTimeField(blank=True, db_index=True, null=True)),
+                (
+                    "deleted_at",
+                    models.DateTimeField(blank=True, db_index=True, null=True),
+                ),
                 (
                     "deleted_by",
                     models.ForeignKey(
@@ -232,13 +306,24 @@ class Migration(migrations.Migration):
             ],
             managers=[
                 ("objects", core.soft_delete.SoftDeleteManager()),
-                ("all_objects", core.soft_delete.SoftDeleteManager(include_deleted=True)),
+                (
+                    "all_objects",
+                    core.soft_delete.SoftDeleteManager(include_deleted=True),
+                ),
             ],
         ),
         migrations.CreateModel(
             name="Aval",
             fields=[
-                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
                 ("nombre", models.CharField(blank=True, max_length=255, null=True)),
                 (
                     "cuit",
@@ -261,7 +346,10 @@ class Migration(migrations.Migration):
                         to="organizaciones.organizacion",
                     ),
                 ),
-                ("deleted_at", models.DateTimeField(blank=True, db_index=True, null=True)),
+                (
+                    "deleted_at",
+                    models.DateTimeField(blank=True, db_index=True, null=True),
+                ),
                 (
                     "deleted_by",
                     models.ForeignKey(
@@ -279,7 +367,10 @@ class Migration(migrations.Migration):
             },
             managers=[
                 ("objects", core.soft_delete.SoftDeleteManager()),
-                ("all_objects", core.soft_delete.SoftDeleteManager(include_deleted=True)),
+                (
+                    "all_objects",
+                    core.soft_delete.SoftDeleteManager(include_deleted=True),
+                ),
             ],
         ),
     ]

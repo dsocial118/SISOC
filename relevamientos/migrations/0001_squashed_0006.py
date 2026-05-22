@@ -14,7 +14,10 @@ class Migration(migrations.Migration):
         ("relevamientos", "0003_relevamiento_fecha_creacion"),
         ("relevamientos", "0004_espacioprestacion_frecuencia_limpieza_otro"),
         ("relevamientos", "0005_espaciococina_almacenamiento_alimentos_secos_otro"),
-        ("relevamientos", "0006_alter_relevamiento_managers_relevamiento_deleted_at_and_more"),
+        (
+            "relevamientos",
+            "0006_alter_relevamiento_managers_relevamiento_deleted_at_and_more",
+        ),
     ]
 
     initial = True
@@ -28,7 +31,15 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name="CantidadColaboradores",
             fields=[
-                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
                 ("nombre", models.CharField(max_length=255, unique=True)),
             ],
             options={
@@ -40,7 +51,15 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name="FrecuenciaLimpieza",
             fields=[
-                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
                 ("nombre", models.CharField(max_length=255, unique=True)),
             ],
             options={
@@ -52,7 +71,15 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name="FrecuenciaRecepcionRecursos",
             fields=[
-                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
                 ("nombre", models.CharField(max_length=255, unique=True)),
             ],
             options={
@@ -64,7 +91,15 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name="MotivoExcepcion",
             fields=[
-                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
                 ("nombre", models.CharField(max_length=255, unique=True)),
             ],
             options={
@@ -75,7 +110,15 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name="TipoAccesoComedor",
             fields=[
-                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
                 ("nombre", models.CharField(max_length=255, unique=True)),
             ],
             options={
@@ -87,7 +130,15 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name="TipoAgua",
             fields=[
-                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
                 ("nombre", models.CharField(max_length=255, unique=True)),
             ],
             options={
@@ -99,7 +150,15 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name="TipoCombustible",
             fields=[
-                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
                 ("nombre", models.CharField(max_length=255, unique=True)),
             ],
             options={
@@ -111,7 +170,15 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name="TipoDesague",
             fields=[
-                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
                 ("nombre", models.CharField(max_length=255, unique=True)),
             ],
             options={
@@ -123,7 +190,15 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name="TipoDistanciaTransporte",
             fields=[
-                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
                 ("nombre", models.CharField(max_length=255, unique=True)),
             ],
             options={
@@ -135,7 +210,15 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name="TipoEspacio",
             fields=[
-                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
                 ("nombre", models.CharField(max_length=255, unique=True)),
             ],
             options={
@@ -147,7 +230,15 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name="TipoFrecuenciaBolsones",
             fields=[
-                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
                 ("nombre", models.CharField(max_length=255, unique=True)),
             ],
             options={
@@ -159,7 +250,15 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name="TipoFrecuenciaInsumos",
             fields=[
-                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
                 ("nombre", models.CharField(max_length=255, unique=True)),
             ],
             options={
@@ -171,7 +270,15 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name="TipoGestionQuejas",
             fields=[
-                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
                 ("nombre", models.CharField(max_length=255, unique=True)),
             ],
             options={
@@ -182,7 +289,15 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name="TipoInsumos",
             fields=[
-                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
                 ("nombre", models.CharField(max_length=255, unique=True)),
             ],
             options={
@@ -194,7 +309,15 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name="TipoModalidadPrestacion",
             fields=[
-                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
                 ("nombre", models.CharField(max_length=255, unique=True)),
             ],
             options={
@@ -206,7 +329,15 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name="TipoModuloBolsones",
             fields=[
-                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
                 ("nombre", models.CharField(max_length=255, unique=True)),
             ],
             options={
@@ -218,7 +349,15 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name="TipoOtrosRecepcion",
             fields=[
-                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
                 ("nombre", models.CharField(max_length=255, unique=True)),
             ],
             options={
@@ -230,7 +369,15 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name="TipoRecurso",
             fields=[
-                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
                 ("nombre", models.CharField(max_length=255, unique=True)),
             ],
             options={
@@ -242,7 +389,15 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name="TipoTecnologia",
             fields=[
-                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
                 ("nombre", models.CharField(max_length=255, unique=True)),
             ],
             options={
@@ -254,26 +409,91 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name="Anexo",
             fields=[
-                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
-                ("comedor_merendero", models.BooleanField(blank=True, default=False, null=True)),
-                ("insumos_organizacion", models.BooleanField(blank=True, default=False, null=True)),
-                ("servicio_internet", models.BooleanField(blank=True, default=False, null=True)),
-                ("zona_inundable", models.BooleanField(blank=True, default=False, null=True)),
-                ("actividades_jardin_maternal", models.BooleanField(blank=True, default=False, null=True)),
-                ("actividades_jardin_infantes", models.BooleanField(blank=True, default=False, null=True)),
-                ("apoyo_escolar", models.BooleanField(blank=True, default=False, null=True)),
-                ("alfabetizacion_terminalidad", models.BooleanField(blank=True, default=False, null=True)),
-                ("capacitaciones_talleres", models.BooleanField(blank=True, default=False, null=True)),
-                ("promocion_salud", models.BooleanField(blank=True, default=False, null=True)),
-                ("actividades_discapacidad", models.BooleanField(blank=True, default=False, null=True)),
-                ("necesidades_alimentarias", models.BooleanField(blank=True, default=False, null=True)),
-                ("actividades_recreativas", models.BooleanField(blank=True, default=False, null=True)),
-                ("actividades_culturales", models.BooleanField(blank=True, default=False, null=True)),
-                ("emprendimientos_productivos", models.BooleanField(blank=True, default=False, null=True)),
-                ("actividades_religiosas", models.BooleanField(blank=True, default=False, null=True)),
-                ("actividades_huerta", models.BooleanField(blank=True, default=False, null=True)),
-                ("espacio_huerta", models.BooleanField(blank=True, default=False, null=True)),
-                ("otras_actividades", models.BooleanField(blank=True, default=False, null=True)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "comedor_merendero",
+                    models.BooleanField(blank=True, default=False, null=True),
+                ),
+                (
+                    "insumos_organizacion",
+                    models.BooleanField(blank=True, default=False, null=True),
+                ),
+                (
+                    "servicio_internet",
+                    models.BooleanField(blank=True, default=False, null=True),
+                ),
+                (
+                    "zona_inundable",
+                    models.BooleanField(blank=True, default=False, null=True),
+                ),
+                (
+                    "actividades_jardin_maternal",
+                    models.BooleanField(blank=True, default=False, null=True),
+                ),
+                (
+                    "actividades_jardin_infantes",
+                    models.BooleanField(blank=True, default=False, null=True),
+                ),
+                (
+                    "apoyo_escolar",
+                    models.BooleanField(blank=True, default=False, null=True),
+                ),
+                (
+                    "alfabetizacion_terminalidad",
+                    models.BooleanField(blank=True, default=False, null=True),
+                ),
+                (
+                    "capacitaciones_talleres",
+                    models.BooleanField(blank=True, default=False, null=True),
+                ),
+                (
+                    "promocion_salud",
+                    models.BooleanField(blank=True, default=False, null=True),
+                ),
+                (
+                    "actividades_discapacidad",
+                    models.BooleanField(blank=True, default=False, null=True),
+                ),
+                (
+                    "necesidades_alimentarias",
+                    models.BooleanField(blank=True, default=False, null=True),
+                ),
+                (
+                    "actividades_recreativas",
+                    models.BooleanField(blank=True, default=False, null=True),
+                ),
+                (
+                    "actividades_culturales",
+                    models.BooleanField(blank=True, default=False, null=True),
+                ),
+                (
+                    "emprendimientos_productivos",
+                    models.BooleanField(blank=True, default=False, null=True),
+                ),
+                (
+                    "actividades_religiosas",
+                    models.BooleanField(blank=True, default=False, null=True),
+                ),
+                (
+                    "actividades_huerta",
+                    models.BooleanField(blank=True, default=False, null=True),
+                ),
+                (
+                    "espacio_huerta",
+                    models.BooleanField(blank=True, default=False, null=True),
+                ),
+                (
+                    "otras_actividades",
+                    models.BooleanField(blank=True, default=False, null=True),
+                ),
                 ("cuales_otras_actividades", models.TextField(blank=True, null=True)),
                 (
                     "veces_recibio_insumos_2024",
@@ -343,7 +563,15 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name="Colaboradores",
             fields=[
-                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
                 (
                     "colaboradores_capacitados_alimentos",
                     models.BooleanField(
@@ -351,9 +579,18 @@ class Migration(migrations.Migration):
                         verbose_name="3.1.2 ¿El Comedor/Merendero cuentan con personas que realizan tareas capacitadas para la manipulación de alimentos?",
                     ),
                 ),
-                ("colaboradores_recibieron_capacitacion_alimentos", models.BooleanField(blank=True, default=False, null=True)),
-                ("colaboradores_capacitados_salud_seguridad", models.BooleanField(blank=True, default=False, null=True)),
-                ("colaboradores_recibieron_capacitacion_emergencias", models.BooleanField(blank=True, default=False, null=True)),
+                (
+                    "colaboradores_recibieron_capacitacion_alimentos",
+                    models.BooleanField(blank=True, default=False, null=True),
+                ),
+                (
+                    "colaboradores_capacitados_salud_seguridad",
+                    models.BooleanField(blank=True, default=False, null=True),
+                ),
+                (
+                    "colaboradores_recibieron_capacitacion_emergencias",
+                    models.BooleanField(blank=True, default=False, null=True),
+                ),
                 (
                     "colaboradores_recibieron_capacitacion_violencia",
                     models.BooleanField(
@@ -378,7 +615,15 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name="Excepcion",
             fields=[
-                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
                 ("descripcion", models.TextField(blank=True, null=True)),
                 (
                     "latitud",
@@ -422,16 +667,48 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name="FuenteCompras",
             fields=[
-                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
-                ("almacen_cercano", models.BooleanField(blank=True, default=False, null=True)),
-                ("verduleria", models.BooleanField(blank=True, default=False, null=True)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "almacen_cercano",
+                    models.BooleanField(blank=True, default=False, null=True),
+                ),
+                (
+                    "verduleria",
+                    models.BooleanField(blank=True, default=False, null=True),
+                ),
                 ("granja", models.BooleanField(blank=True, default=False, null=True)),
-                ("carniceria", models.BooleanField(blank=True, default=False, null=True)),
-                ("pescaderia", models.BooleanField(blank=True, default=False, null=True)),
-                ("supermercado", models.BooleanField(blank=True, default=False, null=True)),
-                ("mercado_central", models.BooleanField(blank=True, default=False, null=True)),
-                ("ferias_comunales", models.BooleanField(blank=True, default=False, null=True)),
-                ("mayoristas", models.BooleanField(blank=True, default=False, null=True)),
+                (
+                    "carniceria",
+                    models.BooleanField(blank=True, default=False, null=True),
+                ),
+                (
+                    "pescaderia",
+                    models.BooleanField(blank=True, default=False, null=True),
+                ),
+                (
+                    "supermercado",
+                    models.BooleanField(blank=True, default=False, null=True),
+                ),
+                (
+                    "mercado_central",
+                    models.BooleanField(blank=True, default=False, null=True),
+                ),
+                (
+                    "ferias_comunales",
+                    models.BooleanField(blank=True, default=False, null=True),
+                ),
+                (
+                    "mayoristas",
+                    models.BooleanField(blank=True, default=False, null=True),
+                ),
                 ("otro", models.BooleanField(blank=True, default=False, null=True)),
             ],
             options={
@@ -442,7 +719,15 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name="FuenteRecursos",
             fields=[
-                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
                 ("recibe_donaciones_particulares", models.BooleanField(default=False)),
                 ("recibe_estado_nacional", models.BooleanField(default=False)),
                 ("recibe_estado_provincial", models.BooleanField(default=False)),
@@ -557,7 +842,15 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name="FuncionamientoPrestacion",
             fields=[
-                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
                 ("servicio_por_turnos", models.BooleanField(default=False)),
                 (
                     "cantidad_turnos",
@@ -589,9 +882,23 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name="EspacioCocina",
             fields=[
-                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
-                ("espacio_elaboracion_alimentos", models.BooleanField(blank=True, default=False, null=True)),
-                ("almacenamiento_alimentos_secos", models.BooleanField(blank=True, default=False, null=True)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "espacio_elaboracion_alimentos",
+                    models.BooleanField(blank=True, default=False, null=True),
+                ),
+                (
+                    "almacenamiento_alimentos_secos",
+                    models.BooleanField(blank=True, default=False, null=True),
+                ),
                 (
                     "almacenamiento_alimentos_secos_otro",
                     models.CharField(
@@ -603,12 +910,35 @@ class Migration(migrations.Migration):
                 ),
                 ("heladera", models.BooleanField(blank=True, default=False, null=True)),
                 ("freezer", models.BooleanField(blank=True, default=False, null=True)),
-                ("recipiente_residuos_organicos", models.BooleanField(blank=True, default=False, null=True)),
-                ("recipiente_residuos_reciclables", models.BooleanField(blank=True, default=False, null=True)),
-                ("otros_residuos", models.BooleanField(blank=True, default=False, null=True)),
-                ("recipiente_otros_residuos", models.BooleanField(blank=True, default=False, null=True)),
-                ("abastecimiento_agua_otro", models.CharField(blank=True, max_length=255, null=True, verbose_name="En caso de otro, especificar")),
-                ("instalacion_electrica", models.BooleanField(blank=True, default=False, null=True)),
+                (
+                    "recipiente_residuos_organicos",
+                    models.BooleanField(blank=True, default=False, null=True),
+                ),
+                (
+                    "recipiente_residuos_reciclables",
+                    models.BooleanField(blank=True, default=False, null=True),
+                ),
+                (
+                    "otros_residuos",
+                    models.BooleanField(blank=True, default=False, null=True),
+                ),
+                (
+                    "recipiente_otros_residuos",
+                    models.BooleanField(blank=True, default=False, null=True),
+                ),
+                (
+                    "abastecimiento_agua_otro",
+                    models.CharField(
+                        blank=True,
+                        max_length=255,
+                        null=True,
+                        verbose_name="En caso de otro, especificar",
+                    ),
+                ),
+                (
+                    "instalacion_electrica",
+                    models.BooleanField(blank=True, default=False, null=True),
+                ),
                 (
                     "abastecimiento_agua",
                     models.ForeignKey(
@@ -637,16 +967,56 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name="EspacioPrestacion",
             fields=[
-                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
-                ("espacio_equipado", models.BooleanField(blank=True, default=False, null=True)),
-                ("tiene_ventilacion", models.BooleanField(blank=True, default=False, null=True)),
-                ("tiene_salida_emergencia", models.BooleanField(blank=True, default=False, null=True)),
-                ("salida_emergencia_senializada", models.BooleanField(blank=True, default=False, null=True)),
-                ("tiene_equipacion_incendio", models.BooleanField(blank=True, default=False, null=True)),
-                ("tiene_botiquin", models.BooleanField(blank=True, default=False, null=True)),
-                ("tiene_buena_iluminacion", models.BooleanField(blank=True, default=False, null=True)),
-                ("tiene_sanitarios", models.BooleanField(blank=True, default=False, null=True)),
-                ("gestion_quejas_otro", models.CharField(blank=True, max_length=255, null=True, verbose_name="En caso de otro, especificar")),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "espacio_equipado",
+                    models.BooleanField(blank=True, default=False, null=True),
+                ),
+                (
+                    "tiene_ventilacion",
+                    models.BooleanField(blank=True, default=False, null=True),
+                ),
+                (
+                    "tiene_salida_emergencia",
+                    models.BooleanField(blank=True, default=False, null=True),
+                ),
+                (
+                    "salida_emergencia_senializada",
+                    models.BooleanField(blank=True, default=False, null=True),
+                ),
+                (
+                    "tiene_equipacion_incendio",
+                    models.BooleanField(blank=True, default=False, null=True),
+                ),
+                (
+                    "tiene_botiquin",
+                    models.BooleanField(blank=True, default=False, null=True),
+                ),
+                (
+                    "tiene_buena_iluminacion",
+                    models.BooleanField(blank=True, default=False, null=True),
+                ),
+                (
+                    "tiene_sanitarios",
+                    models.BooleanField(blank=True, default=False, null=True),
+                ),
+                (
+                    "gestion_quejas_otro",
+                    models.CharField(
+                        blank=True,
+                        max_length=255,
+                        null=True,
+                        verbose_name="En caso de otro, especificar",
+                    ),
+                ),
                 ("informacion_quejas", models.BooleanField(default=False)),
                 (
                     "frecuencia_limpieza_otro",
@@ -696,8 +1066,24 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name="Espacio",
             fields=[
-                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
-                ("espacio_fisico_otro", models.CharField(blank=True, max_length=255, null=True, verbose_name="2.1.2 Si eligió 'Otro', especificar")),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "espacio_fisico_otro",
+                    models.CharField(
+                        blank=True,
+                        max_length=255,
+                        null=True,
+                        verbose_name="2.1.2 Si eligió 'Otro', especificar",
+                    ),
+                ),
                 (
                     "cocina",
                     models.OneToOneField(
@@ -735,77 +1121,295 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name="Prestacion",
             fields=[
-                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
-                ("lunes_desayuno_actual", models.PositiveIntegerField(blank=True, null=True)),
-                ("lunes_desayuno_espera", models.PositiveIntegerField(blank=True, null=True)),
-                ("lunes_almuerzo_actual", models.PositiveIntegerField(blank=True, null=True)),
-                ("lunes_almuerzo_espera", models.PositiveIntegerField(blank=True, null=True)),
-                ("lunes_merienda_actual", models.PositiveIntegerField(blank=True, null=True)),
-                ("lunes_merienda_espera", models.PositiveIntegerField(blank=True, null=True)),
-                ("lunes_merienda_reforzada_actual", models.PositiveIntegerField(blank=True, null=True)),
-                ("lunes_merienda_reforzada_espera", models.PositiveIntegerField(blank=True, null=True)),
-                ("lunes_cena_actual", models.PositiveIntegerField(blank=True, null=True)),
-                ("lunes_cena_espera", models.PositiveIntegerField(blank=True, null=True)),
-                ("martes_desayuno_actual", models.PositiveIntegerField(blank=True, null=True)),
-                ("martes_desayuno_espera", models.PositiveIntegerField(blank=True, null=True)),
-                ("martes_almuerzo_actual", models.PositiveIntegerField(blank=True, null=True)),
-                ("martes_almuerzo_espera", models.PositiveIntegerField(blank=True, null=True)),
-                ("martes_merienda_actual", models.PositiveIntegerField(blank=True, null=True)),
-                ("martes_merienda_espera", models.PositiveIntegerField(blank=True, null=True)),
-                ("martes_merienda_reforzada_actual", models.PositiveIntegerField(blank=True, null=True)),
-                ("martes_merienda_reforzada_espera", models.PositiveIntegerField(blank=True, null=True)),
-                ("martes_cena_actual", models.PositiveIntegerField(blank=True, null=True)),
-                ("martes_cena_espera", models.PositiveIntegerField(blank=True, null=True)),
-                ("miercoles_desayuno_actual", models.PositiveIntegerField(blank=True, null=True)),
-                ("miercoles_desayuno_espera", models.PositiveIntegerField(blank=True, null=True)),
-                ("miercoles_almuerzo_actual", models.PositiveIntegerField(blank=True, null=True)),
-                ("miercoles_almuerzo_espera", models.PositiveIntegerField(blank=True, null=True)),
-                ("miercoles_merienda_actual", models.PositiveIntegerField(blank=True, null=True)),
-                ("miercoles_merienda_espera", models.PositiveIntegerField(blank=True, null=True)),
-                ("miercoles_merienda_reforzada_actual", models.PositiveIntegerField(blank=True, null=True)),
-                ("miercoles_merienda_reforzada_espera", models.PositiveIntegerField(blank=True, null=True)),
-                ("miercoles_cena_actual", models.PositiveIntegerField(blank=True, null=True)),
-                ("miercoles_cena_espera", models.PositiveIntegerField(blank=True, null=True)),
-                ("jueves_desayuno_actual", models.PositiveIntegerField(blank=True, null=True)),
-                ("jueves_desayuno_espera", models.PositiveIntegerField(blank=True, null=True)),
-                ("jueves_almuerzo_actual", models.PositiveIntegerField(blank=True, null=True)),
-                ("jueves_almuerzo_espera", models.PositiveIntegerField(blank=True, null=True)),
-                ("jueves_merienda_actual", models.PositiveIntegerField(blank=True, null=True)),
-                ("jueves_merienda_espera", models.PositiveIntegerField(blank=True, null=True)),
-                ("jueves_merienda_reforzada_actual", models.PositiveIntegerField(blank=True, null=True)),
-                ("jueves_merienda_reforzada_espera", models.PositiveIntegerField(blank=True, null=True)),
-                ("jueves_cena_actual", models.PositiveIntegerField(blank=True, null=True)),
-                ("jueves_cena_espera", models.PositiveIntegerField(blank=True, null=True)),
-                ("viernes_desayuno_actual", models.PositiveIntegerField(blank=True, null=True)),
-                ("viernes_desayuno_espera", models.PositiveIntegerField(blank=True, null=True)),
-                ("viernes_almuerzo_actual", models.PositiveIntegerField(blank=True, null=True)),
-                ("viernes_almuerzo_espera", models.PositiveIntegerField(blank=True, null=True)),
-                ("viernes_merienda_actual", models.PositiveIntegerField(blank=True, null=True)),
-                ("viernes_merienda_espera", models.PositiveIntegerField(blank=True, null=True)),
-                ("viernes_merienda_reforzada_actual", models.PositiveIntegerField(blank=True, null=True)),
-                ("viernes_merienda_reforzada_espera", models.PositiveIntegerField(blank=True, null=True)),
-                ("viernes_cena_actual", models.PositiveIntegerField(blank=True, null=True)),
-                ("viernes_cena_espera", models.PositiveIntegerField(blank=True, null=True)),
-                ("sabado_desayuno_actual", models.PositiveIntegerField(blank=True, null=True)),
-                ("sabado_desayuno_espera", models.PositiveIntegerField(blank=True, null=True)),
-                ("sabado_almuerzo_actual", models.PositiveIntegerField(blank=True, null=True)),
-                ("sabado_almuerzo_espera", models.PositiveIntegerField(blank=True, null=True)),
-                ("sabado_merienda_actual", models.PositiveIntegerField(blank=True, null=True)),
-                ("sabado_merienda_espera", models.PositiveIntegerField(blank=True, null=True)),
-                ("sabado_merienda_reforzada_actual", models.PositiveIntegerField(blank=True, null=True)),
-                ("sabado_merienda_reforzada_espera", models.PositiveIntegerField(blank=True, null=True)),
-                ("sabado_cena_actual", models.PositiveIntegerField(blank=True, null=True)),
-                ("sabado_cena_espera", models.PositiveIntegerField(blank=True, null=True)),
-                ("domingo_desayuno_actual", models.PositiveIntegerField(blank=True, null=True)),
-                ("domingo_desayuno_espera", models.PositiveIntegerField(blank=True, null=True)),
-                ("domingo_almuerzo_actual", models.PositiveIntegerField(blank=True, null=True)),
-                ("domingo_almuerzo_espera", models.PositiveIntegerField(blank=True, null=True)),
-                ("domingo_merienda_actual", models.PositiveIntegerField(blank=True, null=True)),
-                ("domingo_merienda_espera", models.PositiveIntegerField(blank=True, null=True)),
-                ("domingo_merienda_reforzada_actual", models.PositiveIntegerField(blank=True, null=True)),
-                ("domingo_merienda_reforzada_espera", models.PositiveIntegerField(blank=True, null=True)),
-                ("domingo_cena_actual", models.PositiveIntegerField(blank=True, null=True)),
-                ("domingo_cena_espera", models.PositiveIntegerField(blank=True, null=True)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "lunes_desayuno_actual",
+                    models.PositiveIntegerField(blank=True, null=True),
+                ),
+                (
+                    "lunes_desayuno_espera",
+                    models.PositiveIntegerField(blank=True, null=True),
+                ),
+                (
+                    "lunes_almuerzo_actual",
+                    models.PositiveIntegerField(blank=True, null=True),
+                ),
+                (
+                    "lunes_almuerzo_espera",
+                    models.PositiveIntegerField(blank=True, null=True),
+                ),
+                (
+                    "lunes_merienda_actual",
+                    models.PositiveIntegerField(blank=True, null=True),
+                ),
+                (
+                    "lunes_merienda_espera",
+                    models.PositiveIntegerField(blank=True, null=True),
+                ),
+                (
+                    "lunes_merienda_reforzada_actual",
+                    models.PositiveIntegerField(blank=True, null=True),
+                ),
+                (
+                    "lunes_merienda_reforzada_espera",
+                    models.PositiveIntegerField(blank=True, null=True),
+                ),
+                (
+                    "lunes_cena_actual",
+                    models.PositiveIntegerField(blank=True, null=True),
+                ),
+                (
+                    "lunes_cena_espera",
+                    models.PositiveIntegerField(blank=True, null=True),
+                ),
+                (
+                    "martes_desayuno_actual",
+                    models.PositiveIntegerField(blank=True, null=True),
+                ),
+                (
+                    "martes_desayuno_espera",
+                    models.PositiveIntegerField(blank=True, null=True),
+                ),
+                (
+                    "martes_almuerzo_actual",
+                    models.PositiveIntegerField(blank=True, null=True),
+                ),
+                (
+                    "martes_almuerzo_espera",
+                    models.PositiveIntegerField(blank=True, null=True),
+                ),
+                (
+                    "martes_merienda_actual",
+                    models.PositiveIntegerField(blank=True, null=True),
+                ),
+                (
+                    "martes_merienda_espera",
+                    models.PositiveIntegerField(blank=True, null=True),
+                ),
+                (
+                    "martes_merienda_reforzada_actual",
+                    models.PositiveIntegerField(blank=True, null=True),
+                ),
+                (
+                    "martes_merienda_reforzada_espera",
+                    models.PositiveIntegerField(blank=True, null=True),
+                ),
+                (
+                    "martes_cena_actual",
+                    models.PositiveIntegerField(blank=True, null=True),
+                ),
+                (
+                    "martes_cena_espera",
+                    models.PositiveIntegerField(blank=True, null=True),
+                ),
+                (
+                    "miercoles_desayuno_actual",
+                    models.PositiveIntegerField(blank=True, null=True),
+                ),
+                (
+                    "miercoles_desayuno_espera",
+                    models.PositiveIntegerField(blank=True, null=True),
+                ),
+                (
+                    "miercoles_almuerzo_actual",
+                    models.PositiveIntegerField(blank=True, null=True),
+                ),
+                (
+                    "miercoles_almuerzo_espera",
+                    models.PositiveIntegerField(blank=True, null=True),
+                ),
+                (
+                    "miercoles_merienda_actual",
+                    models.PositiveIntegerField(blank=True, null=True),
+                ),
+                (
+                    "miercoles_merienda_espera",
+                    models.PositiveIntegerField(blank=True, null=True),
+                ),
+                (
+                    "miercoles_merienda_reforzada_actual",
+                    models.PositiveIntegerField(blank=True, null=True),
+                ),
+                (
+                    "miercoles_merienda_reforzada_espera",
+                    models.PositiveIntegerField(blank=True, null=True),
+                ),
+                (
+                    "miercoles_cena_actual",
+                    models.PositiveIntegerField(blank=True, null=True),
+                ),
+                (
+                    "miercoles_cena_espera",
+                    models.PositiveIntegerField(blank=True, null=True),
+                ),
+                (
+                    "jueves_desayuno_actual",
+                    models.PositiveIntegerField(blank=True, null=True),
+                ),
+                (
+                    "jueves_desayuno_espera",
+                    models.PositiveIntegerField(blank=True, null=True),
+                ),
+                (
+                    "jueves_almuerzo_actual",
+                    models.PositiveIntegerField(blank=True, null=True),
+                ),
+                (
+                    "jueves_almuerzo_espera",
+                    models.PositiveIntegerField(blank=True, null=True),
+                ),
+                (
+                    "jueves_merienda_actual",
+                    models.PositiveIntegerField(blank=True, null=True),
+                ),
+                (
+                    "jueves_merienda_espera",
+                    models.PositiveIntegerField(blank=True, null=True),
+                ),
+                (
+                    "jueves_merienda_reforzada_actual",
+                    models.PositiveIntegerField(blank=True, null=True),
+                ),
+                (
+                    "jueves_merienda_reforzada_espera",
+                    models.PositiveIntegerField(blank=True, null=True),
+                ),
+                (
+                    "jueves_cena_actual",
+                    models.PositiveIntegerField(blank=True, null=True),
+                ),
+                (
+                    "jueves_cena_espera",
+                    models.PositiveIntegerField(blank=True, null=True),
+                ),
+                (
+                    "viernes_desayuno_actual",
+                    models.PositiveIntegerField(blank=True, null=True),
+                ),
+                (
+                    "viernes_desayuno_espera",
+                    models.PositiveIntegerField(blank=True, null=True),
+                ),
+                (
+                    "viernes_almuerzo_actual",
+                    models.PositiveIntegerField(blank=True, null=True),
+                ),
+                (
+                    "viernes_almuerzo_espera",
+                    models.PositiveIntegerField(blank=True, null=True),
+                ),
+                (
+                    "viernes_merienda_actual",
+                    models.PositiveIntegerField(blank=True, null=True),
+                ),
+                (
+                    "viernes_merienda_espera",
+                    models.PositiveIntegerField(blank=True, null=True),
+                ),
+                (
+                    "viernes_merienda_reforzada_actual",
+                    models.PositiveIntegerField(blank=True, null=True),
+                ),
+                (
+                    "viernes_merienda_reforzada_espera",
+                    models.PositiveIntegerField(blank=True, null=True),
+                ),
+                (
+                    "viernes_cena_actual",
+                    models.PositiveIntegerField(blank=True, null=True),
+                ),
+                (
+                    "viernes_cena_espera",
+                    models.PositiveIntegerField(blank=True, null=True),
+                ),
+                (
+                    "sabado_desayuno_actual",
+                    models.PositiveIntegerField(blank=True, null=True),
+                ),
+                (
+                    "sabado_desayuno_espera",
+                    models.PositiveIntegerField(blank=True, null=True),
+                ),
+                (
+                    "sabado_almuerzo_actual",
+                    models.PositiveIntegerField(blank=True, null=True),
+                ),
+                (
+                    "sabado_almuerzo_espera",
+                    models.PositiveIntegerField(blank=True, null=True),
+                ),
+                (
+                    "sabado_merienda_actual",
+                    models.PositiveIntegerField(blank=True, null=True),
+                ),
+                (
+                    "sabado_merienda_espera",
+                    models.PositiveIntegerField(blank=True, null=True),
+                ),
+                (
+                    "sabado_merienda_reforzada_actual",
+                    models.PositiveIntegerField(blank=True, null=True),
+                ),
+                (
+                    "sabado_merienda_reforzada_espera",
+                    models.PositiveIntegerField(blank=True, null=True),
+                ),
+                (
+                    "sabado_cena_actual",
+                    models.PositiveIntegerField(blank=True, null=True),
+                ),
+                (
+                    "sabado_cena_espera",
+                    models.PositiveIntegerField(blank=True, null=True),
+                ),
+                (
+                    "domingo_desayuno_actual",
+                    models.PositiveIntegerField(blank=True, null=True),
+                ),
+                (
+                    "domingo_desayuno_espera",
+                    models.PositiveIntegerField(blank=True, null=True),
+                ),
+                (
+                    "domingo_almuerzo_actual",
+                    models.PositiveIntegerField(blank=True, null=True),
+                ),
+                (
+                    "domingo_almuerzo_espera",
+                    models.PositiveIntegerField(blank=True, null=True),
+                ),
+                (
+                    "domingo_merienda_actual",
+                    models.PositiveIntegerField(blank=True, null=True),
+                ),
+                (
+                    "domingo_merienda_espera",
+                    models.PositiveIntegerField(blank=True, null=True),
+                ),
+                (
+                    "domingo_merienda_reforzada_actual",
+                    models.PositiveIntegerField(blank=True, null=True),
+                ),
+                (
+                    "domingo_merienda_reforzada_espera",
+                    models.PositiveIntegerField(blank=True, null=True),
+                ),
+                (
+                    "domingo_cena_actual",
+                    models.PositiveIntegerField(blank=True, null=True),
+                ),
+                (
+                    "domingo_cena_espera",
+                    models.PositiveIntegerField(blank=True, null=True),
+                ),
             ],
             options={
                 "verbose_name": "Prestacion",
@@ -815,16 +1419,58 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name="PuntoEntregas",
             fields=[
-                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
-                ("reciben_otros_recepcion", models.CharField(blank=True, max_length=255, null=True, verbose_name="Otros")),
-                ("otros_punto_entregas", models.CharField(blank=True, max_length=255, null=True, verbose_name="Otros punto de entrega")),
-                ("existe_punto_entregas", models.BooleanField(blank=True, default=False, null=True)),
-                ("funciona_punto_entregas", models.BooleanField(blank=True, default=False, null=True)),
-                ("observa_entregas", models.BooleanField(blank=True, default=False, null=True)),
-                ("retiran_mercaderias_distribucion", models.BooleanField(blank=True, default=False, null=True)),
-                ("retiran_mercaderias_comercio", models.BooleanField(blank=True, default=False, null=True)),
-                ("reciben_dinero", models.BooleanField(blank=True, default=False, null=True)),
-                ("registran_entrega_bolsones", models.BooleanField(blank=True, default=False, null=True)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "reciben_otros_recepcion",
+                    models.CharField(
+                        blank=True, max_length=255, null=True, verbose_name="Otros"
+                    ),
+                ),
+                (
+                    "otros_punto_entregas",
+                    models.CharField(
+                        blank=True,
+                        max_length=255,
+                        null=True,
+                        verbose_name="Otros punto de entrega",
+                    ),
+                ),
+                (
+                    "existe_punto_entregas",
+                    models.BooleanField(blank=True, default=False, null=True),
+                ),
+                (
+                    "funciona_punto_entregas",
+                    models.BooleanField(blank=True, default=False, null=True),
+                ),
+                (
+                    "observa_entregas",
+                    models.BooleanField(blank=True, default=False, null=True),
+                ),
+                (
+                    "retiran_mercaderias_distribucion",
+                    models.BooleanField(blank=True, default=False, null=True),
+                ),
+                (
+                    "retiran_mercaderias_comercio",
+                    models.BooleanField(blank=True, default=False, null=True),
+                ),
+                (
+                    "reciben_dinero",
+                    models.BooleanField(blank=True, default=False, null=True),
+                ),
+                (
+                    "registran_entrega_bolsones",
+                    models.BooleanField(blank=True, default=False, null=True),
+                ),
                 (
                     "frecuencia_entrega_bolsones",
                     models.ForeignKey(
@@ -869,17 +1515,37 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name="Relevamiento",
             fields=[
-                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
                 ("estado", models.CharField(blank=True, max_length=255, null=True)),
                 ("fecha_visita", models.DateTimeField(blank=True, null=True)),
-                ("territorial_nombre", models.CharField(blank=True, max_length=255, null=True)),
-                ("territorial_uid", models.CharField(blank=True, max_length=255, null=True)),
+                (
+                    "territorial_nombre",
+                    models.CharField(blank=True, max_length=255, null=True),
+                ),
+                (
+                    "territorial_uid",
+                    models.CharField(blank=True, max_length=255, null=True),
+                ),
                 ("observacion", models.TextField(blank=True, null=True)),
                 ("docPDF", models.URLField(blank=True, null=True)),
-                ("responsable_es_referente", models.BooleanField(blank=True, default=True, null=True)),
+                (
+                    "responsable_es_referente",
+                    models.BooleanField(blank=True, default=True, null=True),
+                ),
                 ("imagenes", models.JSONField(blank=True, default=list, null=True)),
                 ("fecha_creacion", models.DateTimeField(auto_now_add=True, null=True)),
-                ("deleted_at", models.DateTimeField(blank=True, db_index=True, null=True)),
+                (
+                    "deleted_at",
+                    models.DateTimeField(blank=True, db_index=True, null=True),
+                ),
                 (
                     "deleted_by",
                     models.ForeignKey(
@@ -995,12 +1661,17 @@ class Migration(migrations.Migration):
             },
             managers=[
                 ("objects", core.soft_delete.SoftDeleteManager()),
-                ("all_objects", core.soft_delete.SoftDeleteManager(include_deleted=True)),
+                (
+                    "all_objects",
+                    core.soft_delete.SoftDeleteManager(include_deleted=True),
+                ),
             ],
         ),
         migrations.AddIndex(
             model_name="relevamiento",
-            index=models.Index(fields=["comedor"], name="relevamient_comedor_76ee4f_idx"),
+            index=models.Index(
+                fields=["comedor"], name="relevamient_comedor_76ee4f_idx"
+            ),
         ),
         migrations.AlterUniqueTogether(
             name="relevamiento",
@@ -1009,9 +1680,20 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name="ClasificacionComedor",
             fields=[
-                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
                 ("puntuacion_total", models.IntegerField()),
-                ("fecha", models.DateTimeField(blank=True, default=django.utils.timezone.now)),
+                (
+                    "fecha",
+                    models.DateTimeField(blank=True, default=django.utils.timezone.now),
+                ),
                 (
                     "categoria",
                     models.ForeignKey(

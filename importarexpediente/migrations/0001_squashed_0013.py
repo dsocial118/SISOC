@@ -20,50 +20,143 @@ class Migration(migrations.Migration):
 
     initial = True
 
-    replaces = [('importarexpediente', '0001_initial'), ('importarexpediente', '0002_archivosimportados_remove_importrowlog_job_and_more'), ('importarexpediente', '0003_archivosimportados_id_archivo'), ('importarexpediente', '0004_exitoimportacion_remove_archivosimportados_error_and_more'), ('importarexpediente', '0005_archivosimportados_count_errores_and_more'), ('importarexpediente', '0006_alter_archivosimportados_usuario_and_more'), ('importarexpediente', '0007_rename_mensaje_error_erroresimportacion_mensaje_and_more'), ('importarexpediente', '0008_remove_registroimportado_id_expediente_and_more'), ('importarexpediente', '0009_archivosimportados_importacion_completada'), ('importarexpediente', '0010_archivosimportados_delimiter'), ('importarexpediente', '0011_archivosimportados_numero_expedinte_pago'), ('importarexpediente', '0012_alter_archivosimportados_numero_expedinte_pago'), ('importarexpediente', '0013_rename_numero_expedinte_pago_archivosimportados_numero_expediente_pago')]
+    replaces = [
+        ("importarexpediente", "0001_initial"),
+        (
+            "importarexpediente",
+            "0002_archivosimportados_remove_importrowlog_job_and_more",
+        ),
+        ("importarexpediente", "0003_archivosimportados_id_archivo"),
+        (
+            "importarexpediente",
+            "0004_exitoimportacion_remove_archivosimportados_error_and_more",
+        ),
+        ("importarexpediente", "0005_archivosimportados_count_errores_and_more"),
+        ("importarexpediente", "0006_alter_archivosimportados_usuario_and_more"),
+        (
+            "importarexpediente",
+            "0007_rename_mensaje_error_erroresimportacion_mensaje_and_more",
+        ),
+        ("importarexpediente", "0008_remove_registroimportado_id_expediente_and_more"),
+        ("importarexpediente", "0009_archivosimportados_importacion_completada"),
+        ("importarexpediente", "0010_archivosimportados_delimiter"),
+        ("importarexpediente", "0011_archivosimportados_numero_expedinte_pago"),
+        ("importarexpediente", "0012_alter_archivosimportados_numero_expedinte_pago"),
+        (
+            "importarexpediente",
+            "0013_rename_numero_expedinte_pago_archivosimportados_numero_expediente_pago",
+        ),
+    ]
 
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ('expedientespagos', '0002_alter_expedientepago_expediente_pago_and_more'),
+        ("expedientespagos", "0002_alter_expedientepago_expediente_pago_and_more"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='ArchivosImportados',
+            name="ArchivosImportados",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('archivo', models.FileField(upload_to='importados/')),
-                ('fecha_subida', models.DateTimeField(auto_now_add=True)),
-                ('usuario', models.ForeignKey(on_delete=django.db.models.deletion.DO_NOTHING, to=settings.AUTH_USER_MODEL)),
-                ('count_errores', models.IntegerField(default=0)),
-                ('count_exitos', models.IntegerField(default=0)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("archivo", models.FileField(upload_to="importados/")),
+                ("fecha_subida", models.DateTimeField(auto_now_add=True)),
+                (
+                    "usuario",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.DO_NOTHING,
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                ("count_errores", models.IntegerField(default=0)),
+                ("count_exitos", models.IntegerField(default=0)),
             ],
         ),
         migrations.CreateModel(
-            name='ExitoImportacion',
+            name="ExitoImportacion",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('fila', models.IntegerField()),
-                ('mensaje', models.TextField()),
-                ('archivo_importado', models.ForeignKey(on_delete=django.db.models.deletion.DO_NOTHING, related_name='exitos', to='importarexpediente.archivosimportados')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("fila", models.IntegerField()),
+                ("mensaje", models.TextField()),
+                (
+                    "archivo_importado",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.DO_NOTHING,
+                        related_name="exitos",
+                        to="importarexpediente.archivosimportados",
+                    ),
+                ),
             ],
         ),
         migrations.CreateModel(
-            name='ErroresImportacion',
+            name="ErroresImportacion",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('fila', models.IntegerField()),
-                ('mensaje', models.TextField()),
-                ('archivo_importado', models.ForeignKey(on_delete=django.db.models.deletion.DO_NOTHING, related_name='errores', to='importarexpediente.archivosimportados')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("fila", models.IntegerField()),
+                ("mensaje", models.TextField()),
+                (
+                    "archivo_importado",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.DO_NOTHING,
+                        related_name="errores",
+                        to="importarexpediente.archivosimportados",
+                    ),
+                ),
             ],
         ),
         migrations.CreateModel(
-            name='RegistroImportado',
+            name="RegistroImportado",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('id_expediente', models.IntegerField()),
-                ('exito_importacion', models.ForeignKey(on_delete=django.db.models.deletion.DO_NOTHING, related_name='registros', to='importarexpediente.exitoimportacion')),
-                ('expediente_pago', models.ForeignKey(null=True, on_delete=django.db.models.deletion.DO_NOTHING, related_name='registros_importados', to='expedientespagos.expedientepago')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("id_expediente", models.IntegerField()),
+                (
+                    "exito_importacion",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.DO_NOTHING,
+                        related_name="registros",
+                        to="importarexpediente.exitoimportacion",
+                    ),
+                ),
+                (
+                    "expediente_pago",
+                    models.ForeignKey(
+                        null=True,
+                        on_delete=django.db.models.deletion.DO_NOTHING,
+                        related_name="registros_importados",
+                        to="expedientespagos.expedientepago",
+                    ),
+                ),
             ],
         ),
         migrations.RunPython(
@@ -71,37 +164,41 @@ class Migration(migrations.Migration):
             reverse_code=backwards_copy_expediente,
         ),
         migrations.AlterField(
-            model_name='registroimportado',
-            name='expediente_pago',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.DO_NOTHING, related_name='registros_importados', to='expedientespagos.expedientepago'),
+            model_name="registroimportado",
+            name="expediente_pago",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.DO_NOTHING,
+                related_name="registros_importados",
+                to="expedientespagos.expedientepago",
+            ),
         ),
         migrations.RemoveField(
-            model_name='registroimportado',
-            name='id_expediente',
+            model_name="registroimportado",
+            name="id_expediente",
         ),
         migrations.AlterField(
-            model_name='erroresimportacion',
-            name='mensaje',
-            field=models.TextField(blank=True, default=''),
+            model_name="erroresimportacion",
+            name="mensaje",
+            field=models.TextField(blank=True, default=""),
         ),
         migrations.AlterField(
-            model_name='exitoimportacion',
-            name='mensaje',
-            field=models.TextField(blank=True, default=''),
+            model_name="exitoimportacion",
+            name="mensaje",
+            field=models.TextField(blank=True, default=""),
         ),
         migrations.AddField(
-            model_name='archivosimportados',
-            name='importacion_completada',
+            model_name="archivosimportados",
+            name="importacion_completada",
             field=models.BooleanField(default=False),
         ),
         migrations.AddField(
-            model_name='archivosimportados',
-            name='delimiter',
-            field=models.CharField(default=',', max_length=1),
+            model_name="archivosimportados",
+            name="delimiter",
+            field=models.CharField(default=",", max_length=1),
         ),
         migrations.AddField(
-            model_name='archivosimportados',
-            name='numero_expediente_pago',
+            model_name="archivosimportados",
+            name="numero_expediente_pago",
             field=models.CharField(blank=True, max_length=255, null=True),
         ),
     ]
