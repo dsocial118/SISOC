@@ -1571,6 +1571,9 @@ class ComedorService:
         nueva_admision = Admision.objects.create(
             comedor=comedor,
             tipo=tipo_admision,
+            tipo_entidad_origen=getattr(
+                getattr(comedor, "organizacion", None), "tipo_entidad", None
+            ),
         )
         messages.success(
             request,

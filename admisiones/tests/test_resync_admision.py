@@ -92,8 +92,8 @@ def test_admision_desincronizada_devuelve_true_cuando_org_cambia_tipo(
     assert admision_desincronizada(admision) is True
 
 
-def test_admision_desincronizada_false_si_falta_snapshot_o_tipo_actual(
-    estado_inicial, tipo_entidades, tipos_convenio
+def test_admision_desincronizada_false_si_falta_tipo_actual(
+    estado_inicial, tipos_convenio
 ):
     organizacion = Organizacion.objects.create(nombre="Org sin tipo")
     comedor = Comedor.objects.create(nombre="Comedor sin tipo", organizacion=organizacion)
@@ -105,11 +105,39 @@ def test_admision_desincronizada_false_si_falta_snapshot_o_tipo_actual(
 
     assert AdmisionService.admision_desincronizada(admision) is False
 
-    organizacion.tipo_entidad = tipo_entidades["juridica"]
+
+def test_admision_legacy_sin_snapshot_se_inicializa_lazy(
+    estado_inicial, tipo_entidades, tipos_convenio
+):
+    """Una admision creada antes del snapshot (o por un flujo que no lo seteaba)
+    debe adoptar como base el ``tipo_entidad`` actual de la organizacion la
+    primera vez que se evalua la desincronizacion."""
+
+    organizacion = Organizacion.objects.create(
+        nombre="Org legacy", tipo_entidad=tipo_entidades["juridica"]
+    )
+    comedor = Comedor.objects.create(
+        nombre="Comedor legacy", organizacion=organizacion
+    )
+    admision = Admision.objects.create(
+        comedor=comedor,
+        tipo_convenio=tipos_convenio["juridica"],
+        estado=estado_inicial,
+    )
+    assert admision.tipo_entidad_origen_id is None
+
+    desincronizada = AdmisionService.admision_desincronizada(admision)
+
+    admision.refresh_from_db()
+    assert desincronizada is False
+    assert admision.tipo_entidad_origen_id == tipo_entidades["juridica"].id
+
+    # Despues del lazy init, un cambio en la organizacion si debe disparar la
+    # advertencia.
+    organizacion.tipo_entidad = tipo_entidades["eclesiastica"]
     organizacion.save(update_fields=["tipo_entidad"])
     admision.refresh_from_db()
-
-    assert AdmisionService.admision_desincronizada(admision) is False
+    assert AdmisionService.admision_desincronizada(admision) is True
 
 
 def test_resync_admision_borra_archivos_y_actualiza_snapshot(
