@@ -265,9 +265,7 @@ def test_materializacion_preserva_numero_gde_desde_admision(
     persistir en el campo `numero_gde` y el registro `NumeroGdeOrganizacion`
     queda eliminado (deja de ser canonico)."""
 
-    admision = _setup_admision_para_materializacion(
-        organizacion_con_documentos, tipos
-    )
+    admision = _setup_admision_para_materializacion(organizacion_con_documentos, tipos)
     archivo_org_a = ArchivoOrganizacion.objects.filter(
         organizacion=organizacion_con_documentos,
         documentacion__nombre="Acta Constitutiva",
@@ -300,9 +298,7 @@ def test_materializacion_fallback_a_numero_gde_legacy_de_archivo_organizacion(
     `ArchivoOrganizacion.numero_gde` (historico) tiene valor, al materializarse
     se usa ese GDE como fallback."""
 
-    admision = _setup_admision_para_materializacion(
-        organizacion_con_documentos, tipos
-    )
+    admision = _setup_admision_para_materializacion(organizacion_con_documentos, tipos)
     archivo_org_a = ArchivoOrganizacion.objects.filter(
         organizacion=organizacion_con_documentos,
         documentacion__nombre="Acta Constitutiva",
