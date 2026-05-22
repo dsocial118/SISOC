@@ -1074,9 +1074,31 @@ class AdmisionService:
         ArchivoAdmision.objects.filter(admision=admision).delete()
 
     @staticmethod
+    def _asegurar_snapshot_tipo_entidad(admision):
+        """Inicializa ``tipo_entidad_origen`` cuando esta vacio adoptando el
+        ``tipo_entidad`` actual de la organizacion. Cubre admisiones legacy
+        anteriores a la introduccion del snapshot y admisiones creadas por
+        flujos que no lo seteaban.
+        """
+
+        if getattr(admision, "tipo_entidad_origen_id", None):
+            return
+        organizacion = getattr(
+            getattr(admision, "comedor", None), "organizacion", None
+        )
+        tipo_actual_id = getattr(organizacion, "tipo_entidad_id", None)
+        if not tipo_actual_id:
+            return
+        admision.tipo_entidad_origen_id = tipo_actual_id
+        admision.save(update_fields=["tipo_entidad_origen"])
+
+    @staticmethod
     def admision_desincronizada(admision):
         """Indica si el ``tipo_entidad_origen`` snapshotado en la admision
-        difiere del ``tipo_entidad`` actual de la organizacion."""
+        difiere del ``tipo_entidad`` actual de la organizacion. Si el snapshot
+        esta vacio (admisiones legacy) se inicializa con el valor actual y se
+        considera sincronizada hasta el proximo cambio.
+        """
 
         organizacion = getattr(
             getattr(admision, "comedor", None), "organizacion", None
@@ -1084,8 +1106,11 @@ class AdmisionService:
         if not organizacion:
             return False
         tipo_actual_id = getattr(organizacion, "tipo_entidad_id", None)
+        if not tipo_actual_id:
+            return False
+        AdmisionService._asegurar_snapshot_tipo_entidad(admision)
         snapshot_id = getattr(admision, "tipo_entidad_origen_id", None)
-        if not tipo_actual_id or not snapshot_id:
+        if not snapshot_id:
             return False
         return tipo_actual_id != snapshot_id
 
