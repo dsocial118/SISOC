@@ -1,14 +1,20 @@
 import importlib
+from io import BytesIO
+from types import SimpleNamespace
 from datetime import date, time
 import json
 
 import pytest
+from bs4 import BeautifulSoup
+from django.conf import settings
 from django.contrib.auth.models import Group, User
 from django.contrib.auth.models import Permission
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
+from django.core.management import call_command
 from django.test import RequestFactory, override_settings
 from django.urls import reverse
+from openpyxl import load_workbook
 from rest_framework.test import APIClient
 from rest_framework_api_key.models import APIKey
 
@@ -44,10 +50,23 @@ from VAT.models import (
     Voucher,
     VoucherParametria,
 )
-from VAT.services.access_scope import filter_centros_queryset_for_user, is_vat_referente
+from VAT.services.access_scope import (
+    can_user_access_centro,
+    can_user_edit_centro,
+    filter_centros_queryset_for_management,
+    filter_centros_queryset_for_user,
+    filter_comisiones_queryset_for_management,
+    filter_comisiones_queryset_for_user,
+    filter_ofertas_queryset_for_management,
+    filter_ofertas_queryset_for_user,
+    is_vat_referente,
+    is_vat_revisor,
+    is_vat_sse,
+)
+from VAT.services import nomina_export
 from ciudadanos.models import Ciudadano
 from core.models import Dia, Localidad, Municipio, Provincia, Programa, Sexo
-from users.models import Profile
+from users.models import Profile, ProfileTerritorialScope
 
 
 @pytest.fixture
@@ -149,6 +168,57 @@ def _assign_user_profile_provincia(user, provincia, es_usuario_provincial=False)
             "es_usuario_provincial": es_usuario_provincial,
             "provincia": provincia,
         },
+    )
+
+
+def _grant_vat_revisor_access(user, *permissions):
+    revisor_permission, _ = Permission.objects.get_or_create(
+        content_type=ContentType.objects.get_for_model(Group),
+        codename="role_revisorcentrovat",
+        defaults={"name": "RevisorCentroVAT"},
+    )
+    user.user_permissions.add(revisor_permission, *permissions)
+
+
+def _grant_vat_provincial_access(user, *permissions):
+    provincial_permission, _ = Permission.objects.get_or_create(
+        content_type=ContentType.objects.get_for_model(Group),
+        codename="role_provincia_vat",
+        defaults={"name": "Provincia VAT"},
+    )
+    user.user_permissions.add(provincial_permission, *permissions)
+
+
+def _create_vat_centro(
+    *,
+    codigo,
+    provincia,
+    municipio,
+    localidad,
+    referente=None,
+    nombre=None,
+):
+    return Centro.objects.create(
+        nombre=nombre or f"Centro {codigo}",
+        codigo=codigo,
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad,
+        calle="7",
+        numero=123,
+        domicilio_actividad="Calle 7 123",
+        telefono="221-111111",
+        celular="221-222222",
+        correo=f"{codigo.lower()}@vat.test",
+        nombre_referente="Ana",
+        apellido_referente="Perez",
+        telefono_referente="221-333333",
+        correo_referente="ana@vat.test",
+        referente=referente,
+        tipo_gestion="Estatal",
+        clase_institucion="Formacion Profesional",
+        situacion="Institucion de ETP",
+        activo=True,
     )
 
 
@@ -257,11 +327,12 @@ def test_centro_alta_form_configura_referente_como_buscador_simple(vat_referente
     vat_referente_user.save(update_fields=["first_name", "last_name"])
 
     form = CentroAltaForm()
-    referente_field = form.fields["referente"]
+    referente_field = form.fields["referentes"]
 
     assert referente_field.widget.attrs["class"] == "referente-hidden-select"
     assert referente_field.widget.attrs["tabindex"] == "-1"
-    assert referente_field.empty_label == "Seleccionar referente..."
+    assert referente_field.required is False
+    assert referente_field.label == "Referente/s"
     assert (
         referente_field.label_from_instance(vat_referente_user)
         == "referente-vat - Ana Pérez"
@@ -292,13 +363,73 @@ def test_centro_alta_form_no_incluye_grupos_legacy_de_referente():
 
     form = CentroAltaForm()
     queryset_usernames = list(
-        form.fields["referente"]
+        form.fields["referentes"]
         .queryset.order_by("username")
         .values_list("username", flat=True)
     )
 
     assert "referente-legacy-form" not in queryset_usernames
     assert "referente-centro-form" not in queryset_usernames
+
+
+@pytest.mark.django_db
+def test_centro_alta_form_permite_multiples_referentes_y_revisores(vat_geo_data):
+    provincia, municipio, localidad = vat_geo_data
+    cfp_group, _ = Group.objects.get_or_create(name="CFP")
+    revisor_group, _ = Group.objects.get_or_create(name="CFPRevisor")
+    referente_uno = User.objects.create_user(username="referente-multiple-1")
+    referente_dos = User.objects.create_user(username="referente-multiple-2")
+    revisor_uno = User.objects.create_user(username="revisor-multiple-1")
+    revisor_dos = User.objects.create_user(username="revisor-multiple-2")
+    referente_uno.groups.add(cfp_group)
+    referente_dos.groups.add(cfp_group)
+    revisor_uno.groups.add(revisor_group)
+    revisor_dos.groups.add(revisor_group)
+    data = _build_centro_payload(
+        referente_uno,
+        provincia,
+        municipio,
+        localidad,
+        codigo="500144901",
+        referentes=[str(referente_uno.pk), str(referente_dos.pk)],
+        revisores=[str(revisor_uno.pk), str(revisor_dos.pk)],
+    )
+
+    form = CentroAltaForm(data=data)
+
+    assert form.is_valid(), form.errors
+    centro = form.save()
+    assert centro.referente_id == referente_uno.pk
+    assert set(centro.referentes.values_list("pk", flat=True)) == {
+        referente_uno.pk,
+        referente_dos.pk,
+    }
+    assert set(centro.revisores.values_list("pk", flat=True)) == {
+        revisor_uno.pk,
+        revisor_dos.pk,
+    }
+
+
+@pytest.mark.django_db
+def test_centro_alta_form_rechaza_referentes_fuera_de_grupo_cfp(vat_geo_data):
+    provincia, municipio, localidad = vat_geo_data
+    cfp_group, _ = Group.objects.get_or_create(name="CFP")
+    referente = User.objects.create_user(username="referente-valido")
+    user_sin_cfp = User.objects.create_user(username="referente-invalido")
+    referente.groups.add(cfp_group)
+    data = _build_centro_payload(
+        referente,
+        provincia,
+        municipio,
+        localidad,
+        codigo="500144902",
+        referentes=[str(referente.pk), str(user_sin_cfp.pk)],
+    )
+
+    form = CentroAltaForm(data=data)
+
+    assert not form.is_valid()
+    assert "referentes" in form.errors
 
 
 @pytest.mark.django_db
@@ -1145,6 +1276,100 @@ def test_filter_centros_queryset_usuario_con_role_provincia_vat_aplica_scope():
 
 
 @pytest.mark.django_db
+def test_vat_scope_municipio_no_habilita_toda_la_provincia():
+    provincia = Provincia.objects.create(nombre="VAT Provincia Scope")
+    municipio_scope = Municipio.objects.create(
+        nombre="Municipio Scope", provincia=provincia
+    )
+    municipio_fuera = Municipio.objects.create(
+        nombre="Municipio Fuera", provincia=provincia
+    )
+    localidad_scope = Localidad.objects.create(
+        nombre="Localidad Scope", municipio=municipio_scope
+    )
+    localidad_fuera = Localidad.objects.create(
+        nombre="Localidad Fuera", municipio=municipio_fuera
+    )
+    user = User.objects.create_user(username="vat-municipio-scope", password="test1234")
+    profile = user.profile
+    profile.es_usuario_provincial = True
+    profile.save()
+    ProfileTerritorialScope.objects.create(
+        profile=profile,
+        provincia=provincia,
+        municipio=municipio_scope,
+    )
+    _grant_vat_provincial_access(user)
+
+    centro_visible = _create_vat_centro(
+        codigo="MUN-IN",
+        provincia=provincia,
+        municipio=municipio_scope,
+        localidad=localidad_scope,
+    )
+    centro_fuera = _create_vat_centro(
+        codigo="MUN-OUT",
+        provincia=provincia,
+        municipio=municipio_fuera,
+        localidad=localidad_fuera,
+    )
+
+    centros = list(filter_centros_queryset_for_user(Centro.objects.all(), user))
+
+    assert centros == [centro_visible]
+    assert can_user_access_centro(user, centro_visible)
+    assert not can_user_access_centro(user, centro_fuera)
+
+
+@pytest.mark.django_db
+def test_vat_scope_localidad_no_habilita_otra_localidad_para_edicion():
+    provincia = Provincia.objects.create(nombre="VAT Provincia Localidad")
+    municipio = Municipio.objects.create(
+        nombre="Municipio Localidad", provincia=provincia
+    )
+    localidad_scope = Localidad.objects.create(
+        nombre="Localidad Dentro", municipio=municipio
+    )
+    localidad_fuera = Localidad.objects.create(
+        nombre="Localidad Fuera", municipio=municipio
+    )
+    user = User.objects.create_user(username="vat-localidad-scope", password="test1234")
+    profile = user.profile
+    profile.es_usuario_provincial = True
+    profile.save()
+    ProfileTerritorialScope.objects.create(
+        profile=profile,
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad_scope,
+    )
+    change_perm = Permission.objects.get(
+        content_type__app_label="VAT",
+        codename="change_centro",
+    )
+    _grant_vat_provincial_access(user, change_perm)
+
+    centro_visible = _create_vat_centro(
+        codigo="LOC-IN",
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad_scope,
+    )
+    centro_fuera = _create_vat_centro(
+        codigo="LOC-OUT",
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad_fuera,
+    )
+
+    centros = list(filter_centros_queryset_for_management(Centro.objects.all(), user))
+
+    assert centros == [centro_visible]
+    assert can_user_edit_centro(user, centro_visible)
+    assert not can_user_edit_centro(user, centro_fuera)
+
+
+@pytest.mark.django_db
 def test_vat_centro_list_filters_config_expone_solo_nombre_y_codigo(mocker):
     user = User.objects.create_superuser(
         username="admin-vat-filtros",
@@ -1270,6 +1495,188 @@ def test_is_vat_referente_reconoce_alias_legacy_centroreferentevat():
     user.user_permissions.add(permiso_role_referente_legacy)
 
     assert is_vat_referente(user) is True
+
+
+@pytest.mark.django_db
+def test_is_vat_revisor_reconoce_permiso_cfp_revisor():
+    user = User.objects.create_user(username="revisor-vat", password="test1234")
+    _grant_vat_revisor_access(user)
+
+    assert is_vat_revisor(user) is True
+
+
+@pytest.mark.django_db
+def test_cfpinet_tiene_scope_global_por_permiso_canonico_vat_sse(vat_geo_data):
+    provincia, municipio, localidad = vat_geo_data
+    otra_provincia = Provincia.objects.create(nombre="Otra provincia INET")
+    otro_municipio = Municipio.objects.create(
+        nombre="Otro municipio INET", provincia=otra_provincia
+    )
+    otra_localidad = Localidad.objects.create(
+        nombre="Otra localidad INET", municipio=otro_municipio
+    )
+    call_command("create_groups", verbosity=0)
+    user = User.objects.create_user(username="cfpinet-scope", password="test1234")
+    user.groups.add(Group.objects.get(name="CFPINET"))
+    centro_uno = _create_vat_centro(
+        codigo="INET-SCOPE-001",
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad,
+    )
+    centro_dos = _create_vat_centro(
+        codigo="INET-SCOPE-002",
+        provincia=otra_provincia,
+        municipio=otro_municipio,
+        localidad=otra_localidad,
+    )
+
+    centros_visibles = set(
+        filter_centros_queryset_for_user(Centro.objects.all(), user).values_list(
+            "pk", flat=True
+        )
+    )
+
+    assert is_vat_sse(user) is True
+    assert centros_visibles == {centro_uno.pk, centro_dos.pk}
+    assert can_user_access_centro(user, centro_uno) is True
+    assert can_user_access_centro(user, centro_dos) is True
+    assert can_user_edit_centro(user, centro_uno) is True
+
+
+@pytest.mark.django_db
+def test_cfpinet_sin_permiso_vat_sse_no_recibe_scope_global(vat_geo_data):
+    provincia, municipio, localidad = vat_geo_data
+    user = SimpleNamespace(
+        id=999999,
+        is_authenticated=True,
+        is_superuser=False,
+        groups=SimpleNamespace(
+            filter=lambda **_kwargs: SimpleNamespace(exists=lambda: True)
+        ),
+    )
+    centro_uno = _create_vat_centro(
+        codigo="INET-NOROL-001",
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad,
+    )
+    _create_vat_centro(
+        codigo="INET-NOROL-002",
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad,
+    )
+
+    centros_visibles = set(
+        filter_centros_queryset_for_user(Centro.objects.all(), user).values_list(
+            "pk", flat=True
+        )
+    )
+
+    assert is_vat_sse(user) is False
+    assert centros_visibles == set()
+    assert can_user_access_centro(user, centro_uno) is False
+
+
+@pytest.mark.django_db
+def test_scope_mixto_separa_gestion_de_revision(vat_geo_data):
+    provincia, municipio, localidad = vat_geo_data
+    user = User.objects.create_user(username="mixto-vat", password="test1234")
+    _grant_vat_referente_access(user)
+    _grant_vat_revisor_access(user)
+    centro_gestion = _create_vat_centro(
+        codigo="MIX-001",
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad,
+        referente=user,
+    )
+    centro_revision = _create_vat_centro(
+        codigo="MIX-002",
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad,
+    )
+    centro_gestion.referentes.add(user)
+    centro_revision.revisores.add(user)
+
+    centros_visibles = set(
+        filter_centros_queryset_for_user(Centro.objects.all(), user).values_list(
+            "pk", flat=True
+        )
+    )
+    centros_gestionables = set(
+        filter_centros_queryset_for_management(Centro.objects.all(), user).values_list(
+            "pk", flat=True
+        )
+    )
+    sector = Sector.objects.create(nombre="Sector mixto VAT")
+    modalidad = ModalidadCursada.objects.create(nombre="Presencial", activo=True)
+    plan = PlanVersionCurricular.objects.create(
+        provincia=provincia,
+        nombre="Plan mixto VAT",
+        sector=sector,
+        modalidad_cursada=modalidad,
+    )
+    programa = Programa.objects.create(nombre="Programa mixto VAT")
+    oferta_gestion = OfertaInstitucional.objects.create(
+        centro=centro_gestion,
+        plan_curricular=plan,
+        programa=programa,
+        nombre_local="Oferta gestionable",
+        ciclo_lectivo=2026,
+    )
+    oferta_revision = OfertaInstitucional.objects.create(
+        centro=centro_revision,
+        plan_curricular=plan,
+        programa=programa,
+        nombre_local="Oferta solo revision",
+        ciclo_lectivo=2026,
+    )
+    comision_gestion = Comision.objects.create(
+        oferta=oferta_gestion,
+        codigo_comision="MIX-COM-GESTION",
+        nombre="Comision gestionable",
+        fecha_inicio=date(2026, 5, 1),
+        fecha_fin=date(2026, 6, 1),
+        cupo=10,
+    )
+    comision_revision = Comision.objects.create(
+        oferta=oferta_revision,
+        codigo_comision="MIX-COM-REVISION",
+        nombre="Comision solo revision",
+        fecha_inicio=date(2026, 5, 1),
+        fecha_fin=date(2026, 6, 1),
+        cupo=10,
+    )
+
+    assert centros_visibles == {centro_gestion.pk, centro_revision.pk}
+    assert centros_gestionables == {centro_gestion.pk}
+    assert set(
+        filter_ofertas_queryset_for_user(
+            OfertaInstitucional.objects.all(), user
+        ).values_list("pk", flat=True)
+    ) == {oferta_gestion.pk, oferta_revision.pk}
+    assert set(
+        filter_ofertas_queryset_for_management(
+            OfertaInstitucional.objects.all(), user
+        ).values_list("pk", flat=True)
+    ) == {oferta_gestion.pk}
+    assert set(
+        filter_comisiones_queryset_for_user(Comision.objects.all(), user).values_list(
+            "pk", flat=True
+        )
+    ) == {comision_gestion.pk, comision_revision.pk}
+    assert set(
+        filter_comisiones_queryset_for_management(
+            Comision.objects.all(), user
+        ).values_list("pk", flat=True)
+    ) == {comision_gestion.pk}
+    assert can_user_access_centro(user, centro_gestion) is True
+    assert can_user_access_centro(user, centro_revision) is True
+    assert can_user_edit_centro(user, centro_gestion) is True
+    assert can_user_edit_centro(user, centro_revision) is False
 
 
 @pytest.mark.django_db
@@ -1486,6 +1893,367 @@ def test_centro_detail_muestra_boton_editar_para_referente_cfp(client, vat_geo_d
 
 
 @pytest.mark.django_db
+def test_centro_detail_muestra_referentes_plural_sin_exponer_revisores(
+    client, vat_geo_data
+):
+    provincia, municipio, localidad = vat_geo_data
+    cfp_group, _ = Group.objects.get_or_create(name="CFP")
+    revisor_group, _ = Group.objects.get_or_create(name="CFPRevisor")
+    referente_uno = User.objects.create_user(username="ref-detalle-1")
+    referente_dos = User.objects.create_user(username="ref-detalle-2")
+    revisor = User.objects.create_user(username="revisor-detalle")
+    referente_uno.groups.add(cfp_group)
+    referente_dos.groups.add(cfp_group)
+    revisor.groups.add(revisor_group)
+    centro = _create_vat_centro(
+        codigo="DET-001",
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad,
+        referente=referente_uno,
+    )
+    centro.referentes.add(referente_uno, referente_dos)
+    centro.revisores.add(revisor)
+
+    client.force_login(referente_uno)
+    response = client.get(reverse("vat_centro_detail", kwargs={"pk": centro.pk}))
+
+    content = response.content.decode("utf-8")
+    assert response.status_code == 200
+    assert "Referente/s del Centro" in content
+    assert "ref-detalle-1" in content
+    assert "ref-detalle-2" in content
+    assert "revisor-detalle" not in content
+
+
+@pytest.mark.django_db
+def test_revisor_asignado_lista_y_ve_centro_sin_acciones_de_gestion(
+    client, vat_geo_data
+):
+    provincia, municipio, localidad = vat_geo_data
+    revisor_group, _ = Group.objects.get_or_create(name="CFPRevisor")
+    revisor = User.objects.create_user(
+        username="revisor-solo-lectura", password="test1234"
+    )
+    revisor.groups.add(revisor_group)
+    _grant_vat_revisor_access(revisor)
+    centro_asignado = _create_vat_centro(
+        codigo="REV-LIST-001",
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad,
+        nombre="Centro visible para revisor",
+    )
+    centro_ajeno = _create_vat_centro(
+        codigo="REV-LIST-002",
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad,
+        nombre="Centro ajeno al revisor",
+    )
+    centro_asignado.revisores.add(revisor)
+
+    client.force_login(revisor)
+    list_response = client.get(reverse("vat_centro_list"))
+    detail_response = client.get(
+        reverse("vat_centro_detail", kwargs={"pk": centro_asignado.pk})
+    )
+    update_response = client.get(
+        reverse("vat_centro_update", kwargs={"pk": centro_asignado.pk})
+    )
+    delete_response = client.get(
+        reverse("vat_centro_delete", kwargs={"pk": centro_asignado.pk})
+    )
+
+    list_content = list_response.content.decode("utf-8")
+    detail_content = detail_response.content.decode("utf-8")
+    assert list_response.status_code == 200
+    assert centro_asignado.nombre in list_content
+    assert centro_ajeno.nombre not in list_content
+    assert detail_response.status_code == 200
+    assert (
+        reverse("vat_centro_update", kwargs={"pk": centro_asignado.pk})
+        not in detail_content
+    )
+    assert update_response.status_code == 403
+    assert delete_response.status_code == 403
+
+
+@pytest.mark.django_db
+def test_usuario_mixto_no_gestiona_centro_asignado_solo_como_revisor(
+    client, vat_geo_data
+):
+    provincia, municipio, localidad = vat_geo_data
+    modalidad = ModalidadCursada.objects.create(
+        nombre="Presencial solo revisor", activo=True
+    )
+    user = User.objects.create_user(username="mixto-sin-gestion", password="test1234")
+    permisos_gestion = Permission.objects.filter(
+        content_type__app_label="VAT",
+        codename__in=[
+            "view_centro",
+            "delete_centro",
+            "add_institucioncontacto",
+            "change_institucioncontacto",
+            "delete_institucioncontacto",
+            "add_institucionubicacion",
+            "change_institucionubicacion",
+            "delete_institucionubicacion",
+            "add_institucionidentificadorhist",
+            "change_institucionidentificadorhist",
+            "delete_institucionidentificadorhist",
+            "add_curso",
+            "change_curso",
+            "delete_curso",
+            "view_comisioncurso",
+            "add_comisioncurso",
+            "change_comisioncurso",
+            "delete_comisioncurso",
+            "add_comisionhorario",
+            "change_comisionhorario",
+            "delete_comisionhorario",
+            "add_inscripcion",
+            "change_inscripcion",
+        ],
+    )
+    _grant_vat_referente_access(
+        user,
+        *permisos_gestion,
+    )
+    _grant_vat_revisor_access(user)
+    centro = _create_vat_centro(
+        codigo="REV-001",
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad,
+    )
+    centro.revisores.add(user)
+    ubicacion = InstitucionUbicacion.objects.create(
+        centro=centro,
+        localidad=localidad,
+        rol_ubicacion="sede_principal",
+        domicilio="Calle Revisor 123",
+        es_principal=True,
+    )
+    curso = Curso.objects.create(
+        centro=centro,
+        nombre="Curso solo lectura",
+        modalidad=modalidad,
+        estado="planificado",
+    )
+    comision = ComisionCurso.objects.create(
+        curso=curso,
+        ubicacion=ubicacion,
+        codigo_comision="REV-CUR-001",
+        nombre="Comision solo lectura",
+        cupo_total=20,
+        fecha_inicio=date(2026, 4, 1),
+        fecha_fin=date(2026, 4, 30),
+        estado="activa",
+    )
+
+    client.force_login(user)
+    detail_response = client.get(reverse("vat_centro_detail", kwargs={"pk": centro.pk}))
+    panel_response = client.get(
+        reverse("vat_centro_cursos_panel", kwargs={"pk": centro.pk}),
+        HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+    )
+    create_response = client.get(reverse("vat_curso_create"), {"centro": centro.pk})
+    update_response = client.get(reverse("vat_curso_update", kwargs={"pk": curso.pk}))
+    delete_response = client.get(reverse("vat_curso_delete", kwargs={"pk": curso.pk}))
+    comision_create_response = client.get(
+        reverse("vat_comision_curso_create"), {"curso": curso.pk}
+    )
+    comision_update_response = client.get(
+        reverse("vat_comision_curso_update", kwargs={"pk": comision.pk})
+    )
+    comision_delete_response = client.get(
+        reverse("vat_comision_curso_delete", kwargs={"pk": comision.pk})
+    )
+    comision_detail_response = client.get(
+        reverse("vat_comision_curso_detail", kwargs={"pk": comision.pk})
+    )
+
+    detail_content = detail_response.content.decode("utf-8")
+    panel_content = panel_response.content.decode("utf-8")
+    comision_detail_content = comision_detail_response.content.decode("utf-8")
+
+    assert detail_response.status_code == 200
+    assert panel_response.status_code == 200
+    assert comision_detail_response.status_code == 200
+    assert reverse("vat_centro_delete", kwargs={"pk": centro.pk}) not in detail_content
+    assert "Agregar Contacto" not in detail_content
+    assert "Agregar Identificador" not in detail_content
+    assert "Agregar Ubicacion" not in detail_content
+    assert reverse("vat_curso_create") not in panel_content
+    assert reverse("vat_curso_update", kwargs={"pk": curso.pk}) not in panel_content
+    assert reverse("vat_curso_delete", kwargs={"pk": curso.pk}) not in panel_content
+    assert reverse("vat_comision_curso_create") not in panel_content
+    assert (
+        reverse("vat_comision_curso_update", kwargs={"pk": comision.pk})
+        not in panel_content
+    )
+    assert (
+        reverse("vat_comision_curso_delete", kwargs={"pk": comision.pk})
+        not in panel_content
+    )
+    assert create_response.status_code == 403
+    assert update_response.status_code == 404
+    assert delete_response.status_code == 404
+    assert comision_create_response.status_code == 403
+    assert comision_update_response.status_code == 404
+    assert comision_delete_response.status_code == 404
+    assert "Comision solo lectura" in comision_detail_content
+    assert (
+        reverse("vat_comision_curso_update", kwargs={"pk": comision.pk})
+        not in comision_detail_content
+    )
+    assert (
+        reverse("vat_comision_curso_delete", kwargs={"pk": comision.pk})
+        not in comision_detail_content
+    )
+    assert reverse("vat_comision_curso_horario_create") not in comision_detail_content
+    assert (
+        reverse("vat_inscripcion_rapida_comision_curso") not in comision_detail_content
+    )
+
+
+@pytest.mark.django_db
+@override_settings(ROOT_URLCONF="config.urls")
+def test_cfpinet_visualiza_detalle_comision_curso_desde_panel(client, vat_geo_data):
+    provincia, municipio, localidad = vat_geo_data
+    call_command("create_groups", verbosity=0)
+    cfpinet = Group.objects.get(name="CFPINET")
+    user = User.objects.create_user(
+        username="cfpinet-comision-curso", password="test1234"
+    )
+    user.groups.add(cfpinet)
+    centro = _create_vat_centro(
+        codigo="INET-CUR-001",
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad,
+    )
+    ubicacion = InstitucionUbicacion.objects.create(
+        centro=centro,
+        localidad=localidad,
+        rol_ubicacion="sede_principal",
+        domicilio="Calle INET 100",
+        es_principal=True,
+    )
+    modalidad = ModalidadCursada.objects.create(nombre="Presencial INET", activo=True)
+    curso = Curso.objects.create(
+        centro=centro,
+        nombre="Curso visible INET",
+        modalidad=modalidad,
+        estado="planificado",
+    )
+    comision = ComisionCurso.objects.create(
+        curso=curso,
+        ubicacion=ubicacion,
+        codigo_comision="INET-CUR-COM-001",
+        nombre="Comision curso visible INET",
+        cupo_total=20,
+        fecha_inicio=date(2026, 5, 1),
+        fecha_fin=date(2026, 6, 1),
+        estado="activa",
+    )
+
+    client.force_login(user)
+    panel_response = client.get(
+        reverse("vat_centro_cursos_panel", kwargs={"pk": centro.pk})
+    )
+    detail_response = client.get(
+        reverse("vat_comision_curso_detail", kwargs={"pk": comision.pk})
+    )
+
+    panel_content = panel_response.content.decode("utf-8")
+    detail_content = detail_response.content.decode("utf-8")
+    assert panel_response.status_code == 200
+    assert (
+        reverse("vat_comision_curso_detail", kwargs={"pk": comision.pk})
+        in panel_content
+    )
+    assert 'class="fas fa-eye"' in panel_content
+    assert detail_response.status_code == 200
+    assert "Comision curso visible INET" in detail_content
+    assert (
+        reverse("vat_comision_curso_update", kwargs={"pk": comision.pk})
+        not in detail_content
+    )
+    assert (
+        reverse("vat_comision_curso_delete", kwargs={"pk": comision.pk})
+        not in detail_content
+    )
+
+
+@pytest.mark.django_db
+@override_settings(ROOT_URLCONF="config.urls")
+def test_cfpinet_visualiza_listado_y_detalle_comision_institucional(
+    client, vat_geo_data
+):
+    provincia, municipio, localidad = vat_geo_data
+    call_command("create_groups", verbosity=0)
+    cfpinet = Group.objects.get(name="CFPINET")
+    user = User.objects.create_user(username="cfpinet-comision", password="test1234")
+    user.groups.add(cfpinet)
+    centro = _create_vat_centro(
+        codigo="INET-COM-001",
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad,
+    )
+    sector = Sector.objects.create(nombre="Sector INET")
+    modalidad = ModalidadCursada.objects.create(
+        nombre="Presencial Comision INET", activo=True
+    )
+    plan = PlanVersionCurricular.objects.create(
+        nombre="Plan Comision INET",
+        provincia=provincia,
+        sector=sector,
+        modalidad_cursada=modalidad,
+        activo=True,
+    )
+    programa = Programa.objects.create(nombre="Programa Comision INET")
+    oferta = OfertaInstitucional.objects.create(
+        centro=centro,
+        plan_curricular=plan,
+        programa=programa,
+        nombre_local="Oferta visible INET",
+        ciclo_lectivo=2026,
+        estado="publicada",
+    )
+    comision = Comision.objects.create(
+        oferta=oferta,
+        codigo_comision="INET-COM-001",
+        nombre="Comision visible INET",
+        fecha_inicio=date(2026, 5, 1),
+        fecha_fin=date(2026, 6, 1),
+        cupo=20,
+        estado="activa",
+    )
+
+    client.force_login(user)
+    list_response = client.get(reverse("vat_comision_list"))
+    detail_response = client.get(
+        reverse("vat_comision_detail", kwargs={"pk": comision.pk})
+    )
+
+    list_content = list_response.content.decode("utf-8")
+    detail_content = detail_response.content.decode("utf-8")
+    assert list_response.status_code == 200
+    assert reverse("vat_comision_detail", kwargs={"pk": comision.pk}) in list_content
+    assert detail_response.status_code == 200
+    assert "Comision visible INET" in detail_content
+    assert (
+        reverse("vat_comision_update", kwargs={"pk": comision.pk}) not in detail_content
+    )
+    assert (
+        reverse("vat_comision_delete", kwargs={"pk": comision.pk}) not in detail_content
+    )
+
+
+@pytest.mark.django_db
 @override_settings(ROOT_URLCONF="config.urls")
 def test_institucion_ubicacion_update_renderiza_con_volver_al_detalle_del_centro(
     client, vat_geo_data
@@ -1540,6 +2308,118 @@ def test_institucion_ubicacion_update_renderiza_con_volver_al_detalle_del_centro
     assert response.status_code == 200
     assert response.context["return_url"] == return_url
     assert f'href="{return_url}"' in content
+
+
+@pytest.mark.django_db
+@override_settings(ROOT_URLCONF="config.urls")
+def test_centro_detail_modal_ubicacion_expone_localidades_habilitadas(
+    client, vat_geo_data
+):
+    provincia, municipio, localidad = vat_geo_data
+    group, _ = Group.objects.get_or_create(name="CFP")
+    user = User.objects.create_superuser(
+        username="admin-ubicacion-modal",
+        email="admin-ubicacion-modal@vat.test",
+        password="test1234",
+    )
+    user.groups.add(group)
+    centro = Centro.objects.create(
+        nombre="Centro Ubicaciones Modal",
+        codigo="CFP-UBI-MODAL",
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad,
+        calle="8",
+        numero=456,
+        domicilio_actividad="Calle 8 N° 456",
+        telefono="221-4100000",
+        celular="221-5100000",
+        correo="centro-ubicaciones-modal@vat.test",
+        nombre_referente="Luisa",
+        apellido_referente="Martinez",
+        telefono_referente="221-6100000",
+        correo_referente="luisa-modal@vat.test",
+        referente=user,
+        tipo_gestion="Estatal",
+        clase_institucion="Formación Profesional",
+        situacion="Institución de ETP",
+        activo=True,
+    )
+
+    client.force_login(user)
+    response = client.get(reverse("vat_centro_detail", kwargs={"pk": centro.pk}))
+
+    soup = BeautifulSoup(response.content, "html.parser")
+    modal_form = soup.find("form", {"id": "formUbicacion"})
+    centro_select = modal_form.find("select", {"name": "centro"})
+    localidad_select = modal_form.find("select", {"name": "localidad"})
+
+    assert response.status_code == 200
+    assert centro_select["id"] == "id_centro_ubicacion"
+    assert localidad_select["id"] == "id_localidad_ubicacion"
+    assert "disabled" not in localidad_select.attrs
+    assert localidad_select["data-dropdown-parent"] == "#modalUbicacion .modal-body"
+    assert localidad_select.find("option", value=str(localidad.pk)) is not None
+
+
+@pytest.mark.django_db
+@override_settings(ROOT_URLCONF="config.urls")
+def test_centro_detail_modal_ubicacion_fallback_a_provincia_sin_localidades_municipio(
+    client,
+):
+    provincia = Provincia.objects.create(nombre="Buenos Aires")
+    municipio_sin_localidades = Municipio.objects.create(
+        nombre="Municipio sin localidades", provincia=provincia
+    )
+    municipio_con_localidad = Municipio.objects.create(
+        nombre="Municipio con localidad", provincia=provincia
+    )
+    localidad_provincial = Localidad.objects.create(
+        nombre="Localidad provincial", municipio=municipio_con_localidad
+    )
+    user = User.objects.create_superuser(
+        username="admin-ubicacion-modal-fallback",
+        email="admin-ubicacion-modal-fallback@vat.test",
+        password="test1234",
+    )
+    centro = Centro.objects.create(
+        nombre="Centro Ubicaciones Fallback",
+        codigo="CFP-UBI-FALLBACK",
+        provincia=provincia,
+        municipio=municipio_sin_localidades,
+        localidad=localidad_provincial,
+        calle="8",
+        numero=456,
+        domicilio_actividad="Calle 8 N° 456",
+        telefono="221-4100000",
+        celular="221-5100000",
+        correo="centro-ubicaciones-fallback@vat.test",
+        nombre_referente="Luisa",
+        apellido_referente="Martinez",
+        telefono_referente="221-6100000",
+        correo_referente="luisa-fallback@vat.test",
+        referente=user,
+        tipo_gestion="Estatal",
+        clase_institucion="Formación Profesional",
+        situacion="Institución de ETP",
+        activo=True,
+    )
+
+    client.force_login(user)
+    response = client.get(reverse("vat_centro_detail", kwargs={"pk": centro.pk}))
+    ajax_response = client.get(
+        reverse("vat_ajax_localidades_por_centro"), {"centro_id": str(centro.pk)}
+    )
+
+    soup = BeautifulSoup(response.content, "html.parser")
+    modal_form = soup.find("form", {"id": "formUbicacion"})
+    localidad_select = modal_form.find("select", {"name": "localidad"})
+
+    assert response.status_code == 200
+    assert localidad_select.find("option", value=str(localidad_provincial.pk))
+    assert ajax_response.json()["localidades"] == [
+        {"id": localidad_provincial.pk, "nombre": localidad_provincial.nombre}
+    ]
 
 
 @pytest.mark.django_db
@@ -2304,7 +3184,7 @@ def test_api_vat_provincias_lista_sin_paginacion(vat_api_client):
         [Provincia(nombre=f"Provincia VAT {index:02d}") for index in range(12)]
     )
 
-    response = vat_api_client.get("/api/vat/provincias/")
+    response = vat_api_client.get("/api/vat/provincias/?page_size=1")
 
     assert response.status_code == 200
     payload = response.json()
@@ -2325,7 +3205,7 @@ def test_api_vat_localidades_lista_sin_paginacion(vat_api_client):
         ]
     )
 
-    response = vat_api_client.get("/api/vat/localidades/")
+    response = vat_api_client.get("/api/vat/localidades/?page_size=1")
 
     assert response.status_code == 200
     payload = response.json()
@@ -2333,6 +3213,52 @@ def test_api_vat_localidades_lista_sin_paginacion(vat_api_client):
     assert len(payload) == 12
     assert payload[0]["nombre"] == "Localidad VAT 00"
     assert payload[-1]["nombre"] == "Localidad VAT 11"
+
+
+@pytest.mark.django_db
+def test_api_vat_municipios_lista_sin_paginacion(vat_api_client):
+    provincia = Provincia.objects.create(nombre="Provincia VAT")
+    Municipio.objects.bulk_create(
+        [
+            Municipio(nombre=f"Municipio VAT {index:02d}", provincia=provincia)
+            for index in range(12)
+        ]
+    )
+
+    response = vat_api_client.get("/api/vat/municipios/")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert isinstance(payload, list)
+    assert len(payload) == 12
+    assert payload[0]["nombre"] == "Municipio VAT 00"
+    assert payload[-1]["nombre"] == "Municipio VAT 11"
+
+
+@pytest.mark.django_db
+def test_api_vat_municipios_filtra_por_provincia_sin_paginacion(vat_api_client):
+    provincia_ba = Provincia.objects.create(nombre="Buenos Aires")
+    provincia_caba = Provincia.objects.create(nombre="CABA")
+    Municipio.objects.bulk_create(
+        [
+            Municipio(nombre="Municipio BA 01", provincia=provincia_ba),
+            Municipio(nombre="Municipio BA 02", provincia=provincia_ba),
+            Municipio(nombre="Municipio CABA 01", provincia=provincia_caba),
+        ]
+    )
+
+    response = vat_api_client.get(
+        f"/api/vat/municipios/?provincia_id={provincia_ba.id}"
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert isinstance(payload, list)
+    assert len(payload) == 2
+    assert [item["nombre"] for item in payload] == [
+        "Municipio BA 01",
+        "Municipio BA 02",
+    ]
 
 
 @pytest.mark.django_db
@@ -2365,6 +3291,57 @@ def test_api_vat_cursos_lista_por_centro(vat_api_client, vat_curso_base):
     assert payload["count"] == 1
     assert payload["results"][0]["id"] == curso.id
     assert payload["results"][0]["centro"] == centro.id
+
+
+@pytest.mark.django_db
+def test_api_vat_cursos_acepta_page_size(vat_api_client, vat_curso_base):
+    centro, _, modalidad = vat_curso_base
+    Curso.objects.bulk_create(
+        [
+            Curso(
+                centro=centro,
+                nombre=f"Curso API VAT page size {index}",
+                modalidad=modalidad,
+                estado="activo",
+            )
+            for index in range(12)
+        ]
+    )
+
+    response = vat_api_client.get(f"/api/vat/cursos/?centro_id={centro.id}&page_size=3")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["count"] == 12
+    assert len(payload["results"]) == 3
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("invalid_page_size", ["abc", "0", "-1", "201"])
+def test_api_vat_cursos_page_size_invalido_hace_fallback_default(
+    vat_api_client, vat_curso_base, invalid_page_size
+):
+    centro, _, modalidad = vat_curso_base
+    Curso.objects.bulk_create(
+        [
+            Curso(
+                centro=centro,
+                nombre=f"Curso API VAT invalid page size {index}",
+                modalidad=modalidad,
+                estado="activo",
+            )
+            for index in range(12)
+        ]
+    )
+
+    response = vat_api_client.get(
+        f"/api/vat/cursos/?centro_id={centro.id}&page_size={invalid_page_size}"
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    expected_default_size = settings.REST_FRAMEWORK["PAGE_SIZE"]
+    assert len(payload["results"]) == min(expected_default_size, payload["count"])
 
 
 @pytest.mark.django_db
@@ -2539,20 +3516,37 @@ def test_api_vat_cursos_buscar_sin_texto_devuelve_listado_paginado(
     vat_api_client, vat_curso_base
 ):
     centro, ubicacion, modalidad = vat_curso_base
-    curso = Curso.objects.create(
+    curso_prioritario = Curso.objects.create(
         centro=centro,
         nombre="Operador de Primera Carga",
         modalidad=modalidad,
         estado="activo",
+        prioritario=True,
+    )
+    curso_no_prioritario = Curso.objects.create(
+        centro=centro,
+        nombre="Operador de Segunda Carga",
+        modalidad=modalidad,
+        estado="activo",
     )
     ComisionCurso.objects.create(
-        curso=curso,
+        curso=curso_prioritario,
         ubicacion=ubicacion,
-        codigo_comision="PC-001",
+        codigo_comision="PC-002",
         nombre="Comisión Primera Carga",
         cupo_total=20,
-        fecha_inicio=date(2026, 4, 10),
-        fecha_fin=date(2026, 5, 10),
+        fecha_inicio=date(2026, 4, 11),
+        fecha_fin=date(2026, 5, 11),
+        estado="activa",
+    )
+    ComisionCurso.objects.create(
+        curso=curso_no_prioritario,
+        ubicacion=ubicacion,
+        codigo_comision="PC-001",
+        nombre="Comisión Segunda Carga",
+        cupo_total=20,
+        fecha_inicio=date(2026, 4, 12),
+        fecha_fin=date(2026, 5, 12),
         estado="activa",
     )
 
@@ -2560,9 +3554,11 @@ def test_api_vat_cursos_buscar_sin_texto_devuelve_listado_paginado(
 
     assert response.status_code == 200
     payload = response.json()
-    result_ids = {item["id"] for item in payload["results"]}
-    assert payload["count"] == 1
-    assert curso.id in result_ids
+    assert payload["count"] == 2
+    assert [item["id"] for item in payload["results"]] == [
+        curso_prioritario.id,
+        curso_no_prioritario.id,
+    ]
 
 
 @pytest.mark.django_db
@@ -3392,6 +4388,182 @@ def test_api_vat_web_mi_argentina_flujo_completo_prevalidar_e_inscribir(
     assert voucher.cantidad_disponible == 4
 
 
+def _crear_ciudadano_voucher_estado(documento):
+    sexo = Sexo.objects.create(sexo=f"Sexo {documento}")
+    return Ciudadano.objects.create(
+        apellido="Voucher",
+        nombre="Estado",
+        fecha_nacimiento=date(1990, 1, 1),
+        tipo_documento=Ciudadano.DOCUMENTO_DNI,
+        documento=documento,
+        sexo=sexo,
+    )
+
+
+def _crear_voucher_estado(ciudadano):
+    usuario = User.objects.create_user(
+        username=f"voucher-estado-{ciudadano.documento}",
+        password="test1234",
+    )
+    programa = Programa.objects.create(nombre=f"Programa Voucher {ciudadano.documento}")
+    parametria = VoucherParametria.objects.create(
+        nombre=f"Parametria Voucher {ciudadano.documento}",
+        programa=programa,
+        cantidad_inicial=5,
+        fecha_vencimiento=date(2099, 12, 31),
+        creado_por=usuario,
+        activa=True,
+    )
+    return Voucher.objects.create(
+        parametria=parametria,
+        ciudadano=ciudadano,
+        programa=programa,
+        cantidad_inicial=5,
+        cantidad_usada=0,
+        cantidad_disponible=5,
+        fecha_vencimiento=date(2099, 12, 31),
+        estado="activo",
+        asignado_por=usuario,
+    )
+
+
+@pytest.mark.django_db
+def test_api_vat_web_voucher_estado_disponible_con_voucher_sin_inscripcion(
+    vat_api_client,
+):
+    ciudadano = _crear_ciudadano_voucher_estado(40111001)
+    _crear_voucher_estado(ciudadano)
+
+    response = vat_api_client.get(
+        f"/api/vat/web/ciudadanos/voucher-estado/?documento={ciudadano.documento}"
+    )
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "documento": str(ciudadano.documento),
+        "estado": "Disponible",
+        "tiene_voucher": True,
+        "esta_inscripto": False,
+    }
+
+
+@pytest.mark.django_db
+def test_api_vat_web_voucher_estado_prioriza_ciudadano_estandar_con_dni_duplicado(
+    vat_api_client,
+):
+    documento = 40111004
+    sexo = Sexo.objects.create(sexo="Sexo duplicado voucher estado")
+    Ciudadano.objects.create(
+        apellido="Duplicado",
+        nombre="No validado",
+        fecha_nacimiento=date(1990, 1, 1),
+        tipo_documento=Ciudadano.DOCUMENTO_DNI,
+        documento=documento,
+        sexo=sexo,
+        tipo_registro_identidad=Ciudadano.TIPO_REGISTRO_DNI_NO_VALIDADO,
+    )
+    ciudadano_estandar = _crear_ciudadano_voucher_estado(documento)
+    _crear_voucher_estado(ciudadano_estandar)
+
+    response = vat_api_client.get(
+        f"/api/vat/web/ciudadanos/voucher-estado/?documento={documento}"
+    )
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "documento": str(documento),
+        "estado": "Disponible",
+        "tiene_voucher": True,
+        "esta_inscripto": False,
+    }
+
+
+@pytest.mark.django_db
+def test_api_vat_web_voucher_estado_en_uso_con_voucher_e_inscripcion_activa(
+    vat_api_client, vat_curso_base
+):
+    centro, ubicacion, modalidad = vat_curso_base
+    ciudadano = _crear_ciudadano_voucher_estado(40111002)
+    voucher = _crear_voucher_estado(ciudadano)
+    curso = Curso.objects.create(
+        centro=centro,
+        nombre="Curso Voucher Estado",
+        modalidad=modalidad,
+        estado="activo",
+    )
+    comision = ComisionCurso.objects.create(
+        curso=curso,
+        ubicacion=ubicacion,
+        codigo_comision="VCH-EST-01",
+        nombre="Comision Voucher Estado",
+        cupo_total=10,
+        fecha_inicio=date(2026, 5, 10),
+        fecha_fin=date(2026, 6, 10),
+        estado="activa",
+    )
+    Inscripcion.objects.create(
+        ciudadano=ciudadano,
+        comision_curso=comision,
+        programa=voucher.programa,
+        estado="en_espera",
+        origen_canal="api",
+    )
+
+    response = vat_api_client.get(
+        f"/api/vat/web/ciudadanos/voucher-estado/?documento={ciudadano.documento}"
+    )
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "documento": str(ciudadano.documento),
+        "estado": "En uso",
+        "tiene_voucher": True,
+        "esta_inscripto": True,
+    }
+
+
+@pytest.mark.django_db
+def test_api_vat_web_voucher_estado_no_disponible_sin_voucher(vat_api_client):
+    ciudadano = _crear_ciudadano_voucher_estado(40111003)
+
+    response = vat_api_client.get(
+        f"/api/vat/web/ciudadanos/voucher-estado/?documento={ciudadano.documento}"
+    )
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "documento": str(ciudadano.documento),
+        "estado": "No disponible",
+        "tiene_voucher": False,
+        "esta_inscripto": False,
+    }
+
+
+@pytest.mark.django_db
+def test_api_vat_web_voucher_estado_no_disponible_con_dni_inexistente(vat_api_client):
+    response = vat_api_client.get(
+        "/api/vat/web/ciudadanos/voucher-estado/?documento=40111999"
+    )
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "documento": "40111999",
+        "estado": "No disponible",
+        "tiene_voucher": False,
+        "esta_inscripto": False,
+    }
+
+
+@pytest.mark.django_db
+def test_api_vat_web_voucher_estado_rechaza_documento_no_numerico(vat_api_client):
+    response = vat_api_client.get(
+        "/api/vat/web/ciudadanos/voucher-estado/?documento=40A11001"
+    )
+
+    assert response.status_code == 400
+    assert response.json() == {"documento": ["El documento debe ser numerico."]}
+
+
 @pytest.mark.django_db
 def test_api_vat_web_inscripcion_libre_crea_inscripcion_operativa_sin_ciudadano(
     vat_api_client, vat_curso_base
@@ -3442,6 +4614,7 @@ def test_api_vat_web_inscripcion_libre_crea_inscripcion_operativa_sin_ciudadano(
     assert ciudadano.documento == 42439852
     assert ciudadano.apellido == "CONIGLIO"
     assert ciudadano.fecha_nacimiento == date(1900, 1, 1)
+    assert ciudadano.telefono == "+54-351-3989965"
 
     inscripcion = Inscripcion.objects.get(pk=payload["id"])
     assert inscripcion.comision_curso == comision
@@ -3531,6 +4704,76 @@ def test_api_vat_web_inscripcion_libre_usa_cuil_como_documento_si_no_viene_docum
     inscripcion = Inscripcion.objects.get(pk=payload["id"])
     solicitud = SolicitudInscripcionPublica.objects.get(inscripcion=inscripcion)
     assert solicitud.datos_postulante["cuil"] == "27375343520"
+
+
+@pytest.mark.django_db
+def test_api_vat_web_inscripcion_libre_prioriza_documento_principal_sobre_cuil(
+    vat_api_client, vat_curso_base
+):
+    centro, ubicacion, modalidad = vat_curso_base
+    curso = Curso.objects.create(
+        centro=centro,
+        nombre="Operario en Arbolado Urbano",
+        modalidad=modalidad,
+        estado="activo",
+        inscripcion_libre=True,
+    )
+    comision = ComisionCurso.objects.create(
+        curso=curso,
+        ubicacion=ubicacion,
+        codigo_comision="COMCUR-31329-20260416191414474174",
+        nombre="Comision Operario en Arbolado Urbano",
+        cupo_total=35,
+        fecha_inicio=date(2026, 3, 20),
+        fecha_fin=date(2026, 12, 18),
+        estado="activa",
+    )
+
+    response = vat_api_client.post(
+        "/api/vat/web/inscripciones/",
+        {
+            "documento": "29711907",
+            "comision_curso_id": comision.id,
+            "estado": "pre_inscripta",
+            "datos_postulante": {
+                "nombre": "Federico",
+                "apellido": "PIEDRASANTA",
+                "fecha_nacimiento": "1982-07-27",
+                "tipo_documento": "DNI",
+                "cuil": "23297119079",
+                "email": "fede.piedrasanta@gmail.com",
+                "telefono": "+54-351-6783108",
+            },
+            "observaciones": (
+                '{"nombre":"Federico","apellido":"PIEDRASANTA",'
+                '"fecha_nacimiento":"1982-07-27","genero":"M",'
+                '"email":"fede.piedrasanta@gmail.com",'
+                '"telefono":"+54-351-6783108",'
+                '"nivel_estudio":"universitario_completo",'
+                '"tipo_documento":"DNI","cuil":"23297119079",'
+                '"actual_calle":"Av de mayo","actual_numero":"200",'
+                '"actual_entre_calles":"Rosales y Chacabuco",'
+                '"actual_municipio_id":"44",'
+                '"actual_municipio_nombre":"Avellaneda",'
+                '"actual_provincia_id":"2",'
+                '"actual_provincia_nombre":"Buenos Aires"}'
+            ),
+        },
+        format="json",
+    )
+
+    assert response.status_code == 201
+    payload = response.json()
+    ciudadano = Ciudadano.objects.get(pk=payload["ciudadano"])
+    assert ciudadano.documento == 29711907
+    assert ciudadano.fecha_nacimiento == date(1982, 7, 27)
+
+    response_inscripciones = vat_api_client.get(
+        "/api/vat/web/inscripciones/?documento=29711907"
+    )
+
+    assert response_inscripciones.status_code == 200
+    assert response_inscripciones.json()["count"] == 1
 
 
 @pytest.mark.django_db
@@ -4546,6 +5789,8 @@ def test_centro_cursos_panel_renderiza_marcadores_para_filtrar_comisiones_por_cu
     client.force_login(user)
     response = client.get(reverse("vat_centro_cursos_panel", kwargs={"pk": centro.pk}))
     content = response.content.decode("utf-8")
+    soup = BeautifulSoup(content, "html.parser")
+    comisiones_filter_curso = soup.select_one("#comisionesFilterCurso")
 
     assert response.status_code == 200
     assert 'data-panel-rendered="1"' in content
@@ -4582,6 +5827,9 @@ def test_centro_cursos_panel_renderiza_marcadores_para_filtrar_comisiones_por_cu
     assert 'class="comision-curso-row"' in content
     assert reverse("vat_comision_curso_detail", kwargs={"pk": comision.pk}) in content
     assert 'title="Gestionar Comisión"' in content
+    assert comisiones_filter_curso is not None
+    assert "select2" in comisiones_filter_curso.get("class", [])
+    assert comisiones_filter_curso.get("data-width") == "100%"
 
 
 @pytest.mark.django_db
@@ -4648,6 +5896,8 @@ def test_centro_cursos_panel_renderiza_selector_de_planes_en_modal_nuevo_curso(
     client.force_login(user)
     response = client.get(reverse("vat_centro_cursos_panel", kwargs={"pk": centro.pk}))
     content = response.content.decode("utf-8")
+    soup = BeautifulSoup(content, "html.parser")
+    selector_sector = soup.select_one("#planCurricularSelectorSector")
 
     assert response.status_code == 200
     assert 'data-panel-rendered="1"' in content
@@ -4670,22 +5920,38 @@ def test_centro_cursos_panel_renderiza_selector_de_planes_en_modal_nuevo_curso(
     assert f'value="{plan.id}"' in content
     assert f'value="{plan_inactivo.id}"' not in content
     assert f'value="{plan_otra_provincia.id}"' not in content
+    assert selector_sector is not None
+    assert "select2" in selector_sector.get("class", [])
+    assert selector_sector.get("data-width") == "100%"
+    assert selector_sector.get("data-dropdown-parent") == "#modalPlanCurricularSelector"
 
 
 @pytest.mark.django_db
-@override_settings(ROOT_URLCONF="config.urls")
-@pytest.mark.django_db
+@override_settings(ROOT_URLCONF="tests.urls_vat_comision_horarios")
 def test_comision_curso_detail_muestra_gestion_equivalente(client, vat_geo_data):
     provincia, municipio, localidad = vat_geo_data
     modalidad = ModalidadCursada.objects.create(nombre="Presencial", activo=True)
     programa = Programa.objects.create(nombre="Programa Curso VAT")
     group, _ = Group.objects.get_or_create(name="CFP")
-    user = User.objects.create_superuser(
-        username="admin-comision-curso-detail",
-        email="admin-comision-curso-detail@vat.test",
+    user = User.objects.create_user(
+        username="referente-comision-curso-detail",
+        email="referente-comision-curso-detail@vat.test",
         password="test1234",
     )
     user.groups.add(group)
+    permisos = Permission.objects.filter(
+        content_type__app_label="VAT",
+        codename__in=[
+            "view_comisioncurso",
+            "change_comisioncurso",
+            "delete_comisioncurso",
+            "add_inscripcion",
+            "add_comisionhorario",
+            "change_comisionhorario",
+            "delete_comisionhorario",
+        ],
+    )
+    _grant_vat_referente_access(user, *permisos)
     centro = Centro.objects.create(
         nombre="CFP 888",
         codigo="CFP-888",
@@ -4694,7 +5960,7 @@ def test_comision_curso_detail_muestra_gestion_equivalente(client, vat_geo_data)
         localidad=localidad,
         calle="13",
         numero=456,
-        domicilio_actividad="Calle 13 N° 456",
+        domicilio_actividad="Calle 13 N 456",
         telefono="221-8000001",
         celular="221-8000002",
         correo="cfp888@vat.test",
@@ -4704,15 +5970,15 @@ def test_comision_curso_detail_muestra_gestion_equivalente(client, vat_geo_data)
         correo_referente="ana@vat.test",
         referente=user,
         tipo_gestion="Estatal",
-        clase_institucion="Formación Profesional",
-        situacion="Institución de ETP",
+        clase_institucion="Formacion Profesional",
+        situacion="Institucion de ETP",
         activo=True,
     )
     ubicacion = InstitucionUbicacion.objects.create(
         centro=centro,
         localidad=localidad,
         rol_ubicacion="sede_principal",
-        domicilio="Calle 13 N° 456",
+        domicilio="Calle 13 N 456",
         es_principal=True,
     )
     curso = Curso.objects.create(
@@ -4722,7 +5988,7 @@ def test_comision_curso_detail_muestra_gestion_equivalente(client, vat_geo_data)
         estado="planificado",
     )
     voucher = VoucherParametria.objects.create(
-        nombre="Voucher Comisión Detalle",
+        nombre="Voucher Comision Detalle",
         programa=programa,
         cantidad_inicial=3,
         fecha_vencimiento=date(2026, 12, 31),
@@ -4734,7 +6000,7 @@ def test_comision_curso_detail_muestra_gestion_equivalente(client, vat_geo_data)
         curso=curso,
         ubicacion=ubicacion,
         codigo_comision="DET-01",
-        nombre="Comisión Detalle",
+        nombre="Comision Detalle",
         cupo_total=25,
         fecha_inicio=date(2026, 4, 1),
         fecha_fin=date(2026, 5, 1),
@@ -4757,9 +6023,7 @@ def test_comision_curso_detail_muestra_gestion_equivalente(client, vat_geo_data)
     content = response.content.decode("utf-8")
 
     assert response.status_code == 200
-    assert "Comisión de Curso" in content
-    assert comision.nombre in content
-    assert curso.nombre in content
+    assert "Curso con detalle" in content
     assert reverse("vat_comision_curso_update", kwargs={"pk": comision.pk}) in content
     assert reverse("vat_comision_curso_delete", kwargs={"pk": comision.pk}) in content
     assert 'data-bs-target="#modalEditarComisionCurso"' in content
@@ -4781,10 +6045,596 @@ def test_comision_curso_detail_muestra_gestion_equivalente(client, vat_geo_data)
         reverse("vat_comision_curso_horario_delete", kwargs={"pk": horario.pk})
         in content
     )
-    assert "Información" in content
+    assert "Informaci" in content
     assert "Inscriptos" in content
     assert "Sesiones" in content
     assert "Horarios" in content
+    assert (
+        reverse(
+            "vat_comision_curso_export_preinscriptos",
+            kwargs={"pk": comision.pk},
+        )
+        in content
+    )
+    assert (
+        reverse(
+            "vat_comision_curso_export_inscriptos",
+            kwargs={"pk": comision.pk},
+        )
+        in content
+    )
+
+
+def _build_comision_curso_nomina_export_context(vat_geo_data, suffix):
+    provincia, municipio, localidad = vat_geo_data
+    modalidad = ModalidadCursada.objects.create(
+        nombre=f"Presencial Export {suffix}", activo=True
+    )
+    programa = Programa.objects.create(nombre=f"Programa Export {suffix}")
+    sexo = Sexo.objects.create(sexo="Femenino")
+    user = User.objects.create_superuser(
+        username=f"admin-export-{suffix.lower()}",
+        email=f"admin-export-{suffix.lower()}@vat.test",
+        password="test1234",
+    )
+    group, _ = Group.objects.get_or_create(name="CFP")
+    user.groups.add(group)
+    centro = Centro.objects.create(
+        nombre=f"CFP Export {suffix}",
+        codigo=f"CFP-EXP-{suffix}",
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad,
+        calle="18",
+        numero=900,
+        domicilio_actividad=f"Calle 18 N 900 {suffix}",
+        telefono="221-9000001",
+        celular="221-9000002",
+        correo=f"cfp-export-{suffix.lower()}@vat.test",
+        nombre_referente="Ana",
+        apellido_referente="Export",
+        telefono_referente="221-9000003",
+        correo_referente=f"ana-export-{suffix.lower()}@vat.test",
+        referente=user,
+        tipo_gestion="Estatal",
+        clase_institucion="Formacion Profesional",
+        situacion="Institucion de ETP",
+        activo=True,
+    )
+    ubicacion = InstitucionUbicacion.objects.create(
+        centro=centro,
+        localidad=localidad,
+        rol_ubicacion="sede_principal",
+        domicilio=f"Calle 18 N 900 {suffix}",
+        es_principal=True,
+    )
+    curso = Curso.objects.create(
+        centro=centro,
+        nombre=f"Curso Export {suffix}",
+        modalidad=modalidad,
+        estado="planificado",
+    )
+    voucher = VoucherParametria.objects.create(
+        nombre=f"Voucher Export {suffix}",
+        programa=programa,
+        cantidad_inicial=5,
+        fecha_vencimiento=date(2026, 12, 31),
+        creado_por=user,
+        activa=True,
+    )
+    curso.voucher_parametrias.add(voucher)
+    comision = ComisionCurso.objects.create(
+        curso=curso,
+        ubicacion=ubicacion,
+        codigo_comision=f"EXP-{suffix}",
+        nombre=f"Comision Export {suffix}",
+        cupo_total=10,
+        acepta_lista_espera=True,
+        fecha_inicio=date(2026, 4, 1),
+        fecha_fin=date(2026, 4, 30),
+        estado="activa",
+    )
+    ciudadana_inscripta = Ciudadano.objects.create(
+        apellido="Perez",
+        nombre="Ana",
+        fecha_nacimiento=date(1990, 5, 17),
+        tipo_documento=Ciudadano.DOCUMENTO_DNI,
+        documento=30111222,
+        sexo=sexo,
+        email="ana.perez@vat.test",
+        telefono="221-1234567",
+        cuil_cuit="27-30111222-5",
+    )
+    ciudadano_espera = Ciudadano.objects.create(
+        apellido="Lopez",
+        nombre="Juan",
+        fecha_nacimiento=date(1988, 7, 9),
+        tipo_documento=Ciudadano.DOCUMENTO_DNI,
+        documento=28123456,
+        sexo=sexo,
+        email="juan.lopez@vat.test",
+        telefono="221-7654321",
+    )
+    Inscripcion.objects.create(
+        ciudadano=ciudadana_inscripta,
+        comision_curso=comision,
+        programa=programa,
+        estado="inscripta",
+        origen_canal="backoffice",
+    )
+    Inscripcion.objects.create(
+        ciudadano=ciudadano_espera,
+        comision_curso=comision,
+        programa=programa,
+        estado="en_espera",
+        origen_canal="front_publico",
+    )
+    return user, comision
+
+
+@pytest.mark.django_db
+@override_settings(ROOT_URLCONF="tests.urls_vat_comision_horarios")
+def test_comision_curso_exporta_nomina_preinscriptos_en_excel(client, vat_geo_data):
+    user, comision = _build_comision_curso_nomina_export_context(vat_geo_data, "PRE")
+    ciudadana_observaciones = Ciudadano.objects.create(
+        apellido="FEREZ",
+        nombre="Natasha Belen",
+        fecha_nacimiento=date(1995, 2, 10),
+        tipo_documento=Ciudadano.DOCUMENTO_DNI,
+        documento=None,
+        email="natasha.ferez@vat.test",
+    )
+    Inscripcion.objects.create(
+        ciudadano=ciudadana_observaciones,
+        comision_curso=comision,
+        estado="pre_inscripta",
+        origen_canal="front_publico",
+        observaciones=json.dumps(
+            {
+                "cuil": "27388338631",
+                "telefono": "+54-11-23327535",
+            }
+        ),
+    )
+    client.force_login(user)
+
+    response = client.get(
+        reverse(
+            "vat_comision_curso_export_preinscriptos",
+            kwargs={"pk": comision.pk},
+        )
+    )
+
+    workbook = load_workbook(BytesIO(response.content))
+    worksheet = workbook.active
+    header = [cell.value for cell in next(worksheet.iter_rows(max_row=1))]
+    rows = [
+        dict(zip(header, row))
+        for row in worksheet.iter_rows(min_row=2, values_only=True)
+    ]
+    rows_by_name = {row["Nombre"]: row for row in rows}
+
+    assert response.status_code == 200
+    assert (
+        response["Content-Type"]
+        == "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+    assert "nomina_preinscriptos" in response["Content-Disposition"]
+    assert header == [
+        "Apellido",
+        "Nombre",
+        "DNI / CUIL",
+        "Fecha de Nacimiento",
+        "G\u00e9nero",
+        "Comisi\u00f3n",
+        "Curso",
+        "Centro de Formaci\u00f3n",
+        "Estado de Inscripci\u00f3n",
+        "Fecha de Inscripci\u00f3n",
+        "Canal de Inscripci\u00f3n",
+        "Email",
+        "Tel\u00e9fono",
+    ]
+    assert len(rows) == 3
+    assert rows_by_name["Ana"]["Apellido"] == "Perez"
+    assert rows_by_name["Ana"]["DNI / CUIL"] == "27-30111222-5"
+    assert rows_by_name["Ana"]["Estado de Inscripci\u00f3n"] == "Inscripta"
+    assert rows_by_name["Ana"]["Canal de Inscripci\u00f3n"] == "Backoffice"
+    assert (
+        rows_by_name["Ana"]["Centro de Formaci\u00f3n"] == comision.curso.centro.nombre
+    )
+    assert rows_by_name["Juan"]["Apellido"] == "Lopez"
+    assert rows_by_name["Juan"]["DNI / CUIL"] == "28123456"
+    assert rows_by_name["Juan"]["Estado de Inscripci\u00f3n"] == "En Espera"
+    assert rows_by_name["Juan"]["Canal de Inscripci\u00f3n"] == "Front P\u00fablico"
+    assert rows_by_name["Natasha Belen"]["Apellido"] == "FEREZ"
+    assert rows_by_name["Natasha Belen"]["DNI / CUIL"] == "27388338631"
+    assert rows_by_name["Natasha Belen"]["Tel\u00e9fono"] == "+54-11-23327535"
+    assert rows_by_name["Ana"]["Fecha de Inscripci\u00f3n"]
+    assert rows_by_name["Juan"]["Fecha de Inscripci\u00f3n"]
+
+
+def test_nomina_export_ignora_observaciones_no_json():
+    assert (
+        nomina_export._parse_observaciones_json(
+            SimpleNamespace(observaciones="No es JSON")
+        )
+        == {}
+    )
+    assert (
+        nomina_export._parse_observaciones_json(
+            SimpleNamespace(observaciones='["telefono"]')
+        )
+        == {}
+    )
+
+
+@pytest.mark.django_db
+@override_settings(ROOT_URLCONF="tests.urls_vat_comision_horarios")
+def test_revisor_asignado_descarga_nominas_comision_curso_sin_acciones_rapidas(
+    client, vat_geo_data
+):
+    call_command("create_groups", verbosity=0)
+    _, comision = _build_comision_curso_nomina_export_context(vat_geo_data, "REV")
+    revisor = User.objects.create_user(
+        username="revisor-export-comision-curso", password="test1234"
+    )
+    revisor.groups.add(Group.objects.get(name="CFPRevisor"))
+    comision.curso.centro.revisores.add(revisor)
+
+    client.force_login(revisor)
+    detail_response = client.get(
+        reverse("vat_comision_curso_detail", kwargs={"pk": comision.pk})
+    )
+    preinscriptos_response = client.get(
+        reverse(
+            "vat_comision_curso_export_preinscriptos",
+            kwargs={"pk": comision.pk},
+        )
+    )
+    inscriptos_response = client.get(
+        reverse(
+            "vat_comision_curso_export_inscriptos",
+            kwargs={"pk": comision.pk},
+        )
+    )
+    detail_content = detail_response.content.decode("utf-8")
+
+    assert detail_response.status_code == 200
+    assert "Acciones r" not in detail_content
+    assert (
+        reverse(
+            "vat_comision_curso_export_preinscriptos",
+            kwargs={"pk": comision.pk},
+        )
+        in detail_content
+    )
+    assert (
+        reverse(
+            "vat_comision_curso_export_inscriptos",
+            kwargs={"pk": comision.pk},
+        )
+        in detail_content
+    )
+    assert preinscriptos_response.status_code == 200
+    assert inscriptos_response.status_code == 200
+    assert "nomina_preinscriptos" in preinscriptos_response["Content-Disposition"]
+    assert "nomina_inscriptos" in inscriptos_response["Content-Disposition"]
+
+    preinscriptos_sheet = load_workbook(BytesIO(preinscriptos_response.content)).active
+    inscriptos_sheet = load_workbook(BytesIO(inscriptos_response.content)).active
+
+    assert len(list(preinscriptos_sheet.iter_rows(min_row=2, values_only=True))) == 2
+    assert len(list(inscriptos_sheet.iter_rows(min_row=2, values_only=True))) == 1
+
+
+@pytest.mark.django_db
+@override_settings(ROOT_URLCONF="tests.urls_vat_comision_horarios")
+def test_comision_curso_exporta_nomina_inscriptos_solo_estado_inscripta(
+    client, vat_geo_data
+):
+    user, comision = _build_comision_curso_nomina_export_context(vat_geo_data, "INSC")
+    client.force_login(user)
+
+    response = client.get(
+        reverse(
+            "vat_comision_curso_export_inscriptos",
+            kwargs={"pk": comision.pk},
+        )
+    )
+
+    workbook = load_workbook(BytesIO(response.content))
+    worksheet = workbook.active
+    rows = list(worksheet.iter_rows(min_row=2, values_only=True))
+
+    assert response.status_code == 200
+    assert "nomina_inscriptos" in response["Content-Disposition"]
+    assert len(rows) == 1
+    assert rows[0][0] == "Perez"
+    assert rows[0][1] == "Ana"
+    assert rows[0][8] == "Inscripta"
+
+
+@pytest.mark.django_db
+def test_soft_delete_directo_de_comision_curso_cierra_estado(vat_curso_base):
+    centro, ubicacion, modalidad = vat_curso_base
+    curso = Curso.objects.create(
+        centro=centro,
+        nombre="Curso Soft Delete",
+        modalidad=modalidad,
+        estado="activo",
+    )
+    comision = ComisionCurso.objects.create(
+        curso=curso,
+        ubicacion=ubicacion,
+        codigo_comision="SOFT-01",
+        nombre="Comisión Soft Delete",
+        cupo_total=30,
+        fecha_inicio=date(2026, 4, 1),
+        fecha_fin=date(2026, 4, 30),
+        estado="activa",
+    )
+
+    comision.delete(cascade=False)
+
+    comision_refrescada = ComisionCurso.all_objects.get(pk=comision.pk)
+
+    assert comision_refrescada.deleted_at is not None
+    assert comision_refrescada.estado == "cerrada"
+
+
+@pytest.mark.django_db
+def test_restore_directo_de_comision_curso_recupera_estado_operativo(vat_curso_base):
+    centro, ubicacion, modalidad = vat_curso_base
+    curso = Curso.objects.create(
+        centro=centro,
+        nombre="Curso Restore Directo",
+        modalidad=modalidad,
+        estado="activo",
+    )
+    comision = ComisionCurso.objects.create(
+        curso=curso,
+        ubicacion=ubicacion,
+        codigo_comision="REST-01",
+        nombre="Comision Restore Directo",
+        cupo_total=30,
+        fecha_inicio=date(2026, 4, 1),
+        fecha_fin=date(2026, 4, 30),
+        estado="activa",
+    )
+
+    comision.delete(cascade=False)
+    ComisionCurso.all_objects.get(pk=comision.pk).restore(cascade=False)
+
+    comision_refrescada = ComisionCurso.objects.get(pk=comision.pk)
+
+    assert comision_refrescada.deleted_at is None
+    assert comision_refrescada.estado == "planificada"
+
+
+@pytest.mark.django_db
+def test_soft_delete_cascade_de_curso_cierra_comisiones_hijas(vat_curso_base):
+    centro, ubicacion, modalidad = vat_curso_base
+    curso = Curso.objects.create(
+        centro=centro,
+        nombre="Curso Soft Delete Cascade",
+        modalidad=modalidad,
+        estado="activo",
+    )
+    comision_principal = ComisionCurso.objects.create(
+        curso=curso,
+        ubicacion=ubicacion,
+        codigo_comision="SOFT-02",
+        nombre="Comisión Soft Delete 1",
+        cupo_total=30,
+        fecha_inicio=date(2026, 4, 1),
+        fecha_fin=date(2026, 4, 30),
+        estado="activa",
+    )
+    comision_secundaria = ComisionCurso.objects.create(
+        curso=curso,
+        ubicacion=ubicacion,
+        codigo_comision="SOFT-03",
+        nombre="Comisión Soft Delete 2",
+        cupo_total=24,
+        fecha_inicio=date(2026, 5, 1),
+        fecha_fin=date(2026, 5, 31),
+        estado="activa",
+    )
+
+    curso.delete(cascade=True)
+
+    curso_refrescado = Curso.all_objects.get(pk=curso.pk)
+    comisiones_refrescadas = list(
+        ComisionCurso.all_objects.filter(curso_id=curso.pk).order_by("codigo_comision")
+    )
+
+    assert curso_refrescado.deleted_at is not None
+    assert curso_refrescado.estado == "cancelado"
+    assert [comision.estado for comision in comisiones_refrescadas] == [
+        "cerrada",
+        "cerrada",
+    ]
+    assert all(comision.deleted_at is not None for comision in comisiones_refrescadas)
+    assert {comision.pk for comision in comisiones_refrescadas} == {
+        comision_principal.pk,
+        comision_secundaria.pk,
+    }
+
+
+@pytest.mark.django_db
+def test_restore_cascade_de_curso_recupera_estados_operativos(vat_curso_base):
+    centro, ubicacion, modalidad = vat_curso_base
+    curso = Curso.objects.create(
+        centro=centro,
+        nombre="Curso Restore Cascade",
+        modalidad=modalidad,
+        estado="activo",
+    )
+    ComisionCurso.objects.create(
+        curso=curso,
+        ubicacion=ubicacion,
+        codigo_comision="REST-02",
+        nombre="Comision Restore 1",
+        cupo_total=30,
+        fecha_inicio=date(2026, 4, 1),
+        fecha_fin=date(2026, 4, 30),
+        estado="activa",
+    )
+    ComisionCurso.objects.create(
+        curso=curso,
+        ubicacion=ubicacion,
+        codigo_comision="REST-03",
+        nombre="Comision Restore 2",
+        cupo_total=24,
+        fecha_inicio=date(2026, 5, 1),
+        fecha_fin=date(2026, 5, 31),
+        estado="activa",
+    )
+
+    curso.delete(cascade=True)
+    Curso.all_objects.get(pk=curso.pk).restore(cascade=True)
+
+    curso_refrescado = Curso.objects.get(pk=curso.pk)
+    comisiones_refrescadas = list(
+        ComisionCurso.objects.filter(curso_id=curso.pk).order_by("codigo_comision")
+    )
+
+    assert curso_refrescado.deleted_at is None
+    assert curso_refrescado.estado == "planificado"
+    assert [comision.estado for comision in comisiones_refrescadas] == [
+        "planificada",
+        "planificada",
+    ]
+    assert all(comision.deleted_at is None for comision in comisiones_refrescadas)
+
+
+@pytest.mark.django_db
+def test_soft_delete_cascade_de_oferta_institucional_cancela_estado_y_cierra_comision(
+    vat_curso_base,
+):
+    centro, ubicacion, modalidad = vat_curso_base
+    programa = Programa.objects.create(nombre="Programa Soft Delete Oferta")
+    sector = Sector.objects.create(nombre="Sector Soft Delete Oferta")
+    plan = PlanVersionCurricular.objects.create(
+        provincia=centro.provincia,
+        nombre="Plan Soft Delete Oferta",
+        sector=sector,
+        modalidad_cursada=modalidad,
+        activo=True,
+    )
+    oferta = OfertaInstitucional.objects.create(
+        centro=centro,
+        plan_curricular=plan,
+        programa=programa,
+        nombre_local="Oferta Soft Delete",
+        ciclo_lectivo=2026,
+        estado="publicada",
+    )
+    comision = Comision.objects.create(
+        oferta=oferta,
+        ubicacion=ubicacion,
+        codigo_comision="SOFT-OFE-01",
+        nombre="Comisión Soft Delete Oferta",
+        cupo=25,
+        fecha_inicio=date(2026, 6, 1),
+        fecha_fin=date(2026, 7, 1),
+        estado="activa",
+    )
+
+    oferta.delete(cascade=True)
+
+    oferta_refrescada = OfertaInstitucional.all_objects.get(pk=oferta.pk)
+    comision_refrescada = Comision.all_objects.get(pk=comision.pk)
+
+    assert oferta_refrescada.deleted_at is not None
+    assert oferta_refrescada.estado == "cancelada"
+    assert comision_refrescada.deleted_at is not None
+    assert comision_refrescada.estado == "cerrada"
+
+
+@pytest.mark.django_db
+def test_restore_cascade_de_oferta_institucional_recupera_estados_operativos(
+    vat_curso_base,
+):
+    centro, ubicacion, modalidad = vat_curso_base
+    programa = Programa.objects.create(nombre="Programa Restore Oferta")
+    sector = Sector.objects.create(nombre="Sector Restore Oferta")
+    plan = PlanVersionCurricular.objects.create(
+        provincia=centro.provincia,
+        nombre="Plan Restore Oferta",
+        sector=sector,
+        modalidad_cursada=modalidad,
+        activo=True,
+    )
+    oferta = OfertaInstitucional.objects.create(
+        centro=centro,
+        plan_curricular=plan,
+        programa=programa,
+        nombre_local="Oferta Restore",
+        ciclo_lectivo=2026,
+        estado="publicada",
+    )
+    Comision.objects.create(
+        oferta=oferta,
+        ubicacion=ubicacion,
+        codigo_comision="REST-OFE-01",
+        nombre="Comision Restore Oferta",
+        cupo=25,
+        fecha_inicio=date(2026, 6, 1),
+        fecha_fin=date(2026, 7, 1),
+        estado="activa",
+    )
+
+    oferta.delete(cascade=True)
+    OfertaInstitucional.all_objects.get(pk=oferta.pk).restore(cascade=True)
+
+    oferta_refrescada = OfertaInstitucional.objects.get(pk=oferta.pk)
+    comision_refrescada = Comision.objects.get(oferta=oferta_refrescada)
+
+    assert oferta_refrescada.deleted_at is None
+    assert oferta_refrescada.estado == "planificada"
+    assert comision_refrescada.deleted_at is None
+    assert comision_refrescada.estado == "planificada"
+
+
+@pytest.mark.django_db
+def test_soft_delete_directo_de_comision_cierra_estado(vat_curso_base):
+    centro, ubicacion, modalidad = vat_curso_base
+    programa = Programa.objects.create(nombre="Programa Soft Delete Comision")
+    sector = Sector.objects.create(nombre="Sector Soft Delete Comision")
+    plan = PlanVersionCurricular.objects.create(
+        provincia=centro.provincia,
+        nombre="Plan Soft Delete Comision",
+        sector=sector,
+        modalidad_cursada=modalidad,
+        activo=True,
+    )
+    oferta = OfertaInstitucional.objects.create(
+        centro=centro,
+        plan_curricular=plan,
+        programa=programa,
+        nombre_local="Oferta Soft Delete Comisión",
+        ciclo_lectivo=2026,
+        estado="publicada",
+    )
+    comision = Comision.objects.create(
+        oferta=oferta,
+        ubicacion=ubicacion,
+        codigo_comision="SOFT-COM-01",
+        nombre="Comisión Soft Delete",
+        cupo=25,
+        fecha_inicio=date(2026, 6, 1),
+        fecha_fin=date(2026, 7, 1),
+        estado="activa",
+    )
+
+    comision.delete(cascade=False)
+
+    comision_refrescada = Comision.all_objects.get(pk=comision.pk)
+
+    assert comision_refrescada.deleted_at is not None
+    assert comision_refrescada.estado == "cerrada"
 
 
 def _build_comision_curso_horario_context(vat_geo_data, user, suffix):

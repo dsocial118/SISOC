@@ -31,6 +31,8 @@
                   class="w-100"
                   enctype="multipart/form-data">
                 {% csrf_token %}
+                {{ form.cuil_duplicado_confirmado }}
+                {{ form.cuil_duplicado_confirmado_valor }}
 
                 <!-- Indicador de progreso global -->
                 <div class="progress-indicator">
@@ -78,10 +80,53 @@
                                     <i class="fas fa-info-circle"></i>
                                     <span class="tooltip-text">CUIT de 11 dígitos</span>
                                 </span>
+
+                            </div>
+                            <div class="col-md-12">
+                                <!-- Advertencia de CUIL duplicado -->
+                                <div id="cuil-warning"
+                                     class="alert alert-warning d-none mt-2"
+                                     role="alert">
+                                    <strong><i class="fas fa-exclamation-triangle mr-1"></i>Atención:</strong>
+                                    Este CUIT ya está registrado en las siguientes organizaciones:
+                                    <div class="table-responsive mt-2">
+                                        <table class="table table-sm table-bordered mb-2" id="cuil-duplicados-tabla">
+                                            <thead class="thead-light">
+                                                <tr>
+                                                    <th>Nombre</th>
+                                                    <th>Tipo de entidad</th>
+                                                    <th>Subtipo</th>
+                                                    <th>Teléfono</th>
+                                                    <th>Email</th>
+                                                    <th>Domicilio</th>
+                                                    <th>Provincia</th>
+                                                    <th>Municipio</th>
+                                                    <th>Localidad</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="cuil-duplicados-tbody">
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <div class="form-check mt-1">
+                                        <input class="form-check-input" type="checkbox" id="cuil-confirmar-check" />
+                                        <label class="form-check-label font-weight-bold" for="cuil-confirmar-check">
+                                            Revisé la información y confirmo la creación del nuevo registro
+                                        </label>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         <div class="form-group row">
-                            <div class="col-md-6">{{ form.tipo_entidad|as_crispy_field }}</div>
+                            <div class="col-md-6">
+                                {{ form.tipo_entidad|as_crispy_field }}
+                                <div id="tipo-entidad-warning"
+                                     class="alert alert-warning d-none mt-2"
+                                     role="alert">
+                                    <strong><i class="fas fa-exclamation-triangle mr-1"></i>Atención:</strong>
+                                    Al cambiar el Tipo de Entidad se reiniciará la documentación del legajo (se eliminarán los archivos ya cargados). Las admisiones vinculadas mostrarán una advertencia para resincronizarse o continuar.
+                                </div>
+                            </div>
                             <div class="col-md-6">{{ form.subtipo_entidad|as_crispy_field }}</div>
                         </div>
                     </div>
@@ -208,12 +253,54 @@
                         <button type="button" data-history-back="true" class="btn btn-secondary mr-2">
                             <i class="fas fa-times mr-1"></i> Cancelar
                         </button>
-                        <button class="btn btn-success" type="submit">
+                        <button class="btn btn-success" type="submit" id="organizacionSubmitBtn">
                             <i class="fas fa-save mr-1"></i> Guardar organización
                         </button>
                     </div>
                 </div>
             </form>
+
+            <!-- Modal: confirmacion de cambio de Tipo de Entidad -->
+            <div class="modal fade"
+                 id="modalConfirmarTipoEntidad"
+                 tabindex="-1"
+                 aria-labelledby="modalConfirmarTipoEntidadLabel"
+                 aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="modalConfirmarTipoEntidadLabel">
+                                <i class="fas fa-exclamation-triangle text-warning mr-2"></i>
+                                Confirmar cambio de Tipo de Entidad
+                            </h5>
+                            <button type="button"
+                                    class="btn-close"
+                                    data-bs-dismiss="modal"
+                                    aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p>
+                                Al cambiar el <strong>Tipo de Entidad</strong> se reiniciara
+                                el listado de documentos del legajo de la organizacion (se
+                                eliminaran los archivos ya cargados).
+                            </p>
+                            <p class="mb-0">
+                                Ademas, las admisiones vinculadas mostraran una advertencia
+                                para resincronizarse o continuar con la informacion actual.
+                            </p>
+                            <p class="mt-2 mb-0">
+                                <strong>¿Esta seguro de continuar?</strong>
+                            </p>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="button"
+                                    class="btn btn-warning"
+                                    id="confirmarCambioTipoEntidadBtn">Confirmar cambio</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 {% endblock %}
@@ -222,9 +309,155 @@
     <script nonce="{{ request.csp_nonce }}">
         var ajaxLoadMunicipiosUrl = "{% url 'ajax_load_municipios' %}";
         var ajaxLoadLocalidadesUrl = "{% url 'ajax_load_localidades' %}";
+        var cuilCheckAjaxUrl = "{{ cuil_check_ajax_url }}";
+        var organizacionPk = "{{ organizacion_pk|default:'' }}";
+        var tipoEntidadOriginal = "{{ form.instance.tipo_entidad_id|default:'' }}";
     </script>
 
     <!-- Scripts externos -->
     <script src="{% static 'custom/js/ubicacionSelects.js' %}"></script>
     <script src="{% static 'custom/js/organizacionesform.js' %}"></script>
+
+    <script nonce="{{ request.csp_nonce }}">
+    (function () {
+        var tipoEntidadInput = document.getElementById("id_tipo_entidad");
+        var tipoEntidadWarning = document.getElementById("tipo-entidad-warning");
+        var cuitInput = document.getElementById("id_cuit");
+        var warningBox = document.getElementById("cuil-warning");
+        var tbody = document.getElementById("cuil-duplicados-tbody");
+        var confirmarCheck = document.getElementById("cuil-confirmar-check");
+        var hiddenConfirmado = document.getElementById("id_cuil_duplicado_confirmado");
+        var hiddenConfirmadoValor = document.getElementById("id_cuil_duplicado_confirmado_valor");
+        var submitBtn = document.querySelector('#organizacionForm button[type="submit"]');
+        var debounceTimer = null;
+        var requestSeq = 0;
+
+        if (tipoEntidadInput && tipoEntidadWarning) {
+            tipoEntidadInput.addEventListener("change", function () {
+                var changed = organizacionPk && tipoEntidadInput.value !== tipoEntidadOriginal;
+                tipoEntidadWarning.classList.toggle("d-none", !changed);
+            });
+        }
+
+        var organizacionForm = document.getElementById("organizacionForm");
+        var modalEl = document.getElementById("modalConfirmarTipoEntidad");
+        var confirmarTipoEntidadBtn = document.getElementById("confirmarCambioTipoEntidadBtn");
+        var tipoEntidadConfirmado = false;
+        if (organizacionForm && modalEl && tipoEntidadInput && confirmarTipoEntidadBtn) {
+            var modalInstance = bootstrap.Modal.getOrCreateInstance(modalEl);
+            organizacionForm.addEventListener("submit", function (event) {
+                if (!organizacionPk) {
+                    return;
+                }
+                var changed = tipoEntidadInput.value !== tipoEntidadOriginal;
+                if (changed && !tipoEntidadConfirmado) {
+                    event.preventDefault();
+                    modalInstance.show();
+                }
+            });
+            confirmarTipoEntidadBtn.addEventListener("click", function () {
+                tipoEntidadConfirmado = true;
+                modalInstance.hide();
+                organizacionForm.requestSubmit
+                    ? organizacionForm.requestSubmit()
+                    : organizacionForm.submit();
+            });
+        }
+
+        function escapeHtml(str) {
+            var div = document.createElement("div");
+            div.appendChild(document.createTextNode(str || ""));
+            return div.innerHTML;
+        }
+
+        function clearConfirmation(disableSubmit) {
+            confirmarCheck.checked = false;
+            hiddenConfirmado.value = "";
+            hiddenConfirmadoValor.value = "";
+            if (submitBtn) submitBtn.disabled = Boolean(disableSubmit);
+        }
+
+        function resetWarning() {
+            warningBox.classList.add("d-none");
+            tbody.innerHTML = "";
+            clearConfirmation(false);
+        }
+
+        function showWarning(orgs) {
+            tbody.innerHTML = orgs.map(function (o) {
+                return "<tr>" +
+                    "<td>" + escapeHtml(o.nombre) + "</td>" +
+                    "<td>" + escapeHtml(o.tipo_entidad) + "</td>" +
+                    "<td>" + escapeHtml(o.subtipo_entidad) + "</td>" +
+                    "<td>" + escapeHtml(o.telefono) + "</td>" +
+                    "<td>" + escapeHtml(o.email) + "</td>" +
+                    "<td>" + escapeHtml(o.domicilio) + "</td>" +
+                    "<td>" + escapeHtml(o.provincia) + "</td>" +
+                    "<td>" + escapeHtml(o.municipio) + "</td>" +
+                    "<td>" + escapeHtml(o.localidad) + "</td>" +
+                    "</tr>";
+            }).join("");
+            warningBox.classList.remove("d-none");
+            clearConfirmation(true);
+        }
+
+        confirmarCheck.addEventListener("change", function () {
+            if (confirmarCheck.checked) {
+                hiddenConfirmado.value = "true";
+                hiddenConfirmadoValor.value = cuitInput ? cuitInput.value.trim() : "";
+                if (submitBtn) submitBtn.disabled = false;
+            } else {
+                clearConfirmation(true);
+            }
+        });
+
+        function fetchCuilCheck(val, seq) {
+            var url = cuilCheckAjaxUrl + "?cuil=" + encodeURIComponent(val);
+            if (organizacionPk) {
+                url += "&exclude=" + encodeURIComponent(organizacionPk);
+            }
+            fetch(url, { headers: { "X-Requested-With": "XMLHttpRequest" } })
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
+                    if (seq !== undefined && (seq !== requestSeq || cuitInput.value.trim() !== val)) {
+                        return;
+                    }
+                    if (data.organizaciones && data.organizaciones.length > 0) {
+                        showWarning(data.organizaciones);
+                    } else {
+                        resetWarning();
+                    }
+                })
+                .catch(function () {
+                    if (seq === undefined || (seq === requestSeq && cuitInput.value.trim() === val)) {
+                        resetWarning();
+                    }
+                });
+        }
+
+        if (cuitInput) {
+            cuitInput.addEventListener("input", function () {
+                clearTimeout(debounceTimer);
+                requestSeq += 1;
+                var val = cuitInput.value.trim();
+                clearConfirmation(!warningBox.classList.contains("d-none"));
+                if (!val || isNaN(val)) {
+                    resetWarning();
+                    return;
+                }
+                var currentSeq = requestSeq;
+                debounceTimer = setTimeout(function () {
+                    fetchCuilCheck(val, currentSeq);
+                }, 400);
+            });
+
+            // En edición, el CUIL ya viene pre-cargado: verificar duplicados al cargar la página
+            var initialVal = cuitInput.value.trim();
+            if (initialVal && !isNaN(initialVal)) {
+                var initialSeq = requestSeq;
+                fetchCuilCheck(initialVal, initialSeq);
+            }
+        }
+    })();
+    </script>
 {% endblock %}

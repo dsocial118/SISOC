@@ -4,7 +4,7 @@ Sistema de gestión basado en **Django** y **MySQL**, desplegable mediante **Doc
 Cada aplicación del repositorio representa un módulo funcional (ej. `comedores`, `relevamientos`, `users`).
 
 > Documentación organizada: ver `docs/indice.md` para el índice y referencias detalladas.
-> Infraestructura: resumen operativo en `docs/operacion/infraestructura.md`.
+> Setup y operación: `docs/operacion/instalacion.md`, `docs/operacion/infraestructura.md` y `docs/operacion/comandos_administracion.md`.
 
 ---
 
@@ -58,7 +58,7 @@ Cada aplicación del repositorio representa un módulo funcional (ej. `comedores
    ```
 4. Acceder a la app en [http://localhost:8001](http://localhost:8001) (valor por defecto de `DOCKER_DJANGO_PORT_FORWARD` en `.env.example`).
 
-`docker-compose.yml` queda reservado para desarrollo/local y es el unico compose versionado que levanta `mysql`.
+`docker-compose.yml` queda reservado para desarrollo/local y es el único compose versionado que levanta `mysql`.
 
 ## Reiniciar base de datos con nuevo dump
 ```bash
@@ -105,7 +105,8 @@ djlint . --configuration=.djlintrc --reformat
 
 ## Variables de Entorno
 
-Ejemplo en `.env.example` del repositorio.
+Ejemplo y defaults en `.env.example`.
+Para más detalle operativo: `docs/operacion/instalacion.md`.
 
 ---
 
@@ -115,6 +116,10 @@ Ejecutar:
 ```bash
 docker compose exec django pytest -n auto
 ```
+
+Referencia CI actual:
+- `tests.yml` corre `smoke`, `migrations_check` y, en PRs, `pytest` con cobertura + `mysql_compat`.
+- `lint.yml` corre `encoding_check`, `black`, `djlint` y `pylint`.
 
 ---
 
@@ -137,10 +142,12 @@ docker compose exec django pytest -n auto
 4. **Commits**  
    Usar formato consistente:  
    ```
-   feat: nueva funcionalidad en comedores
-   fix: corregido bug en relevamientos
-   refactor: limpieza en servicios de users
+   feat(comedores): nueva funcionalidad
+   fix(relevamientos): corregir bug
+   refactor(users): limpiar servicios
    ```
+
+   Los cambios importantes deben registrar su contexto en `docs/registro/`.
 
 ---
 
@@ -150,6 +157,7 @@ Documentación Postman:
 [API SISOC](https://documenter.getpostman.com/view/14921866/2sAXxMfDXf#01ac9db5-a6b5-4b20-9e8c-973e38884f17)
 No es la mejor documentacion. En caso de dudas, consultar con Juani (Tech lead de SISOC) o Andy (Dueño de GESCOM)
 
+Además, el repo expone schema OpenAPI en `/api/schema/`, Swagger en `/api/docs/` y Redoc en `/api/redoc/`.
 Ejemplo de request:
 ```bash
 curl -X GET http://localhost:8001/api/comedores/ \
@@ -165,17 +173,7 @@ curl -X GET http://localhost:8001/api/comedores/ \
 - **Semana 2 (lunes, freeze)** → congelar `development`, crear tag `YY.MM.DD-rc1`.  
 - **Semana 2 (miércoles noche)** → deploy a PRD si QA aprueba último `rcX`.  
 
-##Entornos y compose de deploy
-- `qa`: branch `development`, compose `docker-compose.deploy.yml` + `docker-compose.qa.yml`.
-- `homologacion`: branch `homologacion`, compose `docker-compose.deploy.yml` + `docker-compose.homologacion.yml`.
-- `produccion`: branch `main`, compose `docker-compose.deploy.yml` + `docker-compose.produccion.yml`.
-- Los compose de deploy no levantan `mysql`; todos asumen base externa, comparten el servicio `django` y leen el `.env` normal del servidor.
-- Los `.env.qa`, `.env.homologacion` y `.env.prod` se conservan como plantillas base saneadas y no deben contener datos reales.
-
-##Comandos de referencia
-```bash
-docker compose -f docker-compose.deploy.yml up -d --build
-```
+Para detalle operativo vigente de entornos, compose y release, usar `docs/operacion/infraestructura.md`.
 
 ##Checklist
 - [ ] Branch `development` congelada sin features nuevos  

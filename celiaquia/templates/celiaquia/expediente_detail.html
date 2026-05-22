@@ -36,13 +36,17 @@
                 {% endif %}
             </div>
             <div class="d-flex gap-2">
+                {% if can_manage_excel_masivo_audit and expediente.excel_masivo %}
+                    <a href="{% url 'expediente_excel_masivo_descargar' expediente.pk %}"
+                       class="btn btn-outline-success btn-sm me-2">
+                        <i class="fas fa-file-excel"></i> Descargar Excel Provincia
+                    </a>
+                {% endif %}
                 <!-- Subir/Reprocesar Cruce: Técnico o Coordinador, no Provincia -->
                 {% if is_tec or is_coord %}
                     {% if expediente.estado.nombre == 'ASIGNADO' or expediente.estado.nombre == 'PROCESO_DE_CRUCE' %}
                         <a href="{% url 'expediente_nomina_sintys_export' expediente.pk %}"
                            class="btn btn-outline-success btn-sm me-2">Descargar nómina Sintys</a>
-                        <a href="{% url 'expediente_padron_final_export' expediente.pk %}"
-                           class="btn btn-outline-primary btn-sm me-2">Descargar padrón final</a>
                         <button type="button"
                                 class="btn btn-outline-info btn-sm me-2"
                                 data-bs-toggle="modal"
@@ -68,6 +72,10 @@
                                     data-mode="reprocess">Reprocesar cruce</button>
                         {% endif %}
                     {% endif %}
+                {% endif %}
+                {% if can_download_nomina_aprobados %}
+                    <a href="{% url 'expediente_padron_final_export' expediente.pk %}"
+                       class="btn btn-outline-primary btn-sm me-2">Descargar nómina aprobados</a>
                 {% endif %}
             </div>
         </div>
@@ -107,6 +115,14 @@
             </div>
         {% endif %}
         <div id="expediente-alerts"></div>
+        {% if alerta_importacion_resumen %}
+            <div class="alert alert-{{ alerta_importacion_resumen_style }} mb-4"
+                 role="alert">{{ alerta_importacion_resumen|linebreaksbr }}</div>
+        {% endif %}
+        {% if alerta_importacion_excluidos %}
+            <div class="alert alert-{{ alerta_importacion_excluidos_style }} mb-4"
+                 role="alert">{{ alerta_importacion_excluidos|linebreaksbr }}</div>
+        {% endif %}
         <div class="p-3 rounded shadow mb-4"
              style="background-color: #1c2a3a;
                     color: #e0e0e0">
@@ -122,6 +138,38 @@
                     <p>
                         <strong>Fecha de creacion:</strong> {{ expediente.fecha_creacion|date:"d/m/Y" }}
                     </p>
+                    {% if can_manage_excel_masivo_audit and expediente.excel_masivo %}
+                        <div class="mt-3 small">
+                            <div class="fw-semibold">Excel original</div>
+                            <div>
+                                <a href="{% url 'expediente_excel_masivo_descargar' expediente.pk %}"
+                                   class="text-decoration-underline"
+                                   target="_blank">{{ expediente.excel_masivo.name }}</a>
+                            </div>
+                            <div class="text-muted">
+                                Cargado por
+                                {% if expediente.excel_masivo_cargado_por %}
+                                    {% with usuario_carga=expediente.excel_masivo_cargado_por %}
+                                        {{ usuario_carga.get_full_name|default:usuario_carga.username }}
+                                    {% endwith %}
+                                {% else %}
+                                    -
+                                {% endif %}
+                                {% if expediente.excel_masivo_cargado_en %}el {{ expediente.excel_masivo_cargado_en|date:"d/m/Y H:i" }}{% endif %}
+                            </div>
+                            <div class="text-muted">
+                                Procesado por
+                                {% if expediente.excel_masivo_procesado_por %}
+                                    {% with usuario_proceso=expediente.excel_masivo_procesado_por %}
+                                        {{ usuario_proceso.get_full_name|default:usuario_proceso.username }}
+                                    {% endwith %}
+                                {% else %}
+                                    -
+                                {% endif %}
+                                {% if expediente.excel_masivo_procesado_en %}el {{ expediente.excel_masivo_procesado_en|date:"d/m/Y H:i" }}{% endif %}
+                            </div>
+                        </div>
+                    {% endif %}
                     {% if expediente.documento %}
                         <p class="mb-0">
                             <strong>PRD generado:</strong>
@@ -424,7 +472,12 @@
                                     </div>
                                 </td>
                                 <td>
-                                    {% if leg.subsanacion_motivo %}
+                                    {% if leg.observacion_tecnica_texto %}
+                                        {% if leg.observacion_tecnica_titulo %}
+                                            <small class="d-block text-muted">{{ leg.observacion_tecnica_titulo }}</small>
+                                        {% endif %}
+                                        <small class="text-break">{{ leg.observacion_tecnica_texto|truncatechars:80 }}</small>
+                                    {% elif leg.subsanacion_motivo %}
                                         <small class="text-break">{{ leg.subsanacion_motivo|truncatechars:80 }}</small>
                                     {% else %}
                                         <span class="text-muted"></span>
@@ -483,7 +536,17 @@
                                                 <!-- Col 2: Observaciones -->
                                                 <div class="col-lg-4 col-md-7">
                                                     {% if is_prov %}
-                                                        {% comment %}
+                                                        {% if leg.observacion_tecnica_texto %}
+                                                            <div class="small muted">{{ leg.observacion_tecnica_titulo|default:"Observación técnica" }}:</div>
+                                                            <div class="mt-1">
+                                                                <div class="p-2 rounded"
+                                                                     style="background:rgba(255,255,255,.04);
+                                                                            border:1px solid rgba(255,255,255,.08)">
+                                                                    <span class="d-block text-break">{{ leg.observacion_tecnica_texto }}</span>
+                                                                </div>
+                                                            </div>
+                                                        {% else %}
+                                                            {% comment %}
                                                         <div class="small muted">Observación (subsanación):</div>
                                                         <div class="mt-1">
                                                             {% if leg.subsanacion_motivo %}
@@ -494,7 +557,8 @@
                                                                 <span class="muted">-</span>
                                                             {% endif %}
                                                         </div>
-                                                        {% endcomment %}
+                                                            {% endcomment %}
+                                                        {% endif %}
                                                         {% if leg.subsanacion_renaper_comentario %}
                                                             <div class="small muted mt-2">Respuesta provincia:</div>
                                                             <div class="mt-1">
@@ -506,18 +570,29 @@
                                                             </div>
                                                         {% endif %}
                                                     {% else %}
-                                                        <div class="small muted">Comentario enviado a provincia:</div>
-                                                        <div class="mt-1">
-                                                            {% if leg.subsanacion_motivo %}
+                                                        {% if leg.observacion_tecnica_texto %}
+                                                            <div class="small muted">{{ leg.observacion_tecnica_titulo|default:"Observación técnica" }}:</div>
+                                                            <div class="mt-1">
                                                                 <div class="p-2 rounded"
                                                                      style="background:rgba(255,255,255,.04);
                                                                             border:1px solid rgba(255,255,255,.08)">
-                                                                    <span class="d-block text-break">{{ leg.subsanacion_motivo }}</span>
+                                                                    <span class="d-block text-break">{{ leg.observacion_tecnica_texto }}</span>
                                                                 </div>
-                                                            {% else %}
-                                                                <span class="muted">-</span>
-                                                            {% endif %}
-                                                        </div>
+                                                            </div>
+                                                        {% else %}
+                                                            <div class="small muted">Comentario enviado a provincia:</div>
+                                                            <div class="mt-1">
+                                                                {% if leg.subsanacion_motivo %}
+                                                                    <div class="p-2 rounded"
+                                                                         style="background:rgba(255,255,255,.04);
+                                                                                border:1px solid rgba(255,255,255,.08)">
+                                                                        <span class="d-block text-break">{{ leg.subsanacion_motivo }}</span>
+                                                                    </div>
+                                                                {% else %}
+                                                                    <span class="muted">-</span>
+                                                                {% endif %}
+                                                            </div>
+                                                        {% endif %}
                                                         {% if leg.subsanacion_renaper_comentario %}
                                                             <div class="small muted mt-2">Respuesta de provincia:</div>
                                                             <div class="mt-1">
@@ -626,9 +701,12 @@
                                                                         Subsanar
                                                                     </button>
                                                                     <button type="button"
-                                                                            class="btn {% if estado == 'RECHAZADO' %}btn-danger active{% else %}btn-outline-danger{% endif %} btn-revision"
+                                                                            class="btn {% if estado == 'RECHAZADO' %}btn-danger active{% else %}btn-outline-danger{% endif %} btn-rechazar"
                                                                             data-legajo-id="{{ leg.pk }}"
-                                                                            data-accion="RECHAZAR">Rechazar</button>
+                                                                            data-bs-toggle="modal"
+                                                                            data-bs-target="#modalRechazar">
+                                                                        Rechazar
+                                                                    </button>
                                                                 </div>
                                                             {% endwith %}
                                                         </div>
@@ -672,18 +750,29 @@
                                 <!-- Col 2: Observaciones -->
                                 <div class="col-lg-4 col-md-7">
                                     {% if is_prov %}
-                                        <div class="small muted">Observación (subsanación):</div>
-                                        <div class="mt-1">
-                                            {% if leg.subsanacion_motivo %}
+                                        {% if leg.observacion_tecnica_texto %}
+                                            <div class="small muted">{{ leg.observacion_tecnica_titulo|default:"Observación técnica" }}:</div>
+                                            <div class="mt-1">
                                                 <div class="p-2 rounded"
                                                      style="background:rgba(255,255,255,.04);
                                                             border:1px solid rgba(255,255,255,.08)">
-                                                    <span class="d-block text-break">{{ leg.subsanacion_motivo }}</span>
+                                                    <span class="d-block text-break">{{ leg.observacion_tecnica_texto }}</span>
                                                 </div>
-                                            {% else %}
-                                                <span class="muted">-</span>
-                                            {% endif %}
-                                        </div>
+                                            </div>
+                                        {% else %}
+                                            <div class="small muted">Observación (subsanación):</div>
+                                            <div class="mt-1">
+                                                {% if leg.subsanacion_motivo %}
+                                                    <div class="p-2 rounded"
+                                                         style="background:rgba(255,255,255,.04);
+                                                                border:1px solid rgba(255,255,255,.08)">
+                                                        <span class="d-block text-break">{{ leg.subsanacion_motivo }}</span>
+                                                    </div>
+                                                {% else %}
+                                                    <span class="muted">-</span>
+                                                {% endif %}
+                                            </div>
+                                        {% endif %}
                                         {% if leg.subsanacion_renaper_comentario %}
                                             <div class="small muted mt-2">Respuesta provincia:</div>
                                             <div class="mt-1">
@@ -695,18 +784,16 @@
                                             </div>
                                         {% endif %}
                                     {% else %}
-                                        {% comment %}
-                                        <div class="small muted">Comentario enviado a provincia:</div>
-                                        <div class="mt-1">
-                                            {% if leg.subsanacion_motivo %}
-                                                <div class="p-2 rounded" style="background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08)">
-                                                    <span class="d-block text-break">{{ leg.subsanacion_motivo }}</span>
+                                        {% if leg.observacion_tecnica_texto %}
+                                            <div class="small muted">{{ leg.observacion_tecnica_titulo|default:"Observación técnica" }}:</div>
+                                            <div class="mt-1">
+                                                <div class="p-2 rounded"
+                                                     style="background:rgba(255,255,255,.04);
+                                                            border:1px solid rgba(255,255,255,.08)">
+                                                    <span class="d-block text-break">{{ leg.observacion_tecnica_texto }}</span>
                                                 </div>
-                                            {% else %}
-                                                <span class="muted">-</span>
-                                            {% endif %}
-                                        </div>
-                                        {% endcomment %}
+                                            </div>
+                                        {% endif %}
                                         {% if leg.subsanacion_renaper_comentario %}
                                             <div class="small muted mt-2">Respuesta de provincia:</div>
                                             <div class="mt-1">
@@ -808,9 +895,10 @@
                                                             data-bs-toggle="modal"
                                                             data-bs-target="#modalSubsanar">Subsanar</button>
                                                     <button type="button"
-                                                            class="btn {% if estado == 'RECHAZADO' %}btn-danger active{% else %}btn-outline-danger{% endif %} btn-revision"
+                                                            class="btn {% if estado == 'RECHAZADO' %}btn-danger active{% else %}btn-outline-danger{% endif %} btn-rechazar"
                                                             data-legajo-id="{{ leg.pk }}"
-                                                            data-accion="RECHAZAR">Rechazar</button>
+                                                            data-bs-toggle="modal"
+                                                            data-bs-target="#modalRechazar">Rechazar</button>
                                                 </div>
                                             {% endwith %}
                                         </div>
@@ -844,6 +932,46 @@
 </div>
 
 <!-- Registros Erróneos -->
+<!-- Modal: rechazar legajo -->
+<div class="modal fade"
+     id="modalRechazar"
+     tabindex="-1"
+     aria-labelledby="modalRechazarLabel"
+     aria-hidden="true">
+    <div class="modal-dialog">
+        <form class="modal-content" id="form-rechazar" method="post">
+            {% csrf_token %}
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalRechazarLabel">Motivo del Rechazo</h5>
+                <button type="button"
+                        class="btn-close"
+                        data-bs-dismiss="modal"
+                        aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" name="accion" value="RECHAZAR" />
+                <input type="hidden" id="rechazar-legajo-id" name="legajo_id" value="" />
+                <div class="mb-2">
+                    <label for="rechazar-motivo" class="form-label">Motivo del Rechazo *</label>
+                    <textarea id="rechazar-motivo"
+                              name="motivo"
+                              class="form-control"
+                              rows="3"
+                              required
+                              maxlength="500"></textarea>
+                </div>
+                <small class="text-muted d-block">
+                    El legajo quedará en estado <strong>RECHAZADO</strong> y la provincia verá esta observación.
+                </small>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="submit" class="btn btn-danger" id="btn-confirm-rechazar">Confirmar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 {% if registros_erroneos %}
     <div class="p-3 rounded shadow mb-4 registros-erroneos-section"
          style="background-color: #1c2a3a;
@@ -1077,16 +1205,24 @@
                                             </h6>
                                             <div class="row g-2">
                                                 <div class="col-md-4">
-                                                    <label class="form-label">Apellido Responsable{% if registro.responsable_requerido %} *{% endif %}</label>
+                                                    <label class="form-label"
+                                                           data-field-label="Apellido Responsable{% if registro.responsable_requerido %} *{% endif %}">
+                                                        Apellido Responsable
+                                                        {% if registro.responsable_requerido %}*{% endif %}
+                                                    </label>
                                                     <input type="text"
                                                            class="form-control{% if 'apellido_responsable' in registro.invalid_fields %} field-error-soft{% endif %}"
                                                            name="apellido_responsable"
+                                                           {% if registro.responsable_requerido %}aria-label="Apellido Responsable *"{% endif %}
                                                            value="{{ registro.datos_raw.apellido_responsable|default:'' }}"
                                                            {% if 'apellido_responsable' in registro.invalid_fields %}aria-invalid="true"{% endif %}
                                                            {% if registro.responsable_requerido %}required{% endif %} />
                                                 </div>
                                                 <div class="col-md-4">
-                                                    <label class="form-label">Nombre Responsable{% if registro.responsable_requerido %} *{% endif %}</label>
+                                                    <label class="form-label">
+                                                        Nombre Responsable
+                                                        {% if registro.responsable_requerido %}*{% endif %}
+                                                    </label>
                                                     <input type="text"
                                                            class="form-control{% if 'nombre_responsable' in registro.invalid_fields %} field-error-soft{% endif %}"
                                                            name="nombre_responsable"
@@ -1095,7 +1231,10 @@
                                                            {% if registro.responsable_requerido %}required{% endif %} />
                                                 </div>
                                                 <div class="col-md-4">
-                                                    <label class="form-label">CUIT/Documento Responsable{% if registro.responsable_requerido %} *{% endif %}</label>
+                                                    <label class="form-label">
+                                                        CUIT/Documento Responsable
+                                                        {% if registro.responsable_requerido %}*{% endif %}
+                                                    </label>
                                                     <input type="text"
                                                            class="form-control{% if 'documento_responsable' in registro.invalid_fields %} field-error-soft{% endif %}"
                                                            name="documento_responsable"
@@ -1104,7 +1243,10 @@
                                                            {% if registro.responsable_requerido %}required{% endif %} />
                                                 </div>
                                                 <div class="col-md-4">
-                                                    <label class="form-label">Fecha Nac. Responsable{% if registro.responsable_requerido %} *{% endif %}</label>
+                                                    <label class="form-label">
+                                                        Fecha Nac. Responsable
+                                                        {% if registro.responsable_requerido %}*{% endif %}
+                                                    </label>
                                                     <input type="text"
                                                            class="form-control{% if 'fecha_nacimiento_responsable' in registro.invalid_fields %} field-error-soft{% endif %}"
                                                            name="fecha_nacimiento_responsable"
@@ -1114,7 +1256,10 @@
                                                            {% if registro.responsable_requerido %}required{% endif %} />
                                                 </div>
                                                 <div class="col-md-4">
-                                                    <label class="form-label">Sexo Responsable{% if registro.responsable_requerido %} *{% endif %}</label>
+                                                    <label class="form-label">
+                                                        Sexo Responsable
+                                                        {% if registro.responsable_requerido %}*{% endif %}
+                                                    </label>
                                                     <select class="form-select{% if 'sexo_responsable' in registro.invalid_fields %} field-error-soft{% endif %}"
                                                             name="sexo_responsable"
                                                             {% if 'sexo_responsable' in registro.invalid_fields %}aria-invalid="true"{% endif %}
@@ -1145,7 +1290,10 @@
                                                            {% if 'email_responsable' in registro.invalid_fields %}aria-invalid="true"{% endif %} />
                                                 </div>
                                                 <div class="col-md-6">
-                                                    <label class="form-label">Domicilio Responsable{% if registro.responsable_requerido %} *{% endif %}</label>
+                                                    <label class="form-label">
+                                                        Domicilio Responsable
+                                                        {% if registro.responsable_requerido %}*{% endif %}
+                                                    </label>
                                                     <input type="text"
                                                            class="form-control{% if 'domicilio_responsable' in registro.invalid_fields %} field-error-soft{% endif %}"
                                                            name="domicilio_responsable"
@@ -1154,7 +1302,10 @@
                                                            {% if registro.responsable_requerido %}required{% endif %} />
                                                 </div>
                                                 <div class="col-md-6">
-                                                    <label class="form-label">Localidad Responsable{% if registro.responsable_requerido %} *{% endif %}</label>
+                                                    <label class="form-label">
+                                                        Localidad Responsable
+                                                        {% if registro.responsable_requerido %}*{% endif %}
+                                                    </label>
                                                     <select class="form-select{% if 'localidad_responsable' in registro.invalid_fields %} field-error-soft{% endif %}"
                                                             name="localidad_responsable"
                                                             {% if 'localidad_responsable' in registro.invalid_fields %}aria-invalid="true"{% endif %}
@@ -1198,7 +1349,10 @@
                 {% csrf_token %}
                 <div class="form-group">
                     <label for="tecnico">Seleccionar Técnico:</label>
-                    <select name="tecnico_id" id="tecnico" class="form-control">
+                    <select name="tecnico_id"
+                            id="tecnico"
+                            class="form-control select2"
+                            data-width="100%">
                         {% for tecnico in tecnicos %}
                             <option value="{{ tecnico.id }}">{{ tecnico.get_full_name|default:tecnico.username }}</option>
                         {% endfor %}
@@ -1583,7 +1737,7 @@
                                             -
                                         {% endif %}
                                     </td>
-                                    <td>{{ h.observaciones|default:"-" }}</td>
+                                    <td>{{ h.observaciones_visibles|default:"-"|linebreaksbr }}</td>
                                 </tr>
                             {% empty %}
                                 <tr>
@@ -1664,9 +1818,12 @@
                         </div>
                         <div class="col-md-6">
                             <label for="editar-nacionalidad" class="form-label">Nacionalidad *</label>
-                            <select class="form-select"
+                            <select class="form-select select2"
                                     id="editar-nacionalidad"
                                     name="nacionalidad"
+                                    data-width="100%"
+                                    data-placeholder="Seleccionar..."
+                                    data-dropdown-parent="#modalEditarLegajo"
                                     required>
                                 <option value="">Seleccionar...</option>
                                 {% for nacionalidad in nacionalidades %}
@@ -1699,14 +1856,26 @@
                         </div>
                         <div class="col-md-4">
                             <label for="editar-municipio" class="form-label">Municipio *</label>
-                            <select class="form-select" id="editar-municipio" name="municipio" required>
+                            <select class="form-select select2"
+                                    id="editar-municipio"
+                                    name="municipio"
+                                    data-width="100%"
+                                    data-placeholder="Seleccionar..."
+                                    data-dropdown-parent="#modalEditarLegajo"
+                                    required>
                                 <option value="">Seleccionar...</option>
                                 {% for mun in municipios %}<option value="{{ mun.id }}">{{ mun.nombre }}</option>{% endfor %}
                             </select>
                         </div>
                         <div class="col-md-4">
                             <label for="editar-localidad" class="form-label">Localidad *</label>
-                            <select class="form-select" id="editar-localidad" name="localidad" required>
+                            <select class="form-select select2"
+                                    id="editar-localidad"
+                                    name="localidad"
+                                    data-width="100%"
+                                    data-placeholder="Seleccionar..."
+                                    data-dropdown-parent="#modalEditarLegajo"
+                                    required>
                                 <option value="">Seleccionar...</option>
                                 {% for loc in localidades %}
                                     <option value="{{ loc.id }}" data-municipio="{{ loc.municipio_id }}">
@@ -1863,13 +2032,11 @@
     <meta name="editar-legajo-url-template"
           content="{% url 'legajo_editar' expediente.pk 0 %}" />
     <meta name="expediente-id" content="{{ expediente.pk }}" />
-    <script src="{% static 'custom/js/expediente_detail_config.js' %}"></script>
+    <script src="{% static 'custom/js/expediente_detail_config.js' %}?v=20260425b-editar-legajo"></script>
     <script src="{% static 'custom/js/registros_erroneos.js' %}?v=20260326-guardado-parcial-siempre"></script>
     <script src="{% static 'custom/js/utils.js' %}"></script>
-    <script src="{% static 'custom/js/expediente_detail.js' %}"></script>
+    <script src="{% static 'custom/js/expediente_detail.js' %}?v=20260425b-editar-legajo"></script>
     <script src="{% static 'custom/js/global_pagination.js' %}"></script>
     <script src="{% static 'custom/js/pagination_fix.js' %}"></script>
     <script src="{% static 'custom/js/legajo_comentarios.js' %}"></script>
 {% endblock %}
-
-

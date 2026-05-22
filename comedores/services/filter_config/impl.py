@@ -48,6 +48,7 @@ FIELD_MAP: Dict[str, str] = {
     "codigo_postal": "codigo_postal",
     "latitud": "latitud",
     "longitud": "longitud",
+    "mes_ejecucion": "mes_ejecucion",
 }
 
 # Tipos: text | number (utilizados para validacion y casteo)
@@ -103,6 +104,7 @@ FIELD_TYPES: Dict[str, str] = {
             "codigo_postal",
             "latitud",
             "longitud",
+            "mes_ejecucion",
         ]
     },
 }
@@ -149,6 +151,12 @@ FILTER_FIELDS = [
     {"name": "id", "label": "ID", "type": "number"},
     {"name": "id_externo", "label": "ID Externo", "type": "number"},
     {"name": "comienzo", "label": "Comienzo (anio)", "type": "number"},
+    {
+        "name": "mes_ejecucion",
+        "label": "Mes de ejecucion",
+        "type": "choice",
+        "choices": [{"value": str(i), "label": str(i)} for i in range(1, 7)],
+    },
     {"name": "numero", "label": "Numero", "type": "number"},
     {"name": "codigo_postal", "label": "Codigo Postal", "type": "number"},
     {
@@ -166,7 +174,7 @@ FILTER_FIELDS = [
 ]
 
 DEFAULT_FIELD = "nombre"
-FILTERS_UI_CONFIG_CACHE_KEY = "comedores:filters_ui_config:v2"
+FILTERS_UI_CONFIG_CACHE_KEY = "comedores:filters_ui_config:v3"
 FILTERS_UI_CONFIG_CACHE_TTL = 60 * 15
 
 

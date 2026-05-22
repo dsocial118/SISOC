@@ -189,3 +189,25 @@ label:has(.field-tooltip) {
   transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(33, 115, 70, 0.3);
 }
+
+/* Select2 en filtros avanzados: igualar borde dorado de controles nativos.
+   Usa #filters-rows (ID) para ganar en especificidad sobre body.dark-mode del tema base. */
+#filters-rows .select2-container--default .select2-selection--single {
+  background: #1e2a3a !important;
+  border: 2px solid #e7ba61 !important;
+  border-radius: 6px !important;
+  transition: all 0.3s ease !important;
+}
+
+#filters-rows .select2-container--default:hover .select2-selection--single {
+  background: #253446 !important;
+  border-color: #e67e22 !important;
+  box-shadow: 0 4px 8px rgba(243, 156, 18, 0.2) !important;
+}
+
+#filters-rows .select2-container--default.select2-container--focus .select2-selection--single,
+#filters-rows .select2-container--default.select2-container--open .select2-selection--single {
+  background: #253446 !important;
+  border-color: #e7ba61 !important;
+  box-shadow: 0 0 0 0.3rem rgba(243, 156, 18, 0.25) !important;
+}

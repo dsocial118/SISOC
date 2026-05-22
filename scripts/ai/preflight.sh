@@ -4,8 +4,13 @@ set -euo pipefail
 TASK_KIND="${1:-general}"
 TARGET_PATH="${2:-}"
 
-repo_root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+repo_root="$(git rev-parse --show-toplevel 2>/dev/null || (cd "$script_dir/../.." && pwd))"
 cd "$repo_root"
+git_available=true
+if ! git rev-parse --show-toplevel >/dev/null 2>&1; then
+  git_available=false
+fi
 
 print_header() {
   printf '\n== %s ==\n' "$1"
@@ -18,13 +23,19 @@ if [[ -n "$TARGET_PATH" ]]; then
   printf 'Target path: %s\n' "$TARGET_PATH"
 fi
 
-branch="$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo 'unknown')"
-commit="$(git rev-parse --short HEAD 2>/dev/null || echo 'unknown')"
+branch="unknown"
+commit="unknown"
+if [[ "$git_available" == true ]]; then
+  branch="$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo 'unknown')"
+  commit="$(git rev-parse --short HEAD 2>/dev/null || echo 'unknown')"
+fi
 printf 'Branch: %s\n' "$branch"
 printf 'HEAD: %s\n' "$commit"
 
 print_header "Cambios locales (no tocar sin pedirlo)"
-if git diff --quiet && git diff --cached --quiet; then
+if [[ "$git_available" != true ]]; then
+  echo "Git no disponible desde este shell; usar PowerShell si hace falta status exacto."
+elif git diff --quiet && git diff --cached --quiet; then
   echo "Working tree limpio"
 else
   git status --short
@@ -33,6 +44,7 @@ fi
 print_header "Lectura inicial recomendada"
 echo "- AGENTS.md"
 echo "- docs/indice.md"
+echo "- memoria de contexto reutilizable aplicable (si existe)"
 echo "- archivo objetivo + tests del modulo"
 echo "- docs/ia/CONTEXT_HYGIENE.md"
 echo "- una sola guia de docs/ia segun la tarea"
@@ -47,12 +59,20 @@ echo "- Crear worktrees de tarea fuera del repo principal"
 
 print_header "Comandos utiles"
 cat <<'CMDS'
-docker compose up
-docker compose exec django pytest -n auto
-docker compose exec django pytest -m smoke
-black . --config pyproject.toml
-djlint . --configuration=.djlintrc --reformat
-pylint **/*.py --rcfile=.pylintrc
+# Wrappers PowerShell (camino recomendado en Codex Desktop/Windows)
+powershell -ExecutionPolicy Bypass -File scripts/ai/codex_task.ps1 <slug>
+powershell -ExecutionPolicy Bypass -File scripts/ai/codex_run.ps1 validate
+powershell -ExecutionPolicy Bypass -File scripts/ai/codex_run.ps1 test <path>
+powershell -ExecutionPolicy Bypass -File scripts/ai/codex_run.ps1 smoke
+powershell -ExecutionPolicy Bypass -File scripts/ai/codex_run.ps1 black-check <path>
+powershell -ExecutionPolicy Bypass -File scripts/ai/codex_run.ps1 djlint-check <path>
+powershell -ExecutionPolicy Bypass -File scripts/ai/codex_run.ps1 pylint <archivo.py>
+
+# Fallback Docker directo si este script se ejecuta sin PowerShell disponible
+docker compose -f docker-compose.yml -f docker-compose.codex.yml run --rm --no-deps django pytest -m smoke
+docker compose -f docker-compose.yml -f docker-compose.codex.yml run --rm --no-deps django python manage.py makemigrations --check --dry-run
+python scripts/ai/context_memory.py preflight --target <path>
+python scripts/ai/context_memory.py scaffold --slug <slug> --title <titulo> --summary <resumen> --path <path>
 CMDS
 
 print_header "Contexto minimo sugerido (por tipo)"
@@ -111,6 +131,23 @@ if [[ -n "$TARGET_PATH" && -e "$TARGET_PATH" ]]; then
     dir="$(dirname "$TARGET_PATH")"
     find "$dir" -maxdepth 2 -type f | sort | head -30
   fi
+fi
+
+print_header "Memoria operativa reutilizable"
+if command -v python3 >/dev/null 2>&1; then
+  if [[ -n "$TARGET_PATH" ]]; then
+    python3 scripts/ai/context_memory.py preflight --target "$TARGET_PATH"
+  else
+    python3 scripts/ai/context_memory.py preflight
+  fi
+elif command -v python >/dev/null 2>&1; then
+  if [[ -n "$TARGET_PATH" ]]; then
+    python scripts/ai/context_memory.py preflight --target "$TARGET_PATH"
+  else
+    python scripts/ai/context_memory.py preflight
+  fi
+else
+  echo "No se encontro python/python3 para resolver memoria operativa."
 fi
 
 print_header "Fin"

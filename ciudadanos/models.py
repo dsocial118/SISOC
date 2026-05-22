@@ -12,8 +12,15 @@ from core.soft_delete import SoftDeleteModelMixin
 User = get_user_model()
 
 
+def ciudadanos_import_job_upload_to(instance, filename):
+    return f"ciudadanos/import_jobs/{instance.requested_by_id}/{filename}"
+
+
 class Ciudadano(SoftDeleteModelMixin, models.Model):
     """Datos básicos del ciudadano/a."""
+
+    SOFT_DELETE_OPERATIONAL_UPDATES = {"activo": False}
+    SOFT_RESTORE_OPERATIONAL_UPDATES = {"activo": True}
 
     DOCUMENTO_DNI = "DNI"
     DOCUMENTO_CUIT = "CUIT"
@@ -34,6 +41,16 @@ class Ciudadano(SoftDeleteModelMixin, models.Model):
         (TIPO_REGISTRO_ESTANDAR, "Estándar"),
         (TIPO_REGISTRO_SIN_DNI, "Sin DNI"),
         (TIPO_REGISTRO_DNI_NO_VALIDADO, "DNI no validado por RENAPER"),
+    ]
+
+    # --- Estado de revision manual de identidad ---
+    REVISION_IDENTIDAD_PENDIENTE = "PENDIENTE"
+    REVISION_IDENTIDAD_APROBADA = "APROBADA"
+    REVISION_IDENTIDAD_DESCARTADA = "DESCARTADA"
+    REVISION_IDENTIDAD_CHOICES = [
+        (REVISION_IDENTIDAD_PENDIENTE, "Revisi\u00f3n pendiente"),
+        (REVISION_IDENTIDAD_APROBADA, "Aprobado"),
+        (REVISION_IDENTIDAD_DESCARTADA, "Descartado"),
     ]
 
     # --- Estado de validación RENAPER ---
@@ -140,8 +157,8 @@ class Ciudadano(SoftDeleteModelMixin, models.Model):
         max_digits=9, decimal_places=6, null=True, blank=True
     )
 
-    telefono = models.CharField(max_length=30, null=True, blank=True)
-    telefono_alternativo = models.CharField(max_length=30, null=True, blank=True)
+    telefono = models.CharField(max_length=50, null=True, blank=True)
+    telefono_alternativo = models.CharField(max_length=50, null=True, blank=True)
     email = models.EmailField(null=True, blank=True)
 
     ESTADO_CIVIL_CHOICES = [
@@ -222,6 +239,12 @@ class Ciudadano(SoftDeleteModelMixin, models.Model):
     )
     motivo_no_validacion_descripcion = models.TextField(null=True, blank=True)
     requiere_revision_manual = models.BooleanField(default=False, db_index=True)
+    estado_revision_manual = models.CharField(
+        max_length=20,
+        choices=REVISION_IDENTIDAD_CHOICES,
+        default=REVISION_IDENTIDAD_PENDIENTE,
+        db_index=True,
+    )
     # null=True es intencional: unique + nullable permite múltiples NULLs en
     # MySQL (NULL != NULL), lo que es necesario para ciudadanos sin identificador
     # asignado aún. Sin null=True, el unique constraint rechazaría el segundo
@@ -272,6 +295,96 @@ class Ciudadano(SoftDeleteModelMixin, models.Model):
     @property
     def nombre_completo(self) -> str:
         return f"{self.nombre} {self.apellido}".strip()
+
+    def _set_identity_field(self, field_name, value):
+        if getattr(self, field_name) == value:
+            return set()
+        setattr(self, field_name, value)
+        return {field_name}
+
+    def build_documento_unico_key(self):
+        if (
+            self.tipo_registro_identidad == self.TIPO_REGISTRO_ESTANDAR
+            and self.documento
+        ):
+            return f"{self.tipo_documento}_{self.documento}"
+        return None
+
+    def _debe_requerir_revision_manual(self, tipo, update_fields=None):
+        if tipo == self.TIPO_REGISTRO_ESTANDAR:
+            return False
+        if update_fields is not None and "requiere_revision_manual" in update_fields:
+            return self.requiere_revision_manual
+        if self.pk is None:
+            return True
+
+        tipo_previo = (
+            self.__class__.all_objects.filter(pk=self.pk)
+            .values_list("tipo_registro_identidad", flat=True)
+            .first()
+        )
+        if tipo_previo != tipo:
+            return True
+        return self.requiere_revision_manual
+
+    def _estado_revision_manual(self, requiere_revision_manual, update_fields=None):
+        if update_fields is not None and "estado_revision_manual" in update_fields:
+            return self.estado_revision_manual
+        if requiere_revision_manual:
+            return self.REVISION_IDENTIDAD_PENDIENTE
+        return self.estado_revision_manual
+
+    def normalizar_identidad(self, update_fields=None):
+        changed_fields = set()
+        tipo = self.tipo_registro_identidad or self.TIPO_REGISTRO_ESTANDAR
+
+        if tipo == self.TIPO_REGISTRO_SIN_DNI:
+            changed_fields |= self._set_identity_field("documento", None)
+            changed_fields |= self._set_identity_field(
+                "motivo_no_validacion_renaper", None
+            )
+            changed_fields |= self._set_identity_field(
+                "motivo_no_validacion_descripcion", None
+            )
+        elif tipo == self.TIPO_REGISTRO_DNI_NO_VALIDADO:
+            changed_fields |= self._set_identity_field("motivo_sin_dni", None)
+            changed_fields |= self._set_identity_field(
+                "motivo_sin_dni_descripcion", None
+            )
+        else:
+            changed_fields |= self._set_identity_field("motivo_sin_dni", None)
+            changed_fields |= self._set_identity_field(
+                "motivo_sin_dni_descripcion", None
+            )
+            changed_fields |= self._set_identity_field(
+                "motivo_no_validacion_renaper", None
+            )
+            changed_fields |= self._set_identity_field(
+                "motivo_no_validacion_descripcion", None
+            )
+
+        changed_fields |= self._set_identity_field(
+            "documento_unico_key", self.build_documento_unico_key()
+        )
+        changed_fields |= self._set_identity_field(
+            "requiere_revision_manual",
+            self._debe_requerir_revision_manual(tipo, update_fields=update_fields),
+        )
+        changed_fields |= self._set_identity_field(
+            "estado_revision_manual",
+            self._estado_revision_manual(
+                self.requiere_revision_manual,
+                update_fields=update_fields,
+            ),
+        )
+        return changed_fields
+
+    def save(self, *args, **kwargs):
+        update_fields = kwargs.get("update_fields")
+        changed_fields = self.normalizar_identidad(update_fields=update_fields)
+        if update_fields is not None and changed_fields:
+            kwargs["update_fields"] = set(update_fields) | changed_fields
+        return super().save(*args, **kwargs)
 
     @staticmethod
     def documento_prefix_filter(cleaned, field_name="documento"):
@@ -340,6 +453,131 @@ class Ciudadano(SoftDeleteModelMixin, models.Model):
 
     def get_absolute_url(self):
         return reverse("ciudadanos_ver", kwargs={"pk": self.pk})
+
+
+class CiudadanosImportJob(models.Model):
+    class Status(models.TextChoices):
+        PENDING = "pending", "Pendiente"
+        PROCESSING = "processing", "Procesando"
+        COMPLETED = "completed", "Completado"
+        COMPLETED_WITH_ERRORS = "completed_with_errors", "Completado con errores"
+        FAILED = "failed", "Fallido"
+
+    requested_by = models.ForeignKey(
+        User,
+        on_delete=models.DO_NOTHING,
+        related_name="ciudadanos_import_jobs",
+    )
+    archivo = models.FileField(upload_to=ciudadanos_import_job_upload_to)
+    original_filename = models.CharField(max_length=255)
+    status = models.CharField(
+        max_length=30,
+        choices=Status.choices,
+        default=Status.PENDING,
+        db_index=True,
+    )
+    total_rows = models.PositiveIntegerField(default=0)
+    processed_rows = models.PositiveIntegerField(default=0)
+    created_rows = models.PositiveIntegerField(default=0)
+    existing_rows = models.PositiveIntegerField(default=0)
+    failed_rows = models.PositiveIntegerField(default=0)
+    pending_rows = models.PositiveIntegerField(default=0)
+    next_row_index = models.PositiveIntegerField(default=0)
+    last_successful_row = models.PositiveIntegerField(null=True, blank=True)
+    last_successful_documento = models.CharField(max_length=32, blank=True)
+    last_attempted_row = models.PositiveIntegerField(null=True, blank=True)
+    last_attempted_documento = models.CharField(max_length=32, blank=True)
+    last_error_message = models.TextField(blank=True)
+    last_error_type = models.CharField(max_length=64, blank=True)
+    last_error_at = models.DateTimeField(null=True, blank=True)
+    resume_count = models.PositiveIntegerField(default=0)
+    requested_at = models.DateTimeField(auto_now_add=True, db_index=True)
+    started_at = models.DateTimeField(null=True, blank=True)
+    finished_at = models.DateTimeField(null=True, blank=True)
+    last_activity_at = models.DateTimeField(null=True, blank=True, db_index=True)
+
+    class Meta:
+        ordering = ["-requested_at", "-id"]
+        indexes = [
+            models.Index(
+                fields=["status", "requested_at"],
+                name="ciudadanos__status_8d0a47_idx",
+            ),
+            models.Index(
+                fields=["requested_by", "requested_at"],
+                name="ciudadanos__request_5b2064_idx",
+            ),
+        ]
+        verbose_name = "Lote de importacion masiva de ciudadanos"
+        verbose_name_plural = "Lotes de importacion masiva de ciudadanos"
+
+    def __str__(self):
+        return f"Lote {self.id} ({self.get_status_display()})"
+
+
+class CiudadanosImportJobRow(models.Model):
+    class Status(models.TextChoices):
+        PENDING = "pending", "Pendiente"
+        CREATED = "created", "Creado"
+        EXISTING = "existing", "Existente"
+        FAILED = "failed", "Fallido"
+
+    job = models.ForeignKey(
+        CiudadanosImportJob,
+        on_delete=models.CASCADE,
+        related_name="rows",
+    )
+    fila = models.PositiveIntegerField()
+    documento_raw = models.CharField(max_length=64, blank=True)
+    dni = models.CharField(max_length=16, blank=True)
+    cuil = models.CharField(max_length=11, blank=True)
+    sexo = models.CharField(max_length=1, blank=True)
+    sexos_intentados = models.CharField(max_length=16, blank=True)
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.PENDING,
+        db_index=True,
+    )
+    ciudadano = models.ForeignKey(
+        Ciudadano,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="import_rows",
+    )
+    mensaje = models.TextField(blank=True)
+    error_type = models.CharField(max_length=64, blank=True)
+    attempts = models.PositiveIntegerField(default=0)
+    processed_at = models.DateTimeField(null=True, blank=True, db_index=True)
+
+    class Meta:
+        ordering = ["fila", "id"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["job", "fila"],
+                name="ciudadanos_import_job_row_unique",
+            )
+        ]
+        indexes = [
+            models.Index(
+                fields=["job", "status"],
+                name="ciudadanos__job_id_2121af_idx",
+            ),
+            models.Index(
+                fields=["job", "processed_at"],
+                name="ciudadanos__job_id_00c794_idx",
+            ),
+            models.Index(
+                fields=["ciudadano"],
+                name="ciudadanos__ciudada_76bc92_idx",
+            ),
+        ]
+        verbose_name = "Resultado de fila de importacion de ciudadanos"
+        verbose_name_plural = "Resultados de filas de importacion de ciudadanos"
+
+    def __str__(self):
+        return f"Lote {self.job_id} fila {self.fila} ({self.get_status_display()})"
 
 
 class GrupoFamiliar(SoftDeleteModelMixin, models.Model):

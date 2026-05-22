@@ -1,0 +1,110 @@
+{% extends "includes/main.html" %}
+{% load crispy_forms_tags %}
+{% block title %}Importacion masiva de ciudadanos{% endblock %}
+{% block titulo-pagina %}Importacion masiva de ciudadanos{% endblock %}
+{% block breadcrumb %}
+    <ol class="breadcrumb float-sm-right">
+        <li class="breadcrumb-item">Ciudadanos</li>
+        <li class="breadcrumb-item">
+            <a href="{% url 'ciudadanos' %}">Historia Social Digital</a>
+        </li>
+        <li class="breadcrumb-item active">Importacion masiva</li>
+    </ol>
+{% endblock %}
+{% block content %}
+    <div class="row justify-content-center">
+        <div class="col-12 col-lg-9">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h3 class="mb-0">Nuevo lote</h3>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-light border">
+                        <div class="font-weight-bold mb-2">Formato esperado</div>
+                        <ul class="mb-0 pl-3">
+                            <li>
+                                La plantilla incluye <code>cuil_o_dni</code> y <code>sexo</code>.
+                            </li>
+                            <li>
+                                Tambien se aceptan encabezados <code>cuil</code>, <code>dni</code>
+                                o <code>documento</code>.
+                            </li>
+                            <li>
+                                Si <code>sexo</code> viene vacio, el worker intenta M, F y X.
+                            </li>
+                            <li>El procesamiento queda en historial y se ejecuta fuera de la request web.</li>
+                        </ul>
+                    </div>
+
+                    <form method="post" enctype="multipart/form-data" novalidate>
+                        {% csrf_token %}
+                        <div class="mb-3">{{ form.archivo|as_crispy_field }}</div>
+                        <div class="d-flex flex-wrap gap-2">
+                            <button type="submit"
+                                    class="btn btn-outline-primary"
+                                    formaction="{{ template_download_url }}"
+                                    formmethod="get"
+                                    formnovalidate>Descargar plantilla</button>
+                            <button type="submit" class="btn btn-success">Crear lote</button>
+                            <a href="{% url 'ciudadanos' %}" class="btn btn-secondary">Volver</a>
+                        </div>
+                    </form>
+
+                    <hr class="my-4" />
+                    <h4 class="mb-3">Historial de lotes</h4>
+                    {% if recent_jobs %}
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-hover align-middle mb-0">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Lote</th>
+                                        <th scope="col">Fecha</th>
+                                        <th scope="col">Usuario</th>
+                                        <th scope="col">Estado</th>
+                                        <th scope="col">Creados</th>
+                                        <th scope="col">Existentes</th>
+                                        <th scope="col">Fallidos</th>
+                                        <th scope="col">Pendientes</th>
+                                        <th scope="col">Detalle</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for job in recent_jobs %}
+                                        <tr>
+                                            <td>#{{ job.id }}</td>
+                                            <td>{{ job.requested_at|date:"d/m/Y H:i" }}</td>
+                                            <td>{{ job.requested_by|default:"-" }}</td>
+                                            <td>
+                                                {% if job.status == "completed" %}
+                                                    <span class="badge badge-success">Completado</span>
+                                                {% elif job.status == "completed_with_errors" %}
+                                                    <span class="badge badge-warning">Con errores</span>
+                                                {% elif job.status == "failed" %}
+                                                    <span class="badge badge-danger">Fallido</span>
+                                                {% elif job.status == "processing" %}
+                                                    <span class="badge badge-info">Procesando</span>
+                                                {% else %}
+                                                    <span class="badge badge-secondary">Pendiente</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>{{ job.created_rows }}</td>
+                                            <td>{{ job.existing_rows }}</td>
+                                            <td>{{ job.failed_rows }}</td>
+                                            <td>{{ job.pending_rows }}</td>
+                                            <td>
+                                                <a href="{% url 'ciudadanos_importacion_masiva_lote' job.id %}"
+                                                   class="btn btn-sm btn-outline-primary">Ver detalle</a>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-light border mb-0">Todavia no hay lotes de importacion masiva.</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

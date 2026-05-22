@@ -23,7 +23,7 @@
             <table class="table table-bordered table-striped">
                 <thead>
                     <tr>
-                        <th>ID</th>
+                        <th>CDI / ID</th>
                         <th>Fecha relevamiento</th>
                         <th>Quien responde</th>
                         <th>Creado</th>
@@ -34,7 +34,7 @@
                 <tbody>
                     {% for item in summary_items %}
                         <tr>
-                            <td>{{ item.id }}</td>
+                            <td>{{ item.id_codigo_cdi }} / {{ item.id }}</td>
                             <td>{{ item.fecha_relevamiento|date:"d/m/Y"|default:"-" }}</td>
                             <td>{{ item.nombre_completo_respondente|default:"-" }}</td>
                             <td>{{ item.created_at|date:"d/m/Y H:i" }}</td>

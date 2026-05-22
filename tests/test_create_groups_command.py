@@ -75,6 +75,8 @@ def test_create_groups_creates_cfpinet_with_vat_permissions():
         "view_centro",
         "add_centro",
         "change_centro",
+        "view_comision",
+        "view_comisioncurso",
         "view_planversioncurricular",
         "add_planversioncurricular",
         "change_planversioncurricular",
@@ -122,6 +124,23 @@ def test_create_groups_creates_cfp_secondary_groups_with_expected_permissions():
         "add_asistenciasesion",
         "change_asistenciasesion",
     }.issubset(set(cfp.permissions.values_list("codename", flat=True)))
+
+
+def test_create_groups_creates_cfp_revisor_readonly_group():
+    """CFPRevisor debe existir para visualizacion acotada sin permisos de gestion."""
+    Group.objects.all().delete()
+
+    call_command("create_groups", verbosity=0)
+
+    cfp_revisor = Group.objects.get(name="CFPRevisor")
+    group_codes = set(cfp_revisor.permissions.values_list("codename", flat=True))
+
+    assert {"role_revisorcentrovat", "view_centro", "view_comisioncurso"}.issubset(
+        group_codes
+    )
+    assert not any(
+        code.startswith(("add_", "change_", "delete_")) for code in group_codes
+    )
 
 
 def test_rename_vat_sse_group_migration_forward_renames_existing_group():

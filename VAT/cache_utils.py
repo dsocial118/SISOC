@@ -39,7 +39,7 @@ def invalidate_planes_centro_cache_on_save_or_delete(sender, **kwargs):
 @receiver([post_soft_delete, post_restore])
 def invalidate_planes_centro_cache_on_soft_delete(sender, instance, **kwargs):
     """Invalida el cache cuando un plan o titulo se da de baja o se restaura."""
-    if instance._meta.label_lower in {
+    if instance._meta.label_lower.lower() in {
         "vat.planversioncurricular",
         "vat.tituloreferencia",
     }:

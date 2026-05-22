@@ -52,6 +52,62 @@ def test_create_view_post_territorial_desde_listado(client_logged, comedor):
 
 
 @pytest.mark.django_db
+def test_detail_view_muestra_boton_y_modal_asignar_para_pendiente(
+    client_logged, relevamiento
+):
+    relevamiento.estado = "Pendiente"
+    relevamiento.save(update_fields=["estado"])
+
+    url = reverse(
+        "relevamiento_detalle",
+        kwargs={"comedor_pk": relevamiento.comedor.pk, "pk": relevamiento.pk},
+    )
+    response = client_logged.get(url)
+    body = response.content.decode()
+
+    assert response.status_code == 200
+    assert 'data-bs-target="#modalAsignarTerritorial"' in body
+    assert 'name="territorial_editar"' in body
+    assert 'id="update_territorial_select"' in body
+
+
+@pytest.mark.django_db
+def test_detail_view_no_muestra_asignar_para_visita_pendiente(
+    client_logged, relevamiento
+):
+    relevamiento.estado = "Visita pendiente"
+    relevamiento.save(update_fields=["estado"])
+
+    url = reverse(
+        "relevamiento_detalle",
+        kwargs={"comedor_pk": relevamiento.comedor.pk, "pk": relevamiento.pk},
+    )
+    response = client_logged.get(url)
+    body = response.content.decode()
+
+    assert response.status_code == 200
+    assert 'data-bs-target="#modalAsignarTerritorial"' not in body
+    assert 'id="update_territorial_select"' not in body
+
+
+@pytest.mark.django_db
+def test_detail_view_no_muestra_asignar_para_finalizado(client_logged, relevamiento):
+    relevamiento.estado = "Finalizado"
+    relevamiento.save(update_fields=["estado"])
+
+    url = reverse(
+        "relevamiento_detalle",
+        kwargs={"comedor_pk": relevamiento.comedor.pk, "pk": relevamiento.pk},
+    )
+    response = client_logged.get(url)
+    body = response.content.decode()
+
+    assert response.status_code == 200
+    assert 'data-bs-target="#modalAsignarTerritorial"' not in body
+    assert 'id="update_territorial_select"' not in body
+
+
+@pytest.mark.django_db
 def test_update_view_get(client_logged, relevamiento):
     url = reverse("relevamiento_create_edit_ajax", kwargs={"pk": relevamiento.pk})
     response = client_logged.post(url, {})  # Usar POST en vez de GET

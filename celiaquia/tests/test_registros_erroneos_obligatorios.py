@@ -325,7 +325,7 @@ def test_detalle_expediente_muestra_nacionalidad_editable_y_autocompleta_municip
     content = response.content.decode()
     form_pattern = (
         rf'<form[^>]+class="form-editar-error"[^>]+data-registro-id="{registro.pk}"'
-        rf'.*?</form>'
+        rf".*?</form>"
     )
     form_match = re.search(form_pattern, content, flags=re.DOTALL)
 
@@ -343,11 +343,14 @@ def test_detalle_expediente_muestra_nacionalidad_editable_y_autocompleta_municip
     )
     assert nacionalidad_select is not None
     assert municipio_select is not None
-    assert re.search(
-        rf'option value="{argentina.pk}"\s+selected',
-        nacionalidad_select.group(0),
-        flags=re.DOTALL,
-    ) is None
+    assert (
+        re.search(
+            rf'option value="{argentina.pk}"\s+selected',
+            nacionalidad_select.group(0),
+            flags=re.DOTALL,
+        )
+        is None
+    )
     assert re.search(
         rf'option value="{municipio.pk}"\s+selected',
         municipio_select.group(0),
@@ -414,7 +417,7 @@ def test_detalle_expediente_no_autoselecciona_nacionalidad_invalida_o_vacia(clie
     for registro in (registro_invalido, registro_vacio):
         form_pattern = (
             rf'<form[^>]+class="form-editar-error"[^>]+data-registro-id="{registro.pk}"'
-            rf'.*?</form>'
+            rf".*?</form>"
         )
         form_match = re.search(form_pattern, content, flags=re.DOTALL)
         assert form_match is not None
@@ -425,11 +428,14 @@ def test_detalle_expediente_no_autoselecciona_nacionalidad_invalida_o_vacia(clie
             flags=re.DOTALL,
         )
         assert nacionalidad_select is not None
-        assert re.search(
-            rf'option value="{argentina.pk}"\s+selected',
-            nacionalidad_select.group(0),
-            flags=re.DOTALL,
-        ) is None
+        assert (
+            re.search(
+                rf'option value="{argentina.pk}"\s+selected',
+                nacionalidad_select.group(0),
+                flags=re.DOTALL,
+            )
+            is None
+        )
 
 
 @pytest.mark.django_db
@@ -712,7 +718,9 @@ def test_actualizar_registro_erroneo_permite_mayor_con_responsable_incompleto(cl
 
 
 @pytest.mark.django_db
-def test_actualizar_registro_erroneo_conserva_nacionalidad_elegida_y_corrige_municipio_por_localidad(client):
+def test_actualizar_registro_erroneo_conserva_nacionalidad_elegida_y_corrige_municipio_por_localidad(
+    client,
+):
     user, provincia = _crear_usuario_provincial("prov_update_defaults")
     user.is_superuser = True
     user.save(update_fields=["is_superuser"])

@@ -1,3 +1,4 @@
+import json
 from datetime import timedelta
 
 from django import forms
@@ -5,6 +6,7 @@ from django.contrib.admin.widgets import FilteredSelectMultiple
 from django.conf import settings
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.models import Group, Permission, User
+from django.core.exceptions import ValidationError as DjangoValidationError
 from django.core.validators import FileExtensionValidator
 from django.db import transaction
 from django.utils.crypto import get_random_string
@@ -21,6 +23,11 @@ from users.services_pwa import (
     sync_representante_accesses,
 )
 from users.services_bulk_credentials import get_bulk_credentials_send_type_choices
+from users.territorial_scope import (
+    clean_territorial_scope_payload,
+    serialize_profile_scopes,
+    sync_profile_territorial_scopes,
+)
 
 MOBILE_RENDICION_PERMISSION_CODE = "rendicioncuentasmensual.manage_mobile_rendicion"
 
@@ -33,6 +40,57 @@ ROLE_PERMISSION_QUERYSET = (
     )
     .order_by("name")
 )
+
+
+def _validation_error_messages(error):
+    if hasattr(error, "messages"):
+        return error.messages
+    return [str(error)]
+
+
+class TerritorialScopeFormMixin:
+    def _setup_territorial_scope_fields(self, profile=None):
+        initial_scopes = serialize_profile_scopes(profile)
+        self.initial_territorial_scopes = initial_scopes
+        initial_json = json.dumps(initial_scopes)
+        self.fields["territorial_scopes"].initial = initial_json
+        if not self.is_bound:
+            self.initial["territorial_scopes"] = initial_json
+
+    def _clean_territorial_scope_fields(self, cleaned):
+        if not cleaned.get("es_usuario_provincial"):
+            cleaned["territorial_scopes_data"] = []
+            return cleaned
+
+        raw_scopes = cleaned.get("territorial_scopes") or "[]"
+        try:
+            payload = json.loads(raw_scopes)
+        except json.JSONDecodeError:
+            self.add_error(
+                "territorial_scopes",
+                "El formato de alcances territoriales no es válido.",
+            )
+            cleaned["territorial_scopes_data"] = []
+            return cleaned
+
+        if payload in (None, [], "") and cleaned.get("provincia"):
+            payload = [
+                {
+                    "provincia_id": cleaned["provincia"].pk,
+                    "municipio_id": None,
+                    "localidad_id": None,
+                }
+            ]
+
+        try:
+            cleaned["territorial_scopes_data"] = clean_territorial_scope_payload(
+                payload
+            )
+        except DjangoValidationError as error:
+            for message in _validation_error_messages(error):
+                self.add_error("territorial_scopes", message)
+            cleaned["territorial_scopes_data"] = []
+        return cleaned
 
 
 class BackofficeAuthenticationForm(AuthenticationForm):
@@ -441,7 +499,12 @@ class DelegationScopeMixin:
             )
 
 
-class UserCreationForm(PWAAccessMixin, DelegationScopeMixin, forms.ModelForm):
+class UserCreationForm(
+    TerritorialScopeFormMixin,
+    PWAAccessMixin,
+    DelegationScopeMixin,
+    forms.ModelForm,
+):
     password = forms.CharField(widget=forms.PasswordInput, label="Contraseña")
     groups = forms.ModelMultipleChoiceField(
         queryset=Group.objects.all(),
@@ -468,8 +531,13 @@ class UserCreationForm(PWAAccessMixin, DelegationScopeMixin, forms.ModelForm):
     provincia = forms.ModelChoiceField(
         queryset=Provincia.objects.all(),
         required=False,
-        widget=forms.Select(attrs={"class": "select"}),
+        widget=forms.Select(attrs={"class": "select2"}),
         label="Provincia",
+    )
+    territorial_scopes = forms.CharField(
+        required=False,
+        widget=forms.HiddenInput,
+        label="Alcances territoriales",
     )
     es_coordinador = forms.BooleanField(
         required=False,
@@ -494,6 +562,7 @@ class UserCreationForm(PWAAccessMixin, DelegationScopeMixin, forms.ModelForm):
             "user_permissions",
             "es_usuario_provincial",
             "provincia",
+            "territorial_scopes",
             "es_coordinador",
             "duplas_asignadas",
             "last_name",
@@ -511,6 +580,7 @@ class UserCreationForm(PWAAccessMixin, DelegationScopeMixin, forms.ModelForm):
         self.fields["password"].required = False
         self.generated_password = None
         self.password_was_auto_generated = False
+        self._setup_territorial_scope_fields()
 
     def clean(self):
         cleaned = super().clean()
@@ -520,8 +590,7 @@ class UserCreationForm(PWAAccessMixin, DelegationScopeMixin, forms.ModelForm):
             and not (cleaned.get("password") or "").strip()
         ):
             self.add_error("password", "Este campo es obligatorio.")
-        if cleaned.get("es_usuario_provincial") and not cleaned.get("provincia"):
-            self.add_error("provincia", "Seleccione una provincia.")
+        cleaned = self._clean_territorial_scope_fields(cleaned)
         if cleaned.get("es_coordinador") and not cleaned.get("duplas_asignadas"):
             self.add_error("duplas_asignadas", "Seleccione al menos una dupla.")
         self._validate_selected_within_allowed(cleaned)
@@ -564,11 +633,7 @@ class UserCreationForm(PWAAccessMixin, DelegationScopeMixin, forms.ModelForm):
             profile.es_usuario_provincial = self.cleaned_data.get(
                 "es_usuario_provincial", False
             )
-            profile.provincia = (
-                self.cleaned_data.get("provincia")
-                if self.cleaned_data.get("es_usuario_provincial")
-                else None
-            )
+            profile.provincia = None
             profile.es_coordinador = self.cleaned_data.get("es_coordinador", False)
             profile.rol = self.cleaned_data.get("rol")
             profile.must_change_password = True
@@ -578,6 +643,10 @@ class UserCreationForm(PWAAccessMixin, DelegationScopeMixin, forms.ModelForm):
             )
             profile.temporary_password_plaintext = self.generated_password
             profile.save()
+            sync_profile_territorial_scopes(
+                profile,
+                self.cleaned_data.get("territorial_scopes_data", []),
+            )
             # Evita devolver un profile cacheado con valores viejos tras el signal de User.
             user.refresh_from_db()
             profile.grupos_asignables.set(
@@ -596,7 +665,12 @@ class UserCreationForm(PWAAccessMixin, DelegationScopeMixin, forms.ModelForm):
         return user
 
 
-class CustomUserChangeForm(PWAAccessMixin, DelegationScopeMixin, forms.ModelForm):
+class CustomUserChangeForm(
+    TerritorialScopeFormMixin,
+    PWAAccessMixin,
+    DelegationScopeMixin,
+    forms.ModelForm,
+):
     password = forms.CharField(
         widget=forms.PasswordInput,
         label="Contraseña (dejar en blanco para no cambiarla)",
@@ -630,6 +704,11 @@ class CustomUserChangeForm(PWAAccessMixin, DelegationScopeMixin, forms.ModelForm
         widget=forms.Select(attrs={"class": "select2"}),
         label="Provincia",
     )
+    territorial_scopes = forms.CharField(
+        required=False,
+        widget=forms.HiddenInput,
+        label="Alcances territoriales",
+    )
     es_coordinador = forms.BooleanField(
         required=False,
         label="Es Coordinador de Equipo Técnico",
@@ -653,6 +732,7 @@ class CustomUserChangeForm(PWAAccessMixin, DelegationScopeMixin, forms.ModelForm
             "user_permissions",
             "es_usuario_provincial",
             "provincia",
+            "territorial_scopes",
             "es_coordinador",
             "duplas_asignadas",
             "last_name",
@@ -676,6 +756,7 @@ class CustomUserChangeForm(PWAAccessMixin, DelegationScopeMixin, forms.ModelForm
         except Profile.DoesNotExist:
             prof = None
 
+        self._setup_territorial_scope_fields(prof)
         if prof:
             self.fields["es_usuario_provincial"].initial = prof.es_usuario_provincial
             self.fields["provincia"].initial = prof.provincia
@@ -687,8 +768,7 @@ class CustomUserChangeForm(PWAAccessMixin, DelegationScopeMixin, forms.ModelForm
     def clean(self):
         cleaned = super().clean()
         cleaned = self._validate_required_email(cleaned)
-        if cleaned.get("es_usuario_provincial") and not cleaned.get("provincia"):
-            self.add_error("provincia", "Seleccione una provincia.")
+        cleaned = self._clean_territorial_scope_fields(cleaned)
         if cleaned.get("es_coordinador") and not cleaned.get("duplas_asignadas"):
             self.add_error("duplas_asignadas", "Seleccione al menos una dupla.")
         self._validate_selected_within_allowed(cleaned)
@@ -727,11 +807,7 @@ class CustomUserChangeForm(PWAAccessMixin, DelegationScopeMixin, forms.ModelForm
             profile.es_usuario_provincial = self.cleaned_data.get(
                 "es_usuario_provincial", False
             )
-            profile.provincia = (
-                self.cleaned_data.get("provincia")
-                if self.cleaned_data.get("es_usuario_provincial")
-                else None
-            )
+            profile.provincia = None
             profile.es_coordinador = self.cleaned_data.get("es_coordinador", False)
             profile.rol = self.cleaned_data.get("rol")
             if new_pwd:
@@ -743,13 +819,17 @@ class CustomUserChangeForm(PWAAccessMixin, DelegationScopeMixin, forms.ModelForm
                 )
             elif not self.cleaned_data.get("es_representante_pwa", False):
                 profile.password_reset_requested_at = None
-                profile.must_change_password = True
+                profile.must_change_password = False
                 profile.password_changed_at = None
                 profile.initial_password_expires_at = timezone.now() + timedelta(
                     hours=settings.INITIAL_PASSWORD_MAX_AGE_HOURS
                 )
                 profile.temporary_password_plaintext = None
             profile.save()
+            sync_profile_territorial_scopes(
+                profile,
+                self.cleaned_data.get("territorial_scopes_data", []),
+            )
             user.refresh_from_db()
             profile.grupos_asignables.set(
                 self.cleaned_data.get("grupos_asignables", [])

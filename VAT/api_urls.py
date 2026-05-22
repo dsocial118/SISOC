@@ -28,6 +28,7 @@ from VAT.api_views import (
 )
 from VAT.api_web_views import (
     VatWebCentroViewSet,
+    VatWebCiudadanoViewSet,
     VatWebCursoViewSet,
     VatWebInscripcionViewSet,
     VatWebTituloViewSet,
@@ -135,6 +136,11 @@ router.register(
 )
 
 router.register(r"web/centros", VatWebCentroViewSet, basename="vat-web-centro")
+router.register(
+    r"web/ciudadanos",
+    VatWebCiudadanoViewSet,
+    basename="vat-web-ciudadano",
+)
 router.register(r"web/titulos", VatWebTituloViewSet, basename="vat-web-titulo")
 router.register(r"web/cursos", VatWebCursoViewSet, basename="vat-web-curso")
 router.register(

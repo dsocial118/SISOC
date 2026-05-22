@@ -1,4 +1,6 @@
 import os
+import re
+import unicodedata
 from datetime import datetime
 from django.conf import settings
 from django.db import models
@@ -18,6 +20,7 @@ from admisiones.models.admisiones import (
     InformeTecnico,
     InformeTecnicoPDF,
     InformeComplementario,
+    NumeroGdeOrganizacion,
 )
 from admisiones.forms.admisiones_forms import (
     CaratularForm,
@@ -36,8 +39,9 @@ from admisiones.services.admisiones_filter_config import (
     CHOICE_OPS as ADMISION_CHOICE_OPS,
 )
 from comedores.utils import comedor_usa_admision_para_nomina
+from organizaciones.models import ArchivoOrganizacion, DocumentacionOrganizacion
 
-from django.db.models import Q
+from django.db.models import Prefetch, Q
 import logging
 
 logger = logging.getLogger("django")
@@ -55,6 +59,97 @@ ADMISION_ADVANCED_FILTER = AdvancedFilterEngine(
 
 
 class AdmisionService:
+    TIPO_ENTIDAD_A_CONVENIO = {
+        "personeria juridica": "personeria juridica",
+        "personeria juridica eclesiastica": "personeria juridica eclesiastica",
+        "asociacion de hecho": "organizacion base",
+    }
+
+    ESTADOS_BLOQUEO_ELIMINACION_DOCUMENTAL = (
+        "informe_tecnico_finalizado",
+        "informe_tecnico_docx_editado",
+        "informe_tecnico_en_revision",
+        "informe_tecnico_en_subsanacion",
+        "informe_tecnico_aprobado",
+        "if_informe_tecnico_cargado",
+        "enviado_a_legales",
+        "enviado_a_acompaniamiento",
+        "descartado",
+        "inactivada",
+    )
+    ESTADOS_BLOQUEO_AVANCE_DOCUMENTAL = (
+        "documentacion_aprobada",
+        "expediente_cargado",
+        "informe_tecnico_en_proceso",
+        *ESTADOS_BLOQUEO_ELIMINACION_DOCUMENTAL,
+    )
+    ESTADOS_DOCUMENTACION_ORGANIZACIONAL_CONGELADA = (
+        "informe_tecnico_finalizado",
+        "informe_tecnico_docx_editado",
+        "informe_tecnico_en_revision",
+        "informe_tecnico_en_subsanacion",
+        "informe_tecnico_aprobado",
+        "if_informe_tecnico_cargado",
+        "enviado_a_legales",
+        "enviado_a_acompaniamiento",
+    )
+    CATEGORIA_ORGANIZACIONAL_POR_TIPO_CONVENIO = {
+        1: DocumentacionOrganizacion.CATEGORIA_BASE,
+        2: DocumentacionOrganizacion.CATEGORIA_ECLESIASTICA,
+        3: DocumentacionOrganizacion.CATEGORIA_PERSONERIA,
+    }
+    ALIAS_DOCUMENTACION_ORGANIZACIONAL = {
+        DocumentacionOrganizacion.CATEGORIA_PERSONERIA: {
+            "acta constitutiva": "acta constitutiva de la organizacion",
+            "estatuto": "estatuto social vigente",
+            "reso personeria juridica": "resolucion de otorgamiento de la personeria juridica",
+            "resolucion personeria juridica": "resolucion de otorgamiento de la personeria juridica",
+            "acta de designacion de autoridades": "acta de designacion de autoridades vigentes",
+            "dni presidente": "dni del presidente",
+            "dni tesorero": "dni del tesorero",
+            "dni secretario": "dni del secretario",
+            "acta de solicitud de subsidio": "acta de solicitud de subsidio al programa",
+            "constancia de arca": "constancia de inscripcion ante arca",
+            "preinscripcion renacom": "constancia de preinscripcion en renacom",
+            "validacion renacom": "constancia de validacion en renacom",
+            "inscripcion renacom": "constancia de inscripcion definitiva en renacom",
+        },
+        DocumentacionOrganizacion.CATEGORIA_ECLESIASTICA: {
+            "designacion autoridad maxima": "acta o documento de designacion de la autoridad maxima",
+            "certificado de culto": "certificado de culto vigente",
+            "dni obispo": "dni del obispo o autoridad eclesiastica",
+            "constancia de arca": "constancia de inscripcion ante arca",
+            "preinscripcion renacom": "constancia de preinscripcion en renacom",
+            "validacion renacom": "constancia de validacion en renacom",
+            "inscripcion renacom": "constancia de inscripcion definitiva en renacom",
+            "decreto de reconocimiento del estado nacional": "decreto de reconocimiento del estado nacional",
+            "apoderado": "documento de designacion de apoderado",
+            "dni apoderado": "dni del apoderado",
+            "estatuto": "estatuto institucional",
+            "conformacion de la comision diocesana": "acta de conformacion de la comision diocesana",
+            "autorizacion para gestionar": "autorizacion para gestionar",
+        },
+        DocumentacionOrganizacion.CATEGORIA_BASE: {
+            "acta de asamblea": "acta de asamblea constitutiva",
+            "dni responsable 1": "dni del responsable 1",
+            "dni responsable 2": "dni del responsable 2",
+            "acta designacion aval 1 designacion de cargo aval 1 persona fisica": "acta designacion aval 1 designacion de cargo aval 1 persona fisica o juridica",
+            "dni autoridad maxima aval 1 dni aval 1 persona fisica": "dni de la autoridad maxima del aval 1 dni del aval 1 segun corresponda",
+            "acta designacion aval 2 designacion de cargo aval 2 persona fisica": "acta designacion aval 2 designacion de cargo aval 2 persona fisica o juridica",
+            "dni autoridad maxima aval 2 dni aval 2 persona fisica": "dni de la autoridad maxima del aval 2 dni del aval 2 segun corresponda",
+            "nota aval 1": "nota de aval emitida por el aval 1",
+            "nota aval 2": "nota de aval emitida por el aval 2",
+            "acta constitutiva aval 1": "acta constitutiva del aval 1",
+            "estatuto aval 1": "estatuto del aval 1",
+            "reso personeria juridica aval 1": "resolucion de personeria juridica del aval 1",
+            "acta constitutiva aval 2": "acta constitutiva del aval 2",
+            "estatuto aval 2": "estatuto del aval 2",
+            "reso personeria juridica aval 2": "resolucion de personeria juridica del aval 2",
+            "preinscripcion renacom": "constancia de preinscripcion en renacom",
+            "validacion renacom": "constancia de validacion en renacom",
+            "inscripcion renacom": "constancia de inscripcion definitiva en renacom",
+        },
+    }
 
     @staticmethod
     def _normalize_estado_display(estado):
@@ -148,6 +243,93 @@ class AdmisionService:
         return "Documento adicional"
 
     @staticmethod
+    def _normalizar_nombre_documental(nombre):
+        texto = unicodedata.normalize("NFKD", str(nombre or ""))
+        texto = texto.encode("ascii", "ignore").decode("ascii").lower()
+        return re.sub(r"[^a-z0-9]+", " ", texto).strip()
+
+    @staticmethod
+    def _categoria_organizacional_admision(admision):
+        return AdmisionService.CATEGORIA_ORGANIZACIONAL_POR_TIPO_CONVENIO.get(
+            getattr(admision, "tipo_convenio_id", None)
+        )
+
+    @staticmethod
+    def _org_doc_key_desde_documentacion_admision(documentacion, categoria):
+        if not categoria or not documentacion:
+            return None
+        nombre_normalizado = AdmisionService._normalizar_nombre_documental(
+            documentacion.nombre
+        )
+        return AdmisionService.ALIAS_DOCUMENTACION_ORGANIZACIONAL.get(
+            categoria, {}
+        ).get(nombre_normalizado)
+
+    @staticmethod
+    def _get_archivos_organizacion_vigentes(admision, categoria):
+        organizacion = getattr(getattr(admision, "comedor", None), "organizacion", None)
+        if not organizacion or not categoria:
+            return {}
+
+        archivos = (
+            ArchivoOrganizacion.objects.filter(
+                organizacion=organizacion,
+                documentacion__categoria=categoria,
+            )
+            .select_related("documentacion")
+            .order_by("documentacion_id", "-creado", "-id")
+        )
+        vigentes = {}
+        for archivo in archivos:
+            vigentes.setdefault(archivo.documentacion_id, archivo)
+        return vigentes
+
+    @staticmethod
+    def _serializar_documentacion_organizacion(
+        org_doc,
+        archivo=None,
+        admision_doc=None,
+        numero_gde_admision=None,
+    ):
+        estado_display, estado_valor = AdmisionService._estado_display_y_valor(
+            archivo.estado if archivo else "pendiente"
+        )
+        return {
+            "id": f"org-{org_doc.id}",
+            "documentacion_id": admision_doc.id if admision_doc else None,
+            "archivo_id": None,
+            "archivo_organizacion_id": archivo.id if archivo else None,
+            "nombre": org_doc.nombre,
+            "obligatorio": org_doc.obligatorio,
+            "estado": estado_display,
+            "estado_valor": estado_valor,
+            "archivo_url": archivo.archivo.url if archivo and archivo.archivo else None,
+            "numero_gde": numero_gde_admision,
+            "fecha_vencimiento": archivo.fecha_vencimiento if archivo else None,
+            "observaciones": archivo.observaciones if archivo else None,
+            "es_personalizado": False,
+            "es_documento_organizacion": True,
+            "origen": "organizacion",
+            "row_id": f"org-{org_doc.id}",
+        }
+
+    @staticmethod
+    def _crear_archivo_admision_desde_archivo_organizacion(
+        admision, org_doc, archivo_org, documentacion_admision=None
+    ):
+        return ArchivoAdmision.objects.create(
+            admision=admision,
+            documentacion=documentacion_admision,
+            nombre_personalizado=None if documentacion_admision else org_doc.nombre,
+            archivo=archivo_org.archivo.name,
+            estado=archivo_org.estado,
+            observaciones=archivo_org.observaciones,
+            numero_gde=None,
+            creado_por=archivo_org.creado_por,
+            modificado_por=archivo_org.modificado_por,
+        )
+
+    @staticmethod
     def _serialize_documentacion(documentacion, archivo=None):
 
         estado = archivo.estado if archivo else "pendiente"
@@ -173,11 +355,113 @@ class AdmisionService:
             "observaciones": archivo.observaciones if archivo else None,
             "es_personalizado": False,
             "row_id": row_id,
-            "observaciones": archivo.observaciones if archivo else None,
+            "es_documento_organizacion": False,
+            "origen": "admision",
         }
 
     @staticmethod
-    def _build_documentos_update_context(documentaciones, archivos_subidos):
+    def _build_documentos_organizacionales_update_context(
+        admision, documentaciones, archivos_por_documentacion
+    ):
+        categoria = AdmisionService._categoria_organizacional_admision(admision)
+        if not categoria:
+            return [], set()
+
+        org_docs = list(
+            DocumentacionOrganizacion.objects.filter(categoria=categoria).order_by(
+                "orden", "id"
+            )
+        )
+        org_docs_por_key = {
+            AdmisionService._normalizar_nombre_documental(org_doc.nombre): org_doc
+            for org_doc in org_docs
+        }
+        admision_doc_por_org_key = {}
+        ids_documentacion_admision_usados = set()
+
+        for documentacion in documentaciones:
+            org_key = AdmisionService._org_doc_key_desde_documentacion_admision(
+                documentacion, categoria
+            )
+            if org_key and org_key in org_docs_por_key:
+                admision_doc_por_org_key[org_key] = documentacion
+                ids_documentacion_admision_usados.add(documentacion.id)
+
+        archivos_org = AdmisionService._get_archivos_organizacion_vigentes(
+            admision, categoria
+        )
+        numeros_gde_por_archivo_org = (
+            AdmisionService._get_numeros_gde_organizacion_por_archivo(
+                admision,
+                [archivo.id for archivo in archivos_org.values() if archivo],
+            )
+        )
+        documentos = []
+        for org_doc in org_docs:
+            org_key = AdmisionService._normalizar_nombre_documental(org_doc.nombre)
+            admision_doc = admision_doc_por_org_key.get(org_key)
+            archivo_org = archivos_org.get(org_doc.id)
+            archivo_admision = (
+                archivos_por_documentacion.get(admision_doc.id)
+                if admision_doc
+                else None
+            )
+            numero_gde_admision = (
+                numeros_gde_por_archivo_org.get(archivo_org.id) if archivo_org else None
+            )
+            if archivo_admision:
+                doc_serializado = (
+                    AdmisionService._serialize_documentacion(
+                        admision_doc, archivo_admision
+                    )
+                    if admision_doc
+                    else AdmisionService.serialize_documento_personalizado(
+                        archivo_admision
+                    )
+                )
+                doc_serializado.update(
+                    {
+                        "nombre": org_doc.nombre,
+                        "obligatorio": org_doc.obligatorio,
+                        "es_documento_organizacion": True,
+                        "origen": "organizacion",
+                        "fecha_vencimiento": (
+                            archivo_org.fecha_vencimiento if archivo_org else None
+                        ),
+                        "archivo_organizacion_id": (
+                            archivo_org.id if archivo_org else None
+                        ),
+                    }
+                )
+                if numero_gde_admision is not None:
+                    doc_serializado["numero_gde"] = numero_gde_admision
+            else:
+                doc_serializado = (
+                    AdmisionService._serializar_documentacion_organizacion(
+                        org_doc,
+                        archivo_org,
+                        admision_doc=admision_doc,
+                        numero_gde_admision=numero_gde_admision,
+                    )
+                )
+            documentos.append(doc_serializado)
+
+        return documentos, ids_documentacion_admision_usados
+
+    @staticmethod
+    def _get_numeros_gde_organizacion_por_archivo(admision, archivo_org_ids):
+        if not admision or not archivo_org_ids:
+            return {}
+        registros = NumeroGdeOrganizacion.objects.filter(
+            admision=admision,
+            archivo_organizacion_id__in=archivo_org_ids,
+        ).values_list("archivo_organizacion_id", "numero_gde")
+        return {archivo_id: numero for archivo_id, numero in registros}
+
+    @staticmethod
+    def _build_documentos_update_context(
+        documentaciones, archivos_subidos, admision=None
+    ):
         archivos_por_documentacion = {
             archivo.documentacion_id: archivo
             for archivo in archivos_subidos
@@ -187,8 +471,26 @@ class AdmisionService:
         documentos_info = []
         obligatorios_totales = 0
         obligatorios_completos = 0
+        ids_documentacion_admision_usados = set()
+
+        if admision:
+            (
+                documentos_info,
+                ids_documentacion_admision_usados,
+            ) = AdmisionService._build_documentos_organizacionales_update_context(
+                admision,
+                documentaciones,
+                archivos_por_documentacion,
+            )
+            for doc_serializado in documentos_info:
+                if doc_serializado.get("obligatorio"):
+                    obligatorios_totales += 1
+                    if doc_serializado.get("estado") == "Aceptado":
+                        obligatorios_completos += 1
 
         for documentacion in documentaciones:
+            if documentacion.id in ids_documentacion_admision_usados:
+                continue
             archivo = archivos_por_documentacion.get(documentacion.id)
             doc_serializado = AdmisionService._serialize_documentacion(
                 documentacion, archivo
@@ -241,6 +543,8 @@ class AdmisionService:
             "numero_gde": archivo.numero_gde,
             "observaciones": archivo.observaciones,
             "es_personalizado": True,
+            "es_documento_organizacion": False,
+            "origen": "admision",
             "row_id": f"custom-{archivo.id}",
         }
 
@@ -486,10 +790,26 @@ class AdmisionService:
         )
 
     @staticmethod
+    def _puede_editar_num_expediente_update_context(user, admision):
+        if not user or not admision or getattr(admision, "enviado_legales", False):
+            return False
+        return user.is_superuser or AdmisionService._verificar_permiso_tecnico_dupla(
+            user, admision.comedor
+        )
+
+    @staticmethod
     def _build_objetos_update_context(admision):
+        tipo_convenio_precargado = (
+            AdmisionService.resolver_tipo_convenio_desde_organizacion(
+                getattr(getattr(admision, "comedor", None), "organizacion", None)
+            )
+            if admision
+            else None
+        )
         return {
             "comedor": admision.comedor,
             "convenios": TipoConvenio.objects.exclude(id=4),
+            "tipo_convenio_precargado": tipo_convenio_precargado,
             "caratular_form": CaratularForm(instance=admision) if admision else None,
             "form_if_informe_tecnico": (
                 IFInformeTecnicoForm(instance=admision) if admision else None
@@ -512,7 +832,10 @@ class AdmisionService:
         informe_complementario_context,
         botones_disponibles,
         puede_editar_convenio_numero,
+        puede_editar_num_expediente,
     ):
+        organizacion = getattr(getattr(admision, "comedor", None), "organizacion", None)
+        tipo_entidad_actual = getattr(organizacion, "tipo_entidad", None)
         return {
             "documentos": documentos_context["documentos"],
             "documentos_personalizados": documentos_context[
@@ -520,6 +843,7 @@ class AdmisionService:
             ],
             "comedor": objetos_contexto["comedor"],
             "convenios": objetos_contexto["convenios"],
+            "tipo_convenio_precargado": objetos_contexto["tipo_convenio_precargado"],
             "caratular_form": objetos_contexto["caratular_form"],
             "form_if_informe_tecnico": objetos_contexto["form_if_informe_tecnico"],
             "informe_tecnico": objetos_contexto["informe_tecnico"],
@@ -538,6 +862,14 @@ class AdmisionService:
             "observaciones_informe_tecnico_complementario": admision.observaciones_informe_tecnico_complementario,
             "botones_disponibles": botones_disponibles,
             "puede_editar_convenio_numero": puede_editar_convenio_numero,
+            "puede_editar_num_expediente": puede_editar_num_expediente,
+            "admision_desincronizada": AdmisionService.admision_desincronizada(
+                admision
+            ),
+            "tipo_entidad_actual_organizacion": tipo_entidad_actual,
+            "tipo_entidad_origen_snapshot": getattr(
+                admision, "tipo_entidad_origen", None
+            ),
         }
 
     @staticmethod
@@ -555,6 +887,7 @@ class AdmisionService:
             documentos_context = AdmisionService._build_documentos_update_context(
                 documentaciones=documentaciones,
                 archivos_subidos=archivos_subidos,
+                admision=admision,
             )
             objetos_contexto = AdmisionService._build_objetos_update_context(admision)
             informe_complementario_context = (
@@ -576,6 +909,11 @@ class AdmisionService:
                     user, objetos_contexto["comedor"]
                 )
             )
+            puede_editar_num_expediente = (
+                AdmisionService._puede_editar_num_expediente_update_context(
+                    user, admision
+                )
+            )
 
             return AdmisionService._build_response_update_context(
                 admision=admision,
@@ -584,6 +922,7 @@ class AdmisionService:
                 informe_complementario_context=informe_complementario_context,
                 botones_disponibles=botones_disponibles,
                 puede_editar_convenio_numero=puede_editar_convenio_numero,
+                puede_editar_num_expediente=puede_editar_num_expediente,
             )
 
         except Exception:
@@ -614,10 +953,19 @@ class AdmisionService:
 
     @staticmethod
     def _procesar_post_disponibilizar_acomp(admision, user):
-        if not AdmisionService.marcar_como_enviado_a_acompaniamiento(admision, user):
-            return False, "Error al enviar a Acompañamiento."
+        with transaction.atomic():
+            AcompanamientoService.importar_datos_desde_admision(admision)
+            if not AdmisionService.marcar_como_enviado_a_acompaniamiento(
+                admision, user
+            ):
+                return False, "Error al enviar a Acompañamiento."
+            if not AdmisionService.actualizar_estado_admision(
+                admision, "enviar_a_acompaniamiento"
+            ):
+                raise RuntimeError(
+                    "No se pudo actualizar el estado de la admisión a acompañamiento."
+                )
 
-        AdmisionService.actualizar_estado_admision(admision, "enviar_a_acompaniamiento")
         return True, "Se envió a Acompañamiento correctamente."
 
     @staticmethod
@@ -627,7 +975,21 @@ class AdmisionService:
         return True, "Se rectificó la documentación."
 
     @staticmethod
+    def _procesar_post_finalizar_carga_documentacion(admision):
+        if not AdmisionService.actualizar_estado_admision(
+            admision, "finalizar_carga_documentacion"
+        ):
+            return False, "No se pudo finalizar la carga de documentación."
+        return True, "Carga de documentación finalizada correctamente."
+
+    @staticmethod
     def _procesar_post_caratulacion(request, admision):
+        if admision.estado_admision != "documentacion_carga_finalizada":
+            return (
+                False,
+                "Debe finalizar la carga de documentación antes de caratular.",
+            )
+
         form = CaratularForm(request.POST, instance=admision)
         if not form.is_valid():
             return False, "Error al guardar la caratulación."
@@ -636,12 +998,6 @@ class AdmisionService:
         AdmisionService.actualizar_estado_admision(admision, "cargar_expediente")
         admision.refresh_from_db()
         return True, "Caratulación del expediente guardado correctamente."
-
-    @staticmethod
-    def _procesar_post_tipo_convenio(request, admision):
-        if AdmisionService.update_convenio(admision, request.POST.get("tipo_convenio")):
-            return True, "Tipo de convenio actualizado correctamente."
-        return None, None
 
     @staticmethod
     def _dispatch_post_update_action(request, admision):
@@ -671,12 +1027,20 @@ class AdmisionService:
                 ),
             ),
             (
+                "btnFinalizarCargaDocumentacion",
+                lambda: AdmisionService._procesar_post_finalizar_carga_documentacion(
+                    admision
+                ),
+            ),
+            (
                 "btnCaratulacion",
                 lambda: AdmisionService._procesar_post_caratulacion(request, admision),
             ),
             (
-                "tipo_convenio",
-                lambda: AdmisionService._procesar_post_tipo_convenio(request, admision),
+                "confirmar_tipo_convenio",
+                lambda: AdmisionService._procesar_post_confirmar_tipo_convenio(
+                    admision
+                ),
             ),
         )
         for key, handler in actions:
@@ -704,6 +1068,99 @@ class AdmisionService:
         admision.save()
         AdmisionService.actualizar_estado_admision(admision, "seleccionar_convenio")
         ArchivoAdmision.objects.filter(admision=admision).delete()
+
+    @staticmethod
+    def _asegurar_snapshot_tipo_entidad(admision):
+        """Inicializa ``tipo_entidad_origen`` cuando esta vacio adoptando el
+        ``tipo_entidad`` actual de la organizacion. Cubre admisiones legacy
+        anteriores a la introduccion del snapshot y admisiones creadas por
+        flujos que no lo seteaban.
+        """
+
+        if getattr(admision, "tipo_entidad_origen_id", None):
+            return
+        organizacion = getattr(getattr(admision, "comedor", None), "organizacion", None)
+        tipo_actual_id = getattr(organizacion, "tipo_entidad_id", None)
+        if not tipo_actual_id:
+            return
+        admision.tipo_entidad_origen_id = tipo_actual_id
+        admision.save(update_fields=["tipo_entidad_origen"])
+
+    @staticmethod
+    def admision_desincronizada(admision):
+        """Indica si el ``tipo_entidad_origen`` snapshotado en la admision
+        difiere del ``tipo_entidad`` actual de la organizacion. Si el snapshot
+        esta vacio (admisiones legacy) se inicializa con el valor actual y se
+        considera sincronizada hasta el proximo cambio.
+        """
+
+        organizacion = getattr(getattr(admision, "comedor", None), "organizacion", None)
+        if not organizacion:
+            return False
+        tipo_actual_id = getattr(organizacion, "tipo_entidad_id", None)
+        if not tipo_actual_id:
+            return False
+        AdmisionService._asegurar_snapshot_tipo_entidad(admision)
+        snapshot_id = getattr(admision, "tipo_entidad_origen_id", None)
+        if not snapshot_id:
+            return False
+        return tipo_actual_id != snapshot_id
+
+    @staticmethod
+    def resync_admision_desde_organizacion(admision):
+        """Resetea la admision usando como fuente la organizacion: borra todos
+        los ``ArchivoAdmision``, vuelve el estado a ``convenio_seleccionado``,
+        ajusta ``tipo_convenio`` segun el nuevo ``tipo_entidad`` y actualiza el
+        snapshot."""
+
+        organizacion = getattr(getattr(admision, "comedor", None), "organizacion", None)
+        if not organizacion:
+            return False, "La admision no tiene organizacion asociada."
+
+        nuevo_convenio = AdmisionService.resolver_tipo_convenio_desde_organizacion(
+            organizacion
+        )
+        if not nuevo_convenio:
+            return (
+                False,
+                "No se pudo resolver el Tipo de Convenio desde el Tipo de Entidad de la organizacion.",
+            )
+
+        AdmisionService._aplicar_cambio_convenio_y_reset_documentos(
+            admision, nuevo_convenio
+        )
+        admision.tipo_entidad_origen_id = organizacion.tipo_entidad_id
+        admision.save(update_fields=["tipo_entidad_origen"])
+        AdmisionService.congelar_documentacion_organizacional(admision)
+        logger.info(
+            "Admision resincronizada desde la organizacion",
+            extra={
+                "admision_pk": admision.pk,
+                "tipo_entidad_id": organizacion.tipo_entidad_id,
+            },
+        )
+        return True, "Admision actualizada desde el Legajo de la Organizacion."
+
+    @staticmethod
+    def aceptar_desincronizacion_admision(admision):
+        """Mantiene el estado actual de la admision pero actualiza el snapshot
+        de ``tipo_entidad_origen`` para que la advertencia desaparezca hasta el
+        proximo cambio en la organizacion."""
+
+        organizacion = getattr(getattr(admision, "comedor", None), "organizacion", None)
+        if not organizacion:
+            return False, "La admision no tiene organizacion asociada."
+
+        admision.tipo_entidad_origen_id = organizacion.tipo_entidad_id
+        admision.save(update_fields=["tipo_entidad_origen"])
+        logger.info(
+            "Desincronizacion aceptada en admision",
+            extra={
+                "admision_pk": admision.pk,
+                "tipo_entidad_id": organizacion.tipo_entidad_id,
+            },
+        )
+        return True, "Continuara operando con la informacion actual de la admision."
 
     @staticmethod
     def update_convenio(admision, nuevo_convenio_id):
@@ -735,10 +1192,74 @@ class AdmisionService:
             return False
 
     @staticmethod
+    def _normalizar_nombre_tipo(nombre):
+        texto = unicodedata.normalize("NFKD", nombre or "")
+        texto = "".join(c for c in texto if not unicodedata.combining(c))
+        return re.sub(r"\s+", " ", texto).strip().lower()
+
+    @staticmethod
+    def resolver_tipo_convenio_desde_organizacion(organizacion):
+        tipo_entidad = getattr(organizacion, "tipo_entidad", None)
+        tipo_entidad_nombre = AdmisionService._normalizar_nombre_tipo(
+            getattr(tipo_entidad, "nombre", "")
+        )
+        convenio_nombre = AdmisionService.TIPO_ENTIDAD_A_CONVENIO.get(
+            tipo_entidad_nombre
+        )
+        if not convenio_nombre:
+            return None
+
+        for convenio in TipoConvenio.objects.exclude(id=4):
+            if (
+                AdmisionService._normalizar_nombre_tipo(convenio.nombre)
+                == convenio_nombre
+            ):
+                return convenio
+        return None
+
+    @staticmethod
+    def asegurar_tipo_convenio_desde_organizacion(admision):
+        if not admision or admision.tipo_convenio_id:
+            return admision
+
+        tipo_convenio = AdmisionService.resolver_tipo_convenio_desde_organizacion(
+            getattr(getattr(admision, "comedor", None), "organizacion", None)
+        )
+        if not tipo_convenio:
+            return admision
+
+        admision.tipo_convenio = tipo_convenio
+        admision.estado_admision = admision.estado_admision or "convenio_seleccionado"
+        admision.save(update_fields=["tipo_convenio", "estado_admision"])
+        return admision
+
+    @staticmethod
+    def confirmar_tipo_convenio_desde_organizacion(admision):
+        tipo_convenio = AdmisionService.resolver_tipo_convenio_desde_organizacion(
+            getattr(getattr(admision, "comedor", None), "organizacion", None)
+        )
+        if not tipo_convenio:
+            return (
+                False,
+                "No se pudo resolver el Tipo de Convenio desde el Tipo de Entidad de la organización.",
+            )
+
+        admision.tipo_convenio = tipo_convenio
+        admision.estado_admision = "convenio_seleccionado"
+        admision.save(update_fields=["tipo_convenio", "estado_admision"])
+        AdmisionService.congelar_documentacion_organizacional(admision)
+        return True, "Tipo de convenio precargado desde la organización."
+
+    @staticmethod
+    def _procesar_post_confirmar_tipo_convenio(admision):
+        return AdmisionService.confirmar_tipo_convenio_desde_organizacion(admision)
+
+    @staticmethod
     def _build_defaults_handle_file_upload(archivo, usuario=None):
         defaults = {
             "archivo": archivo,
             "estado": "Documento adjunto",
+            "numero_gde": None,
             "nombre_personalizado": None,
         }
         if usuario and usuario.is_authenticated:
@@ -763,6 +1284,13 @@ class AdmisionService:
         try:
 
             admision = get_object_or_404(Admision, pk=admision_id)
+            error_modificacion = (
+                AdmisionService._validar_modificacion_documental_por_tecnico(
+                    usuario, admision
+                )
+            )
+            if error_modificacion:
+                return None, False
 
             documentacion = get_object_or_404(Documentacion, pk=documentacion_id)
 
@@ -781,6 +1309,7 @@ class AdmisionService:
                 admision=admision,
                 usuario=usuario,
             )
+            AdmisionService._limpiar_if_gde_admision_por_cambio_documental(admision)
 
             return archivo_admision, created
 
@@ -838,6 +1367,13 @@ class AdmisionService:
             )
             if not has_permission:
                 return None, permission_error
+            error_modificacion = (
+                AdmisionService._validar_modificacion_documental_por_tecnico(
+                    usuario, admision
+                )
+            )
+            if error_modificacion:
+                return None, error_modificacion
 
             with transaction.atomic():
 
@@ -854,6 +1390,7 @@ class AdmisionService:
                         usuario if usuario and usuario.is_authenticated else None
                     ),
                 )
+                AdmisionService._limpiar_if_gde_admision_por_cambio_documental(admision)
 
             return archivo_admision, None
 
@@ -887,6 +1424,10 @@ class AdmisionService:
                 archivo.hard_delete()
             else:
                 archivo.delete()
+
+            AdmisionService._limpiar_if_gde_admision_por_cambio_documental(
+                archivo.admision
+            )
 
             if (
                 documentacion
@@ -999,8 +1540,19 @@ class AdmisionService:
             )
             if permission_error:
                 return permission_error
+            error_modificacion = (
+                AdmisionService._validar_modificacion_documental_por_tecnico(
+                    request.user, admision
+                )
+            )
+            if error_modificacion:
+                return {"success": False, "error": error_modificacion}
 
-            archivo = get_object_or_404(ArchivoAdmision, id=documento_id)
+            archivo = get_object_or_404(
+                ArchivoAdmision.objects.select_related("admision", "documentacion"),
+                id=documento_id,
+                admision_id=admision_id,
+            )
 
             grupo_usuario, observacion, display_objetivo, estado_canonico = (
                 AdmisionService._resolver_estado_y_observacion_actualizar_estado_ajax(
@@ -1368,12 +1920,17 @@ class AdmisionService:
         try:
             from comedores.models import Comedor
 
-            comedor = get_object_or_404(Comedor, id=comedor_id)
-            convenios = TipoConvenio.objects.exclude(id=4)
+            comedor = get_object_or_404(
+                Comedor.objects.select_related("organizacion__tipo_entidad"),
+                id=comedor_id,
+            )
+            tipo_convenio = AdmisionService.resolver_tipo_convenio_desde_organizacion(
+                comedor.organizacion
+            )
 
             return {
                 "comedor": comedor,
-                "convenios": convenios,
+                "tipo_convenio_precargado": tipo_convenio,
             }
         except Exception:
             logger.exception(
@@ -1383,12 +1940,16 @@ class AdmisionService:
             return {}
 
     @staticmethod
-    def create_admision(comedor_id, tipo_convenio_id):
+    def create_admision(comedor_id, tipo_convenio_id=None):
+        del tipo_convenio_id
         try:
             from comedores.models import Comedor
 
             comedor = get_object_or_404(
-                Comedor.objects.select_related("programa"), id=comedor_id
+                Comedor.objects.select_related(
+                    "programa", "organizacion__tipo_entidad"
+                ),
+                id=comedor_id,
             )
             if not comedor_usa_admision_para_nomina(comedor):
                 logger.warning(
@@ -1396,7 +1957,15 @@ class AdmisionService:
                     extra={"comedor_id": comedor_id},
                 )
                 return None
-            tipo_convenio = get_object_or_404(TipoConvenio, id=tipo_convenio_id)
+            tipo_convenio = AdmisionService.resolver_tipo_convenio_desde_organizacion(
+                comedor.organizacion
+            )
+            if not tipo_convenio:
+                logger.warning(
+                    "No se pudo resolver tipo de convenio desde tipo de entidad",
+                    extra={"comedor_id": comedor_id},
+                )
+                return None
             estado_inicial = EstadoAdmision.objects.first()
 
             admision = Admision.objects.create(
@@ -1405,13 +1974,15 @@ class AdmisionService:
                 estado=estado_inicial,
                 tipo="incorporacion",
                 estado_admision="convenio_seleccionado",
+                tipo_entidad_origen=getattr(comedor.organizacion, "tipo_entidad", None),
             )
+            AdmisionService.congelar_documentacion_organizacional(admision)
 
             return admision
         except Exception:
             logger.exception(
                 "Error en create_admision",
-                extra={"comedor_id": comedor_id, "tipo_convenio_id": tipo_convenio_id},
+                extra={"comedor_id": comedor_id},
             )
             return None
 
@@ -1465,6 +2036,94 @@ class AdmisionService:
         return user.is_superuser or AdmisionService._verificar_permiso_dupla(
             user, archivo.admision.comedor
         )
+
+    @staticmethod
+    def _obtener_ultimo_informe_tecnico(admision):
+        return (
+            InformeTecnico.objects.filter(admision=admision, tipo="base")
+            .order_by("-id")
+            .only("estado", "estado_formulario")
+            .first()
+        )
+
+    @staticmethod
+    def _validar_modificacion_documental_por_tecnico(user, admision):
+        comedor = getattr(admision, "comedor", None)
+        if (
+            not user
+            or getattr(user, "is_superuser", False)
+            or not admision
+            or not comedor
+        ):
+            return None
+        if not AdmisionService._verificar_permiso_tecnico_dupla(user, comedor):
+            return None
+
+        informe = AdmisionService._obtener_ultimo_informe_tecnico(admision)
+        if not informe:
+            return None
+
+        if informe.estado != "Iniciado" and informe.estado_formulario != "borrador":
+            return (
+                "No puede modificar documentos cuando el informe tecnico ya no esta "
+                "iniciado ni en borrador."
+            )
+        return None
+
+    @staticmethod
+    def _limpiar_if_gde_admision_por_cambio_documental(admision):
+        if not admision:
+            return
+
+        update_fields = []
+        if getattr(admision, "numero_if_tecnico", None):
+            admision.numero_if_tecnico = None
+            update_fields.append("numero_if_tecnico")
+        if getattr(admision, "archivo_informe_tecnico_GDE", None):
+            admision.archivo_informe_tecnico_GDE = None
+            update_fields.append("archivo_informe_tecnico_GDE")
+        if getattr(admision, "estado_admision", None) == "if_informe_tecnico_cargado":
+            admision.estado_admision = "informe_tecnico_aprobado"
+            update_fields.append("estado_admision")
+        else:
+            nuevo_estado_documental = (
+                AdmisionService._resolver_estado_documental_por_cambio_documental(
+                    admision
+                )
+            )
+            if (
+                nuevo_estado_documental
+                and nuevo_estado_documental != admision.estado_admision
+            ):
+                admision.estado_admision = nuevo_estado_documental
+                update_fields.append("estado_admision")
+
+        if update_fields:
+            admision.save(update_fields=update_fields)
+
+    @staticmethod
+    def _resolver_estado_documental_por_cambio_documental(admision):
+        estado_admision = getattr(admision, "estado_admision", None)
+        if estado_admision not in {
+            "documentacion_finalizada",
+            "documentacion_aprobada",
+            "documentacion_carga_finalizada",
+        }:
+            return None
+
+        if not AdmisionService._todos_obligatorios_tienen_archivos(admision):
+            return "documentacion_en_proceso"
+
+        if estado_admision in {
+            "documentacion_aprobada",
+            "documentacion_carga_finalizada",
+        } and not AdmisionService._todos_obligatorios_aceptados(admision):
+            return "documentacion_finalizada"
+
+        if estado_admision == "documentacion_carga_finalizada":
+            return "documentacion_aprobada"
+
+        return None
 
     @staticmethod
     def actualizar_numero_gde_ajax(request):
@@ -1568,12 +2227,24 @@ class AdmisionService:
                 return AdmisionService._build_error_response_actualizar_numero_gde(
                     "No tiene permisos para editar este documento."
                 )
+            error_modificacion = (
+                AdmisionService._validar_modificacion_documental_por_tecnico(
+                    request.user, archivo.admision
+                )
+            )
+            if error_modificacion:
+                return AdmisionService._build_error_response_actualizar_numero_gde(
+                    error_modificacion
+                )
 
             valor_anterior = archivo.numero_gde
 
             archivo.numero_gde = numero_gde if numero_gde else None
 
             archivo.save()
+            AdmisionService._limpiar_if_gde_admision_por_cambio_documental(
+                archivo.admision
+            )
 
             logger.info(
                 f"Número GDE actualizado: documento_id={documento_id}, "
@@ -1594,6 +2265,108 @@ class AdmisionService:
             )
 
             return {"success": False, "error": str(e)}
+
+    @staticmethod
+    def actualizar_numero_gde_organizacion_ajax(request):
+        """Actualiza el numero GDE asociado a un ``ArchivoOrganizacion`` para
+        una admision puntual usando el modelo ``NumeroGdeOrganizacion``.
+        Reglas:
+        - solo se permite cuando ``ArchivoOrganizacion.estado == 'Aceptado'``,
+        - solo el tecnico de la dupla (o superuser) puede editar,
+        - se aplican las mismas restricciones documentales que para los
+          ``ArchivoAdmision`` (informe tecnico ya no en borrador).
+        """
+
+        archivo_org_id = (request.POST.get("archivo_organizacion_id") or "").strip()
+        admision_id = (request.POST.get("admision_id") or "").strip()
+        numero_gde = (request.POST.get("numero_gde") or "").strip() or None
+        try:
+            if not archivo_org_id or not admision_id:
+                return AdmisionService._build_error_response_actualizar_numero_gde(
+                    "Faltan parametros admision o archivo de organizacion."
+                )
+
+            admision = get_object_or_404(
+                Admision.objects.select_related("comedor__organizacion"),
+                pk=admision_id,
+            )
+            archivo_org = get_object_or_404(
+                ArchivoOrganizacion.objects.select_related("organizacion"),
+                pk=archivo_org_id,
+            )
+
+            organizacion_admision = getattr(
+                getattr(admision, "comedor", None), "organizacion", None
+            )
+            if (
+                not organizacion_admision
+                or organizacion_admision.pk != archivo_org.organizacion_id
+            ):
+                return AdmisionService._build_error_response_actualizar_numero_gde(
+                    "El archivo no pertenece a la organizacion de la admision."
+                )
+
+            if archivo_org.estado != ArchivoOrganizacion.ESTADO_ACEPTADO:
+                return AdmisionService._build_error_response_actualizar_numero_gde(
+                    "Solo se puede actualizar el numero GDE en documentos aceptados."
+                )
+
+            if not (
+                request.user.is_superuser
+                or AdmisionService._verificar_permiso_dupla(
+                    request.user, admision.comedor
+                )
+            ):
+                return AdmisionService._build_error_response_actualizar_numero_gde(
+                    "No tiene permisos para editar este documento."
+                )
+
+            error_modificacion = (
+                AdmisionService._validar_modificacion_documental_por_tecnico(
+                    request.user, admision
+                )
+            )
+            if error_modificacion:
+                return AdmisionService._build_error_response_actualizar_numero_gde(
+                    error_modificacion
+                )
+
+            registro, _ = NumeroGdeOrganizacion.objects.get_or_create(
+                admision=admision,
+                archivo_organizacion=archivo_org,
+                defaults={"modificado_por": request.user},
+            )
+            valor_anterior = registro.numero_gde
+            registro.numero_gde = numero_gde
+            registro.modificado_por = request.user
+            registro.save(update_fields=["numero_gde", "modificado_por", "modificado"])
+
+            AdmisionService._limpiar_if_gde_admision_por_cambio_documental(admision)
+
+            logger.info(
+                "Numero GDE de organizacion actualizado",
+                extra={
+                    "admision_id": admision.id,
+                    "archivo_organizacion_id": archivo_org.id,
+                    "valor_anterior": valor_anterior,
+                    "valor_nuevo": numero_gde,
+                },
+            )
+            return {
+                "success": True,
+                "numero_gde": registro.numero_gde,
+                "valor_anterior": valor_anterior,
+            }
+        except Exception as exc:
+            logger.exception(
+                "Error en actualizar_numero_gde_organizacion_ajax",
+                extra={
+                    "archivo_organizacion_id": archivo_org_id,
+                    "admision_id": admision_id,
+                    "numero_gde": numero_gde,
+                },
+            )
+            return {"success": False, "error": str(exc)}
 
     @staticmethod
     def _build_error_response_actualizar_convenio_numero(message):
@@ -1679,6 +2452,76 @@ class AdmisionService:
             logger.exception(
                 "Error en actualizar_convenio_numero_ajax",
                 extra={"admision_id": admision_id},
+            )
+            return {"success": False, "error": str(exc)}
+
+    @staticmethod
+    def _build_error_response_actualizar_num_expediente(message):
+        return {"success": False, "error": message}
+
+    @staticmethod
+    def _parse_actualizar_num_expediente_payload(request):
+        admision_id = request.POST.get("admision_id")
+        numero_raw = request.POST.get("num_expediente", "").strip()
+        return admision_id, numero_raw
+
+    @staticmethod
+    def _puede_editar_num_expediente(user, admision):
+        if admision.enviado_legales:
+            return False
+        return user.is_superuser or AdmisionService._verificar_permiso_tecnico_dupla(
+            user, admision.comedor
+        )
+
+    @staticmethod
+    def actualizar_num_expediente_ajax(request):
+        try:
+            admision_id, numero_raw = (
+                AdmisionService._parse_actualizar_num_expediente_payload(request)
+            )
+
+            if not admision_id:
+                return AdmisionService._build_error_response_actualizar_num_expediente(
+                    "ID de admisión requerido."
+                )
+
+            if not numero_raw:
+                return AdmisionService._build_error_response_actualizar_num_expediente(
+                    "El número de expediente es obligatorio."
+                )
+
+            admision = get_object_or_404(Admision, id=admision_id)
+
+            if not AdmisionService._puede_editar_num_expediente(request.user, admision):
+                if admision.enviado_legales:
+                    return AdmisionService._build_error_response_actualizar_num_expediente(
+                        "No se puede editar el expediente una vez enviado a legales."
+                    )
+                return AdmisionService._build_error_response_actualizar_num_expediente(
+                    "No tiene permisos para editar esta admisión."
+                )
+
+            valor_anterior = admision.num_expediente
+            admision.num_expediente = numero_raw or None
+            admision.save(update_fields=["num_expediente"])
+
+            logger.info(
+                "Numero de expediente actualizado: admision_id=%s, valor_anterior=%s, valor_nuevo=%s",
+                admision_id,
+                valor_anterior,
+                admision.num_expediente,
+            )
+
+            return {
+                "success": True,
+                "num_expediente": admision.num_expediente,
+                "valor_anterior": valor_anterior,
+            }
+
+        except Exception as exc:
+            logger.exception(
+                "Error en actualizar_num_expediente_ajax",
+                extra={"admision_id": locals().get("admision_id")},
             )
             return {"success": False, "error": str(exc)}
 
@@ -1848,6 +2691,12 @@ class AdmisionService:
             admision.estado_admision == "documentacion_aprobada"
             and not admision.num_expediente
         ):
+            botones.append("finalizar_carga_documentacion")
+
+        if (
+            admision.estado_admision == "documentacion_carga_finalizada"
+            and not admision.num_expediente
+        ):
             botones.append("caratular_expediente")
 
         if admision.num_expediente:
@@ -1916,6 +2765,7 @@ class AdmisionService:
             "cargar_documento": "documentacion_en_proceso",
             "finalizar_documentacion": "documentacion_finalizada",
             "aprobar_documentacion": "documentacion_aprobada",
+            "finalizar_carga_documentacion": "documentacion_carga_finalizada",
             "rectificar_documento": "documentacion_en_proceso",
             "cargar_expediente": "expediente_cargado",
             "iniciar_informe_tecnico": "informe_tecnico_en_proceso",
@@ -1935,7 +2785,7 @@ class AdmisionService:
             for (
                 doc_obligatorio
             ) in AdmisionService._iter_documentos_obligatorios_admision(admision):
-                if not AdmisionService._existe_archivo_obligatorio_admision(
+                if not AdmisionService._documento_obligatorio_cumple_requisito(
                     admision=admision,
                     doc_obligatorio=doc_obligatorio,
                     estado="Aceptado",
@@ -1954,10 +2804,192 @@ class AdmisionService:
 
     @staticmethod
     def _iter_documentos_obligatorios_admision(admision):
-
+        archivos_qs = (
+            ArchivoAdmision.objects.filter(admision_id=admision.pk)
+            .select_related("admision", "documentacion")
+            .order_by("id")
+        )
         return Documentacion.objects.filter(
             convenios=admision.tipo_convenio, obligatorio=True
+        ).prefetch_related(
+            Prefetch(
+                "archivoadmision_set",
+                queryset=archivos_qs,
+                to_attr="archivos_prefetch_para_admision",
+            )
         )
+
+    @staticmethod
+    def _obtener_archivo_organizacion_para_documentacion_admision(
+        admision, documentacion
+    ):
+        categoria = AdmisionService._categoria_organizacional_admision(admision)
+        org_key = AdmisionService._org_doc_key_desde_documentacion_admision(
+            documentacion, categoria
+        )
+        organizacion = getattr(getattr(admision, "comedor", None), "organizacion", None)
+        if not org_key or not organizacion:
+            return None
+
+        org_doc = (
+            DocumentacionOrganizacion.objects.filter(categoria=categoria)
+            .filter(nombre__isnull=False)
+            .order_by("orden", "id")
+        )
+        org_doc = next(
+            (
+                doc
+                for doc in org_doc
+                if AdmisionService._normalizar_nombre_documental(doc.nombre) == org_key
+            ),
+            None,
+        )
+        if not org_doc:
+            return None
+
+        return (
+            ArchivoOrganizacion.objects.filter(
+                organizacion=organizacion,
+                documentacion=org_doc,
+            )
+            .order_by("-creado", "-id")
+            .first()
+        )
+
+    @staticmethod
+    def _existe_archivo_organizacion_obligatorio_admision(
+        *,
+        admision,
+        doc_obligatorio,
+        estado=None,
+        requiere_archivo=False,
+    ):
+        archivo = (
+            AdmisionService._obtener_archivo_organizacion_para_documentacion_admision(
+                admision, doc_obligatorio
+            )
+        )
+        if not archivo:
+            return False
+        if estado is not None and archivo.estado != estado:
+            return False
+        if requiere_archivo and not archivo.archivo:
+            return False
+        return True
+
+    @staticmethod
+    def _archivo_cumple_requisito_documental(
+        archivo, *, estado=None, requiere_archivo=False
+    ):
+        if not archivo:
+            return False
+        if estado is not None and archivo.estado != estado:
+            return False
+        if requiere_archivo and not archivo.archivo:
+            return False
+        return True
+
+    @staticmethod
+    def _documento_obligatorio_cumple_requisito(
+        *,
+        admision,
+        doc_obligatorio,
+        estado=None,
+        requiere_archivo=False,
+    ):
+        archivo_admision = AdmisionService._obtener_archivo_obligatorio_admision(
+            admision=admision,
+            doc_obligatorio=doc_obligatorio,
+            estado=estado,
+        )
+        if archivo_admision:
+            return AdmisionService._archivo_cumple_requisito_documental(
+                archivo_admision,
+                estado=estado,
+                requiere_archivo=requiere_archivo,
+            )
+
+        archivo_admision_existente = (
+            AdmisionService._obtener_archivo_obligatorio_admision(
+                admision=admision,
+                doc_obligatorio=doc_obligatorio,
+            )
+        )
+        if archivo_admision_existente:
+            return False
+
+        return AdmisionService._existe_archivo_organizacion_obligatorio_admision(
+            admision=admision,
+            doc_obligatorio=doc_obligatorio,
+            estado=estado,
+            requiere_archivo=requiere_archivo,
+        )
+
+    @staticmethod
+    def congelar_documentacion_organizacional(admision, user=None):
+        categoria = AdmisionService._categoria_organizacional_admision(admision)
+        organizacion = getattr(getattr(admision, "comedor", None), "organizacion", None)
+        if not categoria or not organizacion:
+            return
+
+        documentaciones = Documentacion.objects.filter(
+            convenios=admision.tipo_convenio
+        ).order_by("orden", "id")
+        docs_admision_por_org_key = {}
+        for documentacion in documentaciones:
+            org_key = AdmisionService._org_doc_key_desde_documentacion_admision(
+                documentacion, categoria
+            )
+            if org_key:
+                docs_admision_por_org_key[org_key] = documentacion
+
+        archivos_org = AdmisionService._get_archivos_organizacion_vigentes(
+            admision, categoria
+        )
+        creo_archivos = False
+        for org_doc in DocumentacionOrganizacion.objects.filter(
+            categoria=categoria
+        ).order_by("orden", "id"):
+            archivo_org = archivos_org.get(org_doc.id)
+            if not archivo_org or not archivo_org.archivo:
+                continue
+
+            org_key = AdmisionService._normalizar_nombre_documental(org_doc.nombre)
+            documentacion_admision = docs_admision_por_org_key.get(org_key)
+            if (
+                documentacion_admision
+                and ArchivoAdmision.objects.filter(
+                    admision=admision,
+                    documentacion=documentacion_admision,
+                ).exists()
+            ):
+                continue
+            if (
+                not documentacion_admision
+                and ArchivoAdmision.objects.filter(
+                    admision=admision,
+                    documentacion__isnull=True,
+                    nombre_personalizado=org_doc.nombre,
+                ).exists()
+            ):
+                continue
+
+            archivo_admision = (
+                AdmisionService._crear_archivo_admision_desde_archivo_organizacion(
+                    admision,
+                    org_doc,
+                    archivo_org,
+                    documentacion_admision=documentacion_admision,
+                )
+            )
+            if user:
+                archivo_admision.creado_por = user
+                archivo_admision.modificado_por = user
+                archivo_admision.save(update_fields=["creado_por", "modificado_por"])
+            creo_archivos = True
+
+        if creo_archivos:
+            AdmisionService._sincronizar_estado_documental_si_corresponde(admision)
 
     @staticmethod
     def _existe_archivo_obligatorio_admision(
@@ -1967,6 +2999,32 @@ class AdmisionService:
         estado=None,
         requiere_archivo=False,
     ):
+        archivo = AdmisionService._obtener_archivo_obligatorio_admision(
+            admision=admision,
+            doc_obligatorio=doc_obligatorio,
+            estado=estado,
+        )
+        if not archivo:
+            return False
+
+        return AdmisionService._archivo_cumple_requisito_documental(
+            archivo,
+            estado=estado,
+            requiere_archivo=requiere_archivo,
+        )
+
+    @staticmethod
+    def _obtener_archivo_obligatorio_admision(
+        *, admision, doc_obligatorio, estado=None
+    ):
+        archivos_prefetch = getattr(
+            doc_obligatorio, "archivos_prefetch_para_admision", None
+        )
+        if archivos_prefetch is not None:
+            for archivo in archivos_prefetch:
+                if estado is None or archivo.estado == estado:
+                    return archivo
+            return None
 
         filtros = {
             "admision": admision,
@@ -1975,14 +3033,12 @@ class AdmisionService:
         if estado is not None:
             filtros["estado"] = estado
 
-        archivo = ArchivoAdmision.objects.filter(**filtros).first()
-        if not archivo:
-            return False
-
-        if requiere_archivo and not archivo.archivo:
-            return False
-
-        return True
+        return (
+            ArchivoAdmision.objects.filter(**filtros)
+            .select_related("admision", "documentacion")
+            .order_by("id")
+            .first()
+        )
 
     @staticmethod
     def _actualizar_estados_por_cambio_documento(admision, estado_documento):
@@ -1994,6 +3050,9 @@ class AdmisionService:
                 return
 
             if AdmisionService._bloquea_avance_estado_documental(admision):
+                return
+
+            if AdmisionService._sincronizar_estado_documental_si_corresponde(admision):
                 return
 
             AdmisionService._marcar_documentacion_finalizada_si_corresponde(admision)
@@ -2018,6 +3077,7 @@ class AdmisionService:
         if admision.estado_admision not in [
             "documentacion_finalizada",
             "documentacion_aprobada",
+            "documentacion_carga_finalizada",
         ]:
 
             return True
@@ -2034,19 +3094,49 @@ class AdmisionService:
     @staticmethod
     def _bloquea_avance_estado_documental(admision):
 
-        return admision.estado_admision in [
-            "documentacion_aprobada",
-            "expediente_cargado",
-            "informe_tecnico_en_proceso",
-            "informe_tecnico_finalizado",
-            "informe_tecnico_docx_editado",
-            "informe_tecnico_en_revision",
-            "informe_tecnico_en_subsanacion",
-            "informe_tecnico_aprobado",
-            "if_informe_tecnico_cargado",
-            "enviado_a_legales",
-            "enviado_a_acompaniamiento",
-        ]
+        return (
+            admision.estado_admision
+            in AdmisionService.ESTADOS_BLOQUEO_AVANCE_DOCUMENTAL
+        )
+
+    @staticmethod
+    def _sincronizar_estado_documental_si_corresponde(admision):
+        if AdmisionService._bloquea_avance_estado_documental(admision):
+            return False
+
+        estado_actual = getattr(admision, "estado_admision", None)
+        if estado_actual not in {
+            "convenio_seleccionado",
+            "documentacion_en_proceso",
+            "documentacion_finalizada",
+        }:
+            return False
+
+        if not AdmisionService._todos_obligatorios_tienen_archivos(admision):
+            return False
+
+        if AdmisionService._todos_obligatorios_aceptados(admision):
+            admision.estado_admision = "documentacion_aprobada"
+            if admision.estado_id != 2:
+                admision.estado_id = 2
+            admision.save(update_fields=["estado_admision", "estado"])
+            return True
+
+        if estado_actual != "documentacion_finalizada":
+            admision.estado_admision = "documentacion_finalizada"
+            admision.save(update_fields=["estado_admision"])
+            return True
+
+        return False
+
+    @staticmethod
+    def bloquea_eliminacion_documental(admision):
+        """Indica si la admision ya no admite borrado de documentos adjuntos."""
+
+        return (
+            getattr(admision, "estado_admision", None)
+            in AdmisionService.ESTADOS_BLOQUEO_ELIMINACION_DOCUMENTAL
+        )
 
     @staticmethod
     def _marcar_documentacion_finalizada_si_corresponde(admision):
@@ -2091,7 +3181,7 @@ class AdmisionService:
             for (
                 doc_obligatorio
             ) in AdmisionService._iter_documentos_obligatorios_admision(admision):
-                if not AdmisionService._existe_archivo_obligatorio_admision(
+                if not AdmisionService._documento_obligatorio_cumple_requisito(
                     admision=admision,
                     doc_obligatorio=doc_obligatorio,
                     requiere_archivo=True,

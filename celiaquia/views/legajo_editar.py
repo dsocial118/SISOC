@@ -11,6 +11,7 @@ from django.db import transaction
 from celiaquia.models import Expediente, ExpedienteCiudadano
 from core.models import Localidad, Nacionalidad, Sexo
 from iam.services import user_has_permission_code
+from users.territorial_scope import is_territorial_user, user_can_access_territory
 
 logger = logging.getLogger("django")
 ROLE_COORDINADOR_CELIAQUIA_PERMISSION = "auth.role_coordinadorceliaquia"
@@ -26,10 +27,18 @@ def _is_admin(user) -> bool:
 
 
 def _is_provincial(user) -> bool:
-    try:
-        return bool(user.profile.es_usuario_provincial and user.profile.provincia_id)
-    except:
-        return False
+    return is_territorial_user(user)
+
+
+def _provincial_can_access_legajo(user, expediente, legajo) -> bool:
+    ciudadano = getattr(legajo, "ciudadano", None)
+    return user_can_access_territory(
+        user,
+        provincia_id=getattr(ciudadano, "provincia_id", None),
+        municipio_id=getattr(ciudadano, "municipio_id", None),
+        localidad_id=getattr(ciudadano, "localidad_id", None),
+        owner=getattr(expediente, "usuario_provincia", None),
+    )
 
 
 def _get_nacionalidad_argentina():
@@ -61,6 +70,11 @@ class EditarLegajoView(View):
                             "success": False,
                             "error": "No puede editar legajos después de enviar el expediente.",
                         },
+                        status=403,
+                    )
+                if not _provincial_can_access_legajo(user, expediente, legajo):
+                    return JsonResponse(
+                        {"success": False, "error": "Fuera de alcance territorial."},
                         status=403,
                     )
             else:
@@ -131,6 +145,11 @@ class EditarLegajoView(View):
                             "success": False,
                             "error": "No puede editar legajos después de enviar el expediente.",
                         },
+                        status=403,
+                    )
+                if not _provincial_can_access_legajo(user, expediente, legajo):
+                    return JsonResponse(
+                        {"success": False, "error": "Fuera de alcance territorial."},
                         status=403,
                     )
             else:
@@ -243,8 +262,10 @@ class EditarLegajoView(View):
                 )
 
         except ValidationError as e:
+            msgs = getattr(e, "messages", None)
+            error_msg = " ".join(str(m) for m in msgs) if msgs else str(e)
             return JsonResponse(
-                {"success": False, "error": "Los datos ingresados no son válidos."},
+                {"success": False, "error": error_msg},
                 status=400,
             )
         except Exception as e:

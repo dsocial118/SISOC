@@ -79,6 +79,15 @@ def _informe(**overrides):
             _admision(estado_admision="documentacion_aprobada", num_expediente=None),
             None,
             False,
+            ["finalizar_carga_documentacion"],
+        ),
+        (
+            _admision(
+                estado_admision="documentacion_carga_finalizada",
+                num_expediente=None,
+            ),
+            None,
+            False,
             ["caratular_expediente"],
         ),
         (

@@ -1,3 +1,82 @@
+<!-- AUTO-GENERATED RELEASE START: 2026-05-20 -->
+# Versión SISOC 20.05.2026
+
+## Nuevas Funcionalidades
+
+- [CDI/Usuarios] Se incorpora la generación de usuarios `CDI - Referente centro` desde el detalle del CDI, con credenciales temporales, envío por mail, panel de usuarios por centro y alcance acotado a los centros vinculados.
+- [Organizaciones/Admisiones] La documentación de organizaciones se integra al flujo de admisiones, con historial, carga de archivos, número GDE y trazabilidad reutilizable desde comedores y relevamientos.
+- [Comedores] Se agrega resumen y detalle de transacciones Nación Servicios en el legajo del comedor, con modelo DW, vistas web y pruebas de compatibilidad.
+- [Importar expedientes] Los lotes importados guardan período de pago, permiten descargar el archivo original y bloquean duplicados de expedientes de pago antes de crear lotes inconsistentes.
+- [Usuarios] Los usuarios provinciales incorporan alcance territorial configurable, reutilizado por VAT, Celiaquía, CDI y formularios de usuario para restringir visibilidad y gestión por provincia/localidad.
+- [Dispositivos] El formulario de dispositivos muestra campos condicionales `_otro/_otra` solo cuando corresponde y revela documentación adicional de forma progresiva.
+
+## Actualizaciones
+
+- [VAT] La exportación de nómina completa datos desde observaciones para evitar filas incompletas cuando la fuente principal no trae toda la información esperada.
+- [Celiaquía] Las vistas y permisos incorporan el alcance territorial de usuarios provinciales y refuerzan cobertura de listado, localidades y permisos operativos.
+- [CDI] Formularios, exportaciones y detalle aplican scope de referente de centro sin cambiar la visibilidad existente para provinciales y superusuarios.
+- [Relevamientos] Se agrega número IF y se ajusta el listado para sostener la nueva documentación asociada a organizaciones.
+
+## Corrección de Errores
+
+- [Dispositivos] Se restaura el comportamiento de colapsar secciones por click en el formulario moderno.
+- [CI/Lint] Se corrigen regresiones de lint y formato detectadas durante los merges hacia `development`.
+- [Predeploy] Se sanea el formato `djlint` de `users/templates/user/user_form.html` para dejar `development` lista para promoción a `main`.
+- [Usuarios/CDI/Celiaquía] Se corrige el fallback de perfiles provinciales y scopes territoriales para mantener compatibilidad con usuarios con `profile.provincia`, comentarios de legajos sin provincia histórica y accesos CDI fuera de alcance.
+<!-- AUTO-GENERATED RELEASE END: 2026-05-20 -->
+
+<!-- AUTO-GENERATED RELEASE START: 2026-05-06 -->
+# Versión SISOC 06.05.2026
+
+## Nuevas Funcionalidades
+
+- [VAT] Centros VAT soportan múltiples referentes CFP y revisores CFPRevisor, con migración del referente legacy y scopes diferenciados para lectura y gestión.
+- [PWA/Comedores] La sección Formación mobile pasa a cursos dinámicos administrables desde web, con segmentación por programa, imágenes normalizadas y cursos recomendados.
+- [CDI] Centros de Infancia incorporan oferta de servicios múltiple y edición integral de registros de nómina desde la superficie existente.
+- [Celiaquia] Expedientes incorporan auditoría del Excel masivo vigente, con usuario/fecha de carga, usuario/fecha de procesamiento y descarga para roles habilitados.
+
+## Actualizaciones
+
+- [sin-area] Release mobile a main sin arrastrar development. (PR #1660)
+- [Admisiones] La edición de número de expediente queda acotada al flujo de Técnicos, con condiciones de visibilidad y UX contextual.
+- [VAT Web/API] Se agregan consulta de estado de voucher por DNI, ajustes de inscripción web y fallback de localidades para ubicaciones adicionales de centros.
+- [Importación de expedientes] Se incorpora `Mes de Convenio` y automatización de estados de comedores para lotes de Alimentar Comunidad.
+- [Ciudadanos/Comedores] Listados, búsquedas y nóminas respetan el estado de revisión de identidad para evitar altas con ciudadanos pendientes.
+
+## Corrección de Errores
+
+- [Celiaquia] El detalle de expediente acota relaciones familiares a legajos activos del expediente y no hereda roles desde expedientes eliminados.
+- [CDF] El listado de responsables evita el conteo global caro con joins y reduce el riesgo de timeouts en `/beneficiarios/responsables/`.
+- [Importar expediente] Los cambios de estado actualizan `Comedor.ultimo_estado` sin disparar la sincronización completa de comedor hacia GESTIONAR.
+- [Core/UI] Se estabiliza la paginación compartida y filtros asociados en listados pesados.
+<!-- AUTO-GENERATED RELEASE END: 2026-05-06 -->
+
+<!-- AUTO-GENERATED RELEASE START: 2026-04-24 -->
+# Versión SISOC 24.04.2026
+
+## Nuevas Funcionalidades
+
+- Nuevo modelo de identidad de Ciudadanos con identificador interno, cola de revisión manual, comando `backfill_identidad` y filtros/badges para tratar DNIs duplicados, sin DNI y registros no validados por RENAPER.
+- Nuevo flujo de Acompañamientos por admisión, con entidad propia, migración de hitos/prestaciones/información relevante y detalle web asociado para sostener seguimiento más consistente.
+- Nuevos flujos operativos en CDI, Relevamientos y Core: formulario detallado de nómina/intervenciones con trazabilidad de creación, asignación de territorial desde pendientes y comandos para benchmarks/exportes técnicos reproducibles.
+
+## Actualizaciones
+
+- Evolución de VAT en centros, cursos y comisiones: edición preservando `activo`, filtro `Código` alineado al CUE vigente, exportación de nómina de preinscriptos, filtrado explícito de comisiones y refresco visual con tema global de `select2`.
+- Ajustes fuertes en Celiaquía y Admisiones: nacionalidad por país normalizado, responsable obligatorio solo para menores, comparación RENAPER priorizando localidad, buscador de localidades más estable y mejoras documentales/técnicas en la carga de expedientes.
+- Optimización transversal de listados pesados en Ciudadanos, Organizaciones y Comedores mediante paginación sin `COUNT(*)`, nuevos índices, reordenamiento de nóminas activas y sincronización de estado operativo para soft-delete.
+- Mejoras operativas del repo: memoria de contexto reutilizable para agentes, endurecimiento de CI/lint, actualización de documentación IAM/infraestructura y saneamiento del bootstrap de worktrees nuevas.
+
+## Corrección de Errores
+
+- Corrección de duplicados visibles y orden inestable en nóminas de Comedores, con revalidación transaccional al alta para reducir carreras y priorizar un único registro por ciudadano.
+- Correcciones en VAT, Ciudadanos y Acompañamientos para resolver regresiones de edición, merges de migraciones y compatibilidad de vouchers/fixtures sin romper el flujo productivo reciente.
+- Ajustes en Celiaquía para rechazo con motivo, reprocesos RENAPER, exportación SINTyS y localización de datos inválidos sin perder trazabilidad para el usuario.
+- Corrección de infraestructura y release para que `.env.example`, la resolución de dependencias y los jobs de lint/bootstrap no fallen por configuraciones inválidas o entradas vacías.
+- Saneamiento de predeploy para respetar cierres explícitos de revisión manual de identidad, mantener la nómina de Comedores compatible con ciudadanos ya revisados y evitar bloqueos de lint/docs en la promoción a `main`.
+
+<!-- AUTO-GENERATED RELEASE END: 2026-04-24 -->
+
 <!-- AUTO-GENERATED RELEASE START: 2026-04-09 -->
 # Versión SISOC 09.04.2026
 

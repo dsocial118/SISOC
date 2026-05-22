@@ -201,7 +201,9 @@ class AcompanamientoDetailView(LoginRequiredMixin, DetailView):
         context["hitos"] = AcompanamientoService.obtener_hitos(
             comedor, admision_id=hitos_admision_id
         )
-        context["fechas_hitos"] = AcompanamientoService.obtener_fechas_hitos(comedor)
+        context["fechas_hitos"] = AcompanamientoService.obtener_fechas_hitos(
+            comedor, admision_id=admision_id_activa
+        )
 
         context["admision"] = admision
         context["info_relevante"] = info_relevante

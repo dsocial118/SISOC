@@ -16,7 +16,6 @@
 ;
 {% load crispy_forms_tags %}
 {% block content %}
-    <link rel="stylesheet" href="{% static 'admin/css/select2templated.css' %}" />
     <link rel="stylesheet" href="{% static 'custom/css/user_form.css' %}" />
     <div class="row">
         <div class="col">
@@ -257,7 +256,37 @@
                     </div>
                     <div class="card-body">
                         {{ form.es_usuario_provincial|as_crispy_field }}
-                        {{ form.provincia|as_crispy_field }}
+                        <div class="d-none" id="legacy-provincia-field">{{ form.provincia|as_crispy_field }}</div>
+                        {{ form.territorial_scopes }}
+                        {{ form.initial_territorial_scopes|json_script:"territorial-scopes-initial" }}
+                        <div id="territorial-scopes-panel"
+                             class="mb-3"
+                             data-municipios-url="{% url 'ajax_load_municipios' %}"
+                             data-localidades-url="{% url 'ajax_load_localidades' %}">
+                            <label class="form-label d-block">Alcances territoriales</label>
+                            {% if form.territorial_scopes.errors %}
+                                <div class="invalid-feedback d-block mb-2">{{ form.territorial_scopes.errors|striptags }}</div>
+                            {% endif %}
+                            <div class="table-responsive">
+                                <table class="table table-sm align-middle mb-2">
+                                    <thead>
+                                        <tr>
+                                            <th scope="col">Provincia</th>
+                                            <th scope="col">Municipio</th>
+                                            <th scope="col">Localidad</th>
+                                            <th scope="col" class="text-right">Acción</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="territorial-scopes-list">
+                                    </tbody>
+                                </table>
+                            </div>
+                            <button type="button"
+                                    class="btn btn-outline-primary btn-sm"
+                                    id="add-territorial-scope">
+                                <i class="fas fa-plus mr-1"></i>Agregar alcance
+                            </button>
+                        </div>
                         {{ form.es_coordinador|as_crispy_field }}
                         {{ form.duplas_asignadas|as_crispy_field }}
                         {{ form.grupos_asignables|as_crispy_field }}
@@ -652,5 +681,5 @@
     toggleAssociationFields();
   })();
     </script>
-    <script src="{% static 'custom/js/usuarioprovincial.js' %}"></script>
+    <script src="{% static 'custom/js/usuarioprovincial.js' %}?v=territorial-scopes-1737-2"></script>
 {% endblock customJS %}

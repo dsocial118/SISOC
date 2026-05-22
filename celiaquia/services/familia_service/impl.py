@@ -7,6 +7,20 @@ from ciudadanos.models import GrupoFamiliar
 
 logger = logging.getLogger("django")
 
+ROLES_RESPONSABLE_EXPEDIENTE = {
+    "responsable",
+    "beneficiario_y_responsable",
+}
+
+
+def _normalizar_rol_legajo(legajo):
+    return (getattr(legajo, "rol", "") or "").strip().lower()
+
+
+def _legajo_tiene_rol_responsable(legajo):
+    rol = _normalizar_rol_legajo(legajo)
+    return not rol or rol in ROLES_RESPONSABLE_EXPEDIENTE
+
 
 class FamiliaService:
     """Servicios auxiliares para gestionar relaciones familiares."""
@@ -99,15 +113,24 @@ class FamiliaService:
             return []
 
     @staticmethod
-    def obtener_responsables(hijo_id: int) -> List:
+    def obtener_responsables(
+        hijo_id: int, responsables_ids: Iterable[int] = None
+    ) -> List:
         """Devuelve la lista de responsables de un hijo."""
 
         try:
+            filtros = {
+                "ciudadano_2_id": hijo_id,
+                "cuidador_principal": True,
+            }
+            if responsables_ids is not None:
+                responsables_ids = set(responsables_ids)
+                if not responsables_ids:
+                    return []
+                filtros["ciudadano_1_id__in"] = responsables_ids
+
             relaciones = (
-                GrupoFamiliar.objects.filter(
-                    ciudadano_2_id=hijo_id,
-                    cuidador_principal=True,
-                )
+                GrupoFamiliar.objects.filter(**filtros)
                 .select_related("ciudadano_1")
                 .order_by("ciudadano_1__apellido", "ciudadano_1__nombre")
             )
@@ -117,13 +140,22 @@ class FamiliaService:
             return []
 
     @staticmethod
-    def obtener_responsable_de_hijo(hijo_id: int):
+    def obtener_responsable_de_hijo(
+        hijo_id: int, responsables_ids: Iterable[int] = None
+    ):
         """Devuelve el ID del responsable principal de un hijo, o None si no tiene."""
         try:
-            relacion = GrupoFamiliar.objects.filter(
-                ciudadano_2_id=hijo_id,
-                cuidador_principal=True,
-            ).first()
+            filtros = {
+                "ciudadano_2_id": hijo_id,
+                "cuidador_principal": True,
+            }
+            if responsables_ids is not None:
+                responsables_ids = set(responsables_ids)
+                if not responsables_ids:
+                    return None
+                filtros["ciudadano_1_id__in"] = responsables_ids
+
+            relacion = GrupoFamiliar.objects.filter(**filtros).first()
             return relacion.ciudadano_1_id if relacion else None
         except Exception as exc:
             logger.error("Error obteniendo responsable de hijo: %s", exc)
@@ -139,11 +171,26 @@ class FamiliaService:
         ).exists()
 
     @staticmethod
-    def obtener_ids_responsables(ciudadanos_ids: Iterable[int]) -> Set[int]:
-        relaciones = GrupoFamiliar.objects.filter(
-            ciudadano_1_id__in=ciudadanos_ids,
-            cuidador_principal=True,
-        ).values_list("ciudadano_1_id", flat=True)
+    def obtener_ids_responsables(
+        ciudadanos_ids: Iterable[int], hijos_ids: Iterable[int] = None
+    ) -> Set[int]:
+        ciudadanos_ids = set(ciudadanos_ids)
+        if not ciudadanos_ids:
+            return set()
+
+        filtros = {
+            "ciudadano_1_id__in": ciudadanos_ids,
+            "cuidador_principal": True,
+        }
+        if hijos_ids is not None:
+            hijos_ids = set(hijos_ids)
+            if not hijos_ids:
+                return set()
+            filtros["ciudadano_2_id__in"] = hijos_ids
+
+        relaciones = GrupoFamiliar.objects.filter(**filtros).values_list(
+            "ciudadano_1_id", flat=True
+        )
         return set(relaciones)
 
     @staticmethod
@@ -181,8 +228,18 @@ class FamiliaService:
         try:
             legajos = list(expediente.expediente_ciudadanos.select_related("ciudadano"))
             ciudadanos_ids = [legajo.ciudadano_id for legajo in legajos]
+            ciudadanos_ids_set = set(ciudadanos_ids)
+            responsables_por_rol_ids = {
+                legajo.ciudadano_id
+                for legajo in legajos
+                if _legajo_tiene_rol_responsable(legajo)
+            }
 
-            responsables_ids = FamiliaService.obtener_ids_responsables(ciudadanos_ids)
+            responsables_ids = set()
+            if responsables_por_rol_ids:
+                responsables_ids = FamiliaService.obtener_ids_responsables(
+                    responsables_por_rol_ids, hijos_ids=ciudadanos_ids_set
+                )
 
             estructura = {
                 "responsables": {},
@@ -203,7 +260,9 @@ class FamiliaService:
                         "hijos": hijos,
                     }
                 else:
-                    responsables = FamiliaService.obtener_responsables(ciudadano.id)
+                    responsables = FamiliaService.obtener_responsables(
+                        ciudadano.id, responsables_ids=responsables_por_rol_ids
+                    )
                     responsables_en_expediente = [
                         resp
                         for resp in responsables

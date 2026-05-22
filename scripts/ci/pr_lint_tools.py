@@ -7,6 +7,8 @@ import json
 import os
 import subprocess
 import sys
+import urllib.error
+import urllib.request
 from pathlib import Path
 
 
@@ -148,6 +150,59 @@ def get_fallback_changed_files() -> list[Path]:
     return []
 
 
+def _fetch_github_json(url: str) -> list[dict]:
+    """Consulta la API de GitHub usando el token del workflow cuando esta disponible."""
+
+    headers = {
+        "Accept": "application/vnd.github+json",
+    }
+    token = os.environ.get("GITHUB_TOKEN")
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+
+    request = urllib.request.Request(url, headers=headers)
+    with urllib.request.urlopen(request, timeout=30) as response:
+        return json.loads(response.read().decode("utf-8"))
+
+
+def get_pull_request_changed_files_from_api() -> list[Path]:
+    """Obtiene archivos del PR via API para checkouts shallow del merge commit."""
+
+    if os.environ.get("GITHUB_EVENT_NAME") != "pull_request":
+        return []
+
+    payload = read_event_payload()
+    pull_request = payload.get("pull_request") or {}
+    files_url = pull_request.get("url")
+    if not files_url:
+        return []
+
+    changed_files: list[Path] = []
+    page = 1
+    while True:
+        try:
+            items = _fetch_github_json(f"{files_url}/files?per_page=100&page={page}")
+        except (OSError, urllib.error.URLError, urllib.error.HTTPError):
+            return []
+
+        if not items:
+            break
+
+        changed_files.extend(
+            Path(item["filename"]) for item in items if item.get("filename")
+        )
+        if len(items) < 100:
+            break
+        page += 1
+
+    if changed_files:
+        print(
+            "Usando la API de GitHub para detectar archivos del PR.",
+            file=sys.stderr,
+        )
+    return changed_files
+
+
 def get_changed_files() -> list[Path]:
     """Lista archivos cambiados dentro del rango del evento."""
 
@@ -163,6 +218,9 @@ def get_changed_files() -> list[Path]:
         ),
         file=sys.stderr,
     )
+    api_files = get_pull_request_changed_files_from_api()
+    if api_files:
+        return api_files
     fallback_files = get_fallback_changed_files()
     if fallback_files:
         return fallback_files

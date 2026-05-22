@@ -36,6 +36,14 @@
                     <i class="bi bi-list"></i>Acciones
                 </button>
                 <ul class="dropdown-menu dropdown-menu-end">
+                    {% if puede_generar_usuario_cdi %}
+                        <li>
+                            <a class="dropdown-item"
+                               href="{% url 'centrodeinfancia_generar_usuario' centro.id %}">
+                                <i class="bi bi-person-plus me-1"></i>Generar usuario
+                            </a>
+                        </li>
+                    {% endif %}
                     <li>
                         <a class="dropdown-item"
                            href="{% url 'centrodeinfancia_editar' centro.id %}">
@@ -252,6 +260,56 @@
                         <p class="mb-0">
                             <i class="bi bi-phone me-2"></i><strong>Teléfono:</strong> {{ centro.telefono_referente|default:"-" }}
                         </p>
+
+                        {% if puede_ver_usuarios_cdi %}
+                            <hr />
+                            <div class="mb-2">
+                                <h5 class="mb-0">Usuarios del centro</h5>
+                                <small class="text-muted">Credenciales visibles solo para el referente del centro y administradores. La contraseña temporal se oculta automáticamente cuando el usuario la cambia.</small>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-striped align-middle mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>Usuario</th>
+                                            <th>Nombre</th>
+                                            <th>Email</th>
+                                            <th>Estado</th>
+                                            <th>Contraseña temporal</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for acceso in usuarios_cdi %}
+                                            <tr>
+                                                <td>
+                                                    <code>{{ acceso.user.username }}</code>
+                                                </td>
+                                                <td>{{ acceso.user.get_full_name|default:"-" }}</td>
+                                                <td>{{ acceso.user.email|default:"-" }}</td>
+                                                <td>
+                                                    {% if acceso.activo %}
+                                                        <span class="badge bg-success">Activo</span>
+                                                    {% else %}
+                                                        <span class="badge bg-secondary">Baja</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td>
+                                                    {% if acceso.user.profile.temporary_password_plaintext %}
+                                                        <code>{{ acceso.user.profile.temporary_password_plaintext }}</code>
+                                                    {% else %}
+                                                        <span class="text-muted">Ya cambiada</span>
+                                                    {% endif %}
+                                                </td>
+                                            </tr>
+                                        {% empty %}
+                                            <tr>
+                                                <td colspan="5" class="text-center text-muted">Sin usuarios generados para este centro.</td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% endif %}
                     </div>
                 </div>
 
@@ -416,7 +474,7 @@
                                     <tbody>
                                         {% for item in formularios_recent %}
                                             <tr>
-                                                <td>{{ item.id }}</td>
+                                                <td>{{ item.id_codigo_cdi }} / {{ item.id }}</td>
                                                 <td>{{ item.fecha_relevamiento|date:"d/m/Y"|default:"-" }}</td>
                                                 <td>{{ item.nombre_completo_respondente|default:"-" }}</td>
                                                 <td>{{ item.updated_at|date:"d/m/Y H:i" }}</td>

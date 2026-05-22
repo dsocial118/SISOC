@@ -52,6 +52,10 @@ def apply_ciudadanos_filters(queryset, cleaned_data):
     term = (cleaned_data.get("q") or "").strip()
     provincia = cleaned_data.get("provincia")
     tipo_registro = cleaned_data.get("tipo_registro")
+    estado_revision = cleaned_data.get("estado_revision")
+    estado_revision_explicito = cleaned_data.get("estado_revision_explicito")
+    if estado_revision_explicito is None:
+        estado_revision_explicito = bool(estado_revision)
 
     if term:
         if term.isdigit():
@@ -70,6 +74,17 @@ def apply_ciudadanos_filters(queryset, cleaned_data):
 
     if tipo_registro:
         queryset = queryset.filter(tipo_registro_identidad=tipo_registro)
+
+    permite_filtrar_revision = tipo_registro in (
+        "",
+        Ciudadano.TIPO_REGISTRO_SIN_DNI,
+        Ciudadano.TIPO_REGISTRO_DNI_NO_VALIDADO,
+    )
+    if permite_filtrar_revision and (not term or estado_revision_explicito):
+        if estado_revision == CiudadanoFiltroForm.ESTADO_REVISION_PENDIENTE:
+            queryset = queryset.filter(requiere_revision_manual=True)
+        elif estado_revision == CiudadanoFiltroForm.ESTADO_REVISION_FINALIZADA:
+            queryset = queryset.filter(requiere_revision_manual=False)
 
     return queryset
 
@@ -94,34 +109,8 @@ def hydrate_ciudadanos_page(page_ids):
     return [ciudadanos_by_id[pk] for pk in page_ids if pk in ciudadanos_by_id]
 
 
-def _documento_unico_key(ciudadano):
-    if (
-        ciudadano.tipo_registro_identidad == Ciudadano.TIPO_REGISTRO_ESTANDAR
-        and ciudadano.documento
-    ):
-        return f"{ciudadano.tipo_documento}_{ciudadano.documento}"
-    return None
-
-
 def _normalizar_identidad_ciudadano(ciudadano):
-    tipo = ciudadano.tipo_registro_identidad
-    if tipo == Ciudadano.TIPO_REGISTRO_SIN_DNI:
-        ciudadano.documento = None
-        ciudadano.motivo_no_validacion_renaper = None
-        ciudadano.motivo_no_validacion_descripcion = None
-    elif tipo == Ciudadano.TIPO_REGISTRO_DNI_NO_VALIDADO:
-        ciudadano.motivo_sin_dni = None
-        ciudadano.motivo_sin_dni_descripcion = None
-    else:
-        ciudadano.motivo_sin_dni = None
-        ciudadano.motivo_sin_dni_descripcion = None
-        ciudadano.motivo_no_validacion_renaper = None
-        ciudadano.motivo_no_validacion_descripcion = None
-    ciudadano.documento_unico_key = _documento_unico_key(ciudadano)
-    ciudadano.requiere_revision_manual = tipo in (
-        Ciudadano.TIPO_REGISTRO_SIN_DNI,
-        Ciudadano.TIPO_REGISTRO_DNI_NO_VALIDADO,
-    )
+    return ciudadano.normalizar_identidad()
 
 
 def _asegurar_identificador_interno(ciudadano):
@@ -143,9 +132,16 @@ class CiudadanosListView(LoginRequiredMixin, ListView):
     context_object_name = "ciudadanos"
     paginate_by = 25
 
+    def get_filter_form_data(self):
+        data = self.request.GET
+        if not data or set(data.keys()) <= {self.page_kwarg}:
+            data = data.copy()
+            data["filters_mode"] = CiudadanoFiltroForm.FILTERS_MODE_UI
+        return data
+
     def get_queryset(self):
         queryset = Ciudadano.objects.order_by("pk")
-        form = CiudadanoFiltroForm(self.request.GET or None)
+        form = CiudadanoFiltroForm(self.get_filter_form_data())
         if form.is_valid():
             queryset = apply_ciudadanos_filters(queryset, form.cleaned_data)
         return queryset
@@ -159,7 +155,17 @@ class CiudadanosListView(LoginRequiredMixin, ListView):
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        ctx["filter_form"] = CiudadanoFiltroForm(self.request.GET or None)
+        ctx["filter_form"] = CiudadanoFiltroForm(self.get_filter_form_data())
+        ctx["additional_buttons"] = []
+        if self.request.user.has_perm("ciudadanos.add_ciudadano"):
+            ctx["additional_buttons"].append(
+                {
+                    "label": "IMPORTACION MASIVA",
+                    "url": str(reverse_lazy("ciudadanos_importacion_masiva")),
+                    "class": "btn btn-lg btn-export-csv",
+                    "title": "Importar ciudadanos desde Excel",
+                }
+            )
         page_obj = ctx.get("page_obj")
         if page_obj and getattr(page_obj.paginator, "count", None) is None:
             ctx["page_range"] = build_no_count_page_range(page_obj)
@@ -537,20 +543,21 @@ class CiudadanosCreateView(LoginRequiredMixin, CreateView):
                 None,
             )
             if estandar:
-                messages.info(
-                    request, "El ciudadano ya existe. Puede editar su legajo."
+                messages.warning(
+                    request,
+                    "Ya existe un ciudadano estandar con ese DNI. "
+                    "Si corresponde cargar un registro no estandar, continue "
+                    "con este formulario; el legajo estandar no se modificara.",
                 )
-                return redirect("ciudadanos_editar", pk=estandar.pk)
 
-            # Hay duplicados no-estándar: avisar y mostrar el formulario sin redirigir
-            messages.warning(
-                request,
-                f"Se encontraron {len(coincidencias)} registro(s) con ese DNI "
-                "pero ninguno está validado como estándar. "
-                "Revisá la cola de revisión o creá un nuevo registro.",
-            )
-            return super().get(request, *args, **kwargs)
-
+            else:
+                # Hay duplicados no-estándar: avisar y mostrar el formulario sin redirigir
+                messages.warning(
+                    request,
+                    f"Se encontraron {len(coincidencias)} registro(s) con ese DNI "
+                    "pero ninguno está validado como estándar. "
+                    "Revisá la cola de revisión o creá un nuevo registro.",
+                )
         sexo = (request.GET.get("sexo") or "M").upper()
         if sexo not in {"M", "F", "X"}:
             sexo = None
@@ -758,11 +765,43 @@ class ColaRevisionView(PermissionRequiredMixin, LoginRequiredMixin, ListView):
     context_object_name = "ciudadanos"
     paginate_by = 25
     permission_required = "ciudadanos.revision_identidad"
+    ESTADO_PENDIENTE = "pendiente"
+    ESTADO_DESCARTADA = "descartada"
+    ESTADO_APROBADA = "aprobada"
+    FILTROS_ESTADO = (
+        (ESTADO_PENDIENTE, "Revisi\u00f3n Pendiente"),
+        (ESTADO_DESCARTADA, "Solicitudes descartadas"),
+        (ESTADO_APROBADA, "Solicitudes aprobadas"),
+    )
+
+    def get_estado_filtro(self):
+        estado = self.request.GET.get("estado", self.ESTADO_PENDIENTE)
+        estados_validos = {value for value, _label in self.FILTROS_ESTADO}
+        if estado not in estados_validos:
+            return self.ESTADO_PENDIENTE
+        return estado
 
     def get_queryset(self):
+        estado = self.get_estado_filtro()
+        queryset = Ciudadano.objects.exclude(
+            tipo_registro_identidad=Ciudadano.TIPO_REGISTRO_ESTANDAR
+        )
+        if estado == self.ESTADO_DESCARTADA:
+            queryset = queryset.filter(
+                estado_revision_manual=Ciudadano.REVISION_IDENTIDAD_DESCARTADA
+            )
+        elif estado == self.ESTADO_APROBADA:
+            queryset = queryset.filter(
+                estado_revision_manual=Ciudadano.REVISION_IDENTIDAD_APROBADA
+            )
+        else:
+            queryset = queryset.filter(
+                requiere_revision_manual=True,
+                estado_revision_manual=Ciudadano.REVISION_IDENTIDAD_PENDIENTE,
+            )
+
         return (
-            Ciudadano.objects.filter(requiere_revision_manual=True)
-            .select_related("provincia")
+            queryset.select_related("provincia")
             .only(
                 "id",
                 "apellido",
@@ -774,6 +813,8 @@ class ColaRevisionView(PermissionRequiredMixin, LoginRequiredMixin, ListView):
                 "motivo_sin_dni_descripcion",
                 "motivo_no_validacion_renaper",
                 "motivo_no_validacion_descripcion",
+                "requiere_revision_manual",
+                "estado_revision_manual",
                 "provincia",
             )
             .order_by("apellido", "nombre")
@@ -781,9 +822,19 @@ class ColaRevisionView(PermissionRequiredMixin, LoginRequiredMixin, ListView):
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        ctx["total_pendientes"] = Ciudadano.objects.filter(
-            requiere_revision_manual=True
-        ).count()
+        ctx["total_pendientes"] = (
+            Ciudadano.objects.exclude(
+                tipo_registro_identidad=Ciudadano.TIPO_REGISTRO_ESTANDAR
+            )
+            .filter(
+                requiere_revision_manual=True,
+                estado_revision_manual=Ciudadano.REVISION_IDENTIDAD_PENDIENTE,
+            )
+            .count()
+        )
+        ctx["estado_filtro"] = self.get_estado_filtro()
+        ctx["filtros_estado"] = self.FILTROS_ESTADO
+        ctx["total_filtrado"] = self.object_list.count()
         return ctx
 
 
@@ -794,10 +845,34 @@ def marcar_revisado(request, pk):
     """Marca un ciudadano como revisado (requiere_revision_manual=False)."""
     ciudadano = get_object_or_404(Ciudadano, pk=pk)
     ciudadano.requiere_revision_manual = False
-    ciudadano.save(update_fields=["requiere_revision_manual"])
+    ciudadano.estado_revision_manual = Ciudadano.REVISION_IDENTIDAD_APROBADA
+    ciudadano.save(update_fields=["requiere_revision_manual", "estado_revision_manual"])
     messages.success(
         request,
         f"Ciudadano {ciudadano} marcado como revisado.",
     )
-    next_url = request.POST.get("next") or ciudadano.get_absolute_url()
-    return redirect(next_url)
+    return safe_redirect(
+        request,
+        default=ciudadano.get_absolute_url(),
+        target=request.POST.get("next"),
+    )
+
+
+@require_POST
+@login_required
+@permission_required("ciudadanos.revision_identidad", raise_exception=True)
+def descartar_revision(request, pk):
+    """Marca un ciudadano como descartado en la revision manual."""
+    ciudadano = get_object_or_404(Ciudadano, pk=pk)
+    ciudadano.requiere_revision_manual = False
+    ciudadano.estado_revision_manual = Ciudadano.REVISION_IDENTIDAD_DESCARTADA
+    ciudadano.save(update_fields=["requiere_revision_manual", "estado_revision_manual"])
+    messages.success(
+        request,
+        f"Ciudadano {ciudadano} marcado como descartado.",
+    )
+    return safe_redirect(
+        request,
+        default=ciudadano.get_absolute_url(),
+        target=request.POST.get("next"),
+    )

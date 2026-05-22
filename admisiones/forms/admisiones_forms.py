@@ -9,6 +9,7 @@ from admisiones.models.admisiones import (
     FormularioProyectoDeConvenio,
     DocumentosExpediente,
     ArchivoAdmision,
+    NumeroGdeOrganizacion,
 )
 
 
@@ -16,10 +17,24 @@ def _ultimo_numero_gde(admision, documentacion_nombre):
     if not admision:
         return None
 
-    return (
+    candidato_admision = (
         ArchivoAdmision.objects.filter(
             admision=admision,
             documentacion__nombre=documentacion_nombre,
+        )
+        .exclude(numero_gde__isnull=True)
+        .exclude(numero_gde="")
+        .order_by("-modificado", "-id")
+        .values_list("numero_gde", flat=True)
+        .first()
+    )
+    if candidato_admision:
+        return candidato_admision
+
+    return (
+        NumeroGdeOrganizacion.objects.filter(
+            admision=admision,
+            archivo_organizacion__documentacion__nombre=documentacion_nombre,
         )
         .exclude(numero_gde__isnull=True)
         .exclude(numero_gde="")

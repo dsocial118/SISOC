@@ -1,10 +1,17 @@
+import json
+from datetime import date
+
 import pytest
 from django.contrib.auth.models import Group, Permission, User
 from django.contrib.contenttypes.models import ContentType
 from django.test import RequestFactory
 
+from ciudadanos.models import Ciudadano
+from core.models import Localidad, Municipio, Provincia
 from users.forms import UserCreationForm
+from users.models import ProfileTerritorialScope
 from users.services import UsuariosService
+from users.territorial_scope import apply_territorial_scope
 
 
 def _create_role_permission(codename: str, name: str) -> Permission:
@@ -15,6 +22,299 @@ def _create_role_permission(codename: str, name: str) -> Permission:
         defaults={"name": name},
     )
     return permission
+
+
+def _geo_set(prefix="Geo"):
+    provincia = Provincia.objects.create(nombre=f"{prefix} Provincia")
+    municipio = Municipio.objects.create(
+        nombre=f"{prefix} Municipio", provincia=provincia
+    )
+    localidad = Localidad.objects.create(
+        nombre=f"{prefix} Localidad", municipio=municipio
+    )
+    return provincia, municipio, localidad
+
+
+def _user_form_data(username, scopes, provincia=""):
+    return {
+        "username": username,
+        "email": f"{username}@example.com",
+        "password": "pass12345",
+        "es_usuario_provincial": "on",
+        "provincia": provincia,
+        "territorial_scopes": json.dumps(scopes),
+    }
+
+
+def _crear_ciudadano(documento, provincia, municipio, localidad):
+    return Ciudadano.objects.create(
+        apellido="Perez",
+        nombre=f"Ciudadano {documento}",
+        fecha_nacimiento=date(2010, 1, 1),
+        documento=documento,
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad,
+    )
+
+
+@pytest.mark.django_db
+def test_usuario_provincial_sin_alcances_es_valido_y_no_crea_scope():
+    form = UserCreationForm(
+        data=_user_form_data("prov_sin_scopes", [], provincia=""),
+    )
+
+    assert form.is_valid(), form.errors
+    user = form.save()
+
+    user.profile.refresh_from_db()
+    assert user.profile.es_usuario_provincial is True
+    assert user.profile.provincia_id is None
+    assert user.profile.territorial_scopes.count() == 0
+
+
+@pytest.mark.django_db
+def test_usuario_provincial_acepta_multiples_provincias():
+    provincia_a, _, _ = _geo_set("Multi A")
+    provincia_b, _, _ = _geo_set("Multi B")
+    form = UserCreationForm(
+        data=_user_form_data(
+            "prov_multi",
+            [
+                {
+                    "provincia_id": provincia_a.id,
+                    "municipio_id": None,
+                    "localidad_id": None,
+                },
+                {
+                    "provincia_id": provincia_b.id,
+                    "municipio_id": None,
+                    "localidad_id": None,
+                },
+            ],
+        ),
+    )
+
+    assert form.is_valid(), form.errors
+    user = form.save()
+
+    assert set(
+        user.profile.territorial_scopes.values_list("provincia_id", flat=True)
+    ) == {provincia_a.id, provincia_b.id}
+    assert user.profile.provincia_id is None
+
+
+@pytest.mark.django_db
+def test_usuario_provincial_acepta_provincia_municipio():
+    provincia, municipio, _ = _geo_set("Municipio Valido")
+    form = UserCreationForm(
+        data=_user_form_data(
+            "prov_municipio",
+            [
+                {
+                    "provincia_id": provincia.id,
+                    "municipio_id": municipio.id,
+                    "localidad_id": None,
+                }
+            ],
+        ),
+    )
+
+    assert form.is_valid(), form.errors
+    user = form.save()
+
+    scope = user.profile.territorial_scopes.get()
+    assert scope.provincia_id == provincia.id
+    assert scope.municipio_id == municipio.id
+    assert scope.localidad_id is None
+    assert user.profile.provincia_id is None
+
+
+@pytest.mark.django_db
+def test_usuario_provincial_acepta_provincia_municipio_localidad():
+    provincia, municipio, localidad = _geo_set("Localidad Valida")
+    form = UserCreationForm(
+        data=_user_form_data(
+            "prov_localidad",
+            [
+                {
+                    "provincia_id": provincia.id,
+                    "municipio_id": municipio.id,
+                    "localidad_id": localidad.id,
+                }
+            ],
+        ),
+    )
+
+    assert form.is_valid(), form.errors
+    user = form.save()
+
+    scope = user.profile.territorial_scopes.get()
+    assert scope.provincia_id == provincia.id
+    assert scope.municipio_id == municipio.id
+    assert scope.localidad_id == localidad.id
+
+
+@pytest.mark.django_db
+def test_usuario_provincial_rechaza_municipio_sin_provincia():
+    _, municipio, _ = _geo_set("Municipio Sin Provincia")
+    form = UserCreationForm(
+        data=_user_form_data(
+            "prov_municipio_sin_prov",
+            [
+                {
+                    "provincia_id": None,
+                    "municipio_id": municipio.id,
+                    "localidad_id": None,
+                }
+            ],
+        ),
+    )
+
+    assert not form.is_valid()
+    assert "territorial_scopes" in form.errors
+
+
+@pytest.mark.django_db
+def test_usuario_provincial_rechaza_localidad_sin_municipio():
+    provincia, _, localidad = _geo_set("Localidad Sin Municipio")
+    form = UserCreationForm(
+        data=_user_form_data(
+            "prov_localidad_sin_muni",
+            [
+                {
+                    "provincia_id": provincia.id,
+                    "municipio_id": None,
+                    "localidad_id": localidad.id,
+                }
+            ],
+        ),
+    )
+
+    assert not form.is_valid()
+    assert "territorial_scopes" in form.errors
+
+
+@pytest.mark.django_db
+def test_usuario_provincial_rechaza_municipio_de_otra_provincia():
+    provincia_a, _, _ = _geo_set("Cruce Provincia")
+    _, municipio_b, _ = _geo_set("Cruce Municipio")
+    form = UserCreationForm(
+        data=_user_form_data(
+            "prov_municipio_cruzado",
+            [
+                {
+                    "provincia_id": provincia_a.id,
+                    "municipio_id": municipio_b.id,
+                    "localidad_id": None,
+                }
+            ],
+        ),
+    )
+
+    assert not form.is_valid()
+    assert "territorial_scopes" in form.errors
+
+
+@pytest.mark.django_db
+def test_usuario_provincial_rechaza_localidad_de_otro_municipio():
+    provincia, municipio_a, _ = _geo_set("Cruce Localidad A")
+    _, _, localidad_b = _geo_set("Cruce Localidad B")
+    form = UserCreationForm(
+        data=_user_form_data(
+            "prov_localidad_cruzada",
+            [
+                {
+                    "provincia_id": provincia.id,
+                    "municipio_id": municipio_a.id,
+                    "localidad_id": localidad_b.id,
+                }
+            ],
+        ),
+    )
+
+    assert not form.is_valid()
+    assert "territorial_scopes" in form.errors
+
+
+@pytest.mark.django_db
+def test_usuario_provincial_rechaza_alcances_duplicados():
+    provincia, municipio, _ = _geo_set("Duplicado")
+    payload = {
+        "provincia_id": provincia.id,
+        "municipio_id": municipio.id,
+        "localidad_id": None,
+    }
+    form = UserCreationForm(
+        data=_user_form_data("prov_duplicado", [payload, payload]),
+    )
+
+    assert not form.is_valid()
+    assert "territorial_scopes" in form.errors
+
+
+@pytest.mark.django_db
+def test_scope_municipio_no_incluye_otro_municipio():
+    provincia, municipio_a, localidad_a = _geo_set("Scope Municipio A")
+    municipio_b = Municipio.objects.create(
+        nombre="Scope Municipio B", provincia=provincia
+    )
+    localidad_b = Localidad.objects.create(
+        nombre="Scope Localidad B", municipio=municipio_b
+    )
+    user = User.objects.create_user(username="scope_municipio", password="pass")
+    profile = user.profile
+    profile.es_usuario_provincial = True
+    profile.save()
+    ProfileTerritorialScope.objects.create(
+        profile=profile,
+        provincia=provincia,
+        municipio=municipio_a,
+    )
+    visible = _crear_ciudadano(101, provincia, municipio_a, localidad_a)
+    oculto = _crear_ciudadano(102, provincia, municipio_b, localidad_b)
+
+    qs = apply_territorial_scope(
+        Ciudadano.objects.all(),
+        user,
+        provincia_lookup="provincia_id",
+        municipio_lookup="municipio_id",
+        localidad_lookup="localidad_id",
+    )
+
+    assert visible in qs
+    assert oculto not in qs
+
+
+@pytest.mark.django_db
+def test_scope_localidad_no_incluye_otra_localidad():
+    provincia, municipio, localidad_a = _geo_set("Scope Localidad A")
+    localidad_b = Localidad.objects.create(
+        nombre="Scope Localidad B", municipio=municipio
+    )
+    user = User.objects.create_user(username="scope_localidad", password="pass")
+    profile = user.profile
+    profile.es_usuario_provincial = True
+    profile.save()
+    ProfileTerritorialScope.objects.create(
+        profile=profile,
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad_a,
+    )
+    visible = _crear_ciudadano(201, provincia, municipio, localidad_a)
+    oculto = _crear_ciudadano(202, provincia, municipio, localidad_b)
+
+    qs = apply_territorial_scope(
+        Ciudadano.objects.all(),
+        user,
+        provincia_lookup="provincia_id",
+        municipio_lookup="municipio_id",
+        localidad_lookup="localidad_id",
+    )
+
+    assert visible in qs
+    assert oculto not in qs
 
 
 @pytest.mark.django_db

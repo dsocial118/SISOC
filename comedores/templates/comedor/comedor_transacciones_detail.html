@@ -1,0 +1,79 @@
+{% extends "includes/main.html" %}
+{% load static %}
+
+{% block title %}Transacciones - {{ comedor.nombre }}{% endblock %}
+
+{% block app-header %}
+    <div class="row g-2 align-items-center">
+        <div class="col-12 col-lg-auto d-flex justify-content-start">
+            <a href="{% url 'comedor_detalle' comedor.id %}"
+               class="btn btn-sm btn-primary w-100 w-sm-auto backbutton-handler">Volver</a>
+        </div>
+        <div class="col-12 col-lg d-flex justify-content-lg-end">
+            <h4 class="m-0">Transacciones - Naci&oacute;n Servicios</h4>
+        </div>
+    </div>
+{% endblock %}
+
+{% block content %}
+    <div class="container-fluid">
+        <style>
+            table.transacciones-table > :not(caption) > * > * {
+                padding-bottom: .5rem;
+                padding-top: .5rem;
+            }
+        </style>
+        <div class="card mb-3">
+            <div class="card-header">
+                <h3 class="card-title">Transacciones - Naci&oacute;n Servicios</h3>
+            </div>
+            <div class="card-body p-0">
+                {% if transacciones %}
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-sm mb-0 transacciones-table">
+                            <thead>
+                                <tr>
+                                    <th scope="col"
+                                        style="background-color: #3d4f63 !important;
+                                               border-bottom: 2px solid #e7ba61 !important">Per&iacute;odo</th>
+                                    <th scope="col"
+                                        class="text-end"
+                                        style="background-color: #3d4f63 !important;
+                                               border-bottom: 2px solid #e7ba61 !important">Movimientos</th>
+                                    <th scope="col"
+                                        class="text-end"
+                                        style="background-color: #3d4f63 !important;
+                                               border-bottom: 2px solid #e7ba61 !important">Transferido</th>
+                                    <th scope="col"
+                                        class="text-end"
+                                        style="background-color: #3d4f63 !important;
+                                               border-bottom: 2px solid #e7ba61 !important">Gastado</th>
+                                    <th scope="col"
+                                        class="text-end"
+                                        style="background-color: #3d4f63 !important;
+                                               border-bottom: 2px solid #e7ba61 !important">Saldo Remanente</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for transaccion in transacciones %}
+                                    <tr>
+                                        <td>{{ transaccion.periodo_display }}</td>
+                                        <td class="text-end">{{ transaccion.cantidad_debitos }}</td>
+                                        <td class="text-end">{{ transaccion.transferido_display }}</td>
+                                        <td class="text-end">{{ transaccion.gastado_display }}</td>
+                                        <td class="text-end">{{ transaccion.saldo_display }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="alert alert-info m-3">
+                        <i class="bi bi-info-circle me-2"></i>
+                        <strong>Sin informaci&oacute;n</strong> - No hay registros de transacciones disponibles para este comedor.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+{% endblock %}

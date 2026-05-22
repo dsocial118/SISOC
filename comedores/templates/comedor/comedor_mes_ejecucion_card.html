@@ -1,0 +1,38 @@
+<div class="card bg-card h-100" id="card-mes-ejecucion">
+    <div class="card-header py-1">
+        <h6 class="fw-bold my-1 text-center">Mes de ejecuci&oacute;n</h6>
+    </div>
+    <div class="card-body d-flex flex-column">
+        {% if mes_ejecucion_resumen.expediente %}
+            {% with expediente=mes_ejecucion_resumen.expediente %}
+                <p class="mb-0 fs-7">
+                    Expediente del convenio: <strong class="text-uppercase">{{ expediente.expediente_convenio|default:"Sin informaci&oacute;n" }}</strong>
+                </p>
+                <p class="mb-0 fs-7">
+                    Expediente de pago: <strong class="text-uppercase">{{ expediente.expediente_pago|default:"Sin informaci&oacute;n" }}</strong>
+                </p>
+                <p class="mb-0 fs-7">
+                    Cantidad de prestaciones: <strong>{{ mes_ejecucion_resumen.cantidad_prestaciones|default:"0" }}</strong>
+                </p>
+                <p class="mb-0 fs-7">
+                    Monto total de prestaciones: <strong>${{ mes_ejecucion_resumen.monto_total|default:"0" }}</strong>
+                </p>
+                <p class="mb-0 fs-7">
+                    Mes de pago: <strong>{{ expediente.mes_pago|default:"Sin informaci&oacute;n" }}</strong>
+                </p>
+                <p class="mb-0 fs-7">
+                    A&ntilde;o: <strong>{{ expediente.ano|default:"Sin informaci&oacute;n" }}</strong>
+                </p>
+                <p class="mb-0 fs-7">
+                    Mes de ejecuci&oacute;n: <strong>{{ expediente.mes_convenio|default:"Sin informaci&oacute;n" }}</strong>
+                </p>
+            {% endwith %}
+        {% else %}
+            <p class="mb-0 fs-7">No hay expedientes de pago cargados para este comedor.</p>
+        {% endif %}
+        <div class="mt-auto pt-3 d-flex flex-column flex-sm-row justify-content-center gap-2">
+            <a href="{% url 'expedientespagos_list' comedor.id %}"
+               class="btn btn-primary px-2 py-1 fs-7 w-100 w-sm-auto">Ver m&aacute;s</a>
+        </div>
+    </div>
+</div>
