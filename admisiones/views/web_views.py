@@ -675,9 +675,7 @@ def resync_convenio_admision(request, admision_pk):
     elif accion == "continuar":
         ok, mensaje = AdmisionService.aceptar_desincronizacion_admision(admision)
     else:
-        return JsonResponse(
-            {"success": False, "error": "Accion invalida."}, status=400
-        )
+        return JsonResponse({"success": False, "error": "Accion invalida."}, status=400)
 
     if not ok:
         return JsonResponse({"success": False, "error": mensaje}, status=400)

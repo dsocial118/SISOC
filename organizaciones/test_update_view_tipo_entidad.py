@@ -41,9 +41,7 @@ def usuario():
 @pytest.fixture
 def tipos():
     juridica = TipoEntidad.objects.create(nombre="Personería Jurídica")
-    eclesiastica = TipoEntidad.objects.create(
-        nombre="Personería Jurídica Eclesiástica"
-    )
+    eclesiastica = TipoEntidad.objects.create(nombre="Personería Jurídica Eclesiástica")
     return {"juridica": juridica, "eclesiastica": eclesiastica}
 
 
@@ -155,13 +153,9 @@ def test_volver_al_tipo_anterior_no_recupera_archivos_borrados(
     url = reverse("organizacion_editar", kwargs={"pk": organizacion_con_documentos.pk})
 
     # Primer cambio: eclesiastica → borra todo
-    client.post(
-        url, _post_payload(organizacion_con_documentos, tipos["eclesiastica"])
-    )
+    client.post(url, _post_payload(organizacion_con_documentos, tipos["eclesiastica"]))
     # Volver al tipo anterior
-    client.post(
-        url, _post_payload(organizacion_con_documentos, tipos["juridica"])
-    )
+    client.post(url, _post_payload(organizacion_con_documentos, tipos["juridica"]))
 
     organizacion_con_documentos.refresh_from_db()
     assert organizacion_con_documentos.tipo_entidad_id == tipos["juridica"].pk
@@ -186,9 +180,7 @@ def test_cambio_tipo_entidad_materializa_archivos_en_admision_activa(
     # obligatorios estan aceptados.
     EstadoAdmision.objects.create(nombre="Inicial")
     EstadoAdmision.objects.create(nombre="Avanzada")
-    tipo_convenio = TipoConvenio.objects.create(
-        pk=3, nombre="Personería Jurídica"
-    )
+    tipo_convenio = TipoConvenio.objects.create(pk=3, nombre="Personería Jurídica")
     comedor = Comedor.objects.create(
         nombre="Comedor afectado", organizacion=organizacion_con_documentos
     )
@@ -202,9 +194,7 @@ def test_cambio_tipo_entidad_materializa_archivos_en_admision_activa(
 
     client = Client()
     client.force_login(usuario)
-    url = reverse(
-        "organizacion_editar", kwargs={"pk": organizacion_con_documentos.pk}
-    )
+    url = reverse("organizacion_editar", kwargs={"pk": organizacion_con_documentos.pk})
 
     response = client.post(
         url, _post_payload(organizacion_con_documentos, tipos["eclesiastica"])
@@ -230,9 +220,7 @@ def test_cambio_tipo_entidad_no_materializa_en_admisiones_archivadas(
     """Admisiones ya enviadas a archivo no deben recibir clones — ya son
     historico inmutable."""
 
-    tipo_convenio = TipoConvenio.objects.create(
-        pk=3, nombre="Personería Jurídica"
-    )
+    tipo_convenio = TipoConvenio.objects.create(pk=3, nombre="Personería Jurídica")
     comedor = Comedor.objects.create(
         nombre="Comedor archivado", organizacion=organizacion_con_documentos
     )
@@ -246,13 +234,9 @@ def test_cambio_tipo_entidad_no_materializa_en_admisiones_archivadas(
 
     client = Client()
     client.force_login(usuario)
-    url = reverse(
-        "organizacion_editar", kwargs={"pk": organizacion_con_documentos.pk}
-    )
+    url = reverse("organizacion_editar", kwargs={"pk": organizacion_con_documentos.pk})
 
-    client.post(
-        url, _post_payload(organizacion_con_documentos, tipos["eclesiastica"])
-    )
+    client.post(url, _post_payload(organizacion_con_documentos, tipos["eclesiastica"]))
 
     assert (
         ArchivoAdmision.objects.filter(admision=admision).count() == 0
