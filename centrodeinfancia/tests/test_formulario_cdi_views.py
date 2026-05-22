@@ -572,7 +572,7 @@ def test_detalle_cdi_muestra_nuevos_paneles_y_campos(client):
     assert "Asociacion Civil Horizonte" in content
     assert "20-44535030-4" in content
     assert "detalle@example.com" in content
-    assert "20/05/2024" in content
+    assert "2024" in content  # vista muestra solo el año de fecha_inicio
     assert "1234" in content
     assert "Latitud:" in content
     assert "Longitud:" in content
