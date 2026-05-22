@@ -108,6 +108,16 @@ def review_certificate(certificado, estado, actor, observacion=None):
     if estado not in valid_statuses:
         raise ValidationError("Estado inválido.")
 
+    estados_finales = {
+        CapacitacionComedorCertificado.ESTADO_RECHAZADO,
+        CapacitacionComedorCertificado.ESTADO_ACEPTADO,
+    }
+    estado_actual = certificado.estado
+    if estado_actual in estados_finales and estado != estado_actual:
+        raise ValidationError(
+            "El certificado ya fue revisado y no puede cambiar de estado."
+        )
+
     observacion = (observacion or "").strip()
     if estado == CapacitacionComedorCertificado.ESTADO_RECHAZADO and not observacion:
         raise ValidationError("Debe ingresar una observación para rechazar.")

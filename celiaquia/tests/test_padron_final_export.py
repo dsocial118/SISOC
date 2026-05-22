@@ -1,12 +1,13 @@
-"""Tests para la exportacion del padron final de aprobados (issue #1724)."""
+"""Tests de exportacion de nomina aprobada Celiaquia."""
 
-import datetime
 from io import BytesIO
 
 import pytest
-from django.contrib.auth.models import User
+from django.contrib.auth.models import Permission, User
+from django.contrib.contenttypes.models import ContentType
+from django.core.files.base import ContentFile
 from django.urls import reverse
-from openpyxl import load_workbook
+from openpyxl import Workbook, load_workbook
 
 from celiaquia.models import (
     EstadoExpediente,
@@ -16,11 +17,11 @@ from celiaquia.models import (
     ResultadoSintys,
     RevisionTecnico,
 )
-from ciudadanos.models import Ciudadano, GrupoFamiliar
-from core.models import Localidad, Municipio, Provincia, Sexo
+from celiaquia.services.padron_final_service import PadronFinalService
+from ciudadanos.models import Ciudadano
 
 
-COLUMNAS_ESPERADAS = [
+NOMINA_HEADERS = [
     "apellido",
     "nombre",
     "documento",
@@ -35,7 +36,7 @@ COLUMNAS_ESPERADAS = [
     "telefono",
     "email",
     "APELLIDO_RESPONSABLE",
-    "NOMBRE_REPSONSABLE",
+    "NOMBRE_RESPONSABLE",
     "Cuit_Responsable",
     "FECHA_DE_NACIMIENTO_RESPONSABLE",
     "SEXO_RESPONSABLE",
@@ -46,140 +47,290 @@ COLUMNAS_ESPERADAS = [
 ]
 
 
-@pytest.mark.django_db
-def test_padron_final_export_estructura_y_formato(client):
-    admin = User.objects.create_superuser(username="admin", password="pass")
+def _permission(app_label, codename):
+    try:
+        return Permission.objects.get(
+            content_type__app_label=app_label,
+            codename=codename,
+        )
+    except Permission.DoesNotExist:
+        content_type = ContentType.objects.get(app_label="auth", model="user")
+        return Permission.objects.create(
+            content_type=content_type,
+            codename=codename,
+            name=codename,
+        )
 
-    provincia = Provincia.objects.create(nombre="Buenos Aires")
-    municipio = Municipio.objects.create(nombre="La Plata", provincia=provincia)
-    localidad = Localidad.objects.create(nombre="City Bell", municipio=municipio)
-    municipio_resp = Municipio.objects.create(nombre="Quilmes", provincia=provincia)
-    localidad_resp = Localidad.objects.create(
-        nombre="Bernal", municipio=municipio_resp
-    )
-    sexo_f = Sexo.objects.create(sexo="Femenino")
-    sexo_m = Sexo.objects.create(sexo="Masculino")
 
-    estado_exp = EstadoExpediente.objects.create(nombre="ASIGNADO")
-    estado_leg = EstadoLegajo.objects.create(nombre="VALIDO")
+def _grant(user, app_label, codename):
+    user.user_permissions.add(_permission(app_label, codename))
+
+
+def _user(username, *, coord=False):
+    user = User.objects.create_user(username=username, password="pass")
+    _grant(user, "celiaquia", "view_expediente")
+    if coord:
+        _grant(user, "auth", "role_coordinadorceliaquia")
+    return user
+
+
+def _excel_bytes(rows):
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Sheet1"
+    ws.append(NOMINA_HEADERS)
+    for row in rows:
+        ws.append([row.get(header) for header in NOMINA_HEADERS])
+
+    output = BytesIO()
+    wb.save(output)
+    return output.getvalue()
+
+
+def _row(documento, apellido, nombre, **extra):
+    data = {
+        "apellido": apellido,
+        "nombre": nombre,
+        "documento": documento,
+        "fecha_nacimiento": "2000-10-10",
+        "sexo": "M",
+        "nacionalidad": "ARGENTINA",
+        "municipio": "1353",
+        "localidad": "8842",
+        "calle": "Calle",
+        "altura": "1",
+        "codigo_postal": "1900",
+    }
+    data.update(extra)
+    return data
+
+
+def _workbook_rows(content):
+    wb = load_workbook(BytesIO(content))
+    ws = wb.active
+    rows = list(ws.iter_rows(values_only=True))
+    return rows[0], rows[1:]
+
+
+def _expediente_con_excel(
+    settings, tmp_path, owner, rows, *, estado="CRUCE_FINALIZADO"
+):
+    settings.MEDIA_ROOT = tmp_path
     expediente = Expediente.objects.create(
-        usuario_provincia=admin, estado=estado_exp
+        usuario_provincia=owner,
+        estado=EstadoExpediente.objects.create(nombre=estado),
     )
+    expediente.excel_masivo.save(
+        "nomina_original.xlsx",
+        ContentFile(_excel_bytes(rows)),
+        save=True,
+    )
+    return expediente
 
-    beneficiario = Ciudadano.objects.create(
-        apellido="Perez",
-        nombre="Juan",
-        fecha_nacimiento=datetime.date(2015, 6, 10),
-        documento=12345678,
-        tipo_documento=Ciudadano.DOCUMENTO_DNI,
-        sexo=sexo_m,
-        provincia=provincia,
-        municipio=municipio,
-        localidad=localidad,
-        calle="Calle Falsa",
-        altura="123",
-        codigo_postal="1900",
-        telefono="2211234567",
-        email="juan@example.com",
-    )
-    responsable = Ciudadano.objects.create(
-        apellido="Perez",
-        nombre="Maria",
-        fecha_nacimiento=datetime.date(1985, 3, 22),
-        documento=23456789,
-        cuil_cuit="27234567893",
-        tipo_documento=Ciudadano.DOCUMENTO_DNI,
-        sexo=sexo_f,
-        provincia=provincia,
-        municipio=municipio_resp,
-        localidad=localidad_resp,
-        calle="Av. Siempre Viva",
-        altura="742",
-        telefono="2219876543",
-        email="maria@example.com",
-    )
-    GrupoFamiliar.objects.create(
-        ciudadano_1=responsable,
-        ciudadano_2=beneficiario,
-        vinculo=GrupoFamiliar.RELACION_PADRE,
-        cuidador_principal=True,
-    )
 
-    no_aprobado = Ciudadano.objects.create(
-        apellido="Lopez",
-        nombre="Pedro",
-        fecha_nacimiento=datetime.date(2010, 1, 1),
-        documento=34567890,
-        tipo_documento=Ciudadano.DOCUMENTO_DNI,
+def _crear_legajo(expediente, documento, *, revision, sintys, rol=None):
+    estado_legajo, _ = EstadoLegajo.objects.get_or_create(nombre="VALIDO")
+    ciudadano = Ciudadano.objects.create(
+        apellido=f"Apellido {documento}",
+        nombre=f"Nombre {documento}",
+        fecha_nacimiento="2000-01-01",
+        documento=int(documento),
     )
-
-    ExpedienteCiudadano.objects.create(
+    return ExpedienteCiudadano.objects.create(
         expediente=expediente,
-        ciudadano=beneficiario,
-        estado=estado_leg,
-        rol=ExpedienteCiudadano.ROLE_BENEFICIARIO,
-        revision_tecnico=RevisionTecnico.APROBADO,
-        resultado_sintys=ResultadoSintys.MATCH,
+        ciudadano=ciudadano,
+        estado=estado_legajo,
+        revision_tecnico=revision,
+        resultado_sintys=sintys,
+        rol=rol or ExpedienteCiudadano.ROLE_BENEFICIARIO,
     )
-    ExpedienteCiudadano.objects.create(
-        expediente=expediente,
-        ciudadano=responsable,
-        estado=estado_leg,
+
+
+@pytest.mark.django_db
+def test_nomina_aprobados_conserva_estructura_original_y_filtra_aprobados(
+    settings, tmp_path
+):
+    owner = _user("prov-servicio")
+    rows = [
+        _row(
+            "20392317989",
+            "alzueta",
+            "lucas",
+            APELLIDO_RESPONSABLE="adulto",
+            NOMBRE_RESPONSABLE="responsable",
+            Cuit_Responsable="27222222222",
+        ),
+        _row("20392317990", "no", "match"),
+        _row("20392317991", "rechazado", "tecnico"),
+        _row("20392317992", "responsable", "puro"),
+    ]
+    expediente = _expediente_con_excel(settings, tmp_path, owner, rows)
+
+    _crear_legajo(
+        expediente,
+        "20392317989",
+        revision=RevisionTecnico.APROBADO,
+        sintys=ResultadoSintys.MATCH,
+    )
+    _crear_legajo(
+        expediente,
+        "20392317990",
+        revision=RevisionTecnico.APROBADO,
+        sintys=ResultadoSintys.NO_MATCH,
+    )
+    _crear_legajo(
+        expediente,
+        "20392317991",
+        revision=RevisionTecnico.RECHAZADO,
+        sintys=ResultadoSintys.MATCH,
+    )
+    _crear_legajo(
+        expediente,
+        "20392317992",
+        revision=RevisionTecnico.APROBADO,
+        sintys=ResultadoSintys.MATCH,
         rol=ExpedienteCiudadano.ROLE_RESPONSABLE,
-        revision_tecnico=RevisionTecnico.APROBADO,
-        resultado_sintys=ResultadoSintys.MATCH,
-    )
-    ExpedienteCiudadano.objects.create(
-        expediente=expediente,
-        ciudadano=no_aprobado,
-        estado=estado_leg,
-        rol=ExpedienteCiudadano.ROLE_BENEFICIARIO,
-        revision_tecnico=RevisionTecnico.PENDIENTE,
-        resultado_sintys=ResultadoSintys.SIN_CRUCE,
     )
 
-    client.force_login(admin)
+    header, data_rows = _workbook_rows(
+        PadronFinalService.generar_padron_final_excel(expediente)
+    )
+
+    assert list(header) == NOMINA_HEADERS
+    assert len(data_rows) == 1
+    assert data_rows[0][NOMINA_HEADERS.index("documento")] == "20392317989"
+    assert data_rows[0][NOMINA_HEADERS.index("APELLIDO_RESPONSABLE")] == "adulto"
+    assert data_rows[0][NOMINA_HEADERS.index("Cuit_Responsable")] == "27222222222"
+
+
+@pytest.mark.django_db
+def test_nomina_aprobados_se_recalcula_con_resultado_sintys_actual(settings, tmp_path):
+    owner = _user("prov-reproceso")
+    rows = [
+        _row("20392317001", "primero", "match"),
+        _row("20392317002", "segundo", "reprocesado"),
+    ]
+    expediente = _expediente_con_excel(settings, tmp_path, owner, rows)
+    _crear_legajo(
+        expediente,
+        "20392317001",
+        revision=RevisionTecnico.APROBADO,
+        sintys=ResultadoSintys.MATCH,
+    )
+    reprocesado = _crear_legajo(
+        expediente,
+        "20392317002",
+        revision=RevisionTecnico.APROBADO,
+        sintys=ResultadoSintys.NO_MATCH,
+    )
+
+    _, data_rows = _workbook_rows(
+        PadronFinalService.generar_padron_final_excel(expediente)
+    )
+    assert [row[NOMINA_HEADERS.index("documento")] for row in data_rows] == [
+        "20392317001"
+    ]
+
+    reprocesado.resultado_sintys = ResultadoSintys.MATCH
+    reprocesado.save(update_fields=["resultado_sintys"])
+
+    _, data_rows = _workbook_rows(
+        PadronFinalService.generar_padron_final_excel(expediente)
+    )
+    assert [row[NOMINA_HEADERS.index("documento")] for row in data_rows] == [
+        "20392317001",
+        "20392317002",
+    ]
+
+
+@pytest.mark.django_db
+def test_descarga_nomina_aprobados_no_disponible_antes_de_cruce_finalizado(
+    client, settings, tmp_path
+):
+    owner = _user("prov-antes")
+    coord = _user("coord-antes", coord=True)
+    expediente = _expediente_con_excel(
+        settings,
+        tmp_path,
+        owner,
+        [_row("20392317101", "pendiente", "cruce")],
+        estado="ASIGNADO",
+    )
+
+    client.force_login(coord)
     response = client.get(
         reverse("expediente_padron_final_export", args=[expediente.pk])
     )
+
+    assert response.status_code == 404
+
+
+@pytest.mark.django_db
+def test_descarga_nomina_aprobados_finalizada_devuelve_xlsx(client, settings, tmp_path):
+    owner = _user("prov-final")
+    coord = _user("coord-final", coord=True)
+    expediente = _expediente_con_excel(
+        settings,
+        tmp_path,
+        owner,
+        [_row("20392317201", "final", "aprobado")],
+    )
+    _crear_legajo(
+        expediente,
+        "20392317201",
+        revision=RevisionTecnico.APROBADO,
+        sintys=ResultadoSintys.MATCH,
+    )
+
+    client.force_login(coord)
+    response = client.get(
+        reverse("expediente_padron_final_export", args=[expediente.pk])
+    )
+
     assert response.status_code == 200
+    assert (
+        response["Content-Type"]
+        == "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+    assert (
+        f"nomina_aprobados_{expediente.pk}.xlsx"
+        in response.headers["Content-Disposition"]
+    )
+    header, data_rows = _workbook_rows(response.content)
+    assert list(header) == NOMINA_HEADERS
+    assert data_rows[0][NOMINA_HEADERS.index("documento")] == "20392317201"
 
-    wb = load_workbook(BytesIO(response.content))
-    ws = wb.active
 
-    header = [cell.value for cell in next(ws.iter_rows(max_row=1))]
-    assert header == COLUMNAS_ESPERADAS
+@pytest.mark.django_db
+def test_detalle_muestra_descarga_solo_con_cruce_finalizado(client, settings, tmp_path):
+    owner = _user("prov-detalle")
+    coord = _user("coord-detalle", coord=True)
+    expediente_asignado = _expediente_con_excel(
+        settings,
+        tmp_path,
+        owner,
+        [_row("20392317301", "asignado", "sin-cruce")],
+        estado="ASIGNADO",
+    )
+    expediente_finalizado = _expediente_con_excel(
+        settings,
+        tmp_path,
+        owner,
+        [_row("20392317302", "finalizado", "con-cruce")],
+    )
 
-    filas = list(ws.iter_rows(min_row=2, values_only=True))
-    assert len(filas) == 1, "Solo el beneficiario aprobado debe figurar"
+    client.force_login(coord)
+    response_asignado = client.get(
+        reverse("expediente_detail", args=[expediente_asignado.pk])
+    )
+    response_finalizado = client.get(
+        reverse("expediente_detail", args=[expediente_finalizado.pk])
+    )
 
-    fila = dict(zip(COLUMNAS_ESPERADAS, filas[0]))
-
-    assert fila["apellido"] == "Perez"
-    assert fila["nombre"] == "Juan"
-    assert str(fila["documento"]) == "12345678"
-
-    assert fila["fecha_nacimiento"] == "10/06/2015"
-    assert ":" not in str(fila["fecha_nacimiento"])
-
-    assert fila["municipio"] == "La Plata"
-    assert fila["localidad"] == "City Bell"
-    assert str(fila["municipio"]) != str(municipio.pk)
-    assert str(fila["localidad"]) != str(localidad.pk)
-
-    assert fila["sexo"] == "Masculino"
-    assert fila["calle"] == "Calle Falsa"
-    assert fila["altura"] == "123"
-    assert fila["telefono"] == "2211234567"
-    assert fila["email"] == "juan@example.com"
-
-    assert fila["APELLIDO_RESPONSABLE"] == "Perez"
-    assert fila["NOMBRE_REPSONSABLE"] == "Maria"
-    assert fila["Cuit_Responsable"] == "27234567893"
-    assert fila["FECHA_DE_NACIMIENTO_RESPONSABLE"] == "22/03/1985"
-    assert fila["SEXO_RESPONSABLE"] == "Femenino"
-    assert fila["DOMICILIO_RESPONSABLE"] == "Av. Siempre Viva 742"
-    assert fila["LOCALIDAD_RESPONSABLE"] == "Bernal"
-    assert str(fila["LOCALIDAD_RESPONSABLE"]) != str(localidad_resp.pk)
-    assert fila["CELULAR_RESPONSABLE"] == "2219876543"
-    assert fila["CORREO_RESPONSABLE"] == "maria@example.com"
+    assert response_asignado.status_code == 200
+    assert response_finalizado.status_code == 200
+    assert (
+        reverse("expediente_padron_final_export", args=[expediente_asignado.pk])
+        not in response_asignado.content.decode()
+    )
+    assert "Descargar nómina aprobados" in response_finalizado.content.decode()

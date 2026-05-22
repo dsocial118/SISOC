@@ -82,7 +82,9 @@
                                         {{ form.inscripcion_libre.label }}
                                     </label>
                                 </div>
-                                {% if form.inscripcion_libre.help_text %}<div class="form-text text-muted">{{ form.inscripcion_libre.help_text }}</div>{% endif %}
+                                {% if form.inscripcion_libre.help_text %}
+                                    <div class="form-text text-muted">{{ form.inscripcion_libre.help_text }}</div>
+                                {% endif %}
                                 {% if form.inscripcion_libre.errors %}
                                     <div class="text-danger small mt-1">{{ form.inscripcion_libre.errors.0 }}</div>
                                 {% endif %}

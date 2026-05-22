@@ -115,6 +115,8 @@ from VAT.views.curso import (
     CursoUpdateView,
     CursoDeleteView,
     ComisionCursoDetailView,
+    ComisionCursoPreinscriptosExportView,
+    ComisionCursoInscriptosExportView,
     ComisionCursoCreateView,
     ComisionCursoUpdateView,
     ComisionCursoDeleteView,
@@ -214,6 +216,20 @@ urlpatterns = [
             ComisionCursoDetailView.as_view()
         ),
         name="vat_comision_curso_detail",
+    ),
+    path(
+        "vat/cursos/comisiones/<int:pk>/descargar-nomina-preinscriptos/",
+        permissions_any_required(["VAT.view_comisioncurso"])(
+            ComisionCursoPreinscriptosExportView.as_view()
+        ),
+        name="vat_comision_curso_export_preinscriptos",
+    ),
+    path(
+        "vat/cursos/comisiones/<int:pk>/descargar-nomina-inscriptos/",
+        permissions_any_required(["VAT.view_comisioncurso"])(
+            ComisionCursoInscriptosExportView.as_view()
+        ),
+        name="vat_comision_curso_export_inscriptos",
     ),
     path(
         "vat/cursos/comisiones/<int:pk>/editar/",

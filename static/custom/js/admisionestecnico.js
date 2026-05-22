@@ -181,6 +181,7 @@ function subirArchivo(admisionId, documentoId) {
 let admisionIdEliminar;
 let documentacionIdEliminar;
 let archivoIdEliminar;
+let nombreArchivoEliminar = "";
 
 function construirUrlEliminar(admisionId, identifier, includePreview = false) {
     let url = `/admision/${admisionId}/documentacion/${identifier}/eliminar/`;
@@ -197,21 +198,20 @@ function construirUrlEliminar(admisionId, identifier, includePreview = false) {
     return url;
 }
 
-function renderizarPreview(preview) {
-    if (!preview || !Array.isArray(preview.desglose_por_modelo)) {
-        return "¿Estás seguro de que deseas dar de baja este archivo?";
-    }
-    const lineas = preview.desglose_por_modelo
-        .map((item) => `- ${item.modelo}: ${item.cantidad}`)
-        .join("<br>");
+function _escapeHtml(text) {
+    const div = document.createElement("div");
+    div.textContent = text || "";
+    return div.innerHTML;
+}
+
+function renderizarConfirmacionEliminacion(nombreArchivo) {
     return `
-        <p>Se realizará una baja lógica en cascada.</p>
-        <p><strong>Total de registros afectados:</strong> ${preview.total_afectados}</p>
-        <p class="mb-0">${lineas || "-"}</p>
+        <p>¿Seguro que quiere eliminar el siguiente archivo?</p>
+        <p class="mb-0"><strong>${_escapeHtml(nombreArchivo || "")}</strong></p>
     `;
 }
 
-function confirmarEliminar(admisionId, documentacionId, archivoId) {
+function confirmarEliminar(admisionId, documentacionId, archivoId, nombreArchivo) {
     admisionIdEliminar = admisionId;
     documentacionIdEliminar = documentacionId !== undefined && documentacionId !== null
         ? documentacionId
@@ -219,40 +219,21 @@ function confirmarEliminar(admisionId, documentacionId, archivoId) {
     archivoIdEliminar = archivoId !== undefined && archivoId !== null
         ? archivoId
         : null;
+    nombreArchivoEliminar = nombreArchivo || "";
     const identifier = documentacionIdEliminar !== null ? documentacionIdEliminar : archivoIdEliminar;
     const modalBody = document.getElementById("modalConfirmarEliminarBody");
     if (!identifier) {
         if (modalBody) {
-            modalBody.textContent = "No se pudo preparar la baja del archivo.";
+            modalBody.textContent = "No se pudo preparar la eliminación del archivo.";
         }
         $("#modalConfirmarEliminar").modal("show");
         return;
     }
 
     if (modalBody) {
-        modalBody.innerHTML = "Cargando preview de impacto...";
+        modalBody.innerHTML = renderizarConfirmacionEliminacion(nombreArchivoEliminar);
     }
-
-    fetch(construirUrlEliminar(admisionIdEliminar, identifier, true), {
-        method: "DELETE",
-        headers: { "X-CSRFToken": getCsrfToken() }
-    })
-        .then((response) => response.json())
-        .then((data) => {
-            if (modalBody) {
-                modalBody.innerHTML = data.success
-                    ? renderizarPreview(data.preview)
-                    : "No se pudo obtener el preview de impacto.";
-            }
-        })
-        .catch(() => {
-            if (modalBody) {
-                modalBody.textContent = "No se pudo obtener el preview de impacto.";
-            }
-        })
-        .finally(() => {
-            $("#modalConfirmarEliminar").modal("show");
-        });
+    $("#modalConfirmarEliminar").modal("show");
 }
 
 const botonConfirmarEliminar = document.getElementById("btnConfirmarEliminar");

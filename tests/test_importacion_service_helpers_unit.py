@@ -814,7 +814,7 @@ def test_importacion_helpers_registrar_legajo_beneficiario(mocker):
     assert existentes_ids == {33}
     assert len(legajos_crear) == 1
     assert legajos_crear[0].kwargs["rol"] == "BEN"
-    assert abiertos[33]["expediente__estado__nombre"] == "CREADO"
+    assert abiertos[33]["revision_tecnico"] == module.RevisionTecnico.PENDIENTE
     assert abiertos[33]["estado_cupo"] == module.EstadoCupo.NO_EVAL
 
 

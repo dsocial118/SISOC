@@ -7,6 +7,14 @@
         {% if doc.estado_valor == "Rectificar" %}<i class="bi bi-x-circle text-danger fs-4 fw-bold me-1"></i>{% endif %}
         {{ doc.nombre }}
         {% if doc.obligatorio %}<span class="text-danger fs-5 ms-1">*</span>{% endif %}
+        {% if doc.origen == "organizacion" %}
+            <div class="small text-muted">
+                Documento de la organizacion
+                {% if doc.fecha_vencimiento %}
+                    <span class="ms-2">Vencimiento: {{ doc.fecha_vencimiento|date:"d/m/Y" }}</span>
+                {% endif %}
+            </div>
+        {% endif %}
     </td>
     <td id="estado-{{ doc.archivo_id|default:doc.row_id }}"
         class="ps-1 text-center"
@@ -30,31 +38,37 @@
                     <option value="Aceptado">Aceptado</option>
                     <option value="Rectificar">Rectificar</option>
                 </select>
-            {% elif request.user|has_any_perm:"comedores.view_comedor,admisiones.view_admision,acompanamientos.view_informacionrelevante" %}
+            {% elif request.user|has_any_perm:"comedores.view_comedor,admisiones.view_admision,acompanamientos.view_informacionrelevante" or request.user|has_perm_code:"auth.role_tecnico_comedor" or request.user|has_any_group:"Tecnico Comedor" %}
                 <span class="badge bg-primary">A Validar Abogado</span>
             {% else %}
                 {{ doc.estado }}
             {% endif %}
         {% else %}
-            {% if request.user|has_any_perm:"comedores.view_comedor,admisiones.view_admision,acompanamientos.view_informacionrelevante" and doc.archivo_id %}
-                <select class="form-control form-control-sm mb-2{% if doc.estado == 'Rectificar' %} border border-danger border-2{% endif %}"
-                        data-call-change="actualizarEstado"
-                        data-call-pass-this="true"
-                        data-admision-id="{{ admision.id }}"
-                        data-documento-id="{{ doc.archivo_id }}"
-                        data-url="{% url 'actualizar_estado_archivo' %}"
-                        data-requires-observacion="0"
-                        data-current-value="{{ doc.estado_valor }}">
-                    {% if doc.estado == 'Rectificar' %}<option value="Rectificar" selected disabled>Rectificar</option>{% endif %}
-                    <option value="Documento adjunto"
-                            {% if doc.estado_valor == 'Documento adjunto' %}selected disabled{% endif %}>
-                        Documento adjunto
-                    </option>
-                    <option value="A Validar Abogado"
-                            {% if doc.estado_valor == 'A Validar Abogado' %}selected{% endif %}>
-                        A Validar Abogado
-                    </option>
-                </select>
+            {% if doc.archivo_id %}
+                {% if request.user|has_perm_code:"auth.role_tecnico_comedor" or request.user|has_any_group:"Tecnico Comedor" or request.user|has_any_perm:"comedores.view_comedor,admisiones.view_admision,acompanamientos.view_informacionrelevante" %}
+                    <select class="form-control form-control-sm mb-2{% if doc.estado == 'Rectificar' %} border border-danger border-2{% endif %}"
+                            data-call-change="actualizarEstado"
+                            data-call-pass-this="true"
+                            data-admision-id="{{ admision.id }}"
+                            data-documento-id="{{ doc.archivo_id }}"
+                            data-url="{% url 'actualizar_estado_archivo' %}"
+                            data-requires-observacion="0"
+                            data-current-value="{{ doc.estado_valor }}">
+                        {% if doc.estado == 'Rectificar' %}<option value="Rectificar" selected disabled>Rectificar</option>{% endif %}
+                        <option value="Documento adjunto"
+                                {% if doc.estado_valor == 'Documento adjunto' %}selected disabled{% endif %}>
+                            Documento adjunto
+                        </option>
+                        <option value="A Validar Abogado"
+                                {% if doc.estado_valor == 'A Validar Abogado' %}selected{% endif %}>
+                            A Validar Abogado
+                        </option>
+                    </select>
+                {% else %}
+                    <span class="badge {% if doc.estado == 'Rectificar' %}bg-danger {% elif doc.estado == 'Aceptado' %}bg-success {% elif doc.estado == 'Pendiente' or doc.estado == 'Documento adjunto' %}bg-secondary {% else %}bg-primary {% endif %}">
+                        {{ doc.estado }}
+                    </span>
+                {% endif %}
             {% else %}
                 <span class="badge {% if doc.estado == 'Rectificar' %}bg-danger {% elif doc.estado == 'Aceptado' %}bg-success {% elif doc.estado == 'Pendiente' or doc.estado == 'Documento adjunto' %}bg-secondary {% else %}bg-primary {% endif %}">
                     {{ doc.estado }}
@@ -67,40 +81,42 @@
             <a href="{{ doc.archivo_url }}"
                target="_blank"
                class="btn btn-primary btn-sm">Ver Archivo</a>
-            {% if request.user|has_any_perm:"comedores.view_comedor,admisiones.view_admision,acompanamientos.view_informacionrelevante" and admision.estado.nombre != "Finalizada" and admision.estado.nombre != "Descartado" %}
-                {% if doc.estado_valor != "Aceptado" and doc.estado_valor != "A Validar Abogado" %}
+            {% if doc.origen != "organizacion" and not admision.enviada_a_archivo and admision.estado_admision != "descartado" and admision.estado_admision != "informe_tecnico_finalizado" and admision.estado_admision != "informe_tecnico_docx_editado" and admision.estado_admision != "informe_tecnico_en_revision" and admision.estado_admision != "informe_tecnico_en_subsanacion" and admision.estado_admision != "informe_tecnico_aprobado" and admision.estado_admision != "if_informe_tecnico_cargado" and admision.estado_admision != "enviado_a_legales" and admision.estado_admision != "enviado_a_acompaniamiento" %}
+                {% if request.user|has_perm_code:"auth.role_tecnico_comedor" or request.user|has_any_group:"Tecnico Comedor" or request.user|has_any_perm:"comedores.view_comedor,admisiones.view_admision,acompanamientos.view_informacionrelevante" %}
                     <button class="btn btn-sm btn-danger px-3 ms-2"
                             data-call-click="confirmarEliminar"
-                            data-call-args='[{{ admision.id }}, {{ doc.documentacion_id|default:"null" }}, {{ doc.archivo_id|default:"null" }}]'>
+                            data-call-args='[{{ admision.id }}, {{ doc.documentacion_id|default:"null" }}, {{ doc.archivo_id|default:"null" }}, "{{ doc.nombre|escapejs }}"]'>
                         Eliminar
                     </button>
                 {% endif %}
             {% endif %}
         {% else %}
-            {% if request.user|has_any_perm:"comedores.view_comedor,admisiones.view_admision,acompanamientos.view_informacionrelevante" and not doc.es_personalizado and not admision.enviada_a_archivo and admision.estado.nombre != "Finalizada" and admision.estado.nombre != "Descartado" %}
-                <input type="file"
-                       id="file-{{ doc.documentacion_id }}"
-                       class="d-none"
-                       data-call-change="subirArchivo"
-                       data-call-args='[{{ admision.id }}, {{ doc.documentacion_id }}]' />
-                <button type="button"
-                        class="btn btn-sm btn-outline-primary"
-                        data-click-target-id="file-{{ doc.documentacion_id }}">Adjuntar</button>
-                <div class="progress mt-2"
-                     id="progress-container-{{ doc.documentacion_id }}"
-                     style="display:none;
-                            height: 3px">
-                    <div class="progress-bar  progress-bar-striped"
-                         role="progressbar"
-                         id="progress-bar-{{ doc.documentacion_id }}"
-                         style="width: 0%">0%</div>
-                </div>
+            {% if doc.origen != "organizacion" and not doc.es_personalizado and not admision.enviada_a_archivo and admision.estado_admision != "descartado" %}
+                {% if request.user|has_perm_code:"auth.role_tecnico_comedor" or request.user|has_any_group:"Tecnico Comedor" or request.user|has_any_perm:"comedores.view_comedor,admisiones.view_admision,acompanamientos.view_informacionrelevante" %}
+                    <input type="file"
+                           id="file-{{ doc.documentacion_id }}"
+                           class="d-none"
+                           data-call-change="subirArchivo"
+                           data-call-args='[{{ admision.id }}, {{ doc.documentacion_id }}]' />
+                    <button type="button"
+                            class="btn btn-sm btn-outline-primary"
+                            data-click-target-id="file-{{ doc.documentacion_id }}">Adjuntar</button>
+                    <div class="progress mt-2"
+                         id="progress-container-{{ doc.documentacion_id }}"
+                         style="display:none;
+                                height: 3px">
+                        <div class="progress-bar  progress-bar-striped"
+                             role="progressbar"
+                             id="progress-bar-{{ doc.documentacion_id }}"
+                             style="width: 0%">0%</div>
+                    </div>
+                {% endif %}
             {% endif %}
         {% endif %}
     </td>
     <td id="gde-{{ doc.id }}">
         {% if doc.estado == "Aceptado" %}
-            {% if request.user.is_superuser or request.user|has_any_perm:"comedores.view_comedor,admisiones.view_admision,acompanamientos.view_informacionrelevante" %}
+            {% if doc.archivo_id and request.user.is_superuser or doc.archivo_id and request.user|has_any_perm:"comedores.view_comedor,admisiones.view_admision,acompanamientos.view_informacionrelevante" or doc.archivo_id and request.user|has_perm_code:"auth.role_tecnico_comedor" or doc.archivo_id and request.user|has_any_group:"Tecnico Comedor" %}
                 <!-- Modo vista (por defecto) -->
                 <div id="gde-display-{{ doc.id }}"
                      class="gde-display"
@@ -137,6 +153,49 @@
                         <button class="btn btn-secondary btn-sm"
                                 data-call-click="cancelarEdicionGDE"
                                 data-call-args="[{{ doc.id }}]"
+                                title="Cancelar">
+                            <i class="bi bi-x"></i>
+                        </button>
+                    </div>
+                </div>
+            {% elif doc.archivo_organizacion_id and not doc.archivo_id and request.user.is_superuser or doc.archivo_organizacion_id and not doc.archivo_id and request.user|has_any_perm:"comedores.view_comedor,admisiones.view_admision,acompanamientos.view_informacionrelevante" or doc.archivo_organizacion_id and not doc.archivo_id and request.user|has_perm_code:"auth.role_tecnico_comedor" or doc.archivo_organizacion_id and not doc.archivo_id and request.user|has_any_group:"Tecnico Comedor" %}
+                <!-- Modo vista para documentos puros de organizacion -->
+                <div id="gde-org-display-{{ doc.archivo_organizacion_id }}"
+                     class="gde-display"
+                     data-call-click="activarEdicionGDEOrganizacion"
+                     data-call-args="[{{ doc.archivo_organizacion_id }}]">
+                    {% if doc.numero_gde %}
+                        <span class="text-success fw-bold">{{ doc.numero_gde }}</span>
+                        <i class="bi bi-pencil-square ms-2 text-muted"
+                           style="cursor: pointer"
+                           title="Editar número GDE"></i>
+                    {% else %}
+                        <span class="text-muted">Sin número GDE</span>
+                        <i class="bi bi-plus-circle ms-2 text-primary"
+                           style="cursor: pointer"
+                           title="Agregar número GDE"></i>
+                    {% endif %}
+                </div>
+                <!-- Modo edición para documentos puros de organizacion -->
+                <div id="gde-org-edit-{{ doc.archivo_organizacion_id }}"
+                     class="gde-edit d-none">
+                    <div class="d-flex align-items-center">
+                        <input type="text"
+                               class="form-control form-control-sm me-2"
+                               id="gde-org-input-{{ doc.archivo_organizacion_id }}"
+                               value="{{ doc.numero_gde|default_if_none:'' }}"
+                               placeholder="Ingrese número GDE"
+                               maxlength="50"
+                               style="max-width: 150px" />
+                        <button class="btn btn-success btn-sm me-1"
+                                data-call-click="guardarNumeroGDEOrganizacion"
+                                data-call-args="[{{ doc.archivo_organizacion_id }}]"
+                                title="Guardar">
+                            <i class="bi bi-check"></i>
+                        </button>
+                        <button class="btn btn-secondary btn-sm"
+                                data-call-click="cancelarEdicionGDEOrganizacion"
+                                data-call-args="[{{ doc.archivo_organizacion_id }}]"
                                 title="Cancelar">
                             <i class="bi bi-x"></i>
                         </button>

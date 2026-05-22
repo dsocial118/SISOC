@@ -1,4 +1,4 @@
-{% extends "includes/main.html" %}
+﻿{% extends "includes/main.html" %}
 {% load static %}
 {% load admisiones_tags %}
 {% load estado_filters %}
@@ -142,9 +142,22 @@
                         <dd class="col-sm-7">
                             {{ admision.enviado_acompaniamiento|yesno:"Si,No" }}
                         </dd>
-                        <dt class="col-sm-5">Numero expediente</dt>
+                        <dt class="col-sm-5">Número de expediente</dt>
                         <dd class="col-sm-7">
-                            {{ admision.num_expediente|default:"-" }}
+                            <div class="d-inline-flex align-items-center gap-2 flex-wrap">
+                                <span id="num-expediente-display" class="fw-bold">{{ admision.num_expediente|default:"-" }}</span>
+                                {% if admision.num_expediente %}
+                                    <i class="bi bi-check-circle-fill text-success"></i>
+                                {% else %}
+                                    <i class="bi bi-x-circle-fill text-danger"></i>
+                                {% endif %}
+                                {% if admision.num_expediente %}
+                                    <i class="fas fa-info-circle"
+                                       data-bs-toggle="tooltip"
+                                       data-bs-placement="top"
+                                       title="Tené en cuenta que, si modificás el número de expediente, este cambio no se reflejará en el informe técnico en caso de que ya esté finalizado."></i>
+                                {% endif %}
+                            </div>
                         </dd>
                         {% if not admision.activa %}
                             <dt class="col-sm-5">Fecha de cierre</dt>
@@ -505,7 +518,7 @@
             <div class="row">
                 <div class="col-lg-6">
                     <dl class="row mb-0">
-                        <dt class="col-sm-6">Numero de expediente</dt>
+                        <dt class="col-sm-6">Número de expediente</dt>
                         <dd class="col-sm-6">
                             {% if acompanamiento_info %}
                                 {{ acompanamiento_info.expediente_nro|default:"-" }}
@@ -796,6 +809,7 @@
     <form style="display: none;">
         {% csrf_token %}
     </form>
+
 {% endblock %}
 
 {% block customJS %}
@@ -868,6 +882,11 @@
     </div>
     <script nonce="{{ request.csp_nonce }}">
         document.addEventListener('DOMContentLoaded', function() {
+            const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            tooltipTriggerList.forEach(function(tooltipTriggerEl) {
+                new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+
             // Funcionalidad para archivos adicionales
             const btnAbrirArchivoFile = document.getElementById('btnAbrirArchivoFile');
             const nuevoArchivoFile = document.getElementById('nuevoArchivoFile');

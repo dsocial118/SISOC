@@ -1,9 +1,17 @@
 """Tests unitarios para ciudadanos.views."""
 
 from contextlib import nullcontext
+from datetime import date
 from types import SimpleNamespace
+from unittest.mock import Mock, patch
+
+import pytest
+from django.contrib.auth import get_user_model
+from django.http import QueryDict
+from django.urls import reverse
 
 from ciudadanos import views as module
+from ciudadanos import views_export as export_module
 
 
 class _ExpedientesList(list):
@@ -39,6 +47,70 @@ def test_ciudadanos_list_view_get_queryset_filtra(mocker):
     assert result == qs
     order_by_mock.assert_called_once_with("pk")
     assert qs.filter.called
+
+
+def test_ciudadanos_list_view_get_queryset_aplica_revision_finalizada_por_defecto(
+    mocker,
+):
+    qs = mocker.Mock()
+    qs.filter.return_value = qs
+    mocker.patch("ciudadanos.views.Ciudadano.objects.order_by", return_value=qs)
+    mocker.patch(
+        "ciudadanos.forms.get_cached_provincia_filter_choices",
+        return_value=[],
+    )
+
+    view = module.CiudadanosListView()
+    view.request = SimpleNamespace(GET={})
+
+    result = view.get_queryset()
+
+    assert result == qs
+    qs.filter.assert_called_once_with(requiere_revision_manual=False)
+
+
+def test_ciudadanos_list_view_busqueda_simple_no_aplica_revision_implicita(mocker):
+    qs = mocker.Mock()
+    qs.filter.return_value = qs
+    prefix_filter = object()
+    mocker.patch("ciudadanos.views.Ciudadano.objects.order_by", return_value=qs)
+    mocker.patch(
+        "ciudadanos.forms.get_cached_provincia_filter_choices",
+        return_value=[],
+    )
+    prefix_mock = mocker.patch(
+        "ciudadanos.views.Ciudadano.documento_prefix_filter",
+        return_value=prefix_filter,
+    )
+
+    view = module.CiudadanosListView()
+    view.request = SimpleNamespace(GET={"q": "12345678", "filters_mode": "ui"})
+
+    result = view.get_queryset()
+
+    assert result == qs
+    prefix_mock.assert_called_once_with("12345678")
+    qs.filter.assert_called_once_with(prefix_filter)
+
+
+def test_ciudadanos_export_view_respeta_default_ui_con_ordenamiento():
+    qs = Mock()
+    qs.filter.return_value = qs
+    qs.order_by.return_value = qs
+    view = export_module.CiudadanosExportView()
+    view.request = SimpleNamespace(GET=QueryDict("sort=apellido&direction=desc"))
+
+    with (
+        patch("ciudadanos.forms.get_cached_provincia_filter_choices", return_value=[]),
+        patch(
+            "ciudadanos.views_export.Ciudadano.objects.select_related", return_value=qs
+        ),
+    ):
+        result = view.get_queryset()
+
+    assert result == qs
+    qs.filter.assert_called_once_with(requiere_revision_manual=False)
+    qs.order_by.assert_called_once_with("-apellido")
 
 
 def test_apply_ciudadanos_filters_usa_documento_prefix_para_q_numerico(mocker):
@@ -77,6 +149,259 @@ def test_apply_ciudadanos_filters_textual_no_toca_documento(mocker):
     assert qs.filter.call_args_list[-1].kwargs == {
         "tipo_registro_identidad": module.Ciudadano.TIPO_REGISTRO_SIN_DNI
     }
+
+
+def test_apply_ciudadanos_filters_estado_revision_pendiente_para_sin_dni(mocker):
+    qs = mocker.Mock()
+    qs.filter.return_value = qs
+
+    result = module.apply_ciudadanos_filters(
+        qs,
+        {
+            "q": "",
+            "provincia": None,
+            "tipo_registro": module.Ciudadano.TIPO_REGISTRO_SIN_DNI,
+            "estado_revision": module.CiudadanoFiltroForm.ESTADO_REVISION_PENDIENTE,
+        },
+    )
+
+    assert result == qs
+    assert qs.filter.call_args_list[-1].kwargs == {"requiere_revision_manual": True}
+
+
+def test_apply_ciudadanos_filters_estado_revision_se_ignora_fuera_de_tipos_habilitados(
+    mocker,
+):
+    qs = mocker.Mock()
+    qs.filter.return_value = qs
+
+    result = module.apply_ciudadanos_filters(
+        qs,
+        {
+            "q": "",
+            "provincia": None,
+            "tipo_registro": module.Ciudadano.TIPO_REGISTRO_ESTANDAR,
+            "estado_revision": module.CiudadanoFiltroForm.ESTADO_REVISION_PENDIENTE,
+        },
+    )
+
+    assert result == qs
+    assert qs.filter.call_count == 1
+    assert qs.filter.call_args_list[0].kwargs == {
+        "tipo_registro_identidad": module.Ciudadano.TIPO_REGISTRO_ESTANDAR
+    }
+
+
+def test_apply_ciudadanos_filters_sin_estado_revision_no_filtra(mocker):
+    qs = mocker.Mock()
+    qs.filter.return_value = qs
+
+    result = module.apply_ciudadanos_filters(
+        qs,
+        {
+            "q": "12345678",
+            "provincia": None,
+            "tipo_registro": "",
+            "estado_revision": None,
+        },
+    )
+
+    assert result == qs
+    assert qs.filter.call_count == 1
+
+
+def test_apply_ciudadanos_filters_si_aplica_revision_finalizada(mocker):
+    qs = mocker.Mock()
+    qs.filter.return_value = qs
+    prefix_filter = object()
+    mocker.patch(
+        "ciudadanos.views.Ciudadano.documento_prefix_filter",
+        return_value=prefix_filter,
+    )
+
+    result = module.apply_ciudadanos_filters(
+        qs,
+        {
+            "q": "12345678",
+            "provincia": None,
+            "tipo_registro": "",
+            "estado_revision": module.CiudadanoFiltroForm.ESTADO_REVISION_FINALIZADA,
+        },
+    )
+
+    assert result == qs
+    assert qs.filter.call_args_list[-1].kwargs == {"requiere_revision_manual": False}
+
+
+def test_ciudadano_filtro_form_ui_mantiene_finalizada_por_defecto(mocker):
+    mocker.patch(
+        "ciudadanos.forms.get_cached_provincia_filter_choices",
+        return_value=[],
+    )
+
+    form = module.CiudadanoFiltroForm({"q": "12345678", "filters_mode": "ui"})
+
+    assert (
+        form["estado_revision"].value()
+        == module.CiudadanoFiltroForm.ESTADO_REVISION_FINALIZADA
+    )
+    assert form.estado_revision_fue_seleccionado_explicitamente is False
+
+
+def test_ciudadano_filtro_form_api_muestra_todos_si_revision_no_fue_explicito(mocker):
+    mocker.patch(
+        "ciudadanos.forms.get_cached_provincia_filter_choices",
+        return_value=[],
+    )
+
+    form = module.CiudadanoFiltroForm({"q": "12345678", "filters_mode": "api"})
+
+    assert (
+        form["estado_revision"].value()
+        == module.CiudadanoFiltroForm.ESTADO_REVISION_TODOS
+    )
+    assert form.estado_revision_fue_seleccionado_explicitamente is False
+
+
+def _ciudadano_revision_manual(nombre, estado_revision, requiere_revision_manual):
+    ciudadano = module.Ciudadano.objects.create(
+        apellido="Revision",
+        nombre=nombre,
+        fecha_nacimiento=date(1990, 1, 1),
+        tipo_documento=module.Ciudadano.DOCUMENTO_DNI,
+        documento=30111000 + len(nombre),
+        tipo_registro_identidad=module.Ciudadano.TIPO_REGISTRO_DNI_NO_VALIDADO,
+        motivo_no_validacion_renaper=module.Ciudadano.MOTIVO_NO_VALIDADO_OTRO,
+    )
+    ciudadano.requiere_revision_manual = requiere_revision_manual
+    ciudadano.estado_revision_manual = estado_revision
+    ciudadano.save(update_fields=["requiere_revision_manual", "estado_revision_manual"])
+    return ciudadano
+
+
+@pytest.mark.django_db
+def test_cola_revision_filtra_por_estado(client, superuser):
+    pendiente = _ciudadano_revision_manual(
+        "CasoUno",
+        module.Ciudadano.REVISION_IDENTIDAD_PENDIENTE,
+        True,
+    )
+    aprobada = _ciudadano_revision_manual(
+        "CasoDos",
+        module.Ciudadano.REVISION_IDENTIDAD_APROBADA,
+        False,
+    )
+    descartada = _ciudadano_revision_manual(
+        "CasoTres",
+        module.Ciudadano.REVISION_IDENTIDAD_DESCARTADA,
+        False,
+    )
+    client.force_login(superuser)
+    url = reverse("ciudadanos_cola_revision")
+
+    response = client.get(url)
+    content = response.content.decode()
+
+    assert response.status_code == 200
+    assert pendiente.nombre in content
+    assert aprobada.nombre not in content
+    assert descartada.nombre not in content
+
+    response = client.get(url, {"estado": "aprobada"})
+    content = response.content.decode()
+
+    assert aprobada.nombre in content
+    assert pendiente.nombre not in content
+    assert descartada.nombre not in content
+
+    response = client.get(url, {"estado": "descartada"})
+    content = response.content.decode()
+
+    assert descartada.nombre in content
+    assert pendiente.nombre not in content
+    assert aprobada.nombre not in content
+
+
+@pytest.mark.django_db
+def test_marcar_revisado_persiste_estado_aprobado(client, superuser):
+    ciudadano = _ciudadano_revision_manual(
+        "ParaAprobar",
+        module.Ciudadano.REVISION_IDENTIDAD_PENDIENTE,
+        True,
+    )
+    next_url = reverse("ciudadanos_cola_revision")
+    client.force_login(superuser)
+
+    response = client.post(
+        reverse("ciudadanos_marcar_revisado", args=[ciudadano.pk]),
+        {"next": next_url},
+    )
+
+    ciudadano.refresh_from_db()
+    assert response.status_code == 302
+    assert response.url == next_url
+    assert ciudadano.requiere_revision_manual is False
+    assert (
+        ciudadano.estado_revision_manual == module.Ciudadano.REVISION_IDENTIDAD_APROBADA
+    )
+
+
+@pytest.mark.django_db
+def test_descartar_revision_persiste_estado_descartado(client, superuser):
+    ciudadano = _ciudadano_revision_manual(
+        "ParaDescartar",
+        module.Ciudadano.REVISION_IDENTIDAD_PENDIENTE,
+        True,
+    )
+    next_url = reverse("ciudadanos_cola_revision")
+    client.force_login(superuser)
+
+    response = client.post(
+        reverse("ciudadanos_descartar_revision", args=[ciudadano.pk]),
+        {"next": next_url},
+    )
+
+    ciudadano.refresh_from_db()
+    assert response.status_code == 302
+    assert response.url == next_url
+    assert ciudadano.requiere_revision_manual is False
+    assert (
+        ciudadano.estado_revision_manual
+        == module.Ciudadano.REVISION_IDENTIDAD_DESCARTADA
+    )
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    ("url_name", "estado_esperado"),
+    [
+        ("ciudadanos_marcar_revisado", module.Ciudadano.REVISION_IDENTIDAD_APROBADA),
+        (
+            "ciudadanos_descartar_revision",
+            module.Ciudadano.REVISION_IDENTIDAD_DESCARTADA,
+        ),
+    ],
+)
+def test_acciones_revision_bloquean_next_externo(
+    client, superuser, url_name, estado_esperado
+):
+    ciudadano = _ciudadano_revision_manual(
+        "NextExterno",
+        module.Ciudadano.REVISION_IDENTIDAD_PENDIENTE,
+        True,
+    )
+    client.force_login(superuser)
+
+    response = client.post(
+        reverse(url_name, args=[ciudadano.pk]),
+        {"next": "https://example.com/phishing"},
+    )
+
+    ciudadano.refresh_from_db()
+    assert response.status_code == 302
+    assert response.url == ciudadano.get_absolute_url()
+    assert ciudadano.requiere_revision_manual is False
+    assert ciudadano.estado_revision_manual == estado_esperado
 
 
 def test_hydrate_ciudadanos_page_preserva_orden(mocker):
@@ -151,10 +476,13 @@ def test_ciudadanos_create_busqueda_paths(mocker):
         return_value="super-get",
     )
     msg_warn = mocker.patch("ciudadanos.views.messages.warning")
-    msg_info = mocker.patch("ciudadanos.views.messages.info")
     msg_success = mocker.patch("ciudadanos.views.messages.success")
     redir = mocker.patch(
         "ciudadanos.views.redirect", side_effect=lambda *a, **k: (a, k)
+    )
+    renaper = mocker.patch(
+        "ciudadanos.views.ComedorService.obtener_datos_ciudadano_desde_renaper",
+        return_value={"success": False, "message": "no"},
     )
 
     invalid = view._handle_ciudadano_busqueda(request, "abc", None)
@@ -170,33 +498,139 @@ def test_ciudadanos_create_busqueda_paths(mocker):
         return_value=_OrderableResult([existing]),
     )
     exists_resp = view._handle_ciudadano_busqueda(request, "12345678", None)
-    assert exists_resp[0][0] == "ciudadanos_editar"
-    assert msg_info.called
+    assert exists_resp == "super-get"
+    assert msg_warn.call_count >= 2
+    renaper.assert_called_with("12345678", sexo="M")
+    redir.assert_not_called()
 
     mocker.patch(
         "ciudadanos.views.Ciudadano.objects.filter",
         return_value=_OrderableResult([]),
     )
-    mocker.patch(
-        "ciudadanos.views.ComedorService.obtener_datos_ciudadano_desde_renaper",
-        return_value={"success": False, "message": "no"},
-    )
+    renaper.return_value = {"success": False, "message": "no"}
     not_found = view._handle_ciudadano_busqueda(request, "12345678", None)
     assert not_found == "super-get"
 
-    mocker.patch(
-        "ciudadanos.views.ComedorService.obtener_datos_ciudadano_desde_renaper",
-        return_value={
-            "success": True,
-            "data": {"documento": 123, "fecha_nacimiento": "2020-01-01"},
-        },
-    )
+    renaper.return_value = {
+        "success": True,
+        "data": {"documento": 123, "fecha_nacimiento": "2020-01-01"},
+    }
     ok = view._handle_ciudadano_busqueda(request, "12345678", None)
     assert ok == "super-get"
     assert request.session.get("ciudadano_prefill")
     assert msg_success.called
     assert super_get.called
-    assert redir.called
+    redir.assert_not_called()
+
+
+def test_ciudadanos_create_busqueda_con_existente_no_estandar_precarga_renaper(mocker):
+    view = module.CiudadanosCreateView()
+    request = SimpleNamespace(GET={"sexo": "F"}, session=_Session(), headers={})
+
+    super_get = mocker.patch(
+        "django.views.generic.edit.BaseCreateView.get",
+        return_value="super-get",
+    )
+    mocker.patch("ciudadanos.views.messages.warning")
+    msg_success = mocker.patch("ciudadanos.views.messages.success")
+
+    existente_no_estandar = SimpleNamespace(
+        pk=7,
+        tipo_registro_identidad=module.Ciudadano.TIPO_REGISTRO_DNI_NO_VALIDADO,
+    )
+    mocker.patch(
+        "ciudadanos.views.Ciudadano.objects.filter",
+        return_value=_OrderableResult([existente_no_estandar]),
+    )
+    renaper = mocker.patch(
+        "ciudadanos.views.ComedorService.obtener_datos_ciudadano_desde_renaper",
+        return_value={
+            "success": True,
+            "data": {"documento": 12345678, "nombre": "Ana"},
+        },
+    )
+
+    response = view._handle_ciudadano_busqueda(request, "12345678", None)
+
+    assert response == "super-get"
+    renaper.assert_called_once_with("12345678", sexo="F")
+    assert request.session["ciudadano_prefill"]["nombre"] == "Ana"
+    assert request.session.modified is True
+    assert msg_success.called
+    assert super_get.called
+
+
+@pytest.mark.django_db
+def test_ciudadanos_crear_permite_no_estandar_con_dni_de_estandar(client, monkeypatch):
+    documento = 30111888
+    user = get_user_model().objects.create_user(
+        username="ciudadanos_duplicados",
+        password="test-pass",
+    )
+    estandar = module.Ciudadano.objects.create(
+        apellido="Gomez",
+        nombre="Ana",
+        fecha_nacimiento=date(1990, 1, 1),
+        tipo_documento=module.Ciudadano.DOCUMENTO_DNI,
+        documento=documento,
+        tipo_registro_identidad=module.Ciudadano.TIPO_REGISTRO_ESTANDAR,
+        creado_por=user,
+        modificado_por=user,
+    )
+    client.force_login(user)
+
+    def renaper_ok(dni, sexo=None):
+        return {
+            "success": True,
+            "data": {
+                "apellido": "Gomez",
+                "nombre": "Ana",
+                "documento": int(dni),
+                "fecha_nacimiento": "1990-01-01",
+            },
+        }
+
+    monkeypatch.setattr(
+        module.ComedorService,
+        "obtener_datos_ciudadano_desde_renaper",
+        renaper_ok,
+    )
+
+    url = reverse("ciudadanos_crear")
+    get_response = client.get(url, {"dni": str(documento)})
+
+    assert get_response.status_code == 200
+
+    response = client.post(
+        url,
+        {
+            "apellido": "Gomez",
+            "nombre": "Ana",
+            "fecha_nacimiento": "1990-01-01",
+            "tipo_documento": module.Ciudadano.DOCUMENTO_DNI,
+            "documento": str(documento),
+            "tipo_registro_identidad": module.Ciudadano.TIPO_REGISTRO_DNI_NO_VALIDADO,
+            "motivo_no_validacion_renaper": module.Ciudadano.MOTIVO_NO_VALIDADO_OTRO,
+            "activo": "on",
+        },
+    )
+
+    assert response.status_code == 302
+    estandar.refresh_from_db()
+    ciudadanos = module.Ciudadano.objects.filter(documento=documento)
+    assert ciudadanos.count() == 2
+    assert estandar.tipo_registro_identidad == module.Ciudadano.TIPO_REGISTRO_ESTANDAR
+    no_estandar = ciudadanos.get(
+        tipo_registro_identidad=module.Ciudadano.TIPO_REGISTRO_DNI_NO_VALIDADO
+    )
+
+    list_response = client.get(reverse("ciudadanos"), {"q": str(documento)})
+
+    assert list_response.status_code == 200
+    ciudadanos_listados = {
+        ciudadano.pk for ciudadano in list_response.context["object_list"]
+    }
+    assert {estandar.pk, no_estandar.pk}.issubset(ciudadanos_listados)
 
 
 def test_ciudadanos_create_get_form_and_safe_int(mocker):
@@ -476,6 +910,15 @@ def test_ciudadanos_create_and_update_form_valid_and_context(mocker):
         save=mocker.Mock(),
         get_absolute_url=lambda: "/ciudadano/1/",
     )
+
+    def _normalizar_estandar():
+        ciudadano.documento_unico_key = "{}_{}".format(
+            module.Ciudadano.DOCUMENTO_DNI, "12345678"
+        )
+        ciudadano.requiere_revision_manual = False
+        return {"documento_unico_key", "requiere_revision_manual"}
+
+    ciudadano.normalizar_identidad = _normalizar_estandar
     form = SimpleNamespace(save=lambda commit=False: ciudadano, save_m2m=mocker.Mock())
     create_view.request = SimpleNamespace(user=SimpleNamespace(id=2))
     mocker.patch("ciudadanos.views.transaction.atomic", return_value=nullcontext())
@@ -507,6 +950,22 @@ def test_ciudadanos_create_and_update_form_valid_and_context(mocker):
         save=mocker.Mock(),
         get_absolute_url=lambda: "/c/2/",
     )
+
+    def _normalizar_sin_dni():
+        ciudadano2.documento = None
+        ciudadano2.documento_unico_key = None
+        ciudadano2.requiere_revision_manual = True
+        ciudadano2.motivo_no_validacion_renaper = None
+        ciudadano2.motivo_no_validacion_descripcion = None
+        return {
+            "documento",
+            "documento_unico_key",
+            "requiere_revision_manual",
+            "motivo_no_validacion_renaper",
+            "motivo_no_validacion_descripcion",
+        }
+
+    ciudadano2.normalizar_identidad = _normalizar_sin_dni
     form2 = SimpleNamespace(
         save=lambda commit=False: ciudadano2, save_m2m=mocker.Mock()
     )

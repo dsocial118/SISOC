@@ -55,6 +55,12 @@ from duplas.dupla_filter_config import (
     NUM_OPS as DUPLAS_OPS_NUMERO,
     TEXT_OPS as DUPLAS_OPS_TEXTO,
 )
+from dispositivos.dispositivos_filter_config import (
+    CHOICE_OPS as DISPOSITIVOS_OPS_ELECCION,
+    FIELD_TYPES as DISPOSITIVOS_TIPOS_CAMPOS,
+    NUM_OPS as DISPOSITIVOS_OPS_NUMERO,
+    TEXT_OPS as DISPOSITIVOS_OPS_TEXTO,
+)
 from users.users_filter_config import (
     FIELD_TYPES as USUARIOS_TIPOS_CAMPOS,
     NUM_OPS as USUARIOS_OPS_NUMERO,
@@ -76,6 +82,7 @@ class SeccionesFiltrosFavoritos:
     CDF_BENEFICIARIOS = "centrodefamilia_beneficiarios"
     CDF_RESPONSABLES = "centrodefamilia_responsables"
     VAT_CENTROS = "vat_centros"
+    DISPOSITIVOS = "dispositivos"
 
 
 @dataclass(frozen=True)
@@ -156,6 +163,14 @@ CONFIGURACIONES_POR_SECCION = {
             "text": VAT_CENTROS_OPS_TEXTO,
             "number": VAT_CENTROS_OPS_NUMERO,
             "boolean": VAT_CENTROS_OPS_BOOLEANO,
+        },
+    ),
+    SeccionesFiltrosFavoritos.DISPOSITIVOS: ConfiguracionFiltrosSeccion(
+        tipos_campos=DISPOSITIVOS_TIPOS_CAMPOS,
+        operadores_permitidos={
+            "text": DISPOSITIVOS_OPS_TEXTO,
+            "number": DISPOSITIVOS_OPS_NUMERO,
+            "choice": DISPOSITIVOS_OPS_ELECCION,
         },
     ),
 }

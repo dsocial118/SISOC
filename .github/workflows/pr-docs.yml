@@ -1,4 +1,4 @@
-name: Documentación automática de PR
+name: Documentacion automatica de PR
 
 permissions:
     contents: write
@@ -37,10 +37,28 @@ jobs:
                   GITHUB_EVENT_PATH: ${{ github.event_path }}
               run: python scripts/ci/pr_doc_automation.py
 
-            - name: Commit automático de artefactos
-              if: github.event.pull_request.head.repo.full_name == github.repository
+            - name: Reportar artefactos para ramas protegidas
+              if: github.event.pull_request.head.repo.full_name == github.repository && (github.event.pull_request.head.ref == 'development' || github.event.pull_request.head.ref == 'main')
               run: |
-                  if git diff --quiet -- docs/registro/prs docs/contexto/features docs/registro/releases/pending; then
+                  if git diff --quiet -- docs/registro/prs docs/contexto/features docs/registro/releases/pending CHANGELOG.md; then
+                    echo "No hay cambios generados para reportar."
+                    exit 0
+                  fi
+
+                  {
+                    echo "### Artefactos spec-as-source generados"
+                    echo ""
+                    echo "La rama origen \`${{ github.event.pull_request.head.ref }}\` esta protegida; no se intenta push directo desde el workflow."
+                    echo ""
+                    echo '```diff'
+                    git diff -- docs/registro/prs docs/contexto/features docs/registro/releases/pending CHANGELOG.md
+                    echo '```'
+                  } >> "$GITHUB_STEP_SUMMARY"
+
+            - name: Commit automatico de artefactos
+              if: github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref != 'development' && github.event.pull_request.head.ref != 'main'
+              run: |
+                  if git diff --quiet -- docs/registro/prs docs/contexto/features docs/registro/releases/pending CHANGELOG.md; then
                     echo "No hay cambios generados para commitear."
                     exit 0
                   fi
@@ -48,6 +66,6 @@ jobs:
                   git config user.name "github-actions[bot]"
                   git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-                  git add docs/registro/prs docs/contexto/features docs/registro/releases/pending
-                  git commit -m "docs(ci): actualizar artefactos automáticos del PR #${{ github.event.pull_request.number }}"
+                  git add docs/registro/prs docs/contexto/features docs/registro/releases/pending CHANGELOG.md
+                  git commit -m "docs(ci): actualizar artefactos automaticos del PR #${{ github.event.pull_request.number }}"
                   git push

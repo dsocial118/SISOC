@@ -168,6 +168,26 @@ def test_clean_validates_missing_and_mismatches(mocker):
     assert any(field == "motivo" for field, _ in errors)
 
 
+def test_restrict_estado_fields_for_pac_preserves_previous_initials():
+    form = _build_form_stub()
+    form.instance = SimpleNamespace(programa_id=2)
+    form._can_edit_estado_fields = lambda: False
+    form.previous_estado_chain = (
+        SimpleNamespace(pk=11),
+        SimpleNamespace(pk=22),
+        SimpleNamespace(pk=33),
+    )
+
+    form._restrict_estado_fields_for_pac()
+
+    assert form.fields["estado_general"].disabled is True
+    assert form.fields["estado_general"].initial == 11
+    assert form.fields["subestado"].disabled is True
+    assert form.fields["subestado"].initial == 22
+    assert form.fields["motivo"].disabled is True
+    assert form.fields["motivo"].initial == 33
+
+
 def test_save_preserves_ultimo_estado_and_sync(mocker):
     form = _build_form_stub()
 

@@ -20,11 +20,17 @@ class CiudadanosExportView(LoginRequiredMixin, CSVExportMixin, View):
             ("Localidad", "localidad__nombre"),
         ]
 
+    def get_filter_form_data(self):
+        data = self.request.GET.copy()
+        if "filters_mode" not in data:
+            data["filters_mode"] = CiudadanoFiltroForm.FILTERS_MODE_UI
+        return data
+
     def get_queryset(self):
         queryset = Ciudadano.objects.select_related(
             "sexo", "provincia", "municipio", "localidad"
         )
-        form = CiudadanoFiltroForm(self.request.GET or None)
+        form = CiudadanoFiltroForm(self.get_filter_form_data())
         if form.is_valid():
             queryset = apply_ciudadanos_filters(queryset, form.cleaned_data)
 

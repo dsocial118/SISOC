@@ -69,6 +69,32 @@ def test_next_wednesday_devuelve_mismo_dia_si_ya_es_miercoles():
     assert following == date(2026, 3, 18)
 
 
+def test_resolve_release_date_prioriza_fecha_explicita_del_pr():
+    """Permite fijar el corte cuando el PR final declara fecha de release."""
+
+    metadata = pr_doc_automation.parse_pr_body_metadata(
+        "- Fecha objetivo de release: 2026-04-24"
+    )
+
+    explicit = pr_doc_automation.resolve_release_date(metadata, date(2026, 4, 24))
+    fallback = pr_doc_automation.resolve_release_date({}, date(2026, 4, 24))
+
+    assert explicit == "2026-04-24"
+    assert fallback == "2026-04-29"
+
+
+def test_resolve_release_date_ignora_fecha_explicita_invalida():
+    """Usa fallback si el body trae un patron de fecha fuera de rango."""
+
+    metadata = pr_doc_automation.parse_pr_body_metadata(
+        "- Fecha objetivo de release: 2026-13-40"
+    )
+
+    assert pr_doc_automation.resolve_release_date(metadata, date(2026, 4, 24)) == (
+        "2026-04-29"
+    )
+
+
 def test_render_changelog_reemplaza_bloque_auto_generado_de_misma_release(tmp_path):
     """Regenera el bloque auto y preserva el historial previo."""
 

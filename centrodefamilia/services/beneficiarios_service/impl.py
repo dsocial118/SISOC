@@ -31,6 +31,7 @@ from centrodefamilia.services.responsables_filter_config import (
     TEXT_OPS as RESPONSABLE_TEXT_OPS,
 )
 from core.services.advanced_filters import AdvancedFilterEngine
+from core.services.advanced_filters.payload import extract_raw_filters, load_payload
 from core.services.column_preferences import build_columns_context_from_fields
 
 logger = logging.getLogger("django")
@@ -138,6 +139,8 @@ RESPONSABLE_ADVANCED_FILTER = AdvancedFilterEngine(
     },
     field_casts={"genero": _normalize_genero},
 )
+
+RESPONSABLE_COUNT_FILTER_FIELD = "cantidad_beneficiarios"
 
 
 def guardar_datos_renaper(request, persona, tipo, es_nuevo=True):
@@ -665,7 +668,14 @@ def get_filtered_beneficiarios(request_or_get):
 def get_filtered_responsables(request_or_get):
     """Aplica filtros combinables sobre el listado de responsables."""
 
-    base_qs = get_responsables_queryset()
+    include_beneficiarios_count = _filters_reference_field(
+        RESPONSABLE_ADVANCED_FILTER,
+        request_or_get,
+        RESPONSABLE_COUNT_FILTER_FIELD,
+    )
+    base_qs = get_responsables_queryset(
+        include_beneficiarios_count=include_beneficiarios_count
+    )
     return RESPONSABLE_ADVANCED_FILTER.filter_queryset(base_qs, request_or_get)
 
 
@@ -676,12 +686,43 @@ def get_beneficiarios_queryset():
     ).order_by("-id", "apellido", "nombre")
 
 
-def get_responsables_queryset():
+def get_responsables_queryset(*, include_beneficiarios_count=False):
     """Query optimizada para responsables"""
-    return (
-        Responsable.objects.annotate(cantidad_beneficiarios=Count("beneficiarios"))
-        .select_related("provincia", "municipio")
-        .order_by("-id", "apellido", "nombre")
+    queryset = Responsable.objects.select_related("provincia", "municipio")
+
+    if include_beneficiarios_count:
+        queryset = queryset.annotate(cantidad_beneficiarios=Count("beneficiarios"))
+
+    return queryset.order_by("-id")
+
+
+def hydrate_responsables_page(page_ids):
+    """Hidrata responsables visibles y calcula conteos solo para esa ventana."""
+
+    ordered_ids = list(page_ids)
+    responsables_by_id = {
+        responsable.pk: responsable
+        for responsable in get_responsables_queryset(
+            include_beneficiarios_count=True
+        ).filter(pk__in=ordered_ids)
+    }
+    return [responsables_by_id[pk] for pk in ordered_ids if pk in responsables_by_id]
+
+
+def _filters_reference_field(filter_engine, request_or_get, field_name):
+    """Indica si el payload de filtros usa un campo que requiere anotacion."""
+
+    raw_filters = extract_raw_filters(filter_engine.param_name, request_or_get)
+    payload = load_payload(raw_filters)
+    if not payload:
+        return False
+
+    items = payload.get("items") or []
+    if not isinstance(items, list):
+        return False
+
+    return any(
+        isinstance(item, dict) and item.get("field") == field_name for item in items
     )
 
 

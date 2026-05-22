@@ -38,7 +38,10 @@ class CentroAdmin(admin.ModelAdmin):
     list_filter = ("activo", "tipo_gestion")
     search_fields = ("nombre",)
     fieldsets = (
-        ("Información General", {"fields": ("nombre", "codigo", "referente")}),
+        (
+            "Información General",
+            {"fields": ("nombre", "codigo", "referente", "referentes", "revisores")},
+        ),
         (
             "Ubicación",
             {

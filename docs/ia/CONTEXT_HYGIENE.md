@@ -20,9 +20,10 @@ Evitar:
 Para cualquier tarea:
 1. `AGENTS.md`
 2. `docs/indice.md`
-3. archivo(s) objetivo
-4. tests del modulo o flujo afectado, si existen
-5. una sola guia de `docs/ia/` elegida por tipo de tarea
+3. memoria reutilizable aplicable (`docs/contexto/memoria/` o `.codex/cache/context-memory/`), si existe
+4. archivo(s) objetivo
+5. tests del modulo o flujo afectado, si existen
+6. una sola guia de `docs/ia/` elegida por tipo de tarea
 
 ## Elegir una sola guia inicial
 
@@ -128,4 +129,12 @@ Expandir si hace falta:
 bash scripts/ai/preflight.sh general
 bash scripts/ai/preflight.sh bugfix-view core/views.py
 bash scripts/ai/preflight.sh feature-api comunicados/api_views.py
+```
+
+Para consultar o refrescar memoria operativa manualmente:
+
+```bash
+python scripts/ai/context_memory.py preflight --target core/views.py
+python scripts/ai/context_memory.py scaffold --slug core --title "Core" --summary "Resumen operativo de core" --path core/ --path tests/test_core_*.py
+python scripts/ai/context_memory.py refresh --file docs/contexto/memoria/core.md
 ```

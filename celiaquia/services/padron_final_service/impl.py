@@ -1,161 +1,131 @@
 """
 Servicio para generar padrón final del expediente de celiaquía.
-
-Genera un Excel con la nómina de beneficiarios aprobados (revision_tecnico
-APROBADO + resultado_sintys MATCH) respetando la misma estructura de columnas
-que la plantilla de importación que carga la provincia.
 """
 
 from io import BytesIO
+import re
 
-import pandas as pd
+from openpyxl import Workbook, load_workbook
 
-from celiaquia.models import (
-    ExpedienteCiudadano,
-    ResultadoSintys,
-    RevisionTecnico,
-)
+from celiaquia.models import ExpedienteCiudadano, ResultadoSintys, RevisionTecnico
 
 
-COLUMNAS_PADRON = [
-    "apellido",
-    "nombre",
+DOCUMENTO_COLUMN_CANDIDATES = {
     "documento",
-    "fecha_nacimiento",
-    "sexo",
-    "nacionalidad",
-    "municipio",
-    "localidad",
-    "calle",
-    "altura",
-    "codigo_postal",
-    "telefono",
-    "email",
-    "APELLIDO_RESPONSABLE",
-    "NOMBRE_REPSONSABLE",
-    "Cuit_Responsable",
-    "FECHA_DE_NACIMIENTO_RESPONSABLE",
-    "SEXO_RESPONSABLE",
-    "DOMICILIO_RESPONSABLE",
-    "LOCALIDAD_RESPONSABLE",
-    "CELULAR_RESPONSABLE",
-    "CORREO_RESPONSABLE",
-]
-
-
-def _fmt_fecha(fecha) -> str:
-    if not fecha:
-        return ""
-    try:
-        return fecha.strftime("%d/%m/%Y")
-    except AttributeError:
-        return str(fecha)
-
-
-def _domicilio(ciudadano) -> str:
-    if ciudadano is None:
-        return ""
-    calle = (ciudadano.calle or "").strip()
-    altura = (ciudadano.altura or "").strip() if ciudadano.altura else ""
-    if calle and altura:
-        return f"{calle} {altura}"
-    return calle or altura or ""
+    "numero_documento",
+    "nro_documento",
+    "número_documento",
+    "dni",
+    "cuit",
+    "cuil",
+}
 
 
 class PadronFinalService:
-    """Genera padrón final en Excel para expediente de celiaquía."""
+    """Genera nomina final aprobada en Excel para expediente de celiaquia."""
 
     @staticmethod
     def generar_padron_final_excel(expediente) -> bytes:
-        """Genera Excel con los beneficiarios aprobados del expediente.
-
-        Filtra los legajos con ``revision_tecnico=APROBADO`` y
-        ``resultado_sintys=MATCH`` y emite una fila por beneficiario
-        (incluye ``ROLE_BENEFICIARIO`` y ``ROLE_BENEFICIARIO_Y_RESPONSABLE``).
-        Si el beneficiario tiene responsable, sus datos se incluyen en las
-        columnas ``*_RESPONSABLE``.
         """
-        from celiaquia.services.familia_service import FamiliaService
+        Genera Excel con la nomina original filtrada por aprobados finales.
 
-        legajos = (
+        Args:
+            expediente: Expediente object
+
+        Returns:
+            bytes: Contenido del archivo Excel
+        """
+        headers, rows = PadronFinalService._leer_nomina_original(expediente)
+        documento_index = PadronFinalService._documento_column_index(headers)
+        documentos_aprobados = PadronFinalService._documentos_aprobados(expediente)
+
+        filtered_rows = []
+        if documento_index is not None and documentos_aprobados:
+            for row in rows:
+                documento = PadronFinalService._normalize_documento(
+                    row[documento_index] if documento_index < len(row) else None
+                )
+                if documento in documentos_aprobados:
+                    filtered_rows.append(row)
+
+        return PadronFinalService._build_excel(headers, filtered_rows)
+
+    @staticmethod
+    def _leer_nomina_original(expediente):
+        excel_masivo = getattr(expediente, "excel_masivo", None)
+        if not excel_masivo:
+            return [], []
+
+        try:
+            excel_masivo.open()
+        except Exception:  # pragma: no cover - FileField local ya suele estar abierto.
+            pass
+        excel_masivo.seek(0)
+        wb = load_workbook(BytesIO(excel_masivo.read()), data_only=True)
+        ws = wb.worksheets[0]
+        values = list(ws.iter_rows(values_only=True))
+        if not values:
+            return [], []
+
+        headers = list(values[0])
+        rows = [list(row) for row in values[1:]]
+        return headers, rows
+
+    @staticmethod
+    def _documentos_aprobados(expediente) -> set[str]:
+        aprobados = (
             ExpedienteCiudadano.objects.filter(
                 expediente=expediente,
                 revision_tecnico=RevisionTecnico.APROBADO,
                 resultado_sintys=ResultadoSintys.MATCH,
-                rol__in=[
-                    ExpedienteCiudadano.ROLE_BENEFICIARIO,
-                    ExpedienteCiudadano.ROLE_BENEFICIARIO_Y_RESPONSABLE,
-                ],
             )
-            .select_related(
-                "ciudadano",
-                "ciudadano__sexo",
-                "ciudadano__nacionalidad",
-                "ciudadano__municipio",
-                "ciudadano__localidad",
+            .exclude(rol=ExpedienteCiudadano.ROLE_RESPONSABLE)
+            .select_related("ciudadano")
+            .values_list("ciudadano__documento", flat=True)
+        )
+        return {
+            documento
+            for documento in (
+                PadronFinalService._normalize_documento(value) for value in aprobados
             )
-            .order_by("ciudadano__apellido", "ciudadano__nombre")
-        )
+            if documento
+        }
 
-        ciudadanos_ids = list(legajos.values_list("ciudadano_id", flat=True))
-        responsables_por_hijo = FamiliaService.obtener_responsables_por_hijo(
-            ciudadanos_ids
-        )
+    @staticmethod
+    def _normalize_header(value) -> str:
+        normalized = str(value or "").strip().lower()
+        normalized = normalized.replace(" ", "_").replace(".", "")
+        return normalized
 
-        registros = []
-        for legajo in legajos:
-            ciudadano = legajo.ciudadano
-            registro = {
-                "apellido": ciudadano.apellido or "",
-                "nombre": ciudadano.nombre or "",
-                "documento": ciudadano.documento or "",
-                "fecha_nacimiento": _fmt_fecha(ciudadano.fecha_nacimiento),
-                "sexo": ciudadano.sexo.sexo if ciudadano.sexo else "",
-                "nacionalidad": (
-                    ciudadano.nacionalidad.nombre if ciudadano.nacionalidad else ""
-                ),
-                "municipio": ciudadano.municipio.nombre if ciudadano.municipio else "",
-                "localidad": ciudadano.localidad.nombre if ciudadano.localidad else "",
-                "calle": ciudadano.calle or "",
-                "altura": ciudadano.altura or "",
-                "codigo_postal": ciudadano.codigo_postal or "",
-                "telefono": ciudadano.telefono or "",
-                "email": ciudadano.email or "",
-                "APELLIDO_RESPONSABLE": "",
-                "NOMBRE_REPSONSABLE": "",
-                "Cuit_Responsable": "",
-                "FECHA_DE_NACIMIENTO_RESPONSABLE": "",
-                "SEXO_RESPONSABLE": "",
-                "DOMICILIO_RESPONSABLE": "",
-                "LOCALIDAD_RESPONSABLE": "",
-                "CELULAR_RESPONSABLE": "",
-                "CORREO_RESPONSABLE": "",
-            }
+    @staticmethod
+    def _documento_column_index(headers) -> int | None:
+        for index, header in enumerate(headers):
+            if (
+                PadronFinalService._normalize_header(header)
+                in DOCUMENTO_COLUMN_CANDIDATES
+            ):
+                return index
+        return None
 
-            responsables = responsables_por_hijo.get(ciudadano.id, [])
-            if responsables:
-                resp = responsables[0]
-                registro["APELLIDO_RESPONSABLE"] = resp.apellido or ""
-                registro["NOMBRE_REPSONSABLE"] = resp.nombre or ""
-                registro["Cuit_Responsable"] = resp.cuil_cuit or (resp.documento or "")
-                registro["FECHA_DE_NACIMIENTO_RESPONSABLE"] = _fmt_fecha(
-                    resp.fecha_nacimiento
-                )
-                registro["SEXO_RESPONSABLE"] = resp.sexo.sexo if resp.sexo else ""
-                registro["DOMICILIO_RESPONSABLE"] = _domicilio(resp)
-                registro["LOCALIDAD_RESPONSABLE"] = (
-                    resp.localidad.nombre if resp.localidad else ""
-                )
-                registro["CELULAR_RESPONSABLE"] = resp.telefono or ""
-                registro["CORREO_RESPONSABLE"] = resp.email or ""
+    @staticmethod
+    def _normalize_documento(value) -> str:
+        if value is None:
+            return ""
+        if isinstance(value, float) and value.is_integer():
+            value = int(value)
+        return re.sub(r"\D", "", str(value)).lstrip("0")
 
-            registros.append(registro)
-
-        df = pd.DataFrame(registros, columns=COLUMNAS_PADRON)
+    @staticmethod
+    def _build_excel(headers, rows) -> bytes:
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "nomina_aprobados"
+        if headers:
+            ws.append(headers)
+        for row in rows:
+            ws.append(row)
 
         output = BytesIO()
-        with pd.ExcelWriter(output, engine="openpyxl") as writer:
-            df.to_excel(writer, sheet_name="padron_final", index=False)
-
+        wb.save(output)
         output.seek(0)
         return output.getvalue()

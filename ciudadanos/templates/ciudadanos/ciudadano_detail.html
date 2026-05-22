@@ -6,7 +6,7 @@
     --navy-dark: #232D4F;
     --navy-medium: #232D4F;
     --navy-light: #4A5F7F;
-    --gold: #F5A623;
+    --gold: #E7BA61;
     --green: #28A745;
     --red: #DC3545;
 }
@@ -653,7 +653,7 @@
                                         <div style="display: flex; align-items: center; gap: 2rem;">
                                             <span style="color: rgba(255,255,255,0.7);">Edad: <span style="color: white; font-weight: 600;">{{ familiar.edad|default:'-' }}</span></span>
                                             <a href="{% url 'ciudadanos_ver' familiar.pk %}"
-                                               style="color: #F5A623;
+                                               style="color: #E7BA61;
                                                       text-decoration: underline;
                                                       display: flex;
                                                       align-items: center;
@@ -1189,7 +1189,7 @@
                                                         margin-top: 0.25rem">
                                                 {% if comedor_actual and comedor_actual.id %}
                                                     <a href="{% url 'comedor_detalle' comedor_actual.id %}"
-                                                       style="color: #F5A623;
+                                                       style="color: #E7BA61;
                                                               text-decoration: underline">
                                                         {{ comedor_actual.nombre }}
                                                     </a>
@@ -1266,7 +1266,7 @@
                                                         {% with comedor=nomina.admision.comedor %}
                                                             {% if comedor and comedor.id %}
                                                                 <a href="{% url 'comedor_detalle' comedor.id %}"
-                                                                   style="color: #F5A623;
+                                                                   style="color: #E7BA61;
                                                                           text-decoration: underline">
                                                                     {{ comedor.nombre }}
                                                                 </a>
@@ -2070,7 +2070,7 @@
                                                         {% with voucher_ref=programa_vat.voucher_activo|default:programa_vat.voucher_referencia %}
                                                             {% if voucher_ref %}
                                                                 <a href="{% url 'vat_voucher_detail' voucher_ref.pk %}"
-                                                                   style="color: #F5A623;
+                                                                   style="color: #E7BA61;
                                                                           text-decoration: underline">
                                                                     #{{ voucher_ref.pk }}
                                                                 </a>
@@ -2135,7 +2135,7 @@
                                                                 <td>{{ inscripcion.comision.oferta.plan_curricular.titulo_referencia.nombre|default:"-" }}</td>
                                                                 <td>
                                                                     <a href="{% url 'vat_comision_detail' inscripcion.comision.pk %}"
-                                                                       style="color: #F5A623;
+                                                                       style="color: #E7BA61;
                                                                               text-decoration: underline">
                                                                         {{ inscripcion.comision.codigo_comision }}
                                                                     </a>
@@ -2149,7 +2149,7 @@
                                                                 </td>
                                                                 <td>
                                                                     <a href="{% url 'vat_inscripcion_detail' inscripcion.pk %}"
-                                                                       style="color: #F5A623;
+                                                                       style="color: #E7BA61;
                                                                               text-decoration: underline">Ver inscripción</a>
                                                                 </td>
                                                             </tr>
@@ -2177,7 +2177,7 @@
                                                                 <td>{{ inscripcion_oferta.oferta.oferta.plan_curricular.titulo_referencia.nombre|default:"-" }}</td>
                                                                 <td>
                                                                     <a href="{% url 'vat_comision_detail' inscripcion_oferta.oferta.pk %}"
-                                                                       style="color: #F5A623;
+                                                                       style="color: #E7BA61;
                                                                               text-decoration: underline">
                                                                         {{ inscripcion_oferta.oferta.codigo_comision }}
                                                                     </a>
@@ -2185,7 +2185,7 @@
                                                                 <td>{{ inscripcion_oferta.get_estado_display }}</td>
                                                                 <td>
                                                                     <a href="{% url 'vat_inscripcion_oferta_detail' inscripcion_oferta.pk %}"
-                                                                       style="color: #F5A623;
+                                                                       style="color: #E7BA61;
                                                                               text-decoration: underline">Ver inscripción</a>
                                                                 </td>
                                                             </tr>
@@ -2226,7 +2226,7 @@
                                         <td>
                                             {% if colaboracion.comedor and colaboracion.comedor.id %}
                                                 <a href="{% url 'comedor_detalle' colaboracion.comedor.id %}"
-                                                   style="color: #F5A623;
+                                                   style="color: #E7BA61;
                                                           text-decoration: underline">
                                                     {{ colaboracion.comedor.nombre }}
                                                 </a>

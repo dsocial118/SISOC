@@ -1,157 +1,112 @@
 # AGENTS.md
 
-Guia principal para IAs (Codex, Claude, Copilot, GPT) que trabajen en SISOC.
+Guia principal para IAs que trabajen en SISOC. Mantener este archivo como mapa breve; los detalles viven en `docs/`.
 
-Objetivo:
-- bajar variabilidad entre asistentes,
-- mantener diffs chicos y revisables,
-- reducir costo de contexto sin perder calidad,
-- respetar el stack y los patrones reales del repo.
+## Prioridad
 
-## Reglas duras
+- Seguir la instruccion mas local y especifica.
+- `docs/` es la fuente de verdad operativa: specs, ADRs, guias tecnicas y registros.
+- Si falta contexto critico, explicitar supuesto, impacto y seguir con la opcion segura.
 
-### 1. Aislamiento estricto de tareas
+## Arranque seguro
 
-Toda tarea no trivial debe correr en:
-- una branch dedicada,
-- un worktree dedicado,
-- un path fuera del checkout principal.
+Para toda tarea no trivial, trabajar en branch y worktree dedicados fuera del checkout principal.
 
-Reglas:
-- Nunca trabajar directo sobre `development`, `main` ni el checkout compartido.
-- Nunca reutilizar un worktree viejo para una tarea nueva.
-- Nunca reutilizar la branch de una tarea para otra distinta.
-- Nunca editar archivos fuera del worktree asignado.
-- El path recomendado es `../worktrees/<slug>` respecto del repo principal.
+Default:
 
-Ejemplo:
-- branch: `task/fix-login-redirect`
-- worktree: `C:/Users/Juanito/Desktop/Repos-Codex/worktrees/fix-login-redirect`
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/ai/codex_task.ps1 <slug>
+```
 
-### 2. Setup obligatorio antes de implementar
+Ese comando crea `codex/<slug>` desde `origin/development`, prepara `../worktrees/<slug>` y ejecuta bootstrap Docker-first.
 
-Antes de editar:
-1. `git fetch origin --prune`
-2. Crear la branch desde `origin/development` actualizado o desde `development` ya sincronizado con remoto.
-3. Crear el worktree dedicado fuera del repo principal.
-4. Verificar branch actual, path actual y `git status`.
+Fallback manual si el checkout actual esta viejo o no tiene el script:
 
-Si el entorno no esta aislado, no implementar hasta corregirlo.
+```powershell
+git fetch origin --prune
+git worktree add -b codex/<slug> ../worktrees/<slug> origin/development
+cd ../worktrees/<slug>
+powershell -ExecutionPolicy Bypass -File scripts/ai/codex_bootstrap.ps1 -NoStart
+```
 
-### 3. Politica de lectura: minimo contexto suficiente
+Antes de editar, verificar:
+- path actual dentro del worktree asignado,
+- branch actual,
+- `git status --short --branch`.
 
-No cargar contexto amplio por defecto.
+No trabajar directo sobre `development`, `main` ni el checkout compartido. No reutilizar worktrees o branches de otra tarea.
 
-Lectura inicial obligatoria:
+## Contexto minimo
+
+No cargar contexto amplio por defecto. Leer:
+
 1. `AGENTS.md`
 2. `docs/indice.md`
-3. archivo(s) objetivo
-4. tests del modulo o flujo afectado, si existen
-5. una sola guia de `docs/ia/` elegida segun la tarea
+3. memoria aplicable en `docs/contexto/memoria/` o `.codex/cache/context-memory/`
+4. archivo objetivo
+5. tests del modulo o flujo afectado
+6. una sola guia de `docs/ia/` segun la tarea
 
-Expandir solo si la evidencia lo requiere:
-- otra guia de `docs/ia/`,
-- documentacion del dominio afectado,
-- callers, servicios, serializers, templates o settings relacionados.
-
-Casos en los que la documentacion del dominio pasa a ser obligatoria:
-- cambia comportamiento observable,
-- hay reglas funcionales o permisos del negocio,
-- el modulo tiene contratos implicitos que no quedan claros en el codigo.
-
-Usar `docs/ia/CONTEXT_HYGIENE.md` como matriz de carga minima.
-
-### 4. Spec-as-source
-
-`docs/` es la fuente de verdad operativa del repo.
-
-Reglas:
-- Toda decision o cambio importante debe quedar documentado en `docs/`.
-- Si el cambio es trivial y no hace falta registro, explicitarlo en la entrega.
-- Convencion recomendada:
-  - `docs/registro/cambios/YYYY-MM-DD-<tema>.md`
-  - `docs/registro/decisiones/YYYY-MM-DD-<tema>.md`
-
-## THINK antes de tocar codigo
-
-Antes de implementar, dejar claro en pocas lineas:
-- problema real,
-- solucion recomendada mas simple,
-- archivos o capas a tocar,
-- como se va a validar,
-- ambiguedades o supuestos relevantes.
-
-Reglas por tipo de tarea:
-- feature o cambio de comportamiento: hacer un THINK corto antes de editar,
-- bug o fallo de tests: investigar causa raiz antes del fix,
-- review: priorizar hallazgos, evidencia y severidad.
+Usar `docs/ia/CONTEXT_HYGIENE.md` para decidir si hace falta ampliar. Abrir mas docs/callers/settings solo con evidencia concreta.
 
 ## Implementacion
 
-- Hacer cambios pequenos y enfocados.
+- Entender causa raiz antes de tocar codigo.
+- Mantener cambios chicos, locales y revisables.
+- Reutilizar patrones existentes; no inventar modelos, endpoints, permisos, schemas ni dependencias.
 - No mezclar feature, refactor amplio y formateo masivo.
-- Reutilizar patrones existentes del modulo.
-- No inventar APIs, modelos, campos, serializers, endpoints ni permisos.
 - Mantener compatibilidad hacia atras salvo pedido explicito.
-- Si hace falta un supuesto, declararlo.
+- La logica de negocio vive preferentemente en `services/`.
+- Coexisten Django views y DRF.
+- Hay logging custom en `config/settings.py` y `core/utils.py`.
+- No se usa Celery actualmente.
 
-Patrones criticos del repo:
-- la logica de negocio vive preferentemente en `services/`,
-- coexisten Django views y DRF,
-- hay logging custom en `config/settings.py` y `core/utils.py`,
-- no se usa Celery actualmente.
+Antes de implementar un cambio funcional, dejar un THINK corto: problema real, solucion simple, archivos/capas, validacion y supuestos.
 
-## Tooling real del repo
+## Documentacion
 
+Registrar en `docs/` cambios funcionales visibles, decisiones de arquitectura/diseno, seguridad/permisos y trade-offs importantes.
+
+Usar:
+- `docs/registro/cambios/YYYY-MM-DD-<tema>.md`
+- `docs/registro/decisiones/YYYY-MM-DD-<tema>.md`
+
+Si el cambio es trivial y no requiere registro, decirlo en la entrega.
+
+## Validacion
+
+Tooling real:
 - Python: `black`
 - Lint Python: `pylint` + `pylint_django`
 - Templates: `djlint`
 - Tests: `pytest`, `pytest-django`, `pytest-xdist`
 
-No imponer como obligatorios si no fueron pedidos:
-- `ruff`
-- `mypy`
-- `eslint`
-- `prettier`
+Comando de cierre recomendado cuando aplique:
 
-## Validacion minima
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/ai/codex_run.ps1 validate
+```
 
-- Toda feature nueva debe incluir testing minimo.
-- Todo bugfix debe incluir test de regresion cuando sea viable.
-- Correr primero checks puntuales sobre archivos o tests tocados.
-- Escalar a checks amplios solo si el cambio lo requiere o fue pedido.
+`validate` ejecuta bootstrap sin levantar puertos, `black --check`, `djlint --check`, smoke tests y `makemigrations --check --dry-run` en Docker. Para cambios Python puntuales, agregar:
 
-## Review antes de cerrar
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/ai/codex_run.ps1 pylint <archivo.py>
+```
 
-Verificar:
-- la branch contiene solo cambios de la tarea,
-- no se toco nada fuera del worktree asignado,
-- no se metieron refactors o formateos no pedidos,
-- los cambios relevantes quedaron documentados si aplica,
-- el commit y el push se hicieron sobre la misma branch aislada.
+Si el cambio modifica comportamiento, agregar/actualizar tests cercanos. Si no se puede validar, explicar causa, impacto y alternativa.
 
-Si no hay cambios de archivo, no hacer commits vacios.
+## Cierre
 
-## Entrega / handoff
+Antes de entregar:
+- revisar que la branch contiene solo cambios de la tarea,
+- confirmar que no se toco fuera del worktree,
+- evitar commits vacios,
+- si la tarea pidio versionar/publicar, commitear y pushear en la branch aislada.
 
-La entrega debe incluir:
-- que cambio,
-- decision principal,
-- supuestos,
-- validacion ejecutada,
-- como probarlo manualmente,
-- que deberia entender el usuario de este cambio,
-- resumen de aislamiento:
-  - branch usada,
-  - worktree usado,
-  - confirmacion de que solo hubo cambios relevantes,
-  - confirmacion de commit y push en esa branch.
+Respuesta por defecto: cambio, decision principal, supuestos, validacion ejecutada, riesgos y como probar manualmente. Incluir branch/worktree/commit/push solo cuando hubo cambios versionados o publicacion.
 
-Si la tarea es no trivial, cerrar con 3 preguntas cortas de control.
+## Guias
 
-## Guias de referencia
-
-Leer solo las que apliquen:
 - `docs/ia/CONTEXT_HYGIENE.md`
 - `docs/ia/CONTRIBUTING_AI.md`
 - `docs/ia/STYLE_GUIDE.md`

@@ -6,6 +6,7 @@
 - `docs/contexto/dominio.md`: modelo del dominio central y relaciones clave entre entidades.
 - `docs/contexto/arquitectura.md`: resumen de la arquitectura técnica (apps, servicios, dependencias).
 - `docs/contexto/aplicaciones.md`: inventario y notas por aplicaciones del sistema.
+- `docs/contexto/memoria/`: memoria operativa reusable curada para reducir reconstruccion de contexto entre tareas de IA.
 - `docs/contexto/features/`: contexto incremental generado por PR para continuidad entre agentes y revisión.
 - `docs/contexto/documentacion_base_datos_celiaquia.md`: detalles específicos de la base de datos de Celiaquía.
 
@@ -15,11 +16,14 @@
 - `docs/operacion/integraciones.md`: conexiones con servicios externos, caches y manejo de estáticos/media.
 - `docs/operacion/operaciones.md`: tareas recurrentes, cron jobs y endpoints de health de producción.
 - `docs/operacion/infraestructura.md`: inventario de infraestructura operativo (entornos, arquitectura, networking, deploy, observabilidad, seguridad y roadmap infra).
+- `docs/operacion/deploy_entornos_docker_nginx_mysql.md`: runbook generico parametrizado para replicar entornos SISOC con Docker Compose, MySQL dedicado y NGINX.
+- `docs/operacion/qa_trixie_deploy.md`: runbook para desplegar QA en Debian 13 con SITE-QA, DB-QA, Docker Compose, MySQL 8.0 y NGINX.
 - `docs/operacion/comandos_administracion.md`: utilidades de management (`manage.py`) disponibles para el equipo.
 - `docs/operacion/pwa_web_push_deploy.md`: checklist de despliegue y validacion de web push para la PWA.
 
 ### 3. Seguridad
 - `docs/seguridad/security_baseline.md`: baseline de seguridad general del proyecto.
+- `docs/seguridad/iam_infraestructura.md`: matriz de accesos operativos a servidores, bases de datos y storage de backups provista por Infraestructura.
 - `docs/seguridad/security_baseline_pwa.md`: baseline de seguridad para capacidades PWA.
 
 ### 4. Guías funcionales e implementaciones

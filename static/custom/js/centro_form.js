@@ -1,16 +1,42 @@
 document.addEventListener('DOMContentLoaded', function () {
     const tipoField = document.getElementById('id_tipo');
     const allFieldWrappers = document.querySelectorAll('div[id^="div_id_"]');
+    const provinciaSelect = document.getElementById('id_provincia');
+    const municipioSelect = document.getElementById('id_municipio');
+    const localidadSelect = document.getElementById('id_localidad');
 
-        document.getElementById('id_provincia').addEventListener('change', function () {
+    function buildEmptyOption(label) {
+        const option = document.createElement('option');
+        option.value = '';
+        option.textContent = label;
+        return option;
+    }
+
+    function refreshSelect2(targetSelect) {
+        if (!targetSelect || !window.refreshSelect2Element) {
+            return;
+        }
+
+        window.refreshSelect2Element(targetSelect);
+    }
+
+    provinciaSelect.addEventListener('change', function () {
         var url = ajaxLoadMunicipiosUrl;  // Obtén la URL de la vista
         var provinciaId = this.value;  // Obtén el ID de la provincia seleccionada
+        municipioSelect.innerHTML = '';
+        municipioSelect.appendChild(buildEmptyOption('Seleccionar municipio...'));
+        localidadSelect.innerHTML = '';
+        localidadSelect.appendChild(buildEmptyOption('Seleccionar localidad...'));
+        refreshSelect2(municipioSelect);
+        refreshSelect2(localidadSelect);
+
+        if (!provinciaId) {
+            return;
+        }
+
         fetch(url + '?provincia_id=' + provinciaId)
             .then(response => response.json())
             .then(data => {
-                var municipioSelect = document.getElementById('id_municipio');
-                municipioSelect.innerHTML = '';  // Limpia el campo de municipios
-
                 data.forEach(function (municipio) {
                     var option = document.createElement('option');
                     option.value = municipio.id;
@@ -18,25 +44,32 @@ document.addEventListener('DOMContentLoaded', function () {
                     option.textContent = municipio.nombre;
                     municipioSelect.appendChild(option);
                 });
+                refreshSelect2(municipioSelect);
             });
     });
 
     
-    document.getElementById('id_municipio').addEventListener('change', function () {
+    municipioSelect.addEventListener('change', function () {
         var url = ajaxLoadLocalidadesUrl;  // Obtén la URL de la vista
         var localidadId = this.options[this.selectedIndex].getAttribute('data-municipio-id');;  // Obtén el ID de la provincia seleccionada
+        localidadSelect.innerHTML = '';
+        localidadSelect.appendChild(buildEmptyOption('Seleccionar localidad...'));
+        refreshSelect2(localidadSelect);
+
+        if (!this.value || !localidadId) {
+            return;
+        }
+
         fetch(url + '?municipio_id=' + localidadId)
             .then(response => response.json())
             .then(data => {
-                var localidadSelect = document.getElementById('id_localidad');
-                localidadSelect.innerHTML = '';  // Limpia el campo de municipios
-
                 data.forEach(function (localidad) {
                     var option = document.createElement('option');
                     option.value = localidad.id;
                     option.textContent = localidad.nombre;
                     localidadSelect.appendChild(option);
                 });
+                refreshSelect2(localidadSelect);
             });
     });
     const camposComunes = ['div_id_tipo'];

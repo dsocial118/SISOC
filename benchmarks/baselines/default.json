@@ -1,0 +1,287 @@
+{
+  "meta": {
+    "baseline_path": "benchmarks/baselines/default.json",
+    "generated_at": "2026-04-16T16:15:53.227484+00:00",
+    "samples": 5,
+    "thresholds": {
+      "query_regression": 3,
+      "time_regression_ms": 25.0,
+      "time_regression_pct": 20.0
+    },
+    "warmups": 1
+  },
+  "scenarios": {
+    "VAT:list": {
+      "db_time_ms": 0.0,
+      "label": "Listado de centros VAT",
+      "module": "VAT",
+      "query_count": 5,
+      "status_code": 200,
+      "wall_time_ms": 8.66
+    },
+    "acompanamientos:list": {
+      "db_time_ms": 0.0,
+      "label": "Listado de acompañamientos",
+      "module": "acompanamientos",
+      "query_count": 6,
+      "status_code": 200,
+      "wall_time_ms": 11.01
+    },
+    "admisiones:legales": {
+      "db_time_ms": 0.0,
+      "label": "Listado de admisiones legales",
+      "module": "admisiones",
+      "query_count": 8,
+      "status_code": 200,
+      "wall_time_ms": 11.72
+    },
+    "admisiones:tecnicos": {
+      "db_time_ms": 0.0,
+      "label": "Listado de admisiones técnicas",
+      "module": "admisiones",
+      "query_count": 8,
+      "status_code": 200,
+      "wall_time_ms": 11.45
+    },
+    "audittrail:list": {
+      "db_time_ms": 0.0,
+      "label": "Listado de auditoría",
+      "module": "audittrail",
+      "query_count": 10,
+      "status_code": 200,
+      "wall_time_ms": 22.76
+    },
+    "celiaquia:detail": {
+      "db_time_ms": 0.0,
+      "label": "Detalle de expediente celiaquía",
+      "module": "celiaquia",
+      "query_count": 24,
+      "status_code": 200,
+      "wall_time_ms": 21.99
+    },
+    "celiaquia:list": {
+      "db_time_ms": 0.0,
+      "label": "Listado de expedientes celiaquía",
+      "module": "celiaquia",
+      "query_count": 6,
+      "status_code": 200,
+      "wall_time_ms": 10.29
+    },
+    "centrodefamilia:list": {
+      "db_time_ms": 0.0,
+      "label": "Listado de centros de familia",
+      "module": "centrodefamilia",
+      "query_count": 5,
+      "status_code": 200,
+      "wall_time_ms": 8.75
+    },
+    "centrodeinfancia:formularios": {
+      "db_time_ms": 0.0,
+      "label": "Listado de formularios CDI",
+      "module": "centrodeinfancia",
+      "query_count": 8,
+      "status_code": 200,
+      "wall_time_ms": 12.12
+    },
+    "centrodeinfancia:list": {
+      "db_time_ms": 0.0,
+      "label": "Listado de CDI",
+      "module": "centrodeinfancia",
+      "query_count": 8,
+      "status_code": 200,
+      "wall_time_ms": 11.38
+    },
+    "ciudadanos:detail": {
+      "db_time_ms": 0.0,
+      "label": "Detalle de ciudadano",
+      "module": "ciudadanos",
+      "query_count": 17,
+      "status_code": 200,
+      "wall_time_ms": 19.61
+    },
+    "ciudadanos:list": {
+      "db_time_ms": 0.0,
+      "label": "Listado de ciudadanos",
+      "module": "ciudadanos",
+      "query_count": 6,
+      "status_code": 200,
+      "wall_time_ms": 12.07
+    },
+    "comedores:detail": {
+      "db_time_ms": 0.0,
+      "label": "Detalle de comedor",
+      "module": "comedores",
+      "query_count": 32,
+      "status_code": 200,
+      "wall_time_ms": 38.84
+    },
+    "comedores:list": {
+      "db_time_ms": 0.0,
+      "label": "Listado de comedores",
+      "module": "comedores",
+      "query_count": 6,
+      "status_code": 200,
+      "wall_time_ms": 10.23
+    },
+    "comunicados:detail": {
+      "db_time_ms": 0.0,
+      "label": "Detalle de comunicado",
+      "module": "comunicados",
+      "query_count": 6,
+      "status_code": 200,
+      "wall_time_ms": 9.34
+    },
+    "comunicados:gestion": {
+      "db_time_ms": 0.0,
+      "label": "Listado de gestión de comunicados",
+      "module": "comunicados",
+      "query_count": 6,
+      "status_code": 200,
+      "wall_time_ms": 9.67
+    },
+    "comunicados:list": {
+      "db_time_ms": 0.0,
+      "label": "Listado público de comunicados",
+      "module": "comunicados",
+      "query_count": 6,
+      "status_code": 200,
+      "wall_time_ms": 9.68
+    },
+    "core:inicio": {
+      "db_time_ms": 0.0,
+      "label": "Inicio",
+      "module": "core",
+      "query_count": 6,
+      "status_code": 200,
+      "wall_time_ms": 7.82
+    },
+    "core:montos": {
+      "db_time_ms": 0.0,
+      "label": "Listado de montos de prestación",
+      "module": "core",
+      "query_count": 6,
+      "status_code": 200,
+      "wall_time_ms": 8.09
+    },
+    "core:programas": {
+      "db_time_ms": 0.0,
+      "label": "Listado de programas",
+      "module": "core",
+      "query_count": 6,
+      "status_code": 200,
+      "wall_time_ms": 7.59
+    },
+    "dashboard:list": {
+      "db_time_ms": 0.0,
+      "label": "Dashboard principal",
+      "module": "dashboard",
+      "query_count": 9,
+      "status_code": 200,
+      "wall_time_ms": 8.49
+    },
+    "dashboard:tablero": {
+      "db_time_ms": 0.0,
+      "label": "Detalle de tablero",
+      "module": "dashboard",
+      "query_count": 6,
+      "status_code": 200,
+      "wall_time_ms": 7.32
+    },
+    "duplas:list": {
+      "db_time_ms": 0.0,
+      "label": "Listado de duplas",
+      "module": "duplas",
+      "query_count": 8,
+      "status_code": 200,
+      "wall_time_ms": 12.25
+    },
+    "expedientespagos:list": {
+      "db_time_ms": 0.0,
+      "label": "Listado de expedientes de pago",
+      "module": "expedientespagos",
+      "query_count": 7,
+      "status_code": 200,
+      "wall_time_ms": 9.08
+    },
+    "historial:service": {
+      "db_time_ms": 0.0,
+      "label": "Registro de historial serializado",
+      "module": "historial",
+      "query_count": 8,
+      "status_code": 200,
+      "wall_time_ms": 1.37
+    },
+    "importarexpediente:list": {
+      "db_time_ms": 0.0,
+      "label": "Listado de importación de expedientes",
+      "module": "importarexpediente",
+      "query_count": 5,
+      "status_code": 200,
+      "wall_time_ms": 9.17
+    },
+    "intervenciones:create": {
+      "db_time_ms": 0.0,
+      "label": "Formulario de intervención",
+      "module": "intervenciones",
+      "query_count": 11,
+      "status_code": 200,
+      "wall_time_ms": 18.53
+    },
+    "organizaciones:list": {
+      "db_time_ms": 0.0,
+      "label": "Listado de organizaciones",
+      "module": "organizaciones",
+      "query_count": 6,
+      "status_code": 200,
+      "wall_time_ms": 8.76
+    },
+    "pwa:health": {
+      "db_time_ms": 0,
+      "label": "Healthcheck API PWA",
+      "module": "pwa",
+      "query_count": 0,
+      "status_code": 200,
+      "wall_time_ms": 0.52
+    },
+    "relevamientos:list": {
+      "db_time_ms": 0.0,
+      "label": "Listado de relevamientos",
+      "module": "relevamientos",
+      "query_count": 6,
+      "status_code": 200,
+      "wall_time_ms": 8.34
+    },
+    "rendicioncuentasfinal:list": {
+      "db_time_ms": 0.0,
+      "label": "Listado de rendiciones finales",
+      "module": "rendicioncuentasfinal",
+      "query_count": 5,
+      "status_code": 200,
+      "wall_time_ms": 9.56
+    },
+    "rendicioncuentasmensual:list": {
+      "db_time_ms": 0.0,
+      "label": "Listado global de rendiciones mensuales",
+      "module": "rendicioncuentasmensual",
+      "query_count": 5,
+      "status_code": 200,
+      "wall_time_ms": 9.08
+    },
+    "users:groups": {
+      "db_time_ms": 0.0,
+      "label": "Listado de grupos",
+      "module": "users",
+      "query_count": 6,
+      "status_code": 200,
+      "wall_time_ms": 28.58
+    },
+    "users:list": {
+      "db_time_ms": 0.0,
+      "label": "Listado de usuarios",
+      "module": "users",
+      "query_count": 7,
+      "status_code": 200,
+      "wall_time_ms": 19.35
+    }
+  }
+}

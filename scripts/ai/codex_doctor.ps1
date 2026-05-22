@@ -7,6 +7,7 @@ $repoRoot = Get-CodexRepoRoot
 $envPath = Get-CodexEnvPath -RepoRoot $repoRoot
 $envValues = Get-CodexEnvValues -Path $envPath
 $required = Get-CodexRequiredEnvDefaults -RepoRoot $repoRoot
+$composeFiles = Get-CodexComposeFileArgs -RepoRoot $repoRoot
 
 function Write-StatusLine {
     param(
@@ -21,6 +22,10 @@ function Write-StatusLine {
 
 Write-Host ("Repo: {0}" -f $repoRoot)
 Write-StatusLine -Label ".env" -Ok (Test-Path $envPath) -Detail $envPath
+Write-StatusLine -Label "compose-project" -Ok $envValues.ContainsKey("COMPOSE_PROJECT_NAME") -Detail (
+    $(if ($envValues.ContainsKey("COMPOSE_PROJECT_NAME")) { $envValues["COMPOSE_PROJECT_NAME"] } else { "se completa con bootstrap" })
+)
+Write-StatusLine -Label "compose-files" -Ok $true -Detail ($composeFiles -join " ")
 
 foreach ($key in $required.Keys) {
     $hasValue = $envValues.ContainsKey($key) -and -not [string]::IsNullOrWhiteSpace($envValues[$key])
@@ -65,17 +70,21 @@ Write-StatusLine -Label "py-launcher" -Ok $pyAvailable -Detail (
 if ($pyAvailable) {
     try {
         $blackCheck = & py -3 -m black --version 2>&1
-        Write-StatusLine -Label "host-black" -Ok $true -Detail $blackCheck[0]
+        Write-StatusLine -Label "fallback-host-black" -Ok $true -Detail $blackCheck[0]
     }
     catch {
-        Write-StatusLine -Label "host-black" -Ok $false -Detail $_.Exception.Message
+        Write-StatusLine -Label "fallback-host-black" -Ok $dockerAvailable -Detail (
+            $(if ($dockerAvailable) { "no requerido en modo Docker" } else { $_.Exception.Message })
+        )
     }
 
     try {
         $pytestCheck = & py -3 -m pytest --version 2>&1
-        Write-StatusLine -Label "host-pytest" -Ok $true -Detail $pytestCheck[0]
+        Write-StatusLine -Label "fallback-host-pytest" -Ok $true -Detail $pytestCheck[0]
     }
     catch {
-        Write-StatusLine -Label "host-pytest" -Ok $false -Detail $_.Exception.Message
+        Write-StatusLine -Label "fallback-host-pytest" -Ok $dockerAvailable -Detail (
+            $(if ($dockerAvailable) { "no requerido en modo Docker" } else { $_.Exception.Message })
+        )
     }
 }

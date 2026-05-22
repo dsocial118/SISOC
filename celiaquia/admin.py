@@ -51,6 +51,12 @@ class ExpedienteCiudadanoAdmin(admin.ModelAdmin):
     list_display = ("ciudadano", "expediente", "estado", "rol", "creado_en")
     list_filter = ("estado", "rol", "revision_tecnico", "resultado_sintys")
     search_fields = ("ciudadano__documento", "ciudadano__nombre", "ciudadano__apellido")
+    autocomplete_fields = (
+        "deleted_by",
+        "expediente",
+        "ciudadano",
+        "subsanacion_usuario",
+    )
 
 
 @admin.register(AsignacionTecnico)

@@ -6,8 +6,11 @@ from django.core.validators import FileExtensionValidator
 
 class CSVUploadForm(forms.Form):
     file = forms.FileField(
-        label="Archivo CSV",
-        validators=[FileExtensionValidator(["csv"])],
+        label="Archivo CSV o XLSX",
+        validators=[FileExtensionValidator(["csv", "xlsx"])],
+        widget=forms.ClearableFileInput(
+            attrs={"accept": ".csv,.xlsx"},
+        ),
     )
     delimiter = forms.ChoiceField(
         choices=[(",", "Coma (,)"), (";", "Punto y coma (;)")],

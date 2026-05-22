@@ -25,6 +25,20 @@ def _ciudadano(**kwargs):
     return Ciudadano.objects.create(**defaults)
 
 
+def _ciudadanos_legacy_sin_normalizar(*items):
+    ciudadanos = []
+    for item in items:
+        defaults = {
+            "nombre": "Test",
+            "apellido": "Ciudadano",
+            "fecha_nacimiento": date(1990, 1, 1),
+        }
+        defaults.update(item)
+        ciudadanos.append(Ciudadano(**defaults))
+    Ciudadano.objects.bulk_create(ciudadanos)
+    return list(Ciudadano.objects.order_by("pk"))
+
+
 def _run_backfill():
     call_command("backfill_identidad", stdout=StringIO(), stderr=StringIO())
 
@@ -57,8 +71,10 @@ def test_dni_unico_clasifica_como_estandar():
 
 @pytest.mark.django_db
 def test_dni_duplicado_clasifica_como_no_validado():
-    c1 = _ciudadano(nombre="Ana", documento=22222222)
-    c2 = _ciudadano(nombre="Beto", documento=22222222)
+    c1, c2 = _ciudadanos_legacy_sin_normalizar(
+        {"nombre": "Ana", "documento": 22222222},
+        {"nombre": "Beto", "documento": 22222222},
+    )
 
     _run_backfill()
 

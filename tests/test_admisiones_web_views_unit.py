@@ -2,6 +2,8 @@
 
 from types import SimpleNamespace
 
+import pytest
+
 from admisiones.views import web_views as module
 
 
@@ -167,6 +169,35 @@ def test_eliminar_archivo_admision_estado_no_permitido_and_success(mocker):
     assert resp2.status_code == 200
 
 
+@pytest.mark.parametrize(
+    "estado_admision",
+    module.AdmisionService.ESTADOS_BLOQUEO_ELIMINACION_DOCUMENTAL,
+)
+def test_eliminar_archivo_admision_bloqueado_si_estado_cerrado(mocker, estado_admision):
+    admision = SimpleNamespace(
+        comedor=SimpleNamespace(), estado_admision=estado_admision
+    )
+    req = _Req(method="DELETE", user=_user(False), GET={})
+
+    mocker.patch("admisiones.views.web_views.get_object_or_404", return_value=admision)
+    mocker.patch(
+        "admisiones.views.web_views.AdmisionService._verificar_permiso_dupla",
+        return_value=True,
+    )
+    mocker.patch(
+        "admisiones.views.web_views.AdmisionService._validar_modificacion_documental_por_tecnico",
+        return_value=None,
+    )
+    archivo_filter_mock = mocker.patch(
+        "admisiones.views.web_views.ArchivoAdmision.objects.filter"
+    )
+
+    resp = module.eliminar_archivo_admision(req, 1, 2)
+
+    assert resp.status_code == 400
+    archivo_filter_mock.assert_not_called()
+
+
 def test_subir_archivo_admision_paths(mocker):
     req_no = _Req(FILES={}, user=_user(), method="POST")
     assert module.subir_archivo_admision(req_no, 1, 2).status_code == 400
@@ -236,11 +267,11 @@ def test_tecnicos_list_view_queryset_and_context(mocker):
 
 
 def test_tecnicos_create_view_post_branches(mocker):
-    """Create view should create admision when tipo_convenio is present."""
+    """Create view should create admision only on explicit confirmation."""
     view = module.AdmisionesTecnicosCreateView()
     view.kwargs = {"pk": 99}
 
-    req = _Req(POST={"tipo_convenio": "1"}, user=_user())
+    req = _Req(POST={"confirmar_tipo_convenio": "1"}, user=_user())
     adm = SimpleNamespace(pk=7)
     mocker.patch(
         "admisiones.views.web_views.AdmisionService.create_admision", return_value=adm
@@ -248,7 +279,7 @@ def test_tecnicos_create_view_post_branches(mocker):
     mocker.patch("admisiones.views.web_views.redirect", return_value="redir")
     assert view.post(req) == "redir"
 
-    req3 = _Req(POST={"tipo_convenio": "1"}, user=_user())
+    req3 = _Req(POST={"confirmar_tipo_convenio": "1"}, user=_user())
     mocker.patch(
         "admisiones.views.web_views.AdmisionService.create_admision",
         return_value=None,
@@ -262,6 +293,32 @@ def test_tecnicos_create_view_post_branches(mocker):
         "django.views.generic.edit.ProcessFormView.get", return_value="getresp"
     )
     assert view.post(req2) == "getresp"
+
+
+def test_informe_form_kwargs_no_congela_documentacion_en_get(mocker):
+    view = module.InformeTecnicosCreateView()
+    view.admision_obj = SimpleNamespace(pk=1)
+    view.tipo = "base"
+    view.request = _Req(user=_user())
+    mocker.patch(
+        "admisiones.views.web_views.InformeService.get_form_class_por_tipo",
+        return_value=object,
+    )
+    mocker.patch(
+        "django.views.generic.edit.ModelFormMixin.get_form_kwargs",
+        return_value={"seed": 1},
+    )
+    build_mock = mocker.patch(
+        "admisiones.views.web_views._build_informe_form_kwargs",
+        return_value={"built": True},
+    )
+    freeze_mock = mocker.patch(
+        "admisiones.views.web_views.AdmisionService.congelar_documentacion_organizacional"
+    )
+
+    assert view.get_form_kwargs() == {"built": True}
+    freeze_mock.assert_not_called()
+    build_mock.assert_called_once()
 
 
 def test_tecnicos_update_view_post_docx_and_router_paths(mocker):
