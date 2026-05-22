@@ -2,7 +2,7 @@
     <div class="card-header py-1">
         <h6 class="fw-bold my-1 text-center">Mes de ejecuci&oacute;n</h6>
     </div>
-    <div class="card-body">
+    <div class="card-body d-flex flex-column">
         {% if mes_ejecucion_resumen.expediente %}
             {% with expediente=mes_ejecucion_resumen.expediente %}
                 <p class="mb-0 fs-7">
@@ -30,7 +30,7 @@
         {% else %}
             <p class="mb-0 fs-7">No hay expedientes de pago cargados para este comedor.</p>
         {% endif %}
-        <div class="mt-3 d-flex flex-column flex-sm-row justify-content-center gap-2">
+        <div class="mt-auto pt-3 d-flex flex-column flex-sm-row justify-content-center gap-2">
             <a href="{% url 'expedientespagos_list' comedor.id %}"
                class="btn btn-primary px-2 py-1 fs-7 w-100 w-sm-auto">Ver m&aacute;s</a>
         </div>
