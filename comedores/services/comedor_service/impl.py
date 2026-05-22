@@ -54,6 +54,7 @@ from admisiones.models.admisiones import Admision
 from rendicioncuentasmensual.models import RendicionCuentaMensual
 from intervenciones.models.intervenciones import Intervencion
 from expedientespagos.models import ExpedientePago
+from expedientespagos.services import ordenar_expedientes_por_periodo_desc
 from duplas.models import Dupla
 from organizaciones.models import Aval, Firmante
 
@@ -351,11 +352,9 @@ def _calcular_presupuesto_desde_prestaciones(count, valor_map):
 
 
 def _build_comedores_list_values_queryset(base_qs):
-    latest_mes_ejecucion = (
+    latest_mes_ejecucion = ordenar_expedientes_por_periodo_desc(
         ExpedientePago.objects.filter(comedor_id=OuterRef("pk"))
-        .order_by("-fecha_creacion", "-id")
-        .values("mes_convenio")[:1]
-    )
+    ).values("mes_convenio")[:1]
     return (
         base_qs.select_related(
             "provincia",

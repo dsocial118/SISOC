@@ -87,16 +87,26 @@
                 <div class="modal-content">
                     <form method="POST">
                         {% csrf_token %}
+                        <input type="hidden" name="confirmar_tipo_convenio" value="1" />
                         <div class="modal-header">
-                            <h5 class="modal-title">Seleccione el tipo de convenio</h5>
+                            <h5 class="modal-title">Selección de Convenio</h5>
                         </div>
                         <div class="modal-body">
-                            <select name="tipo_convenio" id="tipoConvenio" class="form-control" required>
-                                <option value="">-- Seleccione --</option>
-                                {% for c in convenios %}
-                                    {% if c.id != 4 %}<option value="{{ c.id }}">{{ c.nombre }}</option>{% endif %}
-                                {% endfor %}
-                            </select>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Tipo de Entidad</label>
+                                <input type="text"
+                                       class="form-control"
+                                       value="{{ comedor.organizacion.tipo_entidad|default:'Sin información' }}"
+                                       readonly />
+                                <div class="form-text">Esta información debe editarse desde el legajo de la Organización</div>
+                            </div>
+                            <div>
+                                <label class="form-label fw-bold">Tipo de Convenio</label>
+                                <input type="text"
+                                       class="form-control"
+                                       value="{{ tipo_convenio_precargado.nombre|default:'Sin información' }}"
+                                       readonly />
+                            </div>
                         </div>
                         <div class="modal-footer">
                             <a href="{% url 'admisiones_tecnicos_listar' %}"
@@ -104,7 +114,7 @@
                             <button type="submit"
                                     class="btn btn-primary"
                                     id="confirmarSeleccion"
-                                    disabled>Continuar</button>
+                                    {% if not tipo_convenio_precargado %}disabled{% endif %}>Continuar</button>
                         </div>
                     </form>
                 </div>
@@ -122,16 +132,7 @@
                         <li class="nav-item">
                             <div class="comment-text">
                                 Tipo Convenio:
-                                <span class="fw-bold">{{ admision.tipo_convenio.nombre| default_if_none:"Sin información" }}
-                                    {% if request.user|has_any_perm:"comedores.view_comedor,admisiones.view_admision,acompanamientos.view_informacionrelevante" %}
-                                        {% if admision.estado.nombre == "Pendiente" %}
-                                            <button type="button"
-                                                    class="btn btn-primary btn-sm ms-3 mb-1"
-                                                    data-bs-toggle="modal"
-                                                    data-bs-target="#nuevoSeleccionModal">Cambiar</button>
-                                        {% endif %}
-                                    {% endif %}
-                                </span>
+                                <span class="fw-bold">{{ admision.tipo_convenio.nombre| default_if_none:"Sin información" }}</span>
                             </div>
                         </li>
                         <li class="nav-item">
@@ -542,50 +543,6 @@
                         </div>
                     </div>
                 </div>
-                <!-- MODAL DE SELECCIÓN DE CONVENIO -->
-                <div class="modal fade"
-                     id="nuevoSeleccionModal"
-                     tabindex="-1"
-                     aria-labelledby="nuevoSeleccionModalLabel"
-                     aria-hidden="true">
-                    <div class="modal-dialog modal-dialog-centered">
-                        <div class="modal-content">
-                            <form method="POST" action="">
-                                {% csrf_token %}
-                                <div class="modal-header">
-                                    <h5 class="modal-title">Seleccione el tipo de convenio</h5>
-                                    <button type="button"
-                                            class="btn-close"
-                                            data-bs-dismiss="modal"
-                                            aria-label="Close"></button>
-                                </div>
-                                <div class="modal-body">
-                                    <div class="alert alert-danger h6 text-white" role="alert">
-                                        Al cambiar el Convenio se perderan todos los archivos cargados. Esta seguro que quiere continuar
-                                    </div>
-                                    <select name="tipo_convenio"
-                                            id="nuevoTipoConvenio"
-                                            class="form-control"
-                                            required>
-                                        <option value="">-- Seleccione --</option>
-                                        {% for c in convenios %}
-                                            {% if c.id != 4 %}
-                                                <option value="{{ c.id }}"
-                                                        {% if c.id == admision.tipo_convenio.id %}selected{% endif %}>
-                                                    {{ c.nombre }}
-                                                </option>
-                                            {% endif %}
-                                        {% endfor %}
-                                    </select>
-                                </div>
-                                <div class="modal-footer">
-                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                                    <button type="submit" class="btn btn-danger" id="nuevoConfirmarSeleccion">Cambiar y eliminar</button>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                </div>
                 <!-- Modal para confirmar derivar a legales -->
                 <div class="modal fade"
                      id="confirmarLegalesModal"
@@ -986,14 +943,10 @@
                      hidden></div>
                 {% if not admision.tipo_convenio and not admision.enviada_a_archivo %}
                     <script nonce="{{ request.csp_nonce }}">
-                                        document.addEventListener('DOMContentLoaded', function() {
-                                            var modal = new bootstrap.Modal(document.getElementById('seleccionModal'));
-                                            modal.show();
-
-                                            document.getElementById('tipoConvenio').addEventListener('change', function() {
-                                                document.getElementById('confirmarSeleccion').disabled = !this.value;
-                                            });
-                                        });
+                        document.addEventListener('DOMContentLoaded', function() {
+                            var modal = new bootstrap.Modal(document.getElementById('seleccionModal'));
+                            modal.show();
+                        });
                     </script>
                 {% endif %}
 

@@ -134,6 +134,43 @@ def test_build_documentos_update_context_agrupa_resumen_y_stats():
     assert ctx["stats"]["rectificar"] == 1
 
 
+def test_build_documentos_update_context_no_materializa_documentos_organizacion(mocker):
+    """Armar contexto no debe crear ArchivoAdmision para docs heredados."""
+    doc = SimpleNamespace(id=10, nombre="Acta constitutiva", obligatorio=True)
+    org_doc = SimpleNamespace(id=20, nombre="Acta constitutiva", obligatorio=True)
+    archivo_org = SimpleNamespace(
+        estado="Aceptado",
+        archivo=SimpleNamespace(url="/org.pdf"),
+        numero_gde="GDE-ORG",
+        fecha_vencimiento=None,
+        observaciones="",
+    )
+    admision = SimpleNamespace(
+        tipo_convenio_id=1,
+        comedor=SimpleNamespace(organizacion=SimpleNamespace()),
+    )
+    mocker.patch(
+        "admisiones.services.admisiones_service.DocumentacionOrganizacion.objects.filter",
+        return_value=_ListChain([org_doc]),
+    )
+    mocker.patch.object(
+        module.AdmisionService,
+        "_get_archivos_organizacion_vigentes",
+        return_value={org_doc.id: archivo_org},
+    )
+    create_mock = mocker.patch.object(
+        module.AdmisionService, "_crear_archivo_admision_desde_archivo_organizacion"
+    )
+
+    ctx = module.AdmisionService._build_documentos_update_context(
+        [doc], [], admision=admision
+    )
+
+    create_mock.assert_not_called()
+    assert ctx["documentos"][0]["origen"] == "organizacion"
+    assert ctx["documentos"][0]["archivo_url"] == "/org.pdf"
+
+
 def test_apply_text_search_and_queryset_passthrough():
     qs = SimpleNamespace(filter=lambda *_args, **_kwargs: "filtered")
     assert module.AdmisionService._apply_admisiones_text_search(qs, "") is qs
@@ -392,11 +429,18 @@ def test_post_update_router_cubre_ramas_restantes(mocker):
         "Debe finalizar la carga de documentación antes de caratular.",
     )
 
-    # tipo convenio
-    req_tipo = SimpleNamespace(POST={"tipo_convenio": "7"}, user=user)
-    mocker.patch.object(module.AdmisionService, "update_convenio", return_value=True)
+    # tipo convenio precargado
+    req_tipo = SimpleNamespace(POST={"confirmar_tipo_convenio": "1"}, user=user)
+    mocker.patch.object(
+        module.AdmisionService,
+        "confirmar_tipo_convenio_desde_organizacion",
+        return_value=(True, "Tipo de convenio precargado desde la organización."),
+    )
     ok_tipo, msg_tipo = module.AdmisionService.procesar_post_update(req_tipo, adm)
-    assert (ok_tipo, msg_tipo) == (True, "Tipo de convenio actualizado correctamente.")
+    assert (ok_tipo, msg_tipo) == (
+        True,
+        "Tipo de convenio precargado desde la organización.",
+    )
 
 
 def test_procesar_post_disponibilizar_acomp_no_persiste_estado_parcial_si_importar_falla(
@@ -1085,18 +1129,28 @@ def test_generar_documento_admision_and_update_context(mocker):
 
 def test_contextos_create_admision_y_instancia_paths(mocker):
     """Cubre éxito y excepción en context/create/get instance helpers."""
-    comedor = SimpleNamespace(id=11)
-    convenio = SimpleNamespace(id=3)
+    convenio = SimpleNamespace(id=3, nombre="Personeria juridica")
+    comedor = SimpleNamespace(
+        id=11,
+        programa=SimpleNamespace(),
+        organizacion=SimpleNamespace(
+            tipo_entidad=SimpleNamespace(nombre="Personeria juridica")
+        ),
+    )
     estado = SimpleNamespace(id=1)
     admision = SimpleNamespace(id=99)
 
     mocker.patch(
         "admisiones.services.admisiones_service.get_object_or_404",
-        side_effect=[comedor, comedor, convenio, SimpleNamespace(id=77)],
+        side_effect=[comedor, comedor, SimpleNamespace(id=77)],
     )
     mocker.patch(
         "admisiones.services.admisiones_service.EstadoAdmision.objects.first",
         return_value=estado,
+    )
+    mocker.patch(
+        "admisiones.services.admisiones_service.comedor_usa_admision_para_nomina",
+        return_value=True,
     )
     create_mock = mocker.patch(
         "admisiones.services.admisiones_service.Admision.objects.create",
@@ -1109,7 +1163,7 @@ def test_contextos_create_admision_y_instancia_paths(mocker):
 
     create_ctx = module.AdmisionService.get_admision_create_context(11)
     assert create_ctx["comedor"].id == 11
-    assert create_ctx["convenios"] == [convenio]
+    assert create_ctx["tipo_convenio_precargado"] == convenio
 
     created = module.AdmisionService.create_admision(11, 3)
     assert created.id == 99
@@ -1134,7 +1188,9 @@ def test_helpers_contexto_instancia_y_create_admision_error(mocker):
 
 def test_create_admision_rechaza_comedor_con_nomina_directa(mocker):
     """Un comedor que usa nómina directa no debe crear admisiones."""
-    comedor = SimpleNamespace(id=11, programa=SimpleNamespace())
+    comedor = SimpleNamespace(
+        id=11, programa=SimpleNamespace(), organizacion=SimpleNamespace()
+    )
 
     mocker.patch(
         "admisiones.services.admisiones_service.get_object_or_404",

@@ -150,12 +150,19 @@ class DispositivoDetailView(LoginRequiredMixin, DetailView):
                         "value": _format_value(str(dispositivo.municipio)),
                     },
                     {
-                        "label": "Domicilio",
-                        "value": _format_value(dispositivo.domicilio_institucion),
+                        "label": "Calle",
+                        "value": _format_value(dispositivo.calle),
                     },
                     {
-                        "label": "Teléfono de contacto",
-                        "value": _format_value(dispositivo.telefono_contacto),
+                        "label": "Altura",
+                        "value": _format_value(dispositivo.altura),
+                    },
+                    {
+                        "label": "Teléfono",
+                        "value": _format_value(
+                            f"{dispositivo.telefono_prefijo} {dispositivo.telefono_numero}".strip()
+                            or None
+                        ),
                     },
                     {
                         "label": "Correo electrónico",
