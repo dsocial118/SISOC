@@ -107,7 +107,7 @@ class CentroDeInfanciaForm(forms.ModelForm):
         self._aplicar_clases_y_placeholders()
 
     # Mostrar/editar solo el año en el formulario: aceptamos AAAA y lo convertimos
-    # a una fecha internalmente como <AAAA>-01-01 para mantener compatibilidad
+    # internamente como una fecha <AAAA>-01-01 para mantener compatibilidad
     # con el modelo (`DateField`).
     fecha_inicio = forms.CharField(
         required=False,
