@@ -1188,15 +1188,13 @@
 </div>
 </div>
 </div>
-{% if resumen_dw_transacciones or mostrar_mes_ejecucion %}
+{% if puede_ver_dw_transacciones or mostrar_mes_ejecucion %}
     <div class="row mt-3">
-        {% if resumen_dw_transacciones %}
-            <div class="col-12 col-lg-6 mb-3 mb-lg-0">
-                {% include "comedor/comedor_transacciones_card.html" %}
-            </div>
+        {% if puede_ver_dw_transacciones %}
+            <div class="col-12 col-lg-6 mb-3 mb-lg-0">{% include "comedor/comedor_transacciones_card.html" %}</div>
         {% endif %}
         {% if mostrar_mes_ejecucion %}
-            <div class="col-12 col-lg-6 {% if not resumen_dw_transacciones %}ms-lg-auto{% endif %}">
+            <div class="col-12 col-lg-6 {% if not puede_ver_dw_transacciones %}ms-lg-auto{% endif %}">
                 {% include "comedor/comedor_mes_ejecucion_card.html" %}
             </div>
         {% endif %}
