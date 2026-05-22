@@ -44,13 +44,9 @@ def superuser():
 @pytest.fixture
 def setup_org(tecnico, abogado):
     tipo = TipoEntidad.objects.create(nombre="Personería Jurídica")
-    dupla = Dupla.objects.create(
-        nombre="Dupla GDE", estado="Activo", abogado=abogado
-    )
+    dupla = Dupla.objects.create(nombre="Dupla GDE", estado="Activo", abogado=abogado)
     dupla.tecnico.add(tecnico)
-    organizacion = Organizacion.objects.create(
-        nombre="Org GDE", tipo_entidad=tipo
-    )
+    organizacion = Organizacion.objects.create(nombre="Org GDE", tipo_entidad=tipo)
     comedor = Comedor.objects.create(
         nombre="Comedor GDE", organizacion=organizacion, dupla=dupla
     )
@@ -112,9 +108,7 @@ def test_actualizar_numero_gde_organizacion_crea_registro(setup_org, superuser):
     assert registro.modificado_por_id == superuser.id
 
 
-def test_actualizar_numero_gde_organizacion_actualiza_existente(
-    setup_org, superuser
-):
+def test_actualizar_numero_gde_organizacion_actualiza_existente(setup_org, superuser):
     NumeroGdeOrganizacion.objects.create(
         admision=setup_org["admision"],
         archivo_organizacion=setup_org["archivo_org"],
@@ -137,9 +131,7 @@ def test_actualizar_numero_gde_organizacion_actualiza_existente(
     assert NumeroGdeOrganizacion.objects.count() == 1
 
 
-def test_actualizar_numero_gde_organizacion_rechaza_no_aceptado(
-    setup_org, superuser
-):
+def test_actualizar_numero_gde_organizacion_rechaza_no_aceptado(setup_org, superuser):
     setup_org["archivo_org"].estado = ArchivoOrganizacion.ESTADO_A_VALIDAR
     setup_org["archivo_org"].save(update_fields=["estado"])
 
