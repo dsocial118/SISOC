@@ -35,37 +35,67 @@
         return "";
     }
 
+    function mostrarPasoSeleccion(elementos) {
+        elementos.stepSeleccion.classList.remove("d-none");
+        elementos.stepConfirmacion.classList.add("d-none");
+        elementos.btnAplicar.classList.remove("d-none");
+        elementos.btnVolver.classList.add("d-none");
+        elementos.btnConfirmar.classList.add("d-none");
+        elementos.btnAplicar.disabled = !elementos.select.value;
+    }
+
+    function mostrarPasoConfirmacion(elementos, accion) {
+        elementos.mensaje.textContent = mensajeParaAccion(accion);
+        elementos.stepSeleccion.classList.add("d-none");
+        elementos.stepConfirmacion.classList.remove("d-none");
+        elementos.btnAplicar.classList.add("d-none");
+        elementos.btnVolver.classList.remove("d-none");
+        elementos.btnConfirmar.classList.remove("d-none");
+        elementos.btnConfirmar.disabled = false;
+        elementos.btnConfirmar.dataset.accion = accion;
+    }
+
     function inicializar() {
-        var selectAccion = document.getElementById("accionResyncConvenio");
-        var btnAplicar = document.getElementById("btnAplicarResyncConvenio");
-        var modalEl = document.getElementById("modalConfirmarResyncConvenio");
-        var mensajeEl = document.getElementById("modalConfirmarResyncConvenioMensaje");
-        var btnConfirmar = document.getElementById("btnConfirmarResyncConvenio");
-        if (!selectAccion || !btnAplicar || !modalEl || !mensajeEl || !btnConfirmar) {
+        var modalEl = document.getElementById("modalResyncConvenio");
+        if (!modalEl) {
             return;
         }
+        var elementos = {
+            modalEl: modalEl,
+            stepSeleccion: document.getElementById("modalResyncStepSeleccion"),
+            stepConfirmacion: document.getElementById("modalResyncStepConfirmacion"),
+            select: document.getElementById("accionResyncConvenio"),
+            btnAplicar: document.getElementById("btnAplicarResyncConvenio"),
+            btnVolver: document.getElementById("btnVolverResyncConvenio"),
+            btnConfirmar: document.getElementById("btnConfirmarResyncConvenio"),
+            mensaje: document.getElementById("modalConfirmarResyncConvenioMensaje"),
+        };
         var modalInstance = bootstrap.Modal.getOrCreateInstance(modalEl);
 
-        selectAccion.addEventListener("change", function () {
-            btnAplicar.disabled = !selectAccion.value;
+        mostrarPasoSeleccion(elementos);
+
+        elementos.select.addEventListener("change", function () {
+            elementos.btnAplicar.disabled = !elementos.select.value;
         });
 
-        btnAplicar.addEventListener("click", function () {
-            var accion = selectAccion.value;
+        elementos.btnAplicar.addEventListener("click", function () {
+            var accion = elementos.select.value;
             if (!accion) return;
-            mensajeEl.textContent = mensajeParaAccion(accion);
-            btnConfirmar.dataset.accion = accion;
-            modalInstance.show();
+            mostrarPasoConfirmacion(elementos, accion);
         });
 
-        btnConfirmar.addEventListener("click", function () {
-            var accion = btnConfirmar.dataset.accion;
+        elementos.btnVolver.addEventListener("click", function () {
+            mostrarPasoSeleccion(elementos);
+        });
+
+        elementos.btnConfirmar.addEventListener("click", function () {
+            var accion = elementos.btnConfirmar.dataset.accion;
             if (!accion) return;
-            btnConfirmar.disabled = true;
+            elementos.btnConfirmar.disabled = true;
             var url = getResyncUrl();
             if (!url) {
                 alert("No se pudo determinar la URL del endpoint de resincronización.");
-                btnConfirmar.disabled = false;
+                elementos.btnConfirmar.disabled = false;
                 return;
             }
             fetch(url, {
@@ -88,19 +118,22 @@
                             (payload.data && payload.data.error) ||
                             "No se pudo aplicar la acción.";
                         alert(error);
-                        btnConfirmar.disabled = false;
+                        elementos.btnConfirmar.disabled = false;
                         return;
                     }
-                    modalInstance.hide();
                     var redirect =
                         (payload.data && payload.data.redirect) || window.location.href;
                     window.location.href = redirect;
                 })
                 .catch(function () {
                     alert("Ocurrió un error al aplicar la acción.");
-                    btnConfirmar.disabled = false;
+                    elementos.btnConfirmar.disabled = false;
                 });
         });
+
+        // Apertura forzada al cargar la pagina: el usuario no puede operar sobre
+        // la admision sin elegir explicitamente una de las dos opciones.
+        modalInstance.show();
     }
 
     if (document.readyState === "loading") {

@@ -139,6 +139,7 @@ def test_build_documentos_update_context_no_materializa_documentos_organizacion(
     doc = SimpleNamespace(id=10, nombre="Acta constitutiva", obligatorio=True)
     org_doc = SimpleNamespace(id=20, nombre="Acta constitutiva", obligatorio=True)
     archivo_org = SimpleNamespace(
+        id=21,
         estado="Aceptado",
         archivo=SimpleNamespace(url="/org.pdf"),
         numero_gde="GDE-ORG",
@@ -158,6 +159,11 @@ def test_build_documentos_update_context_no_materializa_documentos_organizacion(
         "_get_archivos_organizacion_vigentes",
         return_value={org_doc.id: archivo_org},
     )
+    mocker.patch.object(
+        module.AdmisionService,
+        "_get_numeros_gde_organizacion_por_archivo",
+        return_value={},
+    )
     create_mock = mocker.patch.object(
         module.AdmisionService, "_crear_archivo_admision_desde_archivo_organizacion"
     )
@@ -169,6 +175,7 @@ def test_build_documentos_update_context_no_materializa_documentos_organizacion(
     create_mock.assert_not_called()
     assert ctx["documentos"][0]["origen"] == "organizacion"
     assert ctx["documentos"][0]["archivo_url"] == "/org.pdf"
+    assert ctx["documentos"][0]["archivo_organizacion_id"] == 21
 
 
 def test_apply_text_search_and_queryset_passthrough():
