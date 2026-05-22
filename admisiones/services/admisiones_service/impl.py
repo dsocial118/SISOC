@@ -317,17 +317,48 @@ class AdmisionService:
     def _crear_archivo_admision_desde_archivo_organizacion(
         admision, org_doc, archivo_org, documentacion_admision=None
     ):
-        return ArchivoAdmision.objects.create(
+        numero_gde = AdmisionService._resolver_numero_gde_para_clonado(
+            admision, archivo_org
+        )
+        archivo_admision = ArchivoAdmision.objects.create(
             admision=admision,
             documentacion=documentacion_admision,
             nombre_personalizado=None if documentacion_admision else org_doc.nombre,
             archivo=archivo_org.archivo.name,
             estado=archivo_org.estado,
             observaciones=archivo_org.observaciones,
-            numero_gde=None,
+            numero_gde=numero_gde,
             creado_por=archivo_org.creado_por,
             modificado_por=archivo_org.modificado_por,
         )
+        if numero_gde:
+            # El GDE ahora vive en el ArchivoAdmision clonado; el registro
+            # en NumeroGdeOrganizacion para esta combinacion deja de ser
+            # canonico y se elimina para evitar valores divergentes.
+            NumeroGdeOrganizacion.objects.filter(
+                admision=admision, archivo_organizacion=archivo_org
+            ).delete()
+        return archivo_admision
+
+    @staticmethod
+    def _resolver_numero_gde_para_clonado(admision, archivo_org):
+        """Resuelve el numero_gde a usar al materializar un ArchivoOrganizacion
+        como ArchivoAdmision. Prioriza el GDE registrado para esta admision en
+        ``NumeroGdeOrganizacion`` (donde el tecnico carga el valor desde la
+        admision) y cae al ``ArchivoOrganizacion.numero_gde`` historico como
+        fallback.
+        """
+
+        numero_admision = (
+            NumeroGdeOrganizacion.objects.filter(
+                admision=admision, archivo_organizacion=archivo_org
+            )
+            .values_list("numero_gde", flat=True)
+            .first()
+        )
+        if numero_admision:
+            return numero_admision
+        return getattr(archivo_org, "numero_gde", None) or None
 
     @staticmethod
     def _serialize_documentacion(documentacion, archivo=None):
