@@ -68,7 +68,9 @@
                             </div>
                             <div class="section-title-group">
                                 <h3 class="section-title">Identificación del dispositivo</h3>
-                                <p class="section-subtitle">Datos generales e institución responsable</p>
+                                <p class="section-subtitle">
+                                    Esta sección releva los datos generales del dispositivo, su localización, la información de contacto institucional y los datos de la persona responsable.
+                                </p>
                             </div>
                         </div>
                         <div class="section-status">
@@ -86,8 +88,17 @@
                             <div class="col-md-4">{{ form.tipo_gestion|as_crispy_field }}</div>
                         </div>
                         <div class="form-group row">
-                            <div class="col-md-4">{{ form.tipo_gestion_otra|as_crispy_field }}</div>
-                            <div class="col-md-4">{{ form.razon_social|as_crispy_field }}</div>
+                            <div id="wrapper-tipo_gestion_otra"
+                                 class="col-md-4 {% if form.tipo_gestion.value != 'otra' %}d-none{% endif %}">
+                                {{ form.tipo_gestion_otra|as_crispy_field }}
+                            </div>
+                            <div class="col-md-4">
+                                {{ form.razon_social|as_crispy_field }}
+                                <span class="field-tooltip">
+                                    <i class="fas fa-info-circle"></i>
+                                    <span class="tooltip-text">La Razón Social es la identidad jurídica y obligatoria ante el Estado, utilizada para firmar contratos, emitir facturas y realizar trámites administrativos o legales</span>
+                                </span>
+                            </div>
                         </div>
                         <div class="form-group row">
                             <div class="col-md-4">{{ form.cuit_institucion|as_crispy_field }}</div>
@@ -95,9 +106,11 @@
                             <div class="col-md-2">{{ form.municipio|as_crispy_field }}</div>
                         </div>
                         <div class="form-group row">
-                            <div class="col-md-4">{{ form.domicilio_institucion|as_crispy_field }}</div>
-                            <div class="col-md-2">{{ form.telefono_contacto|as_crispy_field }}</div>
-                            <div class="col-md-2">{{ form.correo_electronico|as_crispy_field }}</div>
+                            <div class="col-md-3">{{ form.calle|as_crispy_field }}</div>
+                            <div class="col-md-1">{{ form.altura|as_crispy_field }}</div>
+                            <div class="col-md-1">{{ form.telefono_prefijo|as_crispy_field }}</div>
+                            <div class="col-md-2">{{ form.telefono_numero|as_crispy_field }}</div>
+                            <div class="col-md-3">{{ form.correo_electronico|as_crispy_field }}</div>
                         </div>
                         <div class="form-group row">
                             <div class="col-md-4">{{ form.responsable_nombre_completo|as_crispy_field }}</div>
@@ -115,7 +128,9 @@
                             </div>
                             <div class="section-title-group">
                                 <h3 class="section-title">Características del dispositivo</h3>
-                                <p class="section-subtitle">Tipo, modalidad, capacidad y horarios</p>
+                                <p class="section-subtitle">
+                                    En esta sección se releva el tipo de dispositivo y su modalidad de atención. Seleccione la opción que mejor describa su funcionamiento principal. En caso de realizar múltiples actividades, priorice aquella que define su función principal.
+                                </p>
                             </div>
                         </div>
                         <div class="section-status">
@@ -130,7 +145,10 @@
                     <div class="section-body collapse show" id="section-caracteristicas">
                         <div class="form-group row">
                             <div class="col-md-4">{{ form.tipo_dispositivo|as_crispy_field }}</div>
-                            <div class="col-md-4">{{ form.tipo_dispositivo_otro|as_crispy_field }}</div>
+                            <div id="wrapper-tipo_dispositivo_otro"
+                                 class="col-md-4 {% if form.tipo_dispositivo.value != 'otro' %}d-none{% endif %}">
+                                {{ form.tipo_dispositivo_otro|as_crispy_field }}
+                            </div>
                         </div>
                         <div class="form-group row">
                             <div class="col-md-4">{{ form.modalidad_funcionamiento|as_crispy_field }}</div>
@@ -152,7 +170,9 @@
                             </div>
                             <div class="section-title-group">
                                 <h3 class="section-title">Población destinataria</h3>
-                                <p class="section-subtitle">Perfil y franjas etarias de las personas atendidas</p>
+                                <p class="section-subtitle">
+                                    En esta sección se releva el perfil de la población destinataria del dispositivo, incluyendo características sociodemográficas y el tiempo de permanencia habitual.
+                                </p>
                             </div>
                         </div>
                         <div class="section-status">
@@ -168,15 +188,23 @@
                         <div class="form-group row">
                             <div class="col-md-4">
                                 {{ form.poblacion_destinataria|as_crispy_field }}
-                                <div class="row">
-                                    <div class="col-md-8">{{ form.poblacion_destinataria_otro|as_crispy_field }}</div>
-                                </div>
+                                {% with sel=form.poblacion_destinataria.value %}
+                                    <div class="row">
+                                        <div id="wrapper-poblacion_destinataria_otro"
+                                             class="col-md-8 {% if not sel or 'otro' not in sel %}d-none{% endif %}">
+                                            {{ form.poblacion_destinataria_otro|as_crispy_field }}
+                                        </div>
+                                    </div>
+                                {% endwith %}
                             </div>
                             <div class="col-md-4">
                                 {{ form.franja_etaria_destinataria|as_crispy_field }}
                                 <div class="row">
                                     <div class="col-md-6">{{ form.tiempo_permanencia_promedio|as_crispy_field }}</div>
-                                    <div class="col-md-6">{{ form.tiempo_permanencia_otro|as_crispy_field }}</div>
+                                    <div id="wrapper-tiempo_permanencia_otro"
+                                         class="col-md-6 {% if form.tiempo_permanencia_promedio.value != 'otro' %}d-none{% endif %}">
+                                        {{ form.tiempo_permanencia_otro|as_crispy_field }}
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -192,7 +220,9 @@
                             </div>
                             <div class="section-title-group">
                                 <h3 class="section-title">Modalidad de ingreso</h3>
-                                <p class="section-subtitle">Cómo acceden las personas al dispositivo</p>
+                                <p class="section-subtitle">
+                                    En esta sección se releva cómo acceden las personas al dispositivo, qué documentación se solicita al momento del ingreso y cuáles son los requisitos o condiciones establecidos para su admisión.
+                                </p>
                             </div>
                         </div>
                         <div class="section-status">
@@ -208,17 +238,32 @@
                         <div class="form-group row">
                             <div class="col-md-4">
                                 {{ form.modalidad_ingreso|as_crispy_field }}
-                                {{ form.modalidad_ingreso_otro|as_crispy_field }}
+                                {% with sel=form.modalidad_ingreso.value %}
+                                    <div id="wrapper-modalidad_ingreso_otro"
+                                         class="{% if not sel or 'otro' not in sel %}d-none{% endif %}">
+                                        {{ form.modalidad_ingreso_otro|as_crispy_field }}
+                                    </div>
+                                {% endwith %}
                             </div>
                             <div class="col-md-4">
                                 {{ form.documentacion_ingreso|as_crispy_field }}
-                                {{ form.documentacion_ingreso_otro|as_crispy_field }}
+                                {% with sel=form.documentacion_ingreso.value %}
+                                    <div id="wrapper-documentacion_ingreso_otro"
+                                         class="{% if not sel or 'otro' not in sel %}d-none{% endif %}">
+                                        {{ form.documentacion_ingreso_otro|as_crispy_field }}
+                                    </div>
+                                {% endwith %}
                             </div>
                         </div>
                         <div class="form-group row">
                             <div class="col-md-4">
                                 {{ form.requisitos_ingreso|as_crispy_field }}
-                                {{ form.requisitos_ingreso_otro|as_crispy_field }}
+                                {% with sel=form.requisitos_ingreso.value %}
+                                    <div id="wrapper-requisitos_ingreso_otro"
+                                         class="{% if not sel or 'otro' not in sel %}d-none{% endif %}">
+                                        {{ form.requisitos_ingreso_otro|as_crispy_field }}
+                                    </div>
+                                {% endwith %}
                             </div>
                         </div>
                     </div>
@@ -233,7 +278,9 @@
                             </div>
                             <div class="section-title-group">
                                 <h3 class="section-title">Servicios brindados</h3>
-                                <p class="section-subtitle">Prestaciones y actividades ofrecidas</p>
+                                <p class="section-subtitle">
+                                    En esta sección se releva el tipo de servicios y prestaciones que el dispositivo brinda a las personas. Considere aquellas que se ofrecen de manera habitual.
+                                </p>
                             </div>
                         </div>
                         <div class="section-status">
@@ -249,14 +296,24 @@
                         <div class="form-group row">
                             <div class="col-md-4">
                                 {{ form.servicios_brindados|as_crispy_field }}
-                                {{ form.servicios_brindados_otro|as_crispy_field }}
+                                {% with sel=form.servicios_brindados.value %}
+                                    <div id="wrapper-servicios_brindados_otro"
+                                         class="{% if not sel or 'otro' not in sel %}d-none{% endif %}">
+                                        {{ form.servicios_brindados_otro|as_crispy_field }}
+                                    </div>
+                                {% endwith %}
                             </div>
                             <div class="col-md-4">
                                 {{ form.ofrece_actividades_formativas|as_crispy_field }}
                                 <div id="actividades-detalle"
                                      class="{% if form.ofrece_actividades_formativas.value != 'si' %}d-none{% endif %}">
                                     {{ form.tipos_actividades_formativas|as_crispy_field }}
-                                    {{ form.tipos_actividades_formativas_otro|as_crispy_field }}
+                                    {% with sel=form.tipos_actividades_formativas.value %}
+                                        <div id="wrapper-tipos_actividades_formativas_otro"
+                                             class="{% if not sel or 'otro' not in sel %}d-none{% endif %}">
+                                            {{ form.tipos_actividades_formativas_otro|as_crispy_field }}
+                                        </div>
+                                    {% endwith %}
                                     {{ form.actividades_certificacion_oficial|as_crispy_field }}
                                 </div>
                             </div>
@@ -273,7 +330,9 @@
                             </div>
                             <div class="section-title-group">
                                 <h3 class="section-title">Sistema de registro de personas usuarias</h3>
-                                <p class="section-subtitle">Cómo se registra la información de quienes asisten</p>
+                                <p class="section-subtitle">
+                                    En esta sección se releva si el dispositivo registra información sobre las personas atendidas, los medios utilizados para ese registro y el tipo de información que se releva.
+                                </p>
                             </div>
                         </div>
                         <div class="section-status">
@@ -294,11 +353,19 @@
                             <div class="form-group row">
                                 <div class="col-md-4">
                                     {{ form.modo_registro|as_crispy_field }}
-                                    {{ form.modo_registro_otro|as_crispy_field }}
+                                    <div id="wrapper-modo_registro_otro"
+                                         class="{% if form.modo_registro.value != 'otro' %}d-none{% endif %}">
+                                        {{ form.modo_registro_otro|as_crispy_field }}
+                                    </div>
                                 </div>
                                 <div class="col-md-4">
                                     {{ form.tipo_informacion_registrada|as_crispy_field }}
-                                    {{ form.tipo_informacion_registrada_otro|as_crispy_field }}
+                                    {% with sel=form.tipo_informacion_registrada.value %}
+                                        <div id="wrapper-tipo_informacion_registrada_otro"
+                                             class="{% if not sel or 'otro' not in sel %}d-none{% endif %}">
+                                            {{ form.tipo_informacion_registrada_otro|as_crispy_field }}
+                                        </div>
+                                    {% endwith %}
                                 </div>
                             </div>
                         </div>
@@ -314,7 +381,9 @@
                             </div>
                             <div class="section-title-group">
                                 <h3 class="section-title">Infraestructura y necesidades</h3>
-                                <p class="section-subtitle">Espacios disponibles y limitaciones del dispositivo</p>
+                                <p class="section-subtitle">
+                                    En esta sección se releva la infraestructura disponible del dispositivo, incluyendo condiciones de accesibilidad, así como las principales limitaciones o necesidades identificadas en su funcionamiento.
+                                </p>
                             </div>
                         </div>
                         <div class="section-status">
@@ -330,16 +399,28 @@
                         <div class="form-group row">
                             <div class="col-md-4">
                                 {{ form.infraestructura_disponible|as_crispy_field }}
-                                {{ form.infraestructura_disponible_otro|as_crispy_field }}
+                                {% with sel=form.infraestructura_disponible.value %}
+                                    <div id="wrapper-infraestructura_disponible_otro"
+                                         class="{% if not sel or 'otro' not in sel %}d-none{% endif %}">
+                                        {{ form.infraestructura_disponible_otro|as_crispy_field }}
+                                    </div>
+                                {% endwith %}
                             </div>
                             <div class="col-md-4">
                                 {{ form.infraestructura_accesibilidad|as_crispy_field }}
-                                {{ form.infraestructura_accesibilidad_otro|as_crispy_field }}
+                                {% with sel=form.infraestructura_accesibilidad.value %}
+                                    <div id="wrapper-infraestructura_accesibilidad_otro"
+                                         class="{% if not sel or 'otro' not in sel %}d-none{% endif %}">
+                                        {{ form.infraestructura_accesibilidad_otro|as_crispy_field }}
+                                    </div>
+                                {% endwith %}
                             </div>
                         </div>
                         <div class="form-group row">
-                            <div class="col-md-4">{{ form.principales_limitaciones|as_crispy_field }}</div>
-                            <div class="col-md-4">{{ form.necesidades_prioritarias|as_crispy_field }}</div>
+                            <div class="col-md-12">{{ form.principales_limitaciones|as_crispy_field }}</div>
+                        </div>
+                        <div class="form-group row">
+                            <div class="col-md-12">{{ form.necesidades_prioritarias|as_crispy_field }}</div>
                         </div>
                     </div>
                 </div>
@@ -353,7 +434,9 @@
                             </div>
                             <div class="section-title-group">
                                 <h3 class="section-title">Articulaciones institucionales</h3>
-                                <p class="section-subtitle">Organismos y redes con las que trabaja el dispositivo</p>
+                                <p class="section-subtitle">
+                                    En esta sección se releva con qué tipos de instituciones el dispositivo articula de manera habitual para la atención, derivación o acompañamiento de las personas.
+                                </p>
                             </div>
                         </div>
                         <div class="section-status">
@@ -369,7 +452,12 @@
                         <div class="form-group row">
                             <div class="col-md-4">
                                 {{ form.articulaciones_institucionales|as_crispy_field }}
-                                {{ form.articulaciones_institucionales_otro|as_crispy_field }}
+                                {% with sel=form.articulaciones_institucionales.value %}
+                                    <div id="wrapper-articulaciones_institucionales_otro"
+                                         class="{% if not sel or 'otro' not in sel %}d-none{% endif %}">
+                                        {{ form.articulaciones_institucionales_otro|as_crispy_field }}
+                                    </div>
+                                {% endwith %}
                             </div>
                         </div>
                     </div>
@@ -383,8 +471,10 @@
                                 <i class="fas fa-file-alt"></i>
                             </div>
                             <div class="section-title-group">
-                                <h3 class="section-title">Observaciones y documentación</h3>
-                                <p class="section-subtitle">Notas adicionales y archivos adjuntos</p>
+                                <h3 class="section-title">Observaciones y documentación del dispositivo</h3>
+                                <p class="section-subtitle">
+                                    En este espacio puede incorporar información adicional que considere relevante sobre el funcionamiento del dispositivo y que no haya sido contemplada en las preguntas anteriores. También puede adjuntar documentación institucional vinculada al funcionamiento del dispositivo, como protocolos de intervención, circuitos de admisión, manuales de trabajo, reglamentos internos u otros documentos que permitan comprender mejor la modalidad de atención.
+                                </p>
                             </div>
                         </div>
                         <div class="section-status">
@@ -479,7 +569,8 @@
                             </div>
 
                             <!-- Slot: Adicional 1 -->
-                            <div class="doc-slot" data-field="documentacion_dispositivo_adicional_1">
+                            <div class="doc-slot {% if not form.instance.documentacion_dispositivo_adicional_1 %}d-none{% endif %}"
+                                 data-field="documentacion_dispositivo_adicional_1">
                                 <div class="doc-slot-header">
                                     <i class="fas fa-file"></i>
                                     Documentación adicional 1
@@ -549,7 +640,8 @@
                             </div>
 
                             <!-- Slot: Adicional 2 -->
-                            <div class="doc-slot" data-field="documentacion_dispositivo_adicional_2">
+                            <div class="doc-slot {% if not form.instance.documentacion_dispositivo_adicional_2 %}d-none{% endif %}"
+                                 data-field="documentacion_dispositivo_adicional_2">
                                 <div class="doc-slot-header">
                                     <i class="fas fa-file"></i>
                                     Documentación adicional 2
@@ -619,7 +711,8 @@
                             </div>
 
                             <!-- Slot: Adicional 3 -->
-                            <div class="doc-slot" data-field="documentacion_dispositivo_adicional_3">
+                            <div class="doc-slot {% if not form.instance.documentacion_dispositivo_adicional_3 %}d-none{% endif %}"
+                                 data-field="documentacion_dispositivo_adicional_3">
                                 <div class="doc-slot-header">
                                     <i class="fas fa-file"></i>
                                     Documentación adicional 3
@@ -689,7 +782,8 @@
                             </div>
 
                             <!-- Slot: Adicional 4 -->
-                            <div class="doc-slot" data-field="documentacion_dispositivo_adicional_4">
+                            <div class="doc-slot {% if not form.instance.documentacion_dispositivo_adicional_4 %}d-none{% endif %}"
+                                 data-field="documentacion_dispositivo_adicional_4">
                                 <div class="doc-slot-header">
                                     <i class="fas fa-file"></i>
                                     Documentación adicional 4
@@ -759,6 +853,10 @@
                             </div>
 
                         </div>
+
+                        <button type="button" id="btn-add-doc" class="btn btn-outline-primary mt-3">
+                            <i class="fas fa-plus mr-1"></i> Añadir archivo
+                        </button>
                     </div>
                 </div>
 

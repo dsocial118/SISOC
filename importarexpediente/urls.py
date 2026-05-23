@@ -7,6 +7,7 @@ from .views import (
     importarexpediente_detail_ajax,
     ImportDatosView,
     BorrarDatosImportadosView,
+    descargar_archivo_importado,
 )
 
 urlpatterns = [
@@ -25,6 +26,11 @@ urlpatterns = [
         "importarexpedientes/<int:id_archivo>/",
         ImportarExpedienteDetalleListView.as_view(),
         name="importarexpediente_detail",
+    ),
+    path(
+        "importarexpedientes/<int:id_archivo>/descargar/",
+        descargar_archivo_importado,
+        name="descargar_archivo_importado",
     ),
     path(
         "importarexpedientes/<int:id_archivo>/ajax/",

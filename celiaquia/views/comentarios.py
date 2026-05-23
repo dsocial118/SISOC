@@ -8,6 +8,7 @@ from django.core.exceptions import ObjectDoesNotExist
 
 from celiaquia.models import ExpedienteCiudadano, HistorialComentarios
 from iam.services import user_has_permission_code
+from users.territorial_scope import is_territorial_user, user_can_access_territory
 
 logger = logging.getLogger("django")
 ROLE_COORDINADOR_CELIAQUIA_PERMISSION = "auth.role_coordinadorceliaquia"
@@ -24,7 +25,7 @@ def _safe_profile(user):
         return None
     try:
         return user.profile
-    except ObjectDoesNotExist:
+    except (AttributeError, ObjectDoesNotExist):
         return None
 
 
@@ -36,6 +37,31 @@ def _user_has_permission_cached(user, permission_code):
 
 ALLOWED_UPLOAD_TYPES = {"application/pdf", "image/jpeg", "image/png"}
 MAX_UPLOAD_MB = 5
+
+
+def _provincia_can_access_comment_legajo(user, legajo) -> bool:
+    if not is_territorial_user(user):
+        return False
+
+    owner = getattr(legajo.expediente, "usuario_provincia", None)
+    ciudadano = getattr(legajo, "ciudadano", None)
+    territorio = {
+        "provincia_id": getattr(ciudadano, "provincia_id", None),
+        "municipio_id": getattr(ciudadano, "municipio_id", None),
+        "localidad_id": getattr(ciudadano, "localidad_id", None),
+    }
+    if any(value is not None for value in territorio.values()):
+        return user_can_access_territory(user, **territorio, owner=owner)
+
+    owner_profile = _safe_profile(owner)
+    owner_provincia_id = getattr(owner_profile, "provincia_id", None)
+    if owner_provincia_id is None:
+        return True
+    return user_can_access_territory(
+        user,
+        provincia_id=owner_provincia_id,
+        owner=owner,
+    )
 
 
 class LegajoComentarioCreateView(View):
@@ -182,34 +208,11 @@ class LegajoComentarioListView(View):
 
         # Provincia: debe pertenecer a la misma provincia
         if is_prov and not (is_admin or is_coord):
-            owner = getattr(legajo.expediente, "usuario_provincia", None)
-            if not owner:
+            if not _provincia_can_access_comment_legajo(user, legajo):
                 return JsonResponse(
                     {
                         "success": False,
-                        "message": "No se pudo validar la provincia del expediente.",
-                    },
-                    status=403,
-                )
-
-            user_profile = _safe_profile(user)
-            owner_profile = _safe_profile(owner)
-            if not user_profile:
-                return JsonResponse(
-                    {
-                        "success": False,
-                        "message": "No se pudo validar tu provincia.",
-                    },
-                    status=403,
-                )
-
-            user_provincia = getattr(user_profile, "provincia_id", None)
-            owner_provincia = getattr(owner_profile, "provincia_id", None)
-            if user_provincia and owner_provincia and user_provincia != owner_provincia:
-                return JsonResponse(
-                    {
-                        "success": False,
-                        "message": "No pertenece a la misma provincia del expediente.",
+                        "message": "No pertenece al alcance territorial del expediente.",
                     },
                     status=403,
                 )

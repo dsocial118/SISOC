@@ -43,6 +43,16 @@ function initializeEstadoTree() {
         return;
     }
 
+    const estadoSection = document.querySelector('[data-section="estado"]');
+    const estadoLocked = estadoSection && estadoSection.dataset.estadoLocked === "true";
+    if (estadoLocked) {
+        [estadoSelect, subestadoSelect, motivoSelect].forEach((select) => {
+            select.disabled = true;
+            select.setAttribute("disabled", "disabled");
+        });
+        return;
+    }
+
     const subestadoPlaceholder =
         subestadoSelect.dataset.placeholder || "Seleccione un subestado";
     const motivoPlaceholder =

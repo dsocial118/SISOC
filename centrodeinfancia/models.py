@@ -1370,3 +1370,55 @@ class FormularioCDIHorarioFuncionamiento(models.Model):
             )
         if errors:
             raise ValidationError(errors)
+
+
+class AccesoCDI(models.Model):
+    """Vínculo entre un usuario y un CDI que gestiona.
+
+    Replica el patrón de ``users.AccesoComedorPWA`` para el dominio CDI: un
+    usuario provincial genera usuarios "CDI - Referente centro" asociados a un
+    centro puntual (relación 1..N, máximo definido en la capa de servicio).
+    El rol/permisos los aporta el grupo, no este modelo.
+    """
+
+    LIMITE_USUARIOS_POR_CENTRO = 10
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="accesos_cdi",
+    )
+    centro = models.ForeignKey(
+        CentroDeInfancia,
+        on_delete=models.CASCADE,
+        related_name="accesos_usuarios",
+    )
+    creado_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="accesos_cdi_creados",
+    )
+    activo = models.BooleanField(default=True)
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    fecha_baja = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        verbose_name = "Acceso de usuario a CDI"
+        verbose_name_plural = "Accesos de usuarios a CDI"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user", "centro"],
+                name="uniq_acceso_cdi_user_centro",
+            )
+        ]
+        indexes = [
+            models.Index(fields=["centro", "activo"]),
+            models.Index(fields=["user", "activo"]),
+            models.Index(fields=["creado_por", "activo"]),
+        ]
+
+    def __str__(self):
+        estado = "activo" if self.activo else "baja"
+        return f"{self.user_id} - {self.centro_id} ({estado})"

@@ -88,6 +88,8 @@
                                         <th>Organización</th>
                                     {% elif column_key == "programa" %}
                                         <th>Programa</th>
+                                    {% elif column_key == "mes_ejecucion" %}
+                                        <th>Mes de ejecucion</th>
                                     {% elif column_key == "dupla" %}
                                         <th>Dupla</th>
                                     {% elif column_key == "estado_general" %}
@@ -152,6 +154,8 @@
                                             <td>{{ comedor.organizacion__nombre | default_if_none:"Sin organización" }}</td>
                                         {% elif column_key == "programa" %}
                                             <td>{{ comedor.programa__nombre | default_if_none:"Sin programa" }}</td>
+                                        {% elif column_key == "mes_ejecucion" %}
+                                            <td>{{ comedor.mes_ejecucion | default_if_none:"-" }}</td>
                                         {% elif column_key == "dupla" %}
                                             <td>{{ comedor.dupla__nombre | default_if_none:"Sin dupla" }}</td>
                                         {% elif column_key == "estado_general" %}

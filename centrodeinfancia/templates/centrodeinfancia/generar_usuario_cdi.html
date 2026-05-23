@@ -1,0 +1,37 @@
+{% extends "includes/main.html" %}
+{% load crispy_forms_tags %}
+
+{% block title %}Generar usuario - Centro de Desarrollo Infantil{% endblock %}
+{% block titulo-pagina %}Generar usuario referente del CDI{% endblock %}
+
+{% block content %}
+    <div class="row">
+        <div class="col-12 col-lg-8 mx-auto">
+            <div class="card card-primary card-outline">
+                <div class="card-header mb-3">
+                    <h3 class="card-title">
+                        Generar usuario referente para:
+                        <a href="{% url 'centrodeinfancia_detalle' centro.id %}">{{ centro.nombre }}</a>
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">
+                        Se creará un usuario con el rol <strong>CDI - Referente centro</strong>
+                        (no editable) asociado a este centro.
+                        Cupo restante: <strong>{{ usuarios_restantes }}</strong>.
+                    </p>
+                    <form method="post" class="w-100">
+                        {% csrf_token %}
+                        {{ form.non_field_errors }}
+                        {{ form.first_name|as_crispy_field }}
+                        {{ form.last_name|as_crispy_field }}
+                        {{ form.email|as_crispy_field }}
+                        <button class="btn btn-primary mx-1" type="submit">Generar usuario</button>
+                        <a href="{% url 'centrodeinfancia_detalle' centro.id %}"
+                           class="btn btn-secondary">Cancelar</a>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

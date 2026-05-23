@@ -5,9 +5,11 @@ from admisiones.views.web_views import (
     eliminar_archivo_admision,
     actualizar_estado_archivo,
     actualizar_numero_gde_archivo,
+    actualizar_numero_gde_organizacion_admision,
     actualizar_convenio_numero,
     actualizar_num_expediente,
     crear_documento_personalizado,
+    resync_convenio_admision,
     AdmisionesTecnicosListView,
     AdmisionesTecnicosUpdateView,
     AdmisionDetailView,
@@ -123,6 +125,16 @@ urlpatterns = [
         "ajax/actualizar-numero-gde/",
         actualizar_numero_gde_archivo,
         name="actualizar_numero_gde_archivo",
+    ),
+    path(
+        "ajax/actualizar-numero-gde-organizacion/",
+        actualizar_numero_gde_organizacion_admision,
+        name="actualizar_numero_gde_organizacion_admision",
+    ),
+    path(
+        "admisiones/<int:admision_pk>/resync-convenio/",
+        resync_convenio_admision,
+        name="admision_resync_convenio",
     ),
     path(
         "ajax/actualizar-convenio-numero/",
