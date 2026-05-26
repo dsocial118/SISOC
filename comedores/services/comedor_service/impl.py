@@ -443,7 +443,9 @@ def _apply_user_scope_to_comedores_list_queryset(base_qs, user):
     is_dupla = UserPermissionService.es_tecnico_o_abogado(user)
 
     if is_coordinador:
-        role_qs = _aplicar_scope_coordinador_comedores_list_queryset(base_qs, duplas_ids)
+        role_qs = _aplicar_scope_coordinador_comedores_list_queryset(
+            base_qs, duplas_ids
+        )
     elif is_dupla:
         role_qs = _build_dupla_user_scoped_comedores_list_queryset(user)
     else:
@@ -462,7 +464,7 @@ def _apply_user_scope_to_comedores_list_queryset(base_qs, user):
 
     if role_qs is not None:
         # Territorio + asignados fuera del territorio
-        return (territorial_qs | role_qs).distinct()
+        return (territorial_qs | role_qs.distinct()).distinct()
     return territorial_qs
 
 
@@ -481,9 +483,13 @@ def _apply_user_scope_to_comedores_queryset(base_qs, user):
     is_dupla = UserPermissionService.es_tecnico_o_abogado(user)
 
     if is_coordinador:
-        role_qs = _aplicar_scope_coordinador_comedores_list_queryset(base_qs, duplas_ids)
+        role_qs = _aplicar_scope_coordinador_comedores_list_queryset(
+            base_qs, duplas_ids
+        )
     elif is_dupla:
-        role_qs = base_qs.filter(Q(dupla__abogado=user) | Q(dupla__tecnico=user)).distinct()
+        role_qs = base_qs.filter(
+            Q(dupla__abogado=user) | Q(dupla__tecnico=user)
+        ).distinct()
     else:
         role_qs = None
 
@@ -500,7 +506,7 @@ def _apply_user_scope_to_comedores_queryset(base_qs, user):
 
     if role_qs is not None:
         # Territorio + asignados fuera del territorio
-        return (territorial_qs | role_qs).distinct()
+        return (territorial_qs | role_qs.distinct()).distinct()
     return territorial_qs
 
 
