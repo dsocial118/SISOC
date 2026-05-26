@@ -464,7 +464,7 @@ def _apply_user_scope_to_comedores_list_queryset(base_qs, user):
 
     if role_qs is not None:
         # Territorio + asignados fuera del territorio
-        return (territorial_qs | role_qs).distinct()
+        return (territorial_qs | role_qs.distinct()).distinct()
     return territorial_qs
 
 
@@ -506,7 +506,7 @@ def _apply_user_scope_to_comedores_queryset(base_qs, user):
 
     if role_qs is not None:
         # Territorio + asignados fuera del territorio
-        return (territorial_qs | role_qs).distinct()
+        return (territorial_qs | role_qs.distinct()).distinct()
     return territorial_qs
 
 
