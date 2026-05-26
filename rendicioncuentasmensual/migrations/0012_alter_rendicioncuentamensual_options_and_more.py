@@ -19,7 +19,7 @@ class Migration(migrations.Migration):
                 "permissions": [
                     ("manage_mobile_rendicion", "Puede gestionar rendiciones mobile")
                 ],
-                "verbose_name": "RendiciÃ³n de Cuenta Mensual",
+                "verbose_name": "Rendición de Cuenta Mensual",
                 "verbose_name_plural": "Rendiciones de Cuenta Mensuales",
             },
         ),
@@ -45,14 +45,14 @@ class Migration(migrations.Migration):
                 ],
                 default="comprobantes",
                 max_length=40,
-                verbose_name="CategorÃ\xada",
+                verbose_name="Categoría",
             ),
         ),
         migrations.AlterField(
             model_name="documentacionadjunta",
             name="fecha_creacion",
             field=models.DateTimeField(
-                auto_now_add=True, verbose_name="Fecha de CreaciÃ³n"
+                auto_now_add=True, verbose_name="Fecha de Creación"
             ),
         ),
         migrations.AlterField(
@@ -64,69 +64,69 @@ class Migration(migrations.Migration):
                 on_delete=django.db.models.deletion.CASCADE,
                 related_name="archivos_adjuntos",
                 to="rendicioncuentasmensual.rendicioncuentamensual",
-                verbose_name="RendiciÃ³n de Cuenta Mensual",
+                verbose_name="Rendición de Cuenta Mensual",
             ),
         ),
         migrations.AlterField(
             model_name="documentacionadjunta",
             name="ultima_modificacion",
             field=models.DateTimeField(
-                auto_now=True, verbose_name="Ãšltima ModificaciÃ³n"
+                auto_now=True, verbose_name="Última Modificación"
             ),
         ),
         migrations.AlterField(
             model_name="rendicioncuentamensual",
             name="anio",
-            field=models.IntegerField(verbose_name="AÃ±o"),
+            field=models.IntegerField(verbose_name="Año"),
         ),
         migrations.AlterField(
             model_name="rendicioncuentamensual",
             name="estado",
             field=models.CharField(
                 choices=[
-                    ("elaboracion", "PresentaciÃ³n en elaboraciÃ³n"),
-                    ("revision", "PresentaciÃ³n en revisiÃ³n"),
-                    ("subsanar", "PresentaciÃ³n a subsanar"),
-                    ("finalizada", "PresentaciÃ³n finalizada"),
+                    ("elaboracion", "Presentación en elaboración"),
+                    ("revision", "Presentación en revisión"),
+                    ("subsanar", "Presentación a subsanar"),
+                    ("finalizada", "Presentación finalizada"),
                 ],
                 default="elaboracion",
                 max_length=20,
-                verbose_name="Estado de RendiciÃ³n",
+                verbose_name="Estado de Rendición",
             ),
         ),
         migrations.AlterField(
             model_name="rendicioncuentamensual",
             name="fecha_creacion",
             field=models.DateTimeField(
-                auto_now_add=True, verbose_name="Fecha de CreaciÃ³n"
+                auto_now_add=True, verbose_name="Fecha de Creación"
             ),
         ),
         migrations.AlterField(
             model_name="rendicioncuentamensual",
             name="numero_rendicion",
             field=models.PositiveIntegerField(
-                blank=True, null=True, verbose_name="NÃºmero de RendiciÃ³n"
+                blank=True, null=True, verbose_name="Número de Rendición"
             ),
         ),
         migrations.AlterField(
             model_name="rendicioncuentamensual",
             name="periodo_fin",
             field=models.DateField(
-                blank=True, null=True, verbose_name="PerÃ\xadodo fin"
+                blank=True, null=True, verbose_name="Período fin"
             ),
         ),
         migrations.AlterField(
             model_name="rendicioncuentamensual",
             name="periodo_inicio",
             field=models.DateField(
-                blank=True, null=True, verbose_name="PerÃ\xadodo inicio"
+                blank=True, null=True, verbose_name="Período inicio"
             ),
         ),
         migrations.AlterField(
             model_name="rendicioncuentamensual",
             name="ultima_modificacion",
             field=models.DateTimeField(
-                auto_now=True, verbose_name="Ãšltima ModificaciÃ³n"
+                auto_now=True, verbose_name="Última Modificación"
             ),
         ),
         migrations.AlterField(
@@ -138,7 +138,7 @@ class Migration(migrations.Migration):
                 on_delete=django.db.models.deletion.SET_NULL,
                 related_name="rendiciones_cuentas_mensuales_modificadas",
                 to=settings.AUTH_USER_MODEL,
-                verbose_name="Usuario Ãºltima modificaciÃ³n",
+                verbose_name="Usuario última modificación",
             ),
         ),
     ]

@@ -32,6 +32,7 @@ logger = logging.getLogger("django")
 
 def inferir_linea_programatica(comedor):
     programa_id = getattr(comedor, "programa_id", None)
+    # IDs de programa: 3 = Abordaje Comunitario SECOS, 4 = Abordaje Comunitario Tradicional
     if programa_id == 3:
         return DocumentacionAdjunta.LINEA_SECOS
     if programa_id == 4:

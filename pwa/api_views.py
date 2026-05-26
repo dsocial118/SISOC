@@ -1,7 +1,6 @@
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.exceptions import ObjectDoesNotExist
-from datetime import date
 from django.core.paginator import Paginator
 from django.db.models import Count, Prefetch, Q
 from django.db import connection
@@ -67,6 +66,7 @@ from pwa.services.nomina_service import (
     split_gender_bucket,
     update_nomina_persona,
 )
+from pwa.utils import parse_periodo_referencia
 from pwa.view_helpers import (
     build_mensaje_espacio_summary,
     normalize_renaper_error_message,
@@ -786,17 +786,7 @@ class NominaEspacioPWAViewSet(viewsets.ViewSet):
             "total_asistentes": total,
         }
 
-    @staticmethod
-    def _parse_periodo_referencia(value: str | None):
-        raw_value = (value or "").strip()
-        if not raw_value:
-            return None
-        if len(raw_value) == 7:
-            raw_value = f"{raw_value}-01"
-        try:
-            return date.fromisoformat(raw_value).replace(day=1)
-        except ValueError:
-            return None
+    _parse_periodo_referencia = staticmethod(parse_periodo_referencia)
 
     @staticmethod
     def _serialize_attendance_attendee(registro):
@@ -1025,19 +1015,16 @@ class NominaEspacioPWAViewSet(viewsets.ViewSet):
                 {"detail": "Periodo invalido."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        registros = self._attendance_queryset(tab).filter(
-            periodo_referencia=periodo_referencia
+        asistentes = list(
+            self._attendance_queryset(tab).filter(periodo_referencia=periodo_referencia)
         )
         return Response(
             {
                 "tab": tab,
-                **self._serialize_attendance_period(
-                    periodo_referencia,
-                    registros.count(),
-                ),
+                **self._serialize_attendance_period(periodo_referencia, len(asistentes)),
                 "asistentes": [
                     self._serialize_attendance_attendee(registro)
-                    for registro in registros
+                    for registro in asistentes
                 ],
             },
             status=status.HTTP_200_OK,

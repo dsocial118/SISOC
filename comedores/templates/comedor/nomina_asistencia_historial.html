@@ -58,7 +58,7 @@
                                 <td>
                                     {% if registro.nomina.ciudadano_id %}
                                         <a href="{% url 'ciudadanos_ver' registro.nomina.ciudadano.id %}"
-                                           style="color: #3498db; text-decoration: none">
+                                           class="nomina-citizen-link">
                                             {{ registro.nomina.ciudadano.apellido|default:"-" }},
                                             {{ registro.nomina.ciudadano.nombre|default:"-" }}
                                         </a>

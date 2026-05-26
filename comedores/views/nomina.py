@@ -1,5 +1,3 @@
-from datetime import date
-
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -22,6 +20,7 @@ from comedores.services.comedor_service import ComedorService
 from comedores.utils import comedor_usa_admision_para_nomina
 from core.soft_delete.view_helpers import SoftDeleteDeleteViewMixin
 from pwa.models import RegistroAsistenciaNominaPWA
+from pwa.utils import parse_periodo_referencia
 
 
 def _get_nomina_scoped_or_404(pk, user):
@@ -58,18 +57,6 @@ def _get_cantidad_asistentes_activos(rangos):
     return (rangos or {}).get("cantidad_activos") or 0
 
 
-def _parse_periodo_asistencia(value):
-    raw_value = (value or "").strip()
-    if not raw_value:
-        return None
-    if len(raw_value) == 7:
-        raw_value = f"{raw_value}-01"
-    try:
-        return date.fromisoformat(raw_value).replace(day=1)
-    except ValueError:
-        return None
-
-
 def _get_asistencia_nomina_context(request, *, admision_id=None, comedor_id=None):
     registros = RegistroAsistenciaNominaPWA.objects.filter(
         periodicidad=RegistroAsistenciaNominaPWA.PERIODICIDAD_MENSUAL,
@@ -85,7 +72,7 @@ def _get_asistencia_nomina_context(request, *, admision_id=None, comedor_id=None
         .annotate(total_asistentes=Count("id"))
         .order_by("-periodo_referencia")
     )
-    periodo_seleccionado = _parse_periodo_asistencia(request.GET.get("periodo"))
+    periodo_seleccionado = parse_periodo_referencia(request.GET.get("periodo"))
 
     asistentes = []
     if periodo_seleccionado:

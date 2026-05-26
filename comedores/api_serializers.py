@@ -4,6 +4,7 @@
 
 from rest_framework import serializers
 from django.core.exceptions import DisallowedHost
+from django.urls import reverse
 
 from comedores.models import Comedor, ComedorDatosConvenioPnud, Nomina
 from comedores.services.comedor_service import ComedorService
@@ -1304,9 +1305,13 @@ class RendicionMensualDetailSerializer(RendicionMensualListSerializer):
 
     def _build_modelo_payload(self, obj, modelo):
         request = self.context.get("request")
-        url = (
-            f"/api/comedores/{obj.comedor_id}/rendiciones/modelos/"
-            f"{obj.linea_programatica}/{modelo['codigo']}/download/"
+        url = reverse(
+            "api-comedor-descargar-modelo-rendicion",
+            kwargs={
+                "pk": obj.comedor_id,
+                "linea_programatica": obj.linea_programatica,
+                "modelo_codigo": modelo["codigo"],
+            },
         )
         return {
             **modelo,

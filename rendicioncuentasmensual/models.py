@@ -262,7 +262,7 @@ class DocumentacionAdjunta(SoftDeleteModelMixin, models.Model):
         max_length=40,
         choices=CATEGORIA_CHOICES,
         default=CATEGORIA_COMPROBANTES,
-        verbose_name="CategorÃ­a",
+        verbose_name="Categoría",
     )
     estado = models.CharField(
         max_length=20,
@@ -281,17 +281,17 @@ class DocumentacionAdjunta(SoftDeleteModelMixin, models.Model):
     )
     fecha_creacion = models.DateTimeField(
         auto_now_add=True,
-        verbose_name="Fecha de CreaciÃ³n",
+        verbose_name="Fecha de Creación",
     )
     ultima_modificacion = models.DateTimeField(
         auto_now=True,
-        verbose_name="Ãšltima ModificaciÃ³n",
+        verbose_name="Última Modificación",
     )
     rendicion_cuenta_mensual = models.ForeignKey(
         "RendicionCuentaMensual",
         on_delete=models.CASCADE,
         related_name="archivos_adjuntos",
-        verbose_name="RendiciÃ³n de Cuenta Mensual",
+        verbose_name="Rendición de Cuenta Mensual",
         null=True,
         blank=True,
     )
@@ -389,10 +389,10 @@ class RendicionCuentaMensual(SoftDeleteModelMixin, models.Model):
     ESTADO_FINALIZADA = "finalizada"
 
     ESTADO_CHOICES = [
-        (ESTADO_ELABORACION, "PresentaciÃ³n en elaboraciÃ³n"),
-        (ESTADO_REVISION, "PresentaciÃ³n en revisiÃ³n"),
-        (ESTADO_SUBSANAR, "PresentaciÃ³n a subsanar"),
-        (ESTADO_FINALIZADA, "PresentaciÃ³n finalizada"),
+        (ESTADO_ELABORACION, "Presentación en elaboración"),
+        (ESTADO_REVISION, "Presentación en revisión"),
+        (ESTADO_SUBSANAR, "Presentación a subsanar"),
+        (ESTADO_FINALIZADA, "Presentación finalizada"),
     ]
 
     LINEA_PROGRAMATICA_CHOICES = [
@@ -423,7 +423,7 @@ class RendicionCuentaMensual(SoftDeleteModelMixin, models.Model):
         blank=True,
     )
     mes = models.IntegerField(verbose_name="Mes", choices=MESES)
-    anio = models.IntegerField(verbose_name="AÃ±o")
+    anio = models.IntegerField(verbose_name="Año")
     convenio = models.CharField(
         max_length=100,
         verbose_name="Convenio",
@@ -431,17 +431,17 @@ class RendicionCuentaMensual(SoftDeleteModelMixin, models.Model):
         null=True,
     )
     numero_rendicion = models.PositiveIntegerField(
-        verbose_name="NÃºmero de RendiciÃ³n",
+        verbose_name="Número de Rendición",
         blank=True,
         null=True,
     )
     periodo_inicio = models.DateField(
-        verbose_name="PerÃ­odo inicio",
+        verbose_name="Período inicio",
         blank=True,
         null=True,
     )
     periodo_fin = models.DateField(
-        verbose_name="PerÃ­odo fin",
+        verbose_name="Período fin",
         blank=True,
         null=True,
     )
@@ -480,24 +480,24 @@ class RendicionCuentaMensual(SoftDeleteModelMixin, models.Model):
         related_name="rendiciones_cuentas_mensuales_modificadas",
         blank=True,
         null=True,
-        verbose_name="Usuario Ãºltima modificaciÃ³n",
+        verbose_name="Usuario última modificación",
     )
     ultima_modificacion = models.DateTimeField(
         auto_now=True,
-        verbose_name="Ãšltima ModificaciÃ³n",
+        verbose_name="Última Modificación",
     )
     fecha_creacion = models.DateTimeField(
         auto_now_add=True,
-        verbose_name="Fecha de CreaciÃ³n",
+        verbose_name="Fecha de Creación",
     )
 
     class Meta:
         permissions = [
             ("manage_mobile_rendicion", "Puede gestionar rendiciones mobile"),
         ]
-        verbose_name = "RendiciÃ³n de Cuenta Mensual"
+        verbose_name = "Rendición de Cuenta Mensual"
         verbose_name_plural = "Rendiciones de Cuenta Mensuales"
 
     @property
-    def arvhios_adjuntos(self):  # compat legacy (typo histÃ³rico)
+    def arvhios_adjuntos(self):  # compat legacy (typo histórico)
         return getattr(self, "archivos_adjuntos")

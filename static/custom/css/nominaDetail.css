@@ -568,6 +568,11 @@
     color: #bdc3c7;
 }
 
+.nomina-citizen-link {
+    color: #3498db;
+    text-decoration: none;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     .nomina-stats-row {
