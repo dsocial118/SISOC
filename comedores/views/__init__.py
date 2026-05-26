@@ -14,6 +14,7 @@ from .colaborador import (
 )
 from .dupla import AsignarDuplaListView
 from .nomina import (
+    NominaAsistenciaHistorialView,
     NominaCreateView,
     NominaDeleteView,
     NominaDetailView,
@@ -53,6 +54,7 @@ __all__ = [
     "ComedorTransaccionesDetailView",
     "ComedorUpdateView",
     "NominaCreateView",
+    "NominaAsistenciaHistorialView",
     "NominaDeleteView",
     "NominaDetailView",
     "NominaDirectaCreateView",

@@ -91,7 +91,34 @@ def _active_nomina_queryset(*, comedor_id: int):
 
 def get_periodo_mensual_actual() -> date:
     today = timezone.localdate()
+    if today.day <= 10:
+        previous_month = today.month - 1
+        year = today.year
+        if previous_month == 0:
+            previous_month = 12
+            year -= 1
+        return date(year, previous_month, 1)
     return today.replace(day=1)
+
+
+def asistencia_nomina_habilitada() -> bool:
+    today = timezone.localdate()
+    return today.day >= 25 or today.day <= 10
+
+
+def validar_asistencia_nomina_habilitada():
+    if asistencia_nomina_habilitada():
+        return
+    periodo_referencia = get_periodo_mensual_actual()
+    raise ValidationError(
+        {
+            "detail": (
+                "La asistencia del periodo "
+                f"{periodo_referencia:%m/%Y} se habilita desde el dia 25 "
+                "hasta el dia 10 del mes siguiente."
+            )
+        }
+    )
 
 
 def _resolve_admision_para_comedor(*, comedor_id: int):
@@ -762,6 +789,7 @@ def is_menor(fecha_nacimiento: date | None) -> bool:
 @transaction.atomic
 def registrar_asistencia_nomina_mes_actual(*, nomina: Nomina, actor):
     comedor_id = _nomina_comedor_id(nomina)
+    validar_asistencia_nomina_habilitada()
     periodo_referencia = get_periodo_mensual_actual()
     registro, created = RegistroAsistenciaNominaPWA.objects.get_or_create(
         nomina=nomina,
@@ -792,6 +820,7 @@ def registrar_asistencia_nomina_mes_actual(*, nomina: Nomina, actor):
 def sync_asistencia_alimentaria_nomina_mes_actual(
     *, comedor_id: int, actor, selected_nomina_ids: list[int]
 ):
+    validar_asistencia_nomina_habilitada()
     periodo_referencia = get_periodo_mensual_actual()
     queryset = (
         _active_nomina_queryset(comedor_id=comedor_id)

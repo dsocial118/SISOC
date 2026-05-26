@@ -149,16 +149,24 @@
 .nomina-actions-bar {
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items: stretch;
     margin-bottom: 25px;
     gap: 15px;
     flex-wrap: wrap;
 }
 
 .nomina-search-box {
+    flex: 1;
+    min-width: 360px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.nomina-search-field {
     position: relative;
     flex: 1;
-    max-width: 400px;
+    min-width: 220px;
 }
 
 .nomina-search-icon {
@@ -172,6 +180,7 @@
 
 .nomina-search-input {
     width: 100%;
+    height: 48px;
     padding: 12px 15px 12px 45px;
     border: 2px solid #2c3e50;
     border-radius: 10px;
@@ -191,7 +200,24 @@
     background: #34495e;
 }
 
+.nomina-search-actions {
+    display: flex;
+    align-items: stretch;
+    gap: 8px;
+}
+
+.nomina-search-actions .btn {
+    height: 48px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    white-space: nowrap;
+    margin: 0 !important;
+    border-radius: 10px;
+}
+
 .nomina-add-btn {
+    min-height: 48px;
     padding: 12px 25px;
     background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
     color: #ffffff;
@@ -459,6 +485,94 @@
     font-size: 1.1rem;
 }
 
+.nomina-period-list {
+    display: grid;
+    gap: 12px;
+}
+
+.nomina-attendance-title {
+    color: #ffffff;
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin: 0 0 24px 0;
+}
+
+.nomina-attendance-detail-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    padding-bottom: 18px;
+    margin-bottom: 24px;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.18);
+}
+
+.nomina-attendance-detail-header .nomina-attendance-title {
+    margin-bottom: 8px;
+}
+
+.nomina-attendance-detail-header .btn {
+    flex-shrink: 0;
+}
+
+.nomina-period-card {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    align-items: center;
+    gap: 18px;
+    padding: 18px 20px;
+    border-radius: 12px;
+    background: #2c3e50;
+    color: #ffffff;
+    text-decoration: none;
+    transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.nomina-period-card:hover {
+    background: #34495e;
+    color: #ffffff;
+    text-decoration: none;
+    transform: translateY(-1px);
+}
+
+.nomina-period-title {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 700;
+}
+
+.nomina-period-meta {
+    margin: 4px 0 0 0;
+    color: #bdc3c7;
+    font-size: 0.9rem;
+}
+
+.nomina-period-count {
+    min-width: 120px;
+    text-align: right;
+}
+
+.nomina-period-count strong {
+    display: block;
+    color: #E7BA61;
+    font-size: 1.5rem;
+    line-height: 1;
+}
+
+.nomina-period-count span {
+    color: #bdc3c7;
+    font-size: 0.85rem;
+}
+
+.nomina-period-icon {
+    color: #bdc3c7;
+}
+
+.nomina-citizen-link {
+    color: #3498db;
+    text-decoration: none;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     .nomina-stats-row {
@@ -475,7 +589,13 @@
     }
 
     .nomina-search-box {
-        max-width: 100%;
+        width: 100%;
+        min-width: 100%;
+        align-items: stretch;
+    }
+
+    .nomina-search-actions {
+        flex-shrink: 0;
     }
 
     .nomina-table-container {
@@ -490,6 +610,19 @@
         width: 100%;
         text-align: center;
         margin-bottom: 10px;
+    }
+
+    .nomina-period-card {
+        grid-template-columns: 1fr auto;
+    }
+
+    .nomina-period-icon {
+        display: none;
+    }
+
+    .nomina-attendance-detail-header {
+        align-items: stretch;
+        flex-direction: column;
     }
 }
 
