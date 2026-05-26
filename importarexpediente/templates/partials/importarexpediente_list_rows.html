@@ -2,41 +2,50 @@
 {% for expediente in importarexpedientes %}
     <tr>
         <td data-cuit="{{ expediente.cuit|default:'' }}">
-            {{ expediente.numero_expediente_pago |default_if_none:"Sin información" }}
+            {{ expediente.numero_expediente_pago |default_if_none:"Sin informacion" }}
         </td>
         <td data-nombre="{{ organizacion.nombre }}">
             <a href="{% url 'importarexpediente_detail' expediente.id %}"
                class="font-weight-bold link-handler"
                title="Ver detalles">{{ expediente.archivo }}</a>
         </td>
+        <td data-periodo="{{ expediente.periodo_pago|default:'' }}">
+            {{ expediente.periodo_pago |default_if_none:"Sin informacion" }}
+        </td>
         <td data-cuit="{{ expediente.cuit|default:'' }}">
-            {{ expediente.usuario.username |default_if_none:"Sin información" }}
+            {{ expediente.usuario.username |default_if_none:"Sin informacion" }}
         </td>
         <td data-telefono="{{ expediente.telefono|default:'' }}">
-            {{ expediente.fecha_subida | default_if_none:"Sin información" }}
+            {{ expediente.fecha_subida | default_if_none:"Sin informacion" }}
         </td>
         <td data-email="{{ expediente.email|default:'' }}">
-            {{ expediente.count_exitos | default_if_none:"Sin información" }}
+            {{ expediente.count_exitos | default_if_none:"Sin informacion" }}
         </td>
         <td data-email="{{ expediente.email|default:'' }}">
-            {{ expediente.count_errores | default_if_none:"Sin información" }}
+            {{ expediente.count_errores | default_if_none:"Sin informacion" }}
         </td>
         <td data-email="{{ expediente.email|default:'' }}">
-            {{ expediente.importacion_completada|yesno:"Si,No,Sin información" }}
+            {{ expediente.importacion_completada|yesno:"Si,No,Sin informacion" }}
         </td>
         <td class="project-actions text-right">
             <div class="action-buttons" role="group">
                 <a href="{% url 'importarexpediente_detail' expediente.id %}"
                    class="btn btn-primary link-handler"
-                   title="Ver detalle de la organización">
+                   title="Ver detalle">
                     <i class="fas fa-eye"></i>
                     Ver
+                </a>
+                <a href="{% url 'descargar_archivo_importado' expediente.id %}"
+                   class="btn btn-secondary"
+                   title="Descargar archivo adjunto">
+                    <i class="fas fa-download"></i>
+                    Descargar
                 </a>
             </div>
         </td>
     </tr>
 {% empty %}
     <tr>
-        <td colspan="5" class="text-center text-muted py-4">No hay organizaciones disponibles.</td>
+        <td colspan="9" class="text-center text-muted py-4">No hay expedientes disponibles.</td>
     </tr>
 {% endfor %}

@@ -14,8 +14,10 @@ def _base_data(provincia, municipio, **overrides):
         "cuit_institucion": "20123456789",
         "provincia": provincia.id,
         "municipio": municipio.id,
-        "domicilio_institucion": "Calle 1 123",
-        "telefono_contacto": "2211234567",
+        "calle": "Calle 1",
+        "altura": "123",
+        "telefono_prefijo": "221",
+        "telefono_numero": "1234567",
         "correo_electronico": "test@example.com",
         "responsable_nombre_completo": "Juan Perez",
         "responsable_dni": "12345678",
@@ -115,3 +117,40 @@ def test_modelo_rechaza_documentacion_demasiado_grande():
 
     with pytest.raises(ValidationError):
         dispositivo.full_clean()
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "field_name",
+    ["calle", "altura", "telefono_prefijo", "telefono_numero"],
+)
+def test_modelo_requiere_contacto_desdoblado(field_name):
+    provincia = Provincia.objects.create(nombre="Neuquen")
+    municipio = Municipio.objects.create(nombre="Neuquen", provincia=provincia)
+    data = _base_data(provincia, municipio)
+    data["provincia"] = provincia
+    data["municipio"] = municipio
+    data[field_name] = ""
+    dispositivo = Dispositivo(**data)
+
+    with pytest.raises(ValidationError) as exc_info:
+        dispositivo.full_clean()
+
+    assert field_name in exc_info.value.message_dict
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("field_name", ["telefono_prefijo", "telefono_numero"])
+def test_modelo_rechaza_telefono_desdoblado_no_numerico(field_name):
+    provincia = Provincia.objects.create(nombre="Rio Negro")
+    municipio = Municipio.objects.create(nombre="Bariloche", provincia=provincia)
+    data = _base_data(provincia, municipio)
+    data["provincia"] = provincia
+    data["municipio"] = municipio
+    data[field_name] = "22-abc"
+    dispositivo = Dispositivo(**data)
+
+    with pytest.raises(ValidationError) as exc_info:
+        dispositivo.full_clean()
+
+    assert field_name in exc_info.value.message_dict

@@ -3,18 +3,31 @@ Servicio para generar padrón final del expediente de celiaquía.
 """
 
 from io import BytesIO
-import pandas as pd
-from django.db.models import Q
-from celiaquia.models import ExpedienteCiudadano, EstadoLegajo
+import re
+
+from openpyxl import Workbook, load_workbook
+
+from celiaquia.models import ExpedienteCiudadano, ResultadoSintys, RevisionTecnico
+
+
+DOCUMENTO_COLUMN_CANDIDATES = {
+    "documento",
+    "numero_documento",
+    "nro_documento",
+    "número_documento",
+    "dni",
+    "cuit",
+    "cuil",
+}
 
 
 class PadronFinalService:
-    """Genera padrón final en Excel para expediente de celiaquía."""
+    """Genera nomina final aprobada en Excel para expediente de celiaquia."""
 
     @staticmethod
     def generar_padron_final_excel(expediente) -> bytes:
         """
-        Genera Excel con registros finales del expediente.
+        Genera Excel con la nomina original filtrada por aprobados finales.
 
         Args:
             expediente: Expediente object
@@ -22,112 +35,97 @@ class PadronFinalService:
         Returns:
             bytes: Contenido del archivo Excel
         """
-        # Obtener legajos válidos (excluir erróneos)
-        legajos = (
-            ExpedienteCiudadano.objects.filter(expediente=expediente)
-            .select_related("ciudadano", "estado")
-            .exclude(
-                estado__nombre__in=["DOCUMENTO_PENDIENTE", "RECHAZADO", "EXCLUIDO"]
-            )
-        )
+        headers, rows = PadronFinalService._leer_nomina_original(expediente)
+        documento_index = PadronFinalService._documento_column_index(headers)
+        documentos_aprobados = PadronFinalService._documentos_aprobados(expediente)
 
-        registros = []
+        filtered_rows = []
+        if documento_index is not None and documentos_aprobados:
+            for row in rows:
+                documento = PadronFinalService._normalize_documento(
+                    row[documento_index] if documento_index < len(row) else None
+                )
+                if documento in documentos_aprobados:
+                    filtered_rows.append(row)
 
-        for legajo in legajos:
-            ciudadano = legajo.ciudadano
-
-            # Determinar tipo de registro
-            if legajo.rol == ExpedienteCiudadano.ROLE_BENEFICIARIO_Y_RESPONSABLE:
-                tipo_registro = "DobleRol"
-            elif legajo.rol == ExpedienteCiudadano.ROLE_RESPONSABLE:
-                tipo_registro = "Responsable"
-            else:
-                tipo_registro = "Beneficiario"
-
-            # Datos base
-            registro = {
-                "TipoRegistro": tipo_registro,
-                "Apellido": ciudadano.apellido or "",
-                "Nombre": ciudadano.nombre or "",
-                "Documento": ciudadano.documento or "",
-                "CUIL_CUIT": ciudadano.documento or "",
-                "FechaNacimiento": (
-                    ciudadano.fecha_nacimiento.strftime("%d/%m/%Y")
-                    if ciudadano.fecha_nacimiento
-                    else ""
-                ),
-                "Sexo": ciudadano.sexo.sexo if ciudadano.sexo else "",
-                "Provincia": ciudadano.provincia.nombre if ciudadano.provincia else "",
-                "Municipio": ciudadano.municipio.nombre if ciudadano.municipio else "",
-                "Localidad": ciudadano.localidad.nombre if ciudadano.localidad else "",
-                "ExpedienteID": expediente.id,
-                "EstadoLegajo": legajo.estado.nombre if legajo.estado else "",
-                "RolLegajo": legajo.get_rol_display(),
-                "ResponsableDocumento": "",
-                "ResponsableNombre": "",
-            }
-
-            # Si es beneficiario, buscar responsable
-            if tipo_registro == "Beneficiario":
-                responsable_legajo = PadronFinalService._obtener_responsable(legajo)
-                if responsable_legajo:
-                    resp_ciudadano = responsable_legajo.ciudadano
-                    registro["ResponsableDocumento"] = resp_ciudadano.documento or ""
-                    registro["ResponsableNombre"] = (
-                        f"{resp_ciudadano.apellido} {resp_ciudadano.nombre}".strip()
-                    )
-
-            registros.append(registro)
-
-        # Crear DataFrame
-        df = pd.DataFrame(registros)
-
-        # Orden de columnas
-        columnas = [
-            "TipoRegistro",
-            "Apellido",
-            "Nombre",
-            "Documento",
-            "CUIL_CUIT",
-            "FechaNacimiento",
-            "Sexo",
-            "Provincia",
-            "Municipio",
-            "Localidad",
-            "ExpedienteID",
-            "EstadoLegajo",
-            "RolLegajo",
-            "ResponsableDocumento",
-            "ResponsableNombre",
-        ]
-        df = df[columnas]
-
-        # Generar Excel
-        output = BytesIO()
-        with pd.ExcelWriter(output, engine="openpyxl") as writer:
-            df.to_excel(writer, sheet_name="padron_final", index=False)
-
-        output.seek(0)
-        return output.getvalue()
+        return PadronFinalService._build_excel(headers, filtered_rows)
 
     @staticmethod
-    def _obtener_responsable(legajo_beneficiario):
-        """Obtiene el responsable de un beneficiario si existe."""
-        from ciudadanos.models import GrupoFamiliar
+    def _leer_nomina_original(expediente):
+        excel_masivo = getattr(expediente, "excel_masivo", None)
+        if not excel_masivo:
+            return [], []
 
         try:
-            relacion = GrupoFamiliar.objects.filter(
-                ciudadano_2=legajo_beneficiario.ciudadano,
-                vinculo=GrupoFamiliar.RELACION_PADRE,
-            ).first()
-
-            if relacion:
-                return ExpedienteCiudadano.objects.filter(
-                    expediente=legajo_beneficiario.expediente,
-                    ciudadano=relacion.ciudadano_1,
-                    rol=ExpedienteCiudadano.ROLE_RESPONSABLE,
-                ).first()
-        except Exception:
+            excel_masivo.open()
+        except Exception:  # pragma: no cover - FileField local ya suele estar abierto.
             pass
+        excel_masivo.seek(0)
+        wb = load_workbook(BytesIO(excel_masivo.read()), data_only=True)
+        ws = wb.worksheets[0]
+        values = list(ws.iter_rows(values_only=True))
+        if not values:
+            return [], []
 
+        headers = list(values[0])
+        rows = [list(row) for row in values[1:]]
+        return headers, rows
+
+    @staticmethod
+    def _documentos_aprobados(expediente) -> set[str]:
+        aprobados = (
+            ExpedienteCiudadano.objects.filter(
+                expediente=expediente,
+                revision_tecnico=RevisionTecnico.APROBADO,
+                resultado_sintys=ResultadoSintys.MATCH,
+            )
+            .exclude(rol=ExpedienteCiudadano.ROLE_RESPONSABLE)
+            .select_related("ciudadano")
+            .values_list("ciudadano__documento", flat=True)
+        )
+        return {
+            documento
+            for documento in (
+                PadronFinalService._normalize_documento(value) for value in aprobados
+            )
+            if documento
+        }
+
+    @staticmethod
+    def _normalize_header(value) -> str:
+        normalized = str(value or "").strip().lower()
+        normalized = normalized.replace(" ", "_").replace(".", "")
+        return normalized
+
+    @staticmethod
+    def _documento_column_index(headers) -> int | None:
+        for index, header in enumerate(headers):
+            if (
+                PadronFinalService._normalize_header(header)
+                in DOCUMENTO_COLUMN_CANDIDATES
+            ):
+                return index
         return None
+
+    @staticmethod
+    def _normalize_documento(value) -> str:
+        if value is None:
+            return ""
+        if isinstance(value, float) and value.is_integer():
+            value = int(value)
+        return re.sub(r"\D", "", str(value)).lstrip("0")
+
+    @staticmethod
+    def _build_excel(headers, rows) -> bytes:
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "nomina_aprobados"
+        if headers:
+            ws.append(headers)
+        for row in rows:
+            ws.append(row)
+
+        output = BytesIO()
+        wb.save(output)
+        output.seek(0)
+        return output.getvalue()

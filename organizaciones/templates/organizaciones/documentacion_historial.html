@@ -1,0 +1,67 @@
+{% extends "includes/main.html" %}
+{% block title %}Historial de documentacion{% endblock %}
+{% block breadcrumb %}
+    <ol class="breadcrumb float-sm-right">
+        <li class="breadcrumb-item">
+            <a href="{% url 'organizaciones' %}">Organizaciones</a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{% url 'organizacion_detalle' organizacion.id %}">{{ organizacion.nombre }}</a>
+        </li>
+        <li class="breadcrumb-item active">Historial</li>
+    </ol>
+{% endblock %}
+{% block content %}
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <div>
+                <h3 class="card-title mb-0">{{ documentacion.nombre }}</h3>
+                <div class="text-muted small">{{ organizacion.nombre }}</div>
+            </div>
+            <a href="{% url 'organizacion_detalle' organizacion.id %}"
+               class="btn btn-secondary btn-sm">Volver</a>
+        </div>
+        <div class="card-body">
+            <table class="table table-bordered table-striped">
+                <thead>
+                    <tr>
+                        <th>Fecha de carga</th>
+                        <th>Estado</th>
+                        <th>Fecha de vencimiento</th>
+                        <th>Observaciones</th>
+                        <th>Archivo</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for archivo in archivos %}
+                        <tr>
+                            <td>{{ archivo.creado|date:"d/m/Y H:i" }}</td>
+                            <td>
+                                {% if archivo.estado == "Aceptado" %}
+                                    <span class="badge bg-success">Aceptado</span>
+                                {% elif archivo.estado == "Rectificar" %}
+                                    <span class="badge bg-danger">Rectificar</span>
+                                {% elif archivo.estado == "A Validar Abogado" %}
+                                    <span class="badge bg-primary">A Validar Abogado</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">{{ archivo.estado }}</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ archivo.fecha_vencimiento|date:"d/m/Y"|default:"-" }}</td>
+                            <td>{{ archivo.observaciones|default:"-" }}</td>
+                            <td>
+                                <a href="{{ archivo.archivo.url }}"
+                                   target="_blank"
+                                   class="btn btn-primary btn-sm">Ver archivo</a>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center text-muted py-4">No hay documentos cargados.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}

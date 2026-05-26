@@ -1,7 +1,39 @@
 import logging
+from django.db.models import Case, IntegerField, Value, When
 from expedientespagos.models import ExpedientePago
 
 logger = logging.getLogger("django")
+
+
+_MES_PAGO_ALIASES = (
+    (1, ("enero", "1", "01")),
+    (2, ("febrero", "2", "02")),
+    (3, ("marzo", "3", "03")),
+    (4, ("abril", "4", "04")),
+    (5, ("mayo", "5", "05")),
+    (6, ("junio", "6", "06")),
+    (7, ("julio", "7", "07")),
+    (8, ("agosto", "8", "08")),
+    (9, ("septiembre", "setiembre", "9", "09")),
+    (10, ("octubre", "10")),
+    (11, ("noviembre", "11")),
+    (12, ("diciembre", "12")),
+)
+
+
+def ordenar_expedientes_por_periodo_desc(queryset):
+    mes_order = Case(
+        *[
+            When(mes_pago__iexact=alias, then=Value(numero))
+            for numero, aliases in _MES_PAGO_ALIASES
+            for alias in aliases
+        ],
+        default=Value(0),
+        output_field=IntegerField(),
+    )
+    return queryset.annotate(_mes_pago_order=mes_order).order_by(
+        "-ano", "-_mes_pago_order", "-fecha_creacion", "-id"
+    )
 
 
 class ExpedientesPagosService:
@@ -103,7 +135,9 @@ class ExpedientesPagosService:
     @staticmethod
     def obtener_expedientes_pagos(comedor):
         try:
-            return ExpedientePago.objects.filter(comedor=comedor)
+            return ordenar_expedientes_por_periodo_desc(
+                ExpedientePago.objects.filter(comedor=comedor)
+            )
         except Exception:
             logger.exception(
                 "Error en ExpedientesPagosService.obtener_expedientes_pagos",

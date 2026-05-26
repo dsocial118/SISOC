@@ -495,7 +495,8 @@ def test_form_precarga_fecha_inicio_en_input_date():
 
     form = CentroDeInfanciaForm(instance=centro)
 
-    assert form.fields["fecha_inicio"].widget.input_type == "date"
+    # fecha_inicio se redefinió como CharField (año solo, AAAA) — usa TextInput
+    assert form.fields["fecha_inicio"].widget.input_type == "text"
     assert 'value="2024-05-04"' in str(form["fecha_inicio"])
 
 

@@ -1168,3 +1168,41 @@ class HistorialValidacion(models.Model):
     def __str__(self):
         fecha_str = self.fecha_validacion.strftime("%d/%m/%Y")
         return f"{self.comedor.nombre} - {self.estado_validacion} ({fecha_str})"
+
+
+class DWECResumenTransacciones(models.Model):
+    """
+    Modelo de solo lectura que mapea a la vista externa DW_sisoc.vw_EC_resumen_transacciones.
+
+    Esta vista contiene información financiera histórica de transacciones de comedores
+    desde el sistema Data Warehouse. Los datos se actualizan automáticamente en la fuente.
+
+    Campos:
+        comedor_id_sisoc: FK lógica contra comedores_comedor.id
+        periodo: Período YYYYMM
+        cantidad_debitos: Cantidad de movimientos/transacciones realizadas
+        credito_total: Monto efectivamente utilizado/gastado
+        debito_total: Monto transferido al comedor
+        cereo: Remanente sobrante al cierre del período
+    """
+
+    comedor_id_sisoc = models.IntegerField(db_index=True)
+    periodo = models.CharField(max_length=6)  # YYYYMM
+    cantidad_debitos = models.IntegerField()
+    credito_total = models.DecimalField(
+        max_digits=15, decimal_places=2, null=True, blank=True
+    )
+    debito_total = models.DecimalField(
+        max_digits=15, decimal_places=2, null=True, blank=True
+    )
+    cereo = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True)
+
+    class Meta:
+        managed = False
+        db_table = "DW_sisoc.vw_EC_resumen_transacciones"
+        verbose_name = "Resumen DW - Transacciones"
+        verbose_name_plural = "Resumen DW - Transacciones"
+        ordering = ["-periodo"]
+
+    def __str__(self):
+        return f"Comedor {self.comedor_id_sisoc} - Período {self.periodo}"

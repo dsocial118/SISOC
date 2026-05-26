@@ -16,6 +16,7 @@ from django.db.models import (
     IntegerField,
     F,
     Func,
+    OuterRef,
     Subquery,
 )
 from django.db import IntegrityError, transaction
@@ -52,6 +53,8 @@ from core.models import Provincia, Municipio, Localidad, Nacionalidad
 from admisiones.models.admisiones import Admision
 from rendicioncuentasmensual.models import RendicionCuentaMensual
 from intervenciones.models.intervenciones import Intervencion
+from expedientespagos.models import ExpedientePago
+from expedientespagos.services import ordenar_expedientes_por_periodo_desc
 from duplas.models import Dupla
 from organizaciones.models import Aval, Firmante
 
@@ -349,6 +352,9 @@ def _calcular_presupuesto_desde_prestaciones(count, valor_map):
 
 
 def _build_comedores_list_values_queryset(base_qs):
+    latest_mes_ejecucion = ordenar_expedientes_por_periodo_desc(
+        ExpedientePago.objects.filter(comedor_id=OuterRef("pk"))
+    ).values("mes_convenio")[:1]
     return (
         base_qs.select_related(
             "provincia",
@@ -364,12 +370,18 @@ def _build_comedores_list_values_queryset(base_qs):
             estado_general=Coalesce(
                 "ultimo_estado__estado_general__estado_actividad__estado",
                 Value(Comedor.ESTADO_GENERAL_DEFAULT),
-            )
+            ),
+            mes_ejecucion=Case(
+                When(programa_id=2, then=Subquery(latest_mes_ejecucion)),
+                default=Value(None),
+                output_field=IntegerField(),
+            ),
         )
         .values(
             "id",
             "nombre",
             "estado_general",
+            "mes_ejecucion",
             "tipocomedor__nombre",
             "organizacion__nombre",
             "programa__nombre",
@@ -1316,6 +1328,11 @@ class ComedorService:
         return (ciudadano_data, None)
 
     @staticmethod
+    def build_ciudadano_data_from_renaper(datos, dni_str):
+        """Mapea datos de RENAPER a campos de Ciudadano para consumidores externos."""
+        return ComedorService._build_ciudadano_data_from_renaper(datos, dni_str)
+
+    @staticmethod
     def obtener_datos_ciudadano_desde_renaper(dni, sexo=None):
         """
         Consulta RENAPER y devuelve datos listos para precargar un formulario.
@@ -1554,6 +1571,9 @@ class ComedorService:
         nueva_admision = Admision.objects.create(
             comedor=comedor,
             tipo=tipo_admision,
+            tipo_entidad_origen=getattr(
+                getattr(comedor, "organizacion", None), "tipo_entidad", None
+            ),
         )
         messages.success(
             request,

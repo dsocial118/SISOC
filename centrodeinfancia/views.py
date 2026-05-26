@@ -38,8 +38,10 @@ from core.soft_delete.view_helpers import SoftDeleteDeleteViewMixin
 from iam.services import user_has_permission_code
 
 from centrodeinfancia.access import (
-    aplicar_filtro_provincia_usuario as _aplicar_filtro_provincia_usuario,
-    get_object_scoped_por_provincia_or_404,
+    aplicar_scope_centros_cdi as _aplicar_scope_centros_cdi,
+    get_object_scoped_cdi_or_404,
+    puede_generar_usuario_cdi,
+    puede_ver_usuarios_cdi,
 )
 from centrodeinfancia.forms import (
     CentroDeInfanciaForm,
@@ -52,6 +54,7 @@ from centrodeinfancia.forms import (
 )
 from centrodeinfancia.formulario_cdi_schema import CAMPOS_OPCIONES_MULTIPLES
 from centrodeinfancia.models import (
+    AccesoCDI,
     CentroDeInfancia,
     DepartamentoIpi,
     IntervencionCentroInfancia,
@@ -144,22 +147,24 @@ def _construir_horarios_detalle(centro):
 
 
 def _centros_cdi_queryset_scoped(user):
-    return _aplicar_filtro_provincia_usuario(_centros_cdi_queryset_detalle(), user)
+    return _aplicar_scope_centros_cdi(_centros_cdi_queryset_detalle(), user)
 
 
 def _get_centro_cdi_scoped_or_404(user, **kwargs):
-    return get_object_scoped_por_provincia_or_404(
+    return get_object_scoped_cdi_or_404(
         _centros_cdi_queryset_detalle(),
         user,
+        id_lookup="id",
         provincia_lookup="provincia",
         **kwargs,
     )
 
 
 def _aplicar_scope_provincia_centro_relacion(queryset, user):
-    return _aplicar_filtro_provincia_usuario(
+    return _aplicar_scope_centros_cdi(
         queryset,
         user,
+        id_lookup="centro_id",
         provincia_lookup="centro__provincia",
     )
 
@@ -238,7 +243,7 @@ class CentroDeInfanciaListView(LoginRequiredMixin, ListView):
             "municipio",
             "localidad",
         ).annotate(tiene_nomina=Exists(nomina_subquery))
-        queryset = _aplicar_filtro_provincia_usuario(queryset, self.request.user)
+        queryset = _aplicar_scope_centros_cdi(queryset, self.request.user)
         if query:
             queryset = queryset.filter(
                 Q(nombre__icontains=query) | Q(organizacion__icontains=query)
@@ -577,9 +582,7 @@ class CentroDeInfanciaDetailView(LoginRequiredMixin, DetailView):
             "ambito": self.object.get_ambito_display() or "-",
             "mail": self.object.mail or "-",
             "fecha_inicio": (
-                self.object.fecha_inicio.strftime("%d/%m/%Y")
-                if self.object.fecha_inicio
-                else "-"
+                str(self.object.fecha_inicio.year) if self.object.fecha_inicio else "-"
             ),
         }
         context["centro_funcionamiento"] = {
@@ -640,6 +643,22 @@ class CentroDeInfanciaDetailView(LoginRequiredMixin, DetailView):
         context["tipo_intervencion_programas_json"] = json.dumps(tipo_programas_map)
         context["tipo_intervencion_programa_aliases_json"] = json.dumps(alias_list)
         context.update(_build_trabajadores_context(self.request, self.object))
+        context["puede_generar_usuario_cdi"] = puede_generar_usuario_cdi(
+            self.request.user, self.object
+        )
+        context["puede_ver_usuarios_cdi"] = puede_ver_usuarios_cdi(
+            self.request.user, self.object
+        )
+        if context["puede_ver_usuarios_cdi"]:
+            usuarios_cdi = AccesoCDI.objects.filter(centro=self.object)
+            if not getattr(self.request.user, "is_superuser", False):
+                usuarios_cdi = usuarios_cdi.filter(
+                    user=self.request.user,
+                    activo=True,
+                )
+            context["usuarios_cdi"] = usuarios_cdi.select_related(
+                "user", "user__profile"
+            ).order_by("-activo", "user__username")
         return context
 
 
@@ -829,7 +848,7 @@ def centrodeinfancia_ajax(request):
             "municipio",
             "localidad",
         )
-        queryset = _aplicar_filtro_provincia_usuario(queryset, req.user)
+        queryset = _aplicar_scope_centros_cdi(queryset, req.user)
         if query:
             queryset = queryset.filter(
                 Q(nombre__icontains=query) | Q(organizacion__icontains=query)
