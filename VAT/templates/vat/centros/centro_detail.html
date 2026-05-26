@@ -5,6 +5,10 @@
     {% include 'components/breadcrumb.html' with items=breadcrumb_items %}
 {% endblock %}
 {% block content %}
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Lora:wght@700&family=Montserrat:wght@400;600;700&display=swap"
+          rel="stylesheet" />
     <link rel="stylesheet" href="{% static 'custom/css/centro_detail.css' %}" />
 
     <style>
@@ -528,6 +532,11 @@
         .sisoc-centro-page {
             font-family: Inter, Roboto, sans-serif;
             color: #ffffff;
+            max-width: 1620px;
+            margin: 0 auto 1rem;
+            background: #3E5A7E;
+            border-radius: 20px;
+            padding: 1rem;
             margin-bottom: 1rem;
         }
 
@@ -536,8 +545,12 @@
             align-items: center;
             justify-content: space-between;
             gap: 1rem;
-            margin-bottom: .9rem;
+            margin-bottom: .7rem;
             flex-wrap: wrap;
+            background: #4f6e94;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 8px;
+            padding: .55rem .7rem;
         }
 
         .sisoc-back-link {
@@ -567,18 +580,21 @@
         .sisoc-header-actions {
             display: flex;
             align-items: center;
-            gap: 1rem;
+            gap: .85rem;
             flex-wrap: wrap;
         }
 
-        .sisoc-header-actions a {
-            color: #8b9bb4;
+        .sisoc-header-action-link {
+            color: #dbe6f8;
             text-decoration: none;
             font-size: 12px;
             font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: .3rem;
         }
 
-        .sisoc-header-actions a:hover {
+        .sisoc-header-action-link:hover {
             color: #ffffff;
         }
 
@@ -586,12 +602,12 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            gap: 1.25rem;
-            flex-wrap: wrap;
-            background: #1e2e40;
-            border: 1px solid #2a3a4a;
-            border-radius: 6px;
-            padding: 1.4rem 1.6rem;
+            gap: 40px;
+            flex-wrap: nowrap;
+            background: #232D4F;
+            border: 0;
+            border-radius: 20px;
+            padding: 20px 30px;
             margin-bottom: 1.1rem;
         }
 
@@ -602,52 +618,68 @@
 
         .sisoc-title-block h1 {
             margin: 0;
-            font-size: 24px;
+            font-family: 'Lora', Georgia, 'Times New Roman', serif;
+            font-size: 36px;
             font-weight: 700;
             color: #ffffff;
-            line-height: 1.2;
+            line-height: 40px;
+            letter-spacing: 1px;
         }
 
         .sisoc-title-meta {
             display: inline-flex;
+            flex: 0 0 auto;
             align-items: center;
-            gap: 1.1rem;
-            flex-wrap: wrap;
+            justify-content: flex-end;
+            gap: 20px;
+            flex-wrap: nowrap;
+            padding: 10px 0;
         }
 
         .sisoc-title-meta .sisoc-cue-text {
-            color: #c9d3e1;
-            font-size: 14px;
-            font-weight: 600;
-            letter-spacing: .03em;
+            color: #ffffff;
+            font-family: 'Lora', Georgia, 'Times New Roman', serif;
+            font-size: 24px;
+            font-weight: 700;
+            line-height: 40px;
+            letter-spacing: 1px;
+            white-space: nowrap;
         }
 
         .sisoc-status-pill {
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            min-height: 28px;
-            border-radius: 4px;
-            padding: 4px 16px;
-            background: rgba(28, 87, 66, 0.72);
+            border-radius: 8px;
+            padding: 8px 10px;
+            background: #2F8F5B;
+            border: 1px solid rgba(255, 255, 255, 0.22);
             color: #ffffff;
-            font-size: 13px;
+            font-size: 12px;
             font-weight: 700;
-            letter-spacing: .02em;
+            letter-spacing: .04em;
+            text-transform: uppercase;
+            line-height: 1;
+        }
+
+        .sisoc-title-meta {
+            align-self: center;
         }
 
         .sisoc-status-pill.is-inactive {
-            background: #c0392b;
+            background: #B42318;
         }
 
         .sisoc-info-shell {
             display: flex;
             align-items: stretch;
-            background: #1e2e40;
-            border: 1px solid #2a3a4a;
-            border-radius: 6px;
+            background: #232D4F;
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            border-radius: 20px;
+            box-shadow: 0 4px 4px 0 rgba(0, 0, 0, 0.35);
             overflow: hidden;
-            min-height: 420px;
+            min-height: 524px;
+            font-family: 'Montserrat', Inter, Roboto, sans-serif;
         }
 
         .sisoc-info-content {
@@ -657,7 +689,7 @@
 
         .sisoc-info-panel {
             display: none;
-            padding: 1.25rem 1.5rem 1.4rem;
+            padding: 30px;
         }
 
         .sisoc-info-panel.is-active {
@@ -683,9 +715,9 @@
         }
 
         .sisoc-side-tab {
-            width: 50px;
+            width: 54px;
             border: 0;
-            background: #2a6b5d;
+            background: #3B8681;
             color: #ffffff;
             padding: 0;
             display: flex;
@@ -710,50 +742,62 @@
         }
 
         .sisoc-side-tab.is-active {
-            background: #2a6b5d;
+            background: #3B8681;
         }
 
         .sisoc-side-tab[data-sisoc-tab-target="general"] {
-            background: #3b8681;
+            background: #3B8681;
         }
 
         .sisoc-side-tab[data-sisoc-tab-target="general"]:hover,
         .sisoc-side-tab[data-sisoc-tab-target="general"]:focus,
         .sisoc-side-tab[data-sisoc-tab-target="general"].is-active {
-            background: #3b8681;
+            background: #3B8681;
         }
 
         .sisoc-side-tab[data-sisoc-tab-target="ubicaciones"] {
-            background: #4e928d;
+            background: #3B8681;
         }
 
         .sisoc-side-tab[data-sisoc-tab-target="ubicaciones"]:hover,
         .sisoc-side-tab[data-sisoc-tab-target="ubicaciones"]:focus,
         .sisoc-side-tab[data-sisoc-tab-target="ubicaciones"].is-active {
-            background: #4e928d;
+            background: #3B8681;
         }
 
         .sisoc-side-tab[data-sisoc-tab-target="contactos"] {
-            background: #629e9a;
+            background: #3B8681;
         }
 
         .sisoc-side-tab[data-sisoc-tab-target="contactos"]:hover,
         .sisoc-side-tab[data-sisoc-tab-target="contactos"]:focus,
         .sisoc-side-tab[data-sisoc-tab-target="contactos"].is-active {
-            background: #629e9a;
+            background: #3B8681;
+        }
+
+        .sisoc-side-tabs--left .sisoc-side-tab:first-child {
+            border-top-left-radius: 20px;
+            border-bottom-left-radius: 20px;
+        }
+
+        .sisoc-side-tabs--right .sisoc-side-tab:last-child {
+            border-top-right-radius: 20px;
+            border-bottom-right-radius: 20px;
         }
 
         .sisoc-side-tab span {
             writing-mode: vertical-rl;
             transform: rotate(180deg);
-            font-size: 13px;
+            font-size: 24px;
             font-weight: 700;
-            letter-spacing: .02em;
+            letter-spacing: 1px;
             white-space: nowrap;
+            color: #ffffff;
+            line-height: 1;
         }
 
         .sisoc-panel-section + .sisoc-panel-section {
-            margin-top: 1.4rem;
+            margin-top: 30px;
         }
 
         .sisoc-section-header {
@@ -761,36 +805,38 @@
             align-items: center;
             justify-content: space-between;
             gap: 1rem;
-            margin-bottom: .75rem;
+            margin-bottom: 10px;
             flex-wrap: wrap;
         }
 
         .sisoc-section-header h2,
         .sisoc-section-header h3 {
             margin: 0;
-            font-size: 17px;
-            font-weight: 700;
-            color: #ffffff;
+            font-size: 24px;
+            font-weight: 600;
+            color: #F2F2F2;
+            letter-spacing: 1px;
+            line-height: 40px;
         }
 
         .sisoc-section-divider {
-            height: 1px;
+            height: 2px;
             border: 0;
-            margin: 0 0 1rem;
-            background: rgba(255, 255, 255, 0.75);
+            margin: 0 0 20px;
+            background: rgba(255, 255, 255, 0.95);
         }
 
         .sisoc-general-layout {
             display: grid;
-            grid-template-columns: minmax(0, 1fr) 114px;
-            gap: 1.15rem;
+            grid-template-columns: minmax(0, 1fr) 195px;
+            gap: 30px;
             align-items: stretch;
         }
 
         .sisoc-general-grid {
             display: grid;
             grid-template-columns: repeat(3, minmax(0, 1fr));
-            gap: 1.05rem 1.25rem;
+            gap: 20px 60px;
             align-content: space-between;
             min-height: 110px;
         }
@@ -801,20 +847,21 @@
 
         .sisoc-data-label {
             margin: 0 0 .22rem;
-            color: #8b9bb4;
-            font-size: 12px;
-            font-weight: 500;
+            color: #F2F2F2;
+            font-size: 16px;
+            font-weight: 400;
             text-transform: none;
-            letter-spacing: 0;
-            line-height: 1.25;
+            letter-spacing: 1px;
+            line-height: 20px;
         }
 
         .sisoc-data-value {
             margin: 0;
-            color: #ffffff;
-            font-size: 14px;
-            font-weight: 700;
-            line-height: 1.35;
+            color: #F2F2F2;
+            font-size: 16px;
+            font-weight: 600;
+            letter-spacing: 1px;
+            line-height: 25px;
             word-break: break-word;
         }
 
@@ -829,11 +876,12 @@
 
         .sisoc-map-preview {
             width: 100%;
-            height: 116px;
+            height: 140px;
             overflow: hidden;
-            border-radius: 4px;
-            border: 1px solid rgba(255, 255, 255, 0.12);
-            background: #152331;
+            border-radius: 12.56px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: #1b2a4a;
+            box-shadow: 0 2.51px 2.51px 0 rgba(0, 0, 0, 0.35);
             align-self: stretch;
         }
 
@@ -860,32 +908,32 @@
             margin: 0;
             padding: 0;
             display: grid;
-            gap: .72rem;
+            gap: 10px;
             align-content: space-between;
         }
 
         .sisoc-referente-item {
             display: flex;
-            align-items: center;
-            gap: .55rem;
+            align-items: baseline;
+            gap: 10px;
             line-height: 1.3;
         }
 
         .sisoc-referente-icon {
-            width: 14px;
-            height: 14px;
-            flex: 0 0 14px;
+            width: 20px;
+            height: 20px;
+            flex: 0 0 20px;
             display: inline-flex;
             align-items: center;
             justify-content: center;
             color: #ffffff;
-            font-size: 12px;
+            font-size: 16px;
         }
 
         .sisoc-referente-copy {
             display: inline-flex;
             align-items: baseline;
-            gap: .35rem;
+            gap: 10px;
             flex-wrap: wrap;
             min-width: 0;
         }
@@ -893,17 +941,20 @@
         .sisoc-referente-copy span {
             display: inline;
             margin-bottom: 0;
-            color: #8b9bb4;
-            font-size: 12px;
-            line-height: 1.2;
+            color: #F2F2F2;
+            font-size: 16px;
+            font-weight: 400;
+            letter-spacing: 1px;
+            line-height: 20px;
         }
 
         .sisoc-referente-copy strong,
         .sisoc-referente-copy div {
-            color: #ffffff;
-            font-size: 14px;
-            font-weight: 700;
-            line-height: 1.3;
+            color: #F2F2F2;
+            font-size: 16px;
+            font-weight: 600;
+            letter-spacing: 1px;
+            line-height: 25px;
             display: inline;
         }
 
@@ -936,7 +987,8 @@
         }
 
         .sisoc-btn--edit {
-            background: #3d4f63;
+            background: #4e6f95;
+            border-color: rgba(215, 226, 244, 0.2);
             color: #ffffff;
         }
 
@@ -947,6 +999,17 @@
 
         .sisoc-btn--delete {
             background: #d04545;
+            border-color: rgba(255, 255, 255, 0.2);
+            color: #ffffff;
+        }
+
+        .sisoc-btn--edit:hover,
+        .sisoc-btn--edit:focus {
+            color: #ffffff;
+        }
+
+        .sisoc-btn--delete:hover,
+        .sisoc-btn--delete:focus {
             color: #ffffff;
         }
 
@@ -1072,8 +1135,8 @@
             display: flex;
             align-items: center;
             padding: 0 18px;
-            border-radius: 6px 6px 0 0;
-            background: #3b8681;
+            border-radius: 20px 20px 0 0;
+            background: #3f958d;
             color: #ffffff;
             font-size: 15px;
             font-weight: 700;
@@ -1083,7 +1146,7 @@
             background: #1e2e40;
             border: 1px solid #2a3a4a;
             border-top: 0;
-            border-radius: 0 0 6px 6px;
+            border-radius: 0 0 20px 20px;
             padding: 1rem;
         }
 
@@ -1226,10 +1289,21 @@
         @media (max-width: 767.98px) {
             .sisoc-centro-page {
                 padding: .85rem;
+                border-radius: 14px;
             }
 
             .sisoc-title-row {
+                flex-wrap: wrap;
                 align-items: flex-start;
+            }
+
+            .sisoc-title-block h1 {
+                font-size: 30px;
+                line-height: 34px;
+            }
+
+            .sisoc-title-meta .sisoc-cue-text {
+                font-size: 16px;
             }
 
             .sisoc-info-shell {
@@ -1291,13 +1365,15 @@
                 </a>
                 <div class="sisoc-header-actions">
                     {% if can_edit_centro %}
-                        <a href="{% url 'vat_centro_update' centro.id %}">
-                            <i class="fas fa-pen me-1"></i>Editar
+                        <a href="{% url 'vat_centro_update' centro.id %}" class="sisoc-header-action-link">
+                            <i class="fas fa-pen"></i>
+                            <span>Editar</span>
                         </a>
                     {% endif %}
                     {% if can_edit_centro and perms.VAT.delete_centro %}
-                        <a href="{% url 'vat_centro_delete' centro.id %}">
-                            <i class="fas fa-trash me-1"></i>Eliminar
+                        <a href="{% url 'vat_centro_delete' centro.id %}" class="sisoc-header-action-link">
+                            <i class="fas fa-trash"></i>
+                            <span>Eliminar</span>
                         </a>
                     {% endif %}
                 </div>
