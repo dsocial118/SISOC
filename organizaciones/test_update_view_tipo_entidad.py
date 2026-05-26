@@ -12,6 +12,7 @@ from admisiones.models.admisiones import (
     Admision,
     ArchivoAdmision,
     EstadoAdmision,
+    NumeroGdeOrganizacion,
     TipoConvenio,
 )
 from comedores.models import Comedor
@@ -241,3 +242,77 @@ def test_cambio_tipo_entidad_no_materializa_en_admisiones_archivadas(
     assert (
         ArchivoAdmision.objects.filter(admision=admision).count() == 0
     ), "Una admision archivada no debe recibir clones materializados"
+
+
+def _setup_admision_para_materializacion(organizacion, tipos):
+    EstadoAdmision.objects.create(nombre="Inicial")
+    EstadoAdmision.objects.create(nombre="Avanzada")
+    tipo_convenio = TipoConvenio.objects.create(pk=3, nombre="Personería Jurídica")
+    comedor = Comedor.objects.create(nombre="Comedor GDE", organizacion=organizacion)
+    return Admision.objects.create(
+        comedor=comedor,
+        tipo_convenio=tipo_convenio,
+        tipo_entidad_origen=tipos["juridica"],
+        estado_admision="documentacion_en_proceso",
+    )
+
+
+def test_materializacion_preserva_numero_gde_desde_admision(
+    organizacion_con_documentos, tipos, usuario
+):
+    """Si el tecnico cargo un Numero de GDE desde la admision sobre un archivo
+    heredado, al materializarse el archivo en `ArchivoAdmision` el GDE debe
+    persistir en el campo `numero_gde` y el registro `NumeroGdeOrganizacion`
+    queda eliminado (deja de ser canonico)."""
+
+    admision = _setup_admision_para_materializacion(organizacion_con_documentos, tipos)
+    archivo_org_a = ArchivoOrganizacion.objects.filter(
+        organizacion=organizacion_con_documentos,
+        documentacion__nombre="Acta Constitutiva",
+    ).first()
+    NumeroGdeOrganizacion.objects.create(
+        admision=admision,
+        archivo_organizacion=archivo_org_a,
+        numero_gde="GDE-2026-PRESERVAR",
+    )
+
+    client = Client()
+    client.force_login(usuario)
+    url = reverse("organizacion_editar", kwargs={"pk": organizacion_con_documentos.pk})
+    client.post(url, _post_payload(organizacion_con_documentos, tipos["eclesiastica"]))
+
+    archivo_admision = ArchivoAdmision.objects.filter(
+        admision=admision, nombre_personalizado="Acta Constitutiva"
+    ).first()
+    assert archivo_admision is not None
+    assert archivo_admision.numero_gde == "GDE-2026-PRESERVAR"
+    assert (
+        NumeroGdeOrganizacion.objects.filter(admision=admision).count() == 0
+    ), "El registro de GDE en organizacion debe eliminarse tras la materializacion"
+
+
+def test_materializacion_fallback_a_numero_gde_legacy_de_archivo_organizacion(
+    organizacion_con_documentos, tipos, usuario
+):
+    """Si no hay `NumeroGdeOrganizacion` para la admision pero el
+    `ArchivoOrganizacion.numero_gde` (historico) tiene valor, al materializarse
+    se usa ese GDE como fallback."""
+
+    admision = _setup_admision_para_materializacion(organizacion_con_documentos, tipos)
+    archivo_org_a = ArchivoOrganizacion.objects.filter(
+        organizacion=organizacion_con_documentos,
+        documentacion__nombre="Acta Constitutiva",
+    ).first()
+    archivo_org_a.numero_gde = "GDE-LEGACY"
+    archivo_org_a.save(update_fields=["numero_gde"])
+
+    client = Client()
+    client.force_login(usuario)
+    url = reverse("organizacion_editar", kwargs={"pk": organizacion_con_documentos.pk})
+    client.post(url, _post_payload(organizacion_con_documentos, tipos["eclesiastica"]))
+
+    archivo_admision = ArchivoAdmision.objects.filter(
+        admision=admision, nombre_personalizado="Acta Constitutiva"
+    ).first()
+    assert archivo_admision is not None
+    assert archivo_admision.numero_gde == "GDE-LEGACY"

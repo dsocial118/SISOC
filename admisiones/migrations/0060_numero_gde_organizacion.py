@@ -93,9 +93,7 @@ class Migration(migrations.Migration):
                 ),
             ],
             options={
-                "verbose_name": (
-                    "Numero GDE de archivo de organizacion por admision"
-                ),
+                "verbose_name": ("Numero GDE de archivo de organizacion por admision"),
                 "verbose_name_plural": (
                     "Numeros GDE de archivos de organizacion por admision"
                 ),
