@@ -30,6 +30,18 @@ from rendicioncuentasmensual.service_helpers import (
 logger = logging.getLogger("django")
 
 
+def inferir_linea_programatica(comedor):
+    programa_id = getattr(comedor, "programa_id", None)
+    if programa_id == 3:
+        return DocumentacionAdjunta.LINEA_SECOS
+    if programa_id == 4:
+        return DocumentacionAdjunta.LINEA_TRADICIONAL
+    programa_nombre = str(getattr(getattr(comedor, "programa", None), "nombre", "") or "")
+    if "secos" in programa_nombre.lower():
+        return DocumentacionAdjunta.LINEA_SECOS
+    return DocumentacionAdjunta.LINEA_TRADICIONAL
+
+
 class RendicionCuentaMensualService:
     MOBILE_MESSAGE_ACTION_PREFIX = "[SISOC_ACCION]"
     MOBILE_MESSAGE_ACTION_SUFFIX = "[/SISOC_ACCION]"
@@ -283,7 +295,9 @@ class RendicionCuentaMensualService:
 
     @staticmethod
     def _validar_categoria_documental(rendicion, categoria):
-        config = DocumentacionAdjunta.get_categoria_config(categoria)
+        config = DocumentacionAdjunta.get_categoria_config(
+            categoria, getattr(rendicion, "linea_programatica", None)
+        )
         if not config:
             raise ValidationError(
                 {"categoria": "La categoría de documentación es inválida."}
@@ -367,7 +381,9 @@ class RendicionCuentaMensualService:
     def _validar_carga_documentacion_mobile(
         *, rendicion, categoria, documento_subsanado_id=None
     ):
-        config = DocumentacionAdjunta.get_categoria_config(categoria)
+        config = DocumentacionAdjunta.get_categoria_config(
+            categoria, getattr(rendicion, "linea_programatica", None)
+        )
         if not config:
             raise ValidationError(
                 {"categoria": "La categoría de documentación es inválida."}
@@ -422,7 +438,10 @@ class RendicionCuentaMensualService:
             RendicionCuentaMensualService._documentos_activos_queryset(rendicion)
         )
         grouped = {
-            item["codigo"]: [] for item in DocumentacionAdjunta.categorias_mobile()
+            item["codigo"]: []
+            for item in DocumentacionAdjunta.categorias_mobile(
+                getattr(rendicion, "linea_programatica", None)
+            )
         }
         for documento in documentos:
             grouped.setdefault(documento.categoria, []).append(documento)
@@ -435,7 +454,9 @@ class RendicionCuentaMensualService:
         )
         return construir_documentacion_para_detalle(
             documentos,
-            DocumentacionAdjunta.categorias_mobile(),
+            DocumentacionAdjunta.categorias_mobile(
+                getattr(rendicion, "linea_programatica", None)
+            ),
             RendicionCuentaMensualService.CATEGORIAS_CON_HISTORIAL_SUBSANACION,
         )
 
@@ -445,7 +466,9 @@ class RendicionCuentaMensualService:
             rendicion
         )
         categorias = []
-        for categoria in DocumentacionAdjunta.categorias_mobile():
+        for categoria in DocumentacionAdjunta.categorias_mobile(
+            getattr(rendicion, "linea_programatica", None)
+        ):
             categorias.append(
                 {
                     **categoria,
@@ -569,7 +592,9 @@ class RendicionCuentaMensualService:
         ):
             grouped.setdefault(documento.categoria, []).append(documento)
         faltantes = []
-        for categoria in DocumentacionAdjunta.categorias_mobile():
+        for categoria in DocumentacionAdjunta.categorias_mobile(
+            getattr(rendicion, "linea_programatica", None)
+        ):
             if categoria["required"] and not grouped.get(categoria["codigo"]):
                 faltantes.append(categoria["label"])
         if faltantes:
@@ -591,6 +616,9 @@ class RendicionCuentaMensualService:
         periodo_inicio = data.get("periodo_inicio")
         periodo_fin = data.get("periodo_fin")
         observaciones = (data.get("observaciones") or "").strip()
+        linea_programatica = DocumentacionAdjunta.normalizar_linea_programatica(
+            data.get("linea_programatica") or inferir_linea_programatica(comedor)
+        )
 
         RendicionCuentaMensualService._validar_numero_y_periodo(
             comedor=comedor,
@@ -607,6 +635,7 @@ class RendicionCuentaMensualService:
             numero_rendicion=numero_rendicion,
             periodo_inicio=periodo_inicio,
             periodo_fin=periodo_fin,
+            linea_programatica=linea_programatica,
             estado=RendicionCuentaMensual.ESTADO_ELABORACION,
             observaciones=observaciones or None,
             documento_adjunto=False,
