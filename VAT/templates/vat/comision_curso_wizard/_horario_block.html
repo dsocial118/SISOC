@@ -1,0 +1,32 @@
+<fieldset class="sisoc-wizard-horario" data-horario-index="{{ forloop_counter0 }}">
+    <legend class="sisoc-wizard-horario-title">Horario {{ forloop_counter }}</legend>
+    {% for hidden in horario_form.hidden_fields %}{{ hidden }}{% endfor %}
+    <div class="sisoc-wizard-horario-grid">
+        <div class="sisoc-wizard-field" style="margin-bottom:0;">
+            <label class="sisoc-wizard-label" for="{{ horario_form.dia_semana.id_for_label }}">Día de la semana</label>
+            {{ horario_form.dia_semana }}
+            {% if horario_form.dia_semana.errors %}<div class="text-danger">{{ horario_form.dia_semana.errors.0 }}</div>{% endif %}
+        </div>
+        <div class="sisoc-wizard-field" style="margin-bottom:0;">
+            <label class="sisoc-wizard-label" for="{{ horario_form.hora_desde.id_for_label }}">Hora inicio</label>
+            {{ horario_form.hora_desde }}
+            {% if horario_form.hora_desde.errors %}<div class="text-danger">{{ horario_form.hora_desde.errors.0 }}</div>{% endif %}
+        </div>
+        <div class="sisoc-wizard-field" style="margin-bottom:0;">
+            <label class="sisoc-wizard-label" for="{{ horario_form.hora_hasta.id_for_label }}">Hora finalización</label>
+            {{ horario_form.hora_hasta }}
+            {% if horario_form.hora_hasta.errors %}<div class="text-danger">{{ horario_form.hora_hasta.errors.0 }}</div>{% endif %}
+        </div>
+        <button type="button"
+                class="sisoc-wizard-btn sisoc-wizard-btn--icon-danger"
+                data-action="remove-horario"
+                title="Eliminar horario">
+            <i class="fas fa-trash"></i>
+        </button>
+    </div>
+    <div class="sisoc-wizard-horario-estado">
+        <label class="sisoc-wizard-label" for="{{ horario_form.vigente.id_for_label }}">Estado</label>
+        {{ horario_form.vigente }}
+    </div>
+    <div style="display:none;">{{ horario_form.DELETE }}</div>
+</fieldset>

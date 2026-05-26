@@ -33,6 +33,7 @@ try:
 
     _WEASY_OK = True
 except Exception:
+    WPHTML = None  # type: ignore[assignment]
     _WEASY_OK = False
 
 from celiaquia.models import (

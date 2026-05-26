@@ -415,3 +415,6 @@ pyrightconfig.json
 
 # PWA
 mobile/
+
+# Claude Code local settings (contienen permisos y config de máquina)
+.claude/settings.local.json

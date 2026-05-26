@@ -7988,3 +7988,256 @@ def test_voucher_parametria_detail_filters_and_paginates_vouchers(vat_admin_clie
 
     assert second_page_response.status_code == 200
     assert len(second_page_response.context["vouchers"]) == 2
+
+
+# ============================================================================
+# Wizard de Comisión de Curso
+# ============================================================================
+
+_WIZARD_PREFIX = "comision_curso_wizard_view"
+
+
+@pytest.fixture
+def wizard_setup(db):
+    """Minimal objects needed to run the wizard end-to-end."""
+    provincia = Provincia.objects.create(nombre="Santa Fe WIZ")
+    municipio = Municipio.objects.create(nombre="Rosario WIZ", provincia=provincia)
+    localidad = Localidad.objects.create(nombre="Centro WIZ", municipio=municipio)
+    centro = _create_vat_centro(
+        codigo="WIZTEST01",
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad,
+    )
+    ubicacion = InstitucionUbicacion.objects.create(
+        centro=centro,
+        localidad=localidad,
+        rol_ubicacion="sede_principal",
+        domicilio="Av. Pellegrini 1234",
+        es_principal=True,
+    )
+    modalidad = ModalidadCursada.objects.create(nombre="Presencial WIZ", activo=True)
+    curso = Curso.objects.create(
+        centro=centro,
+        nombre="Curso Wizard Test",
+        modalidad=modalidad,
+        estado="planificado",
+    )
+    dia = Dia.objects.create(nombre="Miércoles WIZ")
+    return SimpleNamespace(
+        centro=centro,
+        ubicacion=ubicacion,
+        curso=curso,
+        dia=dia,
+    )
+
+
+def _wizard_referente_user(wizard_setup):
+    """Create a user that is referente for the wizard_setup centro with add_comisioncurso perm."""
+    add_perm = Permission.objects.get(
+        content_type=ContentType.objects.get_for_model(ComisionCurso),
+        codename="add_comisioncurso",
+    )
+    user = User.objects.create_user(username="wizard-ref", password="test1234")
+    _grant_vat_referente_access(user, add_perm)
+    wizard_setup.centro.referentes.add(user)
+    return user
+
+
+def _wizard_url(wizard_setup):
+    return reverse(
+        "vat_comision_curso_wizard",
+        kwargs={"curso_id": wizard_setup.curso.pk},
+    )
+
+
+def _step1_data(wizard_setup):
+    return {
+        f"{_WIZARD_PREFIX}-current_step": "info",
+        "info-ubicacion": str(wizard_setup.ubicacion.pk),
+        "info-cupo_total": "20",
+        "info-estado": "planificada",
+        "info-fecha_inicio": "2026-06-01",
+        "info-fecha_fin": "2026-12-31",
+        "info-observaciones": "",
+    }
+
+
+def _step2_data(wizard_setup):
+    return {
+        f"{_WIZARD_PREFIX}-current_step": "horarios",
+        "horarios-TOTAL_FORMS": "1",
+        "horarios-INITIAL_FORMS": "0",
+        "horarios-MIN_NUM_FORMS": "1",
+        "horarios-MAX_NUM_FORMS": "1000",
+        "horarios-0-dia_semana": str(wizard_setup.dia.pk),
+        "horarios-0-hora_desde": "09:00",
+        "horarios-0-hora_hasta": "11:00",
+        "horarios-0-vigente": "1",
+    }
+
+
+def _step3_data():
+    return {f"{_WIZARD_PREFIX}-current_step": "confirmacion"}
+
+
+@pytest.mark.django_db
+def test_wizard_anonimo_recibe_403(client, wizard_setup):
+    # permissions_any_required wraps the view before LoginRequiredMixin runs
+    response = client.get(_wizard_url(wizard_setup))
+    assert response.status_code == 403
+
+
+@pytest.mark.django_db
+def test_wizard_sin_permiso_recibe_403(client, wizard_setup):
+    user = User.objects.create_user(username="no-perm-wiz", password="test1234")
+    client.force_login(user)
+    response = client.get(_wizard_url(wizard_setup))
+    assert response.status_code == 403
+
+
+@pytest.mark.django_db
+def test_wizard_sin_acceso_centro_lanza_403(client, wizard_setup):
+    add_perm = Permission.objects.get(
+        content_type=ContentType.objects.get_for_model(ComisionCurso),
+        codename="add_comisioncurso",
+    )
+    user = User.objects.create_user(username="no-centro-wiz", password="test1234")
+    _grant_vat_referente_access(user, add_perm)
+    # Not added to centro.referentes → can_user_edit_centro returns False
+    client.force_login(user)
+    response = client.get(_wizard_url(wizard_setup))
+    assert response.status_code == 403
+
+
+@pytest.mark.django_db
+def test_wizard_step1_get_renderiza_200(client, wizard_setup):
+    user = _wizard_referente_user(wizard_setup)
+    client.force_login(user)
+    response = client.get(_wizard_url(wizard_setup))
+    assert response.status_code == 200
+    assert response.context["wizard"]["steps"].current == "info"
+
+
+@pytest.mark.django_db
+def test_wizard_step1_fecha_inicio_pasada_es_rechazada(client, wizard_setup):
+    user = _wizard_referente_user(wizard_setup)
+    client.force_login(user)
+    post = _step1_data(wizard_setup)
+    post["info-fecha_inicio"] = "2020-01-01"
+    response = client.post(_wizard_url(wizard_setup), post)
+    assert response.status_code == 200
+    form = response.context["wizard"]["form"]
+    assert "fecha_inicio" in form.errors
+
+
+@pytest.mark.django_db
+def test_wizard_step1_fecha_fin_igual_a_inicio_es_rechazada(client, wizard_setup):
+    user = _wizard_referente_user(wizard_setup)
+    client.force_login(user)
+    post = _step1_data(wizard_setup)
+    post["info-fecha_inicio"] = "2026-06-01"
+    post["info-fecha_fin"] = "2026-06-01"
+    response = client.post(_wizard_url(wizard_setup), post)
+    assert response.status_code == 200
+    form = response.context["wizard"]["form"]
+    assert "fecha_fin" in form.errors
+
+
+@pytest.mark.django_db
+def test_wizard_step2_duracion_menor_45min_es_rechazada(client, wizard_setup):
+    user = _wizard_referente_user(wizard_setup)
+    client.force_login(user)
+    client.post(_wizard_url(wizard_setup), _step1_data(wizard_setup))
+    post = _step2_data(wizard_setup)
+    post["horarios-0-hora_hasta"] = "09:30"  # 30 min < 45
+    response = client.post(_wizard_url(wizard_setup), post)
+    assert response.status_code == 200
+    form = response.context["wizard"]["form"]
+    assert form.forms[0].errors.get("hora_hasta")
+
+
+@pytest.mark.django_db
+def test_wizard_step2_duracion_mayor_4h_es_rechazada(client, wizard_setup):
+    user = _wizard_referente_user(wizard_setup)
+    client.force_login(user)
+    client.post(_wizard_url(wizard_setup), _step1_data(wizard_setup))
+    post = _step2_data(wizard_setup)
+    post["horarios-0-hora_hasta"] = "15:00"  # 6 h > 4 h
+    response = client.post(_wizard_url(wizard_setup), post)
+    assert response.status_code == 200
+    form = response.context["wizard"]["form"]
+    assert form.forms[0].errors.get("hora_hasta")
+
+
+@pytest.mark.django_db
+def test_wizard_step2_total_semanal_menor_2h_es_rechazado(client, wizard_setup):
+    user = _wizard_referente_user(wizard_setup)
+    client.force_login(user)
+    client.post(_wizard_url(wizard_setup), _step1_data(wizard_setup))
+    post = _step2_data(wizard_setup)
+    post["horarios-0-hora_hasta"] = "09:50"  # 50 min < 2 h total
+    response = client.post(_wizard_url(wizard_setup), post)
+    assert response.status_code == 200
+    form = response.context["wizard"]["form"]
+    assert form.non_form_errors()
+
+
+@pytest.mark.django_db
+def test_wizard_step2_dias_duplicados_son_rechazados(client, wizard_setup):
+    user = _wizard_referente_user(wizard_setup)
+    client.force_login(user)
+    client.post(_wizard_url(wizard_setup), _step1_data(wizard_setup))
+    post = {
+        f"{_WIZARD_PREFIX}-current_step": "horarios",
+        "horarios-TOTAL_FORMS": "2",
+        "horarios-INITIAL_FORMS": "0",
+        "horarios-MIN_NUM_FORMS": "1",
+        "horarios-MAX_NUM_FORMS": "1000",
+        "horarios-0-dia_semana": str(wizard_setup.dia.pk),
+        "horarios-0-hora_desde": "09:00",
+        "horarios-0-hora_hasta": "11:00",
+        "horarios-0-vigente": "1",
+        "horarios-1-dia_semana": str(wizard_setup.dia.pk),  # mismo día
+        "horarios-1-hora_desde": "14:00",
+        "horarios-1-hora_hasta": "16:00",
+        "horarios-1-vigente": "1",
+    }
+    response = client.post(_wizard_url(wizard_setup), post)
+    assert response.status_code == 200
+    form = response.context["wizard"]["form"]
+    assert form.non_form_errors()
+
+
+@pytest.mark.django_db
+def test_wizard_flujo_completo_crea_comision_y_horario(client, wizard_setup):
+    user = _wizard_referente_user(wizard_setup)
+    client.force_login(user)
+    url = _wizard_url(wizard_setup)
+
+    r1 = client.post(url, _step1_data(wizard_setup))
+    assert r1.status_code == 200
+    assert r1.context["wizard"]["steps"].current == "horarios"
+
+    r2 = client.post(url, _step2_data(wizard_setup))
+    assert r2.status_code == 200
+    assert r2.context["wizard"]["steps"].current == "confirmacion"
+
+    r3 = client.post(url, _step3_data())
+    assert r3.status_code == 302
+
+    redirect_url = r3["Location"]
+    assert "refresh=1" in redirect_url
+    assert "#cursos" in redirect_url
+
+    comision = ComisionCurso.objects.get(curso=wizard_setup.curso)
+    assert comision.cupo_total == 20
+    assert comision.estado == "planificada"
+    assert comision.ubicacion == wizard_setup.ubicacion
+    assert comision.horarios.count() == 1
+
+    horario = comision.horarios.first()
+    assert horario.dia_semana == wizard_setup.dia
+    assert horario.hora_desde == time(9, 0)
+    assert horario.hora_hasta == time(11, 0)
+    assert horario.vigente is True

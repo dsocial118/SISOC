@@ -672,7 +672,7 @@ class CentroCreateView(LoginRequiredMixin, CreateView):
         ctx.update(
             {
                 "contacto_formset": contacto_formset,
-                "page_title": "Alta de Centro de Formacion",
+                "page_title": "Nuevo Centro de Formación Profesional",
                 "page_description": (
                     "Registro inicial del centro VAT con datos institucionales, "
                     "ubicación y contactos institucionales unificados."
@@ -790,7 +790,7 @@ class CentroUpdateView(LoginRequiredMixin, UpdateView):
         context.update(
             {
                 "contacto_formset": contacto_formset,
-                "page_title": "Editar Centro de Formacion",
+                "page_title": "Editar Centro de Formación Profesional",
                 "page_description": (
                     "Actualizá los datos institucionales, la ubicación y los "
                     "contactos institucionales del centro VAT."
