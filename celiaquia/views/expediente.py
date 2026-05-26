@@ -590,7 +590,7 @@ class LocalidadesLookupView(View):
 
         # Filtrar por provincia del usuario solo si es provincial Y NO es coordinador
         is_coord = _user_has_permission(user, ROLE_COORDINADOR_CELIAQUIA_PERMISSION)
-        if _is_provincial(user) and not is_coord:
+        if _is_provincial(user) and not is_coord and not _is_admin(user):
             prov = _user_provincia(user)
             if prov:
                 localidades = localidades.filter(municipio__provincia=prov)
@@ -921,7 +921,7 @@ class ExpedienteCreateView(CreateView):
         user = self.request.user
 
         # Filtrar provincias según el usuario
-        if _is_provincial(user):
+        if _is_provincial(user) and not _is_admin(user):
             ctx["provincias"] = _user_scope_provincias(user)
         else:
             # Admin/Coordinador: todas las provincias

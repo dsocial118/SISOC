@@ -1180,9 +1180,11 @@ def _resolver_localidad_responsable_payload_importacion(
             localidad_resp_str = str(localidad_resp).strip()
             if "(" in localidad_resp_str:
                 localidad_resp_str = localidad_resp_str.split("(", 1)[0].strip()
-            localidades_qs = Localidad.objects.select_related("municipio").filter(
-                municipio__provincia_id=provincia_usuario_id
-            )
+            localidades_qs = Localidad.objects.select_related("municipio")
+            if provincia_usuario_id:
+                localidades_qs = localidades_qs.filter(
+                    municipio__provincia_id=provincia_usuario_id
+                )
             if localidad_resp_str.isdigit():
                 coincidencias = list(
                     localidades_qs.filter(pk=int(localidad_resp_str))[:2]

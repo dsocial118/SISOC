@@ -443,22 +443,27 @@ def _apply_user_scope_to_comedores_list_queryset(base_qs, user):
     is_dupla = UserPermissionService.es_tecnico_o_abogado(user)
 
     if is_coordinador:
-        qs = _aplicar_scope_coordinador_comedores_list_queryset(base_qs, duplas_ids)
+        role_qs = _aplicar_scope_coordinador_comedores_list_queryset(base_qs, duplas_ids)
     elif is_dupla:
-        qs = _build_dupla_user_scoped_comedores_list_queryset(user)
+        role_qs = _build_dupla_user_scoped_comedores_list_queryset(user)
     else:
-        qs = base_qs
+        role_qs = None
 
-    if is_territorial_user(user):
-        qs = apply_territorial_scope(
-            qs,
-            user,
-            provincia_lookup="provincia_id",
-            municipio_lookup="municipio_id",
-            localidad_lookup="localidad_id",
-        )
+    if not is_territorial_user(user):
+        return role_qs if role_qs is not None else base_qs
 
-    return qs
+    territorial_qs = apply_territorial_scope(
+        base_qs,
+        user,
+        provincia_lookup="provincia_id",
+        municipio_lookup="municipio_id",
+        localidad_lookup="localidad_id",
+    )
+
+    if role_qs is not None:
+        # Territorio + asignados fuera del territorio
+        return (territorial_qs | role_qs).distinct()
+    return territorial_qs
 
 
 def _build_comedores_model_queryset():
@@ -476,22 +481,27 @@ def _apply_user_scope_to_comedores_queryset(base_qs, user):
     is_dupla = UserPermissionService.es_tecnico_o_abogado(user)
 
     if is_coordinador:
-        qs = _aplicar_scope_coordinador_comedores_list_queryset(base_qs, duplas_ids)
+        role_qs = _aplicar_scope_coordinador_comedores_list_queryset(base_qs, duplas_ids)
     elif is_dupla:
-        qs = base_qs.filter(Q(dupla__abogado=user) | Q(dupla__tecnico=user)).distinct()
+        role_qs = base_qs.filter(Q(dupla__abogado=user) | Q(dupla__tecnico=user)).distinct()
     else:
-        qs = base_qs
+        role_qs = None
 
-    if is_territorial_user(user):
-        qs = apply_territorial_scope(
-            qs,
-            user,
-            provincia_lookup="provincia_id",
-            municipio_lookup="municipio_id",
-            localidad_lookup="localidad_id",
-        )
+    if not is_territorial_user(user):
+        return role_qs if role_qs is not None else base_qs
 
-    return qs
+    territorial_qs = apply_territorial_scope(
+        base_qs,
+        user,
+        provincia_lookup="provincia_id",
+        municipio_lookup="municipio_id",
+        localidad_lookup="localidad_id",
+    )
+
+    if role_qs is not None:
+        # Territorio + asignados fuera del territorio
+        return (territorial_qs | role_qs).distinct()
+    return territorial_qs
 
 
 def _build_relevamientos_detail_prefetch_queryset():
