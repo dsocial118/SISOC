@@ -3,6 +3,7 @@
 import calendar
 from datetime import date, time
 
+from django.conf import settings
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.paginator import Paginator
 from django.db.models import Prefetch, Q
@@ -979,6 +980,7 @@ class ComedorDetailViewSet(
                 "anio",
                 "periodo_inicio",
                 "periodo_fin",
+                "linea_programatica",
                 "estado",
                 "documento_adjunto",
                 "observaciones",
@@ -1140,6 +1142,45 @@ class ComedorDetailViewSet(
             context={"request": request},
         )
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+    @extend_schema(
+        request=None,
+        tags=["Rendiciones"],
+    )
+    @action(
+        detail=True,
+        methods=["get"],
+        url_path=r"rendiciones/modelos/(?P<linea_programatica>[^/.]+)/(?P<modelo_codigo>[^/.]+)/download",
+        permission_classes=[
+            IsPWARepresentativeForComedor,
+            HasMobileRendicionPermission,
+        ],
+    )
+    def descargar_modelo_rendicion(
+        self, request, pk=None, linea_programatica=None, modelo_codigo=None
+    ):
+        self.get_object()
+        modelo = DocumentacionAdjunta.get_modelo_descarga(
+            linea_programatica,
+            modelo_codigo,
+        )
+        if not modelo:
+            raise Http404("Modelo no encontrado.")
+        file_path = (
+            settings.BASE_DIR
+            / "pwa"
+            / "files"
+            / "rendicion_de_cuentas"
+            / modelo["filename"]
+        )
+        try:
+            return FileResponse(
+                open(file_path, "rb"),
+                as_attachment=True,
+                filename=modelo["filename"],
+            )
+        except FileNotFoundError as exc:
+            raise Http404("Archivo no encontrado.") from exc
 
     @extend_schema(
         request=None,
