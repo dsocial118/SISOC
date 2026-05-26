@@ -20,7 +20,7 @@ jobs:
 
         steps:
             - name: Checkout code
-              uses: actions/checkout@v4.1.7
+              uses: actions/checkout@v6.0.2
 
             - name: Create .env for CI
               run: |
@@ -51,7 +51,7 @@ jobs:
 
         steps:
             - name: Checkout code
-              uses: actions/checkout@v4.1.7
+              uses: actions/checkout@v6.0.2
 
             - name: Create .env for CI
               run: |
@@ -103,7 +103,7 @@ jobs:
 
         steps:
             - name: Checkout code
-              uses: actions/checkout@v4.1.7
+              uses: actions/checkout@v6.0.2
 
             - name: Create .env for CI
               run: |
@@ -135,7 +135,7 @@ jobs:
 
         steps:
             - name: Checkout code
-              uses: actions/checkout@v4.1.7
+              uses: actions/checkout@v6.0.2
 
             - name: Create .env for CI
               run: |
