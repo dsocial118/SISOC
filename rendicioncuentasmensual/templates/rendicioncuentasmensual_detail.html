@@ -64,6 +64,10 @@
                         <strong>{{ rendicion.convenio|default:"Sin dato" }}</strong>
                     </div>
                     <div class="col-12 col-md-6 col-xl-3">
+                        <small class="text-muted d-block">Linea Programatica</small>
+                        <strong>{{ rendicion.get_linea_programatica_display }}</strong>
+                    </div>
+                    <div class="col-12 col-md-6 col-xl-3">
                         <small class="text-muted d-block">Mes / Ano</small>
                         <strong>{{ rendicion.mes }} / {{ rendicion.anio }}</strong>
                     </div>

@@ -1,4 +1,4 @@
-from django.conf import settings
+﻿from django.conf import settings
 from django.db import models
 
 from comedores.models import Comedor
@@ -6,30 +6,59 @@ from core.soft_delete import SoftDeleteModelMixin
 
 
 class DocumentacionAdjunta(SoftDeleteModelMixin, models.Model):
+    LINEA_TRADICIONAL = "tradicional"
+    LINEA_SECOS = "secos"
+
+    CATEGORIA_FORMULARIO_I = "formulario_i"
     CATEGORIA_FORMULARIO_II = "formulario_ii"
     CATEGORIA_FORMULARIO_III = "formulario_iii"
+    CATEGORIA_FORMULARIO_III_ALIMENTARIO = "formulario_iii_alimentario"
+    CATEGORIA_FORMULARIO_III_SIPH = "formulario_iii_siph"
     CATEGORIA_FORMULARIO_IV = "formulario_iv"
     CATEGORIA_FORMULARIO_V = "formulario_v"
+    CATEGORIA_FORMULARIO_V_ALIMENTARIO = "formulario_v_alimentario"
+    CATEGORIA_FORMULARIO_V_SIPH = "formulario_v_siph"
     CATEGORIA_FORMULARIO_VI = "formulario_vi"
     CATEGORIA_EXTRACTO_BANCARIO = "extracto_bancario"
     CATEGORIA_COMPROBANTES = "comprobantes"
     CATEGORIA_PLANILLA_SEGUROS = "planilla_seguros"
     CATEGORIA_OTROS = "otros"
+    MODELO_FORMULARIO_I = CATEGORIA_FORMULARIO_I
 
     ESTADO_PRESENTADO = "presentado"
     ESTADO_SUBSANAR = "subsanar"
     ESTADO_VALIDADO = "validado"
 
     CATEGORIA_CHOICES = [
-        (CATEGORIA_FORMULARIO_II, "Formulario II"),
-        (CATEGORIA_FORMULARIO_III, "Formulario III"),
-        (CATEGORIA_FORMULARIO_IV, "Formulario IV"),
-        (CATEGORIA_FORMULARIO_V, "Formulario V"),
-        (CATEGORIA_FORMULARIO_VI, "Formulario VI"),
+        (CATEGORIA_FORMULARIO_I, "Formulario I - Certificación de Cuenta Bancaria"),
+        (CATEGORIA_FORMULARIO_II, "Formulario II - Resumen"),
+        (
+            CATEGORIA_FORMULARIO_III,
+            "Formulario III - Desagregado por Facturas Prestación Alimentaria",
+        ),
+        (
+            CATEGORIA_FORMULARIO_III_ALIMENTARIO,
+            "Formulario III - Desagregado por Facturas Prestación Alimentaria",
+        ),
+        (
+            CATEGORIA_FORMULARIO_III_SIPH,
+            "Formulario III - Desagregado por Facturas SIPH",
+        ),
+        (CATEGORIA_FORMULARIO_IV, "Formulario IV - Recibo de Fondos"),
+        (
+            CATEGORIA_FORMULARIO_V,
+            "Formulario V - Certificación de Prestaciones Alimentarias",
+        ),
+        (
+            CATEGORIA_FORMULARIO_V_ALIMENTARIO,
+            "Formulario V - Certificación de Prestaciones Alimentarias",
+        ),
+        (CATEGORIA_FORMULARIO_V_SIPH, "Formulario V - Certificación de SIPH"),
+        (CATEGORIA_FORMULARIO_VI, "Formulario VI - Planilla de Pagos"),
         (CATEGORIA_EXTRACTO_BANCARIO, "Extracto Bancario"),
         (CATEGORIA_COMPROBANTES, "Comprobante/s"),
         (CATEGORIA_PLANILLA_SEGUROS, "Planilla de Seguros"),
-        (CATEGORIA_OTROS, "Documentación Extra"),
+        (CATEGORIA_OTROS, "Documentación Adicional"),
     ]
 
     ESTADO_CHOICES = [
@@ -40,69 +69,193 @@ class DocumentacionAdjunta(SoftDeleteModelMixin, models.Model):
 
     CATEGORIAS_CONFIG = (
         {
-            "codigo": CATEGORIA_FORMULARIO_II,
-            "label": "Formulario II",
+            "codigo": CATEGORIA_FORMULARIO_I,
+            "label": "Formulario I - Certificación de Cuenta Bancaria",
             "required": True,
             "multiple": False,
             "order": 1,
         },
         {
-            "codigo": CATEGORIA_FORMULARIO_III,
-            "label": "Formulario III",
+            "codigo": CATEGORIA_FORMULARIO_II,
+            "label": "Formulario II - Resumen",
             "required": True,
             "multiple": False,
             "order": 2,
         },
         {
-            "codigo": CATEGORIA_FORMULARIO_IV,
-            "label": "Formulario IV",
-            "required": False,
+            "codigo": CATEGORIA_FORMULARIO_III_ALIMENTARIO,
+            "label": "Formulario III - Desagregado por Facturas Prestación Alimentaria",
+            "required": True,
             "multiple": False,
             "order": 3,
         },
         {
-            "codigo": CATEGORIA_FORMULARIO_V,
-            "label": "Formulario V",
+            "codigo": CATEGORIA_FORMULARIO_III_SIPH,
+            "label": "Formulario III - Desagregado por Facturas SIPH",
             "required": True,
             "multiple": False,
             "order": 4,
         },
         {
-            "codigo": CATEGORIA_FORMULARIO_VI,
-            "label": "Formulario VI",
+            "codigo": CATEGORIA_FORMULARIO_IV,
+            "label": "Formulario IV - Recibo de Fondos",
             "required": False,
             "multiple": False,
             "order": 5,
+        },
+        {
+            "codigo": CATEGORIA_FORMULARIO_V_ALIMENTARIO,
+            "label": "Formulario V - Certificación de Prestaciones Alimentarias",
+            "required": True,
+            "multiple": False,
+            "order": 6,
+        },
+        {
+            "codigo": CATEGORIA_FORMULARIO_V_SIPH,
+            "label": "Formulario V - Certificación de SIPH",
+            "required": True,
+            "multiple": False,
+            "order": 7,
+        },
+        {
+            "codigo": CATEGORIA_FORMULARIO_VI,
+            "label": "Formulario VI - Planilla de Pagos",
+            "required": False,
+            "multiple": False,
+            "order": 8,
         },
         {
             "codigo": CATEGORIA_EXTRACTO_BANCARIO,
             "label": "Extracto Bancario",
             "required": True,
             "multiple": False,
-            "order": 6,
+            "order": 9,
         },
         {
             "codigo": CATEGORIA_COMPROBANTES,
             "label": "Comprobante/s",
             "required": True,
             "multiple": True,
-            "order": 7,
+            "order": 10,
         },
         {
             "codigo": CATEGORIA_PLANILLA_SEGUROS,
             "label": "Planilla de Seguros",
             "required": False,
             "multiple": False,
-            "order": 8,
+            "order": 11,
         },
         {
             "codigo": CATEGORIA_OTROS,
-            "label": "Documentación Extra",
+            "label": "Documentación Adicional",
             "required": False,
             "multiple": True,
-            "order": 9,
+            "order": 12,
         },
     )
+
+    MODELOS_POR_LINEA = {
+        LINEA_SECOS: (
+            {
+                "codigo": MODELO_FORMULARIO_I,
+                "label": "Formulario I - Certificación de Cuenta Bancaria",
+                "filename": "FORM.I.MS.-Certificacion.de.CUENTA.BANCARIA.2.xlsx",
+                "order": 1,
+            },
+            {
+                "codigo": CATEGORIA_FORMULARIO_II,
+                "label": "Formulario II - Resumen",
+                "filename": "FORM.II.MS.-RESUMEN.1.xlsx",
+                "order": 2,
+            },
+            {
+                "codigo": CATEGORIA_FORMULARIO_III_ALIMENTARIO,
+                "label": "Formulario III - Desagregado por Facturas Prestación Alimentaria",
+                "filename": "FORM.III.MS.-.DESAGREGADO.ALIM.1.xlsx",
+                "order": 3,
+            },
+            {
+                "codigo": CATEGORIA_FORMULARIO_III_SIPH,
+                "label": "Formulario III - Desagregado por Facturas SIPH",
+                "filename": "FORM.III.MS.-.DESAGREGADO.SIPH.1.xlsx",
+                "order": 4,
+            },
+            {
+                "codigo": CATEGORIA_FORMULARIO_IV,
+                "label": "Formulario IV - Recibo de Fondos",
+                "filename": "FORM.IV.MS.-.RECIBO.FONDOS.1.xlsx",
+                "order": 5,
+            },
+            {
+                "codigo": CATEGORIA_FORMULARIO_V_ALIMENTARIO,
+                "label": "Formulario V - Certificación de Prestaciones Alimentarias",
+                "filename": "FORM.V.MS.-.CERTIF.PRESTAC.ALIM.1.xlsx",
+                "order": 6,
+            },
+            {
+                "codigo": CATEGORIA_FORMULARIO_V_SIPH,
+                "label": "Formulario V - Certificación de SIPH",
+                "filename": "FORM.V.MS.-.CERTIF.SS.INT.PRO.HUM.1.xlsx",
+                "order": 7,
+            },
+            {
+                "codigo": CATEGORIA_FORMULARIO_VI,
+                "label": "Formulario VI - Planilla de Pagos",
+                "filename": "FORMULARIO.VI.-.CONTROL.PAGOS.3.xlsx",
+                "order": 8,
+            },
+        ),
+        LINEA_TRADICIONAL: (
+            {
+                "codigo": MODELO_FORMULARIO_I,
+                "label": "Formulario I - Certificación de Cuenta Bancaria",
+                "filename": "FORM.I.-Certificacion.de.CUENTA.BANCARIA.1.xlsx",
+                "order": 1,
+            },
+            {
+                "codigo": CATEGORIA_FORMULARIO_II,
+                "label": "Formulario II - Resumen",
+                "filename": "FORM.II.RMC.AF.1.xlsx",
+                "order": 2,
+            },
+            {
+                "codigo": CATEGORIA_FORMULARIO_III_ALIMENTARIO,
+                "label": "Formulario III - Desagregado por Facturas Prestación Alimentaria",
+                "filename": "FORM.III.RMC.ALIM.1.xlsx",
+                "order": 3,
+            },
+            {
+                "codigo": CATEGORIA_FORMULARIO_III_SIPH,
+                "label": "Formulario III - Desagregado por Facturas SIPH",
+                "filename": "FORM.III.RMC.SIPH.1.xlsx",
+                "order": 4,
+            },
+            {
+                "codigo": CATEGORIA_FORMULARIO_IV,
+                "label": "Formulario IV - Recibo de Fondos",
+                "filename": "FORM.IV.RMC.AF.xlsx",
+                "order": 5,
+            },
+            {
+                "codigo": CATEGORIA_FORMULARIO_V_ALIMENTARIO,
+                "label": "Formulario V - Certificación de Prestaciones Alimentarias",
+                "filename": "FORM.V.CERTIF.ALIM.1.xlsx",
+                "order": 6,
+            },
+            {
+                "codigo": CATEGORIA_FORMULARIO_V_SIPH,
+                "label": "Formulario V - Certificación de SIPH",
+                "filename": "FORM.V.CERTIF.SIPH.1.xlsx",
+                "order": 7,
+            },
+            {
+                "codigo": CATEGORIA_FORMULARIO_VI,
+                "label": "Formulario VI - Planilla de Pagos",
+                "filename": "FORM.VI.RMC.AF.1.xlsx",
+                "order": 8,
+            },
+        ),
+    }
 
     nombre = models.CharField(max_length=255, verbose_name="Nombre del Documento")
     categoria = models.CharField(
@@ -168,26 +321,74 @@ class DocumentacionAdjunta(SoftDeleteModelMixin, models.Model):
         return self.get_estado_display()
 
     @classmethod
-    def categorias_mobile(cls):
-        return list(cls.CATEGORIAS_CONFIG)
+    def normalizar_linea_programatica(cls, linea_programatica):
+        if linea_programatica == cls.LINEA_SECOS:
+            return cls.LINEA_SECOS
+        return cls.LINEA_TRADICIONAL
 
     @classmethod
-    def categorias_obligatorias(cls):
-        return {item["codigo"] for item in cls.CATEGORIAS_CONFIG if item["required"]}
+    def modelos_descargables(cls, linea_programatica=None):
+        linea = cls.normalizar_linea_programatica(linea_programatica)
+        return list(
+            cls.MODELOS_POR_LINEA.get(
+                linea, cls.MODELOS_POR_LINEA[cls.LINEA_TRADICIONAL]
+            )
+        )
 
     @classmethod
-    def categorias_multiples(cls):
-        return {item["codigo"] for item in cls.CATEGORIAS_CONFIG if item["multiple"]}
-
-    @classmethod
-    def get_categoria_config(cls, categoria):
+    def get_modelo_descarga(cls, linea_programatica, codigo):
         return next(
-            (item for item in cls.CATEGORIAS_CONFIG if item["codigo"] == categoria),
+            (
+                item
+                for item in cls.modelos_descargables(linea_programatica)
+                if item["codigo"] == codigo
+            ),
+            None,
+        )
+
+    @classmethod
+    def categorias_mobile(cls, linea_programatica=None):
+        modelos = {
+            item["codigo"]: item
+            for item in cls.modelos_descargables(linea_programatica)
+        }
+        return [
+            {**item, "modelo": modelos.get(item["codigo"])}
+            for item in cls.CATEGORIAS_CONFIG
+        ]
+
+    @classmethod
+    def categorias_obligatorias(cls, linea_programatica=None):
+        return {
+            item["codigo"]
+            for item in cls.categorias_mobile(linea_programatica)
+            if item["required"]
+        }
+
+    @classmethod
+    def categorias_multiples(cls, linea_programatica=None):
+        return {
+            item["codigo"]
+            for item in cls.categorias_mobile(linea_programatica)
+            if item["multiple"]
+        }
+
+    @classmethod
+    def get_categoria_config(cls, categoria, linea_programatica=None):
+        return next(
+            (
+                item
+                for item in cls.categorias_mobile(linea_programatica)
+                if item["codigo"] == categoria
+            ),
             None,
         )
 
 
 class RendicionCuentaMensual(SoftDeleteModelMixin, models.Model):
+    LINEA_TRADICIONAL = DocumentacionAdjunta.LINEA_TRADICIONAL
+    LINEA_SECOS = DocumentacionAdjunta.LINEA_SECOS
+
     ESTADO_ELABORACION = "elaboracion"
     ESTADO_REVISION = "revision"
     ESTADO_SUBSANAR = "subsanar"
@@ -198,6 +399,11 @@ class RendicionCuentaMensual(SoftDeleteModelMixin, models.Model):
         (ESTADO_REVISION, "Presentación en revisión"),
         (ESTADO_SUBSANAR, "Presentación a subsanar"),
         (ESTADO_FINALIZADA, "Presentación finalizada"),
+    ]
+
+    LINEA_PROGRAMATICA_CHOICES = [
+        (LINEA_SECOS, "Abordaje Comunitario - Linea Secos"),
+        (LINEA_TRADICIONAL, "Abordaje Comunitario - Linea Tradicional"),
     ]
 
     MESES = [
@@ -244,6 +450,12 @@ class RendicionCuentaMensual(SoftDeleteModelMixin, models.Model):
         verbose_name="Período fin",
         blank=True,
         null=True,
+    )
+    linea_programatica = models.CharField(
+        max_length=20,
+        choices=LINEA_PROGRAMATICA_CHOICES,
+        default=LINEA_TRADICIONAL,
+        verbose_name="Linea Programatica",
     )
     estado = models.CharField(
         max_length=20,

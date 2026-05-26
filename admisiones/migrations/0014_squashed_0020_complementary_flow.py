@@ -8,16 +8,6 @@ import django.db.models.deletion
 
 class Migration(migrations.Migration):
 
-    replaces = [
-        ("admisiones", "0014_alter_admision_estado_legales"),
-        ("admisiones", "0015_admision_complementario_solicitado"),
-        ("admisiones", "0016_alter_admision_estado_legales"),
-        ("admisiones", "0017_informecomplementario_estado_and_more"),
-        ("admisiones", "0018_alter_admision_estado_legales_and_more"),
-        ("admisiones", "0019_informetecnico_solicitudes_almuerzo_domingo_and_more"),
-        ("admisiones", "0020_remove_informetecnico_prestaciones_almuerzo_letras_and_more"),
-    ]
-
     dependencies = [
         ("admisiones", "0013_alter_admision_comedor"),
     ]
@@ -31,7 +21,6 @@ class Migration(migrations.Migration):
                 default=False, verbose_name="Complementario Solicitado"
             ),
         ),
-        
         # Update estado_legales choices for Admision
         migrations.AlterField(
             model_name="admision",
@@ -72,7 +61,6 @@ class Migration(migrations.Migration):
                 verbose_name="Estado",
             ),
         ),
-        
         # Add fields to InformeComplementario
         migrations.AddField(
             model_name="informecomplementario",
@@ -100,7 +88,6 @@ class Migration(migrations.Migration):
                 blank=True, null=True, verbose_name="Observaciones de Legales"
             ),
         ),
-        
         # Create InformeTecnicoComplementarioPDF model
         migrations.CreateModel(
             name="InformeTecnicoComplementarioPDF",
@@ -154,7 +141,6 @@ class Migration(migrations.Migration):
                 ),
             ],
         ),
-        
         # Add solicitudes fields to InformeTecnico
         migrations.AddField(
             model_name="informetecnico",
@@ -352,7 +338,6 @@ class Migration(migrations.Migration):
                 default=0, validators=[django.core.validators.MinValueValidator(0)]
             ),
         ),
-        
         # Remove old prestaciones fields and add new aprobadas fields
         migrations.RemoveField(
             model_name="informetecnico",
@@ -386,7 +371,6 @@ class Migration(migrations.Migration):
             model_name="informetecnico",
             name="prestaciones_merienda_numero",
         ),
-        
         # Add aprobadas fields
         migrations.AddField(
             model_name="informetecnico",
@@ -584,7 +568,6 @@ class Migration(migrations.Migration):
                 default=0, validators=[django.core.validators.MinValueValidator(0)]
             ),
         ),
-        
         # Add additional fields
         migrations.AddField(
             model_name="informetecnico",
