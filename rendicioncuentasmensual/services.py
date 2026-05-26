@@ -37,7 +37,9 @@ def inferir_linea_programatica(comedor):
         return DocumentacionAdjunta.LINEA_SECOS
     if programa_id == 4:
         return DocumentacionAdjunta.LINEA_TRADICIONAL
-    programa_nombre = str(getattr(getattr(comedor, "programa", None), "nombre", "") or "")
+    programa_nombre = str(
+        getattr(getattr(comedor, "programa", None), "nombre", "") or ""
+    )
     if "secos" in programa_nombre.lower():
         return DocumentacionAdjunta.LINEA_SECOS
     return DocumentacionAdjunta.LINEA_TRADICIONAL

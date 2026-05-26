@@ -1,9 +1,7 @@
 {% extends "includes/main.html" %}
 {% load static %}
 {% block title %}Historial de asistencia - {{ object.nombre }}{% endblock %}
-{% block titulo-pagina %}
-    Historial de asistencia de {{ object.nombre }}
-{% endblock %}
+{% block titulo-pagina %}Historial de asistencia de {{ object.nombre }}{% endblock %}
 {% block breadcrumb %}
     <ol class="breadcrumb float-sm-right">
         <li class="breadcrumb-item">
@@ -73,9 +71,7 @@
                             </tr>
                         {% empty %}
                             <tr>
-                                <td colspan="5" class="nomina-empty-message">
-                                    No hay asistentes registrados para este periodo.
-                                </td>
+                                <td colspan="5" class="nomina-empty-message">No hay asistentes registrados para este periodo.</td>
                             </tr>
                         {% endfor %}
                     </tbody>

@@ -330,7 +330,9 @@ class DocumentacionAdjunta(SoftDeleteModelMixin, models.Model):
     def modelos_descargables(cls, linea_programatica=None):
         linea = cls.normalizar_linea_programatica(linea_programatica)
         return list(
-            cls.MODELOS_POR_LINEA.get(linea, cls.MODELOS_POR_LINEA[cls.LINEA_TRADICIONAL])
+            cls.MODELOS_POR_LINEA.get(
+                linea, cls.MODELOS_POR_LINEA[cls.LINEA_TRADICIONAL]
+            )
         )
 
     @classmethod
@@ -347,9 +349,13 @@ class DocumentacionAdjunta(SoftDeleteModelMixin, models.Model):
     @classmethod
     def categorias_mobile(cls, linea_programatica=None):
         modelos = {
-            item["codigo"]: item for item in cls.modelos_descargables(linea_programatica)
+            item["codigo"]: item
+            for item in cls.modelos_descargables(linea_programatica)
         }
-        return [{**item, "modelo": modelos.get(item["codigo"])} for item in cls.CATEGORIAS_CONFIG]
+        return [
+            {**item, "modelo": modelos.get(item["codigo"])}
+            for item in cls.CATEGORIAS_CONFIG
+        ]
 
     @classmethod
     def categorias_obligatorias(cls, linea_programatica=None):

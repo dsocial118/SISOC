@@ -111,9 +111,7 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name="rendicioncuentamensual",
             name="periodo_fin",
-            field=models.DateField(
-                blank=True, null=True, verbose_name="Período fin"
-            ),
+            field=models.DateField(blank=True, null=True, verbose_name="Período fin"),
         ),
         migrations.AlterField(
             model_name="rendicioncuentamensual",

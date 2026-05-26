@@ -797,7 +797,9 @@ class NominaEspacioPWAViewSet(viewsets.ViewSet):
             "nomina_id": registro.nomina_id,
             "nombre": ciudadano.nombre if ciudadano else "",
             "apellido": ciudadano.apellido if ciudadano else "",
-            "dni": str(ciudadano.documento) if ciudadano and ciudadano.documento else "",
+            "dni": (
+                str(ciudadano.documento) if ciudadano and ciudadano.documento else ""
+            ),
             "genero": sexo.sexo if sexo else "",
             "fecha_toma_asistencia": registro.fecha_toma_asistencia,
             "tomado_por": registro.tomado_por.username if registro.tomado_por else None,
@@ -1021,7 +1023,9 @@ class NominaEspacioPWAViewSet(viewsets.ViewSet):
         return Response(
             {
                 "tab": tab,
-                **self._serialize_attendance_period(periodo_referencia, len(asistentes)),
+                **self._serialize_attendance_period(
+                    periodo_referencia, len(asistentes)
+                ),
                 "asistentes": [
                     self._serialize_attendance_attendee(registro)
                     for registro in asistentes

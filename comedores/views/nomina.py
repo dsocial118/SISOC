@@ -65,7 +65,9 @@ def _get_asistencia_nomina_context(request, *, admision_id=None, comedor_id=None
     if admision_id:
         registros = registros.filter(nomina__admision_id=admision_id)
     elif comedor_id:
-        registros = registros.filter(nomina__comedor_id=comedor_id, nomina__admision__isnull=True)
+        registros = registros.filter(
+            nomina__comedor_id=comedor_id, nomina__admision__isnull=True
+        )
 
     periodos = list(
         registros.values("periodo_referencia")
