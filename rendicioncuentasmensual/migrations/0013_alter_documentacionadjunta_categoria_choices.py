@@ -6,7 +6,10 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("rendicioncuentasmensual", "0012_alter_rendicioncuentamensual_options_and_more"),
+        (
+            "rendicioncuentasmensual",
+            "0012_alter_rendicioncuentamensual_options_and_more",
+        ),
     ]
 
     operations = [
