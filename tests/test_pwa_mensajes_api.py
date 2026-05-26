@@ -484,9 +484,12 @@ def test_mensaje_de_rendicion_se_archiva_cuando_la_subsanacion_se_reenvia(
         estado=RendicionCuentaMensual.ESTADO_SUBSANAR,
     )
     for categoria in (
+        DocumentacionAdjunta.CATEGORIA_FORMULARIO_I,
         DocumentacionAdjunta.CATEGORIA_FORMULARIO_II,
-        DocumentacionAdjunta.CATEGORIA_FORMULARIO_III,
-        DocumentacionAdjunta.CATEGORIA_FORMULARIO_V,
+        DocumentacionAdjunta.CATEGORIA_FORMULARIO_III_ALIMENTARIO,
+        DocumentacionAdjunta.CATEGORIA_FORMULARIO_III_SIPH,
+        DocumentacionAdjunta.CATEGORIA_FORMULARIO_V_ALIMENTARIO,
+        DocumentacionAdjunta.CATEGORIA_FORMULARIO_V_SIPH,
         DocumentacionAdjunta.CATEGORIA_EXTRACTO_BANCARIO,
     ):
         DocumentacionAdjunta.objects.create(

@@ -295,7 +295,7 @@ def test_obtener_documentacion_para_detalle_mantiene_vigente_reemplazo_categoria
     rendicion = RendicionCuentaMensual.objects.create(mes=4, anio=2026)
     observado = DocumentacionAdjunta.objects.create(
         nombre="formulario-iii-v1.pdf",
-        categoria=DocumentacionAdjunta.CATEGORIA_FORMULARIO_III,
+        categoria=DocumentacionAdjunta.CATEGORIA_FORMULARIO_III_ALIMENTARIO,
         estado=DocumentacionAdjunta.ESTADO_SUBSANAR,
         rendicion_cuenta_mensual=rendicion,
         archivo=SimpleUploadedFile(
@@ -307,7 +307,7 @@ def test_obtener_documentacion_para_detalle_mantiene_vigente_reemplazo_categoria
     observado.delete()
     reemplazo = DocumentacionAdjunta.objects.create(
         nombre="formulario-iii-v2.pdf",
-        categoria=DocumentacionAdjunta.CATEGORIA_FORMULARIO_III,
+        categoria=DocumentacionAdjunta.CATEGORIA_FORMULARIO_III_ALIMENTARIO,
         estado=DocumentacionAdjunta.ESTADO_VALIDADO,
         rendicion_cuenta_mensual=rendicion,
         documento_subsanado=observado,
@@ -325,7 +325,7 @@ def test_obtener_documentacion_para_detalle_mantiene_vigente_reemplazo_categoria
     formularios = next(
         item
         for item in categorias
-        if item["codigo"] == DocumentacionAdjunta.CATEGORIA_FORMULARIO_III
+        if item["codigo"] == DocumentacionAdjunta.CATEGORIA_FORMULARIO_III_ALIMENTARIO
     )
     assert [item.id for item in formularios["archivos"]] == [reemplazo.id]
     assert getattr(formularios["archivos"][0], "subsanaciones_historial", []) == []

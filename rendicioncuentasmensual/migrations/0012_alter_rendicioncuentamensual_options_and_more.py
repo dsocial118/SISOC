@@ -28,16 +28,34 @@ class Migration(migrations.Migration):
             name="categoria",
             field=models.CharField(
                 choices=[
-                    ("formulario_i", "Formulario I"),
-                    ("formulario_ii", "Formulario II"),
-                    ("formulario_iii", "Formulario III"),
-                    ("formulario_iii_alimentario", "Formulario III Alimentario"),
-                    ("formulario_iii_siph", "Formulario III SIPH"),
-                    ("formulario_iv", "Formulario IV"),
-                    ("formulario_v", "Formulario V"),
-                    ("formulario_v_alimentario", "Formulario V Alimentario"),
-                    ("formulario_v_siph", "Formulario V SIPH"),
-                    ("formulario_vi", "Formulario VI"),
+                    (
+                        "formulario_i",
+                        "Formulario I - Certificación de Cuenta Bancaria",
+                    ),
+                    ("formulario_ii", "Formulario II - Resumen"),
+                    (
+                        "formulario_iii",
+                        "Formulario III - Desagregado por Facturas Prestación Alimentaria",
+                    ),
+                    (
+                        "formulario_iii_alimentario",
+                        "Formulario III - Desagregado por Facturas Prestación Alimentaria",
+                    ),
+                    (
+                        "formulario_iii_siph",
+                        "Formulario III - Desagregado por Facturas SIPH",
+                    ),
+                    ("formulario_iv", "Formulario IV - Recibo de Fondos"),
+                    (
+                        "formulario_v",
+                        "Formulario V - Certificación de Prestaciones Alimentarias",
+                    ),
+                    (
+                        "formulario_v_alimentario",
+                        "Formulario V - Certificación de Prestaciones Alimentarias",
+                    ),
+                    ("formulario_v_siph", "Formulario V - Certificación de SIPH"),
+                    ("formulario_vi", "Formulario VI - Planilla de Pagos"),
                     ("extracto_bancario", "Extracto Bancario"),
                     ("comprobantes", "Comprobante/s"),
                     ("planilla_seguros", "Planilla de Seguros"),
