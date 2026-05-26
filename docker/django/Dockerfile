@@ -17,7 +17,12 @@ RUN apt-get update && \
       libc-dev \
       bash \
       mariadb-client \
-      locales && \
+      locales \
+      libpango-1.0-0 \
+      libharfbuzz0b \
+      libpangoft2-1.0-0 \
+      libfontconfig1 \
+      libcairo2 && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
