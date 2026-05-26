@@ -1,10 +1,13 @@
 # 2026-05-19 — VAT: wizard de 3 pasos para crear Comisión de Curso
 
 ## Resumen
-Se reemplaza el modal `#modalComisionCurso` (creación) por una página dedicada
-estilo wizard de 3 pasos, fiel al mockup acordado con producto.
+El flujo principal de creación de comisiones migra a una página dedicada estilo
+wizard de 3 pasos, fiel al mockup acordado con producto. El botón "+ Comisión"
+del listado de cursos ahora navega a esta URL.
 
-La edición sigue usando el modal modal viejo (no cambia).
+El modal `#modalComisionCurso` se conserva para el flujo secundario "Guardar y
+crear comisión" del modal de cursos (post-create action). La edición también
+sigue usando modal (no cambia).
 
 ## Alcance
 - **Paso 1 — Información básica**: ubicación, cupo total (5-100), estado,

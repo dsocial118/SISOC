@@ -2,72 +2,80 @@
 
 
 {% block wizard_step %}
-<div class="sisoc-wizard-card">
-    <div class="sisoc-wizard-card-header">
-        <i class="fas fa-clock"></i>
-        <span>Horarios de clase</span>
-    </div>
-    <div class="sisoc-wizard-card-body">
-        <p class="sisoc-wizard-intro">
-            Defina los días y horarios en que se dictará la comisión. Debe agregar al menos 1 horario y el total semanal debe ser mínimo 2 horas.
-        </p>
-
-        {{ form.management_form }}
-        {% if form.non_form_errors %}
-            <div class="text-danger">{{ form.non_form_errors }}</div>
-        {% endif %}
-
-        <div id="sisoc-wizard-horarios" data-horarios-prefix="{{ form.prefix }}">
-            {% for horario_form in form.forms %}
-                {% include "vat/comision_curso_wizard/_horario_block.html" with horario_form=horario_form forloop_counter=forloop.counter forloop_counter0=forloop.counter0 %}
-            {% endfor %}
+    <div class="sisoc-wizard-card">
+        <div class="sisoc-wizard-card-header">
+            <i class="fas fa-clock"></i>
+            <span>Horarios de clase</span>
         </div>
+        <div class="sisoc-wizard-card-body">
+            <p class="sisoc-wizard-intro">
+                Defina los días y horarios en que se dictará la comisión. Debe agregar al menos 1 horario y el total semanal debe ser mínimo 2 horas.
+            </p>
 
-        <template id="sisoc-wizard-horario-template">
-            {% include "vat/comision_curso_wizard/_horario_block.html" with horario_form=form.empty_form forloop_counter="__counter__" forloop_counter0="__prefix__" %}
-        </template>
+            {{ form.management_form }}
+            {% if form.non_form_errors %}<div class="text-danger">{{ form.non_form_errors }}</div>{% endif %}
 
-        <div class="sisoc-wizard-add-horario-row">
-            <button type="button" class="sisoc-wizard-btn sisoc-wizard-btn--add" data-action="add-horario">
-                <i class="fas fa-plus"></i> Agregar horario
-            </button>
+            <div id="sisoc-wizard-horarios" data-horarios-prefix="{{ form.prefix }}">
+                {% for horario_form in form.forms %}
+                    {% include "vat/comision_curso_wizard/_horario_block.html" with horario_form=horario_form forloop_counter=forloop.counter forloop_counter0=forloop.counter0 %}
+                {% endfor %}
+            </div>
+
+            <template id="sisoc-wizard-horario-template">
+                {% include "vat/comision_curso_wizard/_horario_block.html" with horario_form=form.empty_form forloop_counter="__counter__" forloop_counter0="__prefix__" %}
+            </template>
+
+            <div class="sisoc-wizard-add-horario-row">
+                <button type="button"
+                        class="sisoc-wizard-btn sisoc-wizard-btn--add"
+                        data-action="add-horario">
+                    <i class="fas fa-plus"></i> Agregar horario
+                </button>
+            </div>
         </div>
     </div>
-</div>
 {% endblock %}
 
 {% block wizard_footer_left %}
-<div class="sisoc-wizard-total" data-total-semanal>
-    <h4>Total semanal</h4>
-    <div class="value"><span data-total-value>0</span> <span data-total-unit>Min</span></div>
-    <div class="note">• Mínimo requerido 2 hs semanales</div>
-</div>
+    <div class="sisoc-wizard-total" data-total-semanal>
+        <h4>Total semanal</h4>
+        <div class="value">
+            <span data-total-value>0</span> <span data-total-unit>Min</span>
+        </div>
+        <div class="note">• Mínimo requerido 2 hs semanales</div>
+    </div>
 {% endblock %}
 
 {% block wizard_footer_right %}
-<div class="sisoc-wizard-validations">
-    <h4><i class="fas fa-exclamation-circle"></i> Códigos de validación</h4>
-    <ul>
-        <li>Al menos 1 horario definido (obligatorio)</li>
-        <li>Duración de cada clase: entre 45 minutos y 4 horas</li>
-        <li>Total semanal mínimo: 2 horas</li>
-        <li>No puede haber 2 horarios el mismo día</li>
-    </ul>
-</div>
+    <div class="sisoc-wizard-validations">
+        <h4>
+            <i class="fas fa-exclamation-circle"></i> Códigos de validación
+        </h4>
+        <ul>
+            <li>Al menos 1 horario definido (obligatorio)</li>
+            <li>Duración de cada clase: entre 45 minutos y 4 horas</li>
+            <li>Total semanal mínimo: 2 horas</li>
+            <li>No puede haber 2 horarios el mismo día</li>
+        </ul>
+    </div>
 {% endblock %}
 
 {% block wizard_buttons %}
-<button type="submit" name="wizard_goto_step" value="info" class="sisoc-wizard-btn sisoc-wizard-btn--light" formnovalidate>
-    <i class="fas fa-arrow-left"></i> Volver al paso anterior
-</button>
-<button type="submit" class="sisoc-wizard-btn sisoc-wizard-btn--primary">
-    Avanzar al paso siguiente <i class="fas fa-arrow-right"></i>
-</button>
+    <button type="submit"
+            name="wizard_goto_step"
+            value="info"
+            class="sisoc-wizard-btn sisoc-wizard-btn--light"
+            formnovalidate>
+        <i class="fas fa-arrow-left"></i> Volver al paso anterior
+    </button>
+    <button type="submit" class="sisoc-wizard-btn sisoc-wizard-btn--primary">
+        Avanzar al paso siguiente <i class="fas fa-arrow-right"></i>
+    </button>
 {% endblock %}
 
 {% block content %}
-{{ block.super }}
-<script nonce="{{ request.csp_nonce }}">
+    {{ block.super }}
+    <script nonce="{{ request.csp_nonce }}">
 (function () {
     var container = document.getElementById('sisoc-wizard-horarios');
     var tmpl = document.getElementById('sisoc-wizard-horario-template');
@@ -171,5 +179,5 @@
 
     recomputeTotal();
 })();
-</script>
+    </script>
 {% endblock %}

@@ -6,17 +6,16 @@
                 <div class="sisoc-toolbar-left">
                     <label class="sisoc-toolbar-field" for="cursosFilterSearch">
                         <i class="fas fa-search"></i>
-                        <input
-                            type="search"
-                            id="cursosFilterSearch"
-                            placeholder="Buscar curso..."
-                            autocomplete="off" />
+                        <input type="search"
+                               id="cursosFilterSearch"
+                               placeholder="Buscar curso..."
+                               autocomplete="off" />
                     </label>
                     <label class="sisoc-toolbar-field" for="cursosFilterEstado">
                         <select id="cursosFilterEstado">
                             <option value="">Filtrar por Estado de carga</option>
-                            <option value="con_comision">Creado con comision</option>
-                            <option value="sin_comision">Creado sin comision</option>
+                            <option value="con_comision">Creado con comisión</option>
+                            <option value="sin_comision">Creado sin comisión</option>
                         </select>
                     </label>
                     <select id="cursosFilterPageSize" class="sisoc-hidden-control">
@@ -29,12 +28,11 @@
                     <button type="button" id="cursosFilterClear" class="sisoc-hidden-control">Limpiar</button>
                 </div>
                 {% if can_manage_centro and perms.VAT.add_curso %}
-                    <button
-                        type="button"
-                        class="sisoc-btn sisoc-btn--add"
-                        data-bs-toggle="modal"
-                        data-bs-target="#modalCurso"
-                        data-curso-mode="create">
+                    <button type="button"
+                            class="sisoc-btn sisoc-btn--add"
+                            data-bs-toggle="modal"
+                            data-bs-target="#modalCurso"
+                            data-curso-mode="create">
                         <i class="fas fa-plus"></i>
                         <span>Agregar curso</span>
                     </button>
@@ -56,8 +54,7 @@
                             </thead>
                             <tbody>
                                 {% for curso in cursos %}
-                                    <tr
-                                        class="curso-row"
+                                    <tr class="curso-row"
                                         data-curso-id="{{ curso.id }}"
                                         data-curso-nombre="{{ curso.nombre }}"
                                         data-curso-plan="{{ curso.plan_estudio_label|default:'' }}"
@@ -70,43 +67,42 @@
                                         <td>{{ curso.comisiones_count }}</td>
                                         <td>
                                             {% if curso.comisiones_count %}
-                                                <span class="sisoc-data-badge sisoc-data-badge--commission">Creado con comision</span>
+                                                <span class="sisoc-data-badge sisoc-data-badge--commission">Creado con comisión</span>
                                             {% else %}
-                                                <span class="sisoc-data-badge sisoc-data-badge--no-commission">Creado sin comision</span>
+                                                <span class="sisoc-data-badge sisoc-data-badge--no-commission">Creado sin comisión</span>
                                             {% endif %}
                                         </td>
                                         <td>
                                             <div class="sisoc-table-actions">
                                                 {% if can_manage_centro and perms.VAT.add_comisioncurso %}
-                                                    <a
-                                                        href="{% url 'vat_comision_curso_wizard' curso.id %}"
-                                                        class="sisoc-btn sisoc-btn--add">
+                                                    <a href="{% url 'vat_comision_curso_wizard' curso.id %}"
+                                                       class="sisoc-btn sisoc-btn--add">
                                                         <i class="fas fa-plus"></i>
-                                                        <span>comision</span>
+                                                        <span>Comisión</span>
                                                     </a>
                                                 {% endif %}
                                                 {% if can_manage_centro and perms.VAT.change_curso %}
-                                                    <button
-                                                        type="button"
-                                                        class="sisoc-btn sisoc-btn--edit btn-editar-curso"
-                                                        data-bs-toggle="modal"
-                                                        data-bs-target="#modalCurso"
-                                                        data-curso-mode="edit"
-                                                        data-edit-url="{% url 'vat_curso_update' curso.id %}"
-                                                        data-plan-estudio-id="{{ curso.plan_estudio_id|default:'' }}"
-                                                        data-nombre="{{ curso.nombre }}"
-                                                        data-estado="{{ curso.estado|default:'' }}"
-                                                        data-usa-voucher="{{ curso.usa_voucher|yesno:'1,0' }}"
-                                                        data-inscripcion-libre="{{ curso.inscripcion_libre|yesno:'1,0' }}"
-                                                        data-costo-creditos="{{ curso.costo_creditos|default:'' }}"
-                                                        data-observaciones="{{ curso.observaciones|default:'' }}"
-                                                        data-voucher-ids="{% for voucher in curso.voucher_parametrias.all %}{% if not forloop.first %},{% endif %}{{ voucher.id }}{% endfor %}">
+                                                    <button type="button"
+                                                            class="sisoc-btn sisoc-btn--edit btn-editar-curso"
+                                                            data-bs-toggle="modal"
+                                                            data-bs-target="#modalCurso"
+                                                            data-curso-mode="edit"
+                                                            data-edit-url="{% url 'vat_curso_update' curso.id %}"
+                                                            data-plan-estudio-id="{{ curso.plan_estudio_id|default:'' }}"
+                                                            data-nombre="{{ curso.nombre }}"
+                                                            data-estado="{{ curso.estado|default:'' }}"
+                                                            data-usa-voucher="{{ curso.usa_voucher|yesno:'1,0' }}"
+                                                            data-inscripcion-libre="{{ curso.inscripcion_libre|yesno:'1,0' }}"
+                                                            data-costo-creditos="{{ curso.costo_creditos|default:'' }}"
+                                                            data-observaciones="{{ curso.observaciones|default:'' }}"
+                                                            data-voucher-ids="{% for voucher in curso.voucher_parametrias.all %}{% if not forloop.first %},{% endif %}{{ voucher.id }}{% endfor %}">
                                                         <i class="fas fa-pen"></i>
                                                         <span>Editar</span>
                                                     </button>
                                                 {% endif %}
                                                 {% if can_manage_centro and perms.VAT.delete_curso %}
-                                                    <a href="{% url 'vat_curso_delete' curso.id %}" class="sisoc-btn sisoc-btn--delete">
+                                                    <a href="{% url 'vat_curso_delete' curso.id %}"
+                                                       class="sisoc-btn sisoc-btn--delete">
                                                         <i class="fas fa-trash"></i>
                                                         <span>Borrar</span>
                                                     </a>
@@ -138,11 +134,10 @@
                 <div class="sisoc-toolbar-left">
                     <label class="sisoc-toolbar-field" for="comisionesFilterSearch">
                         <i class="fas fa-search"></i>
-                        <input
-                            type="search"
-                            id="comisionesFilterSearch"
-                            placeholder="Buscar Comision..."
-                            autocomplete="off" />
+                        <input type="search"
+                               id="comisionesFilterSearch"
+                               placeholder="Buscar Comisión..."
+                               autocomplete="off" />
                     </label>
                     <label class="sisoc-toolbar-field" for="comisionesFilterCurso">
                         <select id="comisionesFilterCurso" class="select2" data-width="100%">
@@ -176,8 +171,8 @@
                             <thead>
                                 <tr>
                                     <th>Curso</th>
-                                    <th>Comision</th>
-                                    <th>Ubicacion</th>
+                                    <th>Comisión</th>
+                                    <th>Ubicación</th>
                                     <th>Fecha Inicio</th>
                                     <th>Fecha Fin</th>
                                     <th>Cupo</th>
@@ -186,8 +181,7 @@
                             </thead>
                             <tbody>
                                 {% for comision in comisiones_curso %}
-                                    <tr
-                                        class="comision-curso-row"
+                                    <tr class="comision-curso-row"
                                         data-curso-id="{{ comision.curso_id }}"
                                         data-curso-nombre="{{ comision.curso.nombre }}"
                                         data-comision-codigo="{{ comision.codigo_comision }}"
@@ -197,51 +191,40 @@
                                         <td>{{ comision.curso.nombre }}</td>
                                         <td>{{ comision.codigo_comision|default:comision.nombre }}</td>
                                         <td>{{ comision.ubicacion|default:"-" }}</td>
-                                        <td>
-                                            {% if comision.fecha_inicio %}
-                                                {{ comision.fecha_inicio|date:"d/m/Y" }}
-                                            {% else %}
-                                                00/00/0000
-                                            {% endif %}
-                                        </td>
-                                        <td>
-                                            {% if comision.fecha_fin %}
-                                                {{ comision.fecha_fin|date:"d/m/Y" }}
-                                            {% else %}
-                                                00/00/0000
-                                            {% endif %}
-                                        </td>
+                                        <td>{{ comision.fecha_inicio|date:"d/m/Y"|default:"-" }}</td>
+                                        <td>{{ comision.fecha_fin|date:"d/m/Y"|default:"-" }}</td>
                                         <td>{{ comision.cupo_total|default:"-" }}</td>
                                         <td>
                                             <div class="sisoc-table-actions">
                                                 {% if perms.VAT.view_comisioncurso %}
-                                                    <a href="{% url 'vat_comision_curso_detail' comision.id %}" class="sisoc-btn sisoc-btn--view">
+                                                    <a href="{% url 'vat_comision_curso_detail' comision.id %}"
+                                                       class="sisoc-btn sisoc-btn--view">
                                                         <i class="fas fa-eye"></i>
                                                         <span>Ver</span>
                                                     </a>
                                                 {% endif %}
                                                 {% if can_manage_centro and perms.VAT.change_comisioncurso %}
-                                                    <button
-                                                        type="button"
-                                                        class="sisoc-btn sisoc-btn--edit btn-editar-comision-curso"
-                                                        data-bs-toggle="modal"
-                                                        data-bs-target="#modalComisionCurso"
-                                                        data-comision-curso-mode="edit"
-                                                        data-edit-url="{% url 'vat_comision_curso_update' comision.id %}"
-                                                        data-curso-id="{{ comision.curso_id }}"
-                                                        data-curso-nombre="{{ comision.curso.nombre }}"
-                                                        data-ubicacion-id="{{ comision.ubicacion_id|default:'' }}"
-                                                        data-cupo-total="{{ comision.cupo_total }}"
-                                                        data-fecha-inicio="{{ comision.fecha_inicio|date:'Y-m-d' }}"
-                                                        data-fecha-fin="{{ comision.fecha_fin|date:'Y-m-d' }}"
-                                                        data-estado="{{ comision.estado }}"
-                                                        data-observaciones="{{ comision.observaciones|default:'' }}">
+                                                    <button type="button"
+                                                            class="sisoc-btn sisoc-btn--edit btn-editar-comision-curso"
+                                                            data-bs-toggle="modal"
+                                                            data-bs-target="#modalComisionCurso"
+                                                            data-comision-curso-mode="edit"
+                                                            data-edit-url="{% url 'vat_comision_curso_update' comision.id %}"
+                                                            data-curso-id="{{ comision.curso_id }}"
+                                                            data-curso-nombre="{{ comision.curso.nombre }}"
+                                                            data-ubicacion-id="{{ comision.ubicacion_id|default:'' }}"
+                                                            data-cupo-total="{{ comision.cupo_total }}"
+                                                            data-fecha-inicio="{{ comision.fecha_inicio|date:'Y-m-d' }}"
+                                                            data-fecha-fin="{{ comision.fecha_fin|date:'Y-m-d' }}"
+                                                            data-estado="{{ comision.estado }}"
+                                                            data-observaciones="{{ comision.observaciones|default:'' }}">
                                                         <i class="fas fa-pen"></i>
                                                         <span>Editar</span>
                                                     </button>
                                                 {% endif %}
                                                 {% if can_manage_centro and perms.VAT.delete_comisioncurso %}
-                                                    <a href="{% url 'vat_comision_curso_delete' comision.id %}" class="sisoc-btn sisoc-btn--delete">
+                                                    <a href="{% url 'vat_comision_curso_delete' comision.id %}"
+                                                       class="sisoc-btn sisoc-btn--delete">
                                                         <i class="fas fa-trash"></i>
                                                         <span>Borrar</span>
                                                     </a>
@@ -285,7 +268,10 @@
                           method="post"
                           action="{% url 'vat_curso_create' %}?centro={{ centro.id }}">
                         {% csrf_token %}
-                        <input type="hidden" name="post_create_action" id="id_post_create_action" value="" />
+                        <input type="hidden"
+                               name="post_create_action"
+                               id="id_post_create_action"
+                               value="" />
                         <div class="modal-body sisoc-curso-modal-body">
                             <div id="planEstudioSeleccionadoInfo"
                                  class="alert alert-info d-none"
@@ -333,11 +319,13 @@
                                     {% elif field.html_name == 'usa_voucher' or field.html_name == 'inscripcion_libre' %}
                                         {% if field.html_name == 'usa_voucher' %}
                                             <div class="col-12 mb-3 sisoc-curso-check-row">
-                                                <label class="sisoc-curso-check" for="{{ curso_form.usa_voucher.id_for_label }}">
+                                                <label class="sisoc-curso-check"
+                                                       for="{{ curso_form.usa_voucher.id_for_label }}">
                                                     {{ curso_form.usa_voucher }}
                                                     <span>Usa voucher</span>
                                                 </label>
-                                                <label class="sisoc-curso-check" for="{{ curso_form.inscripcion_libre.id_for_label }}">
+                                                <label class="sisoc-curso-check"
+                                                       for="{{ curso_form.inscripcion_libre.id_for_label }}">
                                                     {{ curso_form.inscripcion_libre }}
                                                     <span>Inscripcion libre</span>
                                                 </label>
@@ -346,7 +334,8 @@
                                     {% elif field.html_name == 'voucher_parametrias' %}
                                         <div class="col-12 mb-3 sisoc-curso-vouchers">
                                             <div class="sisoc-curso-vouchers-head">
-                                                <label for="{{ field.id_for_label }}" class="form-label sisoc-curso-label mb-0">
+                                                <label for="{{ field.id_for_label }}"
+                                                       class="form-label sisoc-curso-label mb-0">
                                                     {{ field.label }}
                                                     {% if field.field.required %}<span class="text-danger">*</span>{% endif %}
                                                 </label>
@@ -362,9 +351,7 @@
                                         </div>
                                     {% elif field.html_name == 'costo_creditos' %}
                                         <div class="col-12 mb-3">
-                                            <label for="{{ field.id_for_label }}" class="form-label sisoc-curso-label">
-                                                {{ field.label }}
-                                            </label>
+                                            <label for="{{ field.id_for_label }}" class="form-label sisoc-curso-label">{{ field.label }}</label>
                                             {{ field }}
                                             {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors.0 }}</div>{% endif %}
                                             {% if field.help_text %}<div class="form-text sisoc-curso-help">{{ field.help_text }}</div>{% endif %}
@@ -390,7 +377,7 @@
                             <button type="submit"
                                     class="sisoc-curso-submit sisoc-curso-submit--primary"
                                     id="cursoSaveAndCreateComisionBtn"
-                                    data-post-create-action="open-comision">Guardar y crear comision</button>
+                                    data-post-create-action="open-comision">Guardar y crear comisión</button>
                         </div>
                     </form>
                 </div>
@@ -436,14 +423,15 @@
                             </div>
                         </div>
                         <div class="table-responsive border rounded">
-                            <table class="table table-hover align-middle mb-0" id="tablaPlanCurricularSelector">
+                            <table class="table table-hover align-middle mb-0"
+                                   id="tablaPlanCurricularSelector">
                                 <thead class="table-light">
                                     <tr>
                                         <th>Plan Curricular</th>
                                         <th>Sector</th>
                                         <th>Modalidad</th>
                                         <th>Normativa</th>
-                                        <th class="text-end">Accion</th>
+                                        <th class="text-end">Acción</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -481,7 +469,8 @@
                                 </tbody>
                             </table>
                         </div>
-                        <div id="planCurricularSelectorEmpty" class="text-center py-4 text-muted d-none">
+                        <div id="planCurricularSelectorEmpty"
+                             class="text-center py-4 text-muted d-none">
                             <i class="fas fa-filter fa-2x mb-2 opacity-50"></i>
                             <p class="mb-0">No hay planes curriculares que coincidan con los filtros.</p>
                         </div>
@@ -501,7 +490,7 @@
             <div class="modal-dialog modal-lg">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h5 class="modal-title" id="modalComisionCursoLabel">Nueva Comision de Curso</h5>
+                        <h5 class="modal-title" id="modalComisionCursoLabel">Nueva Comisión de Curso</h5>
                         <button type="button"
                                 class="btn-close"
                                 data-bs-dismiss="modal"
@@ -512,7 +501,8 @@
                           action="{% url 'vat_comision_curso_create' %}">
                         {% csrf_token %}
                         <div class="modal-body">
-                            <div class="alert alert-light border small mb-3 d-none" id="cursoSeleccionadoInfo"></div>
+                            <div class="alert alert-light border small mb-3 d-none"
+                                 id="cursoSeleccionadoInfo"></div>
                             <div class="row">
                                 {% for field in comision_curso_form %}
                                     <div class="col-md-6 mb-3">

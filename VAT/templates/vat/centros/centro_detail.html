@@ -1367,13 +1367,15 @@
                 </a>
                 <div class="sisoc-header-actions">
                     {% if can_edit_centro %}
-                        <a href="{% url 'vat_centro_update' centro.id %}" class="sisoc-header-action-link">
+                        <a href="{% url 'vat_centro_update' centro.id %}"
+                           class="sisoc-header-action-link">
                             <i class="fas fa-pen"></i>
                             <span>Editar</span>
                         </a>
                     {% endif %}
                     {% if can_edit_centro and perms.VAT.delete_centro %}
-                        <a href="{% url 'vat_centro_delete' centro.id %}" class="sisoc-header-action-link">
+                        <a href="{% url 'vat_centro_delete' centro.id %}"
+                           class="sisoc-header-action-link">
                             <i class="fas fa-trash"></i>
                             <span>Eliminar</span>
                         </a>
@@ -1396,14 +1398,27 @@
             </div>
 
             <div class="sisoc-info-shell">
-                <div class="sisoc-side-tabs sisoc-side-tabs--left" role="tablist" aria-label="Secciones visitadas">
-                    <button type="button" class="sisoc-side-tab is-active" data-sisoc-tab-target="general" aria-selected="true">
+                <div class="sisoc-side-tabs sisoc-side-tabs--left"
+                     role="tablist"
+                     aria-label="Secciones visitadas">
+                    <button type="button"
+                            class="sisoc-side-tab is-active"
+                            data-sisoc-tab-target="general"
+                            aria-selected="true">
                         <span>Información general</span>
                     </button>
-                    <button type="button" class="sisoc-side-tab" data-sisoc-tab-target="ubicaciones" aria-selected="false" hidden>
+                    <button type="button"
+                            class="sisoc-side-tab"
+                            data-sisoc-tab-target="ubicaciones"
+                            aria-selected="false"
+                            hidden>
                         <span>Ubicaciones adicionales</span>
                     </button>
-                    <button type="button" class="sisoc-side-tab" data-sisoc-tab-target="contactos" aria-selected="false" hidden>
+                    <button type="button"
+                            class="sisoc-side-tab"
+                            data-sisoc-tab-target="contactos"
+                            aria-selected="false"
+                            hidden>
                         <span>Contactos adicionales</span>
                     </button>
                 </div>
@@ -1428,7 +1443,8 @@
                                         <p class="sisoc-data-label">Domicilio</p>
                                         <p class="sisoc-data-value">
                                             {% if centro.calle %}
-                                                {{ centro.calle }}{% if centro.numero %} {{ centro.numero }}{% endif %}
+                                                {{ centro.calle }}
+                                                {% if centro.numero %}{{ centro.numero }}{% endif %}
                                             {% else %}
                                                 {{ centro.domicilio_actividad|default:"-" }}
                                             {% endif %}
@@ -1455,12 +1471,11 @@
                                 </div>
                                 <div class="sisoc-map-preview">
                                     {% if centro.calle and centro.localidad and centro.municipio and centro.provincia %}
-                                        <iframe
-                                            title="Mapa del centro"
-                                            frameborder="0"
-                                            style="border:0"
-                                            src="https://maps.google.com/maps?q={{ centro.calle|urlencode }}{% if centro.numero %}+{{ centro.numero|urlencode }}{% endif %},+{{ centro.localidad.nombre|urlencode }},+{{ centro.municipio.nombre|urlencode }},+{{ centro.provincia.nombre|urlencode }}&output=embed"
-                                            allowfullscreen>
+                                        <iframe title="Mapa del centro"
+                                                frameborder="0"
+                                                style="border:0"
+                                                src="https://maps.google.com/maps?q={{ centro.calle|urlencode }}{% if centro.numero %}+{{ centro.numero|urlencode }}{% endif %},+{{ centro.localidad.nombre|urlencode }},+{{ centro.municipio.nombre|urlencode }},+{{ centro.provincia.nombre|urlencode }}&output=embed"
+                                                allowfullscreen>
                                         </iframe>
                                     {% else %}
                                         <div class="sisoc-map-placeholder">
@@ -1482,35 +1497,71 @@
                                     <span class="sisoc-referente-icon"><i class="fas fa-user"></i></span>
                                     <div class="sisoc-referente-copy">
                                         <span>Nombre y apellido</span>
-                                        <strong>{% if centro.nombre_referente or centro.apellido_referente %}{{ centro.nombre_referente }} {{ centro.apellido_referente }}{% elif primary_contacto and primary_contacto.nombre_contacto %}{{ primary_contacto.nombre_contacto }}{% else %}-{% endif %}</strong>
+                                        <strong>
+                                            {% if centro.nombre_referente or centro.apellido_referente %}
+                                                {{ centro.nombre_referente }} {{ centro.apellido_referente }}
+                                            {% elif primary_contacto and primary_contacto.nombre_contacto %}
+                                                {{ primary_contacto.nombre_contacto }}
+                                            {% else %}
+                                                -
+                                            {% endif %}
+                                        </strong>
                                     </div>
                                 </li>
                                 <li class="sisoc-referente-item">
                                     <span class="sisoc-referente-icon"><i class="fas fa-phone"></i></span>
                                     <div class="sisoc-referente-copy">
                                         <span>Teléfono</span>
-                                        <strong>{% if centro.telefono_referente %}{{ centro.telefono_referente }}{% elif primary_contacto and primary_contacto.telefono_contacto %}{{ primary_contacto.telefono_contacto }}{% else %}-{% endif %}</strong>
+                                        <strong>
+                                            {% if centro.telefono_referente %}
+                                                {{ centro.telefono_referente }}
+                                            {% elif primary_contacto and primary_contacto.telefono_contacto %}
+                                                {{ primary_contacto.telefono_contacto }}
+                                            {% else %}
+                                                -
+                                            {% endif %}
+                                        </strong>
                                     </div>
                                 </li>
                                 <li class="sisoc-referente-item">
                                     <span class="sisoc-referente-icon"><i class="fas fa-user-cog"></i></span>
                                     <div class="sisoc-referente-copy">
                                         <span>Usuario del sistema</span>
-                                        <div>{% for referente_usuario in referentes_centro %}{{ referente_usuario.get_full_name|default:referente_usuario.username }}{% if not forloop.last %}, {% endif %}{% empty %}-{% endfor %}</div>
+                                        <div>
+                                            {% for referente_usuario in referentes_centro %}
+                                                {{ referente_usuario.get_full_name|default:referente_usuario.username }}
+                                                {% if not forloop.last %},{% endif %}
+                                            {% empty %}-
+                                            {% endfor %}
+                                        </div>
                                     </div>
                                 </li>
                                 <li class="sisoc-referente-item">
                                     <span class="sisoc-referente-icon"><i class="fas fa-id-card"></i></span>
                                     <div class="sisoc-referente-copy">
                                         <span>DNI:</span>
-                                        <strong>{% if primary_contacto and primary_contacto.documento %}{{ primary_contacto.documento }}{% else %}-{% endif %}</strong>
+                                        <strong>
+                                            {% if primary_contacto and primary_contacto.documento %}
+                                                {{ primary_contacto.documento }}
+                                            {% else %}
+                                                -
+                                            {% endif %}
+                                        </strong>
                                     </div>
                                 </li>
                                 <li class="sisoc-referente-item">
                                     <span class="sisoc-referente-icon"><i class="fas fa-envelope"></i></span>
                                     <div class="sisoc-referente-copy">
                                         <span>Correo electrónico</span>
-                                        <strong>{% if centro.correo_referente %}{{ centro.correo_referente }}{% elif primary_contacto and primary_contacto.email_contacto %}{{ primary_contacto.email_contacto }}{% else %}-{% endif %}</strong>
+                                        <strong>
+                                            {% if centro.correo_referente %}
+                                                {{ centro.correo_referente }}
+                                            {% elif primary_contacto and primary_contacto.email_contacto %}
+                                                {{ primary_contacto.email_contacto }}
+                                            {% else %}
+                                                -
+                                            {% endif %}
+                                        </strong>
                                     </div>
                                 </li>
                             </ul>
@@ -1522,11 +1573,10 @@
                             <div class="sisoc-section-header">
                                 <h2>Ubicaciones adicionales</h2>
                                 {% if can_edit_centro and perms.VAT.add_institucionubicacion %}
-                                    <button
-                                        type="button"
-                                        class="sisoc-btn sisoc-btn--add"
-                                        data-bs-toggle="modal"
-                                        data-bs-target="#modalUbicacion">
+                                    <button type="button"
+                                            class="sisoc-btn sisoc-btn--add"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#modalUbicacion">
                                         <i class="fas fa-plus"></i>
                                         <span>Agregar sede</span>
                                     </button>
@@ -1556,13 +1606,17 @@
                                                         <td>
                                                             <div class="sisoc-table-actions">
                                                                 {% if can_edit_centro and perms.VAT.change_institucionubicacion %}
-                                                                    <button type="button" class="sisoc-btn sisoc-btn--edit" onclick="editUbicacion({{ u.id }})">
+                                                                    <button type="button"
+                                                                            class="sisoc-btn sisoc-btn--edit"
+                                                                            onclick="editUbicacion({{ u.id }})">
                                                                         <i class="fas fa-pen"></i>
                                                                         <span>Editar</span>
                                                                     </button>
                                                                 {% endif %}
                                                                 {% if can_edit_centro and perms.VAT.delete_institucionubicacion %}
-                                                                    <button type="button" class="sisoc-btn sisoc-btn--delete" onclick="deleteUbicacion({{ u.id }})">
+                                                                    <button type="button"
+                                                                            class="sisoc-btn sisoc-btn--delete"
+                                                                            onclick="deleteUbicacion({{ u.id }})">
                                                                         <i class="fas fa-trash"></i>
                                                                         <span>Borrar</span>
                                                                     </button>
@@ -1594,11 +1648,10 @@
                             <div class="sisoc-section-header">
                                 <h2>Contactos adicionales</h2>
                                 {% if can_edit_centro and perms.VAT.add_institucioncontacto %}
-                                    <button
-                                        type="button"
-                                        class="sisoc-btn sisoc-btn--add"
-                                        data-bs-toggle="modal"
-                                        data-bs-target="#modalContacto">
+                                    <button type="button"
+                                            class="sisoc-btn sisoc-btn--add"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#modalContacto">
                                         <i class="fas fa-plus"></i>
                                         <span>Agregar contacto</span>
                                     </button>
@@ -1625,18 +1678,28 @@
                                                         <td>{{ c.nombre_contacto|default:"-" }}</td>
                                                         <td>{{ c.documento|default:"-" }}</td>
                                                         <td>{{ c.rol_area|default:"-" }}</td>
-                                                        <td>{% if c.es_principal %}Sí{% else %}No{% endif %}</td>
+                                                        <td>
+                                                            {% if c.es_principal %}
+                                                                Sí
+                                                            {% else %}
+                                                                No
+                                                            {% endif %}
+                                                        </td>
                                                         <td>{{ c.telefono_contacto|default:"-" }}</td>
                                                         <td>
                                                             <div class="sisoc-table-actions">
                                                                 {% if can_edit_centro and perms.VAT.change_institucioncontacto %}
-                                                                    <button type="button" class="sisoc-btn sisoc-btn--edit" onclick="editContacto({{ c.id }})">
+                                                                    <button type="button"
+                                                                            class="sisoc-btn sisoc-btn--edit"
+                                                                            onclick="editContacto({{ c.id }})">
                                                                         <i class="fas fa-pen"></i>
                                                                         <span>Editar</span>
                                                                     </button>
                                                                 {% endif %}
                                                                 {% if can_edit_centro and perms.VAT.delete_institucioncontacto %}
-                                                                    <button type="button" class="sisoc-btn sisoc-btn--delete" onclick="deleteContacto({{ c.id }})">
+                                                                    <button type="button"
+                                                                            class="sisoc-btn sisoc-btn--delete"
+                                                                            onclick="deleteContacto({{ c.id }})">
                                                                         <i class="fas fa-trash"></i>
                                                                         <span>Borrar</span>
                                                                     </button>
@@ -1656,14 +1719,26 @@
                     </section>
                 </div>
 
-                <div class="sisoc-side-tabs sisoc-side-tabs--right" role="tablist" aria-label="Secciones pendientes">
-                    <button type="button" class="sisoc-side-tab" data-sisoc-tab-target="general" aria-selected="false" hidden>
+                <div class="sisoc-side-tabs sisoc-side-tabs--right"
+                     role="tablist"
+                     aria-label="Secciones pendientes">
+                    <button type="button"
+                            class="sisoc-side-tab"
+                            data-sisoc-tab-target="general"
+                            aria-selected="false"
+                            hidden>
                         <span>Información general</span>
                     </button>
-                    <button type="button" class="sisoc-side-tab" data-sisoc-tab-target="ubicaciones" aria-selected="false">
+                    <button type="button"
+                            class="sisoc-side-tab"
+                            data-sisoc-tab-target="ubicaciones"
+                            aria-selected="false">
                         <span>Ubicaciones adicionales</span>
                     </button>
-                    <button type="button" class="sisoc-side-tab" data-sisoc-tab-target="contactos" aria-selected="false">
+                    <button type="button"
+                            class="sisoc-side-tab"
+                            data-sisoc-tab-target="contactos"
+                            aria-selected="false">
                         <span>Contactos adicionales</span>
                     </button>
                 </div>
@@ -1671,7 +1746,9 @@
         </div>
     {% endwith %}
 
-    <div class="sisoc-cursos-pane" id="cursos" data-cursos-panel-url="{{ cursos_panel_url }}">
+    <div class="sisoc-cursos-pane"
+         id="cursos"
+         data-cursos-panel-url="{{ cursos_panel_url }}">
         <div id="centroCursosPanelContainer" data-panel-loaded="0">
             <div class="sisoc-section-card">
                 <div class="sisoc-empty-state">
@@ -2228,6 +2305,11 @@
             if (!form || form.dataset.modalSubmitBound === '1') return;
             form.dataset.modalSubmitBound = '1';
 
+            var lastClickedSubmitter = null;
+            form.querySelectorAll('button[type="submit"]').forEach(function(btn) {
+                btn.addEventListener('click', function() { lastClickedSubmitter = btn; });
+            });
+
             function clearFormErrors() {
                 form.querySelectorAll('.is-invalid').forEach(function(field) {
                     field.classList.remove('is-invalid');
@@ -2258,7 +2340,7 @@
                     form.reportValidity();
                     return;
                 }
-                var submitter = e.submitter || form.querySelector('button[type="submit"]');
+                var submitter = e.submitter || lastClickedSubmitter || form.querySelector('button[type="submit"]');
                 var submitButtons = Array.from(form.querySelectorAll('button[type="submit"]'));
                 var originalSubmitState = submitButtons.map(function(button) {
                     return {

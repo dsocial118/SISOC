@@ -101,7 +101,7 @@ class ComisionCursoWizardView(LoginRequiredMixin, SessionWizardView):
                     "hora_hasta": fin,
                     "duracion": f"{horas} hs {minutos} minutos",
                     "estado_label": (
-                        "Planificado" if horario.get("vigente") == "1" else "Inactivo"
+                        "Activo" if horario.get("vigente") == "1" else "Inactivo"
                     ),
                 }
             )
@@ -161,4 +161,5 @@ class ComisionCursoWizardView(LoginRequiredMixin, SessionWizardView):
             self.request,
             f"Comisión creada con {comision.horarios.count()} horario(s).",
         )
-        return redirect(self._centro_cursos_url() + "?refresh=1")
+        base = reverse("vat_centro_detail", kwargs={"pk": self.curso.centro_id})
+        return redirect(f"{base}?refresh=1#cursos")

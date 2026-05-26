@@ -4,79 +4,79 @@
 {% block titulo-pagina %}{% endblock %}
 
 {% block content %}
-<div class="sisoc-wizard">
-    <div class="sisoc-wizard-topbar">
-        <a href="{{ wizard_cancel_url }}" class="sisoc-wizard-back" role="button">
-            <i class="fas fa-chevron-left"></i>
-            <span>Volver</span>
-        </a>
-        <a href="{{ wizard_cancel_url }}" class="sisoc-wizard-delete">
-            <i class="fas fa-trash"></i>
-            <span>Eliminar</span>
-        </a>
-    </div>
-
-    <div class="sisoc-wizard-header">
-        <h1 class="sisoc-wizard-title">Nueva Comisión de curso</h1>
-        <span class="sisoc-wizard-status">{{ estado_label }}</span>
-    </div>
-
-    {% with current=wizard.steps.current %}
-    <ol class="sisoc-wizard-stepper" aria-label="Pasos del wizard">
-        <li class="sisoc-wizard-step
-            {% if current == 'info' %} is-current{% elif current == 'horarios' or current == 'confirmacion' %} is-done{% endif %}">
-            <div class="sisoc-wizard-step-bubble">
-                {% if current == 'horarios' or current == 'confirmacion' %}
-                    <i class="fas fa-check"></i>
-                {% else %}
-                    1
-                {% endif %}
-            </div>
-            <div class="sisoc-wizard-step-label">Información básica</div>
-            <div class="sisoc-wizard-step-help">Datos generales de la comisión</div>
-        </li>
-        <li class="sisoc-wizard-step
-            {% if current == 'horarios' %} is-current{% elif current == 'confirmacion' %} is-done{% endif %}">
-            <div class="sisoc-wizard-step-bubble">
-                {% if current == 'confirmacion' %}
-                    <i class="fas fa-check"></i>
-                {% else %}
-                    2
-                {% endif %}
-            </div>
-            <div class="sisoc-wizard-step-label">Horarios</div>
-            <div class="sisoc-wizard-step-help">Días y horarios de clase</div>
-        </li>
-        <li class="sisoc-wizard-step {% if current == 'confirmacion' %} is-current{% endif %}">
-            <div class="sisoc-wizard-step-bubble">3</div>
-            <div class="sisoc-wizard-step-label">Confirmación</div>
-            <div class="sisoc-wizard-step-help">Revisión final</div>
-        </li>
-    </ol>
-    {% endwith %}
-
-    <form method="post" id="sisoc-wizard-form" novalidate>
-        {% csrf_token %}
-        {{ wizard.management_form }}
-
-        {% block wizard_step %}{% endblock %}
-
-        <div class="sisoc-wizard-footer-row">
-            <div class="sisoc-wizard-footer-left">
-                {% block wizard_footer_left %}{% endblock %}
-            </div>
-            <div class="sisoc-wizard-footer-right">
-                {% block wizard_footer_right %}{% endblock %}
-            </div>
+    <div class="sisoc-wizard">
+        <div class="sisoc-wizard-topbar">
+            <a href="{{ wizard_cancel_url }}"
+               class="sisoc-wizard-back"
+               role="button">
+                <i class="fas fa-chevron-left"></i>
+                <span>Volver</span>
+            </a>
+            <a href="{{ wizard_cancel_url }}" class="sisoc-wizard-delete">
+                <i class="fas fa-times"></i>
+                <span>Cancelar</span>
+            </a>
         </div>
 
-        <div class="sisoc-wizard-buttons">
-            {% block wizard_buttons %}{% endblock %}
+        <div class="sisoc-wizard-header">
+            <h1 class="sisoc-wizard-title">Nueva Comisión de curso</h1>
+            <span class="sisoc-wizard-status">{{ estado_label }}</span>
         </div>
-    </form>
-</div>
 
-<style nonce="{{ request.csp_nonce }}">
+        {% with current=wizard.steps.current %}
+            <ol class="sisoc-wizard-stepper" aria-label="Pasos del wizard">
+                <li class="sisoc-wizard-step {% if current == 'info' %} is-current{% elif current == 'horarios' or current == 'confirmacion' %} is-done{% endif %}">
+                    <div class="sisoc-wizard-step-bubble">
+                        {% if current == 'horarios' or current == 'confirmacion' %}
+                            <i class="fas fa-check"></i>
+                        {% else %}
+                            1
+                        {% endif %}
+                    </div>
+                    <div class="sisoc-wizard-step-label">Información básica</div>
+                    <div class="sisoc-wizard-step-help">Datos generales de la comisión</div>
+                </li>
+                <li class="sisoc-wizard-step {% if current == 'horarios' %} is-current{% elif current == 'confirmacion' %} is-done{% endif %}">
+                    <div class="sisoc-wizard-step-bubble">
+                        {% if current == 'confirmacion' %}
+                            <i class="fas fa-check"></i>
+                        {% else %}
+                            2
+                        {% endif %}
+                    </div>
+                    <div class="sisoc-wizard-step-label">Horarios</div>
+                    <div class="sisoc-wizard-step-help">Días y horarios de clase</div>
+                </li>
+                <li class="sisoc-wizard-step {% if current == 'confirmacion' %}is-current{% endif %}">
+                    <div class="sisoc-wizard-step-bubble">3</div>
+                    <div class="sisoc-wizard-step-label">Confirmación</div>
+                    <div class="sisoc-wizard-step-help">Revisión final</div>
+                </li>
+            </ol>
+        {% endwith %}
+
+        <form method="post" id="sisoc-wizard-form" novalidate>
+            {% csrf_token %}
+            {{ wizard.management_form }}
+
+            {% block wizard_step %}{% endblock %}
+
+            <div class="sisoc-wizard-footer-row">
+                <div class="sisoc-wizard-footer-left">
+                    {% block wizard_footer_left %}{% endblock %}
+                </div>
+                <div class="sisoc-wizard-footer-right">
+                    {% block wizard_footer_right %}{% endblock %}
+                </div>
+            </div>
+
+            <div class="sisoc-wizard-buttons">
+                {% block wizard_buttons %}{% endblock %}
+            </div>
+        </form>
+    </div>
+
+    <style nonce="{{ request.csp_nonce }}">
     /* === Wizard layout === */
     .sisoc-wizard {
         --wz-bg: #3b4f74;
@@ -602,5 +602,5 @@
             grid-template-columns: 1fr;
         }
     }
-</style>
+    </style>
 {% endblock %}
