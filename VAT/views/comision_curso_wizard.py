@@ -43,13 +43,7 @@ class ComisionCursoWizardView(LoginRequiredMixin, SessionWizardView):
     form_list = WIZARD_FORMS
 
     def dispatch(self, request, *args, **kwargs):
-        if not request.user.is_authenticated:
-            return self.handle_no_permission()
-        curso_id = (
-            kwargs.get("curso_id")
-            or request.GET.get("curso")
-            or request.POST.get("curso")
-        )
+        curso_id = kwargs.get("curso_id")
         if not curso_id:
             raise PermissionDenied("Falta el parámetro curso.")
         self.curso = get_object_or_404(
@@ -57,8 +51,6 @@ class ComisionCursoWizardView(LoginRequiredMixin, SessionWizardView):
             pk=curso_id,
         )
         if not can_user_edit_centro(request.user, self.curso.centro):
-            raise PermissionDenied
-        if not request.user.has_perm("VAT.add_comisioncurso"):
             raise PermissionDenied
         return super().dispatch(request, *args, **kwargs)
 
