@@ -742,7 +742,9 @@ def _aplicar_defaults_y_validar_payload_importacion(payload):
         raise ValidationError("Documento debe contener sólo dígitos")
 
 
-def _inferir_provincia_desde_municipio_importacion(payload, municipio_provincia_map=None):
+def _inferir_provincia_desde_municipio_importacion(
+    payload, municipio_provincia_map=None, fallback_provincia_id=None
+):
     municipio_id = payload.get("municipio")
     if municipio_id is None:
         return
@@ -754,8 +756,7 @@ def _inferir_provincia_desde_municipio_importacion(payload, municipio_provincia_
             .values_list("provincia_id", flat=True)
             .first()
         )
-    if provincia_id:
-        payload["provincia"] = provincia_id
+    payload["provincia"] = provincia_id or fallback_provincia_id or None
 
 
 def _validar_beneficiario_menor_con_responsable_importacion(payload):
@@ -1108,7 +1109,9 @@ def validar_y_normalizar_payloads_importacion(
         nacionalidades_cache=nacionalidades_cache,
         paises_a_nacionalidad=paises_a_nacionalidad,
     )
-    _inferir_provincia_desde_municipio_importacion(payload_normalizado, municipio_provincia_map)
+    _inferir_provincia_desde_municipio_importacion(
+        payload_normalizado, municipio_provincia_map, fallback_provincia_id=provincia_usuario_id
+    )
     _validar_beneficiario_menor_con_responsable_importacion(payload_normalizado)
 
     responsable_payload = None
@@ -1744,7 +1747,9 @@ def _construir_payload_fila_importacion(
         nacionalidades_cache=nacionalidades_cache,
         paises_a_nacionalidad=paises_a_nacionalidad,
     )
-    _inferir_provincia_desde_municipio_importacion(payload, municipio_provincia_map)
+    _inferir_provincia_desde_municipio_importacion(
+        payload, municipio_provincia_map, fallback_provincia_id=provincia_usuario_id
+    )
     _validar_beneficiario_menor_con_responsable_importacion(payload)
     return payload
 

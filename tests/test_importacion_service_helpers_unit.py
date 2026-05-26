@@ -429,6 +429,35 @@ def test_importacion_helpers_payload_row_and_defaults_validation():
         )
 
 
+def test_inferir_provincia_desde_municipio_importacion():
+    fn = module._inferir_provincia_desde_municipio_importacion
+
+    # caso normal: province del map
+    payload = {"municipio": 10}
+    fn(payload, municipio_provincia_map={10: 5})
+    assert payload["provincia"] == 5
+
+    # municipio sin provincia en map → fallback al usuario
+    payload = {"municipio": 10}
+    fn(payload, municipio_provincia_map={10: None}, fallback_provincia_id=7)
+    assert payload["provincia"] == 7
+
+    # municipio no esta en el map → fallback al usuario
+    payload = {"municipio": 10}
+    fn(payload, municipio_provincia_map={}, fallback_provincia_id=7)
+    assert payload["provincia"] == 7
+
+    # ni map ni fallback → None
+    payload = {"municipio": 10}
+    fn(payload, municipio_provincia_map={10: None})
+    assert payload.get("provincia") is None
+
+    # sin municipio → no toca provincia
+    payload = {}
+    fn(payload, municipio_provincia_map={10: 5})
+    assert "provincia" not in payload
+
+
 def test_importacion_helpers_normalizar_enriquecer_payload(mocker):
     warnings = []
 
