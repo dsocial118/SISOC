@@ -265,7 +265,9 @@ class ComedorForm(forms.ModelForm):
                 pk__in=scoped_ids
             ).order_by("nombre")
         else:
-            self.fields["provincia"].queryset = Provincia.objects.all().order_by("nombre")
+            self.fields["provincia"].queryset = Provincia.objects.all().order_by(
+                "nombre"
+            )
 
         if provincia:
             self.fields["provincia"].initial = provincia

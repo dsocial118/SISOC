@@ -478,9 +478,7 @@ def _apply_user_scope_to_comedores_queryset(base_qs, user):
     if is_coordinador:
         qs = _aplicar_scope_coordinador_comedores_list_queryset(base_qs, duplas_ids)
     elif is_dupla:
-        qs = base_qs.filter(
-            Q(dupla__abogado=user) | Q(dupla__tecnico=user)
-        ).distinct()
+        qs = base_qs.filter(Q(dupla__abogado=user) | Q(dupla__tecnico=user)).distinct()
     else:
         qs = base_qs
 
