@@ -590,7 +590,7 @@ class LocalidadesLookupView(View):
 
         # Filtrar por provincia del usuario solo si es provincial Y NO es coordinador
         is_coord = _user_has_permission(user, ROLE_COORDINADOR_CELIAQUIA_PERMISSION)
-        if _is_provincial(user) and not is_coord:
+        if _is_provincial(user) and not is_coord and not _is_admin(user):
             prov = _user_provincia(user)
             if prov:
                 localidades = localidades.filter(municipio__provincia=prov)
@@ -676,19 +676,19 @@ class ExpedienteListView(ListView):
                 "excel_masivo_procesado_en",
             )
         )
-        if _is_admin(user) or _user_has_permission(
-            user, ROLE_COORDINADOR_CELIAQUIA_PERMISSION
-        ):
+        if _is_admin(user):
+            qs = qs.order_by("-fecha_creacion")
+        elif _is_provincial(user):
+            qs = _apply_provincial_expediente_scope(qs, user).order_by(
+                "-fecha_creacion"
+            )
+        elif _user_has_permission(user, ROLE_COORDINADOR_CELIAQUIA_PERMISSION):
             qs = qs.order_by("-fecha_creacion")
         elif _user_has_permission(user, ROLE_TECNICO_CELIAQUIA_PERMISSION):
             qs = (
                 qs.filter(asignaciones_tecnicos__tecnico=user)
                 .distinct()
                 .order_by("-fecha_creacion")
-            )
-        elif _is_provincial(user):
-            qs = _apply_provincial_expediente_scope(qs, user).order_by(
-                "-fecha_creacion"
             )
         else:
             qs = qs.filter(usuario_provincia=user).order_by("-fecha_creacion")
@@ -921,9 +921,8 @@ class ExpedienteCreateView(CreateView):
         user = self.request.user
 
         # Filtrar provincias según el usuario
-        if _is_provincial(user):
-            prov = _user_provincia(user)
-            ctx["provincias"] = [prov] if prov else _user_scope_provincias(user)
+        if _is_provincial(user) and not _is_admin(user):
+            ctx["provincias"] = _user_scope_provincias(user)
         else:
             # Admin/Coordinador: todas las provincias
             ctx["provincias"] = Provincia.objects.order_by("nombre")
@@ -959,14 +958,14 @@ class ExpedienteDetailView(DetailView):
             "expediente_ciudadanos__estado",
             "asignaciones_tecnicos__tecnico",
         )
-        if _is_admin(user) or _user_has_permission(
-            user, ROLE_COORDINADOR_CELIAQUIA_PERMISSION
-        ):
+        if _is_admin(user):
+            return base
+        if _is_provincial(user):
+            return _apply_provincial_expediente_scope(base, user)
+        if _user_has_permission(user, ROLE_COORDINADOR_CELIAQUIA_PERMISSION):
             return base
         if _user_has_permission(user, ROLE_TECNICO_CELIAQUIA_PERMISSION):
             return base.filter(asignaciones_tecnicos__tecnico=user)
-        if _is_provincial(user):
-            return _apply_provincial_expediente_scope(base, user)
         return base.filter(usuario_provincia=user)
 
     def get_context_data(self, **kwargs):

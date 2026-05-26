@@ -683,7 +683,7 @@ class OrganizacionUpdateView(LoginRequiredMixin, UpdateView):
             # Información desde Legajo Organización", el reset posterior los
             # destruira igualmente.
             from admisiones.models.admisiones import Admision
-            from admisiones.services.admisiones_service import AdmisionService
+            from admisiones.services.admisiones_service.impl import AdmisionService
 
             admisiones_afectadas = Admision.objects.filter(
                 comedor__organizacion=self.object,
