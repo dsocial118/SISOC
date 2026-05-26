@@ -20,7 +20,7 @@ def revert_backfill_estado_revision_manual(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("ciudadanos", "0028_merge_20260420_0000"),
+        ("ciudadanos", "0028_merge_20260505_1126"),
     ]
 
     operations = [
