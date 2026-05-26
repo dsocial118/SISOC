@@ -461,7 +461,7 @@ class RendicionCuentaMensual(SoftDeleteModelMixin, models.Model):
         max_length=20,
         choices=ESTADO_CHOICES,
         default=ESTADO_ELABORACION,
-        verbose_name="Estado de RendiciÃ³n",
+        verbose_name="Estado de Rendición",
     )
     documento_adjunto = models.BooleanField(
         default=False,
