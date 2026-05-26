@@ -130,8 +130,15 @@ def _modal_json_error_response(form, message):
     )
 
 
-def _modal_json_success_response(redirect_url, message):
-    return _horario_json_success_response(redirect_url, message)
+def _modal_json_success_response(redirect_url, message, extra_payload=None):
+    payload = {
+        "ok": True,
+        "message": message,
+        "redirect_url": redirect_url,
+    }
+    if extra_payload:
+        payload.update(extra_payload)
+    return JsonResponse(payload)
 
 
 class CursoCreateView(LoginRequiredMixin, CreateView):
@@ -166,9 +173,19 @@ class CursoCreateView(LoginRequiredMixin, CreateView):
         messages.success(self.request, success_message)
         if _is_ajax_request(self.request):
             self.object = form.save()
+            extra_payload = None
+            if self.request.POST.get("post_create_action") == "open-comision":
+                extra_payload = {
+                    "open_comision_modal": True,
+                    "comision_modal_context": {
+                        "curso_id": self.object.pk,
+                        "curso_nombre": self.object.nombre,
+                    },
+                }
             return _modal_json_success_response(
                 self.get_success_url(),
                 success_message,
+                extra_payload=extra_payload,
             )
         return super().form_valid(form)
 

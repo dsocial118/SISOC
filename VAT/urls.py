@@ -127,6 +127,7 @@ from VAT.views.curso import (
     InscripcionRapidaComisionCursoView,
     AsistenciaSesionCursoView,
 )
+from VAT.views.comision_curso_wizard import ComisionCursoWizardView
 
 from VAT.views.persona import (
     InscripcionListView,
@@ -209,6 +210,13 @@ urlpatterns = [
             ComisionCursoCreateView.as_view()
         ),
         name="vat_comision_curso_create",
+    ),
+    path(
+        "vat/cursos/<int:curso_id>/comision/nueva/",
+        permissions_any_required(["VAT.add_comisioncurso"])(
+            ComisionCursoWizardView.as_view()
+        ),
+        name="vat_comision_curso_wizard",
     ),
     path(
         "vat/cursos/comisiones/<int:pk>/",
