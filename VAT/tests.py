@@ -1886,11 +1886,13 @@ def test_centro_detail_muestra_boton_editar_para_referente_cfp(client, vat_geo_d
     assert response.status_code == 200
     assert reverse("vat_centro_update", kwargs={"pk": centro.pk}) in content
     assert "Editar" in content
-    assert "Datos del Establecimiento" in content
+    # Refactor 4f1f2241 renombró secciones: ahora hay tabs "Información general",
+    # "Ubicaciones adicionales" y modal "Agregar Identificador".
+    assert "Información general" in content
     assert "CUE" in content
     assert "Estructura Institucional" not in content
-    assert "Ubicacion Principal" in content
-    assert "Identificadores" in content
+    assert "Ubicaciones adicionales" in content
+    assert "Identificador" in content
 
 
 @pytest.mark.django_db
