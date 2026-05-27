@@ -1375,6 +1375,7 @@ def test_importar_legajos_acumula_warnings_emitidos_por_callbacks(mocker):
         return_value={
             "municipios_cache": {},
             "localidades_cache": {},
+            "municipio_provincia_map": {},
             "sexos_cache": {},
             "nacionalidades_cache": {},
             "paises_a_nacionalidad": {},
