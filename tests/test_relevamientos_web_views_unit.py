@@ -159,8 +159,9 @@ def test_list_view_get_context_data_agrega_comedor(mocker):
     )
 
 
-def _make_relevamiento_stub(rel_id, *, fecha="2026-01-01", estado="Pendiente",
-                            numero_if=None, seguimiento=None):
+def _make_relevamiento_stub(
+    rel_id, *, fecha="2026-01-01", estado="Pendiente", numero_if=None, seguimiento=None
+):
     rel = SimpleNamespace(
         id=rel_id,
         fecha_visita=fecha,
