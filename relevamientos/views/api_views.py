@@ -79,38 +79,74 @@ class PrimerSeguimientoApiView(APIView):
     serializer_class = PrimerSeguimientoSerializer
     permission_classes = [HasAPIKeyOrToken]
 
-    def patch(self, request):
-        sisoc_id = request.data.get("sisoc_id")
-        id_relevamiento = request.data.get("id_relevamiento")
-        if not sisoc_id or not id_relevamiento:
-            return Response(
-                "Debe informar sisoc_id e id_relevamiento.",
+    @staticmethod
+    def _resolve_seguimiento(data):
+        """Resuelve el PrimerSeguimiento por cualquiera de los identificadores
+        que GESTIONAR puede enviar: sisoc_id (PK SISOC), gestionar_id /
+        ID_Seguimiento1 (PK GESTIONAR) o id_relevamiento (FK al ancla).
+        Retorna (seguimiento, error_response). Si los identificadores
+        informados refieren a distintos registros, retorna 400.
+        """
+        sisoc_id = data.get("sisoc_id") or data.get("Id_SISOC")
+        gestionar_id = data.get("gestionar_id") or data.get("ID_Seguimiento1")
+        id_relevamiento = data.get("id_relevamiento") or data.get("Id_Relevamiento")
+
+        if not any([sisoc_id, gestionar_id, id_relevamiento]):
+            return None, Response(
+                "Debe informar al menos uno de: sisoc_id, gestionar_id o "
+                "id_relevamiento.",
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        queryset = PrimerSeguimiento.objects.select_related(
+            "id_relevamiento__comedor"
+        )
         try:
-            seguimiento = PrimerSeguimiento.objects.select_related(
-                "id_relevamiento__comedor"
-            ).get(id=sisoc_id)
+            if sisoc_id:
+                seguimiento = queryset.get(id=int(sisoc_id))
+            elif gestionar_id:
+                seguimiento = queryset.get(gestionar_id=str(gestionar_id).strip())
+            else:
+                seguimiento = queryset.get(
+                    id_relevamiento_id=int(id_relevamiento)
+                )
+        except (TypeError, ValueError):
+            return None, Response(
+                "Identificador invalido.",
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         except PrimerSeguimiento.DoesNotExist:
-            return Response(
-                f"Primer seguimiento {sisoc_id} no encontrado",
+            ref = sisoc_id or gestionar_id or id_relevamiento
+            return None, Response(
+                f"Primer seguimiento {ref} no encontrado",
                 status=status.HTTP_404_NOT_FOUND,
             )
 
-        try:
-            id_relevamiento_int = int(id_relevamiento)
-        except (TypeError, ValueError):
-            return Response(
-                "id_relevamiento invalido.",
+        if sisoc_id and seguimiento.id != int(sisoc_id):
+            return None, Response(
+                "El sisoc_id informado no coincide con el seguimiento resuelto.",
                 status=status.HTTP_400_BAD_REQUEST,
             )
+        if gestionar_id and seguimiento.gestionar_id != str(gestionar_id).strip():
+            return None, Response(
+                "El gestionar_id informado no coincide con el seguimiento "
+                "resuelto.",
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if id_relevamiento and seguimiento.id_relevamiento_id != int(
+            id_relevamiento
+        ):
+            return None, Response(
+                "El id_relevamiento informado no coincide con el seguimiento "
+                "resuelto.",
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        return seguimiento, None
 
-        if seguimiento.id_relevamiento_id != id_relevamiento_int:
-            return Response(
-                "El id_relevamiento no corresponde al primer seguimiento informado.",
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+    def patch(self, request):
+        seguimiento, error_response = self._resolve_seguimiento(request.data)
+        if error_response is not None:
+            return error_response
 
         seguimiento_serializer = PrimerSeguimientoSerializer(
             seguimiento,

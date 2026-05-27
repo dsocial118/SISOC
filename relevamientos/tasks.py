@@ -66,7 +66,12 @@ def build_primer_seguimiento_payload(seguimiento):
     return {
         "Action": "Add",
         "Properties": {"Locale": "es-ES"},
-        "Rows": [{"Id_Relevamiento": f"{seguimiento.id_relevamiento_id}"}],
+        "Rows": [
+            {
+                "Id_Relevamiento": f"{seguimiento.id_relevamiento_id}",
+                "Id_SISOC": f"{seguimiento.id}",
+            }
+        ],
     }
 
 

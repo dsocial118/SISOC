@@ -24,22 +24,24 @@ Registrar el relevamiento inicial de comedores y crear el primer seguimiento aso
 2. Busca el ultimo `Relevamiento` del comedor que no este eliminado y cuyo estado no sea `Finalizado` ni `Finalizado/Excepciones`.
 3. Si no existe ancla activa, crea un `Relevamiento` local con `_skip_gestionar_sync=True`. Ese ancla no envia un relevamiento inicial a GESTIONAR.
 4. Crea `PrimerSeguimiento` en estado `Asignado`, guarda el tecnico externo en `tecnico` y lo vincula por `id_relevamiento`.
-5. Envia el alta con `AsyncSendPrimerSeguimientoToGestionar` usando `GESTIONAR_API_CREAR_PRIMER_SEGUIMIENTO`. El payload contiene solo `{"Id_Relevamiento": "<id>"}`; GESTIONAR genera y devuelve `ID_Seguimiento1`, que SISOC guarda en `PrimerSeguimiento.gestionar_id` para futuras sincronizaciones.
-6. La baja usa `AsyncRemovePrimerSeguimientoToGestionar` y `GESTIONAR_API_BORRAR_PRIMER_SEGUIMIENTO`, enviando el `gestionar_id` guardado. Si el seguimiento no tiene `gestionar_id` (por ejemplo el alta nunca llegó a GESTIONAR), la baja se omite con un log informativo.
+5. Envia el alta con `AsyncSendPrimerSeguimientoToGestionar` usando `GESTIONAR_API_CREAR_PRIMER_SEGUIMIENTO`. El payload contiene `{"Id_Relevamiento": "<id>", "Id_SISOC": "<pk>"}`; GESTIONAR guarda el `Id_SISOC` como correlato y devuelve su propio `ID_Seguimiento1`, que SISOC persiste en `PrimerSeguimiento.gestionar_id`. Asi ambos sistemas conocen el ID del otro.
+6. La baja usa `AsyncRemovePrimerSeguimientoToGestionar` y `GESTIONAR_API_BORRAR_PRIMER_SEGUIMIENTO`, enviando el `gestionar_id` guardado. Si el seguimiento no tiene `gestionar_id` (por ejemplo el alta nunca llego a GESTIONAR), la baja se omite con un log informativo.
 
 ## API externa
 
 `PATCH /api/relevamiento/primer-seguimiento` usa `HasAPIKeyOrToken`.
 
-Requisitos:
+GESTIONAR puede identificar al seguimiento por cualquiera de estos tres campos (alcanza con uno):
 
-- `sisoc_id`: id SISOC del `PrimerSeguimiento`.
-- `id_relevamiento`: id SISOC del `Relevamiento` ancla.
+- `sisoc_id` / `Id_SISOC`: PK del `PrimerSeguimiento` en SISOC.
+- `gestionar_id` / `ID_Seguimiento1`: PK que GESTIONAR genero y SISOC persistio.
+- `id_relevamiento` / `Id_Relevamiento`: PK del `Relevamiento` ancla (unico por OneToOne).
+
+Si el payload trae mas de uno, deben referir al mismo registro.
 
 Respuestas esperadas:
 
-- `400` si falta alguno de los dos ids.
-- `400` si `id_relevamiento` no corresponde al seguimiento informado.
+- `400` si no viene ninguno de los tres identificadores, si alguno es invalido o si entre si refieren a distintos registros.
 - `404` si no existe el `PrimerSeguimiento`.
 - `200` si el payload actualiza bloques relacionados y guarda el seguimiento.
 

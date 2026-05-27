@@ -148,7 +148,12 @@ def test_build_payload_primer_seguimiento(comedor):
 
     assert payload["Action"] == "Add"
     assert payload["Properties"] == {"Locale": "es-ES"}
-    assert payload["Rows"] == [{"Id_Relevamiento": str(relevamiento.id)}]
+    assert payload["Rows"] == [
+        {
+            "Id_Relevamiento": str(relevamiento.id),
+            "Id_SISOC": str(seguimiento.id),
+        }
+    ]
 
 
 def test_async_send_guarda_gestionar_id_de_la_respuesta(comedor, mocker, settings):
@@ -197,7 +202,7 @@ def test_async_remove_usa_gestionar_id_y_omite_si_falta(comedor, mocker, setting
     post_mock.assert_not_called()
 
 
-def test_api_primer_seguimiento_exige_ids(api_client):
+def test_api_primer_seguimiento_exige_algun_identificador(api_client):
     response = api_client.patch(
         reverse("api_primer_seguimiento"),
         {"estado": "Completo"},
@@ -242,6 +247,66 @@ def test_api_primer_seguimiento_no_encontrado(api_client, comedor):
     )
 
     assert response.status_code == 404
+
+
+def test_api_primer_seguimiento_resuelve_por_gestionar_id(api_client, comedor):
+    relevamiento = Relevamiento.objects.create(comedor=comedor, estado="En Proceso")
+    seguimiento = PrimerSeguimiento.objects.create(
+        id_relevamiento=relevamiento,
+        estado=PrimerSeguimiento.ESTADO_ASIGNADO,
+        gestionar_id="afbeaa6c",
+    )
+
+    response = api_client.patch(
+        reverse("api_primer_seguimiento"),
+        {"ID_Seguimiento1": "afbeaa6c", "estado": "Completo"},
+        format="json",
+    )
+
+    assert response.status_code == 200
+    seguimiento.refresh_from_db()
+    assert seguimiento.estado == PrimerSeguimiento.ESTADO_COMPLETO
+
+
+def test_api_primer_seguimiento_resuelve_por_id_relevamiento(api_client, comedor):
+    relevamiento = Relevamiento.objects.create(comedor=comedor, estado="En Proceso")
+    seguimiento = PrimerSeguimiento.objects.create(
+        id_relevamiento=relevamiento,
+        estado=PrimerSeguimiento.ESTADO_ASIGNADO,
+    )
+
+    response = api_client.patch(
+        reverse("api_primer_seguimiento"),
+        {"Id_Relevamiento": relevamiento.id, "estado": "Completo"},
+        format="json",
+    )
+
+    assert response.status_code == 200
+    seguimiento.refresh_from_db()
+    assert seguimiento.estado == PrimerSeguimiento.ESTADO_COMPLETO
+
+
+def test_api_primer_seguimiento_rechaza_gestionar_id_inconsistente(
+    api_client, comedor
+):
+    relevamiento = Relevamiento.objects.create(comedor=comedor, estado="En Proceso")
+    seguimiento = PrimerSeguimiento.objects.create(
+        id_relevamiento=relevamiento,
+        estado=PrimerSeguimiento.ESTADO_ASIGNADO,
+        gestionar_id="afbeaa6c",
+    )
+
+    response = api_client.patch(
+        reverse("api_primer_seguimiento"),
+        {
+            "sisoc_id": seguimiento.id,
+            "ID_Seguimiento1": "otro-id",
+            "estado": "Completo",
+        },
+        format="json",
+    )
+
+    assert response.status_code == 400
 
 
 def test_api_primer_seguimiento_actualiza_bloques_y_estado(api_client, comedor):
