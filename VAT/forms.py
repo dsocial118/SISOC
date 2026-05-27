@@ -2651,9 +2651,9 @@ class ComisionCursoWizardHorarioForm(forms.Form):
                     "La hora de finalización debe ser posterior a la hora de inicio.",
                 )
             else:
-                duracion = (
-                    hora_hasta.hour * 60 + hora_hasta.minute
-                ) - (hora_desde.hour * 60 + hora_desde.minute)
+                duracion = (hora_hasta.hour * 60 + hora_hasta.minute) - (
+                    hora_desde.hour * 60 + hora_desde.minute
+                )
                 if duracion < self.MIN_DURACION_MINUTOS:
                     self.add_error(
                         "hora_hasta",
@@ -2700,9 +2700,9 @@ class BaseComisionCursoWizardHorarioFormSet(forms.BaseFormSet):
             inicio = horario.get("hora_desde")
             fin = horario.get("hora_hasta")
             if inicio and fin:
-                total_minutos += (
-                    fin.hour * 60 + fin.minute
-                ) - (inicio.hour * 60 + inicio.minute)
+                total_minutos += (fin.hour * 60 + fin.minute) - (
+                    inicio.hour * 60 + inicio.minute
+                )
         if total_minutos < self.MIN_TOTAL_SEMANAL_MINUTOS:
             raise forms.ValidationError(
                 "El total semanal debe ser de al menos 2 horas."
