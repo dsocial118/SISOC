@@ -174,9 +174,7 @@ def test_async_send_guarda_gestionar_id_de_la_respuesta(comedor, mocker, setting
     assert seguimiento.gestionar_id == "afbeaa6c"
 
 
-def test_async_remove_usa_gestionar_id_y_omite_si_falta(
-    comedor, mocker, settings
-):
+def test_async_remove_usa_gestionar_id_y_omite_si_falta(comedor, mocker, settings):
     settings.GESTIONAR_INTEGRATION_ENABLED = True
     relevamiento = Relevamiento.objects.create(comedor=comedor, estado="En Proceso")
     seguimiento = PrimerSeguimiento.objects.create(
