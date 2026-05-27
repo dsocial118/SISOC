@@ -68,6 +68,7 @@ def build_primer_seguimiento_payload(seguimiento):
         "Properties": {"Locale": "es-ES"},
         "Rows": [
             {
+                "ID_Seguimiento1": f"{seguimiento.id}",
                 "Id_Relevamiento": f"{seguimiento.id_relevamiento_id}",
                 "Id_SISOC": f"{seguimiento.id}",
             }

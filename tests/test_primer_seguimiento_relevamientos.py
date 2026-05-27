@@ -150,6 +150,7 @@ def test_build_payload_primer_seguimiento(comedor):
     assert payload["Properties"] == {"Locale": "es-ES"}
     assert payload["Rows"] == [
         {
+            "ID_Seguimiento1": str(seguimiento.id),
             "Id_Relevamiento": str(relevamiento.id),
             "Id_SISOC": str(seguimiento.id),
         }

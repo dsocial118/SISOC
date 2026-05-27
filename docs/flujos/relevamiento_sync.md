@@ -24,7 +24,7 @@ Registrar el relevamiento inicial de comedores y crear el primer seguimiento aso
 2. Busca el ultimo `Relevamiento` del comedor que no este eliminado y cuyo estado no sea `Finalizado` ni `Finalizado/Excepciones`.
 3. Si no existe ancla activa, crea un `Relevamiento` local con `_skip_gestionar_sync=True`. Ese ancla no envia un relevamiento inicial a GESTIONAR.
 4. Crea `PrimerSeguimiento` en estado `Asignado`, guarda el tecnico externo en `tecnico` y lo vincula por `id_relevamiento`.
-5. Envia el alta con `AsyncSendPrimerSeguimientoToGestionar` usando `GESTIONAR_API_CREAR_PRIMER_SEGUIMIENTO`. El payload contiene `{"Id_Relevamiento": "<id>", "Id_SISOC": "<pk>"}`; GESTIONAR guarda el `Id_SISOC` como correlato y devuelve su propio `ID_Seguimiento1`, que SISOC persiste en `PrimerSeguimiento.gestionar_id`. Asi ambos sistemas conocen el ID del otro.
+5. Envia el alta con `AsyncSendPrimerSeguimientoToGestionar` usando `GESTIONAR_API_CREAR_PRIMER_SEGUIMIENTO`. El payload contiene `{"ID_Seguimiento1": "<pk>", "Id_Relevamiento": "<id>", "Id_SISOC": "<pk>"}`; `ID_Seguimiento1` viaja con el PK de SISOC para que ambos sistemas usen el mismo identificador. SISOC persiste lo que GESTIONAR devuelve en `Rows[0].ID_Seguimiento1` en `PrimerSeguimiento.gestionar_id` (en el flujo normal coincide con el sisoc_id; si GESTIONAR responde con otra cosa, queda registrado).
 6. La baja usa `AsyncRemovePrimerSeguimientoToGestionar` y `GESTIONAR_API_BORRAR_PRIMER_SEGUIMIENTO`, enviando el `gestionar_id` guardado. Si el seguimiento no tiene `gestionar_id` (por ejemplo el alta nunca llego a GESTIONAR), la baja se omite con un log informativo.
 
 ## API externa

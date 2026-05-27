@@ -6,7 +6,7 @@ El PR #1643 dejo la integracion con GESTIONAR usando placeholders. El endpoint r
 
 ## Cambio
 
-- `relevamientos.tasks.build_primer_seguimiento_payload` envia `{"Id_Relevamiento": "<id>", "Id_SISOC": "<pk>"}` para que GESTIONAR guarde el correlato y pueda usarlo en el PATCH inverso.
+- `relevamientos.tasks.build_primer_seguimiento_payload` envia `{"ID_Seguimiento1": "<pk>", "Id_Relevamiento": "<id>", "Id_SISOC": "<pk>"}`. SISOC controla el `ID_Seguimiento1` desde el alta (mismo PK que `Id_SISOC`), de modo que GESTIONAR no necesita generar el suyo. La respuesta sigue parseandose por seguridad y se persiste en `gestionar_id`.
 - `PrimerSeguimientoApiView` ahora acepta `sisoc_id`/`Id_SISOC`, `gestionar_id`/`ID_Seguimiento1` o `id_relevamiento`/`Id_Relevamiento` (cualquiera alcanza). Si vienen varios, deben referir al mismo registro.
 - `AsyncSendPrimerSeguimientoToGestionar.run()` parsea la respuesta y guarda `Rows[0].ID_Seguimiento1` en `PrimerSeguimiento.gestionar_id` via `update()` (sin disparar signals).
 - Nuevo campo `PrimerSeguimiento.gestionar_id` (CharField max_length=64, nullable). Migracion `0009_primerseguimiento_gestionar_id`.
