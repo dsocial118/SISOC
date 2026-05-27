@@ -452,14 +452,15 @@ def test_centro_update_renderiza_mismo_formulario_extendido_que_alta(
     content = response.content.decode("utf-8")
     assert response.status_code == 200
     assert "contactos-TOTAL_FORMS" in content
-    assert "3.2 Contactos de la institución" in content
+    # Refactor 4f1f2241 renombró las secciones removiendo prefijos numéricos
+    assert "Contactos adicionales" in content
     assert "4. Autoridades" not in content
     assert 'name="contactos-0-documento"' in content
     assert 'name="save_continue"' not in content
     assert 'for="id_provincia"' not in content
     assert 'name="provincia"' in content
     assert 'name="activo_present"' in content
-    assert "4. Estado de la sede" in content
+    assert "Estado de Centro de Formación Profesional" in content
 
 
 @pytest.mark.django_db
