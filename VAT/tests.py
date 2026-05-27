@@ -452,14 +452,15 @@ def test_centro_update_renderiza_mismo_formulario_extendido_que_alta(
     content = response.content.decode("utf-8")
     assert response.status_code == 200
     assert "contactos-TOTAL_FORMS" in content
-    assert "3.2 Contactos de la institución" in content
+    # Refactor 4f1f2241 renombró las secciones removiendo prefijos numéricos
+    assert "Contactos adicionales" in content
     assert "4. Autoridades" not in content
     assert 'name="contactos-0-documento"' in content
     assert 'name="save_continue"' not in content
     assert 'for="id_provincia"' not in content
     assert 'name="provincia"' in content
     assert 'name="activo_present"' in content
-    assert "4. Estado de la sede" in content
+    assert "Estado de Centro de Formación Profesional" in content
 
 
 @pytest.mark.django_db
@@ -1885,11 +1886,13 @@ def test_centro_detail_muestra_boton_editar_para_referente_cfp(client, vat_geo_d
     assert response.status_code == 200
     assert reverse("vat_centro_update", kwargs={"pk": centro.pk}) in content
     assert "Editar" in content
-    assert "Datos del Establecimiento" in content
+    # Refactor 4f1f2241 renombró secciones: ahora hay tabs "Información general",
+    # "Ubicaciones adicionales" y modal "Agregar Identificador".
+    assert "Información general" in content
     assert "CUE" in content
     assert "Estructura Institucional" not in content
-    assert "Ubicacion Principal" in content
-    assert "Identificadores" in content
+    assert "Ubicaciones adicionales" in content
+    assert "Identificador" in content
 
 
 @pytest.mark.django_db
@@ -1920,7 +1923,8 @@ def test_centro_detail_muestra_referentes_plural_sin_exponer_revisores(
 
     content = response.content.decode("utf-8")
     assert response.status_code == 200
-    assert "Referente/s del Centro" in content
+    # Refactor 4f1f2241 renombró la sección a "Referente del centro" (singular)
+    assert "Referente del centro" in content
     assert "ref-detalle-1" in content
     assert "ref-detalle-2" in content
     assert "revisor-detalle" not in content
@@ -5811,11 +5815,14 @@ def test_centro_cursos_panel_renderiza_marcadores_para_filtrar_comisiones_por_cu
     )
     assert "<td>Plan Industrial Inicial</td>" in content
     assert 'id="tablaComisionesCursoCentro"' in content
-    assert "<th>Código</th>" in content
+    # Refactor 4f1f2241 reordenó las columnas: Curso, Comisión, Ubicación,
+    # Fecha Inicio, Fecha Fin, Cupo, Acciones.
+    assert "<th>Curso</th>" in content
+    assert "<th>Comisión</th>" in content
     assert "<th>Ubicación</th>" in content
     assert "<th>Fecha Inicio</th>" in content
     assert "<th>Fecha Fin</th>" in content
-    assert "<th>Observaciones</th>" in content
+    assert "<th>Cupo</th>" in content
     assert "FIL-01" in content
     assert "Comisión Filtrable" in content
     assert 'id="comisionesFilterSearch"' in content
@@ -5826,7 +5833,8 @@ def test_centro_cursos_panel_renderiza_marcadores_para_filtrar_comisiones_por_cu
     assert 'id="comisionesFilterClear"' in content
     assert 'class="comision-curso-row"' in content
     assert reverse("vat_comision_curso_detail", kwargs={"pk": comision.pk}) in content
-    assert 'title="Gestionar Comisión"' in content
+    # El refactor reemplazó el title="Gestionar Comisión" por un botón "Ver"
+    assert "sisoc-btn--view" in content
     assert comisiones_filter_curso is not None
     assert "select2" in comisiones_filter_curso.get("class", [])
     assert comisiones_filter_curso.get("data-width") == "100%"
@@ -5902,7 +5910,9 @@ def test_centro_cursos_panel_renderiza_selector_de_planes_en_modal_nuevo_curso(
     assert response.status_code == 200
     assert 'data-panel-rendered="1"' in content
     assert "Planes Curriculares" not in content
-    assert 'title="Nuevo Curso"' in content
+    # El refactor reemplazó el botón title="Nuevo Curso" por un modal con
+    # heading "Nuevo Curso" (h5) y un botón "Agregar curso".
+    assert ">Nuevo Curso<" in content
     assert 'id="planEstudioSeleccionadoInfo"' in content
     assert 'id="modalPlanCurricularSelector"' in content
     assert 'id="openPlanCurricularSelector"' in content
