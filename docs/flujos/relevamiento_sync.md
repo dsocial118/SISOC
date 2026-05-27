@@ -45,6 +45,19 @@ Respuestas esperadas:
 - `404` si no existe el `PrimerSeguimiento`.
 - `200` si el payload actualiza bloques relacionados y guarda el seguimiento.
 
+## Estado de sincronizacion
+
+Tanto `Relevamiento` como `PrimerSeguimiento` exponen el booleano `sincronizado_gestionar` (default `False`). Cada `PATCH` exitoso desde GESTIONAR lo marca en `True` via `update()` (sin disparar signals). El detalle de relevamiento muestra un badge verde "Sincronizado con GESTIONAR" cuando esta en `True`, y un badge gris "Pendiente sincronizacion" en el bloque del primer seguimiento mientras siga en `False`.
+
+## Referente en el PATCH del primer seguimiento
+
+El payload puede traer un objeto `referente` con dos formas:
+
+1. **Asociar uno existente:** `{"sisoc_id": <pk_referente>}`. Si el PK no existe, devuelve `400`.
+2. **Get-or-create por documento:** `{"documento": "30555777", "nombre": "...", "apellido": "...", "mail": "...", "celular": "...", "funcion": "..."}`. El `documento` se normaliza (acepta `30.555.777`, `30-555-777`, etc.) y es la clave del lookup. Si ya existe un `Referente` con ese DNI, se actualizan los campos enviados (los `None` no pisan valores previos).
+
+Si no viene `documento` ni `sisoc_id`, cae al patron previo de busqueda por nombre.
+
 ## Validaciones y reglas
 
 - No mas de un relevamiento con estado `Pendiente` o `Visita pendiente` por comedor.

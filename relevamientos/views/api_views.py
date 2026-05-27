@@ -45,6 +45,9 @@ class RelevamientoApiView(APIView):
                     relevamiento_serializer.is_valid(raise_exception=True)
                     relevamiento_serializer.save()
                     relevamiento = relevamiento_serializer.instance
+                    Relevamiento.objects.filter(pk=relevamiento.pk).update(
+                        sincronizado_gestionar=True
+                    )
             except ValidationError as exc:
                 error_message_str = format_error_detail(getattr(exc, "detail", exc))
                 return Response(
@@ -158,6 +161,9 @@ class PrimerSeguimientoApiView(APIView):
                     raise ValidationError(detail) from clean_error
                 seguimiento_serializer.is_valid(raise_exception=True)
                 seguimiento_serializer.save()
+                PrimerSeguimiento.objects.filter(
+                    pk=seguimiento_serializer.instance.pk
+                ).update(sincronizado_gestionar=True)
         except ValidationError as exc:
             error_message_str = format_error_detail(getattr(exc, "detail", exc))
             return Response(

@@ -1057,6 +1057,7 @@ class Relevamiento(SoftDeleteModelMixin, models.Model):
         blank=True,
         null=True,
     )
+    sincronizado_gestionar = models.BooleanField(default=False)
     responsable_es_referente = models.BooleanField(default=True, blank=True, null=True)
     responsable_relevamiento = models.ForeignKey(
         to=Referente,
@@ -1560,6 +1561,7 @@ class PrimerSeguimiento(models.Model):
     )
     estado = _nullable_char(choices=ESTADO_CHOICES)
     gestionar_id = _nullable_char(max_length=64)
+    sincronizado_gestionar = models.BooleanField(default=False)
     funcionamiento = models.OneToOneField(
         to=FuncionamientoSeguimiento,
         on_delete=models.PROTECT,

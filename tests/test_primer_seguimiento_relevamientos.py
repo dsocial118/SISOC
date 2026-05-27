@@ -7,7 +7,7 @@ from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import IntegrityError
 from django.urls import reverse
 
-from comedores.models import Comedor
+from comedores.models import Comedor, Referente
 from relevamientos.models import (
     PrimerSeguimiento,
     Relevamiento,
@@ -284,6 +284,124 @@ def test_api_primer_seguimiento_resuelve_por_id_relevamiento(api_client, comedor
     assert response.status_code == 200
     seguimiento.refresh_from_db()
     assert seguimiento.estado == PrimerSeguimiento.ESTADO_COMPLETO
+
+
+def test_api_primer_seguimiento_marca_sincronizado_tras_patch(api_client, comedor):
+    relevamiento = Relevamiento.objects.create(comedor=comedor, estado="En Proceso")
+    seguimiento = PrimerSeguimiento.objects.create(
+        id_relevamiento=relevamiento,
+        estado=PrimerSeguimiento.ESTADO_ASIGNADO,
+    )
+    assert seguimiento.sincronizado_gestionar is False
+
+    response = api_client.patch(
+        reverse("api_primer_seguimiento"),
+        {
+            "sisoc_id": seguimiento.id,
+            "id_relevamiento": relevamiento.id,
+            "estado": "Completo",
+        },
+        format="json",
+    )
+
+    assert response.status_code == 200
+    seguimiento.refresh_from_db()
+    assert seguimiento.sincronizado_gestionar is True
+
+
+def test_api_primer_seguimiento_referente_por_sisoc_id(api_client, comedor):
+    relevamiento = Relevamiento.objects.create(comedor=comedor, estado="En Proceso")
+    seguimiento = PrimerSeguimiento.objects.create(
+        id_relevamiento=relevamiento,
+        estado=PrimerSeguimiento.ESTADO_ASIGNADO,
+    )
+    referente = Referente.objects.create(
+        nombre="Ana", apellido="Lopez", documento=30111222
+    )
+
+    response = api_client.patch(
+        reverse("api_primer_seguimiento"),
+        {
+            "sisoc_id": seguimiento.id,
+            "id_relevamiento": relevamiento.id,
+            "referente": {"sisoc_id": referente.id},
+        },
+        format="json",
+    )
+
+    assert response.status_code == 200
+    seguimiento.refresh_from_db()
+    assert seguimiento.referente_id == referente.id
+
+
+def test_api_primer_seguimiento_referente_get_or_create_por_documento(
+    api_client, comedor
+):
+    relevamiento = Relevamiento.objects.create(comedor=comedor, estado="En Proceso")
+    seguimiento = PrimerSeguimiento.objects.create(
+        id_relevamiento=relevamiento,
+        estado=PrimerSeguimiento.ESTADO_ASIGNADO,
+    )
+
+    response = api_client.patch(
+        reverse("api_primer_seguimiento"),
+        {
+            "sisoc_id": seguimiento.id,
+            "id_relevamiento": relevamiento.id,
+            "referente": {
+                "documento": "30.555.777",
+                "nombre": "Maria",
+                "apellido": "Garcia",
+                "mail": "maria@test.local",
+                "celular": "1144556677",
+                "funcion": "Coordinadora",
+            },
+        },
+        format="json",
+    )
+
+    assert response.status_code == 200
+    referente = Referente.objects.get(documento=30555777)
+    assert referente.nombre == "Maria"
+    assert referente.apellido == "Garcia"
+    seguimiento.refresh_from_db()
+    assert seguimiento.referente_id == referente.id
+
+    # Segundo PATCH con el mismo documento actualiza, no crea otro Referente.
+    response = api_client.patch(
+        reverse("api_primer_seguimiento"),
+        {
+            "sisoc_id": seguimiento.id,
+            "id_relevamiento": relevamiento.id,
+            "referente": {"documento": "30555777", "funcion": "Directora"},
+        },
+        format="json",
+    )
+    assert response.status_code == 200
+    assert Referente.objects.filter(documento=30555777).count() == 1
+    referente.refresh_from_db()
+    assert referente.funcion == "Directora"
+    assert referente.nombre == "Maria"  # no se pisa con None
+
+
+def test_api_primer_seguimiento_referente_sisoc_id_inexistente(api_client, comedor):
+    relevamiento = Relevamiento.objects.create(comedor=comedor, estado="En Proceso")
+    seguimiento = PrimerSeguimiento.objects.create(
+        id_relevamiento=relevamiento,
+        estado=PrimerSeguimiento.ESTADO_ASIGNADO,
+    )
+
+    response = api_client.patch(
+        reverse("api_primer_seguimiento"),
+        {
+            "sisoc_id": seguimiento.id,
+            "id_relevamiento": relevamiento.id,
+            "referente": {"sisoc_id": 999999},
+        },
+        format="json",
+    )
+
+    assert response.status_code == 400
 
 
 def test_api_primer_seguimiento_rechaza_gestionar_id_inconsistente(api_client, comedor):

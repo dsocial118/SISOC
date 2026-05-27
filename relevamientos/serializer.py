@@ -912,29 +912,68 @@ class PrimerSeguimientoSerializer(serializers.ModelSerializer):
         data = self.initial_data.get("referente")
         if not isinstance(data, dict):
             return
+
+        sisoc_id = data.get("sisoc_id") or data.get("Id_SISOC")
+        if sisoc_id:
+            try:
+                referente = Referente.objects.get(pk=int(sisoc_id))
+            except (TypeError, ValueError) as exc:
+                raise DjangoValidationError(
+                    {"referente": [f"sisoc_id invalido: {sisoc_id}"]}
+                ) from exc
+            except Referente.DoesNotExist as exc:
+                raise DjangoValidationError(
+                    {"referente": [f"Referente con sisoc_id={sisoc_id} no existe"]}
+                ) from exc
+            self.initial_data["referente"] = referente.id
+            return
+
+        documento = self._to_int_or_none(data.get("documento") or data.get("dni"))
         referente_data = {
-            "nombre": data.get("nombre_apellido"),
-            "mail": self._normalize_string(data.get("mail_referente")),
-            "celular": self._to_int_or_none(data.get("celular_referente")),
-            "funcion": data.get("funcion_cumple"),
+            "nombre": self._normalize_string(
+                data.get("nombre_apellido") or data.get("nombre")
+            ),
+            "apellido": self._normalize_string(data.get("apellido")),
+            "mail": self._normalize_string(
+                data.get("mail_referente") or data.get("mail")
+            ),
+            "celular": self._to_int_or_none(
+                data.get("celular_referente") or data.get("celular")
+            ),
+            "funcion": self._normalize_string(
+                data.get("funcion_cumple") or data.get("funcion")
+            ),
         }
-        if not self._has_values(referente_data):
+
+        if not documento and not self._has_values(referente_data):
             self.initial_data.pop("referente", None)
             return
-        external_id = self._normalize_string(data.get("id_referente"))
-        referente = None
-        if external_id:
+
+        defaults = {k: v for k, v in referente_data.items() if v is not None}
+        if documento:
+            referente, created = Referente.objects.get_or_create(
+                documento=documento, defaults=defaults
+            )
+            if not created and defaults:
+                for field_name, value in defaults.items():
+                    setattr(referente, field_name, value)
+                referente.save()
+        else:
+            # Sin documento, fallback al patron previo: buscar por nombre sin
+            # documento, o crear uno nuevo. Mantiene compatibilidad con datos
+            # antiguos que vienen sin DNI.
             referente = (
                 Referente.objects.filter(documento__isnull=True)
                 .filter(nombre=referente_data["nombre"])
                 .last()
             )
-        if referente is None:
-            referente = Referente(**referente_data)
-        else:
-            for field_name, value in referente_data.items():
-                setattr(referente, field_name, value)
-        referente.save()
+            if referente is None:
+                referente = Referente(**defaults)
+            else:
+                for field_name, value in defaults.items():
+                    setattr(referente, field_name, value)
+            referente.save()
+
         self.initial_data["referente"] = referente.id
 
     def _normalize_string(self, value):
