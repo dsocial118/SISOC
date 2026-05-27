@@ -105,6 +105,22 @@ class Expediente(SoftDeleteModelMixin, models.Model):
     excel_masivo = models.FileField(
         upload_to="expedientes/masivos/", null=True, blank=True
     )
+    excel_masivo_cargado_por = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+    )
+    excel_masivo_cargado_en = models.DateTimeField(null=True, blank=True)
+    excel_masivo_procesado_por = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+    )
+    excel_masivo_procesado_en = models.DateTimeField(null=True, blank=True)
     cruce_excel = models.FileField(
         upload_to="expedientes/cruces/", null=True, blank=True
     )

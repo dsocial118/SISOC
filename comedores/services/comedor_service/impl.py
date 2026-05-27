@@ -16,6 +16,7 @@ from django.db.models import (
     IntegerField,
     F,
     Func,
+    OuterRef,
     Subquery,
 )
 from django.db import IntegrityError, transaction
@@ -52,6 +53,8 @@ from core.models import Provincia, Municipio, Localidad, Nacionalidad
 from admisiones.models.admisiones import Admision
 from rendicioncuentasmensual.models import RendicionCuentaMensual
 from intervenciones.models.intervenciones import Intervencion
+from expedientespagos.models import ExpedientePago
+from expedientespagos.services import ordenar_expedientes_por_periodo_desc
 from duplas.models import Dupla
 from organizaciones.models import Aval, Firmante
 
@@ -251,6 +254,10 @@ MENSAJE_IDENTIDAD_PENDIENTE_NOMINA = (
     "La identidad de esta persona está pendiente de revisión. "
     "No puede agregarse a la nómina hasta que sea validada."
 )
+MENSAJE_ERROR_AGREGAR_NOMINA = (
+    "Ocurrió un error al agregar a la nómina. "
+    "Verificá los datos e intentá nuevamente."
+)
 
 
 def _ciudadano_puede_ingresar_a_nomina(ciudadano):
@@ -345,6 +352,9 @@ def _calcular_presupuesto_desde_prestaciones(count, valor_map):
 
 
 def _build_comedores_list_values_queryset(base_qs):
+    latest_mes_ejecucion = ordenar_expedientes_por_periodo_desc(
+        ExpedientePago.objects.filter(comedor_id=OuterRef("pk"))
+    ).values("mes_convenio")[:1]
     return (
         base_qs.select_related(
             "provincia",
@@ -360,12 +370,18 @@ def _build_comedores_list_values_queryset(base_qs):
             estado_general=Coalesce(
                 "ultimo_estado__estado_general__estado_actividad__estado",
                 Value(Comedor.ESTADO_GENERAL_DEFAULT),
-            )
+            ),
+            mes_ejecucion=Case(
+                When(programa_id=2, then=Subquery(latest_mes_ejecucion)),
+                default=Value(None),
+                output_field=IntegerField(),
+            ),
         )
         .values(
             "id",
             "nombre",
             "estado_general",
+            "mes_ejecucion",
             "tipocomedor__nombre",
             "organizacion__nombre",
             "programa__nombre",
@@ -421,17 +437,35 @@ def _apply_user_scope_to_comedores_list_queryset(base_qs, user):
         return base_qs
 
     from users.services import UserPermissionService
+    from users.territorial_scope import apply_territorial_scope, is_territorial_user
 
     is_coordinador, duplas_ids = UserPermissionService.get_coordinador_duplas(user)
     is_dupla = UserPermissionService.es_tecnico_o_abogado(user)
 
     if is_coordinador:
-        return _aplicar_scope_coordinador_comedores_list_queryset(base_qs, duplas_ids)
+        role_qs = _aplicar_scope_coordinador_comedores_list_queryset(
+            base_qs, duplas_ids
+        )
+    elif is_dupla:
+        role_qs = _build_dupla_user_scoped_comedores_list_queryset(user)
+    else:
+        role_qs = None
 
-    if is_dupla:
-        return _build_dupla_user_scoped_comedores_list_queryset(user)
+    if not is_territorial_user(user):
+        return role_qs if role_qs is not None else base_qs
 
-    return base_qs
+    territorial_qs = apply_territorial_scope(
+        base_qs,
+        user,
+        provincia_lookup="provincia_id",
+        municipio_lookup="municipio_id",
+        localidad_lookup="localidad_id",
+    )
+
+    if role_qs is not None:
+        # Territorio + asignados fuera del territorio
+        return (territorial_qs | role_qs.distinct()).distinct()
+    return territorial_qs
 
 
 def _build_comedores_model_queryset():
@@ -443,19 +477,37 @@ def _apply_user_scope_to_comedores_queryset(base_qs, user):
         return base_qs
 
     from users.services import UserPermissionService
+    from users.territorial_scope import apply_territorial_scope, is_territorial_user
 
     is_coordinador, duplas_ids = UserPermissionService.get_coordinador_duplas(user)
     is_dupla = UserPermissionService.es_tecnico_o_abogado(user)
 
     if is_coordinador:
-        return _aplicar_scope_coordinador_comedores_list_queryset(base_qs, duplas_ids)
-
-    if is_dupla:
-        return base_qs.filter(
+        role_qs = _aplicar_scope_coordinador_comedores_list_queryset(
+            base_qs, duplas_ids
+        )
+    elif is_dupla:
+        role_qs = base_qs.filter(
             Q(dupla__abogado=user) | Q(dupla__tecnico=user)
         ).distinct()
+    else:
+        role_qs = None
 
-    return base_qs
+    if not is_territorial_user(user):
+        return role_qs if role_qs is not None else base_qs
+
+    territorial_qs = apply_territorial_scope(
+        base_qs,
+        user,
+        provincia_lookup="provincia_id",
+        municipio_lookup="municipio_id",
+        localidad_lookup="localidad_id",
+    )
+
+    if role_qs is not None:
+        # Territorio + asignados fuera del territorio
+        return (territorial_qs | role_qs.distinct()).distinct()
+    return territorial_qs
 
 
 def _build_relevamientos_detail_prefetch_queryset():
@@ -803,9 +855,9 @@ class ComedorService:
         return referente_instance
 
     @staticmethod
-    def create_imagenes(imagen, comedor_pk):
+    def create_imagenes(imagen, comedor_pk, origen="web"):
         imagen_comedor = ImagenComedorForm(
-            {"comedor": comedor_pk},
+            {"comedor": comedor_pk, "origen": origen},
             {"imagen": imagen},
         )
         if imagen_comedor.is_valid():
@@ -1176,25 +1228,19 @@ class ComedorService:
 
     @staticmethod
     def _buscar_ciudadano_existente_por_dni_renaper(dni_str):
-        # Buscar primero por documento_unico_key para encontrar solo registros
-        # ESTANDAR verificados. Esto evita retornar un duplicado ambiguo cuando
-        # hay múltiples ciudadanos con el mismo DNI (DNI_NO_VALIDADO_RENAPER).
+        # Buscar primero por documento_unico_key (solo registros ESTANDAR verificados).
         doc_key = f"DNI_{dni_str}"
         ciudadano = Ciudadano.objects.filter(documento_unico_key=doc_key).first()
         if ciudadano:
             return ciudadano
-        # Fallback: si el backfill aún no corrió o el registro es previo a Fase 1,
-        # buscar por documento directo prefiriendo ESTANDAR.
-        ciudadano = Ciudadano.objects.filter(
-            tipo_documento=Ciudadano.DOCUMENTO_DNI,
-            documento=int(dni_str),
-            tipo_registro_identidad=Ciudadano.TIPO_REGISTRO_ESTANDAR,
-        ).first()
-        if ciudadano:
-            return ciudadano
+        # Fallback para registros previos al backfill: busca explícitamente ESTANDAR.
+        # No se retorna ningún ciudadano DNI_NO_VALIDADO_RENAPER ni SIN_DNI: si el
+        # único registro con ese DNI está en revisión, se devuelve None para que
+        # RENAPER pueda consultarse al cargar un nuevo ciudadano.
         return Ciudadano.objects.filter(
             tipo_documento=Ciudadano.DOCUMENTO_DNI,
             documento=int(dni_str),
+            tipo_registro_identidad=Ciudadano.TIPO_REGISTRO_ESTANDAR,
         ).first()
 
     @staticmethod
@@ -1318,6 +1364,11 @@ class ComedorService:
         return (ciudadano_data, None)
 
     @staticmethod
+    def build_ciudadano_data_from_renaper(datos, dni_str):
+        """Mapea datos de RENAPER a campos de Ciudadano para consumidores externos."""
+        return ComedorService._build_ciudadano_data_from_renaper(datos, dni_str)
+
+    @staticmethod
     def obtener_datos_ciudadano_desde_renaper(dni, sexo=None):
         """
         Consulta RENAPER y devuelve datos listos para precargar un formulario.
@@ -1437,6 +1488,9 @@ class ComedorService:
                 )
 
             return True, "Persona añadida correctamente a la nómina."
+        except IntegrityError:
+            logger.exception("Error de integridad al agregar ciudadano a la nómina.")
+            return False, MENSAJE_ERROR_AGREGAR_NOMINA
         except Exception as e:
             return False, f"Ocurrió un error al agregar a la nómina: {e}"
 
@@ -1456,7 +1510,13 @@ class ComedorService:
         """
         try:
             with transaction.atomic():
-                ciudadano = Ciudadano.objects.create(**ciudadano_data)
+                try:
+                    ciudadano = Ciudadano.objects.create(**ciudadano_data)
+                except IntegrityError:
+                    return (
+                        False,
+                        "Ya existe un ciudadano estandar con este tipo y numero de documento.",
+                    )
 
                 ok, msg = ComedorService.agregar_ciudadano_a_nomina(
                     ciudadano_id=ciudadano.id,
@@ -1470,10 +1530,10 @@ class ComedorService:
                     ciudadano.delete()
                 return ok, msg
         except IntegrityError:
-            return (
-                False,
-                "Ya existe un ciudadano estandar con este tipo y numero de documento.",
+            logger.exception(
+                "Error de integridad al crear ciudadano y agregarlo a la nómina."
             )
+            return False, MENSAJE_ERROR_AGREGAR_NOMINA
 
     @staticmethod
     def importar_nomina_ultimo_convenio(admision_id, comedor_id):
@@ -1547,6 +1607,9 @@ class ComedorService:
         nueva_admision = Admision.objects.create(
             comedor=comedor,
             tipo=tipo_admision,
+            tipo_entidad_origen=getattr(
+                getattr(comedor, "organizacion", None), "tipo_entidad", None
+            ),
         )
         messages.success(
             request,

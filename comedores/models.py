@@ -1,9 +1,13 @@
 # pylint: disable=too-many-lines
+from io import BytesIO
+
 from django.conf import settings
 from django.core.validators import MaxValueValidator, MinValueValidator, RegexValidator
 from django.core.exceptions import ValidationError
 from django.db import models, transaction
+from django.core.files.base import ContentFile
 from django.utils import timezone
+from PIL import Image, ImageOps
 
 from core.models import Municipio, Provincia
 from core.models import Localidad
@@ -464,6 +468,41 @@ class AuditComedorPrograma(models.Model):
         return f"{self.comedor.nombre}: {from_programa} -> {to_programa}"
 
 
+class ComedorDatosConvenioPnud(models.Model):
+    comedor = models.OneToOneField(
+        Comedor,
+        on_delete=models.CASCADE,
+        related_name="datos_convenio_pnud",
+    )
+    monto_total_conveniado = models.DecimalField(
+        max_digits=14,
+        decimal_places=2,
+        null=True,
+        blank=True,
+    )
+    nro_convenio = models.CharField(max_length=120, null=True, blank=True)
+    monto_total_convenio_por_espacio = models.DecimalField(
+        max_digits=14,
+        decimal_places=2,
+        null=True,
+        blank=True,
+    )
+    prestaciones_financiadas_mensuales = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+    )
+    personas_conveniadas = models.PositiveIntegerField(null=True, blank=True)
+    cantidad_modulos = models.PositiveIntegerField(null=True, blank=True)
+    actualizado_en = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Datos del Convenio PNUD"
+        verbose_name_plural = "Datos del Convenio PNUD"
+
+    def __str__(self):
+        return f"Convenio PNUD - {self.comedor.nombre}"
+
+
 class Nomina(SoftDeleteModelMixin, models.Model):
     ESTADO_ACTIVO = "activo"
     ESTADO_ESPERA = "espera"
@@ -647,6 +686,89 @@ class ActividadColaboradorEspacio(models.Model):
 
     def __str__(self):
         return f"{self.alias} - {self.nombre}"
+
+
+class CursoAppMobile(SoftDeleteModelMixin, models.Model):
+    IMAGE_SIZE = (96, 96)
+    PROGRAMA_PNUD = "pnud"
+    PROGRAMA_ALIMENTAR = "alimentar_comunidad"
+    PROGRAMA_AMBOS = "ambos"
+    PROGRAMA_CHOICES = (
+        (PROGRAMA_PNUD, "PNUD"),
+        (PROGRAMA_ALIMENTAR, "Alimentar Comunidad"),
+        (PROGRAMA_AMBOS, "PNUD y Alimentar Comunidad"),
+    )
+
+    nombre = models.CharField(max_length=255)
+    link = models.URLField(max_length=500)
+    imagen = models.ImageField(
+        upload_to="comedores/cursos_app_mobile/", null=True, blank=True
+    )
+    descripcion = models.CharField(max_length=300, blank=True, null=True)
+    programa_objetivo = models.CharField(
+        max_length=30,
+        choices=PROGRAMA_CHOICES,
+        default=PROGRAMA_PNUD,
+    )
+    es_recomendado = models.BooleanField(default=False)
+    activo = models.BooleanField(default=True)
+    orden = models.PositiveIntegerField(default=0)
+    creado_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="cursos_app_mobile_creados",
+    )
+    modificado_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="cursos_app_mobile_modificados",
+    )
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    fecha_modificacion = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["orden", "nombre", "id"]
+        verbose_name = "Curso App Mobile"
+        verbose_name_plural = "Cursos App Mobile"
+        indexes = [
+            models.Index(fields=["programa_objetivo", "activo"]),
+            models.Index(fields=["orden", "nombre"]),
+        ]
+
+    def __str__(self):
+        return self.nombre
+
+    def _normalize_image(self):
+        if not self.imagen:
+            return
+        try:
+            self.imagen.open()
+            with Image.open(self.imagen) as img:
+                normalized = ImageOps.fit(
+                    img.convert("RGB"),
+                    self.IMAGE_SIZE,
+                    method=Image.Resampling.LANCZOS,
+                )
+                buffer = BytesIO()
+                normalized.save(buffer, format="JPEG", quality=88, optimize=True)
+                buffer.seek(0)
+                base_name = str(self.imagen.name or "curso").rsplit(".", 1)[0]
+                self.imagen.save(
+                    f"{base_name}.jpg",
+                    ContentFile(buffer.read()),
+                    save=False,
+                )
+        except Exception:
+            # Si no se pudo procesar, se conserva el archivo original.
+            return
+
+    def save(self, *args, **kwargs):
+        self._normalize_image()
+        return super().save(*args, **kwargs)
 
 
 class ColaboradorEspacio(models.Model):
@@ -833,10 +955,22 @@ class AuditColaboradorEspacio(models.Model):
 
 
 class ImagenComedor(models.Model):
+    ORIGEN_WEB = "web"
+    ORIGEN_MOBILE = "mobile"
+    ORIGEN_CHOICES = (
+        (ORIGEN_WEB, "Web"),
+        (ORIGEN_MOBILE, "Mobile"),
+    )
+
     comedor = models.ForeignKey(
         Comedor, on_delete=models.CASCADE, related_name="imagenes"
     )
     imagen = models.ImageField(upload_to="comedor/")
+    origen = models.CharField(
+        max_length=10,
+        choices=ORIGEN_CHOICES,
+        default=ORIGEN_WEB,
+    )
 
     def __str__(self):
         return f"Imagen de {self.comedor.nombre}"
@@ -1034,3 +1168,41 @@ class HistorialValidacion(models.Model):
     def __str__(self):
         fecha_str = self.fecha_validacion.strftime("%d/%m/%Y")
         return f"{self.comedor.nombre} - {self.estado_validacion} ({fecha_str})"
+
+
+class DWECResumenTransacciones(models.Model):
+    """
+    Modelo de solo lectura que mapea a la vista externa DW_sisoc.vw_EC_resumen_transacciones.
+
+    Esta vista contiene información financiera histórica de transacciones de comedores
+    desde el sistema Data Warehouse. Los datos se actualizan automáticamente en la fuente.
+
+    Campos:
+        comedor_id_sisoc: FK lógica contra comedores_comedor.id
+        periodo: Período YYYYMM
+        cantidad_debitos: Cantidad de movimientos/transacciones realizadas
+        credito_total: Monto efectivamente utilizado/gastado
+        debito_total: Monto transferido al comedor
+        cereo: Remanente sobrante al cierre del período
+    """
+
+    comedor_id_sisoc = models.IntegerField(db_index=True)
+    periodo = models.CharField(max_length=6)  # YYYYMM
+    cantidad_debitos = models.IntegerField()
+    credito_total = models.DecimalField(
+        max_digits=15, decimal_places=2, null=True, blank=True
+    )
+    debito_total = models.DecimalField(
+        max_digits=15, decimal_places=2, null=True, blank=True
+    )
+    cereo = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True)
+
+    class Meta:
+        managed = False
+        db_table = "DW_sisoc.vw_EC_resumen_transacciones"
+        verbose_name = "Resumen DW - Transacciones"
+        verbose_name_plural = "Resumen DW - Transacciones"
+        ordering = ["-periodo"]
+
+    def __str__(self):
+        return f"Comedor {self.comedor_id_sisoc} - Período {self.periodo}"

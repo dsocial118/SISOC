@@ -199,6 +199,8 @@ Campos relevantes:
 - `nombre`
 - `referente`
 - `referente_nombre`
+- `referentes`
+- `referentes_nombres`
 - `codigo`
 - `activo`
 - `provincia`
@@ -223,6 +225,12 @@ Uso funcional:
 - encontrar centros por zona geográfica,
 - mostrar ficha básica del centro,
 - seleccionar un centro para consultar su oferta de cursos.
+
+Compatibilidad de referentes:
+
+- `referente` y `referente_nombre` se mantienen como contrato legacy y representan el primer referente del centro.
+- `referentes` y `referentes_nombres` exponen el conjunto canonico de usuarios CFP asignados como referentes.
+- Los revisores CFPRevisor no se exponen en la ficha publica del centro.
 
 Consideraciones de paginación para centros:
 

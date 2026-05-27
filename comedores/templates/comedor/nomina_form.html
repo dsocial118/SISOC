@@ -107,10 +107,12 @@
         {% endif %}
 
         <!-- Formulario Creación de Ciudadano -->
-        {% if request.GET.query and no_resultados %}
+        {% if mostrar_form_ciudadano %}
             <div class="alert alert-info mb-3">
                 <i class="bi bi-exclamation-triangle-fill fs-4"></i>
-                {% if renaper_precarga %}
+                {% if renaper_precarga and ciudadanos %}
+                    Se encontraron coincidencias pendientes de revisión. Se precargaron datos desde RENAPER; confirme para crear y agregar a la nómina.
+                {% elif renaper_precarga %}
                     No se encontraron coincidencias en el sistema. Se precargaron datos desde RENAPER; confirme para crear y agregar a la nómina.
                 {% else %}
                     No se encontraron coincidencias.

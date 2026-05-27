@@ -12,7 +12,8 @@ param(
         "djlint-check",
         "djlint-format",
         "pylint",
-        "manage"
+        "manage",
+        "validate"
     )]
     [string]$Action,
     [Parameter(ValueFromRemainingArguments = $true)]
@@ -50,6 +51,18 @@ function Invoke-DjangoOneOffCommand {
 
     Invoke-CodexBootstrap -NoStart
     Invoke-CodexCompose -RepoRoot $repoRoot -Arguments (@("run", "--rm", "--no-deps", "django") + $CommandArgs)
+}
+
+function Invoke-CodexValidation {
+    $validationScript = @(
+        "set -e",
+        "echo '== validate: black ==' ; black --check . --config pyproject.toml",
+        "echo '== validate: djlint ==' ; djlint . --configuration=.djlintrc --check",
+        "echo '== validate: smoke ==' ; pytest -m smoke",
+        "echo '== validate: migrations ==' ; python manage.py makemigrations --check --dry-run"
+    ) -join "; "
+
+    Invoke-DjangoOneOffCommand -CommandArgs @("sh", "-lc", $validationScript)
 }
 
 switch ($Action) {
@@ -122,6 +135,10 @@ switch ($Action) {
             throw "manage requiere argumentos para manage.py."
         }
         Invoke-DjangoOneOffCommand -CommandArgs (@("python", "manage.py") + $Args)
+        break
+    }
+    "validate" {
+        Invoke-CodexValidation
         break
     }
 }

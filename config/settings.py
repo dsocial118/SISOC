@@ -151,6 +151,7 @@ INSTALLED_APPS = [
     "crispy_forms",
     "crispy_bootstrap5",
     "django_extensions",
+    "formtools",
     "import_export",
     "multiselectfield",
     "auditlog",
@@ -183,6 +184,7 @@ INSTALLED_APPS = [
     "importarexpediente",
     "comunicados",
     "centrodeinfancia",
+    "dispositivos",
     "pwa",
 ]
 
@@ -612,14 +614,18 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 # Herramientas debug/perf en desarrollo (desactivadas en tests para estabilidad y velocidad)
+ENABLE_SILK = os.getenv("ENABLE_SILK", "0") == "1"
+
 if DEBUG and not RUNNING_TESTS:
-    INSTALLED_APPS += ["debug_toolbar", "silk"]
-    MIDDLEWARE.insert(
-        3, "debug_toolbar.middleware.DebugToolbarMiddleware"
-    )  # index tras Cors/Common
-    MIDDLEWARE += ["silk.middleware.SilkyMiddleware"]
+    INSTALLED_APPS += ["debug_toolbar"]
+    MIDDLEWARE.insert(3, "debug_toolbar.middleware.DebugToolbarMiddleware")
     DEBUG_TOOLBAR_CONFIG = {"SHOW_TOOLBAR_CALLBACK": lambda request: True}
-    SILKY_PYTHON_PROFILER = True
+
+    if ENABLE_SILK:
+        INSTALLED_APPS += ["silk"]
+        MIDDLEWARE += ["silk.middleware.SilkyMiddleware"]
+        SILKY_PYTHON_PROFILER = False
+
 
 # Seguridad por entorno
 if IS_PRODUCTION_LIKE_ENVIRONMENT:
@@ -631,11 +637,11 @@ if IS_PRODUCTION_LIKE_ENVIRONMENT:
             "BACKEND": "django.contrib.staticfiles.storage.ManifestStaticFilesStorage",
         },
     }
-    SECURE_HSTS_SECONDS = 1800  # 30 minutos
-    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
-    SECURE_SSL_REDIRECT = True
-    SESSION_COOKIE_SECURE = True
-    CSRF_COOKIE_SECURE = True
+    SECURE_HSTS_SECONDS = _safe_int_env("DJANGO_SECURE_HSTS_SECONDS", 1800)
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = SECURE_HSTS_SECONDS > 0
+    SECURE_SSL_REDIRECT = _safe_bool_env("DJANGO_SECURE_SSL_REDIRECT", True)
+    SESSION_COOKIE_SECURE = _safe_bool_env("DJANGO_SESSION_COOKIE_SECURE", True)
+    CSRF_COOKIE_SECURE = _safe_bool_env("DJANGO_CSRF_COOKIE_SECURE", True)
     USE_X_FORWARDED_HOST = True
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
     SECURE_CONTENT_TYPE_NOSNIFF = True

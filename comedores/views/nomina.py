@@ -2,13 +2,14 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import Http404
-from django.db.models import Q
+from django.db.models import Count, Q
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, DeleteView, TemplateView, View
 
 from admisiones.models.admisiones import Admision
+from ciudadanos.models import Ciudadano
 from comedores.forms.comedor_form import (
     CiudadanoFormParaNomina,
     NominaExtraForm,
@@ -18,6 +19,8 @@ from comedores.models import Nomina
 from comedores.services.comedor_service import ComedorService
 from comedores.utils import comedor_usa_admision_para_nomina
 from core.soft_delete.view_helpers import SoftDeleteDeleteViewMixin
+from pwa.models import RegistroAsistenciaNominaPWA
+from pwa.utils import parse_periodo_referencia
 
 
 def _get_nomina_scoped_or_404(pk, user):
@@ -52,6 +55,46 @@ def _get_admision_del_comedor_or_404(comedor_pk, admision_pk, user):
 
 def _get_cantidad_asistentes_activos(rangos):
     return (rangos or {}).get("cantidad_activos") or 0
+
+
+def _get_asistencia_nomina_context(request, *, admision_id=None, comedor_id=None):
+    registros = RegistroAsistenciaNominaPWA.objects.filter(
+        periodicidad=RegistroAsistenciaNominaPWA.PERIODICIDAD_MENSUAL,
+        nomina__deleted_at__isnull=True,
+    )
+    if admision_id:
+        registros = registros.filter(nomina__admision_id=admision_id)
+    elif comedor_id:
+        registros = registros.filter(
+            nomina__comedor_id=comedor_id, nomina__admision__isnull=True
+        )
+
+    periodos = list(
+        registros.values("periodo_referencia")
+        .annotate(total_asistentes=Count("id"))
+        .order_by("-periodo_referencia")
+    )
+    periodo_seleccionado = parse_periodo_referencia(request.GET.get("periodo"))
+
+    asistentes = []
+    if periodo_seleccionado:
+        asistentes = list(
+            registros.filter(periodo_referencia=periodo_seleccionado)
+            .select_related(
+                "nomina",
+                "nomina__ciudadano",
+                "nomina__ciudadano__sexo",
+                "tomado_por",
+            )
+            .order_by("nomina__ciudadano__apellido", "nomina__ciudadano__nombre", "id")
+        )
+
+    return {
+        "asistencia_periodos": periodos,
+        "asistencia_periodo_seleccionado": periodo_seleccionado,
+        "asistencia_asistentes": asistentes,
+        "asistencia_total": len(asistentes),
+    }
 
 
 @login_required
@@ -110,6 +153,29 @@ class NominaDetailView(LoginRequiredMixin, TemplateView):
         return context
 
 
+class NominaAsistenciaHistorialView(LoginRequiredMixin, TemplateView):
+    template_name = "comedor/nomina_asistencia_historial.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        admision = _get_admision_del_comedor_or_404(
+            self.kwargs["pk"],
+            self.kwargs["admision_pk"],
+            self.request.user,
+        )
+        context.update(
+            {
+                "object": admision.comedor,
+                "admision_pk": admision.pk,
+                **_get_asistencia_nomina_context(
+                    self.request,
+                    admision_id=admision.pk,
+                ),
+            }
+        )
+        return context
+
+
 class NominaCreateView(LoginRequiredMixin, CreateView):
     model = Nomina
     form_class = NominaForm
@@ -138,8 +204,12 @@ class NominaCreateView(LoginRequiredMixin, CreateView):
         renaper_data = None
         if query:
             ciudadanos = ComedorService.buscar_ciudadanos_por_documento(query)
+            # RENAPER se consulta cuando no existe ningún ciudadano validado con ese
+            # DNI. Si todos los encontrados están en revisión manual, se consulta
+            # igual para permitir pre-cargar datos y contrastar con el registro previo.
+            hay_validado = any(not c.requiere_revision_manual for c in ciudadanos)
             if (
-                not ciudadanos
+                not hay_validado
                 and query_clean.isdigit()
                 and len(query_clean) >= 7
                 and not form_ciudadano
@@ -164,11 +234,14 @@ class NominaCreateView(LoginRequiredMixin, CreateView):
         renaper_precarga = bool(renaper_data) or (
             self.request.POST.get("origen_dato") == "renaper"
         )
+        no_resultados = bool(query) and not ciudadanos
+        mostrar_form_ciudadano = bool(query) and (no_resultados or bool(renaper_data))
 
         context.update(
             {
                 "ciudadanos": ciudadanos,
-                "no_resultados": bool(query) and not ciudadanos,
+                "no_resultados": no_resultados,
+                "mostrar_form_ciudadano": mostrar_form_ciudadano,
                 "form_ciudadano": form_ciudadano,
                 "form_nomina_extra": kwargs.get("form_nomina_extra")
                 or NominaExtraForm(),
@@ -208,6 +281,21 @@ class NominaCreateView(LoginRequiredMixin, CreateView):
         ciudadano_id = request.POST.get("ciudadano_id")
 
         if ciudadano_id:
+            # Validación server-side: no se puede agregar a un ciudadano en revisión.
+            try:
+                _c = Ciudadano.objects.only("requiere_revision_manual").get(
+                    pk=ciudadano_id
+                )
+                if _c.requiere_revision_manual:
+                    messages.error(
+                        request,
+                        "Este ciudadano tiene identidad pendiente de revisión "
+                        "y no puede ser agregado a la nómina.",
+                    )
+                    return redirect(self.get_success_url())
+            except Ciudadano.DoesNotExist:
+                pass
+
             # Agregar ciudadano existente
             form_nomina_extra = NominaExtraForm(request.POST)
 
@@ -408,8 +496,9 @@ class NominaDirectaCreateView(LoginRequiredMixin, CreateView):
         renaper_data = None
         if query:
             ciudadanos = ComedorService.buscar_ciudadanos_por_documento(query)
+            hay_validado = any(not c.requiere_revision_manual for c in ciudadanos)
             if (
-                not ciudadanos
+                not hay_validado
                 and query_clean.isdigit()
                 and len(query_clean) >= 7
                 and not form_ciudadano
@@ -437,11 +526,14 @@ class NominaDirectaCreateView(LoginRequiredMixin, CreateView):
         renaper_precarga = bool(renaper_data) or (
             self.request.POST.get("origen_dato") == "renaper"
         )
+        no_resultados = bool(query) and not ciudadanos
+        mostrar_form_ciudadano = bool(query) and (no_resultados or bool(renaper_data))
 
         context.update(
             {
                 "ciudadanos": ciudadanos,
-                "no_resultados": bool(query) and not ciudadanos,
+                "no_resultados": no_resultados,
+                "mostrar_form_ciudadano": mostrar_form_ciudadano,
                 "form_ciudadano": form_ciudadano,
                 "form_nomina_extra": kwargs.get("form_nomina_extra")
                 or NominaExtraForm(),
@@ -458,6 +550,20 @@ class NominaDirectaCreateView(LoginRequiredMixin, CreateView):
         ciudadano_id = request.POST.get("ciudadano_id")
 
         if ciudadano_id:
+            try:
+                _c = Ciudadano.objects.only("requiere_revision_manual").get(
+                    pk=ciudadano_id
+                )
+                if _c.requiere_revision_manual:
+                    messages.error(
+                        request,
+                        "Este ciudadano tiene identidad pendiente de revisión "
+                        "y no puede ser agregado a la nómina.",
+                    )
+                    return redirect(self.get_success_url())
+            except Ciudadano.DoesNotExist:
+                pass
+
             form_nomina_extra = NominaExtraForm(request.POST)
             if not form_nomina_extra.is_valid():
                 messages.error(

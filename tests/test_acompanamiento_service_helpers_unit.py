@@ -3,6 +3,7 @@
 from contextlib import nullcontext
 from datetime import date, datetime
 from types import SimpleNamespace
+from unittest.mock import call
 
 from acompanamientos.acompanamiento_service import AcompanamientoService
 
@@ -380,6 +381,9 @@ def test_importar_datos_desde_admision_ok(mocker):
     informe_tecnico = SimpleNamespace(
         fecha_vencimiento_mandatos=date(2026, 1, 1),
         if_relevamiento="IF-1",
+        aprobadas_desayuno_lunes=3,
+        aprobadas_merienda_lunes=1,
+        aprobadas_almuerzo_martes=2,
     )
     mocker.patch(
         "acompanamientos.acompanamiento_service.InformeTecnico.objects.filter",
@@ -411,16 +415,6 @@ def test_importar_datos_desde_admision_ok(mocker):
         comedor=SimpleNamespace(pk=10),
         num_expediente="EX-1",
         numero_disposicion="DISP-1",
-        prestaciones=SimpleNamespace(
-            all=lambda: [
-                SimpleNamespace(
-                    dia="lunes", desayuno=1, almuerzo=2, merienda=0, cena=0
-                ),
-                SimpleNamespace(
-                    dia="martes", desayuno=0, almuerzo=1, merienda=1, cena=0
-                ),
-            ]
-        ),
     )
 
     resultado = AcompanamientoService.importar_datos_desde_admision(admision)
@@ -436,5 +430,22 @@ def test_importar_datos_desde_admision_ok(mocker):
         },
     )
     delete_qs.delete.assert_called_once()
-    assert crear_prestacion.call_count == 2
+    assert crear_prestacion.call_args_list == [
+        call(
+            acompanamiento=acompanamiento,
+            dia="lunes",
+            desayuno=True,
+            almuerzo=False,
+            merienda=True,
+            cena=False,
+        ),
+        call(
+            acompanamiento=acompanamiento,
+            dia="martes",
+            desayuno=False,
+            almuerzo=True,
+            merienda=False,
+            cena=False,
+        ),
+    ]
     hitos_get_or_create.assert_called_once_with(acompanamiento=acompanamiento)

@@ -4,8 +4,10 @@
 
 from rest_framework import serializers
 from django.core.exceptions import DisallowedHost
+from django.urls import reverse
 
-from comedores.models import Comedor, Nomina
+from comedores.models import Comedor, ComedorDatosConvenioPnud, Nomina
+from comedores.services.comedor_service import ComedorService
 from core.models import Localidad, Municipio, Provincia
 from duplas.models import Dupla
 from organizaciones.models import Organizacion
@@ -103,6 +105,7 @@ class ComedorDetailSerializer(serializers.ModelSerializer):
     rendiciones_mensuales = serializers.SerializerMethodField()
     programa_changes = serializers.SerializerMethodField()
     relevamiento_actual_mobile = serializers.SerializerMethodField()
+    datos_convenio_mobile = serializers.SerializerMethodField()
 
     class Meta:
         model = Comedor
@@ -146,6 +149,7 @@ class ComedorDetailSerializer(serializers.ModelSerializer):
             "rendiciones_mensuales",
             "programa_changes",
             "relevamiento_actual_mobile",
+            "datos_convenio_mobile",
         )
 
     def _absolute_url(self, file_field):
@@ -187,7 +191,11 @@ class ComedorDetailSerializer(serializers.ModelSerializer):
     def get_imagenes(self, obj):
         imagenes = getattr(obj, "imagenes_optimized", None) or obj.imagenes.all()
         return [
-            {"id": imagen.id, "url": self._absolute_url(imagen.imagen)}
+            {
+                "id": imagen.id,
+                "url": self._absolute_url(imagen.imagen),
+                "origen": getattr(imagen, "origen", "web"),
+            }
             for imagen in imagenes
         ]
 
@@ -967,6 +975,103 @@ class ComedorDetailSerializer(serializers.ModelSerializer):
             "sections": self._build_relevamiento_mobile_sections(relevamiento, items),
         }
 
+    @staticmethod
+    def _build_domicilio_convenio(obj):
+        domicilio_partes = []
+        if obj.calle:
+            calle_numero = obj.calle
+            if obj.numero:
+                calle_numero = f"{calle_numero} {obj.numero}"
+            domicilio_partes.append(calle_numero)
+        if obj.barrio:
+            domicilio_partes.append(obj.barrio)
+        if obj.localidad:
+            domicilio_partes.append(obj.localidad.nombre)
+        if obj.municipio:
+            domicilio_partes.append(obj.municipio.nombre)
+        if obj.provincia:
+            domicilio_partes.append(obj.provincia.nombre)
+        return ", ".join(domicilio_partes) if domicilio_partes else None
+
+    @staticmethod
+    def _build_estado_convenio(obj):
+        ultimo_estado = getattr(obj, "ultimo_estado", None)
+        if not ultimo_estado or not ultimo_estado.estado_general:
+            return None, None
+
+        estado_general = ultimo_estado.estado_general
+        estado_actividad = estado_general.estado_actividad
+        estado_proceso = estado_general.estado_proceso
+        return (
+            estado_actividad.estado if estado_actividad else None,
+            estado_proceso.estado if estado_proceso else None,
+        )
+
+    def _get_datos_convenio_pnud(self, obj):
+        datos_pnud = getattr(obj, "datos_convenio_pnud", None)
+        if datos_pnud is None:
+            datos_pnud = ComedorDatosConvenioPnud.objects.filter(comedor=obj).first()
+
+        estado_general, subestado = self._build_estado_convenio(obj)
+        return {
+            "tipo": "pnud",
+            "organizacion_solicitante": (
+                obj.organizacion.nombre if obj.organizacion_id else None
+            ),
+            "codigo_proyecto": obj.codigo_de_proyecto,
+            "monto_total_conveniado": (
+                datos_pnud.monto_total_conveniado if datos_pnud else None
+            ),
+            "nro_convenio": datos_pnud.nro_convenio if datos_pnud else None,
+            "estado_general": estado_general,
+            "subestado": subestado,
+            "nombre_espacio_comunitario": obj.nombre,
+            "id_externo": obj.id_externo,
+            "domicilio_completo_espacio": self._build_domicilio_convenio(obj),
+            "monto_total_convenio_por_espacio": (
+                datos_pnud.monto_total_convenio_por_espacio if datos_pnud else None
+            ),
+            "prestaciones_financiadas_mensuales": (
+                datos_pnud.prestaciones_financiadas_mensuales if datos_pnud else None
+            ),
+            "personas_conveniadas": (
+                datos_pnud.personas_conveniadas if datos_pnud else None
+            ),
+            "cantidad_modulos": datos_pnud.cantidad_modulos if datos_pnud else None,
+        }
+
+    @staticmethod
+    def _get_datos_convenio_alimentar(obj):
+        presupuestos = ComedorService.get_presupuestos(obj.id)
+        prestaciones_mensuales = presupuestos[0]
+        monto_prestacion_mensual = presupuestos[5]
+        return {
+            "tipo": "alimentar_comunidad",
+            "vigencia_convenio_meses": 6,
+            # Campos legados (compatibilidad mobile existente)
+            "prestaciones_gescom_total_mensual": prestaciones_mensuales,
+            "monto_total_convenio": monto_prestacion_mensual,
+            # Campos explícitos alineados con web (acordeón Prestaciones)
+            "prestaciones_mensuales": prestaciones_mensuales,
+            "monto_prestacion_mensual": monto_prestacion_mensual,
+        }
+
+    def get_datos_convenio_mobile(self, obj):
+        programa_nombre = (
+            getattr(getattr(obj, "programa", None), "nombre", "") or ""
+        ).strip()
+        programa_nombre_lc = programa_nombre.lower()
+        is_pnud = obj.programa_id in (3, 4) or "pnud" in programa_nombre_lc
+        is_alimentar = programa_nombre_lc == "alimentar comunidad"
+
+        if is_pnud:
+            return self._get_datos_convenio_pnud(obj)
+
+        if is_alimentar:
+            return self._get_datos_convenio_alimentar(obj)
+
+        return {"tipo": "otro"}
+
 
 APROBADAS_FIELDS = tuple(
     f"aprobadas_{tipo}_{dia}"
@@ -1147,6 +1252,9 @@ class ComprobanteRendicionSerializer(serializers.ModelSerializer):
 
 class RendicionMensualListSerializer(serializers.ModelSerializer):
     estado_label = serializers.CharField(source="get_estado_display", read_only=True)
+    linea_programatica_label = serializers.CharField(
+        source="get_linea_programatica_display", read_only=True
+    )
     periodo_inicio = serializers.DateField(read_only=True)
     periodo_fin = serializers.DateField(read_only=True)
     periodo_label = serializers.SerializerMethodField()
@@ -1162,6 +1270,8 @@ class RendicionMensualListSerializer(serializers.ModelSerializer):
             "periodo_inicio",
             "periodo_fin",
             "periodo_label",
+            "linea_programatica",
+            "linea_programatica_label",
             "estado",
             "estado_label",
             "documento_adjunto",
@@ -1184,18 +1294,44 @@ class RendicionMensualDetailSerializer(RendicionMensualListSerializer):
         source="archivos_adjuntos", many=True, read_only=True
     )
     documentacion = serializers.SerializerMethodField()
+    modelos = serializers.SerializerMethodField()
 
     class Meta(RendicionMensualListSerializer.Meta):
         fields = RendicionMensualListSerializer.Meta.fields + (
             "comprobantes",
             "documentacion",
+            "modelos",
         )
+
+    def _build_modelo_payload(self, obj, modelo):
+        request = self.context.get("request")
+        url = reverse(
+            "api-comedor-descargar-modelo-rendicion",
+            kwargs={
+                "pk": obj.comedor_id,
+                "linea_programatica": obj.linea_programatica,
+                "modelo_codigo": modelo["codigo"],
+            },
+        )
+        return {
+            **modelo,
+            "url": request.build_absolute_uri(url) if request else url,
+        }
+
+    def get_modelos(self, obj):
+        return [
+            self._build_modelo_payload(obj, modelo)
+            for modelo in DocumentacionAdjunta.modelos_descargables(
+                obj.linea_programatica
+            )
+        ]
 
     def get_documentacion(self, obj):
         grouped = RendicionCuentaMensualService.obtener_resumen_documentacion(obj)
         serializer_context = {"request": self.context.get("request")}
         payload = []
-        for categoria in DocumentacionAdjunta.categorias_mobile():
+        for categoria in DocumentacionAdjunta.categorias_mobile(obj.linea_programatica):
+            modelo = categoria.get("modelo")
             payload.append(
                 {
                     "codigo": categoria["codigo"],
@@ -1203,6 +1339,9 @@ class RendicionMensualDetailSerializer(RendicionMensualListSerializer):
                     "required": categoria["required"],
                     "multiple": categoria["multiple"],
                     "order": categoria["order"],
+                    "modelo": (
+                        self._build_modelo_payload(obj, modelo) if modelo else None
+                    ),
                     "archivos": ComprobanteRendicionSerializer(
                         grouped.get(categoria["codigo"], []),
                         many=True,
@@ -1218,6 +1357,10 @@ class RendicionMensualCreateSerializer(NoSaveSerializer):
     numero_rendicion = serializers.IntegerField(min_value=1)
     periodo_inicio = serializers.DateField()
     periodo_fin = serializers.DateField()
+    linea_programatica = serializers.ChoiceField(
+        choices=RendicionCuentaMensual.LINEA_PROGRAMATICA_CHOICES,
+        required=False,
+    )
     observaciones = serializers.CharField(
         required=False,
         allow_blank=True,

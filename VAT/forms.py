@@ -8,6 +8,7 @@ from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.db.models import Q
 from django.forms import BaseInlineFormSet, inlineformset_factory
+from django.utils import timezone
 from ciudadanos.models import Ciudadano
 from core.models import Dia, Sexo
 from core.models import Localidad, Programa
@@ -149,7 +150,26 @@ def build_ubicacion_queryset_for_centros(centro_ids, include_ubicacion_ids=None)
     )
 
 
+def build_localidad_queryset_for_centro(centro):
+    queryset = Localidad.objects.order_by("nombre")
+    if centro.municipio_id:
+        municipio_queryset = queryset.filter(municipio_id=centro.municipio_id)
+        if municipio_queryset.exists():
+            return municipio_queryset
+    if centro.provincia_id:
+        return queryset.filter(municipio__provincia_id=centro.provincia_id)
+    return queryset
+
+
 class ReferenteModelChoiceField(forms.ModelChoiceField):
+    def label_from_instance(self, obj):
+        full_name = f"{obj.first_name} {obj.last_name}".strip()
+        if full_name:
+            return f"{obj.username} - {full_name}"
+        return obj.username
+
+
+class UserModelMultipleChoiceField(forms.ModelMultipleChoiceField):
     def label_from_instance(self, obj):
         full_name = f"{obj.first_name} {obj.last_name}".strip()
         if full_name:
@@ -197,6 +217,7 @@ NORMATIVA_ANIO_CHOICES = [("", "Seleccionar año...")] + [
 
 NORMATIVA_STORAGE_SEPARATOR = " || "
 REFERENTE_GROUP_NAMES = ("CFP",)
+REVISOR_GROUP_NAMES = ("CFPRevisor",)
 
 
 def _clean_non_empty_text(value, field_label):
@@ -323,6 +344,19 @@ def _assign_contact_type_and_value(instance, cleaned_data):
 
 
 class CentroForm(forms.ModelForm):
+    referentes = UserModelMultipleChoiceField(
+        queryset=User.objects.none(),
+        label="Referente/s",
+        required=False,
+        widget=forms.SelectMultiple(attrs={"class": "form-control"}),
+    )
+    revisores = UserModelMultipleChoiceField(
+        queryset=User.objects.none(),
+        label="Usuario Revisor",
+        required=False,
+        widget=forms.SelectMultiple(attrs={"class": "form-control"}),
+    )
+
     class Meta:
         model = Centro
         fields = [
@@ -346,6 +380,8 @@ class CentroForm(forms.ModelForm):
             "apellido_referente",
             "telefono_referente",
             "correo_referente",
+            "referentes",
+            "revisores",
             "referente",
             "activo",
             "tipo_gestion",
@@ -356,21 +392,52 @@ class CentroForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.fields["referente"].queryset = (
+        referente_queryset = (
             User.objects.filter(groups__name__in=REFERENTE_GROUP_NAMES)
             .only("id", "username", "first_name", "last_name")
             .distinct()
         )
-        self.fields["referente"].error_messages[
-            "invalid_choice"
-        ] = "El referente seleccionado debe tener un rol valido de referente VAT."
+        revisor_queryset = (
+            User.objects.filter(groups__name__in=REVISOR_GROUP_NAMES)
+            .only("id", "username", "first_name", "last_name")
+            .distinct()
+        )
+        self.fields["referentes"].queryset = referente_queryset
+        self.fields["referente"].queryset = referente_queryset
+        self.fields["revisores"].queryset = revisor_queryset
+        referente_error = (
+            "El referente seleccionado debe tener un rol valido de referente VAT."
+        )
+        revisor_error = (
+            "El revisor seleccionado debe tener un rol valido de revisor VAT."
+        )
+        self.fields["referentes"].error_messages["invalid_choice"] = referente_error
+        self.fields["referente"].error_messages["invalid_choice"] = referente_error
+        self.fields["revisores"].error_messages["invalid_choice"] = revisor_error
+        if self.instance.pk:
+            referentes_ids = list(self.instance.referentes.values_list("pk", flat=True))
+            if not referentes_ids and self.instance.referente_id:
+                referentes_ids = [self.instance.referente_id]
+            self.initial.setdefault("referentes", referentes_ids)
+            self.initial.setdefault(
+                "revisores",
+                list(self.instance.revisores.values_list("pk", flat=True)),
+            )
         self.referente_search_options = [
             {
                 "id": str(user.pk),
                 "username": user.username,
-                "label": self.fields["referente"].label_from_instance(user),
+                "label": self.fields["referentes"].label_from_instance(user),
             }
-            for user in self.fields["referente"].queryset.order_by("username")
+            for user in referente_queryset.order_by("username")
+        ]
+        self.revisor_search_options = [
+            {
+                "id": str(user.pk),
+                "username": user.username,
+                "label": self.fields["revisores"].label_from_instance(user),
+            }
+            for user in revisor_queryset.order_by("username")
         ]
 
     def clean_referente(self):
@@ -383,6 +450,47 @@ class CentroForm(forms.ModelForm):
                 "El referente seleccionado debe tener un rol valido de referente VAT."
             )
         return referente
+
+    def clean_referentes(self):
+        referentes = self.cleaned_data.get("referentes")
+        if (
+            referentes
+            and referentes.exclude(groups__name__in=REFERENTE_GROUP_NAMES).exists()
+        ):
+            raise ValidationError(
+                "El referente seleccionado debe tener un rol valido de referente VAT."
+            )
+        return referentes
+
+    def clean_revisores(self):
+        revisores = self.cleaned_data.get("revisores")
+        if (
+            revisores
+            and revisores.exclude(groups__name__in=REVISOR_GROUP_NAMES).exists()
+        ):
+            raise ValidationError(
+                "El revisor seleccionado debe tener un rol valido de revisor VAT."
+            )
+        return revisores
+
+    def clean(self):
+        cleaned_data = super().clean()
+        referentes = cleaned_data.get("referentes")
+        legacy_referente = cleaned_data.get("referente")
+        if not referentes and legacy_referente:
+            cleaned_data["referentes"] = User.objects.filter(pk=legacy_referente.pk)
+        if not cleaned_data.get("referentes"):
+            self.add_error("referentes", "Debe seleccionar al menos un referente.")
+        return cleaned_data
+
+    def save(self, commit=True):
+        referentes = list(self.cleaned_data.get("referentes") or [])
+        instance = super().save(commit=False)
+        instance.referente = referentes[0] if referentes else None
+        if commit:
+            instance.save()
+            self.save_m2m()
+        return instance
 
 
 class CentroAltaForm(CentroForm):
@@ -536,9 +644,12 @@ class CentroAltaForm(CentroForm):
             self.fields[hidden_field].widget = forms.HiddenInput()
         self.fields["autoridad_dni"].required = False
         self.fields["autoridad_dni"].widget = forms.HiddenInput()
-        self.fields["referente"].widget.attrs["class"] = "referente-hidden-select"
-        self.fields["referente"].widget.attrs["tabindex"] = "-1"
-        self.fields["referente"].empty_label = "Seleccionar referente..."
+        self.fields["referente"].required = False
+        self.fields["referente"].widget = forms.HiddenInput()
+        self.fields["referentes"].widget.attrs["class"] = "referente-hidden-select"
+        self.fields["referentes"].widget.attrs["tabindex"] = "-1"
+        self.fields["revisores"].widget.attrs["class"] = "referente-hidden-select"
+        self.fields["revisores"].widget.attrs["tabindex"] = "-1"
         self.fields["provincia"].empty_label = "Seleccionar jurisdicción..."
         self.fields["municipio"].empty_label = "Seleccionar municipio..."
         self.fields["localidad"].empty_label = "Seleccionar localidad..."
@@ -1373,6 +1484,22 @@ class InstitucionUbicacionForm(forms.ModelForm):
         widget=forms.Textarea(attrs={"class": "form-control", "rows": 3}),
     )
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        modal_dropdown_parent = "#modalUbicacion .modal-body"
+        self.fields["centro"].widget.attrs.update(
+            {
+                "id": "id_centro_ubicacion",
+                "data-dropdown-parent": modal_dropdown_parent,
+            }
+        )
+        self.fields["localidad"].widget.attrs.update(
+            {
+                "id": "id_localidad_ubicacion",
+                "data-dropdown-parent": modal_dropdown_parent,
+            }
+        )
+
     class Meta:
         model = InstitucionUbicacion
         fields = [
@@ -1432,13 +1559,11 @@ class CursoForm(forms.ModelForm):
             attrs={
                 **_select2_attrs(
                     base_class="form-select",
-                    placeholder="Seleccionar vouchers...",
+                    placeholder="Buscar y elegir vouchers...",
                 ),
-                "size": "7",
-                "style": "min-height: 170px;",
             }
         ),
-        help_text="Seleccioná uno o más vouchers del mismo programa (Ctrl/Cmd + click para selección múltiple).",
+        help_text="Vouchers del mismo programa. Podés elegir uno o varios.",
     )
     costo_creditos = forms.IntegerField(
         label="Costo en créditos",
@@ -2377,3 +2502,224 @@ class VoucherAsignacionMasivaForm(forms.Form):
                 "No se pueden asignar más de 500 vouchers a la vez."
             )
         return dnis
+
+
+# ============================================================================
+# WIZARD - Nueva Comisión de Curso (3 pasos)
+# ============================================================================
+
+
+class ComisionCursoWizardStep1Form(forms.Form):
+    """Paso 1: Información básica de la comisión.
+
+    No es ModelForm para evitar conflictos con el FK curso (lo trae la vista).
+    """
+
+    ubicacion = forms.ModelChoiceField(
+        queryset=InstitucionUbicacion.objects.none(),
+        label="Ubicación",
+        widget=forms.Select(
+            attrs={
+                "class": "form-select sisoc-wizard-input",
+                "data-placeholder": "Selector de sedes y anexos precargados",
+            }
+        ),
+    )
+    cupo_total = forms.IntegerField(
+        label="Cupo total",
+        min_value=5,
+        max_value=100,
+        widget=forms.NumberInput(
+            attrs={
+                "class": "form-control sisoc-wizard-input",
+                "placeholder": "El cupo debe estar entre 5 y 100 estudiantes",
+                "min": "5",
+                "max": "100",
+            }
+        ),
+    )
+    estado = forms.ChoiceField(
+        label="Estado",
+        choices=ComisionCurso.ESTADO_COMISION_CURSO_CHOICES,
+        initial="planificada",
+        widget=forms.Select(attrs={"class": "form-select sisoc-wizard-input"}),
+    )
+    fecha_inicio = forms.DateField(
+        label="Fecha de inicio",
+        widget=forms.DateInput(
+            attrs={
+                "class": "form-control sisoc-wizard-input",
+                "type": "date",
+                "placeholder": "La fecha de inicio debe ser igual o posterior a hoy",
+            }
+        ),
+    )
+    fecha_fin = forms.DateField(
+        label="Fecha de finalización",
+        widget=forms.DateInput(
+            attrs={
+                "class": "form-control sisoc-wizard-input",
+                "type": "date",
+                "placeholder": "La fecha de finalización debe ser posterior a la fecha de inicio",
+            }
+        ),
+    )
+    observaciones = forms.CharField(
+        label="Observaciones",
+        required=False,
+        widget=forms.Textarea(
+            attrs={"class": "form-control sisoc-wizard-input", "rows": 3}
+        ),
+    )
+
+    def __init__(self, *args, **kwargs):
+        self.curso = kwargs.pop("curso", None)
+        super().__init__(*args, **kwargs)
+        if self.curso is not None:
+            self.fields["ubicacion"].queryset = build_ubicacion_queryset_for_centros(
+                [self.curso.centro_id]
+            )
+
+    def clean(self):
+        cleaned = super().clean()
+        fecha_inicio = cleaned.get("fecha_inicio")
+        fecha_fin = cleaned.get("fecha_fin")
+        if fecha_inicio and fecha_inicio < timezone.localdate():
+            self.add_error(
+                "fecha_inicio",
+                "La fecha de inicio debe ser igual o posterior a hoy.",
+            )
+        if fecha_inicio and fecha_fin and fecha_fin <= fecha_inicio:
+            self.add_error(
+                "fecha_fin",
+                "La fecha de finalización debe ser posterior a la fecha de inicio.",
+            )
+        return cleaned
+
+
+class ComisionCursoWizardHorarioForm(forms.Form):
+    """Una fila del formset del paso 2."""
+
+    dia_semana = forms.ModelChoiceField(
+        queryset=Dia.objects.all(),
+        label="Día de la semana",
+        widget=forms.Select(
+            attrs={
+                "class": "form-select sisoc-wizard-input",
+                "data-placeholder": "Seleccionar día...",
+            }
+        ),
+    )
+    hora_desde = forms.TimeField(
+        label="Hora inicio",
+        widget=forms.TimeInput(
+            attrs={
+                "class": "form-control sisoc-wizard-input",
+                "type": "time",
+                "placeholder": "--/--",
+            }
+        ),
+    )
+    hora_hasta = forms.TimeField(
+        label="Hora finalización",
+        widget=forms.TimeInput(
+            attrs={
+                "class": "form-control sisoc-wizard-input",
+                "type": "time",
+                "placeholder": "--/--",
+            }
+        ),
+    )
+    vigente = forms.ChoiceField(
+        label="Estado",
+        choices=[("1", "Activo"), ("0", "Inactivo")],
+        initial="1",
+        widget=forms.Select(attrs={"class": "form-select sisoc-wizard-input"}),
+    )
+
+    MIN_DURACION_MINUTOS = 45
+    MAX_DURACION_MINUTOS = 4 * 60
+
+    def clean(self):
+        cleaned = super().clean()
+        hora_desde = cleaned.get("hora_desde")
+        hora_hasta = cleaned.get("hora_hasta")
+        if hora_desde and hora_hasta:
+            if hora_hasta <= hora_desde:
+                self.add_error(
+                    "hora_hasta",
+                    "La hora de finalización debe ser posterior a la hora de inicio.",
+                )
+            else:
+                duracion = (
+                    hora_hasta.hour * 60 + hora_hasta.minute
+                ) - (hora_desde.hour * 60 + hora_desde.minute)
+                if duracion < self.MIN_DURACION_MINUTOS:
+                    self.add_error(
+                        "hora_hasta",
+                        "Cada clase debe durar al menos 45 minutos.",
+                    )
+                elif duracion > self.MAX_DURACION_MINUTOS:
+                    self.add_error(
+                        "hora_hasta",
+                        "Cada clase no puede durar más de 4 horas.",
+                    )
+        return cleaned
+
+
+class BaseComisionCursoWizardHorarioFormSet(forms.BaseFormSet):
+    MIN_TOTAL_SEMANAL_MINUTOS = 2 * 60
+
+    def clean(self):
+        super().clean()
+        if any(self.errors):
+            return
+
+        horarios_validos = []
+        for form in self.forms:
+            if not form.cleaned_data or form.cleaned_data.get("DELETE"):
+                continue
+            horarios_validos.append(form.cleaned_data)
+
+        if not horarios_validos:
+            raise forms.ValidationError(
+                "Debés definir al menos un horario para la comisión."
+            )
+
+        dias_vistos = set()
+        for horario in horarios_validos:
+            dia = horario.get("dia_semana")
+            if dia in dias_vistos:
+                raise forms.ValidationError(
+                    "No puede haber dos horarios para el mismo día de la semana."
+                )
+            dias_vistos.add(dia)
+
+        total_minutos = 0
+        for horario in horarios_validos:
+            inicio = horario.get("hora_desde")
+            fin = horario.get("hora_hasta")
+            if inicio and fin:
+                total_minutos += (
+                    fin.hour * 60 + fin.minute
+                ) - (inicio.hour * 60 + inicio.minute)
+        if total_minutos < self.MIN_TOTAL_SEMANAL_MINUTOS:
+            raise forms.ValidationError(
+                "El total semanal debe ser de al menos 2 horas."
+            )
+
+
+ComisionCursoWizardStep2FormSet = forms.formset_factory(
+    ComisionCursoWizardHorarioForm,
+    formset=BaseComisionCursoWizardHorarioFormSet,
+    extra=1,
+    can_delete=True,
+    min_num=1,
+    validate_min=True,
+)
+
+
+class ComisionCursoWizardStep3Form(forms.Form):
+    """Paso 3 - confirmación. Sin campos: sólo se renderiza el resumen."""
+
+    pass

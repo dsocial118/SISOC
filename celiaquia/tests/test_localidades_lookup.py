@@ -7,7 +7,7 @@ from django.contrib.auth.models import Group, User
 from django.test.utils import CaptureQueriesContext
 
 from core.models import Provincia, Municipio, Localidad
-from users.models import Profile
+from users.models import Profile, ProfileTerritorialScope
 
 
 @pytest.mark.django_db
@@ -94,3 +94,33 @@ def test_localidades_lookup_uses_single_localidad_query_for_provincia_filter(cli
         if "core_localidad" in query["sql"].lower()
     ]
     assert len(localidad_queries) == 1
+
+
+@pytest.mark.django_db
+def test_localidades_lookup_respeta_scope_localidad(client):
+    prov = Provincia.objects.create(nombre="Buenos Aires Scope")
+    muni = Municipio.objects.create(nombre="La Plata Scope", provincia=prov)
+    loc_visible = Localidad.objects.create(nombre="Scope Norte", municipio=muni)
+    loc_oculta = Localidad.objects.create(nombre="Scope Sur", municipio=muni)
+
+    grupo = Group.objects.create(name="ProvinciaCeliaquia")
+    user = User.objects.create_user(username="prov_loc_scope", password="pass")
+    profile, _ = Profile.objects.get_or_create(user=user)
+    profile.es_usuario_provincial = True
+    profile.provincia = None
+    profile.save()
+    ProfileTerritorialScope.objects.create(
+        profile=profile,
+        provincia=prov,
+        municipio=muni,
+        localidad=loc_visible,
+    )
+    user.groups.add(grupo)
+    client.force_login(user)
+
+    resp = client.get(reverse("expediente_localidades_lookup"), {"provincia": prov.id})
+    data = resp.json()
+
+    assert resp.status_code == 200
+    assert {item["localidad_id"] for item in data} == {loc_visible.id}
+    assert loc_oculta.id not in {item["localidad_id"] for item in data}

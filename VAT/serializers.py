@@ -3,6 +3,7 @@
 from datetime import date
 import json
 
+from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import transaction
 from rest_framework import serializers
@@ -43,9 +44,20 @@ from core.models import Provincia, Municipio, Localidad
 
 
 class CentroSerializer(serializers.ModelSerializer):
+    referente = serializers.PrimaryKeyRelatedField(
+        queryset=get_user_model().objects.filter(groups__name="CFP").distinct(),
+        allow_null=True,
+        required=False,
+    )
     referente_nombre = serializers.CharField(
         source="referente.get_full_name", read_only=True
     )
+    referentes = serializers.PrimaryKeyRelatedField(
+        many=True,
+        queryset=get_user_model().objects.filter(groups__name="CFP").distinct(),
+        required=False,
+    )
+    referentes_nombres = serializers.SerializerMethodField()
     provincia_nombre = serializers.CharField(source="provincia.nombre", read_only=True)
     municipio_nombre = serializers.CharField(source="municipio.nombre", read_only=True)
     localidad_nombre = serializers.CharField(source="localidad.nombre", read_only=True)
@@ -57,6 +69,8 @@ class CentroSerializer(serializers.ModelSerializer):
             "nombre",
             "referente",
             "referente_nombre",
+            "referentes",
+            "referentes_nombres",
             "codigo",
             "activo",
             "provincia",
@@ -75,6 +89,32 @@ class CentroSerializer(serializers.ModelSerializer):
             "clase_institucion",
             "situacion",
         ]
+
+    def get_referentes_nombres(self, obj):
+        referentes = list(obj.referentes.all())
+        if not referentes and obj.referente_id:
+            referentes = [obj.referente]
+        return [
+            referente.get_full_name() or referente.username for referente in referentes
+        ]
+
+    def _sync_legacy_referente(self, instance):
+        first_referente = instance.referentes.order_by("id").first()
+        if first_referente is None and instance.referente_id:
+            instance.referentes.add(instance.referente)
+            first_referente = instance.referente
+        if first_referente and instance.referente_id != first_referente.pk:
+            instance.referente = first_referente
+            instance.save(update_fields=["referente"])
+        return instance
+
+    def create(self, validated_data):
+        instance = super().create(validated_data)
+        return self._sync_legacy_referente(instance)
+
+    def update(self, instance, validated_data):
+        instance = super().update(instance, validated_data)
+        return self._sync_legacy_referente(instance)
 
 
 class ProvinciaSerializer(serializers.ModelSerializer):
@@ -542,6 +582,8 @@ class CursoBusquedaCentroSerializer(serializers.ModelSerializer):
     referente_nombre = serializers.CharField(
         source="referente.get_full_name", read_only=True
     )
+    referentes = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
+    referentes_nombres = serializers.SerializerMethodField()
     provincia = ProvinciaSerializer(read_only=True)
     ciudad = CursoBusquedaCiudadSerializer(source="*", read_only=True)
 
@@ -552,6 +594,8 @@ class CursoBusquedaCentroSerializer(serializers.ModelSerializer):
             "nombre",
             "referente",
             "referente_nombre",
+            "referentes",
+            "referentes_nombres",
             "codigo",
             "activo",
             "provincia",
@@ -564,6 +608,14 @@ class CursoBusquedaCentroSerializer(serializers.ModelSerializer):
             "tipo_gestion",
             "clase_institucion",
             "situacion",
+        ]
+
+    def get_referentes_nombres(self, obj):
+        referentes = list(obj.referentes.all())
+        if not referentes and obj.referente_id:
+            referentes = [obj.referente]
+        return [
+            referente.get_full_name() or referente.username for referente in referentes
         ]
 
 
@@ -1371,6 +1423,13 @@ class VatPlainSerializer(serializers.Serializer):
 
     def update(self, instance, validated_data):
         return instance
+
+
+class VatWebVoucherEstadoSerializer(VatPlainSerializer):
+    documento = serializers.CharField()
+    estado = serializers.CharField()
+    tiene_voucher = serializers.BooleanField()
+    esta_inscripto = serializers.BooleanField()
 
 
 class VatWebInscripcionBaseSerializer(VatPlainSerializer):

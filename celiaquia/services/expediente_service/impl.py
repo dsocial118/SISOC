@@ -4,6 +4,7 @@ from functools import lru_cache
 from django.db import transaction
 from django.core.exceptions import ValidationError
 from django.contrib.auth import get_user_model
+from django.utils import timezone
 from celiaquia.models import EstadoExpediente, Expediente, ExpedienteEstadoHistorial
 from celiaquia.services.importacion_service import ImportacionService
 from celiaquia.services.legajo_service import LegajoService
@@ -162,6 +163,9 @@ class ExpedienteService:
             observaciones=datos_metadatos.get("observaciones", ""),
             excel_masivo=excel_masivo,
         )
+        if excel_masivo:
+            create_kwargs["excel_masivo_cargado_por"] = usuario_provincia
+            create_kwargs["excel_masivo_cargado_en"] = timezone.now()
         try:
             if hasattr(Expediente, "provincia_id"):
                 create_kwargs["provincia_id"] = getattr(
@@ -203,6 +207,15 @@ class ExpedienteService:
             observaciones=_build_observaciones_importacion(result),
         )
         logger.info("Expediente %s pasó a estado EN_ESPERA", expediente.pk)
+
+        expediente.excel_masivo_procesado_por = usuario
+        expediente.excel_masivo_procesado_en = timezone.now()
+        expediente.save(
+            update_fields=[
+                "excel_masivo_procesado_por",
+                "excel_masivo_procesado_en",
+            ]
+        )
 
         return {
             "creados": result.get("validos", 0),

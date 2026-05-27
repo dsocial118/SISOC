@@ -1,8 +1,10 @@
 from .comedor import (
     ComedorCreateView,
+    ComedorDatosConvenioPnudUpdateView,
     ComedorDeleteView,
     ComedorDetailView,
     ComedorListView,
+    ComedorTransaccionesDetailView,
     ComedorUpdateView,
 )
 from .colaborador import (
@@ -12,6 +14,7 @@ from .colaborador import (
 )
 from .dupla import AsignarDuplaListView
 from .nomina import (
+    NominaAsistenciaHistorialView,
     NominaCreateView,
     NominaDeleteView,
     NominaDetailView,
@@ -31,6 +34,12 @@ from .observacion import (
 from .relevamientos import relevamiento_crear_editar_ajax
 from .validacion import validar_comedor
 from .capacitaciones import capacitacion_certificado_estado_ajax
+from .cursos_app_mobile import (
+    CursoAppMobileCreateView,
+    CursoAppMobileDeleteView,
+    CursoAppMobileListView,
+    CursoAppMobileUpdateView,
+)
 
 __all__ = [
     "AsignarDuplaListView",
@@ -38,11 +47,14 @@ __all__ = [
     "ColaboradorEspacioDeleteView",
     "ColaboradorEspacioUpdateView",
     "ComedorCreateView",
+    "ComedorDatosConvenioPnudUpdateView",
     "ComedorDeleteView",
     "ComedorDetailView",
     "ComedorListView",
+    "ComedorTransaccionesDetailView",
     "ComedorUpdateView",
     "NominaCreateView",
+    "NominaAsistenciaHistorialView",
     "NominaDeleteView",
     "NominaDetailView",
     "NominaDirectaCreateView",
@@ -57,5 +69,9 @@ __all__ = [
     "nomina_editar_ajax",
     "relevamiento_crear_editar_ajax",
     "capacitacion_certificado_estado_ajax",
+    "CursoAppMobileCreateView",
+    "CursoAppMobileDeleteView",
+    "CursoAppMobileListView",
+    "CursoAppMobileUpdateView",
     "validar_comedor",
 ]

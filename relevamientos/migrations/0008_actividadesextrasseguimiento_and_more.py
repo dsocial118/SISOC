@@ -9,10 +9,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ("comedores", "0036_capacitacion_comedor_certificado"),
-        (
-            "relevamientos",
-            "0006_alter_relevamiento_managers_relevamiento_deleted_at_and_more",
-        ),
+        ("relevamientos", "0007_relevamiento_numero_if"),
     ]
 
     operations = [

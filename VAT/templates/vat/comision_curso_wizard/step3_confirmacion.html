@@ -1,0 +1,115 @@
+{% extends "vat/comision_curso_wizard/_base.html" %}
+
+
+
+{% block wizard_step %}
+    <div class="sisoc-wizard-card">
+        <div class="sisoc-wizard-card-header">
+            <i class="fas fa-check-circle"></i>
+            <span>Confirmación final</span>
+        </div>
+        <div class="sisoc-wizard-card-body">
+            <p class="sisoc-wizard-intro">
+                Revise todos los datos antes de guardar. Una vez confirmado, la comisión quedará registrada en el sistema.
+            </p>
+        </div>
+    </div>
+
+    <div class="sisoc-wizard-summary-card">
+        <div class="sisoc-wizard-summary-header">
+            <i class="fas fa-graduation-cap"></i>
+            <span>Curso - Nuevo</span>
+        </div>
+        <div class="sisoc-wizard-summary-body">
+            <div class="sisoc-wizard-summary-cell">
+                <span class="label">Nombre del curso</span>
+                <span class="value">{{ curso.nombre|default:"-" }}</span>
+            </div>
+            <div class="sisoc-wizard-summary-cell">
+                <span class="label">Plan curricular</span>
+                <span class="value">{{ curso.plan_estudio|default:"-" }}</span>
+            </div>
+            <div class="sisoc-wizard-summary-cell">
+                <span class="label">Código</span>
+                <span class="value">{{ curso.id|stringformat:"011d" }}</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="sisoc-wizard-summary-card">
+        <div class="sisoc-wizard-summary-header">
+            <i class="fas fa-book"></i>
+            <span>Comisión</span>
+        </div>
+        <div class="sisoc-wizard-summary-body">
+            <div class="sisoc-wizard-summary-cell">
+                <span class="label">Ubicación</span>
+                <span class="value">{{ step1_data.ubicacion|default:"Sede u Anexos" }}</span>
+            </div>
+            <div class="sisoc-wizard-summary-cell">
+                <span class="label">Período</span>
+                <span class="value">
+                    {% if step1_data.fecha_inicio and step1_data.fecha_fin %}
+                        {{ step1_data.fecha_inicio|date:"d/m/Y" }} - {{ step1_data.fecha_fin|date:"d/m/Y" }}
+                    {% else %}
+                        -
+                    {% endif %}
+                </span>
+            </div>
+            <div class="sisoc-wizard-summary-cell">
+                <span class="label">Cupo</span>
+                <span class="value">{{ step1_data.cupo_total|default:"00" }}</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="sisoc-wizard-summary-card">
+        <div class="sisoc-wizard-summary-header">
+            <i class="fas fa-clock"></i>
+            <span>Horarios</span>
+        </div>
+        <div class="sisoc-wizard-summary-body sisoc-wizard-summary-body--horarios">
+            <div class="sisoc-wizard-horarios-list">
+                {% for fila in horarios_resumen %}
+                    <div class="sisoc-wizard-horarios-item">
+                        <div class="sisoc-wizard-horarios-day">{{ fila.dia }}</div>
+                        <div class="sisoc-wizard-horarios-time">{{ fila.hora_desde|time:"H:i" }} a {{ fila.hora_hasta|time:"H:i" }}</div>
+                    </div>
+                {% endfor %}
+            </div>
+            <div class="sisoc-wizard-horarios-list">
+                {% for fila in horarios_resumen %}
+                    <div class="sisoc-wizard-horarios-item">
+                        <div class="sisoc-wizard-horarios-meta-label">Duración</div>
+                        <div class="sisoc-wizard-horarios-meta-value">{{ fila.duracion }}</div>
+                    </div>
+                {% endfor %}
+            </div>
+            <div class="sisoc-wizard-horarios-list">
+                {% for fila in horarios_resumen %}
+                    <div class="sisoc-wizard-horarios-item">
+                        <div class="sisoc-wizard-horarios-meta-label">Estado</div>
+                        <div class="sisoc-wizard-horarios-meta-value">{{ fila.estado_label }}</div>
+                    </div>
+                {% endfor %}
+            </div>
+            <div class="sisoc-wizard-summary-total sisoc-wizard-summary-total--horarios">
+                <span class="label">Duración total semanal</span>
+                <span class="value">{{ horarios_total_label }}</span>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block wizard_buttons %}
+    <button type="submit"
+            name="wizard_goto_step"
+            value="horarios"
+            class="sisoc-wizard-btn sisoc-wizard-btn--light"
+            formnovalidate>
+        <i class="fas fa-arrow-left"></i> Volver al paso anterior
+    </button>
+    <button type="submit" class="sisoc-wizard-btn sisoc-wizard-btn--success">
+        <i class="fas fa-check-circle"></i> Confirmar y crear comisión
+    </button>
+{% endblock %}

@@ -208,6 +208,9 @@ def test_importacion_helpers_normalizan_dataframe_y_precargas(mocker):
                 return self
             return [x for x in self if x.provincia_id == provincia_id]
 
+        def only(self, *_fields):
+            return self
+
     mocker.patch(
         "celiaquia.services.importacion_service.Municipio.objects.filter",
         return_value=_FakeMunicipiosQS(
@@ -231,6 +234,7 @@ def test_importacion_helpers_normalizan_dataframe_y_precargas(mocker):
 
     precargas = module._precargar_datos_importacion(out, provincia_usuario_id=7)
     assert precargas["municipios_cache"] == {1: 1}
+    assert precargas["municipio_provincia_map"] == {1: 7, 3: 8}
     assert precargas["localidades_cache"] == {2: 2}
     assert precargas["sexos_cache"]["masculino"] == 1
     assert precargas["sexos_cache"]["f"] == 2
@@ -416,15 +420,12 @@ def test_importacion_helpers_payload_row_and_defaults_validation():
         }
     )
 
-    module._aplicar_defaults_y_validar_payload_importacion(
-        payload, provincia_usuario_id=7
-    )
-    assert payload["provincia"] == 7
+    module._aplicar_defaults_y_validar_payload_importacion(payload)
     assert payload["tipo_documento"] == module.Ciudadano.DOCUMENTO_CUIT
 
     with pytest.raises(ValidationError):
         module._aplicar_defaults_y_validar_payload_importacion(
-            {"nombre": "Ana", "documento": "123"}, provincia_usuario_id=None
+            {"nombre": "Ana", "documento": "123"}
         )
 
 
@@ -582,7 +583,7 @@ def test_importacion_helpers_responsable_payload_and_same_document():
     )
 
     assert responsable_payload["tipo_documento"] == module.Ciudadano.DOCUMENTO_CUIT
-    assert responsable_payload["provincia"] == 7
+    assert "provincia" not in responsable_payload
     assert responsable_payload["sexo"] == 2
     assert module._es_mismo_documento_responsable_importacion(payload) is True
 
@@ -606,9 +607,17 @@ def test_importacion_helpers_responsable_enriquecimiento_y_relacion(mocker):
             if "municipio__provincia_id" in kwargs:
                 return self
             if kwargs == {"nombre__iexact": "Rosario"}:
-                return [SimpleNamespace(pk=11, municipio=SimpleNamespace(pk=22))]
+                return [
+                    SimpleNamespace(
+                        pk=11, municipio=SimpleNamespace(pk=22, provincia_id=7)
+                    )
+                ]
             if kwargs == {"nombre__icontains": "Rosario"}:
-                return [SimpleNamespace(pk=11, municipio=SimpleNamespace(pk=22))]
+                return [
+                    SimpleNamespace(
+                        pk=11, municipio=SimpleNamespace(pk=22, provincia_id=7)
+                    )
+                ]
             return []
 
     mocker.patch(
@@ -635,6 +644,7 @@ def test_importacion_helpers_responsable_enriquecimiento_y_relacion(mocker):
     assert responsable_payload["altura"] == "1234"
     assert responsable_payload["localidad"] == 11
     assert responsable_payload["municipio"] == 22
+    assert responsable_payload["provincia"] == 7
     assert responsable_payload["fecha_nacimiento"] == date(2001, 2, 3)
     assert warnings == []
 
@@ -670,7 +680,11 @@ def test_importacion_helpers_resuelve_localidad_responsable_con_parentesis(mocke
             if "municipio__provincia_id" in kwargs:
                 return self
             if kwargs == {"nombre__iexact": "Rosario"}:
-                return [SimpleNamespace(pk=44, municipio=SimpleNamespace(pk=55))]
+                return [
+                    SimpleNamespace(
+                        pk=44, municipio=SimpleNamespace(pk=55, provincia_id=7)
+                    )
+                ]
             return []
 
     mocker.patch(
@@ -690,6 +704,7 @@ def test_importacion_helpers_resuelve_localidad_responsable_con_parentesis(mocke
 
     assert responsable_payload["localidad"] == 44
     assert responsable_payload["municipio"] == 55
+    assert responsable_payload["provincia"] == 7
 
 
 def test_importacion_helpers_crear_responsable_y_legajo(mocker):

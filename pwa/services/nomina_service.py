@@ -7,13 +7,15 @@ from django.db.models import Q
 from django.utils import timezone
 
 from ciudadanos.models import Ciudadano
-from comedores.models import Nomina
+from comedores.models import Comedor, Nomina
+from comedores.utils import comedor_usa_admision_para_nomina
 from comedores.services.comedor_service.impl import ComedorService
 from core.models import Sexo
 from pwa.models import (
     ActividadEspacioPWA,
     InscriptoActividadEspacioPWA,
     NominaEspacioPWA,
+    NominaObservacionPWA,
     RegistroAsistenciaNominaPWA,
 )
 from pwa.services.auditoria_operacion_service import registrar_evento_operacion
@@ -89,7 +91,34 @@ def _active_nomina_queryset(*, comedor_id: int):
 
 def get_periodo_mensual_actual() -> date:
     today = timezone.localdate()
+    if today.day <= 10:
+        previous_month = today.month - 1
+        year = today.year
+        if previous_month == 0:
+            previous_month = 12
+            year -= 1
+        return date(year, previous_month, 1)
     return today.replace(day=1)
+
+
+def asistencia_nomina_habilitada() -> bool:
+    today = timezone.localdate()
+    return today.day >= 25 or today.day <= 10
+
+
+def validar_asistencia_nomina_habilitada():
+    if asistencia_nomina_habilitada():
+        return
+    periodo_referencia = get_periodo_mensual_actual()
+    raise ValidationError(
+        {
+            "detail": (
+                "La asistencia del periodo "
+                f"{periodo_referencia:%m/%Y} se habilita desde el dia 25 "
+                "hasta el dia 10 del mes siguiente."
+            )
+        }
+    )
 
 
 def _resolve_admision_para_comedor(*, comedor_id: int):
@@ -106,6 +135,21 @@ def _resolve_admision_para_comedor(*, comedor_id: int):
     if admision:
         return admision
     return Admision.objects.create(comedor_id=comedor_id, activa=True)
+
+
+def _build_nomina_link_fields(*, comedor_id: int) -> dict:
+    comedor = Comedor.objects.select_related("programa").filter(pk=comedor_id).first()
+    if not comedor:
+        raise ValidationError({"comedor_id": "Espacio no encontrado."})
+    if comedor_usa_admision_para_nomina(comedor):
+        return {
+            "admision": _resolve_admision_para_comedor(comedor_id=comedor_id),
+            "comedor": None,
+        }
+    return {
+        "admision": None,
+        "comedor": comedor,
+    }
 
 
 def _get_or_create_profile(nomina: Nomina, actor):
@@ -435,12 +479,21 @@ def create_nomina_persona(*, comedor_id: int, actor, data: dict) -> Nomina:
             {"ciudadano_id": "La persona ya integra la nómina activa del espacio."}
         )
 
+    link_fields = _build_nomina_link_fields(comedor_id=comedor_id)
     nomina = Nomina.objects.create(
-        admision=_resolve_admision_para_comedor(comedor_id=comedor_id),
+        admision=link_fields["admision"],
+        comedor=link_fields["comedor"],
         ciudadano=ciudadano,
         estado=Nomina.ESTADO_ACTIVO,
         observaciones=(data.get("observaciones") or "").strip() or None,
     )
+    initial_observacion = (data.get("observaciones") or "").strip()
+    if initial_observacion:
+        NominaObservacionPWA.objects.create(
+            nomina=nomina,
+            texto=initial_observacion,
+            creada_por=actor,
+        )
     profile = _get_or_create_profile(nomina, actor)
     profile.asistencia_alimentaria = asistencia_alimentaria
     profile.asistencia_actividades = asistencia_actividades
@@ -569,7 +622,14 @@ def update_nomina_persona(*, nomina: Nomina, actor, data: dict) -> Nomina:
 
     nomina_fields = []
     if "observaciones" in data:
-        nomina.observaciones = (data.get("observaciones") or "").strip() or None
+        observacion_texto = (data.get("observaciones") or "").strip()
+        nomina.observaciones = observacion_texto or None
+        if observacion_texto:
+            NominaObservacionPWA.objects.create(
+                nomina=nomina,
+                texto=observacion_texto,
+                creada_por=actor,
+            )
         nomina_fields.append("observaciones")
     if "estado" in data and data["estado"] in dict(Nomina.ESTADO_CHOICES):
         nomina.estado = data["estado"]
@@ -729,6 +789,7 @@ def is_menor(fecha_nacimiento: date | None) -> bool:
 @transaction.atomic
 def registrar_asistencia_nomina_mes_actual(*, nomina: Nomina, actor):
     comedor_id = _nomina_comedor_id(nomina)
+    validar_asistencia_nomina_habilitada()
     periodo_referencia = get_periodo_mensual_actual()
     registro, created = RegistroAsistenciaNominaPWA.objects.get_or_create(
         nomina=nomina,
@@ -759,6 +820,7 @@ def registrar_asistencia_nomina_mes_actual(*, nomina: Nomina, actor):
 def sync_asistencia_alimentaria_nomina_mes_actual(
     *, comedor_id: int, actor, selected_nomina_ids: list[int]
 ):
+    validar_asistencia_nomina_habilitada()
     periodo_referencia = get_periodo_mensual_actual()
     queryset = (
         _active_nomina_queryset(comedor_id=comedor_id)

@@ -12,6 +12,7 @@ from centrodeinfancia.models import (
     NominaCentroInfancia,
     ObservacionCentroInfancia,
 )
+from centrodeinfancia.access import aplicar_scope_centros_cdi
 from centrodeinfancia.views import (
     CentroDeInfanciaDetailView,
     IntervencionCentroInfanciaUpdateView,
@@ -22,8 +23,8 @@ from centrodeinfancia.views import (
     nomina_centrodeinfancia_editar_ajax,
     subir_archivo_intervencion_centrodeinfancia,
 )
-from core.models import Provincia
-from users.models import Profile
+from core.models import Localidad, Municipio, Provincia
+from users.models import Profile, ProfileTerritorialScope
 
 
 def _build_view(view_cls, request, **kwargs):
@@ -36,7 +37,10 @@ def _crear_usuario(username, provincia=None):
     user = User.objects.create_user(username=username, password="test1234")
     profile, _ = Profile.objects.get_or_create(user=user)
     profile.provincia = provincia
+    profile.es_usuario_provincial = provincia is not None
     profile.save()
+    if provincia:
+        ProfileTerritorialScope.objects.create(profile=profile, provincia=provincia)
     return user
 
 
@@ -199,3 +203,90 @@ def test_eliminar_documentacion_no_permite_intervencion_fuera_de_scope():
 
     with pytest.raises(Http404):
         eliminar_archivo_intervencion_centrodeinfancia(request, intervencion.pk)
+
+
+@pytest.mark.django_db
+def test_scope_centros_cdi_municipio_no_habilita_toda_la_provincia():
+    provincia = Provincia.objects.create(nombre="Rio Negro")
+    municipio_scope = Municipio.objects.create(nombre="Viedma", provincia=provincia)
+    municipio_fuera = Municipio.objects.create(nombre="Bariloche", provincia=provincia)
+    localidad_scope = Localidad.objects.create(
+        nombre="Viedma", municipio=municipio_scope
+    )
+    localidad_fuera = Localidad.objects.create(
+        nombre="Bariloche", municipio=municipio_fuera
+    )
+    user = User.objects.create_user(username="cdi-municipio", password="test1234")
+    profile = user.profile
+    profile.es_usuario_provincial = True
+    profile.save()
+    ProfileTerritorialScope.objects.create(
+        profile=profile,
+        provincia=provincia,
+        municipio=municipio_scope,
+    )
+    centro_visible = CentroDeInfancia.objects.create(
+        nombre="CDI Viedma",
+        provincia=provincia,
+        municipio=municipio_scope,
+        localidad=localidad_scope,
+    )
+    CentroDeInfancia.objects.create(
+        nombre="CDI Bariloche",
+        provincia=provincia,
+        municipio=municipio_fuera,
+        localidad=localidad_fuera,
+    )
+
+    centros = list(aplicar_scope_centros_cdi(CentroDeInfancia.objects.all(), user))
+
+    assert centros == [centro_visible]
+
+
+@pytest.mark.django_db
+def test_scope_centros_cdi_localidad_no_habilita_otra_localidad():
+    provincia = Provincia.objects.create(nombre="Santa Cruz")
+    municipio = Municipio.objects.create(nombre="Rio Gallegos", provincia=provincia)
+    localidad_scope = Localidad.objects.create(nombre="Centro", municipio=municipio)
+    localidad_fuera = Localidad.objects.create(nombre="Sur", municipio=municipio)
+    user = User.objects.create_user(username="cdi-localidad", password="test1234")
+    profile = user.profile
+    profile.es_usuario_provincial = True
+    profile.save()
+    ProfileTerritorialScope.objects.create(
+        profile=profile,
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad_scope,
+    )
+    centro_visible = CentroDeInfancia.objects.create(
+        nombre="CDI Centro",
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad_scope,
+    )
+    CentroDeInfancia.objects.create(
+        nombre="CDI Sur",
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad_fuera,
+    )
+
+    centros = list(aplicar_scope_centros_cdi(CentroDeInfancia.objects.all(), user))
+
+    assert centros == [centro_visible]
+
+
+@pytest.mark.django_db
+def test_scope_centros_cdi_provincial_sin_scopes_no_es_global():
+    provincia = Provincia.objects.create(nombre="Tierra del Fuego")
+    user = User.objects.create_user(username="cdi-sin-scope", password="test1234")
+    profile = user.profile
+    profile.es_usuario_provincial = True
+    profile.provincia = None
+    profile.save()
+    CentroDeInfancia.objects.create(nombre="CDI Ushuaia", provincia=provincia)
+
+    centros = list(aplicar_scope_centros_cdi(CentroDeInfancia.objects.all(), user))
+
+    assert centros == []

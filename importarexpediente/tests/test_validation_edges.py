@@ -45,12 +45,15 @@ def test_upload_without_header_is_rejected(client_logged, tmp_media):
     resp = client_logged.post(
         reverse("upload"),
         {"file": uploaded, "delimiter": ";", "has_header": False},
+        follow=True,
     )
-    assert resp.status_code in (302, 200)
-    batch = ArchivosImportados.objects.latest("id")
-    assert batch.count_errores == 1
-    assert ErroresImportacion.objects.filter(archivo_importado=batch, fila=0).exists()
-    assert ExitoImportacion.objects.filter(archivo_importado=batch).count() == 0
+    assert resp.status_code == 200
+    assert resp.request["PATH_INFO"] == reverse("upload")
+    assert ArchivosImportados.objects.count() == 0
+    assert ErroresImportacion.objects.count() == 0
+    assert ExitoImportacion.objects.count() == 0
+    assert b"Archivo sin cabecera no soportado" in resp.content
+    assert b"alert-danger" in resp.content
 
 
 def test_upload_with_invalid_numbers_creates_error(client_logged, tmp_media):
