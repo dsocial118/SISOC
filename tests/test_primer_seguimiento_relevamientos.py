@@ -3,6 +3,8 @@
 import json
 
 import pytest
+from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Permission
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import IntegrityError
 from django.urls import reverse
@@ -602,3 +604,74 @@ def test_detalle_primer_seguimiento_404_si_comedor_no_coincide(auth_client, come
     response = auth_client.get(url)
 
     assert response.status_code == 404
+
+
+def _crear_seguimiento_con_gestionar_id(comedor, gestionar_id="afbeaa6c"):
+    relevamiento = Relevamiento.objects.create(comedor=comedor, estado="En Proceso")
+    seguimiento = PrimerSeguimiento.objects.create(
+        id_relevamiento=relevamiento,
+        estado=PrimerSeguimiento.ESTADO_ASIGNADO,
+        gestionar_id=gestionar_id,
+    )
+    return relevamiento, seguimiento
+
+
+def test_eliminar_primer_seguimiento_desde_ui_dispara_baja_gestionar(
+    client, comedor, mocker
+):
+    relevamiento, seguimiento = _crear_seguimiento_con_gestionar_id(comedor)
+
+    user_model = get_user_model()
+    user = user_model.objects.create_user(username="eliminador", password="testpass")
+    user.user_permissions.add(
+        Permission.objects.get(codename="delete_primerseguimiento")
+    )
+    client.force_login(user)
+
+    remove_start = mocker.patch(
+        "relevamientos.signals.AsyncRemovePrimerSeguimientoToGestionar.start"
+    )
+
+    response = client.post(
+        reverse(
+            "primer_seguimiento_eliminar",
+            kwargs={
+                "comedor_pk": comedor.id,
+                "relevamiento_pk": relevamiento.id,
+            },
+        )
+    )
+
+    assert response.status_code == 302
+    assert response.url == reverse(
+        "relevamiento_detalle",
+        kwargs={"comedor_pk": comedor.id, "pk": relevamiento.id},
+    )
+    assert not PrimerSeguimiento.objects.filter(pk=seguimiento.id).exists()
+    remove_start.assert_called_once_with()
+
+
+def test_eliminar_primer_seguimiento_sin_permiso_devuelve_403(client, comedor, mocker):
+    relevamiento, seguimiento = _crear_seguimiento_con_gestionar_id(comedor)
+
+    user_model = get_user_model()
+    user = user_model.objects.create_user(username="curioso", password="testpass")
+    client.force_login(user)
+
+    remove_start = mocker.patch(
+        "relevamientos.signals.AsyncRemovePrimerSeguimientoToGestionar.start"
+    )
+
+    response = client.post(
+        reverse(
+            "primer_seguimiento_eliminar",
+            kwargs={
+                "comedor_pk": comedor.id,
+                "relevamiento_pk": relevamiento.id,
+            },
+        )
+    )
+
+    assert response.status_code == 403
+    assert PrimerSeguimiento.objects.filter(pk=seguimiento.id).exists()
+    remove_start.assert_not_called()

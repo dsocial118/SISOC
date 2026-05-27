@@ -4,7 +4,7 @@ from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db import models as dj_models
 from django.shortcuts import get_object_or_404, redirect
-from django.urls import reverse_lazy
+from django.urls import reverse, reverse_lazy
 
 from comedores.forms.comedor_form import ReferenteForm
 from comedores.models import Comedor
@@ -30,6 +30,7 @@ from django.views.generic import (
     ListView,
     UpdateView,
 )
+from django.views.generic.base import View
 from core.soft_delete.view_helpers import SoftDeleteDeleteViewMixin
 
 from comedores.models import Comedor
@@ -504,3 +505,29 @@ class PrimerSeguimientoDetailView(LoginRequiredMixin, DetailView):
             list(menu.receta_items.all()) if menu is not None else []
         )
         return context
+
+
+class PrimerSeguimientoEliminarView(LoginRequiredMixin, View):
+    """Borrado del primer seguimiento desde la UI.
+
+    La confirmacion se hace via modal en el detalle del relevamiento; por eso
+    no exponemos GET y solo aceptamos POST. El borrado dispara la signal
+    pre_delete que envia la baja al endpoint de GESTIONAR.
+    """
+
+    http_method_names = ["post"]
+
+    def post(self, request, comedor_pk, relevamiento_pk):
+        seguimiento = get_object_or_404(
+            PrimerSeguimiento.objects.select_related("id_relevamiento"),
+            id_relevamiento_id=relevamiento_pk,
+            id_relevamiento__comedor_id=comedor_pk,
+        )
+        seguimiento.delete()
+        messages.success(request, "Primer seguimiento eliminado correctamente.")
+        return redirect(
+            reverse(
+                "relevamiento_detalle",
+                kwargs={"comedor_pk": comedor_pk, "pk": relevamiento_pk},
+            )
+        )

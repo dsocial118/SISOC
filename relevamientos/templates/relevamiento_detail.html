@@ -1400,12 +1400,56 @@
                               title="Aún no se recibieron datos desde GESTIONAR">Pendiente sincronización</span>
                     {% endif %}
                 </div>
-                <div class="card-body d-flex align-items-center justify-content-between">
+                <div class="card-body d-flex align-items-center justify-content-between flex-wrap gap-2">
                     <span class="text-muted">Ver el detalle completo del primer seguimiento cargado para este relevamiento.</span>
-                    <a href="{% url 'primer_seguimiento_detalle' relevamiento.comedor.id relevamiento.id %}"
-                       class="btn btn-primary">Ver primer seguimiento</a>
+                    <div class="d-flex gap-2">
+                        <a href="{% url 'primer_seguimiento_detalle' relevamiento.comedor.id relevamiento.id %}"
+                           class="btn btn-primary">Ver primer seguimiento</a>
+                        {% if perms.relevamientos.delete_primerseguimiento %}
+                            <button type="button"
+                                    class="btn btn-danger"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#modalEliminarPrimerSeguimiento">
+                                Eliminar primer seguimiento
+                            </button>
+                        {% endif %}
+                    </div>
                 </div>
             </div>
+            {% if perms.relevamientos.delete_primerseguimiento %}
+                <div class="modal fade"
+                     id="modalEliminarPrimerSeguimiento"
+                     tabindex="-1"
+                     aria-labelledby="modalEliminarPrimerSeguimientoLabel"
+                     aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content">
+                            <form method="post"
+                                  action="{% url 'primer_seguimiento_eliminar' relevamiento.comedor.id relevamiento.id %}">
+                                {% csrf_token %}
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="modalEliminarPrimerSeguimientoLabel">Eliminar primer seguimiento</h5>
+                                    <button type="button"
+                                            class="btn-close"
+                                            data-bs-dismiss="modal"
+                                            aria-label="Cerrar"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <p class="mb-2">
+                                        Esta accion eliminara el primer seguimiento del relevamiento
+                                        y dara de baja el registro asociado en GESTIONAR.
+                                    </p>
+                                    <p class="mb-0 text-muted">No se puede deshacer.</p>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                    <button type="submit" class="btn btn-danger">Eliminar</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
         {% endif %}
     {% endwith %}
 {% endblock %}
