@@ -1923,7 +1923,8 @@ def test_centro_detail_muestra_referentes_plural_sin_exponer_revisores(
 
     content = response.content.decode("utf-8")
     assert response.status_code == 200
-    assert "Referente/s del Centro" in content
+    # Refactor 4f1f2241 renombró la sección a "Referente del centro" (singular)
+    assert "Referente del centro" in content
     assert "ref-detalle-1" in content
     assert "ref-detalle-2" in content
     assert "revisor-detalle" not in content
