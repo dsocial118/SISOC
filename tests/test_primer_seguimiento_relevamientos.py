@@ -286,9 +286,7 @@ def test_api_primer_seguimiento_resuelve_por_id_relevamiento(api_client, comedor
     assert seguimiento.estado == PrimerSeguimiento.ESTADO_COMPLETO
 
 
-def test_api_primer_seguimiento_rechaza_gestionar_id_inconsistente(
-    api_client, comedor
-):
+def test_api_primer_seguimiento_rechaza_gestionar_id_inconsistente(api_client, comedor):
     relevamiento = Relevamiento.objects.create(comedor=comedor, estado="En Proceso")
     seguimiento = PrimerSeguimiento.objects.create(
         id_relevamiento=relevamiento,

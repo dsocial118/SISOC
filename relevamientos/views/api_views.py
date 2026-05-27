@@ -98,18 +98,14 @@ class PrimerSeguimientoApiView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        queryset = PrimerSeguimiento.objects.select_related(
-            "id_relevamiento__comedor"
-        )
+        queryset = PrimerSeguimiento.objects.select_related("id_relevamiento__comedor")
         try:
             if sisoc_id:
                 seguimiento = queryset.get(id=int(sisoc_id))
             elif gestionar_id:
                 seguimiento = queryset.get(gestionar_id=str(gestionar_id).strip())
             else:
-                seguimiento = queryset.get(
-                    id_relevamiento_id=int(id_relevamiento)
-                )
+                seguimiento = queryset.get(id_relevamiento_id=int(id_relevamiento))
         except (TypeError, ValueError):
             return None, Response(
                 "Identificador invalido.",
@@ -129,13 +125,10 @@ class PrimerSeguimientoApiView(APIView):
             )
         if gestionar_id and seguimiento.gestionar_id != str(gestionar_id).strip():
             return None, Response(
-                "El gestionar_id informado no coincide con el seguimiento "
-                "resuelto.",
+                "El gestionar_id informado no coincide con el seguimiento " "resuelto.",
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        if id_relevamiento and seguimiento.id_relevamiento_id != int(
-            id_relevamiento
-        ):
+        if id_relevamiento and seguimiento.id_relevamiento_id != int(id_relevamiento):
             return None, Response(
                 "El id_relevamiento informado no coincide con el seguimiento "
                 "resuelto.",
