@@ -5815,11 +5815,14 @@ def test_centro_cursos_panel_renderiza_marcadores_para_filtrar_comisiones_por_cu
     )
     assert "<td>Plan Industrial Inicial</td>" in content
     assert 'id="tablaComisionesCursoCentro"' in content
-    assert "<th>Código</th>" in content
+    # Refactor 4f1f2241 reordenó las columnas: Curso, Comisión, Ubicación,
+    # Fecha Inicio, Fecha Fin, Cupo, Acciones.
+    assert "<th>Curso</th>" in content
+    assert "<th>Comisión</th>" in content
     assert "<th>Ubicación</th>" in content
     assert "<th>Fecha Inicio</th>" in content
     assert "<th>Fecha Fin</th>" in content
-    assert "<th>Observaciones</th>" in content
+    assert "<th>Cupo</th>" in content
     assert "FIL-01" in content
     assert "Comisión Filtrable" in content
     assert 'id="comisionesFilterSearch"' in content
@@ -5830,7 +5833,8 @@ def test_centro_cursos_panel_renderiza_marcadores_para_filtrar_comisiones_por_cu
     assert 'id="comisionesFilterClear"' in content
     assert 'class="comision-curso-row"' in content
     assert reverse("vat_comision_curso_detail", kwargs={"pk": comision.pk}) in content
-    assert 'title="Gestionar Comisión"' in content
+    # El refactor reemplazó el title="Gestionar Comisión" por un botón "Ver"
+    assert "sisoc-btn--view" in content
     assert comisiones_filter_curso is not None
     assert "select2" in comisiones_filter_curso.get("class", [])
     assert comisiones_filter_curso.get("data-width") == "100%"
