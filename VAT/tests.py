@@ -5910,7 +5910,9 @@ def test_centro_cursos_panel_renderiza_selector_de_planes_en_modal_nuevo_curso(
     assert response.status_code == 200
     assert 'data-panel-rendered="1"' in content
     assert "Planes Curriculares" not in content
-    assert 'title="Nuevo Curso"' in content
+    # El refactor reemplazó el botón title="Nuevo Curso" por un modal con
+    # heading "Nuevo Curso" (h5) y un botón "Agregar curso".
+    assert ">Nuevo Curso<" in content
     assert 'id="planEstudioSeleccionadoInfo"' in content
     assert 'id="modalPlanCurricularSelector"' in content
     assert 'id="openPlanCurricularSelector"' in content
