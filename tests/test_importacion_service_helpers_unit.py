@@ -1630,6 +1630,7 @@ def test_importar_legajos_registra_error_si_falla_responsable_tras_beneficiario(
         return_value={
             "municipios_cache": {},
             "localidades_cache": {},
+            "municipio_provincia_map": {},
             "sexos_cache": {},
             "nacionalidades_cache": {},
             "paises_a_nacionalidad": {},
