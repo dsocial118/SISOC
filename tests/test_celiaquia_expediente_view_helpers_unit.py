@@ -306,9 +306,7 @@ def test_expediente_create_view_context_by_user_type(mocker):
 
     mocker.patch("celiaquia.views.expediente._is_provincial", return_value=True)
     mocker.patch("celiaquia.views.expediente._is_admin", return_value=False)
-    mocker.patch(
-        "celiaquia.views.expediente.is_territorial_user", return_value=True
-    )
+    mocker.patch("celiaquia.views.expediente.is_territorial_user", return_value=True)
     mocker.patch(
         "celiaquia.views.expediente._user_scope_provincias",
         return_value=["prov"],
