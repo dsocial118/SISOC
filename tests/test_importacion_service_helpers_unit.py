@@ -1477,6 +1477,7 @@ def test_importar_legajos_orquesta_loop_principal_y_postprocesos(mocker):
         return_value={
             "municipios_cache": {},
             "localidades_cache": {},
+            "municipio_provincia_map": {},
             "sexos_cache": {},
             "nacionalidades_cache": {},
             "paises_a_nacionalidad": {},
