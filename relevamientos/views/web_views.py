@@ -97,8 +97,8 @@ class RelevamientoListView(LoginRequiredMixin, ListView):
         comedor = self.kwargs["comedor_pk"]
         return (
             Relevamiento.objects.filter(comedor=comedor)
+            .select_related("primer_seguimiento")
             .order_by("-estado", "-id")
-            .values("id", "fecha_visita", "estado", "numero_if")
         )
 
     def post(self, request, *args, **kwargs):
@@ -125,7 +125,39 @@ class RelevamientoListView(LoginRequiredMixin, ListView):
             "municipio__nombre",
         ).get(pk=self.kwargs["comedor_pk"])
 
+        items = []
+        for rel in context["relevamientos"]:
+            items.append(
+                {
+                    "id": rel.id,
+                    "fecha": rel.fecha_visita,
+                    "estado": rel.estado,
+                    "numero_if": rel.numero_if,
+                    "is_child": False,
+                    "parent_id": None,
+                }
+            )
+            seguimiento = _get_primer_seguimiento(rel)
+            if seguimiento is not None:
+                items.append(
+                    {
+                        "id": seguimiento.id,
+                        "fecha": seguimiento.fecha_hora,
+                        "estado": seguimiento.estado,
+                        "numero_if": None,
+                        "is_child": True,
+                        "parent_id": rel.id,
+                    }
+                )
+        context["relevamientos_items"] = items
         return context
+
+
+def _get_primer_seguimiento(relevamiento):
+    try:
+        return relevamiento.primer_seguimiento
+    except PrimerSeguimiento.DoesNotExist:
+        return None
 
 
 class RelevamientoDetailView(LoginRequiredMixin, DetailView):

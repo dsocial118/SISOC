@@ -118,19 +118,21 @@ def test_create_view_form_valid_muestra_errores_si_forms_invalidos(mocker):
 def test_list_view_get_queryset_filtra_y_ordena(mocker):
     view = RelevamientoListView()
     view.kwargs = {"comedor_pk": 5}
-    values_mock = mocker.Mock(return_value=[{"id": 1}])
-    order_by_mock = mocker.Mock(return_value=SimpleNamespace(values=values_mock))
+    order_by_mock = mocker.Mock(return_value="QS")
+    select_related_mock = mocker.Mock(
+        return_value=SimpleNamespace(order_by=order_by_mock)
+    )
     filter_mock = mocker.patch(
         "relevamientos.views.web_views.Relevamiento.objects.filter",
-        return_value=SimpleNamespace(order_by=order_by_mock),
+        return_value=SimpleNamespace(select_related=select_related_mock),
     )
 
     result = view.get_queryset()
 
-    assert result == [{"id": 1}]
+    assert result == "QS"
     filter_mock.assert_called_once_with(comedor=5)
+    select_related_mock.assert_called_once_with("primer_seguimiento")
     order_by_mock.assert_called_once_with("-estado", "-id")
-    values_mock.assert_called_once_with("id", "fecha_visita", "estado", "numero_if")
 
 
 def test_list_view_get_context_data_agrega_comedor(mocker):
@@ -147,6 +149,7 @@ def test_list_view_get_context_data_agrega_comedor(mocker):
     context = view.get_context_data()
 
     assert context["comedor"]["id"] == 5
+    assert context["relevamientos_items"] == []
     values_mock.assert_called_once_with(
         "id",
         "nombre",
@@ -154,6 +157,110 @@ def test_list_view_get_context_data_agrega_comedor(mocker):
         "localidad__nombre",
         "municipio__nombre",
     )
+
+
+def _make_relevamiento_stub(rel_id, *, fecha="2026-01-01", estado="Pendiente",
+                            numero_if=None, seguimiento=None):
+    rel = SimpleNamespace(
+        id=rel_id,
+        fecha_visita=fecha,
+        estado=estado,
+        numero_if=numero_if,
+    )
+    if seguimiento is None:
+        from relevamientos.models import PrimerSeguimiento
+
+        def _raise(_):
+            raise PrimerSeguimiento.DoesNotExist
+
+        rel.primer_seguimiento = property(_raise)
+    else:
+        rel.primer_seguimiento = seguimiento
+    return rel
+
+
+def test_list_view_construye_items_solo_padre_sin_seguimiento(mocker):
+    view = RelevamientoListView()
+    view.kwargs = {"comedor_pk": 5}
+    rel = _make_relevamiento_stub(11, numero_if="IF-11")
+    mocker.patch(
+        "django.views.generic.list.MultipleObjectMixin.get_context_data",
+        return_value={"relevamientos": [rel]},
+    )
+    mocker.patch(
+        "relevamientos.views.web_views._get_primer_seguimiento",
+        return_value=None,
+    )
+    get_mock = mocker.Mock(return_value={"id": 5})
+    mocker.patch(
+        "relevamientos.views.web_views.Comedor.objects.values",
+        mocker.Mock(return_value=SimpleNamespace(get=get_mock)),
+    )
+
+    context = view.get_context_data()
+
+    assert context["relevamientos_items"] == [
+        {
+            "id": 11,
+            "fecha": "2026-01-01",
+            "estado": "Pendiente",
+            "numero_if": "IF-11",
+            "is_child": False,
+            "parent_id": None,
+        }
+    ]
+
+
+def test_list_view_construye_items_padre_seguido_de_hijo(mocker):
+    view = RelevamientoListView()
+    view.kwargs = {"comedor_pk": 5}
+    rel = _make_relevamiento_stub(42, numero_if="IF-42")
+    seguimiento = SimpleNamespace(id=900, fecha_hora="2026-02-02", estado="Asignado")
+    mocker.patch(
+        "django.views.generic.list.MultipleObjectMixin.get_context_data",
+        return_value={"relevamientos": [rel]},
+    )
+    mocker.patch(
+        "relevamientos.views.web_views._get_primer_seguimiento",
+        return_value=seguimiento,
+    )
+    get_mock = mocker.Mock(return_value={"id": 5})
+    mocker.patch(
+        "relevamientos.views.web_views.Comedor.objects.values",
+        mocker.Mock(return_value=SimpleNamespace(get=get_mock)),
+    )
+
+    context = view.get_context_data()
+
+    items = context["relevamientos_items"]
+    assert len(items) == 2
+    assert items[0]["id"] == 42 and items[0]["is_child"] is False
+    assert items[1]["id"] == 900
+    assert items[1]["is_child"] is True
+    assert items[1]["parent_id"] == 42
+    assert items[1]["fecha"] == "2026-02-02"
+    assert items[1]["estado"] == "Asignado"
+    assert items[1]["numero_if"] is None
+
+
+def test_get_primer_seguimiento_helper_devuelve_none_si_no_existe():
+    from relevamientos.models import PrimerSeguimiento
+    from relevamientos.views.web_views import _get_primer_seguimiento
+
+    class _Rel:
+        @property
+        def primer_seguimiento(self):
+            raise PrimerSeguimiento.DoesNotExist
+
+    assert _get_primer_seguimiento(_Rel()) is None
+
+
+def test_get_primer_seguimiento_helper_devuelve_instancia():
+    from relevamientos.views.web_views import _get_primer_seguimiento
+
+    sentinel = object()
+    rel = SimpleNamespace(primer_seguimiento=sentinel)
+    assert _get_primer_seguimiento(rel) is sentinel
 
 
 def test_update_view_get_context_data_construye_instance_map(mocker):

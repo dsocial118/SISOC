@@ -37,51 +37,62 @@
                                 <div class="col-10">
                                     <div class="nav-item d-flex">
                                         <div class="comment-text comment-text d-flex row w-100">
-                                            {% for relevamiento in relevamientos %}
+                                            {% for item in relevamientos_items %}
                                                 <div class="col-3 d-flex">
-                                                    <a href="{% url 'relevamiento_detalle' comedor.id relevamiento.id %}">{{ relevamiento.id }} - {{ relevamiento.fecha_visita|default_if_none:"Sin asignar" }}</a>
+                                                    {% if item.is_child %}
+                                                        <div style="padding-left: 20px;">
+                                                            <span class="text-muted">└─</span>
+                                                            <a href="{% url 'primer_seguimiento_detalle' comedor.id item.parent_id %}">{{ item.id }} - {{ item.fecha|default_if_none:"Sin asignar" }}</a>
+                                                        </div>
+                                                    {% else %}
+                                                        <a href="{% url 'relevamiento_detalle' comedor.id item.id %}">{{ item.id }} - {{ item.fecha|default_if_none:"Sin asignar" }}</a>
+                                                    {% endif %}
                                                 </div>
                                                 <div class="col-3 d-flex">
-                                                    <p {% if relevamiento.estado == "Pendiente" %} style="color: yellow;" {% elif relevamiento.estado == "Visita pendiente" %} style="color: green;" {% else %} style="color: white;" {% endif %}>
-                                                        {{ relevamiento.estado }}
+                                                    <p {% if item.estado == "Pendiente" %} style="color: yellow;" {% elif item.estado == "Visita pendiente" %} style="color: green;" {% else %} style="color: white;" {% endif %}>
+                                                        {{ item.estado|default:"Sin información" }}
                                                     </p>
                                                 </div>
                                                 <div class="col-6 mb-2">
-                                                    <div id="numero-if-display-{{ relevamiento.id }}"
-                                                         class="d-flex align-items-end gap-2">
-                                                        <div class="flex-grow-1 d-flex align-items-center gap-2">
-                                                            <span>Número de IF:</span>
-                                                            <span class="fw-semibold">{{ relevamiento.numero_if|default:"Sin número de IF" }}</span>
+                                                    {% if item.is_child %}
+                                                        <span class="badge bg-info">Primer seguimiento</span>
+                                                    {% else %}
+                                                        <div id="numero-if-display-{{ item.id }}"
+                                                             class="d-flex align-items-end gap-2">
+                                                            <div class="flex-grow-1 d-flex align-items-center gap-2">
+                                                                <span>Número de IF:</span>
+                                                                <span class="fw-semibold">{{ item.numero_if|default:"Sin número de IF" }}</span>
+                                                            </div>
+                                                            {% if perms.relevamientos.change_relevamiento %}
+                                                                <button type="button"
+                                                                        class="btn btn-sm btn-primary mb-0 py-1 px-2"
+                                                                        data-numero-if-edit="{{ item.id }}">
+                                                                    Actualizar IF
+                                                                </button>
+                                                            {% endif %}
                                                         </div>
                                                         {% if perms.relevamientos.change_relevamiento %}
-                                                            <button type="button"
-                                                                    class="btn btn-sm btn-primary mb-0 py-1 px-2"
-                                                                    data-numero-if-edit="{{ relevamiento.id }}">
-                                                                Actualizar IF
-                                                            </button>
+                                                            <form method="post"
+                                                                  id="numero-if-form-{{ item.id }}"
+                                                                  class="d-none align-items-end gap-2">
+                                                                {% csrf_token %}
+                                                                <input type="hidden" name="relevamiento_id" value="{{ item.id }}" />
+                                                                <div class="flex-grow-1">
+                                                                    <label class="form-label mb-1">Número de IF</label>
+                                                                    <input type="text"
+                                                                           name="numero_if"
+                                                                           maxlength="255"
+                                                                           class="form-control form-control-sm"
+                                                                           value="{{ item.numero_if|default_if_none:'' }}" />
+                                                                </div>
+                                                                <button type="submit" class="btn btn-sm btn-primary mb-0">Guardar</button>
+                                                                <button type="button"
+                                                                        class="btn btn-sm btn-secondary mb-0"
+                                                                        data-numero-if-cancel="{{ item.id }}">
+                                                                    Cancelar
+                                                                </button>
+                                                            </form>
                                                         {% endif %}
-                                                    </div>
-                                                    {% if perms.relevamientos.change_relevamiento %}
-                                                        <form method="post"
-                                                              id="numero-if-form-{{ relevamiento.id }}"
-                                                              class="d-none align-items-end gap-2">
-                                                            {% csrf_token %}
-                                                            <input type="hidden" name="relevamiento_id" value="{{ relevamiento.id }}" />
-                                                            <div class="flex-grow-1">
-                                                                <label class="form-label mb-1">Número de IF</label>
-                                                                <input type="text"
-                                                                       name="numero_if"
-                                                                       maxlength="255"
-                                                                       class="form-control form-control-sm"
-                                                                       value="{{ relevamiento.numero_if|default_if_none:'' }}" />
-                                                            </div>
-                                                            <button type="submit" class="btn btn-sm btn-primary mb-0">Guardar</button>
-                                                            <button type="button"
-                                                                    class="btn btn-sm btn-secondary mb-0"
-                                                                    data-numero-if-cancel="{{ relevamiento.id }}">
-                                                                Cancelar
-                                                            </button>
-                                                        </form>
                                                     {% endif %}
                                                 </div>
                                             {% endfor %}
