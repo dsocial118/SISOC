@@ -14,7 +14,11 @@ from relevamientos.models import (
     ServiciosBasicosSeguimiento,
 )
 from relevamientos.primer_seguimiento_service import PrimerSeguimientoService
-from relevamientos.tasks import build_primer_seguimiento_payload
+from relevamientos.tasks import (
+    AsyncRemovePrimerSeguimientoToGestionar,
+    AsyncSendPrimerSeguimientoToGestionar,
+    build_primer_seguimiento_payload,
+)
 
 
 pytestmark = pytest.mark.django_db
@@ -142,12 +146,57 @@ def test_build_payload_primer_seguimiento(comedor):
 
     payload = build_primer_seguimiento_payload(seguimiento)
 
-    row = payload["Rows"][0]
     assert payload["Action"] == "Add"
-    assert row["ID_Seguimiento1"] == str(seguimiento.id)
-    assert row["Id_Relevamiento"] == str(relevamiento.id)
-    assert row["CodPNUD"] == "PNUD-001"
-    assert row["tecnico"] == "uid-1"
+    assert payload["Properties"] == {"Locale": "es-ES"}
+    assert payload["Rows"] == [{"Id_Relevamiento": str(relevamiento.id)}]
+
+
+def test_async_send_guarda_gestionar_id_de_la_respuesta(comedor, mocker, settings):
+    settings.GESTIONAR_INTEGRATION_ENABLED = True
+    relevamiento = Relevamiento.objects.create(comedor=comedor, estado="En Proceso")
+    seguimiento = PrimerSeguimiento.objects.create(
+        id_relevamiento=relevamiento,
+        estado=PrimerSeguimiento.ESTADO_ASIGNADO,
+    )
+
+    response = mocker.Mock()
+    response.raise_for_status.return_value = None
+    response.content = b'{"Rows": [{"ID_Seguimiento1": "afbeaa6c"}]}'
+    response.json.return_value = {"Rows": [{"ID_Seguimiento1": "afbeaa6c"}]}
+    mocker.patch("relevamientos.tasks.requests.post", return_value=response)
+
+    AsyncSendPrimerSeguimientoToGestionar(
+        seguimiento.id,
+        build_primer_seguimiento_payload(seguimiento),
+    ).run()
+
+    seguimiento.refresh_from_db()
+    assert seguimiento.gestionar_id == "afbeaa6c"
+
+
+def test_async_remove_usa_gestionar_id_y_omite_si_falta(
+    comedor, mocker, settings
+):
+    settings.GESTIONAR_INTEGRATION_ENABLED = True
+    relevamiento = Relevamiento.objects.create(comedor=comedor, estado="En Proceso")
+    seguimiento = PrimerSeguimiento.objects.create(
+        id_relevamiento=relevamiento,
+        estado=PrimerSeguimiento.ESTADO_ASIGNADO,
+        gestionar_id="afbeaa6c",
+    )
+    post_mock = mocker.patch("relevamientos.tasks.requests.post")
+
+    AsyncRemovePrimerSeguimientoToGestionar(
+        seguimiento.id, seguimiento.gestionar_id
+    ).run()
+
+    body_enviado = post_mock.call_args.kwargs["json"]
+    assert body_enviado["Action"] == "Delete"
+    assert body_enviado["Rows"] == [{"ID_Seguimiento1": "afbeaa6c"}]
+
+    post_mock.reset_mock()
+    AsyncRemovePrimerSeguimientoToGestionar(seguimiento.id, "").start()
+    post_mock.assert_not_called()
 
 
 def test_api_primer_seguimiento_exige_ids(api_client):

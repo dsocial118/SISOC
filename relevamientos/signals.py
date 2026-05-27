@@ -43,4 +43,8 @@ def remove_relevamiento_to_gestionar(sender, instance, **kwargs):
 
 @receiver(pre_delete, sender=PrimerSeguimiento)
 def remove_primer_seguimiento_to_gestionar(sender, instance, **kwargs):
-    AsyncRemovePrimerSeguimientoToGestionar(instance.id).start()
+    if not instance.gestionar_id:
+        return
+    AsyncRemovePrimerSeguimientoToGestionar(
+        instance.id, instance.gestionar_id
+    ).start()

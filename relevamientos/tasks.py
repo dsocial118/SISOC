@@ -66,16 +66,7 @@ def build_primer_seguimiento_payload(seguimiento):
     return {
         "Action": "Add",
         "Properties": {"Locale": "es-ES"},
-        "Rows": [
-            {
-                "ID_Seguimiento1": f"{seguimiento.id}",
-                "Id_SISOC": f"{seguimiento.id}",
-                "Id_Relevamiento": f"{seguimiento.id_relevamiento_id}",
-                "CodPNUD": seguimiento.cod_pnud or "",
-                "tecnico": seguimiento.tecnico or "",
-                "ESTADO": seguimiento.estado or PrimerSeguimiento.ESTADO_ASIGNADO,
-            }
-        ],
+        "Rows": [{"Id_Relevamiento": f"{seguimiento.id_relevamiento_id}"}],
     }
 
 
@@ -242,6 +233,15 @@ class AsyncSendPrimerSeguimientoToGestionar(threading.Thread):
                 timeout=TIMEOUT,
             )
             response.raise_for_status()
+            response_data = response.json() if response.content else {}
+            gestionar_id = ""
+            rows = response_data.get("Rows") or []
+            if rows:
+                gestionar_id = (rows[0].get("ID_Seguimiento1") or "").strip()
+            if gestionar_id:
+                PrimerSeguimiento.objects.filter(pk=self.seguimiento_id).update(
+                    gestionar_id=gestionar_id
+                )
             logger.info(
                 "PRIMER SEGUIMIENTO %s sincronizado con GESTIONAR con exito",
                 self.seguimiento_id,
@@ -258,15 +258,22 @@ class AsyncSendPrimerSeguimientoToGestionar(threading.Thread):
 class AsyncRemovePrimerSeguimientoToGestionar(threading.Thread):
     """Hilo para eliminar primer seguimiento de GESTIONAR asincronamente"""
 
-    def __init__(self, seguimiento_id):
+    def __init__(self, seguimiento_id, gestionar_id):
         super().__init__()
         self.seguimiento_id = seguimiento_id
+        self.gestionar_id = gestionar_id
 
     def start(self):  # type: ignore[override]
         if not _is_gestionar_integration_enabled():
             logger.info(
                 "Integracion con GESTIONAR deshabilitada: "
                 "se omite baja de primer seguimiento"
+            )
+            return None
+        if not self.gestionar_id:
+            logger.info(
+                "Primer seguimiento %s sin gestionar_id: se omite baja",
+                self.seguimiento_id,
             )
             return None
         if _run_async_threads():
@@ -282,7 +289,7 @@ class AsyncRemovePrimerSeguimientoToGestionar(threading.Thread):
         data = {
             "Action": "Delete",
             "Properties": {"Locale": "es-ES"},
-            "Rows": [{"ID_Seguimiento1": f"{self.seguimiento_id}"}],
+            "Rows": [{"ID_Seguimiento1": f"{self.gestionar_id}"}],
         }
         headers = {
             "applicationAccessKey": os.getenv("GESTIONAR_API_KEY"),

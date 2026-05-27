@@ -1559,6 +1559,7 @@ class PrimerSeguimiento(models.Model):
         blank=True,
     )
     estado = _nullable_char(choices=ESTADO_CHOICES)
+    gestionar_id = _nullable_char(max_length=64)
     funcionamiento = models.OneToOneField(
         to=FuncionamientoSeguimiento,
         on_delete=models.PROTECT,
