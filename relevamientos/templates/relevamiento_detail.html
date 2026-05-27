@@ -1394,23 +1394,35 @@
                 <div class="card-header d-flex align-items-center justify-content-between">
                     <h5 class="mb-0">Primer seguimiento</h5>
                     {% if seguimiento.sincronizado_gestionar %}
-                        <span class="badge bg-success" title="Datos recibidos desde GESTIONAR">Sincronizado con GESTIONAR</span>
+                        <span class="badge bg-success"
+                              title="Datos recibidos desde GESTIONAR">Sincronizado con GESTIONAR</span>
                     {% else %}
-                        <span class="badge bg-secondary" title="Aun no se recibieron datos desde GESTIONAR">Pendiente sincronizacion</span>
+                        <span class="badge bg-secondary"
+                              title="Aun no se recibieron datos desde GESTIONAR">Pendiente sincronizacion</span>
                     {% endif %}
                 </div>
                 <div class="card-body">
                     <dl class="row mb-0">
                         <dt class="col-sm-3">ID SISOC</dt>
-                        <dd class="col-sm-9">{{ seguimiento.id }}</dd>
+                        <dd class="col-sm-9">
+                            {{ seguimiento.id }}
+                        </dd>
                         <dt class="col-sm-3">ID GESTIONAR</dt>
-                        <dd class="col-sm-9">{{ seguimiento.gestionar_id | default:"Sin asignar" }}</dd>
+                        <dd class="col-sm-9">
+                            {{ seguimiento.gestionar_id | default:"Sin asignar" }}
+                        </dd>
                         <dt class="col-sm-3">Estado</dt>
-                        <dd class="col-sm-9">{{ seguimiento.estado | default:"Sin informacion" }}</dd>
+                        <dd class="col-sm-9">
+                            {{ seguimiento.estado | default:"Sin informacion" }}
+                        </dd>
                         <dt class="col-sm-3">Tecnico</dt>
-                        <dd class="col-sm-9">{{ seguimiento.tecnico | default:"Sin asignar" }}</dd>
+                        <dd class="col-sm-9">
+                            {{ seguimiento.tecnico | default:"Sin asignar" }}
+                        </dd>
                         <dt class="col-sm-3">Fecha y hora</dt>
-                        <dd class="col-sm-9">{{ seguimiento.fecha_hora | default:"Sin informacion" }}</dd>
+                        <dd class="col-sm-9">
+                            {{ seguimiento.fecha_hora | default:"Sin informacion" }}
+                        </dd>
                     </dl>
                 </div>
             </div>
