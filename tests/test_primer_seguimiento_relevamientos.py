@@ -9,6 +9,9 @@ from django.urls import reverse
 
 from comedores.models import Comedor, Referente
 from relevamientos.models import (
+    CierreSeguimiento,
+    FuncionamientoSeguimiento,
+    PrestacionSeguimiento,
     PrimerSeguimiento,
     Relevamiento,
     ServiciosBasicosSeguimiento,
@@ -498,3 +501,104 @@ def test_api_primer_seguimiento_hace_rollback_si_bloque_es_invalido(
     seguimiento.refresh_from_db()
     assert seguimiento.estado == PrimerSeguimiento.ESTADO_ASIGNADO
     assert seguimiento.servicios_basicos_id is None
+
+
+def test_detalle_primer_seguimiento_renderiza_bloques(auth_client, comedor):
+    relevamiento = Relevamiento.objects.create(comedor=comedor, estado="En Proceso")
+    funcionamiento = FuncionamientoSeguimiento.objects.create(
+        funcionamiento=FuncionamientoSeguimiento.ABIERTO_FUNCIONANDO,
+    )
+    servicios = ServiciosBasicosSeguimiento.objects.create(
+        agua_potable=True,
+        gas_red=3,
+        observan_animales=False,
+    )
+    cierre = CierreSeguimiento.objects.create(
+        info_adicional="Sin novedades",
+        realizo_forma=CierreSeguimiento.COMPLETA,
+        comentarios_finales="Formulario completo",
+    )
+    seguimiento = PrimerSeguimiento.objects.create(
+        id_relevamiento=relevamiento,
+        estado=PrimerSeguimiento.ESTADO_COMPLETO,
+        tecnico="uid-1",
+        funcionamiento=funcionamiento,
+        servicios_basicos=servicios,
+        cierre=cierre,
+    )
+    PrestacionSeguimiento.objects.create(
+        seguimiento=seguimiento,
+        id_prestacion_seg="prest-1",
+        dias_prestacion="Lunes",
+        tipo_prestacion="Almuerzo",
+        ap_presencial=10,
+    )
+
+    url = reverse(
+        "primer_seguimiento_detalle",
+        kwargs={"comedor_pk": comedor.id, "relevamiento_pk": relevamiento.id},
+    )
+    response = auth_client.get(url)
+
+    assert response.status_code == 200
+    content = response.content.decode("utf-8")
+    assert "Primer seguimiento" in content
+    assert "Funcionamiento" in content
+    assert "Abierto en funcionamiento" in content
+    assert "Servicios básicos" in content
+    assert "Cierre" in content
+    assert "Sin novedades" in content
+    assert "prest-1" in content
+
+
+def test_detalle_primer_seguimiento_skippea_bloques_vacios(auth_client, comedor):
+    relevamiento = Relevamiento.objects.create(comedor=comedor, estado="En Proceso")
+    funcionamiento = FuncionamientoSeguimiento.objects.create(
+        funcionamiento=FuncionamientoSeguimiento.ABIERTO_FUNCIONANDO,
+    )
+    PrimerSeguimiento.objects.create(
+        id_relevamiento=relevamiento,
+        estado=PrimerSeguimiento.ESTADO_ASIGNADO,
+        funcionamiento=funcionamiento,
+    )
+
+    url = reverse(
+        "primer_seguimiento_detalle",
+        kwargs={"comedor_pk": comedor.id, "relevamiento_pk": relevamiento.id},
+    )
+    response = auth_client.get(url)
+
+    assert response.status_code == 200
+    content = response.content.decode("utf-8")
+    assert 'id="bloque-funcionamiento"' in content
+    assert 'id="bloque-cierre"' not in content
+    assert 'id="bloque-servicios_basicos"' not in content
+
+
+def test_detalle_primer_seguimiento_404_si_no_existe(auth_client, comedor):
+    relevamiento = Relevamiento.objects.create(comedor=comedor, estado="En Proceso")
+
+    url = reverse(
+        "primer_seguimiento_detalle",
+        kwargs={"comedor_pk": comedor.id, "relevamiento_pk": relevamiento.id},
+    )
+    response = auth_client.get(url)
+
+    assert response.status_code == 404
+
+
+def test_detalle_primer_seguimiento_404_si_comedor_no_coincide(auth_client, comedor):
+    otro_comedor = Comedor.objects.create(nombre="Otro comedor")
+    relevamiento = Relevamiento.objects.create(comedor=comedor, estado="En Proceso")
+    PrimerSeguimiento.objects.create(
+        id_relevamiento=relevamiento,
+        estado=PrimerSeguimiento.ESTADO_ASIGNADO,
+    )
+
+    url = reverse(
+        "primer_seguimiento_detalle",
+        kwargs={"comedor_pk": otro_comedor.id, "relevamiento_pk": relevamiento.id},
+    )
+    response = auth_client.get(url)
+
+    assert response.status_code == 404

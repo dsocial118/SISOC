@@ -2,7 +2,8 @@ from typing import Any
 
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.shortcuts import redirect
+from django.db import models as dj_models
+from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
 
 from comedores.forms.comedor_form import ReferenteForm
@@ -20,7 +21,7 @@ from relevamientos.form import (
     PuntosEntregaForm,
     RelevamientoForm,
 )
-from relevamientos.models import Prestacion, Relevamiento
+from relevamientos.models import Prestacion, PrimerSeguimiento, Relevamiento
 from relevamientos.service import RelevamientoService
 from django.views.generic import (
     CreateView,
@@ -383,3 +384,123 @@ class RelevamientoDeleteView(
         comedor = self.object.comedor
 
         return reverse_lazy("comedor_detalle", kwargs={"pk": comedor.id})
+
+
+PRIMER_SEGUIMIENTO_BLOQUES = (
+    ("funcionamiento", "Funcionamiento"),
+    ("servicios_basicos", "Servicios básicos"),
+    ("almacenamiento_alimentos", "Almacenamiento de alimentos"),
+    ("condiciones_higiene", "Condiciones de higiene"),
+    ("tareas_comedor", "Tareas en el comedor"),
+    ("recursos", "Recursos"),
+    ("compras", "Compras"),
+    ("frecuencia_compra_alimentos", "Frecuencia de compra de alimentos"),
+    ("menu", "Menú"),
+    ("registro_asistencia", "Registro de asistencia"),
+    ("frecuencia_alimentos", "Frecuencia de alimentos"),
+    ("actividades_extras", "Actividades extras"),
+    ("tarjeta", "Tarjeta"),
+    ("rendicion_cuentas", "Rendición de cuentas"),
+    ("asistencia_tecnica", "Asistencia técnica"),
+    ("cierre", "Cierre"),
+)
+
+
+def _display_value(instance, field):
+    raw = getattr(instance, field.name, None)
+    if raw is None:
+        return None
+    if getattr(field, "choices", None):
+        getter = getattr(instance, f"get_{field.name}_display", None)
+        if callable(getter):
+            return getter()
+    if isinstance(raw, bool):
+        return "Sí" if raw else "No"
+    if isinstance(raw, str) and not raw.strip():
+        return None
+    if isinstance(raw, dj_models.Model):
+        return str(raw)
+    return raw
+
+
+def _bloque_campos(instance):
+    if instance is None:
+        return []
+    rows = []
+    for field in instance._meta.get_fields():
+        if not isinstance(field, dj_models.Field):
+            continue
+        if field.primary_key or field.auto_created:
+            continue
+        value = _display_value(instance, field)
+        if value is None or value == "":
+            continue
+        label = (
+            str(field.verbose_name).capitalize()
+            if field.verbose_name
+            else field.name.replace("_", " ").capitalize()
+        )
+        rows.append({"label": label, "value": value})
+    return rows
+
+
+class PrimerSeguimientoDetailView(LoginRequiredMixin, DetailView):
+    model = PrimerSeguimiento
+    template_name = "primer_seguimiento_detail.html"
+    context_object_name = "seguimiento"
+
+    def get_object(self, queryset=None):
+        queryset = PrimerSeguimiento.objects.select_related(
+            "id_relevamiento",
+            "id_relevamiento__comedor",
+            "referente",
+            "funcionamiento",
+            "servicios_basicos",
+            "almacenamiento_alimentos",
+            "condiciones_higiene",
+            "tareas_comedor",
+            "tareas_comedor__tareas_comedor_cant_personas",
+            "recursos",
+            "recursos__fuente_recursos",
+            "compras",
+            "compras__fuente_compras",
+            "frecuencia_compra_alimentos",
+            "menu",
+            "menu__modalidad_prestacion_del_dia",
+            "registro_asistencia",
+            "frecuencia_alimentos",
+            "actividades_extras",
+            "tarjeta",
+            "rendicion_cuentas",
+            "asistencia_tecnica",
+            "cierre",
+        ).prefetch_related("prestaciones", "menu__receta_items")
+        return get_object_or_404(
+            queryset,
+            id_relevamiento_id=self.kwargs["relevamiento_pk"],
+            id_relevamiento__comedor_id=self.kwargs["comedor_pk"],
+        )
+
+    def get_context_data(self, **kwargs) -> dict[str, Any]:
+        context = super().get_context_data(**kwargs)
+        seguimiento = self.object
+        context["relevamiento"] = seguimiento.id_relevamiento
+        context["comedor"] = seguimiento.id_relevamiento.comedor
+
+        bloques = []
+        for attr, label in PRIMER_SEGUIMIENTO_BLOQUES:
+            instance = getattr(seguimiento, attr, None)
+            if instance is None:
+                continue
+            campos = _bloque_campos(instance)
+            if not campos:
+                continue
+            bloques.append({"key": attr, "label": label, "campos": campos})
+        context["bloques"] = bloques
+
+        context["prestaciones"] = list(seguimiento.prestaciones.all())
+        menu = seguimiento.menu
+        context["receta_items"] = (
+            list(menu.receta_items.all()) if menu is not None else []
+        )
+        return context

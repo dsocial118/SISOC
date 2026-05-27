@@ -1397,32 +1397,13 @@
                         <span class="badge bg-success" title="Datos recibidos desde GESTIONAR">Sincronizado con GESTIONAR</span>
                     {% else %}
                         <span class="badge bg-secondary"
-                              title="Aun no se recibieron datos desde GESTIONAR">Pendiente sincronizacion</span>
+                              title="Aún no se recibieron datos desde GESTIONAR">Pendiente sincronización</span>
                     {% endif %}
                 </div>
-                <div class="card-body">
-                    <dl class="row mb-0">
-                        <dt class="col-sm-3">ID SISOC</dt>
-                        <dd class="col-sm-9">
-                            {{ seguimiento.id }}
-                        </dd>
-                        <dt class="col-sm-3">ID GESTIONAR</dt>
-                        <dd class="col-sm-9">
-                            {{ seguimiento.gestionar_id | default:"Sin asignar" }}
-                        </dd>
-                        <dt class="col-sm-3">Estado</dt>
-                        <dd class="col-sm-9">
-                            {{ seguimiento.estado | default:"Sin informacion" }}
-                        </dd>
-                        <dt class="col-sm-3">Tecnico</dt>
-                        <dd class="col-sm-9">
-                            {{ seguimiento.tecnico | default:"Sin asignar" }}
-                        </dd>
-                        <dt class="col-sm-3">Fecha y hora</dt>
-                        <dd class="col-sm-9">
-                            {{ seguimiento.fecha_hora | default:"Sin informacion" }}
-                        </dd>
-                    </dl>
+                <div class="card-body d-flex align-items-center justify-content-between">
+                    <span class="text-muted">Ver el detalle completo del primer seguimiento cargado para este relevamiento.</span>
+                    <a href="{% url 'primer_seguimiento_detalle' relevamiento.comedor.id relevamiento.id %}"
+                       class="btn btn-primary">Ver primer seguimiento</a>
                 </div>
             </div>
         {% endif %}
