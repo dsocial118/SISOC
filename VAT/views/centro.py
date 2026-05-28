@@ -1,3 +1,5 @@
+# pylint: disable=too-many-lines
+
 from django.views.generic import (
     ListView,
     DetailView,

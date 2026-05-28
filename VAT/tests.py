@@ -452,14 +452,14 @@ def test_centro_update_renderiza_mismo_formulario_extendido_que_alta(
     content = response.content.decode("utf-8")
     assert response.status_code == 200
     assert "contactos-TOTAL_FORMS" in content
-    assert "3.2 Contactos de la institución" in content
+    assert "Contactos adicionales" in content
     assert "4. Autoridades" not in content
     assert 'name="contactos-0-documento"' in content
     assert 'name="save_continue"' not in content
     assert 'for="id_provincia"' not in content
     assert 'name="provincia"' in content
     assert 'name="activo_present"' in content
-    assert "4. Estado de la sede" in content
+    assert "Estado de Centro de Formación Profesional" in content
 
 
 @pytest.mark.django_db
@@ -1930,11 +1930,11 @@ def test_centro_detail_muestra_boton_editar_para_referente_cfp(client, vat_geo_d
     assert response.status_code == 200
     assert reverse("vat_centro_update", kwargs={"pk": centro.pk}) in content
     assert "Editar" in content
-    assert "Datos del Establecimiento" in content
+    assert "Información general sobre el establecimiento" in content
     assert "CUE" in content
     assert "Estructura Institucional" not in content
-    assert "Ubicacion Principal" in content
-    assert "Identificadores" in content
+    assert "Ubicaciones adicionales" in content
+    assert "Contactos adicionales" in content
 
 
 @pytest.mark.django_db
@@ -1965,7 +1965,7 @@ def test_centro_detail_muestra_referentes_plural_sin_exponer_revisores(
 
     content = response.content.decode("utf-8")
     assert response.status_code == 200
-    assert "Referente/s del Centro" in content
+    assert "Referente del centro" in content
     assert "ref-detalle-1" in content
     assert "ref-detalle-2" in content
     assert "revisor-detalle" not in content
@@ -5858,11 +5858,11 @@ def test_centro_cursos_panel_renderiza_marcadores_para_filtrar_comisiones_por_cu
     )
     assert "<td>Plan Industrial Inicial</td>" in content
     assert 'id="tablaComisionesCursoCentro"' in content
-    assert "<th>Código</th>" in content
+    assert "<th>Comisión</th>" in content
     assert "<th>Ubicación</th>" in content
     assert "<th>Fecha Inicio</th>" in content
     assert "<th>Fecha Fin</th>" in content
-    assert "<th>Observaciones</th>" in content
+    assert "<th>Cupo</th>" in content
     assert "FIL-01" in content
     assert "Comisión Filtrable" in content
     assert 'id="comisionesFilterSearch"' in content
@@ -5873,7 +5873,7 @@ def test_centro_cursos_panel_renderiza_marcadores_para_filtrar_comisiones_por_cu
     assert 'id="comisionesFilterClear"' in content
     assert 'class="comision-curso-row"' in content
     assert reverse("vat_comision_curso_detail", kwargs={"pk": comision.pk}) in content
-    assert 'title="Gestionar Comisión"' in content
+    assert '<span>Ver</span>' in content
     assert comisiones_filter_curso is not None
     assert "select2" in comisiones_filter_curso.get("class", [])
     assert comisiones_filter_curso.get("data-width") == "100%"

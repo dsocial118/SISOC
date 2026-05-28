@@ -110,5 +110,5 @@
 {% block customJS %}
     <!-- Script de ordenamiento reutilizable para tablas -->
     <script src="{% static 'custom/js/listSort.js' %}"></script>
-    {% include "vat/partials/tour.html" with vat_tour_section="centros_list" %}
+    {% include "vat/partials/tour.html" with vat_tour_section="centros_list" vat_tour_autostart=True %}
 {% endblock %}
