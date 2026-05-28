@@ -315,7 +315,9 @@ def _cargar_municipio_provincia_map(municipio_ids):
         return {}
     return {
         m.pk: m.provincia_id
-        for m in Municipio.objects.filter(pk__in=municipio_ids).only("pk", "provincia_id")
+        for m in Municipio.objects.filter(pk__in=municipio_ids).only(
+            "pk", "provincia_id"
+        )
     }
 
 
@@ -742,7 +744,9 @@ def _aplicar_defaults_y_validar_payload_importacion(payload):
         raise ValidationError("Documento debe contener sólo dígitos")
 
 
-def _inferir_provincia_desde_municipio_importacion(payload, municipio_provincia_map=None):
+def _inferir_provincia_desde_municipio_importacion(
+    payload, municipio_provincia_map=None
+):
     municipio_id = payload.get("municipio")
     if municipio_id is None:
         return
@@ -1108,7 +1112,9 @@ def validar_y_normalizar_payloads_importacion(
         nacionalidades_cache=nacionalidades_cache,
         paises_a_nacionalidad=paises_a_nacionalidad,
     )
-    _inferir_provincia_desde_municipio_importacion(payload_normalizado, municipio_provincia_map)
+    _inferir_provincia_desde_municipio_importacion(
+        payload_normalizado, municipio_provincia_map
+    )
     _validar_beneficiario_menor_con_responsable_importacion(payload_normalizado)
 
     responsable_payload = None
@@ -1227,7 +1233,9 @@ def _resolver_localidad_responsable_payload_importacion(
                 responsable_payload["localidad"] = localidad_obj.pk
                 responsable_payload["municipio"] = localidad_obj.municipio.pk
                 if localidad_obj.municipio.provincia_id:
-                    responsable_payload["provincia"] = localidad_obj.municipio.provincia_id
+                    responsable_payload["provincia"] = (
+                        localidad_obj.municipio.provincia_id
+                    )
                 return
             if len(coincidencias) > 1:
                 raise ValidationError(
