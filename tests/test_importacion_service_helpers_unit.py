@@ -1375,6 +1375,7 @@ def test_importar_legajos_acumula_warnings_emitidos_por_callbacks(mocker):
         return_value={
             "municipios_cache": {},
             "localidades_cache": {},
+            "municipio_provincia_map": {},
             "sexos_cache": {},
             "nacionalidades_cache": {},
             "paises_a_nacionalidad": {},
@@ -1476,6 +1477,7 @@ def test_importar_legajos_orquesta_loop_principal_y_postprocesos(mocker):
         return_value={
             "municipios_cache": {},
             "localidades_cache": {},
+            "municipio_provincia_map": {},
             "sexos_cache": {},
             "nacionalidades_cache": {},
             "paises_a_nacionalidad": {},
@@ -1628,6 +1630,7 @@ def test_importar_legajos_registra_error_si_falla_responsable_tras_beneficiario(
         return_value={
             "municipios_cache": {},
             "localidades_cache": {},
+            "municipio_provincia_map": {},
             "sexos_cache": {},
             "nacionalidades_cache": {},
             "paises_a_nacionalidad": {},

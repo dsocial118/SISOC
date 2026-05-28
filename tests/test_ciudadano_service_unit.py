@@ -72,6 +72,13 @@ def test_resolver_ubicacion_paths(mocker):
     with pytest.raises(ValidationError):
         module.CiudadanoService._resolver_provincia("abc")
 
+    # Commit 38a81093 cambió _resolver_municipio(provincia=None) para que
+    # busque por ID sin la restricción provincial. Si Municipio no existe,
+    # todavía se levanta ValidationError; si existe, se devuelve.
+    mocker.patch(
+        "celiaquia.services.ciudadano_service.Municipio.objects.filter",
+        return_value=_FirstResult(None),
+    )
     with pytest.raises(ValidationError):
         module.CiudadanoService._resolver_municipio("20", None)
 

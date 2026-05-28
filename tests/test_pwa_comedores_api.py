@@ -817,10 +817,15 @@ def test_adjuntar_y_presentar_rendicion(comedores, settings, tmp_path):
     )
     assert present_without_docs_response.status_code == 400
 
+    # El commit a4636912 actualizó CATEGORIAS_CONFIG: agregó Formulario I y
+    # dividió Formulario III/V en _ALIMENTARIO/_SIPH como obligatorios mobile.
     categorias_obligatorias = [
+        DocumentacionAdjunta.CATEGORIA_FORMULARIO_I,
         DocumentacionAdjunta.CATEGORIA_FORMULARIO_II,
-        DocumentacionAdjunta.CATEGORIA_FORMULARIO_III,
-        DocumentacionAdjunta.CATEGORIA_FORMULARIO_V,
+        DocumentacionAdjunta.CATEGORIA_FORMULARIO_III_ALIMENTARIO,
+        DocumentacionAdjunta.CATEGORIA_FORMULARIO_III_SIPH,
+        DocumentacionAdjunta.CATEGORIA_FORMULARIO_V_ALIMENTARIO,
+        DocumentacionAdjunta.CATEGORIA_FORMULARIO_V_SIPH,
         DocumentacionAdjunta.CATEGORIA_EXTRACTO_BANCARIO,
         DocumentacionAdjunta.CATEGORIA_COMPROBANTES,
     ]
@@ -841,13 +846,15 @@ def test_adjuntar_y_presentar_rendicion(comedores, settings, tmp_path):
         f"/api/comedores/{comedor_1.id}/rendiciones/{rendicion.id}/",
     )
     assert detail_response.status_code == 200
-    assert len(detail_response.data["documentacion"]) == 9
+    # CATEGORIAS_CONFIG ahora trae 12 items (Form I + III/V divididos +
+    # Form IV/VI + Extracto + Comprobantes + Planilla Seguros + Otros).
+    assert len(detail_response.data["documentacion"]) == 12
     categoria_extra = next(
         item
         for item in detail_response.data["documentacion"]
         if item["codigo"] == DocumentacionAdjunta.CATEGORIA_OTROS
     )
-    assert categoria_extra["label"] == "Documentación Extra"
+    assert categoria_extra["label"] == "Documentación Adicional"
 
     present_response = client.post(
         f"/api/comedores/{comedor_1.id}/rendiciones/{rendicion.id}/presentar/",
