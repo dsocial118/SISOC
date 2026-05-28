@@ -9,10 +9,13 @@ from django.test import RequestFactory
 from core.constants import UserGroups
 from core.models import Provincia
 from centrodefamilia.access import (
+    puede_gestionar_usuarios_cdf,
     puede_generar_usuario_cdf,
     puede_ver_usuarios_cdf,
 )
 from centrodefamilia.models import AccesoCDF, Centro
+from centrodefamilia.views import centro as centro_views
+from centrodefamilia.views.centro import CentroDetailView, CentroListView
 from centrodefamilia.views.generar_usuario import GenerarUsuarioCDFView
 from users.models import Profile
 from users.services_generate_user import (
@@ -308,3 +311,180 @@ def test_initial_precarga_solo_el_primer_usuario():
     siguiente = GenerarUsuarioCDFView()
     siguiente.centro = centro
     assert siguiente.get_initial() == {}
+
+
+# --------------------------- Detalle: acceso (get_object) ------------------
+
+
+def _detail_view(user, pk):
+    request = RequestFactory().get("/")
+    request.user = user
+    view = CentroDetailView()
+    view.setup(request, pk=pk)
+    return view
+
+
+def _centro_legacy(nombre, provincia, referente):
+    centro = _centro(nombre, provincia)
+    centro.referente = referente
+    centro.save(update_fields=["referente"])
+    return centro
+
+
+@pytest.mark.django_db
+def test_detail_referente_acceso_solo_su_centro():
+    provincia = Provincia.objects.create(nombre="Cba Detalle CDF")
+    centro = _centro("CDF Det Propio", provincia)
+    ajeno = _centro("CDF Det Ajeno", provincia)
+    referente = _referente_cdf("ref-det", centro)
+
+    assert _detail_view(referente, centro.pk).get_object().pk == centro.pk
+    with pytest.raises(PermissionDenied):
+        _detail_view(referente, ajeno.pk).get_object()
+
+
+@pytest.mark.django_db
+def test_detail_referente_legacy_sigue_accediendo():
+    """Regresión: el referente legacy (FK ``referente``) conserva el acceso al detalle."""
+    provincia = Provincia.objects.create(nombre="Legacy Detalle CDF")
+    user = User.objects.create_user(username="ref-legacy-det", password="test1234")
+    Profile.objects.get_or_create(user=user)
+    centro = _centro_legacy("CDF Legacy Det", provincia, user)
+
+    assert _detail_view(user, centro.pk).get_object().pk == centro.pk
+
+
+@pytest.mark.django_db
+def test_detail_provincial_delegador_puede_acceder():
+    """El provincial que puede delegar accede al detalle aunque no sea SSE ni referente."""
+    provincia = Provincia.objects.create(nombre="Prov Deleg Detalle")
+    centro = _centro("CDF Prov Deleg", provincia)
+    actor = _provincial("prov-det-ok", provincia)
+
+    assert _detail_view(actor, centro.pk).get_object().pk == centro.pk
+
+
+@pytest.mark.django_db
+def test_detail_provincial_delegador_acceso_independiente_del_cupo():
+    """Llenar el cupo NO debe revocar el acceso de lectura al detalle del CDF."""
+    provincia = Provincia.objects.create(nombre="Prov Cupo Detalle")
+    centro = _centro("CDF Cupo Det", provincia)
+    actor = _provincial("prov-det-cupo", provincia)
+    for i in range(AccesoCDF.LIMITE_USUARIOS_POR_CENTRO):
+        usuario = User.objects.create_user(username=f"ref-det-cupo-{i}")
+        AccesoCDF.objects.create(user=usuario, centro=centro, creado_por=actor)
+
+    assert puede_generar_usuario_cdf(actor, centro) is False  # cupo lleno
+    assert puede_gestionar_usuarios_cdf(actor, centro) is True  # pero gestiona/ve
+    assert _detail_view(actor, centro.pk).get_object().pk == centro.pk
+
+
+@pytest.mark.django_db
+def test_detail_provincial_otra_provincia_denegado():
+    prov_a = Provincia.objects.create(nombre="Prov A Det")
+    prov_b = Provincia.objects.create(nombre="Prov B Det")
+    centro = _centro("CDF Prov A", prov_a)
+    actor = _provincial("prov-det-otra", prov_b)
+
+    with pytest.raises(PermissionDenied):
+        _detail_view(actor, centro.pk).get_object()
+
+
+@pytest.mark.django_db
+def test_detail_provincial_sin_grupo_delegable_denegado():
+    """Sanity: el acceso adicional es solo para el delegador, no para cualquier provincial."""
+    provincia = Provincia.objects.create(nombre="Prov SinGrupo Det")
+    centro = _centro("CDF SinGrupo Det", provincia)
+    actor = _provincial("prov-det-sg", provincia, con_grupo_delegable=False)
+
+    with pytest.raises(PermissionDenied):
+        _detail_view(actor, centro.pk).get_object()
+
+
+# --------------------------- Detalle: panel de credenciales ----------------
+
+
+@pytest.mark.django_db
+def test_detail_referente_solo_lista_su_propia_credencial():
+    provincia = Provincia.objects.create(nombre="Cred Referente CDF")
+    centro = _centro("CDF Cred", provincia)
+    referente = _referente_cdf("ref-cred-propio", centro)
+    otro = _referente_cdf("ref-cred-otro", centro)
+    referente.profile.temporary_password_plaintext = "propia"
+    referente.profile.save(update_fields=["temporary_password_plaintext"])
+    otro.profile.temporary_password_plaintext = "ajena"
+    otro.profile.save(update_fields=["temporary_password_plaintext"])
+
+    view = _detail_view(referente, centro.pk)
+    view.object = centro
+    usuarios = list(view.get_context_data(object=centro)["usuarios_cdf"])
+
+    assert [acceso.user_id for acceso in usuarios] == [referente.id]
+
+
+@pytest.mark.django_db
+def test_detail_superuser_lista_todas_las_credenciales():
+    provincia = Provincia.objects.create(nombre="Cred Admin CDF")
+    centro = _centro("CDF Cred Admin", provincia)
+    referente = _referente_cdf("ref-cred-a", centro)
+    otro = _referente_cdf("ref-cred-b", centro)
+    superadmin = User.objects.create_superuser(
+        username="su-cred-cdf", email="su-cred@example.com", password="test1234"
+    )
+
+    view = _detail_view(superadmin, centro.pk)
+    view.object = centro
+    usuarios = list(view.get_context_data(object=centro)["usuarios_cdf"])
+
+    assert {acceso.user_id for acceso in usuarios} == {referente.id, otro.id}
+
+
+# --------------------------- Listado: scope -------------------------------
+
+
+def _list_ids(user):
+    request = RequestFactory().get("/")
+    request.user = user
+    view = CentroListView()
+    view.setup(request)
+    return list(view.get_queryset().values_list("id", flat=True))
+
+
+@pytest.mark.django_db
+def test_listado_referente_cdf_solo_sus_centros():
+    provincia = Provincia.objects.create(nombre="Lista Referente CDF")
+    propio = _centro("CDF Lista Propio", provincia)
+    _centro("CDF Lista Ajeno", provincia)
+    referente = _referente_cdf("ref-lista", propio)
+
+    assert _list_ids(referente) == [propio.id]
+
+
+@pytest.mark.django_db
+def test_listado_referente_legacy_sin_regresion(monkeypatch):
+    """Regresión: el referente legacy (rol + FK ``referente``) sigue viendo solo su centro."""
+    provincia = Provincia.objects.create(nombre="Lista Legacy CDF")
+    user = User.objects.create_user(username="ref-legacy-lista", password="test1234")
+    Profile.objects.get_or_create(user=user)
+    propio = _centro_legacy("CDF Legacy Lista Propio", provincia, user)
+    _centro("CDF Legacy Lista Ajeno", provincia)
+
+    monkeypatch.setattr(
+        centro_views,
+        "_has_permission",
+        lambda u, code: code == centro_views.ROLE_REFERENTE_CENTRO_PERMISSION,
+    )
+
+    assert _list_ids(user) == [propio.id]
+
+
+@pytest.mark.django_db
+def test_listado_usuario_sin_rol_no_ve_centros(monkeypatch):
+    provincia = Provincia.objects.create(nombre="Lista SinRol CDF")
+    _centro("CDF SinRol", provincia)
+    user = User.objects.create_user(username="sin-rol-lista", password="test1234")
+    Profile.objects.get_or_create(user=user)
+
+    monkeypatch.setattr(centro_views, "_has_permission", lambda u, code: False)
+
+    assert _list_ids(user) == []

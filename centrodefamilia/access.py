@@ -54,18 +54,17 @@ def usuarios_cdf_restantes(centro):
     )
 
 
-def puede_generar_usuario_cdf(user, centro):
-    """Regla de negocio para habilitar el botón "Generar usuario" en un CDF.
+def puede_gestionar_usuarios_cdf(user, centro):
+    """Habilita a un actor a gestionar usuarios referentes de un CDF.
 
-    - El usuario debe poder delegar el grupo "CDF - Referente centro".
-    - Debe ser de la misma provincia que el CDF (salvo superusuario).
-    - Debe quedar cupo respecto del máximo por CDF.
+    Regla de delegación + territorio, SIN considerar el cupo. Es la base de
+    :func:`puede_generar_usuario_cdf` y además sirve como gate de lectura del
+    detalle del centro: poder ver el CDF para gestionarlo no debe depender de
+    que quede cupo libre (si no, llenar el cupo revocaría el acceso a la ficha).
     """
     if not user or not getattr(user, "is_authenticated", False):
         return False
     if not actor_puede_delegar_grupo_nombre(user, GRUPO_CDF_REFERENTE_CENTRO):
-        return False
-    if usuarios_cdf_restantes(centro) <= 0:
         return False
     if user.is_superuser:
         return True
@@ -78,6 +77,18 @@ def puede_generar_usuario_cdf(user, centro):
         municipio_id=getattr(centro, "municipio_id", None),
         localidad_id=getattr(centro, "localidad_id", None),
     )
+
+
+def puede_generar_usuario_cdf(user, centro):
+    """Regla de negocio para habilitar el botón "Generar usuario" en un CDF.
+
+    - El usuario debe poder delegar el grupo "CDF - Referente centro".
+    - Debe ser de la misma provincia que el CDF (salvo superusuario).
+    - Debe quedar cupo respecto del máximo por CDF.
+    """
+    if not puede_gestionar_usuarios_cdf(user, centro):
+        return False
+    return usuarios_cdf_restantes(centro) > 0
 
 
 def puede_ver_usuarios_cdf(user, centro):
@@ -146,7 +157,7 @@ def aplicar_filtro_provincia_usuario(queryset, user, provincia_lookup="provincia
     )
 
 
-def _ids_centros_referente_cdf(user):
+def ids_centros_referente_cdf(user):
     """IDs de Centros de Familia donde el usuario es referente (tiene AccesoCDF).
 
     Devuelve la lista de centros con acceso activo si el usuario es referente
@@ -173,7 +184,7 @@ def _ids_centros_referente_cdf(user):
 
 def es_referente_cdf(user):
     """Indica si el usuario está vinculado como referente de algún CDF."""
-    return _ids_centros_referente_cdf(user) is not None
+    return ids_centros_referente_cdf(user) is not None
 
 
 def aplicar_scope_centros_cdf(
@@ -194,7 +205,7 @@ def aplicar_scope_centros_cdf(
     if getattr(user, "is_superuser", False):
         return queryset
 
-    referente_ids = _ids_centros_referente_cdf(user)
+    referente_ids = ids_centros_referente_cdf(user)
     if referente_ids is not None:
         return queryset.filter(**{f"{id_lookup}__in": referente_ids})
 

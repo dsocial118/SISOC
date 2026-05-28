@@ -16,10 +16,10 @@ from django.shortcuts import get_object_or_404
 from django.http import Http404
 
 from centrodefamilia.access import (
-    es_referente_cdf,
+    ids_centros_referente_cdf,
+    puede_gestionar_usuarios_cdf,
     puede_generar_usuario_cdf,
     puede_ver_usuarios_cdf,
-    aplicar_scope_centros_cdf,
 )
 from centrodefamilia.models import (
     AccesoCDF,
@@ -96,14 +96,16 @@ def _build_cdf_centro_list_queryset(request):
 
     if user.is_superuser or _has_permission(user, ROLE_CDF_SSE_PERMISSION):
         pass
-    elif es_referente_cdf(user):
-        # Referente nuevo: scope por AccesoCDF (puede ver solo sus centros asignados)
-        queryset = aplicar_scope_centros_cdf(queryset, user)
-    elif _has_permission(user, ROLE_REFERENTE_CENTRO_PERMISSION):
-        # Referente legacy: scope por FK referente_id
-        queryset = queryset.filter(referente_id=user.id)
     else:
-        return Centro.objects.none()
+        centros_referente = ids_centros_referente_cdf(user)
+        if centros_referente is not None:
+            # Referente nuevo: scope por AccesoCDF (solo sus centros asignados)
+            queryset = queryset.filter(id__in=centros_referente)
+        elif _has_permission(user, ROLE_REFERENTE_CENTRO_PERMISSION):
+            # Referente legacy: scope por FK referente_id
+            queryset = queryset.filter(referente_id=user.id)
+        else:
+            return Centro.objects.none()
 
     queryset = _apply_cdf_centro_search(queryset, request.GET.get("busqueda", ""))
     return BOOL_ADVANCED_FILTER.filter_queryset(queryset, request.GET).order_by("-id")
@@ -197,7 +199,13 @@ class CentroDetailView(LoginRequiredMixin, DetailView):
             centro=obj, user=user, activo=True
         ).exists()
         es_cdf_sse = _has_permission(user, ROLE_CDF_SSE_PERMISSION)
-        if not (es_ref_legacy or es_ref_acceso or user.is_superuser or es_cdf_sse):
+        if not (
+            es_ref_legacy
+            or es_ref_acceso
+            or user.is_superuser
+            or es_cdf_sse
+            or puede_gestionar_usuarios_cdf(user, obj)
+        ):
             raise PermissionDenied
         return obj
 
