@@ -86,13 +86,25 @@ class PrimerSeguimientoApiView(APIView):
     def _resolve_seguimiento(data):
         """Resuelve el PrimerSeguimiento por cualquiera de los identificadores
         que GESTIONAR puede enviar: sisoc_id (PK SISOC), gestionar_id /
-        ID_Seguimiento1 (PK GESTIONAR) o id_relevamiento (FK al ancla).
-        Retorna (seguimiento, error_response). Si los identificadores
-        informados refieren a distintos registros, retorna 400.
+        ID_Seguimiento1 / id_seguimiento1 (PK GESTIONAR) o id_relevamiento
+        (FK al ancla). sisoc_id se trata como PK solo si es numerico; si llega
+        alfanumerico se interpreta como gestionar_id. Retorna
+        (seguimiento, error_response). Si los identificadores informados
+        refieren a distintos registros, retorna 400.
         """
         sisoc_id = data.get("sisoc_id") or data.get("Id_SISOC")
-        gestionar_id = data.get("gestionar_id") or data.get("ID_Seguimiento1")
+        gestionar_id = (
+            data.get("gestionar_id")
+            or data.get("ID_Seguimiento1")
+            or data.get("id_seguimiento1")
+        )
         id_relevamiento = data.get("id_relevamiento") or data.get("Id_Relevamiento")
+
+        # sisoc_id alfanumerico no es un PK de SISOC: GESTIONAR puede mandar su
+        # propio identificador en ese campo, asi que cae a gestionar_id.
+        if sisoc_id is not None and not str(sisoc_id).strip().isdigit():
+            gestionar_id = gestionar_id or sisoc_id
+            sisoc_id = None
 
         if not any([sisoc_id, gestionar_id, id_relevamiento]):
             return None, Response(

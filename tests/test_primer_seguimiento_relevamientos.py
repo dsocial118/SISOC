@@ -478,6 +478,62 @@ def test_api_primer_seguimiento_actualiza_bloques_y_estado(api_client, comedor):
     assert seguimiento.cierre.info_adicional == "Sin novedades"
 
 
+def test_api_primer_seguimiento_sisoc_id_alfanumerico_resuelve_por_gestionar_id(
+    api_client, comedor
+):
+    relevamiento, seguimiento = _crear_seguimiento_con_gestionar_id(
+        comedor, gestionar_id="8ac5ef13"
+    )
+
+    response = api_client.patch(
+        reverse("api_primer_seguimiento"),
+        {
+            "sisoc_id": "8ac5ef13",
+            "id_seguimiento1": "8ac5ef13",
+            "id_relevamiento": relevamiento.id,
+            "estado": "Completo",
+        },
+        format="json",
+    )
+
+    assert response.status_code == 200
+    seguimiento.refresh_from_db()
+    assert seguimiento.estado == PrimerSeguimiento.ESTADO_COMPLETO
+
+
+def test_api_primer_seguimiento_normaliza_formatos_de_gestionar(api_client, comedor):
+    relevamiento, seguimiento = _crear_seguimiento_con_gestionar_id(
+        comedor, gestionar_id="8ac5ef13"
+    )
+
+    response = api_client.patch(
+        reverse("api_primer_seguimiento"),
+        {
+            "sisoc_id": "8ac5ef13",
+            "id_seguimiento1": "8ac5ef13",
+            "id_relevamiento": relevamiento.id,
+            "fecha_hora": "28/5/2026 08:46:06",
+            "estado": "En Proceso",
+            "funcionamiento": "Abierto, en funcionamiento",
+            "cantidad_personas_menu": "0120",
+            "mejora_alimentacion_ofrecida": "Porciones",
+        },
+        format="json",
+    )
+
+    assert response.status_code == 200
+    seguimiento.refresh_from_db()
+    assert seguimiento.funcionamiento.funcionamiento == "Abierto en funcionamiento"
+    assert seguimiento.menu.mejora_alimentacion_ofrecida == "Porciones"
+    assert seguimiento.menu.cantidad_personas_menu == 120
+    assert seguimiento.fecha_hora is not None
+    assert (
+        seguimiento.fecha_hora.year,
+        seguimiento.fecha_hora.month,
+        seguimiento.fecha_hora.day,
+    ) == (2026, 5, 28)
+
+
 def test_api_primer_seguimiento_hace_rollback_si_bloque_es_invalido(
     api_client,
     comedor,

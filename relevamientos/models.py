@@ -1352,7 +1352,7 @@ class MenuSeguimiento(models.Model):
     considera_menu_tamanio_porciones = _nullable_bool()
     considera_personas_conformes = _nullable_bool()
     considera_personas_conformes_porque = _nullable_char()
-    mejora_alimentacion_ofrecida = _nullable_bool()
+    mejora_alimentacion_ofrecida = _nullable_char()
 
     class Meta:
         verbose_name = "Menu de primer seguimiento"

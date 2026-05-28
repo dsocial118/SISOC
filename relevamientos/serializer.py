@@ -1,7 +1,10 @@
 import logging
+from datetime import datetime
+
 from rest_framework import serializers
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import models
+from django.utils import timezone
 
 from comedores.models import Referente
 from core.validators import validate_unicode_email
@@ -588,6 +591,7 @@ class PrimerSeguimientoSerializer(serializers.ModelSerializer):
         self._normalize_aliases()
         self._normalize_fecha_hora()
         self._process_referente()
+        self._normalize_funcionamiento()
         self._process_simple_block(
             "funcionamiento",
             FuncionamientoSeguimiento,
@@ -664,8 +668,65 @@ class PrimerSeguimientoSerializer(serializers.ModelSerializer):
             self.initial_data.pop(old_key, None)
 
     def _normalize_fecha_hora(self):
-        if not self.initial_data.get("fecha_hora"):
+        valor = self.initial_data.get("fecha_hora")
+        if not valor:
             self.initial_data.pop("fecha_hora", None)
+            return
+        if isinstance(valor, datetime):
+            return
+        parsed = self._parse_fecha_hora(valor)
+        if parsed is not None:
+            self.initial_data["fecha_hora"] = parsed
+
+    def _parse_fecha_hora(self, valor):
+        # GESTIONAR manda la fecha como D/M/YYYY (con o sin hora/segundos), que
+        # DRF no acepta por defecto (solo ISO-8601). Se parsea aca a datetime.
+        if not isinstance(valor, str):
+            return None
+        texto = valor.strip()
+        if not texto:
+            return None
+        formatos = (
+            "%d/%m/%Y %H:%M:%S",
+            "%d/%m/%Y %H:%M",
+            "%d/%m/%Y",
+            "%d\\%m\\%Y %H:%M:%S",
+            "%d\\%m\\%Y %H:%M",
+            "%d\\%m\\%Y",
+        )
+        for fmt in formatos:
+            try:
+                parsed = datetime.strptime(texto, fmt)
+            except ValueError:
+                continue
+            if timezone.is_naive(parsed):
+                parsed = timezone.make_aware(parsed, timezone.get_default_timezone())
+            return parsed
+        return None
+
+    def _normalize_funcionamiento(self):
+        valor = self.initial_data.get("funcionamiento")
+        if not isinstance(valor, str):
+            return
+        canonical = self._match_funcionamiento_choice(valor)
+        if canonical is not None:
+            self.initial_data["funcionamiento"] = canonical
+
+    def _match_funcionamiento_choice(self, valor):
+        objetivo = self._normalize_choice_key(valor)
+        if not objetivo:
+            return None
+        for choice_value, _ in FuncionamientoSeguimiento.FUNCIONAMIENTO_CHOICES:
+            if self._normalize_choice_key(choice_value) == objetivo:
+                return choice_value
+        return None
+
+    @staticmethod
+    def _normalize_choice_key(texto):
+        # Compara choices ignorando comas, mayusculas y espacios repetidos:
+        # GESTIONAR manda "Abierto, en funcionamiento" y el choice no lleva coma.
+        sin_coma = str(texto).replace(",", " ")
+        return " ".join(sin_coma.split()).lower()
 
     def _drop_external_fields(self):
         for field_name in (
