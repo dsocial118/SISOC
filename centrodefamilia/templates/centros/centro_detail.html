@@ -258,7 +258,9 @@
                                 <tbody>
                                     {% for acceso in usuarios_cdf %}
                                         <tr>
-                                            <td><code>{{ acceso.user.username }}</code></td>
+                                            <td>
+                                                <code>{{ acceso.user.username }}</code>
+                                            </td>
                                             <td>{{ acceso.user.get_full_name|default:"-" }}</td>
                                             <td>{{ acceso.user.email|default:"-" }}</td>
                                             <td>
@@ -278,9 +280,7 @@
                                         </tr>
                                     {% empty %}
                                         <tr>
-                                            <td colspan="5" class="text-center text-muted py-2">
-                                                No hay usuarios generados para este centro.
-                                            </td>
+                                            <td colspan="5" class="text-center text-muted py-2">No hay usuarios generados para este centro.</td>
                                         </tr>
                                     {% endfor %}
                                 </tbody>

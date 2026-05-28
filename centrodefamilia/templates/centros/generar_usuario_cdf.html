@@ -27,8 +27,7 @@
                         {{ form.last_name|as_crispy_field }}
                         {{ form.email|as_crispy_field }}
                         <button class="btn btn-primary mx-1" type="submit">Generar usuario</button>
-                        <a href="{% url 'centro_detail' centro.id %}"
-                           class="btn btn-secondary">Cancelar</a>
+                        <a href="{% url 'centro_detail' centro.id %}" class="btn btn-secondary">Cancelar</a>
                     </form>
                 </div>
             </div>
