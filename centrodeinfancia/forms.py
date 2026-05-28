@@ -112,11 +112,11 @@ class CentroDeInfanciaForm(forms.ModelForm):
     fecha_inicio = forms.CharField(
         required=False,
         label="Año de inicio de actividades del CDI",
-        widget=forms.TextInput(
+        widget=forms.NumberInput(
             attrs={
                 "placeholder": "AAAA",
-                "inputmode": "numeric",
-                "pattern": "\\d{4}",
+                "min": "1900",
+                "max": "2100",
                 "class": "form-control",
             }
         ),

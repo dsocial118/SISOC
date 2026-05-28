@@ -1,3 +1,11 @@
+<!-- AUTO-GENERATED RELEASE START: 2026-05-27 -->
+# Versión SISOC 27.05.2026
+
+## Actualizaciones
+
+- [sin-area] fix(migrations): agregar migración faltante para choices de categoria en DocumentacionAdjunta. (PR #1783)
+<!-- AUTO-GENERATED RELEASE END: 2026-05-27 -->
+
 <!-- AUTO-GENERATED RELEASE START: 2026-05-20 -->
 # Versión SISOC 20.05.2026
 

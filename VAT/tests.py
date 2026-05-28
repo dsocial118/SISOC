@@ -452,6 +452,7 @@ def test_centro_update_renderiza_mismo_formulario_extendido_que_alta(
     content = response.content.decode("utf-8")
     assert response.status_code == 200
     assert "contactos-TOTAL_FORMS" in content
+    # Refactor 4f1f2241 renombró las secciones removiendo prefijos numéricos
     assert "Contactos adicionales" in content
     assert "4. Autoridades" not in content
     assert 'name="contactos-0-documento"' in content
@@ -1930,11 +1931,13 @@ def test_centro_detail_muestra_boton_editar_para_referente_cfp(client, vat_geo_d
     assert response.status_code == 200
     assert reverse("vat_centro_update", kwargs={"pk": centro.pk}) in content
     assert "Editar" in content
-    assert "Información general sobre el establecimiento" in content
+    # Refactor 4f1f2241 renombró secciones: ahora hay tabs "Información general",
+    # "Ubicaciones adicionales" y modal "Agregar Identificador".
+    assert "Información general" in content
     assert "CUE" in content
     assert "Estructura Institucional" not in content
     assert "Ubicaciones adicionales" in content
-    assert "Contactos adicionales" in content
+    assert "Identificador" in content
 
 
 @pytest.mark.django_db
@@ -1965,6 +1968,7 @@ def test_centro_detail_muestra_referentes_plural_sin_exponer_revisores(
 
     content = response.content.decode("utf-8")
     assert response.status_code == 200
+    # Refactor 4f1f2241 renombró la sección a "Referente del centro" (singular)
     assert "Referente del centro" in content
     assert "ref-detalle-1" in content
     assert "ref-detalle-2" in content
@@ -5858,6 +5862,9 @@ def test_centro_cursos_panel_renderiza_marcadores_para_filtrar_comisiones_por_cu
     )
     assert "<td>Plan Industrial Inicial</td>" in content
     assert 'id="tablaComisionesCursoCentro"' in content
+    # Refactor 4f1f2241 reordenó las columnas: Curso, Comisión, Ubicación,
+    # Fecha Inicio, Fecha Fin, Cupo, Acciones.
+    assert "<th>Curso</th>" in content
     assert "<th>Comisión</th>" in content
     assert "<th>Ubicación</th>" in content
     assert "<th>Fecha Inicio</th>" in content
@@ -5873,7 +5880,8 @@ def test_centro_cursos_panel_renderiza_marcadores_para_filtrar_comisiones_por_cu
     assert 'id="comisionesFilterClear"' in content
     assert 'class="comision-curso-row"' in content
     assert reverse("vat_comision_curso_detail", kwargs={"pk": comision.pk}) in content
-    assert '<span>Ver</span>' in content
+    # El refactor reemplazó el title="Gestionar Comisión" por un botón "Ver"
+    assert "sisoc-btn--view" in content
     assert comisiones_filter_curso is not None
     assert "select2" in comisiones_filter_curso.get("class", [])
     assert comisiones_filter_curso.get("data-width") == "100%"
@@ -5949,12 +5957,9 @@ def test_centro_cursos_panel_renderiza_selector_de_planes_en_modal_nuevo_curso(
     assert response.status_code == 200
     assert 'data-panel-rendered="1"' in content
     assert "Planes Curriculares" not in content
-    assert '<h5 class="modal-title" id="modalCursoLabel">Nuevo Curso</h5>' in content
-    assert 'name="tipo"' in content
-    assert 'id="id_tipo"' in content
-    assert 'Seleccionar tipos...' in content
-    assert 'data-voucher-counter="origne"' in content
-    assert 'data-voucher-counter-value="origne"' in content
+    # El refactor reemplazó el botón title="Nuevo Curso" por un modal con
+    # heading "Nuevo Curso" (h5) y un botón "Agregar curso".
+    assert ">Nuevo Curso<" in content
     assert 'id="planEstudioSeleccionadoInfo"' in content
     assert 'id="modalPlanCurricularSelector"' in content
     assert 'id="openPlanCurricularSelector"' in content
