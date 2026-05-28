@@ -10,6 +10,7 @@ from VAT.views.centro import (
     CentroUpdateView,
     centros_ajax,
 )
+from VAT.views.generar_usuario import GenerarUsuarioCentroVATView
 
 from VAT.views.modalidad_institucional import (
     ModalidadInstitucionalListView,
@@ -177,6 +178,13 @@ urlpatterns = [
         "vat/centros/<int:pk>/",
         permissions_any_required(["VAT.view_centro"])(CentroDetailView.as_view()),
         name="vat_centro_detail",
+    ),
+    path(
+        "vat/centros/<int:pk>/generar-usuario/",
+        permissions_any_required(["VAT.view_centro"])(
+            GenerarUsuarioCentroVATView.as_view()
+        ),
+        name="vat_centro_generar_usuario",
     ),
     path(
         "vat/centros/<int:pk>/panel/cursos/",
