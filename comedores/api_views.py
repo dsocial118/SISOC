@@ -386,7 +386,12 @@ class ComedorDetailViewSet(
 
     def _serialize_prestacion_alimentaria_payload(self, comedor, informe):
         if informe:
-            payload = InformeTecnicoPrestacionSerializer(informe).data
+            fechas = InformeTecnicoPrestacionSerializer.fechas_finalizacion_para(
+                [informe.admision_id]
+            )
+            payload = InformeTecnicoPrestacionSerializer(
+                informe, context={"fechas_finalizacion": fechas}
+            ).data
         else:
             payload = {
                 "informe_id": None,
@@ -1629,6 +1634,11 @@ class ComedorDetailViewSet(
     @action(detail=True, methods=["get"], url_path="prestacion-alimentaria/historial")
     def prestacion_alimentaria_historial(self, request, pk=None):
         comedor = self.get_object()
+        if not is_alimentar_comunidad_program(comedor):
+            return Response(
+                {"detail": "Disponible solo para Alimentar Comunidad."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
         queryset = InformeTecnico.objects.filter(
             admision__comedor=comedor,
             estado_formulario="finalizado",
@@ -1659,13 +1669,19 @@ class ComedorDetailViewSet(
         page_number = request.query_params.get("page", 1)
         page_obj = paginator.get_page(page_number)
 
+        page_items = list(page_obj.object_list)
+        fechas = InformeTecnicoPrestacionSerializer.fechas_finalizacion_para(
+            [informe.admision_id for informe in page_items]
+        )
         return Response(
             {
                 "count": paginator.count,
                 "num_pages": paginator.num_pages,
                 "current_page": page_obj.number,
                 "results": InformeTecnicoPrestacionSerializer(
-                    page_obj.object_list, many=True
+                    page_items,
+                    many=True,
+                    context={"fechas_finalizacion": fechas},
                 ).data,
             },
             status=status.HTTP_200_OK,

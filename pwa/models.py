@@ -471,11 +471,6 @@ class NominaEspacioPWA(models.Model):
                 name="pwa_nomina_asistencia_idx",
             ),
             models.Index(fields=["es_indocumentado"], name="pwa_nomina_indoc_idx"),
-            models.Index(
-                fields=["pertenece_comunidad_indigena"],
-                name="pwa_nomina_indig_idx",
-            ),
-            models.Index(fields=["situacion_calle"], name="pwa_nomina_calle_idx"),
         ]
 
     def __str__(self):

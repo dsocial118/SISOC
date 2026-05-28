@@ -14,8 +14,18 @@ from PIL import Image
 from rest_framework.authtoken.models import Token
 from rest_framework.test import APIClient
 
-from admisiones.models.admisiones import Admision, InformeTecnico
-from comedores.models import Comedor, ImagenComedor, Nomina, Programas
+from admisiones.models.admisiones import (
+    Admision,
+    HistorialEstadosAdmision,
+    InformeTecnico,
+)
+from comedores.models import (
+    Comedor,
+    ImagenComedor,
+    Nomina,
+    PrestacionAlimentariaConformidad,
+    Programas,
+)
 from core.models import Localidad, Municipio, Provincia
 from organizaciones.models import Organizacion
 from relevamientos.models import (
@@ -1124,3 +1134,102 @@ def test_rendicion_en_subsanar_permite_agregar_historial_para_comprobantes(
     assert observado_payload["estado_visual"] == DocumentacionAdjunta.ESTADO_SUBSANAR
     assert observado_payload["estado_label_visual"] == "A Subsanar"
     assert observado_payload["observaciones"] == "Subir una versión legible"
+
+
+def _comedor_alimentar_comunidad(*, username):
+    provincia = Provincia.objects.create(nombre="Cordoba")
+    programa = Programas.objects.create(nombre="Alimentar Comunidad")
+    comedor = Comedor.objects.create(
+        nombre="Comedor Alimentar Comunidad",
+        provincia=provincia,
+        programa=programa,
+    )
+    representante = _create_pwa_user(
+        comedor=comedor,
+        role=AccesoComedorPWA.ROL_REPRESENTANTE,
+        username=username,
+    )
+    return comedor, _token_client(representante)
+
+
+@pytest.mark.django_db
+def test_prestacion_alimentaria_conformidad_crea_registro():
+    comedor, client = _comedor_alimentar_comunidad(username="rep_conf_ok")
+
+    response = client.post(
+        f"/api/comedores/{comedor.id}/prestacion-alimentaria/conformidad/",
+        {"conforme": True},
+        format="json",
+    )
+
+    assert response.status_code == 201
+    assert response.data["conforme"] is True
+    conformidad = PrestacionAlimentariaConformidad.objects.get(comedor=comedor)
+    assert conformidad.conforme is True
+    assert conformidad.periodo == timezone.localdate().replace(day=1)
+
+
+@pytest.mark.django_db
+def test_prestacion_alimentaria_conformidad_rechaza_duplicado_del_mes():
+    comedor, client = _comedor_alimentar_comunidad(username="rep_conf_dup")
+    url = f"/api/comedores/{comedor.id}/prestacion-alimentaria/conformidad/"
+
+    assert client.post(url, {"conforme": True}, format="json").status_code == 201
+    repetido = client.post(url, {"conforme": True}, format="json")
+
+    assert repetido.status_code == 400
+    assert PrestacionAlimentariaConformidad.objects.filter(comedor=comedor).count() == 1
+
+
+@pytest.mark.django_db
+def test_prestacion_alimentaria_no_conforme_requiere_observaciones():
+    comedor, client = _comedor_alimentar_comunidad(username="rep_conf_obs")
+    url = f"/api/comedores/{comedor.id}/prestacion-alimentaria/conformidad/"
+
+    sin_observaciones = client.post(url, {"conforme": False}, format="json")
+    assert sin_observaciones.status_code == 400
+    assert not PrestacionAlimentariaConformidad.objects.filter(comedor=comedor).exists()
+
+    con_observaciones = client.post(
+        url,
+        {"conforme": False, "observaciones": "Faltan raciones"},
+        format="json",
+    )
+    assert con_observaciones.status_code == 201
+    assert con_observaciones.data["observaciones"] == "Faltan raciones"
+
+
+@pytest.mark.django_db
+def test_prestacion_alimentaria_conformidad_solo_para_alimentar_comunidad(comedores):
+    comedor_1, _ = comedores
+    representante = _create_pwa_user(
+        comedor=comedor_1,
+        role=AccesoComedorPWA.ROL_REPRESENTANTE,
+        username="rep_no_ac",
+    )
+    client = _token_client(representante)
+
+    response = client.post(
+        f"/api/comedores/{comedor_1.id}/prestacion-alimentaria/conformidad/",
+        {"conforme": True},
+        format="json",
+    )
+
+    assert response.status_code == 404
+    assert PrestacionAlimentariaConformidad.objects.count() == 0
+
+
+@pytest.mark.django_db
+def test_prestacion_alimentaria_expone_fecha_finalizacion_desde_historial():
+    comedor, client = _comedor_alimentar_comunidad(username="rep_fecha")
+    admision = Admision.objects.create(comedor=comedor)
+    _create_informe_tecnico(admision)
+    HistorialEstadosAdmision.objects.create(
+        admision=admision,
+        estado_nuevo="Informe técnico finalizado",
+    )
+
+    response = client.get(f"/api/comedores/{comedor.id}/prestacion-alimentaria/")
+
+    assert response.status_code == 200
+    assert response.data["fecha_finalizacion"] is not None

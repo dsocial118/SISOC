@@ -702,12 +702,6 @@ class PrestacionAlimentariaConformidad(models.Model):
                 name="uniq_conformidad_prestacion_alimentaria_mes",
             )
         ]
-        indexes = [
-            models.Index(
-                fields=["comedor", "periodo"],
-                name="comedores_p_comedor_20587d_idx",
-            ),
-        ]
 
     def __str__(self):
         estado = "conforme" if self.conforme else "no conforme"

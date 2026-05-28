@@ -25,6 +25,7 @@ Agregar en Mobile/PWA la consulta y conformidad mensual de prestaciones convenia
 - `pwa/admin.py`
 - `ciudadanos/views.py`
 - `ciudadanos/templates/ciudadanos/ciudadano_detail.html`
+- `tests/test_pwa_comedores_api.py`
 - `mobile/src/api/prestacionesApi.ts`
 - `mobile/src/api/nominaApi.ts`
 - `mobile/src/app/router.tsx`
@@ -46,6 +47,14 @@ Agregar en Mobile/PWA la consulta y conformidad mensual de prestaciones convenia
 - Los detalles Mobile de beneficiario muestran esos datos sociales.
 - El legajo web de ciudadano muestra pueblo originario y situación de calle, y agrega una badge visible junto al nombre cuando está en situación de calle.
 - Se extendieron timeouts de detalle/edición de beneficiarios y se desacopló la carga del historial de asistencia para no bloquear la ficha.
+
+## Ajustes post-revisión (hardening)
+- `fecha_finalizacion` se resuelve en lote (una sola consulta a `HistorialEstadosAdmision`) y se inyecta por contexto del serializer, eliminando el N+1 del historial paginado de prestaciones.
+- El estado de referencia se deriva de `Admision.ESTADOS_ADMISION` (constante `ESTADO_INFORME_TECNICO_FINALIZADO_DISPLAY`) en lugar de un literal, para no romperse en silencio si cambia el texto del estado.
+- El endpoint `prestacion-alimentaria/historial` aplica el mismo guard `is_alimentar_comunidad_program` que el detalle y la conformidad.
+- Se quitó el índice `(comedor, periodo)` redundante con la `UniqueConstraint`, y los índices de baja cardinalidad sobre los flags booleanos de `NominaEspacioPWA`.
+- `get_flags_sociales_context` se simplificó quitando el manejo de errores defensivo innecesario.
+- Se agregaron tests del flujo de conformidad (alta, duplicado mensual, no conformidad sin observaciones, restricción a Alimentar Comunidad) y de `fecha_finalizacion`.
 
 ## Supuestos
 - Los datos sociales se guardan a nivel `NominaEspacioPWA`, no directamente en `Ciudadano`, porque se capturan desde la gestión de beneficiarios Mobile/PWA.

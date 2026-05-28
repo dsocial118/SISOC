@@ -4,6 +4,7 @@
 
 from rest_framework import serializers
 from django.core.exceptions import DisallowedHost
+from django.db.models import Max
 from django.urls import reverse
 
 from comedores.models import (
@@ -16,7 +17,11 @@ from comedores.services.comedor_service import ComedorService
 from core.models import Localidad, Municipio, Provincia
 from duplas.models import Dupla
 from organizaciones.models import Organizacion
-from admisiones.models.admisiones import HistorialEstadosAdmision, InformeTecnico
+from admisiones.models.admisiones import (
+    Admision,
+    HistorialEstadosAdmision,
+    InformeTecnico,
+)
 from relevamientos.models import ClasificacionComedor, Relevamiento
 from relevamientos.service import RelevamientoService
 from rendicioncuentasmensual.models import DocumentacionAdjunta
@@ -1093,6 +1098,12 @@ APROBADAS_FIELDS = tuple(
 )
 
 
+ESTADO_INFORME_TECNICO_FINALIZADO = "informe_tecnico_finalizado"
+ESTADO_INFORME_TECNICO_FINALIZADO_DISPLAY = dict(Admision.ESTADOS_ADMISION).get(
+    ESTADO_INFORME_TECNICO_FINALIZADO, "Informe técnico finalizado"
+)
+
+
 class InformeTecnicoPrestacionSerializer(serializers.ModelSerializer):
     informe_id = serializers.IntegerField(source="id", read_only=True)
     admision_id = serializers.IntegerField(read_only=True)
@@ -1111,16 +1122,27 @@ class InformeTecnicoPrestacionSerializer(serializers.ModelSerializer):
             *APROBADAS_FIELDS,
         )
 
-    def get_fecha_finalizacion(self, obj):
-        historial = (
+    @staticmethod
+    def fechas_finalizacion_para(admision_ids):
+        ids = [admision_id for admision_id in admision_ids if admision_id]
+        if not ids:
+            return {}
+        filas = (
             HistorialEstadosAdmision.objects.filter(
-                admision_id=obj.admision_id,
-                estado_nuevo="Informe técnico finalizado",
+                admision_id__in=ids,
+                estado_nuevo=ESTADO_INFORME_TECNICO_FINALIZADO_DISPLAY,
             )
-            .order_by("-fecha", "-id")
-            .first()
+            .values("admision_id")
+            .annotate(fecha=Max("fecha"))
+            .values_list("admision_id", "fecha")
         )
-        return historial.fecha if historial else None
+        return dict(filas)
+
+    def get_fecha_finalizacion(self, obj):
+        fechas = self.context.get("fechas_finalizacion")
+        if fechas is None:
+            fechas = self.fechas_finalizacion_para([obj.admision_id])
+        return fechas.get(obj.admision_id)
 
 
 class PrestacionAlimentariaConformidadSerializer(serializers.ModelSerializer):

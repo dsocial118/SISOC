@@ -352,33 +352,18 @@ class CiudadanosDetailView(LoginRequiredMixin, DetailView):
         return contexto
 
     def get_flags_sociales_context(self, ciudadano):
-        try:
-            from pwa.models import NominaEspacioPWA
-        except ImportError:
-            return {
-                "pertenece_comunidad_indigena": False,
-                "situacion_calle_pwa": False,
-            }
+        from pwa.models import NominaEspacioPWA
 
-        try:
-            perfiles = NominaEspacioPWA.objects.filter(
-                nomina__ciudadano=ciudadano,
-                activo=True,
-            )
-            return {
-                "pertenece_comunidad_indigena": perfiles.filter(
-                    pertenece_comunidad_indigena=True
-                ).exists(),
-                "situacion_calle_pwa": perfiles.filter(situacion_calle=True).exists(),
-            }
-        except Exception:
-            logger.exception(
-                "Error cargando flags sociales PWA para ciudadano %s", ciudadano.pk
-            )
-            return {
-                "pertenece_comunidad_indigena": False,
-                "situacion_calle_pwa": False,
-            }
+        perfiles = NominaEspacioPWA.objects.filter(
+            nomina__ciudadano=ciudadano,
+            activo=True,
+        )
+        return {
+            "pertenece_comunidad_indigena": perfiles.filter(
+                pertenece_comunidad_indigena=True
+            ).exists(),
+            "situacion_calle_pwa": perfiles.filter(situacion_calle=True).exists(),
+        }
 
     def get_vat_context(
         self, ciudadano

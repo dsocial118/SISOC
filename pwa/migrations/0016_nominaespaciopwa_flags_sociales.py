@@ -17,15 +17,4 @@ class Migration(migrations.Migration):
             name="situacion_calle",
             field=models.BooleanField(default=False),
         ),
-        migrations.AddIndex(
-            model_name="nominaespaciopwa",
-            index=models.Index(
-                fields=["pertenece_comunidad_indigena"],
-                name="pwa_nomina_indig_idx",
-            ),
-        ),
-        migrations.AddIndex(
-            model_name="nominaespaciopwa",
-            index=models.Index(fields=["situacion_calle"], name="pwa_nomina_calle_idx"),
-        ),
     ]

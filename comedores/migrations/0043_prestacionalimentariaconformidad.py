@@ -63,13 +63,6 @@ class Migration(migrations.Migration):
                 "ordering": ["-periodo", "-creado"],
             },
         ),
-        migrations.AddIndex(
-            model_name="prestacionalimentariaconformidad",
-            index=models.Index(
-                fields=["comedor", "periodo"],
-                name="comedores_p_comedor_20587d_idx",
-            ),
-        ),
         migrations.AddConstraint(
             model_name="prestacionalimentariaconformidad",
             constraint=models.UniqueConstraint(
