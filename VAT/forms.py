@@ -1519,6 +1519,12 @@ class InstitucionUbicacionForm(forms.ModelForm):
 
 
 class CursoForm(forms.ModelForm):
+    TIPO_CURSO_CHOICES = [
+        ("presencial", "Presencial"),
+        ("virtual", "Virtual"),
+        ("mixto", "Mixto"),
+    ]
+
     plan_estudio = forms.ModelChoiceField(
         queryset=build_plan_estudio_queryset_for_centro(),
         label="Plan Curricular",
@@ -1531,6 +1537,20 @@ class CursoForm(forms.ModelForm):
     nombre = forms.CharField(
         label="Nombre",
         widget=forms.TextInput(attrs={"class": "form-control"}),
+    )
+    tipo = forms.MultipleChoiceField(
+        label="Tipo",
+        required=False,
+        choices=TIPO_CURSO_CHOICES,
+        widget=forms.SelectMultiple(
+            attrs={
+                **_select2_attrs(
+                    base_class="form-select",
+                    placeholder="Seleccionar tipos...",
+                ),
+            }
+        ),
+        help_text="Podés seleccionar uno o varios tipos.",
     )
     estado = forms.ChoiceField(
         label="Estado",
@@ -1584,6 +1604,7 @@ class CursoForm(forms.ModelForm):
         fields = [
             "plan_estudio",
             "nombre",
+            "tipo",
             "estado",
             "usa_voucher",
             "inscripcion_libre",
@@ -1592,8 +1613,24 @@ class CursoForm(forms.ModelForm):
             "observaciones",
         ]
 
+    def clean_tipo(self):
+        return self.cleaned_data.get("tipo") or []
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.order_fields(
+            [
+                "plan_estudio",
+                "nombre",
+                "tipo",
+                "estado",
+                "usa_voucher",
+                "inscripcion_libre",
+                "voucher_parametrias",
+                "costo_creditos",
+                "observaciones",
+            ]
+        )
         self.fields["plan_estudio"].empty_label = "Seleccionar plan de estudio..."
         centro_id = None
         centro_provincia_id = None

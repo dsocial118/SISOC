@@ -4,7 +4,6 @@ from django.core.exceptions import PermissionDenied
 from django.db import transaction
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect
-from django.utils import timezone
 from django.urls import reverse
 from django.views import View
 from django.views.generic import (
@@ -32,7 +31,6 @@ from VAT.models import (
     SesionComision,
     Inscripcion,
     AsistenciaSesion,
-    InstitucionUbicacion,
 )
 from VAT.services.access_scope import (
     can_user_edit_centro,
@@ -173,19 +171,9 @@ class CursoCreateView(LoginRequiredMixin, CreateView):
         messages.success(self.request, success_message)
         if _is_ajax_request(self.request):
             self.object = form.save()
-            extra_payload = None
-            if self.request.POST.get("post_create_action") == "open-comision":
-                extra_payload = {
-                    "open_comision_modal": True,
-                    "comision_modal_context": {
-                        "curso_id": self.object.pk,
-                        "curso_nombre": self.object.nombre,
-                    },
-                }
             return _modal_json_success_response(
                 self.get_success_url(),
                 success_message,
-                extra_payload=extra_payload,
             )
         return super().form_valid(form)
 

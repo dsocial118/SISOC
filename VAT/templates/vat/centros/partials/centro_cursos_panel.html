@@ -90,6 +90,7 @@
                                                             data-edit-url="{% url 'vat_curso_update' curso.id %}"
                                                             data-plan-estudio-id="{{ curso.plan_estudio_id|default:'' }}"
                                                             data-nombre="{{ curso.nombre }}"
+                                                            data-tipo="{{ curso.tipo|join:',' }}"
                                                             data-estado="{{ curso.estado|default:'' }}"
                                                             data-usa-voucher="{{ curso.usa_voucher|yesno:'1,0' }}"
                                                             data-inscripcion-libre="{{ curso.inscripcion_libre|yesno:'1,0' }}"
@@ -268,10 +269,6 @@
                           method="post"
                           action="{% url 'vat_curso_create' %}?centro={{ centro.id }}">
                         {% csrf_token %}
-                        <input type="hidden"
-                               name="post_create_action"
-                               id="id_post_create_action"
-                               value="" />
                         <div class="modal-body sisoc-curso-modal-body">
                             <div id="planEstudioSeleccionadoInfo"
                                  class="alert alert-info d-none"
@@ -306,6 +303,24 @@
                                             </label>
                                             {{ field }}
                                             {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors.0 }}</div>{% endif %}
+                                        </div>
+                                    {% elif field.html_name == 'tipo' %}
+                                        <div class="col-12 mb-3 sisoc-curso-vouchers sisoc-curso-tipo">
+                                            <div class="sisoc-curso-vouchers-head">
+                                                <label for="{{ field.id_for_label }}"
+                                                       class="form-label sisoc-curso-label mb-0">
+                                                    {{ field.label }}
+                                                    {% if field.field.required %}<span class="text-danger">*</span>{% endif %}
+                                                </label>
+                                                <span class="sisoc-curso-voucher-counter" data-voucher-counter="tipo">
+                                                    <i class="fas fa-ticket-alt"></i>
+                                                    <span data-voucher-counter-value="tipo">0</span>
+                                                    <span class="sisoc-curso-voucher-counter-label">seleccionados</span>
+                                                </span>
+                                            </div>
+                                            {{ field }}
+                                            {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors.0 }}</div>{% endif %}
+                                            {% if field.help_text %}<div class="form-text sisoc-curso-help">{{ field.help_text }}</div>{% endif %}
                                         </div>
                                     {% elif field.html_name == 'estado' %}
                                         <div class="col-12 mb-3">
@@ -372,12 +387,8 @@
                         </div>
                         <div class="modal-footer sisoc-curso-modal-footer">
                             <button type="submit"
-                                    class="sisoc-curso-submit sisoc-curso-submit--secondary"
-                                    id="cursoPrimarySubmitBtn">Guardar</button>
-                            <button type="submit"
                                     class="sisoc-curso-submit sisoc-curso-submit--primary"
-                                    id="cursoSaveAndCreateComisionBtn"
-                                    data-post-create-action="open-comision">Guardar y crear comisión</button>
+                                    id="cursoPrimarySubmitBtn">Guardar</button>
                         </div>
                     </form>
                 </div>
