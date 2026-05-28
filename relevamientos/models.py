@@ -2,7 +2,7 @@
 from datetime import datetime
 
 from django.core.validators import MaxValueValidator, MinValueValidator
-from django.db import models
+from django.db import models, transaction
 from django.forms import ValidationError
 from django.utils import timezone
 
@@ -1659,9 +1659,40 @@ class PrimerSeguimiento(models.Model):
         blank=True,
     )
 
+    BLOQUES_ONE_TO_ONE = (
+        "funcionamiento",
+        "servicios_basicos",
+        "almacenamiento_alimentos",
+        "condiciones_higiene",
+        "tareas_comedor",
+        "recursos",
+        "compras",
+        "frecuencia_compra_alimentos",
+        "menu",
+        "registro_asistencia",
+        "frecuencia_alimentos",
+        "actividades_extras",
+        "tarjeta",
+        "rendicion_cuentas",
+        "asistencia_tecnica",
+        "cierre",
+    )
+
     @property
     def cod_pnud(self):
         return getattr(self.id_relevamiento.comedor, "codigo_de_proyecto", None)
+
+    def delete(self, *args, **kwargs):
+        # Los bloques cuelgan de un OneToOneField PROTECT del lado del
+        # seguimiento, asi que borrar el seguimiento no los arrastra. Se borran
+        # explicitamente despues del super() para no dejar filas huerfanas.
+        bloques = [getattr(self, attr) for attr in self.BLOQUES_ONE_TO_ONE]
+        with transaction.atomic():
+            result = super().delete(*args, **kwargs)
+            for bloque in bloques:
+                if bloque is not None:
+                    bloque.delete()
+        return result
 
     class Meta:
         indexes = [

@@ -731,3 +731,71 @@ def test_eliminar_primer_seguimiento_sin_permiso_devuelve_403(client, comedor, m
     assert response.status_code == 403
     assert PrimerSeguimiento.objects.filter(pk=seguimiento.id).exists()
     remove_start.assert_not_called()
+
+
+def test_api_primer_seguimiento_valor_no_numerico_devuelve_400(api_client, comedor):
+    # Un entero no numerico hace que clean() lance ValueError (no
+    # DjangoValidationError); debe traducirse a 400, no escalar a 500.
+    relevamiento = Relevamiento.objects.create(comedor=comedor, estado="En Proceso")
+    seguimiento = PrimerSeguimiento.objects.create(
+        id_relevamiento=relevamiento,
+        estado=PrimerSeguimiento.ESTADO_ASIGNADO,
+    )
+
+    response = api_client.patch(
+        reverse("api_primer_seguimiento"),
+        {
+            "sisoc_id": seguimiento.id,
+            "id_relevamiento": relevamiento.id,
+            "gas_red": "no-es-numero",
+        },
+        format="json",
+    )
+
+    assert response.status_code == 400
+    seguimiento.refresh_from_db()
+    assert seguimiento.estado == PrimerSeguimiento.ESTADO_ASIGNADO
+    assert seguimiento.servicios_basicos_id is None
+
+
+def test_eliminar_primer_seguimiento_borra_bloques_asociados(comedor, mocker):
+    mocker.patch("relevamientos.signals.AsyncRemovePrimerSeguimientoToGestionar.start")
+    relevamiento = Relevamiento.objects.create(comedor=comedor, estado="En Proceso")
+    funcionamiento = FuncionamientoSeguimiento.objects.create(
+        funcionamiento=FuncionamientoSeguimiento.ABIERTO_FUNCIONANDO,
+    )
+    servicios = ServiciosBasicosSeguimiento.objects.create(
+        agua_potable=True,
+        gas_red=3,
+        observan_animales=False,
+    )
+    cierre = CierreSeguimiento.objects.create(
+        info_adicional="Sin novedades",
+        realizo_forma=CierreSeguimiento.COMPLETA,
+    )
+    seguimiento = PrimerSeguimiento.objects.create(
+        id_relevamiento=relevamiento,
+        estado=PrimerSeguimiento.ESTADO_COMPLETO,
+        funcionamiento=funcionamiento,
+        servicios_basicos=servicios,
+        cierre=cierre,
+    )
+    PrestacionSeguimiento.objects.create(
+        seguimiento=seguimiento,
+        id_prestacion_seg="prest-del-1",
+    )
+
+    seguimiento_id = seguimiento.id
+    funcionamiento_id = funcionamiento.id
+    servicios_id = servicios.id
+    cierre_id = cierre.id
+
+    seguimiento.delete()
+
+    assert not PrimerSeguimiento.objects.filter(pk=seguimiento_id).exists()
+    assert not FuncionamientoSeguimiento.objects.filter(pk=funcionamiento_id).exists()
+    assert not ServiciosBasicosSeguimiento.objects.filter(pk=servicios_id).exists()
+    assert not CierreSeguimiento.objects.filter(pk=cierre_id).exists()
+    assert not PrestacionSeguimiento.objects.filter(
+        seguimiento_id=seguimiento_id
+    ).exists()

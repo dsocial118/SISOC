@@ -162,32 +162,52 @@ class PrimerSeguimientoApiView(APIView):
             partial=True,
         )
         try:
-            with transaction.atomic():
-                try:
-                    seguimiento_serializer.clean()
-                except DjangoValidationError as clean_error:
-                    logger.exception("Error en clean() de primer seguimiento")
-                    detail = getattr(clean_error, "message_dict", None) or getattr(
-                        clean_error, "messages", clean_error
-                    )
-                    raise ValidationError(detail) from clean_error
-                seguimiento_serializer.is_valid(raise_exception=True)
-                seguimiento_serializer.save()
-                PrimerSeguimiento.objects.filter(
-                    pk=seguimiento_serializer.instance.pk
-                ).update(sincronizado_gestionar=True)
-        except ValidationError as exc:
-            error_message_str = format_error_detail(getattr(exc, "detail", exc))
-            return Response(
-                f"Error en primer seguimiento: '{error_message_str}'",
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            try:
+                with transaction.atomic():
+                    try:
+                        seguimiento_serializer.clean()
+                    except DjangoValidationError as clean_error:
+                        logger.exception("Error en clean() de primer seguimiento")
+                        detail = getattr(clean_error, "message_dict", None) or getattr(
+                            clean_error, "messages", clean_error
+                        )
+                        raise ValidationError(detail) from clean_error
+                    except ValidationError:
+                        raise
+                    except Exception as clean_error:
+                        logger.exception("Error en clean() de primer seguimiento")
+                        raise ValidationError(
+                            {"non_field_errors": [str(clean_error)]}
+                        ) from clean_error
+                    seguimiento_serializer.is_valid(raise_exception=True)
+                    seguimiento_serializer.save()
+                    PrimerSeguimiento.objects.filter(
+                        pk=seguimiento_serializer.instance.pk
+                    ).update(sincronizado_gestionar=True)
+            except ValidationError as exc:
+                error_message_str = format_error_detail(getattr(exc, "detail", exc))
+                return Response(
+                    f"Error en primer seguimiento: '{error_message_str}'",
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
 
-        logger.info(
-            "Primer seguimiento %s actualizado correctamente",
-            seguimiento_serializer.instance.id,
-        )
-        return Response(
-            PrimerSeguimientoSerializer(seguimiento_serializer.instance).data,
-            status=status.HTTP_200_OK,
-        )
+            logger.info(
+                "Primer seguimiento %s actualizado correctamente",
+                seguimiento_serializer.instance.id,
+            )
+            return Response(
+                PrimerSeguimientoSerializer(seguimiento_serializer.instance).data,
+                status=status.HTTP_200_OK,
+            )
+        except Exception:
+            logger.exception(
+                "Error en PATCH al primer seguimiento",
+                extra={
+                    "primer_seguimiento_pk": seguimiento.pk,
+                    "data": request.data,
+                },
+            )
+            return Response(
+                f"Error al actualizar el primer seguimiento {seguimiento.pk}",
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
