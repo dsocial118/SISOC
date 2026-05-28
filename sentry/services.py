@@ -82,6 +82,25 @@ def _build_sentry_integrations(sentry_log_event_level: int) -> list:
     ]
 
 
+def _is_gunicorn_system_exit_event(event: dict, hint: dict | None) -> bool:
+    if not (event.get("logger") or "").startswith("gunicorn."):
+        return False
+
+    exc_info = (hint or {}).get("exc_info")
+    if exc_info and exc_info[0] is SystemExit:
+        return True
+
+    exception_values = event.get("exception", {}).get("values", [])
+    return any(value.get("type") == "SystemExit" for value in exception_values)
+
+
+def before_send(event: dict, hint: dict | None) -> dict | None:
+    """Reduce ruido de abortos internos de Gunicorn reportados como errores."""
+    if _is_gunicorn_system_exit_event(event, hint):
+        return None
+    return event
+
+
 def get_sentry_frontend_config() -> dict:
     environment = _runtime_environment()
     dsn = (getattr(settings, "SENTRY_DSN", "") or "").strip()
@@ -170,6 +189,7 @@ def initialize_sentry_sdk() -> None:
             getattr(settings, "SENTRY_PROFILES_SAMPLE_RATE", 0.0), default=0.0
         ),
         "integrations": _build_sentry_integrations(sentry_log_event_level),
+        "before_send": before_send,
     }
 
     release = (os.getenv("SENTRY_RELEASE") or "").strip()
