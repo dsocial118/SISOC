@@ -439,6 +439,8 @@ class NominaEspacioPWA(models.Model):
     asistencia_alimentaria = models.BooleanField(default=True)
     asistencia_actividades = models.BooleanField(default=False)
     es_indocumentado = models.BooleanField(default=False)
+    pertenece_comunidad_indigena = models.BooleanField(default=False)
+    situacion_calle = models.BooleanField(default=False)
     identificador_interno = models.CharField(max_length=40, null=True, blank=True)
     activo = models.BooleanField(default=True)
     fecha_alta = models.DateTimeField(auto_now_add=True)
@@ -469,6 +471,11 @@ class NominaEspacioPWA(models.Model):
                 name="pwa_nomina_asistencia_idx",
             ),
             models.Index(fields=["es_indocumentado"], name="pwa_nomina_indoc_idx"),
+            models.Index(
+                fields=["pertenece_comunidad_indigena"],
+                name="pwa_nomina_indig_idx",
+            ),
+            models.Index(fields=["situacion_calle"], name="pwa_nomina_calle_idx"),
         ]
 
     def __str__(self):

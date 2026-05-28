@@ -6,6 +6,7 @@ from datetime import date, time
 from django.conf import settings
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.paginator import Paginator
+from django.db import IntegrityError
 from django.db.models import Prefetch, Q
 from django.db.models.fields.files import FieldFile
 from django.http import FileResponse, Http404
@@ -31,6 +32,7 @@ from comedores.api_serializers import (
     NominaCreateSerializer,
     NominaSerializer,
     NominaUpdateSerializer,
+    PrestacionAlimentariaConformidadSerializer,
     RendicionMensualCreateSerializer,
     RendicionMensualDetailSerializer,
     RendicionMensualListSerializer,
@@ -43,6 +45,7 @@ from comedores.models import (
     ImagenComedor,
     Nomina,
     Observacion,
+    PrestacionAlimentariaConformidad,
 )
 from comedores.services.comedor_service import ComedorService
 from comedores.services.capacitaciones_certificados_service import (
@@ -356,6 +359,64 @@ class ComedorDetailViewSet(
         except (TypeError, ValueError, IndexError):
             return None
         return None
+
+    def _current_month_period(self):
+        today = timezone.localdate()
+        return today.replace(day=1)
+
+    def _get_latest_prestacion_alimentaria_informe(self, comedor):
+        return (
+            InformeTecnico.objects.filter(
+                admision__comedor=comedor,
+                estado_formulario="finalizado",
+            )
+            .select_related("admision")
+            .only(
+                "id",
+                "admision_id",
+                "tipo",
+                "estado_formulario",
+                "creado",
+                "modificado",
+                *APROBADAS_FIELDS,
+            )
+            .order_by("-modificado", "-id")
+            .first()
+        )
+
+    def _serialize_prestacion_alimentaria_payload(self, comedor, informe):
+        if informe:
+            payload = InformeTecnicoPrestacionSerializer(informe).data
+        else:
+            payload = {
+                "informe_id": None,
+                "admision_id": None,
+                "tipo": None,
+                "estado_formulario": None,
+                "creado": None,
+                "modificado": None,
+                "fecha_finalizacion": None,
+            }
+            payload.update({field: None for field in APROBADAS_FIELDS})
+
+        current_period = self._current_month_period()
+        conformidades = (
+            PrestacionAlimentariaConformidad.objects.filter(comedor=comedor)
+            .select_related("usuario")
+            .order_by("-periodo", "-creado")
+        )
+        conformidad_actual = conformidades.filter(periodo=current_period).first()
+        payload["periodo_actual"] = current_period
+        payload["conformidad_actual"] = (
+            PrestacionAlimentariaConformidadSerializer(conformidad_actual).data
+            if conformidad_actual
+            else None
+        )
+        payload["historial_conformidad"] = PrestacionAlimentariaConformidadSerializer(
+            conformidades,
+            many=True,
+        ).data
+        return payload
 
     def _collect_documentos(self, comedor, request):
         documentos = []
@@ -1467,31 +1528,78 @@ class ComedorDetailViewSet(
     @action(detail=True, methods=["get"], url_path="prestacion-alimentaria")
     def prestacion_alimentaria(self, request, pk=None):
         comedor = self.get_object()
-        informe = (
-            InformeTecnico.objects.filter(
-                admision__comedor=comedor,
-                estado_formulario="finalizado",
-            )
-            .order_by("-modificado", "-id")
-            .first()
-        )
-        if not informe:
-            payload = {
-                "informe_id": None,
-                "admision_id": None,
-                "tipo": None,
-                "estado_formulario": None,
-                "creado": None,
-                "modificado": None,
-            }
-            payload.update({field: None for field in APROBADAS_FIELDS})
+        if not is_alimentar_comunidad_program(comedor):
             return Response(
-                payload,
-                status=status.HTTP_200_OK,
+                {"detail": "Disponible solo para Alimentar Comunidad."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        informe = self._get_latest_prestacion_alimentaria_informe(comedor)
+        return Response(
+            self._serialize_prestacion_alimentaria_payload(comedor, informe),
+            status=status.HTTP_200_OK,
+        )
+
+    @extend_schema(
+        request=None,
+        responses=PrestacionAlimentariaConformidadSerializer,
+        tags=["Comedores"],
+    )
+    @action(
+        detail=True,
+        methods=["post"],
+        url_path="prestacion-alimentaria/conformidad",
+        permission_classes=[IsPWARepresentativeForComedor],
+    )
+    def prestacion_alimentaria_conformidad(self, request, pk=None):
+        comedor = self.get_object()
+        if not is_alimentar_comunidad_program(comedor):
+            return Response(
+                {"detail": "Disponible solo para Alimentar Comunidad."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        conforme = request.data.get("conforme")
+        if not isinstance(conforme, bool):
+            return Response(
+                {"detail": "El campo conforme es obligatorio."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        observaciones = str(request.data.get("observaciones") or "").strip()
+        if not conforme and not observaciones:
+            return Response(
+                {"detail": "Las observaciones son obligatorias para no dar conformidad."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        periodo = self._current_month_period()
+        if PrestacionAlimentariaConformidad.objects.filter(
+            comedor=comedor,
+            periodo=periodo,
+        ).exists():
+            return Response(
+                {"detail": "Ya se registró la conformidad del mes."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        informe = self._get_latest_prestacion_alimentaria_informe(comedor)
+        try:
+            conformidad = PrestacionAlimentariaConformidad.objects.create(
+                comedor=comedor,
+                informe_tecnico=informe,
+                periodo=periodo,
+                conforme=conforme,
+                observaciones=observaciones,
+                usuario=request.user,
+            )
+        except IntegrityError:
+            return Response(
+                {"detail": "Ya se registró la conformidad del mes."},
+                status=status.HTTP_400_BAD_REQUEST,
             )
         return Response(
-            InformeTecnicoPrestacionSerializer(informe).data,
-            status=status.HTTP_200_OK,
+            PrestacionAlimentariaConformidadSerializer(conformidad).data,
+            status=status.HTTP_201_CREATED,
         )
 
     @extend_schema(

@@ -206,6 +206,7 @@ class CiudadanosDetailView(LoginRequiredMixin, DetailView):
         ctx.update(self.get_celiaquia_context(ciudadano))
         ctx.update(self.get_cdf_context(ciudadano))
         ctx.update(self.get_comedor_context(ciudadano))
+        ctx.update(self.get_flags_sociales_context(ciudadano))
         ctx.update(self.get_vat_context(ciudadano))
         return ctx
 
@@ -349,6 +350,35 @@ class CiudadanosDetailView(LoginRequiredMixin, DetailView):
         if nomina_actual:
             contexto["nomina_actual"] = nomina_actual
         return contexto
+
+    def get_flags_sociales_context(self, ciudadano):
+        try:
+            from pwa.models import NominaEspacioPWA
+        except ImportError:
+            return {
+                "pertenece_comunidad_indigena": False,
+                "situacion_calle_pwa": False,
+            }
+
+        try:
+            perfiles = NominaEspacioPWA.objects.filter(
+                nomina__ciudadano=ciudadano,
+                activo=True,
+            )
+            return {
+                "pertenece_comunidad_indigena": perfiles.filter(
+                    pertenece_comunidad_indigena=True
+                ).exists(),
+                "situacion_calle_pwa": perfiles.filter(situacion_calle=True).exists(),
+            }
+        except Exception:
+            logger.exception(
+                "Error cargando flags sociales PWA para ciudadano %s", ciudadano.pk
+            )
+            return {
+                "pertenece_comunidad_indigena": False,
+                "situacion_calle_pwa": False,
+            }
 
     def get_vat_context(
         self, ciudadano
