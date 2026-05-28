@@ -259,7 +259,11 @@ class ComedorForm(forms.ModelForm):
         from users.territorial_scope import get_effective_scopes, is_territorial_user
 
         user = self.current_user
-        if user and is_territorial_user(user):
+        if (
+            user
+            and not getattr(user, "is_superuser", False)
+            and is_territorial_user(user)
+        ):
             scoped_ids = [s.provincia_id for s in get_effective_scopes(user)]
             self.fields["provincia"].queryset = Provincia.objects.filter(
                 pk__in=scoped_ids

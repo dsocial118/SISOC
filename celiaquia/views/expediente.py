@@ -70,6 +70,7 @@ logger = logging.getLogger("django")
 
 ROLE_COORDINADOR_CELIAQUIA_PERMISSION = "auth.role_coordinadorceliaquia"
 ROLE_TECNICO_CELIAQUIA_PERMISSION = "auth.role_tecnicoceliaquia"
+ROLE_PROVINCIA_CELIAQUIA_PERMISSION = "auth.role_provinciaceliaquia"
 
 
 def _user_has_permission(user, permission_code: str) -> bool:
@@ -107,7 +108,9 @@ def _is_ajax(request) -> bool:
 
 def _is_provincial(user) -> bool:
     try:
-        return is_territorial_user(user)
+        if is_territorial_user(user):
+            return True
+        return _user_has_permission(user, ROLE_PROVINCIA_CELIAQUIA_PERMISSION)
     except ObjectDoesNotExist:
         return False
 
@@ -528,6 +531,10 @@ def _user_scope_provincias(user):
 
 
 def _apply_provincial_expediente_scope(queryset, user):
+    if not is_territorial_user(user):
+        # Tiene role_provinciaceliaquia pero no scope territorial configurado;
+        # restringir a expedientes propios.
+        return queryset.filter(usuario_provincia=user).distinct()
     return apply_territorial_scope(
         queryset,
         user,
@@ -590,7 +597,7 @@ class LocalidadesLookupView(View):
 
         # Filtrar por provincia del usuario solo si es provincial Y NO es coordinador
         is_coord = _user_has_permission(user, ROLE_COORDINADOR_CELIAQUIA_PERMISSION)
-        if _is_provincial(user) and not is_coord:
+        if _is_provincial(user) and not is_coord and not _is_admin(user):
             prov = _user_provincia(user)
             if prov:
                 localidades = localidades.filter(municipio__provincia=prov)
@@ -921,10 +928,10 @@ class ExpedienteCreateView(CreateView):
         user = self.request.user
 
         # Filtrar provincias según el usuario
-        if _is_provincial(user):
+        if _is_provincial(user) and not _is_admin(user) and is_territorial_user(user):
             ctx["provincias"] = _user_scope_provincias(user)
         else:
-            # Admin/Coordinador: todas las provincias
+            # Admin/Coordinador/provincial sin scope configurado: todas las provincias
             ctx["provincias"] = Provincia.objects.order_by("nombre")
         return ctx
 

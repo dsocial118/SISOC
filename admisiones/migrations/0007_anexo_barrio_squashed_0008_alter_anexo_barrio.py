@@ -5,11 +5,6 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
 
-    replaces = [
-        ("admisiones", "0007_anexo_barrio"),
-        ("admisiones", "0008_alter_anexo_barrio"),
-    ]
-
     dependencies = [
         ("admisiones", "0006_informetecnico_conclusiones"),
     ]
