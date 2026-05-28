@@ -126,9 +126,7 @@ class ComisionCursoWizardView(LoginRequiredMixin, SessionWizardView):
         )
 
     def _centro_cursos_url(self):
-        base = reverse(
-            "vat_centro_detail", kwargs={"pk": self.curso.centro_id}
-        )
+        base = reverse("vat_centro_detail", kwargs={"pk": self.curso.centro_id})
         return f"{base}#cursos"
 
     def done(self, form_list, form_dict, **kwargs):
