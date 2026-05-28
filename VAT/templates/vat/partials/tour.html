@@ -43,9 +43,13 @@ Si no se pasa vat_tour_section, vat_tour.js detecta la seccion por URL.
                 <i class="fas fa-map me-2"></i> Tour general del modulo VAT
             </a>
         </li>
-        <li><hr class="dropdown-divider" /></li>
         <li>
-            <a class="dropdown-item text-muted" href="#" data-vat-tour-action="reset">
+            <hr class="dropdown-divider" />
+        </li>
+        <li>
+            <a class="dropdown-item text-muted"
+               href="#"
+               data-vat-tour-action="reset">
                 <i class="fas fa-rotate-left me-2"></i> Reiniciar tours vistos
             </a>
         </li>
@@ -54,24 +58,27 @@ Si no se pasa vat_tour_section, vat_tour.js detecta la seccion por URL.
 <script nonce="{{ request.csp_nonce }}">
     window.SISOC_VAT_TOUR = {
         section: "{{ vat_tour_section|default:'' }}",
-        autoStart: {% if vat_tour_autostart is False %}false{% else %}true{% endif %}
+        autoStart: {% if vat_tour_autostart == False %}false{% else %}true{% endif %}
     };
 </script>
 <script src="{% static 'custom/js/driver.js.iife.js' %}"></script>
 <script src="{% static 'custom/js/vat_tour.js' %}"></script>
 <script nonce="{{ request.csp_nonce }}">
-    document.addEventListener("click", function (ev) {
-        var target = ev.target.closest("[data-vat-tour-action]");
-        if (!target || !window.SisocVatTour) return;
-        ev.preventDefault();
-        var action = target.getAttribute("data-vat-tour-action");
-        if (action === "general") {
-            window.SisocVatTour.runGeneral();
-        } else if (action === "reset") {
-            window.SisocVatTour.resetSeen();
-            window.SisocVatTour.runSection();
-        } else {
-            window.SisocVatTour.runSection();
-        }
-    });
+    if (!window.__sisocVatTourClickBound) {
+        window.__sisocVatTourClickBound = true;
+        document.addEventListener("click", function (ev) {
+            var target = ev.target.closest("[data-vat-tour-action]");
+            if (!target || !window.SisocVatTour) return;
+            ev.preventDefault();
+            var action = target.getAttribute("data-vat-tour-action");
+            if (action === "general") {
+                window.SisocVatTour.runGeneral();
+            } else if (action === "reset") {
+                window.SisocVatTour.resetSeen();
+                window.SisocVatTour.runSection();
+            } else {
+                window.SisocVatTour.runSection();
+            }
+        });
+    }
 </script>

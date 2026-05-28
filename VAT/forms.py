@@ -1539,7 +1539,7 @@ class CursoForm(forms.ModelForm):
         widget=forms.TextInput(attrs={"class": "form-control"}),
     )
     tipo = forms.MultipleChoiceField(
-        label="Origne",
+        label="Tipo",
         required=False,
         choices=TIPO_CURSO_CHOICES,
         widget=forms.SelectMultiple(
@@ -1604,6 +1604,7 @@ class CursoForm(forms.ModelForm):
         fields = [
             "plan_estudio",
             "nombre",
+            "tipo",
             "estado",
             "usa_voucher",
             "inscripcion_libre",
@@ -1611,6 +1612,9 @@ class CursoForm(forms.ModelForm):
             "costo_creditos",
             "observaciones",
         ]
+
+    def clean_tipo(self):
+        return self.cleaned_data.get("tipo") or []
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -2684,9 +2688,9 @@ class ComisionCursoWizardHorarioForm(forms.Form):
                     "La hora de finalización debe ser posterior a la hora de inicio.",
                 )
             else:
-                duracion = (
-                    hora_hasta.hour * 60 + hora_hasta.minute
-                ) - (hora_desde.hour * 60 + hora_desde.minute)
+                duracion = (hora_hasta.hour * 60 + hora_hasta.minute) - (
+                    hora_desde.hour * 60 + hora_desde.minute
+                )
                 if duracion < self.MIN_DURACION_MINUTOS:
                     self.add_error(
                         "hora_hasta",
@@ -2733,9 +2737,9 @@ class BaseComisionCursoWizardHorarioFormSet(forms.BaseFormSet):
             inicio = horario.get("hora_desde")
             fin = horario.get("hora_hasta")
             if inicio and fin:
-                total_minutos += (
-                    fin.hour * 60 + fin.minute
-                ) - (inicio.hour * 60 + inicio.minute)
+                total_minutos += (fin.hour * 60 + fin.minute) - (
+                    inicio.hour * 60 + inicio.minute
+                )
         if total_minutos < self.MIN_TOTAL_SEMANAL_MINUTOS:
             raise forms.ValidationError(
                 "El total semanal debe ser de al menos 2 horas."

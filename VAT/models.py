@@ -942,6 +942,12 @@ class Curso(SoftDeleteModelMixin, models.Model):
         verbose_name="Plan de Estudio",
     )
     nombre = models.CharField(max_length=255, verbose_name="Nombre")
+    tipo = models.JSONField(
+        default=list,
+        blank=True,
+        verbose_name="Tipo",
+        help_text="Tipos seleccionados para el curso (por ejemplo: presencial, virtual o mixto).",
+    )
     prioritario = models.BooleanField(
         default=False,
         db_index=True,

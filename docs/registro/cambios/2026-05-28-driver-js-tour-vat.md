@@ -40,7 +40,7 @@ agrego solo para el include.
 ## Comportamiento
 
 - Auto-launch del tour general la primera visita a cualquier pantalla VAT.
-  Se persiste en `localStorage` bajo la key `sisoc_vat_tour_general_seen_v1`.
+  Se persiste en `localStorage` bajo la key `sisoc_vat_tour_general_seen_v2`.
 - Boton flotante (esquina inferior derecha) con dropdown:
   - "Tour de esta pantalla" -> `SisocVatTour.runSection()`.
   - "Tour general del modulo VAT" -> `SisocVatTour.runGeneral()`.
@@ -64,8 +64,9 @@ agrego solo para el include.
    automaticamente (primera vez). Cerrar.
 3. Boton flotante "Tour de ayuda" -> "Tour de esta pantalla": se debe
    resaltar el buscador, el boton "Agregar" y la tabla.
-4. Limpiar `localStorage["sisoc_vat_tour_general_seen_v1"]` y recargar para
+4. Limpiar `localStorage["sisoc_vat_tour_general_seen_v2"]` y recargar para
    ver de nuevo el auto-launch.
+  Para secciones, limpiar keys con prefijo `sisoc_vat_tour_section_v2_`.
 5. Repetir en `oferta_list`, `comision_list`, `asistencia_sesion`,
    `inscripcion_oferta_list/form` y formularios de centro.
 
