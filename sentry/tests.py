@@ -53,6 +53,34 @@ def test_initialize_sentry_with_dsn_inits_once(monkeypatch):
     assert calls[0]["sample_rate"] == 0.75
     assert "integrations" in calls[0]
     assert len(calls[0]["integrations"]) == 2
+    assert calls[0]["before_send"] == services.before_send
+
+
+def test_before_send_drops_gunicorn_system_exit():
+    event = {
+        "logger": "gunicorn.error",
+        "exception": {"values": [{"type": "SystemExit"}]},
+    }
+
+    assert services.before_send(event, {}) is None
+
+
+def test_before_send_keeps_non_gunicorn_system_exit():
+    event = {
+        "logger": "django.request",
+        "exception": {"values": [{"type": "SystemExit"}]},
+    }
+
+    assert services.before_send(event, {}) == event
+
+
+def test_before_send_keeps_gunicorn_non_system_exit():
+    event = {
+        "logger": "gunicorn.error",
+        "exception": {"values": [{"type": "RuntimeError"}]},
+    }
+
+    assert services.before_send(event, {}) == event
 
 
 def test_initialize_sentry_uses_settings_rate_over_env(monkeypatch):
@@ -212,6 +240,36 @@ def test_sentry_event_handler_captures_exception(monkeypatch):
     handler.emit(record)
 
     assert called["count"] == 1
+
+
+def test_sentry_event_handler_ignores_gunicorn_system_exit(monkeypatch):
+    handler = SentryEventHandler()
+    called = {"count": 0}
+
+    def fake_capture_exception(exc):
+        called["count"] += 1
+
+    monkeypatch.setattr(
+        "sentry.handlers.sentry_sdk.capture_exception", fake_capture_exception
+    )
+
+    try:
+        raise SystemExit(1)
+    except SystemExit:
+        record = logging.LogRecord(
+            name="gunicorn.error",
+            level=logging.ERROR,
+            pathname=__file__,
+            lineno=1,
+            msg="Worker abort",
+            args=(),
+            exc_info=True,
+        )
+        record.exc_info = __import__("sys").exc_info()
+
+    handler.emit(record)
+
+    assert called["count"] == 0
 
 
 def test_sentry_event_handler_captures_error_message(monkeypatch):
