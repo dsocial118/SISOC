@@ -1,4 +1,4 @@
-"""Serializers para la API de integración con sistemas externos."""
+"""Serializers para la API server-to-server con la Ticketera."""
 
 from rest_framework import serializers
 

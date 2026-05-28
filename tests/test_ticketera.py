@@ -1,8 +1,9 @@
-"""Tests de la API de integración con la Ticketera.
+"""Tests de la API server-to-server con la Ticketera.
 
-Cubre los dos endpoints server-to-server protegidos por API Key:
-- POST /api/integracion/ticketera/usuarios/        (alta / reconciliación)
-- POST /api/integracion/ticketera/auth/verificar/  (verificación de credenciales)
+Cubre los tres endpoints protegidos por API Key:
+- POST /api/ticketera/usuarios/              (alta / reconciliación)
+- POST /api/ticketera/auth/verificar/        (verificación de credenciales)
+- POST /api/ticketera/auth/cambiar-password/ (cambio de contraseña temporal)
 
 Reutiliza las fixtures `api_key` / `api_client` de ``tests/conftest.py`` (cliente
 DRF con header ``Authorization: Api-Key <key>``).
@@ -18,10 +19,10 @@ from auditlog.models import LogEntry
 from audittrail.models import AuditEntryMeta
 
 
-USUARIOS_URL = "/api/integracion/ticketera/usuarios/"
-VERIFICAR_URL = "/api/integracion/ticketera/auth/verificar/"
-CAMBIAR_PASSWORD_URL = "/api/integracion/ticketera/auth/cambiar-password/"
-AUDIT_SOURCE = "integracion:ticketera"
+USUARIOS_URL = "/api/ticketera/usuarios/"
+VERIFICAR_URL = "/api/ticketera/auth/verificar/"
+CAMBIAR_PASSWORD_URL = "/api/ticketera/auth/cambiar-password/"
+AUDIT_SOURCE = "ticketera"
 
 
 @pytest.fixture(autouse=True)

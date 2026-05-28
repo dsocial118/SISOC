@@ -10,17 +10,18 @@ La Ticketera (Django + PostgreSQL, servidor separado) necesita autenticar a sus
 usuarios contra las credenciales gestionadas por SISOC. La Ticketera no debe
 almacenar contraseñas propias: SISOC actúa como fuente de verdad.
 
-Se necesitan dos operaciones:
+Se necesitan tres operaciones:
 
 1. **Alta de usuarios** desde la Ticketera hacia SISOC.
 2. **Verificación de credenciales** en cada login de la Ticketera.
+3. **Cambio de la contraseña temporal** por la definitiva (cierra el ciclo).
 
 ---
 
 ## Decisión
 
-Crear una app `integracion/` con dos endpoints REST protegidos por API Key
-bajo el prefijo `/api/integracion/ticketera/`:
+Crear una app `ticketera/` con tres endpoints REST protegidos por API Key
+bajo el prefijo `/api/ticketera/`:
 
 | Método | Ruta | Función |
 |---|---|---|
@@ -35,7 +36,7 @@ bajo el prefijo `/api/integracion/ticketera/`:
 - **Rate limit:** `users.rate_limits.hit_rate_limit` (scope
   `ticketera_verificar`, 10 intentos por username cada 5 minutos).
 - **Auditoría:** `audittrail.context.audit_context` con
-  `source="integracion:ticketera"` y `extra={"remote_source": <source>}`.
+  `source="ticketera"` y `extra={"remote_source": <source>}`.
   El alta de `User` queda registrada vía `auditlog`. En `verificar`, como
   `last_login` está en los campos excluidos del diff (un `save` que solo toca
   ese campo no genera `LogEntry`), se emite un `LogEntry` explícito de tipo
@@ -82,7 +83,7 @@ Migración: `users/migrations/0031_profile_source.py`.
 
 ## Contratos
 
-### POST `/api/integracion/ticketera/usuarios/`
+### POST `/api/ticketera/usuarios/`
 
 Request:
 
@@ -105,7 +106,7 @@ Respuestas:
 - `409 Conflict` — username ocupado por otro origen:
   `{ "error": "username_taken", "message": "..." }`.
 
-### POST `/api/integracion/ticketera/auth/verificar/`
+### POST `/api/ticketera/auth/verificar/`
 
 Request:
 
@@ -123,7 +124,7 @@ Respuestas:
 - `401 Unauthorized` — `{ valid: false, error: "invalid_credentials" }`.
 - `429 Too Many Requests` — `{ error: "too_many_attempts", message: "..." }`.
 
-### POST `/api/integracion/ticketera/auth/cambiar-password/`
+### POST `/api/ticketera/auth/cambiar-password/`
 
 Request:
 
@@ -165,7 +166,7 @@ el flag**. Los mecanismos existentes no aplican a este canal:
 
 ### Decisión
 
-Agregar `POST /api/integracion/ticketera/auth/cambiar-password/` (`HasAPIKey`,
+Agregar `POST /api/ticketera/auth/cambiar-password/` (`HasAPIKey`,
 server-to-server) que cierra el ciclo:
 
 1. **Rate limit** con `users.rate_limits.hit_rate_limit` (scope propio
@@ -185,7 +186,7 @@ server-to-server) que cierra el ciclo:
    la lógica), que setea la contraseña y limpia `must_change_password`,
    `password_changed_at`, `initial_password_expires_at`,
    `password_reset_requested_at` y `temporary_password_plaintext`.
-5. Corre dentro de `audit_context(source="integracion:ticketera",
+5. Corre dentro de `audit_context(source="ticketera",
    extra={"remote_source": source})`. Como **`password` está en los
    `excluded_fields` del modelo `Usuario` en auditlog** y `Profile` no es un
    modelo trackeado, un `save` de la contraseña no genera diff: se emite un
@@ -285,24 +286,24 @@ Cuatro correcciones sobre los endpoints **sin cambiar los contratos existentes**
 
 ## Archivos tocados
 
-- `integracion/__init__.py`, `integracion/apps.py`
-- `integracion/api_serializers.py`
-- `integracion/api_views.py`
-- `integracion/api_urls.py`
+- `ticketera/__init__.py`, `ticketera/apps.py`
+- `ticketera/api_serializers.py`
+- `ticketera/api_views.py`
+- `ticketera/api_urls.py`
 - `users/models.py` — campo `Profile.source`
 - `users/migrations/0031_profile_source.py`
 - `config/settings.py` — alta de la app en `INSTALLED_APPS`
-- `config/urls.py` — alta de la ruta `/api/integracion/`
+- `config/urls.py` — alta de la ruta `/api/ticketera/`
 - `docs/registro/decisiones/2026-05-27-integracion-ticketera.md` (este archivo)
 
 ### Cierre del ciclo de contraseña temporal (2026-05-28)
 
-- `integracion/api_serializers.py` — `TicketeraAuthCambiarPasswordSerializer` y
+- `ticketera/api_serializers.py` — `TicketeraAuthCambiarPasswordSerializer` y
   `TicketeraAuthCambiarPasswordResponseSerializer`.
-- `integracion/api_views.py` — `TicketeraAuthCambiarPasswordView`;
+- `ticketera/api_views.py` — `TicketeraAuthCambiarPasswordView`;
   `initial_password_expires_at` en `TicketeraUsuarioCreateView`.
-- `integracion/api_urls.py` — ruta `ticketera/auth/cambiar-password/`.
-- `tests/test_integracion_ticketera.py`, `integracion/tests.py` — tests del
+- `ticketera/api_urls.py` — ruta `auth/cambiar-password/`.
+- `tests/test_ticketera.py`, `ticketera/tests.py` — tests del
   nuevo endpoint (happy path/ciclo, `401`/`400`/`429`, auditoría, `503` por flag).
 - `docs/registro/cambios/2026-05-28-integracion-ticketera-cambiar-password.md`.
 - Reutiliza sin modificar: `users.services_auth.change_password_for_authenticated_user`.

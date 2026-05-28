@@ -1,7 +1,8 @@
-"""Vistas REST para la integración con la Ticketera.
+"""Vistas REST de la API server-to-server con la Ticketera.
 
-SISOC actúa como fuente de verdad de credenciales: la Ticketera crea
-usuarios y verifica credenciales contra estos endpoints en cada login.
+SISOC actúa como fuente de verdad de credenciales. La Ticketera opera contra
+tres endpoints: alta/reconciliación de usuarios, verificación de credenciales
+en cada login y cambio de la contraseña temporal por la definitiva.
 """
 
 from datetime import timedelta
@@ -20,7 +21,7 @@ from rest_framework.views import APIView
 
 from audittrail.context import audit_context
 from core.api_auth import HasAPIKey
-from integracion.api_serializers import (
+from ticketera.api_serializers import (
     TicketeraAuthCambiarPasswordResponseSerializer,
     TicketeraAuthCambiarPasswordSerializer,
     TicketeraAuthInvalidSerializer,
@@ -35,11 +36,21 @@ from users.rate_limits import hit_rate_limit
 from users.services_auth import change_password_for_authenticated_user
 
 
-AUDIT_SOURCE = "integracion:ticketera"
+AUDIT_SOURCE = "ticketera"
 
 
-def _integracion_disabled_response() -> Response:
-    """Respuesta uniforme cuando la integración está deshabilitada por flag."""
+def _is_ticketera_source(source: str) -> bool:
+    """Indica si un usuario proviene de la Ticketera.
+
+    Acepta el valor por defecto ("ticketera") y sus variantes por entorno
+    ("ticketera-qa", "ticketera-staging", ...): todas son altas de la Ticketera
+    y deben tratarse como idempotentes, no como colisión con otro origen.
+    """
+    return source == "ticketera" or source.startswith("ticketera-")
+
+
+def _ticketera_disabled_response() -> Response:
+    """Respuesta uniforme cuando la API de la Ticketera está deshabilitada por flag."""
     return Response(
         {
             "error": "integration_disabled",
@@ -49,12 +60,13 @@ def _integracion_disabled_response() -> Response:
     )
 
 
-@extend_schema(tags=["Integración Ticketera"])
+@extend_schema(tags=["Ticketera"])
 class TicketeraUsuarioCreateView(APIView):
     """Crea (o reconcilia) un usuario solicitado por la Ticketera.
 
-    - Idempotente cuando el usuario ya existe con `profile.source == "ticketera"`.
-    - 409 cuando el username ya existe con otro source (colisión real).
+    - Idempotente cuando el usuario ya existe con un `profile.source` de la
+      Ticketera (``ticketera``, ``ticketera-qa``, ...).
+    - 409 cuando el username ya existe con otro origen (colisión real).
     """
 
     permission_classes = [HasAPIKey]
@@ -66,7 +78,7 @@ class TicketeraUsuarioCreateView(APIView):
         la Ticketera responde 200 (idempotente); si pertenece a otro origen, 409.
         """
         existing_source = getattr(getattr(existing, "profile", None), "source", "")
-        if existing_source == "ticketera":
+        if _is_ticketera_source(existing_source):
             return Response(
                 {
                     "id": existing.id,
@@ -93,7 +105,7 @@ class TicketeraUsuarioCreateView(APIView):
             ),
             200: OpenApiResponse(
                 response=TicketeraUsuarioResponseSerializer,
-                description="Usuario ya existía con source=ticketera (idempotente).",
+                description="Usuario ya existía con origen Ticketera (idempotente).",
             ),
             400: OpenApiResponse(
                 description=(
@@ -112,8 +124,8 @@ class TicketeraUsuarioCreateView(APIView):
         },
     )
     def post(self, request):
-        if not settings.INTEGRACION_TICKETERA_ENABLED:
-            return _integracion_disabled_response()
+        if not settings.TICKETERA_ENABLED:
+            return _ticketera_disabled_response()
 
         serializer = TicketeraUsuarioCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -191,7 +203,7 @@ class TicketeraUsuarioCreateView(APIView):
         )
 
 
-@extend_schema(tags=["Integración Ticketera"])
+@extend_schema(tags=["Ticketera"])
 class TicketeraAuthVerificarView(APIView):
     """Verifica credenciales de un usuario por cuenta de la Ticketera."""
 
@@ -220,8 +232,8 @@ class TicketeraAuthVerificarView(APIView):
         },
     )
     def post(self, request):
-        if not settings.INTEGRACION_TICKETERA_ENABLED:
-            return _integracion_disabled_response()
+        if not settings.TICKETERA_ENABLED:
+            return _ticketera_disabled_response()
 
         serializer = TicketeraAuthVerificarSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -300,7 +312,7 @@ class TicketeraAuthVerificarView(APIView):
         )
 
 
-@extend_schema(tags=["Integración Ticketera"])
+@extend_schema(tags=["Ticketera"])
 class TicketeraAuthCambiarPasswordView(APIView):
     """Cierra el ciclo de contraseña temporal por cuenta de la Ticketera.
 
@@ -344,8 +356,8 @@ class TicketeraAuthCambiarPasswordView(APIView):
         },
     )
     def post(self, request):
-        if not settings.INTEGRACION_TICKETERA_ENABLED:
-            return _integracion_disabled_response()
+        if not settings.TICKETERA_ENABLED:
+            return _ticketera_disabled_response()
 
         serializer = TicketeraAuthCambiarPasswordSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)

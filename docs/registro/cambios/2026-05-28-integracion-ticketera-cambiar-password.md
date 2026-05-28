@@ -3,7 +3,7 @@
 ## Contexto
 
 - Endpoints server-to-server de la integración con la Ticketera
-  (`integracion/api_views.py`), protegidos por API Key. Arquitectura y contratos
+  (`ticketera/api_views.py`), protegidos por API Key. Arquitectura y contratos
   en
   [docs/registro/decisiones/2026-05-27-integracion-ticketera.md](../decisiones/2026-05-27-integracion-ticketera.md).
 - El ciclo de "contraseña temporal" estaba a medias: el alta marcaba
@@ -16,9 +16,9 @@
 
 ## Cambios aplicados
 
-- **Nuevo endpoint `POST /api/integracion/ticketera/auth/cambiar-password/`**
+- **Nuevo endpoint `POST /api/ticketera/auth/cambiar-password/`**
   (`HasAPIKey`, `TicketeraAuthCambiarPasswordView`). Flujo:
-  1. Gate `INTEGRACION_TICKETERA_ENABLED` (igual que los otros dos endpoints;
+  1. Gate `TICKETERA_ENABLED` (igual que los otros dos endpoints;
      `503` si está apagado).
   2. Rate limit `hit_rate_limit` con scope propio `ticketera_cambiar_password`,
      identidad `f"{ip}:{username}"`, `limit=10`, `window_seconds=300` (mismo
@@ -28,7 +28,7 @@
   4. Valida `new_password` con `password_validation.validate_password(...,
      user)` y rechaza que sea igual a `current_password` ⇒ `400 { new_password:
      [...] }`.
-  5. Dentro de `audit_context(source="integracion:ticketera",
+  5. Dentro de `audit_context(source="ticketera",
      extra={"remote_source": source})`, reutiliza
      `users.services_auth.change_password_for_authenticated_user` (no se duplica
      la lógica) y emite un `LogEntry` `UPDATE` explícito con la contraseña
@@ -38,11 +38,11 @@
   el alta (`now + timedelta(hours=INITIAL_PASSWORD_MAX_AGE_HOURS)`), para que la
   temporal de Ticketera expire igual que en el flujo PWA/web. **El contrato de
   `/usuarios/` no cambia** (sigue devolviendo `{ id, username, email }`).
-- **Serializers nuevos** en `integracion/api_serializers.py`:
+- **Serializers nuevos** en `ticketera/api_serializers.py`:
   `TicketeraAuthCambiarPasswordSerializer` (request) y
   `TicketeraAuthCambiarPasswordResponseSerializer` (response 200), anotados en
   `@extend_schema` (aparecen en `/api/schema/` y `/api/docs/`).
-- **Ruta** `ticketera/auth/cambiar-password/` en `integracion/api_urls.py`.
+- **Ruta** `auth/cambiar-password/` en `ticketera/api_urls.py`.
 
 ## Decisiones
 
@@ -71,21 +71,21 @@
   `verificar` posterior devuelve `must_change_password=false`.
 - `current_password` incorrecta ⇒ `401` sin tocar la base; `new_password` débil
   o igual a la actual ⇒ `400` sin tocar la base.
-- El cambio queda en el audittrail con `source="integracion:ticketera"`.
+- El cambio queda en el audittrail con `source="ticketera"`.
 - Sin cambios en los contratos de `/usuarios/` ni `/verificar/`.
 
 ## Validación
 
-- `black --check` sobre `integracion/api_views.py`,
-  `integracion/api_serializers.py`, `integracion/api_urls.py`,
-  `integracion/tests.py` y `tests/test_integracion_ticketera.py`.
+- `black --check` sobre `ticketera/api_views.py`,
+  `ticketera/api_serializers.py`, `ticketera/api_urls.py`,
+  `ticketera/tests.py` y `tests/test_ticketera.py`.
 - Tests nuevos:
-  - `tests/test_integracion_ticketera.py`: ciclo completo (200 + verificar
+  - `tests/test_ticketera.py`: ciclo completo (200 + verificar
     posterior con `must_change_password=false`), `401` por current incorrecta y
     por usuario inactivo (sin cambios), `400` por débil y por igual a la actual
     (sin cambios), `429` en el intento 11, auditoría con source Ticketera, y la
     URL agregada al test parametrizado de "sin API Key".
-  - `integracion/tests.py`: `503` con el flag deshabilitado.
+  - `ticketera/tests.py`: `503` con el flag deshabilitado.
 - **Sin validar localmente:** `pytest` / `manage.py`. El entorno Python local
   está roto (`ImportError: cannot import name 'punycode'`, mismatch de versión
   de Django) y Docker suele estar apagado. Queda delegado a la CI del PR o a una
@@ -100,7 +100,7 @@
   independientes).
 - **Riesgo:** el rate limit comparte patrón con `verificar` pero usa scope
   propio; no interfiere con el contador de `verificar`.
-- **Rollback:** quitar la ruta `cambiar-password` de `integracion/api_urls.py`
+- **Rollback:** quitar la ruta `cambiar-password` de `ticketera/api_urls.py`
   y la vista/serializers asociados; opcionalmente revertir el seteo de
   `initial_password_expires_at`. Los cambios están acotados a la app
-  `integracion/` (no se modificó `users/services_auth.py`).
+  `ticketera/` (no se modificó `users/services_auth.py`).

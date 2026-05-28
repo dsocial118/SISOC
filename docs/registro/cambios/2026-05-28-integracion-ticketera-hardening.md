@@ -3,7 +3,7 @@
 ## Contexto
 
 - Endpoints server-to-server de la integración con la Ticketera
-  (`integracion/api_views.py`), protegidos por API Key. Arquitectura y contratos
+  (`ticketera/api_views.py`), protegidos por API Key. Arquitectura y contratos
   en
   [docs/registro/decisiones/2026-05-27-integracion-ticketera.md](../decisiones/2026-05-27-integracion-ticketera.md).
 - Se detectaron cuatro problemas de robustez/seguridad en `usuarios/` y
@@ -60,19 +60,19 @@
 
 ## Validación
 
-- `black --check` sobre `integracion/api_views.py`,
-  `integracion/api_serializers.py` e `integracion/tests.py`: **OK**.
-- Tests de regresión del endurecimiento en `integracion/tests.py`:
+- `black --check` sobre `ticketera/api_views.py`,
+  `ticketera/api_serializers.py` e `ticketera/tests.py`: **OK**.
+- Tests de regresión del endurecimiento en `ticketera/tests.py`:
   idempotencia/409 case-insensitive, contraseña débil `400` sin crear, carrera
   `200`/`409` vía `IntegrityError` mockeado e identidad del rate limit con IP.
   Los happy-paths, permisos y auditoría se cubren en
-  `tests/test_integracion_ticketera.py`.
+  `tests/test_ticketera.py`.
 - **`pytest`: 24 passed.** El Python local está roto
   (`ImportError: cannot import name 'punycode' from 'django.core.validators'`),
   así que la suite se corrió en un contenedor efímero (`docker run --rm` con la
   imagen `*-django` ya construida, montando el checkout y con
-  `USE_SQLITE_FOR_TESTS=1`). Pasaron las 9 de `integracion/tests.py` (flag +
-  regresiones del endurecimiento) y las 15 de `tests/test_integracion_ticketera.py`,
+  `USE_SQLITE_FOR_TESTS=1`). Pasaron las 9 de `ticketera/tests.py` (flag +
+  regresiones del endurecimiento) y las 15 de `tests/test_ticketera.py`,
   confirmando que los cambios no rompen los happy-paths ni la auditoría.
 
 ## Riesgos y rollback
@@ -81,6 +81,6 @@
   concurrentes con distinta capitalización del mismo username podrían crear dos
   filas distintas (la constraint única no las consideraría duplicadas). Escenario
   fuera de la configuración default; se asume collation case-insensitive.
-- **Rollback:** revertir `integracion/api_views.py` a la versión previa al
+- **Rollback:** revertir `ticketera/api_views.py` a la versión previa al
   endurecimiento (los cambios están acotados a las dos vistas) y quitar
-  `integracion/tests.py` si fuese necesario.
+  `ticketera/tests.py` si fuese necesario.
