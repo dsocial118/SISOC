@@ -536,17 +536,43 @@ class CentroListView(LoginRequiredMixin, ListView):
                 "filters_config": get_centro_filters_ui_config(),
                 "seccion_filtros_favoritos": SeccionesFiltrosFavoritos.VAT_CENTROS,
                 "add_url": reverse("vat_centro_create"),
+                "centro_additional_buttons": [],
+                "current_query": self.request.GET.get("busqueda", ""),
             }
         )
 
         ctx["can_add"] = can_user_create_centro(user)
 
         ctx["table_headers"] = [
-            {"title": "Nombre", "sortable": True, "sort_key": "nombre"},
-            {"title": "Dirección", "sortable": True, "sort_key": "calle"},
-            {"title": "Teléfono", "sortable": True, "sort_key": "telefono"},
-            {"title": "Estado", "sortable": True, "sort_key": "activo"},
-            {"title": "Acciones"},
+            {
+                "title": "Nombre",
+                "sortable": True,
+                "sort_key": "nombre",
+                "class": "",
+                "style": "",
+            },
+            {
+                "title": "Dirección",
+                "sortable": True,
+                "sort_key": "calle",
+                "class": "",
+                "style": "",
+            },
+            {
+                "title": "Teléfono",
+                "sortable": True,
+                "sort_key": "telefono",
+                "class": "",
+                "style": "",
+            },
+            {
+                "title": "Estado",
+                "sortable": True,
+                "sort_key": "activo",
+                "class": "",
+                "style": "",
+            },
+            {"title": "Acciones", "sortable": False, "class": "", "style": ""},
         ]
 
         page_obj = ctx.get("page_obj")

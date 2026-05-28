@@ -2111,6 +2111,11 @@
             padding: .35rem .55rem;
         }
 
+        #modalCurso select[name="tipo"][multiple] {
+            min-height: 38px;
+            padding: .35rem .55rem;
+        }
+
         /* Select2 multiple dark mode para #modalOferta y #modalCurso */
         #modalOferta .select2-container--default .select2-selection--multiple,
         #modalCurso .select2-container--default .select2-selection--multiple {
@@ -2359,12 +2364,6 @@
                 if (submitter && submitter.name) {
                     formData.set(submitter.name, submitter.value || '');
                 }
-                if (submitter && submitter.dataset.postCreateAction) {
-                    formData.set('post_create_action', submitter.dataset.postCreateAction);
-                } else {
-                    formData.delete('post_create_action');
-                }
-
                 fetch(form.action, {
                     method: 'POST',
                     body: formData,
@@ -2393,15 +2392,6 @@
                             search: window.location.search,
                             forceReload: true,
                             updateUrl: true
-                        }).then(function() {
-                            if (
-                                modalId === 'modalCurso'
-                                && payload
-                                && payload.open_comision_modal
-                                && typeof openComisionCursoModalFromContext === 'function'
-                            ) {
-                                openComisionCursoModalFromContext(payload.comision_modal_context);
-                            }
                         });
                     }
                     location.reload();
@@ -2802,36 +2792,47 @@
                 return field.closest('p') || field.closest('.mb-3') || field.parentElement;
             }
 
-            var vouchersContainer = getFieldContainer(vouchersSelect);
-            var counterValue = vouchersContainer
-                ? vouchersContainer.querySelector('[data-voucher-counter-value="1"]')
-                : null;
-            var counterChip = vouchersContainer
-                ? vouchersContainer.querySelector('[data-voucher-counter="1"]')
-                : null;
-            var selectedInfo = null;
-            if (!counterValue) {
-                selectedInfo = document.createElement('div');
-                selectedInfo.className = 'form-text mt-1';
-                selectedInfo.textContent = 'Seleccionados: 0';
-                if (vouchersContainer) {
-                    vouchersContainer.appendChild(selectedInfo);
+            function bindMultiSelectCounter(selectField, counterKey) {
+                if (!selectField) {
+                    return function() {};
                 }
+
+                var fieldContainer = getFieldContainer(selectField);
+                var counterValueNode = fieldContainer
+                    ? fieldContainer.querySelector('[data-voucher-counter-value="' + counterKey + '"]')
+                    : null;
+                var counterChipNode = fieldContainer
+                    ? fieldContainer.querySelector('[data-voucher-counter="' + counterKey + '"]')
+                    : null;
+                var selectedInfoNode = null;
+
+                if (!counterValueNode) {
+                    selectedInfoNode = document.createElement('div');
+                    selectedInfoNode.className = 'form-text mt-1';
+                    selectedInfoNode.textContent = 'Seleccionados: 0';
+                    if (fieldContainer) {
+                        fieldContainer.appendChild(selectedInfoNode);
+                    }
+                }
+
+                return function refreshCounter() {
+                    var selectedCount = Array.from(selectField.options).filter(function(option) {
+                        return option.selected;
+                    }).length;
+                    if (counterValueNode) {
+                        counterValueNode.textContent = selectedCount;
+                        if (counterChipNode) {
+                            counterChipNode.classList.toggle('is-active', selectedCount > 0);
+                        }
+                    } else if (selectedInfoNode) {
+                        selectedInfoNode.textContent = 'Seleccionados: ' + selectedCount;
+                    }
+                };
             }
 
-            function refreshSelectedInfo() {
-                var selectedCount = Array.from(vouchersSelect.options).filter(function(option) {
-                    return option.selected;
-                }).length;
-                if (counterValue) {
-                    counterValue.textContent = selectedCount;
-                    if (counterChip) {
-                        counterChip.classList.toggle('is-active', selectedCount > 0);
-                    }
-                } else if (selectedInfo) {
-                    selectedInfo.textContent = 'Seleccionados: ' + selectedCount;
-                }
-            }
+            var refreshSelectedInfo = bindMultiSelectCounter(vouchersSelect, '1');
+            var tipoSelect = form.querySelector('select[name="tipo"]');
+            var refreshTipoSelectedInfo = bindMultiSelectCounter(tipoSelect, 'origne');
 
             function filtrarVouchersPorPrograma() {
                 if (!programaSelect) {
@@ -2899,6 +2900,10 @@
                 });
             }
             vouchersSelect.addEventListener('change', refreshSelectedInfo);
+            if (tipoSelect) {
+                tipoSelect.addEventListener('change', refreshTipoSelectedInfo);
+                refreshTipoSelectedInfo();
+            }
 
             toggleVoucherField();
         }
@@ -3210,7 +3215,6 @@
             var formEl = document.getElementById('formCurso');
             var titleEl = document.getElementById('modalCursoLabel');
             var primarySubmitEl = document.getElementById('cursoPrimarySubmitBtn');
-            var saveAndCreateEl = document.getElementById('cursoSaveAndCreateComisionBtn');
             var planEstudioInfoEl = document.getElementById('planEstudioSeleccionadoInfo');
             if (!modalEl || !formEl || !titleEl) return;
             if (modalEl.dataset.cursoFormInitialized === '1') return;
@@ -3521,9 +3525,6 @@
                     if (primarySubmitEl) {
                         primarySubmitEl.textContent = 'Actualizar';
                     }
-                    if (saveAndCreateEl) {
-                        saveAndCreateEl.classList.add('d-none');
-                    }
                     setFormValue('plan_estudio', triggerButton.getAttribute('data-plan-estudio-id'));
                     setFormValue('nombre', triggerButton.getAttribute('data-nombre'));
                     setFormValue('estado', triggerButton.getAttribute('data-estado'));
@@ -3542,9 +3543,6 @@
                 formEl.setAttribute('action', createAction);
                 if (primarySubmitEl) {
                     primarySubmitEl.textContent = 'Guardar';
-                }
-                if (saveAndCreateEl) {
-                    saveAndCreateEl.classList.remove('d-none');
                 }
                 setFormValue('plan_estudio', planEstudioId);
                 setPlanEstudioFieldLock(planEstudioId, lockPlanEstudio);
@@ -3994,4 +3992,5 @@
         initializeVoucherSelect2('formOferta', 'modalOferta');
         initializeVoucherSelect2('formCurso', 'modalCurso');
     </script>
+    {% include "vat/partials/tour.html" with vat_tour_section="centros_detail" %}
 {% endblock %}

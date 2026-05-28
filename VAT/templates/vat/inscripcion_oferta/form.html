@@ -99,3 +99,7 @@
         </div>
     </div>
 {% endblock %}
+
+{% block customJS %}
+    {% include "vat/partials/tour.html" with vat_tour_section="inscripcion_oferta_form" %}
+{% endblock %}

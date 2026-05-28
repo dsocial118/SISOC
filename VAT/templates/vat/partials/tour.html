@@ -1,0 +1,77 @@
+{% load static %}
+{% comment %}
+Partial reutilizable para tours VAT con driver.js.
+
+Uso:
+  {% include "vat/partials/tour.html" with vat_tour_section="centros_list" %}
+
+Si no se pasa vat_tour_section, vat_tour.js detecta la seccion por URL.
+{% endcomment %}
+<link rel="stylesheet" href="{% static 'custom/css/driver.css' %}" />
+<style nonce="{{ request.csp_nonce }}">
+    #sisoc-vat-tour-btn {
+        position: fixed;
+        right: 1.5rem;
+        bottom: 1.5rem;
+        z-index: 1080;
+        border-radius: 999px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+        padding: 0.65rem 1.1rem;
+        font-weight: 600;
+    }
+    #sisoc-vat-tour-btn .dropdown-menu {
+        min-width: 14rem;
+    }
+</style>
+<div class="dropup" id="sisoc-vat-tour-container">
+    <button id="sisoc-vat-tour-btn"
+            type="button"
+            class="btn btn-primary dropdown-toggle"
+            data-bs-toggle="dropdown"
+            data-vat-tour="help-button"
+            aria-expanded="false">
+        <i class="fas fa-question-circle me-1"></i> Tour de ayuda
+    </button>
+    <ul class="dropdown-menu dropdown-menu-end">
+        <li>
+            <a class="dropdown-item" href="#" data-vat-tour-action="section">
+                <i class="fas fa-location-arrow me-2"></i> Tour de esta pantalla
+            </a>
+        </li>
+        <li>
+            <a class="dropdown-item" href="#" data-vat-tour-action="general">
+                <i class="fas fa-map me-2"></i> Tour general del modulo VAT
+            </a>
+        </li>
+        <li><hr class="dropdown-divider" /></li>
+        <li>
+            <a class="dropdown-item text-muted" href="#" data-vat-tour-action="reset">
+                <i class="fas fa-rotate-left me-2"></i> Reiniciar tours vistos
+            </a>
+        </li>
+    </ul>
+</div>
+<script nonce="{{ request.csp_nonce }}">
+    window.SISOC_VAT_TOUR = {
+        section: "{{ vat_tour_section|default:'' }}",
+        autoStart: {% if vat_tour_autostart is False %}false{% else %}true{% endif %}
+    };
+</script>
+<script src="{% static 'custom/js/driver.js.iife.js' %}"></script>
+<script src="{% static 'custom/js/vat_tour.js' %}"></script>
+<script nonce="{{ request.csp_nonce }}">
+    document.addEventListener("click", function (ev) {
+        var target = ev.target.closest("[data-vat-tour-action]");
+        if (!target || !window.SisocVatTour) return;
+        ev.preventDefault();
+        var action = target.getAttribute("data-vat-tour-action");
+        if (action === "general") {
+            window.SisocVatTour.runGeneral();
+        } else if (action === "reset") {
+            window.SisocVatTour.resetSeen();
+            window.SisocVatTour.runSection();
+        } else {
+            window.SisocVatTour.runSection();
+        }
+    });
+</script>

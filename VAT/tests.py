@@ -1188,6 +1188,51 @@ def test_centro_list_usuario_provincial_solo_ve_su_provincia(client):
 
 
 @pytest.mark.django_db
+def test_vat_centro_list_no_emite_errores_de_variables_faltantes_en_search_bar(
+    client, vat_geo_data, caplog
+):
+    provincia, municipio, localidad = vat_geo_data
+    user = User.objects.create_superuser(
+        username="admin-vat-centro-list-render",
+        email="admin-centro-list-render@vat.test",
+        password="test1234",
+    )
+    Centro.objects.create(
+        nombre="Centro Render",
+        codigo="CEN-RENDER-001",
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad,
+        calle="7",
+        numero=123,
+        domicilio_actividad="Calle 7 123",
+        telefono="221-4000000",
+        celular="221-5000000",
+        correo="render@vat.test",
+        nombre_referente="Ana",
+        apellido_referente="Pérez",
+        telefono_referente="221-6000000",
+        correo_referente="referente-render@vat.test",
+        tipo_gestion="Estatal",
+        clase_institucion="Formación Profesional",
+        situacion="Institución de ETP",
+        activo=True,
+    )
+
+    client.force_login(user)
+    caplog.clear()
+
+    with caplog.at_level("DEBUG", logger="django.template"):
+        response = client.get(reverse("vat_centro_list"))
+
+    assert response.status_code == 200
+    assert not any(
+        "Exception while resolving variable" in record.message
+        for record in caplog.records
+    )
+
+
+@pytest.mark.django_db
 def test_filter_centros_queryset_usuario_con_role_provincia_vat_aplica_scope():
     provincia_corrientes = Provincia.objects.create(nombre="Corrientes")
     provincia_chaco = Provincia.objects.create(nombre="Chaco")
@@ -5350,6 +5395,8 @@ def test_curso_form_plan_estudio_es_primer_campo():
     form = CursoForm()
 
     assert list(form.fields.keys())[0] == "plan_estudio"
+    assert list(form.fields.keys())[2] == "tipo"
+    assert form.fields["tipo"].widget.allow_multiple_selected is True
     assert "ubicacion" not in form.fields
 
 
@@ -5902,7 +5949,12 @@ def test_centro_cursos_panel_renderiza_selector_de_planes_en_modal_nuevo_curso(
     assert response.status_code == 200
     assert 'data-panel-rendered="1"' in content
     assert "Planes Curriculares" not in content
-    assert 'title="Nuevo Curso"' in content
+    assert '<h5 class="modal-title" id="modalCursoLabel">Nuevo Curso</h5>' in content
+    assert 'name="tipo"' in content
+    assert 'id="id_tipo"' in content
+    assert 'Seleccionar tipos...' in content
+    assert 'data-voucher-counter="origne"' in content
+    assert 'data-voucher-counter-value="origne"' in content
     assert 'id="planEstudioSeleccionadoInfo"' in content
     assert 'id="modalPlanCurricularSelector"' in content
     assert 'id="openPlanCurricularSelector"' in content
@@ -5917,6 +5969,8 @@ def test_centro_cursos_panel_renderiza_selector_de_planes_en_modal_nuevo_curso(
     )
     assert "Seleccionar plan curricular" in content
     assert "Buscar por plan, sector o normativa" in content
+    assert "Guardar y crear comisión" not in content
+    assert 'data-post-create-action="open-comision"' not in content
     assert f'value="{plan.id}"' in content
     assert f'value="{plan_inactivo.id}"' not in content
     assert f'value="{plan_otra_provincia.id}"' not in content
