@@ -735,7 +735,6 @@ class PrimerSeguimientoSerializer(serializers.ModelSerializer):
             "id_seguimiento1",
             "cod_pnud",
             "prestaciones_seguimientos",
-            "menu",
         ):
             self.initial_data.pop(field_name, None)
 
