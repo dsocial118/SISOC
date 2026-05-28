@@ -1573,7 +1573,9 @@ class ComedorDetailViewSet(
         observaciones = str(request.data.get("observaciones") or "").strip()
         if not conforme and not observaciones:
             return Response(
-                {"detail": "Las observaciones son obligatorias para no dar conformidad."},
+                {
+                    "detail": "Las observaciones son obligatorias para no dar conformidad."
+                },
                 status=status.HTTP_400_BAD_REQUEST,
             )
 

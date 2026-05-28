@@ -774,7 +774,9 @@ class NominaEspacioPWACreateUpdateSerializer(serializers.Serializer):
     sexo_id = serializers.IntegerField(required=False, allow_null=True)
     fecha_nacimiento = serializers.DateField(required=False)
     es_indocumentado = serializers.BooleanField(required=False, default=False)
-    pertenece_comunidad_indigena = serializers.BooleanField(required=False, default=False)
+    pertenece_comunidad_indigena = serializers.BooleanField(
+        required=False, default=False
+    )
     situacion_calle = serializers.BooleanField(required=False, default=False)
     identificador_interno = serializers.CharField(
         required=False, allow_blank=True, allow_null=True

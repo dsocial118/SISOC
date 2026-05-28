@@ -403,8 +403,7 @@
                     <h1>
                         {{ ciudadano.nombre }} {{ ciudadano.apellido }}
                         {% if situacion_calle_pwa %}
-                            <span class="badge bg-danger ms-2 align-middle"
-                                  style="font-size: 0.75rem;">Situación de calle</span>
+                            <span class="badge bg-danger ms-2 align-middle" style="font-size: 0.75rem;">Situación de calle</span>
                         {% endif %}
                     </h1>
                     <p class="subtitle mb-0">
@@ -629,13 +628,21 @@
                                     <div class="info-row">
                                         <strong>Pueblo originario:</strong>
                                         <span class="value">
-                                            {% if pertenece_comunidad_indigena %}Sí{% else %}No{% endif %}
+                                            {% if pertenece_comunidad_indigena %}
+                                                Sí
+                                            {% else %}
+                                                No
+                                            {% endif %}
                                         </span>
                                     </div>
                                     <div class="info-row">
                                         <strong>Situación de calle:</strong>
                                         <span class="value">
-                                            {% if situacion_calle_pwa %}Sí{% else %}No{% endif %}
+                                            {% if situacion_calle_pwa %}
+                                                Sí
+                                            {% else %}
+                                                No
+                                            {% endif %}
                                         </span>
                                     </div>
                                 </div>
