@@ -16,6 +16,9 @@
           {% if relevamiento.estado == "Pendiente" %} style="color: yellow;" {% elif relevamiento.estado == "Visita pendiente" %} style="color: green;" {% else %} style="color: white;" {% endif %}>
         {{ relevamiento.estado | default_if_none:"Sin información" }}
     </span>
+    {% if relevamiento.sincronizado_gestionar %}
+        <span class="badge bg-success ml-2" title="Datos recibidos desde GESTIONAR">Sincronizado con GESTIONAR</span>
+    {% endif %}
 {% endblock %}
 
 {% block customJS %}
@@ -1385,4 +1388,68 @@
             </div>
         </div>
     </div>
+    {% with seguimiento=relevamiento.primer_seguimiento %}
+        {% if seguimiento %}
+            <div class="card mt-4">
+                <div class="card-header d-flex align-items-center justify-content-between">
+                    <h5 class="mb-0">Primer seguimiento</h5>
+                    {% if seguimiento.sincronizado_gestionar %}
+                        <span class="badge bg-success" title="Datos recibidos desde GESTIONAR">Sincronizado con GESTIONAR</span>
+                    {% else %}
+                        <span class="badge bg-secondary"
+                              title="Aún no se recibieron datos desde GESTIONAR">Pendiente sincronización</span>
+                    {% endif %}
+                </div>
+                <div class="card-body d-flex align-items-center justify-content-between flex-wrap gap-2">
+                    <span class="text-muted">Ver el detalle completo del primer seguimiento cargado para este relevamiento.</span>
+                    <div class="d-flex gap-2">
+                        <a href="{% url 'primer_seguimiento_detalle' relevamiento.comedor.id relevamiento.id %}"
+                           class="btn btn-primary">Ver primer seguimiento</a>
+                        {% if perms.relevamientos.delete_primerseguimiento %}
+                            <button type="button"
+                                    class="btn btn-danger"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#modalEliminarPrimerSeguimiento">
+                                Eliminar primer seguimiento
+                            </button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% if perms.relevamientos.delete_primerseguimiento %}
+                <div class="modal fade"
+                     id="modalEliminarPrimerSeguimiento"
+                     tabindex="-1"
+                     aria-labelledby="modalEliminarPrimerSeguimientoLabel"
+                     aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content">
+                            <form method="post"
+                                  action="{% url 'primer_seguimiento_eliminar' relevamiento.comedor.id relevamiento.id %}">
+                                {% csrf_token %}
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="modalEliminarPrimerSeguimientoLabel">Eliminar primer seguimiento</h5>
+                                    <button type="button"
+                                            class="btn-close"
+                                            data-bs-dismiss="modal"
+                                            aria-label="Cerrar"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <p class="mb-2">
+                                        Esta accion eliminara el primer seguimiento del relevamiento
+                                        y dara de baja el registro asociado en GESTIONAR.
+                                    </p>
+                                    <p class="mb-0 text-muted">No se puede deshacer.</p>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                    <button type="submit" class="btn btn-danger">Eliminar</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+        {% endif %}
+    {% endwith %}
 {% endblock %}
