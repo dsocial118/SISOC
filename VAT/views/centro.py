@@ -57,6 +57,9 @@ from VAT.services.access_scope import (
     can_user_create_centro,
     can_user_edit_centro,
     filter_centros_queryset_for_user,
+    puede_generar_usuario_centro_vat,
+    puede_ver_usuarios_centro_vat,
+    usuarios_centro_vat_restantes,
 )
 from core.pagination import NoCountPaginator, build_no_count_page_range
 from core.services.advanced_filters import AdvancedFilterEngine
@@ -637,6 +640,13 @@ class CentroDetailView(CentroAccessMixin, LoginRequiredMixin, DetailView):
             kwargs={"pk": centro.pk},
         )
         ctx["can_edit_centro"] = can_user_edit_centro(self.request.user, centro)
+        ctx["puede_generar_usuario_centro_vat"] = puede_generar_usuario_centro_vat(
+            self.request.user, centro
+        )
+        ctx["puede_ver_usuarios_centro_vat"] = puede_ver_usuarios_centro_vat(
+            self.request.user, centro
+        )
+        ctx["usuarios_centro_vat_restantes"] = usuarios_centro_vat_restantes(centro)
 
         return ctx
 

@@ -119,6 +119,16 @@ class Profile(models.Model):
         blank=True,
         verbose_name="Contraseña temporal visible",
     )
+    source = models.CharField(
+        max_length=50,
+        blank=True,
+        default="sisoc",
+        verbose_name="Origen del usuario",
+        help_text=(
+            "Sistema que originó el usuario (sisoc, ticketera, ...). "
+            "Permite reconciliar altas provenientes de integraciones externas."
+        ),
+    )
     es_coordinador = models.BooleanField(
         default=False,
         verbose_name="Es Coordinador de Gestión",

@@ -366,3 +366,74 @@ def can_user_edit_centro(user, centro) -> bool:
         )
 
     return _user_is_referente_for_centro(user, centro)
+
+
+GRUPO_REFERENTE_CENTRO_VAT = "CFP"
+LIMITE_USUARIOS_POR_CENTRO_VAT = 10
+
+
+def usuarios_centro_vat_activos(centro) -> int:
+    """Cantidad de usuarios referentes activos asociados a un Centro VAT.
+
+    Cuenta los `referentes` (M2M existente) más el `referente` legado (FK)
+    si no figura en la M2M, para reflejar el total real de usuarios con
+    acceso al centro.
+    """
+    if not getattr(centro, "pk", None):
+        return 0
+    referentes_ids = set(centro.referentes.values_list("id", flat=True))
+    if centro.referente_id:
+        referentes_ids.add(centro.referente_id)
+    return len(referentes_ids)
+
+
+def usuarios_centro_vat_restantes(centro) -> int:
+    """Cupo restante de usuarios referentes para un Centro VAT."""
+    return max(0, LIMITE_USUARIOS_POR_CENTRO_VAT - usuarios_centro_vat_activos(centro))
+
+
+def _actor_puede_delegar_grupo_nombre(user, grupo_nombre: str) -> bool:
+    """Reusa el mecanismo IAM existente `Profile.grupos_asignables`."""
+    if not user or not getattr(user, "is_authenticated", False):
+        return False
+    if user.is_superuser:
+        return True
+    profile = _get_profile(user)
+    if not profile:
+        return False
+    return profile.grupos_asignables.filter(name=grupo_nombre).exists()
+
+
+def puede_generar_usuario_centro_vat(user, centro) -> bool:
+    """Regla para habilitar el botón "Generar usuario" en un Centro VAT.
+
+    - El actor debe poder editar el centro (regla VAT existente).
+    - Debe poder delegar el grupo "CFP".
+    - Debe quedar cupo respecto del máximo por centro.
+    """
+    if not user or not getattr(user, "is_authenticated", False):
+        return False
+    if not can_user_edit_centro(user, centro):
+        return False
+    if not _actor_puede_delegar_grupo_nombre(user, GRUPO_REFERENTE_CENTRO_VAT):
+        return False
+    return usuarios_centro_vat_restantes(centro) > 0
+
+
+def puede_ver_usuarios_centro_vat(user, centro) -> bool:
+    """Quién ve el listado de usuarios+credenciales de un Centro VAT.
+
+    Solo el referente del centro (membresía en `referentes`/`referente`) o
+    SSE/superusuario. Se valida la pertenencia directa al M2M para que el
+    panel también funcione con usuarios generados antes de que se les asigne
+    el permiso de rol.
+    """
+    if not user or not getattr(user, "is_authenticated", False):
+        return False
+    if is_vat_sse(user):
+        return True
+    if not getattr(centro, "pk", None):
+        return False
+    if getattr(centro, "referente_id", None) == getattr(user, "id", None):
+        return True
+    return centro.referentes.filter(pk=user.id).exists()

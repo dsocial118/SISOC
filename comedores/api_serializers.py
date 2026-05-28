@@ -4,14 +4,24 @@
 
 from rest_framework import serializers
 from django.core.exceptions import DisallowedHost
+from django.db.models import Max
 from django.urls import reverse
 
-from comedores.models import Comedor, ComedorDatosConvenioPnud, Nomina
+from comedores.models import (
+    Comedor,
+    ComedorDatosConvenioPnud,
+    Nomina,
+    PrestacionAlimentariaConformidad,
+)
 from comedores.services.comedor_service import ComedorService
 from core.models import Localidad, Municipio, Provincia
 from duplas.models import Dupla
 from organizaciones.models import Organizacion
-from admisiones.models.admisiones import InformeTecnico
+from admisiones.models.admisiones import (
+    Admision,
+    HistorialEstadosAdmision,
+    InformeTecnico,
+)
 from relevamientos.models import ClasificacionComedor, Relevamiento
 from relevamientos.service import RelevamientoService
 from rendicioncuentasmensual.models import DocumentacionAdjunta
@@ -1088,9 +1098,16 @@ APROBADAS_FIELDS = tuple(
 )
 
 
+ESTADO_INFORME_TECNICO_FINALIZADO = "informe_tecnico_finalizado"
+ESTADO_INFORME_TECNICO_FINALIZADO_DISPLAY = dict(Admision.ESTADOS_ADMISION).get(
+    ESTADO_INFORME_TECNICO_FINALIZADO, "Informe técnico finalizado"
+)
+
+
 class InformeTecnicoPrestacionSerializer(serializers.ModelSerializer):
     informe_id = serializers.IntegerField(source="id", read_only=True)
     admision_id = serializers.IntegerField(read_only=True)
+    fecha_finalizacion = serializers.SerializerMethodField()
 
     class Meta:
         model = InformeTecnico
@@ -1101,8 +1118,57 @@ class InformeTecnicoPrestacionSerializer(serializers.ModelSerializer):
             "estado_formulario",
             "creado",
             "modificado",
+            "fecha_finalizacion",
             *APROBADAS_FIELDS,
         )
+
+    @staticmethod
+    def fechas_finalizacion_para(admision_ids):
+        ids = [admision_id for admision_id in admision_ids if admision_id]
+        if not ids:
+            return {}
+        filas = (
+            HistorialEstadosAdmision.objects.filter(
+                admision_id__in=ids,
+                estado_nuevo=ESTADO_INFORME_TECNICO_FINALIZADO_DISPLAY,
+            )
+            .values("admision_id")
+            .annotate(fecha=Max("fecha"))
+            .values_list("admision_id", "fecha")
+        )
+        return dict(filas)
+
+    def get_fecha_finalizacion(self, obj):
+        fechas = self.context.get("fechas_finalizacion")
+        if fechas is None:
+            fechas = self.fechas_finalizacion_para([obj.admision_id])
+        return fechas.get(obj.admision_id)
+
+
+class PrestacionAlimentariaConformidadSerializer(serializers.ModelSerializer):
+    usuario_id = serializers.IntegerField(read_only=True)
+    usuario_nombre = serializers.SerializerMethodField()
+    informe_id = serializers.IntegerField(source="informe_tecnico_id", read_only=True)
+
+    class Meta:
+        model = PrestacionAlimentariaConformidad
+        fields = (
+            "id",
+            "periodo",
+            "conforme",
+            "observaciones",
+            "creado",
+            "usuario_id",
+            "usuario_nombre",
+            "informe_id",
+        )
+
+    def get_usuario_nombre(self, obj):
+        usuario = getattr(obj, "usuario", None)
+        if not usuario:
+            return None
+        full_name = usuario.get_full_name() if hasattr(usuario, "get_full_name") else ""
+        return full_name or getattr(usuario, "username", None) or str(usuario)
 
 
 class NoSaveSerializer(serializers.Serializer):
