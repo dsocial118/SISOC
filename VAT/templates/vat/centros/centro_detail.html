@@ -1759,293 +1759,296 @@
                                         </li>
                                     </ul>
                                 </div>
-                            </section>
-
-                            <section class="sisoc-info-panel" data-sisoc-panel="ubicaciones">
-                                <div class="sisoc-panel-section">
-                                    <div class="sisoc-section-header">
-                                        <h2>Ubicaciones adicionales</h2>
-                                        {% if can_edit_centro and perms.VAT.add_institucionubicacion %}
-                                            <button type="button"
-                                                    class="sisoc-btn sisoc-btn--add"
-                                                    data-bs-toggle="modal"
-                                                    data-bs-target="#modalUbicacion">
-                                                <i class="fas fa-plus"></i>
-                                                <span>Agregar sede</span>
-                                            </button>
-                                        {% endif %}
-                                    </div>
-                                    <hr class="sisoc-section-divider" />
-                                    {% if ubicaciones %}
-                                        <div class="sisoc-table-shell">
-                                            <div class="sisoc-table-wrap">
-                                                <table class="sisoc-table">
-                                                    <thead>
-                                                        <tr>
-                                                            <th>Nombre</th>
-                                                            <th>Característica</th>
-                                                            <th>Localidad</th>
-                                                            <th>Domicilio</th>
-                                                            <th>Acciones</th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody>
-                                                        {% for u in ubicaciones %}
-                                                            <tr>
-                                                                <td>{{ u.nombre_ubicacion|default:u.get_rol_ubicacion_display }}</td>
-                                                                <td>{{ u.get_rol_ubicacion_display }}</td>
-                                                                <td>{{ u.localidad|default:"-" }}</td>
-                                                                <td>{{ u.domicilio|default:"-" }}</td>
-                                                                <td>
-                                                                    <div class="sisoc-table-actions">
-                                                                        {% if can_edit_centro and perms.VAT.change_institucionubicacion %}
-                                                                            <button type="button"
-                                                                                    class="sisoc-btn sisoc-btn--edit"
-                                                                                    onclick="editUbicacion({{ u.id }})">
-                                                                                <i class="fas fa-pen"></i>
-                                                                                <span>Editar</span>
-                                                                            </button>
-                                                                        {% endif %}
-                                                                        {% if can_edit_centro and perms.VAT.delete_institucionubicacion %}
-                                                                            <button type="button"
-                                                                                    class="sisoc-btn sisoc-btn--delete"
-                                                                                    onclick="deleteUbicacion({{ u.id }})">
-                                                                                <i class="fas fa-trash"></i>
-                                                                                <span>Borrar</span>
-                                                                            </button>
-                                                                        {% endif %}
-                                                                    </div>
-                                                                </td>
-                                                            </tr>
-                                                        {% endfor %}
-                                                    </tbody>
-                                                </table>
-                                            </div>
-                                        </div>
-                                        <div class="sisoc-table-footer">
-                                            <span>Mostrando 1-{{ ubicaciones|length }} de {{ ubicaciones|length }}</span>
-                                            <div class="sisoc-pager" aria-hidden="true">
-                                                <button type="button">&lt;</button>
-                                                <span>1 de 1</span>
-                                                <button type="button">&gt;</button>
-                                            </div>
-                                        </div>
-                                    {% else %}
-                                        <div class="sisoc-empty-state">No hay ubicaciones registradas para este centro.</div>
-                                    {% endif %}
-                                </div>
-                            </section>
-
-                            <section class="sisoc-info-panel" data-sisoc-panel="contactos">
-                                <div class="sisoc-panel-section">
-                                    <div class="sisoc-section-header">
-                                        <h2>Contactos adicionales</h2>
-                                        {% if can_edit_centro and perms.VAT.add_institucioncontacto %}
-                                            <button type="button"
-                                                    class="sisoc-btn sisoc-btn--add"
-                                                    data-bs-toggle="modal"
-                                                    data-bs-target="#modalContacto">
-                                                <i class="fas fa-plus"></i>
-                                                <span>Agregar contacto</span>
-                                            </button>
-                                        {% endif %}
-                                    </div>
-                                    <hr class="sisoc-section-divider" />
-                                    {% if contactos %}
-                                        <div class="sisoc-table-shell">
-                                            <div class="sisoc-table-wrap">
-                                                <table class="sisoc-table">
-                                                    <thead>
-                                                        <tr>
-                                                            <th>Nombre y apellido</th>
-                                                            <th>Documento</th>
-                                                            <th>Rol</th>
-                                                            <th>Principal</th>
-                                                            <th>Teléfono</th>
-                                                            <th>Acciones</th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody>
-                                                        {% for c in contactos %}
-                                                            <tr>
-                                                                <td>{{ c.nombre_contacto|default:"-" }}</td>
-                                                                <td>{{ c.documento|default:"-" }}</td>
-                                                                <td>{{ c.rol_area|default:"-" }}</td>
-                                                                <td>
-                                                                    {% if c.es_principal %}
-                                                                        Sí
-                                                                    {% else %}
-                                                                        No
-                                                                    {% endif %}
-                                                                </td>
-                                                                <td>{{ c.telefono_contacto|default:"-" }}</td>
-                                                                <td>
-                                                                    <div class="sisoc-table-actions">
-                                                                        {% if can_edit_centro and perms.VAT.change_institucioncontacto %}
-                                                                            <button type="button"
-                                                                                    class="sisoc-btn sisoc-btn--edit"
-                                                                                    onclick="editContacto({{ c.id }})">
-                                                                                <i class="fas fa-pen"></i>
-                                                                                <span>Editar</span>
-                                                                            </button>
-                                                                        {% endif %}
-                                                                        {% if can_edit_centro and perms.VAT.delete_institucioncontacto %}
-                                                                            <button type="button"
-                                                                                    class="sisoc-btn sisoc-btn--delete"
-                                                                                    onclick="deleteContacto({{ c.id }})">
-                                                                                <i class="fas fa-trash"></i>
-                                                                                <span>Borrar</span>
-                                                                            </button>
-                                                                        {% endif %}
-                                                                    </div>
-                                                                </td>
-                                                            </tr>
-                                                        {% endfor %}
-                                                    </tbody>
-                                                </table>
-                                            </div>
-                                        </div>
-                                    {% else %}
-                                        <div class="sisoc-empty-state">No hay contactos adicionales cargados.</div>
-                                    {% endif %}
-                                </div>
-                            </section>
-                        </div>
-
-                        <div class="sisoc-side-tabs sisoc-side-tabs--right"
-                             role="tablist"
-                             aria-label="Secciones pendientes">
-                            <button type="button"
-                                    class="sisoc-side-tab"
-                                    data-sisoc-tab-target="general"
-                                    aria-selected="false"
-                                    hidden>
-                                <span>Información general</span>
-                            </button>
-                            <button type="button"
-                                    class="sisoc-side-tab"
-                                    data-sisoc-tab-target="ubicaciones"
-                                    aria-selected="false">
-                                <span>Ubicaciones adicionales</span>
-                            </button>
-                            <button type="button"
-                                    class="sisoc-side-tab"
-                                    data-sisoc-tab-target="contactos"
-                                    aria-selected="false">
-                                <span>Contactos adicionales</span>
-                            </button>
+                            </div>
                         </div>
                     </div>
-                </div>
-            {% endwith %}
+                </section>
 
-            <div class="sisoc-cursos-pane"
-                 id="cursos"
-                 data-cursos-panel-url="{{ cursos_panel_url }}">
-                <div id="centroCursosPanelContainer" data-panel-loaded="0">
-                    <div class="sisoc-section-card">
-                        <div class="sisoc-empty-state">
-                            <div class="spinner-border spinner-border-sm text-light mb-3"
-                                 role="status"
-                                 aria-hidden="true"></div>
-                            <p class="mb-0">Cargando oferta educativa y comisiones...</p>
+                <section class="sisoc-info-panel" data-sisoc-panel="ubicaciones">
+                    <div class="sisoc-panel-section">
+                        <div class="sisoc-section-header">
+                            <h2>Ubicaciones adicionales</h2>
+                            {% if can_edit_centro and perms.VAT.add_institucionubicacion %}
+                                <button type="button"
+                                        class="sisoc-btn sisoc-btn--add"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#modalUbicacion">
+                                    <i class="fas fa-plus"></i>
+                                    <span>Agregar sede</span>
+                                </button>
+                            {% endif %}
                         </div>
+                        <hr class="sisoc-section-divider" />
+                        {% if ubicaciones %}
+                            <div class="sisoc-table-shell">
+                                <div class="sisoc-table-wrap">
+                                    <table class="sisoc-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Nombre</th>
+                                                <th>Característica</th>
+                                                <th>Localidad</th>
+                                                <th>Domicilio</th>
+                                                <th>Acciones</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for u in ubicaciones %}
+                                                <tr>
+                                                    <td>{{ u.nombre_ubicacion|default:u.get_rol_ubicacion_display }}</td>
+                                                    <td>{{ u.get_rol_ubicacion_display }}</td>
+                                                    <td>{{ u.localidad|default:"-" }}</td>
+                                                    <td>{{ u.domicilio|default:"-" }}</td>
+                                                    <td>
+                                                        <div class="sisoc-table-actions">
+                                                            {% if can_edit_centro and perms.VAT.change_institucionubicacion %}
+                                                                <button type="button"
+                                                                        class="sisoc-btn sisoc-btn--edit"
+                                                                        onclick="editUbicacion({{ u.id }})">
+                                                                    <i class="fas fa-pen"></i>
+                                                                    <span>Editar</span>
+                                                                </button>
+                                                            {% endif %}
+                                                            {% if can_edit_centro and perms.VAT.delete_institucionubicacion %}
+                                                                <button type="button"
+                                                                        class="sisoc-btn sisoc-btn--delete"
+                                                                        onclick="deleteUbicacion({{ u.id }})">
+                                                                    <i class="fas fa-trash"></i>
+                                                                    <span>Borrar</span>
+                                                                </button>
+                                                            {% endif %}
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <div class="sisoc-table-footer">
+                                <span>Mostrando 1-{{ ubicaciones|length }} de {{ ubicaciones|length }}</span>
+                                <div class="sisoc-pager" aria-hidden="true">
+                                    <button type="button">&lt;</button>
+                                    <span>1 de 1</span>
+                                    <button type="button">&gt;</button>
+                                </div>
+                            </div>
+                        {% else %}
+                            <div class="sisoc-empty-state">No hay ubicaciones registradas para este centro.</div>
+                        {% endif %}
                     </div>
-                </div>
+                </section>
+
+                <section class="sisoc-info-panel" data-sisoc-panel="contactos">
+                    <div class="sisoc-panel-section">
+                        <div class="sisoc-section-header">
+                            <h2>Contactos adicionales</h2>
+                            {% if can_edit_centro and perms.VAT.add_institucioncontacto %}
+                                <button type="button"
+                                        class="sisoc-btn sisoc-btn--add"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#modalContacto">
+                                    <i class="fas fa-plus"></i>
+                                    <span>Agregar contacto</span>
+                                </button>
+                            {% endif %}
+                        </div>
+                        <hr class="sisoc-section-divider" />
+                        {% if contactos %}
+                            <div class="sisoc-table-shell">
+                                <div class="sisoc-table-wrap">
+                                    <table class="sisoc-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Nombre y apellido</th>
+                                                <th>Documento</th>
+                                                <th>Rol</th>
+                                                <th>Principal</th>
+                                                <th>Teléfono</th>
+                                                <th>Acciones</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for c in contactos %}
+                                                <tr>
+                                                    <td>{{ c.nombre_contacto|default:"-" }}</td>
+                                                    <td>{{ c.documento|default:"-" }}</td>
+                                                    <td>{{ c.rol_area|default:"-" }}</td>
+                                                    <td>
+                                                        {% if c.es_principal %}
+                                                            Sí
+                                                        {% else %}
+                                                            No
+                                                        {% endif %}
+                                                    </td>
+                                                    <td>{{ c.telefono_contacto|default:"-" }}</td>
+                                                    <td>
+                                                        <div class="sisoc-table-actions">
+                                                            {% if can_edit_centro and perms.VAT.change_institucioncontacto %}
+                                                                <button type="button"
+                                                                        class="sisoc-btn sisoc-btn--edit"
+                                                                        onclick="editContacto({{ c.id }})">
+                                                                    <i class="fas fa-pen"></i>
+                                                                    <span>Editar</span>
+                                                                </button>
+                                                            {% endif %}
+                                                            {% if can_edit_centro and perms.VAT.delete_institucioncontacto %}
+                                                                <button type="button"
+                                                                        class="sisoc-btn sisoc-btn--delete"
+                                                                        onclick="deleteContacto({{ c.id }})">
+                                                                    <i class="fas fa-trash"></i>
+                                                                    <span>Borrar</span>
+                                                                </button>
+                                                            {% endif %}
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        {% else %}
+                            <div class="sisoc-empty-state">No hay contactos adicionales cargados.</div>
+                        {% endif %}
+                    </div>
+                </section>
             </div>
 
-            {% if can_edit_centro %}
-                <!-- Modal Contacto -->
-                <div class="modal fade"
-                     id="modalContacto"
-                     tabindex="-1"
-                     aria-labelledby="modalContactoLabel"
-                     aria-hidden="true">
-                    <div class="modal-dialog modal-lg">
-                        <div class="modal-content">
-                            <div class="modal-header">
-                                <h5 class="modal-title" id="modalContactoLabel">Agregar Contacto</h5>
-                                <button type="button"
-                                        class="btn-close"
-                                        data-bs-dismiss="modal"
-                                        aria-label="Close"></button>
-                            </div>
-                            <form id="formContacto"
-                                  method="post"
-                                  action="{% url 'vat_institucion_contacto_create' %}?centro={{ centro.id }}">
-                                {% csrf_token %}
-                                <div class="modal-body">{{ contacto_form.as_p }}</div>
-                                <div class="modal-footer">
-                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                                    <button type="submit" class="btn btn-primary">Guardar</button>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                </div>
+            <div class="sisoc-side-tabs sisoc-side-tabs--right"
+                 role="tablist"
+                 aria-label="Secciones pendientes">
+                <button type="button"
+                        class="sisoc-side-tab"
+                        data-sisoc-tab-target="general"
+                        aria-selected="false"
+                        hidden>
+                    <span>Información general</span>
+                </button>
+                <button type="button"
+                        class="sisoc-side-tab"
+                        data-sisoc-tab-target="ubicaciones"
+                        aria-selected="false">
+                    <span>Ubicaciones adicionales</span>
+                </button>
+                <button type="button"
+                        class="sisoc-side-tab"
+                        data-sisoc-tab-target="contactos"
+                        aria-selected="false">
+                    <span>Contactos adicionales</span>
+                </button>
+            </div>
+        </div>
+    </div>
+{% endwith %}
 
-                <!-- Modal Identificador -->
-                <div class="modal fade"
-                     id="modalIdentificador"
-                     tabindex="-1"
-                     aria-labelledby="modalIdentificadorLabel"
-                     aria-hidden="true">
-                    <div class="modal-dialog modal-lg">
-                        <div class="modal-content">
-                            <div class="modal-header">
-                                <h5 class="modal-title" id="modalIdentificadorLabel">Agregar Identificador</h5>
-                                <button type="button"
-                                        class="btn-close"
-                                        data-bs-dismiss="modal"
-                                        aria-label="Close"></button>
-                            </div>
-                            <form id="formIdentificador"
-                                  method="post"
-                                  action="{% url 'vat_institucion_identificador_create' %}?centro={{ centro.id }}">
-                                {% csrf_token %}
-                                <div class="modal-body">{{ identificador_form.as_p }}</div>
-                                <div class="modal-footer">
-                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                                    <button type="submit" class="btn btn-primary">Guardar</button>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                </div>
+<div class="sisoc-cursos-pane"
+     id="cursos"
+     data-cursos-panel-url="{{ cursos_panel_url }}">
+    <div id="centroCursosPanelContainer" data-panel-loaded="0">
+        <div class="sisoc-section-card">
+            <div class="sisoc-empty-state">
+                <div class="spinner-border spinner-border-sm text-light mb-3"
+                     role="status"
+                     aria-hidden="true"></div>
+                <p class="mb-0">Cargando oferta educativa y comisiones...</p>
+            </div>
+        </div>
+    </div>
+</div>
 
-                <!-- Modal Ubicacion -->
-                <div class="modal fade"
-                     id="modalUbicacion"
-                     tabindex="-1"
-                     aria-labelledby="modalUbicacionLabel"
-                     aria-hidden="true">
-                    <div class="modal-dialog modal-lg">
-                        <div class="modal-content">
-                            <div class="modal-header">
-                                <h5 class="modal-title" id="modalUbicacionLabel">Agregar Ubicacion</h5>
-                                <button type="button"
-                                        class="btn-close"
-                                        data-bs-dismiss="modal"
-                                        aria-label="Close"></button>
-                            </div>
-                            <form id="formUbicacion"
-                                  method="post"
-                                  action="{% url 'vat_institucion_ubicacion_create' %}?centro={{ centro.id }}">
-                                {% csrf_token %}
-                                <div class="modal-body">{{ ubicacion_form.as_p }}</div>
-                                <div class="modal-footer">
-                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                                    <button type="submit" class="btn btn-primary">Guardar</button>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
+{% if can_edit_centro %}
+    <!-- Modal Contacto -->
+    <div class="modal fade"
+         id="modalContacto"
+         tabindex="-1"
+         aria-labelledby="modalContactoLabel"
+         aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalContactoLabel">Agregar Contacto</h5>
+                    <button type="button"
+                            class="btn-close"
+                            data-bs-dismiss="modal"
+                            aria-label="Close"></button>
                 </div>
-            {% endif %}
+                <form id="formContacto"
+                      method="post"
+                      action="{% url 'vat_institucion_contacto_create' %}?centro={{ centro.id }}">
+                    {% csrf_token %}
+                    <div class="modal-body">{{ contacto_form.as_p }}</div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Guardar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 
-            <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css"
-                  rel="stylesheet" />
-            <style>
+    <!-- Modal Identificador -->
+    <div class="modal fade"
+         id="modalIdentificador"
+         tabindex="-1"
+         aria-labelledby="modalIdentificadorLabel"
+         aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalIdentificadorLabel">Agregar Identificador</h5>
+                    <button type="button"
+                            class="btn-close"
+                            data-bs-dismiss="modal"
+                            aria-label="Close"></button>
+                </div>
+                <form id="formIdentificador"
+                      method="post"
+                      action="{% url 'vat_institucion_identificador_create' %}?centro={{ centro.id }}">
+                    {% csrf_token %}
+                    <div class="modal-body">{{ identificador_form.as_p }}</div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Guardar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Ubicacion -->
+    <div class="modal fade"
+         id="modalUbicacion"
+         tabindex="-1"
+         aria-labelledby="modalUbicacionLabel"
+         aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalUbicacionLabel">Agregar Ubicacion</h5>
+                    <button type="button"
+                            class="btn-close"
+                            data-bs-dismiss="modal"
+                            aria-label="Close"></button>
+                </div>
+                <form id="formUbicacion"
+                      method="post"
+                      action="{% url 'vat_institucion_ubicacion_create' %}?centro={{ centro.id }}">
+                    {% csrf_token %}
+                    <div class="modal-body">{{ ubicacion_form.as_p }}</div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Guardar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endif %}
+
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css"
+      rel="stylesheet" />
+<style>
         #modalCurso .form-control:disabled,
         #modalCurso .form-select:disabled,
         #modalCurso .modal-locked-field,
@@ -2439,9 +2442,9 @@
             background-color: #f39c12 !important;
             color: #1e2a3a !important;
         }
-            </style>
-            <script src="{% static 'custom/js/vat.js' %}"></script>
-            <script nonce="{{ request.csp_nonce }}">
+</style>
+<script src="{% static 'custom/js/vat.js' %}"></script>
+<script nonce="{{ request.csp_nonce }}">
         // Funciones para editar (redirigir a pagina de edicion)
         function editContacto(id) {
             window.location.href = `/vat/institucion/contactos/${id}/editar/`;
@@ -4012,12 +4015,12 @@
                 }
             });
         });
-            </script>
-        {% endblock %}
+</script>
+{% endblock %}
 
-        {% block customJS %}
-            <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-            <script nonce="{{ request.csp_nonce }}">
+{% block customJS %}
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script nonce="{{ request.csp_nonce }}">
         // Select2 se carga aquí (después de jQuery via mainscripts)
         // Re-bind setupOfertaVoucherSelector ahora que Select2 está disponible
         (function() {
@@ -4186,5 +4189,5 @@
 
         initializeVoucherSelect2('formOferta', 'modalOferta');
         initializeVoucherSelect2('formCurso', 'modalCurso');
-            </script>
-        {% endblock %}
+    </script>
+{% endblock %}
