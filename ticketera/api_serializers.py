@@ -1,5 +1,10 @@
 """Serializers para la API server-to-server con la Ticketera."""
 
+# DTOs de request/response: no implementan create()/update() de BaseSerializer
+# porque no se usan para .save(). W0223 (abstract-method) es falso positivo de
+# DRF para serializers de solo validación/salida.
+# pylint: disable=abstract-method
+
 from rest_framework import serializers
 
 
