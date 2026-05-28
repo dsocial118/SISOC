@@ -90,6 +90,7 @@
                                                             data-edit-url="{% url 'vat_curso_update' curso.id %}"
                                                             data-plan-estudio-id="{{ curso.plan_estudio_id|default:'' }}"
                                                             data-nombre="{{ curso.nombre }}"
+                                                            data-tipo="{{ curso.tipo|join:',' }}"
                                                             data-estado="{{ curso.estado|default:'' }}"
                                                             data-usa-voucher="{{ curso.usa_voucher|yesno:'1,0' }}"
                                                             data-inscripcion-libre="{{ curso.inscripcion_libre|yesno:'1,0' }}"

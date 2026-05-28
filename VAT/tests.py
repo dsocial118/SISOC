@@ -5986,6 +5986,66 @@ def test_centro_cursos_panel_renderiza_selector_de_planes_en_modal_nuevo_curso(
 
 
 @pytest.mark.django_db
+def test_centro_cursos_panel_boton_editar_curso_incluye_data_tipo(client, vat_geo_data):
+    # Regresión: el modal de curso es compartido entre alta y edición y se
+    # rellena en cliente desde atributos data-*. Si el botón de editar no
+    # expone data-tipo, al editar el multiselect queda vacío y guardar pisa
+    # el tipo almacenado con [].
+    provincia, municipio, localidad = vat_geo_data
+    modalidad = ModalidadCursada.objects.create(nombre="Presencial", activo=True)
+    group, _ = Group.objects.get_or_create(name="CFP")
+    user = User.objects.create_superuser(
+        username="admin-vat-curso-editar-tipo",
+        email="admin-curso-editar-tipo@vat.test",
+        password="test1234",
+    )
+    user.groups.add(group)
+    centro = Centro.objects.create(
+        nombre="CFP 780",
+        codigo="CFP-780",
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad,
+        calle="15",
+        numero=101,
+        domicilio_actividad="Calle 15 N° 101",
+        telefono="221-7200001",
+        celular="221-7200002",
+        correo="cfp780@vat.test",
+        nombre_referente="Jose",
+        apellido_referente="Diaz",
+        telefono_referente="221-7200003",
+        correo_referente="jose@vat.test",
+        referente=user,
+        tipo_gestion="Estatal",
+        clase_institucion="Formación Profesional",
+        situacion="Institución de ETP",
+        activo=True,
+    )
+    curso = Curso.objects.create(
+        centro=centro,
+        nombre="Curso con tipo",
+        modalidad=modalidad,
+        estado="activo",
+        tipo=["virtual", "presencial"],
+    )
+
+    client.force_login(user)
+    response = client.get(reverse("vat_centro_cursos_panel", kwargs={"pk": centro.pk}))
+    content = response.content.decode("utf-8")
+    soup = BeautifulSoup(content, "html.parser")
+    edit_button = soup.select_one(".btn-editar-curso")
+
+    assert response.status_code == 200
+    assert edit_button is not None
+    assert edit_button.get("data-curso-mode") == "edit"
+    assert edit_button.get("data-tipo") == "virtual,presencial"
+    assert reverse("vat_curso_update", args=[curso.id]) == edit_button.get(
+        "data-edit-url"
+    )
+
+
+@pytest.mark.django_db
 @override_settings(ROOT_URLCONF="tests.urls_vat_comision_horarios")
 def test_comision_curso_detail_muestra_gestion_equivalente(client, vat_geo_data):
     provincia, municipio, localidad = vat_geo_data

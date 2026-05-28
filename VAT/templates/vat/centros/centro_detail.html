@@ -2630,19 +2630,6 @@
         }
         setupUbicacionModalSelect2();
 
-        function openComisionCursoModalFromContext(context) {
-            if (!context || !window.bootstrap || !window.bootstrap.Modal) return;
-
-            var modalEl = document.getElementById('modalComisionCurso');
-            if (!modalEl) return;
-
-            modalEl.dataset.pendingMode = 'create';
-            modalEl.dataset.pendingCursoId = context.curso_id || '';
-            modalEl.dataset.pendingCursoNombre = context.curso_nombre || '';
-            modalEl.dataset.pendingLockCurso = '1';
-            window.bootstrap.Modal.getOrCreateInstance(modalEl).show();
-        }
-
         var modalComisionCurso = document.getElementById('modalComisionCurso');
         if (modalComisionCurso) {
             var formComisionCurso = document.getElementById('formComisionCurso');
@@ -3724,6 +3711,7 @@
                     }
                     setFormValue('plan_estudio', triggerButton.getAttribute('data-plan-estudio-id'));
                     setFormValue('nombre', triggerButton.getAttribute('data-nombre'));
+                    setFormValue('tipo', triggerButton.getAttribute('data-tipo'));
                     setFormValue('estado', triggerButton.getAttribute('data-estado'));
                     setFormValue('usa_voucher', triggerButton.getAttribute('data-usa-voucher'));
                     setFormValue('inscripcion_libre', triggerButton.getAttribute('data-inscripcion-libre'));
