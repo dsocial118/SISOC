@@ -2721,5 +2721,3 @@ ComisionCursoWizardStep2FormSet = forms.formset_factory(
 
 class ComisionCursoWizardStep3Form(forms.Form):
     """Paso 3 - confirmación. Sin campos: sólo se renderiza el resumen."""
-
-    pass
