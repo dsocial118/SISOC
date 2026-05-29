@@ -11,9 +11,9 @@ from ticketera.api_views import (
 
 urlpatterns = [
     path(
-        "usuarios/",
+        "auth/crear_usuario/",
         TicketeraUsuarioCreateView.as_view(),
-        name="ticketera-usuarios",
+        name="ticketera-auth-crear-usuario",
     ),
     path(
         "auth/verificar/",

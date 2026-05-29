@@ -68,7 +68,7 @@ def _crear_usuario(username, *, source, password=STRONG_PASSWORD, email=None):
 @override_settings(TICKETERA_ENABLED=False)
 def test_usuarios_responde_503_con_flag_deshabilitado(api_client):
     response = api_client.post(
-        reverse("ticketera-usuarios"),
+        reverse("ticketera-auth-crear-usuario"),
         {
             "username": "juan.perez",
             "email": "juan.perez@ejemplo.gob.ar",
@@ -118,7 +118,7 @@ def test_cambiar_password_responde_503_con_flag_deshabilitado(api_client):
 @override_settings(TICKETERA_ENABLED=True)
 def test_usuarios_opera_con_flag_habilitado(api_client):
     response = api_client.post(
-        reverse("ticketera-usuarios"),
+        reverse("ticketera-auth-crear-usuario"),
         {
             "username": "juan.perez",
             "email": "juan.perez@ejemplo.gob.ar",
@@ -142,7 +142,7 @@ def test_usuarios_idempotente_case_insensitive_200(api_client):
     _crear_usuario("juan.perez", source="ticketera")
 
     response = api_client.post(
-        reverse("ticketera-usuarios"),
+        reverse("ticketera-auth-crear-usuario"),
         {
             "username": "Juan.Perez",
             "email": "otro@ejemplo.gob.ar",
@@ -162,7 +162,7 @@ def test_usuarios_conflicto_case_insensitive_409(api_client):
     _crear_usuario("ana.gomez", source="sisoc")
 
     response = api_client.post(
-        reverse("ticketera-usuarios"),
+        reverse("ticketera-auth-crear-usuario"),
         {
             "username": "ANA.GOMEZ",
             "email": "ana@ejemplo.gob.ar",
@@ -183,7 +183,7 @@ def test_usuarios_idempotente_con_source_variante_ticketera_200(api_client):
     _crear_usuario("qa.user", source="ticketera-qa")
 
     response = api_client.post(
-        reverse("ticketera-usuarios"),
+        reverse("ticketera-auth-crear-usuario"),
         {
             "username": "qa.user",
             "email": "otro@ejemplo.gob.ar",
@@ -205,7 +205,7 @@ def test_usuarios_idempotente_con_source_variante_ticketera_200(api_client):
 @override_settings(TICKETERA_ENABLED=True)
 def test_usuarios_password_debil_400_sin_crear(api_client):
     response = api_client.post(
-        reverse("ticketera-usuarios"),
+        reverse("ticketera-auth-crear-usuario"),
         {
             "username": "debil.user",
             "email": "debil@ejemplo.gob.ar",
@@ -238,7 +238,7 @@ def test_usuarios_carrera_resuelve_200_si_ganador_es_ticketera(api_client):
         patch.object(User.objects, "create_user", side_effect=IntegrityError("dup")),
     ):
         response = api_client.post(
-            reverse("ticketera-usuarios"),
+            reverse("ticketera-auth-crear-usuario"),
             {
                 "username": "race.user",
                 "email": "race@ejemplo.gob.ar",
@@ -264,7 +264,7 @@ def test_usuarios_carrera_resuelve_409_si_ganador_es_otro_source(api_client):
         patch.object(User.objects, "create_user", side_effect=IntegrityError("dup")),
     ):
         response = api_client.post(
-            reverse("ticketera-usuarios"),
+            reverse("ticketera-auth-crear-usuario"),
             {
                 "username": "race.other",
                 "email": "race.other@ejemplo.gob.ar",

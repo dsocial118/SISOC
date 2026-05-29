@@ -1,7 +1,7 @@
 """Tests de la API server-to-server con la Ticketera.
 
 Cubre los tres endpoints protegidos por API Key:
-- POST /api/ticketera/usuarios/              (alta / reconciliación)
+- POST /api/ticketera/auth/crear_usuario/    (alta / reconciliación)
 - POST /api/ticketera/auth/verificar/        (verificación de credenciales)
 - POST /api/ticketera/auth/cambiar-password/ (cambio de contraseña temporal)
 
@@ -19,7 +19,7 @@ from auditlog.models import LogEntry
 from audittrail.models import AuditEntryMeta
 
 
-USUARIOS_URL = "/api/ticketera/usuarios/"
+CREAR_USUARIO_URL = "/api/ticketera/auth/crear_usuario/"
 VERIFICAR_URL = "/api/ticketera/auth/verificar/"
 CAMBIAR_PASSWORD_URL = "/api/ticketera/auth/cambiar-password/"
 AUDIT_SOURCE = "ticketera"
@@ -56,7 +56,7 @@ def _crear_usuario(
 
 
 # --------------------------------------------------------------------------- #
-# POST /usuarios/  (alta / reconciliación)
+# POST /auth/crear_usuario/  (alta / reconciliación)
 # --------------------------------------------------------------------------- #
 
 
@@ -70,7 +70,7 @@ def test_usuarios_alta_nueva_devuelve_201_y_setea_profile(api_client):
         "password": "ContraseñaTemporal1!",
     }
 
-    response = api_client.post(USUARIOS_URL, payload, format="json")
+    response = api_client.post(CREAR_USUARIO_URL, payload, format="json")
 
     assert response.status_code == status.HTTP_201_CREATED
     user = User.objects.get(username="juan.perez")
@@ -95,7 +95,7 @@ def test_usuarios_alta_respeta_source_del_body(api_client):
         "source": "ticketera-qa",
     }
 
-    response = api_client.post(USUARIOS_URL, payload, format="json")
+    response = api_client.post(CREAR_USUARIO_URL, payload, format="json")
 
     assert response.status_code == status.HTTP_201_CREATED
     assert User.objects.get(username="ana.gomez").profile.source == "ticketera-qa"
@@ -111,7 +111,7 @@ def test_usuarios_idempotente_devuelve_200_sin_duplicar(api_client):
         "email": "otro-mail@ejemplo.gob.ar",
         "password": "OtraClave1!",
     }
-    response = api_client.post(USUARIOS_URL, payload, format="json")
+    response = api_client.post(CREAR_USUARIO_URL, payload, format="json")
 
     assert response.status_code == status.HTTP_200_OK
     assert response.data == {
@@ -132,7 +132,7 @@ def test_usuarios_username_tomado_por_otro_source_devuelve_409(api_client):
         "email": "nuevo@ejemplo.gob.ar",
         "password": "Clave1!",
     }
-    response = api_client.post(USUARIOS_URL, payload, format="json")
+    response = api_client.post(CREAR_USUARIO_URL, payload, format="json")
 
     assert response.status_code == status.HTTP_409_CONFLICT
     assert response.data["error"] == "username_taken"
@@ -162,7 +162,7 @@ def test_usuarios_username_tomado_por_otro_source_devuelve_409(api_client):
     ],
 )
 def test_usuarios_payload_invalido_devuelve_400(api_client, payload):
-    response = api_client.post(USUARIOS_URL, payload, format="json")
+    response = api_client.post(CREAR_USUARIO_URL, payload, format="json")
 
     assert response.status_code == status.HTTP_400_BAD_REQUEST
     assert not User.objects.filter(username=payload["username"]).exists()
@@ -496,7 +496,9 @@ def test_cambiar_password_registra_auditoria_con_source_ticketera(api_client):
 
 
 @pytest.mark.django_db
-@pytest.mark.parametrize("url", [USUARIOS_URL, VERIFICAR_URL, CAMBIAR_PASSWORD_URL])
+@pytest.mark.parametrize(
+    "url", [CREAR_USUARIO_URL, VERIFICAR_URL, CAMBIAR_PASSWORD_URL]
+)
 def test_sin_api_key_rechaza(url):
     client = APIClient()  # sin header Authorization: Api-Key
 
@@ -528,7 +530,7 @@ def test_alta_registra_auditoria_con_source_ticketera(api_client):
         "email": "auditado@ejemplo.gob.ar",
         "password": "ContraseñaTemporal1!",
     }
-    response = api_client.post(USUARIOS_URL, payload, format="json")
+    response = api_client.post(CREAR_USUARIO_URL, payload, format="json")
     assert response.status_code == status.HTTP_201_CREATED
 
     metas = AuditEntryMeta.objects.filter(source=AUDIT_SOURCE)

@@ -25,7 +25,7 @@ bajo el prefijo `/api/ticketera/`:
 
 | Método | Ruta | Función |
 |---|---|---|
-| POST | `/usuarios/` | Crea o reconcilia un usuario (idempotente con `source=ticketera`). |
+| POST | `/auth/crear_usuario/` | Crea o reconcilia un usuario (idempotente con `source=ticketera`). |
 | POST | `/auth/verificar/` | Verifica credenciales y reporta `must_change_password`. |
 | POST | `/auth/cambiar-password/` | Fija la contraseña definitiva y baja `must_change_password` (cierra el ciclo de la temporal). |
 
@@ -83,7 +83,7 @@ Migración: `users/migrations/0031_profile_source.py`.
 
 ## Contratos
 
-### POST `/api/ticketera/usuarios/`
+### POST `/api/ticketera/auth/crear_usuario/`
 
 Request:
 
@@ -202,10 +202,10 @@ una nueva (coherente con la decisión de no bloquear, abajo).
 
 ### Expiración de la temporal en el alta — DEFAULT: SÍ (aplicado)
 
-El alta (`/usuarios/`) ahora setea
+El alta (`/auth/crear_usuario/`) ahora setea
 `initial_password_expires_at = now + timedelta(hours=INITIAL_PASSWORD_MAX_AGE_HOURS)`,
 para que la temporal de Ticketera expire igual que en el flujo PWA/web (ver
-`generate_temporary_password_for_user`). **El contrato de `/usuarios/` no
+`generate_temporary_password_for_user`). **El contrato de `/auth/crear_usuario/` no
 cambia** (sigue respondiendo `{ id, username, email }`).
 
 - **Interacción conocida:** `initial_password_expires_at` se **enforcea en el
@@ -278,9 +278,32 @@ Cuatro correcciones sobre los endpoints **sin cambiar los contratos existentes**
 
 ### Contrato afectado
 
-- `POST /usuarios/` agrega `400 Bad Request` por contraseña débil:
+- `POST /auth/crear_usuario/` agrega `400 Bad Request` por contraseña débil:
   `{ "password": ["<motivo 1>", ...] }`. (El `400` por payload inválido del
   serializer ya existía; este reutiliza ese mismo status.)
+
+---
+
+## Renombre del endpoint de alta → `/auth/crear_usuario/` (2026-05-29)
+
+El endpoint de alta pasa de `POST /api/ticketera/usuarios/` a
+`POST /api/ticketera/auth/crear_usuario/`. Motivo: agrupar las tres operaciones
+de la integración bajo el prefijo `auth/` (junto a `verificar` y
+`cambiar-password`), que es donde la Ticketera espera consumirlas.
+
+- **Solo cambia la ruta.** El método, el payload, los códigos de respuesta
+  (`201`/`200`/`400`/`409`/`503`) y los shapes se conservan.
+- **Name de URL:** `ticketera-usuarios` → `ticketera-auth-crear-usuario`
+  (alineado con `ticketera-auth-verificar` / `ticketera-auth-cambiar-password`).
+- **Nota de estilo:** se usa `crear_usuario` (guion bajo) por pedido explícito;
+  el endpoint hermano `cambiar-password` usa guion medio. Inconsistencia menor,
+  conocida y aceptada.
+- Cambio asociado:
+  [docs/registro/cambios/2026-05-29-ticketera-endpoint-crear-usuario.md](../cambios/2026-05-29-ticketera-endpoint-crear-usuario.md).
+
+> El registro `2026-05-28-ticketera-rename-app-endpoints.md` documenta la ruta
+> `/api/ticketera/usuarios/` como resultado del renombre `integracion → ticketera`
+> de esa fecha; esta sección la supersede.
 
 ---
 
