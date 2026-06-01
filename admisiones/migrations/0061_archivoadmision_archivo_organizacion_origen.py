@@ -57,6 +57,7 @@ def backfill_origen(apps, schema_editor):
                 using=db_alias, update_fields=["archivo_organizacion_origen"]
             )
 
+
 class Migration(migrations.Migration):
 
     dependencies = [
