@@ -213,6 +213,8 @@ class NominaEspacioPWAAdmin(admin.ModelAdmin):
         "asistencia_alimentaria",
         "asistencia_actividades",
         "es_indocumentado",
+        "pertenece_comunidad_indigena",
+        "situacion_calle",
         "identificador_interno",
         "activo",
         "fecha_alta",
@@ -220,6 +222,8 @@ class NominaEspacioPWAAdmin(admin.ModelAdmin):
     list_filter = (
         "activo",
         "es_indocumentado",
+        "pertenece_comunidad_indigena",
+        "situacion_calle",
         "asistencia_alimentaria",
         "asistencia_actividades",
     )

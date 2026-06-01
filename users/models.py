@@ -1,7 +1,9 @@
 from django.contrib.auth.models import Group, Permission, User
+from django.core.exceptions import ValidationError
 from django.db import models
+from django.db.models import Q
 
-from core.models import Provincia
+from core.models import Localidad, Municipio, Provincia
 
 
 def bulk_credentials_job_upload_to(instance, filename):
@@ -18,8 +20,8 @@ class Profile(models.Model):
     ----------------
 
     1. Usuario Provincial:
-       - Tiene acceso limitado a comedores de su provincia específica
-       - Requiere: es_usuario_provincial=True y provincia asignada
+       - Tiene acceso limitado por ProfileTerritorialScope
+       - Profile.provincia se conserva solo como compatibilidad legacy
 
     2. Coordinador de Gestión:
        - Rol de supervisión con acceso de solo lectura a comedores/admisiones/acompañamientos
@@ -62,7 +64,7 @@ class Profile(models.Model):
     es_usuario_provincial : BooleanField
         Indica si el usuario tiene restricción por provincia
     provincia : ForeignKey
-        Provincia específica si es_usuario_provincial=True
+        Provincia legacy; la autorización territorial usa ProfileTerritorialScope
     rol : CharField
         Descripción textual del rol (complementa groups)
     es_coordinador : BooleanField
@@ -117,6 +119,16 @@ class Profile(models.Model):
         blank=True,
         verbose_name="Contraseña temporal visible",
     )
+    source = models.CharField(
+        max_length=50,
+        blank=True,
+        default="sisoc",
+        verbose_name="Origen del usuario",
+        help_text=(
+            "Sistema que originó el usuario (sisoc, ticketera, ...). "
+            "Permite reconciliar altas provenientes de integraciones externas."
+        ),
+    )
     es_coordinador = models.BooleanField(
         default=False,
         verbose_name="Es Coordinador de Gestión",
@@ -146,6 +158,98 @@ class Profile(models.Model):
 
     def __str__(self):
         return f"Perfil de {self.user.username}"
+
+
+class ProfileTerritorialScope(models.Model):
+    """Alcance territorial explícito para usuarios provinciales."""
+
+    profile = models.ForeignKey(
+        Profile,
+        on_delete=models.CASCADE,
+        related_name="territorial_scopes",
+    )
+    provincia = models.ForeignKey(
+        Provincia,
+        on_delete=models.PROTECT,
+        related_name="+",
+    )
+    municipio = models.ForeignKey(
+        Municipio,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="+",
+    )
+    localidad = models.ForeignKey(
+        Localidad,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="+",
+    )
+    scope_key = models.CharField(max_length=64, editable=False, db_index=True)
+
+    class Meta:
+        verbose_name = "Alcance territorial de perfil"
+        verbose_name_plural = "Alcances territoriales de perfil"
+        constraints = [
+            models.CheckConstraint(
+                check=Q(localidad__isnull=True) | Q(municipio__isnull=False),
+                name="profile_scope_localidad_requires_municipio",
+            ),
+            models.UniqueConstraint(
+                fields=["profile", "scope_key"],
+                name="uniq_profile_scope_key",
+            ),
+        ]
+        indexes = [
+            models.Index(
+                fields=["profile", "provincia"],
+                name="users_profi_profile_4be6f7_idx",
+            ),
+            models.Index(
+                fields=["profile", "provincia", "municipio"],
+                name="users_profi_profile_26d7f4_idx",
+            ),
+        ]
+
+    @staticmethod
+    def build_scope_key(provincia_id, municipio_id=None, localidad_id=None):
+        return f"p{provincia_id}:m{municipio_id or 0}:l{localidad_id or 0}"
+
+    def clean(self):
+        super().clean()
+        if not self.provincia_id:
+            raise ValidationError({"provincia": "Seleccione una provincia."})
+        if self.localidad_id and not self.municipio_id:
+            raise ValidationError(
+                {"localidad": "Para asignar localidad debe seleccionar municipio."}
+            )
+        if self.municipio_id and self.municipio.provincia_id != self.provincia_id:
+            raise ValidationError(
+                {"municipio": "El municipio no pertenece a la provincia seleccionada."}
+            )
+        if self.localidad_id and self.localidad.municipio_id != self.municipio_id:
+            raise ValidationError(
+                {"localidad": "La localidad no pertenece al municipio seleccionado."}
+            )
+
+    def save(self, *args, **kwargs):
+        self.scope_key = self.build_scope_key(
+            self.provincia_id,
+            self.municipio_id,
+            self.localidad_id,
+        )
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        parts = [str(self.provincia)]
+        if self.municipio_id:
+            parts.append(str(self.municipio))
+        if self.localidad_id:
+            parts.append(str(self.localidad))
+        return " / ".join(parts)
 
 
 class AccesoComedorPWA(models.Model):

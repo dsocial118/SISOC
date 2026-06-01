@@ -4,7 +4,6 @@ from django.core.exceptions import PermissionDenied
 from django.db import transaction
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect
-from django.utils import timezone
 from django.urls import reverse
 from django.views import View
 from django.views.generic import (
@@ -32,7 +31,6 @@ from VAT.models import (
     SesionComision,
     Inscripcion,
     AsistenciaSesion,
-    InstitucionUbicacion,
 )
 from VAT.services.access_scope import (
     can_user_edit_centro,
@@ -130,8 +128,15 @@ def _modal_json_error_response(form, message):
     )
 
 
-def _modal_json_success_response(redirect_url, message):
-    return _horario_json_success_response(redirect_url, message)
+def _modal_json_success_response(redirect_url, message, extra_payload=None):
+    payload = {
+        "ok": True,
+        "message": message,
+        "redirect_url": redirect_url,
+    }
+    if extra_payload:
+        payload.update(extra_payload)
+    return JsonResponse(payload)
 
 
 class CursoCreateView(LoginRequiredMixin, CreateView):

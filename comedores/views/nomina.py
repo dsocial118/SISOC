@@ -2,7 +2,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import Http404
-from django.db.models import Q
+from django.db.models import Count, Q
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse_lazy
@@ -19,6 +19,8 @@ from comedores.models import Nomina
 from comedores.services.comedor_service import ComedorService
 from comedores.utils import comedor_usa_admision_para_nomina
 from core.soft_delete.view_helpers import SoftDeleteDeleteViewMixin
+from pwa.models import RegistroAsistenciaNominaPWA
+from pwa.utils import parse_periodo_referencia
 
 
 def _get_nomina_scoped_or_404(pk, user):
@@ -53,6 +55,46 @@ def _get_admision_del_comedor_or_404(comedor_pk, admision_pk, user):
 
 def _get_cantidad_asistentes_activos(rangos):
     return (rangos or {}).get("cantidad_activos") or 0
+
+
+def _get_asistencia_nomina_context(request, *, admision_id=None, comedor_id=None):
+    registros = RegistroAsistenciaNominaPWA.objects.filter(
+        periodicidad=RegistroAsistenciaNominaPWA.PERIODICIDAD_MENSUAL,
+        nomina__deleted_at__isnull=True,
+    )
+    if admision_id:
+        registros = registros.filter(nomina__admision_id=admision_id)
+    elif comedor_id:
+        registros = registros.filter(
+            nomina__comedor_id=comedor_id, nomina__admision__isnull=True
+        )
+
+    periodos = list(
+        registros.values("periodo_referencia")
+        .annotate(total_asistentes=Count("id"))
+        .order_by("-periodo_referencia")
+    )
+    periodo_seleccionado = parse_periodo_referencia(request.GET.get("periodo"))
+
+    asistentes = []
+    if periodo_seleccionado:
+        asistentes = list(
+            registros.filter(periodo_referencia=periodo_seleccionado)
+            .select_related(
+                "nomina",
+                "nomina__ciudadano",
+                "nomina__ciudadano__sexo",
+                "tomado_por",
+            )
+            .order_by("nomina__ciudadano__apellido", "nomina__ciudadano__nombre", "id")
+        )
+
+    return {
+        "asistencia_periodos": periodos,
+        "asistencia_periodo_seleccionado": periodo_seleccionado,
+        "asistencia_asistentes": asistentes,
+        "asistencia_total": len(asistentes),
+    }
 
 
 @login_required
@@ -106,6 +148,29 @@ class NominaDetailView(LoginRequiredMixin, TemplateView):
                 "admision_pk": admision.pk,
                 "dni_query": dni_query,
                 "estados": Nomina.ESTADO_CHOICES,
+            }
+        )
+        return context
+
+
+class NominaAsistenciaHistorialView(LoginRequiredMixin, TemplateView):
+    template_name = "comedor/nomina_asistencia_historial.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        admision = _get_admision_del_comedor_or_404(
+            self.kwargs["pk"],
+            self.kwargs["admision_pk"],
+            self.request.user,
+        )
+        context.update(
+            {
+                "object": admision.comedor,
+                "admision_pk": admision.pk,
+                **_get_asistencia_nomina_context(
+                    self.request,
+                    admision_id=admision.pk,
+                ),
             }
         )
         return context

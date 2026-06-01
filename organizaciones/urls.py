@@ -13,7 +13,6 @@ from organizaciones.views import (
     FirmanteUpdateView,
     FirmanteDeleteView,
     AvalDeleteView,
-    actualizar_gde_documento_organizacion,
     actualizar_estado_documento_organizacion,
     actualizar_vencimiento_documento_organizacion,
     historial_documento_organizacion,
@@ -86,13 +85,6 @@ urlpatterns = [
             actualizar_estado_documento_organizacion
         ),
         name="organizacion_documento_estado",
-    ),
-    path(
-        "organizaciones/documentacion/<int:archivo_id>/gde/",
-        permissions_any_required(ORGANIZACION_DOCUMENTACION_PERMS)(
-            actualizar_gde_documento_organizacion
-        ),
-        name="organizacion_documento_gde",
     ),
     path(
         "organizaciones/documentacion/<int:archivo_id>/vencimiento/",

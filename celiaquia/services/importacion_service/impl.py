@@ -238,6 +238,13 @@ def _normalizar_dataframe_importacion(df: pd.DataFrame) -> pd.DataFrame:
 def _obtener_provincia_usuario_id(usuario):
     provincia_usuario_id = None
     try:
+        from users.territorial_scope import get_effective_scopes
+
+        scopes = get_effective_scopes(usuario)
+        provincia_ids = {scope.provincia_id for scope in scopes}
+        if len(provincia_ids) == 1:
+            return next(iter(provincia_ids))
+
         profile = getattr(usuario, "profile", None)
         if profile and profile.provincia_id:
             provincia_usuario_id = profile.provincia_id
@@ -301,6 +308,17 @@ def _cargar_municipios_cache(municipio_ids, provincia_usuario_id):
     for municipio in municipios_qs:
         municipios_cache[municipio.pk] = municipio.pk
     return municipios_cache
+
+
+def _cargar_municipio_provincia_map(municipio_ids):
+    if not municipio_ids:
+        return {}
+    return {
+        m.pk: m.provincia_id
+        for m in Municipio.objects.filter(pk__in=municipio_ids).only(
+            "pk", "provincia_id"
+        )
+    }
 
 
 def _cargar_localidades_cache(localidad_ids):
@@ -369,6 +387,9 @@ def _precargar_datos_importacion(df: pd.DataFrame, provincia_usuario_id):
     return {
         "municipios_cache": _cargar_municipios_cache(
             lookup_values["municipio_ids"], provincia_usuario_id
+        ),
+        "municipio_provincia_map": _cargar_municipio_provincia_map(
+            lookup_values["municipio_ids"]
         ),
         "localidades_cache": _cargar_localidades_cache(lookup_values["localidad_ids"]),
         "sexos_cache": _cargar_sexos_cache(),
@@ -708,11 +729,8 @@ def validar_campos_obligatorios_importacion(
         raise ValidationError(f"Faltan campos obligatorios: {', '.join(faltantes)}")
 
 
-def _aplicar_defaults_y_validar_payload_importacion(payload, provincia_usuario_id):
+def _aplicar_defaults_y_validar_payload_importacion(payload):
     payload["tipo_documento"] = _get_tipo_documento(payload.get("documento", ""))
-
-    if provincia_usuario_id:
-        payload["provincia"] = provincia_usuario_id
 
     validar_campos_obligatorios_importacion(
         payload,
@@ -724,6 +742,24 @@ def _aplicar_defaults_y_validar_payload_importacion(payload, provincia_usuario_i
         raise ValidationError("Documento es obligatorio")
     if not str(doc).isdigit():
         raise ValidationError("Documento debe contener sólo dígitos")
+
+
+def _inferir_provincia_desde_municipio_importacion(
+    payload, municipio_provincia_map=None
+):
+    municipio_id = payload.get("municipio")
+    if municipio_id is None:
+        return
+    if municipio_provincia_map is not None:
+        provincia_id = municipio_provincia_map.get(municipio_id)
+    else:
+        provincia_id = (
+            Municipio.objects.filter(pk=municipio_id)
+            .values_list("provincia_id", flat=True)
+            .first()
+        )
+    if provincia_id:
+        payload["provincia"] = provincia_id
 
 
 def _validar_beneficiario_menor_con_responsable_importacion(payload):
@@ -966,7 +1002,7 @@ def _build_lookup_caches_payload_importacion(payload, provincia_usuario_id):
 def _build_responsable_payload_importacion(
     payload, provincia_usuario_id, offset, add_error
 ):
-    del offset, add_error
+    del provincia_usuario_id, offset, add_error
     validar_campos_obligatorios_importacion(
         payload=payload,
         required_fields=IMPORTACION_RESPONSABLE_REQUIRED_FIELDS,
@@ -980,7 +1016,6 @@ def _build_responsable_payload_importacion(
         "email": payload.get("email_responsable"),
         "documento": payload.get("documento_responsable"),
         "tipo_documento": _get_tipo_documento(payload.get("documento_responsable", "")),
-        "provincia": provincia_usuario_id,
     }
 
 
@@ -1038,6 +1073,7 @@ def validar_y_normalizar_payloads_importacion(
     offset=0,
     municipios_cache=None,
     localidades_cache=None,
+    municipio_provincia_map=None,
     nacionalidades_cache=None,
     paises_a_nacionalidad=None,
     normalizar_sexo=None,
@@ -1064,9 +1100,7 @@ def validar_y_normalizar_payloads_importacion(
     if paises_a_nacionalidad is None:
         paises_a_nacionalidad = _cargar_paises_a_nacionalidad_importacion()
 
-    _aplicar_defaults_y_validar_payload_importacion(
-        payload_normalizado, provincia_usuario_id
-    )
+    _aplicar_defaults_y_validar_payload_importacion(payload_normalizado)
     _normalizar_enriquecer_payload_importacion(
         payload=payload_normalizado,
         offset=offset,
@@ -1077,6 +1111,9 @@ def validar_y_normalizar_payloads_importacion(
         normalizar_sexo=normalizar_sexo,
         nacionalidades_cache=nacionalidades_cache,
         paises_a_nacionalidad=paises_a_nacionalidad,
+    )
+    _inferir_provincia_desde_municipio_importacion(
+        payload_normalizado, municipio_provincia_map
     )
     _validar_beneficiario_menor_con_responsable_importacion(payload_normalizado)
 
@@ -1173,9 +1210,11 @@ def _resolver_localidad_responsable_payload_importacion(
             localidad_resp_str = str(localidad_resp).strip()
             if "(" in localidad_resp_str:
                 localidad_resp_str = localidad_resp_str.split("(", 1)[0].strip()
-            localidades_qs = Localidad.objects.select_related("municipio").filter(
-                municipio__provincia_id=provincia_usuario_id
-            )
+            localidades_qs = Localidad.objects.select_related("municipio")
+            if provincia_usuario_id:
+                localidades_qs = localidades_qs.filter(
+                    municipio__provincia_id=provincia_usuario_id
+                )
             if localidad_resp_str.isdigit():
                 coincidencias = list(
                     localidades_qs.filter(pk=int(localidad_resp_str))[:2]
@@ -1193,6 +1232,10 @@ def _resolver_localidad_responsable_payload_importacion(
                 localidad_obj = coincidencias[0]
                 responsable_payload["localidad"] = localidad_obj.pk
                 responsable_payload["municipio"] = localidad_obj.municipio.pk
+                if localidad_obj.municipio.provincia_id:
+                    responsable_payload["provincia"] = (
+                        localidad_obj.municipio.provincia_id
+                    )
                 return
             if len(coincidencias) > 1:
                 raise ValidationError(
@@ -1685,6 +1728,7 @@ def _construir_payload_fila_importacion(
     to_date,
     municipios_cache,
     localidades_cache,
+    municipio_provincia_map,
     normalizar_sexo,
     nacionalidades_cache,
     paises_a_nacionalidad,
@@ -1696,10 +1740,7 @@ def _construir_payload_fila_importacion(
         validar_documento=validar_documento,
         add_warning=add_warning,
     )
-    _aplicar_defaults_y_validar_payload_importacion(
-        payload=payload,
-        provincia_usuario_id=provincia_usuario_id,
-    )
+    _aplicar_defaults_y_validar_payload_importacion(payload)
     _normalizar_enriquecer_payload_importacion(
         payload=payload,
         offset=offset,
@@ -1711,6 +1752,7 @@ def _construir_payload_fila_importacion(
         nacionalidades_cache=nacionalidades_cache,
         paises_a_nacionalidad=paises_a_nacionalidad,
     )
+    _inferir_provincia_desde_municipio_importacion(payload, municipio_provincia_map)
     _validar_beneficiario_menor_con_responsable_importacion(payload)
     return payload
 
@@ -1935,6 +1977,7 @@ def _procesar_beneficiario_desde_row_importacion(
     provincia_usuario_id,
     municipios_cache,
     localidades_cache,
+    municipio_provincia_map,
     nacionalidades_cache,
     paises_a_nacionalidad,
     validar_documento,
@@ -1961,6 +2004,7 @@ def _procesar_beneficiario_desde_row_importacion(
         to_date=to_date,
         municipios_cache=municipios_cache,
         localidades_cache=localidades_cache,
+        municipio_provincia_map=municipio_provincia_map,
         normalizar_sexo=normalizar_sexo,
         nacionalidades_cache=nacionalidades_cache,
         paises_a_nacionalidad=paises_a_nacionalidad,
@@ -2074,6 +2118,7 @@ def _procesar_fila_legajo_importacion(
     provincia_usuario_id,
     municipios_cache,
     localidades_cache,
+    municipio_provincia_map,
     nacionalidades_cache,
     paises_a_nacionalidad,
     validar_documento,
@@ -2118,6 +2163,7 @@ def _procesar_fila_legajo_importacion(
                 provincia_usuario_id=provincia_usuario_id,
                 municipios_cache=municipios_cache,
                 localidades_cache=localidades_cache,
+                municipio_provincia_map=municipio_provincia_map,
                 nacionalidades_cache=nacionalidades_cache,
                 paises_a_nacionalidad=paises_a_nacionalidad,
                 validar_documento=validar_documento,
@@ -2242,6 +2288,7 @@ def _build_contexto_filas_importacion_legajos(
         "provincia_usuario_id": provincia_usuario_id,
         "municipios_cache": precargas["municipios_cache"],
         "localidades_cache": precargas["localidades_cache"],
+        "municipio_provincia_map": precargas["municipio_provincia_map"],
         "nacionalidades_cache": nacionalidades_cache,
         "paises_a_nacionalidad": paises_a_nacionalidad,
         "validar_documento": _validar_documento_importacion,

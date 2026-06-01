@@ -646,6 +646,57 @@ def actualizar_numero_gde_archivo(request):
 
 @login_required
 @require_POST
+def actualizar_numero_gde_organizacion_admision(request):
+    resultado = AdmisionService.actualizar_numero_gde_organizacion_ajax(request)
+
+    response_data = {
+        "success": resultado.get("success"),
+        "numero_gde": resultado.get("numero_gde"),
+        "valor_anterior": resultado.get("valor_anterior"),
+    }
+
+    if not resultado.get("success"):
+        response_data["error"] = resultado.get("error", "Error desconocido")
+        return JsonResponse(response_data, status=400)
+
+    return JsonResponse(response_data)
+
+
+@login_required
+@require_POST
+def resync_convenio_admision(request, admision_pk):
+    accion = (request.POST.get("accion") or "").strip().lower()
+    admision = get_object_or_404(
+        Admision.objects.select_related("comedor__organizacion"), pk=admision_pk
+    )
+
+    if accion == "actualizar":
+        ok, mensaje = AdmisionService.resync_admision_desde_organizacion(admision)
+    elif accion == "continuar":
+        ok, mensaje = AdmisionService.aceptar_desincronizacion_admision(admision)
+    else:
+        return JsonResponse({"success": False, "error": "Accion invalida."}, status=400)
+
+    if not ok:
+        return JsonResponse({"success": False, "error": mensaje}, status=400)
+
+    if accion == "actualizar":
+        messages.success(request, mensaje)
+    else:
+        messages.info(request, mensaje)
+    return JsonResponse(
+        {
+            "success": True,
+            "mensaje": mensaje,
+            "redirect": reverse(
+                "admisiones_tecnicos_editar", kwargs={"pk": admision.pk}
+            ),
+        }
+    )
+
+
+@login_required
+@require_POST
 def actualizar_convenio_numero(request):
     resultado = AdmisionService.actualizar_convenio_numero_ajax(request)
 
@@ -771,25 +822,25 @@ class AdmisionesTecnicosCreateView(LoginRequiredMixin, CreateView):
     form_class = AdmisionForm
     context_object_name = "admision"
 
+    def _crear_admision(self, request):
+        admision = AdmisionService.create_admision(self.kwargs["pk"])
+        if admision is None:
+            messages.error(
+                request,
+                "No se pudo crear la admision. Verifique el tipo de entidad de la organizacion.",
+            )
+            return redirect("comedor_detalle", pk=self.kwargs["pk"])
+        return redirect("admisiones_tecnicos_editar", pk=admision.pk)
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context.update(AdmisionService.get_admision_create_context(self.kwargs["pk"]))
         return context
 
     def post(self, request, *args, **kwargs):
-        tipo_convenio_id = request.POST.get("tipo_convenio")
-        if tipo_convenio_id:
-            admision = AdmisionService.create_admision(
-                self.kwargs["pk"], tipo_convenio_id
-            )
-            if admision is None:
-                messages.error(
-                    request,
-                    "No se pudo crear la admisión para este comedor. Intente nuevamente más tarde.",
-                )
-                return redirect("comedor_detalle", pk=self.kwargs["pk"])
-            return redirect("admisiones_tecnicos_editar", pk=admision.pk)
-        return self.get(request, *args, **kwargs)
+        if "confirmar_tipo_convenio" not in request.POST:
+            return self.get(request, *args, **kwargs)
+        return self._crear_admision(request)
 
 
 class AdmisionesTecnicosUpdateView(LoginRequiredMixin, UpdateView):

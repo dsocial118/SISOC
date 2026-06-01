@@ -582,9 +582,7 @@ class CentroDeInfanciaDetailView(LoginRequiredMixin, DetailView):
             "ambito": self.object.get_ambito_display() or "-",
             "mail": self.object.mail or "-",
             "fecha_inicio": (
-                self.object.fecha_inicio.strftime("%d/%m/%Y")
-                if self.object.fecha_inicio
-                else "-"
+                str(self.object.fecha_inicio.year) if self.object.fecha_inicio else "-"
             ),
         }
         context["centro_funcionamiento"] = {

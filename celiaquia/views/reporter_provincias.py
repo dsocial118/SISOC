@@ -1,187 +1,14 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.core.exceptions import ObjectDoesNotExist
-from django.core.paginator import Paginator
-from django.db.models import Count
-from django.db.models.functions import TruncMonth
-from django.views.generic import TemplateView
-
+from django.db.models import Count, Q, F, Case, When, IntegerField
+from django.utils import timezone
+from datetime import timedelta
 from core.models import Provincia
-from celiaquia.models import (
-    EstadoCupo,
-    ExpedienteCiudadano,
-    ResultadoSintys,
-    RevisionTecnico,
+from celiaquia.models import ExpedienteCiudadano, Expediente
+from users.territorial_scope import (
+    apply_territorial_scope,
+    get_effective_scopes,
+    is_territorial_user,
 )
-
-
-PAGE_SIZE = 12
-MONTH_NAMES = (
-    "Ene",
-    "Feb",
-    "Mar",
-    "Abr",
-    "May",
-    "Jun",
-    "Jul",
-    "Ago",
-    "Sep",
-    "Oct",
-    "Nov",
-    "Dic",
-)
-
-VALIDACION_ITEMS = (
-    {"code": RevisionTecnico.PENDIENTE, "label": "Pendiente", "tone": "neutral"},
-    {"code": RevisionTecnico.APROBADO, "label": "Aprobado", "tone": "success"},
-    {"code": RevisionTecnico.RECHAZADO, "label": "Rechazado", "tone": "danger"},
-    {"code": RevisionTecnico.SUBSANAR, "label": "Subsanar", "tone": "warning"},
-    {"code": RevisionTecnico.SUBSANADO, "label": "Subsanado", "tone": "accent"},
-)
-SINTYS_ITEMS = (
-    {"code": ResultadoSintys.SIN_CRUCE, "label": "Sin cruce", "tone": "neutral"},
-    {"code": ResultadoSintys.MATCH, "label": "Match", "tone": "success"},
-    {"code": ResultadoSintys.NO_MATCH, "label": "No match", "tone": "danger"},
-)
-CUPO_ITEMS = (
-    {"code": EstadoCupo.NO_EVAL, "label": "No evaluado", "tone": "neutral"},
-    {"code": EstadoCupo.DENTRO, "label": "Dentro de cupo", "tone": "success"},
-    {"code": EstadoCupo.FUERA, "label": "Fuera de cupo", "tone": "danger"},
-)
-
-
-def _safe_profile(user):
-    try:
-        return user.profile
-    except (AttributeError, ObjectDoesNotExist):
-        return None
-
-
-def _is_provincial(user) -> bool:
-    profile = _safe_profile(user)
-    return bool(profile and profile.es_usuario_provincial and profile.provincia_id)
-
-
-def _percentage(value, total):
-    return round((value / total) * 100, 1) if total else 0
-
-
-def _format_percentage(value, total):
-    return f"{_percentage(value, total):.1f}".replace(".", ",") + "%"
-
-
-def _group_counts(queryset, field_name):
-    return [
-        {"code": item[field_name], "total": item["total"]}
-        for item in queryset.values(field_name).annotate(total=Count("id")).order_by()
-    ]
-
-
-def _build_status_items(grouped_counts, definitions, total_cases):
-    totals_by_code = {item["code"]: item["total"] for item in grouped_counts}
-    max_count = max(totals_by_code.values(), default=0)
-    items = []
-
-    for definition in definitions:
-        count = totals_by_code.get(definition["code"], 0)
-        items.append(
-            {
-                **definition,
-                "count": count,
-                "percentage": _percentage(count, total_cases),
-                "size": round(count / max_count, 4) if max_count else 0,
-            }
-        )
-
-    return items
-
-
-def _build_metric(label, value, support, tone="base"):
-    return {
-        "label": label,
-        "value": value,
-        "support": support,
-        "tone": tone,
-    }
-
-
-def _clean_query_params(query_params):
-    cleaned = query_params.copy()
-
-    for key in list(cleaned.keys()):
-        values = [value for value in cleaned.getlist(key) if value]
-
-        if values:
-            cleaned.setlist(key, values)
-        else:
-            cleaned.pop(key, None)
-
-    return cleaned
-
-
-def _find_definition_label(code, definitions):
-    for definition in definitions:
-        if definition["code"] == code:
-            return definition["label"]
-    return code
-
-
-def _build_province_breakdown(queryset, total_cases):
-    grouped = list(
-        queryset.values(
-            "expediente__usuario_provincia__profile__provincia__id",
-            "expediente__usuario_provincia__profile__provincia__nombre",
-        )
-        .annotate(total_expedientes=Count("expediente", distinct=True), total_casos=Count("id"))
-        .order_by("-total_casos", "expediente__usuario_provincia__profile__provincia__nombre")
-    )
-    max_cases = max((item["total_casos"] for item in grouped), default=0)
-    items = []
-
-    for item in grouped:
-        casos = item["total_casos"]
-        items.append(
-            {
-                "provincia_id": item[
-                    "expediente__usuario_provincia__profile__provincia__id"
-                ],
-                "nombre": item[
-                    "expediente__usuario_provincia__profile__provincia__nombre"
-                ]
-                or "Sin provincia",
-                "casos": casos,
-                "expedientes": item["total_expedientes"],
-                "share": _percentage(casos, total_cases),
-                "size": round(casos / max_cases, 4) if max_cases else 0,
-            }
-        )
-
-    return items
-
-
-def _month_label(period):
-    if not period:
-        return ""
-    return f"{MONTH_NAMES[period.month - 1]} {period.year}"
-
-
-def _build_monthly_trend(queryset):
-    grouped = list(
-        queryset.annotate(periodo=TruncMonth("creado_en"))
-        .values("periodo")
-        .annotate(total=Count("id"))
-        .order_by("-periodo")[:6]
-    )
-    grouped.reverse()
-    max_total = max((item["total"] for item in grouped), default=0)
-
-    return [
-        {
-            "label": _month_label(item["periodo"]),
-            "count": item["total"],
-            "size": round(item["total"] / max_total, 4) if max_total else 0,
-        }
-        for item in grouped
-    ]
 
 
 class ReporterProvinciasView(LoginRequiredMixin, TemplateView):
@@ -191,14 +18,10 @@ class ReporterProvinciasView(LoginRequiredMixin, TemplateView):
         context = super().get_context_data(**kwargs)
         user = self.request.user
 
-        es_usuario_provincial = _is_provincial(user)
-        profile = _safe_profile(user)
-        provincia_usuario = profile.provincia if es_usuario_provincial else None
+        es_usuario_provincial = is_territorial_user(user)
 
-        provincia_id = self.request.GET.get("provincia") or ""
-
-        if es_usuario_provincial and provincia_usuario:
-            provincia_id = str(provincia_usuario.id)
+        # Obtener parámetros de filtro
+        provincia_id = self.request.GET.get("provincia")
 
         fecha_desde = self.request.GET.get("fecha_desde")
         fecha_hasta = self.request.GET.get("fecha_hasta")
@@ -209,15 +32,22 @@ class ReporterProvinciasView(LoginRequiredMixin, TemplateView):
         estado_cupo = self.request.GET.get("estado_cupo")
 
         queryset = ExpedienteCiudadano.objects.select_related(
-            "expediente__usuario_provincia__profile__provincia",
-            "ciudadano",
-            "estado",
+            "expediente__usuario_provincia__profile", "ciudadano", "estado"
         )
 
-        if provincia_id:
-            queryset = queryset.filter(
-                expediente__usuario_provincia__profile__provincia_id=provincia_id
+        if es_usuario_provincial:
+            queryset = apply_territorial_scope(
+                queryset,
+                user,
+                provincia_lookup="ciudadano__provincia_id",
+                municipio_lookup="ciudadano__municipio_id",
+                localidad_lookup="ciudadano__localidad_id",
+                own_lookup="expediente__usuario_provincia",
+                include_own=True,
             )
+
+        if provincia_id:
+            queryset = queryset.filter(ciudadano__provincia_id=provincia_id)
 
         if fecha_desde:
             queryset = queryset.filter(creado_en__gte=fecha_desde)
@@ -295,84 +125,31 @@ class ReporterProvinciasView(LoginRequiredMixin, TemplateView):
             .distinct()
             .count()
         )
-        expedientes_por_provincia = _build_province_breakdown(queryset, total_casos)
-        tendencia_mensual = _build_monthly_trend(queryset)
-        metricas_principales = [
-            _build_metric(
-                "Casos analizados",
-                total_casos,
-                "Base filtrada del reporter",
-                tone="base",
-            ),
-            _build_metric(
-                "Aprobación técnica",
-                _format_percentage(
-                    casos_por_instancia["validacion_tecnica"]["aprobado"],
-                    total_casos,
-                ),
-                f"{casos_por_instancia['validacion_tecnica']['aprobado']} legajos aprobados",
-                tone="success",
-            ),
-            _build_metric(
-                "Documentación completa",
-                _format_percentage(casos_documentos_ok, total_casos),
-                f"{casos_documentos_ok} casos con legajo completo",
-                tone="accent",
-            ),
-            _build_metric(
-                "Cruces con match",
-                _format_percentage(casos_por_instancia["sintys"]["match"], total_casos),
-                f"{casos_por_instancia['sintys']['match']} coincidencias SINTYS",
-                tone="warning",
-            ),
-        ]
 
-        paginator = Paginator(queryset.order_by("-creado_en"), PAGE_SIZE)
-        page_obj = paginator.get_page(self.request.GET.get("page"))
-        current_query = _clean_query_params(self.request.GET)
-        current_query.pop("page", None)
+        # Expedientes por provincia
+        expedientes_por_provincia = (
+            Expediente.objects.filter(expediente_ciudadanos__in=queryset)
+            .values("expediente_ciudadanos__ciudadano__provincia__nombre")
+            .annotate(
+                total=Count("id", distinct=True),
+                casos=Count("expediente_ciudadanos", distinct=True),
+            )
+            .order_by("-casos")
+        )
 
-        provincias = Provincia.objects.all().order_by("nombre")
-        provincia_actual = None
-        if provincia_id:
-            provincia_actual = next(
-                (provincia for provincia in provincias if str(provincia.id) == provincia_id),
-                None,
-            )
+        # Últimos casos (para tabla de detalle)
+        ultimos_casos = queryset.order_by("-creado_en")[:50]
 
-        filtros_activos = []
-        if provincia_actual:
-            filtros_activos.append({"label": "Provincia", "value": provincia_actual.nombre})
-        if fecha_desde:
-            filtros_activos.append({"label": "Desde", "value": fecha_desde})
-        if fecha_hasta:
-            filtros_activos.append({"label": "Hasta", "value": fecha_hasta})
-        if revision_tecnico:
-            filtros_activos.append(
-                {
-                    "label": "Validación",
-                    "value": _find_definition_label(revision_tecnico, VALIDACION_ITEMS),
-                }
+        # Provincias disponibles
+        if es_usuario_provincial:
+            provincia_ids = {scope.provincia_id for scope in get_effective_scopes(user)}
+            provincias = Provincia.objects.filter(pk__in=provincia_ids).order_by(
+                "nombre"
             )
-        if resultado_sintys:
-            filtros_activos.append(
-                {
-                    "label": "SINTYS",
-                    "value": _find_definition_label(resultado_sintys, SINTYS_ITEMS),
-                }
-            )
-        if estado_cupo:
-            filtros_activos.append(
-                {
-                    "label": "Cupo",
-                    "value": _find_definition_label(estado_cupo, CUPO_ITEMS),
-                }
-            )
-        if expediente_numero:
-            filtros_activos.append({"label": "Expediente", "value": expediente_numero})
-        if documento_persona:
-            filtros_activos.append({"label": "Documento", "value": documento_persona})
+        else:
+            provincias = Provincia.objects.all().order_by("nombre")
 
+        # Preparar datos para gráficos
         context.update(
             {
                 "total_casos": total_casos,

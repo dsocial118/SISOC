@@ -53,51 +53,13 @@
         </td>
         <td>
             {% if archivo %}
-                <div class="documentacion-compact-controls documentacion-gde">
+                <div class="documentacion-compact-controls">
                     <a href="{{ archivo.archivo.url }}"
                        target="_blank"
                        class="btn btn-primary btn-sm">
                         <i class="fas fa-eye"></i>
                         Ver Archivo
                     </a>
-                    <div id="org-gde-display-{{ archivo.id }}"
-                         class="{% if puede_validar_documentacion_organizacion or puede_enviar_documentacion_organizacion %}org-inline-display{% endif %}"
-                         {% if puede_validar_documentacion_organizacion or puede_enviar_documentacion_organizacion %}data-org-inline-edit="org-gde-edit-{{ archivo.id }}"{% endif %}>
-                        {% if archivo.numero_gde %}
-                            <span class="text-success fw-bold">{{ archivo.numero_gde }}</span>
-                            <i class="bi bi-pencil-square ms-2 text-muted" title="Editar numero GDE"></i>
-                        {% else %}
-                            <span class="text-muted">Sin numero GDE</span>
-                            <i class="bi bi-plus-circle ms-2 text-primary"
-                               title="Agregar numero GDE"></i>
-                        {% endif %}
-                    </div>
-                    {% if puede_validar_documentacion_organizacion or puede_enviar_documentacion_organizacion %}
-                        <div id="org-gde-edit-{{ archivo.id }}" class="org-inline-edit d-none">
-                            <div class="d-flex align-items-center">
-                                <input type="text"
-                                       class="form-control form-control-sm me-2 org-inline-input"
-                                       value="{{ archivo.numero_gde|default_if_none:'' }}"
-                                       data-empty-text="Sin numero GDE"
-                                       data-url="{% url 'organizacion_documento_gde' archivo.id %}"
-                                       data-field="numero_gde"
-                                       data-display-id="org-gde-display-{{ archivo.id }}"
-                                       data-edit-id="org-gde-edit-{{ archivo.id }}"
-                                       maxlength="50"
-                                       placeholder="Ingrese numero GDE" />
-                                <button type="button"
-                                        class="btn btn-success btn-sm me-1 org-inline-save"
-                                        title="Guardar">
-                                    <i class="bi bi-check"></i>
-                                </button>
-                                <button type="button"
-                                        class="btn btn-secondary btn-sm org-inline-cancel"
-                                        title="Cancelar">
-                                    <i class="bi bi-x"></i>
-                                </button>
-                            </div>
-                        </div>
-                    {% endif %}
                 </div>
             {% else %}
                 <span style="color: #9ca3af;">Sin archivo</span>
@@ -157,6 +119,7 @@
                     <input type="file"
                            id="org-doc-file-{{ doc.id }}"
                            class="d-none org-doc-file"
+                           accept=".pdf,.jpg,.jpeg,.png,.xls,.xlsx,.doc,.docx"
                            data-upload-url="{% url 'organizacion_documento_subir' organizacion.id doc.id %}"
                            data-vencimiento-id="org-doc-venc-{{ doc.id }}" />
                     <button type="button"

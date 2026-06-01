@@ -20,6 +20,7 @@ from comedores.views import (
     ObservacionDeleteView,
     ObservacionDetailView,
     ObservacionUpdateView,
+    NominaAsistenciaHistorialView,
     NominaDetailView,
     NominaCreateView,
     NominaDeleteView,
@@ -264,6 +265,13 @@ urlpatterns = [
         "comedores/<int:pk>/admision/<int:admision_pk>/nomina/",
         permissions_any_required(["comedores.view_nomina"])(NominaDetailView.as_view()),
         name="nomina_ver",
+    ),
+    path(
+        "comedores/<int:pk>/admision/<int:admision_pk>/nomina/asistencia/",
+        permissions_any_required(["comedores.view_nomina"])(
+            NominaAsistenciaHistorialView.as_view()
+        ),
+        name="nomina_asistencia_historial",
     ),
     path(
         "comedores/editar-nomina/<int:pk>/",

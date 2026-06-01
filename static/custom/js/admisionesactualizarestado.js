@@ -532,6 +532,115 @@ function actualizarNumeroGDELegacy(documentoId, numeroGDE) {
     actualizarNumeroGDE(documentoId, numeroGDE);
 }
 
+// --- Numero GDE para documentos puros de Organizacion vistos desde la Admision ---
+
+function activarEdicionGDEOrganizacion(archivoOrgId) {
+    const displayDiv = document.getElementById(`gde-org-display-${archivoOrgId}`);
+    const editDiv = document.getElementById(`gde-org-edit-${archivoOrgId}`);
+    const input = document.getElementById(`gde-org-input-${archivoOrgId}`);
+    if (displayDiv && editDiv && input) {
+        displayDiv.classList.add("d-none");
+        editDiv.classList.remove("d-none");
+        input.focus();
+    }
+}
+
+function cancelarEdicionGDEOrganizacion(archivoOrgId) {
+    const displayDiv = document.getElementById(`gde-org-display-${archivoOrgId}`);
+    const editDiv = document.getElementById(`gde-org-edit-${archivoOrgId}`);
+    const input = document.getElementById(`gde-org-input-${archivoOrgId}`);
+    if (displayDiv && editDiv && input) {
+        const valorOriginal = displayDiv.querySelector("span").textContent;
+        input.value = valorOriginal === "Sin número GDE" ? "" : valorOriginal;
+        editDiv.classList.add("d-none");
+        displayDiv.classList.remove("d-none");
+    }
+}
+
+function guardarNumeroGDEOrganizacion(archivoOrgId) {
+    const input = document.getElementById(`gde-org-input-${archivoOrgId}`);
+    const numeroGDE = input ? input.value.trim() : "";
+    actualizarNumeroGDEOrganizacion(archivoOrgId, numeroGDE);
+}
+
+function actualizarVistaGDEOrganizacion(archivoOrgId, numeroGDE) {
+    const displayDiv = document.getElementById(`gde-org-display-${archivoOrgId}`);
+    const input = document.getElementById(`gde-org-input-${archivoOrgId}`);
+    if (!displayDiv || !input) return;
+    input.value = numeroGDE || "";
+    displayDiv.innerHTML = "";
+    const span = document.createElement("span");
+    if (numeroGDE) {
+        span.className = "text-success fw-bold";
+        span.textContent = numeroGDE;
+        displayDiv.appendChild(span);
+        const icon = document.createElement("i");
+        icon.className = "bi bi-pencil-square ms-2 text-muted";
+        icon.style.cursor = "pointer";
+        icon.title = "Editar número GDE";
+        displayDiv.appendChild(icon);
+    } else {
+        span.className = "text-muted";
+        span.textContent = "Sin número GDE";
+        displayDiv.appendChild(span);
+        const icon = document.createElement("i");
+        icon.className = "bi bi-plus-circle ms-2 text-primary";
+        icon.style.cursor = "pointer";
+        icon.title = "Agregar número GDE";
+        displayDiv.appendChild(icon);
+    }
+}
+
+function volverAModoVistaOrganizacion(archivoOrgId) {
+    const displayDiv = document.getElementById(`gde-org-display-${archivoOrgId}`);
+    const editDiv = document.getElementById(`gde-org-edit-${archivoOrgId}`);
+    if (displayDiv && editDiv) {
+        editDiv.classList.add("d-none");
+        displayDiv.classList.remove("d-none");
+    }
+}
+
+function actualizarNumeroGDEOrganizacion(archivoOrgId, numeroGDE) {
+    const csrfToken = document.querySelector("[name=csrfmiddlewaretoken]").value;
+    const config = document.getElementById("admisiones-tecnicos-config");
+    const url = config ? config.dataset.urlActualizarNumeroGdeOrganizacion : "";
+    const admisionId = config ? config.dataset.admisionId : "";
+    if (!url || !admisionId) {
+        alert("No se pudo actualizar el número GDE.");
+        return;
+    }
+
+    fetch(url, {
+        method: "POST",
+        headers: {
+            "X-CSRFToken": csrfToken,
+            "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: new URLSearchParams({
+            admision_id: admisionId,
+            archivo_organizacion_id: archivoOrgId,
+            numero_gde: numeroGDE,
+        }),
+    })
+        .then((response) => response.json())
+        .then((data) => {
+            if (!data.success) {
+                alert("Error: " + data.error);
+                const input = document.getElementById(`gde-org-input-${archivoOrgId}`);
+                if (input) input.value = data.valor_anterior || "";
+                return;
+            }
+            const toastEl = document.getElementById("toastGDEExito");
+            if (toastEl) new bootstrap.Toast(toastEl).show();
+            actualizarVistaGDEOrganizacion(archivoOrgId, data.numero_gde);
+            volverAModoVistaOrganizacion(archivoOrgId);
+        })
+        .catch((error) => {
+            console.error("Error al actualizar número GDE de organización:", error);
+            alert("Ocurrió un error al actualizar el número GDE.");
+        });
+}
+
 function activarEdicionConvenioNumero() {
     const displayDiv = document.getElementById("convenio-numero-display");
     const editDiv = document.getElementById("convenio-numero-edit");

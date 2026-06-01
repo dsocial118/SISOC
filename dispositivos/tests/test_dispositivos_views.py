@@ -37,8 +37,10 @@ def _crear_dispositivo(provincia, municipio, indice=0, **overrides):
         "cuit_institucion": f"20{indice:09d}",
         "provincia": provincia,
         "municipio": municipio,
-        "domicilio_institucion": f"Calle {indice}",
-        "telefono_contacto": "2219876543",
+        "calle": f"Calle {indice}",
+        "altura": "100",
+        "telefono_prefijo": "221",
+        "telefono_numero": "9876543",
         "responsable_nombre_completo": "Ana Lopez",
         "responsable_dni": f"{indice:08d}",
         "tipo_dispositivo": "refugio",
@@ -85,8 +87,10 @@ def test_crud_dispositivo_con_permisos(client, user_con_permisos, provincia_muni
             "cuit_institucion": "20123456789",
             "provincia": provincia.id,
             "municipio": municipio.id,
-            "domicilio_institucion": "Calle 1 123",
-            "telefono_contacto": "2211234567",
+            "calle": "Calle 1",
+            "altura": "123",
+            "telefono_prefijo": "221",
+            "telefono_numero": "1234567",
             "correo_electronico": "test@example.com",
             "responsable_nombre_completo": "Juan Perez",
             "responsable_dni": "12345678",
@@ -124,8 +128,10 @@ def test_crud_dispositivo_con_permisos(client, user_con_permisos, provincia_muni
             "cuit_institucion": "20123456789",
             "provincia": provincia.id,
             "municipio": municipio.id,
-            "domicilio_institucion": "Calle 1 123",
-            "telefono_contacto": "2211234567",
+            "calle": "Calle 1",
+            "altura": "123",
+            "telefono_prefijo": "221",
+            "telefono_numero": "1234567",
             "correo_electronico": "test@example.com",
             "responsable_nombre_completo": "Juan Perez",
             "responsable_dni": "12345678",
@@ -267,6 +273,15 @@ def _tag_for(contenido, wrapper_id):
     return contenido[idx:tag_end]
 
 
+def _doc_slot_tag(contenido, field):
+    needle = f'data-field="{field}"'
+    idx = contenido.find(needle)
+    assert idx != -1, f"No se encontró slot {field} en el template"
+    tag_start = contenido.rfind("<div", 0, idx)
+    tag_end = contenido.find(">", idx)
+    return contenido[tag_start:tag_end]
+
+
 @pytest.mark.django_db
 def test_formulario_oculta_todos_los_wrappers_otro_en_creacion(
     client, user_con_permisos
@@ -337,3 +352,93 @@ def test_formulario_muestra_wrappers_otro_cuando_dispositivo_tiene_valor(
         assert (
             "d-none" not in tag
         ), f"{wrapper_id} no debe tener d-none cuando 'otro' está seleccionado"
+
+
+def _doc_slot_tag(contenido, field):
+    needle = f'data-field="{field}"'
+    idx = contenido.find(needle)
+    assert idx != -1, f"No se encontró slot {field} en el template"
+    tag_start = contenido.rfind("<div", 0, idx)
+    tag_end = contenido.find(">", idx)
+    return contenido[tag_start:tag_end]
+
+
+@pytest.mark.django_db
+def test_formulario_solo_muestra_primer_slot_documento_en_creacion(
+    client, user_con_permisos
+):
+    client.force_login(user_con_permisos)
+
+    response = client.get(reverse("dispositivos_crear"))
+
+    assert response.status_code == 200
+    contenido = response.content.decode("utf-8")
+    principal_tag = _doc_slot_tag(contenido, "documentacion_dispositivo")
+    assert "d-none" not in principal_tag, "El slot principal debe ser visible"
+
+    for field in [
+        "documentacion_dispositivo_adicional_1",
+        "documentacion_dispositivo_adicional_2",
+        "documentacion_dispositivo_adicional_3",
+        "documentacion_dispositivo_adicional_4",
+    ]:
+        tag = _doc_slot_tag(contenido, field)
+        assert "d-none" in tag, f"Slot {field} debe iniciar oculto"
+
+    assert 'id="btn-add-doc"' in contenido
+    assert "Añadir archivo" in contenido
+
+
+@pytest.mark.django_db
+def test_formulario_muestra_slots_con_documentacion_persistida_en_edicion(
+    client, user_con_permisos, provincia_municipio
+):
+    provincia, municipio = provincia_municipio
+    client.force_login(user_con_permisos)
+
+    dispositivo = _crear_dispositivo(
+        provincia,
+        municipio,
+        indice=55667788,
+        nombre_institucion="Dispositivo con docs",
+        cuit_institucion="20556677881",
+        responsable_dni="55667788",
+    )
+    dispositivo.documentacion_dispositivo_adicional_2.save(
+        "doc-2.pdf",
+        SimpleUploadedFile("doc-2.pdf", b"x", content_type="application/pdf"),
+        save=True,
+    )
+
+    response = client.get(reverse("dispositivos_editar", kwargs={"pk": dispositivo.pk}))
+
+    assert response.status_code == 200
+    contenido = response.content.decode("utf-8")
+    tag_2 = _doc_slot_tag(contenido, "documentacion_dispositivo_adicional_2")
+    assert "d-none" not in tag_2, "El slot con archivo persistido debe ser visible"
+    tag_3 = _doc_slot_tag(contenido, "documentacion_dispositivo_adicional_3")
+    assert "d-none" in tag_3, "Slots sin archivo deben mantenerse ocultos"
+
+
+@pytest.mark.django_db
+def test_formulario_micro_ajustes_visibles(client, user_con_permisos):
+    client.force_login(user_con_permisos)
+
+    response = client.get(reverse("dispositivos_crear"))
+
+    assert response.status_code == 200
+    contenido = response.content.decode("utf-8")
+    assert "La Razón Social es la identidad jurídica" in contenido
+    assert "Ninguna de las anteriores" in contenido
+    assert 'inputmode="numeric"' in contenido
+    assert "Debe ingresar los 11 dígitos sin puntos ni guiones" in contenido
+    limitaciones_idx = contenido.index('name="principales_limitaciones"')
+    necesidades_idx = contenido.index('name="necesidades_prioritarias"')
+    bloque_limitaciones = contenido[max(0, limitaciones_idx - 1500) : limitaciones_idx]
+    bloque_necesidades = contenido[max(0, necesidades_idx - 1500) : necesidades_idx]
+    assert (
+        'class="col-md-12"' in bloque_limitaciones
+    ), "Principales limitaciones debe estar en col-md-12"
+    assert (
+        'class="col-md-12"' in bloque_necesidades
+    ), "Necesidades prioritarias debe estar en col-md-12"

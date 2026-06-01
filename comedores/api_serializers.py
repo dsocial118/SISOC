@@ -4,13 +4,24 @@
 
 from rest_framework import serializers
 from django.core.exceptions import DisallowedHost
+from django.db.models import Max
+from django.urls import reverse
 
-from comedores.models import Comedor, ComedorDatosConvenioPnud, Nomina
+from comedores.models import (
+    Comedor,
+    ComedorDatosConvenioPnud,
+    Nomina,
+    PrestacionAlimentariaConformidad,
+)
 from comedores.services.comedor_service import ComedorService
 from core.models import Localidad, Municipio, Provincia
 from duplas.models import Dupla
 from organizaciones.models import Organizacion
-from admisiones.models.admisiones import InformeTecnico
+from admisiones.models.admisiones import (
+    Admision,
+    HistorialEstadosAdmision,
+    InformeTecnico,
+)
 from relevamientos.models import ClasificacionComedor, Relevamiento
 from relevamientos.service import RelevamientoService
 from rendicioncuentasmensual.models import DocumentacionAdjunta
@@ -1087,9 +1098,16 @@ APROBADAS_FIELDS = tuple(
 )
 
 
+ESTADO_INFORME_TECNICO_FINALIZADO = "informe_tecnico_finalizado"
+ESTADO_INFORME_TECNICO_FINALIZADO_DISPLAY = dict(Admision.ESTADOS_ADMISION).get(
+    ESTADO_INFORME_TECNICO_FINALIZADO, "Informe técnico finalizado"
+)
+
+
 class InformeTecnicoPrestacionSerializer(serializers.ModelSerializer):
     informe_id = serializers.IntegerField(source="id", read_only=True)
     admision_id = serializers.IntegerField(read_only=True)
+    fecha_finalizacion = serializers.SerializerMethodField()
 
     class Meta:
         model = InformeTecnico
@@ -1100,8 +1118,57 @@ class InformeTecnicoPrestacionSerializer(serializers.ModelSerializer):
             "estado_formulario",
             "creado",
             "modificado",
+            "fecha_finalizacion",
             *APROBADAS_FIELDS,
         )
+
+    @staticmethod
+    def fechas_finalizacion_para(admision_ids):
+        ids = [admision_id for admision_id in admision_ids if admision_id]
+        if not ids:
+            return {}
+        filas = (
+            HistorialEstadosAdmision.objects.filter(
+                admision_id__in=ids,
+                estado_nuevo=ESTADO_INFORME_TECNICO_FINALIZADO_DISPLAY,
+            )
+            .values("admision_id")
+            .annotate(fecha=Max("fecha"))
+            .values_list("admision_id", "fecha")
+        )
+        return dict(filas)
+
+    def get_fecha_finalizacion(self, obj):
+        fechas = self.context.get("fechas_finalizacion")
+        if fechas is None:
+            fechas = self.fechas_finalizacion_para([obj.admision_id])
+        return fechas.get(obj.admision_id)
+
+
+class PrestacionAlimentariaConformidadSerializer(serializers.ModelSerializer):
+    usuario_id = serializers.IntegerField(read_only=True)
+    usuario_nombre = serializers.SerializerMethodField()
+    informe_id = serializers.IntegerField(source="informe_tecnico_id", read_only=True)
+
+    class Meta:
+        model = PrestacionAlimentariaConformidad
+        fields = (
+            "id",
+            "periodo",
+            "conforme",
+            "observaciones",
+            "creado",
+            "usuario_id",
+            "usuario_nombre",
+            "informe_id",
+        )
+
+    def get_usuario_nombre(self, obj):
+        usuario = getattr(obj, "usuario", None)
+        if not usuario:
+            return None
+        full_name = usuario.get_full_name() if hasattr(usuario, "get_full_name") else ""
+        return full_name or getattr(usuario, "username", None) or str(usuario)
 
 
 class NoSaveSerializer(serializers.Serializer):
@@ -1251,6 +1318,9 @@ class ComprobanteRendicionSerializer(serializers.ModelSerializer):
 
 class RendicionMensualListSerializer(serializers.ModelSerializer):
     estado_label = serializers.CharField(source="get_estado_display", read_only=True)
+    linea_programatica_label = serializers.CharField(
+        source="get_linea_programatica_display", read_only=True
+    )
     periodo_inicio = serializers.DateField(read_only=True)
     periodo_fin = serializers.DateField(read_only=True)
     periodo_label = serializers.SerializerMethodField()
@@ -1266,6 +1336,8 @@ class RendicionMensualListSerializer(serializers.ModelSerializer):
             "periodo_inicio",
             "periodo_fin",
             "periodo_label",
+            "linea_programatica",
+            "linea_programatica_label",
             "estado",
             "estado_label",
             "documento_adjunto",
@@ -1288,18 +1360,44 @@ class RendicionMensualDetailSerializer(RendicionMensualListSerializer):
         source="archivos_adjuntos", many=True, read_only=True
     )
     documentacion = serializers.SerializerMethodField()
+    modelos = serializers.SerializerMethodField()
 
     class Meta(RendicionMensualListSerializer.Meta):
         fields = RendicionMensualListSerializer.Meta.fields + (
             "comprobantes",
             "documentacion",
+            "modelos",
         )
+
+    def _build_modelo_payload(self, obj, modelo):
+        request = self.context.get("request")
+        url = reverse(
+            "api-comedor-descargar-modelo-rendicion",
+            kwargs={
+                "pk": obj.comedor_id,
+                "linea_programatica": obj.linea_programatica,
+                "modelo_codigo": modelo["codigo"],
+            },
+        )
+        return {
+            **modelo,
+            "url": request.build_absolute_uri(url) if request else url,
+        }
+
+    def get_modelos(self, obj):
+        return [
+            self._build_modelo_payload(obj, modelo)
+            for modelo in DocumentacionAdjunta.modelos_descargables(
+                obj.linea_programatica
+            )
+        ]
 
     def get_documentacion(self, obj):
         grouped = RendicionCuentaMensualService.obtener_resumen_documentacion(obj)
         serializer_context = {"request": self.context.get("request")}
         payload = []
-        for categoria in DocumentacionAdjunta.categorias_mobile():
+        for categoria in DocumentacionAdjunta.categorias_mobile(obj.linea_programatica):
+            modelo = categoria.get("modelo")
             payload.append(
                 {
                     "codigo": categoria["codigo"],
@@ -1307,6 +1405,9 @@ class RendicionMensualDetailSerializer(RendicionMensualListSerializer):
                     "required": categoria["required"],
                     "multiple": categoria["multiple"],
                     "order": categoria["order"],
+                    "modelo": (
+                        self._build_modelo_payload(obj, modelo) if modelo else None
+                    ),
                     "archivos": ComprobanteRendicionSerializer(
                         grouped.get(categoria["codigo"], []),
                         many=True,
@@ -1322,6 +1423,10 @@ class RendicionMensualCreateSerializer(NoSaveSerializer):
     numero_rendicion = serializers.IntegerField(min_value=1)
     periodo_inicio = serializers.DateField()
     periodo_fin = serializers.DateField()
+    linea_programatica = serializers.ChoiceField(
+        choices=RendicionCuentaMensual.LINEA_PROGRAMATICA_CHOICES,
+        required=False,
+    )
     observaciones = serializers.CharField(
         required=False,
         allow_blank=True,

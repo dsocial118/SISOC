@@ -7,7 +7,7 @@
     --navy-dark: #232D4F;
     --navy-medium: #232D4F;
     --navy-light: #4A5F7F;
-    --gold: #F5A623;
+    --gold: #E7BA61;
     --green: #28A745;
     --red: #DC3545;
 }
@@ -278,10 +278,6 @@
 .documentacion-compact-controls .form-select-sm {
     min-width: 145px;
     max-width: 180px;
-}
-
-.documentacion-gde {
-    min-width: 220px;
 }
 
 .org-inline-display {
@@ -636,7 +632,7 @@
                                         <tr>
                                             <th>Documento</th>
                                             <th>Estado / validación</th>
-                                            <th>Archivo / GDE</th>
+                                            <th>Archivo</th>
                                             <th>Vencimiento / carga</th>
                                         </tr>
                                     </thead>
@@ -691,31 +687,11 @@
                                                     </td>
                                                     <td>
                                                         {% if archivo %}
-                                                            <div class="documentacion-compact-controls documentacion-gde">
+                                                            <div class="documentacion-compact-controls">
                                                                 <a href="{{ archivo.archivo.url }}" target="_blank" class="btn btn-primary btn-sm">
                                                                     <i class="fas fa-eye"></i>
                                                                     Ver Archivo
                                                                 </a>
-                                                                <div id="org-gde-display-{{ archivo.id }}" class="org-inline-display" data-org-inline-edit="org-gde-edit-{{ archivo.id }}">
-                                                                    {% if archivo.numero_gde %}
-                                                                        <span class="text-success fw-bold">{{ archivo.numero_gde }}</span>
-                                                                        <i class="bi bi-pencil-square ms-2 text-muted" title="Editar número GDE"></i>
-                                                                    {% else %}
-                                                                        <span class="text-muted">Sin número GDE</span>
-                                                                        <i class="bi bi-plus-circle ms-2 text-primary" title="Agregar número GDE"></i>
-                                                                    {% endif %}
-                                                                </div>
-                                                                <div id="org-gde-edit-{{ archivo.id }}" class="org-inline-edit d-none">
-                                                                    <div class="d-flex align-items-center">
-                                                                        <input type="text" class="form-control form-control-sm me-2 org-inline-input" value="{{ archivo.numero_gde|default_if_none:'' }}" data-empty-text="Sin número GDE" data-url="{% url 'organizacion_documento_gde' archivo.id %}" data-field="numero_gde" data-display-id="org-gde-display-{{ archivo.id }}" data-edit-id="org-gde-edit-{{ archivo.id }}" maxlength="50" placeholder="Ingrese número GDE" />
-                                                                        <button type="button" class="btn btn-success btn-sm me-1 org-inline-save" title="Guardar">
-                                                                            <i class="bi bi-check"></i>
-                                                                        </button>
-                                                                        <button type="button" class="btn btn-secondary btn-sm org-inline-cancel" title="Cancelar">
-                                                                            <i class="bi bi-x"></i>
-                                                                        </button>
-                                                                    </div>
-                                                                </div>
                                                             </div>
                                                         {% else %}
                                                             <span style="color: #9ca3af;">Sin archivo</span>
@@ -756,7 +732,7 @@
                                                             {% else %}
                                                                 <input type="date" class="form-control form-control-sm" id="org-doc-venc-{{ doc.id }}" aria-label="Fecha de vencimiento" />
                                                             {% endif %}
-                                                            <input type="file" id="org-doc-file-{{ doc.id }}" class="d-none org-doc-file" data-upload-url="{% url 'organizacion_documento_subir' organizacion.id doc.id %}" data-vencimiento-id="org-doc-venc-{{ doc.id }}" />
+                                                            <input type="file" id="org-doc-file-{{ doc.id }}" class="d-none org-doc-file" accept=".pdf,.jpg,.jpeg,.png,.xls,.xlsx,.doc,.docx" data-upload-url="{% url 'organizacion_documento_subir' organizacion.id doc.id %}" data-vencimiento-id="org-doc-venc-{{ doc.id }}" />
                                                             <button type="button" class="btn btn-sm btn-outline-light org-doc-open-file" data-file-id="org-doc-file-{{ doc.id }}">Adjuntar</button>
                                                         </div>
                                                         <div class="progress mt-2 documentacion-upload-progress" id="org-progress-container-{{ doc.id }}">
@@ -774,9 +750,6 @@
                                                                         <div class="small">
                                                                             <a href="{{ version.archivo.url }}" target="_blank" style="color: #e7ba61;">{{ version.creado|date:"d/m/Y H:i" }}</a>
                                                                             - {{ version.estado }}
-                                                                            {% if version.numero_gde %}
-                                                                                - GDE {{ version.numero_gde }}
-                                                                            {% endif %}
                                                                             {% if version.fecha_vencimiento %}
                                                                                 - vence {{ version.fecha_vencimiento|date:"d/m/Y" }}
                                                                             {% endif %}
@@ -835,7 +808,7 @@
                                             <tr>
                                                 <td>
                                                     <a href="{% url 'comedor_detalle' comedor.id %}"
-                                                       style="color: #F5A623;
+                                                       style="color: #E7BA61;
                                                               text-decoration: underline">{{ comedor.nombre }}</a>
                                                 </td>
                                                 <td>{{ comedor.tipocomedor.nombre|default:'-' }}</td>
@@ -896,6 +869,39 @@
                             {% endif %}
                         </div>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade"
+         id="orgModalObservacionRectificar"
+         tabindex="-1"
+         aria-labelledby="orgModalObservacionRectificarLabel"
+         aria-hidden="true"
+         data-bs-backdrop="static"
+         data-bs-keyboard="false">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="orgModalObservacionRectificarLabel">Observaciones obligatorias</h5>
+                    <button type="button"
+                            class="btn-close"
+                            data-bs-dismiss="modal"
+                            aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="orgObservacionRectificar" class="form-label">Detalle el motivo de la rectificacion</label>
+                        <textarea class="form-control"
+                                  id="orgObservacionRectificar"
+                                  rows="4"
+                                  maxlength="2000"></textarea>
+                        <div class="text-danger small mt-2" id="orgObservacionRectificarError"></div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" id="orgBtnConfirmarRectificar">Guardar observaciones</button>
                 </div>
             </div>
         </div>

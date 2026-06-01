@@ -94,7 +94,9 @@
                 </div>
 
                 <!-- Sección 2: Estado y Proceso -->
-                <div class="section-card" data-section="estado">
+                <div class="section-card"
+                     data-section="estado"
+                     data-estado-locked="{% if form.estado_general.field.disabled %}true{% else %}false{% endif %}">
                     <div class="section-header" data-toggle-section="estado">
                         <div class="section-header-left">
                             <div class="section-icon">
