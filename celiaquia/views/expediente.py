@@ -21,7 +21,8 @@ from django.core.exceptions import ObjectDoesNotExist, ValidationError, Permissi
 from django.conf import settings
 from django.utils.decorators import method_decorator
 from django.contrib.auth.models import User
-from django.db.models import Q, Count, OuterRef, Subquery
+from django.db.models import Q, Count, OuterRef, Subquery, F, CharField
+from django.db.models.functions import Coalesce
 from django.core.paginator import Paginator
 from iam.services import user_has_permission_code
 
@@ -595,20 +596,20 @@ class LocalidadesLookupView(View):
 
         localidades = Localidad.objects.select_related("municipio__provincia")
 
-        # Filtrar por provincia del usuario solo si es provincial Y NO es coordinador
+        # Restringir por el alcance territorial real del usuario (provincia,
+        # municipio y/o localidad). Coordinador y admin no tienen restriccion.
+        # Antes se filtraba por la provincia unica del perfil, que queda vacia
+        # cuando el usuario tiene varias provincias o un municipio especifico,
+        # ocultando las localidades de su municipio.
         is_coord = _user_has_permission(user, ROLE_COORDINADOR_CELIAQUIA_PERMISSION)
         if _is_provincial(user) and not is_coord and not _is_admin(user):
-            prov = _user_provincia(user)
-            if prov:
-                localidades = localidades.filter(municipio__provincia=prov)
-            else:
-                localidades = apply_territorial_scope(
-                    localidades,
-                    user,
-                    provincia_lookup="municipio__provincia_id",
-                    municipio_lookup="municipio_id",
-                    localidad_lookup="id",
-                )
+            localidades = apply_territorial_scope(
+                localidades,
+                user,
+                provincia_lookup="municipio__provincia_id",
+                municipio_lookup="municipio_id",
+                localidad_lookup="id",
+            )
 
         if provincia_id:
             localidades = localidades.filter(municipio__provincia_id=provincia_id)
@@ -683,6 +684,27 @@ class ExpedienteListView(ListView):
                 "excel_masivo_procesado_en",
             )
         )
+
+        # Provincia mostrada en la grilla: se deriva del territorio de los
+        # ciudadanos del expediente (un usuario puede tener varias provincias y el
+        # perfil legacy queda vacio). Se anota con Subquery para evitar N+1 y se
+        # cae al valor legacy del perfil para expedientes aun sin legajos.
+        provincia_derivada_sq = (
+            ExpedienteCiudadano.objects.filter(
+                expediente=OuterRef("pk"),
+                ciudadano__provincia__isnull=False,
+            )
+            .order_by("ciudadano_id")
+            .values("ciudadano__provincia__nombre")[:1]
+        )
+        qs = qs.annotate(
+            provincia_derivada=Coalesce(
+                Subquery(provincia_derivada_sq),
+                F("usuario_provincia__profile__provincia__nombre"),
+                output_field=CharField(),
+            )
+        )
+
         if _is_admin(user):
             qs = qs.order_by("-fecha_creacion")
         elif _is_provincial(user):
@@ -708,6 +730,9 @@ class ExpedienteListView(ListView):
                 | Q(estado__nombre__icontains=search_query)
                 | Q(
                     usuario_provincia__profile__provincia__nombre__icontains=search_query
+                )
+                | Q(
+                    expediente_ciudadanos__ciudadano__provincia__nombre__icontains=search_query
                 )
                 | Q(asignaciones_tecnicos__tecnico__first_name__icontains=search_query)
                 | Q(asignaciones_tecnicos__tecnico__last_name__icontains=search_query)
@@ -1243,7 +1268,10 @@ class ExpedienteDetailView(DetailView):
             except CupoNoConfigurado:
                 cupo_error = "La provincia no tiene cupo configurado."
         else:
-            cupo_error = "No se pudo determinar la provincia del expediente."
+            # Sin provincia determinable aun (p. ej. expediente sin legajos
+            # importados). No corresponde a ninguna accion del usuario, por lo que
+            # no se muestra un error al abrir el expediente.
+            cupo_error = None
 
         fuera_count = expediente.expediente_ciudadanos.filter(
             estado_cupo="FUERA"
@@ -1392,6 +1420,7 @@ class ExpedienteDetailView(DetailView):
                 "cupo": cupo,  # para el template actual
                 "cupo_metrics": cupo_metrics,  # compat si lo usas en JS/otros templates
                 "cupo_error": cupo_error,
+                "provincia_expediente": prov,
                 "fuera_count": fuera_count,
                 "total_responsables": len(estructura_familiar.get("responsables", {})),
                 "total_hijos_sin_responsable": len(
