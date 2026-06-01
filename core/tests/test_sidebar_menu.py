@@ -1,6 +1,7 @@
 import re
 
 import pytest
+from django.contrib.auth.models import Group
 from django.contrib.auth import get_user_model
 from django.urls import reverse
 
@@ -49,3 +50,23 @@ def test_sidebar_separa_administracion_de_configuracion_comedores(client):
     assert reverse("changelog") in content
     assert 'class="footer-secondary-link"' in content
     assert re.search(r">v\d{2}\.\d{2}\.\d{2}<", content)
+
+
+def test_sidebar_oculta_modalidades_para_cfpinet(client):
+    user_model = get_user_model()
+    user = user_model.objects.create_superuser(
+        username="sidebar_cfpinet",
+        email="sidebar_cfpinet@example.com",
+        password="testpass123",
+    )
+    cfpinet_group, _ = Group.objects.get_or_create(name="CFPINET")
+    user.groups.add(cfpinet_group)
+    client.force_login(user)
+
+    response = client.get(reverse("inicio"))
+
+    assert response.status_code == 200
+
+    content = response.content.decode()
+    assert "Planes Curriculares" in content
+    assert "Modalidades de Cursado" not in content
