@@ -621,8 +621,15 @@ class CruceService:
                 "El expediente no está en un estado válido para realizar el cruce."
             )
 
+        provincia_expediente = expediente.provincia
+        if provincia_expediente is None:
+            raise ValidationError(
+                "No se pudo determinar la provincia del expediente a partir de los "
+                "ciudadanos cargados. Verifique que los legajos tengan municipio y "
+                "localidad antes de realizar el cruce con SINTYS."
+            )
         try:
-            metrics_iniciales = CupoService.metrics_por_provincia(expediente.provincia)
+            metrics_iniciales = CupoService.metrics_por_provincia(provincia_expediente)
         except CupoNoConfigurado as e:
             raise ValidationError(
                 f"No hay cupo configurado para la provincia del expediente. {e}"

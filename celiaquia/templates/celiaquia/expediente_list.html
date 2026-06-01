@@ -77,7 +77,7 @@
                             <td data-id="{{ exp.pk }}">{{ exp.pk }}</td>
                             <td data-numero="{{ exp.numero_expediente|default:'-' }}">{{ exp.numero_expediente|default:"-" }}</td>
                             <td data-fecha="{{ exp.fecha_creacion|date:'Y-m-d H:i' }}">{{ exp.fecha_creacion|date:"d/m/Y H:i" }}</td>
-                            <td data-provincia="{{ exp.provincia }}">{{ exp.provincia }}</td>
+                            <td data-provincia="{{ exp.provincia_derivada|default:'' }}">{{ exp.provincia_derivada|default:"-" }}</td>
                             <td data-estado="{{ exp.estado.display_name }}">
                                 <span class="badge {% if exp.estado.nombre == 'CREADO' %}bg-secondary {% elif exp.estado.nombre == 'EN_ESPERA' %}bg-info {% elif exp.estado.nombre == 'CONFIRMACION_DE_ENVIO' %}bg-warning {% elif exp.estado.nombre == 'RECEPCIONADO' %}bg-secondary {% elif exp.estado.nombre == 'ASIGNADO' %}bg-primary {% elif exp.estado.nombre == 'PROCESO_DE_CRUCE' %}bg-dark {% elif exp.estado.nombre == 'CRUCE_FINALIZADO' %}bg-success {% else %}bg-body-tertiary text-body{% endif %}">
                                     {{ exp.estado.display_name }}
