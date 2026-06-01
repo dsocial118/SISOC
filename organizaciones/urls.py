@@ -21,6 +21,7 @@ from organizaciones.views import (
     cuil_check_ajax,
     subir_documento_organizacion,
     agregar_documento_personalizado_organizacion,
+    actualizar_numero_gde_documento_organizacion,
 )
 from organizaciones.views_export import OrganizacionExportView
 
@@ -100,6 +101,13 @@ urlpatterns = [
             actualizar_vencimiento_documento_organizacion
         ),
         name="organizacion_documento_vencimiento",
+    ),
+    path(
+        "organizaciones/documentacion/<int:archivo_id>/numero-gde/",
+        permissions_any_required(ORGANIZACION_DOCUMENTACION_PERMS)(
+            actualizar_numero_gde_documento_organizacion
+        ),
+        name="organizacion_documento_gde",
     ),
     path(
         "organizaciones/<int:organizacion_id>/documentacion/<int:documentacion_id>/historial/",
