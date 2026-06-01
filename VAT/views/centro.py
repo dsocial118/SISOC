@@ -153,10 +153,51 @@ def _apply_vat_centro_search(queryset, query):
     return queryset.filter(Q(nombre__icontains=busq))
 
 
+def _is_centro_carga_completa_q():
+    return (
+        Q(provincia__isnull=False)
+        & ~Q(domicilio_actividad__isnull=True)
+        & ~Q(domicilio_actividad__exact="")
+        & ~Q(telefono__isnull=True)
+        & ~Q(telefono__exact="")
+        & ~Q(celular__isnull=True)
+        & ~Q(celular__exact="")
+        & ~Q(correo__isnull=True)
+        & ~Q(correo__exact="")
+        & ~Q(nombre_referente__isnull=True)
+        & ~Q(nombre_referente__exact="")
+        & ~Q(apellido_referente__isnull=True)
+        & ~Q(apellido_referente__exact="")
+        & Q(count_contactos__gt=0)
+        & Q(count_identificadores__gt=0)
+        & Q(count_ubicaciones__gt=0)
+    )
+
+
+def _apply_vat_centro_estado_carga_filter(queryset, estado_carga):
+    estado = (estado_carga or "").strip().lower()
+    if estado not in {"completo", "incompleto"}:
+        return queryset
+
+    queryset = queryset.annotate(
+        count_contactos=Count("contactos_adicionales", distinct=True),
+        count_identificadores=Count("identificadores_hist", distinct=True),
+        count_ubicaciones=Count("ubicaciones", distinct=True),
+    )
+    carga_completa_q = _is_centro_carga_completa_q()
+    if estado == "completo":
+        return queryset.filter(carga_completa_q)
+    return queryset.exclude(carga_completa_q)
+
+
 def _build_vat_centro_list_queryset(request):
     queryset = _build_vat_centro_list_base_queryset()
     queryset = filter_centros_queryset_for_user(queryset, request.user)
     queryset = _apply_vat_centro_search(queryset, request.GET.get("busqueda", ""))
+    queryset = _apply_vat_centro_estado_carga_filter(
+        queryset,
+        request.GET.get("estado_carga"),
+    )
     return BOOL_ADVANCED_FILTER.filter_queryset(queryset, request.GET).order_by("-id")
 
 
@@ -543,6 +584,7 @@ class CentroListView(LoginRequiredMixin, ListView):
                 "add_url": reverse("vat_centro_create"),
                 "centro_additional_buttons": [],
                 "current_query": self.request.GET.get("busqueda", ""),
+                "current_estado_carga": (self.request.GET.get("estado_carga", "") or "").lower(),
             }
         )
 

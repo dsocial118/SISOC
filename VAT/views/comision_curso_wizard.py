@@ -136,6 +136,7 @@ class ComisionCursoWizardView(LoginRequiredMixin, SessionWizardView):
         with transaction.atomic():
             comision = ComisionCurso.objects.create(
                 curso=self.curso,
+                modalidad=info.get("modalidad") or self.curso.modalidad,
                 ubicacion=info["ubicacion"],
                 cupo_total=info["cupo_total"],
                 estado=info["estado"],

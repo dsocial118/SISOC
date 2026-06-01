@@ -33,9 +33,62 @@
                 <form method="post" novalidate>
                     {% csrf_token %}
                     <div class="row mb-4">
+                        <div class="col-12">
+                            <div class="border rounded-3 p-3 bg-light-subtle">
+                                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+                                    <h2 class="h6 mb-0">Guía de carga del curso</h2>
+                                    <span class="small text-muted" id="cursoProgressLabel">0 de 4 campos clave completados</span>
+                                </div>
+                                <div class="progress" role="progressbar" aria-label="Progreso de carga" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+                                    <div class="progress-bar" id="cursoProgressBar" style="width: 0%"></div>
+                                </div>
+                                <div class="accordion accordion-flush mt-3" id="cursoFormGuide">
+                                    <div class="accordion-item">
+                                        <h3 class="accordion-header">
+                                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#guiaNombre" aria-expanded="false" aria-controls="guiaNombre">
+                                                Nombre del curso
+                                            </button>
+                                        </h3>
+                                        <div id="guiaNombre" class="accordion-collapse collapse" data-bs-parent="#cursoFormGuide">
+                                            <div class="accordion-body small text-muted">
+                                                Máximo 150 caracteres. Ejemplo recomendado: "Programación Web Full Stack 2026".
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="accordion-item">
+                                        <h3 class="accordion-header">
+                                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#guiaPlan" aria-expanded="false" aria-controls="guiaPlan">
+                                                Plan curricular
+                                            </button>
+                                        </h3>
+                                        <div id="guiaPlan" class="accordion-collapse collapse" data-bs-parent="#cursoFormGuide">
+                                            <div class="accordion-body small text-muted">
+                                                Define modalidad, estructura pedagógica y criterios de certificación del curso.
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="accordion-item">
+                                        <h3 class="accordion-header">
+                                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#guiaEstado" aria-expanded="false" aria-controls="guiaEstado">
+                                                Estado del curso
+                                            </button>
+                                        </h3>
+                                        <div id="guiaEstado" class="accordion-collapse collapse" data-bs-parent="#cursoFormGuide">
+                                            <div class="accordion-body small text-muted">
+                                                Activo: visible y operativo. Planificado: pendiente de inicio. Finalizado/Cancelado: sin nuevas altas.
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mb-4">
                         <div class="col-md-6">
                             <label for="{{ form.plan_estudio.id_for_label }}" class="form-label fw-600">{{ form.plan_estudio.label }}</label>
                             {{ form.plan_estudio }}
+                            {% if form.plan_estudio.help_text %}<div class="form-text text-muted mt-1">{{ form.plan_estudio.help_text }}</div>{% endif %}
                             {% if form.plan_estudio.errors %}<div class="text-danger small mt-1">{{ form.plan_estudio.errors.0 }}</div>{% endif %}
                         </div>
                     </div>
@@ -46,6 +99,7 @@
                                 {{ form.nombre.label }} <span class="text-danger">*</span>
                             </label>
                             {{ form.nombre }}
+                            {% if form.nombre.help_text %}<div class="form-text text-muted mt-1">{{ form.nombre.help_text }}</div>{% endif %}
                             {% if form.nombre.errors %}<div class="text-danger small mt-1">{{ form.nombre.errors.0 }}</div>{% endif %}
                         </div>
                     </div>
@@ -119,6 +173,7 @@
                             <div class="form-text text-muted mb-2">La modalidad se toma automáticamente del plan de estudio seleccionado.</div>
                             <label for="{{ form.observaciones.id_for_label }}" class="form-label fw-600">{{ form.observaciones.label }}</label>
                             {{ form.observaciones }}
+                            {% if form.observaciones.help_text %}<div class="form-text text-muted mt-1">{{ form.observaciones.help_text }}</div>{% endif %}
                             {% if form.observaciones.errors %}
                                 <div class="text-danger small mt-1">{{ form.observaciones.errors.0 }}</div>
                             {% endif %}
@@ -161,6 +216,12 @@
     const costoInput = document.getElementById('{{ form.costo_creditos.id_for_label }}');
     const campoCosto = document.getElementById('campo-costo-creditos');
     const campoVouchers = document.getElementById('campo-vouchers');
+    const planInput = document.getElementById('{{ form.plan_estudio.id_for_label }}');
+    const nombreInput = document.getElementById('{{ form.nombre.id_for_label }}');
+    const estadoInput = document.getElementById('{{ form.estado.id_for_label }}');
+    const observacionesInput = document.getElementById('{{ form.observaciones.id_for_label }}');
+    const progressBar = document.getElementById('cursoProgressBar');
+    const progressLabel = document.getElementById('cursoProgressLabel');
 
     function actualizarCosto() {
         if (toggle && toggleLibre && toggle.checked && toggleLibre.checked) {
@@ -185,6 +246,31 @@
                     costoInput.value = '1';
                 }
             }
+        }
+    }
+
+    function hasValue(input) {
+        if (!input) {
+            return false;
+        }
+        if (input.tagName === 'SELECT') {
+            return !!input.value;
+        }
+        return !!String(input.value || '').trim();
+    }
+
+    function actualizarProgresoCarga() {
+        const camposClave = [planInput, nombreInput, estadoInput, observacionesInput];
+        const completos = camposClave.filter(hasValue).length;
+        const total = camposClave.length;
+        const porcentaje = Math.round((completos / total) * 100);
+
+        if (progressBar) {
+            progressBar.style.width = porcentaje + '%';
+            progressBar.setAttribute('aria-valuenow', String(porcentaje));
+        }
+        if (progressLabel) {
+            progressLabel.textContent = completos + ' de ' + total + ' campos clave completados';
         }
     }
 
@@ -214,7 +300,16 @@
         if (cancelBtn) cancelBtn.addEventListener('click', closeModal);
     }
 
+    [planInput, nombreInput, estadoInput, observacionesInput].forEach(function (input) {
+        if (!input) {
+            return;
+        }
+        input.addEventListener('change', actualizarProgresoCarga);
+        input.addEventListener('input', actualizarProgresoCarga);
+    });
+
     actualizarCosto();
+    actualizarProgresoCarga();
 })();
     </script>
 {% endblock %}
