@@ -17,29 +17,45 @@ def backfill_origen(apps, schema_editor):
 
     ArchivoAdmision = apps.get_model("admisiones", "ArchivoAdmision")
     ArchivoOrganizacion = apps.get_model("organizaciones", "ArchivoOrganizacion")
+    db_alias = schema_editor.connection.alias
 
     candidatos = (
-        ArchivoAdmision.objects.filter(archivo_organizacion_origen__isnull=True)
+        ArchivoAdmision.objects.using(db_alias)
+        .filter(archivo_organizacion_origen__isnull=True)
         .exclude(archivo="")
         .exclude(archivo__isnull=True)
         .select_related("admision__comedor")
     )
+
+    # Cache por organizacion para evitar N+1 contra ArchivoOrganizacion.
+    archivos_org_por_organizacion = {}
+
     for archivo_adm in candidatos.iterator(chunk_size=500):
         admision = archivo_adm.admision
         comedor = getattr(admision, "comedor", None) if admision else None
         organizacion_id = getattr(comedor, "organizacion_id", None)
         if not organizacion_id:
             continue
-        matches = list(
-            ArchivoOrganizacion.objects.filter(
-                organizacion_id=organizacion_id,
-                archivo=archivo_adm.archivo.name,
-            ).values_list("id", flat=True)[:2]
-        )
+
+        cache_org = archivos_org_por_organizacion.get(organizacion_id)
+        if cache_org is None:
+            cache_org = {}
+            for archivo_name, archivo_id in (
+                ArchivoOrganizacion.objects.using(db_alias)
+                .filter(organizacion_id=organizacion_id)
+                .values_list("archivo", "id")
+            ):
+                ids = cache_org.setdefault(archivo_name, [])
+                if len(ids) < 2:
+                    ids.append(archivo_id)
+            archivos_org_por_organizacion[organizacion_id] = cache_org
+
+        matches = cache_org.get(archivo_adm.archivo.name, [])
         if len(matches) == 1:
             archivo_adm.archivo_organizacion_origen_id = matches[0]
-            archivo_adm.save(update_fields=["archivo_organizacion_origen"])
-
+            archivo_adm.save(
+                using=db_alias, update_fields=["archivo_organizacion_origen"]
+            )
 
 class Migration(migrations.Migration):
 
