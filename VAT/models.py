@@ -131,34 +131,6 @@ class Centro(SoftDeleteModelMixin, models.Model):
             ),
         ]
 
-    @property
-    def estado_carga(self):
-        """Resume si el centro tiene la carga operativa minima completa."""
-
-        datos_basicos_completos = all(
-            [
-                bool(self.provincia_id),
-                bool((self.domicilio_actividad or "").strip()),
-                bool((self.telefono or "").strip()),
-                bool((self.celular or "").strip()),
-                bool((self.correo or "").strip()),
-                bool((self.nombre_referente or "").strip()),
-                bool((self.apellido_referente or "").strip()),
-            ]
-        )
-        tiene_relaciones_minimas = all(
-            [
-                self.contactos_adicionales.exists(),
-                self.identificadores_hist.exists(),
-                self.ubicaciones.exists(),
-            ]
-        )
-        return (
-            "COMPLETO"
-            if datos_basicos_completos and tiene_relaciones_minimas
-            else "INCOMPLETO"
-        )
-
 
 class ModalidadInstitucional(models.Model):
     nombre = models.CharField(max_length=100, verbose_name="Nombre de la modalidad")

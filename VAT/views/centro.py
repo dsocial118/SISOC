@@ -206,26 +206,28 @@ def _request_has_estado_carga_advanced_filter(request):
 
 
 def _apply_vat_centro_estado_carga_filter(queryset, estado_carga):
+    # Asume que la anotación estado_carga_completa ya fue aplicada cuando corresponde.
     estado = (estado_carga or "").strip().lower()
-    if estado not in {"completo", "incompleto"}:
-        return queryset
-
-    queryset = _annotate_vat_centro_estado_carga(queryset)
     if estado == "completo":
         return queryset.filter(estado_carga_completa=True)
-    return queryset.filter(estado_carga_completa=False)
+    if estado == "incompleto":
+        return queryset.filter(estado_carga_completa=False)
+    return queryset
 
 
 def _build_vat_centro_list_queryset(request):
     queryset = _build_vat_centro_list_base_queryset()
     queryset = filter_centros_queryset_for_user(queryset, request.user)
     queryset = _apply_vat_centro_search(queryset, request.GET.get("busqueda", ""))
-    queryset = _apply_vat_centro_estado_carga_filter(
-        queryset,
-        request.GET.get("estado_carga"),
-    )
-    if _request_has_estado_carga_advanced_filter(request):
+    estado_carga = request.GET.get("estado_carga")
+    # Anotar una sola vez: la consumen tanto el filtro simple como el avanzado.
+    needs_estado_carga_annotation = (estado_carga or "").strip().lower() in {
+        "completo",
+        "incompleto",
+    } or _request_has_estado_carga_advanced_filter(request)
+    if needs_estado_carga_annotation:
         queryset = _annotate_vat_centro_estado_carga(queryset)
+    queryset = _apply_vat_centro_estado_carga_filter(queryset, estado_carga)
     return BOOL_ADVANCED_FILTER.filter_queryset(queryset, request.GET).order_by("-id")
 
 
