@@ -166,9 +166,27 @@ def _build_documentacion_organizacion_rows(organizacion):
                 "documentacion": documentacion,
                 "archivo": vigente,
                 "historial": versiones[1:],
+                "es_personalizado": False,
             }
         )
+    rows.extend(_build_documentacion_organizacion_personalizados_rows(organizacion))
     return rows
+
+
+def _build_documentacion_organizacion_personalizados_rows(organizacion):
+    """Filas de documentacion adicional (sin catalogo) cargada en el legajo."""
+    archivos = ArchivoOrganizacion.objects.filter(
+        organizacion=organizacion, documentacion__isnull=True
+    ).order_by("-creado", "-id")
+    return [
+        {
+            "documentacion": None,
+            "archivo": archivo,
+            "historial": [],
+            "es_personalizado": True,
+        }
+        for archivo in archivos
+    ]
 
 
 def _build_documentacion_organizacion_row(organizacion, documentacion):
@@ -188,6 +206,31 @@ def _build_documentacion_organizacion_row(organizacion, documentacion):
 
 def _render_documentacion_organizacion_row(request, organizacion, documentacion):
     row = _build_documentacion_organizacion_row(organizacion, documentacion)
+    return render_to_string(
+        "organizaciones/partials/documentacion_organizacion_row.html",
+        {
+            "row": row,
+            "organizacion": organizacion,
+            "puede_validar_documentacion_organizacion": (
+                _puede_validar_documentacion_organizacion(request.user, organizacion)
+            ),
+            "puede_enviar_documentacion_organizacion": (
+                _puede_enviar_documentacion_organizacion(request.user, organizacion)
+            ),
+        },
+        request=request,
+    )
+
+
+def _render_documentacion_organizacion_personalizado_row(
+    request, organizacion, archivo
+):
+    row = {
+        "documentacion": None,
+        "archivo": archivo,
+        "historial": [],
+        "es_personalizado": True,
+    }
     return render_to_string(
         "organizaciones/partials/documentacion_organizacion_row.html",
         {
@@ -908,6 +951,63 @@ def subir_documento_organizacion(request, organizacion_id, documentacion_id):
                 request, organizacion, documentacion
             ),
             "row_id": documentacion.id,
+        }
+    )
+
+
+@login_required
+@require_POST
+def agregar_documento_personalizado_organizacion(request, organizacion_id):
+    """Alta de Documentacion Adicional (sin catalogo) en el legajo de la
+    organizacion. Requiere nombre y archivo; pueden agregarse N."""
+    organizacion = get_object_or_404(
+        _filtrar_organizaciones_por_dupla(Organizacion.objects.all(), request.user),
+        pk=organizacion_id,
+    )
+    if not _puede_enviar_documentacion_organizacion(request.user, organizacion):
+        return JsonResponse(
+            {"success": False, "error": "Sin permisos para cargar este documento."},
+            status=403,
+        )
+
+    nombre = (request.POST.get("nombre") or "").strip()
+    if not nombre:
+        return JsonResponse(
+            {"success": False, "error": "Debe indicar un nombre para el documento."},
+            status=400,
+        )
+
+    archivo = request.FILES.get("archivo")
+    error_archivo = _validar_archivo_documento_organizacion(archivo)
+    if error_archivo:
+        return JsonResponse({"success": False, "error": error_archivo}, status=400)
+
+    fecha_vencimiento = request.POST.get("fecha_vencimiento") or None
+    if fecha_vencimiento:
+        fecha_vencimiento = parse_date(fecha_vencimiento)
+        if fecha_vencimiento is None:
+            return JsonResponse(
+                {"success": False, "error": "Fecha de vencimiento invalida."},
+                status=400,
+            )
+
+    archivo_org = ArchivoOrganizacion.objects.create(
+        organizacion=organizacion,
+        documentacion=None,
+        nombre_personalizado=nombre[:255],
+        archivo=archivo,
+        fecha_vencimiento=fecha_vencimiento,
+        estado=ArchivoOrganizacion.ESTADO_ADJUNTO,
+        creado_por=request.user,
+        modificado_por=request.user,
+    )
+    return JsonResponse(
+        {
+            "success": True,
+            "html": _render_documentacion_organizacion_personalizado_row(
+                request, organizacion, archivo_org
+            ),
+            "archivo_id": archivo_org.id,
         }
     )
 

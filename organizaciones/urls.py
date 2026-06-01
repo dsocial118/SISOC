@@ -20,6 +20,7 @@ from organizaciones.views import (
     organizaciones_ajax,
     cuil_check_ajax,
     subir_documento_organizacion,
+    agregar_documento_personalizado_organizacion,
 )
 from organizaciones.views_export import OrganizacionExportView
 
@@ -78,6 +79,13 @@ urlpatterns = [
             subir_documento_organizacion
         ),
         name="organizacion_documento_subir",
+    ),
+    path(
+        "organizaciones/<int:organizacion_id>/documentacion/personalizada/agregar/",
+        permissions_any_required(ORGANIZACION_DOCUMENTACION_PERMS)(
+            agregar_documento_personalizado_organizacion
+        ),
+        name="organizacion_documento_personalizado_agregar",
     ),
     path(
         "organizaciones/documentacion/<int:archivo_id>/estado/",

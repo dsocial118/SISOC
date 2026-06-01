@@ -1,9 +1,14 @@
-{% with doc=row.documentacion archivo=row.archivo %}
-    <tr id="org-doc-row-{{ doc.id }}">
+{% with doc=row.documentacion archivo=row.archivo es_personalizado=row.es_personalizado %}
+    <tr id="org-doc-row-{% if es_personalizado %}custom-{{ archivo.id }}{% else %}{{ doc.id }}{% endif %}">
         <td class="doc-name">
-            <strong>{{ doc.nombre }}</strong>
-            {% if doc.obligatorio %}<span class="text-danger fs-5 ms-1">*</span>{% endif %}
-            {% if archivo %}
+            {% if es_personalizado %}
+                <strong>{{ archivo.nombre_personalizado }}</strong>
+                <span class="badge bg-info text-dark ms-1">Adicional</span>
+            {% else %}
+                <strong>{{ doc.nombre }}</strong>
+                {% if doc.obligatorio %}<span class="text-danger fs-5 ms-1">*</span>{% endif %}
+            {% endif %}
+            {% if archivo and not es_personalizado %}
                 <div class="mt-1">
                     <a href="{% url 'organizacion_documento_historial' organizacion.id doc.id %}"
                        class="btn btn-sm btn-outline-secondary">Historial</a>
@@ -115,7 +120,7 @@
                         </div>
                     {% endif %}
                 {% endif %}
-                {% if puede_enviar_documentacion_organizacion %}
+                {% if puede_enviar_documentacion_organizacion and not es_personalizado %}
                     <input type="file"
                            id="org-doc-file-{{ doc.id }}"
                            class="d-none org-doc-file"
@@ -127,7 +132,7 @@
                             data-file-id="org-doc-file-{{ doc.id }}">Adjuntar</button>
                 {% endif %}
             </div>
-            {% if puede_enviar_documentacion_organizacion %}
+            {% if puede_enviar_documentacion_organizacion and not es_personalizado %}
                 <div class="progress mt-2 documentacion-upload-progress"
                      id="org-progress-container-{{ doc.id }}">
                     <div class="progress-bar progress-bar-striped"
