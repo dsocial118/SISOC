@@ -784,3 +784,7 @@ body.sidebar-collapse .sidebar-user-name {
   color: white;
   border-color: #b71c1c;
 }
+
+.table-sm > :not(caption) > * > * {
+  padding: 0.25rem 0.75rem !important;
+}
