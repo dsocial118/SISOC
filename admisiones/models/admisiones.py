@@ -305,6 +305,20 @@ class ArchivoAdmision(SoftDeleteModelMixin, models.Model):
     nombre_personalizado = models.CharField(
         max_length=255, blank=True, null=True, verbose_name="Nombre personalizado"
     )
+    archivo_organizacion_origen = models.ForeignKey(
+        "organizaciones.ArchivoOrganizacion",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="archivos_admision_materializados",
+        verbose_name="Archivo de organizacion de origen",
+        help_text=(
+            "Si el documento fue materializado desde el legajo de la"
+            " organizacion, referencia al ArchivoOrganizacion de origen."
+            " Permite replicar el GDE y detectar cambios sin depender del"
+            " matching por nombre."
+        ),
+    )
     archivo = models.FileField(
         upload_to="admisiones/admisiones_archivos/", null=True, blank=True
     )
