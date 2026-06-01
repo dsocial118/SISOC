@@ -311,6 +311,7 @@ class AdmisionService:
             "observaciones": archivo.observaciones if archivo else None,
             "es_personalizado": False,
             "es_documento_organizacion": True,
+            "es_origen_organizacion": True,
             "origen": "organizacion",
             "row_id": f"org-{org_doc.id}",
         }
@@ -390,6 +391,11 @@ class AdmisionService:
             "es_personalizado": False,
             "row_id": row_id,
             "es_documento_organizacion": False,
+            "es_origen_organizacion": (
+                bool(getattr(archivo, "archivo_organizacion_origen_id", None))
+                if archivo
+                else False
+            ),
             "origen": "admision",
         }
 
@@ -2136,6 +2142,34 @@ class AdmisionService:
             admision.save(update_fields=update_fields)
 
     @staticmethod
+    def replicar_numero_gde_desde_organizacion(archivo_org, user=None):
+        """Issue #1799 Req 3: el Numero de GDE se carga en el legajo de la
+        Organizacion (unica fuente) y se replica a los ``ArchivoAdmision``
+        materializados desde ese archivo, en todas las admisiones activas
+        relacionadas. Devuelve la cantidad de admisiones actualizadas."""
+        if not archivo_org:
+            return 0
+        materializados = ArchivoAdmision.objects.filter(
+            archivo_organizacion_origen_id=archivo_org.id,
+            admision__enviada_a_archivo=False,
+        ).select_related("admision")
+        actualizados = 0
+        for archivo_adm in materializados:
+            if archivo_adm.numero_gde == archivo_org.numero_gde:
+                continue
+            archivo_adm.numero_gde = archivo_org.numero_gde
+            if user is not None and getattr(user, "is_authenticated", False):
+                archivo_adm.modificado_por = user
+            archivo_adm.save(
+                update_fields=["numero_gde", "modificado_por", "modificado"]
+            )
+            AdmisionService._limpiar_if_gde_admision_por_cambio_documental(
+                archivo_adm.admision
+            )
+            actualizados += 1
+        return actualizados
+
+    @staticmethod
     def _resolver_estado_documental_por_cambio_documental(admision):
         estado_admision = getattr(admision, "estado_admision", None)
         if estado_admision not in {
@@ -2255,6 +2289,14 @@ class AdmisionService:
             if archivo.estado != "Aceptado":
                 return AdmisionService._build_error_response_actualizar_numero_gde(
                     "Solo se puede actualizar el número GDE en documentos aceptados."
+                )
+
+            if archivo.archivo_organizacion_origen_id:
+                # Issue #1799 Req 3: el GDE de documentos de origen organizacional
+                # se gestiona desde el Legajo de la Organizacion (unica fuente).
+                return AdmisionService._build_error_response_actualizar_numero_gde(
+                    "El número de GDE de documentos de la Organización se gestiona "
+                    "desde el Legajo de la Organización."
                 )
 
             if not AdmisionService._puede_editar_numero_gde(request.user, archivo):

@@ -247,6 +247,20 @@ def _render_documentacion_organizacion_personalizado_row(
     )
 
 
+def _render_fila_documentacion_y_row_id(request, organizacion, archivo):
+    """Devuelve ``(html, row_id)`` para una fila del legajo, soportando tanto
+    documentos de catalogo como personalizados (documentacion is None)."""
+    if archivo and archivo.documentacion_id:
+        html = _render_documentacion_organizacion_row(
+            request, organizacion, archivo.documentacion
+        )
+        return html, archivo.documentacion_id
+    html = _render_documentacion_organizacion_personalizado_row(
+        request, organizacion, archivo
+    )
+    return html, f"custom-{archivo.id}"
+
+
 def _validar_archivo_documento_organizacion(archivo):
     if not archivo:
         return "Debe adjuntar un archivo."
@@ -1053,14 +1067,15 @@ def actualizar_estado_documento_organizacion(request, archivo_id):
     archivo.save(
         update_fields=["estado", "observaciones", "modificado_por", "modificado"]
     )
+    html, row_id = _render_fila_documentacion_y_row_id(
+        request, archivo.organizacion, archivo
+    )
     return JsonResponse(
         {
             "success": True,
             "estado": archivo.estado,
-            "html": _render_documentacion_organizacion_row(
-                request, archivo.organizacion, archivo.documentacion
-            ),
-            "row_id": archivo.documentacion_id,
+            "html": html,
+            "row_id": row_id,
         }
     )
 
@@ -1090,6 +1105,9 @@ def actualizar_vencimiento_documento_organizacion(request, archivo_id):
     archivo.fecha_vencimiento = fecha_parseada
     archivo.modificado_por = request.user
     archivo.save(update_fields=["fecha_vencimiento", "modificado_por", "modificado"])
+    html, row_id = _render_fila_documentacion_y_row_id(
+        request, archivo.organizacion, archivo
+    )
     return JsonResponse(
         {
             "success": True,
@@ -1098,10 +1116,57 @@ def actualizar_vencimiento_documento_organizacion(request, archivo_id):
                 if archivo.fecha_vencimiento
                 else ""
             ),
-            "html": _render_documentacion_organizacion_row(
-                request, archivo.organizacion, archivo.documentacion
-            ),
-            "row_id": archivo.documentacion_id,
+            "html": html,
+            "row_id": row_id,
+        }
+    )
+
+
+@login_required
+@require_POST
+def actualizar_numero_gde_documento_organizacion(request, archivo_id):
+    """Issue #1799 Req 3: el Numero de GDE se gestiona desde el legajo de la
+    Organizacion (solo en documentos Aceptados) y se replica a las admisiones
+    relacionadas. El legajo es la unica fuente del dato."""
+    archivo = get_object_or_404(
+        ArchivoOrganizacion.objects.select_related("organizacion", "documentacion"),
+        pk=archivo_id,
+    )
+    if not _puede_modificar_documentacion_organizacion(
+        request.user, archivo.organizacion
+    ):
+        return JsonResponse(
+            {"success": False, "error": "Sin permisos para modificar este documento."},
+            status=403,
+        )
+    if archivo.estado != ArchivoOrganizacion.ESTADO_ACEPTADO:
+        return JsonResponse(
+            {
+                "success": False,
+                "error": "El número de GDE solo puede cargarse en documentos aceptados.",
+            },
+            status=400,
+        )
+
+    numero_gde = (request.POST.get("numero_gde") or "").strip()[:50]
+    archivo.numero_gde = numero_gde or None
+    archivo.modificado_por = request.user
+    archivo.save(update_fields=["numero_gde", "modificado_por", "modificado"])
+
+    # Replicar el GDE a las admisiones relacionadas (flujo Legajo -> Admision).
+    from admisiones.services.admisiones_service.impl import AdmisionService
+
+    AdmisionService.replicar_numero_gde_desde_organizacion(archivo, request.user)
+
+    html, row_id = _render_fila_documentacion_y_row_id(
+        request, archivo.organizacion, archivo
+    )
+    return JsonResponse(
+        {
+            "success": True,
+            "numero_gde": archivo.numero_gde or "",
+            "html": html,
+            "row_id": row_id,
         }
     )
 
