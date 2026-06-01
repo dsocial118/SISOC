@@ -4,11 +4,14 @@ import django.db.models.deletion
 
 def populate_comision_modalidad(apps, schema_editor):
     ComisionCurso = apps.get_model("VAT", "ComisionCurso")
-    for comision in ComisionCurso.objects.select_related("curso").iterator():
+    db_alias = schema_editor.connection.alias
+    for comision in (
+        ComisionCurso.objects.using(db_alias).select_related("curso").iterator()
+    ):
         if comision.modalidad_id or not comision.curso_id:
             continue
         comision.modalidad_id = comision.curso.modalidad_id
-        comision.save(update_fields=["modalidad"])
+        comision.save(using=db_alias, update_fields=["modalidad"])
 
 
 class Migration(migrations.Migration):

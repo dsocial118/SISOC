@@ -153,7 +153,11 @@ class Centro(SoftDeleteModelMixin, models.Model):
                 self.ubicaciones.exists(),
             ]
         )
-        return "COMPLETO" if datos_basicos_completos and tiene_relaciones_minimas else "INCOMPLETO"
+        return (
+            "COMPLETO"
+            if datos_basicos_completos and tiene_relaciones_minimas
+            else "INCOMPLETO"
+        )
 
 
 class ModalidadInstitucional(models.Model):

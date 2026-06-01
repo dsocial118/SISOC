@@ -1537,9 +1537,7 @@ class CursoForm(forms.ModelForm):
     nombre = forms.CharField(
         label="Nombre",
         max_length=150,
-        widget=forms.TextInput(
-            attrs={"class": "form-control", "maxlength": "150"}
-        ),
+        widget=forms.TextInput(attrs={"class": "form-control", "maxlength": "150"}),
         help_text=(
             "Hasta 150 caracteres. Evitá nombres genéricos y usá una "
             "descripción clara (por ejemplo: Python para Principiantes v3.2)."
@@ -1826,16 +1824,13 @@ class ComisionCursoForm(forms.ModelForm):
                 curso_id = curso_inicial
 
         if curso_id:
-            centro_id = (
+            curso_attrs = (
                 Curso.all_objects.filter(pk=curso_id)
-                .values_list("centro_id", flat=True)
+                .values("centro_id", "modalidad_id")
                 .first()
             )
-            curso_modalidad_id = (
-                Curso.all_objects.filter(pk=curso_id)
-                .values_list("modalidad_id", flat=True)
-                .first()
-            )
+            centro_id = curso_attrs["centro_id"] if curso_attrs else None
+            curso_modalidad_id = curso_attrs["modalidad_id"] if curso_attrs else None
             self.fields["ubicacion"].queryset = build_ubicacion_queryset_for_centros(
                 [centro_id],
                 include_ubicacion_ids=[current_ubicacion_id],

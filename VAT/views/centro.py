@@ -584,7 +584,9 @@ class CentroListView(LoginRequiredMixin, ListView):
                 "add_url": reverse("vat_centro_create"),
                 "centro_additional_buttons": [],
                 "current_query": self.request.GET.get("busqueda", ""),
-                "current_estado_carga": (self.request.GET.get("estado_carga", "") or "").lower(),
+                "current_estado_carga": (
+                    self.request.GET.get("estado_carga", "") or ""
+                ).lower(),
             }
         )
 
