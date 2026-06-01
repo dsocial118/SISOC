@@ -108,7 +108,9 @@ class AdmisionService:
             "dni presidente": "dni del presidente",
             "dni tesorero": "dni del tesorero",
             "dni secretario": "dni del secretario",
-            "acta de solicitud de subsidio": "acta de solicitud de subsidio al programa",
+            # "Acta de Solicitud de Subsidio" se gestiona como documento nativo
+            # de la Admision (issue #1799 Req 2); ya no se materializa desde el
+            # legajo de la Organizacion.
             "constancia de arca": "constancia de inscripcion ante arca",
             "preinscripcion renacom": "constancia de preinscripcion en renacom",
             "validacion renacom": "constancia de validacion en renacom",
