@@ -328,6 +328,7 @@ class AdmisionService:
             estado=archivo_org.estado,
             observaciones=archivo_org.observaciones,
             numero_gde=numero_gde,
+            archivo_organizacion_origen=archivo_org,
             creado_por=archivo_org.creado_por,
             modificado_por=archivo_org.modificado_por,
         )
