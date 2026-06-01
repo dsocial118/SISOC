@@ -129,13 +129,15 @@ class ComisionCursoWizardView(LoginRequiredMixin, SessionWizardView):
         base = reverse("vat_centro_detail", kwargs={"pk": self.curso.centro_id})
         return f"{base}#cursos"
 
-    def done(self, form_list, form_dict, **kwargs):
+    # Django form wizard passes form_dict for named forms in this flow.
+    def done(self, form_list, form_dict, **kwargs):  # pylint: disable=arguments-differ
         info = form_dict["info"].cleaned_data
         horarios_formset = form_dict["horarios"]
 
         with transaction.atomic():
             comision = ComisionCurso.objects.create(
                 curso=self.curso,
+                modalidad=info.get("modalidad") or self.curso.modalidad,
                 ubicacion=info["ubicacion"],
                 cupo_total=info["cupo_total"],
                 estado=info["estado"],

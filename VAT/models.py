@@ -1113,6 +1113,14 @@ class ComisionCurso(SoftDeleteModelMixin, models.Model):
         related_name="comisiones",
         verbose_name="Curso",
     )
+    modalidad = models.ForeignKey(
+        ModalidadCursada,
+        on_delete=models.PROTECT,
+        related_name="comisiones_curso",
+        null=True,
+        blank=True,
+        verbose_name="Modalidad de Cursado",
+    )
     ubicacion = models.ForeignKey(
         InstitucionUbicacion,
         on_delete=models.PROTECT,
@@ -1182,6 +1190,8 @@ class ComisionCurso(SoftDeleteModelMixin, models.Model):
         return "Comisión"[:255]
 
     def save(self, *args, **kwargs):
+        if not self.modalidad_id and self.curso_id:
+            self.modalidad = self.curso.modalidad
         if not self.codigo_comision:
             self.codigo_comision = self._build_default_codigo_comision()
         if not self.nombre:

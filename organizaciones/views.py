@@ -166,9 +166,27 @@ def _build_documentacion_organizacion_rows(organizacion):
                 "documentacion": documentacion,
                 "archivo": vigente,
                 "historial": versiones[1:],
+                "es_personalizado": False,
             }
         )
+    rows.extend(_build_documentacion_organizacion_personalizados_rows(organizacion))
     return rows
+
+
+def _build_documentacion_organizacion_personalizados_rows(organizacion):
+    """Filas de documentacion adicional (sin catalogo) cargada en el legajo."""
+    archivos = ArchivoOrganizacion.objects.filter(
+        organizacion=organizacion, documentacion__isnull=True
+    ).order_by("-creado", "-id")
+    return [
+        {
+            "documentacion": None,
+            "archivo": archivo,
+            "historial": [],
+            "es_personalizado": True,
+        }
+        for archivo in archivos
+    ]
 
 
 def _build_documentacion_organizacion_row(organizacion, documentacion):
@@ -202,6 +220,45 @@ def _render_documentacion_organizacion_row(request, organizacion, documentacion)
         },
         request=request,
     )
+
+
+def _render_documentacion_organizacion_personalizado_row(
+    request, organizacion, archivo
+):
+    row = {
+        "documentacion": None,
+        "archivo": archivo,
+        "historial": [],
+        "es_personalizado": True,
+    }
+    return render_to_string(
+        "organizaciones/partials/documentacion_organizacion_row.html",
+        {
+            "row": row,
+            "organizacion": organizacion,
+            "puede_validar_documentacion_organizacion": (
+                _puede_validar_documentacion_organizacion(request.user, organizacion)
+            ),
+            "puede_enviar_documentacion_organizacion": (
+                _puede_enviar_documentacion_organizacion(request.user, organizacion)
+            ),
+        },
+        request=request,
+    )
+
+
+def _render_fila_documentacion_y_row_id(request, organizacion, archivo):
+    """Devuelve ``(html, row_id)`` para una fila del legajo, soportando tanto
+    documentos de catalogo como personalizados (documentacion is None)."""
+    if archivo and archivo.documentacion_id:
+        html = _render_documentacion_organizacion_row(
+            request, organizacion, archivo.documentacion
+        )
+        return html, archivo.documentacion_id
+    html = _render_documentacion_organizacion_personalizado_row(
+        request, organizacion, archivo
+    )
+    return html, f"custom-{archivo.id}"
 
 
 def _validar_archivo_documento_organizacion(archivo):
@@ -914,6 +971,63 @@ def subir_documento_organizacion(request, organizacion_id, documentacion_id):
 
 @login_required
 @require_POST
+def agregar_documento_personalizado_organizacion(request, organizacion_id):
+    """Alta de Documentacion Adicional (sin catalogo) en el legajo de la
+    organizacion. Requiere nombre y archivo; pueden agregarse N."""
+    organizacion = get_object_or_404(
+        _filtrar_organizaciones_por_dupla(Organizacion.objects.all(), request.user),
+        pk=organizacion_id,
+    )
+    if not _puede_enviar_documentacion_organizacion(request.user, organizacion):
+        return JsonResponse(
+            {"success": False, "error": "Sin permisos para cargar este documento."},
+            status=403,
+        )
+
+    nombre = (request.POST.get("nombre") or "").strip()
+    if not nombre:
+        return JsonResponse(
+            {"success": False, "error": "Debe indicar un nombre para el documento."},
+            status=400,
+        )
+
+    archivo = request.FILES.get("archivo")
+    error_archivo = _validar_archivo_documento_organizacion(archivo)
+    if error_archivo:
+        return JsonResponse({"success": False, "error": error_archivo}, status=400)
+
+    fecha_vencimiento = request.POST.get("fecha_vencimiento") or None
+    if fecha_vencimiento:
+        fecha_vencimiento = parse_date(fecha_vencimiento)
+        if fecha_vencimiento is None:
+            return JsonResponse(
+                {"success": False, "error": "Fecha de vencimiento invalida."},
+                status=400,
+            )
+
+    archivo_org = ArchivoOrganizacion.objects.create(
+        organizacion=organizacion,
+        documentacion=None,
+        nombre_personalizado=nombre[:255],
+        archivo=archivo,
+        fecha_vencimiento=fecha_vencimiento,
+        estado=ArchivoOrganizacion.ESTADO_ADJUNTO,
+        creado_por=request.user,
+        modificado_por=request.user,
+    )
+    return JsonResponse(
+        {
+            "success": True,
+            "html": _render_documentacion_organizacion_personalizado_row(
+                request, organizacion, archivo_org
+            ),
+            "archivo_id": archivo_org.id,
+        }
+    )
+
+
+@login_required
+@require_POST
 def actualizar_estado_documento_organizacion(request, archivo_id):
     archivo = get_object_or_404(
         ArchivoOrganizacion.objects.select_related("organizacion", "documentacion"),
@@ -953,14 +1067,15 @@ def actualizar_estado_documento_organizacion(request, archivo_id):
     archivo.save(
         update_fields=["estado", "observaciones", "modificado_por", "modificado"]
     )
+    html, row_id = _render_fila_documentacion_y_row_id(
+        request, archivo.organizacion, archivo
+    )
     return JsonResponse(
         {
             "success": True,
             "estado": archivo.estado,
-            "html": _render_documentacion_organizacion_row(
-                request, archivo.organizacion, archivo.documentacion
-            ),
-            "row_id": archivo.documentacion_id,
+            "html": html,
+            "row_id": row_id,
         }
     )
 
@@ -990,6 +1105,9 @@ def actualizar_vencimiento_documento_organizacion(request, archivo_id):
     archivo.fecha_vencimiento = fecha_parseada
     archivo.modificado_por = request.user
     archivo.save(update_fields=["fecha_vencimiento", "modificado_por", "modificado"])
+    html, row_id = _render_fila_documentacion_y_row_id(
+        request, archivo.organizacion, archivo
+    )
     return JsonResponse(
         {
             "success": True,
@@ -998,10 +1116,57 @@ def actualizar_vencimiento_documento_organizacion(request, archivo_id):
                 if archivo.fecha_vencimiento
                 else ""
             ),
-            "html": _render_documentacion_organizacion_row(
-                request, archivo.organizacion, archivo.documentacion
-            ),
-            "row_id": archivo.documentacion_id,
+            "html": html,
+            "row_id": row_id,
+        }
+    )
+
+
+@login_required
+@require_POST
+def actualizar_numero_gde_documento_organizacion(request, archivo_id):
+    """Issue #1799 Req 3: el Numero de GDE se gestiona desde el legajo de la
+    Organizacion (solo en documentos Aceptados) y se replica a las admisiones
+    relacionadas. El legajo es la unica fuente del dato."""
+    archivo = get_object_or_404(
+        ArchivoOrganizacion.objects.select_related("organizacion", "documentacion"),
+        pk=archivo_id,
+    )
+    if not _puede_modificar_documentacion_organizacion(
+        request.user, archivo.organizacion
+    ):
+        return JsonResponse(
+            {"success": False, "error": "Sin permisos para modificar este documento."},
+            status=403,
+        )
+    if archivo.estado != ArchivoOrganizacion.ESTADO_ACEPTADO:
+        return JsonResponse(
+            {
+                "success": False,
+                "error": "El número de GDE solo puede cargarse en documentos aceptados.",
+            },
+            status=400,
+        )
+
+    numero_gde = (request.POST.get("numero_gde") or "").strip()[:50]
+    archivo.numero_gde = numero_gde or None
+    archivo.modificado_por = request.user
+    archivo.save(update_fields=["numero_gde", "modificado_por", "modificado"])
+
+    # Replicar el GDE a las admisiones relacionadas (flujo Legajo -> Admision).
+    from admisiones.services.admisiones_service.impl import AdmisionService
+
+    AdmisionService.replicar_numero_gde_desde_organizacion(archivo, request.user)
+
+    html, row_id = _render_fila_documentacion_y_row_id(
+        request, archivo.organizacion, archivo
+    )
+    return JsonResponse(
+        {
+            "success": True,
+            "numero_gde": archivo.numero_gde or "",
+            "html": html,
+            "row_id": row_id,
         }
     )
 

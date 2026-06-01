@@ -133,6 +133,7 @@ def test_suspender_liberar_reactivar_basic_branches(mocker):
         estado_cupo=module.EstadoCupo.DENTRO,
         es_titular_activo=True,
         expediente=exp,
+        ciudadano=SimpleNamespace(provincia=provincia),
         save=mocker.Mock(),
     )
     mocker.patch(
@@ -148,6 +149,7 @@ def test_suspender_liberar_reactivar_basic_branches(mocker):
         estado_cupo=module.EstadoCupo.DENTRO,
         es_titular_activo=False,
         expediente=exp,
+        ciudadano=SimpleNamespace(provincia=provincia),
         save=mocker.Mock(),
     )
     mocker.patch(
@@ -164,6 +166,7 @@ def test_suspender_liberar_reactivar_basic_branches(mocker):
         estado_cupo=module.EstadoCupo.DENTRO,
         es_titular_activo=True,
         expediente=exp,
+        ciudadano=SimpleNamespace(provincia=provincia),
         save=mocker.Mock(),
     )
     mocker.patch(
