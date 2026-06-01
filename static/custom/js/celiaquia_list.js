@@ -322,7 +322,7 @@
         return;
       }
 
-      const url = `/expedientes/${expId}/asignar-tecnico/?tecnico_id=${tecnicoId}`;
+      const url = `/celiaquia/expedientes/${expId}/asignar-tecnico/?tecnico_id=${tecnicoId}`;
 
       const fetchPreviewMessage = async () => {
         try {
