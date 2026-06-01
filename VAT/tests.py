@@ -1416,7 +1416,7 @@ def test_vat_scope_localidad_no_habilita_otra_localidad_para_edicion():
 
 
 @pytest.mark.django_db
-def test_vat_centro_list_filters_config_expone_solo_nombre_y_codigo(mocker):
+def test_vat_centro_list_filters_config_expone_nombre_codigo_y_estado_carga(mocker):
     user = User.objects.create_superuser(
         username="admin-vat-filtros",
         email="admin-filtros@vat.test",
@@ -1436,6 +1436,7 @@ def test_vat_centro_list_filters_config_expone_solo_nombre_y_codigo(mocker):
     assert [field["name"] for field in context["filters_config"]["fields"]] == [
         "nombre",
         "codigo",
+        "estado_carga",
     ]
 
 
