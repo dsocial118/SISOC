@@ -11,7 +11,19 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
 from django.urls import reverse_lazy, reverse
 from django.db import transaction
-from django.db.models import CharField, Count, F, OuterRef, Prefetch, Q, Subquery
+from django.db.models import (
+    BooleanField,
+    Case,
+    CharField,
+    Count,
+    F,
+    OuterRef,
+    Prefetch,
+    Q,
+    Subquery,
+    Value,
+    When,
+)
 from django.db.models.functions import Coalesce
 from django.core.cache import cache
 from django.core.exceptions import PermissionDenied
@@ -174,20 +186,34 @@ def _is_centro_carga_completa_q():
     )
 
 
+def _annotate_vat_centro_estado_carga(queryset):
+    carga_completa_q = _is_centro_carga_completa_q()
+    return queryset.annotate(
+        count_contactos=Count("contactos_adicionales", distinct=True),
+        count_identificadores=Count("identificadores_hist", distinct=True),
+        count_ubicaciones=Count("ubicaciones", distinct=True),
+    ).annotate(
+        estado_carga_completa=Case(
+            When(carga_completa_q, then=Value(True)),
+            default=Value(False),
+            output_field=BooleanField(),
+        )
+    )
+
+
+def _request_has_estado_carga_advanced_filter(request):
+    return "estado_carga" in (request.GET.get("filters") or "")
+
+
 def _apply_vat_centro_estado_carga_filter(queryset, estado_carga):
     estado = (estado_carga or "").strip().lower()
     if estado not in {"completo", "incompleto"}:
         return queryset
 
-    queryset = queryset.annotate(
-        count_contactos=Count("contactos_adicionales", distinct=True),
-        count_identificadores=Count("identificadores_hist", distinct=True),
-        count_ubicaciones=Count("ubicaciones", distinct=True),
-    )
-    carga_completa_q = _is_centro_carga_completa_q()
+    queryset = _annotate_vat_centro_estado_carga(queryset)
     if estado == "completo":
-        return queryset.filter(carga_completa_q)
-    return queryset.exclude(carga_completa_q)
+        return queryset.filter(estado_carga_completa=True)
+    return queryset.filter(estado_carga_completa=False)
 
 
 def _build_vat_centro_list_queryset(request):
@@ -198,6 +224,8 @@ def _build_vat_centro_list_queryset(request):
         queryset,
         request.GET.get("estado_carga"),
     )
+    if _request_has_estado_carga_advanced_filter(request):
+        queryset = _annotate_vat_centro_estado_carga(queryset)
     return BOOL_ADVANCED_FILTER.filter_queryset(queryset, request.GET).order_by("-id")
 
 

@@ -1599,6 +1599,75 @@ def test_vat_centro_list_filtra_por_estado_carga(vat_geo_data):
 
 
 @pytest.mark.django_db
+def test_vat_centro_list_filtra_por_estado_carga_en_filtros_combinables(vat_geo_data):
+    provincia, municipio, localidad = vat_geo_data
+    user = User.objects.create_superuser(
+        username="centro-filtro-estado-carga-avanzado",
+        email="centro-filtro-estado-carga-avanzado@vat.test",
+        password="test1234",
+    )
+
+    centro_completo = _create_vat_centro(
+        codigo="EST-ADV-COMP",
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad,
+    )
+    ubicacion = InstitucionUbicacion.objects.create(
+        centro=centro_completo,
+        localidad=localidad,
+        rol_ubicacion="sede_principal",
+        es_principal=True,
+    )
+    InstitucionContacto.objects.create(
+        centro=centro_completo,
+        tipo="email",
+        valor="contacto-avanzado@vat.test",
+        nombre_contacto="Contacto Avanzado",
+        es_principal=True,
+    )
+    InstitucionIdentificadorHist.objects.create(
+        centro=centro_completo,
+        tipo_identificador="cue",
+        valor_identificador="500000011",
+        rol_institucional="sede",
+        ubicacion=ubicacion,
+        es_actual=True,
+    )
+
+    _create_vat_centro(
+        codigo="EST-ADV-INCOMP",
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad,
+    )
+
+    request = RequestFactory().get(
+        "/vat/centros/",
+        data={
+            "filters": json.dumps(
+                {
+                    "logic": "AND",
+                    "items": [
+                        {
+                            "field": "estado_carga",
+                            "op": "eq",
+                            "value": True,
+                        }
+                    ],
+                }
+            )
+        },
+    )
+    request.user = user
+
+    view = centro_views.CentroListView()
+    view.request = request
+
+    assert list(view.get_queryset()) == [centro_completo]
+
+
+@pytest.mark.django_db
 def test_is_vat_referente_reconoce_alias_legacy_centroreferentevat():
     user = User.objects.create_user(username="referente-legacy", password="test1234")
     permiso_role_referente_legacy, _ = Permission.objects.get_or_create(
