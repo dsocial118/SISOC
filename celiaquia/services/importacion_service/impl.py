@@ -269,6 +269,48 @@ def _obtener_provincia_usuario_id(usuario):
     return provincia_usuario_id
 
 
+def _obtener_provincias_permitidas_ids(usuario):
+    """Conjunto de ``provincia_id`` sobre las que el usuario puede cargar legajos.
+
+    Devuelve ``None`` cuando no hay restriccion provincial (superusuario o cualquier
+    usuario no territorial, p. ej. coordinador). Para un usuario territorial devuelve
+    el conjunto de provincias de su alcance (``ProfileTerritorialScope``); puede ser
+    vacio si no tiene alcance configurado, en cuyo caso no podra cargar ninguna.
+
+    A diferencia de ``_obtener_provincia_usuario_id`` (que solo resuelve cuando hay
+    una unica provincia), este conjunto soporta usuarios multi-provincia: cada
+    ciudadano se acepta solo si su provincia pertenece al alcance del usuario.
+    """
+    if getattr(usuario, "is_superuser", False):
+        return None
+    try:
+        from users.territorial_scope import get_effective_scopes, is_territorial_user
+
+        if not is_territorial_user(usuario):
+            return None
+        return {scope.provincia_id for scope in get_effective_scopes(usuario)}
+    except Exception as exc:  # pylint: disable=broad-exception-caught
+        logger.warning("No se pudo obtener el alcance provincial del usuario: %s", exc)
+        return None
+
+
+def _validar_provincia_permitida_importacion(payload, provincias_permitidas_ids):
+    """Rechaza un ciudadano cuya provincia quede fuera del alcance del usuario.
+
+    ``provincias_permitidas_ids=None`` significa sin restriccion (admin/coordinador).
+    Si la provincia no pudo inferirse (``None``), no se valida aca: la obligatoriedad
+    de municipio/localidad ya produce el error correspondiente.
+    """
+    if provincias_permitidas_ids is None:
+        return
+    provincia_id = payload.get("provincia")
+    if provincia_id and provincia_id not in provincias_permitidas_ids:
+        raise ValidationError(
+            "El ciudadano pertenece a una provincia fuera de su alcance territorial; "
+            "no puede cargar legajos de otra provincia."
+        )
+
+
 def _colectar_ids_y_nombres_importacion(df: pd.DataFrame):
     municipio_ids = set()
     localidad_ids = set()
@@ -1070,6 +1112,7 @@ def validar_y_normalizar_payloads_importacion(
     *,
     payload,
     provincia_usuario_id,
+    provincias_permitidas_ids=None,
     offset=0,
     municipios_cache=None,
     localidades_cache=None,
@@ -1115,6 +1158,9 @@ def validar_y_normalizar_payloads_importacion(
     _inferir_provincia_desde_municipio_importacion(
         payload_normalizado, municipio_provincia_map
     )
+    _validar_provincia_permitida_importacion(
+        payload_normalizado, provincias_permitidas_ids
+    )
     _validar_beneficiario_menor_con_responsable_importacion(payload_normalizado)
 
     responsable_payload = None
@@ -1132,6 +1178,11 @@ def validar_y_normalizar_payloads_importacion(
             add_warning=add_warning,
             add_error=add_error,
             validar_edad_responsable_fn=validar_edad_responsable,
+        )
+
+    if responsable_payload:
+        _validar_provincia_permitida_importacion(
+            responsable_payload, provincias_permitidas_ids
         )
 
     return payload_normalizado, responsable_payload, es_mismo_documento_resp
@@ -1723,6 +1774,7 @@ def _construir_payload_fila_importacion(
     offset,
     numeric_fields,
     provincia_usuario_id,
+    provincias_permitidas_ids,
     validar_documento,
     add_warning,
     to_date,
@@ -1753,6 +1805,7 @@ def _construir_payload_fila_importacion(
         paises_a_nacionalidad=paises_a_nacionalidad,
     )
     _inferir_provincia_desde_municipio_importacion(payload, municipio_provincia_map)
+    _validar_provincia_permitida_importacion(payload, provincias_permitidas_ids)
     _validar_beneficiario_menor_con_responsable_importacion(payload)
     return payload
 
@@ -1975,6 +2028,7 @@ def _procesar_beneficiario_desde_row_importacion(
     expediente,
     estado_id,
     provincia_usuario_id,
+    provincias_permitidas_ids,
     municipios_cache,
     localidades_cache,
     municipio_provincia_map,
@@ -1999,6 +2053,7 @@ def _procesar_beneficiario_desde_row_importacion(
         offset=offset,
         numeric_fields=IMPORTACION_NUMERIC_FIELDS,
         provincia_usuario_id=provincia_usuario_id,
+        provincias_permitidas_ids=provincias_permitidas_ids,
         validar_documento=validar_documento,
         add_warning=add_warning,
         to_date=to_date,
@@ -2025,6 +2080,11 @@ def _procesar_beneficiario_desde_row_importacion(
             add_warning=add_warning,
             add_error=add_error,
             validar_edad_responsable_fn=validar_edad_responsable,
+        )
+
+    if responsable_payload:
+        _validar_provincia_permitida_importacion(
+            responsable_payload, provincias_permitidas_ids
         )
 
     # Detectar doble rol: mismo documento O documento en lista de doble rol
@@ -2116,6 +2176,7 @@ def _procesar_fila_legajo_importacion(
     expediente,
     estado_id,
     provincia_usuario_id,
+    provincias_permitidas_ids,
     municipios_cache,
     localidades_cache,
     municipio_provincia_map,
@@ -2161,6 +2222,7 @@ def _procesar_fila_legajo_importacion(
                 expediente=expediente,
                 estado_id=estado_id,
                 provincia_usuario_id=provincia_usuario_id,
+                provincias_permitidas_ids=provincias_permitidas_ids,
                 municipios_cache=municipios_cache,
                 localidades_cache=localidades_cache,
                 municipio_provincia_map=municipio_provincia_map,
@@ -2261,6 +2323,7 @@ def _build_contexto_filas_importacion_legajos(
 ):
     estado_id = _estado_doc_pendiente_id()
     provincia_usuario_id = _obtener_provincia_usuario_id(usuario)
+    provincias_permitidas_ids = _obtener_provincias_permitidas_ids(usuario)
     existentes_ids, en_programa, abiertos = (
         _precargar_conflictos_y_existentes_importacion(expediente)
     )
@@ -2286,6 +2349,7 @@ def _build_contexto_filas_importacion_legajos(
         "expediente": expediente,
         "estado_id": estado_id,
         "provincia_usuario_id": provincia_usuario_id,
+        "provincias_permitidas_ids": provincias_permitidas_ids,
         "municipios_cache": precargas["municipios_cache"],
         "localidades_cache": precargas["localidades_cache"],
         "municipio_provincia_map": precargas["municipio_provincia_map"],

@@ -259,7 +259,9 @@
             <div class="modal-dialog sisoc-curso-modal-dialog modal-dialog-centered">
                 <div class="modal-content sisoc-curso-modal-content">
                     <div class="modal-header sisoc-curso-modal-header">
-                        <h5 class="modal-title" id="modalCursoLabel">Nuevo Curso</h5>
+                        <h5 class="modal-title" id="modalCursoLabel">
+                            <i class="fas fa-book"></i><span id="modalCursoLabelText">Nuevo Curso</span>
+                        </h5>
                         <button type="button"
                                 class="btn-close sisoc-curso-close"
                                 data-bs-dismiss="modal"
@@ -386,6 +388,9 @@
                             </div>
                         </div>
                         <div class="modal-footer sisoc-curso-modal-footer">
+                            <button type="button"
+                                    class="sisoc-curso-submit sisoc-curso-submit--secondary"
+                                    data-bs-dismiss="modal">Cancelar</button>
                             <button type="submit"
                                     class="sisoc-curso-submit sisoc-curso-submit--primary"
                                     id="cursoPrimarySubmitBtn">Guardar</button>

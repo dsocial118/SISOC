@@ -39,14 +39,16 @@ class ReporterProvinciasView(LoginRequiredMixin, TemplateView):
         )
 
         if es_usuario_provincial:
+            # Reporte restringido al alcance territorial real del usuario. No se
+            # incluyen legajos de expedientes propios fuera de alcance (sin
+            # include_own): no deben contabilizarse casos de otra provincia
+            # (seguimiento del issue #1793).
             queryset = apply_territorial_scope(
                 queryset,
                 user,
                 provincia_lookup="ciudadano__provincia_id",
                 municipio_lookup="ciudadano__municipio_id",
                 localidad_lookup="ciudadano__localidad_id",
-                own_lookup="expediente__usuario_provincia",
-                include_own=True,
             )
 
         # Aplicar filtros

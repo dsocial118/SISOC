@@ -62,7 +62,6 @@ def _readable_centros_ids(user):
 
 def _scoped_comisiones_curso_queryset(user):
     return ComisionCurso.objects.select_related(
-        "modalidad",
         "curso__centro",
         "curso__modalidad",
         "curso__plan_estudio",
@@ -72,7 +71,6 @@ def _scoped_comisiones_curso_queryset(user):
 
 def _readable_comisiones_curso_queryset(user):
     return ComisionCurso.objects.select_related(
-        "modalidad",
         "curso__centro",
         "curso__modalidad",
         "curso__plan_estudio",
@@ -835,14 +833,20 @@ class ComisionCursoUpdateView(LoginRequiredMixin, UpdateView):
         return form
 
     def form_valid(self, form):
+        fechas_cambiaron = bool({"fecha_inicio", "fecha_fin"} & set(form.changed_data))
         messages.success(self.request, "Comision del curso actualizada exitosamente.")
         if _is_ajax_request(self.request):
             self.object = form.save()
+            if fechas_cambiaron:
+                SesionComisionService.regenerar_para_comision(self.object)
             return _modal_json_success_response(
                 self.get_success_url(),
                 "Comision del curso actualizada exitosamente.",
             )
-        return super().form_valid(form)
+        response = super().form_valid(form)
+        if fechas_cambiaron:
+            SesionComisionService.regenerar_para_comision(self.object)
+        return response
 
     def form_invalid(self, form):
         if _is_ajax_request(self.request):
