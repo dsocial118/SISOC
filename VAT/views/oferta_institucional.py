@@ -47,6 +47,7 @@ from VAT.services.access_scope import (
     filter_sesiones_queryset_for_management,
     filter_sesiones_queryset_for_user,
 )
+from VAT.services.sesion_comision_service.impl import SesionComisionService
 
 logger = logging.getLogger("django")
 
@@ -523,8 +524,6 @@ class ComisionUpdateView(LoginRequiredMixin, UpdateView):
         return form
 
     def form_valid(self, form):
-        from VAT.services.sesion_comision_service.impl import SesionComisionService
-
         fechas_cambiaron = bool({"fecha_inicio", "fecha_fin"} & set(form.changed_data))
         messages.success(self.request, "Comisión actualizada exitosamente.")
         response = super().form_valid(form)
