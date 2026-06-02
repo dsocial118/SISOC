@@ -525,9 +525,7 @@ class ComisionUpdateView(LoginRequiredMixin, UpdateView):
     def form_valid(self, form):
         from VAT.services.sesion_comision_service.impl import SesionComisionService
 
-        fechas_cambiaron = bool(
-            {"fecha_inicio", "fecha_fin"} & set(form.changed_data)
-        )
+        fechas_cambiaron = bool({"fecha_inicio", "fecha_fin"} & set(form.changed_data))
         messages.success(self.request, "Comisión actualizada exitosamente.")
         response = super().form_valid(form)
         if fechas_cambiaron:

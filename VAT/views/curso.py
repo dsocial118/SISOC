@@ -833,9 +833,7 @@ class ComisionCursoUpdateView(LoginRequiredMixin, UpdateView):
         return form
 
     def form_valid(self, form):
-        fechas_cambiaron = bool(
-            {"fecha_inicio", "fecha_fin"} & set(form.changed_data)
-        )
+        fechas_cambiaron = bool({"fecha_inicio", "fecha_fin"} & set(form.changed_data))
         messages.success(self.request, "Comision del curso actualizada exitosamente.")
         if _is_ajax_request(self.request):
             self.object = form.save()
