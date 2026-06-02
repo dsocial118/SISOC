@@ -428,7 +428,134 @@ function orgUploadDocumento(input) {
     xhr.send(formData);
 }
 
+function orgAppendDocumentoAdicionalRow(html) {
+    if (!html) {
+        return;
+    }
+    const tbody = document.querySelector("#documentacion .documentacion-table tbody");
+    if (!tbody) {
+        return;
+    }
+    const placeholder = tbody.querySelector("td[colspan]");
+    if (placeholder && placeholder.parentElement) {
+        placeholder.parentElement.remove();
+    }
+    const template = document.createElement("template");
+    template.innerHTML = html.trim();
+    tbody.appendChild(template.content);
+    orgBindDynamicHandlers(document);
+}
+
+function orgSubmitDocumentoAdicional() {
+    const nombreInput = document.getElementById("nuevoDocOrgNombre");
+    const archivoInput = document.getElementById("nuevoDocOrgArchivo");
+    const vencInput = document.getElementById("nuevoDocOrgVencimiento");
+    const btn = document.getElementById("btnAgregarDocOrg");
+    if (!nombreInput || !archivoInput || !btn) {
+        return;
+    }
+    const nombre = (nombreInput.value || "").trim();
+    if (!nombre) {
+        orgShowToast("error", "Debe indicar un nombre para el documento.");
+        nombreInput.focus();
+        return;
+    }
+    if (!archivoInput.files.length) {
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append("nombre", nombre);
+    formData.append("archivo", archivoInput.files[0]);
+    if (vencInput && vencInput.value) {
+        formData.append("fecha_vencimiento", vencInput.value);
+    }
+
+    const progressContainer = document.getElementById("org-doc-adicional-progress-container");
+    const progressBar = document.getElementById("org-doc-adicional-progress-bar");
+    if (progressContainer && progressBar) {
+        progressContainer.classList.remove("d-none");
+        progressBar.style.width = "0%";
+        progressBar.textContent = "0%";
+    }
+    btn.disabled = true;
+
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", btn.dataset.url, true);
+    xhr.setRequestHeader("X-CSRFToken", getOrganizacionDocsCsrfToken());
+
+    xhr.upload.onprogress = function (event) {
+        if (event.lengthComputable && progressBar) {
+            const percent = Math.round((event.loaded / event.total) * 100);
+            progressBar.style.width = `${percent}%`;
+            progressBar.textContent = `${percent}%`;
+        }
+    };
+
+    xhr.onload = function () {
+        btn.disabled = false;
+        if (progressContainer) {
+            progressContainer.classList.add("d-none");
+        }
+        let data = {};
+        try {
+            data = JSON.parse(xhr.responseText || "{}");
+        } catch (error) {
+            data = {};
+        }
+        if (xhr.status >= 200 && xhr.status < 300 && data.success) {
+            orgAppendDocumentoAdicionalRow(data.html);
+            orgShowToast("success", "Documento adicional agregado con éxito.");
+            nombreInput.value = "";
+            archivoInput.value = "";
+            if (vencInput) {
+                vencInput.value = "";
+            }
+            return;
+        }
+        orgShowToast("error", (data && data.error) || "No se pudo agregar el documento.");
+        archivoInput.value = "";
+    };
+
+    xhr.onerror = function () {
+        btn.disabled = false;
+        if (progressContainer) {
+            progressContainer.classList.add("d-none");
+        }
+        orgShowToast("error", "Error de red al agregar el documento.");
+        archivoInput.value = "";
+    };
+
+    xhr.send(formData);
+}
+
+function orgInitDocumentoAdicional() {
+    const btn = document.getElementById("btnAgregarDocOrg");
+    const archivoInput = document.getElementById("nuevoDocOrgArchivo");
+    const nombreInput = document.getElementById("nuevoDocOrgNombre");
+    if (!btn || !archivoInput) {
+        return;
+    }
+    btn.addEventListener("click", function () {
+        const nombre = nombreInput ? (nombreInput.value || "").trim() : "";
+        if (!nombre) {
+            orgShowToast("error", "Debe indicar un nombre para el documento.");
+            if (nombreInput) {
+                nombreInput.focus();
+            }
+            return;
+        }
+        archivoInput.click();
+    });
+    archivoInput.addEventListener("change", function () {
+        if (archivoInput.files.length) {
+            orgSubmitDocumentoAdicional();
+        }
+    });
+}
+
 document.addEventListener("DOMContentLoaded", function () {
     orgInitRectificarModal();
+    orgInitDocumentoAdicional();
     orgBindDynamicHandlers(document);
 });

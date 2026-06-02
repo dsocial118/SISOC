@@ -87,7 +87,7 @@ class CupoProvinciaDetailView(View):
         suspendidos_qs = ExpedienteCiudadano.objects.select_related(
             "ciudadano", "expediente", "expediente__usuario_provincia"
         ).filter(
-            expediente__usuario_provincia__profile__provincia=provincia,
+            ciudadano__provincia=provincia,
             estado_cupo=EstadoCupo.DENTRO,
             es_titular_activo=False,
         )
@@ -96,7 +96,7 @@ class CupoProvinciaDetailView(View):
         lista_espera_qs = ExpedienteCiudadano.objects.select_related(
             "ciudadano", "expediente", "expediente__usuario_provincia"
         ).filter(
-            expediente__usuario_provincia__profile__provincia=provincia,
+            ciudadano__provincia=provincia,
             estado_cupo=EstadoCupo.FUERA,
         )
 
@@ -109,7 +109,7 @@ class CupoProvinciaDetailView(View):
                 Q(provincia=provincia)
                 | Q(
                     provincia__isnull=True,
-                    expediente__usuario_provincia__profile__provincia=provincia,
+                    legajo__ciudadano__provincia=provincia,
                 )
             )
             .order_by("-creado_en")
@@ -183,15 +183,12 @@ class _BaseAccionLegajo(View):
         provincia = get_object_or_404(Provincia, pk=provincia_id)
         legajo = get_object_or_404(
             ExpedienteCiudadano.objects.select_related(
-                "expediente",
-                "expediente__usuario_provincia",
-                "expediente__usuario_provincia__profile",
+                "ciudadano",
+                "ciudadano__provincia",
             ),
             pk=legajo_id,
         )
-        leg_prov = getattr(
-            legajo.expediente.usuario_provincia.profile, "provincia", None
-        )
+        leg_prov = legajo.ciudadano.provincia
         if not leg_prov or leg_prov.id != provincia.id:
             raise ValidationError("El legajo no pertenece a la provincia indicada.")
         return legajo

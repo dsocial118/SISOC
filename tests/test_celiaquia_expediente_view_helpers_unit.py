@@ -232,7 +232,8 @@ def test_localidades_lookup_view_filters_and_returns_json(mocker):
 
     mocker.patch("celiaquia.views.expediente._user_has_permission", return_value=False)
     mocker.patch("celiaquia.views.expediente._is_provincial", return_value=True)
-    mocker.patch("celiaquia.views.expediente._user_provincia", return_value="prov_obj")
+    # El lookup ahora restringe por el alcance territorial real del usuario.
+    mocker.patch("celiaquia.views.expediente.apply_territorial_scope", return_value=qs)
 
     request = SimpleNamespace(
         user=SimpleNamespace(),
@@ -243,7 +244,8 @@ def test_localidades_lookup_view_filters_and_returns_json(mocker):
 
     assert isinstance(response, JsonResponse)
     assert response.status_code == 200
-    assert qs.filter.call_count >= 3
+    # Filtros por provincia y municipio de los parametros GET.
+    assert qs.filter.call_count >= 2
 
 
 def test_expediente_preview_excel_view_error_and_success(mocker):

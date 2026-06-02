@@ -21,6 +21,7 @@ from admisiones.models.admisiones import (
     InformeTecnicoPDF,
     InformeComplementario,
     NumeroGdeOrganizacion,
+    AdmisionDocOrgSnapshot,
 )
 from admisiones.forms.admisiones_forms import (
     CaratularForm,
@@ -108,7 +109,9 @@ class AdmisionService:
             "dni presidente": "dni del presidente",
             "dni tesorero": "dni del tesorero",
             "dni secretario": "dni del secretario",
-            "acta de solicitud de subsidio": "acta de solicitud de subsidio al programa",
+            # "Acta de Solicitud de Subsidio" se gestiona como documento nativo
+            # de la Admision (issue #1799 Req 2); ya no se materializa desde el
+            # legajo de la Organizacion.
             "constancia de arca": "constancia de inscripcion ante arca",
             "preinscripcion renacom": "constancia de preinscripcion en renacom",
             "validacion renacom": "constancia de validacion en renacom",
@@ -309,6 +312,7 @@ class AdmisionService:
             "observaciones": archivo.observaciones if archivo else None,
             "es_personalizado": False,
             "es_documento_organizacion": True,
+            "es_origen_organizacion": True,
             "origen": "organizacion",
             "row_id": f"org-{org_doc.id}",
         }
@@ -323,11 +327,16 @@ class AdmisionService:
         archivo_admision = ArchivoAdmision.objects.create(
             admision=admision,
             documentacion=documentacion_admision,
-            nombre_personalizado=None if documentacion_admision else org_doc.nombre,
+            nombre_personalizado=(
+                None
+                if documentacion_admision
+                else (org_doc.nombre if org_doc else archivo_org.nombre_personalizado)
+            ),
             archivo=archivo_org.archivo.name,
             estado=archivo_org.estado,
             observaciones=archivo_org.observaciones,
             numero_gde=numero_gde,
+            archivo_organizacion_origen=archivo_org,
             creado_por=archivo_org.creado_por,
             modificado_por=archivo_org.modificado_por,
         )
@@ -387,6 +396,11 @@ class AdmisionService:
             "es_personalizado": False,
             "row_id": row_id,
             "es_documento_organizacion": False,
+            "es_origen_organizacion": (
+                bool(getattr(archivo, "archivo_organizacion_origen_id", None))
+                if archivo
+                else False
+            ),
             "origen": "admision",
         }
 
@@ -867,6 +881,13 @@ class AdmisionService:
     ):
         organizacion = getattr(getattr(admision, "comedor", None), "organizacion", None)
         tipo_entidad_actual = getattr(organizacion, "tipo_entidad", None)
+        admision_desincronizada = AdmisionService.admision_desincronizada(admision)
+        documentacion_desactualizada, documentos_org_modificados = (
+            AdmisionService.admision_documentacion_desactualizada(admision)
+        )
+        mostrar_modal_resync_org = (
+            admision_desincronizada or documentacion_desactualizada
+        ) and not getattr(admision, "enviada_a_archivo", False)
         return {
             "documentos": documentos_context["documentos"],
             "documentos_personalizados": documentos_context[
@@ -894,13 +915,14 @@ class AdmisionService:
             "botones_disponibles": botones_disponibles,
             "puede_editar_convenio_numero": puede_editar_convenio_numero,
             "puede_editar_num_expediente": puede_editar_num_expediente,
-            "admision_desincronizada": AdmisionService.admision_desincronizada(
-                admision
-            ),
+            "admision_desincronizada": admision_desincronizada,
             "tipo_entidad_actual_organizacion": tipo_entidad_actual,
             "tipo_entidad_origen_snapshot": getattr(
                 admision, "tipo_entidad_origen", None
             ),
+            "documentacion_desactualizada": documentacion_desactualizada,
+            "documentos_org_modificados": documentos_org_modificados,
+            "mostrar_modal_resync_org": mostrar_modal_resync_org,
         }
 
     @staticmethod
@@ -1163,6 +1185,7 @@ class AdmisionService:
         admision.tipo_entidad_origen_id = organizacion.tipo_entidad_id
         admision.save(update_fields=["tipo_entidad_origen"])
         AdmisionService.congelar_documentacion_organizacional(admision)
+        AdmisionService.refrescar_snapshot_documentacion_organizacional(admision)
         logger.info(
             "Admision resincronizada desde la organizacion",
             extra={
@@ -1184,6 +1207,7 @@ class AdmisionService:
 
         admision.tipo_entidad_origen_id = organizacion.tipo_entidad_id
         admision.save(update_fields=["tipo_entidad_origen"])
+        AdmisionService.refrescar_snapshot_documentacion_organizacional(admision)
         logger.info(
             "Desincronizacion aceptada en admision",
             extra={
@@ -1192,6 +1216,123 @@ class AdmisionService:
             },
         )
         return True, "Continuara operando con la informacion actual de la admision."
+
+    # ------------------------------------------------------------------
+    # Issue #1799 Req 1: deteccion de cambios en la documentacion del legajo
+    # ------------------------------------------------------------------
+    @staticmethod
+    def _org_archivos_relevantes(admision):
+        """Archivos del legajo de la organizacion que alimentan a esta admision:
+        los vigentes de la categoria documental (catalogo) mas los adicionales
+        (personalizados)."""
+        organizacion = getattr(getattr(admision, "comedor", None), "organizacion", None)
+        if not organizacion:
+            return []
+        relevantes = []
+        categoria = AdmisionService._categoria_organizacional_admision(admision)
+        if categoria:
+            vigentes = AdmisionService._get_archivos_organizacion_vigentes(
+                admision, categoria
+            )
+            relevantes.extend(vigentes.values())
+        relevantes.extend(
+            ArchivoOrganizacion.objects.filter(
+                organizacion=organizacion, documentacion__isnull=True
+            )
+        )
+        return relevantes
+
+    @staticmethod
+    def _tokens_org_actuales(admision):
+        """Mapa ``slot_key -> {etiqueta, token}`` del estado actual del legajo.
+        El token excluye el numero_gde (se replica aparte, Req 3) y las
+        observaciones internas; captura archivo, estado y vencimiento."""
+        actuales = {}
+        for archivo in AdmisionService._org_archivos_relevantes(admision):
+            if not archivo.archivo:
+                continue
+            if archivo.es_personalizado:
+                slot = f"custom:{archivo.id}"
+            else:
+                slot = f"doc:{archivo.documentacion_id}"
+            token = "|".join(
+                [
+                    str(archivo.id),
+                    str(archivo.estado or ""),
+                    str(getattr(archivo.archivo, "name", "") or ""),
+                    str(archivo.fecha_vencimiento or ""),
+                ]
+            )
+            actuales[slot] = {"etiqueta": archivo.nombre_documento, "token": token}
+        return actuales
+
+    @staticmethod
+    def refrescar_snapshot_documentacion_organizacional(admision):
+        """Deja el snapshot de la admision igual al estado actual del legajo
+        (upsert + limpieza de slots obsoletos). Se invoca al crear la admision,
+        al resincronizar y al aceptar la divergencia."""
+        if not admision or not admision.pk:
+            return
+        actuales = AdmisionService._tokens_org_actuales(admision)
+        existentes = {
+            snap.slot_key: snap
+            for snap in AdmisionDocOrgSnapshot.objects.filter(admision=admision)
+        }
+        for slot, data in actuales.items():
+            snap = existentes.pop(slot, None)
+            if snap is None:
+                AdmisionDocOrgSnapshot.objects.create(
+                    admision=admision,
+                    slot_key=slot,
+                    etiqueta=data["etiqueta"],
+                    token=data["token"],
+                )
+            elif snap.token != data["token"] or snap.etiqueta != data["etiqueta"]:
+                snap.token = data["token"]
+                snap.etiqueta = data["etiqueta"]
+                snap.save(update_fields=["token", "etiqueta", "synced_at"])
+        if existentes:
+            AdmisionDocOrgSnapshot.objects.filter(
+                admision=admision, slot_key__in=list(existentes.keys())
+            ).delete()
+
+    @staticmethod
+    def admision_documentacion_desactualizada(admision):
+        """Devuelve ``(bool, [labels])``: si la documentacion del legajo cambio
+        respecto del snapshot de la admision, y la lista de documentos
+        modificados/agregados/eliminados. Admisiones sin snapshot (legacy o
+        recien creadas) se inicializan en sync (req 1.6)."""
+        if not admision or not admision.pk:
+            return False, []
+        organizacion = getattr(getattr(admision, "comedor", None), "organizacion", None)
+        if not organizacion:
+            return False, []
+
+        existentes = {
+            snap.slot_key: snap
+            for snap in AdmisionDocOrgSnapshot.objects.filter(admision=admision)
+        }
+        actuales = AdmisionService._tokens_org_actuales(admision)
+        if not existentes:
+            AdmisionService.refrescar_snapshot_documentacion_organizacional(admision)
+            return False, []
+
+        modificados = []
+        for slot, data in actuales.items():
+            snap = existentes.get(slot)
+            if snap is None or snap.token != data["token"]:
+                modificados.append(data["etiqueta"])
+        for slot, snap in existentes.items():
+            if slot not in actuales:
+                modificados.append(snap.etiqueta or "Documento")
+
+        labels = []
+        vistos = set()
+        for etiqueta in modificados:
+            if etiqueta not in vistos:
+                vistos.add(etiqueta)
+                labels.append(etiqueta)
+        return (len(labels) > 0), labels
 
     @staticmethod
     def update_convenio(admision, nuevo_convenio_id):
@@ -2008,6 +2149,7 @@ class AdmisionService:
                 tipo_entidad_origen=getattr(comedor.organizacion, "tipo_entidad", None),
             )
             AdmisionService.congelar_documentacion_organizacional(admision)
+            AdmisionService.refrescar_snapshot_documentacion_organizacional(admision)
 
             return admision
         except Exception:
@@ -2133,6 +2275,34 @@ class AdmisionService:
             admision.save(update_fields=update_fields)
 
     @staticmethod
+    def replicar_numero_gde_desde_organizacion(archivo_org, user=None):
+        """Issue #1799 Req 3: el Numero de GDE se carga en el legajo de la
+        Organizacion (unica fuente) y se replica a los ``ArchivoAdmision``
+        materializados desde ese archivo, en todas las admisiones activas
+        relacionadas. Devuelve la cantidad de admisiones actualizadas."""
+        if not archivo_org:
+            return 0
+        materializados = ArchivoAdmision.objects.filter(
+            archivo_organizacion_origen_id=archivo_org.id,
+            admision__enviada_a_archivo=False,
+        ).select_related("admision")
+        actualizados = 0
+        for archivo_adm in materializados:
+            if archivo_adm.numero_gde == archivo_org.numero_gde:
+                continue
+            archivo_adm.numero_gde = archivo_org.numero_gde
+            if user is not None and getattr(user, "is_authenticated", False):
+                archivo_adm.modificado_por = user
+            archivo_adm.save(
+                update_fields=["numero_gde", "modificado_por", "modificado"]
+            )
+            AdmisionService._limpiar_if_gde_admision_por_cambio_documental(
+                archivo_adm.admision
+            )
+            actualizados += 1
+        return actualizados
+
+    @staticmethod
     def _resolver_estado_documental_por_cambio_documental(admision):
         estado_admision = getattr(admision, "estado_admision", None)
         if estado_admision not in {
@@ -2252,6 +2422,14 @@ class AdmisionService:
             if archivo.estado != "Aceptado":
                 return AdmisionService._build_error_response_actualizar_numero_gde(
                     "Solo se puede actualizar el número GDE en documentos aceptados."
+                )
+
+            if archivo.archivo_organizacion_origen_id:
+                # Issue #1799 Req 3: el GDE de documentos de origen organizacional
+                # se gestiona desde el Legajo de la Organizacion (unica fuente).
+                return AdmisionService._build_error_response_actualizar_numero_gde(
+                    "El número de GDE de documentos de la Organización se gestiona "
+                    "desde el Legajo de la Organización."
                 )
 
             if not AdmisionService._puede_editar_numero_gde(request.user, archivo):
@@ -3011,6 +3189,27 @@ class AdmisionService:
                     org_doc,
                     archivo_org,
                     documentacion_admision=documentacion_admision,
+                )
+            )
+            if user:
+                archivo_admision.creado_por = user
+                archivo_admision.modificado_por = user
+                archivo_admision.save(update_fields=["creado_por", "modificado_por"])
+            creo_archivos = True
+
+        # Documentacion adicional (personalizada) del legajo (issue #1799 Req 4/1).
+        for archivo_org in ArchivoOrganizacion.objects.filter(
+            organizacion=organizacion, documentacion__isnull=True
+        ):
+            if not archivo_org.archivo:
+                continue
+            if ArchivoAdmision.objects.filter(
+                admision=admision, archivo_organizacion_origen=archivo_org
+            ).exists():
+                continue
+            archivo_admision = (
+                AdmisionService._crear_archivo_admision_desde_archivo_organizacion(
+                    admision, None, archivo_org, documentacion_admision=None
                 )
             )
             if user:
