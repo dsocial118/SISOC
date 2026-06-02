@@ -47,10 +47,6 @@
                 <span class="value">{{ step1_data.ubicacion|default:"Sede u Anexos" }}</span>
             </div>
             <div class="sisoc-wizard-summary-cell">
-                <span class="label">Modalidad</span>
-                <span class="value">{{ step1_data.modalidad|default:"-" }}</span>
-            </div>
-            <div class="sisoc-wizard-summary-cell">
                 <span class="label">Período</span>
                 <span class="value">
                     {% if step1_data.fecha_inicio and step1_data.fecha_fin %}
