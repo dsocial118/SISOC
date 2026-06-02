@@ -1,7 +1,7 @@
 import importlib
 from io import BytesIO
 from types import SimpleNamespace
-from datetime import date, time
+from datetime import date, time, timedelta
 import json
 
 import pytest
@@ -8317,13 +8317,15 @@ def _wizard_url(wizard_setup):
 
 
 def _step1_data(wizard_setup):
+    fecha_inicio = date.today() + timedelta(days=30)
+    fecha_fin = fecha_inicio + timedelta(days=180)
     return {
         f"{_WIZARD_PREFIX}-current_step": "info",
         "info-ubicacion": str(wizard_setup.ubicacion.pk),
         "info-cupo_total": "20",
         "info-estado": "planificada",
-        "info-fecha_inicio": "2026-06-01",
-        "info-fecha_fin": "2026-12-31",
+        "info-fecha_inicio": fecha_inicio.isoformat(),
+        "info-fecha_fin": fecha_fin.isoformat(),
         "info-observaciones": "",
     }
 
@@ -8400,9 +8402,10 @@ def test_wizard_step1_fecha_inicio_pasada_es_rechazada(client, wizard_setup):
 def test_wizard_step1_fecha_fin_igual_a_inicio_es_rechazada(client, wizard_setup):
     user = _wizard_referente_user(wizard_setup)
     client.force_login(user)
+    misma_fecha = (date.today() + timedelta(days=30)).isoformat()
     post = _step1_data(wizard_setup)
-    post["info-fecha_inicio"] = "2026-06-01"
-    post["info-fecha_fin"] = "2026-06-01"
+    post["info-fecha_inicio"] = misma_fecha
+    post["info-fecha_fin"] = misma_fecha
     response = client.post(_wizard_url(wizard_setup), post)
     assert response.status_code == 200
     form = response.context["wizard"]["form"]

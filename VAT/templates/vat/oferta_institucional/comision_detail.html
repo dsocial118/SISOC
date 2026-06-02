@@ -578,7 +578,9 @@
         <div class="sisoc-title-row">
             <div class="sisoc-title-block">
                 <h1>{{ comision.nombre|default:comision.codigo_comision }}</h1>
-                <p class="sisoc-title-sub"><i class="bi bi-book me-1"></i>{{ comision_subtitle }}</p>
+                <p class="sisoc-title-sub">
+                    <i class="bi bi-book me-1"></i>{{ comision_subtitle }}
+                </p>
             </div>
             <div class="sisoc-title-meta">
                 <span class="sisoc-cue-text">{{ comision.codigo_comision }}</span>
@@ -602,7 +604,9 @@
                         data-sisoc-tab-target="inscriptos"
                         aria-selected="false"
                         hidden>
-                    <span>Inscriptos{% if inscripciones %} ({{ inscripciones|length }}){% endif %}</span>
+                    <span>Inscriptos
+                        {% if inscripciones %}({{ inscripciones|length }}){% endif %}
+                    </span>
                 </button>
                 {% if comision.acepta_lista_espera or lista_espera %}
                     <button type="button"
@@ -610,7 +614,9 @@
                             data-sisoc-tab-target="espera"
                             aria-selected="false"
                             hidden>
-                        <span>Lista de espera{% if lista_espera %} ({{ lista_espera|length }}){% endif %}</span>
+                        <span>Lista de espera
+                            {% if lista_espera %}({{ lista_espera|length }}){% endif %}
+                        </span>
                     </button>
                 {% endif %}
                 <button type="button"
@@ -618,14 +624,18 @@
                         data-sisoc-tab-target="sesiones"
                         aria-selected="false"
                         hidden>
-                    <span>Sesiones{% if sesiones %} ({{ sesiones|length }}){% endif %}</span>
+                    <span>Sesiones
+                        {% if sesiones %}({{ sesiones|length }}){% endif %}
+                    </span>
                 </button>
                 <button type="button"
                         class="sisoc-side-tab"
                         data-sisoc-tab-target="horarios"
                         aria-selected="false"
                         hidden>
-                    <span>Horarios{% if horarios %} ({{ horarios|length }}){% endif %}</span>
+                    <span>Horarios
+                        {% if horarios %}({{ horarios|length }}){% endif %}
+                    </span>
                 </button>
             </div>
 
@@ -670,7 +680,13 @@
                                 </div>
                                 <div class="sisoc-data-item">
                                     <p class="sisoc-data-label">Lista de espera</p>
-                                    <p class="sisoc-data-value">{% if comision.acepta_lista_espera %}Habilitada{% else %}Deshabilitada{% endif %}</p>
+                                    <p class="sisoc-data-value">
+                                        {% if comision.acepta_lista_espera %}
+                                            Habilitada
+                                        {% else %}
+                                            Deshabilitada
+                                        {% endif %}
+                                    </p>
                                 </div>
                             </div>
 
@@ -705,8 +721,7 @@
                                             </a>
                                         {% endif %}
                                         {% if export_inscriptos_url %}
-                                            <a href="{{ export_inscriptos_url }}"
-                                               class="sisoc-btn sisoc-btn--edit">
+                                            <a href="{{ export_inscriptos_url }}" class="sisoc-btn sisoc-btn--edit">
                                                 <i class="bi bi-file-earmark-excel"></i><span>Nómina inscriptos</span>
                                             </a>
                                         {% endif %}
@@ -749,7 +764,8 @@
                 </section>
 
                 {# INSCRIPTOS #}
-                <section class="sisoc-info-panel sisoc-info-panel--overflow" data-sisoc-panel="inscriptos">
+                <section class="sisoc-info-panel sisoc-info-panel--overflow"
+                         data-sisoc-panel="inscriptos">
                     <div class="sisoc-section-header">
                         <h2>Inscriptos</h2>
                         {% if puede_agregar_inscripcion %}
@@ -867,7 +883,8 @@
                 </section>
 
                 {% if comision.acepta_lista_espera or lista_espera %}
-                    <section class="sisoc-info-panel sisoc-info-panel--overflow" data-sisoc-panel="espera">
+                    <section class="sisoc-info-panel sisoc-info-panel--overflow"
+                             data-sisoc-panel="espera">
                         <div class="sisoc-section-header">
                             <h2>Lista de espera</h2>
                         </div>
@@ -1081,27 +1098,35 @@
                         class="sisoc-side-tab"
                         data-sisoc-tab-target="inscriptos"
                         aria-selected="false">
-                    <span>Inscriptos{% if inscripciones %} ({{ inscripciones|length }}){% endif %}</span>
+                    <span>Inscriptos
+                        {% if inscripciones %}({{ inscripciones|length }}){% endif %}
+                    </span>
                 </button>
                 {% if comision.acepta_lista_espera or lista_espera %}
                     <button type="button"
                             class="sisoc-side-tab"
                             data-sisoc-tab-target="espera"
                             aria-selected="false">
-                        <span>Lista de espera{% if lista_espera %} ({{ lista_espera|length }}){% endif %}</span>
+                        <span>Lista de espera
+                            {% if lista_espera %}({{ lista_espera|length }}){% endif %}
+                        </span>
                     </button>
                 {% endif %}
                 <button type="button"
                         class="sisoc-side-tab"
                         data-sisoc-tab-target="sesiones"
                         aria-selected="false">
-                    <span>Sesiones{% if sesiones %} ({{ sesiones|length }}){% endif %}</span>
+                    <span>Sesiones
+                        {% if sesiones %}({{ sesiones|length }}){% endif %}
+                    </span>
                 </button>
                 <button type="button"
                         class="sisoc-side-tab"
                         data-sisoc-tab-target="horarios"
                         aria-selected="false">
-                    <span>Horarios{% if horarios %} ({{ horarios|length }}){% endif %}</span>
+                    <span>Horarios
+                        {% if horarios %}({{ horarios|length }}){% endif %}
+                    </span>
                 </button>
             </div>
         </div>
