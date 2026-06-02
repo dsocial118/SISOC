@@ -93,15 +93,18 @@ def _normalize_curso_tipo_value(nombre):
     return normalized
 
 
-def _collect_curso_tipo_values_from_existing_courses():
+def _collect_curso_tipo_values_from_existing_courses(centro_id=None):
+    qs = Curso.objects.values_list("tipo", flat=True)
+    if centro_id:
+        qs = qs.filter(centro_id=centro_id)
     values = []
-    for tipo_list in Curso.objects.values_list("tipo", flat=True):
+    for tipo_list in qs:
         if isinstance(tipo_list, list):
             values.extend(tipo_list)
     return _normalize_related_ids(values)
 
 
-def build_curso_tipo_choices(include_values=None):
+def build_curso_tipo_choices(include_values=None, centro_id=None):
     include_values = _normalize_related_ids(include_values)
     choices = []
     seen_values = set()
@@ -116,7 +119,7 @@ def build_curso_tipo_choices(include_values=None):
         seen_values.add(value)
 
     include_values = _normalize_related_ids(
-        [*_collect_curso_tipo_values_from_existing_courses(), *include_values]
+        [*_collect_curso_tipo_values_from_existing_courses(centro_id=centro_id), *include_values]
     )
 
     for value in include_values:
@@ -1708,6 +1711,7 @@ class CursoForm(forms.ModelForm):
         )
         self.fields["tipo"].choices = build_curso_tipo_choices(
             include_values=current_tipo_values,
+            centro_id=centro_id,
         )
 
     def clean(self):
