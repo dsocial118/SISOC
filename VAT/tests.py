@@ -1436,7 +1436,116 @@ def test_vat_centro_list_filters_config_expone_solo_nombre_y_codigo(mocker):
     assert [field["name"] for field in context["filters_config"]["fields"]] == [
         "nombre",
         "codigo",
+        "estado_carga",
     ]
+
+
+@pytest.mark.django_db
+def test_vat_centro_list_filtra_por_estado_carga(vat_geo_data):
+    provincia, municipio, localidad = vat_geo_data
+    user = User.objects.create_superuser(
+        username="centro-filtro-estado-carga",
+        email="centro-filtro-estado-carga@vat.test",
+        password="test1234",
+    )
+
+    centro_incompleto = Centro.objects.create(
+        nombre="Centro sin carga 2026",
+        codigo="LEG-EC-001",
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad,
+        calle="7",
+        numero=123,
+        domicilio_actividad="Calle 7",
+        telefono="221-111111",
+        celular="221-111112",
+        correo="ec1@vat.test",
+        nombre_referente="Ana",
+        apellido_referente="Perez",
+        telefono_referente="221-111113",
+        correo_referente="refec1@vat.test",
+        tipo_gestion="Estatal",
+        clase_institucion="Formación Profesional",
+        situacion="Institución de ETP",
+        activo=True,
+    )
+    centro_completo = Centro.objects.create(
+        nombre="Centro con carga 2026",
+        codigo="LEG-EC-002",
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad,
+        calle="8",
+        numero=456,
+        domicilio_actividad="Calle 8",
+        telefono="221-222221",
+        celular="221-222222",
+        correo="ec2@vat.test",
+        nombre_referente="Juan",
+        apellido_referente="Gomez",
+        telefono_referente="221-222223",
+        correo_referente="refec2@vat.test",
+        tipo_gestion="Privada",
+        clase_institucion="Capacitación Laboral",
+        situacion="Institución de ETP",
+        activo=True,
+    )
+    modalidad = ModalidadCursada.objects.create(nombre="Presencial", activo=True)
+    Curso.objects.create(
+        centro=centro_completo,
+        modalidad=modalidad,
+        nombre="Curso carga 2026",
+        estado="planificado",
+    )
+
+    request_false = RequestFactory().get(
+        "/vat/centros/",
+        data={
+            "filters": json.dumps(
+                {
+                    "logic": "AND",
+                    "items": [
+                        {
+                            "field": "estado_carga",
+                            "op": "eq",
+                            "value": "false",
+                        }
+                    ],
+                }
+            )
+        },
+    )
+    request_false.user = user
+
+    view_false = centro_views.CentroListView()
+    view_false.request = request_false
+
+    assert list(view_false.get_queryset()) == [centro_incompleto]
+
+    request_true = RequestFactory().get(
+        "/vat/centros/",
+        data={
+            "filters": json.dumps(
+                {
+                    "logic": "AND",
+                    "items": [
+                        {
+                            "field": "estado_carga",
+                            "op": "eq",
+                            "value": "true",
+                        }
+                    ],
+                }
+            )
+        },
+    )
+    request_true.user = user
+
+    view_true = centro_views.CentroListView()
+    view_true.request = request_true
+
+    assert list(view_true.get_queryset()) == [centro_completo]
 
 
 @pytest.mark.django_db
