@@ -93,6 +93,14 @@ def _normalize_curso_tipo_value(nombre):
     return normalized
 
 
+def _collect_curso_tipo_values_from_existing_courses():
+    values = []
+    for tipo_list in Curso.objects.values_list("tipo", flat=True):
+        if isinstance(tipo_list, list):
+            values.extend(tipo_list)
+    return _normalize_related_ids(values)
+
+
 def build_curso_tipo_choices(include_values=None):
     include_values = _normalize_related_ids(include_values)
     choices = []
@@ -106,6 +114,10 @@ def build_curso_tipo_choices(include_values=None):
             continue
         choices.append((value, nombre))
         seen_values.add(value)
+
+    include_values = _normalize_related_ids(
+        [*_collect_curso_tipo_values_from_existing_courses(), *include_values]
+    )
 
     for value in include_values:
         normalized_value = (value or "").strip()

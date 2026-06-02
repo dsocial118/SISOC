@@ -5424,6 +5424,24 @@ def test_curso_form_tipo_choices_desde_modalidad_cursada(vat_curso_base):
 
 
 @pytest.mark.django_db
+def test_curso_form_tipo_choices_incluye_valores_legacy_de_cursos(vat_curso_base):
+    centro, _, modalidad = vat_curso_base
+    ModalidadCursada.objects.filter(id=modalidad.id).update(activo=False)
+    Curso.objects.create(
+        centro=centro,
+        nombre="Curso legacy mixto",
+        modalidad=modalidad,
+        estado="planificado",
+        tipo=["mixto"],
+    )
+
+    form = CursoForm(initial={"centro": centro})
+    tipo_choices = dict(form.fields["tipo"].choices)
+
+    assert tipo_choices["mixto"] == "Mixto"
+
+
+@pytest.mark.django_db
 def test_curso_form_requiere_costo_creditos_si_usa_voucher(vat_curso_base):
     centro, ubicacion, modalidad = vat_curso_base
     programa = Programa.objects.create(nombre="Programa Test Costo")
