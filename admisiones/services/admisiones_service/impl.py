@@ -1663,21 +1663,28 @@ class AdmisionService:
     @staticmethod
     def _render_celda_gde_html(archivo, request):
         """Renderiza el interior de la celda GDE de un ArchivoAdmision para
-        inyectarlo via AJAX. Devuelve None si no hay request (la celda se
-        renderiza server-side en el render completo)."""
+        inyectarlo via AJAX. Devuelve None si no hay request o si el render falla:
+        el re-render es auxiliar y NUNCA debe romper la actualizacion de estado."""
         if request is None or archivo is None:
             return None
-        if archivo.documentacion_id:
-            doc = AdmisionService._serialize_documentacion(
-                archivo.documentacion, archivo
+        try:
+            if archivo.documentacion_id:
+                doc = AdmisionService._serialize_documentacion(
+                    archivo.documentacion, archivo
+                )
+            else:
+                doc = AdmisionService.serialize_documento_personalizado(archivo)
+            return render_to_string(
+                "admisiones/includes/gde_cell.html",
+                {"doc": doc, "admision": archivo.admision},
+                request=request,
             )
-        else:
-            doc = AdmisionService.serialize_documento_personalizado(archivo)
-        return render_to_string(
-            "admisiones/includes/gde_cell.html",
-            {"doc": doc, "admision": archivo.admision},
-            request=request,
-        )
+        except Exception:
+            logger.exception(
+                "No se pudo renderizar la celda GDE para el re-render AJAX",
+                extra={"archivo_pk": getattr(archivo, "pk", None)},
+            )
+            return None
 
     @staticmethod
     def _resolver_estado_y_observacion_actualizar_estado_ajax(request):
