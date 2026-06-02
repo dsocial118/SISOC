@@ -1,7 +1,7 @@
 import importlib
 from io import BytesIO
 from types import SimpleNamespace
-from datetime import date, time
+from datetime import date, time, timedelta
 import json
 
 import pytest
@@ -14,6 +14,7 @@ from django.core.exceptions import ValidationError
 from django.core.management import call_command
 from django.test import RequestFactory, override_settings
 from django.urls import reverse
+from django.utils import timezone
 from openpyxl import load_workbook
 from rest_framework.test import APIClient
 from rest_framework_api_key.models import APIKey
@@ -8336,14 +8337,20 @@ def _wizard_url(wizard_setup):
 
 
 def _step1_data(wizard_setup):
+    # La validacion del paso 1 exige fecha_inicio >= hoy. Derivar las fechas de
+    # la fecha actual evita que el dato quede en el pasado con el correr del
+    # tiempo (antes estaba hardcodeado "2026-06-01" y rompia a partir del dia
+    # siguiente, dejando el wizard atascado en el paso "info").
+    fecha_inicio = timezone.localdate() + timedelta(days=1)
+    fecha_fin = fecha_inicio + timedelta(days=180)
     return {
         f"{_WIZARD_PREFIX}-current_step": "info",
         "info-ubicacion": str(wizard_setup.ubicacion.pk),
         "info-modalidad": str(wizard_setup.curso.modalidad_id),
         "info-cupo_total": "20",
         "info-estado": "planificada",
-        "info-fecha_inicio": "2026-06-01",
-        "info-fecha_fin": "2026-12-31",
+        "info-fecha_inicio": fecha_inicio.isoformat(),
+        "info-fecha_fin": fecha_fin.isoformat(),
         "info-observaciones": "",
     }
 
