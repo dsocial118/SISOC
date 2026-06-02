@@ -523,8 +523,16 @@ class ComisionUpdateView(LoginRequiredMixin, UpdateView):
         return form
 
     def form_valid(self, form):
+        from VAT.services.sesion_comision_service.impl import SesionComisionService
+
+        fechas_cambiaron = bool(
+            {"fecha_inicio", "fecha_fin"} & set(form.changed_data)
+        )
         messages.success(self.request, "Comisión actualizada exitosamente.")
-        return super().form_valid(form)
+        response = super().form_valid(form)
+        if fechas_cambiaron:
+            SesionComisionService.regenerar_para_comision(self.object)
+        return response
 
 
 class ComisionDeleteView(SoftDeleteDeleteViewMixin, LoginRequiredMixin, DeleteView):

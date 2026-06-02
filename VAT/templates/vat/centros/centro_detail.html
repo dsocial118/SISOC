@@ -1762,15 +1762,16 @@
         }
 
         #modalCurso .modal-dialog {
-            max-width: 365px;
+            max-width: 460px;
         }
 
         #modalCurso .modal-content {
-            background: #2e3b69;
-            border: 0;
-            border-radius: 0 0 14px 14px;
-            box-shadow: 0 26px 70px rgba(5, 12, 24, 0.45);
+            background: linear-gradient(180deg, #2f3d6b 0%, #28335c 100%);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 18px;
+            box-shadow: 0 30px 80px rgba(5, 12, 24, 0.55);
             color: #ffffff;
+            overflow: hidden;
         }
 
         #modalCurso .modal-header,
@@ -1781,37 +1782,73 @@
         .sisoc-curso-modal-header {
             position: relative;
             justify-content: center;
-            padding: 1rem 1.15rem .7rem;
-            background: #2e3b69;
+            padding: 1.15rem 1.25rem .85rem;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0) 100%);
         }
 
         .sisoc-curso-modal-header::after {
             content: '';
             position: absolute;
-            left: 1rem;
-            right: 1rem;
+            left: 1.25rem;
+            right: 1.25rem;
             bottom: 0;
-            height: 1px;
-            background: rgba(255, 255, 255, 0.55);
+            height: 2px;
+            border-radius: 2px;
+            background: linear-gradient(90deg, #3b8681 0%, #4a8ddb 100%);
         }
 
         .sisoc-curso-modal-header .modal-title {
-            font-size: 20px;
+            display: inline-flex;
+            align-items: center;
+            gap: .55rem;
+            font-size: 21px;
             font-weight: 700;
             font-family: Georgia, 'Times New Roman', serif;
             color: #ffffff;
         }
 
+        .sisoc-curso-modal-header .modal-title i {
+            font-size: 17px;
+            color: #7cb2f2;
+        }
+
         .sisoc-curso-close {
             position: absolute;
-            top: .8rem;
-            right: .8rem;
+            top: 1rem;
+            right: 1rem;
+            width: 28px;
+            height: 28px;
+            margin: 0;
+            padding: 0;
+            border-radius: 8px;
+            background-color: rgba(255, 255, 255, 0.08);
             filter: brightness(0) invert(1);
+            opacity: .85;
+            transition: background-color .18s ease, opacity .18s ease;
+        }
+
+        .sisoc-curso-close:hover {
+            background-color: rgba(255, 255, 255, 0.18);
             opacity: 1;
         }
 
         .sisoc-curso-modal-body {
-            padding: .95rem 1rem 0;
+            padding: 1.15rem 1.25rem .25rem;
+            max-height: min(68vh, 560px);
+            overflow-y: auto;
+        }
+
+        .sisoc-curso-modal-body::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .sisoc-curso-modal-body::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.18);
+            border-radius: 99px;
+        }
+
+        .sisoc-curso-modal-body::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.28);
         }
 
         #modalCurso #planEstudioSeleccionadoInfo {
@@ -1835,34 +1872,43 @@
         #modalCurso .form-select,
         .sisoc-curso-select-trigger {
             width: 100%;
-            min-height: 38px;
-            border-radius: 5px;
-            border: 1px solid rgba(255, 255, 255, 0.72);
-            background: rgba(255, 255, 255, 0.03);
+            min-height: 40px;
+            border-radius: 9px;
+            border: 1px solid rgba(255, 255, 255, 0.28);
+            background: rgba(255, 255, 255, 0.05);
             color: #ffffff;
-            font-size: 12px;
+            font-size: 12.5px;
             box-shadow: none;
+            transition: border-color .18s ease, background-color .18s ease, box-shadow .18s ease;
         }
 
         #modalCurso .form-control,
         #modalCurso .form-select {
-            padding: .42rem .72rem;
+            padding: .5rem .8rem;
+        }
+
+        #modalCurso .form-control:hover,
+        #modalCurso .form-select:hover,
+        .sisoc-curso-select-trigger:hover {
+            border-color: rgba(255, 255, 255, 0.45);
+            background: rgba(255, 255, 255, 0.07);
         }
 
         #modalCurso textarea.form-control {
-            min-height: 68px;
-            resize: none;
+            min-height: 72px;
+            resize: vertical;
         }
 
         #modalCurso .form-control::placeholder {
-            color: rgba(255, 255, 255, 0.7);
+            color: rgba(255, 255, 255, 0.55);
         }
 
         #modalCurso .form-control:focus,
         #modalCurso .form-select:focus,
         .sisoc-curso-select-trigger:focus {
-            border-color: #ffffff;
-            box-shadow: 0 0 0 0.14rem rgba(255, 255, 255, 0.12);
+            border-color: #4a8ddb;
+            background: rgba(74, 141, 219, 0.08);
+            box-shadow: 0 0 0 0.18rem rgba(74, 141, 219, 0.22);
             outline: none;
         }
 
@@ -1922,23 +1968,29 @@
         .sisoc-curso-modal-footer {
             display: flex;
             justify-content: flex-end;
-            gap: .7rem;
-            padding: 1rem 1rem 1rem;
+            gap: .6rem;
+            padding: .85rem 1.25rem 1.15rem;
+            background: rgba(0, 0, 0, 0.12);
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
         }
 
         .sisoc-curso-submit {
             border: 0;
             border-radius: 999px;
-            min-height: 32px;
-            padding: .38rem .95rem;
-            font-size: 12px;
+            min-height: 38px;
+            padding: .5rem 1.35rem;
+            font-size: 12.5px;
             font-weight: 700;
             line-height: 1;
-            transition: transform .18s ease, box-shadow .18s ease, opacity .18s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: .45rem;
+            transition: transform .18s ease, box-shadow .18s ease, filter .18s ease, opacity .18s ease;
         }
 
         .sisoc-curso-submit:hover {
             transform: translateY(-1px);
+            filter: brightness(1.06);
         }
 
         .sisoc-curso-submit:disabled {
@@ -1947,15 +1999,20 @@
         }
 
         .sisoc-curso-submit--secondary {
-            background: #ffffff;
-            color: #27365f;
-            box-shadow: 0 10px 22px rgba(5, 12, 24, 0.2);
+            background: rgba(255, 255, 255, 0.1);
+            color: #e6f1ff;
+            box-shadow: none;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .sisoc-curso-submit--secondary:hover {
+            background: rgba(255, 255, 255, 0.16);
         }
 
         .sisoc-curso-submit--primary {
-            background: #2e7d33;
+            background: linear-gradient(135deg, #3a9d40 0%, #2e7d33 100%);
             color: #ffffff;
-            box-shadow: 0 10px 22px rgba(7, 26, 11, 0.24);
+            box-shadow: 0 10px 22px rgba(7, 26, 11, 0.32);
         }
 
         /* Vouchers — header con contador chip */
@@ -3120,6 +3177,20 @@
                 }
             }
 
+            function ensureTipoSelect2() {
+                var tipoField = formEl.querySelector('select[name="tipo"]');
+                if (!tipoField) return;
+
+                if (window.refreshSelect2Element) {
+                    window.refreshSelect2Element(tipoField);
+                    return;
+                }
+
+                if (window.initSelect2Elements) {
+                    window.initSelect2Elements(tipoField);
+                }
+            }
+
             function normalizePlanSelectorValue(value) {
                 return (value || '').toString().trim().toLowerCase();
             }
@@ -3401,7 +3472,7 @@
                 var lockPlanEstudio = triggerButton.getAttribute('data-lock-plan-estudio') === '1';
 
                 if (mode === 'edit') {
-                    titleEl.textContent = 'Editar Curso';
+                    (document.getElementById('modalCursoLabelText') || titleEl).textContent = 'Editar Curso';
                     formEl.setAttribute('action', triggerButton.getAttribute('data-edit-url') || createAction);
                     if (primarySubmitEl) {
                         primarySubmitEl.textContent = 'Actualizar';
@@ -3420,7 +3491,7 @@
                     return;
                 }
 
-                titleEl.textContent = 'Nuevo Curso';
+                (document.getElementById('modalCursoLabelText') || titleEl).textContent = 'Nuevo Curso';
                 formEl.reset();
                 formEl.setAttribute('action', createAction);
                 if (primarySubmitEl) {
@@ -3432,6 +3503,10 @@
                     setPlanEstudioInfo(planEstudioLabel, true);
                 }
                 updatePlanSelectorSummary();
+            });
+
+            modalEl.addEventListener('shown.bs.modal', function() {
+                ensureTipoSelect2();
             });
 
             updatePlanSelectorSummary();

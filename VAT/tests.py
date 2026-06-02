@@ -5410,6 +5410,20 @@ def test_curso_form_plan_estudio_es_primer_campo():
 
 
 @pytest.mark.django_db
+def test_curso_form_tipo_choices_desde_modalidad_cursada(vat_curso_base):
+    centro, _, modalidad = vat_curso_base
+    ModalidadCursada.objects.filter(id=modalidad.id).update(activo=False)
+    ModalidadCursada.objects.create(nombre="Presencial", activo=True)
+    ModalidadCursada.objects.create(nombre="Virtual Extendida", activo=True)
+
+    form = CursoForm(initial={"centro": centro})
+    tipo_choices = dict(form.fields["tipo"].choices)
+
+    assert tipo_choices["presencial"] == "Presencial"
+    assert tipo_choices["virtual_extendida"] == "Virtual Extendida"
+
+
+@pytest.mark.django_db
 def test_curso_form_requiere_costo_creditos_si_usa_voucher(vat_curso_base):
     centro, ubicacion, modalidad = vat_curso_base
     programa = Programa.objects.create(nombre="Programa Test Costo")
