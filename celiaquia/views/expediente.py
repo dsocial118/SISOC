@@ -49,6 +49,7 @@ from celiaquia.services.importacion_service import (
     _beneficiario_requiere_responsable_importacion,
     _cargar_nacionalidades_cache,
     _cargar_paises_a_nacionalidad_importacion,
+    _obtener_provincias_permitidas_ids,
     _precargar_conflictos_y_existentes_importacion,
     _resolver_nacionalidad_payload_importacion,
     validar_y_normalizar_payloads_importacion,
@@ -62,6 +63,7 @@ from core.soft_delete.preview import build_delete_preview
 from core.soft_delete.view_helpers import is_soft_deletable_instance
 from users.territorial_scope import (
     apply_territorial_scope,
+    build_territorial_scope_q,
     get_effective_scopes,
     get_single_full_province_scope_id,
     is_territorial_user,
@@ -485,10 +487,13 @@ def _formatear_observaciones_historial(observaciones):
     return "\n".join(partes) or observaciones
 
 
-def _validar_datos_registro_erroneo(payload, provincia_id, fila_excel=0):
+def _validar_datos_registro_erroneo(
+    payload, provincia_id, fila_excel=0, provincias_permitidas_ids=None
+):
     return validar_y_normalizar_payloads_importacion(
         payload=payload,
         provincia_usuario_id=provincia_id,
+        provincias_permitidas_ids=provincias_permitidas_ids,
         offset=fila_excel,
     )
 
@@ -532,19 +537,33 @@ def _user_scope_provincias(user):
 
 
 def _apply_provincial_expediente_scope(queryset, user):
+    if getattr(user, "is_superuser", False):
+        return queryset
     if not is_territorial_user(user):
         # Tiene role_provinciaceliaquia pero no scope territorial configurado;
         # restringir a expedientes propios.
         return queryset.filter(usuario_provincia=user).distinct()
-    return apply_territorial_scope(
-        queryset,
-        user,
+
+    # Un expediente es visible si tiene al menos un ciudadano dentro del alcance
+    # territorial del usuario. NO se incluyen los expedientes propios fuera de
+    # alcance (sin include_own): un expediente cargado por el usuario con
+    # ciudadanos de otra provincia no debe listarse (seguimiento del issue #1793).
+    scope_q = build_territorial_scope_q(
+        get_effective_scopes(user),
         provincia_lookup="expediente_ciudadanos__ciudadano__provincia_id",
         municipio_lookup="expediente_ciudadanos__ciudadano__municipio_id",
         localidad_lookup="expediente_ciudadanos__ciudadano__localidad_id",
-        own_lookup="usuario_provincia",
-        include_own=True,
     )
+    # Excepcion: sus propios expedientes recien creados, aun sin legajos
+    # importados (sin provincia derivable todavia), deben seguir siendo accesibles
+    # para poder cargar/procesar el Excel.
+    propios_sin_legajos_q = Q(
+        usuario_provincia=user, expediente_ciudadanos__isnull=True
+    )
+    combined_q = (
+        propios_sin_legajos_q if scope_q is None else scope_q | propios_sin_legajos_q
+    )
+    return queryset.filter(combined_q).distinct()
 
 
 def _get_provincial_expediente_or_404(user, pk):
@@ -2045,12 +2064,21 @@ class RevisarLegajoView(View):
 class ActualizarRegistroErroneoView(View):
     def post(self, request, pk, registro_id):
         user = request.user
-        expediente = get_object_or_404(Expediente, pk=pk)
 
         if not _can_manage_registros_erroneos(user):
             return JsonResponse(
                 {"success": False, "error": "Permiso denegado."}, status=403
             )
+
+        # Coordinador/admin gestionan cualquier expediente; el usuario provincial
+        # solo los de su alcance territorial (evita operar registros de otra
+        # provincia accediendo por pk directo).
+        if _is_admin(user) or _user_has_permission(
+            user, ROLE_COORDINADOR_CELIAQUIA_PERMISSION
+        ):
+            expediente = get_object_or_404(Expediente, pk=pk)
+        else:
+            expediente = _get_provincial_expediente_or_404(user, pk)
 
         from celiaquia.models import RegistroErroneo
 
@@ -2078,6 +2106,7 @@ class ActualizarRegistroErroneoView(View):
                 datos_normalizados,
                 provincia_id=provincia_id,
                 fila_excel=registro.fila_excel,
+                provincias_permitidas_ids=_obtener_provincias_permitidas_ids(user),
             )
             datos_limpios = _limpiar_datos_registro_erroneo(datos_normalizados)
             registro.datos_raw = datos_limpios
@@ -2113,12 +2142,20 @@ class ReprocesarRegistrosErroneosView(View):
     @transaction.atomic
     def post(self, request, pk):
         user = request.user
-        expediente = get_object_or_404(Expediente, pk=pk)
 
         if not _can_manage_registros_erroneos(user):
             return JsonResponse(
                 {"success": False, "error": "Permiso denegado."}, status=403
             )
+
+        # Coordinador/admin reprocesan cualquier expediente; el usuario provincial
+        # solo los de su alcance territorial.
+        if _is_admin(user) or _user_has_permission(
+            user, ROLE_COORDINADOR_CELIAQUIA_PERMISSION
+        ):
+            expediente = get_object_or_404(Expediente, pk=pk)
+        else:
+            expediente = _get_provincial_expediente_or_404(user, pk)
 
         registros = expediente.registros_erroneos.filter(procesado=False)
 
@@ -2152,6 +2189,8 @@ class ReprocesarRegistrosErroneosView(View):
                 status=400,
             )
 
+        provincias_permitidas_ids = _obtener_provincias_permitidas_ids(user)
+
         for registro in registros:
             datos = _aplicar_defaults_registro_erroneo(
                 _normalizar_datos_registro_erroneo(registro.datos_raw.copy())
@@ -2165,6 +2204,7 @@ class ReprocesarRegistrosErroneosView(View):
                     datos,
                     provincia_id=provincia_id,
                     fila_excel=registro.fila_excel,
+                    provincias_permitidas_ids=provincias_permitidas_ids,
                 )
 
                 with transaction.atomic():
