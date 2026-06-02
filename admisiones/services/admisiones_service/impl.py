@@ -1218,6 +1218,69 @@ class AdmisionService:
         )
         return True, "Continuara operando con la informacion actual de la admision."
 
+    @staticmethod
+    def actualizar_documentacion_desde_organizacion(admision, user=None):
+        """Issue #1799 (feedback punto 1): "Actualizar Informacion desde Legajo
+        Organizacion" DIRIGIDO. Refresca SOLO los documentos de origen
+        organizacional cuyo slot cambio (agregado / modificado / quitado),
+        preservando los documentos nativos de la admision (cargados admision-side)
+        y los de origen organizacional NO modificados. No resetea ``tipo_convenio``
+        ni ``estado`` (a diferencia de ``resync_admision_desde_organizacion``, que
+        aplica cuando cambio el Tipo de Entidad y reconstruye todo)."""
+        organizacion = getattr(getattr(admision, "comedor", None), "organizacion", None)
+        if not organizacion:
+            return False, "La admision no tiene organizacion asociada."
+
+        actuales = AdmisionService._tokens_org_actuales(admision)
+        snapshots = {
+            snap.slot_key: snap
+            for snap in AdmisionDocOrgSnapshot.objects.filter(admision=admision)
+        }
+        slots_a_refrescar = set()
+        for slot, data in actuales.items():
+            snap = snapshots.get(slot)
+            if snap is None or snap.token != data["token"]:
+                slots_a_refrescar.add(slot)  # agregado / modificado
+        for slot in snapshots:
+            if slot not in actuales:
+                slots_a_refrescar.add(slot)  # quitado del legajo
+
+        if not slots_a_refrescar:
+            AdmisionService.refrescar_snapshot_documentacion_organizacional(admision)
+            return True, "La documentacion ya estaba actualizada con el Legajo."
+
+        # Borrar SOLO los ArchivoAdmision de origen organizacional de los slots
+        # que cambiaron. Nunca se tocan los documentos nativos de la admision
+        # (sin archivo_organizacion_origen) ni los de origen organizacional no
+        # modificados.
+        borrados = 0
+        for archivo_adm in ArchivoAdmision.objects.filter(
+            admision=admision, archivo_organizacion_origen__isnull=False
+        ).select_related("archivo_organizacion_origen"):
+            origin = archivo_adm.archivo_organizacion_origen
+            if origin.documentacion_id:
+                slot = f"doc:{origin.documentacion_id}"
+            else:
+                slot = f"custom:{origin.id}"
+            if slot in slots_a_refrescar:
+                archivo_adm.delete()
+                borrados += 1
+
+        # Re-materializar (aditivo): re-crea desde el legajo los slots borrados que
+        # siguen vigentes; los quitados no se re-crean; preserva nativos y los no
+        # modificados (congelar saltea los que ya existen).
+        AdmisionService.congelar_documentacion_organizacional(admision, user)
+        AdmisionService.refrescar_snapshot_documentacion_organizacional(admision)
+        logger.info(
+            "Documentacion de admision actualizada (dirigida) desde la organizacion",
+            extra={
+                "admision_pk": admision.pk,
+                "slots_refrescados": sorted(slots_a_refrescar),
+                "archivos_borrados": borrados,
+            },
+        )
+        return True, "Documentacion actualizada desde el Legajo de la Organizacion."
+
     # ------------------------------------------------------------------
     # Issue #1799 Req 1: deteccion de cambios en la documentacion del legajo
     # ------------------------------------------------------------------
