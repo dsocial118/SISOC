@@ -47,8 +47,16 @@
     }
 
     .vp-panel-header .card-title {
+        display: block;
+        margin: 0 0 .35rem !important;
         color: #ffffff;
         font-weight: 700;
+    }
+
+    .vp-panel-header .vp-panel-subtitle {
+        display: block;
+        margin-top: .15rem;
+        line-height: 1.4;
     }
 
     .vp-panel-header .text-muted,
@@ -245,7 +253,7 @@
                 <div class="card vp-panel">
                     <div class="vp-panel-header">
                         <h3 class="card-title mb-1">Configuración general</h3>
-                        <div class="text-muted small">Definí la identidad de la parametría y las reglas operativas del voucher.</div>
+                        <div class="text-muted small vp-panel-subtitle">Definí la identidad de la parametría y las reglas operativas del voucher.</div>
                     </div>
                     <form method="post">
                         {% csrf_token %}
