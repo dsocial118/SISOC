@@ -617,6 +617,7 @@ def actualizar_estado_archivo(request):
                 "grupo_usuario": resultado.get("grupo_usuario"),
                 "mostrar_select": resultado.get("mostrar_select", False),
                 "opciones": resultado.get("opciones", []),
+                "gde_html": resultado.get("gde_html"),
             }
         )
     else:

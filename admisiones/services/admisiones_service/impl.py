@@ -6,6 +6,7 @@ from django.conf import settings
 from django.db import models
 from django.db import transaction
 from django.shortcuts import get_object_or_404
+from django.template.loader import render_to_string
 from django.urls import reverse
 from django.core.files.base import ContentFile
 from io import BytesIO
@@ -1646,14 +1647,44 @@ class AdmisionService:
 
     @staticmethod
     def _build_success_actualizar_estado_ajax_response(
-        archivo, display_objetivo, grupo_usuario
+        archivo, display_objetivo, grupo_usuario, request=None
     ):
         return {
             "success": True,
             "nuevo_estado": display_objetivo,
             "grupo_usuario": grupo_usuario,
             "observaciones": archivo.observaciones,
+            # Re-render de la celda "Número de GDE": al cambiar el estado del
+            # documento (p.ej. -> Aceptado) debe aparecer/ocultarse el campo GDE
+            # sin recargar la pagina (issue #1799, feedback punto 4).
+            "gde_html": AdmisionService._render_celda_gde_html(archivo, request),
         }
+
+    @staticmethod
+    def _render_celda_gde_html(archivo, request):
+        """Renderiza el interior de la celda GDE de un ArchivoAdmision para
+        inyectarlo via AJAX. Devuelve None si no hay request o si el render falla:
+        el re-render es auxiliar y NUNCA debe romper la actualizacion de estado."""
+        if request is None or archivo is None:
+            return None
+        try:
+            if archivo.documentacion_id:
+                doc = AdmisionService._serialize_documentacion(
+                    archivo.documentacion, archivo
+                )
+            else:
+                doc = AdmisionService.serialize_documento_personalizado(archivo)
+            return render_to_string(
+                "admisiones/includes/gde_cell.html",
+                {"doc": doc, "admision": archivo.admision},
+                request=request,
+            )
+        except Exception:
+            logger.exception(
+                "No se pudo renderizar la celda GDE para el re-render AJAX",
+                extra={"archivo_pk": getattr(archivo, "pk", None)},
+            )
+            return None
 
     @staticmethod
     def _resolver_estado_y_observacion_actualizar_estado_ajax(request):
@@ -1753,6 +1784,7 @@ class AdmisionService:
                 archivo=archivo,
                 display_objetivo=display_objetivo,
                 grupo_usuario=grupo_usuario,
+                request=request,
             )
 
         except Exception as e:
