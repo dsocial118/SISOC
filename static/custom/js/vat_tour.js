@@ -182,7 +182,7 @@
             },
         },
         {
-            element: '[data-vat-tour="catalogos-menu"], a[href*="/vat/catalogos"], a[href*="/vat/modalidades"]',
+            element: 'a[href*="/vat/catalogos"], a[href*="/vat/modalidades"]',
             popover: {
                 title: "Catalogos academicos",
                 description:

@@ -1416,7 +1416,7 @@ def test_vat_scope_localidad_no_habilita_otra_localidad_para_edicion():
 
 
 @pytest.mark.django_db
-def test_vat_centro_list_filters_config_expone_nombre_codigo_y_estado_carga(mocker):
+def test_vat_centro_list_filters_config_expone_solo_nombre_y_codigo(mocker):
     user = User.objects.create_superuser(
         username="admin-vat-filtros",
         email="admin-filtros@vat.test",
@@ -1436,7 +1436,6 @@ def test_vat_centro_list_filters_config_expone_nombre_codigo_y_estado_carga(mock
     assert [field["name"] for field in context["filters_config"]["fields"]] == [
         "nombre",
         "codigo",
-        "estado_carga",
     ]
 
 
@@ -1529,143 +1528,6 @@ def test_vat_centro_list_filtra_por_cue_actual_en_codigo(vat_geo_data):
     view.request = request
 
     assert list(view.get_queryset()) == [centro_match]
-
-
-@pytest.mark.django_db
-def test_vat_centro_list_filtra_por_estado_carga(vat_geo_data):
-    provincia, municipio, localidad = vat_geo_data
-    user = User.objects.create_superuser(
-        username="centro-filtro-estado-carga",
-        email="centro-filtro-estado-carga@vat.test",
-        password="test1234",
-    )
-
-    centro_completo = _create_vat_centro(
-        codigo="EST-COMP",
-        provincia=provincia,
-        municipio=municipio,
-        localidad=localidad,
-    )
-    ubicacion = InstitucionUbicacion.objects.create(
-        centro=centro_completo,
-        localidad=localidad,
-        rol_ubicacion="sede_principal",
-        es_principal=True,
-    )
-    InstitucionContacto.objects.create(
-        centro=centro_completo,
-        tipo="email",
-        valor="contacto-completo@vat.test",
-        nombre_contacto="Contacto Completo",
-        es_principal=True,
-    )
-    InstitucionIdentificadorHist.objects.create(
-        centro=centro_completo,
-        tipo_identificador="cue",
-        valor_identificador="500000001",
-        rol_institucional="sede",
-        ubicacion=ubicacion,
-        es_actual=True,
-    )
-
-    centro_incompleto = _create_vat_centro(
-        codigo="EST-INCOMP",
-        provincia=provincia,
-        municipio=municipio,
-        localidad=localidad,
-    )
-
-    request_completos = RequestFactory().get(
-        "/vat/centros/",
-        data={"estado_carga": "completo"},
-    )
-    request_completos.user = user
-    view_completos = centro_views.CentroListView()
-    view_completos.request = request_completos
-    queryset_completos = list(view_completos.get_queryset())
-
-    assert queryset_completos == [centro_completo]
-
-    request_incompletos = RequestFactory().get(
-        "/vat/centros/",
-        data={"estado_carga": "incompleto"},
-    )
-    request_incompletos.user = user
-    view_incompletos = centro_views.CentroListView()
-    view_incompletos.request = request_incompletos
-    queryset_incompletos = list(view_incompletos.get_queryset())
-
-    assert centro_incompleto in queryset_incompletos
-    assert centro_completo not in queryset_incompletos
-
-
-@pytest.mark.django_db
-def test_vat_centro_list_filtra_por_estado_carga_en_filtros_combinables(vat_geo_data):
-    provincia, municipio, localidad = vat_geo_data
-    user = User.objects.create_superuser(
-        username="centro-filtro-estado-carga-avanzado",
-        email="centro-filtro-estado-carga-avanzado@vat.test",
-        password="test1234",
-    )
-
-    centro_completo = _create_vat_centro(
-        codigo="EST-ADV-COMP",
-        provincia=provincia,
-        municipio=municipio,
-        localidad=localidad,
-    )
-    ubicacion = InstitucionUbicacion.objects.create(
-        centro=centro_completo,
-        localidad=localidad,
-        rol_ubicacion="sede_principal",
-        es_principal=True,
-    )
-    InstitucionContacto.objects.create(
-        centro=centro_completo,
-        tipo="email",
-        valor="contacto-avanzado@vat.test",
-        nombre_contacto="Contacto Avanzado",
-        es_principal=True,
-    )
-    InstitucionIdentificadorHist.objects.create(
-        centro=centro_completo,
-        tipo_identificador="cue",
-        valor_identificador="500000011",
-        rol_institucional="sede",
-        ubicacion=ubicacion,
-        es_actual=True,
-    )
-
-    _create_vat_centro(
-        codigo="EST-ADV-INCOMP",
-        provincia=provincia,
-        municipio=municipio,
-        localidad=localidad,
-    )
-
-    request = RequestFactory().get(
-        "/vat/centros/",
-        data={
-            "filters": json.dumps(
-                {
-                    "logic": "AND",
-                    "items": [
-                        {
-                            "field": "estado_carga",
-                            "op": "eq",
-                            "value": True,
-                        }
-                    ],
-                }
-            )
-        },
-    )
-    request.user = user
-
-    view = centro_views.CentroListView()
-    view.request = request
-
-    assert list(view.get_queryset()) == [centro_completo]
 
 
 @pytest.mark.django_db
@@ -2029,7 +1891,9 @@ def test_centro_update_usuario_provincial_puede_editar_dentro_de_su_provincia(cl
 
 
 @pytest.mark.django_db
-def test_centro_detail_muestra_boton_editar_para_referente_cfp(client, vat_geo_data):
+def test_centro_detail_muestra_datos_de_referente_para_referente_cfp(
+    client, vat_geo_data
+):
     provincia, municipio, localidad = vat_geo_data
     referente_group, _ = Group.objects.get_or_create(name="CFP")
     referente = User.objects.create_user(
@@ -2067,11 +1931,14 @@ def test_centro_detail_muestra_boton_editar_para_referente_cfp(client, vat_geo_d
 
     content = response.content.decode("utf-8")
     assert response.status_code == 200
-    assert reverse("vat_centro_update", kwargs={"pk": centro.pk}) in content
-    assert "Editar" in content
     # Refactor 4f1f2241 renombró secciones: ahora hay tabs "Información general",
     # "Ubicaciones adicionales" y modal "Agregar Identificador".
     assert "Información general" in content
+    assert "Referente del centro" in content
+    assert "Ana Pérez" in content
+    assert "221-4111111" in content
+    assert "direccion@vat.test" in content
+    assert reverse("vat_centro_update", kwargs={"pk": centro.pk}) not in content
     assert "CUE" in content
     assert "Estructura Institucional" not in content
     assert "Ubicaciones adicionales" in content
@@ -5212,33 +5079,6 @@ def test_comision_curso_form_no_expone_codigo_ni_nombre_y_los_autogenera(
 
 
 @pytest.mark.django_db
-def test_curso_form_rechaza_observaciones_mayores_a_500(vat_curso_base):
-    centro, _, modalidad = vat_curso_base
-    sector = Sector.objects.create(nombre="Sector Observaciones Curso")
-    plan = PlanVersionCurricular.objects.create(
-        nombre="Plan Observaciones Curso",
-        provincia=centro.provincia,
-        sector=sector,
-        modalidad_cursada=modalidad,
-        activo=True,
-    )
-
-    form = CursoForm(
-        data={
-            "plan_estudio": str(plan.id),
-            "nombre": "Curso con observaciones largas",
-            "estado": "planificado",
-            "costo_creditos": "0",
-            "observaciones": "x" * 501,
-        },
-        initial={"centro": centro.id},
-    )
-
-    assert not form.is_valid()
-    assert "observaciones" in form.errors
-
-
-@pytest.mark.django_db
 def test_comision_curso_create_view_renderiza_formulario(client, vat_curso_base):
     centro, _, modalidad = vat_curso_base
     user = User.objects.create_superuser(
@@ -8339,7 +8179,6 @@ def _step1_data(wizard_setup):
     return {
         f"{_WIZARD_PREFIX}-current_step": "info",
         "info-ubicacion": str(wizard_setup.ubicacion.pk),
-        "info-modalidad": str(wizard_setup.curso.modalidad_id),
         "info-cupo_total": "20",
         "info-estado": "planificada",
         "info-fecha_inicio": "2026-06-01",
@@ -8519,7 +8358,6 @@ def test_wizard_flujo_completo_crea_comision_y_horario(client, wizard_setup):
     assert comision.cupo_total == 20
     assert comision.estado == "planificada"
     assert comision.ubicacion == wizard_setup.ubicacion
-    assert comision.modalidad == wizard_setup.curso.modalidad
     assert comision.horarios.count() == 1
 
     horario = comision.horarios.first()

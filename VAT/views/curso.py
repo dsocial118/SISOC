@@ -62,7 +62,6 @@ def _readable_centros_ids(user):
 
 def _scoped_comisiones_curso_queryset(user):
     return ComisionCurso.objects.select_related(
-        "modalidad",
         "curso__centro",
         "curso__modalidad",
         "curso__plan_estudio",
@@ -72,7 +71,6 @@ def _scoped_comisiones_curso_queryset(user):
 
 def _readable_comisiones_curso_queryset(user):
     return ComisionCurso.objects.select_related(
-        "modalidad",
         "curso__centro",
         "curso__modalidad",
         "curso__plan_estudio",

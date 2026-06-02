@@ -57,6 +57,12 @@ class ComisionCursoWizardView(LoginRequiredMixin, SessionWizardView):
     def get_template_names(self):
         return [WIZARD_STEP_TEMPLATES[self.steps.current]]
 
+    def get(self, request, *args, **kwargs):
+        # Always start a fresh wizard when opening the URL directly.
+        # This avoids showing stale horarios rows from an abandoned session.
+        self.storage.reset()
+        return super().get(request, *args, **kwargs)
+
     def get_form_kwargs(self, step=None):
         kwargs = super().get_form_kwargs(step)
         if step == "info":
@@ -137,7 +143,6 @@ class ComisionCursoWizardView(LoginRequiredMixin, SessionWizardView):
         with transaction.atomic():
             comision = ComisionCurso.objects.create(
                 curso=self.curso,
-                modalidad=info.get("modalidad") or self.curso.modalidad,
                 ubicacion=info["ubicacion"],
                 cupo_total=info["cupo_total"],
                 estado=info["estado"],

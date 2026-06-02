@@ -1536,12 +1536,7 @@ class CursoForm(forms.ModelForm):
     )
     nombre = forms.CharField(
         label="Nombre",
-        max_length=150,
-        widget=forms.TextInput(attrs={"class": "form-control", "maxlength": "150"}),
-        help_text=(
-            "Hasta 150 caracteres. Evitá nombres genéricos y usá una "
-            "descripción clara (por ejemplo: Python para Principiantes v3.2)."
-        ),
+        widget=forms.TextInput(attrs={"class": "form-control"}),
     )
     tipo = forms.MultipleChoiceField(
         label="Tipo",
@@ -1601,10 +1596,7 @@ class CursoForm(forms.ModelForm):
     observaciones = forms.CharField(
         label="Observaciones",
         required=False,
-        widget=forms.Textarea(
-            attrs={"class": "form-control", "rows": 3, "maxlength": "500"}
-        ),
-        help_text="Campo interno opcional. Máximo 500 caracteres.",
+        widget=forms.Textarea(attrs={"class": "form-control", "rows": 3}),
     )
 
     class Meta:
@@ -1623,14 +1615,6 @@ class CursoForm(forms.ModelForm):
 
     def clean_tipo(self):
         return self.cleaned_data.get("tipo") or []
-
-    def clean_observaciones(self):
-        observaciones = (self.cleaned_data.get("observaciones") or "").strip()
-        if len(observaciones) > 500:
-            raise forms.ValidationError(
-                "Las observaciones no pueden superar los 500 caracteres."
-            )
-        return observaciones
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -1755,15 +1739,6 @@ class ComisionCursoForm(forms.ModelForm):
             attrs=_select2_attrs(placeholder="Seleccionar ubicación...")
         ),
     )
-    modalidad = forms.ModelChoiceField(
-        queryset=ModalidadCursada.objects.filter(activo=True).order_by("nombre"),
-        label="Modalidad de Cursado",
-        required=False,
-        widget=forms.Select(
-            attrs=_select2_attrs(placeholder="Seleccionar modalidad...")
-        ),
-        help_text="Si no se selecciona, se toma la modalidad del curso.",
-    )
     cupo_total = forms.IntegerField(
         label="Cupo Total",
         min_value=1,
@@ -1798,7 +1773,6 @@ class ComisionCursoForm(forms.ModelForm):
         fields = [
             "curso",
             "ubicacion",
-            "modalidad",
             "cupo_total",
             "acepta_lista_espera",
             "fecha_inicio",
@@ -1824,19 +1798,15 @@ class ComisionCursoForm(forms.ModelForm):
                 curso_id = curso_inicial
 
         if curso_id:
-            curso_attrs = (
+            centro_id = (
                 Curso.all_objects.filter(pk=curso_id)
-                .values("centro_id", "modalidad_id")
+                .values_list("centro_id", flat=True)
                 .first()
             )
-            centro_id = curso_attrs["centro_id"] if curso_attrs else None
-            curso_modalidad_id = curso_attrs["modalidad_id"] if curso_attrs else None
             self.fields["ubicacion"].queryset = build_ubicacion_queryset_for_centros(
                 [centro_id],
                 include_ubicacion_ids=[current_ubicacion_id],
             )
-            if not self.instance.pk and curso_modalidad_id:
-                self.fields["modalidad"].initial = curso_modalidad_id
         else:
             self.fields["ubicacion"].queryset = InstitucionUbicacion.objects.none()
 
@@ -1844,13 +1814,9 @@ class ComisionCursoForm(forms.ModelForm):
         cleaned_data = super().clean()
         curso = cleaned_data.get("curso")
         ubicacion = cleaned_data.get("ubicacion")
-        modalidad = cleaned_data.get("modalidad")
         cupo_total = cleaned_data.get("cupo_total")
         fecha_inicio = cleaned_data.get("fecha_inicio")
         fecha_fin = cleaned_data.get("fecha_fin")
-
-        if not modalidad and curso:
-            cleaned_data["modalidad"] = curso.modalidad
 
         if curso and ubicacion and ubicacion.centro_id != curso.centro_id:
             self.add_error(
@@ -2596,17 +2562,6 @@ class ComisionCursoWizardStep1Form(forms.Form):
             }
         ),
     )
-    modalidad = forms.ModelChoiceField(
-        queryset=ModalidadCursada.objects.filter(activo=True).order_by("nombre"),
-        label="Modalidad de cursado",
-        required=False,
-        widget=forms.Select(
-            attrs={
-                "class": "form-select sisoc-wizard-input",
-                "data-placeholder": "Seleccioná la modalidad de la comisión",
-            }
-        ),
-    )
     cupo_total = forms.IntegerField(
         label="Cupo total",
         min_value=5,
@@ -2661,21 +2616,11 @@ class ComisionCursoWizardStep1Form(forms.Form):
             self.fields["ubicacion"].queryset = build_ubicacion_queryset_for_centros(
                 [self.curso.centro_id]
             )
-            if self.curso.modalidad_id:
-                self.fields["modalidad"].initial = self.curso.modalidad_id
 
     def clean(self):
         cleaned = super().clean()
         fecha_inicio = cleaned.get("fecha_inicio")
         fecha_fin = cleaned.get("fecha_fin")
-        modalidad = cleaned.get("modalidad")
-        if not modalidad and self.curso is not None:
-            cleaned["modalidad"] = self.curso.modalidad
-        if not cleaned.get("modalidad"):
-            self.add_error(
-                "modalidad",
-                "Debés definir la modalidad de cursado de la comisión.",
-            )
         if fecha_inicio and fecha_inicio < timezone.localdate():
             self.add_error(
                 "fecha_inicio",
@@ -2804,7 +2749,7 @@ class BaseComisionCursoWizardHorarioFormSet(forms.BaseFormSet):
 ComisionCursoWizardStep2FormSet = forms.formset_factory(
     ComisionCursoWizardHorarioForm,
     formset=BaseComisionCursoWizardHorarioFormSet,
-    extra=1,
+    extra=0,
     can_delete=True,
     min_num=1,
     validate_min=True,
