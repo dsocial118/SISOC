@@ -15,95 +15,13 @@
 
     <style>
         .ci-hero {
-            background: linear-gradient(135deg, #1a3a6e 0%, #1f3a93 50%, #3a6bc4 100%);
             border-radius: 12px;
-            padding: 1.75rem 2rem;
+            padding: 0;
             color: #fff;
             margin-bottom: 1.25rem;
             position: relative;
-            overflow: hidden;
-        }
-
-        .ci-hero::before {
-            content: "";
-            position: absolute;
-            top: -40px;
-            right: -40px;
-            width: 220px;
-            height: 220px;
-            background: rgba(255, 255, 255, 0.06);
-            border-radius: 50%;
-            pointer-events: none;
-        }
-
-        .ci-back {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 34px;
-            height: 34px;
-            background: rgba(255, 255, 255, 0.15);
-            border: 1px solid rgba(255, 255, 255, 0.25);
-            border-radius: 8px;
-            color: #fff;
-            text-decoration: none;
-            flex-shrink: 0;
-            transition: background 0.15s;
-        }
-
-        .ci-back:hover {
-            background: rgba(255, 255, 255, 0.25);
-            color: #fff;
-        }
-
-        .ci-code-badge {
-            font-family: monospace;
-            font-size: 0.75rem;
-            font-weight: 700;
-            background: rgba(255, 255, 255, 0.15);
-            border: 1px solid rgba(255, 255, 255, 0.25);
-            padding: 0.2em 0.65em;
-            border-radius: 5px;
-            letter-spacing: 0.06em;
-        }
-
-        .ci-state-badge {
-            font-size: 0.71rem;
-            font-weight: 600;
-            background: rgba(255, 255, 255, 0.12);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            padding: 0.2em 0.65em;
-            border-radius: 5px;
-            color: rgba(255, 255, 255, 0.85);
-        }
-
-        .ci-hero-title {
-            font-size: 1.5rem;
-            font-weight: 700;
-            line-height: 1.2;
-            margin: 0.3rem 0 0.2rem;
-        }
-
-        .ci-hero-sub {
-            font-size: 0.83rem;
-            opacity: 0.75;
-        }
-
-        .ci-edit-btn {
-            background: rgba(255, 255, 255, 0.15);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            color: #fff;
-            border-radius: 8px;
-            font-size: 0.83rem;
-            padding: 0.38rem 0.9rem;
-            text-decoration: none;
-            white-space: nowrap;
-            transition: background 0.15s;
-        }
-
-        .ci-edit-btn:hover {
-            background: rgba(255, 255, 255, 0.25);
-            color: #fff;
+            overflow: visible;
+            background: transparent;
         }
 
         .ci-stats {
@@ -526,7 +444,6 @@
         }
 
         .sisoc-legacy-centro-tabs,
-        .ci-hero,
         #datos-generales {
             display: none !important;
         }
@@ -1359,697 +1276,478 @@
         }
     </style>
 
-{% with primary_contacto=contactos.0 %}
-    <div class="ci-hero d-print-none">
-        <div class="d-flex align-items-start justify-content-between flex-wrap gap-3 mb-3">
-            <div class="d-flex align-items-center gap-3">
-                <a href="{% url 'vat_centro_list' %}" class="ci-back">
-                    <i class="bi bi-arrow-left"></i>
-                </a>
-                <div>
-                    <div class="ci-hero-title" style="margin-top: 0">{{ centro.nombre }}</div>
-                    <div class="ci-hero-sub">
-                        <i class="bi bi-geo-alt me-1"></i>
-                        {{ centro.localidad|default:"Sin localidad" }}, {{ centro.municipio|default:"Sin municipio" }}, {{ centro.provincia|default:"Sin provincia" }}
-                    </div>
+    {% with primary_contacto=contactos.0 %}
+        <div class="ci-hero d-print-none">
+            <div class="sisoc-title-row">
+                <div class="sisoc-title-block">
+                    <h1>{{ centro.nombre }}</h1>
+                </div>
+                <div class="sisoc-title-meta">
+                    <span class="sisoc-cue-text">CUE {{ centro.codigo|default:"-" }}</span>
+                    {% if centro.activo %}
+                        <span class="sisoc-status-pill">Activo</span>
+                    {% else %}
+                        <span class="sisoc-status-pill is-inactive">Inactivo</span>
+                    {% endif %}
                 </div>
             </div>
-            <div class="d-flex align-items-center gap-2 flex-wrap">
-                {% if centro.activo %}
-                    <span class="ci-state-badge">Activo</span>
-                {% else %}
-                    <span class="ci-state-badge">Inactivo</span>
-                {% endif %}
-                <span class="ci-code-badge">CENTRO</span>
-                {% if can_edit_centro %}
-                    <a href="{% url 'vat_centro_update' centro.id %}" class="ci-edit-btn">
-                        <i class="bi bi-pencil me-1"></i>Editar
-                    </a>
-                {% endif %}
-                {% if can_edit_centro and perms.VAT.delete_centro %}
-                    <a href="{% url 'vat_centro_delete' centro.id %}" class="ci-edit-btn">
-                        <i class="bi bi-trash me-1"></i>Eliminar
-                    </a>
-                {% endif %}
-                {% if puede_generar_usuario_centro_vat %}
-                    <a href="{% url 'vat_centro_generar_usuario' centro.id %}"
-                       class="ci-edit-btn">
-                        <i class="bi bi-person-plus me-1"></i>Generar usuario
-                    </a>
-                {% endif %}
-            </div>
-        </div>
 
-        <div class="sisoc-title-row">
-            <div class="sisoc-title-block">
-                <h1>{{ centro.nombre }}</h1>
-            </div>
-            <div class="sisoc-title-meta">
-                <span class="sisoc-cue-text">CUE {{ centro.codigo|default:"-" }}</span>
-                {% if centro.activo %}
-                    <span class="sisoc-status-pill">Activo</span>
-                {% else %}
-                    <span class="sisoc-status-pill is-inactive">Inactivo</span>
-                {% endif %}
-            </div>
-        </div>
-
-        <div class="sisoc-info-shell">
-            <div class="sisoc-side-tabs sisoc-side-tabs--left"
-                 role="tablist"
-                 aria-label="Secciones visitadas">
-                <button type="button"
-                        class="sisoc-side-tab is-active"
-                        data-sisoc-tab-target="general"
-                        aria-selected="true">
-                    <span>Información general</span>
-                </button>
-                <button type="button"
-                        class="sisoc-side-tab"
-                        data-sisoc-tab-target="ubicaciones"
-                        aria-selected="false"
-                        hidden>
-                    <span>Ubicaciones adicionales</span>
-                </button>
-                <button type="button"
-                        class="sisoc-side-tab"
-                        data-sisoc-tab-target="contactos"
-                        aria-selected="false"
-                        hidden>
-                    <span>Contactos adicionales</span>
-                </button>
-            </div>
-            <div class="sisoc-info-content">
-                <section class="sisoc-info-panel is-active" data-sisoc-panel="general">
-                    <div class="sisoc-panel-section">
-                        <div class="sisoc-section-header">
-                            <h2>Información general sobre el establecimiento</h2>
-                        </div>
-                        <hr class="sisoc-section-divider" />
-                        <div class="sisoc-general-layout">
-                            <div class="sisoc-general-grid">
-                                <div class="sisoc-data-item">
-                                    <p class="sisoc-data-label">CUE</p>
-                                    <p class="sisoc-data-value">#{{ centro.codigo|default:"-" }}</p>
-                                </div>
-                                <div class="sisoc-data-item">
-                                    <p class="sisoc-data-label">Sector de gestión</p>
-                                    <p class="sisoc-data-value">{{ centro.tipo_gestion|default:"-" }}</p>
-                                </div>
-                                <div class="sisoc-data-item">
-                                    <p class="sisoc-data-label">Domicilio</p>
-                                    <p class="sisoc-data-value">
-                                        {% if centro.calle %}
-                                            {{ centro.calle }}
-                                            {% if centro.numero %}{{ centro.numero }}{% endif %}
-                                        {% else %}
-                                            {{ centro.domicilio_actividad|default:"-" }}
-                                        {% endif %}
-                                    </p>
-                                </div>
-                                <div class="sisoc-data-item">
-                                    <p class="sisoc-data-label">Teléfono</p>
-                                    <p class="sisoc-data-value">{{ centro.telefono|default:"-" }}</p>
-                                </div>
-                                <div class="sisoc-data-item">
-                                    <p class="sisoc-data-label">Celular</p>
-                                    <p class="sisoc-data-value">{{ centro.celular|default:"-" }}</p>
-                                </div>
-                                <div class="sisoc-data-item">
-                                    <p class="sisoc-data-label">Correo electrónico</p>
-                                    <p class="sisoc-data-value">
-                                        {% if centro.correo %}
-                                            <a href="mailto:{{ centro.correo }}">{{ centro.correo }}</a>
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </p>
-                                </div>
+            <div class="sisoc-info-shell">
+                <div class="sisoc-side-tabs sisoc-side-tabs--left"
+                     role="tablist"
+                     aria-label="Secciones visitadas">
+                    <button type="button"
+                            class="sisoc-side-tab is-active"
+                            data-sisoc-tab-target="general"
+                            aria-selected="true">
+                        <span>Información general</span>
+                    </button>
+                    <button type="button"
+                            class="sisoc-side-tab"
+                            data-sisoc-tab-target="ubicaciones"
+                            aria-selected="false"
+                            hidden>
+                        <span>Ubicaciones adicionales</span>
+                    </button>
+                    <button type="button"
+                            class="sisoc-side-tab"
+                            data-sisoc-tab-target="contactos"
+                            aria-selected="false"
+                            hidden>
+                        <span>Contactos adicionales</span>
+                    </button>
+                </div>
+                <div class="sisoc-info-content">
+                    <section class="sisoc-info-panel is-active" data-sisoc-panel="general">
+                        <div class="sisoc-panel-section">
+                            <div class="sisoc-section-header">
+                                <h2>Información general sobre el establecimiento</h2>
                             </div>
-                            <div class="sisoc-map-preview">
-                                {% if centro.calle and centro.localidad and centro.municipio and centro.provincia %}
-                                    <iframe title="Mapa del centro"
-                                            frameborder="0"
-                                            style="border:0"
-                                            src="https://maps.google.com/maps?q={{ centro.calle|urlencode }}{% if centro.numero %}+{{ centro.numero|urlencode }}{% endif %},+{{ centro.localidad.nombre|urlencode }},+{{ centro.municipio.nombre|urlencode }},+{{ centro.provincia.nombre|urlencode }}&output=embed"
-                                            allowfullscreen>
-                                    </iframe>
-                                {% else %}
-                                    <div class="sisoc-map-placeholder">
-                                        <i class="fas fa-map-marker-alt"></i>
-                                        <span>Sin datos suficientes para mostrar el mapa</span>
+                            <hr class="sisoc-section-divider" />
+                            <div class="sisoc-general-layout">
+                                <div class="sisoc-general-grid">
+                                    <div class="sisoc-data-item">
+                                        <p class="sisoc-data-label">CUE</p>
+                                        <p class="sisoc-data-value">#{{ centro.codigo|default:"-" }}</p>
                                     </div>
-                                {% endif %}
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Referente del centro -->
-                    <div class="card shadow-sm mb-4">
-                        <div class="card-header bg-light referente-header">
-                            <h6 class="mb-0 text-white">
-                                <i class="fas fa-user me-2"></i>
-                                Referente del centro
-                            </h6>
-                        </div>
-                        <div class="card-body">
-                            <div class="details-grid">
-                                <article class="details-item">
-                                    <div class="details-label text-muted">
-                                        <i class="fas fa-id-badge"></i>Nombre y Apellido
+                                    <div class="sisoc-data-item">
+                                        <p class="sisoc-data-label">Sector de gestión</p>
+                                        <p class="sisoc-data-value">{{ centro.tipo_gestion|default:"-" }}</p>
                                     </div>
-                                    <p class="details-value">
-                                        {% if centro.nombre_referente or centro.apellido_referente %}
-                                            {{ centro.nombre_referente }} {{ centro.apellido_referente }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </p>
-                                </article>
-                                <article class="details-item">
-                                    <div class="details-label text-muted">
-                                        <i class="fas fa-user-cog"></i>Usuario/s del Sistema
+                                    <div class="sisoc-data-item">
+                                        <p class="sisoc-data-label">Domicilio</p>
+                                        <p class="sisoc-data-value">
+                                            {% if centro.calle %}
+                                                {{ centro.calle }}
+                                                {% if centro.numero %}{{ centro.numero }}{% endif %}
+                                            {% else %}
+                                                {{ centro.domicilio_actividad|default:"-" }}
+                                            {% endif %}
+                                        </p>
                                     </div>
-                                    <div class="details-value">
-                                        {% for referente_usuario in referentes_centro %}
-                                            <div>{{ referente_usuario.get_full_name|default:referente_usuario.username }}</div>
-                                        {% empty %}
-                                            -
-                                        {% endfor %}
+                                    <div class="sisoc-data-item">
+                                        <p class="sisoc-data-label">Teléfono</p>
+                                        <p class="sisoc-data-value">{{ centro.telefono|default:"-" }}</p>
                                     </div>
-                                </article>
-                                <article class="details-item">
-                                    <div class="details-label text-muted">
-                                        <i class="fas fa-phone"></i>Telefono
+                                    <div class="sisoc-data-item">
+                                        <p class="sisoc-data-label">Celular</p>
+                                        <p class="sisoc-data-value">{{ centro.celular|default:"-" }}</p>
                                     </div>
-                                    <p class="details-value">{{ centro.telefono_referente|default:"-" }}</p>
-                                </article>
-                                <article class="details-item">
-                                    <div class="details-label text-muted">
-                                        <i class="fas fa-envelope"></i>Correo
+                                    <div class="sisoc-data-item">
+                                        <p class="sisoc-data-label">Correo electrónico</p>
+                                        <p class="sisoc-data-value">
+                                            {% if centro.correo %}
+                                                <a href="mailto:{{ centro.correo }}">{{ centro.correo }}</a>
+                                            {% else %}
+                                                -
+                                            {% endif %}
+                                        </p>
                                     </div>
-                                    <p class="details-value">
-                                        {% if centro.correo_referente %}
-                                            <a href="mailto:{{ centro.correo_referente }}"
-                                               class="text-decoration-none">{{ centro.correo_referente }}</a>
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </p>
-                                </article>
-                            </div>
-
-                            {% if puede_ver_usuarios_centro_vat %}
-                                <hr />
-                                <div class="mb-2">
-                                    <h6 class="mb-0">Usuarios del centro</h6>
-                                    <small class="text-muted">Credenciales visibles solo para el referente del centro y administradores. La contraseña temporal se oculta automáticamente cuando el usuario la cambia.</small>
                                 </div>
-                                <div class="table-responsive">
-                                    <table class="table table-bordered table-striped align-middle mb-0">
-                                        <thead>
-                                            <tr>
-                                                <th>Usuario</th>
-                                                <th>Nombre</th>
-                                                <th>Email</th>
-                                                <th>Contraseña temporal</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {% for referente_usuario in referentes_centro %}
-                                                <tr>
-                                                    <td>
-                                                        <code>{{ referente_usuario.username }}</code>
-                                                    </td>
-                                                    <td>{{ referente_usuario.get_full_name|default:"-" }}</td>
-                                                    <td>{{ referente_usuario.email|default:"-" }}</td>
-                                                    <td>
-                                                        {% if referente_usuario.profile.temporary_password_plaintext %}
-                                                            <code>{{ referente_usuario.profile.temporary_password_plaintext }}</code>
-                                                        {% else %}
-                                                            <span class="text-muted">Ya cambiada</span>
-                                                        {% endif %}
-                                                    </td>
-                                                </tr>
-                                            {% empty %}
-                                                <tr>
-                                                    <td colspan="4" class="text-center text-muted">Sin usuarios generados para este centro.</td>
-                                                </tr>
-                                            {% endfor %}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            {% endif %}
-                        </div>
-                    </div>
-
-                    <!-- Contactos Adicionales -->
-                    <div class="card shadow-sm">
-                        <div class="card-header bg-light centro-section-header d-flex justify-content-between align-items-center">
-                            <h6 class="mb-0 text-primary">
-                                <i class="fas fa-phone me-2"></i>
-                                Contactos Adicionales
-                            </h6>
-                            {% if can_edit_centro and perms.VAT.add_institucioncontacto %}
-                                <button type="button"
-                                        class="btn btn-sm btn-primary"
-                                        data-bs-toggle="modal"
-                                        data-bs-target="#modalContacto">
-                                    <i class="fas fa-plus me-1"></i>Agregar
-                                </button>
-                            {% endif %}
-                        </div>
-                        <div class="card-body p-0">
-                            {% if contactos %}
-                                <div class="table-responsive">
-                                    <table class="table table-hover mb-0">
-                                        <thead class="table-light">
-                                            <tr>
-                                                <th>
-                                                    <i class="fas fa-user me-1"></i>Responsable
-                                                </th>
-                                                <th>
-                                                    <i class="fas fa-briefcase me-1"></i>Rol / Área
-                                                </th>
-                                                <th>
-                                                    <i class="fas fa-id-card me-1"></i>Documento
-                                                </th>
-                                                <th>
-                                                    <i class="fas fa-phone me-1"></i>Teléfono
-                                                </th>
-                                                <th>
-                                                    <i class="fas fa-envelope me-1"></i>Correo
-                                                </th>
-                                                <th>
-                                                    <i class="fas fa-star me-1"></i>Principal
-                                                </th>
-                                                <th class="text-center">
-                                                    <i class="fas fa-cogs me-1"></i>Acciones
-                                                </th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {% for c in contactos %}
-                                                <tr>
-                                                    <td class="fw-bold">{{ c.nombre_contacto|default:"-" }}</td>
-                                                    <td>{{ c.rol_area|default:"-" }}</td>
-                                                    <td>{{ c.documento|default:"-" }}</td>
-                                                    <td>{{ c.telefono_contacto|default:"-" }}</td>
-                                                    <td>
-                                                        {% if c.email_contacto %}
-                                                            <a href="mailto:{{ c.email_contacto }}" class="text-decoration-none">{{ c.email_contacto }}</a>
-                                                        {% else %}
-                                                            -
-                                                        {% endif %}
-                                                    </td>
-                                                    <td class="text-center">
-                                                        {% if c.es_principal %}
-                                                            <i class="fas fa-star text-warning"></i>
-                                                        {% else %}
-                                                            -
-                                                        {% endif %}
-                                                    </td>
-                                                    <td class="text-center">
-                                                        <div class="btn-group btn-group-sm" role="group">
-                                                            {% if can_edit_centro and perms.VAT.change_institucioncontacto %}
-                                                                <button class="btn btn-outline-warning"
-                                                                        onclick="editContacto({{ c.id }})"
-                                                                        title="Editar">
-                                                                    <i class="fas fa-edit"></i>
-                                                                </button>
-                                                            {% endif %}
-                                                            {% if can_edit_centro and perms.VAT.delete_institucioncontacto %}
-                                                                <button class="btn btn-outline-danger"
-                                                                        onclick="deleteContacto({{ c.id }})"
-                                                                        title="Eliminar">
-                                                                    <i class="fas fa-trash"></i>
-                                                                </button>
-                                                            {% endif %}
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                            {% endfor %}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            {% else %}
-                                <div class="text-center py-4 text-muted">
-                                    <i class="fas fa-phone fa-2x mb-2 opacity-50"></i>
-                                    <p class="mb-0">No hay contactos institucionales registrados.</p>
-                                </div>
-                            {% endif %}
-                        </div>
-                    </div>
-
-                    {# ================================================================ #}
-                    {# DATOS INSTITUCIONALES DENTRO DE DATOS GENERALES                #}
-                    {# ================================================================ #}
-
-                    <!-- Ubicacion Principal -->
-                    <div class="card shadow-sm mb-4">
-                        <div class="card-header bg-light info-general-header">
-                            <h6 class="mb-0 text-primary">
-                                <i class="fas fa-map-marker-alt me-2"></i>
-                                Ubicacion Principal
-                            </h6>
-                        </div>
-                        <div class="card-body p-0">
-                            <div class="location-card">
-                                <div class="left-tab">
-                                    <div class="tab-text">UBICACION</div>
-                                </div>
-                                {% if centro.calle and centro.numero and centro.localidad and centro.municipio and centro.provincia %}
-                                    <div class="map-container">
-                                        <iframe width="100%"
-                                                height="100%"
+                                <div class="sisoc-map-preview">
+                                    {% if centro.calle and centro.localidad and centro.municipio and centro.provincia %}
+                                        <iframe title="Mapa del centro"
                                                 frameborder="0"
-                                                style="border:0;
-                                                       border-radius: 12px"
-                                                src="https://maps.google.com/maps?q={{ centro.calle|urlencode }}+{{ centro.numero }},+{{ centro.localidad.nombre|urlencode }},+{{ centro.municipio.nombre|urlencode }},+{{ centro.provincia.nombre|urlencode }}&output=embed"
-                                                allowfullscreen></iframe>
+                                                style="border:0"
+                                                src="https://maps.google.com/maps?q={{ centro.calle|urlencode }}{% if centro.numero %}+{{ centro.numero|urlencode }}{% endif %},+{{ centro.localidad.nombre|urlencode }},+{{ centro.municipio.nombre|urlencode }},+{{ centro.provincia.nombre|urlencode }}&output=embed"
+                                                allowfullscreen>
+                                        </iframe>
+                                    {% else %}
+                                        <div class="sisoc-map-placeholder">
+                                            <i class="fas fa-map-marker-alt"></i>
+                                            <span>Sin datos suficientes para mostrar el mapa</span>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <hr class="sisoc-section-divider" />
+                            <div class="sisoc-section-header">
+                                <h2>Referente del centro</h2>
+                            </div>
+                            <ul class="sisoc-referente-list">
+                                <li class="sisoc-referente-item">
+                                    <span class="sisoc-referente-icon"><i class="fas fa-signature"></i></span>
+                                    <div class="sisoc-referente-copy">
+                                        <span>Nombre y apellido</span>
+                                        <strong>
+                                            {% if centro.nombre_referente or centro.apellido_referente %}
+                                                {{ centro.nombre_referente }} {{ centro.apellido_referente }}
+                                            {% elif primary_contacto and primary_contacto.nombre_contacto %}
+                                                {{ primary_contacto.nombre_contacto }}
+                                            {% else %}
+                                                -
+                                            {% endif %}
+                                        </strong>
                                     </div>
-                                {% else %}
-                                    <div class="map-container d-flex align-items-center justify-content-center text-white">
-                                        <div class="text-center">
-                                            <i class="fas fa-map-marker-alt fa-3x mb-3 opacity-75"></i>
-                                            <h5>No hay datos suficientes para cargar el mapa</h5>
+                                </li>
+                                <li class="sisoc-referente-item">
+                                    <span class="sisoc-referente-icon"><i class="fas fa-phone"></i></span>
+                                    <div class="sisoc-referente-copy">
+                                        <span>Teléfono</span>
+                                        <strong>
+                                            {% if centro.telefono_referente %}
+                                                {{ centro.telefono_referente }}
+                                            {% elif primary_contacto and primary_contacto.telefono_contacto %}
+                                                {{ primary_contacto.telefono_contacto }}
+                                            {% else %}
+                                                -
+                                            {% endif %}
+                                        </strong>
+                                    </div>
+                                </li>
+                                <li class="sisoc-referente-item">
+                                    <span class="sisoc-referente-icon"><i class="fas fa-user-check"></i></span>
+                                    <div class="sisoc-referente-copy">
+                                        <span>Usuario del sistema</span>
+                                        <div>
+                                            {% for referente_usuario in referentes_centro %}
+                                                {% if not forloop.first %}<span class="d-none">,</span>{% endif %}
+                                                {{ referente_usuario.get_full_name|default:referente_usuario.username }}
+                                                {% if not forloop.last %},{% endif %}
+                                            {% empty %}
+                                                -
+                                            {% endfor %}
                                         </div>
                                     </div>
+                                </li>
+                                <li class="sisoc-referente-item">
+                                    <span class="sisoc-referente-icon"><i class="fas fa-id-card"></i></span>
+                                    <div class="sisoc-referente-copy">
+                                        <span>DNI</span>
+                                        <strong>
+                                            {% if primary_contacto and primary_contacto.documento %}
+                                                {{ primary_contacto.documento }}
+                                            {% else %}
+                                                -
+                                            {% endif %}
+                                        </strong>
+                                    </div>
+                                </li>
+                                <li class="sisoc-referente-item">
+                                    <span class="sisoc-referente-icon"><i class="fas fa-envelope"></i></span>
+                                    <div class="sisoc-referente-copy">
+                                        <span>Correo electrónico</span>
+                                        <strong>
+                                            {% if centro.correo_referente %}
+                                                {{ centro.correo_referente }}
+                                            {% elif primary_contacto and primary_contacto.email_contacto %}
+                                                {{ primary_contacto.email_contacto }}
+                                            {% else %}
+                                                -
+                                            {% endif %}
+                                        </strong>
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+
+                    </section>
+
+                    <section class="sisoc-info-panel" data-sisoc-panel="ubicaciones">
+                        <div class="sisoc-panel-section">
+                            <div class="sisoc-section-header">
+                                <h2>Ubicaciones adicionales</h2>
+                                {% if can_edit_centro and perms.VAT.add_institucionubicacion %}
+                                    <button type="button"
+                                            class="sisoc-btn sisoc-btn--add"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#modalUbicacion">
+                                        <i class="fas fa-plus"></i>
+                                        <span>Agregar sede</span>
+                                    </button>
                                 {% endif %}
-                                <div class="details-container">
-                                    <h3 class="section-title">Ubicacion Principal</h3>
-                                    <hr class="section-divider" />
-                                    <ul>
-                                        <li>
-                                            <i class="fas fa-map-marker-alt"></i><strong>Provincia:</strong> {{ centro.provincia|default:"-" }}
-                                        </li>
-                                        <li class="sisoc-referente-item">
-                                            <span class="sisoc-referente-icon"><i class="fas fa-envelope"></i></span>
-                                            <div class="sisoc-referente-copy">
-                                                <span>Correo electrónico</span>
-                                                <strong>
-                                                    {% if centro.correo_referente %}
-                                                        {{ centro.correo_referente }}
-                                                    {% elif primary_contacto and primary_contacto.email_contacto %}
-                                                        {{ primary_contacto.email_contacto }}
-                                                    {% else %}
-                                                        -
-                                                    {% endif %}
-                                                </strong>
-                                            </div>
-                                        </li>
-                                    </ul>
-                                </div>
                             </div>
-                        </div>
-                    </div>
-                </section>
-
-                <section class="sisoc-info-panel" data-sisoc-panel="ubicaciones">
-                    <div class="sisoc-panel-section">
-                        <div class="sisoc-section-header">
-                            <h2>Ubicaciones adicionales</h2>
-                            {% if can_edit_centro and perms.VAT.add_institucionubicacion %}
-                                <button type="button"
-                                        class="sisoc-btn sisoc-btn--add"
-                                        data-bs-toggle="modal"
-                                        data-bs-target="#modalUbicacion">
-                                    <i class="fas fa-plus"></i>
-                                    <span>Agregar sede</span>
-                                </button>
+                            <hr class="sisoc-section-divider" />
+                            {% if ubicaciones %}
+                                <div class="sisoc-table-shell">
+                                    <div class="sisoc-table-wrap">
+                                        <table class="sisoc-table">
+                                            <thead>
+                                                <tr>
+                                                    <th>Nombre</th>
+                                                    <th>Característica</th>
+                                                    <th>Localidad</th>
+                                                    <th>Domicilio</th>
+                                                    <th>Acciones</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for u in ubicaciones %}
+                                                    <tr>
+                                                        <td>{{ u.nombre_ubicacion|default:u.get_rol_ubicacion_display }}</td>
+                                                        <td>{{ u.get_rol_ubicacion_display }}</td>
+                                                        <td>{{ u.localidad|default:"-" }}</td>
+                                                        <td>{{ u.domicilio|default:"-" }}</td>
+                                                        <td>
+                                                            <div class="sisoc-table-actions">
+                                                                {% if can_edit_centro and perms.VAT.change_institucionubicacion %}
+                                                                    <button type="button"
+                                                                            class="sisoc-btn sisoc-btn--edit"
+                                                                            onclick="editUbicacion({{ u.id }})">
+                                                                        <i class="fas fa-pen"></i>
+                                                                        <span>Editar</span>
+                                                                    </button>
+                                                                {% endif %}
+                                                                {% if can_edit_centro and perms.VAT.delete_institucionubicacion %}
+                                                                    <button type="button"
+                                                                            class="sisoc-btn sisoc-btn--delete"
+                                                                            onclick="deleteUbicacion({{ u.id }})">
+                                                                        <i class="fas fa-trash"></i>
+                                                                        <span>Borrar</span>
+                                                                    </button>
+                                                                {% endif %}
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                                <div class="sisoc-table-footer">
+                                    <span>Mostrando 1-{{ ubicaciones|length }} de {{ ubicaciones|length }}</span>
+                                    <div class="sisoc-pager" aria-hidden="true">
+                                        <button type="button">&lt;</button>
+                                        <span>1 de 1</span>
+                                        <button type="button">&gt;</button>
+                                    </div>
+                                </div>
+                            {% else %}
+                                <div class="sisoc-empty-state">No hay ubicaciones registradas para este centro.</div>
                             {% endif %}
                         </div>
-                        <hr class="sisoc-section-divider" />
-                        {% if ubicaciones %}
-                            <div class="sisoc-table-shell">
-                                <div class="sisoc-table-wrap">
-                                    <table class="sisoc-table">
-                                        <thead>
-                                            <tr>
-                                                <th>Nombre</th>
-                                                <th>Característica</th>
-                                                <th>Localidad</th>
-                                                <th>Domicilio</th>
-                                                <th>Acciones</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {% for u in ubicaciones %}
-                                                <tr>
-                                                    <td>{{ u.nombre_ubicacion|default:u.get_rol_ubicacion_display }}</td>
-                                                    <td>{{ u.get_rol_ubicacion_display }}</td>
-                                                    <td>{{ u.localidad|default:"-" }}</td>
-                                                    <td>{{ u.domicilio|default:"-" }}</td>
-                                                    <td>
-                                                        <div class="sisoc-table-actions">
-                                                            {% if can_edit_centro and perms.VAT.change_institucionubicacion %}
-                                                                <button type="button"
-                                                                        class="sisoc-btn sisoc-btn--edit"
-                                                                        onclick="editUbicacion({{ u.id }})">
-                                                                    <i class="fas fa-pen"></i>
-                                                                    <span>Editar</span>
-                                                                </button>
-                                                            {% endif %}
-                                                            {% if can_edit_centro and perms.VAT.delete_institucionubicacion %}
-                                                                <button type="button"
-                                                                        class="sisoc-btn sisoc-btn--delete"
-                                                                        onclick="deleteUbicacion({{ u.id }})">
-                                                                    <i class="fas fa-trash"></i>
-                                                                    <span>Borrar</span>
-                                                                </button>
-                                                            {% endif %}
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                            {% endfor %}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                            <div class="sisoc-table-footer">
-                                <span>Mostrando 1-{{ ubicaciones|length }} de {{ ubicaciones|length }}</span>
-                                <div class="sisoc-pager" aria-hidden="true">
-                                    <button type="button">&lt;</button>
-                                    <span>1 de 1</span>
-                                    <button type="button">&gt;</button>
-                                </div>
-                            </div>
-                        {% else %}
-                            <div class="sisoc-empty-state">No hay ubicaciones registradas para este centro.</div>
-                        {% endif %}
-                    </div>
-                </section>
+                    </section>
 
-                <section class="sisoc-info-panel" data-sisoc-panel="contactos">
-                    <div class="sisoc-panel-section">
-                        <div class="sisoc-section-header">
-                            <h2>Contactos adicionales</h2>
-                            {% if can_edit_centro and perms.VAT.add_institucioncontacto %}
-                                <button type="button"
-                                        class="sisoc-btn sisoc-btn--add"
-                                        data-bs-toggle="modal"
-                                        data-bs-target="#modalContacto">
-                                    <i class="fas fa-plus"></i>
-                                    <span>Agregar contacto</span>
-                                </button>
+                    <section class="sisoc-info-panel" data-sisoc-panel="contactos">
+                        <div class="sisoc-panel-section">
+                            <div class="sisoc-section-header">
+                                <h2>Contactos adicionales</h2>
+                                {% if can_edit_centro and perms.VAT.add_institucioncontacto %}
+                                    <button type="button"
+                                            class="sisoc-btn sisoc-btn--add"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#modalContacto">
+                                        <i class="fas fa-plus"></i>
+                                        <span>Agregar contacto</span>
+                                    </button>
+                                {% endif %}
+                            </div>
+                            <hr class="sisoc-section-divider" />
+                            {% if contactos %}
+                                <div class="sisoc-table-shell">
+                                    <div class="sisoc-table-wrap">
+                                        <table class="sisoc-table">
+                                            <thead>
+                                                <tr>
+                                                    <th>Nombre y apellido</th>
+                                                    <th>Documento</th>
+                                                    <th>Rol</th>
+                                                    <th>Principal</th>
+                                                    <th>Teléfono</th>
+                                                    <th>Acciones</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for c in contactos %}
+                                                    <tr>
+                                                        <td>{{ c.nombre_contacto|default:"-" }}</td>
+                                                        <td>{{ c.documento|default:"-" }}</td>
+                                                        <td>{{ c.rol_area|default:"-" }}</td>
+                                                        <td>
+                                                            {% if c.es_principal %}
+                                                                Sí
+                                                            {% else %}
+                                                                No
+                                                            {% endif %}
+                                                        </td>
+                                                        <td>{{ c.telefono_contacto|default:"-" }}</td>
+                                                        <td>
+                                                            <div class="sisoc-table-actions">
+                                                                {% if can_edit_centro and perms.VAT.change_institucioncontacto %}
+                                                                    <button type="button"
+                                                                            class="sisoc-btn sisoc-btn--edit"
+                                                                            onclick="editContacto({{ c.id }})">
+                                                                        <i class="fas fa-pen"></i>
+                                                                        <span>Editar</span>
+                                                                    </button>
+                                                                {% endif %}
+                                                                {% if can_edit_centro and perms.VAT.delete_institucioncontacto %}
+                                                                    <button type="button"
+                                                                            class="sisoc-btn sisoc-btn--delete"
+                                                                            onclick="deleteContacto({{ c.id }})">
+                                                                        <i class="fas fa-trash"></i>
+                                                                        <span>Borrar</span>
+                                                                    </button>
+                                                                {% endif %}
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            {% else %}
+                                <div class="sisoc-empty-state">No hay contactos adicionales cargados.</div>
                             {% endif %}
                         </div>
-                        <hr class="sisoc-section-divider" />
-                        {% if contactos %}
-                            <div class="sisoc-table-shell">
-                                <div class="sisoc-table-wrap">
-                                    <table class="sisoc-table">
-                                        <thead>
-                                            <tr>
-                                                <th>Nombre y apellido</th>
-                                                <th>Documento</th>
-                                                <th>Rol</th>
-                                                <th>Principal</th>
-                                                <th>Teléfono</th>
-                                                <th>Acciones</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {% for c in contactos %}
-                                                <tr>
-                                                    <td>{{ c.nombre_contacto|default:"-" }}</td>
-                                                    <td>{{ c.documento|default:"-" }}</td>
-                                                    <td>{{ c.rol_area|default:"-" }}</td>
-                                                    <td>
-                                                        {% if c.es_principal %}
-                                                            Sí
-                                                        {% else %}
-                                                            No
-                                                        {% endif %}
-                                                    </td>
-                                                    <td>{{ c.telefono_contacto|default:"-" }}</td>
-                                                    <td>
-                                                        <div class="sisoc-table-actions">
-                                                            {% if can_edit_centro and perms.VAT.change_institucioncontacto %}
-                                                                <button type="button"
-                                                                        class="sisoc-btn sisoc-btn--edit"
-                                                                        onclick="editContacto({{ c.id }})">
-                                                                    <i class="fas fa-pen"></i>
-                                                                    <span>Editar</span>
-                                                                </button>
-                                                            {% endif %}
-                                                            {% if can_edit_centro and perms.VAT.delete_institucioncontacto %}
-                                                                <button type="button"
-                                                                        class="sisoc-btn sisoc-btn--delete"
-                                                                        onclick="deleteContacto({{ c.id }})">
-                                                                    <i class="fas fa-trash"></i>
-                                                                    <span>Borrar</span>
-                                                                </button>
-                                                            {% endif %}
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                            {% endfor %}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        {% else %}
-                            <div class="sisoc-empty-state">No hay contactos adicionales cargados.</div>
-                        {% endif %}
-                    </div>
-                </section>
-            </div>
-
-            <div class="sisoc-side-tabs sisoc-side-tabs--right"
-                 role="tablist"
-                 aria-label="Secciones pendientes">
-                <button type="button"
-                        class="sisoc-side-tab"
-                        data-sisoc-tab-target="general"
-                        aria-selected="false"
-                        hidden>
-                    <span>Información general</span>
-                </button>
-                <button type="button"
-                        class="sisoc-side-tab"
-                        data-sisoc-tab-target="ubicaciones"
-                        aria-selected="false">
-                    <span>Ubicaciones adicionales</span>
-                </button>
-                <button type="button"
-                        class="sisoc-side-tab"
-                        data-sisoc-tab-target="contactos"
-                        aria-selected="false">
-                    <span>Contactos adicionales</span>
-                </button>
-            </div>
-        </div>
-    </div>
-{% endwith %}
-
-<div class="sisoc-cursos-pane"
-     id="cursos"
-     data-cursos-panel-url="{{ cursos_panel_url }}">
-    <div id="centroCursosPanelContainer" data-panel-loaded="0">
-        <div class="sisoc-section-card">
-            <div class="sisoc-empty-state">
-                <div class="spinner-border spinner-border-sm text-light mb-3"
-                     role="status"
-                     aria-hidden="true"></div>
-                <p class="mb-0">Cargando oferta educativa y comisiones...</p>
-            </div>
-        </div>
-    </div>
-</div>
-
-{% if can_edit_centro %}
-    <!-- Modal Contacto -->
-    <div class="modal fade"
-         id="modalContacto"
-         tabindex="-1"
-         aria-labelledby="modalContactoLabel"
-         aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="modalContactoLabel">Agregar Contacto</h5>
-                    <button type="button"
-                            class="btn-close"
-                            data-bs-dismiss="modal"
-                            aria-label="Close"></button>
+                    </section>
                 </div>
-                <form id="formContacto"
-                      method="post"
-                      action="{% url 'vat_institucion_contacto_create' %}?centro={{ centro.id }}">
-                    {% csrf_token %}
-                    <div class="modal-body">{{ contacto_form.as_p }}</div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" class="btn btn-primary">Guardar</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
 
-    <!-- Modal Identificador -->
-    <div class="modal fade"
-         id="modalIdentificador"
-         tabindex="-1"
-         aria-labelledby="modalIdentificadorLabel"
-         aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="modalIdentificadorLabel">Agregar Identificador</h5>
+                <div class="sisoc-side-tabs sisoc-side-tabs--right"
+                     role="tablist"
+                     aria-label="Secciones pendientes">
                     <button type="button"
-                            class="btn-close"
-                            data-bs-dismiss="modal"
-                            aria-label="Close"></button>
-                </div>
-                <form id="formIdentificador"
-                      method="post"
-                      action="{% url 'vat_institucion_identificador_create' %}?centro={{ centro.id }}">
-                    {% csrf_token %}
-                    <div class="modal-body">{{ identificador_form.as_p }}</div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" class="btn btn-primary">Guardar</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal Ubicacion -->
-    <div class="modal fade"
-         id="modalUbicacion"
-         tabindex="-1"
-         aria-labelledby="modalUbicacionLabel"
-         aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="modalUbicacionLabel">Agregar Ubicacion</h5>
+                            class="sisoc-side-tab"
+                            data-sisoc-tab-target="general"
+                            aria-selected="false"
+                            hidden>
+                        <span>Información general</span>
+                    </button>
                     <button type="button"
-                            class="btn-close"
-                            data-bs-dismiss="modal"
-                            aria-label="Close"></button>
+                            class="sisoc-side-tab"
+                            data-sisoc-tab-target="ubicaciones"
+                            aria-selected="false">
+                        <span>Ubicaciones adicionales</span>
+                    </button>
+                    <button type="button"
+                            class="sisoc-side-tab"
+                            data-sisoc-tab-target="contactos"
+                            aria-selected="false">
+                        <span>Contactos adicionales</span>
+                    </button>
                 </div>
-                <form id="formUbicacion"
-                      method="post"
-                      action="{% url 'vat_institucion_ubicacion_create' %}?centro={{ centro.id }}">
-                    {% csrf_token %}
-                    <div class="modal-body">{{ ubicacion_form.as_p }}</div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" class="btn btn-primary">Guardar</button>
-                    </div>
-                </form>
+            </div>
+        </div>
+    {% endwith %}
+
+    <div class="sisoc-cursos-pane"
+         id="cursos"
+         data-cursos-panel-url="{{ cursos_panel_url }}">
+        <div id="centroCursosPanelContainer" data-panel-loaded="0">
+            <div class="sisoc-section-card">
+                <div class="sisoc-empty-state">
+                    <div class="spinner-border spinner-border-sm text-light mb-3"
+                         role="status"
+                         aria-hidden="true"></div>
+                    <p class="mb-0">Cargando oferta educativa y comisiones...</p>
+                </div>
             </div>
         </div>
     </div>
-{% endif %}
 
-<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css"
-      rel="stylesheet" />
-<style>
+    {% if can_edit_centro %}
+        <!-- Modal Contacto -->
+        <div class="modal fade"
+             id="modalContacto"
+             tabindex="-1"
+             aria-labelledby="modalContactoLabel"
+             aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="modalContactoLabel">Agregar Contacto</h5>
+                        <button type="button"
+                                class="btn-close"
+                                data-bs-dismiss="modal"
+                                aria-label="Close"></button>
+                    </div>
+                    <form id="formContacto"
+                          method="post"
+                          action="{% url 'vat_institucion_contacto_create' %}?centro={{ centro.id }}">
+                        {% csrf_token %}
+                        <div class="modal-body">{{ contacto_form.as_p }}</div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-primary">Guardar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal Identificador -->
+        <div class="modal fade"
+             id="modalIdentificador"
+             tabindex="-1"
+             aria-labelledby="modalIdentificadorLabel"
+             aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="modalIdentificadorLabel">Agregar Identificador</h5>
+                        <button type="button"
+                                class="btn-close"
+                                data-bs-dismiss="modal"
+                                aria-label="Close"></button>
+                    </div>
+                    <form id="formIdentificador"
+                          method="post"
+                          action="{% url 'vat_institucion_identificador_create' %}?centro={{ centro.id }}">
+                        {% csrf_token %}
+                        <div class="modal-body">{{ identificador_form.as_p }}</div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-primary">Guardar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal Ubicacion -->
+        <div class="modal fade"
+             id="modalUbicacion"
+             tabindex="-1"
+             aria-labelledby="modalUbicacionLabel"
+             aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="modalUbicacionLabel">Agregar Ubicacion</h5>
+                        <button type="button"
+                                class="btn-close"
+                                data-bs-dismiss="modal"
+                                aria-label="Close"></button>
+                    </div>
+                    <form id="formUbicacion"
+                          method="post"
+                          action="{% url 'vat_institucion_ubicacion_create' %}?centro={{ centro.id }}">
+                        {% csrf_token %}
+                        <div class="modal-body">{{ ubicacion_form.as_p }}</div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-primary">Guardar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css"
+          rel="stylesheet" />
+    <style>
         #modalCurso .form-control:disabled,
         #modalCurso .form-select:disabled,
         #modalCurso .modal-locked-field,
@@ -2065,15 +1763,16 @@
         }
 
         #modalCurso .modal-dialog {
-            max-width: 365px;
+            max-width: 460px;
         }
 
         #modalCurso .modal-content {
-            background: #2e3b69;
-            border: 0;
-            border-radius: 0 0 14px 14px;
-            box-shadow: 0 26px 70px rgba(5, 12, 24, 0.45);
+            background: linear-gradient(180deg, #2f3d6b 0%, #28335c 100%);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 18px;
+            box-shadow: 0 30px 80px rgba(5, 12, 24, 0.55);
             color: #ffffff;
+            overflow: hidden;
         }
 
         #modalCurso .modal-header,
@@ -2084,37 +1783,73 @@
         .sisoc-curso-modal-header {
             position: relative;
             justify-content: center;
-            padding: 1rem 1.15rem .7rem;
-            background: #2e3b69;
+            padding: 1.15rem 1.25rem .85rem;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0) 100%);
         }
 
         .sisoc-curso-modal-header::after {
             content: '';
             position: absolute;
-            left: 1rem;
-            right: 1rem;
+            left: 1.25rem;
+            right: 1.25rem;
             bottom: 0;
-            height: 1px;
-            background: rgba(255, 255, 255, 0.55);
+            height: 2px;
+            border-radius: 2px;
+            background: linear-gradient(90deg, #3b8681 0%, #4a8ddb 100%);
         }
 
         .sisoc-curso-modal-header .modal-title {
-            font-size: 20px;
+            display: inline-flex;
+            align-items: center;
+            gap: .55rem;
+            font-size: 21px;
             font-weight: 700;
             font-family: Georgia, 'Times New Roman', serif;
             color: #ffffff;
         }
 
+        .sisoc-curso-modal-header .modal-title i {
+            font-size: 17px;
+            color: #7cb2f2;
+        }
+
         .sisoc-curso-close {
             position: absolute;
-            top: .8rem;
-            right: .8rem;
+            top: 1rem;
+            right: 1rem;
+            width: 28px;
+            height: 28px;
+            margin: 0;
+            padding: 0;
+            border-radius: 8px;
+            background-color: rgba(255, 255, 255, 0.08);
             filter: brightness(0) invert(1);
+            opacity: .85;
+            transition: background-color .18s ease, opacity .18s ease;
+        }
+
+        .sisoc-curso-close:hover {
+            background-color: rgba(255, 255, 255, 0.18);
             opacity: 1;
         }
 
         .sisoc-curso-modal-body {
-            padding: .95rem 1rem 0;
+            padding: 1.15rem 1.25rem .25rem;
+            max-height: min(68vh, 560px);
+            overflow-y: auto;
+        }
+
+        .sisoc-curso-modal-body::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .sisoc-curso-modal-body::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.18);
+            border-radius: 99px;
+        }
+
+        .sisoc-curso-modal-body::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.28);
         }
 
         #modalCurso #planEstudioSeleccionadoInfo {
@@ -2138,39 +1873,50 @@
         #modalCurso .form-select,
         .sisoc-curso-select-trigger {
             width: 100%;
-            min-height: 38px;
-            border-radius: 5px;
-            border: 1px solid rgba(255, 255, 255, 0.72);
-            background: rgba(255, 255, 255, 0.03);
+            min-height: 40px;
+            border-radius: 9px;
+            border: 1px solid rgba(255, 255, 255, 0.28);
+            background: rgba(255, 255, 255, 0.05);
             color: #ffffff;
-            font-size: 12px;
+            font-size: 12.5px;
             box-shadow: none;
+            transition: border-color .18s ease, background-color .18s ease, box-shadow .18s ease;
         }
 
         #modalCurso .form-control,
         #modalCurso .form-select {
-            padding: .42rem .72rem;
+            padding: .5rem .8rem;
+        }
+
+        #modalCurso .form-control:hover,
+        #modalCurso .form-select:hover,
+        .sisoc-curso-select-trigger:hover {
+            border-color: rgba(255, 255, 255, 0.45);
+            background: rgba(255, 255, 255, 0.07);
         }
 
         #modalCurso textarea.form-control {
-            min-height: 68px;
-            resize: none;
+            min-height: 72px;
+            resize: vertical;
         }
 
         #modalCurso .form-control::placeholder {
-            color: rgba(255, 255, 255, 0.7);
+            color: rgba(255, 255, 255, 0.55);
         }
 
         #modalCurso .form-control:focus,
         #modalCurso .form-select:focus,
         .sisoc-curso-select-trigger:focus {
-            border-color: #ffffff;
-            box-shadow: 0 0 0 0.14rem rgba(255, 255, 255, 0.12);
+            border-color: #4a8ddb;
+            background: rgba(74, 141, 219, 0.08);
+            box-shadow: 0 0 0 0.18rem rgba(74, 141, 219, 0.22);
             outline: none;
         }
 
-        #modalCurso .form-select option {
+        #modalCurso select.form-select option,
+        #modalCurso select.form-control option {
             color: #1c2742;
+            background-color: #ffffff;
         }
 
         .sisoc-curso-select-trigger {
@@ -2225,23 +1971,29 @@
         .sisoc-curso-modal-footer {
             display: flex;
             justify-content: flex-end;
-            gap: .7rem;
-            padding: 1rem 1rem 1rem;
+            gap: .6rem;
+            padding: .85rem 1.25rem 1.15rem;
+            background: rgba(0, 0, 0, 0.12);
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
         }
 
         .sisoc-curso-submit {
             border: 0;
             border-radius: 999px;
-            min-height: 32px;
-            padding: .38rem .95rem;
-            font-size: 12px;
+            min-height: 38px;
+            padding: .5rem 1.35rem;
+            font-size: 12.5px;
             font-weight: 700;
             line-height: 1;
-            transition: transform .18s ease, box-shadow .18s ease, opacity .18s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: .45rem;
+            transition: transform .18s ease, box-shadow .18s ease, filter .18s ease, opacity .18s ease;
         }
 
         .sisoc-curso-submit:hover {
             transform: translateY(-1px);
+            filter: brightness(1.06);
         }
 
         .sisoc-curso-submit:disabled {
@@ -2250,15 +2002,20 @@
         }
 
         .sisoc-curso-submit--secondary {
-            background: #ffffff;
-            color: #27365f;
-            box-shadow: 0 10px 22px rgba(5, 12, 24, 0.2);
+            background: rgba(255, 255, 255, 0.1);
+            color: #e6f1ff;
+            box-shadow: none;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .sisoc-curso-submit--secondary:hover {
+            background: rgba(255, 255, 255, 0.16);
         }
 
         .sisoc-curso-submit--primary {
-            background: #2e7d33;
+            background: linear-gradient(135deg, #3a9d40 0%, #2e7d33 100%);
             color: #ffffff;
-            box-shadow: 0 10px 22px rgba(7, 26, 11, 0.24);
+            box-shadow: 0 10px 22px rgba(7, 26, 11, 0.32);
         }
 
         /* Vouchers — header con contador chip */
@@ -2448,9 +2205,9 @@
             background-color: #f39c12 !important;
             color: #1e2a3a !important;
         }
-</style>
-<script src="{% static 'custom/js/vat.js' %}"></script>
-<script nonce="{{ request.csp_nonce }}">
+    </style>
+    <script src="{% static 'custom/js/vat.js' %}"></script>
+    <script nonce="{{ request.csp_nonce }}">
         // Funciones para editar (redirigir a pagina de edicion)
         function editContacto(id) {
             window.location.href = `/vat/institucion/contactos/${id}/editar/`;
@@ -3423,6 +3180,20 @@
                 }
             }
 
+            function ensureTipoSelect2() {
+                var tipoField = formEl.querySelector('select[name="tipo"]');
+                if (!tipoField) return;
+
+                if (window.refreshSelect2Element) {
+                    window.refreshSelect2Element(tipoField);
+                    return;
+                }
+
+                if (window.initSelect2Elements) {
+                    window.initSelect2Elements(tipoField);
+                }
+            }
+
             function normalizePlanSelectorValue(value) {
                 return (value || '').toString().trim().toLowerCase();
             }
@@ -3704,7 +3475,7 @@
                 var lockPlanEstudio = triggerButton.getAttribute('data-lock-plan-estudio') === '1';
 
                 if (mode === 'edit') {
-                    titleEl.textContent = 'Editar Curso';
+                    (document.getElementById('modalCursoLabelText') || titleEl).textContent = 'Editar Curso';
                     formEl.setAttribute('action', triggerButton.getAttribute('data-edit-url') || createAction);
                     if (primarySubmitEl) {
                         primarySubmitEl.textContent = 'Actualizar';
@@ -3723,7 +3494,7 @@
                     return;
                 }
 
-                titleEl.textContent = 'Nuevo Curso';
+                (document.getElementById('modalCursoLabelText') || titleEl).textContent = 'Nuevo Curso';
                 formEl.reset();
                 formEl.setAttribute('action', createAction);
                 if (primarySubmitEl) {
@@ -3735,6 +3506,10 @@
                     setPlanEstudioInfo(planEstudioLabel, true);
                 }
                 updatePlanSelectorSummary();
+            });
+
+            modalEl.addEventListener('shown.bs.modal', function() {
+                ensureTipoSelect2();
             });
 
             updatePlanSelectorSummary();
@@ -4002,7 +3777,7 @@
                 }
             });
         });
-</script>
+    </script>
 {% endblock %}
 
 {% block customJS %}

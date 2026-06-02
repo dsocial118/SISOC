@@ -20,7 +20,7 @@ BOOL_OPS = ["eq", "ne"]
 
 FILTER_FIELDS = [
     {"name": "nombre", "label": "Nombre", "type": "text"},
-    {"name": "codigo", "label": "Codigo", "type": "text"},
+    {"name": "codigo", "label": "CUE", "type": "text"},
     {
         "name": "estado_carga",
         "label": "Estado de carga",
