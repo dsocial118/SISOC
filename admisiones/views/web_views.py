@@ -671,7 +671,16 @@ def resync_convenio_admision(request, admision_pk):
     )
 
     if accion == "actualizar":
-        ok, mensaje = AdmisionService.resync_admision_desde_organizacion(admision)
+        # Si cambio el Tipo de Entidad, el convenio (y su set documental) cambia:
+        # se reconstruye todo (#1605). Si solo cambio la documentacion del legajo,
+        # la actualizacion es DIRIGIDA: refresca lo que cambio y preserva el resto,
+        # sin borrar los documentos cargados admision-side (#1799 feedback punto 1).
+        if AdmisionService.admision_desincronizada(admision):
+            ok, mensaje = AdmisionService.resync_admision_desde_organizacion(admision)
+        else:
+            ok, mensaje = AdmisionService.actualizar_documentacion_desde_organizacion(
+                admision, request.user
+            )
     elif accion == "continuar":
         ok, mensaje = AdmisionService.aceptar_desincronizacion_admision(admision)
     else:
