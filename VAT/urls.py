@@ -10,6 +10,7 @@ from VAT.views.centro import (
     CentroUpdateView,
     centros_ajax,
 )
+from VAT.views.generar_usuario import GenerarUsuarioCentroVATView
 
 from VAT.views.modalidad_institucional import (
     ModalidadInstitucionalListView,
@@ -127,6 +128,7 @@ from VAT.views.curso import (
     InscripcionRapidaComisionCursoView,
     AsistenciaSesionCursoView,
 )
+from VAT.views.comision_curso_wizard import ComisionCursoWizardView
 
 from VAT.views.persona import (
     InscripcionListView,
@@ -178,6 +180,13 @@ urlpatterns = [
         name="vat_centro_detail",
     ),
     path(
+        "vat/centros/<int:pk>/generar-usuario/",
+        permissions_any_required(["VAT.view_centro"])(
+            GenerarUsuarioCentroVATView.as_view()
+        ),
+        name="vat_centro_generar_usuario",
+    ),
+    path(
         "vat/centros/<int:pk>/panel/cursos/",
         permissions_any_required(["VAT.view_centro"])(CentroCursosPanelView.as_view()),
         name="vat_centro_cursos_panel",
@@ -209,6 +218,13 @@ urlpatterns = [
             ComisionCursoCreateView.as_view()
         ),
         name="vat_comision_curso_create",
+    ),
+    path(
+        "vat/cursos/<int:curso_id>/comision/nueva/",
+        permissions_any_required(["VAT.add_comisioncurso"])(
+            ComisionCursoWizardView.as_view()
+        ),
+        name="vat_comision_curso_wizard",
     ),
     path(
         "vat/cursos/comisiones/<int:pk>/",

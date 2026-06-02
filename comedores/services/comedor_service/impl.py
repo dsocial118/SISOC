@@ -54,6 +54,7 @@ from admisiones.models.admisiones import Admision
 from rendicioncuentasmensual.models import RendicionCuentaMensual
 from intervenciones.models.intervenciones import Intervencion
 from expedientespagos.models import ExpedientePago
+from expedientespagos.services import ordenar_expedientes_por_periodo_desc
 from duplas.models import Dupla
 from organizaciones.models import Aval, Firmante
 
@@ -351,11 +352,9 @@ def _calcular_presupuesto_desde_prestaciones(count, valor_map):
 
 
 def _build_comedores_list_values_queryset(base_qs):
-    latest_mes_ejecucion = (
+    latest_mes_ejecucion = ordenar_expedientes_por_periodo_desc(
         ExpedientePago.objects.filter(comedor_id=OuterRef("pk"))
-        .order_by("-fecha_creacion", "-id")
-        .values("mes_convenio")[:1]
-    )
+    ).values("mes_convenio")[:1]
     return (
         base_qs.select_related(
             "provincia",
@@ -438,17 +437,35 @@ def _apply_user_scope_to_comedores_list_queryset(base_qs, user):
         return base_qs
 
     from users.services import UserPermissionService
+    from users.territorial_scope import apply_territorial_scope, is_territorial_user
 
     is_coordinador, duplas_ids = UserPermissionService.get_coordinador_duplas(user)
     is_dupla = UserPermissionService.es_tecnico_o_abogado(user)
 
     if is_coordinador:
-        return _aplicar_scope_coordinador_comedores_list_queryset(base_qs, duplas_ids)
+        role_qs = _aplicar_scope_coordinador_comedores_list_queryset(
+            base_qs, duplas_ids
+        )
+    elif is_dupla:
+        role_qs = _build_dupla_user_scoped_comedores_list_queryset(user)
+    else:
+        role_qs = None
 
-    if is_dupla:
-        return _build_dupla_user_scoped_comedores_list_queryset(user)
+    if not is_territorial_user(user):
+        return role_qs if role_qs is not None else base_qs
 
-    return base_qs
+    territorial_qs = apply_territorial_scope(
+        base_qs,
+        user,
+        provincia_lookup="provincia_id",
+        municipio_lookup="municipio_id",
+        localidad_lookup="localidad_id",
+    )
+
+    if role_qs is not None:
+        # Territorio + asignados fuera del territorio
+        return (territorial_qs | role_qs.distinct()).distinct()
+    return territorial_qs
 
 
 def _build_comedores_model_queryset():
@@ -460,19 +477,37 @@ def _apply_user_scope_to_comedores_queryset(base_qs, user):
         return base_qs
 
     from users.services import UserPermissionService
+    from users.territorial_scope import apply_territorial_scope, is_territorial_user
 
     is_coordinador, duplas_ids = UserPermissionService.get_coordinador_duplas(user)
     is_dupla = UserPermissionService.es_tecnico_o_abogado(user)
 
     if is_coordinador:
-        return _aplicar_scope_coordinador_comedores_list_queryset(base_qs, duplas_ids)
-
-    if is_dupla:
-        return base_qs.filter(
+        role_qs = _aplicar_scope_coordinador_comedores_list_queryset(
+            base_qs, duplas_ids
+        )
+    elif is_dupla:
+        role_qs = base_qs.filter(
             Q(dupla__abogado=user) | Q(dupla__tecnico=user)
         ).distinct()
+    else:
+        role_qs = None
 
-    return base_qs
+    if not is_territorial_user(user):
+        return role_qs if role_qs is not None else base_qs
+
+    territorial_qs = apply_territorial_scope(
+        base_qs,
+        user,
+        provincia_lookup="provincia_id",
+        municipio_lookup="municipio_id",
+        localidad_lookup="localidad_id",
+    )
+
+    if role_qs is not None:
+        # Territorio + asignados fuera del territorio
+        return (territorial_qs | role_qs.distinct()).distinct()
+    return territorial_qs
 
 
 def _build_relevamientos_detail_prefetch_queryset():
@@ -1572,6 +1607,9 @@ class ComedorService:
         nueva_admision = Admision.objects.create(
             comedor=comedor,
             tipo=tipo_admision,
+            tipo_entidad_origen=getattr(
+                getattr(comedor, "organizacion", None), "tipo_entidad", None
+            ),
         )
         messages.success(
             request,

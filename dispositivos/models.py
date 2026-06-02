@@ -75,8 +75,10 @@ class Dispositivo(models.Model):
     )
     provincia = models.ForeignKey(Provincia, on_delete=models.PROTECT)
     municipio = models.ForeignKey(Municipio, on_delete=models.PROTECT)
-    domicilio_institucion = models.CharField(max_length=255)
-    telefono_contacto = models.CharField(max_length=50)
+    calle = models.CharField(max_length=255, blank=True)
+    altura = models.CharField(max_length=50, blank=True)
+    telefono_prefijo = models.CharField(max_length=10, blank=True)
+    telefono_numero = models.CharField(max_length=20, blank=True)
     correo_electronico = models.EmailField(blank=True, null=True)
     responsable_nombre_completo = models.CharField(max_length=255)
     responsable_dni = models.CharField(
@@ -226,6 +228,26 @@ class Dispositivo(models.Model):
     def clean(self):
         super().clean()
         errors = {}
+
+        required_text_fields = {
+            "calle": "Ingrese la calle.",
+            "altura": "Ingrese la altura.",
+            "telefono_prefijo": "Ingrese el prefijo (solo números).",
+            "telefono_numero": "Ingrese el teléfono (solo números).",
+        }
+        for field_name, message in required_text_fields.items():
+            value = getattr(self, field_name, "")
+            if isinstance(value, str):
+                value = value.strip()
+                setattr(self, field_name, value)
+            if not value:
+                errors[field_name] = message
+
+        for field_name in ("telefono_prefijo", "telefono_numero"):
+            value = getattr(self, field_name, "")
+            if value and not str(value).isdigit():
+                errors[field_name] = "Ingrese solo números."
+
         if (
             self.tipo_gestion == self.TipoGestion.OTRA
             and not (self.tipo_gestion_otra or "").strip()

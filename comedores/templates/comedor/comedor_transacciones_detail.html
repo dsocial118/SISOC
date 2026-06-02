@@ -7,110 +7,70 @@
     <div class="row g-2 align-items-center">
         <div class="col-12 col-lg-auto d-flex justify-content-start">
             <a href="{% url 'comedor_detalle' comedor.id %}"
-               class="btn btn-sm btn-primary w-100 w-sm-auto backbutton-handler">Volver al legajo</a>
+               class="btn btn-sm btn-primary w-100 w-sm-auto backbutton-handler">Volver</a>
         </div>
         <div class="col-12 col-lg d-flex justify-content-lg-end">
-            <h4 class="m-0">Transacciones Nación Servicios</h4>
+            <h4 class="m-0">Transacciones - Naci&oacute;n Servicios</h4>
         </div>
     </div>
 {% endblock %}
 
 {% block content %}
     <div class="container-fluid">
-        <div class="card">
-            <div class="card-header py-1 d-flex align-items-center justify-content-between">
-                <h4 class="fw-bold my-1">{{ comedor.nombre }}</h4>
-                <small class="text-muted">Histórico de transacciones - Total: {{ total_count }}</small>
+        <style>
+            table.transacciones-table > :not(caption) > * > * {
+                padding-bottom: .5rem;
+                padding-top: .5rem;
+            }
+        </style>
+        <div class="card mb-3">
+            <div class="card-header">
+                <h3 class="card-title">Transacciones - Naci&oacute;n Servicios</h3>
             </div>
-            <div class="card-body">
+            <div class="card-body p-0">
                 {% if transacciones %}
                     <div class="table-responsive">
-                        <table class="table table-hover table-sm">
-                            <thead class="table-light">
+                        <table class="table table-bordered table-sm mb-0 transacciones-table">
+                            <thead>
                                 <tr>
-                                    <th>Período</th>
-                                    <th class="text-end">Movimientos</th>
-                                    <th class="text-end">Transferido</th>
-                                    <th class="text-end">Gastado</th>
-                                    <th class="text-end">Saldo Remanente</th>
+                                    <th scope="col"
+                                        style="background-color: #3d4f63 !important;
+                                               border-bottom: 2px solid #e7ba61 !important">Per&iacute;odo</th>
+                                    <th scope="col"
+                                        class="text-end"
+                                        style="background-color: #3d4f63 !important;
+                                               border-bottom: 2px solid #e7ba61 !important">Movimientos</th>
+                                    <th scope="col"
+                                        class="text-end"
+                                        style="background-color: #3d4f63 !important;
+                                               border-bottom: 2px solid #e7ba61 !important">Transferido</th>
+                                    <th scope="col"
+                                        class="text-end"
+                                        style="background-color: #3d4f63 !important;
+                                               border-bottom: 2px solid #e7ba61 !important">Gastado</th>
+                                    <th scope="col"
+                                        class="text-end"
+                                        style="background-color: #3d4f63 !important;
+                                               border-bottom: 2px solid #e7ba61 !important">Saldo Remanente</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {% for transaccion in transacciones %}
                                     <tr>
-                                        <td>
-                                            <strong>{{ transaccion.periodo_display }}</strong>
-                                        </td>
+                                        <td>{{ transaccion.periodo_display }}</td>
                                         <td class="text-end">{{ transaccion.cantidad_debitos }}</td>
-                                        <td class="text-end">
-                                            <span class="badge bg-info">{{ transaccion.transferido_display }}</span>
-                                        </td>
-                                        <td class="text-end">
-                                            <span class="badge bg-success">{{ transaccion.gastado_display }}</span>
-                                        </td>
-                                        <td class="text-end">
-                                            <span class="badge bg-warning">{{ transaccion.saldo_display }}</span>
-                                        </td>
+                                        <td class="text-end">{{ transaccion.transferido_display }}</td>
+                                        <td class="text-end">{{ transaccion.gastado_display }}</td>
+                                        <td class="text-end">{{ transaccion.saldo_display }}</td>
                                     </tr>
                                 {% endfor %}
                             </tbody>
                         </table>
                     </div>
-
-                    <!-- Paginación -->
-                    {% if page_obj.has_other_pages %}
-                        <nav aria-label="Page navigation">
-                            <ul class="pagination justify-content-center">
-                                {% if page_obj.has_previous %}
-                                    <li class="page-item">
-                                        <a class="page-link" href="?page=1">Primera</a>
-                                    </li>
-                                    <li class="page-item">
-                                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Anterior</a>
-                                    </li>
-                                {% else %}
-                                    <li class="page-item disabled">
-                                        <span class="page-link">Primera</span>
-                                    </li>
-                                    <li class="page-item disabled">
-                                        <span class="page-link">Anterior</span>
-                                    </li>
-                                {% endif %}
-
-                                {% for num in page_obj.paginator.page_range %}
-                                    {% if page_obj.number == num %}
-                                        <li class="page-item active" aria-current="page">
-                                            <span class="page-link">{{ num }}</span>
-                                        </li>
-                                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
-                                        <li class="page-item">
-                                            <a class="page-link" href="?page={{ num }}">{{ num }}</a>
-                                        </li>
-                                    {% endif %}
-                                {% endfor %}
-
-                                {% if page_obj.has_next %}
-                                    <li class="page-item">
-                                        <a class="page-link" href="?page={{ page_obj.next_page_number }}">Siguiente</a>
-                                    </li>
-                                    <li class="page-item">
-                                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">Última</a>
-                                    </li>
-                                {% else %}
-                                    <li class="page-item disabled">
-                                        <span class="page-link">Siguiente</span>
-                                    </li>
-                                    <li class="page-item disabled">
-                                        <span class="page-link">Última</span>
-                                    </li>
-                                {% endif %}
-                            </ul>
-                        </nav>
-                    {% endif %}
                 {% else %}
-                    <div class="alert alert-info">
+                    <div class="alert alert-info m-3">
                         <i class="bi bi-info-circle me-2"></i>
-                        <strong>Sin información</strong> - No hay registros de transacciones disponibles para este comedor.
+                        <strong>Sin informaci&oacute;n</strong> - No hay registros de transacciones disponibles para este comedor.
                     </div>
                 {% endif %}
             </div>

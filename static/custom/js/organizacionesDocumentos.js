@@ -1,3 +1,6 @@
+let orgRectificarContext = null;
+let orgModalRectificarInstance = null;
+
 function getOrganizacionDocsCsrfToken() {
     const config = document.getElementById("organizacion-documentos-config");
     return config && config.dataset ? config.dataset.csrfToken : "";
@@ -163,21 +166,8 @@ function postOrganizacionDocState(url, estado, observaciones) {
     });
 }
 
-function orgHandleStateChange(select) {
-    if (!select.value) {
-        return;
-    }
-
+function orgSubmitStateChange(select, observaciones) {
     const previousValue = select.dataset.currentValue || "";
-    const requiresObservacion = select.dataset.requiresObservacion === "1";
-    let observaciones = "";
-    if (select.value === "Rectificar" && requiresObservacion) {
-        observaciones = window.prompt("Observaciones para rectificar") || "";
-        if (!observaciones.trim()) {
-            select.value = previousValue;
-            return;
-        }
-    }
 
     postOrganizacionDocState(select.dataset.url, select.value, observaciones)
         .then(function (data) {
@@ -188,6 +178,113 @@ function orgHandleStateChange(select) {
             orgShowToast("error", error.message);
             select.value = previousValue;
         });
+}
+
+function orgHandleStateChange(select) {
+    if (!select.value) {
+        return;
+    }
+
+    const previousValue = select.dataset.currentValue || "";
+    const requiresObservacion = select.dataset.requiresObservacion === "1";
+    if (select.value === "Rectificar" && requiresObservacion) {
+        orgRectificarContext = {
+            selectElement: select,
+            estado: select.value,
+            previousValue: previousValue,
+            confirmed: false,
+            observaciones: "",
+        };
+
+        select.value = previousValue;
+
+        if (orgModalRectificarInstance) {
+            orgModalRectificarInstance.show();
+        } else {
+            const promptValue = window.prompt("Detalle el motivo de la rectificacion:") || "";
+            const texto = promptValue.trim();
+            if (!texto) {
+                orgRectificarContext = null;
+                select.value = previousValue;
+                return;
+            }
+            orgRectificarContext = null;
+            select.value = "Rectificar";
+            orgSubmitStateChange(select, texto);
+        }
+        return;
+    }
+
+    orgSubmitStateChange(select, "");
+}
+
+function orgInitRectificarModal() {
+    const modalElement = document.getElementById("orgModalObservacionRectificar");
+    if (modalElement && typeof bootstrap !== "undefined") {
+        orgModalRectificarInstance = new bootstrap.Modal(modalElement);
+        modalElement.addEventListener("shown.bs.modal", function () {
+            const textarea = document.getElementById("orgObservacionRectificar");
+            if (textarea) {
+                textarea.focus();
+            }
+        });
+        modalElement.addEventListener("hidden.bs.modal", function () {
+            const textarea = document.getElementById("orgObservacionRectificar");
+            if (textarea) {
+                textarea.value = "";
+            }
+            const errorLabel = document.getElementById("orgObservacionRectificarError");
+            if (errorLabel) {
+                errorLabel.textContent = "";
+            }
+            if (!orgRectificarContext) {
+                return;
+            }
+
+            const context = orgRectificarContext;
+            orgRectificarContext = null;
+            const select = context.selectElement;
+            if (!select) {
+                return;
+            }
+
+            if (context.confirmed) {
+                select.value = context.estado;
+                orgSubmitStateChange(select, context.observaciones);
+            } else {
+                select.value = context.previousValue || "";
+                if (select.dataset) {
+                    select.dataset.currentValue = context.previousValue || "";
+                }
+            }
+        });
+    }
+
+    const confirmarBtn = document.getElementById("orgBtnConfirmarRectificar");
+    if (confirmarBtn) {
+        confirmarBtn.addEventListener("click", function () {
+            if (!orgRectificarContext) {
+                return;
+            }
+            const textarea = document.getElementById("orgObservacionRectificar");
+            const errorLabel = document.getElementById("orgObservacionRectificarError");
+            const texto = textarea ? textarea.value.trim() : "";
+            if (!texto) {
+                if (errorLabel) {
+                    errorLabel.textContent = "Debe completar las observaciones.";
+                }
+                return;
+            }
+            if (errorLabel) {
+                errorLabel.textContent = "";
+            }
+            orgRectificarContext.observaciones = texto;
+            orgRectificarContext.confirmed = true;
+            if (orgModalRectificarInstance) {
+                orgModalRectificarInstance.hide();
+            }
+        });
+    }
 }
 
 function orgOpenInlineEditor(display) {
@@ -331,6 +428,134 @@ function orgUploadDocumento(input) {
     xhr.send(formData);
 }
 
+function orgAppendDocumentoAdicionalRow(html) {
+    if (!html) {
+        return;
+    }
+    const tbody = document.querySelector("#documentacion .documentacion-table tbody");
+    if (!tbody) {
+        return;
+    }
+    const placeholder = tbody.querySelector("td[colspan]");
+    if (placeholder && placeholder.parentElement) {
+        placeholder.parentElement.remove();
+    }
+    const template = document.createElement("template");
+    template.innerHTML = html.trim();
+    tbody.appendChild(template.content);
+    orgBindDynamicHandlers(document);
+}
+
+function orgSubmitDocumentoAdicional() {
+    const nombreInput = document.getElementById("nuevoDocOrgNombre");
+    const archivoInput = document.getElementById("nuevoDocOrgArchivo");
+    const vencInput = document.getElementById("nuevoDocOrgVencimiento");
+    const btn = document.getElementById("btnAgregarDocOrg");
+    if (!nombreInput || !archivoInput || !btn) {
+        return;
+    }
+    const nombre = (nombreInput.value || "").trim();
+    if (!nombre) {
+        orgShowToast("error", "Debe indicar un nombre para el documento.");
+        nombreInput.focus();
+        return;
+    }
+    if (!archivoInput.files.length) {
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append("nombre", nombre);
+    formData.append("archivo", archivoInput.files[0]);
+    if (vencInput && vencInput.value) {
+        formData.append("fecha_vencimiento", vencInput.value);
+    }
+
+    const progressContainer = document.getElementById("org-doc-adicional-progress-container");
+    const progressBar = document.getElementById("org-doc-adicional-progress-bar");
+    if (progressContainer && progressBar) {
+        progressContainer.classList.remove("d-none");
+        progressBar.style.width = "0%";
+        progressBar.textContent = "0%";
+    }
+    btn.disabled = true;
+
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", btn.dataset.url, true);
+    xhr.setRequestHeader("X-CSRFToken", getOrganizacionDocsCsrfToken());
+
+    xhr.upload.onprogress = function (event) {
+        if (event.lengthComputable && progressBar) {
+            const percent = Math.round((event.loaded / event.total) * 100);
+            progressBar.style.width = `${percent}%`;
+            progressBar.textContent = `${percent}%`;
+        }
+    };
+
+    xhr.onload = function () {
+        btn.disabled = false;
+        if (progressContainer) {
+            progressContainer.classList.add("d-none");
+        }
+        let data = {};
+        try {
+            data = JSON.parse(xhr.responseText || "{}");
+        } catch (error) {
+            data = {};
+        }
+        if (xhr.status >= 200 && xhr.status < 300 && data.success) {
+            orgAppendDocumentoAdicionalRow(data.html);
+            orgShowToast("success", "Documento adicional agregado con éxito.");
+            nombreInput.value = "";
+            archivoInput.value = "";
+            if (vencInput) {
+                vencInput.value = "";
+            }
+            return;
+        }
+        orgShowToast("error", (data && data.error) || "No se pudo agregar el documento.");
+        archivoInput.value = "";
+    };
+
+    xhr.onerror = function () {
+        btn.disabled = false;
+        if (progressContainer) {
+            progressContainer.classList.add("d-none");
+        }
+        orgShowToast("error", "Error de red al agregar el documento.");
+        archivoInput.value = "";
+    };
+
+    xhr.send(formData);
+}
+
+function orgInitDocumentoAdicional() {
+    const btn = document.getElementById("btnAgregarDocOrg");
+    const archivoInput = document.getElementById("nuevoDocOrgArchivo");
+    const nombreInput = document.getElementById("nuevoDocOrgNombre");
+    if (!btn || !archivoInput) {
+        return;
+    }
+    btn.addEventListener("click", function () {
+        const nombre = nombreInput ? (nombreInput.value || "").trim() : "";
+        if (!nombre) {
+            orgShowToast("error", "Debe indicar un nombre para el documento.");
+            if (nombreInput) {
+                nombreInput.focus();
+            }
+            return;
+        }
+        archivoInput.click();
+    });
+    archivoInput.addEventListener("change", function () {
+        if (archivoInput.files.length) {
+            orgSubmitDocumentoAdicional();
+        }
+    });
+}
+
 document.addEventListener("DOMContentLoaded", function () {
+    orgInitRectificarModal();
+    orgInitDocumentoAdicional();
     orgBindDynamicHandlers(document);
 });

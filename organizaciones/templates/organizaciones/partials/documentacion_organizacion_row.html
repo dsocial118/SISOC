@@ -1,9 +1,14 @@
-{% with doc=row.documentacion archivo=row.archivo %}
-    <tr id="org-doc-row-{{ doc.id }}">
+{% with doc=row.documentacion archivo=row.archivo es_personalizado=row.es_personalizado %}
+    <tr id="org-doc-row-{% if es_personalizado %}custom-{{ archivo.id }}{% else %}{{ doc.id }}{% endif %}">
         <td class="doc-name">
-            <strong>{{ doc.nombre }}</strong>
-            {% if doc.obligatorio %}<span class="text-danger fs-5 ms-1">*</span>{% endif %}
-            {% if archivo %}
+            {% if es_personalizado %}
+                <strong>{{ archivo.nombre_personalizado }}</strong>
+                <span class="badge bg-info text-dark ms-1">Adicional</span>
+            {% else %}
+                <strong>{{ doc.nombre }}</strong>
+                {% if doc.obligatorio %}<span class="text-danger fs-5 ms-1">*</span>{% endif %}
+            {% endif %}
+            {% if archivo and not es_personalizado %}
                 <div class="mt-1">
                     <a href="{% url 'organizacion_documento_historial' organizacion.id doc.id %}"
                        class="btn btn-sm btn-outline-secondary">Historial</a>
@@ -53,51 +58,13 @@
         </td>
         <td>
             {% if archivo %}
-                <div class="documentacion-compact-controls documentacion-gde">
+                <div class="documentacion-compact-controls">
                     <a href="{{ archivo.archivo.url }}"
                        target="_blank"
                        class="btn btn-primary btn-sm">
                         <i class="fas fa-eye"></i>
                         Ver Archivo
                     </a>
-                    <div id="org-gde-display-{{ archivo.id }}"
-                         class="{% if puede_validar_documentacion_organizacion or puede_enviar_documentacion_organizacion %}org-inline-display{% endif %}"
-                         {% if puede_validar_documentacion_organizacion or puede_enviar_documentacion_organizacion %}data-org-inline-edit="org-gde-edit-{{ archivo.id }}"{% endif %}>
-                        {% if archivo.numero_gde %}
-                            <span class="text-success fw-bold">{{ archivo.numero_gde }}</span>
-                            <i class="bi bi-pencil-square ms-2 text-muted" title="Editar numero GDE"></i>
-                        {% else %}
-                            <span class="text-muted">Sin numero GDE</span>
-                            <i class="bi bi-plus-circle ms-2 text-primary"
-                               title="Agregar numero GDE"></i>
-                        {% endif %}
-                    </div>
-                    {% if puede_validar_documentacion_organizacion or puede_enviar_documentacion_organizacion %}
-                        <div id="org-gde-edit-{{ archivo.id }}" class="org-inline-edit d-none">
-                            <div class="d-flex align-items-center">
-                                <input type="text"
-                                       class="form-control form-control-sm me-2 org-inline-input"
-                                       value="{{ archivo.numero_gde|default_if_none:'' }}"
-                                       data-empty-text="Sin numero GDE"
-                                       data-url="{% url 'organizacion_documento_gde' archivo.id %}"
-                                       data-field="numero_gde"
-                                       data-display-id="org-gde-display-{{ archivo.id }}"
-                                       data-edit-id="org-gde-edit-{{ archivo.id }}"
-                                       maxlength="50"
-                                       placeholder="Ingrese numero GDE" />
-                                <button type="button"
-                                        class="btn btn-success btn-sm me-1 org-inline-save"
-                                        title="Guardar">
-                                    <i class="bi bi-check"></i>
-                                </button>
-                                <button type="button"
-                                        class="btn btn-secondary btn-sm org-inline-cancel"
-                                        title="Cancelar">
-                                    <i class="bi bi-x"></i>
-                                </button>
-                            </div>
-                        </div>
-                    {% endif %}
                 </div>
             {% else %}
                 <span style="color: #9ca3af;">Sin archivo</span>
@@ -153,10 +120,11 @@
                         </div>
                     {% endif %}
                 {% endif %}
-                {% if puede_enviar_documentacion_organizacion %}
+                {% if puede_enviar_documentacion_organizacion and not es_personalizado %}
                     <input type="file"
                            id="org-doc-file-{{ doc.id }}"
                            class="d-none org-doc-file"
+                           accept=".pdf,.jpg,.jpeg,.png,.xls,.xlsx,.doc,.docx"
                            data-upload-url="{% url 'organizacion_documento_subir' organizacion.id doc.id %}"
                            data-vencimiento-id="org-doc-venc-{{ doc.id }}" />
                     <button type="button"
@@ -164,7 +132,7 @@
                             data-file-id="org-doc-file-{{ doc.id }}">Adjuntar</button>
                 {% endif %}
             </div>
-            {% if puede_enviar_documentacion_organizacion %}
+            {% if puede_enviar_documentacion_organizacion and not es_personalizado %}
                 <div class="progress mt-2 documentacion-upload-progress"
                      id="org-progress-container-{{ doc.id }}">
                     <div class="progress-bar progress-bar-striped"
@@ -172,6 +140,57 @@
                          id="org-progress-bar-{{ doc.id }}"
                          style="width: 0%">0%</div>
                 </div>
+            {% endif %}
+        </td>
+        <td>
+            {% if archivo and archivo.estado == "Aceptado" %}
+                {% if puede_validar_documentacion_organizacion or puede_enviar_documentacion_organizacion %}
+                    <div id="org-gde-display-{{ archivo.id }}"
+                         class="org-inline-display"
+                         data-org-inline-edit="org-gde-edit-{{ archivo.id }}">
+                        {% if archivo.numero_gde %}
+                            <span class="text-success fw-bold">{{ archivo.numero_gde }}</span>
+                            <i class="bi bi-pencil-square ms-2 text-muted" title="Editar número GDE"></i>
+                        {% else %}
+                            <span class="text-muted">Sin número GDE</span>
+                            <i class="bi bi-plus-circle ms-2 text-primary"
+                               title="Agregar número GDE"></i>
+                        {% endif %}
+                    </div>
+                    <div id="org-gde-edit-{{ archivo.id }}" class="org-inline-edit d-none">
+                        <div class="d-flex align-items-center">
+                            <input type="text"
+                                   class="form-control form-control-sm me-2 org-inline-input"
+                                   value="{{ archivo.numero_gde|default_if_none:'' }}"
+                                   maxlength="50"
+                                   placeholder="Ingrese número GDE"
+                                   data-empty-text="Sin número GDE"
+                                   data-url="{% url 'organizacion_documento_gde' archivo.id %}"
+                                   data-field="numero_gde"
+                                   data-display-id="org-gde-display-{{ archivo.id }}"
+                                   data-edit-id="org-gde-edit-{{ archivo.id }}"
+                                   style="max-width: 160px" />
+                            <button type="button"
+                                    class="btn btn-success btn-sm me-1 org-inline-save"
+                                    title="Guardar">
+                                <i class="bi bi-check"></i>
+                            </button>
+                            <button type="button"
+                                    class="btn btn-secondary btn-sm org-inline-cancel"
+                                    title="Cancelar">
+                                <i class="bi bi-x"></i>
+                            </button>
+                        </div>
+                    </div>
+                {% else %}
+                    {% if archivo.numero_gde %}
+                        <span class="text-success fw-bold">{{ archivo.numero_gde }}</span>
+                    {% else %}
+                        <span class="text-muted">-</span>
+                    {% endif %}
+                {% endif %}
+            {% else %}
+                <span class="text-muted">-</span>
             {% endif %}
         </td>
     </tr>

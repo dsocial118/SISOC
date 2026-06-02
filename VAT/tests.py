@@ -1,7 +1,7 @@
 import importlib
 from io import BytesIO
 from types import SimpleNamespace
-from datetime import date, time
+from datetime import date, time, timedelta
 import json
 
 import pytest
@@ -14,6 +14,7 @@ from django.core.exceptions import ValidationError
 from django.core.management import call_command
 from django.test import RequestFactory, override_settings
 from django.urls import reverse
+from django.utils import timezone
 from openpyxl import load_workbook
 from rest_framework.test import APIClient
 from rest_framework_api_key.models import APIKey
@@ -452,14 +453,15 @@ def test_centro_update_renderiza_mismo_formulario_extendido_que_alta(
     content = response.content.decode("utf-8")
     assert response.status_code == 200
     assert "contactos-TOTAL_FORMS" in content
-    assert "3.2 Contactos de la institución" in content
+    # Refactor 4f1f2241 renombró las secciones removiendo prefijos numéricos
+    assert "Contactos adicionales" in content
     assert "4. Autoridades" not in content
     assert 'name="contactos-0-documento"' in content
     assert 'name="save_continue"' not in content
     assert 'for="id_provincia"' not in content
     assert 'name="provincia"' in content
     assert 'name="activo_present"' in content
-    assert "4. Estado de la sede" in content
+    assert "Estado de Centro de Formación Profesional" in content
 
 
 @pytest.mark.django_db
@@ -1188,6 +1190,51 @@ def test_centro_list_usuario_provincial_solo_ve_su_provincia(client):
 
 
 @pytest.mark.django_db
+def test_vat_centro_list_no_emite_errores_de_variables_faltantes_en_search_bar(
+    client, vat_geo_data, caplog
+):
+    provincia, municipio, localidad = vat_geo_data
+    user = User.objects.create_superuser(
+        username="admin-vat-centro-list-render",
+        email="admin-centro-list-render@vat.test",
+        password="test1234",
+    )
+    Centro.objects.create(
+        nombre="Centro Render",
+        codigo="CEN-RENDER-001",
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad,
+        calle="7",
+        numero=123,
+        domicilio_actividad="Calle 7 123",
+        telefono="221-4000000",
+        celular="221-5000000",
+        correo="render@vat.test",
+        nombre_referente="Ana",
+        apellido_referente="Pérez",
+        telefono_referente="221-6000000",
+        correo_referente="referente-render@vat.test",
+        tipo_gestion="Estatal",
+        clase_institucion="Formación Profesional",
+        situacion="Institución de ETP",
+        activo=True,
+    )
+
+    client.force_login(user)
+    caplog.clear()
+
+    with caplog.at_level("DEBUG", logger="django.template"):
+        response = client.get(reverse("vat_centro_list"))
+
+    assert response.status_code == 200
+    assert not any(
+        "Exception while resolving variable" in record.message
+        for record in caplog.records
+    )
+
+
+@pytest.mark.django_db
 def test_filter_centros_queryset_usuario_con_role_provincia_vat_aplica_scope():
     provincia_corrientes = Provincia.objects.create(nombre="Corrientes")
     provincia_chaco = Provincia.objects.create(nombre="Chaco")
@@ -1390,7 +1437,116 @@ def test_vat_centro_list_filters_config_expone_solo_nombre_y_codigo(mocker):
     assert [field["name"] for field in context["filters_config"]["fields"]] == [
         "nombre",
         "codigo",
+        "estado_carga",
     ]
+
+
+@pytest.mark.django_db
+def test_vat_centro_list_filtra_por_estado_carga(vat_geo_data):
+    provincia, municipio, localidad = vat_geo_data
+    user = User.objects.create_superuser(
+        username="centro-filtro-estado-carga",
+        email="centro-filtro-estado-carga@vat.test",
+        password="test1234",
+    )
+
+    centro_incompleto = Centro.objects.create(
+        nombre="Centro sin carga 2026",
+        codigo="LEG-EC-001",
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad,
+        calle="7",
+        numero=123,
+        domicilio_actividad="Calle 7",
+        telefono="221-111111",
+        celular="221-111112",
+        correo="ec1@vat.test",
+        nombre_referente="Ana",
+        apellido_referente="Perez",
+        telefono_referente="221-111113",
+        correo_referente="refec1@vat.test",
+        tipo_gestion="Estatal",
+        clase_institucion="Formación Profesional",
+        situacion="Institución de ETP",
+        activo=True,
+    )
+    centro_completo = Centro.objects.create(
+        nombre="Centro con carga 2026",
+        codigo="LEG-EC-002",
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad,
+        calle="8",
+        numero=456,
+        domicilio_actividad="Calle 8",
+        telefono="221-222221",
+        celular="221-222222",
+        correo="ec2@vat.test",
+        nombre_referente="Juan",
+        apellido_referente="Gomez",
+        telefono_referente="221-222223",
+        correo_referente="refec2@vat.test",
+        tipo_gestion="Privada",
+        clase_institucion="Capacitación Laboral",
+        situacion="Institución de ETP",
+        activo=True,
+    )
+    modalidad = ModalidadCursada.objects.create(nombre="Presencial", activo=True)
+    Curso.objects.create(
+        centro=centro_completo,
+        modalidad=modalidad,
+        nombre="Curso carga 2026",
+        estado="planificado",
+    )
+
+    request_false = RequestFactory().get(
+        "/vat/centros/",
+        data={
+            "filters": json.dumps(
+                {
+                    "logic": "AND",
+                    "items": [
+                        {
+                            "field": "estado_carga",
+                            "op": "eq",
+                            "value": "false",
+                        }
+                    ],
+                }
+            )
+        },
+    )
+    request_false.user = user
+
+    view_false = centro_views.CentroListView()
+    view_false.request = request_false
+
+    assert list(view_false.get_queryset()) == [centro_incompleto]
+
+    request_true = RequestFactory().get(
+        "/vat/centros/",
+        data={
+            "filters": json.dumps(
+                {
+                    "logic": "AND",
+                    "items": [
+                        {
+                            "field": "estado_carga",
+                            "op": "eq",
+                            "value": "true",
+                        }
+                    ],
+                }
+            )
+        },
+    )
+    request_true.user = user
+
+    view_true = centro_views.CentroListView()
+    view_true.request = request_true
+
+    assert list(view_true.get_queryset()) == [centro_completo]
 
 
 @pytest.mark.django_db
@@ -1845,7 +2001,9 @@ def test_centro_update_usuario_provincial_puede_editar_dentro_de_su_provincia(cl
 
 
 @pytest.mark.django_db
-def test_centro_detail_muestra_boton_editar_para_referente_cfp(client, vat_geo_data):
+def test_centro_detail_muestra_datos_de_referente_para_referente_cfp(
+    client, vat_geo_data
+):
     provincia, municipio, localidad = vat_geo_data
     referente_group, _ = Group.objects.get_or_create(name="CFP")
     referente = User.objects.create_user(
@@ -1883,13 +2041,18 @@ def test_centro_detail_muestra_boton_editar_para_referente_cfp(client, vat_geo_d
 
     content = response.content.decode("utf-8")
     assert response.status_code == 200
-    assert reverse("vat_centro_update", kwargs={"pk": centro.pk}) in content
-    assert "Editar" in content
-    assert "Datos del Establecimiento" in content
+    # Refactor 4f1f2241 renombró secciones: ahora hay tabs "Información general",
+    # "Ubicaciones adicionales" y modal "Agregar Identificador".
+    assert "Información general" in content
+    assert "Referente del centro" in content
+    assert "Ana Pérez" in content
+    assert "221-4111111" in content
+    assert "direccion@vat.test" in content
+    assert reverse("vat_centro_update", kwargs={"pk": centro.pk}) not in content
     assert "CUE" in content
     assert "Estructura Institucional" not in content
-    assert "Ubicacion Principal" in content
-    assert "Identificadores" in content
+    assert "Ubicaciones adicionales" in content
+    assert "Identificador" in content
 
 
 @pytest.mark.django_db
@@ -1920,7 +2083,8 @@ def test_centro_detail_muestra_referentes_plural_sin_exponer_revisores(
 
     content = response.content.decode("utf-8")
     assert response.status_code == 200
-    assert "Referente/s del Centro" in content
+    # Refactor 4f1f2241 renombró la sección a "Referente del centro" (singular)
+    assert "Referente del centro" in content
     assert "ref-detalle-1" in content
     assert "ref-detalle-2" in content
     assert "revisor-detalle" not in content
@@ -5350,7 +5514,41 @@ def test_curso_form_plan_estudio_es_primer_campo():
     form = CursoForm()
 
     assert list(form.fields.keys())[0] == "plan_estudio"
+    assert list(form.fields.keys())[2] == "tipo"
+    assert form.fields["tipo"].widget.allow_multiple_selected is True
     assert "ubicacion" not in form.fields
+
+
+@pytest.mark.django_db
+def test_curso_form_tipo_choices_desde_modalidad_cursada(vat_curso_base):
+    centro, _, modalidad = vat_curso_base
+    ModalidadCursada.objects.filter(id=modalidad.id).update(activo=False)
+    ModalidadCursada.objects.create(nombre="Presencial", activo=True)
+    ModalidadCursada.objects.create(nombre="Virtual Extendida", activo=True)
+
+    form = CursoForm(initial={"centro": centro})
+    tipo_choices = dict(form.fields["tipo"].choices)
+
+    assert tipo_choices["presencial"] == "Presencial"
+    assert tipo_choices["virtual_extendida"] == "Virtual Extendida"
+
+
+@pytest.mark.django_db
+def test_curso_form_tipo_choices_incluye_valores_legacy_de_cursos(vat_curso_base):
+    centro, _, modalidad = vat_curso_base
+    ModalidadCursada.objects.filter(id=modalidad.id).update(activo=False)
+    Curso.objects.create(
+        centro=centro,
+        nombre="Curso legacy mixto",
+        modalidad=modalidad,
+        estado="planificado",
+        tipo=["mixto"],
+    )
+
+    form = CursoForm(initial={"centro": centro})
+    tipo_choices = dict(form.fields["tipo"].choices)
+
+    assert tipo_choices["mixto"] == "Mixto"
 
 
 @pytest.mark.django_db
@@ -5811,11 +6009,14 @@ def test_centro_cursos_panel_renderiza_marcadores_para_filtrar_comisiones_por_cu
     )
     assert "<td>Plan Industrial Inicial</td>" in content
     assert 'id="tablaComisionesCursoCentro"' in content
-    assert "<th>Código</th>" in content
+    # Refactor 4f1f2241 reordenó las columnas: Curso, Comisión, Ubicación,
+    # Fecha Inicio, Fecha Fin, Cupo, Acciones.
+    assert "<th>Curso</th>" in content
+    assert "<th>Comisión</th>" in content
     assert "<th>Ubicación</th>" in content
     assert "<th>Fecha Inicio</th>" in content
     assert "<th>Fecha Fin</th>" in content
-    assert "<th>Observaciones</th>" in content
+    assert "<th>Cupo</th>" in content
     assert "FIL-01" in content
     assert "Comisión Filtrable" in content
     assert 'id="comisionesFilterSearch"' in content
@@ -5826,7 +6027,8 @@ def test_centro_cursos_panel_renderiza_marcadores_para_filtrar_comisiones_por_cu
     assert 'id="comisionesFilterClear"' in content
     assert 'class="comision-curso-row"' in content
     assert reverse("vat_comision_curso_detail", kwargs={"pk": comision.pk}) in content
-    assert 'title="Gestionar Comisión"' in content
+    # El refactor reemplazó el title="Gestionar Comisión" por un botón "Ver"
+    assert "sisoc-btn--view" in content
     assert comisiones_filter_curso is not None
     assert "select2" in comisiones_filter_curso.get("class", [])
     assert comisiones_filter_curso.get("data-width") == "100%"
@@ -5902,7 +6104,9 @@ def test_centro_cursos_panel_renderiza_selector_de_planes_en_modal_nuevo_curso(
     assert response.status_code == 200
     assert 'data-panel-rendered="1"' in content
     assert "Planes Curriculares" not in content
-    assert 'title="Nuevo Curso"' in content
+    # El refactor reemplazó el botón title="Nuevo Curso" por un modal con
+    # heading "Nuevo Curso" (h5) y un botón "Agregar curso".
+    assert ">Nuevo Curso<" in content
     assert 'id="planEstudioSeleccionadoInfo"' in content
     assert 'id="modalPlanCurricularSelector"' in content
     assert 'id="openPlanCurricularSelector"' in content
@@ -5917,6 +6121,8 @@ def test_centro_cursos_panel_renderiza_selector_de_planes_en_modal_nuevo_curso(
     )
     assert "Seleccionar plan curricular" in content
     assert "Buscar por plan, sector o normativa" in content
+    assert "Guardar y crear comisión" not in content
+    assert 'data-post-create-action="open-comision"' not in content
     assert f'value="{plan.id}"' in content
     assert f'value="{plan_inactivo.id}"' not in content
     assert f'value="{plan_otra_provincia.id}"' not in content
@@ -5924,6 +6130,66 @@ def test_centro_cursos_panel_renderiza_selector_de_planes_en_modal_nuevo_curso(
     assert "select2" in selector_sector.get("class", [])
     assert selector_sector.get("data-width") == "100%"
     assert selector_sector.get("data-dropdown-parent") == "#modalPlanCurricularSelector"
+
+
+@pytest.mark.django_db
+def test_centro_cursos_panel_boton_editar_curso_incluye_data_tipo(client, vat_geo_data):
+    # Regresión: el modal de curso es compartido entre alta y edición y se
+    # rellena en cliente desde atributos data-*. Si el botón de editar no
+    # expone data-tipo, al editar el multiselect queda vacío y guardar pisa
+    # el tipo almacenado con [].
+    provincia, municipio, localidad = vat_geo_data
+    modalidad = ModalidadCursada.objects.create(nombre="Presencial", activo=True)
+    group, _ = Group.objects.get_or_create(name="CFP")
+    user = User.objects.create_superuser(
+        username="admin-vat-curso-editar-tipo",
+        email="admin-curso-editar-tipo@vat.test",
+        password="test1234",
+    )
+    user.groups.add(group)
+    centro = Centro.objects.create(
+        nombre="CFP 780",
+        codigo="CFP-780",
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad,
+        calle="15",
+        numero=101,
+        domicilio_actividad="Calle 15 N° 101",
+        telefono="221-7200001",
+        celular="221-7200002",
+        correo="cfp780@vat.test",
+        nombre_referente="Jose",
+        apellido_referente="Diaz",
+        telefono_referente="221-7200003",
+        correo_referente="jose@vat.test",
+        referente=user,
+        tipo_gestion="Estatal",
+        clase_institucion="Formación Profesional",
+        situacion="Institución de ETP",
+        activo=True,
+    )
+    curso = Curso.objects.create(
+        centro=centro,
+        nombre="Curso con tipo",
+        modalidad=modalidad,
+        estado="activo",
+        tipo=["virtual", "presencial"],
+    )
+
+    client.force_login(user)
+    response = client.get(reverse("vat_centro_cursos_panel", kwargs={"pk": centro.pk}))
+    content = response.content.decode("utf-8")
+    soup = BeautifulSoup(content, "html.parser")
+    edit_button = soup.select_one(".btn-editar-curso")
+
+    assert response.status_code == 200
+    assert edit_button is not None
+    assert edit_button.get("data-curso-mode") == "edit"
+    assert edit_button.get("data-tipo") == "virtual,presencial"
+    assert reverse("vat_curso_update", args=[curso.id]) == edit_button.get(
+        "data-edit-url"
+    )
 
 
 @pytest.mark.django_db
@@ -7988,3 +8254,263 @@ def test_voucher_parametria_detail_filters_and_paginates_vouchers(vat_admin_clie
 
     assert second_page_response.status_code == 200
     assert len(second_page_response.context["vouchers"]) == 2
+
+
+# ============================================================================
+# Wizard de Comisión de Curso
+# ============================================================================
+
+_WIZARD_PREFIX = "comision_curso_wizard_view"
+
+
+@pytest.fixture
+def wizard_setup(db):
+    """Minimal objects needed to run the wizard end-to-end."""
+    provincia = Provincia.objects.create(nombre="Santa Fe WIZ")
+    municipio = Municipio.objects.create(nombre="Rosario WIZ", provincia=provincia)
+    localidad = Localidad.objects.create(nombre="Centro WIZ", municipio=municipio)
+    centro = _create_vat_centro(
+        codigo="WIZTEST01",
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad,
+    )
+    ubicacion = InstitucionUbicacion.objects.create(
+        centro=centro,
+        localidad=localidad,
+        rol_ubicacion="sede_principal",
+        domicilio="Av. Pellegrini 1234",
+        es_principal=True,
+    )
+    modalidad = ModalidadCursada.objects.create(nombre="Presencial WIZ", activo=True)
+    curso = Curso.objects.create(
+        centro=centro,
+        nombre="Curso Wizard Test",
+        modalidad=modalidad,
+        estado="planificado",
+    )
+    dia = Dia.objects.create(nombre="Miércoles WIZ")
+    return SimpleNamespace(
+        centro=centro,
+        ubicacion=ubicacion,
+        curso=curso,
+        dia=dia,
+    )
+
+
+def _wizard_referente_user(wizard_setup):
+    """Create a user that is referente for the wizard_setup centro with add_comisioncurso perm."""
+    add_perm = Permission.objects.get(
+        content_type=ContentType.objects.get_for_model(ComisionCurso),
+        codename="add_comisioncurso",
+    )
+    user = User.objects.create_user(username="wizard-ref", password="test1234")
+    _grant_vat_referente_access(user, add_perm)
+    wizard_setup.centro.referentes.add(user)
+    return user
+
+
+def _wizard_url(wizard_setup):
+    return reverse(
+        "vat_comision_curso_wizard",
+        kwargs={"curso_id": wizard_setup.curso.pk},
+    )
+
+
+def _step1_data(wizard_setup):
+    # La validacion del paso 1 exige fecha_inicio >= hoy. Derivar las fechas de
+    # la fecha actual evita que el dato quede en el pasado con el correr del
+    # tiempo (antes estaba hardcodeado "2026-06-01" y rompia a partir del dia
+    # siguiente, dejando el wizard atascado en el paso "info").
+    fecha_inicio = timezone.localdate() + timedelta(days=1)
+    fecha_fin = fecha_inicio + timedelta(days=180)
+    return {
+        f"{_WIZARD_PREFIX}-current_step": "info",
+        "info-ubicacion": str(wizard_setup.ubicacion.pk),
+        "info-cupo_total": "20",
+        "info-estado": "planificada",
+        "info-fecha_inicio": fecha_inicio.isoformat(),
+        "info-fecha_fin": fecha_fin.isoformat(),
+        "info-observaciones": "",
+    }
+
+
+def _step2_data(wizard_setup):
+    return {
+        f"{_WIZARD_PREFIX}-current_step": "horarios",
+        "horarios-TOTAL_FORMS": "1",
+        "horarios-INITIAL_FORMS": "0",
+        "horarios-MIN_NUM_FORMS": "1",
+        "horarios-MAX_NUM_FORMS": "1000",
+        "horarios-0-dia_semana": str(wizard_setup.dia.pk),
+        "horarios-0-hora_desde": "09:00",
+        "horarios-0-hora_hasta": "11:00",
+        "horarios-0-vigente": "1",
+    }
+
+
+def _step3_data():
+    return {f"{_WIZARD_PREFIX}-current_step": "confirmacion"}
+
+
+@pytest.mark.django_db
+def test_wizard_anonimo_recibe_403(client, wizard_setup):
+    # permissions_any_required wraps the view before LoginRequiredMixin runs
+    response = client.get(_wizard_url(wizard_setup))
+    assert response.status_code == 403
+
+
+@pytest.mark.django_db
+def test_wizard_sin_permiso_recibe_403(client, wizard_setup):
+    user = User.objects.create_user(username="no-perm-wiz", password="test1234")
+    client.force_login(user)
+    response = client.get(_wizard_url(wizard_setup))
+    assert response.status_code == 403
+
+
+@pytest.mark.django_db
+def test_wizard_sin_acceso_centro_lanza_403(client, wizard_setup):
+    add_perm = Permission.objects.get(
+        content_type=ContentType.objects.get_for_model(ComisionCurso),
+        codename="add_comisioncurso",
+    )
+    user = User.objects.create_user(username="no-centro-wiz", password="test1234")
+    _grant_vat_referente_access(user, add_perm)
+    # Not added to centro.referentes → can_user_edit_centro returns False
+    client.force_login(user)
+    response = client.get(_wizard_url(wizard_setup))
+    assert response.status_code == 403
+
+
+@pytest.mark.django_db
+def test_wizard_step1_get_renderiza_200(client, wizard_setup):
+    user = _wizard_referente_user(wizard_setup)
+    client.force_login(user)
+    response = client.get(_wizard_url(wizard_setup))
+    assert response.status_code == 200
+    assert response.context["wizard"]["steps"].current == "info"
+
+
+@pytest.mark.django_db
+def test_wizard_step1_fecha_inicio_pasada_es_rechazada(client, wizard_setup):
+    user = _wizard_referente_user(wizard_setup)
+    client.force_login(user)
+    post = _step1_data(wizard_setup)
+    post["info-fecha_inicio"] = "2020-01-01"
+    response = client.post(_wizard_url(wizard_setup), post)
+    assert response.status_code == 200
+    form = response.context["wizard"]["form"]
+    assert "fecha_inicio" in form.errors
+
+
+@pytest.mark.django_db
+def test_wizard_step1_fecha_fin_igual_a_inicio_es_rechazada(client, wizard_setup):
+    user = _wizard_referente_user(wizard_setup)
+    client.force_login(user)
+    misma_fecha = (date.today() + timedelta(days=30)).isoformat()
+    post = _step1_data(wizard_setup)
+    post["info-fecha_inicio"] = misma_fecha
+    post["info-fecha_fin"] = misma_fecha
+    response = client.post(_wizard_url(wizard_setup), post)
+    assert response.status_code == 200
+    form = response.context["wizard"]["form"]
+    assert "fecha_fin" in form.errors
+
+
+@pytest.mark.django_db
+def test_wizard_step2_duracion_menor_45min_es_rechazada(client, wizard_setup):
+    user = _wizard_referente_user(wizard_setup)
+    client.force_login(user)
+    client.post(_wizard_url(wizard_setup), _step1_data(wizard_setup))
+    post = _step2_data(wizard_setup)
+    post["horarios-0-hora_hasta"] = "09:30"  # 30 min < 45
+    response = client.post(_wizard_url(wizard_setup), post)
+    assert response.status_code == 200
+    form = response.context["wizard"]["form"]
+    assert form.forms[0].errors.get("hora_hasta")
+
+
+@pytest.mark.django_db
+def test_wizard_step2_duracion_mayor_4h_es_rechazada(client, wizard_setup):
+    user = _wizard_referente_user(wizard_setup)
+    client.force_login(user)
+    client.post(_wizard_url(wizard_setup), _step1_data(wizard_setup))
+    post = _step2_data(wizard_setup)
+    post["horarios-0-hora_hasta"] = "15:00"  # 6 h > 4 h
+    response = client.post(_wizard_url(wizard_setup), post)
+    assert response.status_code == 200
+    form = response.context["wizard"]["form"]
+    assert form.forms[0].errors.get("hora_hasta")
+
+
+@pytest.mark.django_db
+def test_wizard_step2_total_semanal_menor_2h_es_rechazado(client, wizard_setup):
+    user = _wizard_referente_user(wizard_setup)
+    client.force_login(user)
+    client.post(_wizard_url(wizard_setup), _step1_data(wizard_setup))
+    post = _step2_data(wizard_setup)
+    post["horarios-0-hora_hasta"] = "09:50"  # 50 min < 2 h total
+    response = client.post(_wizard_url(wizard_setup), post)
+    assert response.status_code == 200
+    form = response.context["wizard"]["form"]
+    assert form.non_form_errors()
+
+
+@pytest.mark.django_db
+def test_wizard_step2_dias_duplicados_son_rechazados(client, wizard_setup):
+    user = _wizard_referente_user(wizard_setup)
+    client.force_login(user)
+    client.post(_wizard_url(wizard_setup), _step1_data(wizard_setup))
+    post = {
+        f"{_WIZARD_PREFIX}-current_step": "horarios",
+        "horarios-TOTAL_FORMS": "2",
+        "horarios-INITIAL_FORMS": "0",
+        "horarios-MIN_NUM_FORMS": "1",
+        "horarios-MAX_NUM_FORMS": "1000",
+        "horarios-0-dia_semana": str(wizard_setup.dia.pk),
+        "horarios-0-hora_desde": "09:00",
+        "horarios-0-hora_hasta": "11:00",
+        "horarios-0-vigente": "1",
+        "horarios-1-dia_semana": str(wizard_setup.dia.pk),  # mismo día
+        "horarios-1-hora_desde": "14:00",
+        "horarios-1-hora_hasta": "16:00",
+        "horarios-1-vigente": "1",
+    }
+    response = client.post(_wizard_url(wizard_setup), post)
+    assert response.status_code == 200
+    form = response.context["wizard"]["form"]
+    assert form.non_form_errors()
+
+
+@pytest.mark.django_db
+def test_wizard_flujo_completo_crea_comision_y_horario(client, wizard_setup):
+    user = _wizard_referente_user(wizard_setup)
+    client.force_login(user)
+    url = _wizard_url(wizard_setup)
+
+    r1 = client.post(url, _step1_data(wizard_setup))
+    assert r1.status_code == 200
+    assert r1.context["wizard"]["steps"].current == "horarios"
+
+    r2 = client.post(url, _step2_data(wizard_setup))
+    assert r2.status_code == 200
+    assert r2.context["wizard"]["steps"].current == "confirmacion"
+
+    r3 = client.post(url, _step3_data())
+    assert r3.status_code == 302
+
+    redirect_url = r3["Location"]
+    assert "refresh=1" in redirect_url
+    assert "#cursos" in redirect_url
+
+    comision = ComisionCurso.objects.get(curso=wizard_setup.curso)
+    assert comision.cupo_total == 20
+    assert comision.estado == "planificada"
+    assert comision.ubicacion == wizard_setup.ubicacion
+    assert comision.horarios.count() == 1
+
+    horario = comision.horarios.first()
+    assert horario.dia_semana == wizard_setup.dia
+    assert horario.hora_desde == time(9, 0)
+    assert horario.hora_hasta == time(11, 0)
+    assert horario.vigente is True

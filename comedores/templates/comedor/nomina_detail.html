@@ -238,25 +238,36 @@
         <!-- Barra de búsqueda y acciones -->
         <div class="nomina-actions-bar">
             <form method="get" class="nomina-search-box">
-                <i class="fas fa-search nomina-search-icon"></i>
-                <input type="text"
-                       class="nomina-search-input"
-                       name="dni"
-                       id="nominaSearch"
-                       value="{{ dni_query }}"
-                       inputmode="numeric"
-                       placeholder="Buscar por DNI" />
-                <button type="submit" class="btn btn-sm btn-light ms-2">Buscar</button>
-                {% if dni_query %}
-                    {% if admision_pk %}
-                        <a href="{% url 'nomina_ver' object.id admision_pk %}"
-                           class="btn btn-sm btn-outline-light ms-1">Limpiar</a>
-                    {% else %}
-                        <a href="{% url 'nomina_directa_ver' object.id %}"
-                           class="btn btn-sm btn-outline-light ms-1">Limpiar</a>
+                <div class="nomina-search-field">
+                    <i class="fas fa-search nomina-search-icon"></i>
+                    <input type="text"
+                           class="nomina-search-input"
+                           name="dni"
+                           id="nominaSearch"
+                           value="{{ dni_query }}"
+                           inputmode="numeric"
+                           placeholder="Buscar por DNI" />
+                </div>
+                <div class="nomina-search-actions">
+                    <button type="submit" class="btn btn-light">Buscar</button>
+                    {% if dni_query %}
+                        {% if admision_pk %}
+                            <a href="{% url 'nomina_ver' object.id admision_pk %}"
+                               class="btn btn-outline-light">Limpiar</a>
+                        {% else %}
+                            <a href="{% url 'nomina_directa_ver' object.id %}"
+                               class="btn btn-outline-light">Limpiar</a>
+                        {% endif %}
                     {% endif %}
-                {% endif %}
+                </div>
             </form>
+            {% if admision_pk %}
+                <a href="{% url 'nomina_asistencia_historial' object.id admision_pk %}"
+                   class="nomina-add-btn">
+                    <i class="fas fa-user-check"></i>
+                    <span>Historial de asistencia</span>
+                </a>
+            {% endif %}
             {% if admision_pk %}
                 <a href="{% url 'nomina_crear' object.id admision_pk %}"
                    class="nomina-add-btn">

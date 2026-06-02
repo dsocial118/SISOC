@@ -46,7 +46,7 @@ class CupoService:
         usados = int(pc.usados or 0)
         disponibles = max(total - usados, 0)
         fuera = ExpedienteCiudadano.objects.filter(
-            expediente__usuario_provincia__profile__provincia=provincia,
+            ciudadano__provincia=provincia,
             estado_cupo=EstadoCupo.FUERA,
             es_titular_activo=False,
             rol__in=[
@@ -67,7 +67,7 @@ class CupoService:
         Titulares activos que ocupan cupo.
         """
         return ExpedienteCiudadano.objects.filter(
-            expediente__usuario_provincia__profile__provincia=provincia,
+            ciudadano__provincia=provincia,
             revision_tecnico=RevisionTecnico.APROBADO,
             resultado_sintys=ResultadoSintys.MATCH,
             estado_cupo=EstadoCupo.DENTRO,
@@ -84,7 +84,7 @@ class CupoService:
         Titulares suspendidos: mantienen estado_cupo=DENTRO (cupo ocupado) pero es_titular_activo=False.
         """
         return ExpedienteCiudadano.objects.filter(
-            expediente__usuario_provincia__profile__provincia=provincia,
+            ciudadano__provincia=provincia,
             estado_cupo=EstadoCupo.DENTRO,
             es_titular_activo=False,
             rol__in=[
@@ -145,8 +145,8 @@ class CupoService:
             ExpedienteCiudadano.objects.select_for_update()
             .select_related(
                 "expediente",
-                "expediente__usuario_provincia",
-                "expediente__usuario_provincia__profile",
+                "ciudadano",
+                "ciudadano__provincia",
             )
             .get(pk=legajo.pk)
         )
@@ -174,13 +174,9 @@ class CupoService:
                 )
             return False
 
-        provincia = getattr(
-            legajo.expediente.usuario_provincia.profile, "provincia", None
-        )
+        provincia = legajo.ciudadano.provincia
         if not provincia:
-            raise ValidationError(
-                "El legajo no tiene provincia asociada al usuario del expediente."
-            )
+            raise ValidationError("El legajo no tiene provincia asociada al ciudadano.")
 
         try:
             pc = (
@@ -202,7 +198,7 @@ class CupoService:
         ya_ocupa = (
             ExpedienteCiudadano.objects.filter(
                 ciudadano_id=legajo.ciudadano_id,
-                expediente__usuario_provincia__profile__provincia=provincia,
+                ciudadano__provincia=provincia,
                 estado_cupo=EstadoCupo.DENTRO,
                 rol__in=[
                     ExpedienteCiudadano.ROLE_BENEFICIARIO,
@@ -286,18 +282,14 @@ class CupoService:
             ExpedienteCiudadano.objects.select_for_update()
             .select_related(
                 "expediente",
-                "expediente__usuario_provincia",
-                "expediente__usuario_provincia__profile",
+                "ciudadano",
+                "ciudadano__provincia",
             )
             .get(pk=legajo.pk)
         )
-        provincia = getattr(
-            legajo.expediente.usuario_provincia.profile, "provincia", None
-        )
+        provincia = legajo.ciudadano.provincia
         if not provincia:
-            raise ValidationError(
-                "El legajo no tiene provincia asociada al usuario del expediente."
-            )
+            raise ValidationError("El legajo no tiene provincia asociada al ciudadano.")
 
         # Sólo si tiene cupo DENTRO (activo o ya suspendido)
         if legajo.estado_cupo != EstadoCupo.DENTRO:
@@ -349,18 +341,14 @@ class CupoService:
             ExpedienteCiudadano.objects.select_for_update()
             .select_related(
                 "expediente",
-                "expediente__usuario_provincia",
-                "expediente__usuario_provincia__profile",
+                "ciudadano",
+                "ciudadano__provincia",
             )
             .get(pk=legajo.pk)
         )
-        provincia = getattr(
-            legajo.expediente.usuario_provincia.profile, "provincia", None
-        )
+        provincia = legajo.ciudadano.provincia
         if not provincia:
-            raise ValidationError(
-                "El legajo no tiene provincia asociada al usuario del expediente."
-            )
+            raise ValidationError("El legajo no tiene provincia asociada al ciudadano.")
 
         try:
             pc = (
@@ -438,18 +426,14 @@ class CupoService:
             ExpedienteCiudadano.objects.select_for_update()
             .select_related(
                 "expediente",
-                "expediente__usuario_provincia",
-                "expediente__usuario_provincia__profile",
+                "ciudadano",
+                "ciudadano__provincia",
             )
             .get(pk=legajo.pk)
         )
-        provincia = getattr(
-            legajo.expediente.usuario_provincia.profile, "provincia", None
-        )
+        provincia = legajo.ciudadano.provincia
         if not provincia:
-            raise ValidationError(
-                "El legajo no tiene provincia asociada al usuario del expediente."
-            )
+            raise ValidationError("El legajo no tiene provincia asociada al ciudadano.")
 
         # Debe estar dentro de cupo y NO activo
         if legajo.estado_cupo != EstadoCupo.DENTRO or legajo.es_titular_activo:

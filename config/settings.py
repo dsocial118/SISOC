@@ -151,6 +151,7 @@ INSTALLED_APPS = [
     "crispy_forms",
     "crispy_bootstrap5",
     "django_extensions",
+    "formtools",
     "import_export",
     "multiselectfield",
     "auditlog",
@@ -185,6 +186,7 @@ INSTALLED_APPS = [
     "centrodeinfancia",
     "dispositivos",
     "pwa",
+    "ticketera",
 ]
 
 # Middleware (orden CORS correcto)
@@ -434,6 +436,12 @@ SPECTACULAR_SETTINGS = {
 
 # Dominios / Integraciones
 DOMINIO = os.environ.get("DOMINIO", "localhost:8001")
+
+# Kill-switch de la API server-to-server con la Ticketera (/api/ticketera/).
+# Default True: los endpoints operan igual que hoy. En False responden 503 con
+# un JSON de error. Ver
+# docs/registro/cambios/2026-05-27-integracion-ticketera.md
+TICKETERA_ENABLED = _safe_bool_env("TICKETERA_ENABLED", True)
 SENTRY_DSN = os.getenv("SENTRY_DSN", "").strip()
 SENTRY_LOG_EVENT_LEVEL = "WARNING"
 if ENVIRONMENT == "qa":

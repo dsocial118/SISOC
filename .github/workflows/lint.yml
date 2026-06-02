@@ -24,15 +24,15 @@ jobs:
             python-version: ${{ steps.python-version.outputs.python-version }}
         steps:
             - name: Checkout code
-              uses: actions/checkout@v4.1.7
+              uses: actions/checkout@v6.0.2
               with:
                   fetch-depth: 0
 
             - name: Set up Python
               id: python-version
-              uses: actions/setup-python@v5.2.0
+              uses: actions/setup-python@v6.2.0
               with:
-                  python-version: '3.11.9'
+                  python-version: '3.11.15'
 
             - name: Install dependencies
               run: |
@@ -48,7 +48,7 @@ jobs:
         steps:
             - name: Checkout PR head branch
               if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
-              uses: actions/checkout@v4.1.7
+              uses: actions/checkout@v6.0.2
               with:
                   fetch-depth: 0
                   ref: ${{ github.event.pull_request.head.ref }}
@@ -59,7 +59,7 @@ jobs:
 
             - name: Set up Python
               if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
-              uses: actions/setup-python@v5.2.0
+              uses: actions/setup-python@v6.2.0
               with:
                   python-version: ${{ needs.setup.outputs.python-version }}
 
@@ -147,12 +147,12 @@ jobs:
             - autofix
         steps:
             - name: Checkout code
-              uses: actions/checkout@v4.1.7
+              uses: actions/checkout@v6.0.2
               with:
                   fetch-depth: 0
 
             - name: Set up Python
-              uses: actions/setup-python@v5.2.0
+              uses: actions/setup-python@v6.2.0
               with:
                   python-version: ${{ needs.setup.outputs.python-version }}
 
@@ -166,10 +166,10 @@ jobs:
             - autofix
         steps:
             - name: Checkout code
-              uses: actions/checkout@v4.1.7
+              uses: actions/checkout@v6.0.2
 
             - name: Set up Python
-              uses: actions/setup-python@v5.2.0
+              uses: actions/setup-python@v6.2.0
               with:
                   python-version: ${{ needs.setup.outputs.python-version }}
 
@@ -211,7 +211,7 @@ jobs:
 
             - name: Upload Black report
               if: failure()
-              uses: actions/upload-artifact@v4.4.0
+              uses: actions/upload-artifact@v7.0.1
               with:
                   name: black-report
                   path: |
@@ -224,12 +224,12 @@ jobs:
             - autofix
         steps:
             - name: Checkout code
-              uses: actions/checkout@v4.1.7
+              uses: actions/checkout@v6.0.2
               with:
                   fetch-depth: 0
 
             - name: Set up Python
-              uses: actions/setup-python@v5.2.0
+              uses: actions/setup-python@v6.2.0
               with:
                   python-version: ${{ needs.setup.outputs.python-version }}
 
@@ -269,10 +269,10 @@ jobs:
             - autofix
         steps:
             - name: Checkout code
-              uses: actions/checkout@v4.1.7
+              uses: actions/checkout@v6.0.2
 
             - name: Set up Python
-              uses: actions/setup-python@v5.2.0
+              uses: actions/setup-python@v6.2.0
               with:
                   python-version: ${{ needs.setup.outputs.python-version }}
 

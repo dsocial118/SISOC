@@ -226,8 +226,15 @@ class ComedorForm(forms.ModelForm):
         if self._can_edit_estado_fields():
             return
 
-        for field_name in ("estado_general", "subestado", "motivo"):
+        for field_name, previous_value in zip(
+            ("estado_general", "subestado", "motivo"),
+            self.previous_estado_chain,
+        ):
             field = self.fields[field_name]
+            if previous_value:
+                field.initial = getattr(previous_value, "pk", None) or getattr(
+                    previous_value, "id", None
+                )
             field.disabled = True
             field.help_text = (
                 "Solo Coordinador o Superadmin puede modificar este campo para PAC."
@@ -248,8 +255,23 @@ class ComedorForm(forms.ModelForm):
             pk=pk_formatter(self.data.get("localidad"))
         ).first() or getattr(self.instance, "localidad", None)
 
-        # Configurar queryset de provincias (siempre disponible)
-        self.fields["provincia"].queryset = Provincia.objects.all().order_by("nombre")
+        # Configurar queryset de provincias: restringir para usuarios con scope territorial
+        from users.territorial_scope import get_effective_scopes, is_territorial_user
+
+        user = self.current_user
+        if (
+            user
+            and not getattr(user, "is_superuser", False)
+            and is_territorial_user(user)
+        ):
+            scoped_ids = [s.provincia_id for s in get_effective_scopes(user)]
+            self.fields["provincia"].queryset = Provincia.objects.filter(
+                pk__in=scoped_ids
+            ).order_by("nombre")
+        else:
+            self.fields["provincia"].queryset = Provincia.objects.all().order_by(
+                "nombre"
+            )
 
         if provincia:
             self.fields["provincia"].initial = provincia

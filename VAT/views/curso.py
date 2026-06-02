@@ -4,7 +4,6 @@ from django.core.exceptions import PermissionDenied
 from django.db import transaction
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect
-from django.utils import timezone
 from django.urls import reverse
 from django.views import View
 from django.views.generic import (
@@ -32,7 +31,6 @@ from VAT.models import (
     SesionComision,
     Inscripcion,
     AsistenciaSesion,
-    InstitucionUbicacion,
 )
 from VAT.services.access_scope import (
     can_user_edit_centro,
@@ -130,8 +128,15 @@ def _modal_json_error_response(form, message):
     )
 
 
-def _modal_json_success_response(redirect_url, message):
-    return _horario_json_success_response(redirect_url, message)
+def _modal_json_success_response(redirect_url, message, extra_payload=None):
+    payload = {
+        "ok": True,
+        "message": message,
+        "redirect_url": redirect_url,
+    }
+    if extra_payload:
+        payload.update(extra_payload)
+    return JsonResponse(payload)
 
 
 class CursoCreateView(LoginRequiredMixin, CreateView):
@@ -828,14 +833,20 @@ class ComisionCursoUpdateView(LoginRequiredMixin, UpdateView):
         return form
 
     def form_valid(self, form):
+        fechas_cambiaron = bool({"fecha_inicio", "fecha_fin"} & set(form.changed_data))
         messages.success(self.request, "Comision del curso actualizada exitosamente.")
         if _is_ajax_request(self.request):
             self.object = form.save()
+            if fechas_cambiaron:
+                SesionComisionService.regenerar_para_comision(self.object)
             return _modal_json_success_response(
                 self.get_success_url(),
                 "Comision del curso actualizada exitosamente.",
             )
-        return super().form_valid(form)
+        response = super().form_valid(form)
+        if fechas_cambiaron:
+            SesionComisionService.regenerar_para_comision(self.object)
+        return response
 
     def form_invalid(self, form):
         if _is_ajax_request(self.request):

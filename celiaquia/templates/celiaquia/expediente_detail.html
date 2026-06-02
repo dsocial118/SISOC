@@ -47,8 +47,6 @@
                     {% if expediente.estado.nombre == 'ASIGNADO' or expediente.estado.nombre == 'PROCESO_DE_CRUCE' %}
                         <a href="{% url 'expediente_nomina_sintys_export' expediente.pk %}"
                            class="btn btn-outline-success btn-sm me-2">Descargar nómina Sintys</a>
-                        <a href="{% url 'expediente_padron_final_export' expediente.pk %}"
-                           class="btn btn-outline-primary btn-sm me-2">Descargar padrón final</a>
                         <button type="button"
                                 class="btn btn-outline-info btn-sm me-2"
                                 data-bs-toggle="modal"
@@ -75,6 +73,10 @@
                         {% endif %}
                     {% endif %}
                 {% endif %}
+                {% if can_download_nomina_aprobados %}
+                    <a href="{% url 'expediente_padron_final_export' expediente.pk %}"
+                       class="btn btn-outline-primary btn-sm me-2">Descargar nómina aprobados</a>
+                {% endif %}
             </div>
         </div>
         {% if cupo_metrics %}
@@ -82,7 +84,7 @@
                  style="background-color:#11202e;
                         color:#e0e0e0">
                 <div class="d-flex justify-content-between align-items-center">
-                    <h5 class="mb-3">Provincial de {{ expediente.usuario_provincia.profile.provincia|default:"-" }}</h5>
+                    <h5 class="mb-3">Provincial de {{ provincia_expediente|default:"-" }}</h5>
                 </div>
                 <div class="row g-3">
                     <div class="col-sm-6 col-lg-3">
@@ -179,7 +181,7 @@
                 </div>
                 <div class="col-md-6">
                     <p>
-                        <strong>Provincia:</strong> {{ expediente.usuario_provincia.profile.provincia|default:"-" }}
+                        <strong>Provincia:</strong> {{ provincia_expediente|default:"-" }}
                     </p>
                     <p>
                         <strong>Técnicos asignados:</strong>

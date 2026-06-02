@@ -5,11 +5,13 @@ from typing import Any, Dict
 FIELD_MAP: Dict[str, str] = {
     "nombre": "nombre",
     "codigo": "codigo_cue",
+    "estado_carga": "estado_carga_completa",
 }
 
 FIELD_TYPES: Dict[str, str] = {
     "nombre": "text",
     "codigo": "text",
+    "estado_carga": "boolean",
 }
 
 TEXT_OPS = ["contains", "ncontains", "eq", "ne", "empty"]
@@ -18,7 +20,16 @@ BOOL_OPS = ["eq", "ne"]
 
 FILTER_FIELDS = [
     {"name": "nombre", "label": "Nombre", "type": "text"},
-    {"name": "codigo", "label": "Codigo", "type": "text"},
+    {"name": "codigo", "label": "CUE", "type": "text"},
+    {
+        "name": "estado_carga",
+        "label": "Estado de carga",
+        "type": "boolean",
+        "options": [
+            {"value": True, "label": "COMPLETO"},
+            {"value": False, "label": "INCOMPLETO"},
+        ],
+    },
 ]
 
 

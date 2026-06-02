@@ -12,7 +12,28 @@ document.addEventListener("DOMContentLoaded", function () {
     initializeConditionalFields();
     initializeDocumentSlots();
     initializeAddDocButton();
+    initializeNumericInputs();
 });
+
+const NUMERIC_ONLY_INPUT_IDS = [
+    "id_cuit_institucion",
+    "id_responsable_dni",
+    "id_telefono_prefijo",
+    "id_telefono_numero",
+];
+
+function initializeNumericInputs() {
+    NUMERIC_ONLY_INPUT_IDS.forEach((id) => {
+        const input = document.getElementById(id);
+        if (!input) return;
+        input.addEventListener("input", () => {
+            const stripped = input.value.replace(/\D/g, "");
+            if (stripped !== input.value) {
+                input.value = stripped;
+            }
+        });
+    });
+}
 
 // ============================================
 // SECCIONES COLAPSABLES

@@ -36,11 +36,25 @@ from organizaciones.models import (
 )
 
 MAX_DOCUMENTO_ORGANIZACION_FILE_SIZE = 10 * 1024 * 1024
-ALLOWED_DOCUMENTO_ORGANIZACION_EXTENSIONS = {".pdf", ".jpg", ".jpeg", ".png"}
+DOCUMENTO_ORGANIZACION_FORMATOS_VALIDOS = "PDF, JPG, PNG, Excel o Word"
+ALLOWED_DOCUMENTO_ORGANIZACION_EXTENSIONS = {
+    ".pdf",
+    ".jpg",
+    ".jpeg",
+    ".png",
+    ".xls",
+    ".xlsx",
+    ".doc",
+    ".docx",
+}
 ALLOWED_DOCUMENTO_ORGANIZACION_CONTENT_TYPES = {
     "application/pdf",
     "image/jpeg",
     "image/png",
+    "application/msword",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "application/vnd.ms-excel",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
 }
 
 ORGANIZACION_LIST_ONLY_FIELDS = (
@@ -152,9 +166,27 @@ def _build_documentacion_organizacion_rows(organizacion):
                 "documentacion": documentacion,
                 "archivo": vigente,
                 "historial": versiones[1:],
+                "es_personalizado": False,
             }
         )
+    rows.extend(_build_documentacion_organizacion_personalizados_rows(organizacion))
     return rows
+
+
+def _build_documentacion_organizacion_personalizados_rows(organizacion):
+    """Filas de documentacion adicional (sin catalogo) cargada en el legajo."""
+    archivos = ArchivoOrganizacion.objects.filter(
+        organizacion=organizacion, documentacion__isnull=True
+    ).order_by("-creado", "-id")
+    return [
+        {
+            "documentacion": None,
+            "archivo": archivo,
+            "historial": [],
+            "es_personalizado": True,
+        }
+        for archivo in archivos
+    ]
 
 
 def _build_documentacion_organizacion_row(organizacion, documentacion):
@@ -190,6 +222,45 @@ def _render_documentacion_organizacion_row(request, organizacion, documentacion)
     )
 
 
+def _render_documentacion_organizacion_personalizado_row(
+    request, organizacion, archivo
+):
+    row = {
+        "documentacion": None,
+        "archivo": archivo,
+        "historial": [],
+        "es_personalizado": True,
+    }
+    return render_to_string(
+        "organizaciones/partials/documentacion_organizacion_row.html",
+        {
+            "row": row,
+            "organizacion": organizacion,
+            "puede_validar_documentacion_organizacion": (
+                _puede_validar_documentacion_organizacion(request.user, organizacion)
+            ),
+            "puede_enviar_documentacion_organizacion": (
+                _puede_enviar_documentacion_organizacion(request.user, organizacion)
+            ),
+        },
+        request=request,
+    )
+
+
+def _render_fila_documentacion_y_row_id(request, organizacion, archivo):
+    """Devuelve ``(html, row_id)`` para una fila del legajo, soportando tanto
+    documentos de catalogo como personalizados (documentacion is None)."""
+    if archivo and archivo.documentacion_id:
+        html = _render_documentacion_organizacion_row(
+            request, organizacion, archivo.documentacion
+        )
+        return html, archivo.documentacion_id
+    html = _render_documentacion_organizacion_personalizado_row(
+        request, organizacion, archivo
+    )
+    return html, f"custom-{archivo.id}"
+
+
 def _validar_archivo_documento_organizacion(archivo):
     if not archivo:
         return "Debe adjuntar un archivo."
@@ -200,14 +271,14 @@ def _validar_archivo_documento_organizacion(archivo):
 
     extension = Path(getattr(archivo, "name", "") or "").suffix.lower()
     if extension not in ALLOWED_DOCUMENTO_ORGANIZACION_EXTENSIONS:
-        return "Formato inválido. Solo se permiten archivos PDF, JPG o PNG."
+        return f"Formato inválido. Solo se permiten archivos {DOCUMENTO_ORGANIZACION_FORMATOS_VALIDOS}."
 
     content_type = getattr(archivo, "content_type", None)
     if (
         content_type
         and content_type not in ALLOWED_DOCUMENTO_ORGANIZACION_CONTENT_TYPES
     ):
-        return "Tipo de archivo no permitido. Formatos válidos: PDF, JPG o PNG."
+        return f"Tipo de archivo no permitido. Formatos válidos: {DOCUMENTO_ORGANIZACION_FORMATOS_VALIDOS}."
 
     return None
 
@@ -648,14 +719,42 @@ class OrganizacionUpdateView(LoginRequiredMixin, UpdateView):
         context = super().get_context_data(**kwargs)
         context["cuil_check_ajax_url"] = reverse("organizacion_cuil_check_ajax")
         context["organizacion_pk"] = self.object.pk
+        context["tipo_entidad_actual_id"] = (
+            self.object.tipo_entidad_id if self.object else None
+        )
         return context
 
     def form_valid(self, form):
-        if form.is_valid():
-            self.object = form.save()
-            return HttpResponseRedirect(self.get_success_url())
-        else:
+        if not form.is_valid():
             return self.form_invalid(form)
+
+        tipo_entidad_anterior_id = Organizacion.objects.values_list(
+            "tipo_entidad_id", flat=True
+        ).get(pk=self.object.pk)
+        self.object = form.save()
+        if tipo_entidad_anterior_id != self.object.tipo_entidad_id:
+            # Antes de borrar los ArchivoOrganizacion del legajo, materializar
+            # los archivos heredados en cada admision activa de la organizacion.
+            # Asi, si el tecnico elige "Continuar operando", su admision conserva
+            # los archivos como ArchivoAdmision propios; si elige "Actualizar
+            # Información desde Legajo Organización", el reset posterior los
+            # destruira igualmente.
+            from admisiones.models.admisiones import Admision
+            from admisiones.services.admisiones_service.impl import AdmisionService
+
+            admisiones_afectadas = Admision.objects.filter(
+                comedor__organizacion=self.object,
+                enviada_a_archivo=False,
+            ).select_related("comedor__organizacion")
+            for admision in admisiones_afectadas:
+                AdmisionService.congelar_documentacion_organizacional(admision)
+
+            ArchivoOrganizacion.objects.filter(organizacion=self.object).delete()
+            messages.warning(
+                self.request,
+                "Se reinicio la documentacion del legajo porque cambio el Tipo de Entidad.",
+            )
+        return HttpResponseRedirect(self.get_success_url())
 
     def get_success_url(self):
         return reverse("organizacion_detalle", kwargs={"pk": self.object.pk})
@@ -872,6 +971,63 @@ def subir_documento_organizacion(request, organizacion_id, documentacion_id):
 
 @login_required
 @require_POST
+def agregar_documento_personalizado_organizacion(request, organizacion_id):
+    """Alta de Documentacion Adicional (sin catalogo) en el legajo de la
+    organizacion. Requiere nombre y archivo; pueden agregarse N."""
+    organizacion = get_object_or_404(
+        _filtrar_organizaciones_por_dupla(Organizacion.objects.all(), request.user),
+        pk=organizacion_id,
+    )
+    if not _puede_enviar_documentacion_organizacion(request.user, organizacion):
+        return JsonResponse(
+            {"success": False, "error": "Sin permisos para cargar este documento."},
+            status=403,
+        )
+
+    nombre = (request.POST.get("nombre") or "").strip()
+    if not nombre:
+        return JsonResponse(
+            {"success": False, "error": "Debe indicar un nombre para el documento."},
+            status=400,
+        )
+
+    archivo = request.FILES.get("archivo")
+    error_archivo = _validar_archivo_documento_organizacion(archivo)
+    if error_archivo:
+        return JsonResponse({"success": False, "error": error_archivo}, status=400)
+
+    fecha_vencimiento = request.POST.get("fecha_vencimiento") or None
+    if fecha_vencimiento:
+        fecha_vencimiento = parse_date(fecha_vencimiento)
+        if fecha_vencimiento is None:
+            return JsonResponse(
+                {"success": False, "error": "Fecha de vencimiento invalida."},
+                status=400,
+            )
+
+    archivo_org = ArchivoOrganizacion.objects.create(
+        organizacion=organizacion,
+        documentacion=None,
+        nombre_personalizado=nombre[:255],
+        archivo=archivo,
+        fecha_vencimiento=fecha_vencimiento,
+        estado=ArchivoOrganizacion.ESTADO_ADJUNTO,
+        creado_por=request.user,
+        modificado_por=request.user,
+    )
+    return JsonResponse(
+        {
+            "success": True,
+            "html": _render_documentacion_organizacion_personalizado_row(
+                request, organizacion, archivo_org
+            ),
+            "archivo_id": archivo_org.id,
+        }
+    )
+
+
+@login_required
+@require_POST
 def actualizar_estado_documento_organizacion(request, archivo_id):
     archivo = get_object_or_404(
         ArchivoOrganizacion.objects.select_related("organizacion", "documentacion"),
@@ -911,43 +1067,15 @@ def actualizar_estado_documento_organizacion(request, archivo_id):
     archivo.save(
         update_fields=["estado", "observaciones", "modificado_por", "modificado"]
     )
+    html, row_id = _render_fila_documentacion_y_row_id(
+        request, archivo.organizacion, archivo
+    )
     return JsonResponse(
         {
             "success": True,
             "estado": archivo.estado,
-            "html": _render_documentacion_organizacion_row(
-                request, archivo.organizacion, archivo.documentacion
-            ),
-            "row_id": archivo.documentacion_id,
-        }
-    )
-
-
-@login_required
-@require_POST
-def actualizar_gde_documento_organizacion(request, archivo_id):
-    archivo = get_object_or_404(
-        ArchivoOrganizacion.objects.select_related("organizacion", "documentacion"),
-        pk=archivo_id,
-    )
-    if not _puede_modificar_documentacion_organizacion(
-        request.user, archivo.organizacion
-    ):
-        return JsonResponse(
-            {"success": False, "error": "Sin permisos para modificar este documento."},
-            status=403,
-        )
-    archivo.numero_gde = (request.POST.get("numero_gde") or "").strip() or None
-    archivo.modificado_por = request.user
-    archivo.save(update_fields=["numero_gde", "modificado_por", "modificado"])
-    return JsonResponse(
-        {
-            "success": True,
-            "numero_gde": archivo.numero_gde,
-            "html": _render_documentacion_organizacion_row(
-                request, archivo.organizacion, archivo.documentacion
-            ),
-            "row_id": archivo.documentacion_id,
+            "html": html,
+            "row_id": row_id,
         }
     )
 
@@ -977,6 +1105,9 @@ def actualizar_vencimiento_documento_organizacion(request, archivo_id):
     archivo.fecha_vencimiento = fecha_parseada
     archivo.modificado_por = request.user
     archivo.save(update_fields=["fecha_vencimiento", "modificado_por", "modificado"])
+    html, row_id = _render_fila_documentacion_y_row_id(
+        request, archivo.organizacion, archivo
+    )
     return JsonResponse(
         {
             "success": True,
@@ -985,10 +1116,57 @@ def actualizar_vencimiento_documento_organizacion(request, archivo_id):
                 if archivo.fecha_vencimiento
                 else ""
             ),
-            "html": _render_documentacion_organizacion_row(
-                request, archivo.organizacion, archivo.documentacion
-            ),
-            "row_id": archivo.documentacion_id,
+            "html": html,
+            "row_id": row_id,
+        }
+    )
+
+
+@login_required
+@require_POST
+def actualizar_numero_gde_documento_organizacion(request, archivo_id):
+    """Issue #1799 Req 3: el Numero de GDE se gestiona desde el legajo de la
+    Organizacion (solo en documentos Aceptados) y se replica a las admisiones
+    relacionadas. El legajo es la unica fuente del dato."""
+    archivo = get_object_or_404(
+        ArchivoOrganizacion.objects.select_related("organizacion", "documentacion"),
+        pk=archivo_id,
+    )
+    if not _puede_modificar_documentacion_organizacion(
+        request.user, archivo.organizacion
+    ):
+        return JsonResponse(
+            {"success": False, "error": "Sin permisos para modificar este documento."},
+            status=403,
+        )
+    if archivo.estado != ArchivoOrganizacion.ESTADO_ACEPTADO:
+        return JsonResponse(
+            {
+                "success": False,
+                "error": "El número de GDE solo puede cargarse en documentos aceptados.",
+            },
+            status=400,
+        )
+
+    numero_gde = (request.POST.get("numero_gde") or "").strip()[:50]
+    archivo.numero_gde = numero_gde or None
+    archivo.modificado_por = request.user
+    archivo.save(update_fields=["numero_gde", "modificado_por", "modificado"])
+
+    # Replicar el GDE a las admisiones relacionadas (flujo Legajo -> Admision).
+    from admisiones.services.admisiones_service.impl import AdmisionService
+
+    AdmisionService.replicar_numero_gde_desde_organizacion(archivo, request.user)
+
+    html, row_id = _render_fila_documentacion_y_row_id(
+        request, archivo.organizacion, archivo
+    )
+    return JsonResponse(
+        {
+            "success": True,
+            "numero_gde": archivo.numero_gde or "",
+            "html": html,
+            "row_id": row_id,
         }
     )
 

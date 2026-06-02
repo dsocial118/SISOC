@@ -56,6 +56,7 @@ from acompanamientos.acompanamiento_service import AcompanamientoService
 from intervenciones.models.intervenciones import Intervencion
 from intervenciones.forms import IntervencionForm, build_programa_aliases
 from expedientespagos.models import ExpedientePago
+from expedientespagos.services import ordenar_expedientes_por_periodo_desc
 
 MESES_ES_CORTOS = [
     "Ene",
@@ -833,11 +834,9 @@ def _build_mes_ejecucion_context(comedor_obj):
             "mes_ejecucion_resumen": None,
         }
 
-    expediente = (
+    expediente = ordenar_expedientes_por_periodo_desc(
         ExpedientePago.objects.filter(comedor_id=comedor_obj.id)
-        .order_by("-fecha_creacion", "-id")
-        .first()
-    )
+    ).first()
     resumen = {"expediente": expediente}
 
     if expediente:
@@ -1390,7 +1389,10 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
 
         context["resumen_dw_transacciones"] = None
         request_user = getattr(self.request, "user", None)
-        if user_has_permission_code(request_user, "comedores.view_comedor"):
+        context["puede_ver_dw_transacciones"] = user_has_permission_code(
+            request_user, "comedores.view_comedor"
+        )
+        if context["puede_ver_dw_transacciones"]:
             context["resumen_dw_transacciones"] = (
                 DWTransaccionesService.obtener_resumen_ultimo_periodo(self.object.id)
             )
@@ -1523,7 +1525,7 @@ class ComedorTransaccionesDetailView(LoginRequiredMixin, DetailView):
     model = Comedor
     template_name = "comedor/comedor_transacciones_detail.html"
     context_object_name = "comedor"
-    paginate_by = 20
+    paginate_by = 1000
 
     def get_object(self, queryset=None):
         return ComedorService.get_comedor_detail_object(

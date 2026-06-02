@@ -27,7 +27,6 @@
                     <tr>
                         <th>Fecha de carga</th>
                         <th>Estado</th>
-                        <th>Numero GDE</th>
                         <th>Fecha de vencimiento</th>
                         <th>Observaciones</th>
                         <th>Archivo</th>
@@ -48,7 +47,6 @@
                                     <span class="badge bg-secondary">{{ archivo.estado }}</span>
                                 {% endif %}
                             </td>
-                            <td>{{ archivo.numero_gde|default:"-" }}</td>
                             <td>{{ archivo.fecha_vencimiento|date:"d/m/Y"|default:"-" }}</td>
                             <td>{{ archivo.observaciones|default:"-" }}</td>
                             <td>
@@ -59,7 +57,7 @@
                         </tr>
                     {% empty %}
                         <tr>
-                            <td colspan="6" class="text-center text-muted py-4">No hay documentos cargados.</td>
+                            <td colspan="5" class="text-center text-muted py-4">No hay documentos cargados.</td>
                         </tr>
                     {% endfor %}
                 </tbody>
