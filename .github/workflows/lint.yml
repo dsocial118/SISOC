@@ -18,31 +18,8 @@ concurrency:
     cancel-in-progress: true
 
 jobs:
-    setup:
-        runs-on: ubuntu-latest
-        outputs:
-            python-version: ${{ steps.python-version.outputs.python-version }}
-        steps:
-            - name: Checkout code
-              uses: actions/checkout@v6.0.2
-              with:
-                  fetch-depth: 0
-
-            - name: Set up Python
-              id: python-version
-              uses: actions/setup-python@v6.2.0
-              with:
-                  python-version: '3.11.15'
-
-            - name: Install dependencies
-              run: |
-                  python -m pip install --upgrade pip
-                  pip install black==24.8.0 djlint==1.34.2 pylint==3.2.6
-              id: install-dependencies
-
     autofix:
         runs-on: ubuntu-latest
-        needs: setup
         permissions:
             contents: write
         steps:
@@ -61,13 +38,15 @@ jobs:
               if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
               uses: actions/setup-python@v6.2.0
               with:
-                  python-version: ${{ needs.setup.outputs.python-version }}
+                  python-version: '3.11.15'
+                  cache: 'pip'
+                  cache-dependency-path: requirements/lint.txt
 
             - name: Install autofix dependencies
               if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
               run: |
                   python -m pip install --upgrade pip
-                  pip install black==24.8.0 djlint==1.34.2
+                  pip install -r requirements/lint.txt
 
             - name: Detect changed Python files
               id: detect-changed-python
@@ -102,19 +81,22 @@ jobs:
               run: |
                   python - <<'PY'
                   import json
+                  import multiprocessing
                   import os
                   import subprocess
 
                   templates = json.loads(
                       os.environ.get("TEMPLATE_FILES_JSON") or "[]"
                   )
-                  print("Running djlint --reformat on", len(templates), "template file(s)")
+                  workers = max(1, multiprocessing.cpu_count())
+                  print("Running djlint --reformat on", len(templates), "template file(s) with", workers, "worker(s)")
                   subprocess.run(
                       [
                           "djlint",
                           *templates,
                           "--reformat",
                           "--configuration=.djlintrc",
+                          f"--workers={workers}",
                       ],
                       check=True,
                   )
@@ -143,7 +125,6 @@ jobs:
     encoding_check:
         runs-on: ubuntu-latest
         needs:
-            - setup
             - autofix
         steps:
             - name: Checkout code
@@ -154,7 +135,13 @@ jobs:
             - name: Set up Python
               uses: actions/setup-python@v6.2.0
               with:
-                  python-version: ${{ needs.setup.outputs.python-version }}
+                  python-version: '3.11.15'
+                  cache: 'pip'
+                  cache-dependency-path: requirements/lint.txt
+
+            - name: Install dependencies
+              run: |
+                  python -m pip install --upgrade pip
 
             - name: Validate encoding on changed text files
               run: python scripts/ci/pr_lint_tools.py check-encoding
@@ -162,7 +149,6 @@ jobs:
     black:
         runs-on: ubuntu-latest
         needs:
-            - setup
             - autofix
         steps:
             - name: Checkout code
@@ -171,12 +157,14 @@ jobs:
             - name: Set up Python
               uses: actions/setup-python@v6.2.0
               with:
-                  python-version: ${{ needs.setup.outputs.python-version }}
+                  python-version: '3.11.15'
+                  cache: 'pip'
+                  cache-dependency-path: requirements/lint.txt
 
             - name: Install dependencies
               run: |
                   python -m pip install --upgrade pip
-                  pip install black==24.8.0
+                  pip install -r requirements/lint.txt
 
             - name: Detect changed Python files
               id: detect-changed-python
@@ -220,7 +208,6 @@ jobs:
     djlint:
         runs-on: ubuntu-latest
         needs:
-            - setup
             - autofix
         steps:
             - name: Checkout code
@@ -231,12 +218,14 @@ jobs:
             - name: Set up Python
               uses: actions/setup-python@v6.2.0
               with:
-                  python-version: ${{ needs.setup.outputs.python-version }}
+                  python-version: '3.11.15'
+                  cache: 'pip'
+                  cache-dependency-path: requirements/lint.txt
 
             - name: Install dependencies
               run: |
                   python -m pip install --upgrade pip
-                  pip install djlint==1.34.2
+                  pip install -r requirements/lint.txt
 
             - name: Detect changed templates
               id: detect-changed-templates
@@ -247,15 +236,17 @@ jobs:
               run: |
                   python - <<'PY'
                   import json
+                  import multiprocessing
                   import os
                   import subprocess
 
                   templates = json.loads(
                       os.environ.get("TEMPLATE_FILES_JSON") or "[]"
                   )
-                  print("Running djlint on", len(templates), "template file(s)")
+                  workers = max(1, multiprocessing.cpu_count())
+                  print("Running djlint on", len(templates), "template file(s) with", workers, "worker(s)")
                   subprocess.run(
-                      ["djlint", *templates, "--check", "--configuration=.djlintrc"],
+                      ["djlint", *templates, "--check", "--configuration=.djlintrc", f"--workers={workers}"],
                       check=True,
                   )
                   PY
@@ -265,7 +256,6 @@ jobs:
     pylint:
         runs-on: ubuntu-latest
         needs:
-            - setup
             - autofix
         steps:
             - name: Checkout code
@@ -274,7 +264,11 @@ jobs:
             - name: Set up Python
               uses: actions/setup-python@v6.2.0
               with:
-                  python-version: ${{ needs.setup.outputs.python-version }}
+                  python-version: '3.11.15'
+                  cache: 'pip'
+                  cache-dependency-path: |
+                      requirements/base.txt
+                      requirements/dev.txt
 
             - name: Install dependencies
               run: |
