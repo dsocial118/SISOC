@@ -5,6 +5,7 @@ from pwa.api_views import (
     ActividadEspacioPWAViewSet,
     CatalogoActividadPWAViewSet,
     ColaboradorEspacioPWAViewSet,
+    CursoAppMobilePWAViewSet,
     MensajeEspacioPWAViewSet,
     NominaEspacioPWAViewSet,
     PwaHealthViewSet,
@@ -128,6 +129,15 @@ urlpatterns = [
         name="pwa-actividades-inscriptos",
     ),
     path(
+        "espacios/<int:comedor_id>/formacion/cursos/",
+        CursoAppMobilePWAViewSet.as_view(
+            {
+                "get": "list",
+            }
+        ),
+        name="pwa-formacion-cursos-list",
+    ),
+    path(
         "espacios/<int:comedor_id>/mensajes/",
         MensajeEspacioPWAViewSet.as_view(
             {
@@ -190,6 +200,24 @@ urlpatterns = [
             }
         ),
         name="pwa-nomina-asistencia-alimentaria",
+    ),
+    path(
+        "espacios/<int:comedor_id>/nomina/asistencias-periodos/",
+        NominaEspacioPWAViewSet.as_view(
+            {
+                "get": "periodos_asistencia",
+            }
+        ),
+        name="pwa-nomina-asistencias-periodos",
+    ),
+    path(
+        "espacios/<int:comedor_id>/nomina/asistencias-periodo/",
+        NominaEspacioPWAViewSet.as_view(
+            {
+                "get": "asistencia_periodo",
+            }
+        ),
+        name="pwa-nomina-asistencia-periodo",
     ),
     path(
         "espacios/<int:comedor_id>/nomina/<int:pk>/",

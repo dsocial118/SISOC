@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db import models
 from django.utils import timezone
 from django.core.validators import MaxValueValidator, MinValueValidator
@@ -157,3 +158,124 @@ class Organizacion(SoftDeleteModelMixin, models.Model):
         indexes = [
             models.Index(fields=["telefono"], name="org_telefono_idx"),
         ]
+
+
+class DocumentacionOrganizacion(models.Model):
+    CATEGORIA_PERSONERIA = "personeria_juridica"
+    CATEGORIA_ECLESIASTICA = "personeria_eclesiastica"
+    CATEGORIA_BASE = "organizacion_base"
+
+    CATEGORIAS = [
+        (CATEGORIA_PERSONERIA, "Organizacion con personeria juridica"),
+        (CATEGORIA_ECLESIASTICA, "Personeria juridica eclesiastica"),
+        (CATEGORIA_BASE, "Organizacion de base"),
+    ]
+
+    nombre = models.CharField(max_length=255)
+    categoria = models.CharField(max_length=40, choices=CATEGORIAS)
+    obligatorio = models.BooleanField(default=True)
+    orden = models.PositiveIntegerField(default=0)
+
+    def __str__(self):
+        return self.nombre
+
+    class Meta:
+        ordering = ["categoria", "orden", "id"]
+        verbose_name = "Documentacion de organizacion"
+        verbose_name_plural = "Documentaciones de organizacion"
+
+
+class ArchivoOrganizacion(SoftDeleteModelMixin, models.Model):
+    ESTADO_PENDIENTE = "pendiente"
+    ESTADO_ADJUNTO = "Documento adjunto"
+    ESTADO_A_VALIDAR = "A Validar Abogado"
+    ESTADO_RECTIFICAR = "Rectificar"
+    ESTADO_ACEPTADO = "Aceptado"
+
+    ESTADOS = [
+        (ESTADO_PENDIENTE, "Pendiente"),
+        (ESTADO_ADJUNTO, "Documento adjunto"),
+        (ESTADO_A_VALIDAR, "A Validar Abogado"),
+        (ESTADO_RECTIFICAR, "Rectificar"),
+        (ESTADO_ACEPTADO, "Aceptado"),
+    ]
+
+    organizacion = models.ForeignKey(
+        Organizacion, on_delete=models.CASCADE, related_name="archivos_documentacion"
+    )
+    documentacion = models.ForeignKey(
+        DocumentacionOrganizacion,
+        on_delete=models.SET_NULL,
+        related_name="archivos",
+        null=True,
+        blank=True,
+    )
+    nombre_personalizado = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        verbose_name="Nombre personalizado",
+        help_text="Nombre del documento adicional cuando no corresponde al catalogo.",
+    )
+    archivo = models.FileField(upload_to="organizaciones/documentacion/")
+    estado = models.CharField(max_length=20, choices=ESTADOS, default=ESTADO_ADJUNTO)
+    fecha_vencimiento = models.DateField(blank=True, null=True)
+    numero_gde = models.CharField(
+        "Numero de GDE",
+        max_length=50,
+        blank=True,
+        null=True,
+    )
+    observaciones = models.TextField(blank=True, null=True)
+    creado = models.DateTimeField(auto_now_add=True)
+    modificado = models.DateTimeField(auto_now=True)
+    creado_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="organizaciones_archivos_creados",
+    )
+    modificado_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="organizaciones_archivos_modificados",
+    )
+
+    @property
+    def esta_vencido(self):
+        return bool(
+            self.fecha_vencimiento and self.fecha_vencimiento < timezone.now().date()
+        )
+
+    @property
+    def esta_por_vencer(self):
+        if not self.fecha_vencimiento or self.esta_vencido:
+            return False
+        return (self.fecha_vencimiento - timezone.now().date()).days <= 30
+
+    @property
+    def es_personalizado(self):
+        return self.documentacion_id is None
+
+    @property
+    def nombre_documento(self):
+        if self.documentacion_id:
+            return self.documentacion.nombre
+        return self.nombre_personalizado or "Documento adicional"
+
+    def __str__(self):
+        return f"{self.organizacion_id} - {self.nombre_documento}"
+
+    class Meta:
+        ordering = ["-creado", "-id"]
+        indexes = [
+            models.Index(
+                fields=["organizacion", "documentacion", "-creado"],
+                name="org_doc_archivo_idx",
+            ),
+        ]
+        verbose_name = "Archivo de organizacion"
+        verbose_name_plural = "Archivos de organizacion"

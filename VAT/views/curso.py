@@ -4,7 +4,6 @@ from django.core.exceptions import PermissionDenied
 from django.db import transaction
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect
-from django.utils import timezone
 from django.urls import reverse
 from django.views import View
 from django.views.generic import (
@@ -32,10 +31,10 @@ from VAT.models import (
     SesionComision,
     Inscripcion,
     AsistenciaSesion,
-    InstitucionUbicacion,
 )
 from VAT.services.access_scope import (
-    can_user_access_centro,
+    can_user_edit_centro,
+    filter_centros_queryset_for_management,
     filter_centros_queryset_for_user,
 )
 from VAT.services.inscripcion_service import (
@@ -50,6 +49,12 @@ from VAT.services.sesion_comision_service.impl import SesionComisionService
 
 
 def _scoped_centros_ids(user):
+    return filter_centros_queryset_for_management(
+        Centro.objects.all(), user
+    ).values_list("id", flat=True)
+
+
+def _readable_centros_ids(user):
     return filter_centros_queryset_for_user(Centro.objects.all(), user).values_list(
         "id", flat=True
     )
@@ -62,6 +67,15 @@ def _scoped_comisiones_curso_queryset(user):
         "curso__plan_estudio",
         "ubicacion__localidad",
     ).filter(curso__centro_id__in=_scoped_centros_ids(user))
+
+
+def _readable_comisiones_curso_queryset(user):
+    return ComisionCurso.objects.select_related(
+        "curso__centro",
+        "curso__modalidad",
+        "curso__plan_estudio",
+        "ubicacion__localidad",
+    ).filter(curso__centro_id__in=_readable_centros_ids(user))
 
 
 def _centro_cursos_tab_url(centro_id, refresh=False):
@@ -114,8 +128,15 @@ def _modal_json_error_response(form, message):
     )
 
 
-def _modal_json_success_response(redirect_url, message):
-    return _horario_json_success_response(redirect_url, message)
+def _modal_json_success_response(redirect_url, message, extra_payload=None):
+    payload = {
+        "ok": True,
+        "message": message,
+        "redirect_url": redirect_url,
+    }
+    if extra_payload:
+        payload.update(extra_payload)
+    return JsonResponse(payload)
 
 
 class CursoCreateView(LoginRequiredMixin, CreateView):
@@ -133,7 +154,7 @@ class CursoCreateView(LoginRequiredMixin, CreateView):
         except Centro.DoesNotExist as exc:
             raise PermissionDenied from exc
 
-        if not can_user_access_centro(request.user, centro):
+        if not can_user_edit_centro(request.user, centro):
             raise PermissionDenied
 
         self.centro = centro
@@ -262,7 +283,7 @@ class ComisionCursoCreateView(LoginRequiredMixin, CreateView):
                 curso = Curso.objects.select_related("centro").get(pk=curso_id)
             except Curso.DoesNotExist as exc:
                 raise PermissionDenied from exc
-            if not can_user_access_centro(request.user, curso.centro):
+            if not can_user_edit_centro(request.user, curso.centro):
                 raise PermissionDenied
             self.curso = curso
         else:
@@ -277,7 +298,7 @@ class ComisionCursoCreateView(LoginRequiredMixin, CreateView):
 
     def get_form(self, form_class=None):
         form = super().get_form(form_class)
-        scoped_centros = filter_centros_queryset_for_user(
+        scoped_centros = filter_centros_queryset_for_management(
             Centro.objects.all(), self.request.user
         )
         scoped_centros_ids = list(scoped_centros.values_list("id", flat=True))
@@ -320,16 +341,19 @@ class ComisionCursoDetailView(LoginRequiredMixin, DetailView):
     context_object_name = "comision"
 
     def get_queryset(self):
-        return _scoped_comisiones_curso_queryset(self.request.user).prefetch_related(
+        return _readable_comisiones_curso_queryset(self.request.user).prefetch_related(
             "curso__voucher_parametrias"
         )
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         comision = self.object
+        puede_gestionar_comision = can_user_edit_centro(
+            self.request.user, comision.curso.centro
+        )
         cancel_url = _centro_cursos_tab_url(comision.curso.centro_id)
         comision_form = ComisionCursoForm(instance=comision)
-        scoped_centros = filter_centros_queryset_for_user(
+        scoped_centros = filter_centros_queryset_for_management(
             Centro.objects.all(), self.request.user
         )
         scoped_centros_ids = list(scoped_centros.values_list("id", flat=True))
@@ -396,12 +420,23 @@ class ComisionCursoDetailView(LoginRequiredMixin, DetailView):
                 "comision_delete_url": reverse(
                     "vat_comision_curso_delete", kwargs={"pk": comision.pk}
                 ),
-                "puede_editar_comision": self.request.user.has_perm(
-                    "VAT.change_comisioncurso"
-                ),
-                "puede_eliminar_comision": self.request.user.has_perm(
-                    "VAT.delete_comisioncurso"
-                ),
+                "puede_gestionar_comision": puede_gestionar_comision,
+                "puede_editar_comision": puede_gestionar_comision
+                and self.request.user.has_perm("VAT.change_comisioncurso"),
+                "puede_eliminar_comision": puede_gestionar_comision
+                and self.request.user.has_perm("VAT.delete_comisioncurso"),
+                "puede_agregar_inscripcion": puede_gestionar_comision
+                and self.request.user.has_perm("VAT.add_inscripcion"),
+                "puede_cambiar_inscripcion": puede_gestionar_comision
+                and self.request.user.has_perm("VAT.change_inscripcion"),
+                "puede_gestionar_asistencia": puede_gestionar_comision
+                and self.request.user.has_perm("VAT.change_inscripcion"),
+                "puede_agregar_comision_horario": puede_gestionar_comision
+                and self.request.user.has_perm("VAT.add_comisionhorario"),
+                "puede_editar_comision_horario": puede_gestionar_comision
+                and self.request.user.has_perm("VAT.change_comisionhorario"),
+                "puede_eliminar_comision_horario": puede_gestionar_comision
+                and self.request.user.has_perm("VAT.delete_comisionhorario"),
                 "unidad_label": "Curso",
                 "unidad_valor": comision.curso.nombre,
                 "unidad_sidebar_title": "Curso asociado",
@@ -414,13 +449,21 @@ class ComisionCursoDetailView(LoginRequiredMixin, DetailView):
                 "horario_update_url_name": "vat_comision_curso_horario_update",
                 "horario_delete_url_name": "vat_comision_curso_horario_delete",
                 "inscripcion_rapida_url_name": "vat_inscripcion_rapida_comision_curso",
-                "export_preinscriptos_url": reverse(
-                    "vat_comision_curso_export_preinscriptos",
-                    kwargs={"pk": comision.pk},
+                "export_preinscriptos_url": (
+                    reverse(
+                        "vat_comision_curso_export_preinscriptos",
+                        kwargs={"pk": comision.pk},
+                    )
+                    if self.request.user.has_perm("VAT.view_comisioncurso")
+                    else None
                 ),
-                "export_inscriptos_url": reverse(
-                    "vat_comision_curso_export_inscriptos",
-                    kwargs={"pk": comision.pk},
+                "export_inscriptos_url": (
+                    reverse(
+                        "vat_comision_curso_export_inscriptos",
+                        kwargs={"pk": comision.pk},
+                    )
+                    if self.request.user.has_perm("VAT.view_comisioncurso")
+                    else None
                 ),
             }
         )
@@ -443,7 +486,7 @@ class _ComisionCursoNominaExportView(LoginRequiredMixin, View):
 
     def get(self, request, pk):
         comision = get_object_or_404(
-            _scoped_comisiones_curso_queryset(request.user),
+            _readable_comisiones_curso_queryset(request.user),
             pk=pk,
         )
         content = build_comision_curso_nomina_excel(
@@ -775,7 +818,7 @@ class ComisionCursoUpdateView(LoginRequiredMixin, UpdateView):
 
     def get_form(self, form_class=None):
         form = super().get_form(form_class)
-        scoped_centros = filter_centros_queryset_for_user(
+        scoped_centros = filter_centros_queryset_for_management(
             Centro.objects.all(), self.request.user
         )
         scoped_centros_ids = list(scoped_centros.values_list("id", flat=True))
@@ -790,14 +833,20 @@ class ComisionCursoUpdateView(LoginRequiredMixin, UpdateView):
         return form
 
     def form_valid(self, form):
+        fechas_cambiaron = bool({"fecha_inicio", "fecha_fin"} & set(form.changed_data))
         messages.success(self.request, "Comision del curso actualizada exitosamente.")
         if _is_ajax_request(self.request):
             self.object = form.save()
+            if fechas_cambiaron:
+                SesionComisionService.regenerar_para_comision(self.object)
             return _modal_json_success_response(
                 self.get_success_url(),
                 "Comision del curso actualizada exitosamente.",
             )
-        return super().form_valid(form)
+        response = super().form_valid(form)
+        if fechas_cambiaron:
+            SesionComisionService.regenerar_para_comision(self.object)
+        return response
 
     def form_invalid(self, form):
         if _is_ajax_request(self.request):

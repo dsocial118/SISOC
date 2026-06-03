@@ -439,6 +439,8 @@ class NominaEspacioPWA(models.Model):
     asistencia_alimentaria = models.BooleanField(default=True)
     asistencia_actividades = models.BooleanField(default=False)
     es_indocumentado = models.BooleanField(default=False)
+    pertenece_comunidad_indigena = models.BooleanField(default=False)
+    situacion_calle = models.BooleanField(default=False)
     identificador_interno = models.CharField(max_length=40, null=True, blank=True)
     activo = models.BooleanField(default=True)
     fecha_alta = models.DateTimeField(auto_now_add=True)
@@ -530,4 +532,36 @@ class RegistroAsistenciaNominaPWA(models.Model):
         return (
             f"Asistencia nomina {self.nomina_id} {self.periodicidad} "
             f"{self.periodo_referencia:%Y-%m}"
+        )
+
+
+class NominaObservacionPWA(models.Model):
+    """Historial de observaciones de una persona de nómina en PWA."""
+
+    nomina = models.ForeignKey(
+        Nomina,
+        on_delete=models.CASCADE,
+        related_name="observaciones_pwa",
+    )
+    texto = models.TextField()
+    creada_por = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="observaciones_nomina_pwa_creadas",
+    )
+    fecha_creacion = models.DateTimeField(auto_now_add=True, db_index=True)
+
+    class Meta:
+        verbose_name = "Observación Nómina PWA"
+        verbose_name_plural = "Observaciones Nómina PWA"
+        ordering = ("-fecha_creacion", "-id")
+        indexes = [
+            models.Index(fields=["nomina", "fecha_creacion"], name="pwa_nom_obs_idx"),
+        ]
+
+    def __str__(self):
+        return (
+            f"Observación nómina {self.nomina_id} {self.fecha_creacion:%Y-%m-%d %H:%M}"
         )

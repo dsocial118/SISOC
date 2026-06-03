@@ -119,6 +119,19 @@ class Admision(models.Model):
     tipo_convenio = models.ForeignKey(
         TipoConvenio, on_delete=models.SET_NULL, null=True
     )
+    tipo_entidad_origen = models.ForeignKey(
+        "organizaciones.TipoEntidad",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="admisiones_con_snapshot",
+        verbose_name="Tipo de entidad de origen",
+        help_text=(
+            "Snapshot del tipo de entidad de la organizacion en el momento en"
+            " que la admision quedo sincronizada (creacion, resync manual o"
+            " aceptacion de divergencia)."
+        ),
+    )
     num_expediente = models.CharField(max_length=255, blank=True, null=True)
     num_if = models.CharField(max_length=100, blank=True, null=True)
     legales_num_if = models.CharField(max_length=100, blank=True, null=True)
@@ -291,6 +304,20 @@ class ArchivoAdmision(SoftDeleteModelMixin, models.Model):
     )
     nombre_personalizado = models.CharField(
         max_length=255, blank=True, null=True, verbose_name="Nombre personalizado"
+    )
+    archivo_organizacion_origen = models.ForeignKey(
+        "organizaciones.ArchivoOrganizacion",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="archivos_admision_materializados",
+        verbose_name="Archivo de organizacion de origen",
+        help_text=(
+            "Si el documento fue materializado desde el legajo de la"
+            " organizacion, referencia al ArchivoOrganizacion de origen."
+            " Permite replicar el GDE y detectar cambios sin depender del"
+            " matching por nombre."
+        ),
     )
     archivo = models.FileField(
         upload_to="admisiones/admisiones_archivos/", null=True, blank=True
@@ -1178,3 +1205,87 @@ class InformeTecnicoComplementarioPDF(models.Model):
 
     def __str__(self):
         return f"PDF Complementario Final - Admision #{self.admision_id}"
+
+
+class NumeroGdeOrganizacion(models.Model):
+    """Vincula un ``ArchivoOrganizacion`` con una ``Admision`` para registrar el
+    Numero de GDE propio de esa combinacion. Permite que el mismo documento de
+    la organizacion tenga distintos GDE en distintas admisiones."""
+
+    admision = models.ForeignKey(
+        Admision,
+        on_delete=models.CASCADE,
+        related_name="numeros_gde_organizacion",
+    )
+    archivo_organizacion = models.ForeignKey(
+        "organizaciones.ArchivoOrganizacion",
+        on_delete=models.CASCADE,
+        related_name="numeros_gde_por_admision",
+    )
+    numero_gde = models.CharField(
+        "Numero de GDE",
+        max_length=50,
+        blank=True,
+        null=True,
+        help_text="Numero de expediente GDE asignado por la admision al documento de la organizacion.",
+    )
+    creado = models.DateTimeField(auto_now_add=True)
+    modificado = models.DateTimeField(auto_now=True)
+    modificado_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="numeros_gde_organizacion_modificados",
+    )
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["admision", "archivo_organizacion"],
+                name="unq_gde_admision_archivoorg",
+            )
+        ]
+        verbose_name = "Numero GDE de archivo de organizacion por admision"
+        verbose_name_plural = "Numeros GDE de archivos de organizacion por admision"
+
+    def __str__(self):
+        return (
+            f"Admision #{self.admision_id} - "
+            f"Archivo Org #{self.archivo_organizacion_id} - "
+            f"GDE={self.numero_gde or '-'}"
+        )
+
+
+class AdmisionDocOrgSnapshot(models.Model):
+    """Snapshot por admision del estado de la documentacion del legajo de la
+    Organizacion con el que la admision quedo sincronizada (issue #1799 Req 1).
+
+    Permite detectar que documentos del legajo cambiaron respecto de lo que la
+    admision ya tenia (incluye cambios de estado, p. ej. Pendiente -> Aceptado),
+    para mostrar la advertencia y listar los documentos modificados. Se indexa
+    por *slot logico* (``slot_key``): ``doc:{id}`` para documentos de catalogo y
+    ``custom:{id}`` para documentos adicionales (personalizados)."""
+
+    admision = models.ForeignKey(
+        Admision,
+        on_delete=models.CASCADE,
+        related_name="snapshots_doc_org",
+    )
+    slot_key = models.CharField(max_length=64)
+    etiqueta = models.CharField(max_length=255, blank=True, null=True)
+    token = models.CharField(max_length=255)
+    synced_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["admision", "slot_key"],
+                name="unq_snapshot_doc_org",
+            )
+        ]
+        verbose_name = "Snapshot de documentacion organizacional por admision"
+        verbose_name_plural = "Snapshots de documentacion organizacional por admision"
+
+    def __str__(self):
+        return f"Admision #{self.admision_id} - {self.etiqueta or self.slot_key}"

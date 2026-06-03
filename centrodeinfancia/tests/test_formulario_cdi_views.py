@@ -13,6 +13,7 @@ from centrodeinfancia.models import (
     OfertaServicio,
 )
 from centrodeinfancia.views_formulario_cdi import (
+    FormularioCDICreateView,
     FormularioCDIDetailView,
     FormularioCDIListView,
 )
@@ -482,6 +483,50 @@ def test_formulario_cdi_crear_autocompleta_campos_nuevos_desde_centro(client):
 
 
 @pytest.mark.django_db
+def test_formulario_cdi_crear_no_preselecciona_oferta_si_centro_tiene_multiples():
+    user = _crear_usuario("super-form-multi-oferta", superuser=True)
+    lactantes_servicio, _ = OfertaServicio.objects.get_or_create(
+        codigo="lactantes",
+        defaults={"orden": 0},
+    )
+    multiedad_servicio, _ = OfertaServicio.objects.get_or_create(
+        codigo="multiedad",
+        defaults={"orden": 5},
+    )
+    centro = CentroDeInfancia.objects.create(
+        nombre="CDI Multi Oferta",
+        telefono="12345678",
+    )
+    centro.oferta_servicios.set([lactantes_servicio, multiedad_servicio])
+
+    request = RequestFactory().get(f"/centrodeinfancia/{centro.pk}/formularios/crear/")
+    request.user = user
+    view = _build_view(FormularioCDICreateView, request, pk=centro.pk)
+
+    assert not view.get_initial()["oferta_servicios"]
+
+
+@pytest.mark.django_db
+def test_formulario_cdi_crear_preselecciona_oferta_si_centro_tiene_una_sola():
+    user = _crear_usuario("super-form-una-oferta", superuser=True)
+    oferta_servicio, _ = OfertaServicio.objects.get_or_create(
+        codigo="multiedad",
+        defaults={"orden": 5},
+    )
+    centro = CentroDeInfancia.objects.create(
+        nombre="CDI Una Oferta",
+        telefono="12345678",
+    )
+    centro.oferta_servicios.add(oferta_servicio)
+
+    request = RequestFactory().get(f"/centrodeinfancia/{centro.pk}/formularios/crear/")
+    request.user = user
+    view = _build_view(FormularioCDICreateView, request, pk=centro.pk)
+
+    assert view.get_initial()["oferta_servicios"] == "multiedad"
+
+
+@pytest.mark.django_db
 def test_detalle_cdi_muestra_nuevos_paneles_y_campos(client):
     user = _crear_usuario("super-cdi-detalle-campos", superuser=True)
     client.force_login(user)
@@ -527,7 +572,7 @@ def test_detalle_cdi_muestra_nuevos_paneles_y_campos(client):
     assert "Asociacion Civil Horizonte" in content
     assert "20-44535030-4" in content
     assert "detalle@example.com" in content
-    assert "20/05/2024" in content
+    assert "2024" in content  # vista muestra solo el año de fecha_inicio
     assert "1234" in content
     assert "Latitud:" in content
     assert "Longitud:" in content

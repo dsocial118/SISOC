@@ -1,8 +1,12 @@
+# pylint: disable=too-many-lines
+
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.paginator import Paginator
 from django.db.models import Count, Prefetch, Q
+from django.db import connection
+from django.db.utils import OperationalError, ProgrammingError
 from django.http import Http404
 from drf_spectacular.utils import extend_schema
 from rest_framework import status, viewsets
@@ -31,10 +35,12 @@ from pwa.api_serializers import (
     RegistroAsistenciaNominaPWAListSerializer,
     SexoSerializer,
 )
+from pwa.curso_app_mobile_serializers import CursoAppMobilePWASerializer
 from pwa.models import (
     ActividadEspacioPWA,
     CatalogoActividadPWA,
     InscriptoActividadEspacioPWA,
+    NominaObservacionPWA,
     RegistroAsistenciaNominaPWA,
 )
 from pwa.services.actividades_service import (
@@ -62,6 +68,7 @@ from pwa.services.nomina_service import (
     split_gender_bucket,
     update_nomina_persona,
 )
+from pwa.utils import parse_periodo_referencia
 from pwa.view_helpers import (
     build_mensaje_espacio_summary,
     normalize_renaper_error_message,
@@ -71,7 +78,12 @@ from pwa.view_helpers import (
 )
 from users.api_permissions import IsPWAAuthenticatedToken
 from users.api_permissions import IsPWARepresentativeForComedor
-from comedores.models import ActividadColaboradorEspacio, ColaboradorEspacio, Nomina
+from comedores.models import (
+    ActividadColaboradorEspacio,
+    ColaboradorEspacio,
+    CursoAppMobile,
+    Nomina,
+)
 from comedores.services.colaborador_espacio_service import ColaboradorEspacioService
 from comedores.services.comedor_service.impl import ComedorService
 from ciudadanos.models import Ciudadano
@@ -198,6 +210,62 @@ class MensajeEspacioPWAViewSet(viewsets.ViewSet):
             },
         )
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+@extend_schema(tags=["PWA Formacion"])
+class CursoAppMobilePWAViewSet(viewsets.ViewSet):
+    serializer_class = CursoAppMobilePWASerializer
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated, IsPWARepresentativeForComedor]
+
+    @staticmethod
+    def _is_pnud_space(comedor):
+        programa_nombre = str(
+            getattr(getattr(comedor, "programa", None), "nombre", "") or ""
+        )
+        normalized = " ".join(programa_nombre.lower().split())
+        return comedor.programa_id in (3, 4) or "pnud" in normalized
+
+    @staticmethod
+    def _is_alimentar_comunidad_space(comedor):
+        programa_nombre = str(
+            getattr(getattr(comedor, "programa", None), "nombre", "") or ""
+        )
+        normalized = " ".join(programa_nombre.lower().split())
+        return normalized == "alimentar comunidad"
+
+    @staticmethod
+    def _programas_objetivo_para_comedor(comedor):
+        if CursoAppMobilePWAViewSet._is_pnud_space(comedor):
+            return (
+                CursoAppMobile.PROGRAMA_PNUD,
+                CursoAppMobile.PROGRAMA_AMBOS,
+            )
+        if CursoAppMobilePWAViewSet._is_alimentar_comunidad_space(comedor):
+            return (
+                CursoAppMobile.PROGRAMA_ALIMENTAR,
+                CursoAppMobile.PROGRAMA_AMBOS,
+            )
+        return ()
+
+    def list(self, request, comedor_id=None):
+        comedor = ComedorService.get_scoped_comedor_or_404(comedor_id, request.user)
+
+        programas_objetivo = self._programas_objetivo_para_comedor(comedor)
+        if not programas_objetivo:
+            return Response({"results": []}, status=status.HTTP_200_OK)
+
+        queryset = CursoAppMobile.objects.filter(
+            activo=True,
+            programa_objetivo__in=programas_objetivo,
+        ).order_by("orden", "nombre", "id")
+
+        serializer = CursoAppMobilePWASerializer(
+            queryset,
+            many=True,
+            context={"request": request},
+        )
+        return Response({"results": serializer.data}, status=status.HTTP_200_OK)
 
 
 @extend_schema(tags=["PWA Push"])
@@ -598,10 +666,19 @@ class NominaEspacioPWAViewSet(viewsets.ViewSet):
         except ObjectDoesNotExist:
             return None
 
+    def _has_nomina_observaciones_table(self) -> bool:
+        try:
+            return (
+                NominaObservacionPWA._meta.db_table
+                in connection.introspection.table_names()
+            )
+        except (OperationalError, ProgrammingError):
+            return False
+
     def _base_queryset(self):
         comedor_id = self.kwargs["comedor_id"]
         periodo_actual = get_periodo_mensual_actual()
-        return (
+        queryset = (
             Nomina.objects.filter(
                 Q(admision__comedor_id=comedor_id)
                 | Q(comedor_id=comedor_id, admision__isnull=True),
@@ -626,10 +703,23 @@ class NominaEspacioPWAViewSet(viewsets.ViewSet):
                     .select_related("tomado_por")
                     .order_by("-fecha_toma_asistencia", "-id"),
                     to_attr="asistencia_mes_actual_pwa",
-                )
+                ),
             )
             .order_by("ciudadano__apellido", "ciudadano__nombre", "id")
         )
+        if self._has_nomina_observaciones_table():
+            queryset = queryset.prefetch_related(
+                Prefetch(
+                    "observaciones_pwa",
+                    queryset=NominaObservacionPWA.objects.select_related(
+                        "creada_por"
+                    ).order_by(
+                        "-fecha_creacion",
+                        "-id",
+                    ),
+                )
+            )
+        return queryset
 
     def _detail_queryset(self):
         return self._base_queryset().prefetch_related(
@@ -661,6 +751,61 @@ class NominaEspacioPWAViewSet(viewsets.ViewSet):
                 if getattr(self._safe_profile(row), "asistencia_actividades", False)
             ]
         return rows
+
+    def _attendance_queryset(self, tab: str):
+        comedor_id = self.kwargs["comedor_id"]
+        tab = (tab or "consolidada").strip().lower()
+        queryset = (
+            RegistroAsistenciaNominaPWA.objects.filter(
+                Q(nomina__admision__comedor_id=comedor_id)
+                | Q(nomina__comedor_id=comedor_id, nomina__admision__isnull=True),
+                periodicidad=RegistroAsistenciaNominaPWA.PERIODICIDAD_MENSUAL,
+                nomina__deleted_at__isnull=True,
+            )
+            .select_related(
+                "nomina",
+                "nomina__ciudadano",
+                "nomina__ciudadano__sexo",
+                "nomina__perfil_pwa",
+                "tomado_por",
+            )
+            .order_by("-periodo_referencia", "-fecha_toma_asistencia", "-id")
+        )
+        if tab == "alimentaria":
+            return queryset.filter(
+                Q(nomina__perfil_pwa__asistencia_alimentaria=True)
+                | Q(nomina__perfil_pwa__isnull=True)
+            )
+        if tab == "formacion":
+            return queryset.filter(nomina__perfil_pwa__asistencia_actividades=True)
+        return queryset
+
+    @staticmethod
+    def _serialize_attendance_period(periodo_referencia, total):
+        return {
+            "periodo_referencia": periodo_referencia,
+            "periodo_label": periodo_referencia.strftime("%m/%Y"),
+            "total_asistentes": total,
+        }
+
+    _parse_periodo_referencia = staticmethod(parse_periodo_referencia)
+
+    @staticmethod
+    def _serialize_attendance_attendee(registro):
+        ciudadano = getattr(registro.nomina, "ciudadano", None)
+        sexo = getattr(ciudadano, "sexo", None) if ciudadano else None
+        return {
+            "id": registro.id,
+            "nomina_id": registro.nomina_id,
+            "nombre": ciudadano.nombre if ciudadano else "",
+            "apellido": ciudadano.apellido if ciudadano else "",
+            "dni": (
+                str(ciudadano.documento) if ciudadano and ciudadano.documento else ""
+            ),
+            "genero": sexo.sexo if sexo else "",
+            "fecha_toma_asistencia": registro.fecha_toma_asistencia,
+            "tomado_por": registro.tomado_por.username if registro.tomado_por else None,
+        }
 
     def _apply_search_filter(self, rows: list[Nomina], q: str) -> list[Nomina]:
         term = (q or "").strip().lower()
@@ -841,6 +986,55 @@ class NominaEspacioPWAViewSet(viewsets.ViewSet):
         ).order_by("-periodo_referencia", "-fecha_toma_asistencia", "-id")
         serializer = RegistroAsistenciaNominaPWAListSerializer(registros, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def periodos_asistencia(self, request, comedor_id=None):
+        tab = request.query_params.get("tab", "consolidada")
+        periodos = (
+            self._attendance_queryset(tab)
+            .values("periodo_referencia")
+            .annotate(total_asistentes=Count("id"))
+            .order_by("-periodo_referencia")
+        )
+        return Response(
+            {
+                "tab": tab,
+                "results": [
+                    self._serialize_attendance_period(
+                        row["periodo_referencia"],
+                        row["total_asistentes"],
+                    )
+                    for row in periodos
+                ],
+            },
+            status=status.HTTP_200_OK,
+        )
+
+    def asistencia_periodo(self, request, comedor_id=None):
+        tab = request.query_params.get("tab", "consolidada")
+        periodo_referencia = self._parse_periodo_referencia(
+            request.query_params.get("periodo")
+        )
+        if periodo_referencia is None:
+            return Response(
+                {"detail": "Periodo invalido."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        asistentes = list(
+            self._attendance_queryset(tab).filter(periodo_referencia=periodo_referencia)
+        )
+        return Response(
+            {
+                "tab": tab,
+                **self._serialize_attendance_period(
+                    periodo_referencia, len(asistentes)
+                ),
+                "asistentes": [
+                    self._serialize_attendance_attendee(registro)
+                    for registro in asistentes
+                ],
+            },
+            status=status.HTTP_200_OK,
+        )
 
     def registrar_asistencia_alimentaria(self, request, comedor_id=None):
         serializer = NominaAsistenciaAlimentariaBulkSerializer(data=request.data)

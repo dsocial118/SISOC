@@ -19,6 +19,7 @@ from core.models import Municipio, Provincia
 from core.models import Localidad
 from organizaciones.models import Organizacion
 from core.validators import validate_unicode_email
+from users.services import UserPermissionService
 
 MAX_IMAGEN_COMEDOR_FILE_SIZE = 3 * 1024 * 1024
 
@@ -187,6 +188,7 @@ class ComedorForm(forms.ModelForm):
         self.previous_estado_chain = self._resolve_instance_estados()
         self.estado_tree = self._build_estado_tree()
         self._configure_estado_fields()
+        self._restrict_estado_fields_for_pac()
         self.popular_campos_ubicacion()
 
         # Configurar organizacion: incluir la seleccionada (instancia o POST) para que pase la
@@ -204,6 +206,40 @@ class ComedorForm(forms.ModelForm):
         else:
             self.fields["organizacion"].queryset = Organizacion.objects.none()
 
+    def _can_edit_estado_fields(self):
+        user = self.current_user
+        if not user or not getattr(user, "is_authenticated", False):
+            return False
+        if user.is_superuser:
+            return True
+        return UserPermissionService.tiene_alguno_de_los_grupos(
+            user,
+            [
+                "auth.role_coordinador_general",
+                "auth.role_coordinador_equipo_tecnico",
+            ],
+        ) or UserPermissionService.es_coordinador(user)
+
+    def _restrict_estado_fields_for_pac(self):
+        if getattr(self.instance, "programa_id", None) != 2:
+            return
+        if self._can_edit_estado_fields():
+            return
+
+        for field_name, previous_value in zip(
+            ("estado_general", "subestado", "motivo"),
+            self.previous_estado_chain,
+        ):
+            field = self.fields[field_name]
+            if previous_value:
+                field.initial = getattr(previous_value, "pk", None) or getattr(
+                    previous_value, "id", None
+                )
+            field.disabled = True
+            field.help_text = (
+                "Solo Coordinador o Superadmin puede modificar este campo para PAC."
+            )
+
     def popular_campos_ubicacion(self):
 
         def pk_formatter(value):
@@ -219,8 +255,23 @@ class ComedorForm(forms.ModelForm):
             pk=pk_formatter(self.data.get("localidad"))
         ).first() or getattr(self.instance, "localidad", None)
 
-        # Configurar queryset de provincias (siempre disponible)
-        self.fields["provincia"].queryset = Provincia.objects.all().order_by("nombre")
+        # Configurar queryset de provincias: restringir para usuarios con scope territorial
+        from users.territorial_scope import get_effective_scopes, is_territorial_user
+
+        user = self.current_user
+        if (
+            user
+            and not getattr(user, "is_superuser", False)
+            and is_territorial_user(user)
+        ):
+            scoped_ids = [s.provincia_id for s in get_effective_scopes(user)]
+            self.fields["provincia"].queryset = Provincia.objects.filter(
+                pk__in=scoped_ids
+            ).order_by("nombre")
+        else:
+            self.fields["provincia"].queryset = Provincia.objects.all().order_by(
+                "nombre"
+            )
 
         if provincia:
             self.fields["provincia"].initial = provincia

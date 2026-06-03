@@ -115,9 +115,7 @@ def test_create_expediente_and_provincia_guard(mocker):
     created = SimpleNamespace(pk=7)
 
     create_mock = mocker.Mock(return_value=created)
-    expediente_stub = SimpleNamespace(
-        provincia_id=True, objects=SimpleNamespace(create=create_mock)
-    )
+    expediente_stub = SimpleNamespace(objects=SimpleNamespace(create=create_mock))
     mocker.patch("celiaquia.services.expediente_service.Expediente", expediente_stub)
 
     user = SimpleNamespace(username="usr", profile=SimpleNamespace(provincia_id=12))
@@ -127,7 +125,11 @@ def test_create_expediente_and_provincia_guard(mocker):
         excel_masivo="f.xlsx",
     )
     assert out is created
-    assert create_mock.call_args.kwargs["provincia_id"] == 12
+    # La provincia ya no se denormaliza en el expediente (se deriva del ciudadano):
+    # create_expediente no debe pasar provincia_id.
+    kwargs = create_mock.call_args.kwargs
+    assert "provincia_id" not in kwargs
+    assert kwargs["usuario_provincia"] is user
 
 
 def test_procesar_expediente_validations_and_success(mocker):
@@ -136,7 +138,7 @@ def test_procesar_expediente_validations_and_success(mocker):
             SimpleNamespace(excel_masivo=None), usuario="u"
         )
 
-    exp = SimpleNamespace(pk=8, excel_masivo="file")
+    exp = SimpleNamespace(pk=8, excel_masivo="file", save=mocker.Mock())
     mocker.patch(
         "celiaquia.services.expediente_service.ImportacionService.importar_legajos_desde_excel",
         return_value={
@@ -157,6 +159,12 @@ def test_procesar_expediente_validations_and_success(mocker):
     }
     assert set_estado.call_count == 2
     assert set_estado.call_args_list[1].kwargs["observaciones"]
+    exp.save.assert_called_once_with(
+        update_fields=[
+            "excel_masivo_procesado_por",
+            "excel_masivo_procesado_en",
+        ]
+    )
 
 
 class _LegajosQS:

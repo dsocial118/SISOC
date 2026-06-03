@@ -70,6 +70,22 @@ def _auth_client_for_user(user):
     return client
 
 
+# Día fijo dentro de la ventana de carga de asistencia (día <= 10). El período
+# mensual "actual" y la habilitación de la ventana derivan de
+# ``timezone.localdate()``; sin congelarla los tests dependen del día real de
+# ejecución (la ventana solo está abierta entre el 25 y el 10 del mes
+# siguiente). Fijar la fecha en el día 1 reproduce el borde de mes de forma
+# determinista y mantiene la ventana abierta.
+_FECHA_FIJA_VENTANA = date(2026, 6, 1)
+
+
+@pytest.fixture
+def fecha_fija_en_ventana(mocker):
+    """Congela ``timezone.localdate`` en ``_FECHA_FIJA_VENTANA`` para todo el test."""
+    mocker.patch("django.utils.timezone.localdate", return_value=_FECHA_FIJA_VENTANA)
+    return _FECHA_FIJA_VENTANA
+
+
 @pytest.mark.django_db
 def test_nomina_list_stats_and_tabs(comedor, admision, sexo_f, sexo_m, dia):
     representante = _create_representante(comedor=comedor, username="rep_nomina_tabs")
@@ -281,7 +297,9 @@ def test_nomina_delete_is_logical(comedor, admision, sexo_m, dia):
 
 
 @pytest.mark.django_db
-def test_nomina_list_includes_monthly_attendance_history(comedor, admision, sexo_f):
+def test_nomina_list_includes_monthly_attendance_history(
+    comedor, admision, sexo_f, fecha_fija_en_ventana
+):
     representante = _create_representante(comedor=comedor, username="rep_nomina_hist")
     client = _auth_client_for_user(representante)
 
@@ -417,7 +435,7 @@ def test_nomina_detail_endpoint_returns_linked_activities(
 
 @pytest.mark.django_db
 def test_nomina_register_attendance_current_month_is_idempotent(
-    comedor, admision, sexo_m
+    comedor, admision, sexo_m, fecha_fija_en_ventana
 ):
     representante = _create_representante(comedor=comedor, username="rep_nomina_asis")
     client = _auth_client_for_user(representante)
@@ -461,7 +479,7 @@ def test_nomina_register_attendance_current_month_is_idempotent(
 
 @pytest.mark.django_db
 def test_nomina_bulk_attendance_alimentaria_syncs_current_period(
-    comedor, admision, sexo_f, sexo_m
+    comedor, admision, sexo_f, sexo_m, fecha_fija_en_ventana
 ):
     representante = _create_representante(
         comedor=comedor, username="rep_nomina_bulk_alimentaria"

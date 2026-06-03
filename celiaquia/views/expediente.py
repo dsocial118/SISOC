@@ -8,6 +8,7 @@ from django.views.generic import ListView, CreateView, DetailView, UpdateView
 from django.urls import reverse_lazy
 from django.shortcuts import get_object_or_404, redirect
 from django.http import (
+    FileResponse,
     JsonResponse,
     HttpResponse,
     HttpResponseBadRequest,
@@ -16,11 +17,12 @@ from django.http import (
 from django.utils.html import escape
 from django.views.decorators.csrf import csrf_protect
 from django.contrib import messages
-from django.core.exceptions import ValidationError, PermissionDenied, ObjectDoesNotExist
+from django.core.exceptions import ObjectDoesNotExist, ValidationError, PermissionDenied
 from django.conf import settings
 from django.utils.decorators import method_decorator
 from django.contrib.auth.models import User
-from django.db.models import Q, Count, OuterRef, Subquery
+from django.db.models import Q, Count, OuterRef, Subquery, F, CharField
+from django.db.models.functions import Coalesce
 from django.core.paginator import Paginator
 from iam.services import user_has_permission_code
 
@@ -47,6 +49,7 @@ from celiaquia.services.importacion_service import (
     _beneficiario_requiere_responsable_importacion,
     _cargar_nacionalidades_cache,
     _cargar_paises_a_nacionalidad_importacion,
+    _obtener_provincias_permitidas_ids,
     _precargar_conflictos_y_existentes_importacion,
     _resolver_nacionalidad_payload_importacion,
     validar_y_normalizar_payloads_importacion,
@@ -58,11 +61,19 @@ from django.db import transaction
 from core.models import Nacionalidad, Provincia, Localidad
 from core.soft_delete.preview import build_delete_preview
 from core.soft_delete.view_helpers import is_soft_deletable_instance
+from users.territorial_scope import (
+    apply_territorial_scope,
+    build_territorial_scope_q,
+    get_effective_scopes,
+    get_single_full_province_scope_id,
+    is_territorial_user,
+)
 
 logger = logging.getLogger("django")
 
 ROLE_COORDINADOR_CELIAQUIA_PERMISSION = "auth.role_coordinadorceliaquia"
 ROLE_TECNICO_CELIAQUIA_PERMISSION = "auth.role_tecnicoceliaquia"
+ROLE_PROVINCIA_CELIAQUIA_PERMISSION = "auth.role_provinciaceliaquia"
 
 
 def _user_has_permission(user, permission_code: str) -> bool:
@@ -99,11 +110,11 @@ def _is_ajax(request) -> bool:
 
 
 def _is_provincial(user) -> bool:
-    if not user.is_authenticated:
-        return False
     try:
-        return bool(user.profile.es_usuario_provincial and user.profile.provincia_id)
-    except (AttributeError, ObjectDoesNotExist):
+        if is_territorial_user(user):
+            return True
+        return _user_has_permission(user, ROLE_PROVINCIA_CELIAQUIA_PERMISSION)
+    except ObjectDoesNotExist:
         return False
 
 
@@ -111,6 +122,13 @@ def _can_manage_registros_erroneos(user) -> bool:
     return bool(
         _is_admin(user)
         or _is_provincial(user)
+        or _user_has_permission(user, ROLE_COORDINADOR_CELIAQUIA_PERMISSION)
+    )
+
+
+def _can_manage_excel_masivo_audit(user) -> bool:
+    return bool(
+        _is_admin(user)
         or _user_has_permission(user, ROLE_COORDINADOR_CELIAQUIA_PERMISSION)
     )
 
@@ -316,6 +334,10 @@ def _consolidar_datos_registro_erroneo(datos_previos, datos_nuevos):
 
 def _resolver_provincia_id_registro_erroneo(user, expediente):
     provincia = _user_provincia(user) or getattr(expediente, "provincia", None)
+    if provincia is None and _is_provincial(user):
+        provincia_ids = {scope.provincia_id for scope in get_effective_scopes(user)}
+        if len(provincia_ids) == 1:
+            return next(iter(provincia_ids))
     if provincia is None:
         try:
             provincia = expediente.usuario_provincia.profile.provincia
@@ -465,10 +487,13 @@ def _formatear_observaciones_historial(observaciones):
     return "\n".join(partes) or observaciones
 
 
-def _validar_datos_registro_erroneo(payload, provincia_id, fila_excel=0):
+def _validar_datos_registro_erroneo(
+    payload, provincia_id, fila_excel=0, provincias_permitidas_ids=None
+):
     return validar_y_normalizar_payloads_importacion(
         payload=payload,
         provincia_usuario_id=provincia_id,
+        provincias_permitidas_ids=provincias_permitidas_ids,
         offset=fila_excel,
     )
 
@@ -489,9 +514,63 @@ def _registro_erroneo_responsable_requerido(payload):
 
 def _user_provincia(user):
     try:
-        return user.profile.provincia
+        provincia = user.profile.provincia
     except (AttributeError, ObjectDoesNotExist):
+        provincia = None
+    if provincia:
+        return provincia
+
+    try:
+        provincia_id = get_single_full_province_scope_id(user)
+    except ObjectDoesNotExist:
+        provincia_id = None
+    if not provincia_id:
         return None
+    return Provincia.objects.filter(pk=provincia_id).first()
+
+
+def _user_scope_provincias(user):
+    provincia_ids = sorted({scope.provincia_id for scope in get_effective_scopes(user)})
+    if not provincia_ids:
+        return Provincia.objects.none()
+    return Provincia.objects.filter(pk__in=provincia_ids).order_by("nombre")
+
+
+def _apply_provincial_expediente_scope(queryset, user):
+    if getattr(user, "is_superuser", False):
+        return queryset
+    if not is_territorial_user(user):
+        # Tiene role_provinciaceliaquia pero no scope territorial configurado;
+        # restringir a expedientes propios.
+        return queryset.filter(usuario_provincia=user).distinct()
+
+    # Un expediente es visible si tiene al menos un ciudadano dentro del alcance
+    # territorial del usuario. NO se incluyen los expedientes propios fuera de
+    # alcance (sin include_own): un expediente cargado por el usuario con
+    # ciudadanos de otra provincia no debe listarse (seguimiento del issue #1793).
+    scope_q = build_territorial_scope_q(
+        get_effective_scopes(user),
+        provincia_lookup="expediente_ciudadanos__ciudadano__provincia_id",
+        municipio_lookup="expediente_ciudadanos__ciudadano__municipio_id",
+        localidad_lookup="expediente_ciudadanos__ciudadano__localidad_id",
+    )
+    # Excepcion: sus propios expedientes recien creados, aun sin legajos
+    # importados (sin provincia derivable todavia), deben seguir siendo accesibles
+    # para poder cargar/procesar el Excel.
+    propios_sin_legajos_q = Q(
+        usuario_provincia=user, expediente_ciudadanos__isnull=True
+    )
+    combined_q = (
+        propios_sin_legajos_q if scope_q is None else scope_q | propios_sin_legajos_q
+    )
+    return queryset.filter(combined_q).distinct()
+
+
+def _get_provincial_expediente_or_404(user, pk):
+    return get_object_or_404(
+        _apply_provincial_expediente_scope(Expediente.objects.all(), user),
+        pk=pk,
+    )
 
 
 def _tecnicos_queryset():
@@ -536,12 +615,20 @@ class LocalidadesLookupView(View):
 
         localidades = Localidad.objects.select_related("municipio__provincia")
 
-        # Filtrar por provincia del usuario solo si es provincial Y NO es coordinador
+        # Restringir por el alcance territorial real del usuario (provincia,
+        # municipio y/o localidad). Coordinador y admin no tienen restriccion.
+        # Antes se filtraba por la provincia unica del perfil, que queda vacia
+        # cuando el usuario tiene varias provincias o un municipio especifico,
+        # ocultando las localidades de su municipio.
         is_coord = _user_has_permission(user, ROLE_COORDINADOR_CELIAQUIA_PERMISSION)
-        if _is_provincial(user) and not is_coord:
-            prov = _user_provincia(user)
-            if prov:
-                localidades = localidades.filter(municipio__provincia=prov)
+        if _is_provincial(user) and not is_coord and not _is_admin(user):
+            localidades = apply_territorial_scope(
+                localidades,
+                user,
+                provincia_lookup="municipio__provincia_id",
+                municipio_lookup="municipio_id",
+                localidad_lookup="id",
+            )
 
         if provincia_id:
             localidades = localidades.filter(municipio__provincia_id=provincia_id)
@@ -583,6 +670,8 @@ class ExpedienteListView(ListView):
             Expediente.objects.select_related(
                 "estado",
                 "usuario_provincia__profile__provincia",
+                "excel_masivo_cargado_por",
+                "excel_masivo_procesado_por",
             )
             .prefetch_related("asignaciones_tecnicos__tecnico")
             .annotate(
@@ -601,22 +690,53 @@ class ExpedienteListView(ListView):
                 "usuario_provincia__profile__provincia__id",
                 "usuario_provincia__profile__provincia__nombre",
                 "numero_expediente",
+                "excel_masivo",
+                "excel_masivo_cargado_por_id",
+                "excel_masivo_cargado_por__first_name",
+                "excel_masivo_cargado_por__last_name",
+                "excel_masivo_cargado_por__username",
+                "excel_masivo_cargado_en",
+                "excel_masivo_procesado_por_id",
+                "excel_masivo_procesado_por__first_name",
+                "excel_masivo_procesado_por__last_name",
+                "excel_masivo_procesado_por__username",
+                "excel_masivo_procesado_en",
             )
         )
-        if _is_admin(user) or _user_has_permission(
-            user, ROLE_COORDINADOR_CELIAQUIA_PERMISSION
-        ):
+
+        # Provincia mostrada en la grilla: se deriva del territorio de los
+        # ciudadanos del expediente (un usuario puede tener varias provincias y el
+        # perfil legacy queda vacio). Se anota con Subquery para evitar N+1 y se
+        # cae al valor legacy del perfil para expedientes aun sin legajos.
+        provincia_derivada_sq = (
+            ExpedienteCiudadano.objects.filter(
+                expediente=OuterRef("pk"),
+                ciudadano__provincia__isnull=False,
+            )
+            .order_by("ciudadano_id")
+            .values("ciudadano__provincia__nombre")[:1]
+        )
+        qs = qs.annotate(
+            provincia_derivada=Coalesce(
+                Subquery(provincia_derivada_sq),
+                F("usuario_provincia__profile__provincia__nombre"),
+                output_field=CharField(),
+            )
+        )
+
+        if _is_admin(user):
+            qs = qs.order_by("-fecha_creacion")
+        elif _is_provincial(user):
+            qs = _apply_provincial_expediente_scope(qs, user).order_by(
+                "-fecha_creacion"
+            )
+        elif _user_has_permission(user, ROLE_COORDINADOR_CELIAQUIA_PERMISSION):
             qs = qs.order_by("-fecha_creacion")
         elif _user_has_permission(user, ROLE_TECNICO_CELIAQUIA_PERMISSION):
             qs = (
                 qs.filter(asignaciones_tecnicos__tecnico=user)
                 .distinct()
                 .order_by("-fecha_creacion")
-            )
-        elif _is_provincial(user):
-            prov = _user_provincia(user)
-            qs = qs.filter(usuario_provincia__profile__provincia=prov).order_by(
-                "-fecha_creacion"
             )
         else:
             qs = qs.filter(usuario_provincia=user).order_by("-fecha_creacion")
@@ -629,6 +749,9 @@ class ExpedienteListView(ListView):
                 | Q(estado__nombre__icontains=search_query)
                 | Q(
                     usuario_provincia__profile__provincia__nombre__icontains=search_query
+                )
+                | Q(
+                    expediente_ciudadanos__ciudadano__provincia__nombre__icontains=search_query
                 )
                 | Q(asignaciones_tecnicos__tecnico__first_name__icontains=search_query)
                 | Q(asignaciones_tecnicos__tecnico__last_name__icontains=search_query)
@@ -650,6 +773,7 @@ class ExpedienteListView(ListView):
         ctx["is_tecnico_celiaquia"] = is_tecnico
         ctx["is_provincial_celiaquia"] = _is_provincial(user)
         ctx["can_manage_tecnicos_celiaquia"] = is_admin or is_coord
+        ctx["can_manage_excel_masivo_audit"] = is_admin or is_coord
         ctx["show_tecnico_column_celiaquia"] = is_admin or is_coord or is_tecnico
 
         if is_admin or is_coord:
@@ -664,10 +788,7 @@ class ProcesarExpedienteView(View):
         if _is_admin(user):
             expediente = get_object_or_404(Expediente, pk=pk)
         elif _is_provincial(user):
-            prov = _user_provincia(user)
-            expediente = get_object_or_404(
-                Expediente, pk=pk, usuario_provincia__profile__provincia=prov
-            )
+            expediente = _get_provincial_expediente_or_404(user, pk)
         else:
             expediente = get_object_or_404(Expediente, pk=pk, usuario_provincia=user)
 
@@ -754,10 +875,7 @@ class CrearLegajosView(View):
         if _is_admin(user):
             expediente = get_object_or_404(Expediente, pk=pk)
         elif _is_provincial(user):
-            prov = _user_provincia(user)
-            expediente = get_object_or_404(
-                Expediente, pk=pk, usuario_provincia__profile__provincia=prov
-            )
+            expediente = _get_provincial_expediente_or_404(user, pk)
         else:
             expediente = get_object_or_404(Expediente, pk=pk, usuario_provincia=user)
 
@@ -800,6 +918,26 @@ class ExpedientePlantillaExcelView(View):
         return response
 
 
+class ExpedienteExcelMasivoDownloadView(View):
+    """Descarga la copia del Excel masivo vigente del expediente."""
+
+    def get(self, request, pk):
+        if not _can_manage_excel_masivo_audit(request.user):
+            raise PermissionDenied("No tiene permisos para descargar el Excel masivo.")
+
+        expediente = get_object_or_404(Expediente, pk=pk)
+        if not expediente.excel_masivo:
+            messages.error(request, "El expediente no tiene Excel masivo cargado.")
+            return redirect("expediente_detail", pk=expediente.pk)
+
+        filename = expediente.excel_masivo.name.rsplit("/", 1)[-1]
+        return FileResponse(
+            expediente.excel_masivo.open("rb"),
+            as_attachment=True,
+            filename=filename,
+        )
+
+
 @method_decorator(csrf_protect, name="dispatch")
 class ExpedientePreviewExcelView(View):
     def post(self, request, *args, **kwargs):
@@ -834,12 +972,10 @@ class ExpedienteCreateView(CreateView):
         user = self.request.user
 
         # Filtrar provincias según el usuario
-        if _is_provincial(user):
-            # Usuario provincial: solo su provincia
-            prov = _user_provincia(user)
-            ctx["provincias"] = [prov] if prov else []
+        if _is_provincial(user) and not _is_admin(user) and is_territorial_user(user):
+            ctx["provincias"] = _user_scope_provincias(user)
         else:
-            # Admin/Coordinador: todas las provincias
+            # Admin/Coordinador/provincial sin scope configurado: todas las provincias
             ctx["provincias"] = Provincia.objects.order_by("nombre")
         return ctx
 
@@ -863,21 +999,24 @@ class ExpedienteDetailView(DetailView):
     def get_queryset(self):
         user = self.request.user
         base = Expediente.objects.select_related(
-            "estado", "usuario_modificador", "usuario_provincia"
+            "estado",
+            "usuario_modificador",
+            "usuario_provincia",
+            "excel_masivo_cargado_por",
+            "excel_masivo_procesado_por",
         ).prefetch_related(
             "expediente_ciudadanos__ciudadano",
             "expediente_ciudadanos__estado",
             "asignaciones_tecnicos__tecnico",
         )
-        if _is_admin(user) or _user_has_permission(
-            user, ROLE_COORDINADOR_CELIAQUIA_PERMISSION
-        ):
+        if _is_admin(user):
+            return base
+        if _is_provincial(user):
+            return _apply_provincial_expediente_scope(base, user)
+        if _user_has_permission(user, ROLE_COORDINADOR_CELIAQUIA_PERMISSION):
             return base
         if _user_has_permission(user, ROLE_TECNICO_CELIAQUIA_PERMISSION):
             return base.filter(asignaciones_tecnicos__tecnico=user)
-        if _is_provincial(user):
-            prov = _user_provincia(user)
-            return base.filter(usuario_provincia__profile__provincia=prov)
         return base.filter(usuario_provincia=user)
 
     def get_context_data(self, **kwargs):
@@ -891,10 +1030,17 @@ class ExpedienteDetailView(DetailView):
         is_tecnico = _user_has_permission(user, ROLE_TECNICO_CELIAQUIA_PERMISSION)
         can_manage_registros_erroneos = _can_manage_registros_erroneos(user)
         ctx["is_tecnico_celiaquia"] = is_tecnico
+        ctx["is_admin_celiaquia"] = is_admin
         ctx["is_coord_celiaquia"] = is_coord
         ctx["is_provincial_celiaquia"] = _is_provincial(user)
         ctx["can_manage_tecnicos_celiaquia"] = is_admin or is_coord
         ctx["can_manage_registros_erroneos"] = can_manage_registros_erroneos
+        ctx["can_manage_excel_masivo_audit"] = is_admin or is_coord
+        ctx["can_download_nomina_aprobados"] = bool(
+            (is_admin or is_coord or is_tecnico)
+            and expediente.estado.nombre == "CRUCE_FINALIZADO"
+            and expediente.excel_masivo
+        )
 
         preview = preview_error = None
         preview_limit_actual = None
@@ -946,12 +1092,22 @@ class ExpedienteDetailView(DetailView):
         legajos_por_ciudadano = {}
         ciudadanos_ids = [leg.ciudadano_id for leg in legajos_list]
         ciudadanos_ids_set = set(ciudadanos_ids)
+        roles_responsables = {
+            ExpedienteCiudadano.ROLE_RESPONSABLE,
+            ExpedienteCiudadano.ROLE_BENEFICIARIO_Y_RESPONSABLE,
+        }
+        responsables_por_rol_ids = {
+            leg.ciudadano_id
+            for leg in legajos_list
+            if (getattr(leg, "rol", "") or "").strip().lower() in roles_responsables
+        }
         responsables_ids = set()
-        if ciudadanos_ids:
+        if responsables_por_rol_ids:
             try:
                 responsables_ids = FamiliaService.obtener_ids_responsables(
-                    ciudadanos_ids_set, hijos_ids=ciudadanos_ids_set
+                    responsables_por_rol_ids, hijos_ids=ciudadanos_ids_set
                 )
+                responsables_ids.update(responsables_por_rol_ids)
             except Exception as exc:
                 logger.warning(
                     "No se pudo resolver responsables para expediente %s: %s",
@@ -965,11 +1121,10 @@ class ExpedienteDetailView(DetailView):
         hijos_sin_responsable = []
 
         for legajo in legajos_list:
-            legajo.es_responsable = LegajoService._es_responsable(
-                legajo.ciudadano, responsables_ids
-            )
+            rol_normalizado = (getattr(legajo, "rol", "") or "").strip().lower()
+            legajo.es_responsable = rol_normalizado in roles_responsables
             legajo.responsable_id = FamiliaService.obtener_responsable_de_hijo(
-                legajo.ciudadano.id, responsables_ids=ciudadanos_ids_set
+                legajo.ciudadano.id, responsables_ids=responsables_ids
             )
             hijos_list = []
             # Buscar hijos si es responsable O si el rol es beneficiario_y_responsable
@@ -981,15 +1136,9 @@ class ExpedienteDetailView(DetailView):
                     legajo.ciudadano.id, expediente
                 )
 
-            rol_normalizado = (getattr(legajo, "rol", "") or "").strip().lower()
             legajo.es_doble_rol = (
-                (rol_normalizado == ExpedienteCiudadano.ROLE_BENEFICIARIO_Y_RESPONSABLE)
-                or (legajo.es_responsable and legajo.responsable_id is not None)
-                or (
-                    rol_normalizado == ExpedienteCiudadano.ROLE_BENEFICIARIO
-                    and bool(hijos_list)
-                )
-            )
+                rol_normalizado == ExpedienteCiudadano.ROLE_BENEFICIARIO_Y_RESPONSABLE
+            ) or (legajo.es_responsable and legajo.responsable_id is not None)
 
             # Determinar tipo de legajo segun roles efectivos.
             if legajo.es_doble_rol:
@@ -1138,7 +1287,10 @@ class ExpedienteDetailView(DetailView):
             except CupoNoConfigurado:
                 cupo_error = "La provincia no tiene cupo configurado."
         else:
-            cupo_error = "No se pudo determinar la provincia del expediente."
+            # Sin provincia determinable aun (p. ej. expediente sin legajos
+            # importados). No corresponde a ninguna accion del usuario, por lo que
+            # no se muestra un error al abrir el expediente.
+            cupo_error = None
 
         fuera_count = expediente.expediente_ciudadanos.filter(
             estado_cupo="FUERA"
@@ -1287,6 +1439,7 @@ class ExpedienteDetailView(DetailView):
                 "cupo": cupo,  # para el template actual
                 "cupo_metrics": cupo_metrics,  # compat si lo usas en JS/otros templates
                 "cupo_error": cupo_error,
+                "provincia_expediente": prov,
                 "fuera_count": fuera_count,
                 "total_responsables": len(estructura_familiar.get("responsables", {})),
                 "total_hijos_sin_responsable": len(
@@ -1303,10 +1456,7 @@ class ExpedienteImportView(View):
         if _is_admin(user):
             expediente = get_object_or_404(Expediente, pk=pk)
         elif _is_provincial(user):
-            prov = _user_provincia(user)
-            expediente = get_object_or_404(
-                Expediente, pk=pk, usuario_provincia__profile__provincia=prov
-            )
+            expediente = _get_provincial_expediente_or_404(user, pk)
         else:
             expediente = get_object_or_404(Expediente, pk=pk, usuario_provincia=user)
 
@@ -1353,10 +1503,7 @@ class ExpedienteConfirmView(View):
         if _is_admin(user):
             expediente = get_object_or_404(Expediente, pk=pk)
         elif _is_provincial(user):
-            prov = _user_provincia(user)
-            expediente = get_object_or_404(
-                Expediente, pk=pk, usuario_provincia__profile__provincia=prov
-            )
+            expediente = _get_provincial_expediente_or_404(user, pk)
         else:
             expediente = get_object_or_404(Expediente, pk=pk, usuario_provincia=user)
 
@@ -1408,6 +1555,23 @@ class ExpedienteUpdateView(UpdateView):
     model = Expediente
     form_class = ExpedienteForm
     template_name = "celiaquia/expediente_form.html"
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        if self.request.FILES.get("excel_masivo"):
+            self.object.excel_masivo_cargado_por = self.request.user
+            self.object.excel_masivo_cargado_en = timezone.now()
+            self.object.excel_masivo_procesado_por = None
+            self.object.excel_masivo_procesado_en = None
+            self.object.save(
+                update_fields=[
+                    "excel_masivo_cargado_por",
+                    "excel_masivo_cargado_en",
+                    "excel_masivo_procesado_por",
+                    "excel_masivo_procesado_en",
+                ]
+            )
+        return response
 
     def get_success_url(self):
         return reverse_lazy("expediente_detail", args=[self.object.pk])
@@ -1900,12 +2064,21 @@ class RevisarLegajoView(View):
 class ActualizarRegistroErroneoView(View):
     def post(self, request, pk, registro_id):
         user = request.user
-        expediente = get_object_or_404(Expediente, pk=pk)
 
         if not _can_manage_registros_erroneos(user):
             return JsonResponse(
                 {"success": False, "error": "Permiso denegado."}, status=403
             )
+
+        # Coordinador/admin gestionan cualquier expediente; el usuario provincial
+        # solo los de su alcance territorial (evita operar registros de otra
+        # provincia accediendo por pk directo).
+        if _is_admin(user) or _user_has_permission(
+            user, ROLE_COORDINADOR_CELIAQUIA_PERMISSION
+        ):
+            expediente = get_object_or_404(Expediente, pk=pk)
+        else:
+            expediente = _get_provincial_expediente_or_404(user, pk)
 
         from celiaquia.models import RegistroErroneo
 
@@ -1933,6 +2106,7 @@ class ActualizarRegistroErroneoView(View):
                 datos_normalizados,
                 provincia_id=provincia_id,
                 fila_excel=registro.fila_excel,
+                provincias_permitidas_ids=_obtener_provincias_permitidas_ids(user),
             )
             datos_limpios = _limpiar_datos_registro_erroneo(datos_normalizados)
             registro.datos_raw = datos_limpios
@@ -1968,12 +2142,20 @@ class ReprocesarRegistrosErroneosView(View):
     @transaction.atomic
     def post(self, request, pk):
         user = request.user
-        expediente = get_object_or_404(Expediente, pk=pk)
 
         if not _can_manage_registros_erroneos(user):
             return JsonResponse(
                 {"success": False, "error": "Permiso denegado."}, status=403
             )
+
+        # Coordinador/admin reprocesan cualquier expediente; el usuario provincial
+        # solo los de su alcance territorial.
+        if _is_admin(user) or _user_has_permission(
+            user, ROLE_COORDINADOR_CELIAQUIA_PERMISSION
+        ):
+            expediente = get_object_or_404(Expediente, pk=pk)
+        else:
+            expediente = _get_provincial_expediente_or_404(user, pk)
 
         registros = expediente.registros_erroneos.filter(procesado=False)
 
@@ -2007,6 +2189,8 @@ class ReprocesarRegistrosErroneosView(View):
                 status=400,
             )
 
+        provincias_permitidas_ids = _obtener_provincias_permitidas_ids(user)
+
         for registro in registros:
             datos = _aplicar_defaults_registro_erroneo(
                 _normalizar_datos_registro_erroneo(registro.datos_raw.copy())
@@ -2020,6 +2204,7 @@ class ReprocesarRegistrosErroneosView(View):
                     datos,
                     provincia_id=provincia_id,
                     fila_excel=registro.fila_excel,
+                    provincias_permitidas_ids=provincias_permitidas_ids,
                 )
 
                 with transaction.atomic():

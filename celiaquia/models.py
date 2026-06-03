@@ -1,4 +1,5 @@
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 
 from ciudadanos.models import Ciudadano
@@ -105,6 +106,22 @@ class Expediente(SoftDeleteModelMixin, models.Model):
     excel_masivo = models.FileField(
         upload_to="expedientes/masivos/", null=True, blank=True
     )
+    excel_masivo_cargado_por = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+    )
+    excel_masivo_cargado_en = models.DateTimeField(null=True, blank=True)
+    excel_masivo_procesado_por = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+    )
+    excel_masivo_procesado_en = models.DateTimeField(null=True, blank=True)
     cruce_excel = models.FileField(
         upload_to="expedientes/cruces/", null=True, blank=True
     )
@@ -131,9 +148,23 @@ class Expediente(SoftDeleteModelMixin, models.Model):
 
     @property
     def provincia(self):
+        # La provincia del expediente se deriva del territorio de los ciudadanos
+        # cargados desde el Excel: un usuario puede tener varias provincias, por lo
+        # que ya no se puede inferir desde su perfil. Se toma la provincia del
+        # primer ciudadano con provincia asignada (los expedientes son homogeneos
+        # por provincia en el uso normal). Como respaldo, para un expediente sin
+        # legajos importados, se usa la provincia legacy del usuario creador.
+        provincia_id = (
+            self.expediente_ciudadanos.filter(ciudadano__provincia__isnull=False)
+            .order_by("ciudadano_id")
+            .values_list("ciudadano__provincia_id", flat=True)
+            .first()
+        )
+        if provincia_id:
+            return Provincia.objects.filter(pk=provincia_id).first()
         try:
             return self.usuario_provincia.profile.provincia
-        except Exception:
+        except (AttributeError, ObjectDoesNotExist):
             return None
 
 

@@ -123,4 +123,5 @@
 
 {% block customJS %}
     <script src="{% static 'custom/js/listSort.js' %}"></script>
+    {% include "vat/partials/tour.html" with vat_tour_section="comision_list" vat_tour_autostart=True %}
 {% endblock %}

@@ -2,11 +2,15 @@ from django.shortcuts import render
 from django.views.generic import TemplateView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Count, Q, F, Case, When, IntegerField
-from django.core.exceptions import ObjectDoesNotExist
 from django.utils import timezone
 from datetime import timedelta
 from core.models import Provincia
 from celiaquia.models import ExpedienteCiudadano, Expediente
+from users.territorial_scope import (
+    apply_territorial_scope,
+    get_effective_scopes,
+    is_territorial_user,
+)
 
 
 class ReporterProvinciasView(LoginRequiredMixin, TemplateView):
@@ -16,24 +20,10 @@ class ReporterProvinciasView(LoginRequiredMixin, TemplateView):
         context = super().get_context_data(**kwargs)
         user = self.request.user
 
-        # Detectar si es usuario provincial
-        es_usuario_provincial = False
-        provincia_usuario = None
-        try:
-            profile = user.profile
-        except ObjectDoesNotExist:
-            profile = None
-
-        if profile and profile.es_usuario_provincial:
-            es_usuario_provincial = True
-            provincia_usuario = profile.provincia
+        es_usuario_provincial = is_territorial_user(user)
 
         # Obtener parámetros de filtro
         provincia_id = self.request.GET.get("provincia")
-
-        # Si es usuario provincial, forzar su provincia
-        if es_usuario_provincial and provincia_usuario:
-            provincia_id = str(provincia_usuario.id)
 
         fecha_desde = self.request.GET.get("fecha_desde")
         fecha_hasta = self.request.GET.get("fecha_hasta")
@@ -48,11 +38,22 @@ class ReporterProvinciasView(LoginRequiredMixin, TemplateView):
             "expediente__usuario_provincia__profile", "ciudadano", "estado"
         )
 
+        if es_usuario_provincial:
+            # Reporte restringido al alcance territorial real del usuario. No se
+            # incluyen legajos de expedientes propios fuera de alcance (sin
+            # include_own): no deben contabilizarse casos de otra provincia
+            # (seguimiento del issue #1793).
+            queryset = apply_territorial_scope(
+                queryset,
+                user,
+                provincia_lookup="ciudadano__provincia_id",
+                municipio_lookup="ciudadano__municipio_id",
+                localidad_lookup="ciudadano__localidad_id",
+            )
+
         # Aplicar filtros
         if provincia_id:
-            queryset = queryset.filter(
-                expediente__usuario_provincia__profile__provincia_id=provincia_id
-            )
+            queryset = queryset.filter(ciudadano__provincia_id=provincia_id)
 
         if fecha_desde:
             queryset = queryset.filter(creado_en__gte=fecha_desde)
@@ -144,7 +145,7 @@ class ReporterProvinciasView(LoginRequiredMixin, TemplateView):
         # Expedientes por provincia
         expedientes_por_provincia = (
             Expediente.objects.filter(expediente_ciudadanos__in=queryset)
-            .values("usuario_provincia__profile__provincia__nombre")
+            .values("expediente_ciudadanos__ciudadano__provincia__nombre")
             .annotate(
                 total=Count("id", distinct=True),
                 casos=Count("expediente_ciudadanos", distinct=True),
@@ -156,7 +157,13 @@ class ReporterProvinciasView(LoginRequiredMixin, TemplateView):
         ultimos_casos = queryset.order_by("-creado_en")[:50]
 
         # Provincias disponibles
-        provincias = Provincia.objects.all().order_by("nombre")
+        if es_usuario_provincial:
+            provincia_ids = {scope.provincia_id for scope in get_effective_scopes(user)}
+            provincias = Provincia.objects.filter(pk__in=provincia_ids).order_by(
+                "nombre"
+            )
+        else:
+            provincias = Provincia.objects.all().order_by("nombre")
 
         # Preparar datos para gráficos
         context.update(

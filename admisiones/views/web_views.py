@@ -385,6 +385,14 @@ def _puede_editar_convenio_numero_admision_detail(user, comedor):
     )
 
 
+def _puede_editar_num_expediente_admision_detail(user, admision):
+    if getattr(admision, "enviado_legales", False):
+        return False
+    return user.is_superuser or AdmisionService._verificar_permiso_tecnico_dupla(
+        user, admision.comedor
+    )
+
+
 def _get_informes_complementarios_admision_detail(admision):
     informes_complementarios_queryset = (
         InformeComplementario.objects.filter(admision=admision)
@@ -397,10 +405,12 @@ def _get_informes_complementarios_admision_detail(admision):
 def _build_admision_detail_context_payload(
     *,
     comedor,
+    admision,
     dupla_context,
     admision_context,
     informes_complementarios,
     puede_editar_convenio_numero,
+    puede_editar_num_expediente,
     acompanamiento_context,
     rendiciones_context,
     historial_context,
@@ -416,6 +426,12 @@ def _build_admision_detail_context_payload(
         "informe_tecnico_pdf": admision_context.get("pdf"),
         "informes_complementarios": informes_complementarios,
         "puede_editar_convenio_numero": puede_editar_convenio_numero,
+        "puede_editar_num_expediente": puede_editar_num_expediente,
+        "num_expediente_edit_locked_reason": (
+            "No se puede editar el expediente una vez enviado a legales."
+            if getattr(admision, "enviado_legales", False)
+            else ""
+        ),
         **acompanamiento_context,
         **rendiciones_context,
         **historial_context,
@@ -601,6 +617,7 @@ def actualizar_estado_archivo(request):
                 "grupo_usuario": resultado.get("grupo_usuario"),
                 "mostrar_select": resultado.get("mostrar_select", False),
                 "opciones": resultado.get("opciones", []),
+                "gde_html": resultado.get("gde_html"),
             }
         )
     else:
@@ -630,12 +647,90 @@ def actualizar_numero_gde_archivo(request):
 
 @login_required
 @require_POST
+def actualizar_numero_gde_organizacion_admision(request):
+    resultado = AdmisionService.actualizar_numero_gde_organizacion_ajax(request)
+
+    response_data = {
+        "success": resultado.get("success"),
+        "numero_gde": resultado.get("numero_gde"),
+        "valor_anterior": resultado.get("valor_anterior"),
+    }
+
+    if not resultado.get("success"):
+        response_data["error"] = resultado.get("error", "Error desconocido")
+        return JsonResponse(response_data, status=400)
+
+    return JsonResponse(response_data)
+
+
+@login_required
+@require_POST
+def resync_convenio_admision(request, admision_pk):
+    accion = (request.POST.get("accion") or "").strip().lower()
+    admision = get_object_or_404(
+        Admision.objects.select_related("comedor__organizacion"), pk=admision_pk
+    )
+
+    if accion == "actualizar":
+        # Si cambio el Tipo de Entidad, el convenio (y su set documental) cambia:
+        # se reconstruye todo (#1605). Si solo cambio la documentacion del legajo,
+        # la actualizacion es DIRIGIDA: refresca lo que cambio y preserva el resto,
+        # sin borrar los documentos cargados admision-side (#1799 feedback punto 1).
+        if AdmisionService.admision_desincronizada(admision):
+            ok, mensaje = AdmisionService.resync_admision_desde_organizacion(admision)
+        else:
+            ok, mensaje = AdmisionService.actualizar_documentacion_desde_organizacion(
+                admision, request.user
+            )
+    elif accion == "continuar":
+        ok, mensaje = AdmisionService.aceptar_desincronizacion_admision(admision)
+    else:
+        return JsonResponse({"success": False, "error": "Accion invalida."}, status=400)
+
+    if not ok:
+        return JsonResponse({"success": False, "error": mensaje}, status=400)
+
+    if accion == "actualizar":
+        messages.success(request, mensaje)
+    else:
+        messages.info(request, mensaje)
+    return JsonResponse(
+        {
+            "success": True,
+            "mensaje": mensaje,
+            "redirect": reverse(
+                "admisiones_tecnicos_editar", kwargs={"pk": admision.pk}
+            ),
+        }
+    )
+
+
+@login_required
+@require_POST
 def actualizar_convenio_numero(request):
     resultado = AdmisionService.actualizar_convenio_numero_ajax(request)
 
     response_data = {
         "success": resultado.get("success"),
         "convenio_numero": resultado.get("convenio_numero"),
+        "valor_anterior": resultado.get("valor_anterior"),
+    }
+
+    if not resultado.get("success"):
+        response_data["error"] = resultado.get("error", "Error desconocido")
+        return JsonResponse(response_data, status=400)
+
+    return JsonResponse(response_data)
+
+
+@login_required
+@require_POST
+def actualizar_num_expediente(request):
+    resultado = AdmisionService.actualizar_num_expediente_ajax(request)
+
+    response_data = {
+        "success": resultado.get("success"),
+        "num_expediente": resultado.get("num_expediente"),
         "valor_anterior": resultado.get("valor_anterior"),
     }
 
@@ -737,25 +832,25 @@ class AdmisionesTecnicosCreateView(LoginRequiredMixin, CreateView):
     form_class = AdmisionForm
     context_object_name = "admision"
 
+    def _crear_admision(self, request):
+        admision = AdmisionService.create_admision(self.kwargs["pk"])
+        if admision is None:
+            messages.error(
+                request,
+                "No se pudo crear la admision. Verifique el tipo de entidad de la organizacion.",
+            )
+            return redirect("comedor_detalle", pk=self.kwargs["pk"])
+        return redirect("admisiones_tecnicos_editar", pk=admision.pk)
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context.update(AdmisionService.get_admision_create_context(self.kwargs["pk"]))
         return context
 
     def post(self, request, *args, **kwargs):
-        tipo_convenio_id = request.POST.get("tipo_convenio")
-        if tipo_convenio_id:
-            admision = AdmisionService.create_admision(
-                self.kwargs["pk"], tipo_convenio_id
-            )
-            if admision is None:
-                messages.error(
-                    request,
-                    "No se pudo crear la admisión para este comedor. Intente nuevamente más tarde.",
-                )
-                return redirect("comedor_detalle", pk=self.kwargs["pk"])
-            return redirect("admisiones_tecnicos_editar", pk=admision.pk)
-        return self.get(request, *args, **kwargs)
+        if "confirmar_tipo_convenio" not in request.POST:
+            return self.get(request, *args, **kwargs)
+        return self._crear_admision(request)
 
 
 class AdmisionesTecnicosUpdateView(LoginRequiredMixin, UpdateView):
@@ -866,6 +961,9 @@ class AdmisionDetailView(LoginRequiredMixin, DetailView):
         puede_editar_convenio_numero = _puede_editar_convenio_numero_admision_detail(
             self.request.user, comedor
         )
+        puede_editar_num_expediente = _puede_editar_num_expediente_admision_detail(
+            self.request.user, admision
+        )
         informes_complementarios = _get_informes_complementarios_admision_detail(
             admision
         )
@@ -882,10 +980,12 @@ class AdmisionDetailView(LoginRequiredMixin, DetailView):
         context.update(
             _build_admision_detail_context_payload(
                 comedor=comedor,
+                admision=admision,
                 dupla_context=dupla_context,
                 admision_context=admision_context,
                 informes_complementarios=informes_complementarios,
                 puede_editar_convenio_numero=puede_editar_convenio_numero,
+                puede_editar_num_expediente=puede_editar_num_expediente,
                 acompanamiento_context=acompanamiento_context,
                 rendiciones_context=rendiciones_context,
                 historial_context=historial_context,

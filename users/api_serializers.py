@@ -8,6 +8,7 @@ from users.profile_utils import get_profile_or_none
 from users.services import UserPermissionService
 from users.services_pwa import get_pwa_context
 from users.services_auth import get_user_by_uid
+from users.territorial_scope import serialize_profile_scopes
 
 
 class UserContextSerializer(serializers.Serializer):
@@ -46,6 +47,7 @@ class UserContextSerializer(serializers.Serializer):
         return {
             "rol": profile.rol,
             "provincia_id": profile.provincia_id,
+            "territorial_scopes": serialize_profile_scopes(profile),
             "es_usuario_provincial": profile.es_usuario_provincial,
             "es_coordinador": profile.es_coordinador,
             "duplas_asignadas": list(
@@ -63,6 +65,7 @@ class UserContextSerializer(serializers.Serializer):
             "duplas_ids": duplas_ids,
             "es_usuario_provincial": getattr(profile, "es_usuario_provincial", False),
             "provincia_id": getattr(profile, "provincia_id", None),
+            "territorial_scopes": serialize_profile_scopes(profile),
         }
 
     def get_pwa(self, obj):

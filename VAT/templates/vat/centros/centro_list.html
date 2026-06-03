@@ -14,13 +14,13 @@
     <link rel="stylesheet" href="{% static 'custom/css/listModerno.css' %}" />
     {% url 'vat_centros_ajax' as ajax_url %}
     <!-- Variables para evitar problemas de formateo -->
-    {% with titulo_search='Buscar Centro' %}
+    {% with titulo_search='Buscar Centros de Formación Profesional' %}
         {% with placeholder_text='Buscar por nombre o dirección' %}
             {% with help_text='Buscar por nombre o dirección' %}
                 {% with reset_url_name='vat_centro_list' %}
                     {% with add_url_name='vat_centro_create' %}
                         {% with tbody_id='centros-table-body' %}
-                            {% include 'components/search_bar.html' with titulo=titulo_search placeholder=placeholder_text help_text=help_text reset_url=reset_url_name add_url=add_url_name add_text='Agregar' additional_buttons=centro_additional_buttons query=request.GET.busqueda filters_mode=filters_mode filters_js=filters_js filters_action=filters_action %}
+                            {% include 'components/search_bar.html' with titulo=titulo_search placeholder=placeholder_text help_text=help_text reset_url=reset_url_name reset_url_full='' add_url=add_url_name add_url_full=add_url add_text='Agregar' show_add_button=can_add ajax_search_mode=False export_url='' additional_buttons=centro_additional_buttons query=current_query filters_mode=filters_mode filters_js=filters_js filters_action=filters_action %}
                         {% endwith %}
                     {% endwith %}
                 {% endwith %}
@@ -100,7 +100,7 @@
                         </tbody>
                     </table>
                     <div id="pagination-container">
-                        {% include 'components/pagination.html' with is_paginated=is_paginated page_obj=page_obj query=request.GET.busqueda prev_text='Volver' next_text='Continuar' %}
+                        {% include 'components/pagination.html' with is_paginated=is_paginated page_obj=page_obj page_range=page_range page_param='page' results_count='' query=current_query prev_text='Volver' next_text='Continuar' %}
                     </div>
                 </div>
             </div>
@@ -110,4 +110,5 @@
 {% block customJS %}
     <!-- Script de ordenamiento reutilizable para tablas -->
     <script src="{% static 'custom/js/listSort.js' %}"></script>
+    {% include "vat/partials/tour.html" with vat_tour_section="centros_list" vat_tour_autostart=True %}
 {% endblock %}

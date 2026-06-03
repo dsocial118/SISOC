@@ -14,6 +14,7 @@ logger = logging.getLogger("django")
 DEPLOY_GUNICORN_ENVIRONMENTS = {"qa", "homologacion", "prd"}
 SERVICE_ROLE_WEB = "web"
 SERVICE_ROLE_BULK_CREDENTIALS_WORKER = "bulk_credentials_worker"
+SERVICE_ROLE_CIUDADANOS_IMPORT_WORKER = "ciudadanos_import_worker"
 
 
 def run_command(cmd, *, stage, **kwargs):
@@ -81,6 +82,60 @@ def wait_for_mysql():
     logger.info("[ok] MySQL esta listo.")
 
 
+def fix_migration_history():
+    """
+    Registra ciudadanos.0028_merge_20260505_1126 en django_migrations si el
+    registro fantasma 0028_merge_20260420_0000 existe pero la nueva versión no.
+    Esto ocurre en DBs creadas antes de que se renombrara esa migración de merge.
+    Corre antes de makemigrations para que check_consistent_history no falle.
+    """
+    host = os.getenv("DATABASE_HOST")
+    port = int(os.getenv("DATABASE_PORT", "3306"))
+    user = os.getenv("DATABASE_USER")
+    password = os.getenv("DATABASE_PASSWORD")
+    database = os.getenv("DATABASE_NAME")
+
+    if not all([host, user, password, database]):
+        return
+
+    try:
+        conn = pymysql.connect(
+            host=host, port=port, user=user, password=password, database=database
+        )
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT 1 FROM django_migrations " "WHERE app=%s AND name=%s",
+                ("ciudadanos", "0028_merge_20260420_0000"),
+            )
+            has_ghost = cur.fetchone() is not None
+            if not has_ghost:
+                return
+            cur.execute(
+                "SELECT 1 FROM django_migrations " "WHERE app=%s AND name=%s",
+                ("ciudadanos", "0028_merge_20260505_1126"),
+            )
+            already_recorded = cur.fetchone() is not None
+            if already_recorded:
+                return
+            cur.execute(
+                "INSERT INTO django_migrations (app, name, applied) "
+                "VALUES (%s, %s, NOW())",
+                ("ciudadanos", "0028_merge_20260505_1126"),
+            )
+            conn.commit()
+            logger.info(
+                "[fix] Registrado ciudadanos.0028_merge_20260505_1126 "
+                "en django_migrations (migración fantasma resuelta)."
+            )
+    except Exception as exc:
+        logger.warning("[fix] fix_migration_history: %s", exc)
+    finally:
+        try:
+            conn.close()
+        except Exception:
+            pass
+
+
 def run_django_commands():
     """
     Ejecuta los comandos de Django necesarios para la preparacion
@@ -94,6 +149,8 @@ def run_django_commands():
         ).lower()
         == "true"
     )
+
+    fix_migration_history()
 
     if run_makemigrations_on_start:
         run_command(
@@ -126,11 +183,23 @@ def run_bulk_credentials_worker():
     )
 
 
+def run_ciudadanos_import_worker():
+    """Inicia el worker dedicado de importacion masiva de ciudadanos."""
+    logger.info("[worker] Iniciando worker de importacion masiva de ciudadanos...")
+    run_command(
+        ["python", "manage.py", "process_ciudadanos_import_jobs"],
+        stage="ciudadanos_import_worker",
+    )
+
+
 def main():
     wait_for_mysql()
     service_role = os.getenv("DJANGO_SERVICE_ROLE", SERVICE_ROLE_WEB).strip().lower()
     if service_role == SERVICE_ROLE_BULK_CREDENTIALS_WORKER:
         run_bulk_credentials_worker()
+        return
+    if service_role == SERVICE_ROLE_CIUDADANOS_IMPORT_WORKER:
+        run_ciudadanos_import_worker()
         return
     run_django_commands()
 

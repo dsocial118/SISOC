@@ -14,7 +14,7 @@ from django.urls import reverse
 from django.views import View
 from django.views.generic import DetailView, ListView
 
-from centrodeinfancia.access import aplicar_filtro_provincia_usuario
+from centrodeinfancia.access import aplicar_scope_centros_cdi
 from centrodeinfancia.forms import (
     FormularioCDIForm,
     construir_filas_iniciales_fijas,
@@ -58,8 +58,11 @@ def _obtener_queryset_formularios_cdi_filtrado(user):
         "municipio_organizacion",
         "localidad_organizacion",
     )
-    return aplicar_filtro_provincia_usuario(
-        queryset, user, provincia_lookup="centro__provincia"
+    return aplicar_scope_centros_cdi(
+        queryset,
+        user,
+        id_lookup="centro_id",
+        provincia_lookup="centro__provincia",
     )
 
 
@@ -67,7 +70,7 @@ def _obtener_centro_filtrado_o_404(user, pk):
     queryset = CentroDeInfancia.objects.select_related(
         "provincia", "departamento", "municipio", "localidad"
     )
-    queryset = aplicar_filtro_provincia_usuario(queryset, user)
+    queryset = aplicar_scope_centros_cdi(queryset, user)
     return get_object_or_404(queryset, pk=pk)
 
 
@@ -262,6 +265,9 @@ class FormularioCDIEditBaseView(LoginRequiredMixin, View):
 
     def get_initial(self):
         centro = self.get_centro()
+        ofertas_servicios = list(
+            centro.oferta_servicios.values_list("codigo", flat=True)[:2]
+        )
         initial = {
             "nombre_cdi": centro.nombre,
             "codigo_cdi": centro.codigo_cdi,
@@ -285,9 +291,9 @@ class FormularioCDIEditBaseView(LoginRequiredMixin, View):
             "dias_funcionamiento": centro.dias_funcionamiento,
             "tipo_jornada": centro.tipo_jornada,
             "tipo_jornada_otra": centro.tipo_jornada_otra,
-            "oferta_servicios": centro.oferta_servicios.values_list(
-                "codigo", flat=True
-            ).first(),
+            "oferta_servicios": (
+                ofertas_servicios[0] if len(ofertas_servicios) == 1 else None
+            ),
             "modalidad_gestion": centro.modalidad_gestion,
             "modalidad_gestion_otra": centro.modalidad_gestion_otra,
             "nombre_organizacion_gestora": centro.organizacion,

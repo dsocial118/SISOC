@@ -1,0 +1,105 @@
+{% extends "includes/main.html" %}
+{% load static %}
+{% block title %}Historial de asistencia - {{ object.nombre }}{% endblock %}
+{% block titulo-pagina %}Historial de asistencia de {{ object.nombre }}{% endblock %}
+{% block breadcrumb %}
+    <ol class="breadcrumb float-sm-right">
+        <li class="breadcrumb-item">
+            <a href="{% url 'comedores' %}">Comedores</a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{% url 'comedor_detalle' object.id %}">{{ object.nombre }}</a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{% url 'nomina_ver' object.id admision_pk %}">Nómina</a>
+        </li>
+        <li class="breadcrumb-item active">Historial de asistencia</li>
+    </ol>
+{% endblock %}
+{% block content %}
+    <link rel="stylesheet" href="{% static 'custom/css/nominaDetail.css' %}" />
+
+    <div class="mb-4 d-print-none">
+        <a href="{% url 'nomina_ver' object.id admision_pk %}"
+           class="btn btn-outline-secondary btn-back">
+            <i class="fas fa-arrow-left"></i> Volver a nómina
+        </a>
+    </div>
+
+    <div class="nomina-section bg-base-darkblue">
+        {% if asistencia_periodo_seleccionado %}
+            <div class="nomina-attendance-detail-header">
+                <div>
+                    <h2 class="nomina-attendance-title">Periodo {{ asistencia_periodo_seleccionado|date:"m/Y" }}</h2>
+                    <p class="text-white-50 mb-0">{{ asistencia_total }} asistentes registrados</p>
+                </div>
+                <a href="{% url 'nomina_asistencia_historial' object.id admision_pk %}"
+                   class="btn btn-outline-light">
+                    <i class="fas fa-list"></i> Ver periodos
+                </a>
+            </div>
+
+            <div class="nomina-table-container">
+                <table class="nomina-table">
+                    <thead>
+                        <tr>
+                            <th>Apellido y nombre</th>
+                            <th>DNI</th>
+                            <th>Género</th>
+                            <th>Tomada el</th>
+                            <th>Tomada por</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for registro in asistencia_asistentes %}
+                            <tr class="nomina-table-row">
+                                <td>
+                                    {% if registro.nomina.ciudadano_id %}
+                                        <a href="{% url 'ciudadanos_ver' registro.nomina.ciudadano.id %}"
+                                           class="nomina-citizen-link">
+                                            {{ registro.nomina.ciudadano.apellido|default:"-" }},
+                                            {{ registro.nomina.ciudadano.nombre|default:"-" }}
+                                        </a>
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>
+                                <td>{{ registro.nomina.ciudadano.documento|default:"-" }}</td>
+                                <td>{{ registro.nomina.ciudadano.sexo.sexo|default:"-" }}</td>
+                                <td>{{ registro.fecha_toma_asistencia|date:"d/m/Y H:i" }}</td>
+                                <td>{{ registro.tomado_por.username|default:"-" }}</td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="5" class="nomina-empty-message">No hay asistentes registrados para este periodo.</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <h2 class="nomina-attendance-title">Periodos de asistencia</h2>
+
+            {% if asistencia_periodos %}
+                <div class="nomina-period-list">
+                    {% for item in asistencia_periodos %}
+                        <a href="?periodo={{ item.periodo_referencia|date:'Y-m-d' }}"
+                           class="nomina-period-card">
+                            <div>
+                                <p class="nomina-period-title">Periodo {{ item.periodo_referencia|date:"m/Y" }}</p>
+                                <p class="nomina-period-meta">Asistencia mensual</p>
+                            </div>
+                            <div class="nomina-period-count">
+                                <strong>{{ item.total_asistentes }}</strong>
+                                <span>asistentes</span>
+                            </div>
+                            <i class="fas fa-chevron-right nomina-period-icon"></i>
+                        </a>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="nomina-empty-message mb-0">No hay periodos con asistencia registrada.</p>
+            {% endif %}
+        {% endif %}
+    </div>
+{% endblock %}

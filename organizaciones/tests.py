@@ -1,6 +1,7 @@
 """Tests for organizaciones."""
 
 import json
+from pathlib import Path
 
 from django.contrib.auth.models import User, Permission
 from django.test import RequestFactory, TestCase, Client
@@ -10,6 +11,16 @@ from organizaciones.models import Organizacion, TipoEntidad
 from organizaciones.views import OrganizacionDetailView
 from organizaciones.forms import OrganizacionForm
 from core.models import Provincia
+
+
+class CuilDuplicadoTemplateTests(TestCase):
+    def test_verificacion_inicial_usa_secuencia_para_evitar_respuestas_viejas(self):
+        template = Path("organizaciones/templates/organizacion_form.html").read_text(
+            encoding="utf-8"
+        )
+
+        self.assertIn("var initialSeq = requestSeq;", template)
+        self.assertIn("fetchCuilCheck(initialVal, initialSeq);", template)
 
 
 class OrganizacionDetailViewTests(TestCase):

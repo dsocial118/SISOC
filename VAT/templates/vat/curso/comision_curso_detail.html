@@ -76,7 +76,7 @@
                         </div>
                         <div class="mb-3">
                             <div class="text-muted small">Modalidad</div>
-                            <div>{{ comision_curso.curso.modalidad.nombre|default:"-" }}</div>
+                            <div>{{ comision_curso.modalidad.nombre|default:comision_curso.curso.modalidad.nombre|default:"-" }}</div>
                         </div>
                         <div>
                             <div class="text-muted small">Programa</div>

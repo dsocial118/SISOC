@@ -37,14 +37,63 @@
                                 <div class="col-10">
                                     <div class="nav-item d-flex">
                                         <div class="comment-text comment-text d-flex row w-100">
-                                            {% for relevamiento in relevamientos %}
-                                                <div class="col-6 d-flex">
-                                                    <a href="{% url 'relevamiento_detalle' comedor.id relevamiento.id %}">{{ relevamiento.id }} - {{ relevamiento.fecha_visita|default_if_none:"Sin asignar" }}</a>
+                                            {% for item in relevamientos_items %}
+                                                <div class="col-3 d-flex">
+                                                    {% if item.is_child %}
+                                                        <div style="padding-left: 20px;">
+                                                            <span class="text-muted">└─</span>
+                                                            <a href="{% url 'primer_seguimiento_detalle' comedor.id item.parent_id %}">{{ item.id }} - {{ item.fecha|default_if_none:"Sin asignar" }}</a>
+                                                        </div>
+                                                    {% else %}
+                                                        <a href="{% url 'relevamiento_detalle' comedor.id item.id %}">{{ item.id }} - {{ item.fecha|default_if_none:"Sin asignar" }}</a>
+                                                    {% endif %}
                                                 </div>
-                                                <div class="col-6 d-flex">
-                                                    <p {% if relevamiento.estado == "Pendiente" %} style="color: yellow;" {% elif relevamiento.estado == "Visita pendiente" %} style="color: green;" {% else %} style="color: white;" {% endif %}>
-                                                        {{ relevamiento.estado }}
+                                                <div class="col-3 d-flex">
+                                                    <p {% if item.estado == "Pendiente" %} style="color: yellow;" {% elif item.estado == "Visita pendiente" %} style="color: green;" {% else %} style="color: white;" {% endif %}>
+                                                        {{ item.estado|default:"Sin información" }}
                                                     </p>
+                                                </div>
+                                                <div class="col-6 mb-2">
+                                                    {% if item.is_child %}
+                                                        <span class="badge bg-info">Primer seguimiento</span>
+                                                    {% else %}
+                                                        <div id="numero-if-display-{{ item.id }}"
+                                                             class="d-flex align-items-end gap-2">
+                                                            <div class="flex-grow-1 d-flex align-items-center gap-2">
+                                                                <span>Número de IF:</span>
+                                                                <span class="fw-semibold">{{ item.numero_if|default:"Sin número de IF" }}</span>
+                                                            </div>
+                                                            {% if perms.relevamientos.change_relevamiento %}
+                                                                <button type="button"
+                                                                        class="btn btn-sm btn-primary mb-0 py-1 px-2"
+                                                                        data-numero-if-edit="{{ item.id }}">
+                                                                    Actualizar IF
+                                                                </button>
+                                                            {% endif %}
+                                                        </div>
+                                                        {% if perms.relevamientos.change_relevamiento %}
+                                                            <form method="post"
+                                                                  id="numero-if-form-{{ item.id }}"
+                                                                  class="d-none align-items-end gap-2">
+                                                                {% csrf_token %}
+                                                                <input type="hidden" name="relevamiento_id" value="{{ item.id }}" />
+                                                                <div class="flex-grow-1">
+                                                                    <label class="form-label mb-1">Número de IF</label>
+                                                                    <input type="text"
+                                                                           name="numero_if"
+                                                                           maxlength="255"
+                                                                           class="form-control form-control-sm"
+                                                                           value="{{ item.numero_if|default_if_none:'' }}" />
+                                                                </div>
+                                                                <button type="submit" class="btn btn-sm btn-primary mb-0">Guardar</button>
+                                                                <button type="button"
+                                                                        class="btn btn-sm btn-secondary mb-0"
+                                                                        data-numero-if-cancel="{{ item.id }}">
+                                                                    Cancelar
+                                                                </button>
+                                                            </form>
+                                                        {% endif %}
+                                                    {% endif %}
                                                 </div>
                                             {% endfor %}
                                         </div>
@@ -86,12 +135,26 @@
                         </div>
                         <div class="modal-body">
                             <div class="mb-2">
-                                <label for="new_territorial_select" class="form-label">Territorial asignado</label>
-                                <select id="new_territorial_select" name="territorial" class="form-select">
-                                    <option value="">Sin territorial</option>
+                                <label for="tipo_relevamiento_select" class="form-label">Tipo</label>
+                                <select id="tipo_relevamiento_select"
+                                        name="tipo_relevamiento"
+                                        class="form-select"
+                                        required>
+                                    <option value="relevamiento_inicial" selected>Relevamiento inicial</option>
+                                    <option value="primer_seguimiento">Primer seguimiento</option>
+                                    <option value="segundo_seguimiento" disabled>Segundo seguimiento</option>
                                 </select>
                             </div>
-                            <small class="text-muted">Si no selecciona territorial, se crea en estado Pendiente.</small>
+                            <div class="mb-2">
+                                <label for="new_territorial_select" class="form-label">Territorial asignado</label>
+                                <select id="new_territorial_select"
+                                        name="territorial"
+                                        class="form-select"
+                                        required>
+                                    <option value="" selected disabled>Seleccionar territorial</option>
+                                </select>
+                            </div>
+                            <small class="text-muted">El relevamiento se crea asignado al territorial seleccionado.</small>
                         </div>
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
@@ -108,5 +171,40 @@
     {% if perms.relevamientos.add_relevamiento %}
         <script nonce="{{ request.csp_nonce }}">const comedorId = "{{ comedor.id }}";</script>
         <script src="{% static 'custom/js/comedordetail_territorial_cache.js' %}"></script>
+    {% endif %}
+    {% if perms.relevamientos.change_relevamiento %}
+        <script nonce="{{ request.csp_nonce }}">
+            document.addEventListener("DOMContentLoaded", function () {
+                document.querySelectorAll("[data-numero-if-edit]").forEach(function (button) {
+                    button.addEventListener("click", function () {
+                        var id = button.dataset.numeroIfEdit;
+                        var display = document.getElementById("numero-if-display-" + id);
+                        var form = document.getElementById("numero-if-form-" + id);
+                        if (display && form) {
+                            display.classList.add("d-none");
+                            form.classList.remove("d-none");
+                            form.classList.add("d-flex");
+                            var input = form.querySelector("input[name='numero_if']");
+                            if (input) {
+                                input.focus();
+                            }
+                        }
+                    });
+                });
+
+                document.querySelectorAll("[data-numero-if-cancel]").forEach(function (button) {
+                    button.addEventListener("click", function () {
+                        var id = button.dataset.numeroIfCancel;
+                        var display = document.getElementById("numero-if-display-" + id);
+                        var form = document.getElementById("numero-if-form-" + id);
+                        if (display && form) {
+                            form.classList.add("d-none");
+                            form.classList.remove("d-flex");
+                            display.classList.remove("d-none");
+                        }
+                    });
+                });
+            });
+        </script>
     {% endif %}
 {% endblock %}

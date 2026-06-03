@@ -2,8 +2,9 @@ from typing import Any
 
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.shortcuts import redirect
-from django.urls import reverse_lazy
+from django.db import models as dj_models
+from django.shortcuts import get_object_or_404, redirect
+from django.urls import reverse, reverse_lazy
 
 from comedores.forms.comedor_form import ReferenteForm
 from comedores.models import Comedor
@@ -20,7 +21,7 @@ from relevamientos.form import (
     PuntosEntregaForm,
     RelevamientoForm,
 )
-from relevamientos.models import Prestacion, Relevamiento
+from relevamientos.models import Prestacion, PrimerSeguimiento, Relevamiento
 from relevamientos.service import RelevamientoService
 from django.views.generic import (
     CreateView,
@@ -29,6 +30,7 @@ from django.views.generic import (
     ListView,
     UpdateView,
 )
+from django.views.generic.base import View
 from core.soft_delete.view_helpers import SoftDeleteDeleteViewMixin
 
 from comedores.models import Comedor
@@ -95,9 +97,23 @@ class RelevamientoListView(LoginRequiredMixin, ListView):
         comedor = self.kwargs["comedor_pk"]
         return (
             Relevamiento.objects.filter(comedor=comedor)
+            .select_related("primer_seguimiento")
             .order_by("-estado", "-id")
-            .values("id", "fecha_visita", "estado")
         )
+
+    def post(self, request, *args, **kwargs):
+        if not request.user.has_perm("relevamientos.change_relevamiento"):
+            messages.error(request, "No tiene permisos para editar el Número de IF.")
+            return redirect("relevamientos", comedor_pk=kwargs["comedor_pk"])
+
+        relevamiento_id = request.POST.get("relevamiento_id")
+        numero_if = (request.POST.get("numero_if") or "").strip()
+        Relevamiento.objects.filter(
+            id=relevamiento_id,
+            comedor_id=kwargs["comedor_pk"],
+        ).update(numero_if=numero_if or None)
+        messages.success(request, "Número de IF actualizado correctamente.")
+        return redirect("relevamientos", comedor_pk=kwargs["comedor_pk"])
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -109,7 +125,39 @@ class RelevamientoListView(LoginRequiredMixin, ListView):
             "municipio__nombre",
         ).get(pk=self.kwargs["comedor_pk"])
 
+        items = []
+        for rel in context["relevamientos"]:
+            items.append(
+                {
+                    "id": rel.id,
+                    "fecha": rel.fecha_visita,
+                    "estado": rel.estado,
+                    "numero_if": rel.numero_if,
+                    "is_child": False,
+                    "parent_id": None,
+                }
+            )
+            seguimiento = _get_primer_seguimiento(rel)
+            if seguimiento is not None:
+                items.append(
+                    {
+                        "id": seguimiento.id,
+                        "fecha": seguimiento.fecha_hora,
+                        "estado": seguimiento.estado,
+                        "numero_if": None,
+                        "is_child": True,
+                        "parent_id": rel.id,
+                    }
+                )
+        context["relevamientos_items"] = items
         return context
+
+
+def _get_primer_seguimiento(relevamiento):
+    try:
+        return relevamiento.primer_seguimiento
+    except PrimerSeguimiento.DoesNotExist:
+        return None
 
 
 class RelevamientoDetailView(LoginRequiredMixin, DetailView):
@@ -369,3 +417,149 @@ class RelevamientoDeleteView(
         comedor = self.object.comedor
 
         return reverse_lazy("comedor_detalle", kwargs={"pk": comedor.id})
+
+
+PRIMER_SEGUIMIENTO_BLOQUES = (
+    ("funcionamiento", "Funcionamiento"),
+    ("servicios_basicos", "Servicios básicos"),
+    ("almacenamiento_alimentos", "Almacenamiento de alimentos"),
+    ("condiciones_higiene", "Condiciones de higiene"),
+    ("tareas_comedor", "Tareas en el comedor"),
+    ("recursos", "Recursos"),
+    ("compras", "Compras"),
+    ("frecuencia_compra_alimentos", "Frecuencia de compra de alimentos"),
+    ("menu", "Menú"),
+    ("registro_asistencia", "Registro de asistencia"),
+    ("frecuencia_alimentos", "Frecuencia de alimentos"),
+    ("actividades_extras", "Actividades extras"),
+    ("tarjeta", "Tarjeta"),
+    ("rendicion_cuentas", "Rendición de cuentas"),
+    ("asistencia_tecnica", "Asistencia técnica"),
+    ("cierre", "Cierre"),
+)
+
+
+def _display_value(instance, field):
+    raw = getattr(instance, field.name, None)
+    if raw is None:
+        return None
+    if getattr(field, "choices", None):
+        getter = getattr(instance, f"get_{field.name}_display", None)
+        if callable(getter):
+            return getter()
+    if isinstance(raw, bool):
+        return "Sí" if raw else "No"
+    if isinstance(raw, str) and not raw.strip():
+        return None
+    if isinstance(raw, dj_models.Model):
+        return str(raw)
+    return raw
+
+
+def _bloque_campos(instance):
+    if instance is None:
+        return []
+    rows = []
+    for field in instance._meta.get_fields():
+        if not isinstance(field, dj_models.Field):
+            continue
+        if field.primary_key or field.auto_created:
+            continue
+        value = _display_value(instance, field)
+        if value is None or value == "":
+            continue
+        label = (
+            str(field.verbose_name).capitalize()
+            if field.verbose_name
+            else field.name.replace("_", " ").capitalize()
+        )
+        rows.append({"label": label, "value": value})
+    return rows
+
+
+class PrimerSeguimientoDetailView(LoginRequiredMixin, DetailView):
+    model = PrimerSeguimiento
+    template_name = "primer_seguimiento_detail.html"
+    context_object_name = "seguimiento"
+
+    def get_object(self, queryset=None):
+        queryset = PrimerSeguimiento.objects.select_related(
+            "id_relevamiento",
+            "id_relevamiento__comedor",
+            "referente",
+            "funcionamiento",
+            "servicios_basicos",
+            "almacenamiento_alimentos",
+            "condiciones_higiene",
+            "tareas_comedor",
+            "tareas_comedor__tareas_comedor_cant_personas",
+            "recursos",
+            "recursos__fuente_recursos",
+            "compras",
+            "compras__fuente_compras",
+            "frecuencia_compra_alimentos",
+            "menu",
+            "menu__modalidad_prestacion_del_dia",
+            "registro_asistencia",
+            "frecuencia_alimentos",
+            "actividades_extras",
+            "tarjeta",
+            "rendicion_cuentas",
+            "asistencia_tecnica",
+            "cierre",
+        ).prefetch_related("prestaciones", "menu__receta_items")
+        return get_object_or_404(
+            queryset,
+            id_relevamiento_id=self.kwargs["relevamiento_pk"],
+            id_relevamiento__comedor_id=self.kwargs["comedor_pk"],
+        )
+
+    def get_context_data(self, **kwargs) -> dict[str, Any]:
+        context = super().get_context_data(**kwargs)
+        seguimiento = self.object
+        context["relevamiento"] = seguimiento.id_relevamiento
+        context["comedor"] = seguimiento.id_relevamiento.comedor
+
+        bloques = []
+        for attr, label in PRIMER_SEGUIMIENTO_BLOQUES:
+            instance = getattr(seguimiento, attr, None)
+            if instance is None:
+                continue
+            campos = _bloque_campos(instance)
+            if not campos:
+                continue
+            bloques.append({"key": attr, "label": label, "campos": campos})
+        context["bloques"] = bloques
+
+        context["prestaciones"] = list(seguimiento.prestaciones.all())
+        menu = seguimiento.menu
+        context["receta_items"] = (
+            list(menu.receta_items.all()) if menu is not None else []
+        )
+        return context
+
+
+class PrimerSeguimientoEliminarView(LoginRequiredMixin, View):
+    """Borrado del primer seguimiento desde la UI.
+
+    La confirmacion se hace via modal en el detalle del relevamiento; por eso
+    no exponemos GET y solo aceptamos POST. El borrado dispara la signal
+    pre_delete que envia la baja al endpoint de GESTIONAR.
+    """
+
+    http_method_names = ["post"]
+
+    def post(self, request, comedor_pk, relevamiento_pk):
+        seguimiento = get_object_or_404(
+            PrimerSeguimiento.objects.select_related("id_relevamiento"),
+            id_relevamiento_id=relevamiento_pk,
+            id_relevamiento__comedor_id=comedor_pk,
+        )
+        seguimiento.delete()
+        messages.success(request, "Primer seguimiento eliminado correctamente.")
+        return redirect(
+            reverse(
+                "relevamiento_detalle",
+                kwargs={"comedor_pk": comedor_pk, "pk": relevamiento_pk},
+            )
+        )

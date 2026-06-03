@@ -1,3 +1,7 @@
+# pylint: disable=too-many-lines
+
+from datetime import datetime, date
+
 from django import forms
 from django.utils.text import slugify
 from django.core.exceptions import ValidationError
@@ -22,10 +26,10 @@ from centrodeinfancia.models import (
     DepartamentoIpi,
     IntervencionCentroInfancia,
     NominaCentroInfancia,
-    ObservacionCentroInfancia,
     Trabajador,
     normalizar_cuit,
 )
+from centrodeinfancia.forms_observacion import ObservacionCentroInfanciaForm
 from centrodeinfancia.forms_formulario_cdi import (
     FormularioCDIForm,
     construir_filas_iniciales_fijas,
@@ -40,6 +44,7 @@ __all__ = [
     "NominaCentroInfanciaCreateForm",
     "IntervencionCentroInfanciaForm",
     "TrabajadorForm",
+    "ObservacionCentroInfanciaForm",
     "FormularioCDIForm",
     "construir_filas_iniciales_fijas",
     "construir_clase_formset_articulacion",
@@ -100,6 +105,22 @@ class CentroDeInfanciaForm(forms.ModelForm):
         self._aplicar_atributos_numericos()
         self._aplicar_campo_decil_ipi()
         self._aplicar_clases_y_placeholders()
+
+    # Mostrar/editar solo el año en el formulario: aceptamos AAAA y lo convertimos
+    # internamente como una fecha <AAAA>-01-01 para mantener compatibilidad
+    # con el modelo (`DateField`).
+    fecha_inicio = forms.CharField(
+        required=False,
+        label="Año de inicio de actividades del CDI",
+        widget=forms.NumberInput(
+            attrs={
+                "placeholder": "AAAA",
+                "min": "1900",
+                "max": "2100",
+                "class": "form-control",
+            }
+        ),
+    )
 
     def _aplicar_requeridos(self):
         self.fields["telefono"].required = True
@@ -309,6 +330,31 @@ class CentroDeInfanciaForm(forms.ModelForm):
             raise forms.ValidationError(exc.messages) from exc
         return mail
 
+    def clean_fecha_inicio(self):
+        raw = self.cleaned_data.get("fecha_inicio")
+        if raw in (None, ""):
+            return None
+        # If it's already a date, normalize to Jan 1 of that year
+        if isinstance(raw, date):
+            return date(raw.year, 1, 1)
+        if isinstance(raw, str):
+            raw = raw.strip()
+            # Accept plain year "AAAA"
+            if raw.isdigit() and len(raw) == 4:
+                year = int(raw)
+                return date(year, 1, 1)
+            # Fallback: accept dd/mm/YYYY or YYYY-mm-dd for compatibility
+            try:
+                return datetime.strptime(raw, "%d/%m/%Y").date()
+            except ValueError:
+                try:
+                    return datetime.strptime(raw, "%Y-%m-%d").date()
+                except ValueError as exc2:
+                    raise forms.ValidationError(
+                        "Formato inválido para Año de inicio. Use AAAA."
+                    ) from exc2
+        raise forms.ValidationError("Formato inválido para Año de inicio.")
+
     def clean_telefono(self):
         value = (self.cleaned_data.get("telefono") or "").strip()
         if not value:
@@ -408,7 +454,7 @@ class CentroDeInfanciaForm(forms.ModelForm):
             "fecha_inicio",
         ]
         widgets = {
-            "fecha_inicio": forms.DateInput(attrs={"type": "date"}),
+            "fecha_inicio": forms.DateInput(format="%Y-%m-%d", attrs={"type": "date"}),
             "meses_funcionamiento": forms.CheckboxSelectMultiple(),
             "dias_funcionamiento": forms.CheckboxSelectMultiple(),
         }
@@ -530,7 +576,10 @@ class NominaCentroInfanciaFormEdit(forms.ModelForm):
             "observaciones": "Observaciones",
         }
         widgets = {
-            "fecha_nacimiento": forms.DateInput(attrs={"type": "date"}),
+            "fecha_nacimiento": forms.DateInput(
+                format="%Y-%m-%d",
+                attrs={"type": "date"},
+            ),
         }
 
 
@@ -591,7 +640,10 @@ class NominaCentroInfanciaBaseForm(forms.ModelForm):
             "observaciones",
         ]
         widgets = {
-            "fecha_nacimiento": forms.DateInput(attrs={"type": "date"}),
+            "fecha_nacimiento": forms.DateInput(
+                format="%Y-%m-%d",
+                attrs={"type": "date"},
+            ),
             "observaciones": forms.Textarea(attrs={"rows": 3}),
         }
 
@@ -986,19 +1038,3 @@ class IntervencionCentroInfanciaForm(forms.ModelForm):
             cleaned_data["subintervencion"] = None
 
         return cleaned_data
-
-
-class ObservacionCentroInfanciaForm(forms.ModelForm):
-    class Meta:
-        model = ObservacionCentroInfancia
-        fields = ["observacion"]
-        labels = {"observacion": "Observación"}
-        widgets = {
-            "observacion": forms.Textarea(
-                attrs={
-                    "class": "form-control",
-                    "rows": 4,
-                    "placeholder": "Describa la observación",
-                }
-            )
-        }

@@ -1,13 +1,13 @@
 {% extends "includes/main.html" %}
-{% load static %}
-{% block title %}Organizacion: {{ organizacion.nombre }}{% endblock %}
+{% load static custom_filters %}
+{% block title %}Organización: {{ organizacion.nombre }}{% endblock %}
 {% block content %}
     <style>
 :root {
     --navy-dark: #232D4F;
     --navy-medium: #232D4F;
     --navy-light: #4A5F7F;
-    --gold: #F5A623;
+    --gold: #E7BA61;
     --green: #28A745;
     --red: #DC3545;
 }
@@ -243,6 +243,72 @@
     color: var(--red);
     border: 1px solid var(--red);
 }
+
+.badge-status.por-vencer {
+    background: rgba(245, 166, 35, 0.18);
+    color: var(--gold);
+    border: 1px solid var(--gold);
+}
+
+.documentacion-actions {
+    min-width: 220px;
+}
+
+.documentacion-actions input[type="date"] {
+    max-width: 165px;
+}
+
+.documentacion-table td {
+    vertical-align: middle;
+}
+
+.documentacion-table .doc-name {
+    max-width: 360px;
+}
+
+.documentacion-compact-controls {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.documentacion-compact-controls .form-control-sm,
+.documentacion-compact-controls .form-select-sm {
+    min-width: 145px;
+    max-width: 180px;
+}
+
+.org-inline-display {
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+}
+
+.org-inline-display:hover {
+    background: rgba(255,255,255,0.08);
+}
+
+.org-inline-edit {
+    min-width: 230px;
+}
+
+.org-inline-edit .btn {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.documentacion-upload-progress {
+    width: 100%;
+    height: 3px;
+    display: none;
+}
     </style>
 
     <div class="container-fluid p-0">
@@ -262,10 +328,12 @@
                         <a href="{% url 'audittrail:log_instance' 'organizaciones' 'organizacion' organizacion.pk %}"
                            class="btn btn-outline-light">Historial</a>
                     {% endif %}
-                    <a href="{% url 'organizacion_editar' organizacion.id %}"
-                       class="btn btn-outline-light">Editar</a>
-                    <a href="{% url 'organizacion_eliminar' organizacion.id %}"
-                       class="btn btn-danger">Eliminar</a>
+                    {% if puede_gestionar_organizaciones %}
+                        <a href="{% url 'organizacion_editar' organizacion.id %}"
+                           class="btn btn-outline-light">Editar</a>
+                        <a href="{% url 'organizacion_eliminar' organizacion.id %}"
+                           class="btn btn-danger">Eliminar</a>
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -275,6 +343,9 @@
                 <a class="nav-link active"
                    data-bs-toggle="tab"
                    href="#informacion-general">Información General</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" data-bs-toggle="tab" href="#documentacion">Documentación</a>
             </li>
             <li class="nav-item">
                 <a class="nav-link" data-bs-toggle="tab" href="#comedores">Comedores Asociados ({{ comedores_count }})</a>
@@ -288,10 +359,12 @@
                 <div class="row">
                     <div class="col-12">
                         <div class="datos-card" style="position: relative;">
-                            <a href="{% url 'organizacion_editar' organizacion.id %}"
-                               class="btn-edit-card">
-                                <i class="fas fa-pen"></i>
-                            </a>
+                            {% if puede_gestionar_organizaciones %}
+                                <a href="{% url 'organizacion_editar' organizacion.id %}"
+                                   class="btn-edit-card">
+                                    <i class="fas fa-pen"></i>
+                                </a>
+                            {% endif %}
                             <h5>Información de la Organización</h5>
                             <div class="datos-card-content">
                                 <div style="display: flex; justify-content: center; align-items: center;">
@@ -382,10 +455,12 @@
                         <div class="tabla-legajo">
                             <div class="d-flex justify-content-between align-items-center mb-3">
                                 <h5 class="mb-0">Firmantes de la Organización</h5>
-                                <a href="{% url 'firmante_crear' organizacion.id %}"
-                                   class="btn btn-success btn-sm">
-                                    <i class="fas fa-plus"></i> Agregar Firmante
-                                </a>
+                                {% if puede_gestionar_organizaciones %}
+                                    <a href="{% url 'firmante_crear' organizacion.id %}"
+                                       class="btn btn-success btn-sm">
+                                        <i class="fas fa-plus"></i> Agregar Firmante
+                                    </a>
+                                {% endif %}
                             </div>
                             {% if firmantes %}
                                 <table class="table table-sm">
@@ -394,7 +469,7 @@
                                             <th>Nombre</th>
                                             <th>Rol</th>
                                             <th>CUIT</th>
-                                            <th class="text-end">Acciones</th>
+                                            {% if puede_gestionar_organizaciones %}<th class="text-end">Acciones</th>{% endif %}
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -414,22 +489,24 @@
                                                     {% endif %}
                                                 </td>
                                                 <td>{{ firmante.cuit|default:'-' }}</td>
-                                                <td class="text-end">
-                                                    <a href="{% url 'firmante_editar' firmante.pk %}"
-                                                       class="btn btn-sm"
-                                                       style="background: rgba(40, 167, 69, 0.2);
-                                                              color: var(--green);
-                                                              border: 1px solid var(--green)">
-                                                        <i class="fas fa-edit"></i>
-                                                    </a>
-                                                    <a href="{% url 'firmante_eliminar' firmante.pk %}"
-                                                       class="btn btn-sm"
-                                                       style="background: rgba(220, 53, 69, 0.2);
-                                                              color: var(--red);
-                                                              border: 1px solid var(--red)">
-                                                        <i class="fas fa-trash"></i>
-                                                    </a>
-                                                </td>
+                                                {% if puede_gestionar_organizaciones %}
+                                                    <td class="text-end">
+                                                        <a href="{% url 'firmante_editar' firmante.pk %}"
+                                                           class="btn btn-sm"
+                                                           style="background: rgba(40, 167, 69, 0.2);
+                                                                  color: var(--green);
+                                                                  border: 1px solid var(--green)">
+                                                            <i class="fas fa-edit"></i>
+                                                        </a>
+                                                        <a href="{% url 'firmante_eliminar' firmante.pk %}"
+                                                           class="btn btn-sm"
+                                                           style="background: rgba(220, 53, 69, 0.2);
+                                                                  color: var(--red);
+                                                                  border: 1px solid var(--red)">
+                                                            <i class="fas fa-trash"></i>
+                                                        </a>
+                                                    </td>
+                                                {% endif %}
                                             </tr>
                                         {% endfor %}
                                     </tbody>
@@ -448,10 +525,12 @@
                             <div class="tabla-legajo">
                                 <div class="d-flex justify-content-between align-items-center mb-3">
                                     <h5 class="mb-0">Avales</h5>
-                                    <a href="{% url 'aval_crear' organizacion.id %}"
-                                       class="btn btn-success btn-sm">
-                                        <i class="fas fa-plus"></i> Agregar Aval
-                                    </a>
+                                    {% if puede_gestionar_organizaciones %}
+                                        <a href="{% url 'aval_crear' organizacion.id %}"
+                                           class="btn btn-success btn-sm">
+                                            <i class="fas fa-plus"></i> Agregar Aval
+                                        </a>
+                                    {% endif %}
                                 </div>
                                 {% if avales_data %}
                                     <table class="table table-sm">
@@ -459,7 +538,7 @@
                                             <tr>
                                                 <th>Nombre</th>
                                                 <th>CUIT</th>
-                                                <th class="text-end">Acciones</th>
+                                                {% if puede_gestionar_organizaciones %}<th class="text-end">Acciones</th>{% endif %}
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -467,22 +546,24 @@
                                                 <tr>
                                                     <td>{{ aval.nombre|default:'-' }}</td>
                                                     <td>{{ aval.cuit|default:'-' }}</td>
-                                                    <td class="text-end">
-                                                        <a href="{% url 'aval_editar' aval.pk %}"
-                                                           class="btn btn-sm"
-                                                           style="background: rgba(40, 167, 69, 0.2);
-                                                                  color: var(--green);
-                                                                  border: 1px solid var(--green)">
-                                                            <i class="fas fa-edit"></i>
-                                                        </a>
-                                                        <a href="{% url 'aval_eliminar' aval.pk %}"
-                                                           class="btn btn-sm"
-                                                           style="background: rgba(220, 53, 69, 0.2);
-                                                                  color: var(--red);
-                                                                  border: 1px solid var(--red)">
-                                                            <i class="fas fa-trash"></i>
-                                                        </a>
-                                                    </td>
+                                                    {% if puede_gestionar_organizaciones %}
+                                                        <td class="text-end">
+                                                            <a href="{% url 'aval_editar' aval.pk %}"
+                                                               class="btn btn-sm"
+                                                               style="background: rgba(40, 167, 69, 0.2);
+                                                                      color: var(--green);
+                                                                      border: 1px solid var(--green)">
+                                                                <i class="fas fa-edit"></i>
+                                                            </a>
+                                                            <a href="{% url 'aval_eliminar' aval.pk %}"
+                                                               class="btn btn-sm"
+                                                               style="background: rgba(220, 53, 69, 0.2);
+                                                                      color: var(--red);
+                                                                      border: 1px solid var(--red)">
+                                                                <i class="fas fa-trash"></i>
+                                                            </a>
+                                                        </td>
+                                                    {% endif %}
                                                 </tr>
                                             {% endfor %}
                                         </tbody>
@@ -494,6 +575,248 @@
                         </div>
                     </div>
                 {% endif %}
+            </div>
+
+            <!-- TAB: Documentacion -->
+            <div class="tab-pane fade" id="documentacion">
+                <div class="row">
+                    <div class="col-12">
+                        <div class="tabla-legajo" style="border: 2px solid var(--gold);">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="mb-0">Documentación de la Organización</h5>
+                                <span class="badge"
+                                      style="background: rgba(245, 166, 35, 0.2);
+                                             color: var(--gold);
+                                             border: 1px solid var(--gold)">
+                                    {{ documentacion_organizacion_categoria|default:"Tipo documental" }}
+                                </span>
+                            </div>
+                            <div id="organizacion-documentos-config"
+                                 data-csrf-token="{{ csrf_token }}"
+                                 hidden></div>
+                            <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1100">
+                                <div id="toastOrganizacionDocsExito"
+                                     class="toast align-items-center text-bg-success border-0"
+                                     role="alert"
+                                     aria-live="assertive"
+                                     aria-atomic="true">
+                                    <div class="d-flex">
+                                        <div class="toast-body">
+                                            <h6 id="toastOrganizacionDocsExitoMsg">Cambio guardado con éxito.</h6>
+                                        </div>
+                                        <button type="button"
+                                                class="btn-close btn-close-white me-2 m-auto"
+                                                data-bs-dismiss="toast"
+                                                aria-label="Cerrar"></button>
+                                    </div>
+                                </div>
+                                <div id="toastOrganizacionDocsError"
+                                     class="toast align-items-center text-bg-danger border-0"
+                                     role="alert"
+                                     aria-live="assertive"
+                                     aria-atomic="true">
+                                    <div class="d-flex">
+                                        <div class="toast-body">
+                                            <h6 id="toastOrganizacionDocsErrorMsg">No se pudo guardar el cambio.</h6>
+                                        </div>
+                                        <button type="button"
+                                                class="btn-close btn-close-white me-2 m-auto"
+                                                data-bs-dismiss="toast"
+                                                aria-label="Cerrar"></button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div>
+                                <table class="table table-sm documentacion-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Documento</th>
+                                            <th>Estado / validación</th>
+                                            <th>Archivo</th>
+                                            <th>Vencimiento / carga</th>
+                                            <th>Número de GDE</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for row in documentacion_organizacion %}
+                                            {% include "organizaciones/partials/documentacion_organizacion_row.html" %}
+                                            {% comment %}
+                                            {% with doc=row.documentacion archivo=row.archivo %}
+                                                <tr>
+                                                    <td class="doc-name">
+                                                        <strong>{{ doc.nombre }}</strong>
+                                                        {% if doc.obligatorio %}<span class="text-danger fs-5 ms-1">*</span>{% endif %}
+                                                        {% if row.historial %}
+                                                            <div class="small" style="color: #9ca3af;">
+                                                                {{ row.historial|length }} versión/es anterior/es conservada/s
+                                                            </div>
+                                                        {% endif %}
+                                                    </td>
+                                                    <td>
+                                                        {% if archivo %}
+                                                            {% if puede_validar_documentacion_organizacion and archivo.estado == "A Validar Abogado" %}
+                                                                <select class="form-control form-control-sm org-doc-state-select border border-2 border-primary" data-url="{% url 'organizacion_documento_estado' archivo.id %}" data-current-value="{{ archivo.estado }}" data-requires-observacion="1">
+                                                                    <option value="A Validar Abogado" selected>A Validar Abogado</option>
+                                                                    <option value="Aceptado">Aceptado</option>
+                                                                    <option value="Rectificar">Rectificar</option>
+                                                                </select>
+                                                            {% elif not puede_validar_documentacion_organizacion and archivo.estado != "Aceptado" %}
+                                                                <select class="form-control form-control-sm org-doc-state-select{% if archivo.estado == 'Rectificar' %} border border-danger border-2{% endif %}" data-url="{% url 'organizacion_documento_estado' archivo.id %}" data-current-value="{{ archivo.estado }}" data-requires-observacion="0">
+                                                                    {% if archivo.estado == "Rectificar" %}
+                                                                        <option value="Rectificar" selected disabled>Rectificar</option>
+                                                                    {% endif %}
+                                                                    <option value="Documento adjunto" {% if archivo.estado == "Documento adjunto" %}selected{% endif %}>Documento adjunto</option>
+                                                                    <option value="A Validar Abogado" {% if archivo.estado == "A Validar Abogado" %}selected{% endif %}>A Validar Abogado</option>
+                                                                </select>
+                                                            {% else %}
+                                                                {% if archivo.estado == "Aceptado" %}
+                                                                    <span class="badge bg-success">Aceptado</span>
+                                                                {% elif archivo.estado == "Rectificar" %}
+                                                                    <span class="badge bg-danger">Rectificar</span>
+                                                                {% elif archivo.estado == "A Validar Abogado" %}
+                                                                    <span class="badge bg-primary">A Validar Abogado</span>
+                                                                {% else %}
+                                                                    <span class="badge bg-secondary">{{ archivo.estado }}</span>
+                                                                {% endif %}
+                                                            {% endif %}
+                                                            {% if archivo.observaciones %}
+                                                                <div class="small text-warning mt-1">{{ archivo.observaciones }}</div>
+                                                            {% endif %}
+                                                        {% else %}
+                                                            <span class="badge bg-secondary">Pendiente</span>
+                                                        {% endif %}
+                                                    </td>
+                                                    <td>
+                                                        {% if archivo %}
+                                                            <div class="documentacion-compact-controls">
+                                                                <a href="{{ archivo.archivo.url }}" target="_blank" class="btn btn-primary btn-sm">
+                                                                    <i class="fas fa-eye"></i>
+                                                                    Ver Archivo
+                                                                </a>
+                                                            </div>
+                                                        {% else %}
+                                                            <span style="color: #9ca3af;">Sin archivo</span>
+                                                        {% endif %}
+                                                    </td>
+                                                    <td>
+                                                        <div class="documentacion-compact-controls">
+                                                            {% if archivo %}
+                                                                <div id="org-venc-display-{{ archivo.id }}" class="org-inline-display" data-org-inline-edit="org-venc-edit-{{ archivo.id }}">
+                                                                    {% if archivo.fecha_vencimiento %}
+                                                                        <span class="{% if archivo.esta_vencido %}text-danger{% elif archivo.esta_por_vencer %}text-warning{% else %}text-success{% endif %} fw-bold">
+                                                                            {{ archivo.fecha_vencimiento|date:"d/m/Y" }}
+                                                                        </span>
+                                                                        {% if archivo.esta_vencido %}
+                                                                            <span class="badge-status vencido ms-1">Vencido</span>
+                                                                        {% elif archivo.esta_por_vencer %}
+                                                                            <span class="badge-status por-vencer ms-1">Por vencer</span>
+                                                                        {% else %}
+                                                                            <span class="badge-status vigente ms-1">Vigente</span>
+                                                                        {% endif %}
+                                                                        <i class="bi bi-pencil-square ms-2 text-muted" title="Editar vencimiento"></i>
+                                                                    {% else %}
+                                                                        <span class="text-muted">Sin vencimiento</span>
+                                                                        <i class="bi bi-plus-circle ms-2 text-primary" title="Agregar vencimiento"></i>
+                                                                    {% endif %}
+                                                                </div>
+                                                                <div id="org-venc-edit-{{ archivo.id }}" class="org-inline-edit d-none">
+                                                                    <div class="d-flex align-items-center">
+                                                                        <input type="date" class="form-control form-control-sm me-2 org-inline-input" value="{{ archivo.fecha_vencimiento|date:'Y-m-d' }}" data-empty-text="Sin vencimiento" data-url="{% url 'organizacion_documento_vencimiento' archivo.id %}" data-field="fecha_vencimiento" data-display-id="org-venc-display-{{ archivo.id }}" data-edit-id="org-venc-edit-{{ archivo.id }}" />
+                                                                        <button type="button" class="btn btn-success btn-sm me-1 org-inline-save" title="Guardar">
+                                                                            <i class="bi bi-check"></i>
+                                                                        </button>
+                                                                        <button type="button" class="btn btn-secondary btn-sm org-inline-cancel" title="Cancelar">
+                                                                            <i class="bi bi-x"></i>
+                                                                        </button>
+                                                                    </div>
+                                                                </div>
+                                                            {% else %}
+                                                                <input type="date" class="form-control form-control-sm" id="org-doc-venc-{{ doc.id }}" aria-label="Fecha de vencimiento" />
+                                                            {% endif %}
+                                                            <input type="file" id="org-doc-file-{{ doc.id }}" class="d-none org-doc-file" accept=".pdf,.jpg,.jpeg,.png,.xls,.xlsx,.doc,.docx" data-upload-url="{% url 'organizacion_documento_subir' organizacion.id doc.id %}" data-vencimiento-id="org-doc-venc-{{ doc.id }}" />
+                                                            <button type="button" class="btn btn-sm btn-outline-light org-doc-open-file" data-file-id="org-doc-file-{{ doc.id }}">Adjuntar</button>
+                                                        </div>
+                                                        <div class="progress mt-2 documentacion-upload-progress" id="org-progress-container-{{ doc.id }}">
+                                                            <div class="progress-bar progress-bar-striped" role="progressbar" id="org-progress-bar-{{ doc.id }}" style="width: 0%">0%</div>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                                {% if row.historial %}
+                                                    <tr>
+                                                        <td colspan="4" style="background: rgba(255,255,255,0.04);">
+                                                            <details>
+                                                                <summary>Ver versiones anteriores</summary>
+                                                                <div class="mt-2 d-flex flex-column gap-1">
+                                                                    {% for version in row.historial %}
+                                                                        <div class="small">
+                                                                            <a href="{{ version.archivo.url }}" target="_blank" style="color: #e7ba61;">{{ version.creado|date:"d/m/Y H:i" }}</a>
+                                                                            - {{ version.estado }}
+                                                                            {% if version.fecha_vencimiento %}
+                                                                                - vence {{ version.fecha_vencimiento|date:"d/m/Y" }}
+                                                                            {% endif %}
+                                                                        </div>
+                                                                    {% endfor %}
+                                                                </div>
+                                                            </details>
+                                                        </td>
+                                                    </tr>
+                                                {% endif %}
+                                            {% endwith %}
+                                            {% endcomment %}
+                                        {% empty %}
+                                            <tr>
+                                                <td colspan="5" class="text-center">No hay documentación configurada.</td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {% if puede_enviar_documentacion_organizacion %}
+                                <div class="mt-3 pt-3 border-top" id="org-doc-adicional">
+                                    <h6 class="mb-2">Documentación Adicional</h6>
+                                    <p class="small text-muted mb-2">
+                                        Opcional. Indicá un nombre y adjuntá el archivo. Podés agregar tantos como necesites.
+                                    </p>
+                                    <div class="row g-2 align-items-end">
+                                        <div class="col-md-5">
+                                            <label class="form-label small mb-1" for="nuevoDocOrgNombre">Nombre del documento</label>
+                                            <input type="text"
+                                                   id="nuevoDocOrgNombre"
+                                                   class="form-control form-control-sm"
+                                                   maxlength="255"
+                                                   placeholder="Nombre del documento adicional" />
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label class="form-label small mb-1" for="nuevoDocOrgVencimiento">Vencimiento (opcional)</label>
+                                            <input type="date"
+                                                   id="nuevoDocOrgVencimiento"
+                                                   class="form-control form-control-sm" />
+                                        </div>
+                                        <div class="col-md-4">
+                                            <input type="file"
+                                                   id="nuevoDocOrgArchivo"
+                                                   class="d-none"
+                                                   accept=".pdf,.jpg,.jpeg,.png,.xls,.xlsx,.doc,.docx" />
+                                            <button type="button"
+                                                    id="btnAgregarDocOrg"
+                                                    class="btn btn-sm btn-primary"
+                                                    data-url="{% url 'organizacion_documento_personalizado_agregar' organizacion.id %}">
+                                                <i class="fas fa-plus"></i> Agregar documento adicional
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="progress mt-2 documentacion-upload-progress d-none"
+                                         id="org-doc-adicional-progress-container">
+                                        <div class="progress-bar progress-bar-striped"
+                                             role="progressbar"
+                                             id="org-doc-adicional-progress-bar"
+                                             style="width: 0%">0%</div>
+                                    </div>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- TAB: Comedores -->
@@ -529,7 +852,7 @@
                                             <tr>
                                                 <td>
                                                     <a href="{% url 'comedor_detalle' comedor.id %}"
-                                                       style="color: #F5A623;
+                                                       style="color: #E7BA61;
                                                               text-decoration: underline">{{ comedor.nombre }}</a>
                                                 </td>
                                                 <td>{{ comedor.tipocomedor.nombre|default:'-' }}</td>
@@ -594,4 +917,40 @@
             </div>
         </div>
     </div>
+    <div class="modal fade"
+         id="orgModalObservacionRectificar"
+         tabindex="-1"
+         aria-labelledby="orgModalObservacionRectificarLabel"
+         aria-hidden="true"
+         data-bs-backdrop="static"
+         data-bs-keyboard="false">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="orgModalObservacionRectificarLabel">Observaciones obligatorias</h5>
+                    <button type="button"
+                            class="btn-close"
+                            data-bs-dismiss="modal"
+                            aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="orgObservacionRectificar" class="form-label">Detalle el motivo de la rectificacion</label>
+                        <textarea class="form-control"
+                                  id="orgObservacionRectificar"
+                                  rows="4"
+                                  maxlength="2000"></textarea>
+                        <div class="text-danger small mt-2" id="orgObservacionRectificarError"></div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" id="orgBtnConfirmarRectificar">Guardar observaciones</button>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+{% block customJS %}
+    <script src="{% static 'custom/js/organizacionesDocumentos.js' %}"></script>
 {% endblock %}
