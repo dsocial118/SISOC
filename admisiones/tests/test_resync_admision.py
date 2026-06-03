@@ -240,14 +240,14 @@ def test_aceptar_desincronizacion_no_materializa_archivos_nuevos(
 
     assert ok is True
     count_despues = ArchivoAdmision.objects.filter(admision=admision).count()
-    assert count_despues == count_antes, (
-        "Continuar operando NO debe materializar ArchivoAdmision nuevos desde el legajo"
-    )
+    assert (
+        count_despues == count_antes
+    ), "Continuar operando NO debe materializar ArchivoAdmision nuevos desde el legajo"
     # El snapshot si debe actualizarse para silenciar la advertencia.
     snaps = list(AdmisionDocOrgSnapshot.objects.filter(admision=admision))
-    assert any(s.slot_key != "__init__" for s in snaps), (
-        "El snapshot debe registrar el doc del legajo tras aceptar"
-    )
+    assert any(
+        s.slot_key != "__init__" for s in snaps
+    ), "El snapshot debe registrar el doc del legajo tras aceptar"
 
 
 def test_categoria_para_organizacion_mapea_por_nombre(tipo_entidades):

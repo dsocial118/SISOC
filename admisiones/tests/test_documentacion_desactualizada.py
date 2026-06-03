@@ -290,9 +290,9 @@ def test_primer_doc_en_legajo_multidoc_dispara_advertencia(setup_legajo_con_dos_
     archivo_org_1 = setup_legajo_con_dos_docs["archivo_org_1"]
 
     snaps = list(AdmisionDocOrgSnapshot.objects.filter(admision=admision))
-    assert not any(s.slot_key == "__init__" for s in snaps), (
-        "No debe existir centinela __init__ cuando el legajo tenia docs al crear la admision"
-    )
+    assert not any(
+        s.slot_key == "__init__" for s in snaps
+    ), "No debe existir centinela __init__ cuando el legajo tenia docs al crear la admision"
     assert len(snaps) == 2, "Debe haber un snapshot por cada doc del legajo"
 
     # Modificar el PRIMER documento del legajo (mas antiguo por orden e id).
@@ -302,9 +302,9 @@ def test_primer_doc_en_legajo_multidoc_dispara_advertencia(setup_legajo_con_dos_
     desactualizada, labels = AdmisionService.admision_documentacion_desactualizada(
         admision
     )
-    assert desactualizada is True, (
-        "La modificacion del primer doc debe disparar la advertencia"
-    )
+    assert (
+        desactualizada is True
+    ), "La modificacion del primer doc debe disparar la advertencia"
     assert "DNI del Presidente" in labels
     assert "Estatuto Social Vigente" not in labels
 
