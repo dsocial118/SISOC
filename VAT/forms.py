@@ -8,6 +8,7 @@ from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.db.models import Q
 from django.forms import BaseInlineFormSet, inlineformset_factory
+from django.utils.text import slugify
 from django.utils import timezone
 from ciudadanos.models import Ciudadano
 from core.models import Dia, Sexo
@@ -85,6 +86,54 @@ def _select2_attrs(
         attrs["data-allow-clear"] = str(bool(allow_clear)).lower()
 
     return attrs
+
+
+def _normalize_curso_tipo_value(nombre):
+    normalized = slugify((nombre or "").strip()).replace("-", "_")
+    return normalized
+
+
+def _collect_curso_tipo_values_from_existing_courses(centro_id=None):
+    qs = Curso.objects.values_list("tipo", flat=True)
+    if centro_id:
+        qs = qs.filter(centro_id=centro_id)
+    values = []
+    for tipo_list in qs:
+        if isinstance(tipo_list, list):
+            values.extend(tipo_list)
+    return _normalize_related_ids(values)
+
+
+def build_curso_tipo_choices(include_values=None, centro_id=None):
+    include_values = _normalize_related_ids(include_values)
+    choices = []
+    seen_values = set()
+
+    for nombre in ModalidadCursada.objects.filter(activo=True).values_list(
+        "nombre", flat=True
+    ):
+        value = _normalize_curso_tipo_value(nombre)
+        if not value or value in seen_values:
+            continue
+        choices.append((value, nombre))
+        seen_values.add(value)
+
+    include_values = _normalize_related_ids(
+        [
+            *_collect_curso_tipo_values_from_existing_courses(centro_id=centro_id),
+            *include_values,
+        ]
+    )
+
+    for value in include_values:
+        normalized_value = (value or "").strip()
+        if not normalized_value or normalized_value in seen_values:
+            continue
+        label = normalized_value.replace("_", " ").title()
+        choices.append((normalized_value, label))
+        seen_values.add(normalized_value)
+
+    return choices
 
 
 def build_plan_estudio_queryset_for_centro(
@@ -1519,12 +1568,6 @@ class InstitucionUbicacionForm(forms.ModelForm):
 
 
 class CursoForm(forms.ModelForm):
-    TIPO_CURSO_CHOICES = [
-        ("presencial", "Presencial"),
-        ("virtual", "Virtual"),
-        ("mixto", "Mixto"),
-    ]
-
     plan_estudio = forms.ModelChoiceField(
         queryset=build_plan_estudio_queryset_for_centro(),
         label="Plan Curricular",
@@ -1541,13 +1584,14 @@ class CursoForm(forms.ModelForm):
     tipo = forms.MultipleChoiceField(
         label="Tipo",
         required=False,
-        choices=TIPO_CURSO_CHOICES,
+        choices=(),
         widget=forms.SelectMultiple(
             attrs={
                 **_select2_attrs(
                     base_class="form-select",
                     placeholder="Seleccionar tipos...",
                 ),
+                "data-dropdown-parent": "#modalCurso",
             }
         ),
         help_text="Podés seleccionar uno o varios tipos.",
@@ -1636,6 +1680,7 @@ class CursoForm(forms.ModelForm):
         centro_provincia_id = None
         current_plan_id = None
         current_voucher_ids = []
+        current_tipo_values = []
 
         if self.instance and self.instance.pk and self.instance.centro_id:
             centro_id = self.instance.centro_id
@@ -1644,6 +1689,7 @@ class CursoForm(forms.ModelForm):
             current_voucher_ids = list(
                 self.instance.voucher_parametrias.values_list("pk", flat=True)
             )
+            current_tipo_values = list(self.instance.tipo or [])
         elif self.initial.get("centro"):
             centro = self.initial.get("centro")
             if isinstance(centro, Centro):
@@ -1665,6 +1711,10 @@ class CursoForm(forms.ModelForm):
         )
         self.fields["voucher_parametrias"].queryset = build_voucher_parametria_queryset(
             current_voucher_ids
+        )
+        self.fields["tipo"].choices = build_curso_tipo_choices(
+            include_values=current_tipo_values,
+            centro_id=centro_id,
         )
 
     def clean(self):
@@ -2749,7 +2799,7 @@ class BaseComisionCursoWizardHorarioFormSet(forms.BaseFormSet):
 ComisionCursoWizardStep2FormSet = forms.formset_factory(
     ComisionCursoWizardHorarioForm,
     formset=BaseComisionCursoWizardHorarioFormSet,
-    extra=1,
+    extra=0,
     can_delete=True,
     min_num=1,
     validate_min=True,

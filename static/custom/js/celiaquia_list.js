@@ -376,10 +376,24 @@
             });
             
             if (!ok) {
-              const msg = (data && data.error) || text || `HTTP ${status}`;
+              // No mostramos el cuerpo crudo (text): ante un 404/500/redirect sería el
+              // HTML de la página de error de Django. Damos un mensaje legible por status.
+              if (text) {
+                console.error('Remover técnico (respuesta no-JSON):', text.slice(0, 200));
+              }
+              let msg = data && data.error;
+              if (!msg) {
+                if (status === 404) {
+                  msg = 'La asignación no existe o ya fue removida.';
+                } else if (status === 403) {
+                  msg = 'No tenés permisos para remover el técnico.';
+                } else {
+                  msg = `No se pudo completar la operación (HTTP ${status}).`;
+                }
+              }
               throw new Error(msg);
             }
-            
+
             showAlert('success', 'Técnico removido correctamente.');
             
             // Remover el badge del DOM

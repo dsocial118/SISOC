@@ -1,0 +1,75 @@
+{% load custom_filters %}
+{% comment %}
+Contenido de la celda "Número de GDE" de un documento de la Admisión.
+Se extrae a un partial para poder re-renderizarlo desde el endpoint
+`actualizar_estado_archivo` (issue #1799 / feedback punto 4): al aceptar un
+documento via AJAX el campo GDE debe aparecer sin recargar la página.
+Contexto esperado: `doc` (dict serializado), `admision`, `request`.
+{% endcomment %}
+{% if doc.estado == "Aceptado" %}
+    {% if doc.es_origen_organizacion %}
+        <!-- Documento de origen organizacional: el N de GDE se gestiona
+             desde el Legajo de la Organizacion y se replica aqui (#1799 Req 3) -->
+        {% if doc.numero_gde %}
+            <span class="text-success fw-bold">{{ doc.numero_gde }}</span>
+        {% else %}
+            <span class="text-muted">Sin número GDE</span>
+        {% endif %}
+        <i class="bi bi-info-circle ms-1 text-muted"
+           title="El número de GDE se gestiona desde el Legajo de la Organización"></i>
+    {% elif doc.archivo_id and request.user.is_superuser or doc.archivo_id and request.user|has_any_perm:"comedores.view_comedor,admisiones.view_admision,acompanamientos.view_informacionrelevante" or doc.archivo_id and request.user|has_perm_code:"auth.role_tecnico_comedor" or doc.archivo_id and request.user|has_any_group:"Tecnico Comedor" %}
+        <!-- Modo vista (por defecto) -->
+        <div id="gde-display-{{ doc.id }}"
+             class="gde-display"
+             data-call-click="activarEdicionGDE"
+             data-call-args="[{{ doc.id }}]">
+            {% if doc.numero_gde %}
+                <span class="text-success fw-bold">{{ doc.numero_gde }}</span>
+                <i class="bi bi-pencil-square ms-2 text-muted"
+                   style="cursor: pointer"
+                   title="Editar número GDE"></i>
+            {% else %}
+                <span class="text-muted">Sin número GDE</span>
+                <i class="bi bi-plus-circle ms-2 text-primary"
+                   style="cursor: pointer"
+                   title="Agregar número GDE"></i>
+            {% endif %}
+        </div>
+        <!-- Modo edición (oculto por defecto) -->
+        <div id="gde-edit-{{ doc.id }}" class="gde-edit d-none">
+            <div class="d-flex align-items-center">
+                <input type="text"
+                       class="form-control form-control-sm me-2"
+                       id="gde-input-{{ doc.id }}"
+                       value="{{ doc.numero_gde|default_if_none:'' }}"
+                       placeholder="Ingrese número GDE"
+                       maxlength="50"
+                       style="max-width: 150px" />
+                <button class="btn btn-success btn-sm me-1"
+                        data-call-click="guardarNumeroGDE"
+                        data-call-args="[{{ doc.id }}]"
+                        title="Guardar">
+                    <i class="bi bi-check"></i>
+                </button>
+                <button class="btn btn-secondary btn-sm"
+                        data-call-click="cancelarEdicionGDE"
+                        data-call-args="[{{ doc.id }}]"
+                        title="Cancelar">
+                    <i class="bi bi-x"></i>
+                </button>
+            </div>
+        </div>
+    {% else %}
+        {% if doc.numero_gde %}
+            <span class="text-success fw-bold">{{ doc.numero_gde }}</span>
+        {% else %}
+            <span class="text-muted">-</span>
+        {% endif %}
+    {% endif %}
+{% else %}
+    {% if doc.numero_gde %}
+        <span class="text-success fw-bold">{{ doc.numero_gde }}</span>
+    {% else %}
+        <span class="text-muted">-</span>
+    {% endif %}
+{% endif %}

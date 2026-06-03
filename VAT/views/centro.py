@@ -11,7 +11,16 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
 from django.urls import reverse_lazy, reverse
 from django.db import transaction
-from django.db.models import CharField, Count, F, OuterRef, Prefetch, Q, Subquery
+from django.db.models import (
+    CharField,
+    Count,
+    Exists,
+    F,
+    OuterRef,
+    Prefetch,
+    Q,
+    Subquery,
+)
 from django.db.models.functions import Coalesce
 from django.core.cache import cache
 from django.core.exceptions import PermissionDenied
@@ -137,9 +146,15 @@ def _scope_centro_field_to_current_centro(form, centro):
 
 
 def _build_vat_centro_list_base_queryset():
-    return _annotate_centro_codigo_cue(
+    queryset = _annotate_centro_codigo_cue(
         Centro.objects.only(*VAT_CENTRO_LIST_ONLY_FIELDS)
-    ).order_by("-id")
+    )
+    queryset = queryset.annotate(
+        estado_carga_completa=Exists(
+            Curso.objects.filter(centro_id=OuterRef("pk")),
+        )
+    )
+    return queryset.order_by("-id")
 
 
 def _apply_vat_centro_search(queryset, query):

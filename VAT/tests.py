@@ -1,7 +1,7 @@
 import importlib
 from io import BytesIO
 from types import SimpleNamespace
-from datetime import date, time
+from datetime import date, time, timedelta
 import json
 
 import pytest
@@ -14,6 +14,7 @@ from django.core.exceptions import ValidationError
 from django.core.management import call_command
 from django.test import RequestFactory, override_settings
 from django.urls import reverse
+from django.utils import timezone
 from openpyxl import load_workbook
 from rest_framework.test import APIClient
 from rest_framework_api_key.models import APIKey
@@ -1436,7 +1437,116 @@ def test_vat_centro_list_filters_config_expone_solo_nombre_y_codigo(mocker):
     assert [field["name"] for field in context["filters_config"]["fields"]] == [
         "nombre",
         "codigo",
+        "estado_carga",
     ]
+
+
+@pytest.mark.django_db
+def test_vat_centro_list_filtra_por_estado_carga(vat_geo_data):
+    provincia, municipio, localidad = vat_geo_data
+    user = User.objects.create_superuser(
+        username="centro-filtro-estado-carga",
+        email="centro-filtro-estado-carga@vat.test",
+        password="test1234",
+    )
+
+    centro_incompleto = Centro.objects.create(
+        nombre="Centro sin carga 2026",
+        codigo="LEG-EC-001",
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad,
+        calle="7",
+        numero=123,
+        domicilio_actividad="Calle 7",
+        telefono="221-111111",
+        celular="221-111112",
+        correo="ec1@vat.test",
+        nombre_referente="Ana",
+        apellido_referente="Perez",
+        telefono_referente="221-111113",
+        correo_referente="refec1@vat.test",
+        tipo_gestion="Estatal",
+        clase_institucion="Formación Profesional",
+        situacion="Institución de ETP",
+        activo=True,
+    )
+    centro_completo = Centro.objects.create(
+        nombre="Centro con carga 2026",
+        codigo="LEG-EC-002",
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad,
+        calle="8",
+        numero=456,
+        domicilio_actividad="Calle 8",
+        telefono="221-222221",
+        celular="221-222222",
+        correo="ec2@vat.test",
+        nombre_referente="Juan",
+        apellido_referente="Gomez",
+        telefono_referente="221-222223",
+        correo_referente="refec2@vat.test",
+        tipo_gestion="Privada",
+        clase_institucion="Capacitación Laboral",
+        situacion="Institución de ETP",
+        activo=True,
+    )
+    modalidad = ModalidadCursada.objects.create(nombre="Presencial", activo=True)
+    Curso.objects.create(
+        centro=centro_completo,
+        modalidad=modalidad,
+        nombre="Curso carga 2026",
+        estado="planificado",
+    )
+
+    request_false = RequestFactory().get(
+        "/vat/centros/",
+        data={
+            "filters": json.dumps(
+                {
+                    "logic": "AND",
+                    "items": [
+                        {
+                            "field": "estado_carga",
+                            "op": "eq",
+                            "value": "false",
+                        }
+                    ],
+                }
+            )
+        },
+    )
+    request_false.user = user
+
+    view_false = centro_views.CentroListView()
+    view_false.request = request_false
+
+    assert list(view_false.get_queryset()) == [centro_incompleto]
+
+    request_true = RequestFactory().get(
+        "/vat/centros/",
+        data={
+            "filters": json.dumps(
+                {
+                    "logic": "AND",
+                    "items": [
+                        {
+                            "field": "estado_carga",
+                            "op": "eq",
+                            "value": "true",
+                        }
+                    ],
+                }
+            )
+        },
+    )
+    request_true.user = user
+
+    view_true = centro_views.CentroListView()
+    view_true.request = request_true
+
+    assert list(view_true.get_queryset()) == [centro_completo]
 
 
 @pytest.mark.django_db
@@ -1891,7 +2001,9 @@ def test_centro_update_usuario_provincial_puede_editar_dentro_de_su_provincia(cl
 
 
 @pytest.mark.django_db
-def test_centro_detail_muestra_boton_editar_para_referente_cfp(client, vat_geo_data):
+def test_centro_detail_muestra_datos_de_referente_para_referente_cfp(
+    client, vat_geo_data
+):
     provincia, municipio, localidad = vat_geo_data
     referente_group, _ = Group.objects.get_or_create(name="CFP")
     referente = User.objects.create_user(
@@ -1929,11 +2041,14 @@ def test_centro_detail_muestra_boton_editar_para_referente_cfp(client, vat_geo_d
 
     content = response.content.decode("utf-8")
     assert response.status_code == 200
-    assert reverse("vat_centro_update", kwargs={"pk": centro.pk}) in content
-    assert "Editar" in content
     # Refactor 4f1f2241 renombró secciones: ahora hay tabs "Información general",
     # "Ubicaciones adicionales" y modal "Agregar Identificador".
     assert "Información general" in content
+    assert "Referente del centro" in content
+    assert "Ana Pérez" in content
+    assert "221-4111111" in content
+    assert "direccion@vat.test" in content
+    assert reverse("vat_centro_update", kwargs={"pk": centro.pk}) not in content
     assert "CUE" in content
     assert "Estructura Institucional" not in content
     assert "Ubicaciones adicionales" in content
@@ -5405,6 +5520,38 @@ def test_curso_form_plan_estudio_es_primer_campo():
 
 
 @pytest.mark.django_db
+def test_curso_form_tipo_choices_desde_modalidad_cursada(vat_curso_base):
+    centro, _, modalidad = vat_curso_base
+    ModalidadCursada.objects.filter(id=modalidad.id).update(activo=False)
+    ModalidadCursada.objects.create(nombre="Presencial", activo=True)
+    ModalidadCursada.objects.create(nombre="Virtual Extendida", activo=True)
+
+    form = CursoForm(initial={"centro": centro})
+    tipo_choices = dict(form.fields["tipo"].choices)
+
+    assert tipo_choices["presencial"] == "Presencial"
+    assert tipo_choices["virtual_extendida"] == "Virtual Extendida"
+
+
+@pytest.mark.django_db
+def test_curso_form_tipo_choices_incluye_valores_legacy_de_cursos(vat_curso_base):
+    centro, _, modalidad = vat_curso_base
+    ModalidadCursada.objects.filter(id=modalidad.id).update(activo=False)
+    Curso.objects.create(
+        centro=centro,
+        nombre="Curso legacy mixto",
+        modalidad=modalidad,
+        estado="planificado",
+        tipo=["mixto"],
+    )
+
+    form = CursoForm(initial={"centro": centro})
+    tipo_choices = dict(form.fields["tipo"].choices)
+
+    assert tipo_choices["mixto"] == "Mixto"
+
+
+@pytest.mark.django_db
 def test_curso_form_requiere_costo_creditos_si_usa_voucher(vat_curso_base):
     centro, ubicacion, modalidad = vat_curso_base
     programa = Programa.objects.create(nombre="Programa Test Costo")
@@ -8171,13 +8318,19 @@ def _wizard_url(wizard_setup):
 
 
 def _step1_data(wizard_setup):
+    # La validacion del paso 1 exige fecha_inicio >= hoy. Derivar las fechas de
+    # la fecha actual evita que el dato quede en el pasado con el correr del
+    # tiempo (antes estaba hardcodeado "2026-06-01" y rompia a partir del dia
+    # siguiente, dejando el wizard atascado en el paso "info").
+    fecha_inicio = timezone.localdate() + timedelta(days=1)
+    fecha_fin = fecha_inicio + timedelta(days=180)
     return {
         f"{_WIZARD_PREFIX}-current_step": "info",
         "info-ubicacion": str(wizard_setup.ubicacion.pk),
         "info-cupo_total": "20",
         "info-estado": "planificada",
-        "info-fecha_inicio": "2026-06-01",
-        "info-fecha_fin": "2026-12-31",
+        "info-fecha_inicio": fecha_inicio.isoformat(),
+        "info-fecha_fin": fecha_fin.isoformat(),
         "info-observaciones": "",
     }
 
@@ -8254,9 +8407,10 @@ def test_wizard_step1_fecha_inicio_pasada_es_rechazada(client, wizard_setup):
 def test_wizard_step1_fecha_fin_igual_a_inicio_es_rechazada(client, wizard_setup):
     user = _wizard_referente_user(wizard_setup)
     client.force_login(user)
+    misma_fecha = (date.today() + timedelta(days=30)).isoformat()
     post = _step1_data(wizard_setup)
-    post["info-fecha_inicio"] = "2026-06-01"
-    post["info-fecha_fin"] = "2026-06-01"
+    post["info-fecha_inicio"] = misma_fecha
+    post["info-fecha_fin"] = misma_fecha
     response = client.post(_wizard_url(wizard_setup), post)
     assert response.status_code == 200
     form = response.context["wizard"]["form"]

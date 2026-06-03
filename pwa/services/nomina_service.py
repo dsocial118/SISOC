@@ -92,15 +92,7 @@ def _active_nomina_queryset(*, comedor_id: int):
 
 
 def get_periodo_mensual_actual() -> date:
-    today = timezone.localdate()
-    if today.day <= 10:
-        previous_month = today.month - 1
-        year = today.year
-        if previous_month == 0:
-            previous_month = 12
-            year -= 1
-        return date(year, previous_month, 1)
-    return today.replace(day=1)
+    return timezone.localdate().replace(day=1)
 
 
 def asistencia_nomina_habilitada() -> bool:

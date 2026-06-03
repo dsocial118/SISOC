@@ -305,6 +305,20 @@ class ArchivoAdmision(SoftDeleteModelMixin, models.Model):
     nombre_personalizado = models.CharField(
         max_length=255, blank=True, null=True, verbose_name="Nombre personalizado"
     )
+    archivo_organizacion_origen = models.ForeignKey(
+        "organizaciones.ArchivoOrganizacion",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="archivos_admision_materializados",
+        verbose_name="Archivo de organizacion de origen",
+        help_text=(
+            "Si el documento fue materializado desde el legajo de la"
+            " organizacion, referencia al ArchivoOrganizacion de origen."
+            " Permite replicar el GDE y detectar cambios sin depender del"
+            " matching por nombre."
+        ),
+    )
     archivo = models.FileField(
         upload_to="admisiones/admisiones_archivos/", null=True, blank=True
     )
@@ -1241,3 +1255,37 @@ class NumeroGdeOrganizacion(models.Model):
             f"Archivo Org #{self.archivo_organizacion_id} - "
             f"GDE={self.numero_gde or '-'}"
         )
+
+
+class AdmisionDocOrgSnapshot(models.Model):
+    """Snapshot por admision del estado de la documentacion del legajo de la
+    Organizacion con el que la admision quedo sincronizada (issue #1799 Req 1).
+
+    Permite detectar que documentos del legajo cambiaron respecto de lo que la
+    admision ya tenia (incluye cambios de estado, p. ej. Pendiente -> Aceptado),
+    para mostrar la advertencia y listar los documentos modificados. Se indexa
+    por *slot logico* (``slot_key``): ``doc:{id}`` para documentos de catalogo y
+    ``custom:{id}`` para documentos adicionales (personalizados)."""
+
+    admision = models.ForeignKey(
+        Admision,
+        on_delete=models.CASCADE,
+        related_name="snapshots_doc_org",
+    )
+    slot_key = models.CharField(max_length=64)
+    etiqueta = models.CharField(max_length=255, blank=True, null=True)
+    token = models.CharField(max_length=255)
+    synced_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["admision", "slot_key"],
+                name="unq_snapshot_doc_org",
+            )
+        ]
+        verbose_name = "Snapshot de documentacion organizacional por admision"
+        verbose_name_plural = "Snapshots de documentacion organizacional por admision"
+
+    def __str__(self):
+        return f"Admision #{self.admision_id} - {self.etiqueta or self.slot_key}"
