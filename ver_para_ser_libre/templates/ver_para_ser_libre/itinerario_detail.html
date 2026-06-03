@@ -3,7 +3,8 @@
 
 {% block title %}{{ itinerario.codigo }}{% endblock %}
 {% block head %}
-    <link rel="stylesheet" href="{% static 'custom/css/ver_para_ser_libre.css' %}" />
+    <link rel="stylesheet"
+          href="{% static 'custom/css/ver_para_ser_libre.css' %}" />
 {% endblock %}
 {% block breadcrumb %}
     {% include "components/breadcrumb.html" with items=breadcrumb_items %}
@@ -11,61 +12,76 @@
 
 {% block content %}
     <div class="vpsl-page">
-    <div class="card vpsl-title-card vpsl-header">
-        <div class="card-body d-flex flex-wrap justify-content-between align-items-center gap-3">
-            <div>
-                <h2 class="vpsl-title">{{ itinerario.codigo }}</h2>
-                <p class="vpsl-subtitle">{{ itinerario.provincia }} &middot; {{ itinerario.fecha_inicio|date:"d/m/Y" }} - {{ itinerario.fecha_fin|date:"d/m/Y" }}</p>
-                <span class="badge bg-info vpsl-status-badge">{{ itinerario.get_estado_display }}</span>
-            </div>
-            <div class="vpsl-actions">
-            {% if puede_exportar %}
-                <a href="{% url 'vpsl_itinerario_export' itinerario.pk %}" class="btn btn-outline-primary"><i class="bi bi-download"></i> Exportar</a>
-            {% endif %}
-            {% if puede_editar_itinerario %}
-                <a href="{% url 'vpsl_itinerario_update' itinerario.pk %}" class="btn btn-warning"><i class="bi bi-pencil"></i> Editar</a>
-            {% endif %}
-            {% if mostrar_subsanar %}
-                <a href="{% url 'vpsl_itinerario_subsanar' itinerario.pk %}" class="btn btn-warning"><i class="bi bi-arrow-repeat"></i> Subsanar</a>
-            {% endif %}
-            {% if puede_crear_jornada %}
-                <a href="{% url 'vpsl_jornada_create' itinerario.pk %}" class="btn btn-primary"><i class="bi bi-calendar-plus"></i> Nueva jornada</a>
-            {% endif %}
-            {% if mostrar_presentar %}
-                <form method="post" action="{% url 'vpsl_itinerario_presentar' itinerario.pk %}">
-                    {% csrf_token %}
-                    <button type="submit" class="btn btn-success"><i class="bi bi-send"></i> Presentar</button>
-                </form>
-            {% endif %}
-            {% if mostrar_aprobar %}
-                <button type="button"
-                        class="btn btn-outline-success"
-                        data-bs-toggle="modal"
-                        data-bs-target="#modalEvaluacionItinerario"><i class="bi bi-clipboard-check"></i> Evaluar</button>
-            {% endif %}
+        <div class="card vpsl-title-card vpsl-header">
+            <div class="card-body d-flex flex-wrap justify-content-between align-items-center gap-3">
+                <div>
+                    <h2 class="vpsl-title">{{ itinerario.codigo }}</h2>
+                    <p class="vpsl-subtitle">
+                        {{ itinerario.provincia }} &middot; {{ itinerario.fecha_inicio|date:"d/m/Y" }} - {{ itinerario.fecha_fin|date:"d/m/Y" }}
+                    </p>
+                    <span class="badge bg-info vpsl-status-badge">{{ itinerario.get_estado_display }}</span>
+                </div>
+                <div class="vpsl-actions">
+                    {% if puede_exportar %}
+                        <a href="{% url 'vpsl_itinerario_export' itinerario.pk %}"
+                           class="btn btn-outline-primary"><i class="bi bi-download"></i> Exportar</a>
+                    {% endif %}
+                    {% if puede_editar_itinerario %}
+                        <a href="{% url 'vpsl_itinerario_update' itinerario.pk %}"
+                           class="btn btn-warning"><i class="bi bi-pencil"></i> Editar</a>
+                    {% endif %}
+                    {% if mostrar_subsanar %}
+                        <a href="{% url 'vpsl_itinerario_subsanar' itinerario.pk %}"
+                           class="btn btn-warning"><i class="bi bi-arrow-repeat"></i> Subsanar</a>
+                    {% endif %}
+                    {% if puede_crear_jornada %}
+                        <a href="{% url 'vpsl_jornada_create' itinerario.pk %}"
+                           class="btn btn-primary"><i class="bi bi-calendar-plus"></i> Nueva jornada</a>
+                    {% endif %}
+                    {% if mostrar_presentar %}
+                        <form method="post"
+                              action="{% url 'vpsl_itinerario_presentar' itinerario.pk %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-success">
+                                <i class="bi bi-send"></i> Presentar
+                            </button>
+                        </form>
+                    {% endif %}
+                    {% if mostrar_aprobar %}
+                        <button type="button"
+                                class="btn btn-outline-success"
+                                data-bs-toggle="modal"
+                                data-bs-target="#modalEvaluacionItinerario">
+                            <i class="bi bi-clipboard-check"></i> Evaluar
+                        </button>
+                    {% endif %}
+                </div>
             </div>
         </div>
-    </div>
 
-    <div class="row g-3">
-        <div class="col-12 col-xl-4">
-            <div class="card h-100 vpsl-info-card">
-                <div class="card-header"><h3 class="card-title mb-0">Datos generales</h3></div>
-                <div class="card-body">
-                    <div class="vpsl-metric">
-                        <span class="vpsl-metric-label">Referente</span>
-                        <span class="vpsl-metric-value">{{ itinerario.referente_nombre }} {{ itinerario.referente_apellido }}</span>
+        <div class="row g-3">
+            <div class="col-12 col-xl-4">
+                <div class="card h-100 vpsl-info-card">
+                    <div class="card-header">
+                        <h3 class="card-title mb-0">Datos generales</h3>
                     </div>
-                    <div class="vpsl-metric">
-                        <span class="vpsl-metric-label">Contacto</span>
-                        <span class="vpsl-metric-value">{{ itinerario.referente_telefono|default:"-" }}<br>{{ itinerario.referente_email|default:"-" }}</span>
-                    </div>
-                    <div class="vpsl-metric">
-                        <span class="vpsl-metric-label">Matricula estimada</span>
-                        <span class="vpsl-metric-value">{{ itinerario.matricula_estimada|default:"-" }}</span>
-                    </div>
-                    <div class="mt-3">
-                        <h4 class="h6">Sedes tentativas</h4>
+                    <div class="card-body">
+                        <div class="vpsl-metric">
+                            <span class="vpsl-metric-label">Referente</span>
+                            <span class="vpsl-metric-value">{{ itinerario.referente_nombre }} {{ itinerario.referente_apellido }}</span>
+                        </div>
+                        <div class="vpsl-metric">
+                            <span class="vpsl-metric-label">Contacto</span>
+                            <span class="vpsl-metric-value">{{ itinerario.referente_telefono|default:"-" }}
+                                <br />
+                            {{ itinerario.referente_email|default:"-" }}</span>
+                        </div>
+                        <div class="vpsl-metric">
+                            <span class="vpsl-metric-label">Matricula estimada</span>
+                            <span class="vpsl-metric-value">{{ itinerario.matricula_estimada|default:"-" }}</span>
+                        </div>
+                        <div class="mt-3">
+                            <h4 class="h6">Sedes tentativas</h4>
                             {% for item in sedes_evaluadas %}
                                 {% with evaluacion=item.evaluacion %}
                                     <span class="badge d-inline-block mb-1 {% if evaluacion.estado == 'aprobado' %}bg-success{% elif evaluacion.estado == 'rechazado' %}bg-danger{% elif evaluacion.estado == 'subsanar' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
@@ -75,9 +91,9 @@
                             {% empty %}
                                 -
                             {% endfor %}
-                    </div>
-                    <div class="mt-3">
-                        <h4 class="h6">Carta</h4>
+                        </div>
+                        <div class="mt-3">
+                            <h4 class="h6">Carta</h4>
                             {% if itinerario.carta_referencia %}
                                 <span class="badge {% if itinerario.carta_referencia_estado == 'aprobado' %}bg-success{% elif itinerario.carta_referencia_estado == 'rechazado' %}bg-danger{% elif itinerario.carta_referencia_estado == 'subsanar' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
                                     Referencia: {{ itinerario.get_carta_referencia_estado_display }}
@@ -87,156 +103,209 @@
                                 Sin referencia
                             {% endif %}
                             {% if itinerario.carta_archivo %}
-                                <br>
+                                <br />
                                 <span class="badge {% if itinerario.carta_archivo_estado == 'aprobado' %}bg-success{% elif itinerario.carta_archivo_estado == 'rechazado' %}bg-danger{% elif itinerario.carta_archivo_estado == 'subsanar' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
                                     Archivo: {{ itinerario.get_carta_archivo_estado_display }}
                                 </span>
                                 <a href="{{ itinerario.carta_archivo.url }}">Ver adjunto</a>
                             {% endif %}
-                    </div>
+                        </div>
                         {% if itinerario.subsanacion_observaciones %}
                             <div class="alert alert-warning mt-3 mb-0">
-                                <strong>Pedido de subsanacion</strong><br>{{ itinerario.subsanacion_observaciones }}
+                                <strong>Pedido de subsanacion</strong>
+                                <br />
+                                {{ itinerario.subsanacion_observaciones }}
                             </div>
                         {% endif %}
+                    </div>
                 </div>
             </div>
-        </div>
-        <div class="col-12 col-xl-8">
-            <div class="card h-100 vpsl-table-card">
-                <div class="card-header"><h3 class="card-title mb-0">Jornadas</h3></div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-sm align-middle">
-                            <thead>
-                                <tr>
-                                    <th>Fecha</th>
-                                    <th>Sede</th>
-                                    <th>Localidad</th>
-                                    <th>Vehiculo</th>
-                                    <th>Estado</th>
-                                    <th>Registros</th>
-                                    <th>Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for jornada in jornadas %}
+            <div class="col-12 col-xl-8">
+                <div class="card h-100 vpsl-table-card">
+                    <div class="card-header">
+                        <h3 class="card-title mb-0">Jornadas</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-sm align-middle">
+                                <thead>
                                     <tr>
-                                        <td>{{ jornada.fecha|date:"d/m/Y" }}</td>
-                                        <td>{{ jornada.sede }}</td>
-                                        <td>{{ jornada.sede_vpsl.localidad|default:jornada.localidad|default:"-" }}</td>
-                                        <td>{{ jornada.get_vehiculo_display|default:"-" }}</td>
-                                        <td><span class="badge bg-secondary">{{ jornada.get_estado_display }}</span></td>
-                                        <td>{{ jornada.registros_total }}</td>
-                                        <td><a href="{% url 'vpsl_jornada_detail' jornada.pk %}" class="btn btn-sm btn-primary">Ver</a></td>
+                                        <th>Fecha</th>
+                                        <th>Sede</th>
+                                        <th>Localidad</th>
+                                        <th>Vehiculo</th>
+                                        <th>Estado</th>
+                                        <th>Registros</th>
+                                        <th>Acciones</th>
                                     </tr>
-                                {% empty %}
-                                    <tr><td colspan="7" class="text-center text-muted">Sin jornadas cargadas.</td></tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody>
+                                    {% for jornada in jornadas %}
+                                        <tr>
+                                            <td>{{ jornada.fecha|date:"d/m/Y" }}</td>
+                                            <td>{{ jornada.sede }}</td>
+                                            <td>{{ jornada.sede_vpsl.localidad|default:jornada.localidad|default:"-" }}</td>
+                                            <td>{{ jornada.get_vehiculo_display|default:"-" }}</td>
+                                            <td>
+                                                <span class="badge bg-secondary">{{ jornada.get_estado_display }}</span>
+                                            </td>
+                                            <td>{{ jornada.registros_total }}</td>
+                                            <td>
+                                                <a href="{% url 'vpsl_jornada_detail' jornada.pk %}"
+                                                   class="btn btn-sm btn-primary">Ver</a>
+                                            </td>
+                                        </tr>
+                                    {% empty %}
+                                        <tr>
+                                            <td colspan="7" class="text-center text-muted">Sin jornadas cargadas.</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
 
-    {% if mostrar_aprobar %}
-        <div class="modal fade" id="modalEvaluacionItinerario" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog modal-xl modal-dialog-scrollable modal-fullscreen-lg-down vpsl-evaluacion-modal">
-                <div class="modal-content vpsl-evaluacion-content">
-                    <form method="post"
-                          action="{% url 'vpsl_itinerario_aprobar' itinerario.pk %}"
-                          id="formEvaluacionItinerario"
-                          class="vpsl-evaluacion-form">
-                        {% csrf_token %}
-                        <input type="hidden" name="accion_evaluacion" id="accion_evaluacion" value="aprobar">
-                        <div class="modal-header">
-                            <h5 class="modal-title">Evaluacion del itinerario {{ itinerario.codigo }}</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-                        </div>
-                        <div class="modal-body vpsl-evaluacion-body">
-                            <div class="row g-3 mb-3">
-                                <div class="col-12 col-md-4">
-                                    <strong>Provincia</strong><br>{{ itinerario.provincia }}
-                                </div>
-                                <div class="col-12 col-md-4">
-                                    <strong>Fechas</strong><br>{{ itinerario.fecha_inicio|date:"d/m/Y" }} - {{ itinerario.fecha_fin|date:"d/m/Y" }}
-                                </div>
-                                <div class="col-12 col-md-4">
-                                    <strong>Referente</strong><br>{{ itinerario.referente_nombre }} {{ itinerario.referente_apellido }}
-                                </div>
+        {% if mostrar_aprobar %}
+            <div class="modal fade"
+                 id="modalEvaluacionItinerario"
+                 tabindex="-1"
+                 aria-hidden="true">
+                <div class="modal-dialog modal-xl modal-dialog-scrollable modal-fullscreen-lg-down vpsl-evaluacion-modal">
+                    <div class="modal-content vpsl-evaluacion-content">
+                        <form method="post"
+                              action="{% url 'vpsl_itinerario_aprobar' itinerario.pk %}"
+                              id="formEvaluacionItinerario"
+                              class="vpsl-evaluacion-form">
+                            {% csrf_token %}
+                            <input type="hidden"
+                                   name="accion_evaluacion"
+                                   id="accion_evaluacion"
+                                   value="aprobar" />
+                            <div class="modal-header">
+                                <h5 class="modal-title">Evaluacion del itinerario {{ itinerario.codigo }}</h5>
+                                <button type="button"
+                                        class="btn-close"
+                                        data-bs-dismiss="modal"
+                                        aria-label="Cerrar"></button>
                             </div>
-
-                            <h6>Cartas</h6>
-                            {% if itinerario.carta_referencia %}
-                                <div class="border rounded p-3 mb-2">
-                                    <label class="form-label">Carta referencia: {{ itinerario.carta_referencia }}</label>
-                                    <select name="carta_referencia_estado" class="form-control evaluacion-carta" required>
-                                        {% for value,label in estado_evaluacion_choices %}
-                                            <option value="{{ value }}" {% if itinerario.carta_referencia_estado == value %}selected{% endif %}>{{ label }}</option>
-                                        {% endfor %}
-                                    </select>
-                                </div>
-                            {% endif %}
-                            {% if itinerario.carta_archivo %}
-                                <div class="border rounded p-3 mb-2">
-                                    <label class="form-label">Carta archivo: <a href="{{ itinerario.carta_archivo.url }}">Ver adjunto</a></label>
-                                    <select name="carta_archivo_estado" class="form-control evaluacion-carta" required>
-                                        {% for value,label in estado_evaluacion_choices %}
-                                            <option value="{{ value }}" {% if itinerario.carta_archivo_estado == value %}selected{% endif %}>{{ label }}</option>
-                                        {% endfor %}
-                                    </select>
-                                </div>
-                            {% endif %}
-
-                            <h6 class="mt-4">Sedes tentativas</h6>
-                            {% for item in sedes_evaluadas %}
-                                <div class="border rounded p-3 mb-2">
-                                    <div class="row g-2">
-                                        <div class="col-12 col-lg-5">
-                                            <strong>{{ item.sede.nombre }}</strong><br>
-                                            {{ item.sede.localidad }} &middot; {{ item.sede.domicilio }}
-                                        </div>
-                                        <div class="col-12 col-lg-3">
-                                            <label class="form-label">Estado</label>
-                                            <select name="sede_{{ item.sede.pk }}_estado" class="form-control evaluacion-sede" required>
-                                                {% for value,label in estado_evaluacion_choices %}
-                                                    <option value="{{ value }}" {% if item.evaluacion.estado == value %}selected{% endif %}>{{ label }}</option>
-                                                {% endfor %}
-                                            </select>
-                                        </div>
-                                        <div class="col-12 col-lg-4">
-                                            <label class="form-label">Observacion</label>
-                                            <input type="text"
-                                                   name="sede_{{ item.sede.pk }}_observacion"
-                                                   value="{{ item.evaluacion.observacion }}"
-                                                   class="form-control">
-                                        </div>
+                            <div class="modal-body vpsl-evaluacion-body">
+                                <div class="row g-3 mb-3">
+                                    <div class="col-12 col-md-4">
+                                        <strong>Provincia</strong>
+                                        <br />
+                                        {{ itinerario.provincia }}
+                                    </div>
+                                    <div class="col-12 col-md-4">
+                                        <strong>Fechas</strong>
+                                        <br />
+                                        {{ itinerario.fecha_inicio|date:"d/m/Y" }} - {{ itinerario.fecha_fin|date:"d/m/Y" }}
+                                    </div>
+                                    <div class="col-12 col-md-4">
+                                        <strong>Referente</strong>
+                                        <br />
+                                        {{ itinerario.referente_nombre }} {{ itinerario.referente_apellido }}
                                     </div>
                                 </div>
-                            {% endfor %}
 
-                            <div class="mt-3">
-                                <label class="form-label">Campos o motivos a subsanar</label>
-                                <textarea name="subsanacion_observaciones"
-                                          id="subsanacion_observaciones"
-                                          rows="3"
-                                          class="form-control">{{ itinerario.subsanacion_observaciones }}</textarea>
+                                <h6>Cartas</h6>
+                                {% if itinerario.carta_referencia %}
+                                    <div class="border rounded p-3 mb-2">
+                                        <label class="form-label">Carta referencia: {{ itinerario.carta_referencia }}</label>
+                                        <select name="carta_referencia_estado"
+                                                class="form-control evaluacion-carta"
+                                                required>
+                                            {% for value,label in estado_evaluacion_choices %}
+                                                <option value="{{ value }}"
+                                                        {% if itinerario.carta_referencia_estado == value %}selected{% endif %}>
+                                                    {{ label }}
+                                                </option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                {% endif %}
+                                {% if itinerario.carta_archivo %}
+                                    <div class="border rounded p-3 mb-2">
+                                        <label class="form-label">
+                                            Carta archivo: <a href="{{ itinerario.carta_archivo.url }}">Ver adjunto</a>
+                                        </label>
+                                        <select name="carta_archivo_estado"
+                                                class="form-control evaluacion-carta"
+                                                required>
+                                            {% for value,label in estado_evaluacion_choices %}
+                                                <option value="{{ value }}"
+                                                        {% if itinerario.carta_archivo_estado == value %}selected{% endif %}>
+                                                    {{ label }}
+                                                </option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                {% endif %}
+
+                                <h6 class="mt-4">Sedes tentativas</h6>
+                                {% for item in sedes_evaluadas %}
+                                    <div class="border rounded p-3 mb-2">
+                                        <div class="row g-2">
+                                            <div class="col-12 col-lg-5">
+                                                <strong>{{ item.sede.nombre }}</strong>
+                                                <br />
+                                                {{ item.sede.localidad }} &middot; {{ item.sede.domicilio }}
+                                            </div>
+                                            <div class="col-12 col-lg-3">
+                                                <label class="form-label">Estado</label>
+                                                <select name="sede_{{ item.sede.pk }}_estado"
+                                                        class="form-control evaluacion-sede"
+                                                        required>
+                                                    {% for value,label in estado_evaluacion_choices %}
+                                                        <option value="{{ value }}"
+                                                                {% if item.evaluacion.estado == value %}selected{% endif %}>
+                                                            {{ label }}
+                                                        </option>
+                                                    {% endfor %}
+                                                </select>
+                                            </div>
+                                            <div class="col-12 col-lg-4">
+                                                <label class="form-label">Observacion</label>
+                                                <input type="text"
+                                                       name="sede_{{ item.sede.pk }}_observacion"
+                                                       value="{{ item.evaluacion.observacion }}"
+                                                       class="form-control" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+
+                                <div class="mt-3">
+                                    <label class="form-label">Campos o motivos a subsanar</label>
+                                    <textarea name="subsanacion_observaciones"
+                                              id="subsanacion_observaciones"
+                                              rows="3"
+                                              class="form-control">{{ itinerario.subsanacion_observaciones }}</textarea>
+                                </div>
+                                <div id="evaluacion-feedback" class="alert alert-info mt-3 mb-0"></div>
                             </div>
-                            <div id="evaluacion-feedback" class="alert alert-info mt-3 mb-0"></div>
-                        </div>
-                        <div class="modal-footer vpsl-evaluacion-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                            <button type="submit" class="btn btn-danger" data-accion="rechazar" id="btn-rechazar">Rechazar</button>
-                            <button type="submit" class="btn btn-warning" data-accion="subsanar" id="btn-subsanar">Subsanacion</button>
-                            <button type="submit" class="btn btn-success" data-accion="aprobar" id="btn-aprobar">Aprobar</button>
-                        </div>
-                    </form>
+                            <div class="modal-footer vpsl-evaluacion-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                <button type="submit"
+                                        class="btn btn-danger"
+                                        data-accion="rechazar"
+                                        id="btn-rechazar">Rechazar</button>
+                                <button type="submit"
+                                        class="btn btn-warning"
+                                        data-accion="subsanar"
+                                        id="btn-subsanar">Subsanacion</button>
+                                <button type="submit"
+                                        class="btn btn-success"
+                                        data-accion="aprobar"
+                                        id="btn-aprobar">Aprobar</button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
             </div>
-        </div>
-    {% endif %}
+        {% endif %}
     </div>
 {% endblock %}
 
@@ -352,6 +421,6 @@
             });
             refresh();
         });
-    </script>
-{% endif %}
+        </script>
+    {% endif %}
 {% endblock %}

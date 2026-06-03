@@ -3,7 +3,8 @@
 
 {% block title %}Itinerario VPSL{% endblock %}
 {% block head %}
-    <link rel="stylesheet" href="{% static 'custom/css/ver_para_ser_libre.css' %}" />
+    <link rel="stylesheet"
+          href="{% static 'custom/css/ver_para_ser_libre.css' %}" />
 {% endblock %}
 {% block breadcrumb %}
     {% include "components/breadcrumb.html" with items=breadcrumb_items %}
@@ -54,7 +55,9 @@
                                 {% if form.subsanacion_carta_archivo %}
                                     <section class="vpsl-section">
                                         <div class="vpsl-section-header">
-                                            <div class="vpsl-section-icon"><i class="bi bi-file-earmark-arrow-up"></i></div>
+                                            <div class="vpsl-section-icon">
+                                                <i class="bi bi-file-earmark-arrow-up"></i>
+                                            </div>
                                             <div>
                                                 <h3 class="vpsl-section-title">Carta archivo</h3>
                                                 <p class="vpsl-section-subtitle">Adjunte la documentacion corregida solicitada por Nacion</p>
@@ -79,7 +82,9 @@
                                 {% if form.subsanacion_sede_fields %}
                                     <section class="vpsl-section">
                                         <div class="vpsl-section-header">
-                                            <div class="vpsl-section-icon"><i class="bi bi-geo-alt"></i></div>
+                                            <div class="vpsl-section-icon">
+                                                <i class="bi bi-geo-alt"></i>
+                                            </div>
                                             <div>
                                                 <h3 class="vpsl-section-title">Sedes a subsanar</h3>
                                                 <p class="vpsl-section-subtitle">Cambie solamente las sedes marcadas para correccion</p>
@@ -104,120 +109,128 @@
                             </div>
                         {% else %}
                             <div class="vpsl-form-shell">
-                            <section class="vpsl-section">
-                                <div class="vpsl-section-header">
-                                    <div class="vpsl-section-icon"><i class="bi bi-calendar-range"></i></div>
-                                    <div>
-                                        <h3 class="vpsl-section-title">Datos generales</h3>
-                                        <p class="vpsl-section-subtitle">Provincia y rango de fechas del itinerario</p>
-                                    </div>
-                                </div>
-                                <div class="vpsl-section-body">
-                                    <div class="row g-3">
-                                        {% for field in form %}
-                                            {% if field.name == "provincia" or field.name == "fecha_inicio" or field.name == "fecha_fin" %}
-                                                <div class="col-12 col-md-4">
-                                                    <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
-                                                    {{ field }}
-                                                    {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
-                                                    {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
-                                                </div>
-                                            {% endif %}
-                                        {% endfor %}
-                                    </div>
-                                </div>
-                            </section>
-                            <section class="vpsl-section">
-                                <div class="vpsl-section-header">
-                                    <div class="vpsl-section-icon"><i class="bi bi-file-earmark-arrow-up"></i></div>
-                                    <div>
-                                        <h3 class="vpsl-section-title">Documentacion</h3>
-                                        <p class="vpsl-section-subtitle">Carta archivo obligatoria para presentar el itinerario</p>
-                                    </div>
-                                </div>
-                                <div class="vpsl-section-body">
-                                    <div class="row g-3">
-                                        {% for field in form %}
-                                            {% if field.name == "carta_archivo" %}
-                                                <div class="col-12 col-md-6 vpsl-file-field">
-                                                    <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
-                                                    {{ field }}
-                                                    {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
-                                                    {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
-                                                </div>
-                                            {% endif %}
-                                        {% endfor %}
-                                    </div>
-                                </div>
-                            </section>
-                            <section class="vpsl-section">
-                                <div class="vpsl-section-header">
-                                    <div class="vpsl-section-icon"><i class="bi bi-geo-alt"></i></div>
-                                    <div>
-                                        <h3 class="vpsl-section-title">Sedes tentativas</h3>
-                                        <p class="vpsl-section-subtitle">Filtre por localidad y seleccione sedes del itinerario</p>
-                                    </div>
-                                </div>
-                                <div class="vpsl-section-body">
-                                    <div class="row g-3">
-                                        {% for field in form %}
-                                            {% if field.name == "localidad_filtro" %}
-                                                <div class="col-12 col-md-6">
-                                                    <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
-                                                    {{ field }}
-                                                    {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
-                                                </div>
-                                            {% elif field.name == "sedes" %}
-                                                <div class="col-12">
-                                                    <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
-                                                    {{ field }}
-                                                    <div class="form-text">Las localidades se heredan de las sedes seleccionadas.</div>
-                                                    <div id="sedes-localidades" class="mt-2 d-flex flex-wrap gap-2"></div>
-                                                    {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
-                                                </div>
-                                            {% endif %}
-                                        {% endfor %}
-                                    </div>
-                                </div>
-                            </section>
-                            <section class="vpsl-section">
-                                <div class="vpsl-section-header">
-                                    <div class="vpsl-section-icon"><i class="bi bi-person-lines-fill"></i></div>
-                                    <div>
-                                        <h3 class="vpsl-section-title">Referente y observaciones</h3>
-                                        <p class="vpsl-section-subtitle">Contacto operativo y notas internas</p>
-                                    </div>
-                                </div>
-                                <div class="vpsl-section-body">
-                                    <div class="row g-3">
-                                        <div class="col-12 col-md-6">
-                                            <label class="form-label" for="{{ form.referente_nombre.id_for_label }}">{{ form.referente_nombre.label }}</label>
-                                            {{ form.referente_nombre }}
-                                            {% for error in form.referente_nombre.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                                <section class="vpsl-section">
+                                    <div class="vpsl-section-header">
+                                        <div class="vpsl-section-icon">
+                                            <i class="bi bi-calendar-range"></i>
                                         </div>
-                                        <div class="col-12 col-md-6">
-                                            <label class="form-label" for="{{ form.referente_apellido.id_for_label }}">{{ form.referente_apellido.label }}</label>
-                                            {{ form.referente_apellido }}
-                                            {% for error in form.referente_apellido.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
-                                        </div>
-                                        <div class="col-12 col-md-6">
-                                            <label class="form-label" for="{{ form.referente_telefono.id_for_label }}">{{ form.referente_telefono.label }}</label>
-                                            {{ form.referente_telefono }}
-                                            {% for error in form.referente_telefono.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
-                                        </div>
-                                        <div class="col-12 col-md-6">
-                                            <label class="form-label" for="{{ form.referente_email.id_for_label }}">{{ form.referente_email.label }}</label>
-                                            {{ form.referente_email }}
-                                            {% for error in form.referente_email.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
-                                        </div>
-                                        <div class="col-12">
-                                            <label class="form-label" for="{{ form.observaciones.id_for_label }}">{{ form.observaciones.label }}</label>
-                                            {{ form.observaciones }}
-                                            {% for error in form.observaciones.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                                        <div>
+                                            <h3 class="vpsl-section-title">Datos generales</h3>
+                                            <p class="vpsl-section-subtitle">Provincia y rango de fechas del itinerario</p>
                                         </div>
                                     </div>
-                                </div>
-                            </section>
+                                    <div class="vpsl-section-body">
+                                        <div class="row g-3">
+                                            {% for field in form %}
+                                                {% if field.name == "provincia" or field.name == "fecha_inicio" or field.name == "fecha_fin" %}
+                                                    <div class="col-12 col-md-4">
+                                                        <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                                                        {{ field }}
+                                                        {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+                                                        {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                                                    </div>
+                                                {% endif %}
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                </section>
+                                <section class="vpsl-section">
+                                    <div class="vpsl-section-header">
+                                        <div class="vpsl-section-icon">
+                                            <i class="bi bi-file-earmark-arrow-up"></i>
+                                        </div>
+                                        <div>
+                                            <h3 class="vpsl-section-title">Documentacion</h3>
+                                            <p class="vpsl-section-subtitle">Carta archivo obligatoria para presentar el itinerario</p>
+                                        </div>
+                                    </div>
+                                    <div class="vpsl-section-body">
+                                        <div class="row g-3">
+                                            {% for field in form %}
+                                                {% if field.name == "carta_archivo" %}
+                                                    <div class="col-12 col-md-6 vpsl-file-field">
+                                                        <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                                                        {{ field }}
+                                                        {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+                                                        {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                                                    </div>
+                                                {% endif %}
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                </section>
+                                <section class="vpsl-section">
+                                    <div class="vpsl-section-header">
+                                        <div class="vpsl-section-icon">
+                                            <i class="bi bi-geo-alt"></i>
+                                        </div>
+                                        <div>
+                                            <h3 class="vpsl-section-title">Sedes tentativas</h3>
+                                            <p class="vpsl-section-subtitle">Filtre por localidad y seleccione sedes del itinerario</p>
+                                        </div>
+                                    </div>
+                                    <div class="vpsl-section-body">
+                                        <div class="row g-3">
+                                            {% for field in form %}
+                                                {% if field.name == "localidad_filtro" %}
+                                                    <div class="col-12 col-md-6">
+                                                        <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                                                        {{ field }}
+                                                        {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                                                    </div>
+                                                {% elif field.name == "sedes" %}
+                                                    <div class="col-12">
+                                                        <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                                                        {{ field }}
+                                                        <div class="form-text">Las localidades se heredan de las sedes seleccionadas.</div>
+                                                        <div id="sedes-localidades" class="mt-2 d-flex flex-wrap gap-2"></div>
+                                                        {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                                                    </div>
+                                                {% endif %}
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                </section>
+                                <section class="vpsl-section">
+                                    <div class="vpsl-section-header">
+                                        <div class="vpsl-section-icon">
+                                            <i class="bi bi-person-lines-fill"></i>
+                                        </div>
+                                        <div>
+                                            <h3 class="vpsl-section-title">Referente y observaciones</h3>
+                                            <p class="vpsl-section-subtitle">Contacto operativo y notas internas</p>
+                                        </div>
+                                    </div>
+                                    <div class="vpsl-section-body">
+                                        <div class="row g-3">
+                                            <div class="col-12 col-md-6">
+                                                <label class="form-label" for="{{ form.referente_nombre.id_for_label }}">{{ form.referente_nombre.label }}</label>
+                                                {{ form.referente_nombre }}
+                                                {% for error in form.referente_nombre.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                                            </div>
+                                            <div class="col-12 col-md-6">
+                                                <label class="form-label" for="{{ form.referente_apellido.id_for_label }}">{{ form.referente_apellido.label }}</label>
+                                                {{ form.referente_apellido }}
+                                                {% for error in form.referente_apellido.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                                            </div>
+                                            <div class="col-12 col-md-6">
+                                                <label class="form-label" for="{{ form.referente_telefono.id_for_label }}">{{ form.referente_telefono.label }}</label>
+                                                {{ form.referente_telefono }}
+                                                {% for error in form.referente_telefono.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                                            </div>
+                                            <div class="col-12 col-md-6">
+                                                <label class="form-label" for="{{ form.referente_email.id_for_label }}">{{ form.referente_email.label }}</label>
+                                                {{ form.referente_email }}
+                                                {% for error in form.referente_email.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                                            </div>
+                                            <div class="col-12">
+                                                <label class="form-label" for="{{ form.observaciones.id_for_label }}">{{ form.observaciones.label }}</label>
+                                                {{ form.observaciones }}
+                                                {% for error in form.observaciones.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </section>
                             </div>
                         {% endif %}
                     </div>

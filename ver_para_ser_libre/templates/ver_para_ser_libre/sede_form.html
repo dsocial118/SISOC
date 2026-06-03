@@ -3,7 +3,8 @@
 
 {% block title %}Sede VPSL{% endblock %}
 {% block head %}
-    <link rel="stylesheet" href="{% static 'custom/css/ver_para_ser_libre.css' %}" />
+    <link rel="stylesheet"
+          href="{% static 'custom/css/ver_para_ser_libre.css' %}" />
 {% endblock %}
 {% block breadcrumb %}
     {% include "components/breadcrumb.html" with items=breadcrumb_items %}
@@ -31,7 +32,9 @@
                         <div class="vpsl-form-shell">
                             <section class="vpsl-section">
                                 <div class="vpsl-section-header">
-                                    <div class="vpsl-section-icon"><i class="bi bi-building"></i></div>
+                                    <div class="vpsl-section-icon">
+                                        <i class="bi bi-building"></i>
+                                    </div>
                                     <div>
                                         <h3 class="vpsl-section-title">Datos de la sede</h3>
                                         <p class="vpsl-section-subtitle">Identificacion escolar y contacto institucional</p>
@@ -53,7 +56,9 @@
                             </section>
                             <section class="vpsl-section">
                                 <div class="vpsl-section-header">
-                                    <div class="vpsl-section-icon"><i class="bi bi-geo-alt"></i></div>
+                                    <div class="vpsl-section-icon">
+                                        <i class="bi bi-geo-alt"></i>
+                                    </div>
                                     <div>
                                         <h3 class="vpsl-section-title">Ubicacion</h3>
                                         <p class="vpsl-section-subtitle">Coordenadas y previsualizacion del mapa</p>
@@ -86,7 +91,9 @@
                             </section>
                             <section class="vpsl-section">
                                 <div class="vpsl-section-header">
-                                    <div class="vpsl-section-icon"><i class="bi bi-clipboard-check"></i></div>
+                                    <div class="vpsl-section-icon">
+                                        <i class="bi bi-clipboard-check"></i>
+                                    </div>
                                     <div>
                                         <h3 class="vpsl-section-title">Checklist</h3>
                                         <p class="vpsl-section-subtitle">Condiciones criticas para habilitar jornadas</p>

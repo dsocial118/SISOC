@@ -3,7 +3,8 @@
 
 {% block title %}Registro nominal VPSL{% endblock %}
 {% block head %}
-    <link rel="stylesheet" href="{% static 'custom/css/ver_para_ser_libre.css' %}" />
+    <link rel="stylesheet"
+          href="{% static 'custom/css/ver_para_ser_libre.css' %}" />
 {% endblock %}
 {% block breadcrumb %}
     {% include "components/breadcrumb.html" with items=breadcrumb_items %}
@@ -18,7 +19,8 @@
                         <h2 class="vpsl-title">Registro nominal</h2>
                         <p class="vpsl-subtitle mb-0">{{ jornada.sede }} · {{ jornada.fecha|date:"d/m/Y" }}</p>
                     </div>
-                    <a href="{% url 'vpsl_jornada_detail' jornada.pk %}" class="btn btn-secondary">
+                    <a href="{% url 'vpsl_jornada_detail' jornada.pk %}"
+                       class="btn btn-secondary">
                         <i class="bi bi-arrow-left"></i> Volver
                     </a>
                 </div>
@@ -26,7 +28,10 @@
             <div class="card">
                 <form method="post" enctype="multipart/form-data">
                     {% csrf_token %}
-                    <input type="hidden" name="renaper_estado" id="renaper_estado" value="{% if object.validado_renaper %}validado{% elif object.no_verificar_renaper %}no_verificar{% endif %}">
+                    <input type="hidden"
+                           name="renaper_estado"
+                           id="renaper_estado"
+                           value="{% if object.validado_renaper %}validado{% elif object.no_verificar_renaper %}no_verificar{% endif %}" />
                     <div class="card-body">
                         {% include "ver_para_ser_libre/partials/form_errors.html" with form=form %}
                         {% if messages %}
@@ -44,7 +49,9 @@
                         <div class="vpsl-form-shell">
                             <section class="vpsl-section">
                                 <div class="vpsl-section-header">
-                                    <div class="vpsl-section-icon"><i class="bi bi-shield-check"></i></div>
+                                    <div class="vpsl-section-icon">
+                                        <i class="bi bi-shield-check"></i>
+                                    </div>
                                     <div>
                                         <h3 class="vpsl-section-title">Identificacion RENAPER</h3>
                                         <p class="vpsl-section-subtitle">Validacion del ciudadano y bloqueo de duplicados</p>
@@ -72,7 +79,9 @@
                             </section>
                             <section class="vpsl-section">
                                 <div class="vpsl-section-header">
-                                    <div class="vpsl-section-icon"><i class="bi bi-person-lines-fill"></i></div>
+                                    <div class="vpsl-section-icon">
+                                        <i class="bi bi-person-lines-fill"></i>
+                                    </div>
                                     <div>
                                         <h3 class="vpsl-section-title">Datos nominales</h3>
                                         <p class="vpsl-section-subtitle">Campos autocompletados por RENAPER y datos de contacto</p>
@@ -94,7 +103,9 @@
                             </section>
                             <section class="vpsl-section">
                                 <div class="vpsl-section-header">
-                                    <div class="vpsl-section-icon"><i class="bi bi-eyeglasses"></i></div>
+                                    <div class="vpsl-section-icon">
+                                        <i class="bi bi-eyeglasses"></i>
+                                    </div>
                                     <div>
                                         <h3 class="vpsl-section-title">Atencion oftalmologica</h3>
                                         <p class="vpsl-section-subtitle">Prescripcion, resultado y documentacion asociada</p>
@@ -102,7 +113,8 @@
                                 </div>
                                 <div class="vpsl-section-body">
                                     <div class="row g-3">
-                                        <div class="col-12 col-md-6" data-field-name="{{ form.prescripcion.name }}">
+                                        <div class="col-12 col-md-6"
+                                             data-field-name="{{ form.prescripcion.name }}">
                                             <label class="form-label" for="{{ form.prescripcion.id_for_label }}">{{ form.prescripcion.label }}</label>
                                             {{ form.prescripcion }}
                                             {% for error in form.prescripcion.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
@@ -114,7 +126,8 @@
                                                     {{ form.resultado }}
                                                     {% for error in form.resultado.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
                                                 </div>
-                                                <div class="col-12 col-md-6" data-field-name="{{ form.cantidad_lentes.name }}">
+                                                <div class="col-12 col-md-6"
+                                                     data-field-name="{{ form.cantidad_lentes.name }}">
                                                     <label class="form-label" for="{{ form.cantidad_lentes.id_for_label }}">{{ form.cantidad_lentes.label }}</label>
                                                     {{ form.cantidad_lentes }}
                                                     {% for error in form.cantidad_lentes.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
@@ -129,7 +142,10 @@
                                         <div class="col-12" data-field-name="{{ form.primera_vez_anteojos.name }}">
                                             <div class="form-check">
                                                 {{ form.primera_vez_anteojos }}
-                                                <label class="form-check-label" for="{{ form.primera_vez_anteojos.id_for_label }}">{{ form.primera_vez_anteojos.label }}</label>
+                                                <label class="form-check-label"
+                                                       for="{{ form.primera_vez_anteojos.id_for_label }}">
+                                                    {{ form.primera_vez_anteojos.label }}
+                                                </label>
                                             </div>
                                             {% for error in form.primera_vez_anteojos.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
                                         </div>
@@ -144,7 +160,8 @@
                         </div>
                     </div>
                     <div class="card-footer d-flex justify-content-end gap-2">
-                        <a href="{% url 'vpsl_jornada_detail' jornada.pk %}" class="btn btn-secondary">Volver</a>
+                        <a href="{% url 'vpsl_jornada_detail' jornada.pk %}"
+                           class="btn btn-secondary">Volver</a>
                         <button type="submit" class="btn btn-primary">{{ submit_text|default:"Guardar" }}</button>
                     </div>
                 </form>

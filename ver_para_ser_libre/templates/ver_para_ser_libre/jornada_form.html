@@ -3,7 +3,8 @@
 
 {% block title %}Jornada VPSL{% endblock %}
 {% block head %}
-    <link rel="stylesheet" href="{% static 'custom/css/ver_para_ser_libre.css' %}" />
+    <link rel="stylesheet"
+          href="{% static 'custom/css/ver_para_ser_libre.css' %}" />
 {% endblock %}
 {% block breadcrumb %}
     {% include "components/breadcrumb.html" with items=breadcrumb_items %}
@@ -16,9 +17,12 @@
                 <div class="card-body d-flex flex-wrap justify-content-between align-items-center gap-2">
                     <div>
                         <h2 class="vpsl-title">Jornada VPSL</h2>
-                        <p class="vpsl-subtitle mb-0">{{ itinerario.codigo }} · {{ itinerario.fecha_inicio|date:"d/m/Y" }} a {{ itinerario.fecha_fin|date:"d/m/Y" }}</p>
+                        <p class="vpsl-subtitle mb-0">
+                            {{ itinerario.codigo }} · {{ itinerario.fecha_inicio|date:"d/m/Y" }} a {{ itinerario.fecha_fin|date:"d/m/Y" }}
+                        </p>
                     </div>
-                    <a href="{% url 'vpsl_itinerario_detail' itinerario.pk %}" class="btn btn-secondary">
+                    <a href="{% url 'vpsl_itinerario_detail' itinerario.pk %}"
+                       class="btn btn-secondary">
                         <i class="bi bi-arrow-left"></i> Volver
                     </a>
                 </div>
@@ -34,7 +38,9 @@
                         <div class="vpsl-form-shell">
                             <section class="vpsl-section">
                                 <div class="vpsl-section-header">
-                                    <div class="vpsl-section-icon"><i class="bi bi-calendar-check"></i></div>
+                                    <div class="vpsl-section-icon">
+                                        <i class="bi bi-calendar-check"></i>
+                                    </div>
                                     <div>
                                         <h3 class="vpsl-section-title">Planificacion</h3>
                                         <p class="vpsl-section-subtitle">Fecha, sede y horario operativo</p>
@@ -76,15 +82,23 @@
                             </section>
                             <section class="vpsl-section">
                                 <div class="vpsl-section-header">
-                                    <div class="vpsl-section-icon"><i class="bi bi-person-vcard"></i></div>
+                                    <div class="vpsl-section-icon">
+                                        <i class="bi bi-person-vcard"></i>
+                                    </div>
                                     <div>
                                         <h3 class="vpsl-section-title">Referente de jornada</h3>
                                         <p class="vpsl-section-subtitle">Validacion RENAPER y datos de contacto</p>
                                     </div>
                                 </div>
                                 <div class="vpsl-section-body">
-                                    <input type="hidden" name="referente_nombre_renaper" id="referente_nombre_renaper" value="{{ object.referente_nombre|default:'' }}">
-                                    <input type="hidden" name="referente_apellido_renaper" id="referente_apellido_renaper" value="{{ object.referente_apellido|default:'' }}">
+                                    <input type="hidden"
+                                           name="referente_nombre_renaper"
+                                           id="referente_nombre_renaper"
+                                           value="{{ object.referente_nombre|default:'' }}" />
+                                    <input type="hidden"
+                                           name="referente_apellido_renaper"
+                                           id="referente_apellido_renaper"
+                                           value="{{ object.referente_apellido|default:'' }}" />
                                     <div class="row g-3">
                                         {% for field in form %}
                                             {% if field.name == "referente_dni" or field.name == "referente_sexo" or field.name == "referente_telefono" or field.name == "referente_email" %}
@@ -98,8 +112,12 @@
                                                         <button type="button" id="validar-renaper" class="btn btn-outline-primary">
                                                             <i class="bi bi-shield-check"></i> Validar RENAPER
                                                         </button>
-                                                        <div id="referente-renaper-resumen" class="alert alert-success mt-3 {% if not object.referente_validado_renaper %}d-none{% endif %}">
-                                                            Validado{% if object.referente_nombre or object.referente_apellido %}: {{ object.referente_nombre }} {{ object.referente_apellido }} - DNI {{ object.referente_dni }}{% endif %}
+                                                        <div id="referente-renaper-resumen"
+                                                             class="alert alert-success mt-3 {% if not object.referente_validado_renaper %}d-none{% endif %}">
+                                                            Validado
+                                                            {% if object.referente_nombre or object.referente_apellido %}
+                                                                : {{ object.referente_nombre }} {{ object.referente_apellido }} - DNI {{ object.referente_dni }}
+                                                            {% endif %}
                                                         </div>
                                                     </div>
                                                 {% endif %}
@@ -110,7 +128,9 @@
                             </section>
                             <section class="vpsl-section">
                                 <div class="vpsl-section-header">
-                                    <div class="vpsl-section-icon"><i class="bi bi-chat-square-text"></i></div>
+                                    <div class="vpsl-section-icon">
+                                        <i class="bi bi-chat-square-text"></i>
+                                    </div>
                                     <div>
                                         <h3 class="vpsl-section-title">Observaciones</h3>
                                         <p class="vpsl-section-subtitle">Notas complementarias de la jornada</p>
@@ -129,7 +149,8 @@
                         </div>
                     </div>
                     <div class="card-footer d-flex gap-2 justify-content-end">
-                        <a href="{% url 'vpsl_itinerario_detail' itinerario.pk %}" class="btn btn-secondary">Volver</a>
+                        <a href="{% url 'vpsl_itinerario_detail' itinerario.pk %}"
+                           class="btn btn-secondary">Volver</a>
                         <button type="submit" class="btn btn-primary">Guardar</button>
                     </div>
                 </form>
@@ -154,7 +175,7 @@
             return;
           }
           info.classList.remove("d-none");
-          info.innerHTML = `<strong>${data.nombre}</strong><br>Provincia: ${data.jurisdiccion}<br>Localidad: ${data.localidad}<br>Calle y altura: ${data.domicilio}`;
+          info.innerHTML = `<strong>${data.nombre}</strong><br />Provincia: ${data.jurisdiccion}<br />Localidad: ${data.localidad}<br />Calle y altura: ${data.domicilio}`;
         }
         select.addEventListener("change", render);
         render();

@@ -4,7 +4,8 @@
 {% block title %}Ver Para Ser Libres{% endblock %}
 {% block head %}
     <link rel="stylesheet" href="{% static 'custom/css/listModerno.css' %}" />
-    <link rel="stylesheet" href="{% static 'custom/css/ver_para_ser_libre.css' %}" />
+    <link rel="stylesheet"
+          href="{% static 'custom/css/ver_para_ser_libre.css' %}" />
 {% endblock %}
 {% block breadcrumb %}
     {% include "components/breadcrumb.html" with items=breadcrumb_items %}
@@ -22,14 +23,15 @@
                            name="busqueda"
                            class="form-control"
                            placeholder="Codigo, provincia, referente o sede"
-                           value="{{ filtros.busqueda }}">
+                           value="{{ filtros.busqueda }}" />
                 </div>
                 <div class="col-12 col-md-6 col-lg-2">
                     <label for="id_estado" class="form-label">Estado</label>
                     <select id="id_estado" name="estado" class="form-control">
                         <option value="">Todos</option>
                         {% for value,label in estado_choices %}
-                            <option value="{{ value }}" {% if filtros.estado == value %}selected{% endif %}>{{ label }}</option>
+                            <option value="{{ value }}"
+                                    {% if filtros.estado == value %}selected{% endif %}>{{ label }}</option>
                         {% endfor %}
                     </select>
                 </div>
@@ -40,12 +42,15 @@
                                id="id_provincia"
                                class="form-control bg-dark text-white"
                                value="{{ provincia_restringida }}"
-                               disabled>
+                               disabled />
                     {% else %}
                         <select id="id_provincia" name="provincia" class="form-control">
                             <option value="">Todas</option>
                             {% for provincia in provincias %}
-                                <option value="{{ provincia.pk }}" {% if filtros.provincia == provincia.pk|stringformat:"s" %}selected{% endif %}>{{ provincia.nombre }}</option>
+                                <option value="{{ provincia.pk }}"
+                                        {% if filtros.provincia == provincia.pk|stringformat:"s" %}selected{% endif %}>
+                                    {{ provincia.nombre }}
+                                </option>
                             {% endfor %}
                         </select>
                     {% endif %}
@@ -57,7 +62,7 @@
                            name="localidad"
                            class="form-control"
                            value="{{ filtros.localidad }}"
-                           placeholder="Localidad">
+                           placeholder="Localidad" />
                 </div>
                 <div class="col-12 col-md-3 col-lg-1">
                     <label for="id_fecha_desde" class="form-label">Desde</label>
@@ -65,7 +70,7 @@
                            id="id_fecha_desde"
                            name="fecha_desde"
                            class="form-control"
-                           value="{{ filtros.fecha_desde }}">
+                           value="{{ filtros.fecha_desde }}" />
                 </div>
                 <div class="col-12 col-md-3 col-lg-1">
                     <label for="id_fecha_hasta" class="form-label">Hasta</label>
@@ -73,13 +78,15 @@
                            id="id_fecha_hasta"
                            name="fecha_hasta"
                            class="form-control"
-                           value="{{ filtros.fecha_hasta }}">
+                           value="{{ filtros.fecha_hasta }}" />
                 </div>
             </div>
             <div class="d-flex flex-wrap justify-content-end gap-2 mt-3">
-                <a href="{% url 'vpsl_itinerario_create' %}" class="btn btn-primary btn-lg">Nuevo itinerario</a>
+                <a href="{% url 'vpsl_itinerario_create' %}"
+                   class="btn btn-primary btn-lg">Nuevo itinerario</a>
                 <button type="submit" class="btn btn-success btn-lg">Filtrar</button>
-                <a href="{% url 'vpsl_itinerario_list' %}" class="btn btn-secondary btn-lg">Resetear</a>
+                <a href="{% url 'vpsl_itinerario_list' %}"
+                   class="btn btn-secondary btn-lg">Resetear</a>
             </div>
         </form>
         <div class="row mt-5 max-width-100">
@@ -105,7 +112,9 @@
                                             <td>{{ itinerario.codigo }}</td>
                                             <td>{{ itinerario.provincia }}</td>
                                             <td>{{ itinerario.fecha_inicio|date:"d/m/Y" }} - {{ itinerario.fecha_fin|date:"d/m/Y" }}</td>
-                                            <td><span class="badge bg-info">{{ itinerario.get_estado_display }}</span></td>
+                                            <td>
+                                                <span class="badge bg-info">{{ itinerario.get_estado_display }}</span>
+                                            </td>
                                             <td>{{ itinerario.referente_nombre }} {{ itinerario.referente_apellido }}</td>
                                             <td>{{ itinerario.jornadas_total }}</td>
                                             <td>

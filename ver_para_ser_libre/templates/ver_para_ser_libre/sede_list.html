@@ -4,7 +4,8 @@
 {% block title %}Sedes VPSL{% endblock %}
 {% block head %}
     <link rel="stylesheet" href="{% static 'custom/css/listModerno.css' %}" />
-    <link rel="stylesheet" href="{% static 'custom/css/ver_para_ser_libre.css' %}" />
+    <link rel="stylesheet"
+          href="{% static 'custom/css/ver_para_ser_libre.css' %}" />
 {% endblock %}
 {% block breadcrumb %}
     {% include "components/breadcrumb.html" with items=breadcrumb_items %}
@@ -46,8 +47,10 @@
                                                 {% endif %}
                                             </td>
                                             <td class="d-flex flex-wrap gap-1">
-                                                <a href="{% url 'vpsl_sede_update' sede.pk %}" class="btn btn-sm btn-warning">Editar</a>
-                                                <a href="{% url 'vpsl_sede_delete' sede.pk %}" class="btn btn-sm btn-danger">Eliminar</a>
+                                                <a href="{% url 'vpsl_sede_update' sede.pk %}"
+                                                   class="btn btn-sm btn-warning">Editar</a>
+                                                <a href="{% url 'vpsl_sede_delete' sede.pk %}"
+                                                   class="btn btn-sm btn-danger">Eliminar</a>
                                             </td>
                                         </tr>
                                     {% empty %}
