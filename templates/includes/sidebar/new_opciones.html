@@ -98,7 +98,7 @@
             </ul>
         </li>
     {% endif %}
-    <li class="nav-item {% if 'comedores/' in pagina_actual or 'admisiones' in pagina_actual or 'acompanamiento' in pagina_actual or 'rendicioncuentasmensual' in pagina_actual %}menu-open{% endif %}"
+    <li class="nav-item {% if 'comedores/' in pagina_actual or 'admisiones' in pagina_actual or 'acompanamiento' in pagina_actual or 'rendicioncuentasmensual' in pagina_actual or 'ver-para-ser-libre' in pagina_actual %}menu-open{% endif %}"
         style="order: 2">
         <a href="#" class="nav-link">
             <i class="nav-icon fa fa-address-card"></i>
@@ -184,6 +184,24 @@
                        class="nav-link {% if 'centrodeinfancia/listar' in pagina_actual %}active{% endif %}">
                         <i class="nav-icon bi bi-emoji-smile-fill"></i>
                         <p>Centro de Infancia</p>
+                    </a>
+                </li>
+            {% endif %}
+            {% if not vat_sidebar_only and request.user|has_perm_code:"ver_para_ser_libre.view_itinerariovpsl" %}
+                <li class="nav-item">
+                    <a href="{% url 'vpsl_itinerario_list' %}"
+                       class="nav-link {% if 'ver-para-ser-libre' in pagina_actual %}active{% endif %}">
+                        <i class="nav-icon bi bi-eye-fill"></i>
+                        <p>Itinerarios VPSL</p>
+                    </a>
+                </li>
+            {% endif %}
+            {% if not vat_sidebar_only and request.user|has_perm_code:"ver_para_ser_libre.view_sedevpsl" %}
+                <li class="nav-item">
+                    <a href="{% url 'vpsl_sede_list' %}"
+                       class="nav-link {% if 'ver-para-ser-libre/sedes' in pagina_actual %}active{% endif %}">
+                        <i class="nav-icon bi bi-geo-alt-fill"></i>
+                        <p>Sedes VPSL</p>
                     </a>
                 </li>
             {% endif %}
