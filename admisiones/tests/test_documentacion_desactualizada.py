@@ -242,6 +242,9 @@ def setup_legajo_con_dos_docs():
         nombre="Org Multi Doc", tipo_entidad=tipo
     )
     comedor = Comedor.objects.create(nombre="Comedor Multi", organizacion=organizacion)
+    # EstadoAdmision necesarios para que _sincronizar_estado_documental no rompa FK.
+    EstadoAdmision.objects.create(pk=1, nombre="Pendiente")
+    EstadoAdmision.objects.create(pk=2, nombre="Doc en proceso")
     # pk=3 mapea a CATEGORIA_PERSONERIA en CATEGORIA_ORGANIZACIONAL_POR_TIPO_CONVENIO.
     tipo_convenio = TipoConvenio.objects.create(pk=3, nombre="Personería Jurídica")
     doc_org_1 = DocumentacionOrganizacion.objects.create(
@@ -344,3 +347,40 @@ def test_sin_cambios_no_dispara_advertencia_con_legajo_con_docs(
     )
     assert desactualizada is False
     assert labels == []
+
+
+# ---------------------------------------------------------------------------
+# Regresion Bug A path: confirmar_tipo_convenio_desde_organizacion (#1799)
+# ---------------------------------------------------------------------------
+
+
+def test_confirmar_tipo_convenio_inicializa_snapshot_y_detecta_cambios_posteriores(
+    setup_legajo_con_dos_docs,
+):
+    """Bug A regresion: confirmar_tipo_convenio_desde_organizacion debe llamar a
+    refrescar_snapshot, de lo contrario la primera modificacion del legajo DESPUES
+    de confirmar no dispara la advertencia (admision en estado 'convenio_seleccionado')."""
+    admision = setup_legajo_con_dos_docs["admision"]
+    archivo_org_1 = setup_legajo_con_dos_docs["archivo_org_1"]
+
+    # Simular el click en "Confirmar tipo de convenio" en la vista de edicion.
+    AdmisionService.confirmar_tipo_convenio_desde_organizacion(admision)
+
+    # Snapshot debe existir (refrescar fue llamado por confirmar).
+    snaps = list(AdmisionDocOrgSnapshot.objects.filter(admision=admision))
+    assert any(s.slot_key != "__init__" for s in snaps), (
+        "confirmar_tipo_convenio debe inicializar el snapshot con los docs del legajo"
+    )
+
+    # Ahora se modifica el primer doc del legajo.
+    archivo_org_1.estado = ArchivoOrganizacion.ESTADO_ACEPTADO
+    archivo_org_1.save(update_fields=["estado"])
+
+    desactualizada, labels = AdmisionService.admision_documentacion_desactualizada(
+        admision
+    )
+    assert desactualizada is True, (
+        "Tras confirmar_tipo_convenio, la primera modificacion del legajo "
+        "debe disparar la advertencia"
+    )
+    assert "DNI del Presidente" in labels

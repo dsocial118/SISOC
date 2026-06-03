@@ -1520,6 +1520,9 @@ class AdmisionService:
         admision.estado_admision = "convenio_seleccionado"
         admision.save(update_fields=["tipo_convenio", "estado_admision"])
         AdmisionService.congelar_documentacion_organizacional(admision)
+        # Sincronizar snapshot tras materializar docs: sin este paso la primera
+        # modificacion en el legajo no dispararia la advertencia (Bug A #1799).
+        AdmisionService.refrescar_snapshot_documentacion_organizacional(admision)
         return True, "Tipo de convenio precargado desde la organización."
 
     @staticmethod
