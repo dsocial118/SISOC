@@ -95,7 +95,9 @@ def _build_status_items(stats, items, total_cases):
     return summary
 
 
-def _build_metricas_principales(total_cases, ok_cases, incomplete_cases, comments_count):
+def _build_metricas_principales(
+    total_cases, ok_cases, incomplete_cases, comments_count
+):
     return [
         {
             "label": "Casos totales",
@@ -291,7 +293,10 @@ def _build_case_context(queryset, total_cases):
     ok_cases = queryset.filter(archivos_ok=True).count()
     incomplete_cases = total_cases - ok_cases
     comments_count = (
-        queryset.filter(historial_comentarios__isnull=False).values("id").distinct().count()
+        queryset.filter(historial_comentarios__isnull=False)
+        .values("id")
+        .distinct()
+        .count()
     )
 
     stats_validacion = _group_counts(queryset, "revision_tecnico")

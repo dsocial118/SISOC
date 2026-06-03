@@ -79,7 +79,7 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         });
 
-        quickCounter.textContent = `${visibleCount} registros visibles en esta pagina`;
+        quickCounter.textContent = `${visibleCount} ${visibleCount === 1 ? "registro visible" : "registros visibles"} en esta página`;
     };
 
     quickSearch.addEventListener("input", updateTableFilter);

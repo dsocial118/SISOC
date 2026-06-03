@@ -6,7 +6,12 @@ from ciudadanos.models import Ciudadano
 from core.models import Provincia
 from users.models import Profile
 
-from celiaquia.models import EstadoExpediente, EstadoLegajo, Expediente, ExpedienteCiudadano
+from celiaquia.models import (
+    EstadoExpediente,
+    EstadoLegajo,
+    Expediente,
+    ExpedienteCiudadano,
+)
 
 
 def _create_user_with_permission(username, provincia=None, es_provincial=False):

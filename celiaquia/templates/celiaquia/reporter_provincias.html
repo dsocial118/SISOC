@@ -23,10 +23,10 @@
     <div class="reporter-shell">
         <section class="reporter-hero">
             <div class="reporter-hero__copy">
-                <p class="reporter-eyebrow">Analitica operativa</p>
+                <p class="reporter-eyebrow">Analítica operativa</p>
                 <h2 class="reporter-hero__title">Panorama general de legajos por provincia</h2>
                 <p class="reporter-hero__subtitle">
-                    Una lectura mas clara del flujo de validacion, cruces y cupos para detectar cuellos de botella sin perder el detalle de cada caso.
+                    Una lectura más clara del flujo de validación, cruces y cupos para detectar cuellos de botella sin perder el detalle de cada caso.
                 </p>
                 <div class="reporter-hero__tags">
                     <span class="reporter-tag reporter-tag--accent">
@@ -48,7 +48,7 @@
                 </div>
             </div>
             <aside class="reporter-hero__focus">
-                <span class="reporter-focus__label">Lectura rapida</span>
+                <span class="reporter-focus__label">Lectura rápida</span>
                 {% if expedientes_por_provincia %}
                     <strong class="reporter-focus__title">{{ expedientes_por_provincia.0.nombre }}</strong>
                     <p class="reporter-focus__body">
@@ -66,7 +66,7 @@
         <section class="reporter-filters">
             <div class="reporter-panel__header reporter-panel__header--filters">
                 <div>
-                    <p class="reporter-panel__eyebrow">Exploracion</p>
+                    <p class="reporter-panel__eyebrow">Exploración</p>
                     <h3 class="reporter-panel__title">Filtros y atajos</h3>
                 </div>
                 {% if filtros_activos %}
@@ -117,7 +117,7 @@
                     </label>
 
                     <label class="reporter-field" for="revision_tecnico">
-                        <span class="reporter-field__label">Validacion tecnica</span>
+                        <span class="reporter-field__label">Validación técnica</span>
                         <select name="revision_tecnico" id="revision_tecnico" class="form-select">
                             <option value="">Todas</option>
                             <option value="PENDIENTE"
@@ -156,7 +156,7 @@
                     </label>
 
                     <label class="reporter-field" for="expediente_numero">
-                        <span class="reporter-field__label">Numero de expediente</span>
+                        <span class="reporter-field__label">Número de expediente</span>
                         <input type="text"
                                name="expediente_numero"
                                id="expediente_numero"
@@ -189,7 +189,7 @@
             </form>
         </section>
 
-        <section class="reporter-metrics" aria-label="Metricas principales">
+        <section class="reporter-metrics" aria-label="Métricas principales">
             {% for metric in metricas_principales %}
                 <article class="reporter-metric reporter-metric--{{ metric.tone }}">
                     <p class="reporter-metric__label">{{ metric.label }}</p>
@@ -204,9 +204,9 @@
                 <div class="reporter-panel__header">
                     <div>
                         <p class="reporter-panel__eyebrow">Tendencia</p>
-                        <h3 class="reporter-panel__title">Actividad de los ultimos meses</h3>
+                        <h3 class="reporter-panel__title">Actividad de los últimos meses</h3>
                     </div>
-                    <span class="reporter-panel__hint">Corte dinamico sobre el filtro actual</span>
+                    <span class="reporter-panel__hint">Corte dinámico sobre el filtro actual</span>
                 </div>
                 {% if tendencia_mensual %}
                     <div class="trend-chart" aria-label="Tendencia mensual del reporter">
@@ -222,7 +222,7 @@
                         {% endfor %}
                     </div>
                 {% else %}
-                    <p class="reporter-empty">No hay tendencia disponible para la seleccion actual.</p>
+                    <p class="reporter-empty">No hay tendencia disponible para la selección actual.</p>
                 {% endif %}
             </article>
 
@@ -230,7 +230,7 @@
                 <div class="reporter-panel__header">
                     <div>
                         <p class="reporter-panel__eyebrow">Comparativa</p>
-                        <h3 class="reporter-panel__title">Distribucion por provincia</h3>
+                        <h3 class="reporter-panel__title">Distribución por provincia</h3>
                     </div>
                     <span class="reporter-panel__hint">Click para filtrar cuando el alcance no es provincial</span>
                 </div>
@@ -267,7 +267,7 @@
                 <div class="reporter-panel__header">
                     <div>
                         <p class="reporter-panel__eyebrow">Embudo</p>
-                        <h3 class="reporter-panel__title">Validacion tecnica</h3>
+                        <h3 class="reporter-panel__title">Validación técnica</h3>
                     </div>
                 </div>
                 <div class="status-list">
@@ -354,12 +354,12 @@
                     <p class="reporter-panel__eyebrow">Detalle paginado</p>
                     <h3 class="reporter-panel__title">Casos visibles</h3>
                     <p class="reporter-panel__hint">
-                        Mostrando {{ detalle_desde }} a {{ detalle_hasta }} de {{ total_casos }} registros sobre paginas de {{ page_size }} elementos.
+                        Mostrando {{ detalle_desde }} a {{ detalle_hasta }} de {{ total_casos }} registros sobre páginas de {{ page_size }} elementos.
                     </p>
                 </div>
                 <div class="reporter-table__tools">
                     <label class="reporter-field reporter-field--compact" for="reporterQuickSearch">
-                        <span class="reporter-field__label">Buscar en esta pagina</span>
+                        <span class="reporter-field__label">Buscar en esta página</span>
                         <input type="search"
                                id="reporterQuickSearch"
                                class="form-control"
@@ -377,7 +377,7 @@
                             <th>Nombre</th>
                             <th>Expediente</th>
                             <th>Provincia</th>
-                            <th>Validacion</th>
+                            <th>Validación</th>
                             <th>SINTYS</th>
                             <th>Cupo</th>
                             <th>Documentos</th>
@@ -421,7 +421,7 @@
                             </tr>
                         {% empty %}
                             <tr>
-                                <td colspan="9" class="text-center text-muted py-5">No hay casos para mostrar con la seleccion actual.</td>
+                                <td colspan="9" class="text-center text-muted py-5">No hay casos para mostrar con la selección actual.</td>
                             </tr>
                         {% endfor %}
                     </tbody>
@@ -429,7 +429,7 @@
             </div>
 
             {% if page_obj.paginator.num_pages > 1 %}
-                <nav class="reporter-pagination" aria-label="Paginacion del reporter">
+                <nav class="reporter-pagination" aria-label="Paginación del reporter">
                     {% if page_obj.has_previous %}
                         <a class="reporter-pagination__link"
                            href="?{% if current_querystring %}{{ current_querystring }}&{% endif %}page={{ page_obj.previous_page_number }}">
