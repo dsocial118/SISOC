@@ -1,0 +1,130 @@
+{% extends "includes/main.html" %}
+{% load static %}
+
+{% block title %}Sede VPSL{% endblock %}
+{% block head %}
+    <link rel="stylesheet" href="{% static 'custom/css/ver_para_ser_libre.css' %}" />
+{% endblock %}
+{% block breadcrumb %}
+    {% include "components/breadcrumb.html" with items=breadcrumb_items %}
+{% endblock %}
+
+{% block content %}
+    <div class="row vpsl-page">
+        <div class="col-12 col-xl-10 offset-xl-1">
+            <div class="card vpsl-title-card vpsl-header">
+                <div class="card-body d-flex flex-wrap justify-content-between align-items-center gap-2">
+                    <div>
+                        <h2 class="vpsl-title">Sede VPSL</h2>
+                        <p class="vpsl-subtitle mb-0">Datos escolares, ubicacion y checklist operativo</p>
+                    </div>
+                    <a href="{% url 'vpsl_sede_list' %}" class="btn btn-secondary">
+                        <i class="bi bi-arrow-left"></i> Volver
+                    </a>
+                </div>
+            </div>
+            <div class="card">
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="card-body">
+                        {% include "ver_para_ser_libre/partials/form_errors.html" with form=form %}
+                        <div class="vpsl-form-shell">
+                            <section class="vpsl-section">
+                                <div class="vpsl-section-header">
+                                    <div class="vpsl-section-icon"><i class="bi bi-building"></i></div>
+                                    <div>
+                                        <h3 class="vpsl-section-title">Datos de la sede</h3>
+                                        <p class="vpsl-section-subtitle">Identificacion escolar y contacto institucional</p>
+                                    </div>
+                                </div>
+                                <div class="vpsl-section-body">
+                                    <div class="row g-3">
+                                        {% for field in form %}
+                                            {% if field.name != "latitud" and field.name != "longitud" %}
+                                                <div class="col-12 col-md-6 {% if field.name == 'mail' %}col-md-12{% endif %}">
+                                                    <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                                                    {{ field }}
+                                                    {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                                                </div>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </section>
+                            <section class="vpsl-section">
+                                <div class="vpsl-section-header">
+                                    <div class="vpsl-section-icon"><i class="bi bi-geo-alt"></i></div>
+                                    <div>
+                                        <h3 class="vpsl-section-title">Ubicacion</h3>
+                                        <p class="vpsl-section-subtitle">Coordenadas y previsualizacion del mapa</p>
+                                    </div>
+                                </div>
+                                <div class="vpsl-section-body">
+                                    <div class="row g-3 mb-3">
+                                        {% for field in form %}
+                                            {% if field.name == "latitud" or field.name == "longitud" %}
+                                                <div class="col-12 col-md-6">
+                                                    <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                                                    {{ field }}
+                                                    {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                                                </div>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </div>
+                                    {% if mapa_query %}
+                                        <iframe title="Mapa sede"
+                                                width="100%"
+                                                height="260"
+                                                style="border:0"
+                                                loading="lazy"
+                                                allowfullscreen
+                                                src="https://www.google.com/maps?q={{ mapa_query }}&output=embed"></iframe>
+                                    {% else %}
+                                        <p class="text-muted mb-0">Guarde latitud/longitud o domicilio para ver el mapa.</p>
+                                    {% endif %}
+                                </div>
+                            </section>
+                            <section class="vpsl-section">
+                                <div class="vpsl-section-header">
+                                    <div class="vpsl-section-icon"><i class="bi bi-clipboard-check"></i></div>
+                                    <div>
+                                        <h3 class="vpsl-section-title">Checklist</h3>
+                                        <p class="vpsl-section-subtitle">Condiciones criticas para habilitar jornadas</p>
+                                    </div>
+                                </div>
+                                <div class="vpsl-section-body">
+                                    {% include "ver_para_ser_libre/partials/form_errors.html" with form=checklist_form %}
+                                    <div class="row g-3">
+                                        {% for group in field_groups %}
+                                            <div class="col-12 col-lg-4">
+                                                <div class="vpsl-check-card">
+                                                    <h5 class="h6">{{ group.title }}</h5>
+                                                    <div class="mb-3">
+                                                        <label class="form-label" for="{{ group.cumple.id_for_label }}">{{ group.cumple.label }}</label>
+                                                        {{ group.cumple }}
+                                                    </div>
+                                                    <div class="mb-3">
+                                                        <label class="form-label" for="{{ group.observacion.id_for_label }}">{{ group.observacion.label }}</label>
+                                                        {{ group.observacion }}
+                                                    </div>
+                                                    <div>
+                                                        <label class="form-label" for="{{ group.evidencia.id_for_label }}">{{ group.evidencia.label }}</label>
+                                                        {{ group.evidencia }}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </section>
+                        </div>
+                    </div>
+                    <div class="card-footer d-flex gap-2 justify-content-end">
+                        <a href="{% url 'vpsl_sede_list' %}" class="btn btn-secondary">Volver</a>
+                        <button type="submit" class="btn btn-primary">Guardar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock %}

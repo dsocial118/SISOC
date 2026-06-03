@@ -1,0 +1,272 @@
+{% extends "includes/main.html" %}
+{% load static %}
+
+{% block title %}Registro nominal VPSL{% endblock %}
+{% block head %}
+    <link rel="stylesheet" href="{% static 'custom/css/ver_para_ser_libre.css' %}" />
+{% endblock %}
+{% block breadcrumb %}
+    {% include "components/breadcrumb.html" with items=breadcrumb_items %}
+{% endblock %}
+
+{% block content %}
+    <div class="row vpsl-page">
+        <div class="col-12 col-xl-9 offset-xl-1">
+            <div class="card vpsl-title-card vpsl-header">
+                <div class="card-body d-flex flex-wrap justify-content-between align-items-center gap-2">
+                    <div>
+                        <h2 class="vpsl-title">Registro nominal</h2>
+                        <p class="vpsl-subtitle mb-0">{{ jornada.sede }} · {{ jornada.fecha|date:"d/m/Y" }}</p>
+                    </div>
+                    <a href="{% url 'vpsl_jornada_detail' jornada.pk %}" class="btn btn-secondary">
+                        <i class="bi bi-arrow-left"></i> Volver
+                    </a>
+                </div>
+            </div>
+            <div class="card">
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <input type="hidden" name="renaper_estado" id="renaper_estado" value="{% if object.validado_renaper %}validado{% elif object.no_verificar_renaper %}no_verificar{% endif %}">
+                    <div class="card-body">
+                        {% include "ver_para_ser_libre/partials/form_errors.html" with form=form %}
+                        {% if messages %}
+                            {% for message in messages %}
+                                <div class="alert alert-{{ message.tags|default:'info' }}">{{ message }}</div>
+                            {% endfor %}
+                        {% endif %}
+                        <div id="renaper-status" class="mb-3">
+                            {% if object.validado_renaper %}
+                                <span class="badge bg-success">Validado RENAPER</span>
+                            {% elif object.no_verificar_renaper %}
+                                <span class="badge bg-warning text-dark">No se verificara RENAPER para el ciudadano ingresado</span>
+                            {% endif %}
+                        </div>
+                        <div class="vpsl-form-shell">
+                            <section class="vpsl-section">
+                                <div class="vpsl-section-header">
+                                    <div class="vpsl-section-icon"><i class="bi bi-shield-check"></i></div>
+                                    <div>
+                                        <h3 class="vpsl-section-title">Identificacion RENAPER</h3>
+                                        <p class="vpsl-section-subtitle">Validacion del ciudadano y bloqueo de duplicados</p>
+                                    </div>
+                                </div>
+                                <div class="vpsl-section-body">
+                                    <div class="row g-3">
+                                        <div class="col-12 col-md-6">
+                                            <label class="form-label" for="{{ form.dni.id_for_label }}">{{ form.dni.label }}</label>
+                                            {{ form.dni }}
+                                            {% for error in form.dni.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                                        </div>
+                                        <div class="col-12 col-md-6">
+                                            <label class="form-label" for="{{ form.sexo.id_for_label }}">{{ form.sexo.label }}</label>
+                                            {{ form.sexo }}
+                                            {% for error in form.sexo.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                                        </div>
+                                        <div class="col-12 d-flex flex-wrap gap-2">
+                                            <button type="button" id="verificar-renaper" class="btn btn-outline-primary">
+                                                <i class="bi bi-search"></i> Verificar RENAPER
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </section>
+                            <section class="vpsl-section">
+                                <div class="vpsl-section-header">
+                                    <div class="vpsl-section-icon"><i class="bi bi-person-lines-fill"></i></div>
+                                    <div>
+                                        <h3 class="vpsl-section-title">Datos nominales</h3>
+                                        <p class="vpsl-section-subtitle">Campos autocompletados por RENAPER y datos de contacto</p>
+                                    </div>
+                                </div>
+                                <div class="vpsl-section-body">
+                                    <div class="row g-3">
+                                        {% for field in form %}
+                                            {% if field.name != "dni" and field.name != "sexo" and field.name != "prescripcion" and field.name != "resultado" and field.name != "cantidad_lentes" and field.name != "adjunto" and field.name != "primera_vez_anteojos" and field.name != "observaciones" %}
+                                                <div class="col-12 col-md-6" data-field-name="{{ field.name }}">
+                                                    <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                                                    {{ field }}
+                                                    {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                                                </div>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </section>
+                            <section class="vpsl-section">
+                                <div class="vpsl-section-header">
+                                    <div class="vpsl-section-icon"><i class="bi bi-eyeglasses"></i></div>
+                                    <div>
+                                        <h3 class="vpsl-section-title">Atencion oftalmologica</h3>
+                                        <p class="vpsl-section-subtitle">Prescripcion, resultado y documentacion asociada</p>
+                                    </div>
+                                </div>
+                                <div class="vpsl-section-body">
+                                    <div class="row g-3">
+                                        <div class="col-12 col-md-6" data-field-name="{{ form.prescripcion.name }}">
+                                            <label class="form-label" for="{{ form.prescripcion.id_for_label }}">{{ form.prescripcion.label }}</label>
+                                            {{ form.prescripcion }}
+                                            {% for error in form.prescripcion.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                                        </div>
+                                        <div class="col-12">
+                                            <div class="row g-3">
+                                                <div class="col-12 col-md-6" data-field-name="{{ form.resultado.name }}">
+                                                    <label class="form-label" for="{{ form.resultado.id_for_label }}">{{ form.resultado.label }}</label>
+                                                    {{ form.resultado }}
+                                                    {% for error in form.resultado.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                                                </div>
+                                                <div class="col-12 col-md-6" data-field-name="{{ form.cantidad_lentes.name }}">
+                                                    <label class="form-label" for="{{ form.cantidad_lentes.id_for_label }}">{{ form.cantidad_lentes.label }}</label>
+                                                    {{ form.cantidad_lentes }}
+                                                    {% for error in form.cantidad_lentes.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-12 col-md-6" data-field-name="{{ form.adjunto.name }}">
+                                            <label class="form-label" for="{{ form.adjunto.id_for_label }}">{{ form.adjunto.label }}</label>
+                                            {{ form.adjunto }}
+                                            {% for error in form.adjunto.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                                        </div>
+                                        <div class="col-12" data-field-name="{{ form.primera_vez_anteojos.name }}">
+                                            <div class="form-check">
+                                                {{ form.primera_vez_anteojos }}
+                                                <label class="form-check-label" for="{{ form.primera_vez_anteojos.id_for_label }}">{{ form.primera_vez_anteojos.label }}</label>
+                                            </div>
+                                            {% for error in form.primera_vez_anteojos.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                                        </div>
+                                        <div class="col-12" data-field-name="{{ form.observaciones.name }}">
+                                            <label class="form-label" for="{{ form.observaciones.id_for_label }}">{{ form.observaciones.label }}</label>
+                                            {{ form.observaciones }}
+                                            {% for error in form.observaciones.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </section>
+                        </div>
+                    </div>
+                    <div class="card-footer d-flex justify-content-end gap-2">
+                        <a href="{% url 'vpsl_jornada_detail' jornada.pk %}" class="btn btn-secondary">Volver</a>
+                        <button type="submit" class="btn btn-primary">{{ submit_text|default:"Guardar" }}</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block customJS %}
+    <style nonce="{{ request.csp_nonce }}">
+      .renaper-readonly {
+        border-color: #495057 !important;
+        cursor: not-allowed;
+      }
+    </style>
+    <script nonce="{{ request.csp_nonce }}">
+      document.addEventListener("DOMContentLoaded", function () {
+        const dni = document.getElementById("id_dni");
+        const sexo = document.getElementById("id_sexo");
+        const estado = document.getElementById("renaper_estado");
+        const status = document.getElementById("renaper-status");
+        const verificar = document.getElementById("verificar-renaper");
+        const resultado = document.getElementById("id_resultado");
+        const cantidadLentes = document.getElementById("id_cantidad_lentes");
+        const cantidadLentesWrapper = document.querySelector('[data-field-name="cantidad_lentes"]');
+        const fieldsFromRenaper = ["nombre", "apellido", "edad", "genero"];
+
+        function setField(name, value) {
+          const input = document.getElementById(`id_${name}`);
+          if (input) input.value = value || "";
+        }
+
+        function setReadonly(readonly) {
+          fieldsFromRenaper.forEach((name) => {
+            const input = document.getElementById(`id_${name}`);
+            if (!input) return;
+            input.readOnly = readonly;
+            input.classList.toggle("renaper-readonly", readonly);
+            input.classList.toggle("bg-dark", readonly);
+            input.classList.toggle("text-white", readonly);
+          });
+        }
+
+        function syncCantidadLentes() {
+          if (!resultado || !cantidadLentes || !cantidadLentesWrapper) return;
+          const noRequiere = resultado.value === "no_requiere";
+          cantidadLentesWrapper.classList.toggle("d-none", noRequiere);
+          if (noRequiere) {
+            cantidadLentes.value = "0";
+          }
+        }
+
+        function renderStatus(className, text) {
+          status.innerHTML = `<span class="${className}">${text}</span>`;
+        }
+
+        function parseRenaperBirthDate(value) {
+          if (!value) return null;
+          const text = String(value).trim();
+          let match = text.match(/^(\d{4})-(\d{2})-(\d{2})/);
+          if (match) {
+            return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+          }
+          match = text.match(/^(\d{2})\/(\d{2})\/(\d{4})/);
+          if (match) {
+            return new Date(Number(match[3]), Number(match[2]) - 1, Number(match[1]));
+          }
+          return null;
+        }
+
+        function calcularEdadRenaper(fechaNacimiento) {
+          const nacimiento = parseRenaperBirthDate(fechaNacimiento);
+          if (!nacimiento || Number.isNaN(nacimiento.getTime())) return "";
+          const hoy = new Date();
+          let edad = hoy.getFullYear() - nacimiento.getFullYear();
+          const cumplioEsteAnio =
+            hoy.getMonth() > nacimiento.getMonth() ||
+            (hoy.getMonth() === nacimiento.getMonth() && hoy.getDate() >= nacimiento.getDate());
+          if (!cumplioEsteAnio) edad -= 1;
+          return edad >= 0 ? String(edad) : "";
+        }
+
+        if (verificar) {
+          verificar.addEventListener("click", function () {
+            const params = new URLSearchParams({
+              dni: dni.value || "",
+              sexo: sexo.value || "",
+              registro_nominal: "1",
+              jornada: "{{ jornada.pk }}",
+              registro: "{{ object.pk|default:'' }}",
+            });
+            fetch("{% url 'vpsl_renaper_consultar' %}?" + params.toString(), { credentials: "same-origin" })
+              .then((response) => response.json().then((body) => ({ ok: response.ok, body })))
+              .then(({ ok, body }) => {
+                if (!ok || !body.success) {
+                  estado.value = "";
+                  renderStatus("badge bg-danger", body.message || "No se pudo verificar RENAPER");
+                  return;
+                }
+                const data = body.data || {};
+                setField("nombre", data.nombre);
+                setField("apellido", data.apellido);
+                setField("edad", calcularEdadRenaper(data.fecha_nacimiento));
+                setField("genero", data.genero);
+                if (data.telefono) {
+                  setField("telefono", data.telefono);
+                }
+                if (data.sexo && ["M", "F", "X"].includes(data.sexo)) {
+                  sexo.value = data.sexo;
+                }
+                estado.value = "validado";
+                setReadonly(true);
+                renderStatus("badge bg-success", "Validado RENAPER");
+              });
+          });
+        }
+
+        if (resultado) {
+          resultado.addEventListener("change", syncCantidadLentes);
+          syncCantidadLentes();
+        }
+        setReadonly(true);
+      });
+    </script>
+{% endblock %}

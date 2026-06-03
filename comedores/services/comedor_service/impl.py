@@ -1348,7 +1348,7 @@ class ComedorService:
         }
 
     @staticmethod
-    def crear_ciudadano_desde_renaper(dni, user=None):
+    def crear_ciudadano_desde_renaper(dni, user=None, sexo=None):
         """
         Intenta crear un ciudadano a partir de una consulta a RENAPER.
         Si ya existe, devuelve el registro actual sin crearlo nuevamente.
@@ -1363,7 +1363,9 @@ class ComedorService:
                 existente
             )
 
-        resultado = ComedorService.obtener_datos_ciudadano_desde_renaper(dni_str)
+        resultado = ComedorService.obtener_datos_ciudadano_desde_renaper(
+            dni_str, sexo=sexo
+        )
         if not resultado.get("success"):
             return {
                 "success": False,
