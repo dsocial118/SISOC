@@ -81,22 +81,19 @@ jobs:
               run: |
                   python - <<'PY'
                   import json
-                  import multiprocessing
                   import os
                   import subprocess
 
                   templates = json.loads(
                       os.environ.get("TEMPLATE_FILES_JSON") or "[]"
                   )
-                  workers = max(1, multiprocessing.cpu_count())
-                  print("Running djlint --reformat on", len(templates), "template file(s) with", workers, "worker(s)")
+                  print("Running djlint --reformat on", len(templates), "template file(s)")
                   subprocess.run(
                       [
                           "djlint",
                           *templates,
                           "--reformat",
                           "--configuration=.djlintrc",
-                          f"--workers={workers}",
                       ],
                       check=True,
                   )
