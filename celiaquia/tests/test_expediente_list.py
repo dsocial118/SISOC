@@ -231,12 +231,16 @@ def test_legajos_subsanar_count_no_cambia_con_busqueda(client):
 
     # Sin filtro
     response_sin = client.get(reverse("expediente_list"))
-    exp_sin = next(e for e in response_sin.context["expedientes"] if e.pk == expediente.pk)
+    exp_sin = next(
+        e for e in response_sin.context["expedientes"] if e.pk == expediente.pk
+    )
     count_sin_filtro = exp_sin.legajos_subsanar_count
 
     # Con filtro por nombre de provincia (fuerza JOIN sobre expediente_ciudadanos)
     response_con = client.get(reverse("expediente_list"), {"q": provincia.nombre})
-    exp_con = next(e for e in response_con.context["expedientes"] if e.pk == expediente.pk)
+    exp_con = next(
+        e for e in response_con.context["expedientes"] if e.pk == expediente.pk
+    )
     count_con_filtro = exp_con.legajos_subsanar_count
 
     assert count_sin_filtro == 1
