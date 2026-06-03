@@ -1,7 +1,10 @@
 """Issue #1799 (feedback punto 1): "Actualizar Información desde Legajo Organización"
 DIRIGIDO. Debe refrescar solo los documentos org cuyo slot cambió y PRESERVAR los
 documentos nativos de la admisión (cargados admisión-side) y los org no modificados,
-sin resetear tipo_convenio ni estado. Antes borraba TODOS los ArchivoAdmision."""
+sin resetear tipo_convenio ni estado. Antes borraba TODOS los ArchivoAdmision.
+
+Incluye regresion Bug 2: docs de origen org con estado Aceptado en la admision
+no deben borrarse al actualizar (fix #1799)."""
 
 import pytest
 
@@ -143,3 +146,40 @@ def test_actualizar_quita_doc_removido_del_legajo_y_preserva_nativo(setup):
     assert _archivo_org_materializado(admision, setup["doc_adm"]) is None
     # El doc nativo se preservó.
     assert ArchivoAdmision.objects.filter(pk=setup["archivo_nativo"].pk).exists()
+
+
+# ---------------------------------------------------------------------------
+# Regresion Bug 2 — docs Aceptados en admision no deben borrarse al actualizar
+# ---------------------------------------------------------------------------
+
+
+def test_actualizar_preserva_doc_aceptado_de_origen_org(setup):
+    """Un ArchivoAdmision de origen organizacional con estado Aceptado (validado
+    por un tecnico desde la admision) NO debe eliminarse al actualizar, aunque el
+    slot haya cambiado en el legajo."""
+    admision = setup["admision"]
+    doc_adm = setup["doc_adm"]
+
+    # Obtener el ArchivoAdmision materializado y marcarlo como Aceptado
+    # (simula validacion manual desde la admision).
+    materializado = _archivo_org_materializado(admision, doc_adm)
+    assert materializado is not None
+    materializado.estado = "Aceptado"
+    materializado.save(update_fields=["estado"])
+    pk_aceptado = materializado.pk
+
+    # Cambiar el archivo en el legajo (dispara un cambio de slot).
+    setup["archivo_org"].estado = ArchivoOrganizacion.ESTADO_ACEPTADO
+    setup["archivo_org"].save(update_fields=["estado"])
+
+    ok, _ = AdmisionService.actualizar_documentacion_desde_organizacion(admision)
+    assert ok is True
+
+    # El doc Aceptado de origen org debe haberse conservado.
+    assert ArchivoAdmision.objects.filter(
+        pk=pk_aceptado
+    ).exists(), (
+        "El ArchivoAdmision con estado Aceptado no debe eliminarse al actualizar"
+    )
+    conservado = ArchivoAdmision.objects.get(pk=pk_aceptado)
+    assert conservado.estado == "Aceptado"
