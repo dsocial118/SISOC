@@ -4,6 +4,7 @@ from django.core.exceptions import ValidationError
 from core.models import Municipio, Provincia
 
 from .models import Dispositivo
+from .services import get_dispositivos_geography_scope
 from .validators import DOCUMENTACION_ACCEPT_ATTR, DOCUMENTACION_UPLOAD_FIELDS
 
 
@@ -469,6 +470,7 @@ class DispositivoForm(forms.ModelForm):
         ]
 
     def __init__(self, *args, **kwargs):
+        self._form_user = kwargs.pop("user", None)
         super().__init__(*args, **kwargs)
         self._configure_geography_fields()
         self._apply_field_texts()
@@ -536,16 +538,27 @@ class DispositivoForm(forms.ModelForm):
         def parse_pk(value):
             return int(value) if value and str(value).isdigit() else None
 
+        geo_scope = get_dispositivos_geography_scope(self._form_user)
+
         provincia = Provincia.objects.filter(
             pk=parse_pk(self.data.get(self.add_prefix("provincia")))
         ).first() or getattr(self.instance, "provincia", None)
 
-        self.fields["provincia"].queryset = Provincia.objects.all().order_by("nombre")
+        provincia_qs = Provincia.objects.all().order_by("nombre")
+        if geo_scope is not None:
+            provincia_qs = provincia_qs.filter(pk__in=geo_scope.keys())
+        self.fields["provincia"].queryset = provincia_qs
+
         if provincia:
             self.fields["provincia"].initial = provincia
-            self.fields["municipio"].queryset = Municipio.objects.filter(
-                provincia=provincia
-            ).order_by("nombre")
+            municipio_qs = Municipio.objects.filter(provincia=provincia).order_by(
+                "nombre"
+            )
+            if geo_scope is not None:
+                municipios_permitidos = geo_scope.get(provincia.pk)
+                if municipios_permitidos is not None:
+                    municipio_qs = municipio_qs.filter(pk__in=municipios_permitidos)
+            self.fields["municipio"].queryset = municipio_qs
         else:
             self.fields["municipio"].queryset = Municipio.objects.none()
 
