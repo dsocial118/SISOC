@@ -372,6 +372,7 @@ def test_expediente_detail_expone_motivo_rechazo_para_provincia(client):
         nombre="Lucia",
         fecha_nacimiento=date(2005, 5, 1),
         documento=33444555,
+        provincia=provincia,
     )
     legajo = ExpedienteCiudadano.objects.create(
         expediente=expediente,
