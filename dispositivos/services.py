@@ -1,5 +1,4 @@
 from django.db.models import Q
-from django.shortcuts import get_object_or_404
 
 from users.territorial_scope import get_effective_scopes, is_territorial_user
 
@@ -67,10 +66,6 @@ def get_dispositivos_geography_scope(user):
         else:
             restriccion.setdefault(provincia_id, set()).add(scope.municipio_id)
     return restriccion
-
-
-def get_dispositivo_or_404(pk):
-    return get_object_or_404(get_dispositivos_queryset(), pk=pk)
 
 
 def save_dispositivo_from_form(form, *, instance=None):

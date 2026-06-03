@@ -4,6 +4,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
 
 from core.models import Localidad, Municipio, Provincia
+from dispositivos.forms import DispositivoForm
 from dispositivos.models import Dispositivo
 from users.models import Profile, ProfileTerritorialScope
 
@@ -769,3 +770,18 @@ def test_eliminar_usuario_provincial_bloqueado_fuera_de_provincia(
 
     assert response.status_code == 404
     assert Dispositivo.objects.filter(pk=dispositivo_b.pk).exists()
+
+
+@pytest.mark.django_db
+def test_form_municipio_vacio_para_provincia_fuera_de_alcance(dos_provincias):
+    # Defensa en profundidad: aunque el campo provincia ya rechaza una provincia
+    # fuera de alcance, el queryset de municipio no debe ofrecer opciones de esa
+    # provincia.
+    provincia_a, municipio_a, provincia_b, _municipio_b = dos_provincias
+    user = _crear_usuario_provincial(
+        "prov-a-form-hard", provincia=provincia_a, municipio=municipio_a
+    )
+
+    form = DispositivoForm(data={"provincia": provincia_b.id}, user=user)
+
+    assert not form.fields["municipio"].queryset.exists()

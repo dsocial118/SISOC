@@ -555,9 +555,12 @@ class DispositivoForm(forms.ModelForm):
                 "nombre"
             )
             if geo_scope is not None:
-                municipios_permitidos = geo_scope.get(provincia.pk)
-                if municipios_permitidos is not None:
-                    municipio_qs = municipio_qs.filter(pk__in=municipios_permitidos)
+                if provincia.pk not in geo_scope:
+                    # Provincia fuera del alcance del usuario: sin municipios válidos.
+                    municipio_qs = Municipio.objects.none()
+                elif geo_scope[provincia.pk] is not None:
+                    # Alcance limitado a municipios específicos de la provincia.
+                    municipio_qs = municipio_qs.filter(pk__in=geo_scope[provincia.pk])
             self.fields["municipio"].queryset = municipio_qs
         else:
             self.fields["municipio"].queryset = Municipio.objects.none()

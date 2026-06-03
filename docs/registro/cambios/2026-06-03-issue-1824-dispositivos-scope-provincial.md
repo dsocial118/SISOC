@@ -45,7 +45,15 @@ Regla pedida:
   `user` por kwarg; `_configure_geography_fields()` restringe el `queryset` de
   `provincia` y `municipio` al alcance. Como `ModelChoiceField` valida contra su
   `queryset`, un POST con una provincia/municipio fuera de alcance es rechazado por la
-  propia validación del form (defensa server-side, no solo UI).
+  propia validación del form (defensa server-side, no solo UI). Si en el `data` llega una
+  provincia fuera del alcance, el `queryset` de `municipio` queda vacío (no ofrece
+  municipios de esa provincia), además del rechazo del campo `provincia`.
+
+### Limpieza
+
+- Se elimina `get_dispositivo_or_404` de `services.py`: estaba **sin uso** y devolvía un
+  objeto sin acotar por alcance (footgun si se cableaba a una vista). Las vistas resuelven
+  el objeto vía `get_queryset()` acotado.
 
 ## Decisiones / supuestos
 
@@ -71,11 +79,13 @@ Regla pedida:
 - `black --check`: OK sobre los archivos tocados.
 - `pylint` (archivos cambiados): 10.00/10.
 - `manage.py check`: sin issues (wiring/imports, sin import circular).
-- `pytest dispositivos/tests/`: **38 passed** (Docker one-off, SQLite). 9 tests nuevos
+- `pytest dispositivos/tests/`: **43 passed** (Docker one-off, SQLite). 14 tests nuevos
   en [test_dispositivos_views.py](../../../dispositivos/tests/test_dispositivos_views.py):
-  listado por provincia y por municipio, admin/superusuario y usuario sin provincia ven
-  todo, detalle 200 dentro / 404 fuera, editar 404 fuera, el form de alta restringe
-  provincias y rechaza el POST fuera de alcance.
+  listado por provincia y por municipio, alcance localidad → municipio, multi-provincia,
+  admin/superusuario y usuario sin provincia ven todo, usuario provincial sin alcance no
+  ve nada, detalle 200 dentro / 404 fuera, editar y eliminar 404 fuera, el form de alta
+  restringe provincias, rechaza el POST fuera de alcance y deja vacío el municipio de una
+  provincia fuera de alcance.
 - `makemigrations --check` / `djlint`: N/A (sin cambios de modelo/migración ni
   templates).
 
