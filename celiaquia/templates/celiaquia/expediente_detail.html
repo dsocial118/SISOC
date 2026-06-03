@@ -84,7 +84,7 @@
                  style="background-color:#11202e;
                         color:#e0e0e0">
                 <div class="d-flex justify-content-between align-items-center">
-                    <h5 class="mb-3">Provincial de {{ expediente.usuario_provincia.profile.provincia|default:"-" }}</h5>
+                    <h5 class="mb-3">Provincial de {{ provincia_expediente|default:"-" }}</h5>
                 </div>
                 <div class="row g-3">
                     <div class="col-sm-6 col-lg-3">
@@ -181,7 +181,7 @@
                 </div>
                 <div class="col-md-6">
                     <p>
-                        <strong>Provincia:</strong> {{ expediente.usuario_provincia.profile.provincia|default:"-" }}
+                        <strong>Provincia:</strong> {{ provincia_expediente|default:"-" }}
                     </p>
                     <p>
                         <strong>Técnicos asignados:</strong>

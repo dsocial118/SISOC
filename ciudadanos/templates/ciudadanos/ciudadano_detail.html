@@ -400,7 +400,12 @@
         <div class="legajo-header">
             <div class="d-flex justify-content-between align-items-center">
                 <div>
-                    <h1>{{ ciudadano.nombre }} {{ ciudadano.apellido }}</h1>
+                    <h1>
+                        {{ ciudadano.nombre }} {{ ciudadano.apellido }}
+                        {% if situacion_calle_pwa %}
+                            <span class="badge bg-danger ms-2 align-middle" style="font-size: 0.75rem;">Situación de calle</span>
+                        {% endif %}
+                    </h1>
                     <p class="subtitle mb-0">
                         {{ ciudadano.get_tipo_documento_display }} {{ ciudadano.documento|default:"Sin documento" }}
                     </p>
@@ -619,6 +624,26 @@
                                     <div class="info-row">
                                         <strong>Origen del Dato:</strong>
                                         <span class="value">{{ ciudadano.get_origen_dato_display }}</span>
+                                    </div>
+                                    <div class="info-row">
+                                        <strong>Pueblo originario:</strong>
+                                        <span class="value">
+                                            {% if pertenece_comunidad_indigena %}
+                                                Sí
+                                            {% else %}
+                                                No
+                                            {% endif %}
+                                        </span>
+                                    </div>
+                                    <div class="info-row">
+                                        <strong>Situación de calle:</strong>
+                                        <span class="value">
+                                            {% if situacion_calle_pwa %}
+                                                Sí
+                                            {% else %}
+                                                No
+                                            {% endif %}
+                                        </span>
                                     </div>
                                 </div>
                             </div>

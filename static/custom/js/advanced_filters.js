@@ -174,6 +174,10 @@
     }
 
     function getChoiceOptions(fieldDef) {
+        if (Array.isArray(fieldDef.options) && fieldDef.options.length) {
+            return fieldDef.options;
+        }
+
         if (fieldDef.type === 'boolean') {
             return booleanOptions;
         }

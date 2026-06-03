@@ -89,13 +89,18 @@ class CiudadanoService:
     def _resolver_municipio(raw, provincia):
         if raw in (None, ""):
             return None
-        if provincia is None:
-            raise ValidationError(
-                "Debe indicar la provincia para validar el municipio."
-            )
         try:
-            return Municipio.objects.get(pk=int(str(raw).strip()), provincia=provincia)
-        except (Municipio.DoesNotExist, ValueError) as exc:
+            municipio_id = int(str(raw).strip())
+        except (TypeError, ValueError) as exc:
+            raise ValidationError("Municipio inválido.") from exc
+        if provincia is None:
+            municipio = Municipio.objects.filter(pk=municipio_id).first()
+            if municipio is None:
+                raise ValidationError(f"Municipio {municipio_id} no existe.")
+            return municipio
+        try:
+            return Municipio.objects.get(pk=municipio_id, provincia=provincia)
+        except Municipio.DoesNotExist as exc:
             raise ValidationError("Municipio inválido para la provincia dada.") from exc
 
     @staticmethod

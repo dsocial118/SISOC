@@ -166,14 +166,6 @@ class ExpedienteService:
         if excel_masivo:
             create_kwargs["excel_masivo_cargado_por"] = usuario_provincia
             create_kwargs["excel_masivo_cargado_en"] = timezone.now()
-        try:
-            if hasattr(Expediente, "provincia_id"):
-                create_kwargs["provincia_id"] = getattr(
-                    getattr(usuario_provincia, "profile", None), "provincia_id", None
-                )
-        except Exception:
-            pass
-
         expediente = Expediente.objects.create(**create_kwargs)
         logger.info(
             "Expediente creado por usuario_provincia=%s id=%s",

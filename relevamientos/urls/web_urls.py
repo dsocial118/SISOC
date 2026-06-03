@@ -1,6 +1,8 @@
 from django.urls import path
 from core.decorators import permissions_any_required
 from relevamientos.views.web_views import (
+    PrimerSeguimientoDetailView,
+    PrimerSeguimientoEliminarView,
     RelevamientoCreateView,
     RelevamientoDeleteView,
     RelevamientoDetailView,
@@ -43,5 +45,19 @@ urlpatterns = [
             RelevamientoDeleteView.as_view()
         ),
         name="relevamiento_eliminar",
+    ),
+    path(
+        "comedores/<int:comedor_pk>/relevamiento/<int:relevamiento_pk>/primer-seguimiento/",
+        permissions_any_required(["relevamientos.view_relevamiento"])(
+            PrimerSeguimientoDetailView.as_view()
+        ),
+        name="primer_seguimiento_detalle",
+    ),
+    path(
+        "comedores/<int:comedor_pk>/relevamiento/<int:relevamiento_pk>/primer-seguimiento/eliminar",
+        permissions_any_required(["relevamientos.delete_primerseguimiento"])(
+            PrimerSeguimientoEliminarView.as_view()
+        ),
+        name="primer_seguimiento_eliminar",
     ),
 ]

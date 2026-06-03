@@ -241,6 +241,16 @@ function actualizarEstado(selectElement, observacionForzada = null) {
                 selectElement.dataset.currentValue = nuevoEstado;
             }
 
+            // Re-render de la celda "Número de GDE": al cambiar el estado del
+            // documento (p.ej. -> Aceptado) el campo GDE debe aparecer/ocultarse
+            // sin recargar la pagina (issue #1799, feedback punto 4).
+            if (data.gde_html !== undefined && data.gde_html !== null) {
+                const gdeCell = document.getElementById(`gde-${documentoId}`);
+                if (gdeCell) {
+                    gdeCell.innerHTML = data.gde_html;
+                }
+            }
+
             const toastEl = document.getElementById("toastEstadoExito");
             if (toastEl) {
                 new bootstrap.Toast(toastEl).show();

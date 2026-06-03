@@ -1,3 +1,5 @@
+# pylint: disable=too-many-lines
+
 from django.views.generic import (
     ListView,
     DetailView,
@@ -9,7 +11,16 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
 from django.urls import reverse_lazy, reverse
 from django.db import transaction
-from django.db.models import CharField, Count, F, OuterRef, Prefetch, Q, Subquery
+from django.db.models import (
+    CharField,
+    Count,
+    Exists,
+    F,
+    OuterRef,
+    Prefetch,
+    Q,
+    Subquery,
+)
 from django.db.models.functions import Coalesce
 from django.core.cache import cache
 from django.core.exceptions import PermissionDenied
@@ -55,6 +66,9 @@ from VAT.services.access_scope import (
     can_user_create_centro,
     can_user_edit_centro,
     filter_centros_queryset_for_user,
+    puede_generar_usuario_centro_vat,
+    puede_ver_usuarios_centro_vat,
+    usuarios_centro_vat_restantes,
 )
 from core.pagination import NoCountPaginator, build_no_count_page_range
 from core.services.advanced_filters import AdvancedFilterEngine
@@ -132,9 +146,15 @@ def _scope_centro_field_to_current_centro(form, centro):
 
 
 def _build_vat_centro_list_base_queryset():
-    return _annotate_centro_codigo_cue(
+    queryset = _annotate_centro_codigo_cue(
         Centro.objects.only(*VAT_CENTRO_LIST_ONLY_FIELDS)
-    ).order_by("-id")
+    )
+    queryset = queryset.annotate(
+        estado_carga_completa=Exists(
+            Curso.objects.filter(centro_id=OuterRef("pk")),
+        )
+    )
+    return queryset.order_by("-id")
 
 
 def _apply_vat_centro_search(queryset, query):
@@ -536,17 +556,43 @@ class CentroListView(LoginRequiredMixin, ListView):
                 "filters_config": get_centro_filters_ui_config(),
                 "seccion_filtros_favoritos": SeccionesFiltrosFavoritos.VAT_CENTROS,
                 "add_url": reverse("vat_centro_create"),
+                "centro_additional_buttons": [],
+                "current_query": self.request.GET.get("busqueda", ""),
             }
         )
 
         ctx["can_add"] = can_user_create_centro(user)
 
         ctx["table_headers"] = [
-            {"title": "Nombre", "sortable": True, "sort_key": "nombre"},
-            {"title": "Dirección", "sortable": True, "sort_key": "calle"},
-            {"title": "Teléfono", "sortable": True, "sort_key": "telefono"},
-            {"title": "Estado", "sortable": True, "sort_key": "activo"},
-            {"title": "Acciones"},
+            {
+                "title": "Nombre",
+                "sortable": True,
+                "sort_key": "nombre",
+                "class": "",
+                "style": "",
+            },
+            {
+                "title": "Dirección",
+                "sortable": True,
+                "sort_key": "calle",
+                "class": "",
+                "style": "",
+            },
+            {
+                "title": "Teléfono",
+                "sortable": True,
+                "sort_key": "telefono",
+                "class": "",
+                "style": "",
+            },
+            {
+                "title": "Estado",
+                "sortable": True,
+                "sort_key": "activo",
+                "class": "",
+                "style": "",
+            },
+            {"title": "Acciones", "sortable": False, "class": "", "style": ""},
         ]
 
         page_obj = ctx.get("page_obj")
@@ -609,6 +655,13 @@ class CentroDetailView(CentroAccessMixin, LoginRequiredMixin, DetailView):
             kwargs={"pk": centro.pk},
         )
         ctx["can_edit_centro"] = can_user_edit_centro(self.request.user, centro)
+        ctx["puede_generar_usuario_centro_vat"] = puede_generar_usuario_centro_vat(
+            self.request.user, centro
+        )
+        ctx["puede_ver_usuarios_centro_vat"] = puede_ver_usuarios_centro_vat(
+            self.request.user, centro
+        )
+        ctx["usuarios_centro_vat_restantes"] = usuarios_centro_vat_restantes(centro)
 
         return ctx
 
@@ -662,7 +715,7 @@ class CentroCreateView(LoginRequiredMixin, CreateView):
         ctx.update(
             {
                 "contacto_formset": contacto_formset,
-                "page_title": "Alta de Centro de Formacion",
+                "page_title": "Nuevo Centro de Formación Profesional",
                 "page_description": (
                     "Registro inicial del centro VAT con datos institucionales, "
                     "ubicación y contactos institucionales unificados."
@@ -780,7 +833,7 @@ class CentroUpdateView(LoginRequiredMixin, UpdateView):
         context.update(
             {
                 "contacto_formset": contacto_formset,
-                "page_title": "Editar Centro de Formacion",
+                "page_title": "Editar Centro de Formación Profesional",
                 "page_description": (
                     "Actualizá los datos institucionales, la ubicación y los "
                     "contactos institucionales del centro VAT."

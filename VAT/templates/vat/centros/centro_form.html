@@ -278,4 +278,5 @@
         var ajaxLoadLocalidadesUrl = "{% url 'ajax_load_localidades' %}";
     </script>
     <script src="{% static 'custom/js/centro_form.js' %}"></script>
+    {% include "vat/partials/tour.html" with vat_tour_section="centros_form" vat_tour_autostart=True %}
 {% endblock %}

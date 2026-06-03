@@ -205,8 +205,17 @@ class ArchivoOrganizacion(SoftDeleteModelMixin, models.Model):
     )
     documentacion = models.ForeignKey(
         DocumentacionOrganizacion,
-        on_delete=models.PROTECT,
+        on_delete=models.SET_NULL,
         related_name="archivos",
+        null=True,
+        blank=True,
+    )
+    nombre_personalizado = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        verbose_name="Nombre personalizado",
+        help_text="Nombre del documento adicional cuando no corresponde al catalogo.",
     )
     archivo = models.FileField(upload_to="organizaciones/documentacion/")
     estado = models.CharField(max_length=20, choices=ESTADOS, default=ESTADO_ADJUNTO)
@@ -247,8 +256,18 @@ class ArchivoOrganizacion(SoftDeleteModelMixin, models.Model):
             return False
         return (self.fecha_vencimiento - timezone.now().date()).days <= 30
 
+    @property
+    def es_personalizado(self):
+        return self.documentacion_id is None
+
+    @property
+    def nombre_documento(self):
+        if self.documentacion_id:
+            return self.documentacion.nombre
+        return self.nombre_personalizado or "Documento adicional"
+
     def __str__(self):
-        return f"{self.organizacion_id} - {self.documentacion.nombre}"
+        return f"{self.organizacion_id} - {self.nombre_documento}"
 
     class Meta:
         ordering = ["-creado", "-id"]
