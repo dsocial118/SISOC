@@ -554,14 +554,19 @@ def _apply_provincial_expediente_scope(queryset, user):
         municipio_lookup="expediente_ciudadanos__ciudadano__municipio_id",
         localidad_lookup="expediente_ciudadanos__ciudadano__localidad_id",
     )
-    # Excepcion: sus propios expedientes recien creados, aun sin legajos
-    # importados (sin provincia derivable todavia), deben seguir siendo accesibles
-    # para poder cargar/procesar el Excel.
-    propios_sin_legajos_q = Q(
-        usuario_provincia=user, expediente_ciudadanos__isnull=True
+    # Excepcion: sus propios expedientes sin territorio derivable todavia
+    # deben seguir siendo accesibles para poder cargar/procesar el Excel o
+    # revisar rechazos generados antes de completar provincia/localidad.
+    propios_sin_territorio_q = Q(
+        usuario_provincia=user,
+        expediente_ciudadanos__ciudadano__provincia_id__isnull=True,
+        expediente_ciudadanos__ciudadano__municipio_id__isnull=True,
+        expediente_ciudadanos__ciudadano__localidad_id__isnull=True,
     )
     combined_q = (
-        propios_sin_legajos_q if scope_q is None else scope_q | propios_sin_legajos_q
+        propios_sin_territorio_q
+        if scope_q is None
+        else scope_q | propios_sin_territorio_q
     )
     return queryset.filter(combined_q).distinct()
 
@@ -2077,8 +2082,10 @@ class ActualizarRegistroErroneoView(View):
             user, ROLE_COORDINADOR_CELIAQUIA_PERMISSION
         ):
             expediente = get_object_or_404(Expediente, pk=pk)
-        else:
+        elif _is_provincial(user) and getattr(user, "pk", None):
             expediente = _get_provincial_expediente_or_404(user, pk)
+        else:
+            expediente = get_object_or_404(Expediente, pk=pk)
 
         from celiaquia.models import RegistroErroneo
 
@@ -2154,8 +2161,10 @@ class ReprocesarRegistrosErroneosView(View):
             user, ROLE_COORDINADOR_CELIAQUIA_PERMISSION
         ):
             expediente = get_object_or_404(Expediente, pk=pk)
-        else:
+        elif _is_provincial(user) and getattr(user, "pk", None):
             expediente = _get_provincial_expediente_or_404(user, pk)
+        else:
+            expediente = get_object_or_404(Expediente, pk=pk)
 
         registros = expediente.registros_erroneos.filter(procesado=False)
 
