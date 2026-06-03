@@ -26,6 +26,7 @@ from .dispositivos_filter_config import (
 from .forms import DispositivoForm
 from .models import Dispositivo
 from .services import (
+    apply_dispositivos_scope,
     delete_dispositivo,
     get_dispositivos_queryset,
     save_dispositivo_from_form,
@@ -73,6 +74,7 @@ class DispositivoListView(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         queryset = get_dispositivos_queryset()
+        queryset = apply_dispositivos_scope(queryset, self.request.user)
         queryset = DISPOSITIVOS_ADVANCED_FILTER.filter_queryset(queryset, self.request)
 
         query = (self.request.GET.get("busqueda") or "").strip()
@@ -107,7 +109,7 @@ class DispositivoDetailView(LoginRequiredMixin, DetailView):
     context_object_name = "dispositivo"
 
     def get_queryset(self):
-        return get_dispositivos_queryset()
+        return apply_dispositivos_scope(get_dispositivos_queryset(), self.request.user)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -501,6 +503,11 @@ class DispositivoCreateView(LoginRequiredMixin, CreateView):
     form_class = DispositivoForm
     template_name = "dispositivos_form.html"
 
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["user"] = self.request.user
+        return kwargs
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["breadcrumb_items"] = [
@@ -524,7 +531,12 @@ class DispositivoUpdateView(LoginRequiredMixin, UpdateView):
     template_name = "dispositivos_form.html"
 
     def get_queryset(self):
-        return get_dispositivos_queryset()
+        return apply_dispositivos_scope(get_dispositivos_queryset(), self.request.user)
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["user"] = self.request.user
+        return kwargs
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -553,7 +565,7 @@ class DispositivoDeleteView(LoginRequiredMixin, DeleteView):
     context_object_name = "dispositivo"
 
     def get_queryset(self):
-        return get_dispositivos_queryset()
+        return apply_dispositivos_scope(get_dispositivos_queryset(), self.request.user)
 
     def form_valid(self, form):
         self.object = self.get_object()

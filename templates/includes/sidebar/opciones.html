@@ -223,7 +223,7 @@
         {% endwith %}
     {% endif %}
     <!-- MENÚ LEGAJOS -->
-    <li class="nav-item nav-main-item {% if 'comedores' in pagina_actual or 'admisiones' in pagina_actual or 'acompanamiento' in pagina_actual or 'rendicion_cuentas' in pagina_actual or 'organizaciones' in pagina_actual or 'centrodeinfancia' in pagina_actual or 'ciudadanos' in pagina_actual or 'centros' in pagina_actual or 'celiaquia' in pagina_actual or 'expediente' in pagina_actual or 'dispositivos' in pagina_actual %}menu-open{% endif %}"
+    <li class="nav-item nav-main-item {% if 'comedores' in pagina_actual or 'admisiones' in pagina_actual or 'acompanamiento' in pagina_actual or 'rendicion_cuentas' in pagina_actual or 'organizaciones' in pagina_actual or 'centrodeinfancia' in pagina_actual or 'ver-para-ser-libre' in pagina_actual or 'ciudadanos' in pagina_actual or 'centros' in pagina_actual or 'celiaquia' in pagina_actual or 'expediente' in pagina_actual or 'dispositivos' in pagina_actual %}menu-open{% endif %}"
         style="order: 2">
         <a href="#" class="nav-link">
             <img src="{% static 'custom/img/iconos_sidebar/legajos.svg' %}" alt="" />
@@ -419,6 +419,36 @@
                                     <p>Ver Centros de Infancia</p>
                                 </a>
                             </li>
+                        </ul>
+                    </li>
+                {% endif %}
+                <!-- Ver Para Ser Libres -->
+                {% if request.user|has_perm_code:"ver_para_ser_libre.view_itinerariovpsl" %}
+                    <li class="nav-item {% if 'ver-para-ser-libre' in pagina_actual %}menu-open{% endif %}">
+                        <a href="#"
+                           class="nav-link nav-dot ms-2 {% if 'ver-para-ser-libre' in pagina_actual %}active{% endif %}">
+                            <p>
+                                Ver Para Ser Libres
+                                <i class="nav-arrow bi bi-chevron-right"></i>
+                            </p>
+                        </a>
+                        <ul class="nav nav-treeview">
+                            <li class="nav-item">
+                                <a href="{% url 'vpsl_itinerario_list' %}"
+                                   class="nav-link ms-4 {% if 'ver-para-ser-libre/' in pagina_actual %}active{% endif %}">
+                                    <i class="nav-icon bi bi-arrow-return-right"></i>
+                                    <p>Itinerarios</p>
+                                </a>
+                            </li>
+                            {% if request.user|has_perm_code:"ver_para_ser_libre.view_sedevpsl" %}
+                                <li class="nav-item">
+                                    <a href="{% url 'vpsl_sede_list' %}"
+                                       class="nav-link ms-4 {% if 'ver-para-ser-libre/sedes' in pagina_actual %}active{% endif %}">
+                                        <i class="nav-icon bi bi-arrow-return-right"></i>
+                                        <p>Sedes</p>
+                                    </a>
+                                </li>
+                            {% endif %}
                         </ul>
                     </li>
                 {% endif %}
