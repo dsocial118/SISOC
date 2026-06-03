@@ -1,3 +1,6 @@
+# Modulo extenso de vistas del programa; orquesta helpers internos de
+# ComedorService y del modulo workflow (acceso protegido intencional).
+# pylint: disable=too-many-lines,protected-access
 import unicodedata
 from urllib.parse import quote_plus
 
@@ -35,11 +38,9 @@ from ver_para_ser_libre.forms import (
 )
 from ver_para_ser_libre.models import (
     CasoLaboratorioVPSL,
-    ChecklistJornadaVPSL,
     CierreDiarioVPSL,
     EstadoEvaluacionVPSL,
     EstadoItinerario,
-    EstadoJornada,
     EstadoLaboratorio,
     HistorialChecklistSedeVPSL,
     ItinerarioVPSL,

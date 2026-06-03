@@ -19,6 +19,11 @@ promoción (PR #1783, release 2026-05-27).
   siguiendo el formato auto-generado del repo.
 - Se aplicó el formato requerido por `black` en `VAT/forms.py` (única diferencia
   de formato detectada por el chequeo repo-wide), sin cambios de comportamiento.
+- Se sanearon los hallazgos de `pylint` de la app nueva `ver_para_ser_libre`
+  (única fuente de fallos del job `pylint`): imports sin uso en `views.py`, orden
+  de imports en `forms.py`, trailing newline en `__init__.py` y disables
+  justificados (`too-many-lines`, `protected-access`) por orquestar helpers
+  internos de `ComedorService`/`workflow`. Sin cambios de comportamiento.
 
 ## Impacto
 

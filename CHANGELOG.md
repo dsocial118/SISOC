@@ -28,7 +28,7 @@
 - [Sentry] Se corrige un error reportado en Sentry. (PR #1786)
 - [Comedores] Ajustes de UI en listados. (PR #1816)
 - [Tests] Limpieza y estabilización de tests heredados en pytest. (PRs #1791, #1825)
-- [Predeploy] Se sanea el formato `black` de `VAT/forms.py` para dejar `development` lista para promoción a `main`.
+- [Predeploy] Se sanea el lint para dejar `development` lista para promoción a `main`: formato `black` de `VAT/forms.py` y hallazgos de `pylint` de la app `ver_para_ser_libre` (imports sin uso, orden de imports, trailing newline y disables justificados), sin cambios de comportamiento.
 <!-- AUTO-GENERATED RELEASE END: 2026-06-03 -->
 
 <!-- AUTO-GENERATED RELEASE START: 2026-05-27 -->
