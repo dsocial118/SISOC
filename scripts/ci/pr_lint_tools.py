@@ -208,7 +208,10 @@ def get_changed_files() -> list[Path]:
 
     base_sha, head_sha = get_diff_range()
     if git_revision_exists(base_sha) and git_revision_exists(head_sha):
-        result = run_git_command("diff", "--name-only", base_sha, head_sha)
+        # Tres puntos: diff desde el merge-base de base..head hasta head.
+        # Evita capturar commits ajenos de la rama base cuando ésta avanzó
+        # después de que se creó la rama del PR.
+        result = run_git_command("diff", "--name-only", f"{base_sha}...{head_sha}")
         return parse_git_paths(result.stdout)
 
     print(
