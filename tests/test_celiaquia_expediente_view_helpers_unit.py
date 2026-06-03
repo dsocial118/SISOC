@@ -1092,6 +1092,10 @@ def test_reprocesar_registros_erroneos_convierte_conflicto_en_excluido(mocker):
         "celiaquia.views.expediente.get_object_or_404", return_value=expediente
     )
     mocker.patch(
+        "celiaquia.views.expediente._get_provincial_expediente_or_404",
+        return_value=expediente,
+    )
+    mocker.patch(
         "celiaquia.views.expediente._can_manage_registros_erroneos", return_value=True
     )
     mocker.patch(
