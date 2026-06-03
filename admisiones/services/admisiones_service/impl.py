@@ -1208,12 +1208,9 @@ class AdmisionService:
 
         admision.tipo_entidad_origen_id = organizacion.tipo_entidad_id
         admision.save(update_fields=["tipo_entidad_origen"])
-        # Materializar slots del legajo que la admision todavia no tiene como
-        # copia propia (aditivo: no toca copias existentes ni docs Aceptados).
-        # Esto evita que la vista siga mostrando los docs del legajo en vivo
-        # cuando el usuario elige "Continuar operando con la Admision actual"
-        # (fix Bug #1799 - org pisa admision al seleccionar continuar).
-        AdmisionService.congelar_documentacion_organizacional(admision)
+        # Solo actualizar la linea de base del snapshot para silenciar la
+        # advertencia. NO se materializan nuevos ArchivoAdmision: "Continuar
+        # operando con la Admision actual" NO debe clonar docs del legajo.
         AdmisionService.refrescar_snapshot_documentacion_organizacional(admision)
         logger.info(
             "Desincronizacion aceptada en admision",

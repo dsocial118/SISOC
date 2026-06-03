@@ -5,6 +5,7 @@ import pytest
 
 from admisiones.models.admisiones import (
     Admision,
+    AdmisionDocOrgSnapshot,
     ArchivoAdmision,
     Documentacion,
     EstadoAdmision,
@@ -207,6 +208,46 @@ def test_aceptar_desincronizacion_solo_actualiza_snapshot(
         pk=archivo.pk
     ).exists(), "Los archivos previos deben preservarse al continuar con la admision"
     assert AdmisionService.admision_desincronizada(admision) is False
+
+
+def test_aceptar_desincronizacion_no_materializa_archivos_nuevos(
+    estado_inicial, tipo_entidades, tipos_convenio
+):
+    """Bug B regresion: 'Continuar' (aceptar_desincronizacion) NO debe crear
+    ArchivoAdmision nuevos para slots que la admision no tenia materializados.
+    El slot del legajo sigue siendo 'live' (via organizacion) en la vista."""
+    from organizaciones.models import ArchivoOrganizacion, DocumentacionOrganizacion
+
+    admision = _crear_admision(
+        tipo_entidades["juridica"], tipos_convenio["juridica"], estado_inicial
+    )
+    # Doc en el legajo que la admision nunca materializó.
+    doc_org = DocumentacionOrganizacion.objects.create(
+        nombre="DNI del Presidente",
+        categoria=DocumentacionOrganizacion.CATEGORIA_PERSONERIA,
+        obligatorio=True,
+    )
+    ArchivoOrganizacion.objects.create(
+        organizacion=admision.comedor.organizacion,
+        documentacion=doc_org,
+        archivo="organizaciones/documentacion/dni.pdf",
+        estado=ArchivoOrganizacion.ESTADO_PENDIENTE,
+    )
+    AdmisionService.refrescar_snapshot_documentacion_organizacional(admision)
+    count_antes = ArchivoAdmision.objects.filter(admision=admision).count()
+
+    ok, _ = AdmisionService.aceptar_desincronizacion_admision(admision)
+
+    assert ok is True
+    count_despues = ArchivoAdmision.objects.filter(admision=admision).count()
+    assert count_despues == count_antes, (
+        "Continuar operando NO debe materializar ArchivoAdmision nuevos desde el legajo"
+    )
+    # El snapshot si debe actualizarse para silenciar la advertencia.
+    snaps = list(AdmisionDocOrgSnapshot.objects.filter(admision=admision))
+    assert any(s.slot_key != "__init__" for s in snaps), (
+        "El snapshot debe registrar el doc del legajo tras aceptar"
+    )
 
 
 def test_categoria_para_organizacion_mapea_por_nombre(tipo_entidades):
