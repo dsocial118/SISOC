@@ -996,6 +996,9 @@ def test_reprocesar_registros_erroneos_early_branches(mocker):
         def __iter__(self):
             return iter([])
 
+        def count(self):
+            return 0
+
     expediente = SimpleNamespace(
         registros_erroneos=SimpleNamespace(filter=mocker.Mock())
     )
@@ -1024,8 +1027,8 @@ def test_reprocesar_registros_erroneos_early_branches(mocker):
     )
     assert no_records.status_code == 400
 
-    # Con registros pero sin provincia
-    req_no_prov = SimpleNamespace(
+    # Usuario multi-provincia (provincia_id=None desde el resolver): debe continuar
+    req_multi_prov = SimpleNamespace(
         user=SimpleNamespace(profile=SimpleNamespace(provincia_id=None))
     )
     expediente.registros_erroneos.filter.return_value = _RegistrosQS(True)
@@ -1041,10 +1044,18 @@ def test_reprocesar_registros_erroneos_early_branches(mocker):
         "celiaquia.views.expediente._resolver_provincia_id_registro_erroneo",
         return_value=None,
     )
-    no_prov = module.ReprocesarRegistrosErroneosView.post.__wrapped__(
-        view, req_no_prov, pk=1
+    mocker.patch(
+        "celiaquia.views.expediente._obtener_provincias_permitidas_ids",
+        return_value={1, 2},
     )
-    assert no_prov.status_code == 400
+    mocker.patch(
+        "celiaquia.views.expediente._actualizar_alerta_importacion_persistente",
+        return_value=None,
+    )
+    multi_prov = module.ReprocesarRegistrosErroneosView.post.__wrapped__(
+        view, req_multi_prov, pk=1
+    )
+    assert multi_prov.status_code == 200
 
 
 def test_reprocesar_registros_erroneos_convierte_conflicto_en_excluido(mocker):
