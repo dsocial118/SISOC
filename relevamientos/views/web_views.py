@@ -127,6 +127,7 @@ class RelevamientoListView(LoginRequiredMixin, ListView):
 
         items = []
         for rel in context["relevamientos"]:
+            seguimiento = _get_primer_seguimiento(rel)
             items.append(
                 {
                     "id": rel.id,
@@ -135,9 +136,9 @@ class RelevamientoListView(LoginRequiredMixin, ListView):
                     "numero_if": rel.numero_if,
                     "is_child": False,
                     "parent_id": None,
+                    "has_seguimiento": seguimiento is not None,
                 }
             )
-            seguimiento = _get_primer_seguimiento(rel)
             if seguimiento is not None:
                 items.append(
                     {

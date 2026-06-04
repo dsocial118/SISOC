@@ -1,5 +1,7 @@
 """Tests unitarios para relevamientos.tasks."""
 
+import pytest
+
 from relevamientos import tasks as module
 
 
@@ -58,3 +60,54 @@ def test_async_send_start_omits_when_integration_disabled(mocker, monkeypatch):
     assert result is None
     mock_submit.assert_not_called()
     mock_run.assert_not_called()
+
+
+@pytest.mark.django_db
+def test_async_send_relevamiento_marca_sincronizado_con_filas(mocker, settings):
+    from comedores.models import Comedor
+    from relevamientos.models import Relevamiento
+
+    comedor = Comedor.objects.create(nombre="Comedor Sync Relevamiento")
+    # Se crea con la integracion apagada (default en tests) para que el signal
+    # no dispare un POST real durante el alta.
+    relevamiento = Relevamiento.objects.create(comedor=comedor, estado="En Proceso")
+
+    settings.GESTIONAR_INTEGRATION_ENABLED = True
+    response = mocker.Mock()
+    response.raise_for_status.return_value = None
+    response.content = b'{"Rows": [{"docPDF": "https://gestionar.test/r.pdf"}]}'
+    response.json.return_value = {"Rows": [{"docPDF": "https://gestionar.test/r.pdf"}]}
+    mocker.patch("relevamientos.tasks.requests.post", return_value=response)
+
+    module.AsyncSendRelevamientoToGestionar(
+        relevamiento.id,
+        module.build_relevamiento_payload(relevamiento),
+    ).run()
+
+    relevamiento.refresh_from_db()
+    assert relevamiento.sincronizado_gestionar is True
+    assert relevamiento.docPDF == "https://gestionar.test/r.pdf"
+
+
+@pytest.mark.django_db
+def test_async_send_relevamiento_no_marca_sincronizado_sin_filas(mocker, settings):
+    from comedores.models import Comedor
+    from relevamientos.models import Relevamiento
+
+    comedor = Comedor.objects.create(nombre="Comedor Sync Relevamiento 2")
+    relevamiento = Relevamiento.objects.create(comedor=comedor, estado="En Proceso")
+
+    settings.GESTIONAR_INTEGRATION_ENABLED = True
+    response = mocker.Mock()
+    response.raise_for_status.return_value = None
+    response.content = b'{"Rows": []}'
+    response.json.return_value = {"Rows": []}
+    mocker.patch("relevamientos.tasks.requests.post", return_value=response)
+
+    module.AsyncSendRelevamientoToGestionar(
+        relevamiento.id,
+        module.build_relevamiento_payload(relevamiento),
+    ).run()
+
+    relevamiento.refresh_from_db()
+    assert relevamiento.sincronizado_gestionar is False
