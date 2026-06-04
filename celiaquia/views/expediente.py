@@ -675,9 +675,17 @@ class ExpedienteListView(ListView):
             )
             .prefetch_related("asignaciones_tecnicos__tecnico")
             .annotate(
-                legajos_subsanar_count=Count(
-                    "expediente_ciudadanos",
-                    filter=Q(expediente_ciudadanos__revision_tecnico="SUBSANAR"),
+                legajos_subsanar_count=Coalesce(
+                    Subquery(
+                        ExpedienteCiudadano.objects.filter(
+                            expediente=OuterRef("pk"),
+                            revision_tecnico="SUBSANAR",
+                        )
+                        .values("expediente")
+                        .annotate(c=Count("id"))
+                        .values("c")
+                    ),
+                    0,
                 )
             )
             .only(

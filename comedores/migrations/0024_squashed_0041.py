@@ -194,7 +194,7 @@ class Migration(migrations.Migration):
     ]
 
     dependencies = [
-        ("ciudadanos", "0021_ensure_ciudadano_geo_columns"),
+        ("ciudadanos", "0009_squashed_0028"),
         ("comedores", "0001_squashed_0023"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
         ("admisiones", "0001_squashed_0058"),

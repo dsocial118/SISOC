@@ -6,10 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        (
-            "importarexpediente",
-            "0013_rename_numero_expedinte_pago_archivosimportados_numero_expediente_pago",
-        ),
+        ("importarexpediente", "0001_squashed_0013"),
     ]
 
     operations = [

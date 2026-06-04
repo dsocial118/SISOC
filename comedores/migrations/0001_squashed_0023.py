@@ -185,7 +185,7 @@ class Migration(migrations.Migration):
         ("organizaciones", "0001_squashed_0010"),
         ("duplas", "0001_squashed_0003"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ("ciudadanos", "0001_initial"),
+        ("ciudadanos", "0001_squashed_0008"),
     ]
 
     operations = [
