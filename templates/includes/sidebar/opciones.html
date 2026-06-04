@@ -335,7 +335,7 @@
                                     </a>
                                 </li>
                             {% endif %}
-                            {% if request.user|has_any_perm:"comedores.view_comedor,admisiones.view_admision,acompanamientos.view_informacionrelevante" %}
+                            {% if request.user|has_perm_code:"rendicioncuentasmensual.view_rendicioncuentamensual" %}
                                 <li class="nav-item">
                                     <a href="{% url 'rendicioncuentasmensual_global_list' %}"
                                        class="nav-link ms-4 {% if 'rendicioncuentasmensual' in pagina_actual %}active{% endif %}">
