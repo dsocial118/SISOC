@@ -318,7 +318,7 @@
     background: linear-gradient(180deg, rgba(123, 199, 255, 0.94), rgba(44, 207, 157, 0.92));
     border-radius: 14px;
     display: flex;
-    height: calc(max(var(--size), 0.08) * 100%);
+    height: calc(max(var(--size), 8) * 1%);
     justify-content: center;
     padding-top: 0.55rem;
     position: relative;
@@ -408,7 +408,7 @@
     border-radius: inherit;
     display: block;
     height: 100%;
-    width: calc(max(var(--size), 0.04) * 100%);
+    width: calc(max(var(--size), 4) * 1%);
 }
 
 .province-ranking__meta,
