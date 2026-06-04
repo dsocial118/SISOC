@@ -83,20 +83,25 @@ jobs:
                   import json
                   import os
                   import subprocess
+                  import sys
 
                   templates = json.loads(
                       os.environ.get("TEMPLATE_FILES_JSON") or "[]"
                   )
                   print("Running djlint --reformat on", len(templates), "template file(s)")
-                  subprocess.run(
+                  result = subprocess.run(
                       [
                           "djlint",
                           *templates,
                           "--reformat",
                           "--configuration=.djlintrc",
                       ],
-                      check=True,
+                      check=False,
                   )
+                  # djlint --reformat devuelve 1 cuando reformatea archivos (comportamiento normal).
+                  # Solo fallar ante errores reales (>=2). El paso djlint posterior valida el resultado.
+                  if result.returncode >= 2:
+                      sys.exit(result.returncode)
                   PY
               env:
                   TEMPLATE_FILES_JSON: ${{ steps.detect-changed-templates.outputs.files }}
