@@ -20,6 +20,7 @@ from centrodefamilia.views.centro import (
     InformeCabalArchivoPorCentroDetailView,
     centros_ajax,
 )
+from centrodefamilia.views.generar_usuario import GenerarUsuarioCDFView
 
 from centrodefamilia.views.actividad import (
     ActividadCentroCreateView,
@@ -94,6 +95,13 @@ urlpatterns = [
             CentroDeleteView.as_view()
         ),
         name="centro_delete",
+    ),
+    path(
+        "centros/<int:pk>/generar-usuario/",
+        permissions_any_required(["centrodefamilia.view_centro"])(
+            GenerarUsuarioCDFView.as_view()
+        ),
+        name="cdf_centro_generar_usuario",
     ),
     path(
         "actividades/",

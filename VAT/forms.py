@@ -8,6 +8,8 @@ from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.db.models import Q
 from django.forms import BaseInlineFormSet, inlineformset_factory
+from django.utils.text import slugify
+from django.utils import timezone
 from ciudadanos.models import Ciudadano
 from core.models import Dia, Sexo
 from core.models import Localidad, Programa
@@ -84,6 +86,54 @@ def _select2_attrs(
         attrs["data-allow-clear"] = str(bool(allow_clear)).lower()
 
     return attrs
+
+
+def _normalize_curso_tipo_value(nombre):
+    normalized = slugify((nombre or "").strip()).replace("-", "_")
+    return normalized
+
+
+def _collect_curso_tipo_values_from_existing_courses(centro_id=None):
+    qs = Curso.objects.values_list("tipo", flat=True)
+    if centro_id:
+        qs = qs.filter(centro_id=centro_id)
+    values = []
+    for tipo_list in qs:
+        if isinstance(tipo_list, list):
+            values.extend(tipo_list)
+    return _normalize_related_ids(values)
+
+
+def build_curso_tipo_choices(include_values=None, centro_id=None):
+    include_values = _normalize_related_ids(include_values)
+    choices = []
+    seen_values = set()
+
+    for nombre in ModalidadCursada.objects.filter(activo=True).values_list(
+        "nombre", flat=True
+    ):
+        value = _normalize_curso_tipo_value(nombre)
+        if not value or value in seen_values:
+            continue
+        choices.append((value, nombre))
+        seen_values.add(value)
+
+    include_values = _normalize_related_ids(
+        [
+            *_collect_curso_tipo_values_from_existing_courses(centro_id=centro_id),
+            *include_values,
+        ]
+    )
+
+    for value in include_values:
+        normalized_value = (value or "").strip()
+        if not normalized_value or normalized_value in seen_values:
+            continue
+        label = normalized_value.replace("_", " ").title()
+        choices.append((normalized_value, label))
+        seen_values.add(normalized_value)
+
+    return choices
 
 
 def build_plan_estudio_queryset_for_centro(
@@ -1531,6 +1581,21 @@ class CursoForm(forms.ModelForm):
         label="Nombre",
         widget=forms.TextInput(attrs={"class": "form-control"}),
     )
+    tipo = forms.MultipleChoiceField(
+        label="Tipo",
+        required=False,
+        choices=(),
+        widget=forms.SelectMultiple(
+            attrs={
+                **_select2_attrs(
+                    base_class="form-select",
+                    placeholder="Seleccionar tipos...",
+                ),
+                "data-dropdown-parent": "#modalCurso",
+            }
+        ),
+        help_text="Podés seleccionar uno o varios tipos.",
+    )
     estado = forms.ChoiceField(
         label="Estado",
         choices=Curso.ESTADO_CURSO_CHOICES,
@@ -1558,13 +1623,11 @@ class CursoForm(forms.ModelForm):
             attrs={
                 **_select2_attrs(
                     base_class="form-select",
-                    placeholder="Seleccionar vouchers...",
+                    placeholder="Buscar y elegir vouchers...",
                 ),
-                "size": "7",
-                "style": "min-height: 170px;",
             }
         ),
-        help_text="Seleccioná uno o más vouchers del mismo programa (Ctrl/Cmd + click para selección múltiple).",
+        help_text="Vouchers del mismo programa. Podés elegir uno o varios.",
     )
     costo_creditos = forms.IntegerField(
         label="Costo en créditos",
@@ -1585,6 +1648,7 @@ class CursoForm(forms.ModelForm):
         fields = [
             "plan_estudio",
             "nombre",
+            "tipo",
             "estado",
             "usa_voucher",
             "inscripcion_libre",
@@ -1593,13 +1657,30 @@ class CursoForm(forms.ModelForm):
             "observaciones",
         ]
 
+    def clean_tipo(self):
+        return self.cleaned_data.get("tipo") or []
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.order_fields(
+            [
+                "plan_estudio",
+                "nombre",
+                "tipo",
+                "estado",
+                "usa_voucher",
+                "inscripcion_libre",
+                "voucher_parametrias",
+                "costo_creditos",
+                "observaciones",
+            ]
+        )
         self.fields["plan_estudio"].empty_label = "Seleccionar plan de estudio..."
         centro_id = None
         centro_provincia_id = None
         current_plan_id = None
         current_voucher_ids = []
+        current_tipo_values = []
 
         if self.instance and self.instance.pk and self.instance.centro_id:
             centro_id = self.instance.centro_id
@@ -1608,6 +1689,7 @@ class CursoForm(forms.ModelForm):
             current_voucher_ids = list(
                 self.instance.voucher_parametrias.values_list("pk", flat=True)
             )
+            current_tipo_values = list(self.instance.tipo or [])
         elif self.initial.get("centro"):
             centro = self.initial.get("centro")
             if isinstance(centro, Centro):
@@ -1629,6 +1711,10 @@ class CursoForm(forms.ModelForm):
         )
         self.fields["voucher_parametrias"].queryset = build_voucher_parametria_queryset(
             current_voucher_ids
+        )
+        self.fields["tipo"].choices = build_curso_tipo_choices(
+            include_values=current_tipo_values,
+            centro_id=centro_id,
         )
 
     def clean(self):
@@ -2503,3 +2589,222 @@ class VoucherAsignacionMasivaForm(forms.Form):
                 "No se pueden asignar más de 500 vouchers a la vez."
             )
         return dnis
+
+
+# ============================================================================
+# WIZARD - Nueva Comisión de Curso (3 pasos)
+# ============================================================================
+
+
+class ComisionCursoWizardStep1Form(forms.Form):
+    """Paso 1: Información básica de la comisión.
+
+    No es ModelForm para evitar conflictos con el FK curso (lo trae la vista).
+    """
+
+    ubicacion = forms.ModelChoiceField(
+        queryset=InstitucionUbicacion.objects.none(),
+        label="Ubicación",
+        widget=forms.Select(
+            attrs={
+                "class": "form-select sisoc-wizard-input",
+                "data-placeholder": "Selector de sedes y anexos precargados",
+            }
+        ),
+    )
+    cupo_total = forms.IntegerField(
+        label="Cupo total",
+        min_value=5,
+        max_value=100,
+        widget=forms.NumberInput(
+            attrs={
+                "class": "form-control sisoc-wizard-input",
+                "placeholder": "El cupo debe estar entre 5 y 100 estudiantes",
+                "min": "5",
+                "max": "100",
+            }
+        ),
+    )
+    estado = forms.ChoiceField(
+        label="Estado",
+        choices=ComisionCurso.ESTADO_COMISION_CURSO_CHOICES,
+        initial="planificada",
+        widget=forms.Select(attrs={"class": "form-select sisoc-wizard-input"}),
+    )
+    fecha_inicio = forms.DateField(
+        label="Fecha de inicio",
+        widget=forms.DateInput(
+            attrs={
+                "class": "form-control sisoc-wizard-input",
+                "type": "date",
+                "placeholder": "La fecha de inicio debe ser igual o posterior a hoy",
+            }
+        ),
+    )
+    fecha_fin = forms.DateField(
+        label="Fecha de finalización",
+        widget=forms.DateInput(
+            attrs={
+                "class": "form-control sisoc-wizard-input",
+                "type": "date",
+                "placeholder": "La fecha de finalización debe ser posterior a la fecha de inicio",
+            }
+        ),
+    )
+    observaciones = forms.CharField(
+        label="Observaciones",
+        required=False,
+        widget=forms.Textarea(
+            attrs={"class": "form-control sisoc-wizard-input", "rows": 3}
+        ),
+    )
+
+    def __init__(self, *args, **kwargs):
+        self.curso = kwargs.pop("curso", None)
+        super().__init__(*args, **kwargs)
+        if self.curso is not None:
+            self.fields["ubicacion"].queryset = build_ubicacion_queryset_for_centros(
+                [self.curso.centro_id]
+            )
+
+    def clean(self):
+        cleaned = super().clean()
+        fecha_inicio = cleaned.get("fecha_inicio")
+        fecha_fin = cleaned.get("fecha_fin")
+        if fecha_inicio and fecha_inicio < timezone.localdate():
+            self.add_error(
+                "fecha_inicio",
+                "La fecha de inicio debe ser igual o posterior a hoy.",
+            )
+        if fecha_inicio and fecha_fin and fecha_fin <= fecha_inicio:
+            self.add_error(
+                "fecha_fin",
+                "La fecha de finalización debe ser posterior a la fecha de inicio.",
+            )
+        return cleaned
+
+
+class ComisionCursoWizardHorarioForm(forms.Form):
+    """Una fila del formset del paso 2."""
+
+    dia_semana = forms.ModelChoiceField(
+        queryset=Dia.objects.all(),
+        label="Día de la semana",
+        widget=forms.Select(
+            attrs={
+                "class": "form-select sisoc-wizard-input",
+                "data-placeholder": "Seleccionar día...",
+            }
+        ),
+    )
+    hora_desde = forms.TimeField(
+        label="Hora inicio",
+        widget=forms.TimeInput(
+            attrs={
+                "class": "form-control sisoc-wizard-input",
+                "type": "time",
+                "placeholder": "--/--",
+            }
+        ),
+    )
+    hora_hasta = forms.TimeField(
+        label="Hora finalización",
+        widget=forms.TimeInput(
+            attrs={
+                "class": "form-control sisoc-wizard-input",
+                "type": "time",
+                "placeholder": "--/--",
+            }
+        ),
+    )
+    vigente = forms.ChoiceField(
+        label="Estado",
+        choices=[("1", "Activo"), ("0", "Inactivo")],
+        initial="1",
+        widget=forms.Select(attrs={"class": "form-select sisoc-wizard-input"}),
+    )
+
+    MIN_DURACION_MINUTOS = 45
+    MAX_DURACION_MINUTOS = 4 * 60
+
+    def clean(self):
+        cleaned = super().clean()
+        hora_desde = cleaned.get("hora_desde")
+        hora_hasta = cleaned.get("hora_hasta")
+        if hora_desde and hora_hasta:
+            if hora_hasta <= hora_desde:
+                self.add_error(
+                    "hora_hasta",
+                    "La hora de finalización debe ser posterior a la hora de inicio.",
+                )
+            else:
+                duracion = (hora_hasta.hour * 60 + hora_hasta.minute) - (
+                    hora_desde.hour * 60 + hora_desde.minute
+                )
+                if duracion < self.MIN_DURACION_MINUTOS:
+                    self.add_error(
+                        "hora_hasta",
+                        "Cada clase debe durar al menos 45 minutos.",
+                    )
+                elif duracion > self.MAX_DURACION_MINUTOS:
+                    self.add_error(
+                        "hora_hasta",
+                        "Cada clase no puede durar más de 4 horas.",
+                    )
+        return cleaned
+
+
+class BaseComisionCursoWizardHorarioFormSet(forms.BaseFormSet):
+    MIN_TOTAL_SEMANAL_MINUTOS = 2 * 60
+
+    def clean(self):
+        super().clean()
+        if any(self.errors):
+            return
+
+        horarios_validos = []
+        for form in self.forms:
+            if not form.cleaned_data or form.cleaned_data.get("DELETE"):
+                continue
+            horarios_validos.append(form.cleaned_data)
+
+        if not horarios_validos:
+            raise forms.ValidationError(
+                "Debés definir al menos un horario para la comisión."
+            )
+
+        dias_vistos = set()
+        for horario in horarios_validos:
+            dia = horario.get("dia_semana")
+            if dia in dias_vistos:
+                raise forms.ValidationError(
+                    "No puede haber dos horarios para el mismo día de la semana."
+                )
+            dias_vistos.add(dia)
+
+        total_minutos = 0
+        for horario in horarios_validos:
+            inicio = horario.get("hora_desde")
+            fin = horario.get("hora_hasta")
+            if inicio and fin:
+                total_minutos += (fin.hour * 60 + fin.minute) - (
+                    inicio.hour * 60 + inicio.minute
+                )
+        if total_minutos < self.MIN_TOTAL_SEMANAL_MINUTOS:
+            raise forms.ValidationError(
+                "El total semanal debe ser de al menos 2 horas."
+            )
+
+
+ComisionCursoWizardStep2FormSet = forms.formset_factory(
+    ComisionCursoWizardHorarioForm,
+    formset=BaseComisionCursoWizardHorarioFormSet,
+    extra=0,
+    can_delete=True,
+    min_num=1,
+    validate_min=True,
+)
+
+
+class ComisionCursoWizardStep3Form(forms.Form):
+    """Paso 3 - confirmación. Sin campos: sólo se renderiza el resumen."""

@@ -1,0 +1,171 @@
+{% extends "includes/main.html" %}
+{% load static %}
+{% block title %}
+    Primer seguimiento - Comedor: {{ comedor.nombre }}
+{% endblock title %}
+{% block titulo-pagina %}
+    <div class="mb-4">
+        <a href="{% url 'relevamiento_detalle' comedor.id relevamiento.id %}"
+           class="btn btn-outline-secondary btn-back mr-1">Volver</a>
+    </div>
+    {{ comedor.nombre }}
+    <span class="ml-2 h5">| Primer seguimiento</span>
+    <span class="ml-2 h5">|
+        {{ seguimiento.fecha_hora | default_if_none:"Sin información" }} |
+    </span>
+    <span class="ml-2 h5">{{ seguimiento.estado | default_if_none:"Sin información" }}</span>
+    {% if seguimiento.sincronizado_gestionar %}
+        <span class="badge bg-success ml-2" title="Datos recibidos desde GESTIONAR">Sincronizado con GESTIONAR</span>
+    {% else %}
+        <span class="badge bg-secondary ml-2"
+              title="Aún no se recibieron datos desde GESTIONAR">Pendiente sincronización</span>
+    {% endif %}
+{% endblock titulo-pagina %}
+{% block breadcrumb %}
+    <ol class="breadcrumb float-sm-right">
+        <div class="breadcrumb-item">
+            <a href="{% url 'comedores' %}">Comedores</a>
+        </div>
+        <div class="breadcrumb-item">
+            <a href="{% url 'comedor_detalle' comedor.id %}">{{ comedor.nombre }}</a>
+        </div>
+        <div class="breadcrumb-item">
+            <a href="{% url 'relevamiento_detalle' comedor.id relevamiento.id %}">Relevamiento {{ relevamiento.fecha_visita | default_if_none:"Sin información" }}</a>
+        </div>
+        <div class="breadcrumb-item active">Primer seguimiento</div>
+    </ol>
+{% endblock breadcrumb %}
+{% block content %}
+    <link rel="stylesheet"
+          href="{% static 'custom/css/comedorRelevamiento.css' %}" />
+    <div class="row justify-content-between d-print-none mx-1 mb-3">
+        <div class="col-auto"></div>
+        <div class="col-auto">
+            <button type="button" class="btn btn-primary" disabled>Editar</button>
+        </div>
+    </div>
+    <div class="card mb-4">
+        <div class="card-header">
+            <h3 class="card-title font-weight-bold mr-3 pt-1">Resumen</h3>
+        </div>
+        <div class="card-body card-comments p-0 pb-1">
+            <div class="nav nav-pills row my-3">
+                <div class="nav-item col-md-3 col-sm-6 d-flex">
+                    <div class="comment-text d-flex flex-column text-sm">
+                        ID SISOC
+                        <span class="username fw-bold fs-5">{{ seguimiento.id }}</span>
+                    </div>
+                </div>
+                <div class="nav-item col-md-3 col-sm-6 d-flex">
+                    <div class="comment-text d-flex flex-column text-sm">
+                        ID GESTIONAR
+                        <span class="username fw-bold fs-5">{{ seguimiento.gestionar_id | default:"Sin asignar" }}</span>
+                    </div>
+                </div>
+                <div class="nav-item col-md-3 col-sm-6 d-flex">
+                    <div class="comment-text d-flex flex-column text-sm">
+                        Técnico
+                        <span class="username fw-bold fs-5">{{ seguimiento.tecnico | default:"Sin asignar" }}</span>
+                    </div>
+                </div>
+                <div class="nav-item col-md-3 col-sm-6 d-flex">
+                    <div class="comment-text d-flex flex-column text-sm">
+                        Referente
+                        <span class="username fw-bold fs-5">{{ seguimiento.referente | default:"Sin asignar" }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% if bloques %}
+        {% for bloque in bloques %}
+            <div class="card mb-3" id="bloque-{{ bloque.key }}">
+                <div class="card-header">
+                    <h3 class="card-title font-weight-bold mr-3 pt-1">{{ bloque.label }}</h3>
+                </div>
+                <div class="card-body card-comments p-0 pb-1">
+                    <div class="nav nav-pills row my-3">
+                        {% for campo in bloque.campos %}
+                            <div class="nav-item col-md-4 col-sm-6 d-flex mb-2">
+                                <div class="comment-text d-flex flex-column text-sm">
+                                    {{ campo.label }}
+                                    <span class="username fw-bold fs-5">{{ campo.value }}</span>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    {% else %}
+        <div class="alert alert-info">Todavía no se cargaron bloques del primer seguimiento desde GESTIONAR.</div>
+    {% endif %}
+    {% if prestaciones %}
+        <div class="card mb-3" id="bloque-prestaciones">
+            <div class="card-header">
+                <h3 class="card-title font-weight-bold mr-3 pt-1">Prestaciones</h3>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-striped mb-0">
+                        <thead>
+                            <tr>
+                                <th>ID prestación</th>
+                                <th>Días</th>
+                                <th>Tipo</th>
+                                <th>AP presencial</th>
+                                <th>AP vianda</th>
+                                <th>DE presencial</th>
+                                <th>DE vianda</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for prestacion in prestaciones %}
+                                <tr>
+                                    <td>{{ prestacion.id_prestacion_seg | default_if_none:"-" }}</td>
+                                    <td>{{ prestacion.dias_prestacion | default_if_none:"-" }}</td>
+                                    <td>{{ prestacion.tipo_prestacion | default_if_none:"-" }}</td>
+                                    <td>{{ prestacion.ap_presencial | default_if_none:"-" }}</td>
+                                    <td>{{ prestacion.ap_vianda | default_if_none:"-" }}</td>
+                                    <td>{{ prestacion.de_presencial | default_if_none:"-" }}</td>
+                                    <td>{{ prestacion.de_vianda | default_if_none:"-" }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+    {% if receta_items %}
+        <div class="card mb-3" id="bloque-receta-items">
+            <div class="card-header">
+                <h3 class="card-title font-weight-bold mr-3 pt-1">Items de receta del menú</h3>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-striped mb-0">
+                        <thead>
+                            <tr>
+                                <th>ID item</th>
+                                <th>Ingrediente</th>
+                                <th>Unidad de medida</th>
+                                <th>Cantidad</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in receta_items %}
+                                <tr>
+                                    <td>{{ item.id_item_receta | default_if_none:"-" }}</td>
+                                    <td>{{ item.ingrediente | default_if_none:"-" }}</td>
+                                    <td>{{ item.unidad_medida | default_if_none:"-" }}</td>
+                                    <td>{{ item.cantidad_medida | default_if_none:"-" }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+{% endblock content %}

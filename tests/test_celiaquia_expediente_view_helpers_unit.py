@@ -232,7 +232,8 @@ def test_localidades_lookup_view_filters_and_returns_json(mocker):
 
     mocker.patch("celiaquia.views.expediente._user_has_permission", return_value=False)
     mocker.patch("celiaquia.views.expediente._is_provincial", return_value=True)
-    mocker.patch("celiaquia.views.expediente._user_provincia", return_value="prov_obj")
+    # El lookup ahora restringe por el alcance territorial real del usuario.
+    mocker.patch("celiaquia.views.expediente.apply_territorial_scope", return_value=qs)
 
     request = SimpleNamespace(
         user=SimpleNamespace(),
@@ -243,7 +244,8 @@ def test_localidades_lookup_view_filters_and_returns_json(mocker):
 
     assert isinstance(response, JsonResponse)
     assert response.status_code == 200
-    assert qs.filter.call_count >= 3
+    # Filtros por provincia y municipio de los parametros GET.
+    assert qs.filter.call_count >= 2
 
 
 def test_expediente_preview_excel_view_error_and_success(mocker):
@@ -296,13 +298,21 @@ def test_expediente_plantilla_excel_view_download(mocker):
 
 
 def test_expediente_create_view_context_by_user_type(mocker):
+    # Commit 18e87c53 introdujo scopes territoriales: ahora la rama provincial
+    # requiere además _is_admin=False + is_territorial_user=True y delega en
+    # _user_scope_provincias en lugar de _user_provincia.
     view = module.ExpedienteCreateView()
     mocker.patch(
         "django.views.generic.edit.ModelFormMixin.get_context_data", return_value={}
     )
 
     mocker.patch("celiaquia.views.expediente._is_provincial", return_value=True)
-    mocker.patch("celiaquia.views.expediente._user_provincia", return_value="prov")
+    mocker.patch("celiaquia.views.expediente._is_admin", return_value=False)
+    mocker.patch("celiaquia.views.expediente.is_territorial_user", return_value=True)
+    mocker.patch(
+        "celiaquia.views.expediente._user_scope_provincias",
+        return_value=["prov"],
+    )
     view.request = SimpleNamespace(user=SimpleNamespace())
     ctx = view.get_context_data()
     assert ctx["provincias"] == ["prov"]
@@ -986,6 +996,9 @@ def test_reprocesar_registros_erroneos_early_branches(mocker):
         def __iter__(self):
             return iter([])
 
+        def count(self):
+            return 0
+
     expediente = SimpleNamespace(
         registros_erroneos=SimpleNamespace(filter=mocker.Mock())
     )
@@ -1014,8 +1027,8 @@ def test_reprocesar_registros_erroneos_early_branches(mocker):
     )
     assert no_records.status_code == 400
 
-    # Con registros pero sin provincia
-    req_no_prov = SimpleNamespace(
+    # Usuario multi-provincia (provincia_id=None desde el resolver): debe continuar
+    req_multi_prov = SimpleNamespace(
         user=SimpleNamespace(profile=SimpleNamespace(provincia_id=None))
     )
     expediente.registros_erroneos.filter.return_value = _RegistrosQS(True)
@@ -1031,10 +1044,18 @@ def test_reprocesar_registros_erroneos_early_branches(mocker):
         "celiaquia.views.expediente._resolver_provincia_id_registro_erroneo",
         return_value=None,
     )
-    no_prov = module.ReprocesarRegistrosErroneosView.post.__wrapped__(
-        view, req_no_prov, pk=1
+    mocker.patch(
+        "celiaquia.views.expediente._obtener_provincias_permitidas_ids",
+        return_value={1, 2},
     )
-    assert no_prov.status_code == 400
+    mocker.patch(
+        "celiaquia.views.expediente._actualizar_alerta_importacion_persistente",
+        return_value=None,
+    )
+    multi_prov = module.ReprocesarRegistrosErroneosView.post.__wrapped__(
+        view, req_multi_prov, pk=1
+    )
+    assert multi_prov.status_code == 200
 
 
 def test_reprocesar_registros_erroneos_convierte_conflicto_en_excluido(mocker):
@@ -1069,6 +1090,10 @@ def test_reprocesar_registros_erroneos_convierte_conflicto_en_excluido(mocker):
 
     mocker.patch(
         "celiaquia.views.expediente.get_object_or_404", return_value=expediente
+    )
+    mocker.patch(
+        "celiaquia.views.expediente._get_provincial_expediente_or_404",
+        return_value=expediente,
     )
     mocker.patch(
         "celiaquia.views.expediente._can_manage_registros_erroneos", return_value=True

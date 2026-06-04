@@ -1,3 +1,5 @@
+# pylint: disable=too-many-lines
+
 import re
 from datetime import datetime
 
@@ -556,6 +558,8 @@ class NominaEspacioPWAListSerializer(serializers.ModelSerializer):
     actividades = serializers.SerializerMethodField()
     cantidad_actividades = serializers.SerializerMethodField()
     es_indocumentado = serializers.SerializerMethodField()
+    pertenece_comunidad_indigena = serializers.SerializerMethodField()
+    situacion_calle = serializers.SerializerMethodField()
     identificador_interno = serializers.SerializerMethodField()
     asistencia_mes_actual = serializers.SerializerMethodField()
     historial_asistencias = serializers.SerializerMethodField()
@@ -576,6 +580,8 @@ class NominaEspacioPWAListSerializer(serializers.ModelSerializer):
             "actividades",
             "cantidad_actividades",
             "es_indocumentado",
+            "pertenece_comunidad_indigena",
+            "situacion_calle",
             "identificador_interno",
             "asistencia_mes_actual",
             "historial_asistencias",
@@ -681,6 +687,14 @@ class NominaEspacioPWAListSerializer(serializers.ModelSerializer):
         profile = self._get_profile(obj)
         return bool(profile.es_indocumentado) if profile else False
 
+    def get_pertenece_comunidad_indigena(self, obj):
+        profile = self._get_profile(obj)
+        return bool(profile.pertenece_comunidad_indigena) if profile else False
+
+    def get_situacion_calle(self, obj):
+        profile = self._get_profile(obj)
+        return bool(profile.situacion_calle) if profile else False
+
     def get_identificador_interno(self, obj):
         profile = self._get_profile(obj)
         return profile.identificador_interno if profile else None
@@ -762,6 +776,10 @@ class NominaEspacioPWACreateUpdateSerializer(serializers.Serializer):
     sexo_id = serializers.IntegerField(required=False, allow_null=True)
     fecha_nacimiento = serializers.DateField(required=False)
     es_indocumentado = serializers.BooleanField(required=False, default=False)
+    pertenece_comunidad_indigena = serializers.BooleanField(
+        required=False, default=False
+    )
+    situacion_calle = serializers.BooleanField(required=False, default=False)
     identificador_interno = serializers.CharField(
         required=False, allow_blank=True, allow_null=True
     )

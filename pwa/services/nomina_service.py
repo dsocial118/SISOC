@@ -50,6 +50,8 @@ def _snapshot_nomina_profile(profile: NominaEspacioPWA | None) -> dict | None:
         "asistencia_alimentaria": profile.asistencia_alimentaria,
         "asistencia_actividades": profile.asistencia_actividades,
         "es_indocumentado": profile.es_indocumentado,
+        "pertenece_comunidad_indigena": profile.pertenece_comunidad_indigena,
+        "situacion_calle": profile.situacion_calle,
         "identificador_interno": profile.identificador_interno,
         "activo": profile.activo,
         "fecha_baja": profile.fecha_baja,
@@ -90,15 +92,7 @@ def _active_nomina_queryset(*, comedor_id: int):
 
 
 def get_periodo_mensual_actual() -> date:
-    today = timezone.localdate()
-    if today.day <= 10:
-        previous_month = today.month - 1
-        year = today.year
-        if previous_month == 0:
-            previous_month = 12
-            year -= 1
-        return date(year, previous_month, 1)
-    return today.replace(day=1)
+    return timezone.localdate().replace(day=1)
 
 
 def asistencia_nomina_habilitada() -> bool:
@@ -498,6 +492,10 @@ def create_nomina_persona(*, comedor_id: int, actor, data: dict) -> Nomina:
     profile.asistencia_alimentaria = asistencia_alimentaria
     profile.asistencia_actividades = asistencia_actividades
     profile.es_indocumentado = bool(data.get("es_indocumentado"))
+    profile.pertenece_comunidad_indigena = bool(
+        data.get("pertenece_comunidad_indigena")
+    )
+    profile.situacion_calle = bool(data.get("situacion_calle"))
     profile.identificador_interno = (
         data.get("identificador_interno") or ""
     ).strip() or None
@@ -509,6 +507,8 @@ def create_nomina_persona(*, comedor_id: int, actor, data: dict) -> Nomina:
             "asistencia_alimentaria",
             "asistencia_actividades",
             "es_indocumentado",
+            "pertenece_comunidad_indigena",
+            "situacion_calle",
             "identificador_interno",
             "activo",
             "fecha_baja",
@@ -645,12 +645,20 @@ def update_nomina_persona(*, nomina: Nomina, actor, data: dict) -> Nomina:
         ).strip() or None
     if "es_indocumentado" in data:
         profile.es_indocumentado = next_indocumentado
+    if "pertenece_comunidad_indigena" in data:
+        profile.pertenece_comunidad_indigena = bool(
+            data.get("pertenece_comunidad_indigena")
+        )
+    if "situacion_calle" in data:
+        profile.situacion_calle = bool(data.get("situacion_calle"))
     profile.actualizado_por = actor
     profile.save(
         update_fields=[
             "asistencia_alimentaria",
             "asistencia_actividades",
             "es_indocumentado",
+            "pertenece_comunidad_indigena",
+            "situacion_calle",
             "identificador_interno",
             "actualizado_por",
             "fecha_actualizacion",

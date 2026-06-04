@@ -2,11 +2,22 @@ from django.contrib import admin
 
 
 from relevamientos.models import (
+    ActividadesExtrasSeguimiento,
+    AlmacenamientoAlimentosSeguimiento,
+    AsistenciaTecnicaSeguimiento,
     CantidadColaboradores,
+    CierreSeguimiento,
+    ComprasSeguimiento,
+    CondicionesHigieneSeguimiento,
     FrecuenciaLimpieza,
+    FrecuenciaAlimentosSeguimiento,
+    FrecuenciaCompraAlimentosSeguimiento,
     FrecuenciaRecepcionRecursos,
     FuenteCompras,
     FuenteRecursos,
+    FuncionamientoSeguimiento,
+    ItemRecetaSeguimiento,
+    MenuSeguimiento,
     TipoAgua,
     TipoCombustible,
     TipoDesague,
@@ -17,7 +28,15 @@ from relevamientos.models import (
     Excepcion,
     MotivoExcepcion,
     Prestacion,
+    PrestacionSeguimiento,
+    PrimerSeguimiento,
     Relevamiento,
+    RegistroAsistenciaSeguimiento,
+    RendicionCuentasSeguimiento,
+    RecursosSeguimiento,
+    ServiciosBasicosSeguimiento,
+    TareasComedorSeguimiento,
+    TarjetaSeguimiento,
 )
 
 admin.site.register(TipoModalidadPrestacion)
@@ -36,3 +55,22 @@ admin.site.register(Prestacion)
 admin.site.register(Relevamiento)
 admin.site.register(MotivoExcepcion)
 admin.site.register(Excepcion)
+admin.site.register(FuncionamientoSeguimiento)
+admin.site.register(ServiciosBasicosSeguimiento)
+admin.site.register(AlmacenamientoAlimentosSeguimiento)
+admin.site.register(CondicionesHigieneSeguimiento)
+admin.site.register(TareasComedorSeguimiento)
+admin.site.register(RecursosSeguimiento)
+admin.site.register(ComprasSeguimiento)
+admin.site.register(FrecuenciaCompraAlimentosSeguimiento)
+admin.site.register(MenuSeguimiento)
+admin.site.register(RegistroAsistenciaSeguimiento)
+admin.site.register(FrecuenciaAlimentosSeguimiento)
+admin.site.register(ActividadesExtrasSeguimiento)
+admin.site.register(TarjetaSeguimiento)
+admin.site.register(RendicionCuentasSeguimiento)
+admin.site.register(AsistenciaTecnicaSeguimiento)
+admin.site.register(CierreSeguimiento)
+admin.site.register(PrimerSeguimiento)
+admin.site.register(PrestacionSeguimiento)
+admin.site.register(ItemRecetaSeguimiento)

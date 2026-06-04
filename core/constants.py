@@ -21,6 +21,7 @@ class UserGroups:
     AREA_LEGALES = "Area Legales"
     AREA_CONTABLE = "Area Contable"
     CDI_REFERENTE_CENTRO = "CDI - Referente centro"
+    CDF_REFERENTE_CENTRO = "CDF - Referente centro"
 
     # =========================================================================
     # Grupos de permisos específicos

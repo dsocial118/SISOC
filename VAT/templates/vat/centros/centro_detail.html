@@ -4,100 +4,24 @@
 {% block breadcrumb %}
     {% include 'components/breadcrumb.html' with items=breadcrumb_items %}
 {% endblock %}
+{% block head %}
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Lora:wght@700&family=Montserrat:wght@400;600;700&display=swap"
+          rel="stylesheet" />
+{% endblock %}
 {% block content %}
     <link rel="stylesheet" href="{% static 'custom/css/centro_detail.css' %}" />
 
     <style>
         .ci-hero {
-            background: linear-gradient(135deg, #1a3a6e 0%, #1f3a93 50%, #3a6bc4 100%);
             border-radius: 12px;
-            padding: 1.75rem 2rem;
+            padding: 0;
             color: #fff;
             margin-bottom: 1.25rem;
             position: relative;
-            overflow: hidden;
-        }
-
-        .ci-hero::before {
-            content: "";
-            position: absolute;
-            top: -40px;
-            right: -40px;
-            width: 220px;
-            height: 220px;
-            background: rgba(255, 255, 255, 0.06);
-            border-radius: 50%;
-            pointer-events: none;
-        }
-
-        .ci-back {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 34px;
-            height: 34px;
-            background: rgba(255, 255, 255, 0.15);
-            border: 1px solid rgba(255, 255, 255, 0.25);
-            border-radius: 8px;
-            color: #fff;
-            text-decoration: none;
-            flex-shrink: 0;
-            transition: background 0.15s;
-        }
-
-        .ci-back:hover {
-            background: rgba(255, 255, 255, 0.25);
-            color: #fff;
-        }
-
-        .ci-code-badge {
-            font-family: monospace;
-            font-size: 0.75rem;
-            font-weight: 700;
-            background: rgba(255, 255, 255, 0.15);
-            border: 1px solid rgba(255, 255, 255, 0.25);
-            padding: 0.2em 0.65em;
-            border-radius: 5px;
-            letter-spacing: 0.06em;
-        }
-
-        .ci-state-badge {
-            font-size: 0.71rem;
-            font-weight: 600;
-            background: rgba(255, 255, 255, 0.12);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            padding: 0.2em 0.65em;
-            border-radius: 5px;
-            color: rgba(255, 255, 255, 0.85);
-        }
-
-        .ci-hero-title {
-            font-size: 1.5rem;
-            font-weight: 700;
-            line-height: 1.2;
-            margin: 0.3rem 0 0.2rem;
-        }
-
-        .ci-hero-sub {
-            font-size: 0.83rem;
-            opacity: 0.75;
-        }
-
-        .ci-edit-btn {
-            background: rgba(255, 255, 255, 0.15);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            color: #fff;
-            border-radius: 8px;
-            font-size: 0.83rem;
-            padding: 0.38rem 0.9rem;
-            text-decoration: none;
-            white-space: nowrap;
-            transition: background 0.15s;
-        }
-
-        .ci-edit-btn:hover {
-            background: rgba(255, 255, 255, 0.25);
-            color: #fff;
+            overflow: visible;
+            background: transparent;
         }
 
         .ci-stats {
@@ -514,1219 +438,1222 @@
                 grid-column: auto;
             }
         }
+
+        .app-content-header {
+            display: none;
+        }
+
+        .sisoc-legacy-centro-tabs,
+        #datos-generales {
+            display: none !important;
+        }
+
+        .sisoc-centro-page {
+            font-family: Inter, Roboto, sans-serif;
+            color: #ffffff;
+            max-width: 1620px;
+            margin: 0 auto 1rem;
+            background: #3E5A7E;
+            border-radius: 20px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .sisoc-page-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            margin-bottom: .7rem;
+            flex-wrap: wrap;
+            background: #4f6e94;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 8px;
+            padding: .55rem .7rem;
+        }
+
+        .sisoc-back-link {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0;
+            min-height: 32px;
+            padding: 6px 16px;
+            border-radius: 999px;
+            border: 1px solid rgba(196, 201, 209, 0.9);
+            background: #ffffff;
+            color: #37465b;
+            text-decoration: none;
+            font-size: 12px;
+            font-weight: 700;
+            line-height: 1;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+        }
+
+        .sisoc-back-link:hover {
+            color: #243244;
+            background: #f6f8fb;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.16);
+        }
+
+        .sisoc-header-actions {
+            display: flex;
+            align-items: center;
+            gap: .85rem;
+            flex-wrap: wrap;
+        }
+
+        .sisoc-header-action-link {
+            color: #dbe6f8;
+            text-decoration: none;
+            font-size: 12px;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: .3rem;
+        }
+
+        .sisoc-header-action-link:hover {
+            color: #ffffff;
+        }
+
+        .sisoc-title-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 40px;
+            flex-wrap: nowrap;
+            background: #232D4F;
+            border: 0;
+            border-radius: 20px;
+            padding: 20px 30px;
+            margin-bottom: 1.1rem;
+        }
+
+        .sisoc-title-block {
+            flex: 1 1 auto;
+            min-width: 0;
+        }
+
+        .sisoc-title-block h1 {
+            margin: 0;
+            font-family: 'Lora', Georgia, 'Times New Roman', serif;
+            font-size: 36px;
+            font-weight: 700;
+            color: #ffffff;
+            line-height: 40px;
+            letter-spacing: 1px;
+        }
+
+        .sisoc-title-meta {
+            display: inline-flex;
+            flex: 0 0 auto;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 20px;
+            flex-wrap: nowrap;
+            padding: 10px 0;
+        }
+
+        .sisoc-title-meta .sisoc-cue-text {
+            color: #ffffff;
+            font-family: 'Lora', Georgia, 'Times New Roman', serif;
+            font-size: 24px;
+            font-weight: 700;
+            line-height: 40px;
+            letter-spacing: 1px;
+            white-space: nowrap;
+        }
+
+        .sisoc-status-pill {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            padding: 8px 10px;
+            background: #2F8F5B;
+            border: 1px solid rgba(255, 255, 255, 0.22);
+            color: #ffffff;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: .04em;
+            text-transform: uppercase;
+            line-height: 1;
+        }
+
+        .sisoc-title-meta {
+            align-self: center;
+        }
+
+        .sisoc-status-pill.is-inactive {
+            background: #B42318;
+        }
+
+        .sisoc-info-shell {
+            display: flex;
+            align-items: stretch;
+            background: #232D4F;
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            border-radius: 20px;
+            box-shadow: 0 4px 4px 0 rgba(0, 0, 0, 0.35);
+            overflow: hidden;
+            min-height: 524px;
+            font-family: 'Montserrat', Inter, Roboto, sans-serif;
+        }
+
+        .sisoc-info-content {
+            flex: 1 1 auto;
+            min-width: 0;
+        }
+
+        .sisoc-info-panel {
+            display: none;
+            padding: 30px;
+        }
+
+        .sisoc-info-panel.is-active {
+            display: block;
+        }
+
+        .sisoc-side-tabs {
+            display: flex;
+            align-items: stretch;
+            flex-shrink: 0;
+        }
+
+        .sisoc-side-tabs--left {
+            justify-content: flex-start;
+        }
+
+        .sisoc-side-tabs--right {
+            justify-content: flex-end;
+        }
+
+        .sisoc-side-tab[hidden] {
+            display: none;
+        }
+
+        .sisoc-side-tab {
+            width: 54px;
+            border: 0;
+            background: #3B8681;
+            color: #ffffff;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background-color .2s ease;
+        }
+
+        .sisoc-side-tabs--left .sisoc-side-tab + .sisoc-side-tab {
+            border-left: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .sisoc-side-tabs--right .sisoc-side-tab + .sisoc-side-tab {
+            border-left: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .sisoc-side-tab:hover,
+        .sisoc-side-tab:focus {
+            background: #347a6b;
+            outline: none;
+        }
+
+        .sisoc-side-tab.is-active {
+            background: #3B8681;
+        }
+
+        .sisoc-side-tab[data-sisoc-tab-target="general"] {
+            background: #3B8681;
+        }
+
+        .sisoc-side-tab[data-sisoc-tab-target="general"]:hover,
+        .sisoc-side-tab[data-sisoc-tab-target="general"]:focus,
+        .sisoc-side-tab[data-sisoc-tab-target="general"].is-active {
+            background: #3B8681;
+        }
+
+        .sisoc-side-tab[data-sisoc-tab-target="ubicaciones"] {
+            background: #3B8681;
+        }
+
+        .sisoc-side-tab[data-sisoc-tab-target="ubicaciones"]:hover,
+        .sisoc-side-tab[data-sisoc-tab-target="ubicaciones"]:focus,
+        .sisoc-side-tab[data-sisoc-tab-target="ubicaciones"].is-active {
+            background: #3B8681;
+        }
+
+        .sisoc-side-tab[data-sisoc-tab-target="contactos"] {
+            background: #3B8681;
+        }
+
+        .sisoc-side-tab[data-sisoc-tab-target="contactos"]:hover,
+        .sisoc-side-tab[data-sisoc-tab-target="contactos"]:focus,
+        .sisoc-side-tab[data-sisoc-tab-target="contactos"].is-active {
+            background: #3B8681;
+        }
+
+        .sisoc-side-tabs--left .sisoc-side-tab:first-child {
+            border-top-left-radius: 20px;
+            border-bottom-left-radius: 20px;
+        }
+
+        .sisoc-side-tabs--right .sisoc-side-tab:last-child {
+            border-top-right-radius: 20px;
+            border-bottom-right-radius: 20px;
+        }
+
+        .sisoc-side-tab span {
+            writing-mode: vertical-rl;
+            transform: rotate(180deg);
+            font-size: 24px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            white-space: nowrap;
+            color: #ffffff;
+            line-height: 1;
+        }
+
+        .sisoc-panel-section + .sisoc-panel-section {
+            margin-top: 30px;
+        }
+
+        .sisoc-section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }
+
+        .sisoc-section-header h2,
+        .sisoc-section-header h3 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 600;
+            color: #F2F2F2;
+            letter-spacing: 1px;
+            line-height: 40px;
+        }
+
+        .sisoc-section-divider {
+            height: 2px;
+            border: 0;
+            margin: 0 0 20px;
+            background: rgba(255, 255, 255, 0.95);
+        }
+
+        .sisoc-general-layout {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 195px;
+            gap: 30px;
+            align-items: stretch;
+        }
+
+        .sisoc-general-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 20px 60px;
+            align-content: space-between;
+            min-height: 110px;
+        }
+
+        .sisoc-data-item {
+            min-width: 0;
+        }
+
+        .sisoc-data-label {
+            margin: 0 0 .22rem;
+            color: #F2F2F2;
+            font-size: 16px;
+            font-weight: 400;
+            text-transform: none;
+            letter-spacing: 1px;
+            line-height: 20px;
+        }
+
+        .sisoc-data-value {
+            margin: 0;
+            color: #F2F2F2;
+            font-size: 16px;
+            font-weight: 600;
+            letter-spacing: 1px;
+            line-height: 25px;
+            word-break: break-word;
+        }
+
+        .sisoc-data-value a {
+            color: #ffffff;
+            text-decoration: none;
+        }
+
+        .sisoc-data-value a:hover {
+            text-decoration: underline;
+        }
+
+        .sisoc-map-preview {
+            width: 100%;
+            height: 140px;
+            overflow: hidden;
+            border-radius: 12.56px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: #1b2a4a;
+            box-shadow: 0 2.51px 2.51px 0 rgba(0, 0, 0, 0.35);
+            align-self: stretch;
+        }
+
+        .sisoc-map-preview iframe,
+        .sisoc-map-placeholder {
+            width: 100%;
+            height: 100%;
+        }
+
+        .sisoc-map-placeholder {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: .45rem;
+            color: #8b9bb4;
+            font-size: 11px;
+            text-align: center;
+            padding: .75rem;
+        }
+
+        .sisoc-referente-list {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            display: grid;
+            gap: 10px;
+            align-content: space-between;
+        }
+
+        .sisoc-referente-item {
+            display: flex;
+            align-items: baseline;
+            gap: 10px;
+            line-height: 1.3;
+        }
+
+        .sisoc-referente-icon {
+            width: 20px;
+            height: 20px;
+            flex: 0 0 20px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: #ffffff;
+            font-size: 16px;
+        }
+
+        .sisoc-referente-copy {
+            display: inline-flex;
+            align-items: baseline;
+            gap: 10px;
+            flex-wrap: wrap;
+            min-width: 0;
+        }
+
+        .sisoc-referente-copy span {
+            display: inline;
+            margin-bottom: 0;
+            color: #F2F2F2;
+            font-size: 16px;
+            font-weight: 400;
+            letter-spacing: 1px;
+            line-height: 20px;
+        }
+
+        .sisoc-referente-copy strong,
+        .sisoc-referente-copy div {
+            color: #F2F2F2;
+            font-size: 16px;
+            font-weight: 600;
+            letter-spacing: 1px;
+            line-height: 25px;
+            display: inline;
+        }
+
+        .sisoc-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: .4rem;
+            min-height: 32px;
+            padding: 6px 14px;
+            border-radius: 6px;
+            border: 1px solid transparent;
+            text-decoration: none;
+            font-size: 12.5px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: filter .2s ease, background-color .2s ease;
+        }
+
+        .sisoc-btn:hover,
+        .sisoc-btn:focus {
+            filter: brightness(1.08);
+            color: #ffffff;
+            outline: none;
+        }
+
+        .sisoc-btn--add {
+            background: #2e7d33;
+            color: #ffffff;
+        }
+
+        .sisoc-btn--edit {
+            background: #4e6f95;
+            border-color: rgba(215, 226, 244, 0.2);
+            color: #ffffff;
+        }
+
+        .sisoc-btn--view {
+            background: #2e6fd1;
+            color: #ffffff;
+        }
+
+        .sisoc-btn--delete {
+            background: #d04545;
+            border-color: rgba(255, 255, 255, 0.2);
+            color: #ffffff;
+        }
+
+        .sisoc-btn--edit:hover,
+        .sisoc-btn--edit:focus {
+            color: #ffffff;
+        }
+
+        .sisoc-btn--delete:hover,
+        .sisoc-btn--delete:focus {
+            color: #ffffff;
+        }
+
+        .sisoc-btn--ghost {
+            background: transparent;
+            border-color: #2a3a4a;
+            color: #8b9bb4;
+        }
+
+        .sisoc-table-shell {
+            border: 1px solid #2a3a4a;
+            border-radius: 6px;
+            overflow: hidden;
+            background: #1a2836;
+        }
+
+        .sisoc-table-wrap {
+            overflow-x: auto;
+        }
+
+        .sisoc-table {
+            width: 100%;
+            border-collapse: collapse;
+            border-spacing: 0;
+        }
+
+        .sisoc-table thead th {
+            padding: 10px 12px;
+            border-bottom: 1px solid #2a3a4a;
+            color: #a9b5c7;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .04em;
+            text-align: left;
+            white-space: nowrap;
+        }
+
+        .sisoc-table tbody td {
+            padding: 10px 12px;
+            border-bottom: 1px solid #2a3a4a;
+            color: #ffffff;
+            font-size: 13px;
+            vertical-align: middle;
+        }
+
+        .sisoc-table tbody tr:last-child td {
+            border-bottom: 0;
+        }
+
+        .sisoc-table-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: .3rem;
+            flex-wrap: wrap;
+        }
+
+        .sisoc-table-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            padding: .75rem 0 0;
+            color: #8b9bb4;
+            font-size: 12px;
+            flex-wrap: wrap;
+        }
+
+        .sisoc-pager {
+            display: inline-flex;
+            align-items: center;
+            gap: .35rem;
+            background: #16242f;
+            border: 1px solid #2a3a4a;
+            border-radius: 6px;
+            padding: 3px;
+        }
+
+        .sisoc-pager button {
+            width: 26px;
+            height: 26px;
+            border: 0;
+            border-radius: 4px;
+            background: transparent;
+            color: #d8e0eb;
+            font-size: 12px;
+            line-height: 1;
+            cursor: pointer;
+        }
+
+        .sisoc-pager button:hover {
+            background: #22364a;
+        }
+
+        .sisoc-pager span {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 38px;
+            min-height: 26px;
+            padding: 0 8px;
+            border-radius: 4px;
+            background: #22364a;
+            color: #d8e0eb;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .sisoc-empty-state {
+            padding: 1.4rem 1rem;
+            text-align: center;
+            color: #8b9bb4;
+            font-size: 13px;
+        }
+
+        .sisoc-section-stack {
+            display: grid;
+            gap: 1rem;
+        }
+
+        .sisoc-section-header-bar {
+            min-height: 40px;
+            display: flex;
+            align-items: center;
+            padding: 0 18px;
+            border-radius: 20px 20px 0 0;
+            background: #3f958d;
+            color: #ffffff;
+            font-size: 15px;
+            font-weight: 700;
+        }
+
+        .sisoc-section-card {
+            background: #1e2e40;
+            border: 1px solid #2a3a4a;
+            border-top: 0;
+            border-radius: 0 0 20px 20px;
+            padding: 1rem;
+        }
+
+        .sisoc-data-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 26px;
+            padding: 3px 14px;
+            border-radius: 5px;
+            color: #ffffff;
+            font-size: 12px;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .sisoc-data-badge--commission {
+            background: #b58a3a;
+            color: #ffffff;
+        }
+
+        .sisoc-data-badge--no-commission {
+            background: #c8484c;
+            color: #ffffff;
+        }
+
+        .sisoc-toolbar,
+        .sisoc-toolbar-left {
+            display: flex;
+            align-items: center;
+            gap: .75rem;
+            flex-wrap: wrap;
+        }
+
+        .sisoc-toolbar {
+            justify-content: space-between;
+        }
+
+        .sisoc-toolbar-field {
+            display: flex;
+            align-items: center;
+            gap: .55rem;
+            min-height: 36px;
+            padding: 0 12px;
+            border: 1px solid #2a3a4a;
+            border-radius: 6px;
+            background: #16242f;
+            color: #ffffff;
+        }
+
+        .sisoc-toolbar-field > i {
+            color: #8b9bb4;
+            font-size: 12px;
+        }
+
+        .sisoc-toolbar-field input,
+        .sisoc-toolbar-field select {
+            border: 0;
+            outline: none;
+            background: transparent;
+            color: #ffffff;
+            font-size: 12px;
+            min-width: 170px;
+        }
+
+        .sisoc-toolbar-field input::placeholder {
+            color: #8b9bb4;
+        }
+
+        .sisoc-toolbar-field select option {
+            background: #1e2e40;
+            color: #ffffff;
+        }
+
+        .sisoc-section-card .select2-container {
+            min-width: 210px !important;
+        }
+
+        .sisoc-section-card .select2-container--default .select2-selection--single {
+            height: 32px;
+            border: 1px solid #2a3a4a;
+            background: #1e2e40;
+            border-radius: 4px;
+        }
+
+        .sisoc-section-card .select2-container--default .select2-selection--single .select2-selection__rendered {
+            color: #ffffff;
+            line-height: 30px;
+            padding-left: 10px;
+        }
+
+        .sisoc-section-card .select2-container--default .select2-selection--single .select2-selection__arrow {
+            height: 30px;
+        }
+
+        .sisoc-section-card .select2-dropdown {
+            border: 1px solid #2a3a4a;
+            background: #1e2e40;
+        }
+
+        .sisoc-section-card .select2-search--dropdown .select2-search__field {
+            background: #1b2b3a;
+            border: 1px solid #2a3a4a;
+            color: #ffffff;
+        }
+
+        .sisoc-section-card .select2-results__option {
+            color: #ffffff;
+        }
+
+        .sisoc-section-card .select2-container--default .select2-results__option--highlighted[aria-selected] {
+            background: #2e7d6a;
+            color: #ffffff;
+        }
+
+        .sisoc-hidden-control {
+            display: none;
+        }
+
+        .sisoc-panel-note {
+            color: #8b9bb4;
+            font-size: 12px;
+        }
+
+        .sisoc-cursos-pane {
+            display: block;
+            margin-top: 1rem;
+        }
+
+        @media (max-width: 991.98px) {
+            .sisoc-general-layout {
+                grid-template-columns: 1fr;
+            }
+
+            .sisoc-general-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 767.98px) {
+            .sisoc-centro-page {
+                padding: .85rem;
+                border-radius: 14px;
+            }
+
+            .sisoc-title-row {
+                flex-wrap: wrap;
+                align-items: flex-start;
+            }
+
+            .sisoc-title-block h1 {
+                font-size: 30px;
+                line-height: 34px;
+            }
+
+            .sisoc-title-meta .sisoc-cue-text {
+                font-size: 16px;
+            }
+
+            .sisoc-info-shell {
+                flex-direction: column;
+            }
+
+            .sisoc-side-tabs {
+                order: -1;
+                min-width: 100%;
+                flex: 0 0 auto;
+            }
+
+            .sisoc-side-tab {
+                width: 33.3333%;
+                min-height: 42px;
+                border-left: 0;
+                border-top: 1px solid rgba(255, 255, 255, 0.08);
+            }
+
+            .sisoc-side-tab span {
+                writing-mode: horizontal-tb;
+                transform: none;
+                font-size: 11px;
+            }
+
+            .sisoc-general-grid {
+                grid-template-columns: 1fr;
+                gap: .85rem;
+            }
+
+            .sisoc-table-footer,
+            .sisoc-toolbar {
+                align-items: stretch;
+            }
+
+            .sisoc-toolbar-left,
+            .sisoc-toolbar,
+            .sisoc-header-actions {
+                width: 100%;
+            }
+
+            .sisoc-toolbar-field {
+                width: 100%;
+            }
+
+            .sisoc-toolbar-field input,
+            .sisoc-toolbar-field select {
+                min-width: 0;
+                width: 100%;
+            }
+        }
     </style>
 
-    <div class="ci-hero d-print-none">
-        <div class="d-flex align-items-start justify-content-between flex-wrap gap-3 mb-3">
-            <div class="d-flex align-items-center gap-3">
-                <a href="{% url 'vat_centro_list' %}" class="ci-back">
-                    <i class="bi bi-arrow-left"></i>
-                </a>
-                <div>
-                    <div class="ci-hero-title" style="margin-top: 0">{{ centro.nombre }}</div>
-                    <div class="ci-hero-sub">
-                        <i class="bi bi-geo-alt me-1"></i>
-                        {{ centro.localidad|default:"Sin localidad" }}, {{ centro.municipio|default:"Sin municipio" }}, {{ centro.provincia|default:"Sin provincia" }}
-                    </div>
+    {% with primary_contacto=contactos.0 %}
+        <div class="ci-hero d-print-none">
+            <div class="sisoc-title-row">
+                <div class="sisoc-title-block">
+                    <h1>{{ centro.nombre }}</h1>
                 </div>
-            </div>
-            <div class="d-flex align-items-center gap-2 flex-wrap">
-                {% if centro.activo %}
-                    <span class="ci-state-badge">Activo</span>
-                {% else %}
-                    <span class="ci-state-badge">Inactivo</span>
-                {% endif %}
-                <span class="ci-code-badge">CENTRO</span>
-                {% if can_edit_centro %}
-                    <a href="{% url 'vat_centro_update' centro.id %}" class="ci-edit-btn">
-                        <i class="bi bi-pencil me-1"></i>Editar
-                    </a>
-                {% endif %}
-                {% if can_edit_centro and perms.VAT.delete_centro %}
-                    <a href="{% url 'vat_centro_delete' centro.id %}" class="ci-edit-btn">
-                        <i class="bi bi-trash me-1"></i>Eliminar
-                    </a>
-                {% endif %}
-            </div>
-        </div>
-
-        <div class="ci-stats">
-            <div class="ci-stat">
-                <span class="ci-stat-val">{{ count_ofertas }}</span>
-                <span class="ci-stat-lbl">Ofertas</span>
-            </div>
-            <div class="ci-stat-sep"></div>
-            <div class="ci-stat">
-                <span class="ci-stat-val">{{ count_comisiones }}</span>
-                <span class="ci-stat-lbl">Comisiones</span>
-            </div>
-            <div class="ci-stat-sep"></div>
-            <div class="ci-stat">
-                <span class="ci-stat-val">{{ count_contactos }}</span>
-                <span class="ci-stat-lbl">Contactos</span>
-            </div>
-            <div class="ci-stat-sep"></div>
-            <div class="ci-stat">
-                <span class="ci-stat-val">{{ count_identificadores }}</span>
-                <span class="ci-stat-lbl">Identificadores</span>
-            </div>
-            <div class="ci-stat-sep"></div>
-            <div class="ci-stat">
-                <span class="ci-stat-val">{{ count_cursos }}</span>
-                <span class="ci-stat-lbl">Cursos</span>
-            </div>
-        </div>
-    </div>
-
-    <!-- TABS CONSOLIDADAS (3 tabs) -->
-    <div class="card shadow-sm mb-4">
-        <div class="card-header bg-gradient-primary text-white detalles-centro-header">
-            <h5 class="mb-0">
-                <i class="fas fa-building me-2"></i>
-                Detalles del Centro
-            </h5>
-        </div>
-        <div class="card-body p-0">
-            <ul class="nav nav-pills nav-fill" id="centroTabs" role="tablist">
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link active"
-                            id="datos-generales-tab"
-                            data-bs-toggle="tab"
-                            data-bs-target="#datos-generales"
-                            type="button"
-                            role="tab">
-                        <i class="fas fa-info-circle me-1"></i>Datos del Establecimiento
-                    </button>
-                </li>
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link"
-                            id="cursos-tab"
-                            data-bs-toggle="tab"
-                            data-bs-target="#cursos"
-                            type="button"
-                            role="tab">
-                        <i class="fas fa-chalkboard-teacher me-1"></i>Cursos
-                    </button>
-                </li>
-            </ul>
-        </div>
-    </div>
-
-    <div class="tab-content" id="centroTabContent">
-
-        {# ================================================================ #}
-        {# TAB 1: DATOS GENERALES                                           #}
-        {# Agrupa: Información + Referente + Contactos                      #}
-        {# ================================================================ #}
-        <div class="tab-pane fade show active"
-             id="datos-generales"
-             role="tabpanel">
-
-            <!-- Informacion General -->
-            <div class="card shadow-sm mb-4">
-                <div class="card-header bg-light info-general-header">
-                    <h6 class="mb-0 text-primary">
-                        <i class="fas fa-info-circle me-2"></i>
-                        Informacion General
-                    </h6>
-                </div>
-                <div class="card-body">
-                    <div class="details-grid">
-                        <article class="details-item">
-                            <div class="details-label text-muted">
-                                <i class="fas fa-hashtag"></i>CUE
-                            </div>
-                            <p class="details-value">{{ centro.codigo|default:"-" }}</p>
-                        </article>
-                        <article class="details-item">
-                            <div class="details-label text-muted">
-                                <i class="fas fa-layer-group"></i>Tipo de Gestion
-                            </div>
-                            <p class="details-value">{{ centro.tipo_gestion|default:"-" }}</p>
-                        </article>
-                        <article class="details-item">
-                            <div class="details-label text-muted">
-                                <i class="fas fa-sitemap"></i>Clase de Institucion
-                            </div>
-                            <p class="details-value">{{ centro.clase_institucion|default:"-" }}</p>
-                        </article>
-                        <article class="details-item">
-                            <div class="details-label text-muted">
-                                <i class="fas fa-clipboard-check"></i>Situacion
-                            </div>
-                            <p class="details-value">{{ centro.situacion|default:"-" }}</p>
-                        </article>
-                        <article class="details-item">
-                            <div class="details-label text-muted">
-                                <i class="fas fa-phone"></i>Telefono
-                            </div>
-                            <p class="details-value">{{ centro.telefono|default:"-" }}</p>
-                        </article>
-                        <article class="details-item">
-                            <div class="details-label text-muted">
-                                <i class="fas fa-mobile-alt"></i>Celular
-                            </div>
-                            <p class="details-value">{{ centro.celular|default:"-" }}</p>
-                        </article>
-                        <article class="details-item">
-                            <div class="details-label text-muted">
-                                <i class="fas fa-envelope"></i>Correo
-                            </div>
-                            <p class="details-value">
-                                {% if centro.correo %}
-                                    <a href="mailto:{{ centro.correo }}" class="text-decoration-none">{{ centro.correo }}</a>
-                                {% else %}
-                                    -
-                                {% endif %}
-                            </p>
-                        </article>
-                        <article class="details-item details-item--wide">
-                            <div class="details-label text-muted">
-                                <i class="fas fa-map-marker-alt"></i>Domicilio de Actividades
-                            </div>
-                            <p class="details-value">{{ centro.domicilio_actividad|default:"-" }}</p>
-                        </article>
-                        {% if centro.sitio_web %}
-                            <article class="details-item details-item--wide">
-                                <div class="details-label text-muted">
-                                    <i class="fas fa-globe"></i>Sitio Web
-                                </div>
-                                <p class="details-value">
-                                    <a href="{{ centro.sitio_web }}"
-                                       target="_blank"
-                                       class="text-decoration-none">{{ centro.sitio_web }}</a>
-                                </p>
-                            </article>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-
-            <!-- Referente/s del Centro -->
-            <div class="card shadow-sm mb-4">
-                <div class="card-header bg-light referente-header">
-                    <h6 class="mb-0 text-white">
-                        <i class="fas fa-user me-2"></i>
-                        Referente/s del Centro
-                    </h6>
-                </div>
-                <div class="card-body">
-                    <div class="details-grid">
-                        <article class="details-item">
-                            <div class="details-label text-muted">
-                                <i class="fas fa-id-badge"></i>Nombre y Apellido
-                            </div>
-                            <p class="details-value">
-                                {% if centro.nombre_referente or centro.apellido_referente %}
-                                    {{ centro.nombre_referente }} {{ centro.apellido_referente }}
-                                {% else %}
-                                    -
-                                {% endif %}
-                            </p>
-                        </article>
-                        <article class="details-item">
-                            <div class="details-label text-muted">
-                                <i class="fas fa-user-cog"></i>Usuario/s del Sistema
-                            </div>
-                            <div class="details-value">
-                                {% for referente_usuario in referentes_centro %}
-                                    <div>{{ referente_usuario.get_full_name|default:referente_usuario.username }}</div>
-                                {% empty %}
-                                    -
-                                {% endfor %}
-                            </div>
-                        </article>
-                        <article class="details-item">
-                            <div class="details-label text-muted">
-                                <i class="fas fa-phone"></i>Telefono
-                            </div>
-                            <p class="details-value">{{ centro.telefono_referente|default:"-" }}</p>
-                        </article>
-                        <article class="details-item">
-                            <div class="details-label text-muted">
-                                <i class="fas fa-envelope"></i>Correo
-                            </div>
-                            <p class="details-value">
-                                {% if centro.correo_referente %}
-                                    <a href="mailto:{{ centro.correo_referente }}"
-                                       class="text-decoration-none">{{ centro.correo_referente }}</a>
-                                {% else %}
-                                    -
-                                {% endif %}
-                            </p>
-                        </article>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Contactos Adicionales -->
-            <div class="card shadow-sm">
-                <div class="card-header bg-light centro-section-header d-flex justify-content-between align-items-center">
-                    <h6 class="mb-0 text-primary">
-                        <i class="fas fa-phone me-2"></i>
-                        Contactos Adicionales
-                    </h6>
-                    {% if can_edit_centro and perms.VAT.add_institucioncontacto %}
-                        <button type="button"
-                                class="btn btn-sm btn-primary"
-                                data-bs-toggle="modal"
-                                data-bs-target="#modalContacto">
-                            <i class="fas fa-plus me-1"></i>Agregar
-                        </button>
-                    {% endif %}
-                </div>
-                <div class="card-body p-0">
-                    {% if contactos %}
-                        <div class="table-responsive">
-                            <table class="table table-hover mb-0">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th>
-                                            <i class="fas fa-user me-1"></i>Responsable
-                                        </th>
-                                        <th>
-                                            <i class="fas fa-briefcase me-1"></i>Rol / Área
-                                        </th>
-                                        <th>
-                                            <i class="fas fa-id-card me-1"></i>Documento
-                                        </th>
-                                        <th>
-                                            <i class="fas fa-phone me-1"></i>Teléfono
-                                        </th>
-                                        <th>
-                                            <i class="fas fa-envelope me-1"></i>Correo
-                                        </th>
-                                        <th>
-                                            <i class="fas fa-star me-1"></i>Principal
-                                        </th>
-                                        <th class="text-center">
-                                            <i class="fas fa-cogs me-1"></i>Acciones
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for c in contactos %}
-                                        <tr>
-                                            <td class="fw-bold">{{ c.nombre_contacto|default:"-" }}</td>
-                                            <td>{{ c.rol_area|default:"-" }}</td>
-                                            <td>{{ c.documento|default:"-" }}</td>
-                                            <td>{{ c.telefono_contacto|default:"-" }}</td>
-                                            <td>
-                                                {% if c.email_contacto %}
-                                                    <a href="mailto:{{ c.email_contacto }}" class="text-decoration-none">{{ c.email_contacto }}</a>
-                                                {% else %}
-                                                    -
-                                                {% endif %}
-                                            </td>
-                                            <td class="text-center">
-                                                {% if c.es_principal %}
-                                                    <i class="fas fa-star text-warning"></i>
-                                                {% else %}
-                                                    -
-                                                {% endif %}
-                                            </td>
-                                            <td class="text-center">
-                                                <div class="btn-group btn-group-sm" role="group">
-                                                    {% if can_edit_centro and perms.VAT.change_institucioncontacto %}
-                                                        <button class="btn btn-outline-warning"
-                                                                onclick="editContacto({{ c.id }})"
-                                                                title="Editar">
-                                                            <i class="fas fa-edit"></i>
-                                                        </button>
-                                                    {% endif %}
-                                                    {% if can_edit_centro and perms.VAT.delete_institucioncontacto %}
-                                                        <button class="btn btn-outline-danger"
-                                                                onclick="deleteContacto({{ c.id }})"
-                                                                title="Eliminar">
-                                                            <i class="fas fa-trash"></i>
-                                                        </button>
-                                                    {% endif %}
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
+                <div class="sisoc-title-meta">
+                    <span class="sisoc-cue-text">CUE {{ centro.codigo|default:"-" }}</span>
+                    {% if centro.activo %}
+                        <span class="sisoc-status-pill">Activo</span>
                     {% else %}
-                        <div class="text-center py-4 text-muted">
-                            <i class="fas fa-phone fa-2x mb-2 opacity-50"></i>
-                            <p class="mb-0">No hay contactos institucionales registrados.</p>
-                        </div>
+                        <span class="sisoc-status-pill is-inactive">Inactivo</span>
                     {% endif %}
                 </div>
             </div>
 
-            {# ================================================================ #}
-            {# DATOS INSTITUCIONALES DENTRO DE DATOS GENERALES                #}
-            {# ================================================================ #}
-
-            <!-- Ubicacion Principal -->
-            <div class="card shadow-sm mb-4">
-                <div class="card-header bg-light info-general-header">
-                    <h6 class="mb-0 text-primary">
-                        <i class="fas fa-map-marker-alt me-2"></i>
-                        Ubicacion Principal
-                    </h6>
+            <div class="sisoc-info-shell">
+                <div class="sisoc-side-tabs sisoc-side-tabs--left"
+                     role="tablist"
+                     aria-label="Secciones visitadas">
+                    <button type="button"
+                            class="sisoc-side-tab is-active"
+                            data-sisoc-tab-target="general"
+                            aria-selected="true">
+                        <span>Información general</span>
+                    </button>
+                    <button type="button"
+                            class="sisoc-side-tab"
+                            data-sisoc-tab-target="ubicaciones"
+                            aria-selected="false"
+                            hidden>
+                        <span>Ubicaciones adicionales</span>
+                    </button>
+                    <button type="button"
+                            class="sisoc-side-tab"
+                            data-sisoc-tab-target="contactos"
+                            aria-selected="false"
+                            hidden>
+                        <span>Contactos adicionales</span>
+                    </button>
                 </div>
-                <div class="card-body p-0">
-                    <div class="location-card">
-                        <div class="left-tab">
-                            <div class="tab-text">UBICACION</div>
-                        </div>
-                        {% if centro.calle and centro.numero and centro.localidad and centro.municipio and centro.provincia %}
-                            <div class="map-container">
-                                <iframe width="100%"
-                                        height="100%"
-                                        frameborder="0"
-                                        style="border:0;
-                                               border-radius: 12px"
-                                        src="https://maps.google.com/maps?q={{ centro.calle|urlencode }}+{{ centro.numero }},+{{ centro.localidad.nombre|urlencode }},+{{ centro.municipio.nombre|urlencode }},+{{ centro.provincia.nombre|urlencode }}&output=embed"
-                                        allowfullscreen></iframe>
+                <div class="sisoc-info-content">
+                    <section class="sisoc-info-panel is-active" data-sisoc-panel="general">
+                        <div class="sisoc-panel-section">
+                            <div class="sisoc-section-header">
+                                <h2>Información general sobre el establecimiento</h2>
                             </div>
-                        {% else %}
-                            <div class="map-container d-flex align-items-center justify-content-center text-white">
-                                <div class="text-center">
-                                    <i class="fas fa-map-marker-alt fa-3x mb-3 opacity-75"></i>
-                                    <h5>No hay datos suficientes para cargar el mapa</h5>
+                            <hr class="sisoc-section-divider" />
+                            <div class="sisoc-general-layout">
+                                <div class="sisoc-general-grid">
+                                    <div class="sisoc-data-item">
+                                        <p class="sisoc-data-label">CUE</p>
+                                        <p class="sisoc-data-value">#{{ centro.codigo|default:"-" }}</p>
+                                    </div>
+                                    <div class="sisoc-data-item">
+                                        <p class="sisoc-data-label">Sector de gestión</p>
+                                        <p class="sisoc-data-value">{{ centro.tipo_gestion|default:"-" }}</p>
+                                    </div>
+                                    <div class="sisoc-data-item">
+                                        <p class="sisoc-data-label">Domicilio</p>
+                                        <p class="sisoc-data-value">
+                                            {% if centro.calle %}
+                                                {{ centro.calle }}
+                                                {% if centro.numero %}{{ centro.numero }}{% endif %}
+                                            {% else %}
+                                                {{ centro.domicilio_actividad|default:"-" }}
+                                            {% endif %}
+                                        </p>
+                                    </div>
+                                    <div class="sisoc-data-item">
+                                        <p class="sisoc-data-label">Teléfono</p>
+                                        <p class="sisoc-data-value">{{ centro.telefono|default:"-" }}</p>
+                                    </div>
+                                    <div class="sisoc-data-item">
+                                        <p class="sisoc-data-label">Celular</p>
+                                        <p class="sisoc-data-value">{{ centro.celular|default:"-" }}</p>
+                                    </div>
+                                    <div class="sisoc-data-item">
+                                        <p class="sisoc-data-label">Correo electrónico</p>
+                                        <p class="sisoc-data-value">
+                                            {% if centro.correo %}
+                                                <a href="mailto:{{ centro.correo }}">{{ centro.correo }}</a>
+                                            {% else %}
+                                                -
+                                            {% endif %}
+                                        </p>
+                                    </div>
+                                </div>
+                                <div class="sisoc-map-preview">
+                                    {% if centro.calle and centro.localidad and centro.municipio and centro.provincia %}
+                                        <iframe title="Mapa del centro"
+                                                frameborder="0"
+                                                style="border:0"
+                                                src="https://maps.google.com/maps?q={{ centro.calle|urlencode }}{% if centro.numero %}+{{ centro.numero|urlencode }}{% endif %},+{{ centro.localidad.nombre|urlencode }},+{{ centro.municipio.nombre|urlencode }},+{{ centro.provincia.nombre|urlencode }}&output=embed"
+                                                allowfullscreen>
+                                        </iframe>
+                                    {% else %}
+                                        <div class="sisoc-map-placeholder">
+                                            <i class="fas fa-map-marker-alt"></i>
+                                            <span>Sin datos suficientes para mostrar el mapa</span>
+                                        </div>
+                                    {% endif %}
                                 </div>
                             </div>
-                        {% endif %}
-                        <div class="details-container">
-                            <h3 class="section-title">Ubicacion Principal</h3>
-                            <hr class="section-divider" />
-                            <ul>
-                                <li>
-                                    <i class="fas fa-map-marker-alt"></i><strong>Provincia:</strong> {{ centro.provincia|default:"-" }}
+                            <hr class="sisoc-section-divider" />
+                            <div class="sisoc-section-header">
+                                <h2>Referente del centro</h2>
+                            </div>
+                            <ul class="sisoc-referente-list">
+                                <li class="sisoc-referente-item">
+                                    <span class="sisoc-referente-icon"><i class="fas fa-signature"></i></span>
+                                    <div class="sisoc-referente-copy">
+                                        <span>Nombre y apellido</span>
+                                        <strong>
+                                            {% if centro.nombre_referente or centro.apellido_referente %}
+                                                {{ centro.nombre_referente }} {{ centro.apellido_referente }}
+                                            {% elif primary_contacto and primary_contacto.nombre_contacto %}
+                                                {{ primary_contacto.nombre_contacto }}
+                                            {% else %}
+                                                -
+                                            {% endif %}
+                                        </strong>
+                                    </div>
                                 </li>
-                                <li>
-                                    <i class="fas fa-city"></i><strong>Municipio:</strong> {{ centro.municipio|default:"-" }}
+                                <li class="sisoc-referente-item">
+                                    <span class="sisoc-referente-icon"><i class="fas fa-phone"></i></span>
+                                    <div class="sisoc-referente-copy">
+                                        <span>Teléfono</span>
+                                        <strong>
+                                            {% if centro.telefono_referente %}
+                                                {{ centro.telefono_referente }}
+                                            {% elif primary_contacto and primary_contacto.telefono_contacto %}
+                                                {{ primary_contacto.telefono_contacto }}
+                                            {% else %}
+                                                -
+                                            {% endif %}
+                                        </strong>
+                                    </div>
                                 </li>
-                                <li>
-                                    <i class="fas fa-building"></i><strong>Localidad:</strong> {{ centro.localidad|default:"-" }}
+                                <li class="sisoc-referente-item">
+                                    <span class="sisoc-referente-icon"><i class="fas fa-user-check"></i></span>
+                                    <div class="sisoc-referente-copy">
+                                        <span>Usuario del sistema</span>
+                                        <div>
+                                            {% for referente_usuario in referentes_centro %}
+                                                {% if not forloop.first %}<span class="d-none">,</span>{% endif %}
+                                                {{ referente_usuario.get_full_name|default:referente_usuario.username }}
+                                                {% if not forloop.last %},{% endif %}
+                                            {% empty %}
+                                                -
+                                            {% endfor %}
+                                        </div>
+                                    </div>
                                 </li>
-                                <li>
-                                    <i class="fas fa-road"></i><strong>Domicilio:</strong>
-                                    {% if centro.calle %}
-                                        {{ centro.calle }}
-                                        {% if centro.numero %}{{ centro.numero }}{% endif %}
-                                    {% else %}
-                                        -
-                                    {% endif %}
+                                <li class="sisoc-referente-item">
+                                    <span class="sisoc-referente-icon"><i class="fas fa-id-card"></i></span>
+                                    <div class="sisoc-referente-copy">
+                                        <span>DNI</span>
+                                        <strong>
+                                            {% if primary_contacto and primary_contacto.documento %}
+                                                {{ primary_contacto.documento }}
+                                            {% else %}
+                                                -
+                                            {% endif %}
+                                        </strong>
+                                    </div>
+                                </li>
+                                <li class="sisoc-referente-item">
+                                    <span class="sisoc-referente-icon"><i class="fas fa-envelope"></i></span>
+                                    <div class="sisoc-referente-copy">
+                                        <span>Correo electrónico</span>
+                                        <strong>
+                                            {% if centro.correo_referente %}
+                                                {{ centro.correo_referente }}
+                                            {% elif primary_contacto and primary_contacto.email_contacto %}
+                                                {{ primary_contacto.email_contacto }}
+                                            {% else %}
+                                                -
+                                            {% endif %}
+                                        </strong>
+                                    </div>
                                 </li>
                             </ul>
                         </div>
-                    </div>
-                </div>
-            </div>
 
-            <!-- Ubicaciones Adicionales -->
-            <div class="card shadow-sm mb-4">
-                <div class="card-header bg-light centro-section-header d-flex justify-content-between align-items-center">
-                    <h6 class="mb-0 text-primary">
-                        <i class="fas fa-map me-2"></i>
-                        Ubicaciones Adicionales
-                    </h6>
-                    {% if can_edit_centro and perms.VAT.add_institucionubicacion %}
-                        <button type="button"
-                                class="btn btn-sm btn-primary"
-                                data-bs-toggle="modal"
-                                data-bs-target="#modalUbicacion">
-                            <i class="fas fa-plus me-1"></i>Agregar
-                        </button>
-                    {% endif %}
-                </div>
-                <div class="card-body p-0">
-                    {% if ubicaciones %}
-                        <div class="table-responsive">
-                            <table class="table table-hover mb-0">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th>Nombre</th>
-                                        <th>Rol</th>
-                                        <th>Localidad</th>
-                                        <th>Domicilio</th>
-                                        <th>Principal</th>
-                                        <th class="text-end">Acciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for u in ubicaciones %}
-                                        <tr>
-                                            <td>{{ u.nombre_ubicacion|default:u.get_rol_ubicacion_display }}</td>
-                                            <td>{{ u.get_rol_ubicacion_display }}</td>
-                                            <td>{{ u.localidad }}</td>
-                                            <td>{{ u.domicilio|default:"\u2014" }}</td>
-                                            <td>
-                                                {% if u.es_principal %}
-                                                    <span class="badge bg-primary">Si</span>
-                                                {% else %}
-                                                    \u2014
-                                                {% endif %}
-                                            </td>
-                                            <td class="text-center">
-                                                <div class="btn-group btn-group-sm" role="group">
-                                                    {% if can_edit_centro and perms.VAT.change_institucionubicacion %}
-                                                        <button class="btn btn-outline-warning"
-                                                                onclick="editUbicacion({{ u.id }})"
-                                                                title="Editar">
-                                                            <i class="fas fa-edit"></i>
-                                                        </button>
-                                                    {% endif %}
-                                                    {% if can_edit_centro and perms.VAT.delete_institucionubicacion %}
-                                                        <button class="btn btn-outline-danger"
-                                                                onclick="deleteUbicacion({{ u.id }})"
-                                                                title="Eliminar">
-                                                            <i class="fas fa-trash"></i>
-                                                        </button>
-                                                    {% endif %}
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-                    {% else %}
-                        <div class="text-center py-4 text-muted">
-                            <i class="fas fa-map fa-2x mb-2 opacity-50"></i>
-                            <p class="mb-0">Sin ubicaciones adicionales registradas.</p>
-                        </div>
-                    {% endif %}
-                </div>
-            </div>
+                    </section>
 
-            <!-- Identificadores -->
-            <div class="card shadow-sm">
-                <div class="card-header bg-light centro-section-header d-flex justify-content-between align-items-center">
-                    <h6 class="mb-0 text-primary">
-                        <i class="fas fa-id-card me-2"></i>
-                        Identificadores
-                    </h6>
-                    {% if can_edit_centro and perms.VAT.add_institucionidentificadorhist %}
-                        <button type="button"
-                                class="btn btn-sm btn-primary"
-                                data-bs-toggle="modal"
-                                data-bs-target="#modalIdentificador">
-                            <i class="fas fa-plus me-1"></i>Agregar
-                        </button>
-                    {% endif %}
-                </div>
-                <div class="card-body p-0">
-                    {% if identificadores %}
-                        <div class="table-responsive">
-                            <table class="table table-hover mb-0">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th>Tipo</th>
-                                        <th>Valor</th>
-                                        <th>Rol</th>
-                                        <th>Ubicación</th>
-                                        <th class="text-end">Acciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for id in identificadores %}
-                                        <tr>
-                                            <td>{{ id.get_tipo_identificador_display }}</td>
-                                            <td>
-                                                <strong>{{ id.valor_identificador }}</strong>
-                                            </td>
-                                            <td>{{ id.get_rol_institucional_display|default:"\u2014" }}</td>
-                                            <td>{{ id.ubicacion|default:"\u2014" }}</td>
-                                            <td class="text-center">
-                                                <div class="btn-group btn-group-sm" role="group">
-                                                    {% if can_edit_centro and perms.VAT.change_institucionidentificadorhist %}
-                                                        <button class="btn btn-outline-warning"
-                                                                onclick="editIdentificador({{ id.id }})"
-                                                                title="Editar">
-                                                            <i class="fas fa-edit"></i>
-                                                        </button>
-                                                    {% endif %}
-                                                    {% if can_edit_centro and perms.VAT.delete_institucionidentificadorhist %}
-                                                        <button class="btn btn-outline-danger"
-                                                                onclick="deleteIdentificador({{ id.id }})"
-                                                                title="Eliminar">
-                                                            <i class="fas fa-trash"></i>
-                                                        </button>
-                                                    {% endif %}
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-                    {% else %}
-                        <div class="text-center py-4 text-muted">
-                            <i class="fas fa-id-card fa-2x mb-2 opacity-50"></i>
-                            <p class="mb-0">Sin identificadores registrados.</p>
-                        </div>
-                    {% endif %}
-                </div>
-            </div>
-
-        </div>
-
-        {% comment %}
-        {# ================================================================ #}
-        {# TAB 3: CATALOGO Y OFERTAS EDUCATIVAS                            #}
-        {# Agrupa: Titulos + Planes + Ofertas + Comisiones                  #}
-        {# ================================================================ #}
-        <div class="tab-pane fade" id="catalogo" role="tabpanel">
-
-            <!-- Planes de Estudio -->
-            <div class="card shadow-sm mb-4">
-                <div class="card-header bg-light centro-section-header d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6 class="mb-0 text-primary">
-                            <i class="fas fa-clipboard-list me-2"></i>
-                            Planes de Estudio
-                        </h6>
-                        <small class="text-muted">Planes de estudio asociados a los títulos del centro.</small>
-                    </div>
-                    {% if perms.VAT.add_planversioncurricular %}
-                        <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#modalPlan">
-                            <i class="fas fa-plus me-1"></i>Nuevo Plan de Estudio
-                        </button>
-                    {% endif %}
-                </div>
-                <div class="card-body p-0">
-                    {% if planes %}
-                        <div class="table-responsive">
-                            <table class="table table-hover mb-0">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th>Sector</th>
-                                        <th>Subsector</th>
-                                        <th>Títulos de Referencia</th>
-                                        <th>Modalidad</th>
-                                        <th>Horas Reloj</th>
-                                        <th>Normativa</th>
-                                        <th class="text-center">Acciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for p in planes %}
-                                        <tr>
-                                            <td>
-                                                <span class="badge bg-secondary">{{ p.sector.nombre }}</span>
-                                            </td>
-                                            <td>{{ p.subsector.nombre|default:"\u2014" }}</td>
-                                            <td>
-                                                {% with titulos_plan=p.titulos.all %}
-                                                    {% if titulos_plan %}
-                                                        {% for titulo in titulos_plan %}<span class="badge bg-info text-dark me-1 mb-1">{{ titulo.nombre }}</span>{% endfor %}
-                                                    {% else %}
-                                                        <span class="text-muted">\u2014</span>
-                                                    {% endif %}
-                                                {% endwith %}
-                                            </td>
-                                            <td>
-                                                <span class="badge bg-secondary">{{ p.modalidad_cursada.nombre }}</span>
-                                            </td>
-                                            <td>{{ p.horas_reloj|default:"\u2014" }}</td>
-                                            <td>{{ p.normativa|default:"\u2014" }}</td>
-                                            <td class="text-center">
-                                                <div class="btn-group btn-group-sm" role="group">
-                                                    {% if perms.VAT.change_planversioncurricular %}
-                                                        <button class="btn btn-outline-warning" onclick="editPlan({{ p.id }})" title="Editar">
-                                                            <i class="fas fa-edit"></i>
-                                                        </button>
-                                                    {% endif %}
-                                                    {% if perms.VAT.delete_planversioncurricular %}
-                                                        <form method="post" action="{% url 'vat_planversioncurricular_delete' p.pk %}" class="d-inline confirm-delete-form">
-                                                            {% csrf_token %}
-                                                            <input type="hidden" name="next" value="{{ request.get_full_path }}" />
-                                                            <button type="submit" class="btn btn-outline-danger" title="Eliminar">
-                                                                <i class="fas fa-trash"></i>
-                                                            </button>
-                                                        </form>
-                                                    {% endif %}
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-                    {% else %}
-                        <div class="text-center py-4 text-muted">
-                            <i class="fas fa-clipboard-list fa-2x mb-2 opacity-50"></i>
-                            <p class="mb-0">No hay planes de estudio registrados.</p>
-                            {% if titulos and perms.VAT.add_planversioncurricular %}
-                                <button type="button" class="btn btn-sm btn-outline-primary mt-2" data-bs-toggle="modal" data-bs-target="#modalPlan">
-                                    <i class="fas fa-plus me-1"></i>Crear el primer plan de estudio
-                                </button>
-                            {% endif %}
-                        </div>
-                    {% endif %}
-                </div>
-            </div>
-
-            <!-- Titulos de Referencia del Centro -->
-            <div class="card shadow-sm mb-4">
-                <div class="card-header bg-light centro-section-header d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6 class="mb-0 text-primary">
-                            <i class="fas fa-book me-2"></i>
-                            Titulos de Referencia
-                        </h6>
-                        <small class="text-muted">Titulos habilitados para este centro.</small>
-                    </div>
-                    {% if perms.VAT.add_titulorreferencia %}
-                        <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#modalTitulo">
-                            <i class="fas fa-plus me-1"></i>Nuevo Titulo
-                        </button>
-                    {% endif %}
-                </div>
-                <div class="card-body p-0">
-                    {% if titulos %}
-                        <div class="table-responsive">
-                            <table class="table table-hover mb-0">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th>Titulo</th>
-                                        <th>Codigo Ref.</th>
-                                        <th>Plan de Estudio</th>
-                                        <th class="text-center">Acciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for t in titulos %}
-                                        <tr>
-                                            <td>
-                                                <span class="fw-bold">{{ t.nombre }}</span>
-                                            </td>
-                                            <td>{{ t.codigo_referencia|default:"\u2014" }}</td>
-                                            <td>
-                                                {% if t.plan_estudio %}
-                                                    <span class="badge bg-info text-dark">{{ t.plan_estudio }}</span>
-                                                {% else %}
-                                                    <span class="text-muted">\u2014</span>
-                                                {% endif %}
-                                            </td>
-                                            <td class="text-center">
-                                                <div class="btn-group btn-group-sm" role="group">
-                                                    {% if perms.VAT.change_titulorreferencia %}
-                                                        <button class="btn btn-outline-warning" onclick="editTitulo({{ t.id }})" title="Editar">
-                                                            <i class="fas fa-edit"></i>
-                                                        </button>
-                                                    {% endif %}
-                                                    {% if perms.VAT.delete_titulorreferencia %}
-                                                        <form method="post" action="{% url 'vat_titulorreferencia_delete' t.pk %}" class="d-inline confirm-delete-form">
-                                                            {% csrf_token %}
-                                                            <input type="hidden" name="next" value="{{ request.get_full_path }}" />
-                                                            <button type="submit" class="btn btn-outline-danger" title="Eliminar">
-                                                                <i class="fas fa-trash"></i>
-                                                            </button>
-                                                        </form>
-                                                    {% endif %}
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-                    {% else %}
-                        <div class="text-center py-4 text-muted">
-                            <i class="fas fa-book fa-2x mb-2 opacity-50"></i>
-                            <p class="mb-0">No hay titulos de referencia registrados.</p>
-                            {% if perms.VAT.add_titulorreferencia %}
-                                <button type="button" class="btn btn-sm btn-outline-primary mt-2" data-bs-toggle="modal" data-bs-target="#modalTitulo">
-                                    <i class="fas fa-plus me-1"></i>Crear el primer titulo
-                                </button>
-                            {% endif %}
-                        </div>
-                    {% endif %}
-                </div>
-            </div>
-
-            <!-- Ofertas Institucionales -->
-            <div class="card shadow-sm">
-                <div class="card-header bg-light centro-section-header d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6 class="mb-0 text-primary">
-                            <i class="fas fa-graduation-cap me-2"></i>
-                            Ofertas Materia
-                        </h6>
-                        <small class="text-muted">Programas educativos ofrecidos.</small>
-                    </div>
-                    {% if perms.VAT.add_ofertainstitucional %}
-                        <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#modalOferta">
-                            <i class="fas fa-plus me-1"></i>Nueva Oferta
-                        </button>
-                    {% endif %}
-                </div>
-                <div class="card-body p-0">
-                    {% if ofertas %}
-                        <div class="table-responsive">
-                            <table class="table table-hover mb-0">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th>Oferta</th>
-                                        <th>Título de Referencia</th>
-                                        <th>Ciclo Lectivo</th>
-                                        <th>Costo Referencial</th>
-                                        <th>Comisiones</th>
-                                        <th>Estado</th>
-                                        <th class="text-center">Acciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for oferta in ofertas %}
-                                        <tr>
-                                            <td>
-                                                <strong>{{ oferta.nombre_local|default:oferta.plan_curricular.titulo_referencia }}</strong>
-                                                {% if oferta.usa_voucher %}
-                                                    <span class="badge bg-info ms-1">
-                                                        <i class="fas fa-ticket-alt me-1"></i>Voucher
-                                                    </span>
-                                                {% endif %}
-                                            </td>
-                                            <td>{{ oferta.plan_curricular.titulo_referencia|default:"-" }}</td>
-                                            <td>{{ oferta.ciclo_lectivo }}</td>
-                                            <td>{{ oferta.costo_referencial|default:"-" }}</td>
-                                            <td>{{ oferta.comisiones.count }}</td>
-                                            <td>
-                                                <span class="badge {% if oferta.estado == 'publicada' %}bg-success{% elif oferta.estado == 'aprobada' %}bg-primary{% elif oferta.estado == 'planificada' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
-                                                    {{ oferta.get_estado_display }}
-                                                </span>
-                                            </td>
-                                            <td class="text-center">
-                                                <div class="btn-group btn-group-sm" role="group">
-                                                    <a href="{% url 'vat_oferta_institucional_detail' oferta.pk %}" class="btn btn-sm btn-outline-info" title="Ver detalle">
-                                                        <i class="fas fa-eye"></i>
-                                                    </a>
-                                                    {% if perms.VAT.delete_ofertainstitucional %}
-                                                        <form method="post" action="{% url 'vat_oferta_institucional_delete' oferta.pk %}" class="d-inline confirm-delete-form">
-                                                            {% csrf_token %}
-                                                            <input type="hidden" name="next" value="{{ request.get_full_path }}" />
-                                                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar">
-                                                                <i class="fas fa-trash"></i>
-                                                            </button>
-                                                        </form>
-                                                    {% endif %}
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-                    {% else %}
-                        <div class="text-center py-4 text-muted">
-                            <i class="fas fa-graduation-cap fa-2x mb-2 opacity-50"></i>
-                            <p class="mb-0">Sin ofertas materia registradas.</p>
-                            {% if planes and perms.VAT.add_ofertainstitucional %}
-                                <button type="button" class="btn btn-sm btn-outline-primary mt-2" data-bs-toggle="modal" data-bs-target="#modalOferta">
-                                    <i class="fas fa-plus me-1"></i>Crear la primera oferta
-                                </button>
-                            {% endif %}
-                        </div>
-                    {% endif %}
-                </div>
-            </div>
-
-            <!-- Comisiones -->
-            <div class="card shadow-sm mt-3">
-                <div class="card-header bg-light centro-section-header d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6 class="mb-0 text-primary">
-                            <i class="fas fa-users me-2"></i>
-                            Comisiones
-                        </h6>
-                        <small class="text-muted">Comisiones asociadas a las ofertas institucionales del centro.</small>
-                    </div>
-                    {% if perms.VAT.add_comision %}
-                        <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#modalComision">
-                            <i class="fas fa-plus me-1"></i>Nueva Comision
-                        </button>
-                    {% endif %}
-                </div>
-                <div class="card-body p-0">
-                    {% if comisiones %}
-                        <div class="table-responsive">
-                            <table class="table table-hover mb-0">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th>Codigo</th>
-                                        <th>Comision</th>
-                                        <th>Oferta</th>
-                                        <th>Ciclo Lectivo</th>
-                                        <th>Periodo</th>
-                                        <th>Cupo</th>
-                                        <th>Estado</th>
-                                        <th class="text-center">Acciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for comision in comisiones %}
-                                        <tr>
-                                            <td>
-                                                <strong>{{ comision.codigo_comision }}</strong>
-                                            </td>
-                                            <td>{{ comision.nombre }}</td>
-                                            <td>{{ comision.oferta.plan_curricular.titulo_referencia.nombre }}</td>
-                                            <td>{{ comision.oferta.ciclo_lectivo }}</td>
-                                            <td class="text-muted small">{{ comision.fecha_inicio|date:"d/m/Y" }} - {{ comision.fecha_fin|date:"d/m/Y" }}</td>
-                                            <td>{{ comision.cupo }}</td>
-                                            <td>
-                                                <span class="badge {% if comision.estado == 'activa' %}bg-success{% elif comision.estado == 'planificada' %}bg-warning text-dark{% elif comision.estado == 'cerrada' %}bg-secondary{% else %}bg-danger{% endif %}">
-                                                    {{ comision.get_estado_display }}
-                                                </span>
-                                            </td>
-                                            <td class="text-center">
-                                                <div class="btn-group btn-group-sm" role="group">
-                                                    <a href="{% url 'vat_comision_detail' comision.pk %}" class="btn btn-sm btn-outline-info" title="Ver detalle">
-                                                        <i class="fas fa-eye"></i>
-                                                    </a>
-                                                    {% if perms.VAT.delete_comision %}
-                                                        <form method="post" action="{% url 'vat_comision_delete' comision.pk %}" class="d-inline confirm-delete-form">
-                                                            {% csrf_token %}
-                                                            <input type="hidden" name="next" value="{{ request.get_full_path }}" />
-                                                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar">
-                                                                <i class="fas fa-trash"></i>
-                                                            </button>
-                                                        </form>
-                                                    {% endif %}
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-                    {% else %}
-                        <div class="text-center py-4 text-muted">
-                            <i class="fas fa-users fa-2x mb-2 opacity-50"></i>
-                            <p class="mb-0">No hay comisiones registradas para este centro.</p>
-                        </div>
-                    {% endif %}
-                </div>
-            </div>
-
-        </div>
-
-        {# ================================================================ #}
-        {# TAB 4: CURSOS                                                    #}
-        {# ================================================================ #}
-        <div class="tab-pane fade" id="cursos" role="tabpanel">
-            <div class="card shadow-sm mb-4">
-                <div class="card-header bg-light centro-section-header">
-                    <div>
-                        <h6 class="mb-0 text-primary">
-                            <i class="fas fa-book me-2"></i>
-                            Planes Curriculares
-                        </h6>
-                        <small class="text-muted">Todos los planes curriculares activos de la provincia del centro.</small>
-                    </div>
-                </div>
-                <div class="card-body p-0">
-                    <div class="p-3 border-bottom bg-body-tertiary">
-                        <form method="get" action="{% url 'vat_centro_detail' centro.pk %}#cursos" class="row g-2 align-items-end">
-                            <div class="col-sm-8 col-lg-6">
-                                <label class="form-label small fw-semibold text-uppercase mb-1" style="letter-spacing:.05em">Buscar plan curricular</label>
-                                <input type="search" name="busqueda" class="form-control form-control-sm" placeholder="Ej: auxiliar, servicios o resolución" value="{{ planes_centro_search_query }}" autocomplete="off" />
-                            </div>
-                            <div class="col-sm-auto">
-                                <button type="submit" class="btn btn-primary btn-sm w-100">
-                                    <i class="bi bi-search me-1"></i>Filtrar
-                                </button>
-                            </div>
-                            <div class="col-sm-auto">
-                                <a href="{% url 'vat_centro_detail' centro.pk %}#cursos" class="btn btn-outline-secondary btn-sm w-100">Limpiar</a>
-                            </div>
-                        </form>
-                        <div class="text-muted small mt-2">
-                            Mostrando {{ planes_centro_total_filtrados }} plan{{ planes_centro_total_filtrados|pluralize:"es" }}
-                            {% if planes_centro_search_query %}para la búsqueda actual{% endif %}
-                            .
-                        </div>
-                    </div>
-                    {% if planes_centro %}
-                        <div class="table-responsive">
-                            <table class="table table-hover mb-0">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th>Plan Curricular</th>
-                                        <th>Sector</th>
-                                        <th>Normativa</th>
-                                        <th>Estado</th>
-                                        {% if perms.VAT.add_curso %}<th class="text-center">Acciones</th>{% endif %}
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for plan in planes_centro %}
-                                        <tr>
-                                            <td>
-                                                <strong>{{ plan.titulo_referencia|default:plan }}</strong>
-                                            </td>
-                                            <td>{{ plan.sector|default:"-" }}</td>
-                                            <td>{{ plan.normativa|default:"-" }}</td>
-                                            <td>
-                                                {% if plan.activo %}
-                                                    <span class="badge bg-success">Activo</span>
-                                                {% else %}
-                                                    <span class="badge bg-secondary">Inactivo</span>
-                                                {% endif %}
-                                            </td>
-                                            {% if perms.VAT.add_curso %}
-                                                <td class="text-center">
-                                                    <button type="button" class="btn btn-sm btn-outline-primary" title="Nuevo curso con este plan" aria-label="Nuevo curso con el plan {{ plan.titulo_referencia|default:plan }}" data-bs-toggle="modal" data-bs-target="#modalCurso" data-curso-mode="create" data-plan-estudio-id="{{ plan.id }}" data-plan-estudio-label="{{ plan.titulo_referencia|default:plan }}" data-lock-plan-estudio="1">
-                                                        <i class="fas fa-plus"></i>
-                                                    </button>
-                                                </td>
-                                            {% endif %}
-                                        </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-                        {% if planes_centro_is_paginated %}
-                            <div class="p-3 pt-2">
-                                <ul class="pagination mb-0">
-                                    {% if planes_centro_page_obj.has_previous %}
-                                        <li class="page-item">
-                                            <a href="?{% if planes_centro_search_query %}busqueda={{ planes_centro_search_query|urlencode }}&{% endif %}planes_page={{ planes_centro_page_obj.previous_page_number }}#cursos" class="page-link">Anterior</a>
-                                        </li>
-                                    {% else %}
-                                        <li class="page-item disabled">
-                                            <a href="#" class="page-link">Anterior</a>
-                                        </li>
-                                    {% endif %}
-                                    {% for i in planes_centro_page_obj.paginator.page_range %}
-                                        {% if planes_centro_page_obj.number == i %}
-                                            <li class="page-item active">
-                                                <a href="?{% if planes_centro_search_query %}busqueda={{ planes_centro_search_query|urlencode }}&{% endif %}planes_page={{ i }}#cursos" class="page-link">{{ i }}</a>
-                                            </li>
-                                        {% elif i > planes_centro_page_obj.number|add:'-5' and i < planes_centro_page_obj.number|add:'5' %}
-                                            <li class="page-item">
-                                                <a href="?{% if planes_centro_search_query %}busqueda={{ planes_centro_search_query|urlencode }}&{% endif %}planes_page={{ i }}#cursos" class="page-link">{{ i }}</a>
-                                            </li>
-                                        {% elif i == 1 or i == planes_centro_page_obj.paginator.num_pages %}
-                                            <li class="page-item">
-                                                <a href="?{% if planes_centro_search_query %}busqueda={{ planes_centro_search_query|urlencode }}&{% endif %}planes_page={{ i }}#cursos" class="page-link">{{ i }}</a>
-                                            </li>
-                                        {% elif i == planes_centro_page_obj.number|add:'-6' or i == planes_centro_page_obj.number|add:'6' %}
-                                            <li class="page-item disabled">
-                                                <a href="#" class="page-link">...</a>
-                                            </li>
-                                        {% endif %}
-                                    {% endfor %}
-                                    {% if planes_centro_page_obj.has_next %}
-                                        <li class="page-item">
-                                            <a href="?{% if planes_centro_search_query %}busqueda={{ planes_centro_search_query|urlencode }}&{% endif %}planes_page={{ planes_centro_page_obj.next_page_number }}#cursos" class="page-link">Siguiente</a>
-                                        </li>
-                                    {% else %}
-                                        <li class="page-item disabled">
-                                            <a href="#" class="page-link">Siguiente</a>
-                                        </li>
-                                    {% endif %}
-                                </ul>
-                            </div>
-                        {% endif %}
-                    {% else %}
-                        <div class="text-center py-4 text-muted">
-                            <i class="fas fa-book fa-2x mb-2 opacity-50"></i>
-                            <p class="mb-0">
-                                {% if planes_centro_search_query %}
-                                    No hay planes curriculares que coincidan con la búsqueda actual.
-                                {% else %}
-                                    No hay planes curriculares activos para la provincia de este centro.
+                    <section class="sisoc-info-panel" data-sisoc-panel="ubicaciones">
+                        <div class="sisoc-panel-section">
+                            <div class="sisoc-section-header">
+                                <h2>Ubicaciones adicionales</h2>
+                                {% if can_edit_centro and perms.VAT.add_institucionubicacion %}
+                                    <button type="button"
+                                            class="sisoc-btn sisoc-btn--add"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#modalUbicacion">
+                                        <i class="fas fa-plus"></i>
+                                        <span>Agregar sede</span>
+                                    </button>
                                 {% endif %}
-                            </p>
+                            </div>
+                            <hr class="sisoc-section-divider" />
+                            {% if ubicaciones %}
+                                <div class="sisoc-table-shell">
+                                    <div class="sisoc-table-wrap">
+                                        <table class="sisoc-table">
+                                            <thead>
+                                                <tr>
+                                                    <th>Nombre</th>
+                                                    <th>Característica</th>
+                                                    <th>Localidad</th>
+                                                    <th>Domicilio</th>
+                                                    <th>Acciones</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for u in ubicaciones %}
+                                                    <tr>
+                                                        <td>{{ u.nombre_ubicacion|default:u.get_rol_ubicacion_display }}</td>
+                                                        <td>{{ u.get_rol_ubicacion_display }}</td>
+                                                        <td>{{ u.localidad|default:"-" }}</td>
+                                                        <td>{{ u.domicilio|default:"-" }}</td>
+                                                        <td>
+                                                            <div class="sisoc-table-actions">
+                                                                {% if can_edit_centro and perms.VAT.change_institucionubicacion %}
+                                                                    <button type="button"
+                                                                            class="sisoc-btn sisoc-btn--edit"
+                                                                            onclick="editUbicacion({{ u.id }})">
+                                                                        <i class="fas fa-pen"></i>
+                                                                        <span>Editar</span>
+                                                                    </button>
+                                                                {% endif %}
+                                                                {% if can_edit_centro and perms.VAT.delete_institucionubicacion %}
+                                                                    <button type="button"
+                                                                            class="sisoc-btn sisoc-btn--delete"
+                                                                            onclick="deleteUbicacion({{ u.id }})">
+                                                                        <i class="fas fa-trash"></i>
+                                                                        <span>Borrar</span>
+                                                                    </button>
+                                                                {% endif %}
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                                <div class="sisoc-table-footer">
+                                    <span>Mostrando 1-{{ ubicaciones|length }} de {{ ubicaciones|length }}</span>
+                                    <div class="sisoc-pager" aria-hidden="true">
+                                        <button type="button">&lt;</button>
+                                        <span>1 de 1</span>
+                                        <button type="button">&gt;</button>
+                                    </div>
+                                </div>
+                            {% else %}
+                                <div class="sisoc-empty-state">No hay ubicaciones registradas para este centro.</div>
+                            {% endif %}
                         </div>
-                    {% endif %}
-                </div>
-            </div>
+                    </section>
 
-            <div class="card shadow-sm mb-4">
-                <div class="card-header bg-light centro-section-header d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6 class="mb-0 text-primary">
-                            <i class="fas fa-chalkboard-teacher me-2"></i>
-                            Cursos
-                        </h6>
-                        <small class="text-muted">Cursos configurados para este centro.</small>
-                    </div>
-                </div>
-                <div class="card-body p-0">
-                    {% if cursos %}
-                        <div class="table-responsive">
-                            <table class="table table-hover mb-0" id="tablaCursosCentro">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th>Curso FP</th>
-                                        <th>Nombre</th>
-                                        <th>Comisiones</th>
-                                        <th>Estado</th>
-                                        <th class="text-center">Acciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for curso in cursos %}
-                                        <tr class="curso-row" data-curso-id="{{ curso.id }}" data-curso-nombre="{{ curso.nombre }}" data-curso-plan="{{ curso.plan_estudio_label|default:'' }}" tabindex="0" role="button" aria-label="Filtrar comisiones del curso {{ curso.nombre }}">
-                                            <td>{{ curso.plan_estudio_label }}</td>
-                                            <td class="fw-bold">
-                                                {{ curso.nombre }}
-                                                {% if curso.usa_voucher %}
-                                                    <span class="badge bg-info ms-1">
-                                                        <i class="fas fa-ticket-alt me-1"></i>Voucher
-                                                    </span>
-                                                {% endif %}
-                                                {% if curso.inscripcion_libre %}
-                                                    <span class="badge bg-success-subtle text-success ms-1">
-                                                        <i class="fas fa-users me-1"></i>Inscripción libre
-                                                    </span>
-                                                {% endif %}
-                                            </td>
-                                            <td>{{ curso.comisiones.count }}</td>
-                                            <td>
-                                                <span class="badge {% if curso.estado == 'activo' %}bg-success{% elif curso.estado == 'planificado' %}bg-warning text-dark{% elif curso.estado == 'finalizado' %}bg-secondary{% else %}bg-danger{% endif %}">
-                                                    {{ curso.get_estado_display }}
-                                                </span>
-                                            </td>
-                                            <td class="text-end">
-                                                <div class="btn-group btn-group-sm" role="group">
-                                                    {% if perms.VAT.add_comisioncurso %}
-                                                        <button type="button" class="btn btn-outline-primary" title="Nueva Comisión" data-bs-toggle="modal" data-bs-target="#modalComisionCurso" data-comision-curso-mode="create" data-lock-curso="1" data-curso-id="{{ curso.id }}" data-curso-nombre="{{ curso.nombre }}">
-                                                            <i class="fas fa-plus"></i>
-                                                        </button>
-                                                    {% endif %}
-                                                    {% if perms.VAT.change_curso %}
-                                                        <button type="button" class="btn btn-outline-warning btn-editar-curso" title="Editar Curso" data-bs-toggle="modal" data-bs-target="#modalCurso" data-curso-mode="edit" data-edit-url="{% url 'vat_curso_update' curso.id %}" data-plan-estudio-id="{{ curso.plan_estudio_id|default:'' }}" data-nombre="{{ curso.nombre }}" data-estado="{{ curso.estado|default:'' }}" data-usa-voucher="{{ curso.usa_voucher|yesno:'1,0' }}" data-inscripcion-libre="{{ curso.inscripcion_libre|yesno:'1,0' }}" data-costo-creditos="{{ curso.costo_creditos|default:'' }}" data-observaciones="{{ curso.observaciones|default:'' }}" data-voucher-ids="{% for voucher in curso.voucher_parametrias.all %}{% if not forloop.first %},{% endif %}{{ voucher.id }}{% endfor %}">
-                                                            <i class="fas fa-edit"></i>
-                                                        </button>
-                                                    {% endif %}
-                                                    {% if perms.VAT.delete_curso %}
-                                                        <a href="{% url 'vat_curso_delete' curso.id %}" class="btn btn-outline-danger" title="Eliminar Curso">
-                                                            <i class="fas fa-trash"></i>
-                                                        </a>
-                                                    {% endif %}
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
+                    <section class="sisoc-info-panel" data-sisoc-panel="contactos">
+                        <div class="sisoc-panel-section">
+                            <div class="sisoc-section-header">
+                                <h2>Contactos adicionales</h2>
+                                {% if can_edit_centro and perms.VAT.add_institucioncontacto %}
+                                    <button type="button"
+                                            class="sisoc-btn sisoc-btn--add"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#modalContacto">
+                                        <i class="fas fa-plus"></i>
+                                        <span>Agregar contacto</span>
+                                    </button>
+                                {% endif %}
+                            </div>
+                            <hr class="sisoc-section-divider" />
+                            {% if contactos %}
+                                <div class="sisoc-table-shell">
+                                    <div class="sisoc-table-wrap">
+                                        <table class="sisoc-table">
+                                            <thead>
+                                                <tr>
+                                                    <th>Nombre y apellido</th>
+                                                    <th>Documento</th>
+                                                    <th>Rol</th>
+                                                    <th>Principal</th>
+                                                    <th>Teléfono</th>
+                                                    <th>Acciones</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for c in contactos %}
+                                                    <tr>
+                                                        <td>{{ c.nombre_contacto|default:"-" }}</td>
+                                                        <td>{{ c.documento|default:"-" }}</td>
+                                                        <td>{{ c.rol_area|default:"-" }}</td>
+                                                        <td>
+                                                            {% if c.es_principal %}
+                                                                Sí
+                                                            {% else %}
+                                                                No
+                                                            {% endif %}
+                                                        </td>
+                                                        <td>{{ c.telefono_contacto|default:"-" }}</td>
+                                                        <td>
+                                                            <div class="sisoc-table-actions">
+                                                                {% if can_edit_centro and perms.VAT.change_institucioncontacto %}
+                                                                    <button type="button"
+                                                                            class="sisoc-btn sisoc-btn--edit"
+                                                                            onclick="editContacto({{ c.id }})">
+                                                                        <i class="fas fa-pen"></i>
+                                                                        <span>Editar</span>
+                                                                    </button>
+                                                                {% endif %}
+                                                                {% if can_edit_centro and perms.VAT.delete_institucioncontacto %}
+                                                                    <button type="button"
+                                                                            class="sisoc-btn sisoc-btn--delete"
+                                                                            onclick="deleteContacto({{ c.id }})">
+                                                                        <i class="fas fa-trash"></i>
+                                                                        <span>Borrar</span>
+                                                                    </button>
+                                                                {% endif %}
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            {% else %}
+                                <div class="sisoc-empty-state">No hay contactos adicionales cargados.</div>
+                            {% endif %}
                         </div>
-                    {% else %}
-                        <div class="text-center py-4 text-muted">
-                            <i class="fas fa-chalkboard-teacher fa-2x mb-2 opacity-50"></i>
-                            <p class="mb-0">Sin cursos registrados para este centro.</p>
-                        </div>
-                    {% endif %}
+                    </section>
                 </div>
-            </div>
 
-            <div class="card shadow-sm">
-                <div class="card-header bg-light centro-section-header d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6 class="mb-0 text-primary">
-                            <i class="fas fa-users me-2"></i>
-                            Comisiones de Curso
-                        </h6>
-                        <small class="text-muted" id="comisionesCursoHint">Comisiones vinculadas a cursos del centro.</small>
-                    </div>
-                </div>
-                <div class="card-body p-0">
-                    {% if comisiones_curso %}
-                        <div class="table-responsive">
-                            <table class="table table-hover mb-0" id="tablaComisionesCursoCentro">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th>Código</th>
-                                        <th>Nombre</th>
-                                        <th>Curso</th>
-                                        <th>Ubicación</th>
-                                        <th>Fecha Inicio</th>
-                                        <th>Fecha Fin</th>
-                                        <th>Cupo Total</th>
-                                        <th>Estado</th>
-                                        <th>Observaciones</th>
-                                        <th class="text-end">Acciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for comision in comisiones_curso %}
-                                        <tr class="comision-curso-row" data-curso-id="{{ comision.curso_id }}" data-curso-nombre="{{ comision.curso.nombre }}" data-comision-codigo="{{ comision.codigo_comision }}" data-comision-nombre="{{ comision.nombre }}" data-comision-ubicacion="{{ comision.ubicacion|default:'' }}" data-comision-estado="{{ comision.estado }}">
-                                            <td>{{ comision.codigo_comision }}</td>
-                                            <td>{{ comision.nombre }}</td>
-                                            <td>{{ comision.curso.nombre }}</td>
-                                            <td>{{ comision.ubicacion|default:"-" }}</td>
-                                            <td class="text-muted small">{{ comision.fecha_inicio|date:"d/m/Y" }}</td>
-                                            <td class="text-muted small">{{ comision.fecha_fin|date:"d/m/Y" }}</td>
-                                            <td>{{ comision.cupo_total }}</td>
-                                            <td>
-                                                <span class="badge {% if comision.estado == 'activa' %}bg-success{% elif comision.estado == 'planificada' %}bg-warning text-dark{% elif comision.estado == 'cerrada' %}bg-secondary{% else %}bg-danger{% endif %}">
-                                                    {{ comision.get_estado_display }}
-                                                </span>
-                                            </td>
-                                            <td>{{ comision.observaciones|default:"-" }}</td>
-                                            <td class="text-end">
-                                                <div class="btn-group btn-group-sm" role="group">
-                                                    {% if perms.VAT.view_comisioncurso %}
-                                                        <a href="{% url 'vat_comision_curso_detail' comision.id %}" class="btn btn-outline-info" title="Gestionar Comisión">
-                                                            <i class="fas fa-eye"></i>
-                                                        </a>
-                                                    {% endif %}
-                                                    {% if perms.VAT.change_comisioncurso %}
-                                                        <button type="button" class="btn btn-outline-warning btn-editar-comision-curso" title="Editar Comisión" data-bs-toggle="modal" data-bs-target="#modalComisionCurso" data-comision-curso-mode="edit" data-edit-url="{% url 'vat_comision_curso_update' comision.id %}" data-curso-id="{{ comision.curso_id }}" data-curso-nombre="{{ comision.curso.nombre }}" data-ubicacion-id="{{ comision.ubicacion_id|default:'' }}" data-cupo-total="{{ comision.cupo_total }}" data-fecha-inicio="{{ comision.fecha_inicio|date:'Y-m-d' }}" data-fecha-fin="{{ comision.fecha_fin|date:'Y-m-d' }}" data-estado="{{ comision.estado }}" data-observaciones="{{ comision.observaciones|default:'' }}">
-                                                            <i class="fas fa-edit"></i>
-                                                        </button>
-                                                    {% endif %}
-                                                    {% if perms.VAT.delete_comisioncurso %}
-                                                        <a href="{% url 'vat_comision_curso_delete' comision.id %}" class="btn btn-outline-danger" title="Eliminar Comisión">
-                                                            <i class="fas fa-trash"></i>
-                                                        </a>
-                                                    {% endif %}
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-                        <div id="comisionesCursoEmptyState" class="text-center py-4 text-muted d-none">
-                            <i class="fas fa-filter fa-2x mb-2 opacity-50"></i>
-                            <p class="mb-0">El curso seleccionado no tiene comisiones registradas.</p>
-                        </div>
-                    {% else %}
-                        <div class="text-center py-4 text-muted">
-                            <i class="fas fa-users fa-2x mb-2 opacity-50"></i>
-                            <p class="mb-0">No hay comisiones de curso para este centro.</p>
-                        </div>
-                    {% endif %}
+                <div class="sisoc-side-tabs sisoc-side-tabs--right"
+                     role="tablist"
+                     aria-label="Secciones pendientes">
+                    <button type="button"
+                            class="sisoc-side-tab"
+                            data-sisoc-tab-target="general"
+                            aria-selected="false"
+                            hidden>
+                        <span>Información general</span>
+                    </button>
+                    <button type="button"
+                            class="sisoc-side-tab"
+                            data-sisoc-tab-target="ubicaciones"
+                            aria-selected="false">
+                        <span>Ubicaciones adicionales</span>
+                    </button>
+                    <button type="button"
+                            class="sisoc-side-tab"
+                            data-sisoc-tab-target="contactos"
+                            aria-selected="false">
+                        <span>Contactos adicionales</span>
+                    </button>
                 </div>
             </div>
         </div>
+    {% endwith %}
 
-    </div>
-
-    <!-- ================================================================ -->
-    <!-- MODALES                                                          -->
-    <!-- ================================================================ -->
-
-        {% endcomment %}
-
-        <div class="tab-pane fade"
-             id="cursos"
-             role="tabpanel"
-             data-cursos-panel-url="{{ cursos_panel_url }}">
-            <div id="centroCursosPanelContainer" data-panel-loaded="0">
-                <div class="card shadow-sm">
-                    <div class="card-body py-5 text-center text-muted">
-                        <div class="spinner-border spinner-border-sm text-primary mb-3"
-                             role="status"
-                             aria-hidden="true"></div>
-                        <p class="mb-0">La pestaña de cursos se cargará al abrirla.</p>
-                    </div>
+    <div class="sisoc-cursos-pane"
+         id="cursos"
+         data-cursos-panel-url="{{ cursos_panel_url }}">
+        <div id="centroCursosPanelContainer" data-panel-loaded="0">
+            <div class="sisoc-section-card">
+                <div class="sisoc-empty-state">
+                    <div class="spinner-border spinner-border-sm text-light mb-3"
+                         role="status"
+                         aria-hidden="true"></div>
+                    <p class="mb-0">Cargando oferta educativa y comisiones...</p>
                 </div>
             </div>
         </div>
-
     </div>
 
     {% if can_edit_centro %}
@@ -1818,201 +1745,6 @@
         </div>
     {% endif %}
 
-    {% comment %}
-    <!-- Modal Oferta -->
-    <div class="modal fade" id="modalOferta" tabindex="-1" aria-labelledby="modalOfertaLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="modalOfertaLabel">Nueva Oferta Materia</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <form id="formOferta" method="post" action="{% url 'vat_oferta_institucional_create' %}?centro={{ centro.id }}">
-                    {% csrf_token %}
-                    <div class="modal-body">{{ oferta_form.as_p }}</div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" class="btn btn-primary">Guardar</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal Comision -->
-    <div class="modal fade" id="modalComision" tabindex="-1" aria-labelledby="modalComisionLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="modalComisionLabel">Nueva Comision</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <form id="formComision" method="post" action="{% url 'vat_comision_create' %}">
-                    {% csrf_token %}
-                    <div class="modal-body">{{ comision_form.as_p }}</div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" class="btn btn-primary">Guardar</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal Curso -->
-    <div class="modal fade" id="modalCurso" tabindex="-1" aria-labelledby="modalCursoLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="modalCursoLabel">Nuevo Curso</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <form id="formCurso" method="post" action="{% url 'vat_curso_create' %}?centro={{ centro.id }}">
-                    {% csrf_token %}
-                    <div class="modal-body">
-                        <div id="planEstudioSeleccionadoInfo" class="alert alert-info d-none" role="status" aria-live="polite"></div>
-                        <div class="row">
-                            {% for field in curso_form %}
-                                {% if field.is_hidden %}
-                                    {{ field }}
-                                {% elif field.html_name == 'voucher_parametrias' %}
-                                    <div class="col-12 mb-3">
-                                        <label for="{{ field.id_for_label }}" class="form-label fw-bold">
-                                            {{ field.label }}
-                                            {% if field.field.required %}<span class="text-danger">*</span>{% endif %}
-                                        </label>
-                                        {{ field }}
-                                        {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors.0 }}</div>{% endif %}
-                                        {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
-                                    </div>
-                                {% else %}
-                                    <div class="col-md-6 mb-3">
-                                        <label for="{{ field.id_for_label }}" class="form-label fw-bold">
-                                            {{ field.label }}
-                                            {% if field.field.required %}<span class="text-danger">*</span>{% endif %}
-                                        </label>
-                                        {{ field }}
-                                        {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors.0 }}</div>{% endif %}
-                                        {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
-                                    </div>
-                                {% endif %}
-                            {% endfor %}
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" class="btn btn-primary">Guardar</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal Comisión de Curso -->
-    <div class="modal fade" id="modalComisionCurso" tabindex="-1" aria-labelledby="modalComisionCursoLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="modalComisionCursoLabel">Nueva Comisión de Curso</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <form id="formComisionCurso" method="post" action="{% url 'vat_comision_curso_create' %}">
-                    {% csrf_token %}
-                    <div class="modal-body">
-                        <div class="alert alert-light border small mb-3 d-none" id="cursoSeleccionadoInfo"></div>
-                        <div class="row">
-                            {% for field in comision_curso_form %}
-                                <div class="col-md-6 mb-3">
-                                    <label for="{{ field.id_for_label }}" class="form-label fw-bold">
-                                        {{ field.label }}
-                                        {% if field.field.required %}<span class="text-danger">*</span>{% endif %}
-                                    </label>
-                                    {{ field }}
-                                    {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors.0 }}</div>{% endif %}
-                                    {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
-                                </div>
-                            {% endfor %}
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" class="btn btn-primary">Guardar</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal Titulo de Referencia -->
-    <div class="modal fade" id="modalTitulo" tabindex="-1" aria-labelledby="modalTituloLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="modalTituloLabel">Nuevo Titulo de Referencia</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <form id="formTitulo" method="post" action="{% url 'vat_titulorreferencia_create' %}?centro={{ centro.id }}">
-                    {% csrf_token %}
-                    <div class="modal-body">
-                        <div class="row">
-                            {% for field in titulo_form %}
-                                <div class="col-md-6 mb-3">
-                                    <label for="{{ field.id_for_label }}" class="form-label fw-bold">
-                                        {{ field.label }}
-                                        {% if field.field.required %}<span class="text-danger">*</span>{% endif %}
-                                    </label>
-                                    {{ field }}
-                                    {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors.0 }}</div>{% endif %}
-                                    {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
-                                </div>
-                            {% endfor %}
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" class="btn btn-primary">Guardar</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal Plan de Estudio -->
-    <div class="modal fade" id="modalPlan" tabindex="-1" aria-labelledby="modalPlanLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="modalPlanLabel">Nuevo Plan de Estudio</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <form id="formPlan" method="post" action="{% url 'vat_planversioncurricular_create' %}?centro={{ centro.id }}">
-                    {% csrf_token %}
-                    <div class="modal-body">
-                        <div class="row">
-                            {% for field in plan_form %}
-                                <div class="col-md-6 mb-3">
-                                    <label for="{{ field.id_for_label }}" class="form-label fw-bold">
-                                        {{ field.label }}
-                                        {% if field.field.required %}<span class="text-danger">*</span>{% endif %}
-                                    </label>
-                                    {{ field }}
-                                    {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors.0 }}</div>{% endif %}
-                                    {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
-                                </div>
-                            {% endfor %}
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" class="btn btn-primary">Guardar</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-
-    {% endcomment %}
-
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css"
           rel="stylesheet" />
     <style>
@@ -2030,6 +1762,314 @@
             cursor: not-allowed;
         }
 
+        #modalCurso .modal-dialog {
+            max-width: 460px;
+        }
+
+        #modalCurso .modal-content {
+            background: linear-gradient(180deg, #2f3d6b 0%, #28335c 100%);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 18px;
+            box-shadow: 0 30px 80px rgba(5, 12, 24, 0.55);
+            color: #ffffff;
+            overflow: hidden;
+        }
+
+        #modalCurso .modal-header,
+        #modalCurso .modal-footer {
+            border: 0;
+        }
+
+        .sisoc-curso-modal-header {
+            position: relative;
+            justify-content: center;
+            padding: 1.15rem 1.25rem .85rem;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0) 100%);
+        }
+
+        .sisoc-curso-modal-header::after {
+            content: '';
+            position: absolute;
+            left: 1.25rem;
+            right: 1.25rem;
+            bottom: 0;
+            height: 2px;
+            border-radius: 2px;
+            background: linear-gradient(90deg, #3b8681 0%, #4a8ddb 100%);
+        }
+
+        .sisoc-curso-modal-header .modal-title {
+            display: inline-flex;
+            align-items: center;
+            gap: .55rem;
+            font-size: 21px;
+            font-weight: 700;
+            font-family: Georgia, 'Times New Roman', serif;
+            color: #ffffff;
+        }
+
+        .sisoc-curso-modal-header .modal-title i {
+            font-size: 17px;
+            color: #7cb2f2;
+        }
+
+        .sisoc-curso-close {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            width: 28px;
+            height: 28px;
+            margin: 0;
+            padding: 0;
+            border-radius: 8px;
+            background-color: rgba(255, 255, 255, 0.08);
+            filter: brightness(0) invert(1);
+            opacity: .85;
+            transition: background-color .18s ease, opacity .18s ease;
+        }
+
+        .sisoc-curso-close:hover {
+            background-color: rgba(255, 255, 255, 0.18);
+            opacity: 1;
+        }
+
+        .sisoc-curso-modal-body {
+            padding: 1.15rem 1.25rem .25rem;
+            max-height: min(68vh, 560px);
+            overflow-y: auto;
+        }
+
+        .sisoc-curso-modal-body::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .sisoc-curso-modal-body::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.18);
+            border-radius: 99px;
+        }
+
+        .sisoc-curso-modal-body::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.28);
+        }
+
+        #modalCurso #planEstudioSeleccionadoInfo {
+            margin-bottom: .6rem;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            color: #f2f7ff;
+            padding: .5rem .65rem;
+            font-size: 12px;
+        }
+
+        .sisoc-curso-label {
+            display: block;
+            margin-bottom: .4rem;
+            color: #ffffff;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        #modalCurso .form-control,
+        #modalCurso .form-select,
+        .sisoc-curso-select-trigger {
+            width: 100%;
+            min-height: 40px;
+            border-radius: 9px;
+            border: 1px solid rgba(255, 255, 255, 0.28);
+            background: rgba(255, 255, 255, 0.05);
+            color: #ffffff;
+            font-size: 12.5px;
+            box-shadow: none;
+            transition: border-color .18s ease, background-color .18s ease, box-shadow .18s ease;
+        }
+
+        #modalCurso .form-control,
+        #modalCurso .form-select {
+            padding: .5rem .8rem;
+        }
+
+        #modalCurso .form-control:hover,
+        #modalCurso .form-select:hover,
+        .sisoc-curso-select-trigger:hover {
+            border-color: rgba(255, 255, 255, 0.45);
+            background: rgba(255, 255, 255, 0.07);
+        }
+
+        #modalCurso textarea.form-control {
+            min-height: 72px;
+            resize: vertical;
+        }
+
+        #modalCurso .form-control::placeholder {
+            color: rgba(255, 255, 255, 0.55);
+        }
+
+        #modalCurso .form-control:focus,
+        #modalCurso .form-select:focus,
+        .sisoc-curso-select-trigger:focus {
+            border-color: #4a8ddb;
+            background: rgba(74, 141, 219, 0.08);
+            box-shadow: 0 0 0 0.18rem rgba(74, 141, 219, 0.22);
+            outline: none;
+        }
+
+        #modalCurso select.form-select option,
+        #modalCurso select.form-control option {
+            color: #1c2742;
+            background-color: #ffffff;
+        }
+
+        .sisoc-curso-select-trigger {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: .42rem .72rem;
+            text-align: left;
+        }
+
+        .sisoc-curso-summary,
+        .sisoc-curso-help,
+        #modalCurso .form-text {
+            color: rgba(255, 255, 255, 0.78) !important;
+            font-size: 11px;
+            margin-top: .35rem;
+            line-height: 1.3;
+        }
+
+        .sisoc-curso-check-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            padding: .05rem .1rem .15rem;
+        }
+
+        .sisoc-curso-check {
+            display: inline-flex;
+            align-items: center;
+            gap: .45rem;
+            color: #ffffff;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        .sisoc-curso-check .form-check-input {
+            margin: 0;
+            width: 14px;
+            height: 14px;
+            border-radius: 2px;
+            border: 1px solid rgba(255, 255, 255, 0.82);
+            background-color: transparent;
+            box-shadow: none;
+        }
+
+        .sisoc-curso-check .form-check-input:checked {
+            background-color: #ffffff;
+            border-color: #ffffff;
+        }
+
+        .sisoc-curso-modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: .6rem;
+            padding: .85rem 1.25rem 1.15rem;
+            background: rgba(0, 0, 0, 0.12);
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .sisoc-curso-submit {
+            border: 0;
+            border-radius: 999px;
+            min-height: 38px;
+            padding: .5rem 1.35rem;
+            font-size: 12.5px;
+            font-weight: 700;
+            line-height: 1;
+            display: inline-flex;
+            align-items: center;
+            gap: .45rem;
+            transition: transform .18s ease, box-shadow .18s ease, filter .18s ease, opacity .18s ease;
+        }
+
+        .sisoc-curso-submit:hover {
+            transform: translateY(-1px);
+            filter: brightness(1.06);
+        }
+
+        .sisoc-curso-submit:disabled {
+            opacity: .8;
+            transform: none;
+        }
+
+        .sisoc-curso-submit--secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: #e6f1ff;
+            box-shadow: none;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .sisoc-curso-submit--secondary:hover {
+            background: rgba(255, 255, 255, 0.16);
+        }
+
+        .sisoc-curso-submit--primary {
+            background: linear-gradient(135deg, #3a9d40 0%, #2e7d33 100%);
+            color: #ffffff;
+            box-shadow: 0 10px 22px rgba(7, 26, 11, 0.32);
+        }
+
+        /* Vouchers — header con contador chip */
+        .sisoc-curso-vouchers-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: .6rem;
+            margin-bottom: .4rem;
+        }
+
+        .sisoc-curso-voucher-counter {
+            display: inline-flex;
+            align-items: center;
+            gap: .35rem;
+            padding: .18rem .55rem;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            color: rgba(255, 255, 255, 0.78);
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: .02em;
+            line-height: 1;
+            transition: background .18s ease, border-color .18s ease, color .18s ease;
+        }
+
+        .sisoc-curso-voucher-counter i {
+            font-size: 10px;
+            opacity: .85;
+        }
+
+        .sisoc-curso-voucher-counter.is-active {
+            background: rgba(46, 125, 51, 0.22);
+            border-color: rgba(120, 220, 130, 0.55);
+            color: #d6f5da;
+        }
+
+        .sisoc-curso-voucher-counter-label {
+            text-transform: lowercase;
+            opacity: .82;
+        }
+
+        /* Fallback nativo del <select multiple> antes de Select2 */
+        #modalCurso select[name="voucher_parametrias"][multiple] {
+            min-height: 38px;
+            padding: .35rem .55rem;
+        }
+
+        #modalCurso select[name="tipo"][multiple] {
+            min-height: 38px;
+            padding: .35rem .55rem;
+        }
+
         /* Select2 multiple dark mode para #modalOferta y #modalCurso */
         #modalOferta .select2-container--default .select2-selection--multiple,
         #modalCurso .select2-container--default .select2-selection--multiple {
@@ -2038,35 +2078,97 @@
             border-radius: 0.25rem;
             min-height: 38px;
         }
-        #modalOferta .select2-container--default.select2-container--focus .select2-selection--multiple,
-        #modalCurso .select2-container--default.select2-container--focus .select2-selection--multiple {
+
+        /* Select2 multiple — refinamiento visual para #modalCurso */
+        #modalCurso .select2-container--default .select2-selection--multiple {
+            border-radius: 8px !important;
+            border-color: rgba(255, 255, 255, 0.32) !important;
+            background-color: rgba(255, 255, 255, 0.04) !important;
+            min-height: 40px;
+            padding: 2px 6px;
+            transition: border-color .18s ease, box-shadow .18s ease;
+        }
+
+        #modalCurso .select2-container--default.select2-container--focus .select2-selection--multiple,
+        #modalCurso .select2-container--default.select2-container--open .select2-selection--multiple {
+            border-color: #ffffff !important;
+            background-color: rgba(255, 255, 255, 0.07) !important;
+            box-shadow: 0 0 0 0.14rem rgba(255, 255, 255, 0.12) !important;
+        }
+
+        #modalCurso .select2-container--default .select2-selection--multiple .select2-selection__rendered {
+            padding: 0 2px;
+        }
+
+        #modalCurso .select2-container--default .select2-selection--multiple .select2-selection__choice {
+            display: inline-flex;
+            align-items: center;
+            gap: .35rem;
+            background: linear-gradient(135deg, #3a8a40 0%, #2e7d33 100%) !important;
+            color: #ffffff !important;
+            border: 0 !important;
+            border-radius: 999px !important;
+            padding: 2px 10px 2px 4px !important;
+            margin: 3px 4px 3px 0 !important;
+            font-size: 11px;
+            font-weight: 600;
+            line-height: 1.4;
+            box-shadow: 0 2px 6px rgba(7, 26, 11, 0.28);
+        }
+
+        #modalCurso .select2-container--default .select2-selection--multiple .select2-selection__choice__remove {
+            order: -1;
+            color: rgba(255, 255, 255, 0.85) !important;
+            border: 0 !important;
+            margin: 0 !important;
+            padding: 0 2px 0 4px !important;
+            font-size: 13px;
+            line-height: 1;
+            background: transparent !important;
+        }
+
+        #modalCurso .select2-container--default .select2-selection--multiple .select2-selection__choice__remove:hover {
+            color: #ffffff !important;
+            background: transparent !important;
+            transform: scale(1.1);
+        }
+
+        #modalCurso .select2-container--default .select2-search--inline .select2-search__field {
+            color: #ffffff !important;
+            font-size: 12px;
+            margin-top: 6px;
+            margin-left: 4px;
+        }
+
+        #modalCurso .select2-container--default .select2-search--inline .select2-search__field::placeholder {
+            color: rgba(255, 255, 255, 0.55) !important;
+        }
+
+        /* Select2 multiple dark mode (regla base mantenida abajo) */
+
+        #modalOferta .select2-container--default.select2-container--focus .select2-selection--multiple {
             background-color: #253446 !important;
             border-color: #f39c12 !important;
             box-shadow: 0 0 0 0.2rem rgba(243, 156, 18, 0.15) !important;
         }
-        #modalOferta .select2-container--default .select2-selection--multiple .select2-selection__choice,
-        #modalCurso .select2-container--default .select2-selection--multiple .select2-selection__choice {
+        #modalOferta .select2-container--default .select2-selection--multiple .select2-selection__choice {
             background-color: #2c3e50 !important;
             color: #f39c12 !important;
             border: 1px solid #3d4f63 !important;
             border-radius: 3px;
         }
-        #modalOferta .select2-container--default .select2-selection--multiple .select2-selection__choice__remove,
-        #modalCurso .select2-container--default .select2-selection--multiple .select2-selection__choice__remove {
+        #modalOferta .select2-container--default .select2-selection--multiple .select2-selection__choice__remove {
             color: #9ca3af !important;
             border-right: 1px solid #3d4f63 !important;
         }
-        #modalOferta .select2-container--default .select2-selection--multiple .select2-selection__choice__remove:hover,
-        #modalCurso .select2-container--default .select2-selection--multiple .select2-selection__choice__remove:hover {
+        #modalOferta .select2-container--default .select2-selection--multiple .select2-selection__choice__remove:hover {
             color: #ef4444 !important;
             background-color: transparent !important;
         }
-        #modalOferta .select2-container--default .select2-search--inline .select2-search__field,
-        #modalCurso .select2-container--default .select2-search--inline .select2-search__field {
+        #modalOferta .select2-container--default .select2-search--inline .select2-search__field {
             color: #e5e7eb !important;
         }
-        #modalOferta .select2-container--default .select2-selection--multiple .select2-selection__rendered,
-        #modalCurso .select2-container--default .select2-selection--multiple .select2-selection__rendered {
+        #modalOferta .select2-container--default .select2-selection--multiple .select2-selection__rendered {
             color: #e5e7eb !important;
         }
         /* Dropdown (se renderiza dentro de .modal-body por dropdownParent) */
@@ -2162,6 +2264,11 @@
             if (!form || form.dataset.modalSubmitBound === '1') return;
             form.dataset.modalSubmitBound = '1';
 
+            var lastClickedSubmitter = null;
+            form.querySelectorAll('button[type="submit"]').forEach(function(btn) {
+                btn.addEventListener('click', function() { lastClickedSubmitter = btn; });
+            });
+
             function clearFormErrors() {
                 form.querySelectorAll('.is-invalid').forEach(function(field) {
                     field.classList.remove('is-invalid');
@@ -2192,15 +2299,28 @@
                     form.reportValidity();
                     return;
                 }
-                var submitBtn = form.querySelector('button[type="submit"]');
-                var originalSubmitHtml = submitBtn ? submitBtn.innerHTML : '';
-                if (submitBtn) {
-                    submitBtn.disabled = true;
-                    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Guardando...';
+                var submitter = e.submitter || lastClickedSubmitter || form.querySelector('button[type="submit"]');
+                var submitButtons = Array.from(form.querySelectorAll('button[type="submit"]'));
+                var originalSubmitState = submitButtons.map(function(button) {
+                    return {
+                        button: button,
+                        html: button.innerHTML,
+                    };
+                });
+                submitButtons.forEach(function(button) {
+                    button.disabled = true;
+                });
+                if (submitter) {
+                    submitter.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Guardando...';
+                }
+
+                var formData = new FormData(form);
+                if (submitter && submitter.name) {
+                    formData.set(submitter.name, submitter.value || '');
                 }
                 fetch(form.action, {
                     method: 'POST',
-                    body: new FormData(form),
+                    body: formData,
                     headers: {
                         'X-Requested-With': 'XMLHttpRequest'
                     }
@@ -2218,7 +2338,7 @@
                         throw {};
                     }
                     return null;
-                }).then(function() {
+                }).then(function(payload) {
                     var modal = bootstrap.Modal.getInstance(document.getElementById(modalId));
                     if (modal) modal.hide();
                     if (modalId === 'modalCurso' || modalId === 'modalComisionCurso') {
@@ -2239,10 +2359,10 @@
                             ? payload.message
                             : 'Error al guardar. Intente nuevamente.'
                     );
-                    if (submitBtn) {
-                        submitBtn.disabled = false;
-                        submitBtn.innerHTML = originalSubmitHtml;
-                    }
+                    originalSubmitState.forEach(function(item) {
+                        item.button.disabled = false;
+                        item.button.innerHTML = item.html;
+                    });
                 });
             });
         }
@@ -2321,14 +2441,23 @@
                 var trigger = event.relatedTarget;
                 var mode = trigger
                     ? (trigger.getAttribute('data-comision-curso-mode') || 'create')
-                    : 'create';
-                var cursoId = trigger ? trigger.getAttribute('data-curso-id') : '';
-                var cursoNombre = trigger ? trigger.getAttribute('data-curso-nombre') : '';
+                    : (modalComisionCurso.dataset.pendingMode || 'create');
+                var cursoId = trigger
+                    ? trigger.getAttribute('data-curso-id')
+                    : (modalComisionCurso.dataset.pendingCursoId || '');
+                var cursoNombre = trigger
+                    ? trigger.getAttribute('data-curso-nombre')
+                    : (modalComisionCurso.dataset.pendingCursoNombre || '');
                 var lockCursoField = trigger
                     ? trigger.getAttribute('data-lock-curso') === '1'
-                    : false;
+                    : modalComisionCurso.dataset.pendingLockCurso === '1';
                 var cursoSelect = document.getElementById('id_curso');
                 var cursoInfo = document.getElementById('cursoSeleccionadoInfo');
+
+                delete modalComisionCurso.dataset.pendingMode;
+                delete modalComisionCurso.dataset.pendingCursoId;
+                delete modalComisionCurso.dataset.pendingCursoNombre;
+                delete modalComisionCurso.dataset.pendingLockCurso;
 
                 if (mode === 'edit' && formComisionCurso) {
                     if (tituloComisionCurso) {
@@ -2604,20 +2733,47 @@
                 return field.closest('p') || field.closest('.mb-3') || field.parentElement;
             }
 
-            var vouchersContainer = getFieldContainer(vouchersSelect);
-            var selectedInfo = document.createElement('div');
-            selectedInfo.className = 'form-text mt-1';
-            selectedInfo.textContent = 'Seleccionados: 0';
-            if (vouchersContainer) {
-                vouchersContainer.appendChild(selectedInfo);
+            function bindMultiSelectCounter(selectField, counterKey) {
+                if (!selectField) {
+                    return function() {};
+                }
+
+                var fieldContainer = getFieldContainer(selectField);
+                var counterValueNode = fieldContainer
+                    ? fieldContainer.querySelector('[data-voucher-counter-value="' + counterKey + '"]')
+                    : null;
+                var counterChipNode = fieldContainer
+                    ? fieldContainer.querySelector('[data-voucher-counter="' + counterKey + '"]')
+                    : null;
+                var selectedInfoNode = null;
+
+                if (!counterValueNode) {
+                    selectedInfoNode = document.createElement('div');
+                    selectedInfoNode.className = 'form-text mt-1';
+                    selectedInfoNode.textContent = 'Seleccionados: 0';
+                    if (fieldContainer) {
+                        fieldContainer.appendChild(selectedInfoNode);
+                    }
+                }
+
+                return function refreshCounter() {
+                    var selectedCount = Array.from(selectField.options).filter(function(option) {
+                        return option.selected;
+                    }).length;
+                    if (counterValueNode) {
+                        counterValueNode.textContent = selectedCount;
+                        if (counterChipNode) {
+                            counterChipNode.classList.toggle('is-active', selectedCount > 0);
+                        }
+                    } else if (selectedInfoNode) {
+                        selectedInfoNode.textContent = 'Seleccionados: ' + selectedCount;
+                    }
+                };
             }
 
-            function refreshSelectedInfo() {
-                var selectedCount = Array.from(vouchersSelect.options).filter(function(option) {
-                    return option.selected;
-                }).length;
-                selectedInfo.textContent = 'Seleccionados: ' + selectedCount;
-            }
+            var refreshSelectedInfo = bindMultiSelectCounter(vouchersSelect, '1');
+            var tipoSelect = form.querySelector('select[name="tipo"]');
+            var refreshTipoSelectedInfo = bindMultiSelectCounter(tipoSelect, 'tipo');
 
             function filtrarVouchersPorPrograma() {
                 if (!programaSelect) {
@@ -2685,6 +2841,10 @@
                 });
             }
             vouchersSelect.addEventListener('change', refreshSelectedInfo);
+            if (tipoSelect) {
+                tipoSelect.addEventListener('change', refreshTipoSelectedInfo);
+                refreshTipoSelectedInfo();
+            }
 
             toggleVoucherField();
         }
@@ -2747,26 +2907,16 @@
 
             function updateCursoSummary(visibleRows) {
                 if (!cursosSummary) return;
-                cursosSummary.textContent = 'Mostrando '
-                    + visibleRows
-                    + ' curso'
-                    + (visibleRows === 1 ? '' : 's')
-                    + ' de '
-                    + cursoRows.length
-                    + '.';
+                cursosSummary.textContent = visibleRows > 0
+                    ? 'Mostrando 1-' + visibleRows + ' de ' + cursoRows.length
+                    : 'Mostrando 0 de ' + cursoRows.length;
             }
 
             function updateComisionesSummary(visibleRows, matchedRows) {
                 if (!comisionesSummary) return;
-                comisionesSummary.textContent = 'Mostrando '
-                    + visibleRows
-                    + ' comision'
-                    + (visibleRows === 1 ? '' : 'es')
-                    + ' de '
-                    + matchedRows
-                    + ' filtrada'
-                    + (matchedRows === 1 ? '' : 's')
-                    + '.';
+                comisionesSummary.textContent = visibleRows > 0
+                    ? 'Mostrando 1-' + visibleRows + ' de ' + matchedRows
+                    : 'Mostrando 0 de ' + matchedRows;
             }
 
             function getPageSizeValue(selectEl) {
@@ -3005,6 +3155,7 @@
             var modalEl = document.getElementById('modalCurso');
             var formEl = document.getElementById('formCurso');
             var titleEl = document.getElementById('modalCursoLabel');
+            var primarySubmitEl = document.getElementById('cursoPrimarySubmitBtn');
             var planEstudioInfoEl = document.getElementById('planEstudioSeleccionadoInfo');
             if (!modalEl || !formEl || !titleEl) return;
             if (modalEl.dataset.cursoFormInitialized === '1') return;
@@ -3026,6 +3177,20 @@
             function refreshSelect2(target) {
                 if (window.refreshSelect2Element) {
                     window.refreshSelect2Element(target);
+                }
+            }
+
+            function ensureTipoSelect2() {
+                var tipoField = formEl.querySelector('select[name="tipo"]');
+                if (!tipoField) return;
+
+                if (window.refreshSelect2Element) {
+                    window.refreshSelect2Element(tipoField);
+                    return;
+                }
+
+                if (window.initSelect2Elements) {
+                    window.initSelect2Elements(tipoField);
                 }
             }
 
@@ -3310,10 +3475,14 @@
                 var lockPlanEstudio = triggerButton.getAttribute('data-lock-plan-estudio') === '1';
 
                 if (mode === 'edit') {
-                    titleEl.textContent = 'Editar Curso';
+                    (document.getElementById('modalCursoLabelText') || titleEl).textContent = 'Editar Curso';
                     formEl.setAttribute('action', triggerButton.getAttribute('data-edit-url') || createAction);
+                    if (primarySubmitEl) {
+                        primarySubmitEl.textContent = 'Actualizar';
+                    }
                     setFormValue('plan_estudio', triggerButton.getAttribute('data-plan-estudio-id'));
                     setFormValue('nombre', triggerButton.getAttribute('data-nombre'));
+                    setFormValue('tipo', triggerButton.getAttribute('data-tipo'));
                     setFormValue('estado', triggerButton.getAttribute('data-estado'));
                     setFormValue('usa_voucher', triggerButton.getAttribute('data-usa-voucher'));
                     setFormValue('inscripcion_libre', triggerButton.getAttribute('data-inscripcion-libre'));
@@ -3325,15 +3494,22 @@
                     return;
                 }
 
-                titleEl.textContent = 'Nuevo Curso';
+                (document.getElementById('modalCursoLabelText') || titleEl).textContent = 'Nuevo Curso';
                 formEl.reset();
                 formEl.setAttribute('action', createAction);
+                if (primarySubmitEl) {
+                    primarySubmitEl.textContent = 'Guardar';
+                }
                 setFormValue('plan_estudio', planEstudioId);
                 setPlanEstudioFieldLock(planEstudioId, lockPlanEstudio);
                 if (lockPlanEstudio) {
                     setPlanEstudioInfo(planEstudioLabel, true);
                 }
                 updatePlanSelectorSummary();
+            });
+
+            modalEl.addEventListener('shown.bs.modal', function() {
+                ensureTipoSelect2();
             });
 
             updatePlanSelectorSummary();
@@ -3387,8 +3563,8 @@
             if (!container) return;
 
             container.innerHTML = ''
-                + '<div class="card shadow-sm">'
-                + '    <div class="card-body py-5 text-center text-muted">'
+                + '<div class="sisoc-section-card">'
+                + '    <div class="sisoc-empty-state">'
                 + '        <div class="spinner-border spinner-border-sm text-primary mb-3"' + '             role="status"' + '             aria-hidden="true"></div>'
                 + '        <p class="mb-0">' + message + '</p>'
                 + '    </div>'
@@ -3400,11 +3576,11 @@
             if (!container) return;
 
             container.innerHTML = ''
-                + '<div class="card shadow-sm">'
-                + '    <div class="card-body py-5 text-center text-muted">'
+                + '<div class="sisoc-section-card">'
+                + '    <div class="sisoc-empty-state">'
                 + '        <i class="fas fa-exclamation-triangle text-warning fa-2x mb-3"></i>'
-                + '        <p class="mb-3">No se pudo cargar la pestana de cursos.</p>'
-                + '        <button type="button"' + '                class="btn btn-outline-primary btn-sm"' + '                data-retry-cursos-panel="1">Reintentar</button>'
+                + '        <p class="mb-3">No se pudo cargar la sección de cursos.</p>'
+                + '        <button type="button"' + '                class="sisoc-btn sisoc-btn--ghost"' + '                data-retry-cursos-panel="1">Reintentar</button>'
                 + '    </div>'
                 + '</div>';
         }
@@ -3540,65 +3716,56 @@
             });
         }
 
+        function setupCentroInfoTabs() {
+            var tabs = Array.from(document.querySelectorAll('[data-sisoc-tab-target]'));
+            var panels = Array.from(document.querySelectorAll('[data-sisoc-panel]'));
+            if (!tabs.length || !panels.length) return;
+
+            var tabOrder = ['general', 'ubicaciones', 'contactos'];
+
+            function activatePanel(targetName) {
+                var activeIdx = tabOrder.indexOf(targetName);
+                if (activeIdx < 0) return;
+
+                tabs.forEach(function(tab) {
+                    var target = tab.getAttribute('data-sisoc-tab-target');
+                    var idx = tabOrder.indexOf(target);
+                    var sideEl = tab.closest('.sisoc-side-tabs');
+                    var isLeft = sideEl && sideEl.classList.contains('sisoc-side-tabs--left');
+                    var isActive = idx === activeIdx;
+                    var shouldShow = isLeft ? (idx <= activeIdx) : (idx > activeIdx);
+
+                    tab.hidden = !shouldShow;
+                    tab.classList.toggle('is-active', isActive && isLeft);
+                    tab.setAttribute('aria-selected', isActive && isLeft ? 'true' : 'false');
+                });
+
+                panels.forEach(function(panel) {
+                    panel.classList.toggle(
+                        'is-active',
+                        panel.getAttribute('data-sisoc-panel') === targetName
+                    );
+                });
+            }
+
+            tabs.forEach(function(tab) {
+                tab.addEventListener('click', function() {
+                    activatePanel(tab.getAttribute('data-sisoc-tab-target'));
+                });
+            });
+
+            activatePanel('general');
+        }
+
         // Legacy compatibility - prevent any jQuery double-bind
         if (typeof $ !== 'undefined') {
             $('#formContacto, #formIdentificador, #formUbicacion, #formOferta, #formCurso, #formComisionCurso, #formTitulo, #formPlan').off('submit');
         }
 
-        var tabStorageKey = 'vat-centro-active-tab-{{ centro.id }}';
-
-        function activateTabFromHash(hashValue) {
-            var hash = hashValue || window.location.hash;
-            if (!hash) return false;
-            var tabButton = document.querySelector('#centroTabs [data-bs-target="' + hash + '"]');
-            if (!tabButton) return false;
-            if (tabButton.disabled || tabButton.classList.contains('disabled')) return false;
-            bootstrap.Tab.getOrCreateInstance(tabButton).show();
-            return true;
-        }
-
-        function activatePersistedTab() {
-            var persistedHash = null;
-            try {
-                persistedHash = localStorage.getItem(tabStorageKey);
-            } catch (error) {
-                persistedHash = null;
-            }
-
-            if (activateTabFromHash(window.location.hash)) return;
-            if (persistedHash) {
-                activateTabFromHash(persistedHash);
-            }
-        }
-
-        document.querySelectorAll('#centroTabs [data-bs-toggle="tab"]').forEach(function(tabButton) {
-            tabButton.addEventListener('shown.bs.tab', function(event) {
-                var targetHash = event.target.getAttribute('data-bs-target');
-                if (!targetHash) return;
-                try {
-                    localStorage.setItem(tabStorageKey, targetHash);
-                } catch (error) {
-                    // localStorage can fail in private mode; ignore and keep normal tab behavior.
-                }
-                if (window.location.hash !== targetHash) {
-                    history.replaceState(null, '', targetHash);
-                }
-                if (targetHash === '#cursos') {
-                    loadCursosPanel({
-                        search: window.location.search,
-                        forceReload: window.location.search.indexOf('refresh=1') !== -1
-                    });
-                }
-            });
-        });
-
         bindCursosPanelNavigation();
-
-        // Diferir al siguiente tick para que Bootstrap termine de inicializar
-        // las transiciones CSS antes de intentar activar la solapa del hash.
-        setTimeout(activatePersistedTab, 0);
-        window.addEventListener('hashchange', function() {
-            activateTabFromHash(window.location.hash);
+        setupCentroInfoTabs();
+        loadCursosPanel({
+            search: window.location.search
         });
 
         // Confirmación de eliminado lógico
@@ -3785,4 +3952,5 @@
         initializeVoucherSelect2('formOferta', 'modalOferta');
         initializeVoucherSelect2('formCurso', 'modalCurso');
     </script>
+    {% include "vat/partials/tour.html" with vat_tour_section="centros_detail" vat_tour_autostart=True %}
 {% endblock %}

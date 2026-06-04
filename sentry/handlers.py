@@ -35,6 +35,11 @@ class SentryEventHandler(logging.Handler):
 
         try:
             if record.exc_info and record.exc_info[0] is not None:
+                if (
+                    record.name.startswith("gunicorn.")
+                    and record.exc_info[0] is SystemExit
+                ):
+                    return
                 exc = record.exc_info[1]
                 if exc is not None:
                     sentry_sdk.capture_exception(exc)

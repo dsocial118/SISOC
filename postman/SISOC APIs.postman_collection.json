@@ -132,6 +132,193 @@
             "description": "Updates a specific Relevamiento. Uses Custom Header or Token auth."
           },
           "response": []
+        },
+        {
+          "name": "Update Primer Seguimiento",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Api-Key {{apiKey}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"sisoc_id\": 42,\n    \"fecha_hora\": \"2026-04-27T10:30:00-03:00\",\n    \"estado\": \"Completo\",\n    \"funcionamiento\": \"Abierto en funcionamiento\",\n    \"agua_potable\": \"Y\",\n    \"gas_red\": \"4\",\n    \"gas_envasado\": \"\",\n    \"electricidad\": \"Y\",\n    \"lenia_carbon\": \"N\",\n    \"banio\": \"Y\",\n    \"recipiente\": \"Y\",\n    \"observan_animales\": \"N\",\n    \"elementos_guardados\": \"Y\",\n    \"menu\": {\n        \"id_menu\": \"menu-1\",\n        \"tipo_prestacion\": \"Almuerzo\",\n        \"cantidad_personas_menu\": 50,\n        \"cambios_menu\": \"Y\",\n        \"menu_semana_pasada_lunes\": \"Guiso de lentejas\",\n        \"menu_semana_pasada_martes\": \"Milanesas con pure\",\n        \"modalidad_prestacion_del_dia\": \"Comedor\",\n        \"receta\": {\n            \"id_item_receta\": \"rec-1\",\n            \"ingrediente\": \"Lentejas\",\n            \"unidad_medida\": \"kg\",\n            \"cantidad_medida\": \"2\"\n        }\n    },\n    \"prestaciones_seguimientos\": [\n        {\n            \"id_prestacion_seg\": \"prest-lun-alm\",\n            \"dias_prestacion\": \"Lunes\",\n            \"tipo_prestacion\": \"Almuerzo\",\n            \"ap_presencial\": \"30\",\n            \"ap_vianda\": \"10\",\n            \"de_presencial\": \"5\",\n            \"de_vianda\": \"2\"\n        }\n    ],\n    \"referente\": {\n        \"documento\": \"30555777\",\n        \"nombre\": \"Maria\",\n        \"apellido\": \"Garcia\",\n        \"mail\": \"maria.garcia@ejemplo.com\",\n        \"celular\": \"1144556677\",\n        \"funcion\": \"Referente comedor\"\n    },\n    \"info_adicional\": \"Sin novedades\",\n    \"realizo_forma\": \"Completa\",\n    \"comentarios_finales\": \"Formulario completo\",\n    \"firma_entrevistado\": \"https://gestionar.example/firma-entrevistado.png\",\n    \"firma_tecnico\": \"https://gestionar.example/firma-tecnico.png\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}{{apiPrefix}}/relevamiento/primer-seguimiento",
+              "host": [
+                "{{baseUrl}}{{apiPrefix}}"
+              ],
+              "path": [
+                "relevamiento",
+                "primer-seguimiento"
+              ]
+            },
+            "description": "Actualiza un PrimerSeguimiento. Auth: Api-Key o Token.\n\n**Identificacion (alcanza con UNA de las 3):**\n- `sisoc_id` (alias `Id_SISOC`): PK del PrimerSeguimiento en SISOC.\n- `gestionar_id` (alias `ID_Seguimiento1`): ID asignado por GESTIONAR. String corto (ej. `\"afbeaa6c\"`). Persistido en `PrimerSeguimiento.gestionar_id`.\n- `id_relevamiento` (alias `Id_Relevamiento`): PK del Relevamiento ancla (FK).\n\nSi se envian varios identificadores, deben referir al mismo registro (caso contrario 400).\n\n**Referente:**\n- `\"referente\": {\"sisoc_id\": 42}` asocia un Referente existente.\n- `\"referente\": {\"documento\": \"30555777\", \"nombre\": \"...\", \"apellido\": \"...\", \"mail\": \"...\", \"celular\": \"...\", \"funcion\": \"...\"}` hace `get_or_create` por DNI.\n\n**Bloques aceptados (flat o anidado segun el bloque):** servicios_basicos, almacenamiento_alimentos, condiciones_higiene, tareas_comedor, recursos, compras, frecuencia_compra_alimentos, menu (acepta receta anidada), registro_asistencia, frecuencia_alimentos, actividades_extras, tarjeta, rendicion_cuentas, asistencia_tecnica, cierre, prestaciones_seguimientos (lista o dict).\n\nCada PATCH exitoso marca `sincronizado_gestionar=True`."
+          },
+          "response": [
+            {
+              "name": "Identificar por sisoc_id",
+              "originalRequest": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Api-Key {{apiKey}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"sisoc_id\": 42,\n    \"estado\": \"Completo\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}{{apiPrefix}}/relevamiento/primer-seguimiento",
+                  "host": [
+                    "{{baseUrl}}{{apiPrefix}}"
+                  ],
+                  "path": [
+                    "relevamiento",
+                    "primer-seguimiento"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [],
+              "cookie": [],
+              "body": ""
+            },
+            {
+              "name": "Identificar por gestionar_id (ID_Seguimiento1)",
+              "originalRequest": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Api-Key {{apiKey}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"ID_Seguimiento1\": \"afbeaa6c\",\n    \"estado\": \"Completo\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}{{apiPrefix}}/relevamiento/primer-seguimiento",
+                  "host": [
+                    "{{baseUrl}}{{apiPrefix}}"
+                  ],
+                  "path": [
+                    "relevamiento",
+                    "primer-seguimiento"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [],
+              "cookie": [],
+              "body": ""
+            },
+            {
+              "name": "Identificar por id_relevamiento",
+              "originalRequest": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Api-Key {{apiKey}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"Id_Relevamiento\": 4,\n    \"estado\": \"Completo\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}{{apiPrefix}}/relevamiento/primer-seguimiento",
+                  "host": [
+                    "{{baseUrl}}{{apiPrefix}}"
+                  ],
+                  "path": [
+                    "relevamiento",
+                    "primer-seguimiento"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [],
+              "cookie": [],
+              "body": ""
+            },
+            {
+              "name": "Referente existente por sisoc_id",
+              "originalRequest": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Api-Key {{apiKey}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"sisoc_id\": 42,\n    \"referente\": {\n        \"sisoc_id\": 17\n    }\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}{{apiPrefix}}/relevamiento/primer-seguimiento",
+                  "host": [
+                    "{{baseUrl}}{{apiPrefix}}"
+                  ],
+                  "path": [
+                    "relevamiento",
+                    "primer-seguimiento"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [],
+              "cookie": [],
+              "body": ""
+            }
+          ]
         }
       ]
     },

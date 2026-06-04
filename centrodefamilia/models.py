@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db import models
 from django.contrib.auth.models import User
 from django.contrib.postgres.indexes import GinIndex
@@ -628,3 +629,49 @@ class BeneficiariosResponsablesRenaper(models.Model):
                 name="unique_dni_genero_tipo",
             )
         ]
+
+
+class AccesoCDF(models.Model):
+    """Vínculo entre un usuario y un Centro de Familia que gestiona.
+
+    Replica el patrón de ``centrodeinfancia.models.AccesoCDI`` para el dominio
+    CDF: un usuario provincial genera usuarios "CDF - Referente centro"
+    asociados a un centro puntual (relación 1..N, máximo definido en la capa de
+    servicio). El rol/permisos los aporta el grupo, no este modelo.
+    """
+
+    LIMITE_USUARIOS_POR_CENTRO = 10
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="accesos_cdf",
+    )
+    centro = models.ForeignKey(
+        Centro,
+        on_delete=models.CASCADE,
+        related_name="accesos_usuarios",
+    )
+    creado_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="accesos_cdf_creados",
+    )
+    activo = models.BooleanField(default=True)
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    fecha_baja = models.DateTimeField(null=True, blank=True)
+
+    def __str__(self):
+        return f"AccesoCDF({self.user_id} → {self.centro_id})"
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user", "centro"],
+                name="uniq_acceso_cdf_user_centro",
+            )
+        ]
+        verbose_name = "Acceso CDF"
+        verbose_name_plural = "Accesos CDF"

@@ -1306,7 +1306,7 @@
 <!-- /Bloque central-->
 <div class="row relevamiento-container mb-3">
     <div class="col-12">
-        <div class="card">
+        <div class="card bg-card">
             <div class="card-header">
                 <h3 class="card-title font-weight-bold me-3 pt-1">Colaboradores del espacio</h3>
                 <div class="card-tools">
@@ -1319,78 +1319,79 @@
                     </button>
                 </div>
             </div>
-            <div class="card-body card-comments p-0 pb-1">
-                <div class="px-3 pt-3">
-                    <div class="table-responsive">
-                        <table class="table table-sm table-bordered table-striped mb-0">
-                            <thead>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm table-bordered table-striped mb-0">
+                        <thead>
+                            <tr>
+                                <th>Apellido y nombre</th>
+                                <th>DNI</th>
+                                <th>CUIL</th>
+                                <th>Sexo</th>
+                                <th>Género</th>
+                                <th>Teléfono</th>
+                                <th>Fecha alta</th>
+                                <th>Fecha baja</th>
+                                <th>Actividades</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for colaborador in colaboradores_espacio %}
                                 <tr>
-                                    <th>Apellido y nombre</th>
-                                    <th>DNI</th>
-                                    <th>CUIL</th>
-                                    <th>Sexo</th>
-                                    <th>Género</th>
-                                    <th>Teléfono</th>
-                                    <th>Fecha alta</th>
-                                    <th>Fecha baja</th>
-                                    <th>Actividades</th>
-                                    <th>Acciones</th>
+                                    <td>{{ colaborador.apellido|default:"-" }}, {{ colaborador.nombre|default:"-" }}</td>
+                                    <td>{{ colaborador.dni|default:"-" }}</td>
+                                    <td>{{ colaborador.cuil_cuit|default:"-" }}</td>
+                                    <td>{{ colaborador.sexo_display|default:"-" }}</td>
+                                    <td>{{ colaborador.get_genero_display|default:"-" }}</td>
+                                    <td>
+                                        {% if colaborador.codigo_telefono or colaborador.numero_telefono %}
+                                            {{ colaborador.codigo_telefono|default:"-" }} {{ colaborador.numero_telefono|default:"" }}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ colaborador.fecha_alta|date:"d/m/Y"|default:"-" }}</td>
+                                    <td>{{ colaborador.fecha_baja|date:"d/m/Y"|default:"-" }}</td>
+                                    <td>
+                                        {% for actividad in colaborador.actividades.all %}
+                                            {{ actividad.nombre }}
+                                            {% if not forloop.last %},{% endif %}
+                                        {% empty %}
+                                            -
+                                        {% endfor %}
+                                    </td>
+                                    <td class="text-nowrap">
+                                        {% if request.user|has_perm_code:'comedores.change_colaboradorespacio' %}
+                                            <a href="{% url 'colaborador_espacio_editar' comedor.id colaborador.id %}"
+                                               class="btn btn-sm btn-primary me-1">Editar</a>
+                                        {% endif %}
+                                        {% if request.user|has_perm_code:'comedores.delete_colaboradorespacio' %}
+                                            <form method="post"
+                                                  action="{% url 'colaborador_espacio_eliminar' comedor.id colaborador.id %}"
+                                                  class="d-inline"
+                                                  onsubmit="return confirm('¿Desea dar de baja a este colaborador?');">
+                                                {% csrf_token %}
+                                                <button type="submit"
+                                                        class="btn btn-sm btn-danger"
+                                                        {% if colaborador.fecha_baja %}disabled{% endif %}>
+                                                    Eliminar
+                                                </button>
+                                            </form>
+                                        {% endif %}
+                                    </td>
                                 </tr>
-                            </thead>
-                            <tbody>
-                                {% for colaborador in colaboradores_espacio %}
-                                    <tr>
-                                        <td>{{ colaborador.apellido|default:"-" }}, {{ colaborador.nombre|default:"-" }}</td>
-                                        <td>{{ colaborador.dni|default:"-" }}</td>
-                                        <td>{{ colaborador.cuil_cuit|default:"-" }}</td>
-                                        <td>{{ colaborador.sexo_display|default:"-" }}</td>
-                                        <td>{{ colaborador.get_genero_display|default:"-" }}</td>
-                                        <td>
-                                            {% if colaborador.codigo_telefono or colaborador.numero_telefono %}
-                                                {{ colaborador.codigo_telefono|default:"-" }} {{ colaborador.numero_telefono|default:"" }}
-                                            {% else %}
-                                                -
-                                            {% endif %}
-                                        </td>
-                                        <td>{{ colaborador.fecha_alta|date:"d/m/Y"|default:"-" }}</td>
-                                        <td>{{ colaborador.fecha_baja|date:"d/m/Y"|default:"-" }}</td>
-                                        <td>
-                                            {% for actividad in colaborador.actividades.all %}
-                                                {{ actividad.nombre }}
-                                                {% if not forloop.last %},{% endif %}
-                                            {% empty %}
-                                                -
-                                            {% endfor %}
-                                        </td>
-                                        <td class="text-nowrap">
-                                            {% if request.user|has_perm_code:'comedores.change_colaboradorespacio' %}
-                                                <a href="{% url 'colaborador_espacio_editar' comedor.id colaborador.id %}"
-                                                   class="btn btn-sm btn-primary me-1">Editar</a>
-                                            {% endif %}
-                                            {% if request.user|has_perm_code:'comedores.delete_colaboradorespacio' %}
-                                                <form method="post"
-                                                      action="{% url 'colaborador_espacio_eliminar' comedor.id colaborador.id %}"
-                                                      class="d-inline"
-                                                      onsubmit="return confirm('¿Desea dar de baja a este colaborador?');">
-                                                    {% csrf_token %}
-                                                    <button type="submit"
-                                                            class="btn btn-sm btn-danger"
-                                                            {% if colaborador.fecha_baja %}disabled{% endif %}>
-                                                        Eliminar
-                                                    </button>
-                                                </form>
-                                            {% endif %}
-                                        </td>
-                                    </tr>
-                                {% empty %}
-                                    <tr>
-                                        <td colspan="10" class="text-center text-muted py-3">No hay colaboradores registrados para este espacio.</td>
-                                    </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="10" class="text-center text-muted py-3">No hay colaboradores registrados para este espacio.</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
                 </div>
+                <p class="text-muted small mt-2 mb-0">
+                    Se encontraron {{ colaboradores_espacio|length }} resultado{{ colaboradores_espacio|length|pluralize }}.
+                </p>
             </div>
         </div>
     </div>
@@ -1429,8 +1430,8 @@
                          id="intervenciones-pane"
                          role="tabpanel"
                          aria-labelledby="intervenciones-tab">
-                        {% if intervenciones_admisiones_disponibles %}
-                            <div class="d-flex align-items-center gap-2 mb-3 flex-wrap">
+                        <div class="d-flex align-items-center gap-2 mb-3 flex-wrap">
+                            {% if intervenciones_admisiones_disponibles %}
                                 <span class="fw-bold text-muted small"><i class="fas fa-file-contract me-1"></i>Convenio:</span>
                                 {% for adm in intervenciones_admisiones_disponibles %}
                                     <a href="?admision_id={{ adm.id }}#intervenciones-tab"
@@ -1443,11 +1444,9 @@
                                         {% if not adm.activa %}<span class="badge bg-secondary ms-1">Cerrada</span>{% endif %}
                                     </a>
                                 {% endfor %}
-                            </div>
-                        {% endif %}
-                        <div class="d-flex justify-content-end mb-2">
+                            {% endif %}
                             <button type="button"
-                                    class="btn btn-sm btn-primary"
+                                    class="btn btn-sm btn-primary ms-auto"
                                     data-bs-toggle="modal"
                                     data-bs-target="#modalIntervencion">Agregar intervención</button>
                         </div>
@@ -2189,7 +2188,7 @@
     <script nonce="{{ request.csp_nonce }}">const comedorId = "{{ comedor.id }}";</script>
     <script src="{% static 'custom/js/comedordetail.js' %}"></script>
     <script src="{% static 'custom/js/newcomedor.js' %}"></script>
- 
+
     <script nonce="{{ request.csp_nonce }}">
 const donutCanvas = document.getElementById('donutChart');
 if (donutCanvas) {
