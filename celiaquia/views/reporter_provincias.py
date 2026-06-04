@@ -1,10 +1,10 @@
+from collections import Counter
 from datetime import timedelta
 from urllib.parse import urlencode
 
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.paginator import Paginator
 from django.db.models import Count
-from django.db.models.functions import TruncMonth
 from django.utils import timezone
 from django.views.generic import TemplateView
 
@@ -127,29 +127,35 @@ def _build_metricas_principales(
 
 
 def _build_tendencia_mensual(queryset):
+    # El agrupado mensual se hace en Python en lugar de delegar en TruncMonth.
+    # En MySQL, Trunc*/Extract* sobre DateTimeField con USE_TZ=True emiten
+    # CONVERT_TZ(..., 'UTC', settings.TIME_ZONE), que devuelve NULL si la base no
+    # tiene cargadas/activas las tablas mysql.time_zone* (el caso de produccion).
+    # Ver docs/registro/decisiones/2026-06-04-tendencia-mensual-sin-convert-tz.md.
     cutoff = timezone.now() - timedelta(days=180)
-    monthly = list(
-        queryset.filter(creado_en__gte=cutoff)
-        .annotate(periodo=TruncMonth("creado_en"))
-        .values("periodo")
-        .annotate(count=Count("id"))
-        .order_by("periodo")
-    )
+    fechas = queryset.filter(creado_en__gte=cutoff).values_list("creado_en", flat=True)
 
-    max_count = max((row["count"] for row in monthly), default=0)
-    tendencia = []
-
-    for row in monthly:
-        count = row["count"]
-        tendencia.append(
-            {
-                "label": row["periodo"].strftime("%m/%Y"),
-                "count": count,
-                "size": round((count / max_count) * 100, 1) if max_count else 0.0,
-            }
+    buckets = Counter()
+    for creado_en in fechas:
+        if creado_en is None:
+            continue
+        local = (
+            timezone.localtime(creado_en) if timezone.is_aware(creado_en) else creado_en
         )
+        buckets[(local.year, local.month)] += 1
 
-    return tendencia
+    if not buckets:
+        return []
+
+    max_count = max(buckets.values())
+    return [
+        {
+            "label": f"{month:02d}/{year}",
+            "count": count,
+            "size": round((count / max_count) * 100, 1) if max_count else 0.0,
+        }
+        for (year, month), count in sorted(buckets.items())
+    ]
 
 
 def _build_expedientes_por_provincia(queryset, total_cases):
