@@ -3,7 +3,7 @@
 ## Resumen
 
 - PR: https://github.com/dsocial118/SISOC/pull/1856
-- Base: `main`
+- Base: `development`
 - Rama origen: `claude/stoic-elion-096b9c`
 - Autor: `juanikitro`
 
@@ -14,7 +14,6 @@
 ## Arquitectura tocada
 
 - Hay cambios en vistas web y puede existir impacto en permisos o renderizado.
-- Existen cambios de persistencia o migraciones que requieren revisión de datos.
 
 ## Decisiones y supuestos detectados
 
@@ -31,32 +30,19 @@
 
 - Empezar por `docs/registro/prs/PR-1856.md` para contexto resumido del PR.
 - Revisar primero estos archivos del diff:
-- `VAT/migrations/0001_initial.py`
-- `VAT/migrations/0002_remove_centro_faro_asociado_remove_centro_tipo.py`
-- `VAT/migrations/0003_add_encuentro_asistencia_fechas_actividad.py`
-- `VAT/migrations/0004_alter_centro_referente.py`
-- `VAT/migrations/0005_remove_cabal_models.py`
-- `VAT/migrations/0006_autoridadinstitucional_comision_comisionhorario_and_more.py`
-- `VAT/migrations/0007_voucherparametria_voucher_parametria.py`
-- `VAT/migrations/0008_voucherparametria_renovacion.py`
-- `VAT/migrations/0009_voucher_asignado_por.py`
-- `VAT/migrations/0010_remove_ofertainstitucional_aprobacion_inet_and_more.py`
-- `VAT/migrations/0011_ofertainstitucional_costo.py`
-- `VAT/migrations/0012_asistenciasesion.py`
-- `VAT/migrations/0013_voucherparametria_inscripcion_unica_activa.py`
-- `VAT/migrations/0014_institucionubicacion_nombre_ubicacion.py`
-- `VAT/migrations/0015_institucionidentificadorhist_ubicacion.py`
-- `VAT/migrations/0016_centro_campos_ubicacion_contacto_ampliado.py`
-- `VAT/migrations/0017_centro_remove_legacy_fields.py`
-- `VAT/migrations/0018_curso_comisioncurso.py`
-- `VAT/migrations/0019_alter_comisioncurso_managers_alter_curso_managers.py`
-- `VAT/migrations/0020_alter_planversioncurricular_options_and_more.py`
-- ... y 368 archivo(s) adicional(es) relacionados.
+- `CHANGELOG.md`
+- `docs/contexto/features/pr-1856-style-relevamientos-depurar-imports-de-web-views-py-lint-ci.md`
+- `docs/registro/prs/PR-1856.md`
+- `docs/registro/releases/pending/2026-06-10-pr-1856.md`
+- `relevamientos/views/web_views.py`
 - Documentación sugerida para ampliar contexto:
 - `docs/indice.md`
 - `docs/ia/CONTEXT_HYGIENE.md`
 - `docs/ia/ARCHITECTURE.md`
 - `docs/ia/TESTING.md`
+- `docs/contexto/features/pr-1856-style-relevamientos-depurar-imports-de-web-views-py-lint-ci.md`
+- `docs/registro/prs/PR-1856.md`
+- `docs/registro/releases/pending/2026-06-10-pr-1856.md`
 
 ## Trazabilidad
 
