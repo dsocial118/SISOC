@@ -2,7 +2,7 @@ from importlib import import_module
 from unittest.mock import Mock
 
 migration_0032 = import_module(
-    "VAT.migrations.0032_move_curso_ubicacion_to_comisioncurso"
+    "VAT.migrations.0001_squashed_0045"
 )
 
 
