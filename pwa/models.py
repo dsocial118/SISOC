@@ -439,6 +439,8 @@ class NominaEspacioPWA(models.Model):
     asistencia_alimentaria = models.BooleanField(default=True)
     asistencia_actividades = models.BooleanField(default=False)
     es_indocumentado = models.BooleanField(default=False)
+    pertenece_comunidad_indigena = models.BooleanField(default=False)
+    situacion_calle = models.BooleanField(default=False)
     identificador_interno = models.CharField(max_length=40, null=True, blank=True)
     activo = models.BooleanField(default=True)
     fecha_alta = models.DateTimeField(auto_now_add=True)

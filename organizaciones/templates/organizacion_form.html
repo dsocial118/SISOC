@@ -123,7 +123,8 @@
                                 <div id="tipo-entidad-warning"
                                      class="alert alert-warning d-none mt-2"
                                      role="alert">
-                                    Al modificar el Tipo de Entidad, puede cambiar el Tipo de Convenio y la documentación requerida en las admisiones vinculadas.
+                                    <strong><i class="fas fa-exclamation-triangle mr-1"></i>Atención:</strong>
+                                    Al cambiar el Tipo de Entidad se reiniciará la documentación del legajo (se eliminarán los archivos ya cargados). Las admisiones vinculadas mostrarán una advertencia para resincronizarse o continuar.
                                 </div>
                             </div>
                             <div class="col-md-6">{{ form.subtipo_entidad|as_crispy_field }}</div>
@@ -252,12 +253,54 @@
                         <button type="button" data-history-back="true" class="btn btn-secondary mr-2">
                             <i class="fas fa-times mr-1"></i> Cancelar
                         </button>
-                        <button class="btn btn-success" type="submit">
+                        <button class="btn btn-success" type="submit" id="organizacionSubmitBtn">
                             <i class="fas fa-save mr-1"></i> Guardar organización
                         </button>
                     </div>
                 </div>
             </form>
+
+            <!-- Modal: confirmacion de cambio de Tipo de Entidad -->
+            <div class="modal fade"
+                 id="modalConfirmarTipoEntidad"
+                 tabindex="-1"
+                 aria-labelledby="modalConfirmarTipoEntidadLabel"
+                 aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="modalConfirmarTipoEntidadLabel">
+                                <i class="fas fa-exclamation-triangle text-warning mr-2"></i>
+                                Confirmar cambio de Tipo de Entidad
+                            </h5>
+                            <button type="button"
+                                    class="btn-close"
+                                    data-bs-dismiss="modal"
+                                    aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p>
+                                Al cambiar el <strong>Tipo de Entidad</strong> se reiniciara
+                                el listado de documentos del legajo de la organizacion (se
+                                eliminaran los archivos ya cargados).
+                            </p>
+                            <p class="mb-0">
+                                Ademas, las admisiones vinculadas mostraran una advertencia
+                                para resincronizarse o continuar con la informacion actual.
+                            </p>
+                            <p class="mt-2 mb-0">
+                                <strong>¿Esta seguro de continuar?</strong>
+                            </p>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="button"
+                                    class="btn btn-warning"
+                                    id="confirmarCambioTipoEntidadBtn">Confirmar cambio</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 {% endblock %}
@@ -293,6 +336,31 @@
             tipoEntidadInput.addEventListener("change", function () {
                 var changed = organizacionPk && tipoEntidadInput.value !== tipoEntidadOriginal;
                 tipoEntidadWarning.classList.toggle("d-none", !changed);
+            });
+        }
+
+        var organizacionForm = document.getElementById("organizacionForm");
+        var modalEl = document.getElementById("modalConfirmarTipoEntidad");
+        var confirmarTipoEntidadBtn = document.getElementById("confirmarCambioTipoEntidadBtn");
+        var tipoEntidadConfirmado = false;
+        if (organizacionForm && modalEl && tipoEntidadInput && confirmarTipoEntidadBtn) {
+            var modalInstance = bootstrap.Modal.getOrCreateInstance(modalEl);
+            organizacionForm.addEventListener("submit", function (event) {
+                if (!organizacionPk) {
+                    return;
+                }
+                var changed = tipoEntidadInput.value !== tipoEntidadOriginal;
+                if (changed && !tipoEntidadConfirmado) {
+                    event.preventDefault();
+                    modalInstance.show();
+                }
+            });
+            confirmarTipoEntidadBtn.addEventListener("click", function () {
+                tipoEntidadConfirmado = true;
+                modalInstance.hide();
+                organizacionForm.requestSubmit
+                    ? organizacionForm.requestSubmit()
+                    : organizacionForm.submit();
             });
         }
 

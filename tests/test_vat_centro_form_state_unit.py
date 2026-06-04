@@ -155,4 +155,6 @@ def test_template_centro_create_form_incluye_switch_activo():
     content = template_path.read_text(encoding="utf-8")
 
     assert 'name="activo_present"' in content
-    assert "4. Estado de la sede" in content
+    # Refactor 4f1f2241 renombró el header "4. Estado de la sede" a
+    # "Estado de Centro de Formación Profesional".
+    assert "Estado de Centro de Formación Profesional" in content

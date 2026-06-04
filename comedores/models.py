@@ -667,6 +667,47 @@ class CapacitacionComedorCertificado(models.Model):
         return f"{self.comedor_id} - {self.get_capacitacion_display()} ({self.get_estado_display()})"
 
 
+class PrestacionAlimentariaConformidad(models.Model):
+    comedor = models.ForeignKey(
+        "Comedor",
+        on_delete=models.CASCADE,
+        related_name="conformidades_prestacion_alimentaria",
+    )
+    informe_tecnico = models.ForeignKey(
+        "admisiones.InformeTecnico",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="conformidades_prestacion_alimentaria",
+    )
+    periodo = models.DateField()
+    conforme = models.BooleanField()
+    observaciones = models.TextField(blank=True)
+    usuario = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="conformidades_prestacion_alimentaria",
+    )
+    creado = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-periodo", "-creado"]
+        verbose_name = "Conformidad de prestacion alimentaria"
+        verbose_name_plural = "Conformidades de prestaciones alimentarias"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["comedor", "periodo"],
+                name="uniq_conformidad_prestacion_alimentaria_mes",
+            )
+        ]
+
+    def __str__(self):
+        estado = "conforme" if self.conforme else "no conforme"
+        return f"{self.comedor_id} - {self.periodo:%Y-%m} - {estado}"
+
+
 class ActividadColaboradorEspacio(models.Model):
     alias = models.CharField(max_length=10)
     nombre = models.CharField(max_length=255)

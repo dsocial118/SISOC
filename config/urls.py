@@ -53,6 +53,7 @@ urlpatterns = [
     path("", include("VAT.urls")),
     path("", include("healthcheck.urls")),
     path("", include("centrodeinfancia.urls")),
+    path("", include("ver_para_ser_libre.urls")),
     path("acompanamientos/", include("acompanamientos.urls")),
     path("expedientespagos/", include("expedientespagos.urls")),
     path("", include("rendicioncuentasfinal.urls")),
@@ -75,6 +76,7 @@ urlpatterns = [
     path("api/comunicados/", include("comunicados.api_urls")),
     path("api/renaper/", include("core.api_urls")),
     path("api/pwa/", include("pwa.api_urls")),
+    path("api/ticketera/", include("ticketera.api_urls")),
     path("", include("importarexpediente.urls")),
     path("", include("comunicados.urls")),
 ]

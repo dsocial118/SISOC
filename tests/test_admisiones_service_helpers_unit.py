@@ -139,6 +139,7 @@ def test_build_documentos_update_context_no_materializa_documentos_organizacion(
     doc = SimpleNamespace(id=10, nombre="Acta constitutiva", obligatorio=True)
     org_doc = SimpleNamespace(id=20, nombre="Acta constitutiva", obligatorio=True)
     archivo_org = SimpleNamespace(
+        id=21,
         estado="Aceptado",
         archivo=SimpleNamespace(url="/org.pdf"),
         numero_gde="GDE-ORG",
@@ -158,6 +159,11 @@ def test_build_documentos_update_context_no_materializa_documentos_organizacion(
         "_get_archivos_organizacion_vigentes",
         return_value={org_doc.id: archivo_org},
     )
+    mocker.patch.object(
+        module.AdmisionService,
+        "_get_numeros_gde_organizacion_por_archivo",
+        return_value={},
+    )
     create_mock = mocker.patch.object(
         module.AdmisionService, "_crear_archivo_admision_desde_archivo_organizacion"
     )
@@ -169,6 +175,7 @@ def test_build_documentos_update_context_no_materializa_documentos_organizacion(
     create_mock.assert_not_called()
     assert ctx["documentos"][0]["origen"] == "organizacion"
     assert ctx["documentos"][0]["archivo_url"] == "/org.pdf"
+    assert ctx["documentos"][0]["archivo_organizacion_id"] == 21
 
 
 def test_apply_text_search_and_queryset_passthrough():
@@ -654,6 +661,9 @@ def test_actualizar_numero_gde_ajax_validations(mocker):
     archivo = SimpleNamespace(
         estado="Aceptado",
         numero_gde="OLD",
+        # Issue #1799 Req 3: la produccion ahora consulta este atributo para
+        # bloquear la edicion del GDE de documentos de origen organizacional.
+        archivo_organizacion_origen_id=None,
         admision=SimpleNamespace(comedor=SimpleNamespace()),
         save=mocker.Mock(),
     )
@@ -1155,6 +1165,14 @@ def test_contextos_create_admision_y_instancia_paths(mocker):
     create_mock = mocker.patch(
         "admisiones.services.admisiones_service.Admision.objects.create",
         return_value=admision,
+    )
+    # Issue #1799 Req 1 / #1605: create_admision congela y refresca el snapshot
+    # de documentacion organizacional de la admision recien creada. Esos helpers
+    # leen admision.pk y consultan la BD; aca probamos la orquestacion de
+    # create_admision (que llama a create y devuelve la admision), no su logica.
+    mocker.patch.object(module.AdmisionService, "congelar_documentacion_organizacional")
+    mocker.patch.object(
+        module.AdmisionService, "refrescar_snapshot_documentacion_organizacional"
     )
     mocker.patch(
         "admisiones.services.admisiones_service.TipoConvenio.objects.exclude",

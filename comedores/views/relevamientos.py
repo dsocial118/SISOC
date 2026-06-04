@@ -11,9 +11,14 @@ from django.views.decorators.http import require_POST
 
 from comedores.services.comedor_service import ComedorService
 from relevamientos.models import Relevamiento
+from relevamientos.primer_seguimiento_service import PrimerSeguimientoService
 from relevamientos.service import RelevamientoService
 
 logger = logging.getLogger("django")
+
+TIPO_RELEVAMIENTO_INICIAL = "relevamiento_inicial"
+TIPO_PRIMER_SEGUIMIENTO = "primer_seguimiento"
+TIPO_SEGUNDO_SEGUIMIENTO = "segundo_seguimiento"
 
 
 def _resolve_scoped_comedor_from_pk(pk, user):
@@ -64,6 +69,47 @@ def _handle_create_pendiente(request, comedor, is_ajax):
         is_ajax,
         "Relevamiento territorial creado correctamente.",
         relevamiento,
+    )
+
+
+def _handle_create_primer_seguimiento(request, comedor, is_ajax):
+    seguimiento = PrimerSeguimientoService.create_asignado(
+        comedor.id,
+        request.POST.get("territorial"),
+    )
+    return _success_response(
+        request,
+        is_ajax,
+        "Primer seguimiento creado correctamente.",
+        seguimiento.id_relevamiento,
+    )
+
+
+def _handle_create_with_tipo(request, comedor, is_ajax):
+    tipo_relevamiento = request.POST.get(
+        "tipo_relevamiento",
+        TIPO_RELEVAMIENTO_INICIAL,
+    )
+    if tipo_relevamiento == TIPO_RELEVAMIENTO_INICIAL:
+        return _handle_create_pendiente(request, comedor, is_ajax)
+    if tipo_relevamiento == TIPO_PRIMER_SEGUIMIENTO:
+        return _handle_create_primer_seguimiento(request, comedor, is_ajax)
+    if tipo_relevamiento == TIPO_SEGUNDO_SEGUIMIENTO:
+        return _error_response(
+            request,
+            is_ajax,
+            "Segundo seguimiento aun no disponible.",
+            400,
+            "relevamientos",
+            comedor_pk=comedor.pk,
+        )
+    return _error_response(
+        request,
+        is_ajax,
+        "Tipo de relevamiento no reconocido.",
+        400,
+        "relevamientos",
+        comedor_pk=comedor.pk,
     )
 
 
@@ -125,7 +171,7 @@ def relevamiento_crear_editar_ajax(request, pk):
         comedor = _resolve_scoped_comedor_from_pk(pk, request.user)
 
         if "territorial" in request.POST:
-            response = _handle_create_pendiente(request, comedor, is_ajax)
+            response = _handle_create_with_tipo(request, comedor, is_ajax)
         elif "territorial_editar" in request.POST:
             response = _handle_update_territorial(request, comedor, is_ajax)
         else:

@@ -64,7 +64,7 @@ class PagoService:
         return ExpedienteCiudadano.objects.select_related(
             "ciudadano", "expediente", "expediente__usuario_provincia"
         ).filter(
-            expediente__usuario_provincia__profile__provincia=provincia,
+            ciudadano__provincia=provincia,
             estado_cupo=EstadoCupo.DENTRO,
             es_titular_activo=True,
             revision_tecnico="APROBADO",

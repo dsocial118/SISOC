@@ -193,6 +193,13 @@ LISTADO_DEFINED_GROUPS = (
         ),
     ),
     BootstrapGroupSeed(
+        "CDF - Referente centro",
+        (
+            "centrodefamilia.view_centro",
+            "centrodefamilia.change_centro",
+        ),
+    ),
+    BootstrapGroupSeed(
         "Comedores total",
         (
             "auth.role_comedores",

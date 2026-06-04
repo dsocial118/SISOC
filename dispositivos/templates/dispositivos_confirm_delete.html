@@ -3,37 +3,37 @@
 {% block title %}Eliminar dispositivo{% endblock %}
 
 {% block content %}
-	
+
     <div class="container mt-4">
-	
+
         <div class="card">
-	
+
             <div class="card-header bg-danger text-white">
-	
+
                 <h5 class="mb-0">Confirmar eliminación</h5>
-	
+
             </div>
-	
+
             <div class="card-body">
-	
+
                 <p class="mb-3">
                     ¿Seguro que desea eliminar el dispositivo
                     <strong>{{ dispositivo.nombre_institucion }}</strong>?
-	
+
                 </p>
-	
+
                 <form method="post">
                     {% csrf_token %}
-	
+
                     <button type="submit" class="btn btn-danger">Eliminar</button>
                     <a href="{% url 'dispositivos_detalle' dispositivo.pk %}"
                        class="btn btn-secondary">Cancelar</a>
-	
+
                 </form>
-	
+
             </div>
-	
+
         </div>
-	
+
     </div>
 {% endblock %}

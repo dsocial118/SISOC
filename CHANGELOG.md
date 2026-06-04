@@ -1,3 +1,44 @@
+<!-- AUTO-GENERATED RELEASE START: 2026-06-03 -->
+# Versión SISOC 03.06.2026
+
+## Nuevas Funcionalidades
+
+- [Ver para Ser Libre] Nueva app de seguimiento del programa: itinerarios, jornadas, sedes, casos de laboratorio y cierres diarios, con rutas y permisos propios. (PR #1832)
+- [Ticketera] Nueva API server-to-server (`/api/ticketera/`) para alta/reconciliación de usuarios y verificación/cambio de contraseña temporal, protegida por API key, rate limiting y kill-switch `TICKETERA_ENABLED`. (PR #1795)
+- [Organizaciones/Admisiones] La documentación de organizaciones se gestiona desde Admisión: número GDE como propiedad del legajo, snapshot por admisión, documentación adicional y advertencias de procedencia (Issue #1799). (PRs #1810, #1812, #1813, #1815, #1818)
+- [Relevamientos] Primer seguimiento de relevamiento con actividades extras, número IF y sincronización con GESTIONAR. (PR #1643)
+- [CentroDeFamilia] Generación de usuarios `CDF - Referente centro` desde el detalle del CDF, con acceso acotado por centro (AccesoCDF). (PR #1798)
+- [Comedores] Registro de conformidad de prestación alimentaria por período.
+- [PWA] La nómina de espacios incorpora flags sociales (pertenencia a comunidad indígena y situación de calle). (PR #1794)
+
+## Actualizaciones
+
+- [VAT] Rediseño de UI de centros, tipo de curso configurable y wizard de comisión de curso. (PRs #1773, #1797, #1809, #1826, #1827)
+- [Celiaquía] La provincia del expediente se deriva del ciudadano (soporta multi-provincia) y se aplica alcance territorial en vistas, listados y servicios. (PRs #1814, #1821)
+- [Usuarios] Alcance territorial de perfiles (ProfileTerritorialScope), origen de perfil (`source`) para integraciones y bootstrap de grupos de referentes CDI/CDF. (PRs #1789, #1798)
+- [Infraestructura] Imagen base Docker actualizada (python:3.11.15-slim-bookworm con librerías de WeasyPrint) y MySQL 8.4; reconciliación de historia de migraciones en el arranque del contenedor.
+- [Migraciones] Squash de migraciones históricas por app para acelerar el bootstrap y estabilizar el grafo. (PRs #1762, #1796)
+- [Dependencias] Bumps de seguridad (certifi, cryptography, pillow, requests, urllib3) y nueva dependencia django-formtools. (PR #1777)
+- [CI/Lint] Consolidación del workflow de formateo/linteo con `requirements/lint.txt`, autofix por PR y paralelización de djlint.
+
+## Corrección de Errores
+
+- [Dispositivos] Se aplica alcance territorial provincial en Data Calle. (PR #1829)
+- [Celiaquía] Se corrige el mensaje de error al remover técnico y ajustes de provincia. (PR #1820)
+- [Sentry] Se corrige un error reportado en Sentry. (PR #1786)
+- [Comedores] Ajustes de UI en listados. (PR #1816)
+- [Tests] Limpieza y estabilización de tests heredados en pytest. (PRs #1791, #1825)
+- [Predeploy] Se sanea el lint para dejar `development` lista para promoción a `main`: formato `black` de `VAT/forms.py` y hallazgos de `pylint` de la app `ver_para_ser_libre` (imports sin uso, orden de imports, trailing newline y disables justificados), sin cambios de comportamiento.
+<!-- AUTO-GENERATED RELEASE END: 2026-06-03 -->
+
+<!-- AUTO-GENERATED RELEASE START: 2026-05-27 -->
+# Versión SISOC 27.05.2026
+
+## Actualizaciones
+
+- [sin-area] fix(migrations): agregar migración faltante para choices de categoria en DocumentacionAdjunta. (PR #1783)
+<!-- AUTO-GENERATED RELEASE END: 2026-05-27 -->
+
 <!-- AUTO-GENERATED RELEASE START: 2026-05-20 -->
 # Versión SISOC 20.05.2026
 

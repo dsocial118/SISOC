@@ -7,7 +7,7 @@
     --navy-dark: #232D4F;
     --navy-medium: #232D4F;
     --navy-light: #4A5F7F;
-    --gold: #F5A623;
+    --gold: #E7BA61;
     --green: #28A745;
     --red: #DC3545;
 }
@@ -634,6 +634,7 @@
                                             <th>Estado / validación</th>
                                             <th>Archivo</th>
                                             <th>Vencimiento / carga</th>
+                                            <th>Número de GDE</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -764,12 +765,55 @@
                                             {% endcomment %}
                                         {% empty %}
                                             <tr>
-                                                <td colspan="4" class="text-center">No hay documentación configurada.</td>
+                                                <td colspan="5" class="text-center">No hay documentación configurada.</td>
                                             </tr>
                                         {% endfor %}
                                     </tbody>
                                 </table>
                             </div>
+                            {% if puede_enviar_documentacion_organizacion %}
+                                <div class="mt-3 pt-3 border-top" id="org-doc-adicional">
+                                    <h6 class="mb-2">Documentación Adicional</h6>
+                                    <p class="small text-muted mb-2">
+                                        Opcional. Indicá un nombre y adjuntá el archivo. Podés agregar tantos como necesites.
+                                    </p>
+                                    <div class="row g-2 align-items-end">
+                                        <div class="col-md-5">
+                                            <label class="form-label small mb-1" for="nuevoDocOrgNombre">Nombre del documento</label>
+                                            <input type="text"
+                                                   id="nuevoDocOrgNombre"
+                                                   class="form-control form-control-sm"
+                                                   maxlength="255"
+                                                   placeholder="Nombre del documento adicional" />
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label class="form-label small mb-1" for="nuevoDocOrgVencimiento">Vencimiento (opcional)</label>
+                                            <input type="date"
+                                                   id="nuevoDocOrgVencimiento"
+                                                   class="form-control form-control-sm" />
+                                        </div>
+                                        <div class="col-md-4">
+                                            <input type="file"
+                                                   id="nuevoDocOrgArchivo"
+                                                   class="d-none"
+                                                   accept=".pdf,.jpg,.jpeg,.png,.xls,.xlsx,.doc,.docx" />
+                                            <button type="button"
+                                                    id="btnAgregarDocOrg"
+                                                    class="btn btn-sm btn-primary"
+                                                    data-url="{% url 'organizacion_documento_personalizado_agregar' organizacion.id %}">
+                                                <i class="fas fa-plus"></i> Agregar documento adicional
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="progress mt-2 documentacion-upload-progress d-none"
+                                         id="org-doc-adicional-progress-container">
+                                        <div class="progress-bar progress-bar-striped"
+                                             role="progressbar"
+                                             id="org-doc-adicional-progress-bar"
+                                             style="width: 0%">0%</div>
+                                    </div>
+                                </div>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
@@ -808,7 +852,7 @@
                                             <tr>
                                                 <td>
                                                     <a href="{% url 'comedor_detalle' comedor.id %}"
-                                                       style="color: #F5A623;
+                                                       style="color: #E7BA61;
                                                               text-decoration: underline">{{ comedor.nombre }}</a>
                                                 </td>
                                                 <td>{{ comedor.tipocomedor.nombre|default:'-' }}</td>

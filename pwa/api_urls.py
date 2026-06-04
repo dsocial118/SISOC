@@ -202,6 +202,24 @@ urlpatterns = [
         name="pwa-nomina-asistencia-alimentaria",
     ),
     path(
+        "espacios/<int:comedor_id>/nomina/asistencias-periodos/",
+        NominaEspacioPWAViewSet.as_view(
+            {
+                "get": "periodos_asistencia",
+            }
+        ),
+        name="pwa-nomina-asistencias-periodos",
+    ),
+    path(
+        "espacios/<int:comedor_id>/nomina/asistencias-periodo/",
+        NominaEspacioPWAViewSet.as_view(
+            {
+                "get": "asistencia_periodo",
+            }
+        ),
+        name="pwa-nomina-asistencia-periodo",
+    ),
+    path(
         "espacios/<int:comedor_id>/nomina/<int:pk>/",
         NominaEspacioPWAViewSet.as_view(
             {
