@@ -11,15 +11,9 @@ from users.bootstrap.groups_seed import bootstrap_group_names
 
 pytestmark = pytest.mark.django_db
 
-migration_module = importlib.import_module(
-    "users.migrations.0012_cleanup_unused_groups"
-)
-rename_vat_group_module = importlib.import_module(
-    "users.migrations.0023_rename_vat_sse_group_to_cfpinet"
-)
-rename_vat_secondary_groups_module = importlib.import_module(
-    "users.migrations.0024_rename_vat_secondary_groups_to_cfp"
-)
+migration_module = importlib.import_module("users.migrations.0001_squashed_0028")
+rename_vat_group_module = migration_module
+rename_vat_secondary_groups_module = migration_module
 UNUSED_GROUPS = set(migration_module.UNUSED_GROUPS)
 
 

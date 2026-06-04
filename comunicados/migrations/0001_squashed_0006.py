@@ -17,7 +17,7 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ("comedores", "0021_alter_nomina_estado"),
+        ("comedores", "0001_squashed_0023"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
