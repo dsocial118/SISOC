@@ -208,6 +208,7 @@ def test_list_view_construye_items_solo_padre_sin_seguimiento(mocker):
             "numero_if": "IF-11",
             "is_child": False,
             "parent_id": None,
+            "has_seguimiento": False,
         }
     ]
 
@@ -236,6 +237,7 @@ def test_list_view_construye_items_padre_seguido_de_hijo(mocker):
     items = context["relevamientos_items"]
     assert len(items) == 2
     assert items[0]["id"] == 42 and items[0]["is_child"] is False
+    assert items[0]["has_seguimiento"] is True
     assert items[1]["id"] == 900
     assert items[1]["is_child"] is True
     assert items[1]["parent_id"] == 42
