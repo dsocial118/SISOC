@@ -5,8 +5,8 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("admisiones", "0057_alter_archivoadmision_managers_and_more"),
-        ("intervenciones", "0005_tipointervencion_capacitacion_sincronica_y_fch"),
+        ("admisiones", "0001_squashed_0058"),
+        ("intervenciones", "0001_squashed_0005"),
     ]
 
     operations = [

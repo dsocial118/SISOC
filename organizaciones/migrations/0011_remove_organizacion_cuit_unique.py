@@ -4,7 +4,7 @@ from django.core.validators import MaxValueValidator, MinValueValidator
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("organizaciones", "0010_organizacion_telefono_idx"),
+        ("organizaciones", "0001_squashed_0010"),
     ]
 
     operations = [

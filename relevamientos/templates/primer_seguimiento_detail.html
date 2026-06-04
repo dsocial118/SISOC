@@ -15,10 +15,11 @@
     </span>
     <span class="ml-2 h5">{{ seguimiento.estado | default_if_none:"Sin información" }}</span>
     {% if seguimiento.sincronizado_gestionar %}
-        <span class="badge bg-success ml-2" title="Datos recibidos desde GESTIONAR">Sincronizado con GESTIONAR</span>
+        <span class="badge bg-success ml-2"
+              title="El primer seguimiento se sincronizó con GESTIONAR">Sincronizado con GESTIONAR</span>
     {% else %}
         <span class="badge bg-secondary ml-2"
-              title="Aún no se recibieron datos desde GESTIONAR">Pendiente sincronización</span>
+              title="Todavía no se sincronizó con GESTIONAR">Pendiente sincronización</span>
     {% endif %}
 {% endblock titulo-pagina %}
 {% block breadcrumb %}

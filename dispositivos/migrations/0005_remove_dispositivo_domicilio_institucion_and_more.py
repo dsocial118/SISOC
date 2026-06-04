@@ -72,7 +72,7 @@ def backfill_contacto_desdoblado(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("dispositivos", "0004_validate_dispositivo_uploads"),
+        ("dispositivos", "0001_squashed_0004"),
     ]
 
     operations = [

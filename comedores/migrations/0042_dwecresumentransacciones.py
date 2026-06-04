@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("comedores", "0041_cursoappmobile_es_recomendado"),
+        ("comedores", "0024_squashed_0041"),
     ]
 
     operations = [

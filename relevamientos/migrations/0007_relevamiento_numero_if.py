@@ -6,7 +6,7 @@ class Migration(migrations.Migration):
     dependencies = [
         (
             "relevamientos",
-            "0006_alter_relevamiento_managers_relevamiento_deleted_at_and_more",
+            "0001_squashed_0006",
         ),
     ]
 

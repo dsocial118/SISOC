@@ -11,7 +11,7 @@ class Migration(migrations.Migration):
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
         (
             "centrodeinfancia",
-            "0028_alter_formulariocdi_condiciones_almacenamiento_leche_humana",
+            "0001_squashed_0028",
         ),
     ]
 

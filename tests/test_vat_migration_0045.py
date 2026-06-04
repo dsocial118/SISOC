@@ -10,9 +10,7 @@ from core.models import Localidad, Municipio, Provincia
 
 pytestmark = pytest.mark.django_db
 
-migration_module = importlib.import_module(
-    "VAT.migrations.0045_centro_referentes_revisores"
-)
+migration_module = importlib.import_module("VAT.migrations.0001_squashed_0045")
 
 
 def test_migration_copia_referente_legacy_a_referentes_m2m():
