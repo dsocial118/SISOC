@@ -50,7 +50,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ("expedientespagos", "0002_alter_expedientepago_expediente_pago_and_more"),
+        ("expedientespagos", "0001_squashed_0006_expedientepago_mes_convenio"),
     ]
 
     operations = [

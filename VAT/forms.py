@@ -119,7 +119,10 @@ def build_curso_tipo_choices(include_values=None, centro_id=None):
         seen_values.add(value)
 
     include_values = _normalize_related_ids(
-        [*_collect_curso_tipo_values_from_existing_courses(centro_id=centro_id), *include_values]
+        [
+            *_collect_curso_tipo_values_from_existing_courses(centro_id=centro_id),
+            *include_values,
+        ]
     )
 
     for value in include_values:

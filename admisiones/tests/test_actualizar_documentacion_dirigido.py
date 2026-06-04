@@ -1,7 +1,10 @@
 """Issue #1799 (feedback punto 1): "Actualizar Información desde Legajo Organización"
 DIRIGIDO. Debe refrescar solo los documentos org cuyo slot cambió y PRESERVAR los
 documentos nativos de la admisión (cargados admisión-side) y los org no modificados,
-sin resetear tipo_convenio ni estado. Antes borraba TODOS los ArchivoAdmision."""
+sin resetear tipo_convenio ni estado. Antes borraba TODOS los ArchivoAdmision.
+
+Incluye regresion Bug 2: docs de origen org con estado Aceptado en la admision
+no deben borrarse al actualizar (fix #1799)."""
 
 import pytest
 
@@ -143,3 +146,77 @@ def test_actualizar_quita_doc_removido_del_legajo_y_preserva_nativo(setup):
     assert _archivo_org_materializado(admision, setup["doc_adm"]) is None
     # El doc nativo se preservó.
     assert ArchivoAdmision.objects.filter(pk=setup["archivo_nativo"].pk).exists()
+
+
+# ---------------------------------------------------------------------------
+# Regresion Bug 2 — docs Aceptados en admision no deben borrarse al actualizar
+# ---------------------------------------------------------------------------
+
+
+def test_actualizar_preserva_doc_aceptado_de_origen_org(setup):
+    """Un ArchivoAdmision de origen organizacional con estado Aceptado (validado
+    por un tecnico desde la admision) NO debe eliminarse al actualizar, aunque el
+    slot haya cambiado en el legajo."""
+    admision = setup["admision"]
+    doc_adm = setup["doc_adm"]
+
+    # Obtener el ArchivoAdmision materializado y marcarlo como Aceptado
+    # (simula validacion manual desde la admision).
+    materializado = _archivo_org_materializado(admision, doc_adm)
+    assert materializado is not None
+    materializado.estado = "Aceptado"
+    materializado.save(update_fields=["estado"])
+    pk_aceptado = materializado.pk
+
+    # Cambiar el archivo en el legajo (dispara un cambio de slot).
+    setup["archivo_org"].estado = ArchivoOrganizacion.ESTADO_ACEPTADO
+    setup["archivo_org"].save(update_fields=["estado"])
+
+    ok, _ = AdmisionService.actualizar_documentacion_desde_organizacion(admision)
+    assert ok is True
+
+    # El doc Aceptado de origen org debe haberse conservado.
+    assert ArchivoAdmision.objects.filter(
+        pk=pk_aceptado
+    ).exists(), (
+        "El ArchivoAdmision con estado Aceptado no debe eliminarse al actualizar"
+    )
+    conservado = ArchivoAdmision.objects.get(pk=pk_aceptado)
+    assert conservado.estado == "Aceptado"
+
+
+def test_actualizar_refresca_doc_aceptado_cuando_cambia_el_archivo(setup):
+    """Bug sincronizacion de adjuntos: si el archivo del legajo cambia realmente
+    (la organizacion sube un adjunto nuevo), el documento de origen organizacional
+    debe refrescarse en la admision AUNQUE su copia este "Aceptado" — de lo
+    contrario la admision sigue mostrando el adjunto viejo. Solo los cambios de
+    metadatos (estado/observaciones) preservan la validacion."""
+    admision = setup["admision"]
+    doc_adm = setup["doc_adm"]
+    organizacion = admision.comedor.organizacion
+
+    # La copia materializada en la admision quedo validada (Aceptado) sobre el
+    # archivo viejo del legajo.
+    materializado = _archivo_org_materializado(admision, doc_adm)
+    assert materializado is not None
+    nombre_viejo = materializado.archivo.name
+    materializado.estado = "Aceptado"
+    materializado.save(update_fields=["estado"])
+
+    # La organizacion sube un ADJUNTO NUEVO: como el doc estaba Aceptado, el flujo
+    # real crea una nueva version (nueva fila ArchivoOrganizacion vigente).
+    ArchivoOrganizacion.objects.create(
+        organizacion=organizacion,
+        documentacion=setup["archivo_org"].documentacion,
+        archivo="organizaciones/dni_v2.pdf",
+        estado=ArchivoOrganizacion.ESTADO_ADJUNTO,
+    )
+
+    ok, _ = AdmisionService.actualizar_documentacion_desde_organizacion(admision)
+    assert ok is True
+
+    # La admision debe mostrar AHORA el archivo nuevo, no el viejo.
+    refrescado = _archivo_org_materializado(admision, doc_adm)
+    assert refrescado is not None
+    assert refrescado.archivo.name == "organizaciones/dni_v2.pdf"
+    assert refrescado.archivo.name != nombre_viejo

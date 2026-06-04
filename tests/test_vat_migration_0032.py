@@ -1,9 +1,7 @@
 from importlib import import_module
 from unittest.mock import Mock
 
-migration_0032 = import_module(
-    "VAT.migrations.0032_move_curso_ubicacion_to_comisioncurso"
-)
+migration_0032 = import_module("VAT.migrations.0001_squashed_0045")
 
 
 def _build_schema_editor(*, vendor, null_count=0):

@@ -675,9 +675,17 @@ class ExpedienteListView(ListView):
             )
             .prefetch_related("asignaciones_tecnicos__tecnico")
             .annotate(
-                legajos_subsanar_count=Count(
-                    "expediente_ciudadanos",
-                    filter=Q(expediente_ciudadanos__revision_tecnico="SUBSANAR"),
+                legajos_subsanar_count=Coalesce(
+                    Subquery(
+                        ExpedienteCiudadano.objects.filter(
+                            expediente=OuterRef("pk"),
+                            revision_tecnico="SUBSANAR",
+                        )
+                        .values("expediente")
+                        .annotate(c=Count("id"))
+                        .values("c")
+                    ),
+                    0,
                 )
             )
             .only(
@@ -2094,14 +2102,6 @@ class ActualizarRegistroErroneoView(View):
             )
 
             provincia_id = _resolver_provincia_id_registro_erroneo(user, expediente)
-            if not provincia_id:
-                return JsonResponse(
-                    {
-                        "success": False,
-                        "error": "No se pudo determinar la provincia para validar el registro.",
-                    },
-                    status=400,
-                )
             _validar_datos_registro_erroneo(
                 datos_normalizados,
                 provincia_id=provincia_id,
@@ -2180,15 +2180,6 @@ class ReprocesarRegistrosErroneosView(View):
         )
 
         provincia_id = _resolver_provincia_id_registro_erroneo(user, expediente)
-        if not provincia_id:
-            return JsonResponse(
-                {
-                    "success": False,
-                    "error": "No se pudo determinar la provincia del usuario.",
-                },
-                status=400,
-            )
-
         provincias_permitidas_ids = _obtener_provincias_permitidas_ids(user)
 
         for registro in registros:

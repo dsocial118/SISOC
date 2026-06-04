@@ -184,6 +184,7 @@ INSTALLED_APPS = [
     "importarexpediente",
     "comunicados",
     "centrodeinfancia",
+    "ver_para_ser_libre",
     "dispositivos",
     "pwa",
     "ticketera",

@@ -1,0 +1,210 @@
+{% extends "includes/main.html" %}
+{% load static %}
+
+{% block title %}Jornada VPSL{% endblock %}
+{% block head %}
+    <link rel="stylesheet"
+          href="{% static 'custom/css/ver_para_ser_libre.css' %}" />
+{% endblock %}
+{% block breadcrumb %}
+    {% include "components/breadcrumb.html" with items=breadcrumb_items %}
+{% endblock %}
+
+{% block content %}
+    <div class="row vpsl-page">
+        <div class="col-12 col-xl-10 offset-xl-1">
+            <div class="card vpsl-title-card vpsl-header">
+                <div class="card-body d-flex flex-wrap justify-content-between align-items-center gap-2">
+                    <div>
+                        <h2 class="vpsl-title">Jornada VPSL</h2>
+                        <p class="vpsl-subtitle mb-0">
+                            {{ itinerario.codigo }} · {{ itinerario.fecha_inicio|date:"d/m/Y" }} a {{ itinerario.fecha_fin|date:"d/m/Y" }}
+                        </p>
+                    </div>
+                    <a href="{% url 'vpsl_itinerario_detail' itinerario.pk %}"
+                       class="btn btn-secondary">
+                        <i class="bi bi-arrow-left"></i> Volver
+                    </a>
+                </div>
+            </div>
+            <div class="card">
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="card-body">
+                        {% include "ver_para_ser_libre/partials/form_errors.html" with form=form %}
+                        <div class="alert alert-info">
+                            Fechas permitidas: {{ itinerario.fecha_inicio|date:"d/m/Y" }} a {{ itinerario.fecha_fin|date:"d/m/Y" }}.
+                        </div>
+                        <div class="vpsl-form-shell">
+                            <section class="vpsl-section">
+                                <div class="vpsl-section-header">
+                                    <div class="vpsl-section-icon">
+                                        <i class="bi bi-calendar-check"></i>
+                                    </div>
+                                    <div>
+                                        <h3 class="vpsl-section-title">Planificacion</h3>
+                                        <p class="vpsl-section-subtitle">Fecha, sede y horario operativo</p>
+                                    </div>
+                                </div>
+                                <div class="vpsl-section-body">
+                                    <div class="row g-3">
+                                        <div class="col-12 col-md-6">
+                                            <label class="form-label" for="{{ form.fecha.id_for_label }}">{{ form.fecha.label }}</label>
+                                            {{ form.fecha }}
+                                            {% for error in form.fecha.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                                        </div>
+                                        <div class="col-12 col-md-6">
+                                            <label class="form-label" for="{{ form.sede_vpsl.id_for_label }}">{{ form.sede_vpsl.label }}</label>
+                                            {{ form.sede_vpsl }}
+                                            {% for error in form.sede_vpsl.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                                        </div>
+                                        <div class="col-12">
+                                            <div id="sede-info" class="alert alert-secondary d-none mb-0"></div>
+                                        </div>
+                                        {% for field in form %}
+                                            {% if field.name == "vehiculo" %}
+                                                <div class="col-12 col-md-6">
+                                                    <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                                                    {{ field }}
+                                                    {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                                                </div>
+                                            {% endif %}
+                                            {% if field.name == "horario_inicio" or field.name == "horario_fin" %}
+                                                <div class="col-12 col-md-6">
+                                                    <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                                                    {{ field }}
+                                                    {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                                                </div>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </section>
+                            <section class="vpsl-section">
+                                <div class="vpsl-section-header">
+                                    <div class="vpsl-section-icon">
+                                        <i class="bi bi-person-vcard"></i>
+                                    </div>
+                                    <div>
+                                        <h3 class="vpsl-section-title">Referente de jornada</h3>
+                                        <p class="vpsl-section-subtitle">Validacion RENAPER y datos de contacto</p>
+                                    </div>
+                                </div>
+                                <div class="vpsl-section-body">
+                                    <input type="hidden"
+                                           name="referente_nombre_renaper"
+                                           id="referente_nombre_renaper"
+                                           value="{{ object.referente_nombre|default:'' }}" />
+                                    <input type="hidden"
+                                           name="referente_apellido_renaper"
+                                           id="referente_apellido_renaper"
+                                           value="{{ object.referente_apellido|default:'' }}" />
+                                    <div class="row g-3">
+                                        {% for field in form %}
+                                            {% if field.name == "referente_dni" or field.name == "referente_sexo" or field.name == "referente_telefono" or field.name == "referente_email" %}
+                                                <div class="col-12 col-md-6">
+                                                    <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                                                    {{ field }}
+                                                    {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                                                </div>
+                                                {% if field.name == "referente_sexo" %}
+                                                    <div class="col-12">
+                                                        <button type="button" id="validar-renaper" class="btn btn-outline-primary">
+                                                            <i class="bi bi-shield-check"></i> Validar RENAPER
+                                                        </button>
+                                                        <div id="referente-renaper-resumen"
+                                                             class="alert alert-success mt-3 {% if not object.referente_validado_renaper %}d-none{% endif %}">
+                                                            Validado
+                                                            {% if object.referente_nombre or object.referente_apellido %}
+                                                                : {{ object.referente_nombre }} {{ object.referente_apellido }} - DNI {{ object.referente_dni }}
+                                                            {% endif %}
+                                                        </div>
+                                                    </div>
+                                                {% endif %}
+                                            {% endif %}
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </section>
+                            <section class="vpsl-section">
+                                <div class="vpsl-section-header">
+                                    <div class="vpsl-section-icon">
+                                        <i class="bi bi-chat-square-text"></i>
+                                    </div>
+                                    <div>
+                                        <h3 class="vpsl-section-title">Observaciones</h3>
+                                        <p class="vpsl-section-subtitle">Notas complementarias de la jornada</p>
+                                    </div>
+                                </div>
+                                <div class="vpsl-section-body">
+                                    {% for field in form %}
+                                        {% if field.name == "observaciones" %}
+                                            <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                                            {{ field }}
+                                            {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                            </section>
+                        </div>
+                    </div>
+                    <div class="card-footer d-flex gap-2 justify-content-end">
+                        <a href="{% url 'vpsl_itinerario_detail' itinerario.pk %}"
+                           class="btn btn-secondary">Volver</a>
+                        <button type="submit" class="btn btn-primary">Guardar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block customJS %}
+    {{ sede_data|json_script:"sede-data-json" }}
+    <script nonce="{{ request.csp_nonce }}">
+      document.addEventListener("DOMContentLoaded", function () {
+        const select = document.getElementById("id_sede_vpsl");
+        const info = document.getElementById("sede-info");
+        const sedes = JSON.parse(document.getElementById("sede-data-json").textContent);
+
+        function render() {
+          const data = sedes[String(select.value)];
+          if (!data) {
+            info.classList.add("d-none");
+            info.innerHTML = "";
+            return;
+          }
+          info.classList.remove("d-none");
+          info.innerHTML = `<strong>${data.nombre}</strong><br />Provincia: ${data.jurisdiccion}<br />Localidad: ${data.localidad}<br />Calle y altura: ${data.domicilio}`;
+        }
+        select.addEventListener("change", render);
+        render();
+
+        const validarBtn = document.getElementById("validar-renaper");
+        const resumen = document.getElementById("referente-renaper-resumen");
+        const dni = document.getElementById("id_referente_dni");
+        const sexo = document.getElementById("id_referente_sexo");
+        const nombreHidden = document.getElementById("referente_nombre_renaper");
+        const apellidoHidden = document.getElementById("referente_apellido_renaper");
+        if (validarBtn) {
+          validarBtn.addEventListener("click", function () {
+            const params = new URLSearchParams({ dni: dni.value || "", sexo: sexo.value || "" });
+            fetch("{% url 'vpsl_renaper_consultar' %}?" + params.toString(), { credentials: "same-origin" })
+              .then((response) => response.json().then((body) => ({ ok: response.ok, body })))
+              .then(({ ok, body }) => {
+                if (!ok || !body.success) {
+                  resumen.className = "alert alert-danger mt-3";
+                  resumen.textContent = body.message || "No se pudo validar RENAPER.";
+                  return;
+                }
+                const data = body.data || {};
+                nombreHidden.value = data.nombre || "";
+                apellidoHidden.value = data.apellido || "";
+                resumen.className = "alert alert-success mt-3";
+                resumen.textContent = `Validado: ${data.nombre || ""} ${data.apellido || ""} - DNI ${data.dni || dni.value}`;
+              });
+          });
+        }
+      });
+    </script>
+{% endblock %}

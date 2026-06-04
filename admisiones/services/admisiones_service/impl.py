@@ -1208,6 +1208,9 @@ class AdmisionService:
 
         admision.tipo_entidad_origen_id = organizacion.tipo_entidad_id
         admision.save(update_fields=["tipo_entidad_origen"])
+        # Solo actualizar la linea de base del snapshot para silenciar la
+        # advertencia. NO se materializan nuevos ArchivoAdmision: "Continuar
+        # operando con la Admision actual" NO debe clonar docs del legajo.
         AdmisionService.refrescar_snapshot_documentacion_organizacional(admision)
         logger.info(
             "Desincronizacion aceptada en admision",
@@ -1242,12 +1245,29 @@ class AdmisionService:
             if snap is None or snap.token != data["token"]:
                 slots_a_refrescar.add(slot)  # agregado / modificado
         for slot in snapshots:
+            # Ignorar el centinela de inicializacion; no corresponde a ningún doc.
+            if slot == "__init__":
+                continue
             if slot not in actuales:
                 slots_a_refrescar.add(slot)  # quitado del legajo
 
         if not slots_a_refrescar:
             AdmisionService.refrescar_snapshot_documentacion_organizacional(admision)
             return True, "La documentacion ya estaba actualizada con el Legajo."
+
+        # Mapa slot -> nombre del archivo vigente en el legajo. Permite distinguir
+        # un cambio REAL de archivo (la organizacion subio un adjunto nuevo, hay
+        # que refrescar) de un cambio de metadatos como estado/observaciones (no
+        # debe pisar una validacion admision-side).
+        nombres_org_por_slot = {}
+        for archivo in AdmisionService._org_archivos_relevantes(admision):
+            if not archivo.archivo:
+                continue
+            if archivo.es_personalizado:
+                slot_org = f"custom:{archivo.id}"
+            else:
+                slot_org = f"doc:{archivo.documentacion_id}"
+            nombres_org_por_slot[slot_org] = getattr(archivo.archivo, "name", "") or ""
 
         # Borrar SOLO los ArchivoAdmision de origen organizacional de los slots
         # que cambiaron. Nunca se tocan los documentos nativos de la admision
@@ -1262,9 +1282,22 @@ class AdmisionService:
                 slot = f"doc:{origin.documentacion_id}"
             else:
                 slot = f"custom:{origin.id}"
-            if slot in slots_a_refrescar:
-                archivo_adm.delete()
-                borrados += 1
+            if slot not in slots_a_refrescar:
+                continue
+            # Un documento validado ("Aceptado") en la admision se preserva, PERO
+            # solo si el archivo del legajo no cambio: si la organizacion subio un
+            # adjunto nuevo, la validacion quedo obsoleta y debe refrescarse para
+            # no seguir mostrando el adjunto viejo en la admision. Un cambio que
+            # solo toca metadatos (estado/observaciones/vencimiento) preserva la
+            # validacion (fix Bug #1799 - docs validados no deben pisarse por
+            # cambios de metadatos).
+            if archivo_adm.estado == "Aceptado":
+                nombre_legajo = nombres_org_por_slot.get(slot)
+                nombre_copia = getattr(archivo_adm.archivo, "name", "") or ""
+                if nombre_legajo is None or nombre_legajo == nombre_copia:
+                    continue
+            archivo_adm.delete()
+            borrados += 1
 
         # Re-materializar (aditivo): re-crea desde el legajo los slots borrados que
         # siguen vigentes; los quitados no se re-crean; preserva nativos y los no
@@ -1334,7 +1367,11 @@ class AdmisionService:
     def refrescar_snapshot_documentacion_organizacional(admision):
         """Deja el snapshot de la admision igual al estado actual del legajo
         (upsert + limpieza de slots obsoletos). Se invoca al crear la admision,
-        al resincronizar y al aceptar la divergencia."""
+        al resincronizar y al aceptar la divergencia.
+
+        Cuando el legajo no tiene archivos aun se escribe un centinela
+        ``__init__`` para distinguir "inicializado sin docs" de "nunca
+        inicializado" (fix Bug #1799 - primera modificacion no detectada)."""
         if not admision or not admision.pk:
             return
         actuales = AdmisionService._tokens_org_actuales(admision)
@@ -1355,9 +1392,23 @@ class AdmisionService:
                 snap.token = data["token"]
                 snap.etiqueta = data["etiqueta"]
                 snap.save(update_fields=["token", "etiqueta", "synced_at"])
-        if existentes:
+        # Eliminar slots obsoletos; el centinela se maneja por separado.
+        obsoletos = [k for k in existentes if k != "__init__"]
+        if obsoletos:
             AdmisionDocOrgSnapshot.objects.filter(
-                admision=admision, slot_key__in=list(existentes.keys())
+                admision=admision, slot_key__in=obsoletos
+            ).delete()
+        if not actuales:
+            # Legajo sin archivos: escribir/mantener centinela de inicializacion.
+            AdmisionDocOrgSnapshot.objects.get_or_create(
+                admision=admision,
+                slot_key="__init__",
+                defaults={"etiqueta": "", "token": ""},
+            )
+        else:
+            # Ya hay docs reales: el centinela no hace falta.
+            AdmisionDocOrgSnapshot.objects.filter(
+                admision=admision, slot_key="__init__"
             ).delete()
 
     @staticmethod
@@ -1372,14 +1423,21 @@ class AdmisionService:
         if not organizacion:
             return False, []
 
-        existentes = {
-            snap.slot_key: snap
-            for snap in AdmisionDocOrgSnapshot.objects.filter(admision=admision)
-        }
-        actuales = AdmisionService._tokens_org_actuales(admision)
-        if not existentes:
+        todos_los_snaps = list(AdmisionDocOrgSnapshot.objects.filter(admision=admision))
+        if not todos_los_snaps:
+            # Sin ninguna fila de snapshot: admision legacy o recien creada sin
+            # archivos en el legajo. Inicializar en sync (req 1.6).
             AdmisionService.refrescar_snapshot_documentacion_organizacional(admision)
             return False, []
+
+        # Excluir el centinela "__init__" de la comparacion; solo sirve para
+        # marcar que el snapshot fue inicializado.
+        existentes = {
+            snap.slot_key: snap
+            for snap in todos_los_snaps
+            if snap.slot_key != "__init__"
+        }
+        actuales = AdmisionService._tokens_org_actuales(admision)
 
         modificados = []
         for slot, data in actuales.items():
@@ -1484,6 +1542,9 @@ class AdmisionService:
         admision.estado_admision = "convenio_seleccionado"
         admision.save(update_fields=["tipo_convenio", "estado_admision"])
         AdmisionService.congelar_documentacion_organizacional(admision)
+        # Sincronizar snapshot tras materializar docs: sin este paso la primera
+        # modificacion en el legajo no dispararia la advertencia (Bug A #1799).
+        AdmisionService.refrescar_snapshot_documentacion_organizacional(admision)
         return True, "Tipo de convenio precargado desde la organización."
 
     @staticmethod
