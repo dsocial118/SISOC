@@ -295,6 +295,19 @@ LISTADO_DEFINED_GROUPS = (
         ),
     ),
     BootstrapGroupSeed(
+        "INET_PROVINCIA",
+        (
+            "auth.role_inet_provincia",
+            "auth.role_provincia_vat",
+            "VAT.view_centro",
+            "VAT.add_centro",
+            "VAT.change_centro",
+            "VAT.view_planversioncurricular",
+            "VAT.add_planversioncurricular",
+            "VAT.change_planversioncurricular",
+        ),
+    ),
+    BootstrapGroupSeed(
         "CFP",
         (
             "auth.role_referentecentrovat",

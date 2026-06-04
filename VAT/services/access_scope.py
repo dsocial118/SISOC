@@ -12,6 +12,7 @@ from users.territorial_scope import (
 
 ROLE_VAT_SSE_PERMISSION = "auth.role_vat_sse"
 ROLE_VAT_PROVINCIAL_PERMISSION = "auth.role_provincia_vat"
+ROLE_VAT_INET_PROVINCIAL_PERMISSION = "auth.role_inet_provincia"
 ROLE_REFERENTE_CENTRO_PERMISSIONS = (
     "auth.role_referentecentrovat",
     "auth.role_centroreferentevat",
@@ -62,7 +63,11 @@ def is_vat_provincial(user) -> bool:
         return False
     return _user_has_any_permission_code(
         user,
-        (ROLE_VAT_PROVINCIAL_PERMISSION, VAT_VIEW_CENTRO_PERMISSION),
+        (
+            ROLE_VAT_PROVINCIAL_PERMISSION,
+            ROLE_VAT_INET_PROVINCIAL_PERMISSION,
+            VAT_VIEW_CENTRO_PERMISSION,
+        ),
     )
 
 
