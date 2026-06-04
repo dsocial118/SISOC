@@ -18,8 +18,12 @@
         <span class="badge bg-success ml-2"
               title="El primer seguimiento se sincronizó con GESTIONAR">Sincronizado con GESTIONAR</span>
     {% else %}
-        <span class="badge bg-secondary ml-2"
-              title="Todavía no se sincronizó con GESTIONAR">Pendiente sincronización</span>
+        <span class="badge bg-danger ml-2" title="Todavía no se sincronizó con GESTIONAR">No sincronizado con GESTIONAR</span>
+    {% endif %}
+    {% if seguimiento.estado == "Completo" %}
+        <span class="badge bg-success ml-2">Completo</span>
+    {% else %}
+        <span class="badge bg-danger ml-2">No completo</span>
     {% endif %}
 {% endblock titulo-pagina %}
 {% block breadcrumb %}
@@ -49,7 +53,7 @@
         <div class="card-header">
             <h3 class="card-title font-weight-bold mr-3 pt-1">Resumen</h3>
         </div>
-        <div class="card-body card-comments p-0 pb-1">
+        <div class="card-body card-comments pt-0 pb-1">
             <div class="nav nav-pills row my-3">
                 <div class="nav-item col-md-3 col-sm-6 d-flex">
                     <div class="comment-text d-flex flex-column text-sm">
@@ -84,7 +88,7 @@
                 <div class="card-header">
                     <h3 class="card-title font-weight-bold mr-3 pt-1">{{ bloque.label }}</h3>
                 </div>
-                <div class="card-body card-comments p-0 pb-1">
+                <div class="card-body card-comments pt-0 pb-1">
                     <div class="nav nav-pills row my-3">
                         {% for campo in bloque.campos %}
                             <div class="nav-item col-md-4 col-sm-6 d-flex mb-2">
