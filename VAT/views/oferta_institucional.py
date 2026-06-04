@@ -117,6 +117,11 @@ class OfertaInstitucionalCreateView(LoginRequiredMixin, CreateView):
         ).order_by("nombre")
         return form
 
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["actor"] = self.request.user
+        return kwargs
+
     def form_valid(self, form):
         messages.success(self.request, "Oferta institucional creada exitosamente.")
         return super().form_valid(form)
@@ -160,6 +165,11 @@ class OfertaInstitucionalUpdateView(LoginRequiredMixin, UpdateView):
             Centro.objects.all(), self.request.user
         ).order_by("nombre")
         return form
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["actor"] = self.request.user
+        return kwargs
 
     def form_valid(self, form):
         messages.success(self.request, "Oferta institucional actualizada exitosamente.")
@@ -256,6 +266,11 @@ class ComisionCreateView(LoginRequiredMixin, CreateView):
             centro_id__in=scoped_centros_ids
         ).select_related("localidad")
         return form
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["actor"] = self.request.user
+        return kwargs
 
     def form_valid(self, form):
         messages.success(self.request, "Comisión creada exitosamente.")
@@ -522,6 +537,11 @@ class ComisionUpdateView(LoginRequiredMixin, UpdateView):
             centro_id__in=scoped_centros_ids
         ).select_related("localidad")
         return form
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["actor"] = self.request.user
+        return kwargs
 
     def form_valid(self, form):
         fechas_cambiaron = bool({"fecha_inicio", "fecha_fin"} & set(form.changed_data))

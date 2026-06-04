@@ -60,6 +60,7 @@ from VAT.services.access_scope import (
     filter_comisiones_queryset_for_user,
     filter_ofertas_queryset_for_management,
     filter_ofertas_queryset_for_user,
+    is_vat_provincial,
     is_vat_referente,
     is_vat_revisor,
     is_vat_sse,
@@ -188,6 +189,15 @@ def _grant_vat_provincial_access(user, *permissions):
         defaults={"name": "Provincia VAT"},
     )
     user.user_permissions.add(provincial_permission, *permissions)
+
+
+def _grant_vat_inet_provincia_access(user, *permissions):
+    inet_permission, _ = Permission.objects.get_or_create(
+        content_type=ContentType.objects.get_for_model(Group),
+        codename="role_inet_provincia",
+        defaults={"name": "INET Provincia"},
+    )
+    user.user_permissions.add(inet_permission, *permissions)
 
 
 def _create_vat_centro(
@@ -1414,6 +1424,48 @@ def test_vat_scope_localidad_no_habilita_otra_localidad_para_edicion():
     assert centros == [centro_visible]
     assert can_user_edit_centro(user, centro_visible)
     assert not can_user_edit_centro(user, centro_fuera)
+
+
+@pytest.mark.django_db
+def test_inet_provincia_es_actor_provincial_y_respeta_scope(vat_geo_data):
+    provincia, municipio, localidad = vat_geo_data
+    otra_provincia = Provincia.objects.create(nombre="Otra provincia INET alcance")
+    otro_municipio = Municipio.objects.create(
+        nombre="Otro municipio INET alcance",
+        provincia=otra_provincia,
+    )
+    otra_localidad = Localidad.objects.create(
+        nombre="Otra localidad INET alcance",
+        municipio=otro_municipio,
+    )
+    user = User.objects.create_user("inet-provincia-scope", None, "test1234")
+    _assign_user_profile_provincia(user, provincia, es_usuario_provincial=True)
+    ProfileTerritorialScope.objects.create(profile=user.profile, provincia=provincia)
+    _grant_vat_inet_provincia_access(user)
+
+    centro_dentro = _create_vat_centro(
+        codigo="INET-SCOPE-IN",
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad,
+    )
+    centro_fuera = _create_vat_centro(
+        codigo="INET-SCOPE-OUT",
+        provincia=otra_provincia,
+        municipio=otro_municipio,
+        localidad=otra_localidad,
+    )
+
+    centros = set(
+        filter_centros_queryset_for_user(Centro.objects.all(), user).values_list(
+            "pk", flat=True
+        )
+    )
+
+    assert is_vat_provincial(user) is True
+    assert centros == {centro_dentro.pk}
+    assert can_user_access_centro(user, centro_dentro) is True
+    assert can_user_access_centro(user, centro_fuera) is False
 
 
 @pytest.mark.django_db
@@ -3209,6 +3261,424 @@ def test_plan_version_curricular_usuario_provincial_sin_delete_no_puede_eliminar
 
     assert response.status_code == 403
     assert PlanVersionCurricular.objects.filter(pk=plan.pk).exists()
+
+
+@pytest.mark.django_db
+def test_centro_update_inet_provincia_bloquea_campos_estrategicos_en_post(
+    client, vat_geo_data
+):
+    provincia, municipio, localidad = vat_geo_data
+    group, _ = Group.objects.get_or_create(name="CFP")
+    referente = User.objects.create_user("ref-inet-centro", None, "test1234")
+    referente.groups.add(group)
+    centro = _create_vat_centro(
+        codigo="500144900",
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad,
+        referente=referente,
+    )
+    change_perm = Permission.objects.get(
+        content_type__app_label="VAT",
+        codename="change_centro",
+    )
+    user = User.objects.create_user("inet-centro-update", None, "test1234")
+    _assign_user_profile_provincia(user, provincia, es_usuario_provincial=True)
+    ProfileTerritorialScope.objects.create(profile=user.profile, provincia=provincia)
+    _grant_vat_inet_provincia_access(user, change_perm)
+
+    payload = _build_centro_payload(
+        referente,
+        provincia,
+        municipio,
+        localidad,
+        nombre="Centro INET Editado",
+        codigo="500144901",
+        tipo_gestion="Privada",
+        clase_institucion="Superior Técnico",
+        situacion="Institución de Otro Nivel y/o Modalidad",
+    )
+
+    client.force_login(user)
+    response = client.post(
+        reverse("vat_centro_update", kwargs={"pk": centro.pk}),
+        data=payload,
+    )
+    centro.refresh_from_db()
+
+    assert response.status_code == 302
+    assert centro.nombre == "Centro INET Editado"
+    assert centro.codigo == "500144900"
+    assert centro.tipo_gestion == "Estatal"
+    assert centro.clase_institucion == "Formacion Profesional"
+    assert centro.situacion == "Institucion de ETP"
+
+
+@pytest.mark.django_db
+def test_plan_update_inet_provincia_bloquea_campos_estrategicos_en_post(client):
+    provincia = Provincia.objects.create(nombre="Provincia Plan INET")
+    user = User.objects.create_user("inet-plan-update", None, "test1234")
+    _assign_user_profile_provincia(user, provincia, es_usuario_provincial=True)
+    ProfileTerritorialScope.objects.create(profile=user.profile, provincia=provincia)
+    change_plan = Permission.objects.get(
+        content_type__app_label="VAT",
+        codename="change_planversioncurricular",
+    )
+    _grant_vat_inet_provincia_access(user, change_plan)
+
+    sector = Sector.objects.create(nombre="Sector Original")
+    sector_nuevo = Sector.objects.create(nombre="Sector Nuevo")
+    modalidad = ModalidadCursada.objects.create(nombre="Modalidad Original", activo=True)
+    modalidad_nueva = ModalidadCursada.objects.create(
+        nombre="Modalidad Nueva", activo=True
+    )
+    plan = PlanVersionCurricular.objects.create(
+        provincia=provincia,
+        nombre="Plan Original",
+        sector=sector,
+        modalidad_cursada=modalidad,
+        normativa="Resolución 10/2026",
+        activo=True,
+    )
+
+    client.force_login(user)
+    response = client.post(
+        reverse("vat_planversioncurricular_update", kwargs={"pk": plan.pk}),
+        data={
+            "nombre": "Plan Operativo Editado",
+            "sector": str(sector_nuevo.pk),
+            "subsector": "",
+            "modalidad_cursada": str(modalidad_nueva.pk),
+            "normativa_tipo": "Resolución",
+            "normativa_numero": "11",
+            "normativa_anio": "2026",
+            "horas_reloj": "180",
+            "nivel_requerido": "",
+            "nivel_certifica": "",
+            "activo": "",
+        },
+    )
+    plan.refresh_from_db()
+
+    assert response.status_code == 302
+    assert plan.nombre == "Plan Operativo Editado"
+    assert plan.horas_reloj == 180
+    assert plan.sector_id == sector.pk
+    assert plan.modalidad_cursada_id == modalidad.pk
+    assert plan.activo is True
+
+
+@pytest.mark.django_db
+def test_oferta_update_inet_provincia_bloquea_campos_estrategicos_en_post(
+    client, vat_geo_data
+):
+    provincia, municipio, localidad = vat_geo_data
+    user = User.objects.create_user("inet-oferta-update", None, "test1234")
+    _assign_user_profile_provincia(user, provincia, es_usuario_provincial=True)
+    ProfileTerritorialScope.objects.create(profile=user.profile, provincia=provincia)
+    change_centro = Permission.objects.get(
+        content_type__app_label="VAT",
+        codename="change_centro",
+    )
+    _grant_vat_inet_provincia_access(user, change_centro)
+
+    centro = _create_vat_centro(
+        codigo="INET-OFE-01",
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad,
+    )
+    centro_otro = _create_vat_centro(
+        codigo="INET-OFE-02",
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad,
+    )
+    sector = Sector.objects.create(nombre="Sector Oferta")
+    modalidad = ModalidadCursada.objects.create(nombre="Modalidad Oferta", activo=True)
+    plan = PlanVersionCurricular.objects.create(
+        provincia=provincia,
+        nombre="Plan Oferta Original",
+        sector=sector,
+        modalidad_cursada=modalidad,
+        activo=True,
+    )
+    titulo = TituloReferencia.objects.create(
+        plan_estudio=plan,
+        nombre="Titulo Original",
+        activo=True,
+    )
+    plan_otro = PlanVersionCurricular.objects.create(
+        provincia=provincia,
+        nombre="Plan Oferta Nuevo",
+        sector=sector,
+        modalidad_cursada=modalidad,
+        activo=True,
+    )
+    titulo_otro = TituloReferencia.objects.create(
+        plan_estudio=plan_otro,
+        nombre="Titulo Nuevo",
+        activo=True,
+    )
+    programa = Programa.objects.create(nombre="Programa Original")
+    programa_otro = Programa.objects.create(nombre="Programa Nuevo")
+    oferta = OfertaInstitucional.objects.create(
+        centro=centro,
+        plan_curricular=plan,
+        programa=programa,
+        nombre_local="Oferta Original",
+        ciclo_lectivo=2026,
+        estado="planificada",
+    )
+
+    client.force_login(user)
+    response = client.post(
+        reverse("vat_oferta_institucional_update", kwargs={"pk": oferta.pk}),
+        data={
+            "centro": str(centro_otro.pk),
+            "titulo_referencia": str(titulo_otro.pk),
+            "programa": str(programa_otro.pk),
+            "nombre_local": "Oferta Operativa Editada",
+            "ciclo_lectivo": "2030",
+            "estado": "publicada",
+            "costo": "0",
+            "fecha_publicacion": "",
+            "observaciones": "Cambio operativo permitido",
+            "usa_voucher": "",
+            "voucher_parametrias": [],
+        },
+    )
+    oferta.refresh_from_db()
+
+    assert response.status_code == 302
+    assert oferta.nombre_local == "Oferta Operativa Editada"
+    assert oferta.estado == "publicada"
+    assert oferta.observaciones == "Cambio operativo permitido"
+    assert oferta.centro_id == centro.pk
+    assert oferta.plan_curricular_id == plan.pk
+    assert oferta.programa_id == programa.pk
+    assert oferta.ciclo_lectivo == 2026
+    assert titulo.pk != titulo_otro.pk
+
+
+@pytest.mark.django_db
+def test_comision_update_inet_provincia_bloquea_campos_estrategicos_en_post(
+    client, vat_geo_data
+):
+    provincia, municipio, localidad = vat_geo_data
+    user = User.objects.create_user("inet-comision-update", None, "test1234")
+    _assign_user_profile_provincia(user, provincia, es_usuario_provincial=True)
+    ProfileTerritorialScope.objects.create(profile=user.profile, provincia=provincia)
+    change_centro = Permission.objects.get(
+        content_type__app_label="VAT",
+        codename="change_centro",
+    )
+    _grant_vat_inet_provincia_access(user, change_centro)
+
+    centro = _create_vat_centro(
+        codigo="INET-COM-01",
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad,
+    )
+    ubicacion = InstitucionUbicacion.objects.create(
+        centro=centro,
+        localidad=localidad,
+        rol_ubicacion="sede_principal",
+        domicilio="Calle 1",
+        es_principal=True,
+    )
+    ubicacion_otra = InstitucionUbicacion.objects.create(
+        centro=centro,
+        localidad=localidad,
+        rol_ubicacion="anexo",
+        domicilio="Calle 2",
+    )
+    sector = Sector.objects.create(nombre="Sector Comision")
+    modalidad = ModalidadCursada.objects.create(nombre="Modalidad Comision", activo=True)
+    plan = PlanVersionCurricular.objects.create(
+        provincia=provincia,
+        nombre="Plan Comisión",
+        sector=sector,
+        modalidad_cursada=modalidad,
+        activo=True,
+    )
+    programa = Programa.objects.create(nombre="Programa Comision")
+    oferta = OfertaInstitucional.objects.create(
+        centro=centro,
+        plan_curricular=plan,
+        programa=programa,
+        nombre_local="Oferta Comisión",
+        ciclo_lectivo=2026,
+        estado="publicada",
+    )
+    oferta_otra = OfertaInstitucional.objects.create(
+        centro=centro,
+        plan_curricular=plan,
+        programa=programa,
+        nombre_local="Oferta Comisión Otra",
+        ciclo_lectivo=2027,
+        estado="publicada",
+    )
+    comision = Comision.objects.create(
+        oferta=oferta,
+        ubicacion=ubicacion,
+        codigo_comision="INET-COM-ORIG",
+        nombre="Comisión Original",
+        fecha_inicio=date(2026, 5, 1),
+        fecha_fin=date(2026, 6, 1),
+        cupo=20,
+        estado="planificada",
+    )
+
+    client.force_login(user)
+    response = client.post(
+        reverse("vat_comision_update", kwargs={"pk": comision.pk}),
+        data={
+            "oferta": str(oferta_otra.pk),
+            "ubicacion": str(ubicacion_otra.pk),
+            "codigo_comision": "INET-COM-NUEVO",
+            "nombre": "Comisión Operativa Editada",
+            "fecha_inicio": "2026-05-01",
+            "fecha_fin": "2026-06-15",
+            "cupo": "30",
+            "acepta_lista_espera": "on",
+            "estado": "activa",
+            "observaciones": "Cambio operativo permitido",
+        },
+    )
+    comision.refresh_from_db()
+
+    assert response.status_code == 302
+    assert comision.nombre == "Comisión Operativa Editada"
+    assert comision.estado == "activa"
+    assert comision.observaciones == "Cambio operativo permitido"
+    assert comision.oferta_id == oferta.pk
+    assert comision.ubicacion_id == ubicacion.pk
+    assert comision.codigo_comision == "INET-COM-ORIG"
+
+
+@pytest.mark.django_db
+def test_oferta_update_inet_provincia_muestra_aviso_edicion_parcial(
+    client, vat_geo_data
+):
+    provincia, municipio, localidad = vat_geo_data
+    user = User.objects.create_user("inet-oferta-ui", None, "test1234")
+    _assign_user_profile_provincia(user, provincia, es_usuario_provincial=True)
+    ProfileTerritorialScope.objects.create(profile=user.profile, provincia=provincia)
+    change_centro = Permission.objects.get(
+        content_type__app_label="VAT",
+        codename="change_centro",
+    )
+    _grant_vat_inet_provincia_access(user, change_centro)
+
+    centro = _create_vat_centro(
+        codigo="INET-OFE-UI-01",
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad,
+    )
+    sector = Sector.objects.create(nombre="Sector UI Oferta")
+    modalidad = ModalidadCursada.objects.create(nombre="Modalidad UI Oferta", activo=True)
+    plan = PlanVersionCurricular.objects.create(
+        provincia=provincia,
+        nombre="Plan UI Oferta",
+        sector=sector,
+        modalidad_cursada=modalidad,
+        activo=True,
+    )
+    TituloReferencia.objects.create(
+        plan_estudio=plan,
+        nombre="Título UI Oferta",
+        activo=True,
+    )
+    programa = Programa.objects.create(nombre="Programa UI Oferta")
+    oferta = OfertaInstitucional.objects.create(
+        centro=centro,
+        plan_curricular=plan,
+        programa=programa,
+        nombre_local="Oferta UI",
+        ciclo_lectivo=2026,
+        estado="planificada",
+    )
+
+    client.force_login(user)
+    response = client.get(
+        reverse("vat_oferta_institucional_update", kwargs={"pk": oferta.pk})
+    )
+
+    assert response.status_code == 200
+    assert (
+        "Este perfil INET_PROVINCIA tiene edición parcial" in response.content.decode()
+    )
+
+
+@pytest.mark.django_db
+def test_comision_update_inet_provincia_muestra_aviso_edicion_parcial(
+    client, vat_geo_data
+):
+    provincia, municipio, localidad = vat_geo_data
+    user = User.objects.create_user("inet-comision-ui", None, "test1234")
+    _assign_user_profile_provincia(user, provincia, es_usuario_provincial=True)
+    ProfileTerritorialScope.objects.create(profile=user.profile, provincia=provincia)
+    change_centro = Permission.objects.get(
+        content_type__app_label="VAT",
+        codename="change_centro",
+    )
+    _grant_vat_inet_provincia_access(user, change_centro)
+
+    centro = _create_vat_centro(
+        codigo="INET-COM-UI-01",
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad,
+    )
+    ubicacion = InstitucionUbicacion.objects.create(
+        centro=centro,
+        localidad=localidad,
+        rol_ubicacion="sede_principal",
+        domicilio="Calle UI",
+        es_principal=True,
+    )
+    sector = Sector.objects.create(nombre="Sector UI Comisión")
+    modalidad = ModalidadCursada.objects.create(
+        nombre="Modalidad UI Comisión",
+        activo=True,
+    )
+    plan = PlanVersionCurricular.objects.create(
+        provincia=provincia,
+        nombre="Plan UI Comisión",
+        sector=sector,
+        modalidad_cursada=modalidad,
+        activo=True,
+    )
+    programa = Programa.objects.create(nombre="Programa UI Comisión")
+    oferta = OfertaInstitucional.objects.create(
+        centro=centro,
+        plan_curricular=plan,
+        programa=programa,
+        nombre_local="Oferta UI Comisión",
+        ciclo_lectivo=2026,
+        estado="publicada",
+    )
+    comision = Comision.objects.create(
+        oferta=oferta,
+        ubicacion=ubicacion,
+        codigo_comision="INET-COM-UI",
+        nombre="Comisión UI",
+        fecha_inicio=date(2026, 5, 1),
+        fecha_fin=date(2026, 6, 1),
+        cupo=25,
+        estado="planificada",
+    )
+
+    client.force_login(user)
+    response = client.get(reverse("vat_comision_update", kwargs={"pk": comision.pk}))
+
+    assert response.status_code == 200
+    assert (
+        "Este perfil INET_PROVINCIA tiene edición parcial" in response.content.decode()
+    )
 
 
 @pytest.mark.django_db

@@ -10,6 +10,7 @@ from django.db.models import Q
 from django.forms import BaseInlineFormSet, inlineformset_factory
 from django.utils.text import slugify
 from django.utils import timezone
+from iam.services import user_has_permission_code
 from ciudadanos.models import Ciudadano
 from core.models import Dia, Sexo
 from core.models import Localidad, Programa
@@ -267,6 +268,25 @@ NORMATIVA_ANIO_CHOICES = [("", "Seleccionar año...")] + [
 NORMATIVA_STORAGE_SEPARATOR = " || "
 REFERENTE_GROUP_NAMES = ("CFP",)
 REVISOR_GROUP_NAMES = ("CFPRevisor",)
+INET_PROVINCIA_ROLE_PERMISSION = "auth.role_inet_provincia"
+
+
+def _is_inet_provincia_actor(actor) -> bool:
+    if not actor or not getattr(actor, "is_authenticated", False):
+        return False
+    return user_has_permission_code(actor, INET_PROVINCIA_ROLE_PERMISSION)
+
+
+def _lock_fields_for_partial_edit(form, field_names):
+    for field_name in field_names:
+        field = form.fields.get(field_name)
+        if not field:
+            continue
+        field.disabled = True
+        field.widget.attrs["class"] = _merge_css_classes(
+            field.widget.attrs.get("class"),
+            "inet-provincia-locked-field",
+        )
 
 
 def _clean_non_empty_text(value, field_label):
@@ -678,9 +698,13 @@ class CentroAltaForm(CentroForm):
         fields = CentroForm.Meta.fields
 
     def __init__(self, *args, **kwargs):
+        actor = kwargs.pop("actor", None)
         hide_provincia = kwargs.pop("hide_provincia", False)
         provincia_inicial = kwargs.pop("provincia_inicial", None)
         super().__init__(*args, **kwargs)
+        self.is_inet_provincia_partial_edit = bool(
+            self.instance.pk and _is_inet_provincia_actor(actor)
+        )
         self.fields["activo"].required = False
         self.fields["activo"].widget.attrs["class"] = "form-check-input"
         for hidden_field in [
@@ -742,6 +766,17 @@ class CentroAltaForm(CentroForm):
                 "localidad"
             ].queryset.filter(municipio__provincia_id=provincia_value)
 
+        if self.is_inet_provincia_partial_edit:
+            _lock_fields_for_partial_edit(
+                self,
+                (
+                    "codigo",
+                    "tipo_gestion",
+                    "clase_institucion",
+                    "situacion",
+                ),
+            )
+
     def clean_nombre(self):
         return _clean_non_empty_text(self.cleaned_data.get("nombre"), "La denominación")
 
@@ -796,6 +831,15 @@ class CentroAltaForm(CentroForm):
             "El DNI del director/a",
             max_length=20,
         )
+
+    def clean(self):
+        cleaned_data = super().clean()
+        if self.is_inet_provincia_partial_edit:
+            cleaned_data["codigo"] = self.instance.codigo
+            cleaned_data["tipo_gestion"] = self.instance.tipo_gestion
+            cleaned_data["clase_institucion"] = self.instance.clase_institucion
+            cleaned_data["situacion"] = self.instance.situacion
+        return cleaned_data
 
 
 class BaseInstitucionContactoAltaFormSet(BaseInlineFormSet):
@@ -1169,7 +1213,11 @@ class PlanVersionCurricularForm(forms.ModelForm):
         ]
 
     def __init__(self, *args, **kwargs):
+        actor = kwargs.pop("actor", None)
         super().__init__(*args, **kwargs)
+        self.is_inet_provincia_partial_edit = bool(
+            self.instance.pk and _is_inet_provincia_actor(actor)
+        )
         sector_id = None
         self.normativa_texto_actual = ""
 
@@ -1205,6 +1253,17 @@ class PlanVersionCurricularForm(forms.ModelForm):
             normativa_texto, _ = _split_normativa_value(self.instance.normativa)
             self.normativa_texto_actual = normativa_texto
 
+        if self.is_inet_provincia_partial_edit:
+            _lock_fields_for_partial_edit(
+                self,
+                (
+                    "sector",
+                    "subsector",
+                    "modalidad_cursada",
+                    "activo",
+                ),
+            )
+
     def clean_nombre(self):
         return _clean_non_empty_text(self.cleaned_data.get("nombre"), "El nombre")
 
@@ -1217,6 +1276,11 @@ class PlanVersionCurricularForm(forms.ModelForm):
 
     def clean(self):
         cleaned_data = super().clean()
+        if self.is_inet_provincia_partial_edit:
+            cleaned_data["sector"] = self.instance.sector
+            cleaned_data["subsector"] = self.instance.subsector
+            cleaned_data["modalidad_cursada"] = self.instance.modalidad_cursada
+            cleaned_data["activo"] = self.instance.activo
         sector = cleaned_data.get("sector")
         subsector = cleaned_data.get("subsector")
         normativa_texto_actual = self.normativa_texto_actual
@@ -1993,7 +2057,11 @@ class OfertaInstitucionalForm(forms.ModelForm):
         ]
 
     def __init__(self, *args, **kwargs):
+        actor = kwargs.pop("actor", None)
         super().__init__(*args, **kwargs)
+        self.is_inet_provincia_partial_edit = bool(
+            self.instance.pk and _is_inet_provincia_actor(actor)
+        )
         self.fields["voucher_parametrias"].queryset = (
             VoucherParametria.objects.filter(activa=True)
             .select_related("programa")
@@ -2006,8 +2074,26 @@ class OfertaInstitucionalForm(forms.ModelForm):
             if titulo:
                 self.fields["titulo_referencia"].initial = titulo.pk
 
+        if self.is_inet_provincia_partial_edit:
+            _lock_fields_for_partial_edit(
+                self,
+                (
+                    "centro",
+                    "titulo_referencia",
+                    "programa",
+                    "ciclo_lectivo",
+                ),
+            )
+
     def clean(self):
         cleaned_data = super().clean()
+        if self.is_inet_provincia_partial_edit:
+            titulo = self.instance.plan_curricular.titulos.first()
+            if titulo:
+                cleaned_data["titulo_referencia"] = titulo
+            cleaned_data["centro"] = self.instance.centro
+            cleaned_data["programa"] = self.instance.programa
+            cleaned_data["ciclo_lectivo"] = self.instance.ciclo_lectivo
 
         titulo = cleaned_data.get("titulo_referencia")
         if not titulo:
@@ -2112,6 +2198,30 @@ class ComisionForm(forms.ModelForm):
             "estado",
             "observaciones",
         ]
+
+    def __init__(self, *args, **kwargs):
+        actor = kwargs.pop("actor", None)
+        super().__init__(*args, **kwargs)
+        self.is_inet_provincia_partial_edit = bool(
+            self.instance.pk and _is_inet_provincia_actor(actor)
+        )
+        if self.is_inet_provincia_partial_edit:
+            _lock_fields_for_partial_edit(
+                self,
+                (
+                    "oferta",
+                    "ubicacion",
+                    "codigo_comision",
+                ),
+            )
+
+    def clean(self):
+        cleaned_data = super().clean()
+        if self.is_inet_provincia_partial_edit:
+            cleaned_data["oferta"] = self.instance.oferta
+            cleaned_data["ubicacion"] = self.instance.ubicacion
+            cleaned_data["codigo_comision"] = self.instance.codigo_comision
+        return cleaned_data
 
 
 class ComisionHorarioForm(forms.ModelForm):

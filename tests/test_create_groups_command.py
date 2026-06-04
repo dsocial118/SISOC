@@ -81,6 +81,27 @@ def test_create_groups_creates_cfpinet_with_vat_permissions():
     assert expected_codes.issubset(group_codes)
 
 
+def test_create_groups_creates_inet_provincia_with_expected_permissions():
+    """INET_PROVINCIA debe incluir rol propio y permisos VAT provinciales."""
+    Group.objects.all().delete()
+
+    call_command("create_groups", verbosity=0)
+
+    inet_provincia = Group.objects.get(name="INET_PROVINCIA")
+    group_codes = set(inet_provincia.permissions.values_list("codename", flat=True))
+
+    assert {
+        "role_inet_provincia",
+        "view_centro",
+        "add_centro",
+        "change_centro",
+        "view_planversioncurricular",
+        "add_planversioncurricular",
+        "change_planversioncurricular",
+        "view_comision",
+    }.issubset(group_codes)
+
+
 def test_create_groups_creates_cfp_secondary_groups_with_expected_permissions():
     """Los grupos renombrados de VAT deben existir con sus permisos canónicos."""
     Group.objects.all().delete()
