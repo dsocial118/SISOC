@@ -359,7 +359,8 @@ def test_confirmar_tipo_convenio_inicializa_snapshot_y_detecta_cambios_posterior
 ):
     """Bug A regresion: confirmar_tipo_convenio_desde_organizacion debe llamar a
     refrescar_snapshot, de lo contrario la primera modificacion del legajo DESPUES
-    de confirmar no dispara la advertencia (admision en estado 'convenio_seleccionado')."""
+    de confirmar no dispara la advertencia (admision en estado 'convenio_seleccionado').
+    """
     admision = setup_legajo_con_dos_docs["admision"]
     archivo_org_1 = setup_legajo_con_dos_docs["archivo_org_1"]
 
@@ -368,9 +369,9 @@ def test_confirmar_tipo_convenio_inicializa_snapshot_y_detecta_cambios_posterior
 
     # Snapshot debe existir (refrescar fue llamado por confirmar).
     snaps = list(AdmisionDocOrgSnapshot.objects.filter(admision=admision))
-    assert any(s.slot_key != "__init__" for s in snaps), (
-        "confirmar_tipo_convenio debe inicializar el snapshot con los docs del legajo"
-    )
+    assert any(
+        s.slot_key != "__init__" for s in snaps
+    ), "confirmar_tipo_convenio debe inicializar el snapshot con los docs del legajo"
 
     # Ahora se modifica el primer doc del legajo.
     archivo_org_1.estado = ArchivoOrganizacion.ESTADO_ACEPTADO
