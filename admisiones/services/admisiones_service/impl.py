@@ -1255,27 +1255,49 @@ class AdmisionService:
             AdmisionService.refrescar_snapshot_documentacion_organizacional(admision)
             return True, "La documentacion ya estaba actualizada con el Legajo."
 
+        # Mapa slot -> nombre del archivo vigente en el legajo. Permite distinguir
+        # un cambio REAL de archivo (la organizacion subio un adjunto nuevo, hay
+        # que refrescar) de un cambio de metadatos como estado/observaciones (no
+        # debe pisar una validacion admision-side).
+        nombres_org_por_slot = {}
+        for archivo in AdmisionService._org_archivos_relevantes(admision):
+            if not archivo.archivo:
+                continue
+            if archivo.es_personalizado:
+                slot_org = f"custom:{archivo.id}"
+            else:
+                slot_org = f"doc:{archivo.documentacion_id}"
+            nombres_org_por_slot[slot_org] = getattr(archivo.archivo, "name", "") or ""
+
         # Borrar SOLO los ArchivoAdmision de origen organizacional de los slots
         # que cambiaron. Nunca se tocan los documentos nativos de la admision
         # (sin archivo_organizacion_origen) ni los de origen organizacional no
         # modificados.
-        # Tampoco se eliminan los que esten en estado "Aceptado": un documento
-        # validado debe preservarse aunque el legajo haya cambiado
-        # (fix Bug #1799 - docs validados en admision no deben pisarse).
         borrados = 0
         for archivo_adm in ArchivoAdmision.objects.filter(
             admision=admision, archivo_organizacion_origen__isnull=False
         ).select_related("archivo_organizacion_origen"):
-            if archivo_adm.estado == "Aceptado":
-                continue
             origin = archivo_adm.archivo_organizacion_origen
             if origin.documentacion_id:
                 slot = f"doc:{origin.documentacion_id}"
             else:
                 slot = f"custom:{origin.id}"
-            if slot in slots_a_refrescar:
-                archivo_adm.delete()
-                borrados += 1
+            if slot not in slots_a_refrescar:
+                continue
+            # Un documento validado ("Aceptado") en la admision se preserva, PERO
+            # solo si el archivo del legajo no cambio: si la organizacion subio un
+            # adjunto nuevo, la validacion quedo obsoleta y debe refrescarse para
+            # no seguir mostrando el adjunto viejo en la admision. Un cambio que
+            # solo toca metadatos (estado/observaciones/vencimiento) preserva la
+            # validacion (fix Bug #1799 - docs validados no deben pisarse por
+            # cambios de metadatos).
+            if archivo_adm.estado == "Aceptado":
+                nombre_legajo = nombres_org_por_slot.get(slot)
+                nombre_copia = getattr(archivo_adm.archivo, "name", "") or ""
+                if nombre_legajo is None or nombre_legajo == nombre_copia:
+                    continue
+            archivo_adm.delete()
+            borrados += 1
 
         # Re-materializar (aditivo): re-crea desde el legajo los slots borrados que
         # siguen vigentes; los quitados no se re-crean; preserva nativos y los no

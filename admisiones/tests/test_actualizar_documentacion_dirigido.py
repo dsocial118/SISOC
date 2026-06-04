@@ -183,3 +183,40 @@ def test_actualizar_preserva_doc_aceptado_de_origen_org(setup):
     )
     conservado = ArchivoAdmision.objects.get(pk=pk_aceptado)
     assert conservado.estado == "Aceptado"
+
+
+def test_actualizar_refresca_doc_aceptado_cuando_cambia_el_archivo(setup):
+    """Bug sincronizacion de adjuntos: si el archivo del legajo cambia realmente
+    (la organizacion sube un adjunto nuevo), el documento de origen organizacional
+    debe refrescarse en la admision AUNQUE su copia este "Aceptado" — de lo
+    contrario la admision sigue mostrando el adjunto viejo. Solo los cambios de
+    metadatos (estado/observaciones) preservan la validacion."""
+    admision = setup["admision"]
+    doc_adm = setup["doc_adm"]
+    organizacion = admision.comedor.organizacion
+
+    # La copia materializada en la admision quedo validada (Aceptado) sobre el
+    # archivo viejo del legajo.
+    materializado = _archivo_org_materializado(admision, doc_adm)
+    assert materializado is not None
+    nombre_viejo = materializado.archivo.name
+    materializado.estado = "Aceptado"
+    materializado.save(update_fields=["estado"])
+
+    # La organizacion sube un ADJUNTO NUEVO: como el doc estaba Aceptado, el flujo
+    # real crea una nueva version (nueva fila ArchivoOrganizacion vigente).
+    ArchivoOrganizacion.objects.create(
+        organizacion=organizacion,
+        documentacion=setup["archivo_org"].documentacion,
+        archivo="organizaciones/dni_v2.pdf",
+        estado=ArchivoOrganizacion.ESTADO_ADJUNTO,
+    )
+
+    ok, _ = AdmisionService.actualizar_documentacion_desde_organizacion(admision)
+    assert ok is True
+
+    # La admision debe mostrar AHORA el archivo nuevo, no el viejo.
+    refrescado = _archivo_org_materializado(admision, doc_adm)
+    assert refrescado is not None
+    assert refrescado.archivo.name == "organizaciones/dni_v2.pdf"
+    assert refrescado.archivo.name != nombre_viejo
