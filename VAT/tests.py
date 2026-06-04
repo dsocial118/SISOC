@@ -60,6 +60,7 @@ from VAT.services.access_scope import (
     filter_comisiones_queryset_for_user,
     filter_ofertas_queryset_for_management,
     filter_ofertas_queryset_for_user,
+    is_vat_provincial,
     is_vat_referente,
     is_vat_revisor,
     is_vat_sse,
@@ -1323,6 +1324,615 @@ def test_filter_centros_queryset_usuario_con_role_provincia_vat_aplica_scope():
 
 
 @pytest.mark.django_db
+def test_filter_centros_queryset_usuario_con_role_inet_provincia_aplica_scope():
+    provincia_corrientes = Provincia.objects.create(nombre="Corrientes")
+    provincia_chaco = Provincia.objects.create(nombre="Chaco")
+
+    municipio_corrientes = Municipio.objects.create(
+        nombre="Capital",
+        provincia=provincia_corrientes,
+    )
+    municipio_chaco = Municipio.objects.create(
+        nombre="Resistencia",
+        provincia=provincia_chaco,
+    )
+
+    localidad_corrientes = Localidad.objects.create(
+        nombre="Corrientes",
+        municipio=municipio_corrientes,
+    )
+    localidad_chaco = Localidad.objects.create(
+        nombre="Resistencia",
+        municipio=municipio_chaco,
+    )
+
+    user = User.objects.create_user(username="inet-prov-role", password="test1234")
+    Profile.objects.update_or_create(
+        user=user,
+        defaults={
+            "es_usuario_provincial": True,
+            "provincia": provincia_corrientes,
+        },
+    )
+
+    permiso_role_inet_provincia, _ = Permission.objects.get_or_create(
+        content_type=ContentType.objects.get_for_model(Group),
+        codename="role_inet_provincia",
+        defaults={"name": "Puede role inet provincia"},
+    )
+    user.user_permissions.add(permiso_role_inet_provincia)
+    user = User.objects.get(pk=user.pk)
+
+    centro_corrientes = Centro.objects.create(
+        nombre="Centro Corrientes",
+        codigo="CTES-101",
+        provincia=provincia_corrientes,
+        municipio=municipio_corrientes,
+        localidad=localidad_corrientes,
+        calle="Mendoza",
+        numero=100,
+        domicilio_actividad="Mendoza 100",
+        telefono="379-111111",
+        celular="379-111112",
+        correo="corrientes-101@vat.test",
+        nombre_referente="Ana",
+        apellido_referente="Acosta",
+        telefono_referente="379-111113",
+        correo_referente="refcorrientes@vat.test",
+        tipo_gestion="Estatal",
+        clase_institucion="Formación Profesional",
+        situacion="Institución de ETP",
+        activo=True,
+    )
+    Centro.objects.create(
+        nombre="Centro Chaco",
+        codigo="CHA-101",
+        provincia=provincia_chaco,
+        municipio=municipio_chaco,
+        localidad=localidad_chaco,
+        calle="Santa María",
+        numero=200,
+        domicilio_actividad="Santa María 200",
+        telefono="362-222221",
+        celular="362-222222",
+        correo="chaco-101@vat.test",
+        nombre_referente="Luis",
+        apellido_referente="Benitez",
+        telefono_referente="362-222223",
+        correo_referente="refchaco@vat.test",
+        tipo_gestion="Privada",
+        clase_institucion="Capacitación Laboral",
+        situacion="Institución de ETP",
+        activo=True,
+    )
+
+    centros = list(filter_centros_queryset_for_user(Centro.objects.all(), user))
+
+    assert centros == [centro_corrientes]
+
+
+@pytest.mark.django_db
+def test_centro_alta_form_inet_provincia_restringe_campos_de_configuracion(
+    vat_geo_data,
+):
+    provincia, municipio, localidad = vat_geo_data
+    user = User.objects.create_user(username="inet-centro-form", password="test1234")
+    _assign_user_profile_provincia(user, provincia, es_usuario_provincial=True)
+    permiso_role_inet_provincia, _ = Permission.objects.get_or_create(
+        content_type=ContentType.objects.get_for_model(Group),
+        codename="role_inet_provincia",
+        defaults={"name": "Puede role inet provincia"},
+    )
+    user.user_permissions.add(permiso_role_inet_provincia)
+
+    centro = _create_vat_centro(
+        codigo="INET-FORM-001",
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad,
+    )
+
+    form = CentroAltaForm(instance=centro, actor=user)
+
+    assert form.fields["codigo"].disabled is True
+    assert form.fields["provincia"].disabled is True
+    assert form.fields["tipo_gestion"].disabled is True
+    assert form.fields["clase_institucion"].disabled is True
+    assert form.fields["situacion"].disabled is True
+    assert form.fields["tipo_gestion"].widget.__class__.__name__ == "HiddenInput"
+    assert form.fields["clase_institucion"].widget.__class__.__name__ == "HiddenInput"
+    assert form.fields["situacion"].widget.__class__.__name__ == "HiddenInput"
+
+
+@pytest.mark.django_db
+def test_plan_version_curricular_form_inet_provincia_restringe_campos_estrategicos(
+    vat_geo_data,
+):
+    provincia, _, _ = vat_geo_data
+    user = User.objects.create_user(username="inet-plan-form", password="test1234")
+    _assign_user_profile_provincia(user, provincia, es_usuario_provincial=True)
+    permiso_role_inet_provincia, _ = Permission.objects.get_or_create(
+        content_type=ContentType.objects.get_for_model(Group),
+        codename="role_inet_provincia",
+        defaults={"name": "Puede role inet provincia"},
+    )
+    user.user_permissions.add(permiso_role_inet_provincia)
+
+    sector = Sector.objects.create(nombre="Industria")
+    modalidad = ModalidadCursada.objects.create(nombre="Presencial", activo=True)
+    plan = PlanVersionCurricular.objects.create(
+        nombre="Plan INET Form",
+        provincia=provincia,
+        sector=sector,
+        modalidad_cursada=modalidad,
+        normativa="Resolución 44/2026",
+        horas_reloj=200,
+        nivel_requerido="sin_requisito",
+        nivel_certifica="nivel_1",
+        activo=True,
+    )
+
+    form = PlanVersionCurricularForm(instance=plan, actor=user)
+
+    assert form.fields["sector"].disabled is True
+    assert form.fields["subsector"].disabled is True
+    assert form.fields["modalidad_cursada"].disabled is True
+    assert form.fields["activo"].disabled is True
+    assert form.fields["subsector"].widget.__class__.__name__ == "HiddenInput"
+    assert (
+        form.fields["modalidad_cursada"].widget.__class__.__name__ == "HiddenInput"
+    )
+    assert form.fields["activo"].widget.__class__.__name__ == "HiddenInput"
+
+
+@pytest.mark.django_db
+@override_settings(ROOT_URLCONF="config.urls")
+def test_inet_provincia_no_puede_modificar_campos_bloqueados_en_centro_update(
+    client, vat_geo_data
+):
+    provincia, municipio, localidad = vat_geo_data
+    call_command("create_groups", verbosity=0)
+
+    user = User.objects.create_user(
+        username="inet-prov-centro-update",
+        password="test1234",
+    )
+    user.groups.add(Group.objects.get(name="INET_PROVINCIA"))
+    _assign_user_profile_provincia(user, provincia, es_usuario_provincial=True)
+
+    centro = _create_vat_centro(
+        codigo="INET-LOCK-001",
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad,
+        nombre="Centro INET Lock",
+    )
+
+    original_codigo = centro.codigo
+    original_tipo_gestion = centro.tipo_gestion
+    original_clase = centro.clase_institucion
+    original_situacion = centro.situacion
+
+    client.force_login(user)
+    response = client.post(
+        reverse("vat_centro_update", kwargs={"pk": centro.pk}),
+        data={
+            "nombre": "Centro INET Lock Editado",
+            "codigo": "999999999",
+            "municipio": str(municipio.pk),
+            "localidad": str(localidad.pk),
+            "calle": "Calle 10",
+            "numero": "123",
+            "domicilio_actividad": "Calle 10 123",
+            "codigo_postal": "1900",
+            "lote": "A",
+            "manzana": "B",
+            "entre_calles": "10 y 11",
+            "telefono": "221-1111111",
+            "celular": "221-2222222",
+            "correo": "inet-lock@vat.test",
+            "sitio_web": "https://inet-lock.test",
+            "referentes": [],
+            "revisores": [],
+            "tipo_gestion": "Privada",
+            "clase_institucion": "Secundario Orientado",
+            "situacion": "Institución de Otro Nivel y/o Modalidad",
+            "activo": "on",
+            "activo_present": "1",
+            "contactos-TOTAL_FORMS": "0",
+            "contactos-INITIAL_FORMS": "0",
+            "contactos-MIN_NUM_FORMS": "0",
+            "contactos-MAX_NUM_FORMS": "1000",
+        },
+    )
+
+    centro.refresh_from_db()
+
+    assert response.status_code == 302
+    assert centro.nombre == "Centro INET Lock Editado"
+    assert centro.codigo == original_codigo
+    assert centro.tipo_gestion == original_tipo_gestion
+    assert centro.clase_institucion == original_clase
+    assert centro.situacion == original_situacion
+
+
+@pytest.mark.django_db
+def test_inet_provincia_no_puede_modificar_campos_bloqueados_en_plan_update(client):
+    provincia = Provincia.objects.create(nombre="Buenos Aires")
+    call_command("create_groups", verbosity=0)
+
+    user = User.objects.create_user(
+        username="inet-prov-plan-update",
+        password="test1234",
+    )
+    user.groups.add(Group.objects.get(name="INET_PROVINCIA"))
+    _assign_user_profile_provincia(user, provincia, es_usuario_provincial=True)
+
+    sector_original = Sector.objects.create(nombre="Industria")
+    sector_tampered = Sector.objects.create(nombre="Servicios")
+    modalidad_original = ModalidadCursada.objects.create(
+        nombre="Presencial",
+        activo=True,
+    )
+    modalidad_tampered = ModalidadCursada.objects.create(
+        nombre="Semipresencial",
+        activo=True,
+    )
+
+    plan = PlanVersionCurricular.objects.create(
+        nombre="Plan INET Provincial",
+        provincia=provincia,
+        sector=sector_original,
+        modalidad_cursada=modalidad_original,
+        normativa="Resolución 500/2026",
+        horas_reloj=120,
+        nivel_requerido="sin_requisito",
+        nivel_certifica="nivel_1",
+        activo=True,
+    )
+
+    client.force_login(user)
+    response = client.post(
+        reverse("vat_planversioncurricular_update", kwargs={"pk": plan.pk}),
+        data={
+            "nombre": "Plan INET Provincial Editado",
+            "sector": str(sector_tampered.pk),
+            "subsector": "",
+            "modalidad_cursada": str(modalidad_tampered.pk),
+            "normativa_tipo": "Resolución",
+            "normativa_numero": "500",
+            "normativa_anio": "2026",
+            "horas_reloj": "180",
+            "nivel_requerido": "secundario_completo",
+            "nivel_certifica": "nivel_2",
+            "activo": "",
+        },
+    )
+
+    plan.refresh_from_db()
+
+    assert response.status_code == 302
+    assert plan.nombre == "Plan INET Provincial Editado"
+    assert plan.horas_reloj == 180
+    assert plan.nivel_requerido == "secundario_completo"
+    assert plan.nivel_certifica == "nivel_2"
+    assert plan.sector_id == sector_original.id
+    assert plan.modalidad_cursada_id == modalidad_original.id
+    assert plan.activo is True
+
+
+@pytest.mark.django_db
+@override_settings(ROOT_URLCONF="config.urls")
+def test_inet_provincia_no_puede_modificar_campos_bloqueados_en_oferta_update(
+    client, vat_geo_data
+):
+    provincia, municipio, localidad = vat_geo_data
+    call_command("create_groups", verbosity=0)
+
+    user = User.objects.create_user(
+        username="inet-prov-oferta-update",
+        password="test1234",
+    )
+    user.groups.add(Group.objects.get(name="INET_PROVINCIA"))
+    _assign_user_profile_provincia(user, provincia, es_usuario_provincial=True)
+
+    centro_original = _create_vat_centro(
+        codigo="INET-OFE-001",
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad,
+    )
+    centro_tampered = _create_vat_centro(
+        codigo="INET-OFE-002",
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad,
+        nombre="Centro INET Oferta 2",
+    )
+
+    sector = Sector.objects.create(nombre="Servicios Oferta")
+    modalidad = ModalidadCursada.objects.create(nombre="Presencial Oferta", activo=True)
+    plan = PlanVersionCurricular.objects.create(
+        nombre="Plan Oferta INET",
+        provincia=provincia,
+        sector=sector,
+        modalidad_cursada=modalidad,
+        activo=True,
+    )
+    titulo = TituloReferencia.objects.create(
+        nombre="Titulo Oferta INET",
+        plan_estudio=plan,
+        activo=True,
+    )
+
+    programa_original = Programa.objects.create(nombre="Programa INET Oferta A")
+    programa_tampered = Programa.objects.create(nombre="Programa INET Oferta B")
+
+    oferta = OfertaInstitucional.objects.create(
+        centro=centro_original,
+        plan_curricular=plan,
+        programa=programa_original,
+        nombre_local="Oferta Original",
+        ciclo_lectivo=2026,
+        estado="planificada",
+        costo=100,
+        usa_voucher=False,
+    )
+
+    client.force_login(user)
+    response = client.post(
+        reverse("vat_oferta_institucional_update", kwargs={"pk": oferta.pk}),
+        data={
+            "centro": str(centro_tampered.pk),
+            "titulo_referencia": str(titulo.pk),
+            "programa": str(programa_tampered.pk),
+            "nombre_local": "Oferta Editada INET",
+            "ciclo_lectivo": "2027",
+            "estado": "publicada",
+            "costo": "250",
+            "usa_voucher": "",
+            "fecha_publicacion": "2026-06-01",
+            "observaciones": "Edicion valida de observaciones",
+        },
+    )
+
+    oferta.refresh_from_db()
+
+    assert response.status_code == 302
+    assert oferta.nombre_local == "Oferta Editada INET"
+    assert oferta.estado == "publicada"
+    assert oferta.costo == 250
+    assert oferta.observaciones == "Edicion valida de observaciones"
+    assert oferta.centro_id == centro_original.id
+    assert oferta.programa_id == programa_original.id
+    assert oferta.ciclo_lectivo == 2026
+
+
+@pytest.mark.django_db
+@override_settings(ROOT_URLCONF="config.urls")
+def test_inet_provincia_no_puede_modificar_campos_bloqueados_en_comision_update(
+    client, vat_geo_data
+):
+    provincia, municipio, localidad = vat_geo_data
+    call_command("create_groups", verbosity=0)
+
+    user = User.objects.create_user(
+        username="inet-prov-comision-update",
+        password="test1234",
+    )
+    user.groups.add(Group.objects.get(name="INET_PROVINCIA"))
+    _assign_user_profile_provincia(user, provincia, es_usuario_provincial=True)
+
+    centro = _create_vat_centro(
+        codigo="INET-COM-UPD-001",
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad,
+    )
+    sector = Sector.objects.create(nombre="Sector Comision")
+    modalidad = ModalidadCursada.objects.create(
+        nombre="Presencial Comision", activo=True
+    )
+    plan = PlanVersionCurricular.objects.create(
+        nombre="Plan Comision",
+        provincia=provincia,
+        sector=sector,
+        modalidad_cursada=modalidad,
+        activo=True,
+    )
+    programa = Programa.objects.create(nombre="Programa Comision")
+
+    oferta_original = OfertaInstitucional.objects.create(
+        centro=centro,
+        plan_curricular=plan,
+        programa=programa,
+        nombre_local="Oferta Comision A",
+        ciclo_lectivo=2026,
+        estado="publicada",
+    )
+    oferta_tampered = OfertaInstitucional.objects.create(
+        centro=centro,
+        plan_curricular=plan,
+        programa=programa,
+        nombre_local="Oferta Comision B",
+        ciclo_lectivo=2026,
+        estado="publicada",
+    )
+
+    ubicacion_original = InstitucionUbicacion.objects.create(
+        centro=centro,
+        localidad=localidad,
+        rol_ubicacion="sede",
+        nombre_ubicacion="Sede Central",
+        domicilio="Calle 12 100",
+        es_principal=True,
+    )
+    ubicacion_tampered = InstitucionUbicacion.objects.create(
+        centro=centro,
+        localidad=localidad,
+        rol_ubicacion="anexo",
+        nombre_ubicacion="Anexo Norte",
+        domicilio="Calle 13 200",
+        es_principal=False,
+    )
+
+    comision = Comision.objects.create(
+        oferta=oferta_original,
+        ubicacion=ubicacion_original,
+        codigo_comision="INET-COM-LOCK-001",
+        nombre="Comision Original",
+        fecha_inicio=date(2026, 6, 1),
+        fecha_fin=date(2026, 7, 1),
+        cupo=20,
+        estado="planificada",
+    )
+
+    client.force_login(user)
+    response = client.post(
+        reverse("vat_comision_update", kwargs={"pk": comision.pk}),
+        data={
+            "oferta": str(oferta_tampered.pk),
+            "ubicacion": str(ubicacion_tampered.pk),
+            "codigo_comision": "INET-COM-TAMPER-999",
+            "nombre": "Comision Editada",
+            "fecha_inicio": "2026-06-05",
+            "fecha_fin": "2026-07-05",
+            "cupo": "35",
+            "acepta_lista_espera": "on",
+            "estado": "activa",
+            "observaciones": "Edicion valida",
+        },
+    )
+
+    comision.refresh_from_db()
+
+    assert response.status_code == 302
+    assert comision.nombre == "Comision Editada"
+    assert comision.cupo == 35
+    assert comision.estado == "activa"
+    assert comision.acepta_lista_espera is True
+    assert comision.oferta_id == oferta_original.id
+    assert comision.ubicacion_id == ubicacion_original.id
+    assert comision.codigo_comision == "INET-COM-LOCK-001"
+
+
+@pytest.mark.django_db
+@override_settings(ROOT_URLCONF="config.urls")
+def test_inet_provincia_visualiza_aviso_de_campos_bloqueados_en_oferta_update(
+    client, vat_geo_data
+):
+    provincia, municipio, localidad = vat_geo_data
+    call_command("create_groups", verbosity=0)
+
+    user = User.objects.create_user(
+        username="inet-prov-oferta-ui",
+        password="test1234",
+    )
+    user.groups.add(Group.objects.get(name="INET_PROVINCIA"))
+    _assign_user_profile_provincia(user, provincia, es_usuario_provincial=True)
+
+    centro = _create_vat_centro(
+        codigo="INET-UI-OFE-001",
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad,
+    )
+    sector = Sector.objects.create(nombre="Sector UI Oferta")
+    modalidad = ModalidadCursada.objects.create(nombre="Modalidad UI Oferta", activo=True)
+    plan = PlanVersionCurricular.objects.create(
+        nombre="Plan UI Oferta",
+        provincia=provincia,
+        sector=sector,
+        modalidad_cursada=modalidad,
+        activo=True,
+    )
+    TituloReferencia.objects.create(
+        nombre="Titulo UI Oferta",
+        plan_estudio=plan,
+        activo=True,
+    )
+    programa = Programa.objects.create(nombre="Programa UI Oferta")
+    oferta = OfertaInstitucional.objects.create(
+        centro=centro,
+        plan_curricular=plan,
+        programa=programa,
+        nombre_local="Oferta UI",
+        ciclo_lectivo=2026,
+        estado="planificada",
+    )
+
+    client.force_login(user)
+    response = client.get(
+        reverse("vat_oferta_institucional_update", kwargs={"pk": oferta.pk})
+    )
+
+    assert response.status_code == 200
+    content = response.content.decode("utf-8")
+    assert "Edición parcial por perfil INET_PROVINCIA." in content
+    assert "Centro, Título de referencia, Programa, Ciclo lectivo." in content
+
+
+@pytest.mark.django_db
+@override_settings(ROOT_URLCONF="config.urls")
+def test_inet_provincia_visualiza_aviso_de_campos_bloqueados_en_comision_update(
+    client, vat_geo_data
+):
+    provincia, municipio, localidad = vat_geo_data
+    call_command("create_groups", verbosity=0)
+
+    user = User.objects.create_user(
+        username="inet-prov-comision-ui",
+        password="test1234",
+    )
+    user.groups.add(Group.objects.get(name="INET_PROVINCIA"))
+    _assign_user_profile_provincia(user, provincia, es_usuario_provincial=True)
+
+    centro = _create_vat_centro(
+        codigo="INET-UI-COM-001",
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad,
+    )
+    sector = Sector.objects.create(nombre="Sector UI Comision")
+    modalidad = ModalidadCursada.objects.create(
+        nombre="Modalidad UI Comision", activo=True
+    )
+    plan = PlanVersionCurricular.objects.create(
+        nombre="Plan UI Comision",
+        provincia=provincia,
+        sector=sector,
+        modalidad_cursada=modalidad,
+        activo=True,
+    )
+    programa = Programa.objects.create(nombre="Programa UI Comision")
+    oferta = OfertaInstitucional.objects.create(
+        centro=centro,
+        plan_curricular=plan,
+        programa=programa,
+        nombre_local="Oferta UI Comision",
+        ciclo_lectivo=2026,
+        estado="publicada",
+    )
+    comision = Comision.objects.create(
+        oferta=oferta,
+        codigo_comision="INET-UI-COM-LOCK",
+        nombre="Comision UI",
+        fecha_inicio=date(2026, 6, 1),
+        fecha_fin=date(2026, 7, 1),
+        cupo=25,
+        estado="planificada",
+    )
+
+    client.force_login(user)
+    response = client.get(reverse("vat_comision_update", kwargs={"pk": comision.pk}))
+
+    assert response.status_code == 200
+    content = response.content.decode("utf-8")
+    assert "Edición parcial por perfil INET_PROVINCIA." in content
+    assert "Oferta institucional, Ubicación, Código de comisión." in content
+
+
+@pytest.mark.django_db
 def test_vat_scope_municipio_no_habilita_toda_la_provincia():
     provincia = Provincia.objects.create(nombre="VAT Provincia Scope")
     municipio_scope = Municipio.objects.create(
@@ -1698,6 +2308,22 @@ def test_cfpinet_tiene_scope_global_por_permiso_canonico_vat_sse(vat_geo_data):
     assert can_user_access_centro(user, centro_uno) is True
     assert can_user_access_centro(user, centro_dos) is True
     assert can_user_edit_centro(user, centro_uno) is True
+
+
+@pytest.mark.django_db
+def test_is_vat_provincial_reconoce_permiso_inet_provincia(vat_geo_data):
+    provincia, _, _ = vat_geo_data
+    user = User.objects.create_user(username="inet-prov-check", password="test1234")
+    _assign_user_profile_provincia(user, provincia, es_usuario_provincial=True)
+
+    permiso_role_inet_provincia, _ = Permission.objects.get_or_create(
+        content_type=ContentType.objects.get_for_model(Group),
+        codename="role_inet_provincia",
+        defaults={"name": "Puede role inet provincia"},
+    )
+    user.user_permissions.add(permiso_role_inet_provincia)
+
+    assert is_vat_provincial(user) is True
 
 
 @pytest.mark.django_db

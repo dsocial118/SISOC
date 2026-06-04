@@ -139,6 +139,16 @@
                         <span class="ci-sec-title"><i class="bi bi-file-earmark-text me-2"></i>Información General</span>
                     </div>
                     <div class="ci-form">
+                        {% if inet_provincia_restricted_fields and form.instance.id %}
+                            <div class="alert alert-warning d-flex align-items-start gap-2" role="alert">
+                                <i class="bi bi-shield-lock mt-1"></i>
+                                <div>
+                                    <strong>Edición parcial por perfil INET_PROVINCIA.</strong>
+                                    Los siguientes campos están bloqueados para esta edición:
+                                    {{ inet_provincia_restricted_fields|join:", " }}.
+                                </div>
+                            </div>
+                        {% endif %}
                         <div class="row g-3">
                             <div class="col-md-6">
                                 <label for="{{ form.oferta.id_for_label }}" class="form-label">

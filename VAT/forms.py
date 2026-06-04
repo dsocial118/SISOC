@@ -13,6 +13,7 @@ from django.utils import timezone
 from ciudadanos.models import Ciudadano
 from core.models import Dia, Sexo
 from core.models import Localidad, Programa
+from iam.services import user_has_permission_code
 from VAT.models import (
     Centro,
     ModalidadInstitucional,
@@ -267,6 +268,34 @@ NORMATIVA_ANIO_CHOICES = [("", "Seleccionar año...")] + [
 NORMATIVA_STORAGE_SEPARATOR = " || "
 REFERENTE_GROUP_NAMES = ("CFP",)
 REVISOR_GROUP_NAMES = ("CFPRevisor",)
+ROLE_INET_PROVINCIA_PERMISSION = "auth.role_inet_provincia"
+
+
+def _is_inet_provincia_actor(actor) -> bool:
+    if not actor or not getattr(actor, "is_authenticated", False):
+        return False
+    profile = getattr(actor, "profile", None)
+    if not getattr(profile, "es_usuario_provincial", False):
+        return False
+    return user_has_permission_code(actor, ROLE_INET_PROVINCIA_PERMISSION)
+
+
+def _lock_fields_readonly(form, field_names):
+    for field_name in field_names:
+        field = form.fields.get(field_name)
+        if not field:
+            continue
+        field.disabled = True
+
+
+def _hide_and_lock_fields(form, field_names):
+    for field_name in field_names:
+        field = form.fields.get(field_name)
+        if not field:
+            continue
+        field.required = False
+        field.disabled = True
+        field.widget = forms.HiddenInput()
 
 
 def _clean_non_empty_text(value, field_label):
@@ -680,6 +709,7 @@ class CentroAltaForm(CentroForm):
     def __init__(self, *args, **kwargs):
         hide_provincia = kwargs.pop("hide_provincia", False)
         provincia_inicial = kwargs.pop("provincia_inicial", None)
+        actor = kwargs.pop("actor", None)
         super().__init__(*args, **kwargs)
         self.fields["activo"].required = False
         self.fields["activo"].widget.attrs["class"] = "form-check-input"
@@ -741,6 +771,14 @@ class CentroAltaForm(CentroForm):
             self.fields["localidad"].queryset = self.fields[
                 "localidad"
             ].queryset.filter(municipio__provincia_id=provincia_value)
+
+        # Perfil INET_PROVINCIA: aplica restricciones de edición en legajo existente.
+        if _is_inet_provincia_actor(actor) and self.instance and self.instance.pk:
+            _lock_fields_readonly(self, ["codigo", "provincia"])
+            _hide_and_lock_fields(
+                self,
+                ["tipo_gestion", "clase_institucion", "situacion"],
+            )
 
     def clean_nombre(self):
         return _clean_non_empty_text(self.cleaned_data.get("nombre"), "La denominación")
@@ -1169,6 +1207,7 @@ class PlanVersionCurricularForm(forms.ModelForm):
         ]
 
     def __init__(self, *args, **kwargs):
+        actor = kwargs.pop("actor", None)
         super().__init__(*args, **kwargs)
         sector_id = None
         self.normativa_texto_actual = ""
@@ -1204,6 +1243,11 @@ class PlanVersionCurricularForm(forms.ModelForm):
         elif self.instance and self.instance.pk:
             normativa_texto, _ = _split_normativa_value(self.instance.normativa)
             self.normativa_texto_actual = normativa_texto
+
+        # Perfil INET_PROVINCIA: restringe campos de configuración general del plan.
+        if _is_inet_provincia_actor(actor) and self.instance and self.instance.pk:
+            _lock_fields_readonly(self, ["sector"])
+            _hide_and_lock_fields(self, ["subsector", "modalidad_cursada", "activo"])
 
     def clean_nombre(self):
         return _clean_non_empty_text(self.cleaned_data.get("nombre"), "El nombre")
@@ -1993,6 +2037,7 @@ class OfertaInstitucionalForm(forms.ModelForm):
         ]
 
     def __init__(self, *args, **kwargs):
+        actor = kwargs.pop("actor", None)
         super().__init__(*args, **kwargs)
         self.fields["voucher_parametrias"].queryset = (
             VoucherParametria.objects.filter(activa=True)
@@ -2005,6 +2050,17 @@ class OfertaInstitucionalForm(forms.ModelForm):
             titulo = self.instance.plan_curricular.titulos.first()
             if titulo:
                 self.fields["titulo_referencia"].initial = titulo.pk
+
+        if _is_inet_provincia_actor(actor) and self.instance and self.instance.pk:
+            _lock_fields_readonly(
+                self,
+                [
+                    "centro",
+                    "titulo_referencia",
+                    "programa",
+                    "ciclo_lectivo",
+                ],
+            )
 
     def clean(self):
         cleaned_data = super().clean()
@@ -2112,6 +2168,13 @@ class ComisionForm(forms.ModelForm):
             "estado",
             "observaciones",
         ]
+
+    def __init__(self, *args, **kwargs):
+        actor = kwargs.pop("actor", None)
+        super().__init__(*args, **kwargs)
+
+        if _is_inet_provincia_actor(actor) and self.instance and self.instance.pk:
+            _lock_fields_readonly(self, ["oferta", "ubicacion", "codigo_comision"])
 
 
 class ComisionHorarioForm(forms.ModelForm):
