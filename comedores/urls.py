@@ -2,6 +2,10 @@ from django.contrib.auth.decorators import login_required
 from django.urls import path
 from django.views.generic.base import RedirectView
 from comedores.views import (
+    ActividadPnudCreateView,
+    ActividadPnudDeactivateView,
+    ActividadPnudListView,
+    ActividadPnudUpdateView,
     ColaboradorEspacioCreateView,
     ColaboradorEspacioDeleteView,
     ColaboradorEspacioUpdateView,
@@ -224,6 +228,38 @@ urlpatterns = [
             CursoAppMobileDeleteView.as_view()
         ),
         name="cursos_app_mobile_eliminar",
+    ),
+    path(
+        "comedores/configuracion/actividades-pnud/",
+        permissions_any_required(
+            [
+                "auth.role_admin",
+                "pwa.view_catalogoactividadpwa",
+                "pwa.manage_catalogoactividadpwa",
+            ]
+        )(ActividadPnudListView.as_view()),
+        name="actividades_pnud_list",
+    ),
+    path(
+        "comedores/configuracion/actividades-pnud/crear/",
+        permissions_any_required(["auth.role_admin", "pwa.manage_catalogoactividadpwa"])(
+            ActividadPnudCreateView.as_view()
+        ),
+        name="actividades_pnud_crear",
+    ),
+    path(
+        "comedores/configuracion/actividades-pnud/<int:pk>/editar/",
+        permissions_any_required(["auth.role_admin", "pwa.manage_catalogoactividadpwa"])(
+            ActividadPnudUpdateView.as_view()
+        ),
+        name="actividades_pnud_editar",
+    ),
+    path(
+        "comedores/configuracion/actividades-pnud/<int:pk>/baja/",
+        permissions_any_required(["auth.role_admin", "pwa.manage_catalogoactividadpwa"])(
+            ActividadPnudDeactivateView.as_view()
+        ),
+        name="actividades_pnud_baja",
     ),
     path(
         "comedores/ajax/load-subestadosintervenciones/",

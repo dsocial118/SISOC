@@ -57,6 +57,41 @@ def _get_cantidad_asistentes_activos(rangos):
     return (rangos or {}).get("cantidad_activos") or 0
 
 
+def _is_pnud_comedor(comedor):
+    programa_nombre = str(
+        getattr(getattr(comedor, "programa", None), "nombre", "") or ""
+    )
+    normalized = " ".join(programa_nombre.lower().split())
+    return comedor.programa_id in (3, 4) or "pnud" in normalized
+
+
+def _normalize_nomina_tab(tab):
+    tab = str(tab or "").strip().lower()
+    if tab in {"alimentaria", "actividades", "todas"}:
+        return tab
+    return "alimentaria"
+
+
+def _get_nomina_tab_options(active_tab):
+    options = (
+        ("alimentaria", "Alimentaria"),
+        ("actividades", "Actividades"),
+        ("todas", "Todas"),
+    )
+    return [
+        {"key": key, "label": label, "active": key == active_tab}
+        for key, label in options
+    ]
+
+
+def _get_nomina_total_label(tab):
+    if tab == "actividades":
+        return "Con actividades"
+    if tab == "todas":
+        return "Total personas"
+    return "Asistentes"
+
+
 def _get_asistencia_nomina_context(request, *, admision_id=None, comedor_id=None):
     registros = RegistroAsistenciaNominaPWA.objects.filter(
         periodicidad=RegistroAsistenciaNominaPWA.PERIODICIDAD_MENSUAL,
@@ -127,9 +162,18 @@ class NominaDetailView(LoginRequiredMixin, TemplateView):
         )
         page = int(self.request.GET.get("page", 1))
         dni_query = (self.request.GET.get("dni") or "").strip()
+        is_pnud = _is_pnud_comedor(admision.comedor)
+        nomina_tab = (
+            _normalize_nomina_tab(self.request.GET.get("tab")) if is_pnud else "todas"
+        )
 
         page_obj, nomina_m, nomina_f, nomina_x, espera, _total, rangos = (
-            ComedorService.get_nomina_detail(admision.pk, page, dni_query=dni_query)
+            ComedorService.get_nomina_detail(
+                admision.pk,
+                page,
+                dni_query=dni_query,
+                nomina_tab=nomina_tab,
+            )
         )
 
         menores = (rangos.get("ninos") or 0) + (rangos.get("adolescentes") or 0)
@@ -148,6 +192,12 @@ class NominaDetailView(LoginRequiredMixin, TemplateView):
                 "admision_pk": admision.pk,
                 "dni_query": dni_query,
                 "estados": Nomina.ESTADO_CHOICES,
+                "mostrar_tabs_nomina": is_pnud,
+                "nomina_tab": nomina_tab,
+                "nomina_tab_options": _get_nomina_tab_options(nomina_tab),
+                "nomina_total_label": (
+                    _get_nomina_total_label(nomina_tab) if is_pnud else "Asistentes"
+                ),
             }
         )
         return context
@@ -445,10 +495,17 @@ class NominaDirectaDetailView(LoginRequiredMixin, TemplateView):
         comedor = _get_comedor_directo_or_404(self.kwargs["pk"], self.request.user)
         page = int(self.request.GET.get("page", 1))
         dni_query = (self.request.GET.get("dni") or "").strip()
+        is_pnud = _is_pnud_comedor(comedor)
+        nomina_tab = (
+            _normalize_nomina_tab(self.request.GET.get("tab")) if is_pnud else "todas"
+        )
 
         page_obj, nomina_m, nomina_f, nomina_x, espera, _total, rangos = (
             ComedorService.get_nomina_detail_by_comedor(
-                comedor.pk, page, dni_query=dni_query
+                comedor.pk,
+                page,
+                dni_query=dni_query,
+                nomina_tab=nomina_tab,
             )
         )
 
@@ -468,6 +525,12 @@ class NominaDirectaDetailView(LoginRequiredMixin, TemplateView):
                 "admision_pk": None,
                 "dni_query": dni_query,
                 "estados": Nomina.ESTADO_CHOICES,
+                "mostrar_tabs_nomina": is_pnud,
+                "nomina_tab": nomina_tab,
+                "nomina_tab_options": _get_nomina_tab_options(nomina_tab),
+                "nomina_total_label": (
+                    _get_nomina_total_label(nomina_tab) if is_pnud else "Asistentes"
+                ),
             }
         )
         return context

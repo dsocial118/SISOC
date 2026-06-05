@@ -1,0 +1,142 @@
+{% extends "includes/main.html" %}
+{% block title %}Actividades PNUD{% endblock %}
+{% block breadcrumb %}
+    <ol class="breadcrumb float-sm-right">
+        <li class="breadcrumb-item">
+            <a href="{% url 'actividades_pnud_list' %}">Actividades PNUD</a>
+        </li>
+        <li class="breadcrumb-item active">
+            {% if object %}
+                Editar
+            {% else %}
+                Crear
+            {% endif %}
+        </li>
+    </ol>
+{% endblock %}
+{% block content %}
+    <style>
+        .actividades-pnud-form .form-text {
+            color: #6c757d;
+            font-size: 0.875rem;
+        }
+
+        .actividades-pnud-form .field-errors {
+            color: #dc3545;
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+        }
+
+        .categoria-mode-buttons {
+            display: inline-flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .categoria-field[hidden] {
+            display: none !important;
+        }
+    </style>
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card card-primary">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        {% if object %}
+                            Editar actividad
+                        {% else %}
+                            Crear actividad
+                        {% endif %}
+                    </h3>
+                </div>
+                <form method="post" class="actividades-pnud-form">
+                    <div class="card-body">
+                        {% csrf_token %}
+                        {% if form.non_field_errors %}
+                            <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+                        {% endif %}
+                        {{ form.categoria }}
+                        {{ form.categoria_modo }}
+                        <div class="categoria-mode-buttons" role="group" aria-label="Modo de categoria">
+                            <button type="button"
+                                    class="btn btn-sm btn-primary"
+                                    data-categoria-mode-button="existente">Usar existente</button>
+                            <button type="button"
+                                    class="btn btn-sm btn-outline-primary"
+                                    data-categoria-mode-button="nueva">Crear nueva</button>
+                        </div>
+                        <div class="form-group categoria-field" data-categoria-mode-field="existente">
+                            <label for="{{ form.categoria_existente.id_for_label }}">Categoria existente</label>
+                            {{ form.categoria_existente }}
+                            <small class="form-text">
+                                Selecciona una categoria ya cargada.
+                            </small>
+                        </div>
+                        <div class="form-group categoria-field" data-categoria-mode-field="nueva" hidden>
+                            <label for="{{ form.categoria_nueva.id_for_label }}">Nueva categoria</label>
+                            {{ form.categoria_nueva }}
+                            <small class="form-text">
+                                Completa este campo solo si queres crear una categoria nueva.
+                            </small>
+                            {% if form.categoria.errors %}
+                                <div class="field-errors">{{ form.categoria.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="form-group">
+                            <label for="{{ form.actividad.id_for_label }}">Actividad</label>
+                            {{ form.actividad }}
+                            {% if form.actividad.errors %}
+                                <div class="field-errors">{{ form.actividad.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="form-group form-check">
+                            {{ form.activo }}
+                            <label class="form-check-label" for="{{ form.activo.id_for_label }}">
+                                Activo
+                            </label>
+                            {% if form.activo.errors %}
+                                <div class="field-errors">{{ form.activo.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="card-footer d-flex justify-content-between">
+                        <a href="{% url 'actividades_pnud_list' %}"
+                           class="btn btn-outline-secondary">Volver</a>
+                        <button type="submit" class="btn btn-primary">Guardar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <script>
+        (function () {
+            const modeInput = document.getElementById('{{ form.categoria_modo.id_for_label }}');
+            const buttons = document.querySelectorAll('[data-categoria-mode-button]');
+            const fields = document.querySelectorAll('[data-categoria-mode-field]');
+            const existingSelect = document.getElementById('{{ form.categoria_existente.id_for_label }}');
+            const newInput = document.getElementById('{{ form.categoria_nueva.id_for_label }}');
+
+            function setMode(mode) {
+                modeInput.value = mode;
+                buttons.forEach((button) => {
+                    const active = button.dataset.categoriaModeButton === mode;
+                    button.classList.toggle('btn-primary', active);
+                    button.classList.toggle('btn-outline-primary', !active);
+                });
+                fields.forEach((field) => {
+                    field.hidden = field.dataset.categoriaModeField !== mode;
+                });
+                if (mode === 'existente') {
+                    newInput.value = '';
+                } else {
+                    existingSelect.value = '';
+                }
+            }
+
+            buttons.forEach((button) => {
+                button.addEventListener('click', () => setMode(button.dataset.categoriaModeButton));
+            });
+            setMode(modeInput.value || 'existente');
+        })();
+    </script>
+{% endblock %}

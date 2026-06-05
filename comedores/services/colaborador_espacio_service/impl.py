@@ -184,13 +184,16 @@ class ColaboradorEspacioService:
     def soft_delete(*, colaborador, actor):
         if colaborador.fecha_baja:
             return ColaboradorEspacioService._build_create_response(
-                False,
+                True,
                 "El colaborador ya se encuentra dado de baja.",
                 colaborador=colaborador,
                 ciudadano=colaborador.ciudadano,
             )
         snapshot_antes = ColaboradorEspacioService._snapshot(colaborador)
-        colaborador.fecha_baja = timezone.now().date()
+        fecha_baja = timezone.now().date()
+        if colaborador.fecha_alta and fecha_baja < colaborador.fecha_alta:
+            fecha_baja = colaborador.fecha_alta
+        colaborador.fecha_baja = fecha_baja
         colaborador.modificado_por = (
             actor if getattr(actor, "is_authenticated", False) else None
         )

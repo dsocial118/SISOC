@@ -121,6 +121,68 @@
 }
 
 /* Sección Nómina */
+.nomina-dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 24px;
+    margin-bottom: 30px;
+}
+
+.nomina-dashboard-card {
+    display: grid;
+    grid-template-rows: 1fr 30px;
+    min-height: 132px;
+    overflow: hidden;
+    border-radius: 8px;
+    background: #617A99;
+    color: #ffffff;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+}
+
+.nomina-dashboard-body {
+    display: grid;
+    align-content: start;
+    gap: 10px;
+    padding: 13px 16px 10px 16px;
+}
+
+.nomina-dashboard-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    min-width: 0;
+    color: #ffffff;
+    font-size: 0.96rem;
+    font-weight: 500;
+    line-height: 1.25;
+}
+
+.nomina-dashboard-row i {
+    width: 30px;
+    flex: 0 0 30px;
+    color: #ffffff;
+    font-size: 1.35rem;
+    text-align: center;
+}
+
+.nomina-dashboard-row span {
+    min-width: 0;
+}
+
+.nomina-dashboard-footer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+    min-height: 30px;
+    background: #232D4F;
+    color: #ffffff;
+    font-size: 0.95rem;
+    font-weight: 500;
+    line-height: 1;
+}
+
 .nomina-section {
     border-radius: 15px;
     padding: 30px;
@@ -135,6 +197,19 @@
     margin-bottom: 40px;
 }
 
+.nomina-section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 40px;
+    flex-wrap: wrap;
+}
+
+.nomina-section-header .nomina-section-title {
+    margin-bottom: 0;
+}
+
 .nomina-section-title:after {
     height: 2px;
     background-color: white;
@@ -143,6 +218,40 @@
     top: 5rem;
     left: 0px;
     right: 0px;
+}
+
+.nomina-tabs {
+    display: inline-flex;
+    gap: 8px;
+    padding: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 12px;
+    background: rgba(44, 62, 80, 0.65);
+}
+
+.nomina-tab-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 36px;
+    padding: 8px 14px;
+    border-radius: 9px;
+    color: #bdc3c7;
+    font-size: 0.9rem;
+    font-weight: 700;
+    text-decoration: none;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.nomina-tab-link:hover {
+    color: #ffffff;
+    text-decoration: none;
+    background: rgba(255, 255, 255, 0.12);
+}
+
+.nomina-tab-link.active {
+    color: #232D4F;
+    background: #E7BA61;
 }
 
 /* Barra de búsqueda y acciones */
@@ -283,6 +392,26 @@
     color: #ecf0f1;
     border: none;
     vertical-align: middle;
+}
+
+.nomina-person-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 6px;
+}
+
+.nomina-person-badge {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    padding: 4px 8px;
+    background: rgba(231, 186, 97, 0.18);
+    color: #F7D58D;
+    border: 1px solid rgba(231, 186, 97, 0.4);
+    font-size: 0.72rem;
+    font-weight: 700;
+    line-height: 1;
 }
 
 /* Badges de Estado */
@@ -574,7 +703,22 @@
 }
 
 /* Responsive */
+@media (max-width: 1200px) {
+    .nomina-dashboard-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
 @media (max-width: 768px) {
+    .nomina-dashboard-grid {
+        grid-template-columns: 1fr;
+        gap: 14px;
+    }
+
+    .nomina-dashboard-card {
+        min-height: 118px;
+    }
+
     .nomina-stats-row {
         flex-direction: column;
     }
@@ -586,6 +730,21 @@
     .nomina-actions-bar {
         flex-direction: column;
         align-items: stretch;
+    }
+
+    .nomina-section-header {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .nomina-tabs {
+        width: 100%;
+        overflow-x: auto;
+    }
+
+    .nomina-tab-link {
+        flex: 1;
+        min-width: max-content;
     }
 
     .nomina-search-box {
@@ -690,7 +849,7 @@
    Sección de Estadísticas Detalladas Colapsable
    ======================================== */
 .nomina-detailed-stats-wrapper {
-    margin-bottom: 30px;
+    display: none;
 }
 
 .nomina-toggle-details {

@@ -697,6 +697,17 @@ LISTADO_DEFINED_GROUPS = (
         ("auth.role_comunicado_comedores_archivar",),
     ),
     BootstrapGroupSeed(
+        UserGroups.ACTIVIDADES_PNUD_VER,
+        ("pwa.view_catalogoactividadpwa",),
+    ),
+    BootstrapGroupSeed(
+        UserGroups.ACTIVIDADES_PNUD_GESTIONAR,
+        (
+            "pwa.view_catalogoactividadpwa",
+            "pwa.manage_catalogoactividadpwa",
+        ),
+    ),
+    BootstrapGroupSeed(
         UserGroups.ADMIN,
         (
             "acompanamientos.view_informacionrelevante",
