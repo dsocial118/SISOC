@@ -1,0 +1,385 @@
+{% extends "includes/main.html" %}
+{% load static %}
+
+{% block title %}VAT - Reporte de Inscriptos y Asistencias{% endblock %}
+
+{% block breadcrumb %}
+    <ol class="breadcrumb float-sm-right">
+        <li class="breadcrumb-item">
+            <a href="{% url 'vat_centro_list' %}">VAT</a>
+        </li>
+        <li class="breadcrumb-item active">Reporte General</li>
+    </ol>
+{% endblock %}
+
+{% block head %}
+    <link rel="stylesheet" href="{% static 'custom/css/reporter_provincias.css' %}" />
+{% endblock %}
+
+{% block content %}
+    <div class="reporter-shell">
+        <section class="reporter-hero">
+            <div class="reporter-hero__copy">
+                <p class="reporter-eyebrow">Analitica operativa</p>
+                <h2 class="reporter-hero__title">Reporte general de inscriptos y asistencias</h2>
+                <p class="reporter-hero__subtitle">
+                    Vista consolidada para centro, provincia e INET con metricas de inscripcion, asistencia y sesiones para seguimiento operativo.
+                </p>
+                <div class="reporter-hero__tags">
+                    <span class="reporter-tag reporter-tag--accent">Nivel: {{ filtros.nivel|default:"inet"|upper }}</span>
+                    <span class="reporter-tag">{{ resumen.inscripciones_total|default:0 }} inscripciones en el corte actual</span>
+                    <span class="reporter-tag">Agrupacion: {{ filtros.group_by|default:"centro" }}</span>
+                </div>
+            </div>
+            <aside class="reporter-hero__focus">
+                <span class="reporter-focus__label">Lectura rapida</span>
+                <strong class="reporter-focus__title">{{ resumen.porcentaje_asistencia|default:0 }}% asistencia</strong>
+                <p class="reporter-focus__body">
+                    {{ resumen.presentes|default:0 }} presentes y {{ resumen.ausentes|default:0 }} ausentes sobre {{ resumen.registros_asistencia|default:0 }} registros de asistencia.
+                </p>
+            </aside>
+        </section>
+
+        <section class="reporter-filters">
+            <div class="reporter-panel__header reporter-panel__header--filters">
+                <div>
+                    <p class="reporter-panel__eyebrow">Exploracion</p>
+                    <h3 class="reporter-panel__title">Filtros y exportacion</h3>
+                </div>
+            </div>
+
+            <form method="get" class="reporter-filter-form">
+                <div class="reporter-filter-grid">
+                    <label class="reporter-field" for="id_nivel">
+                        <span class="reporter-field__label">Nivel</span>
+                        <select id="id_nivel" name="nivel" class="form-select">
+                            {% for value, label in nivel_choices %}
+                                <option value="{{ value }}" {% if value == filtros.nivel %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </label>
+
+                    <label class="reporter-field" for="id_group_by">
+                        <span class="reporter-field__label">Agrupar por</span>
+                        <select id="id_group_by" name="group_by" class="form-select">
+                            {% for value, label in group_by_choices %}
+                                <option value="{{ value }}" {% if value == filtros.group_by %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </label>
+
+                    <label class="reporter-field" for="id_fecha_desde">
+                        <span class="reporter-field__label">Fecha desde</span>
+                        <input id="id_fecha_desde"
+                               type="date"
+                               name="fecha_desde"
+                               class="form-control"
+                               value="{{ filtros.fecha_desde }}" />
+                    </label>
+
+                    <label class="reporter-field" for="id_fecha_hasta">
+                        <span class="reporter-field__label">Fecha hasta</span>
+                        <input id="id_fecha_hasta"
+                               type="date"
+                               name="fecha_hasta"
+                               class="form-control"
+                               value="{{ filtros.fecha_hasta }}" />
+                    </label>
+
+                    <label class="reporter-field" for="id_provincia_id">
+                        <span class="reporter-field__label">Provincia</span>
+                        <select id="id_provincia_id" name="provincia_id" class="form-select">
+                            <option value="">Todas</option>
+                            {% for prov in provincias %}
+                                <option value="{{ prov.provincia_id }}" {% if filtros.provincia_id == prov.provincia_id|stringformat:"s" %}selected{% endif %}>{{ prov.provincia__nombre }}</option>
+                            {% endfor %}
+                        </select>
+                    </label>
+
+                    <label class="reporter-field" for="id_municipio_id">
+                        <span class="reporter-field__label">Municipio</span>
+                        <select id="id_municipio_id" name="municipio_id" class="form-select">
+                            <option value="">Todos</option>
+                            {% for municipio in municipios %}
+                                <option value="{{ municipio.municipio_id }}"
+                                        {% if filtros.municipio_id == municipio.municipio_id|stringformat:"s" %}selected{% endif %}>{{ municipio.municipio__nombre }}</option>
+                            {% endfor %}
+                        </select>
+                    </label>
+
+                    <label class="reporter-field" for="id_centro_id">
+                        <span class="reporter-field__label">Centro</span>
+                        <select id="id_centro_id" name="centro_id" class="form-select">
+                            <option value="">Todos</option>
+                            {% for centro in centros %}
+                                <option value="{{ centro.id }}" {% if filtros.centro_id == centro.id|stringformat:"s" %}selected{% endif %}>{{ centro.nombre }}</option>
+                            {% endfor %}
+                        </select>
+                    </label>
+
+                    <label class="reporter-field" for="id_comision_id">
+                        <span class="reporter-field__label">Comision</span>
+                        <select id="id_comision_id" name="comision_id" class="form-select">
+                            <option value="">Todas</option>
+                            {% for comision in comisiones %}
+                                <option value="{{ comision.comision_id_ref }}"
+                                        {% if filtros.comision_id == comision.comision_id_ref|stringformat:"s" %}selected{% endif %}>{{ comision.comision_codigo_ref }} - {{ comision.centro_nombre_ref }}</option>
+                            {% endfor %}
+                        </select>
+                    </label>
+
+                    <label class="reporter-field" for="id_curso_id">
+                        <span class="reporter-field__label">Curso</span>
+                        <select id="id_curso_id" name="curso_id" class="form-select">
+                            <option value="">Todos</option>
+                            {% for curso in cursos %}
+                                <option value="{{ curso.unidad_formativa_id }}"
+                                        {% if filtros.curso_id == curso.unidad_formativa_id|stringformat:"s" %}selected{% endif %}>{{ curso.unidad_formativa_nombre }}</option>
+                            {% endfor %}
+                        </select>
+                    </label>
+
+                    <label class="reporter-field" for="id_programa_id">
+                        <span class="reporter-field__label">Programa</span>
+                        <select id="id_programa_id" name="programa_id" class="form-select">
+                            <option value="">Todos</option>
+                            {% for programa in programas %}
+                                <option value="{{ programa.programa_id_ref }}"
+                                        {% if filtros.programa_id == programa.programa_id_ref|stringformat:"s" %}selected{% endif %}>{{ programa.programa_nombre_ref }}</option>
+                            {% endfor %}
+                        </select>
+                    </label>
+
+                    <label class="reporter-field" for="id_titulo_id">
+                        <span class="reporter-field__label">Titulo</span>
+                        <select id="id_titulo_id" name="titulo_id" class="form-select">
+                            <option value="">Todos</option>
+                            {% for titulo in titulos %}
+                                <option value="{{ titulo.titulo_id_ref }}"
+                                        {% if filtros.titulo_id == titulo.titulo_id_ref|stringformat:"s" %}selected{% endif %}>{{ titulo.titulo_nombre_ref }}</option>
+                            {% endfor %}
+                        </select>
+                    </label>
+
+                    <label class="reporter-field" for="id_modalidad_id">
+                        <span class="reporter-field__label">Modalidad</span>
+                        <select id="id_modalidad_id" name="modalidad_id" class="form-select">
+                            <option value="">Todas</option>
+                            {% for modalidad in modalidades %}
+                                <option value="{{ modalidad.modalidad_id_ref }}"
+                                        {% if filtros.modalidad_id == modalidad.modalidad_id_ref|stringformat:"s" %}selected{% endif %}>{{ modalidad.modalidad_nombre_ref }}</option>
+                            {% endfor %}
+                        </select>
+                    </label>
+
+                    <label class="reporter-field" for="id_estado">
+                        <span class="reporter-field__label">Estado inscripcion</span>
+                        <select id="id_estado" name="estado" class="form-select">
+                            <option value="">Todos</option>
+                            {% for value, label in estado_choices %}
+                                <option value="{{ value }}" {% if filtros.estado == value %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </label>
+
+                    <label class="reporter-field" for="id_usa_voucher">
+                        <span class="reporter-field__label">Usa voucher</span>
+                        <select id="id_usa_voucher" name="usa_voucher" class="form-select">
+                            {% for value, label in usa_voucher_choices %}
+                                <option value="{{ value }}" {% if filtros.usa_voucher == value %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </label>
+
+                    <label class="reporter-field" for="id_estado_curso">
+                        <span class="reporter-field__label">Estado curso</span>
+                        <select id="id_estado_curso" name="estado_curso" class="form-select">
+                            <option value="">Todos</option>
+                            {% for value, label in curso_estado_choices %}
+                                <option value="{{ value }}" {% if filtros.estado_curso == value %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </label>
+
+                    <label class="reporter-field" for="id_estado_comision">
+                        <span class="reporter-field__label">Estado comision</span>
+                        <select id="id_estado_comision" name="estado_comision" class="form-select">
+                            <option value="">Todos</option>
+                            {% for value, label in comision_estado_choices %}
+                                <option value="{{ value }}" {% if filtros.estado_comision == value %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </label>
+                </div>
+
+                <div class="reporter-filter-actions">
+                    <button type="submit" class="btn btn-success reporter-btn reporter-btn--primary">
+                        <i class="fa fa-search"></i>
+                        Aplicar filtros
+                    </button>
+                    <a href="{% url 'vat_reporte_inscripciones_asistencias' %}" class="btn btn-outline-light reporter-btn reporter-btn--ghost">
+                        <i class="fa fa-redo"></i>
+                        Limpiar
+                    </a>
+                    <a href="?{% if querystring %}{{ querystring }}&{% endif %}export=csv"
+                       class="btn btn-outline-light reporter-btn reporter-btn--ghost">
+                        Exportar CSV
+                    </a>
+                    <a href="?{% if querystring %}{{ querystring }}&{% endif %}export=xlsx"
+                       class="btn btn-outline-light reporter-btn reporter-btn--ghost">
+                        Exportar Excel
+                    </a>
+                </div>
+            </form>
+        </section>
+
+        <section class="reporter-metrics" aria-label="Metricas principales">
+            <article class="reporter-metric reporter-metric--base">
+                <p class="reporter-metric__label">Inscriptos totales</p>
+                <strong class="reporter-metric__value">{{ resumen.inscripciones_total|default:0 }}</strong>
+                <span class="reporter-metric__support">Total del corte filtrado</span>
+            </article>
+            <article class="reporter-metric reporter-metric--success">
+                <p class="reporter-metric__label">Presentes</p>
+                <strong class="reporter-metric__value">{{ resumen.presentes|default:0 }}</strong>
+                <span class="reporter-metric__support">Con asistencia registrada</span>
+            </article>
+            <article class="reporter-metric reporter-metric--accent">
+                <p class="reporter-metric__label">Ausentes</p>
+                <strong class="reporter-metric__value">{{ resumen.ausentes|default:0 }}</strong>
+                <span class="reporter-metric__support">Sin asistencia</span>
+            </article>
+            <article class="reporter-metric reporter-metric--warning">
+                <p class="reporter-metric__label">% asistencia</p>
+                <strong class="reporter-metric__value">{{ resumen.porcentaje_asistencia|default:0 }}%</strong>
+                <span class="reporter-metric__support">Sobre registros presentes + ausentes</span>
+            </article>
+        </section>
+
+        <section class="reporter-panel reporter-panel--table">
+            <div class="reporter-panel__header reporter-panel__header--table">
+                <div>
+                    <p class="reporter-panel__eyebrow">Detalle paginado</p>
+                    <h3 class="reporter-panel__title">Resumen por grupo</h3>
+                </div>
+                <div class="reporter-table__tools">
+                    <label class="reporter-field reporter-field--compact" for="reporteQuickSearch">
+                        <span class="reporter-field__label">Buscar en esta pagina</span>
+                        <input type="search"
+                               id="reporteQuickSearch"
+                               class="form-control"
+                               placeholder="Filtrar filas visibles" />
+                    </label>
+                    <span id="reporteQuickCounter" class="reporter-table__counter"></span>
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table reporter-table align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Grupo</th>
+                            <th>Inscriptos</th>
+                            <th>Preinscriptos</th>
+                            <th>En espera</th>
+                            <th>Inscriptos</th>
+                            <th>Validados</th>
+                            <th>Completados</th>
+                            <th>Abandonados</th>
+                            <th>Reg. asistencia</th>
+                            <th>Presentes</th>
+                            <th>Ausentes</th>
+                            <th>% asistencia</th>
+                            <th>Sesiones programadas</th>
+                            <th>Sesiones realizadas</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in rows %}
+                            <tr data-reporter-row>
+                                <td>{{ row.grupo }}</td>
+                                <td>{{ row.inscripciones_total }}</td>
+                                <td>{{ row.preinscriptos }}</td>
+                                <td>{{ row.en_espera }}</td>
+                                <td>{{ row.inscriptos }}</td>
+                                <td>{{ row.validados_presencial }}</td>
+                                <td>{{ row.completados }}</td>
+                                <td>{{ row.abandonados }}</td>
+                                <td>{{ row.registros_asistencia }}</td>
+                                <td>{{ row.presentes }}</td>
+                                <td>{{ row.ausentes }}</td>
+                                <td>{{ row.porcentaje_asistencia }}%</td>
+                                <td>{{ row.sesiones_programadas }}</td>
+                                <td>{{ row.sesiones_realizadas }}</td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="14" class="text-center text-muted py-5">No hay datos para los filtros seleccionados.</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            {% if is_paginated %}
+                <nav class="reporter-pagination" aria-label="Paginacion del reporte">
+                    {% if page_obj.has_previous %}
+                        <a class="reporter-pagination__link"
+                           href="?{% if querystring %}{{ querystring }}&{% endif %}page={{ page_obj.previous_page_number }}">
+                            Anterior
+                        </a>
+                    {% else %}
+                        <span class="reporter-pagination__link is-disabled">Anterior</span>
+                    {% endif %}
+
+                    <div class="reporter-pagination__pages">
+                        <span class="reporter-pagination__link is-current">{{ page_obj.number }}</span>
+                        <span class="reporter-pagination__ellipsis">/</span>
+                        <span class="reporter-pagination__link">{{ page_obj.paginator.num_pages }}</span>
+                    </div>
+
+                    {% if page_obj.has_next %}
+                        <a class="reporter-pagination__link"
+                           href="?{% if querystring %}{{ querystring }}&{% endif %}page={{ page_obj.next_page_number }}">
+                            Siguiente
+                        </a>
+                    {% else %}
+                        <span class="reporter-pagination__link is-disabled">Siguiente</span>
+                    {% endif %}
+                </nav>
+            {% endif %}
+        </section>
+    </div>
+{% endblock %}
+
+{% block customJS %}
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const quickSearch = document.getElementById("reporteQuickSearch");
+            const quickCounter = document.getElementById("reporteQuickCounter");
+            const tableRows = Array.from(document.querySelectorAll("[data-reporter-row]"));
+
+            if (!quickSearch || !quickCounter || !tableRows.length) {
+                return;
+            }
+
+            const updateTableFilter = () => {
+                const term = quickSearch.value.trim().toLowerCase();
+                let visibleCount = 0;
+
+                tableRows.forEach((row) => {
+                    const matches = row.textContent.toLowerCase().includes(term);
+                    row.hidden = !matches;
+                    if (matches) {
+                        visibleCount += 1;
+                    }
+                });
+
+                quickCounter.textContent = `${visibleCount} ${visibleCount === 1 ? "fila visible" : "filas visibles"} en esta pagina`;
+            };
+
+            quickSearch.addEventListener("input", updateTableFilter);
+            updateTableFilter();
+        });
+    </script>
+{% endblock %}
