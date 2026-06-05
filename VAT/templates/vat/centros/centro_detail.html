@@ -7,7 +7,7 @@
 {% block head %}
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Lora:wght@700&family=Montserrat:wght@400;600;700&display=swap"
+    <link href="https://fonts.googleapis.com/css2?family=Lora:wght@600;700&family=Montserrat:wght@400;500;600;700&display=swap"
           rel="stylesheet" />
 {% endblock %}
 {% block content %}
@@ -449,14 +449,13 @@
         }
 
         .sisoc-centro-page {
-            font-family: Inter, Roboto, sans-serif;
+            font-family: 'Montserrat', Inter, Roboto, sans-serif;
             color: #ffffff;
             max-width: 1620px;
             margin: 0 auto 1rem;
-            background: #3E5A7E;
-            border-radius: 20px;
-            padding: 1rem;
-            margin-bottom: 1rem;
+            background: transparent;
+            border-radius: 0;
+            padding: 0;
         }
 
         .sisoc-page-top {
@@ -742,7 +741,7 @@
             height: 2px;
             border: 0;
             margin: 0 0 20px;
-            background: rgba(255, 255, 255, 0.95);
+            background: #ffffff;
         }
 
         .sisoc-general-layout {
@@ -750,6 +749,16 @@
             grid-template-columns: minmax(0, 1fr) 195px;
             gap: 30px;
             align-items: stretch;
+        }
+
+        .sisoc-general-main {
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+
+        .sisoc-general-main .sisoc-general-grid {
+            flex: 1 1 auto;
         }
 
         .sisoc-general-grid {
@@ -795,7 +804,7 @@
 
         .sisoc-map-preview {
             width: 100%;
-            height: 140px;
+            min-height: 170px;
             overflow: hidden;
             border-radius: 12.56px;
             border: 1px solid rgba(255, 255, 255, 0.2);
@@ -939,10 +948,10 @@
         }
 
         .sisoc-table-shell {
-            border: 1px solid #2a3a4a;
-            border-radius: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 15px;
             overflow: hidden;
-            background: #1a2836;
+            background: #232D4F;
         }
 
         .sisoc-table-wrap {
@@ -956,9 +965,11 @@
         }
 
         .sisoc-table thead th {
-            padding: 10px 12px;
-            border-bottom: 1px solid #2a3a4a;
-            color: #a9b5c7;
+            padding: 12px 14px;
+            background: #232D4F;
+            border-top: 1px solid rgba(255, 255, 255, 0.18);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.18);
+            color: #ffffff;
             font-size: 12px;
             font-weight: 700;
             text-transform: uppercase;
@@ -968,8 +979,8 @@
         }
 
         .sisoc-table tbody td {
-            padding: 10px 12px;
-            border-bottom: 1px solid #2a3a4a;
+            padding: 10px 14px;
+            border-bottom: 1px solid rgba(229, 231, 235, 0.16);
             color: #ffffff;
             font-size: 13px;
             vertical-align: middle;
@@ -1081,22 +1092,23 @@
         }
 
         .sisoc-section-header-bar {
-            min-height: 40px;
             display: flex;
             align-items: center;
-            padding: 0 18px;
-            border-radius: 20px 20px 0 0;
-            background: #3f958d;
+            padding: 10px 30px;
+            border-radius: 15px 15px 0 0;
+            background: #3B8681;
+            border-bottom: 2px solid #ffffff;
             color: #ffffff;
-            font-size: 15px;
+            font-size: 20px;
             font-weight: 700;
+            letter-spacing: .5px;
         }
 
         .sisoc-section-card {
-            background: #1e2e40;
-            border: 1px solid #2a3a4a;
+            background: #232D4F;
+            border: 1px solid rgba(255, 255, 255, 0.12);
             border-top: 0;
-            border-radius: 0 0 20px 20px;
+            border-radius: 0 0 15px 15px;
             padding: 1rem;
         }
 
@@ -1114,12 +1126,16 @@
         }
 
         .sisoc-data-badge--commission {
-            background: #b58a3a;
+            background: rgba(231, 186, 97, 0.5);
+            border: 1px solid #E7BA61;
+            border-radius: 10px;
             color: #ffffff;
         }
 
         .sisoc-data-badge--no-commission {
-            background: #c8484c;
+            background: rgba(198, 40, 40, 0.5);
+            border: 1px solid #C62828;
+            border-radius: 10px;
             color: #ffffff;
         }
 
@@ -1307,6 +1323,7 @@
         }
     </style>
 
+    <div class="sisoc-centro-page">
     {% with primary_contacto=contactos.0 %}
         <div class="ci-hero d-print-none">
             <div class="sisoc-title-row">
@@ -1351,12 +1368,13 @@
                 <div class="sisoc-info-content">
                     <section class="sisoc-info-panel is-active" data-sisoc-panel="general">
                         <div class="sisoc-panel-section">
-                            <div class="sisoc-section-header">
-                                <h2>Información general sobre el establecimiento</h2>
-                            </div>
-                            <hr class="sisoc-section-divider" />
                             <div class="sisoc-general-layout">
-                                <div class="sisoc-general-grid">
+                                <div class="sisoc-general-main">
+                                    <div class="sisoc-section-header">
+                                        <h2>Información general sobre el establecimiento</h2>
+                                    </div>
+                                    <hr class="sisoc-section-divider" />
+                                    <div class="sisoc-general-grid">
                                     <div class="sisoc-data-item">
                                         <p class="sisoc-data-label">CUE</p>
                                         <p class="sisoc-data-value">#{{ centro.codigo|default:"-" }}</p>
@@ -1395,12 +1413,15 @@
                                         </p>
                                     </div>
                                 </div>
+                                </div>
                                 <div class="sisoc-map-preview">
-                                    {% if centro.calle and centro.localidad and centro.municipio and centro.provincia %}
+                                    {% if centro.calle and centro.localidad and centro.provincia %}
                                         <iframe title="Mapa del centro"
                                                 frameborder="0"
                                                 style="border:0"
-                                                src="https://maps.google.com/maps?q={{ centro.calle|urlencode }}{% if centro.numero %}+{{ centro.numero|urlencode }}{% endif %},+{{ centro.localidad.nombre|urlencode }},+{{ centro.municipio.nombre|urlencode }},+{{ centro.provincia.nombre|urlencode }}&output=embed"
+                                                loading="lazy"
+                                                referrerpolicy="no-referrer-when-downgrade"
+                                                src="https://maps.google.com/maps?hl=es&amp;q={{ centro.calle|urlencode }}{% if centro.numero %}+{{ centro.numero|urlencode }}{% endif %},+{{ centro.localidad.nombre|urlencode }},+{{ centro.provincia.nombre|urlencode }},+Argentina+({{ centro.nombre|urlencode }})&amp;t=&amp;z=16&amp;ie=UTF8&amp;iwloc=B&amp;output=embed"
                                                 allowfullscreen>
                                         </iframe>
                                     {% else %}
@@ -1685,6 +1706,7 @@
                 </div>
             </div>
         </div>
+    </div>
     </div>
 
     {% if can_edit_centro %}
