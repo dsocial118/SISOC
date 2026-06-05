@@ -59,19 +59,13 @@ class ActividadPnudForm(forms.ModelForm):
     def clean(self):
         cleaned_data = super().clean()
         modo = self.cleaned_data.get("categoria_modo") or "existente"
-        value = (
-            self.cleaned_data.get("categoria_nueva")
-            if modo == "nueva"
-            else self.cleaned_data.get("categoria_existente")
-        ) or (
-            self.cleaned_data.get("categoria_nueva")
-            or self.cleaned_data.get("categoria_existente")
-            or self.cleaned_data.get("categoria")
-            or ""
-        )
-        value = value.strip()
+        if modo == "nueva":
+            value = (self.cleaned_data.get("categoria_nueva") or "").strip()
+            field_name = "categoria_nueva"
+        else:
+            value = (self.cleaned_data.get("categoria_existente") or "").strip()
+            field_name = "categoria_existente"
         if not value:
-            field_name = "categoria_nueva" if modo == "nueva" else "categoria_existente"
             self.add_error(field_name, "La categoria es obligatoria.")
             return cleaned_data
         cleaned_data["categoria"] = value

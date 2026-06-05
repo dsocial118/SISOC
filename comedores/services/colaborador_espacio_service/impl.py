@@ -183,6 +183,9 @@ class ColaboradorEspacioService:
     @staticmethod
     def soft_delete(*, colaborador, actor):
         if colaborador.fecha_baja:
+            # Comportamiento idempotente: si el colaborador ya fue dado de baja,
+            # retornamos success=True para que la PWA mobile trate la operación
+            # como completada y no la reencole como pendiente.
             return ColaboradorEspacioService._build_create_response(
                 True,
                 "El colaborador ya se encuentra dado de baja.",
@@ -191,6 +194,8 @@ class ColaboradorEspacioService:
             )
         snapshot_antes = ColaboradorEspacioService._snapshot(colaborador)
         fecha_baja = timezone.now().date()
+        # Si el alta tiene una fecha futura (ej. carga offline adelantada),
+        # no permitir que fecha_baja quede antes de fecha_alta.
         if colaborador.fecha_alta and fecha_baja < colaborador.fecha_alta:
             fecha_baja = colaborador.fecha_alta
         colaborador.fecha_baja = fecha_baja

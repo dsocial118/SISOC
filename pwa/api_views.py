@@ -86,20 +86,13 @@ from comedores.models import (
 )
 from comedores.services.colaborador_espacio_service import ColaboradorEspacioService
 from comedores.services.comedor_service.impl import ComedorService
+from comedores.utils import is_pnud_comedor
 from ciudadanos.models import Ciudadano
-
-
-def _is_pnud_comedor(comedor):
-    programa_nombre = str(
-        getattr(getattr(comedor, "programa", None), "nombre", "") or ""
-    )
-    normalized = " ".join(programa_nombre.lower().split())
-    return comedor.programa_id in (3, 4) or "pnud" in normalized
 
 
 def _get_pnud_scoped_comedor_or_404(comedor_id, user):
     comedor = ComedorService.get_scoped_comedor_or_404(comedor_id, user)
-    if not _is_pnud_comedor(comedor):
+    if not is_pnud_comedor(comedor):
         raise Http404("Modulo de actividades no disponible para este programa.")
     return comedor
 

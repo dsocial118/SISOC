@@ -2,9 +2,9 @@ from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.db.models import Q
 from django.http import HttpResponseRedirect
-from django.shortcuts import get_object_or_404
 from django.urls import reverse, reverse_lazy
 from django.views.generic import CreateView, ListView, TemplateView, UpdateView
+from django.views.generic.detail import SingleObjectMixin
 
 from comedores.forms.actividades_pnud_form import ActividadPnudForm
 from pwa.models import CatalogoActividadPWA
@@ -29,6 +29,19 @@ class ActividadPnudPermissionMixin(LoginRequiredMixin, UserPassesTestMixin):
 
 class ActividadPnudManagePermissionMixin(ActividadPnudPermissionMixin):
     permission_codes = (MANAGE_PERMISSION,)
+
+
+class ActividadPnudFormMixin:
+    """Inyecta el queryset de categorías existentes en el formulario."""
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["categorias"] = (
+            CatalogoActividadPWA.objects.order_by("categoria")
+            .values_list("categoria", flat=True)
+            .distinct()
+        )
+        return kwargs
 
 
 class ActividadPnudListView(ActividadPnudPermissionMixin, ListView):
@@ -66,55 +79,39 @@ class ActividadPnudListView(ActividadPnudPermissionMixin, ListView):
         return context
 
 
-class ActividadPnudCreateView(ActividadPnudManagePermissionMixin, CreateView):
+class ActividadPnudCreateView(ActividadPnudFormMixin, ActividadPnudManagePermissionMixin, CreateView):
     model = CatalogoActividadPWA
     form_class = ActividadPnudForm
     template_name = "comedor/actividades_pnud_form.html"
     success_url = reverse_lazy("actividades_pnud_list")
-
-    def get_form_kwargs(self):
-        kwargs = super().get_form_kwargs()
-        kwargs["categorias"] = (
-            CatalogoActividadPWA.objects.order_by("categoria")
-            .values_list("categoria", flat=True)
-            .distinct()
-        )
-        return kwargs
 
     def form_valid(self, form):
         messages.success(self.request, "Actividad PNUD creada correctamente.")
         return super().form_valid(form)
 
 
-class ActividadPnudUpdateView(ActividadPnudManagePermissionMixin, UpdateView):
+class ActividadPnudUpdateView(ActividadPnudFormMixin, ActividadPnudManagePermissionMixin, UpdateView):
     model = CatalogoActividadPWA
     form_class = ActividadPnudForm
     template_name = "comedor/actividades_pnud_form.html"
     success_url = reverse_lazy("actividades_pnud_list")
-
-    def get_form_kwargs(self):
-        kwargs = super().get_form_kwargs()
-        kwargs["categorias"] = (
-            CatalogoActividadPWA.objects.order_by("categoria")
-            .values_list("categoria", flat=True)
-            .distinct()
-        )
-        return kwargs
 
     def form_valid(self, form):
         messages.success(self.request, "Actividad PNUD actualizada correctamente.")
         return super().form_valid(form)
 
 
-class ActividadPnudDeactivateView(ActividadPnudManagePermissionMixin, TemplateView):
+class ActividadPnudDeactivateView(ActividadPnudManagePermissionMixin, SingleObjectMixin, TemplateView):
+    model = CatalogoActividadPWA
     template_name = "comedor/actividades_pnud_confirm_deactivate.html"
 
-    def get_object(self):
-        return get_object_or_404(CatalogoActividadPWA, pk=self.kwargs["pk"])
+    def get(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        return super().get(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["object"] = self.get_object()
+        context["object"] = self.object
         context["cancel_url"] = reverse("actividades_pnud_list")
         return context
 

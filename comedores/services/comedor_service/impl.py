@@ -177,7 +177,7 @@ def _build_nomina_qs_and_age_qs(admision_pk):
     return qs_nomina, qs_nomina.annotate(edad=age_expr)
 
 
-def _normalize_nomina_tab(tab):
+def normalize_nomina_tab(tab):
     tab = str(tab or "").strip().lower()
     if tab in {"alimentaria", "actividades", "todas"}:
         return tab
@@ -185,7 +185,7 @@ def _normalize_nomina_tab(tab):
 
 
 def _apply_nomina_tab_filter(qs_nomina, tab):
-    tab = _normalize_nomina_tab(tab)
+    tab = normalize_nomina_tab(tab)
     if tab == "alimentaria":
         return qs_nomina.filter(
             Q(perfil_pwa__asistencia_alimentaria=True) | Q(perfil_pwa__isnull=True)

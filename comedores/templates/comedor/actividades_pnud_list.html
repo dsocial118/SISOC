@@ -8,56 +8,7 @@
 {% endblock %}
 {% block content %}
     <link rel="stylesheet" href="{% static 'custom/css/listModerno.css' %}" />
-    <style>
-        .actividades-pnud-actions {
-            display: flex;
-            flex-wrap: nowrap;
-            gap: 0.5rem;
-            white-space: nowrap;
-        }
-
-        .actividades-pnud-filter {
-            display: inline-flex;
-            flex-wrap: wrap;
-            gap: 0.5rem;
-        }
-
-        .actividades-pnud-filter .btn {
-            min-width: 96px;
-        }
-
-        .actividades-pnud-search {
-            display: flex;
-            flex: 1 1 320px;
-            max-width: 520px;
-            gap: 0.5rem;
-        }
-
-        .actividades-pnud-search .form-control {
-            min-width: 220px;
-        }
-
-        .actividades-pnud-status {
-            border-radius: 999px;
-            display: inline-flex;
-            font-size: 0.78rem;
-            font-weight: 700;
-            line-height: 1;
-            min-width: 82px;
-            padding: 0.45rem 0.75rem;
-            justify-content: center;
-        }
-
-        .actividades-pnud-status--active {
-            background: #dff5e7;
-            color: #157347;
-        }
-
-        .actividades-pnud-status--inactive {
-            background: #fde2e1;
-            color: #b02a37;
-        }
-    </style>
+    <link rel="stylesheet" href="{% static 'custom/css/actividadesPnud.css' %}" />
     <div class="action-bar mb-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
         <div class="actividades-pnud-filter" aria-label="Filtro por estado">
             <a href="{% url 'actividades_pnud_list' %}?estado=todas{% if busqueda %}&q={{ busqueda|urlencode }}{% endif %}"

@@ -16,8 +16,8 @@ from comedores.forms.comedor_form import (
     NominaForm,
 )
 from comedores.models import Nomina
-from comedores.services.comedor_service import ComedorService
-from comedores.utils import comedor_usa_admision_para_nomina
+from comedores.services.comedor_service import ComedorService, normalize_nomina_tab
+from comedores.utils import comedor_usa_admision_para_nomina, is_pnud_comedor
 from core.soft_delete.view_helpers import SoftDeleteDeleteViewMixin
 from pwa.models import RegistroAsistenciaNominaPWA
 from pwa.utils import parse_periodo_referencia
@@ -55,21 +55,6 @@ def _get_admision_del_comedor_or_404(comedor_pk, admision_pk, user):
 
 def _get_cantidad_asistentes_activos(rangos):
     return (rangos or {}).get("cantidad_activos") or 0
-
-
-def _is_pnud_comedor(comedor):
-    programa_nombre = str(
-        getattr(getattr(comedor, "programa", None), "nombre", "") or ""
-    )
-    normalized = " ".join(programa_nombre.lower().split())
-    return comedor.programa_id in (3, 4) or "pnud" in normalized
-
-
-def _normalize_nomina_tab(tab):
-    tab = str(tab or "").strip().lower()
-    if tab in {"alimentaria", "actividades", "todas"}:
-        return tab
-    return "alimentaria"
 
 
 def _get_nomina_tab_options(active_tab):
@@ -162,9 +147,9 @@ class NominaDetailView(LoginRequiredMixin, TemplateView):
         )
         page = int(self.request.GET.get("page", 1))
         dni_query = (self.request.GET.get("dni") or "").strip()
-        is_pnud = _is_pnud_comedor(admision.comedor)
+        is_pnud = is_pnud_comedor(admision.comedor)
         nomina_tab = (
-            _normalize_nomina_tab(self.request.GET.get("tab")) if is_pnud else "todas"
+            normalize_nomina_tab(self.request.GET.get("tab")) if is_pnud else "todas"
         )
 
         page_obj, nomina_m, nomina_f, nomina_x, espera, _total, rangos = (
@@ -495,9 +480,9 @@ class NominaDirectaDetailView(LoginRequiredMixin, TemplateView):
         comedor = _get_comedor_directo_or_404(self.kwargs["pk"], self.request.user)
         page = int(self.request.GET.get("page", 1))
         dni_query = (self.request.GET.get("dni") or "").strip()
-        is_pnud = _is_pnud_comedor(comedor)
+        is_pnud = is_pnud_comedor(comedor)
         nomina_tab = (
-            _normalize_nomina_tab(self.request.GET.get("tab")) if is_pnud else "todas"
+            normalize_nomina_tab(self.request.GET.get("tab")) if is_pnud else "todas"
         )
 
         page_obj, nomina_m, nomina_f, nomina_x, espera, _total, rangos = (

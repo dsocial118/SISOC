@@ -63,8 +63,9 @@ Actualizar flujos mobile y web vinculados a comedores PNUD, nominas, actividades
 
 ## Supuestos
 - Las actividades PWA de este modulo aplican solo a comedores PNUD.
-- Las actividades creadas manualmente desde el ABM no deben ser desactivadas por el bootstrap del catalogo.
+- La migracion 0017 sincroniza el catalogo con la lista oficial: activa los items que pertenecen a la lista y desactiva los que no aparecen en ella. Esto incluye tanto actividades de bootstrap previas como actividades creadas manualmente desde el ABM. Si se quiere preservar actividades personalizadas luego del deploy, deben reactivarse desde el ABM (baja logica, no eliminacion fisica).
 - La baja de colaboradores es logica y la fecha de baja no debe ser anterior a la fecha de alta.
+- La baja de colaboradores es idempotente: si el colaborador ya esta dado de baja, el servicio retorna success=True para que la PWA mobile trate la operacion como completada y no la reencole.
 - Un mensaje general representa un unico comunicado para el usuario, aunque sea visible desde varios comedores.
 
 ## Pendientes / riesgos
