@@ -62,9 +62,33 @@ CHANGELOG_HEADER_PATTERN = re.compile(
 @login_required
 @require_GET
 def load_municipios(request):
-    """Carga municipios filtrados por provincia."""
+    """Carga municipios filtrados por provincia y por el scope territorial del usuario."""
+    from users.territorial_scope import is_territorial_user, get_effective_scopes
+
     provincia_id = request.GET.get("provincia_id")
-    municipios = Municipio.objects.filter(provincia=provincia_id)
+    municipios = Municipio.objects.filter(provincia=provincia_id).order_by("nombre")
+
+    if is_territorial_user(request.user):
+        scope_map = {}
+        for scope in get_effective_scopes(request.user):
+            pid = scope.provincia_id
+            if pid in scope_map and scope_map[pid] is None:
+                continue
+            if scope.municipio_id is None:
+                scope_map[pid] = None
+            else:
+                scope_map.setdefault(pid, set()).add(scope.municipio_id)
+
+        try:
+            pid = int(provincia_id) if provincia_id else None
+        except (ValueError, TypeError):
+            pid = None
+
+        if pid not in scope_map:
+            municipios = Municipio.objects.none()
+        elif scope_map[pid] is not None:
+            municipios = municipios.filter(pk__in=scope_map[pid])
+
     return JsonResponse(list(municipios.values("id", "nombre")), safe=False)
 
 
