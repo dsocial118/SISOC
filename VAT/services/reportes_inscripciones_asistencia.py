@@ -351,6 +351,28 @@ def build_reporte_inscripciones_asistencia(user, filtros: ReporteFiltros):
     }
 
 
+def build_detalle_personas_inscriptas(
+    user,
+    filtros: ReporteFiltros,
+    max_rows: int = 250,
+):
+    queryset = _apply_filters(_base_queryset_for_user(user), filtros)
+    return list(
+        queryset.values(
+            "id",
+            "ciudadano__documento",
+            "ciudadano__apellido",
+            "ciudadano__nombre",
+            "estado",
+            "fecha_inscripcion",
+            "centro_nombre_ref",
+            "comision_codigo_ref",
+            "unidad_formativa_nombre",
+        )
+        .order_by("-fecha_inscripcion")[:max_rows]
+    )
+
+
 def get_filter_options(user):
     centros_qs = filter_centros_queryset_for_user(
         Centro.objects.select_related("provincia", "municipio"), user

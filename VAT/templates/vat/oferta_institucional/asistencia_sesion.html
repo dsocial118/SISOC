@@ -1,363 +1,646 @@
 {% extends "includes/main.html" %}
 {% load static %}
 
-{% block title %}Asistencia — Sesión #{{ sesion.numero_sesion }}{% endblock %}
+{% block title %}Registro de asistencia — Clase #{{ sesion.numero_sesion }}{% endblock %}
+
+{% block head %}
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Lora:wght@600;700&family=Montserrat:wght@400;500;600;700&display=swap"
+          rel="stylesheet" />
+{% endblock %}
 
 {% block content %}
     <style>
-/* ── Hero ─────────────────────────────────────── */
-.ci-hero {
-    background: linear-gradient(135deg, #1a3a6e 0%, #1f3a93 50%, #3a6bc4 100%);
-    border-radius: 12px;
-    padding: 1.75rem 2rem;
-    color: #fff;
-    margin-bottom: 1.25rem;
-    position: relative;
-    overflow: hidden;
-}
-.ci-hero::before {
-    content: '';
-    position: absolute;
-    top: -40px; right: -40px;
-    width: 220px; height: 220px;
-    background: rgba(255,255,255,.06);
-    border-radius: 50%;
-    pointer-events: none;
-}
-.ci-back {
-    display: inline-flex; align-items: center; justify-content: center;
-    width: 34px; height: 34px;
-    background: rgba(255,255,255,.15);
-    border: 1px solid rgba(255,255,255,.25);
-    border-radius: 8px;
-    color: #fff; text-decoration: none;
-    flex-shrink: 0;
-    transition: background .15s;
-}
-.ci-back:hover { background: rgba(255,255,255,.25); color: #fff; }
-.ci-hero-title { font-size: 1.5rem; font-weight: 700; line-height: 1.2; margin: .3rem 0 .2rem; }
-.ci-hero-sub   { font-size: .83rem; opacity: .65; }
-.ci-code-badge {
-    font-family: monospace; font-size: .75rem; font-weight: 700;
-    background: rgba(255,255,255,.15); border: 1px solid rgba(255,255,255,.25);
-    padding: .2em .65em; border-radius: 5px; letter-spacing: .06em;
-}
-.ci-state-badge {
-    font-size: .71rem; font-weight: 600;
-    background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.2);
-    padding: .2em .65em; border-radius: 5px; color: rgba(255,255,255,.85);
-}
-.ci-stats { display: flex; flex-wrap: wrap; gap: 1.25rem; margin-top: 1.25rem; }
-.ci-stat { display: flex; flex-direction: column; }
-.ci-stat-val { font-size: 1rem; font-weight: 700; line-height: 1.1; }
-.ci-stat-lbl { font-size: .64rem; opacity: .55; text-transform: uppercase; letter-spacing: .05em; }
-.ci-stat-sep { width: 1px; background: rgba(255,255,255,.18); align-self: stretch; }
+        .app-content-header { display: none; }
 
-/* ── Panel ────────────────────────────────────── */
-.ci-panel {
-    background: var(--bs-card-bg);
-    border: 1px solid var(--bs-border-color);
-    border-radius: 10px;
-    overflow: hidden;
-}
+        .asis-page {
+            --cnav: #232D4F;
+            --cteal: #3B8681;
+            --ctext: #F2F2F2;
+            --cmuted: rgba(255, 255, 255, 0.76);
+            font-family: 'Montserrat', Inter, Roboto, sans-serif;
+            color: #ffffff;
+            margin: 0 auto 1rem;
+            padding: 0 0 1rem;
+        }
 
-/* ── Section header ───────────────────────────── */
-.ci-sec-head {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: .8rem 1.25rem;
-    background: var(--bs-tertiary-bg);
-    border-bottom: 1px solid var(--bs-border-color);
-}
-.ci-sec-title { font-weight: 600; font-size: .9rem; color: var(--bs-body-color); }
+        /* ── Barra superior ── */
+        .asis-page-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            flex-wrap: wrap;
+            padding: .2rem .75rem 0;
+            margin-bottom: .65rem;
+        }
 
-/* ── List rows ────────────────────────────────── */
-.ci-row {
-    display: flex; align-items: center; gap: .85rem;
-    padding: .8rem 1.25rem;
-    border-bottom: 1px solid var(--bs-border-color-translucent);
-    transition: background .1s;
-}
-.ci-row:last-child { border-bottom: none; }
-.ci-row:hover { background: var(--bs-tertiary-bg); }
+        .asis-back-link {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: .4rem;
+            min-height: 32px;
+            padding: 6px 16px;
+            border-radius: 999px;
+            border: 1px solid rgba(196, 201, 209, 0.9);
+            background: #ffffff;
+            color: #37465b;
+            text-decoration: none;
+            font-size: 12px;
+            font-weight: 700;
+            line-height: 1;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+        }
 
-/* ── Avatars ──────────────────────────────────── */
-.ci-av {
-    width: 32px; height: 32px; border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    font-size: .65rem; font-weight: 700; flex-shrink: 0; color: #fff;
-}
-.ci-av-1 { background: #3b5bdb; }
-.ci-av-2 { background: #7048e8; }
-.ci-av-3 { background: #1098ad; }
-.ci-av-4 { background: #2f9e44; }
-.ci-av-5 { background: #e8590c; }
+        .asis-back-link:hover { color: #243244; background: #f6f8fb; }
 
-/* ── Pills ────────────────────────────────────── */
-.ci-pill { display: inline-block; border-radius: 99px; font-size: .69rem; font-weight: 600; padding: .17em .65em; white-space: nowrap; }
-.ci-pill-green  { background: rgba(34,197,94,.18)  !important; color: #4ade80 !important; }
-.ci-pill-yellow { background: rgba(234,179,8,.18)  !important; color: #facc15 !important; }
-.ci-pill-blue   { background: rgba(74,127,232,.2)  !important; color: #7eb3ff !important; }
-.ci-pill-red    { background: rgba(239,68,68,.18)  !important; color: #f87171 !important; }
-.ci-pill-gray   { background: rgba(148,163,184,.15)!important; color: var(--bs-secondary-color) !important; }
+        /* ── Barra de título ── */
+        .asis-title-row {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 1rem;
+            flex-wrap: wrap;
+            background: var(--cnav);
+            border-radius: 0 0 14px 14px;
+            padding: 1.25rem 1.5rem 1.15rem;
+            box-shadow: 0 14px 20px rgba(18, 28, 46, 0.16);
+            margin-bottom: 30px;
+        }
 
-/* ── Empty state ──────────────────────────────── */
-.ci-empty { display: flex; flex-direction: column; align-items: center; padding: 3rem 1rem; color: var(--bs-secondary-color); text-align: center; }
-.ci-empty i { font-size: 2.2rem; margin-bottom: .65rem; opacity: .4; }
-.ci-empty-t { font-weight: 600; font-size: .9rem; color: var(--bs-body-color); margin-bottom: .2rem; }
-.ci-empty-s { font-size: .8rem; max-width: 250px; }
+        .asis-title-block { flex: 1 1 auto; min-width: 0; }
 
-/* ── Sidebar cards ────────────────────────────── */
-.ci-scard {
-    background: var(--bs-card-bg);
-    border: 1px solid var(--bs-border-color);
-    border-radius: 10px;
-    padding: 1.1rem 1.25rem;
-    margin-bottom: .85rem;
-}
-.ci-scard:last-child { margin-bottom: 0; }
-.ci-sc-title { font-size: .67rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--bs-secondary-color); margin: 0 0 .8rem; }
+        .asis-title-block h1 {
+            margin: 0;
+            font-family: 'Lora', Georgia, 'Times New Roman', serif;
+            font-size: 36px;
+            font-weight: 700;
+            color: #ffffff;
+            line-height: 40px;
+            letter-spacing: 1px;
+        }
 
-/* ── Switch personalizado ─────────────────────── */
-.ci-switch { cursor: pointer; }
-.ci-switch .form-check-input { width: 2.4em; height: 1.3em; cursor: pointer; }
-.ci-switch .form-check-input:checked { background-color: #22c55e; border-color: #22c55e; }
+        .asis-title-sub {
+            margin: .35rem 0 0;
+            color: #ffffff;
+            font-family: 'Lora', Georgia, 'Times New Roman', serif;
+            font-size: 24px;
+            font-weight: 700;
+            line-height: 40px;
+            letter-spacing: 1px;
+        }
 
-/* ── Obs input ────────────────────────────────── */
-.ci-obs-input {
-    background: var(--bs-tertiary-bg);
-    border: 1px solid var(--bs-border-color);
-    border-radius: 7px;
-    font-size: .82rem;
-    padding: .35rem .65rem;
-    color: var(--bs-body-color);
-    transition: border-color .15s;
-}
-.ci-obs-input:focus {
-    border-color: #4a7fe8;
-    box-shadow: 0 0 0 2px rgba(74,127,232,.15);
-    outline: none;
-}
+        .asis-status-pill {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            padding: .42rem .75rem;
+            background: #2f9f51;
+            border: 1px solid rgba(255, 255, 255, 0.22);
+            color: #ffffff;
+            font-size: .72rem;
+            font-weight: 700;
+            letter-spacing: .04em;
+            line-height: 1;
+            align-self: center;
+        }
 
-/* ── Footer actions ───────────────────────────── */
-.ci-footer {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: .85rem 1.25rem;
-    border-top: 1px solid var(--bs-border-color);
-    background: var(--bs-tertiary-bg);
-}
+        /* ── Tarjetas de métricas ── */
+        .asis-metric-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 30px;
+            margin-bottom: 30px;
+            padding: 0 .75rem;
+        }
+
+        .asis-metric-card {
+            position: relative;
+            background: var(--cteal);
+            border-radius: 20px;
+            border-left: 10px solid #E7BA61;
+            box-shadow: 4px 4px 4px 0 rgba(0, 0, 0, 0.3);
+            min-height: 120px;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .asis-metric-card--green { border-left-color: #6EA015; }
+        .asis-metric-card--red   { border-left-color: #C62828; }
+        .asis-metric-card--gold  { border-left-color: #E7BA61; }
+
+        .asis-metric-value {
+            display: block;
+            font-family: 'Lora', Georgia, 'Times New Roman', serif;
+            font-size: 36px;
+            line-height: 1.1;
+            font-weight: 600;
+            text-align: center;
+            color: #ffffff;
+        }
+
+        .asis-metric-label {
+            margin-top: .45rem;
+            font-size: 20px;
+            font-weight: 500;
+            text-align: center;
+            color: #ffffff;
+        }
+
+        /* ── Tarjeta de tabla ── */
+        .asis-card {
+            background: #232D4F;
+            border-radius: 15px;
+            box-shadow: 4px 4px 4px 0 rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+            margin: 0 .75rem;
+        }
+
+        .asis-card-head {
+            display: flex;
+            align-items: center;
+            gap: .55rem;
+            background: #3B8681;
+            border-bottom: 2px solid #ffffff;
+            padding: .85rem 1.25rem;
+            color: #ffffff;
+            font-size: 24px;
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+
+        .asis-card-head i { font-size: 20px; line-height: 1; }
+
+        .asis-subhead {
+            display: flex;
+            align-items: center;
+            gap: 30px;
+            flex-wrap: wrap;
+            background: #232D4F;
+            padding: 20px 30px;
+            color: #ffffff;
+            font-size: 20px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            border-bottom: 1px solid rgba(229, 231, 235, 0.45);
+        }
+
+        .asis-subhead span { display: inline-flex; align-items: center; gap: .5rem; }
+        .asis-subhead i { font-size: 18px; }
+
+        .asis-tbl-scroll { overflow-x: auto; }
+
+        .asis-tbl {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 720px;
+        }
+
+        .asis-tbl thead th {
+            background: #232D4F;
+            color: #ffffff;
+            font-size: 16px;
+            font-weight: 700;
+            letter-spacing: .15px;
+            text-align: left;
+            padding: .65rem 1.25rem;
+            height: 44px;
+            border-top: 1px solid #E5E7EB;
+            border-bottom: 1px solid #E5E7EB;
+            white-space: nowrap;
+        }
+
+        .asis-tbl thead th.asis-col-check { width: 200px; }
+
+        .asis-tbl tbody td {
+            color: #ffffff;
+            font-size: 16px;
+            font-weight: 400;
+            letter-spacing: .15px;
+            padding: .75rem 1.25rem;
+            height: 56px;
+            border-bottom: 1px solid rgba(229, 231, 235, 0.45);
+            white-space: nowrap;
+        }
+
+        .asis-tbl tbody tr:hover td { background: rgba(255, 255, 255, 0.04); }
+
+        .asis-tbl-empty td {
+            text-align: center;
+            color: var(--cmuted);
+            padding: 2.6rem 1rem;
+            font-size: 14px;
+        }
+
+        /* ── Checkbox de presentismo ── */
+        .asis-mark {
+            display: inline-flex;
+            align-items: center;
+            gap: .55rem;
+            cursor: pointer;
+            user-select: none;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .asis-check {
+            appearance: none;
+            -webkit-appearance: none;
+            width: 22px;
+            height: 22px;
+            border: 1.25px solid #ffffff;
+            border-radius: 5px;
+            background: transparent;
+            cursor: pointer;
+            position: relative;
+            flex-shrink: 0;
+            margin: 0;
+            transition: background-color .12s ease, border-color .12s ease;
+        }
+
+        .asis-check::after {
+            content: '';
+            position: absolute;
+            left: 7px;
+            top: 3px;
+            width: 6px;
+            height: 11px;
+            border: solid #ffffff;
+            border-width: 0 2px 2px 0;
+            transform: rotate(45deg);
+            opacity: 0;
+            transition: opacity .12s ease;
+        }
+
+        .asis-check:checked::after { opacity: 1; }
+        .asis-check--present:checked { background: #6EA015; border-color: #6EA015; }
+        .asis-check--absent:checked  { background: #C62828; border-color: #C62828; }
+        .asis-check:focus-visible { outline: 2px solid #E7BA61; outline-offset: 2px; }
+
+        .asis-mark-all { color: #ffffff; font-size: 16px; font-weight: 700; }
+
+        /* ── Pie de tabla ── */
+        .asis-foot {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            flex-wrap: wrap;
+            background: #232D4F;
+            border-top: 1px solid #E5E7EB;
+            padding: .8rem 1.25rem;
+            color: #ffffff;
+            font-size: 14px;
+            border-radius: 0 0 15px 15px;
+        }
+
+        .asis-pager { display: inline-flex; align-items: stretch; }
+
+        .asis-pager button {
+            width: 36px;
+            min-height: 32px;
+            border: 1px solid #ffffff;
+            background: transparent;
+            color: #ffffff;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .asis-pager button:disabled { opacity: .4; cursor: default; }
+        .asis-pager-prev { border-radius: 12px 0 0 12px; border-right: 0; }
+        .asis-pager-next { border-radius: 0 12px 12px 0; border-left: 0; }
+
+        .asis-pager-label {
+            border-top: 1px solid #ffffff;
+            border-bottom: 1px solid #ffffff;
+            padding: 0 .95rem;
+            min-height: 32px;
+            display: inline-flex;
+            align-items: center;
+            font-size: 14px;
+            white-space: nowrap;
+        }
+
+        /* ── Acciones ── */
+        .asis-actions {
+            display: flex;
+            justify-content: flex-end;
+            padding: 30px .75rem 0;
+        }
+
+        .asis-save {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            border: 0;
+            border-radius: 8px;
+            background: #2f8f4f;
+            color: #ffffff;
+            font-size: 16px;
+            font-weight: 600;
+            padding: 12px 20px;
+            cursor: pointer;
+            transition: filter .2s ease;
+        }
+
+        .asis-save:hover { filter: brightness(1.08); }
+
+        .asis-empty {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 3rem 1rem;
+            color: var(--cmuted);
+            text-align: center;
+        }
+        .asis-empty i { font-size: 2.2rem; margin-bottom: .65rem; opacity: .4; }
+        .asis-empty-t { font-weight: 600; font-size: .95rem; color: #fff; margin-bottom: .25rem; }
+        .asis-empty-s { font-size: .82rem; max-width: 320px; }
+
+        @media (max-width: 767.98px) {
+            .asis-metric-grid { grid-template-columns: 1fr; gap: 1rem; }
+            .asis-title-block h1 { font-size: 1.75rem; line-height: 1.15; }
+            .asis-title-sub { font-size: 1.1rem; line-height: 1.3; }
+            .asis-card-head { font-size: 20px; }
+            .asis-subhead { font-size: 16px; gap: 1rem; }
+        }
     </style>
 
-    {# ── HERO ───────────────────────────────────────────────────────── #}
-    <div class="ci-hero">
-        {# ── Fila superior: back + título + badges ── #}
-        <div class="d-flex align-items-start justify-content-between flex-wrap gap-3 mb-3">
-            <div class="d-flex align-items-center gap-3">
-                <a href="{{ comision_detail_url }}" class="ci-back"><i class="bi bi-arrow-left"></i></a>
-                <div>
-                    <div class="ci-hero-title" style="margin-top:0;">
-                        <i class="bi bi-check2-square me-2"></i>Tomar Asistencia
-                    </div>
-                    <div class="ci-hero-sub" style="opacity:.75;font-size:.88rem;">
-                        <i class="bi bi-book me-1"></i>{{ comision_label }}
-                    </div>
-                </div>
-            </div>
-            <div class="d-flex align-items-center gap-2 flex-wrap">
-                <span class="ci-code-badge">Sesión #{{ sesion.numero_sesion }}</span>
-                <span class="ci-state-badge">
-                    {% if sesion.estado == 'realizada' %}
-                        Realizada
-                    {% elif sesion.estado == 'cancelada' %}
-                        Cancelada
-                    {% else %}
-                        Programada
-                    {% endif %}
-                </span>
-                {% if ya_tomada %}<span class="ci-state-badge"><i class="bi bi-pencil-square me-1"></i>Modificando</span>{% endif %}
-            </div>
+    <div class="asis-page">
+
+        {# ── Barra superior: volver ── #}
+        <div class="asis-page-top">
+            <a href="{{ comision_detail_url }}" class="asis-back-link">
+                <i class="bi bi-arrow-left"></i> Volver
+            </a>
         </div>
 
-        {# ── Fila inferior: stats bien distribuidos ── #}
-        <div style="background:rgba(255,255,255,.08);
-                    border-radius:8px;
-                    padding:.85rem 1.15rem;
-                    display:flex;
-                    flex-wrap:wrap;
-                    gap:0">
-            <div style="flex:1;min-width:120px;padding:.25rem .5rem;">
-                <span class="ci-stat-lbl" style="display:block;margin-bottom:.2rem;">Fecha</span>
-                <span class="ci-stat-val"><i class="bi bi-calendar3 me-1" style="font-size:.8rem;opacity:.6;"></i>{{ sesion.fecha|date:"d/m/Y" }}</span>
+        {# ── Barra de título ── #}
+        <div class="asis-title-row">
+            <div class="asis-title-block">
+                <h1>{{ comision_label }}</h1>
+                <p class="asis-title-sub">
+                    <i class="bi bi-book me-1"></i>{{ sesion.comision_curso.curso }}
+                </p>
             </div>
-            <div style="flex:1;
-                        min-width:100px;
-                        padding:.25rem .5rem;
-                        border-left:1px solid rgba(255,255,255,.12)">
-                <span class="ci-stat-lbl" style="display:block;margin-bottom:.2rem;">Día</span>
-                <span class="ci-stat-val">{{ sesion.horario.dia_semana }}</span>
-            </div>
-            <div style="flex:1;
-                        min-width:140px;
-                        padding:.25rem .5rem;
-                        border-left:1px solid rgba(255,255,255,.12)">
-                <span class="ci-stat-lbl" style="display:block;margin-bottom:.2rem;">Horario</span>
-                <span class="ci-stat-val"><i class="bi bi-clock me-1" style="font-size:.8rem;opacity:.6;"></i>{{ sesion.horario.hora_desde|time:"H:i" }} – {{ sesion.horario.hora_hasta|time:"H:i" }}</span>
-            </div>
-            {% if sesion.horario.aula_espacio %}
-                <div style="flex:1;
-                            min-width:100px;
-                            padding:.25rem .5rem;
-                            border-left:1px solid rgba(255,255,255,.12)">
-                    <span class="ci-stat-lbl" style="display:block;margin-bottom:.2rem;">Aula / Espacio</span>
-                    <span class="ci-stat-val"><i class="bi bi-geo-alt me-1" style="font-size:.8rem;opacity:.6;"></i>{{ sesion.horario.aula_espacio }}</span>
-                </div>
-            {% endif %}
-            <div style="flex:0 0 auto;
-                        min-width:80px;
-                        padding:.25rem .5rem;
-                        border-left:1px solid rgba(255,255,255,.12);
-                        text-align:center">
-                <span class="ci-stat-lbl" style="display:block;margin-bottom:.2rem;">Inscriptos</span>
-                <span class="ci-stat-val" style="font-size:1.15rem;">{{ filas|length }}</span>
-            </div>
+            <span class="asis-status-pill">{{ sesion.comision_curso.get_estado_display }}</span>
         </div>
-    </div>
 
-    {# ── BODY ───────────────────────────────────────────────────────── #}
-    <div class="row g-3 align-items-start">
+        {# ── Tarjetas de métricas ── #}
+        <div class="asis-metric-grid">
+            <article class="asis-metric-card asis-metric-card--green">
+                <strong class="asis-metric-value" id="asisMetricPresentes">{{ total_presentes }}</strong>
+                <span class="asis-metric-label">Estudiantes presentes</span>
+            </article>
+            <article class="asis-metric-card asis-metric-card--red">
+                <strong class="asis-metric-value" id="asisMetricAusentes">{{ total_ausentes }}</strong>
+                <span class="asis-metric-label">Estudiantes ausentes</span>
+            </article>
+            <article class="asis-metric-card asis-metric-card--gold">
+                <strong class="asis-metric-value" id="asisMetricSinMarcar">{{ total_sin_marcar }}</strong>
+                <span class="asis-metric-label">Estudiantes sin marcar</span>
+            </article>
+        </div>
 
-        {# ── MAIN ── #}
-        <div class="col-xl-8">
-            <div class="ci-panel">
-                <div class="ci-sec-head">
-                    <span class="ci-sec-title"><i class="bi bi-people me-2"></i>Inscriptos activos ({{ filas|length }})</span>
-                </div>
-
-                {% if filas %}
-                    <form method="post">
-                        {% csrf_token %}
-                        {% for fila in filas %}
-                            <div class="ci-row">
-                                <div class="ci-av ci-av-{{ forloop.counter|divisibleby:5|yesno:'5,' }}{{ forloop.counter|divisibleby:4|yesno:'4,' }}{{ forloop.counter|divisibleby:3|yesno:'3,' }}{{ forloop.counter|divisibleby:2|yesno:'2,1' }}">
-                                    {{ fila.inscripcion.ciudadano.nombre_completo|slice:":2"|upper }}
-                                </div>
-                                <div style="flex:1;min-width:0;">
-                                    <span class="d-block fw-semibold"
-                                          style="font-size:.87rem;
-                                                 color:var(--bs-body-color);
-                                                 white-space:nowrap;
-                                                 overflow:hidden;
-                                                 text-overflow:ellipsis">{{ fila.inscripcion.ciudadano.nombre_completo }}</span>
-                                    <input type="text"
-                                           class="ci-obs-input w-100 mt-1"
-                                           name="obs_{{ fila.inscripcion.pk }}"
-                                           value="{{ fila.observaciones|default:'' }}"
-                                           placeholder="Observaciones (opcional)" />
-                                </div>
-                                <div class="d-flex align-items-center gap-2 flex-shrink-0">
-                                    <span class="ci-pill {% if fila.presente %}ci-pill-green{% elif fila.presente == None %}ci-pill-gray{% else %}ci-pill-red{% endif %}"
-                                          id="lbl_{{ fila.inscripcion.pk }}">
-                                        {% if fila.presente %}
-                                            Presente
-                                        {% elif fila.presente == None %}
-                                            Sin registrar
-                                        {% else %}
-                                            Ausente
-                                        {% endif %}
-                                    </span>
-                                    <div class="form-check form-switch ci-switch mb-0">
-                                        <input class="form-check-input"
-                                               type="checkbox"
-                                               name="presente_{{ fila.inscripcion.pk }}"
-                                               id="pres_{{ fila.inscripcion.pk }}"
-                                               value="1"
-                                               {% if fila.presente %}checked{% endif %}
-                                               onchange=" var lbl=document.getElementById('lbl_{{ fila.inscripcion.pk }}'); if(this.checked){lbl.textContent='Presente';lbl.className='ci-pill ci-pill-green';} else{lbl.textContent='Ausente';lbl.className='ci-pill ci-pill-red';} " />
-                                    </div>
-                                </div>
-                            </div>
-                        {% endfor %}
-
-                        <div class="ci-footer">
-                            <a href="{{ comision_detail_url }}"
-                               class="btn btn-sm btn-outline-secondary rounded-3">
-                                <i class="bi bi-x-lg me-1"></i>Cancelar
-                            </a>
-                            <button type="submit" class="btn btn-sm btn-primary rounded-3">
-                                <i class="bi bi-check-lg me-1"></i>Guardar Asistencia
+        {% if filas %}
+            <form method="post" id="asisForm">
+                {% csrf_token %}
+                <div class="asis-card" id="asisTabla">
+                    <div class="asis-card-head">
+                        <i class="bi bi-people"></i>
+                        <span>Registro de asistencia clase #{{ sesion.numero_sesion }}</span>
+                    </div>
+                    <div class="asis-subhead">
+                        <span><i class="bi bi-calendar3"></i>{{ sesion.horario.dia_semana }} {{ sesion.fecha|date:"j \d\e F" }}</span>
+                        <span><i class="bi bi-clock"></i>{{ sesion.horario.hora_desde|time:"H:i" }} a {{ sesion.horario.hora_hasta|time:"H:i" }} hs</span>
+                    </div>
+                    <div class="asis-tbl-scroll">
+                        <table class="asis-tbl">
+                            <thead>
+                                <tr>
+                                    <th>Apellido</th>
+                                    <th>Nombre</th>
+                                    <th class="asis-col-check">
+                                        <label class="asis-mark asis-mark-all">
+                                            <input type="checkbox" class="asis-check asis-check--present" id="asisMarcarPresentes" />
+                                            Marcar todos
+                                        </label>
+                                    </th>
+                                    <th class="asis-col-check">
+                                        <label class="asis-mark asis-mark-all">
+                                            <input type="checkbox" class="asis-check asis-check--absent" id="asisMarcarAusentes" />
+                                            Marcar todos
+                                        </label>
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody id="asisTablaBody">
+                                {% for fila in filas %}
+                                    <tr class="asis-row">
+                                        <td>{{ fila.inscripcion.ciudadano.apellido|default:"—" }}</td>
+                                        <td>{{ fila.inscripcion.ciudadano.nombre|default:"—" }}</td>
+                                        <td>
+                                            <input type="hidden" name="obs_{{ fila.inscripcion.pk }}" value="{{ fila.observaciones|default:'' }}" />
+                                            <label class="asis-mark">
+                                                <input type="radio"
+                                                       class="asis-check asis-check--present asis-present"
+                                                       name="presente_{{ fila.inscripcion.pk }}"
+                                                       value="1"
+                                                       {% if fila.presente %}checked{% endif %} />
+                                                Presente
+                                            </label>
+                                        </td>
+                                        <td>
+                                            <label class="asis-mark">
+                                                <input type="radio"
+                                                       class="asis-check asis-check--absent asis-absent"
+                                                       name="presente_{{ fila.inscripcion.pk }}"
+                                                       value="0"
+                                                       {% if fila.presente == False %}checked{% endif %} />
+                                                Ausente
+                                            </label>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="asis-foot">
+                        <span id="asisConteo">
+                            Mostrando {{ filas|length|yesno:"1,0" }}-{{ filas|length }} de {{ filas|length }}
+                        </span>
+                        <div class="asis-pager">
+                            <button type="button"
+                                    class="asis-pager-prev"
+                                    id="asisPrev"
+                                    aria-label="Página anterior"
+                                    disabled>
+                                <i class="bi bi-chevron-left"></i>
+                            </button>
+                            <span class="asis-pager-label" id="asisPager">1 de 1</span>
+                            <button type="button"
+                                    class="asis-pager-next"
+                                    id="asisNext"
+                                    aria-label="Página siguiente"
+                                    disabled>
+                                <i class="bi bi-chevron-right"></i>
                             </button>
                         </div>
-                    </form>
-                {% else %}
-                    <div class="ci-empty">
-                        <i class="bi bi-person-plus"></i>
-                        <p class="ci-empty-t">Sin inscriptos aceptados</p>
-                        <p class="ci-empty-s">Aceptá inscripciones desde el detalle de la comisión para poder tomar asistencia.</p>
-                    </div>
-                {% endif %}
-            </div>
-        </div>
-
-        {# ── SIDEBAR ── #}
-        <div class="col-xl-4">
-            <div style="position:sticky;top:1rem;">
-
-                <div class="ci-scard">
-                    <p class="ci-sc-title">Sesión</p>
-                    <div class="d-flex flex-column gap-2">
-                        <div>
-                            <span style="font-size:.65rem;
-                                         font-weight:700;
-                                         text-transform:uppercase;
-                                         letter-spacing:.06em;
-                                         color:var(--bs-secondary-color);
-                                         display:block;
-                                         margin-bottom:.15rem">Comisión</span>
-                            <a href="{{ comision_detail_url }}"
-                               class="text-decoration-none"
-                               style="font-size:.86rem;
-                                      font-weight:600;
-                                      color:var(--bs-body-color)">{{ comision_label }}</a>
-                        </div>
-                        <div>
-                            <span style="font-size:.65rem;
-                                         font-weight:700;
-                                         text-transform:uppercase;
-                                         letter-spacing:.06em;
-                                         color:var(--bs-secondary-color);
-                                         display:block;
-                                         margin-bottom:.15rem">Estado de la sesión</span>
-                            <span class="ci-pill {% if sesion.estado == 'realizada' %}ci-pill-green{% elif sesion.estado == 'cancelada' %}ci-pill-red{% else %}ci-pill-blue{% endif %}">{{ sesion.get_estado_display }}</span>
-                        </div>
                     </div>
                 </div>
 
-                {% if ya_tomada %}
-                    <div class="ci-scard" style="border-color: rgba(74,127,232,.3);">
-                        <p class="ci-sc-title">
-                            <i class="bi bi-info-circle me-1"></i>Asistencia registrada
-                        </p>
-                        <p class="mb-0"
-                           style="font-size:.82rem;
-                                  color:var(--bs-secondary-color)">
-                            Esta sesión ya tiene asistencia. Podés modificarla y guardar nuevamente.
-                        </p>
-                    </div>
-                {% endif %}
-
-                <div class="ci-scard">
-                    <p class="ci-sc-title">Acciones rápidas</p>
-                    <div class="d-grid gap-2">
-                        <a href="{{ comision_detail_url }}"
-                           class="btn btn-outline-secondary btn-sm rounded-3"><i class="bi bi-arrow-left me-2"></i>Volver a comisión</a>
-                    </div>
+                <div class="asis-actions">
+                    <button type="submit" class="asis-save">
+                        <i class="bi bi-check-lg"></i>Guardar Asistencia
+                    </button>
                 </div>
-
+            </form>
+        {% else %}
+            <div class="asis-card">
+                <div class="asis-card-head">
+                    <i class="bi bi-people"></i>
+                    <span>Registro de asistencia clase #{{ sesion.numero_sesion }}</span>
+                </div>
+                <div class="asis-empty">
+                    <i class="bi bi-person-plus"></i>
+                    <p class="asis-empty-t">Sin inscriptos aceptados</p>
+                    <p class="asis-empty-s">Aceptá inscripciones desde el detalle de la comisión para poder tomar asistencia.</p>
+                </div>
             </div>
-        </div>
+        {% endif %}
 
     </div>
 {% endblock %}
 
 {% block customJS %}
     {% include "vat/partials/tour.html" with vat_tour_section="asistencia" vat_tour_autostart=True %}
+
+    <script nonce="{{ request.csp_nonce }}">
+    (function() {
+        var form = document.getElementById('asisForm');
+        if (!form) return;
+
+        var body = document.getElementById('asisTablaBody');
+        var metPres = document.getElementById('asisMetricPresentes');
+        var metAus = document.getElementById('asisMetricAusentes');
+        var metSin = document.getElementById('asisMetricSinMarcar');
+        var allPres = document.getElementById('asisMarcarPresentes');
+        var allAus = document.getElementById('asisMarcarAusentes');
+
+        var rows = Array.prototype.slice.call(body.querySelectorAll('.asis-row'));
+
+        function updateMetrics() {
+            var presentes = 0, ausentes = 0, sinMarcar = 0;
+            rows.forEach(function(row) {
+                var pres = row.querySelector('.asis-present');
+                var aus = row.querySelector('.asis-absent');
+                if (pres && pres.checked) { presentes += 1; }
+                else if (aus && aus.checked) { ausentes += 1; }
+                else { sinMarcar += 1; }
+            });
+            if (metPres) metPres.textContent = presentes;
+            if (metAus) metAus.textContent = ausentes;
+            if (metSin) metSin.textContent = sinMarcar;
+        }
+
+        body.addEventListener('change', function(ev) {
+            if (ev.target && (ev.target.classList.contains('asis-present') ||
+                              ev.target.classList.contains('asis-absent'))) {
+                updateMetrics();
+            }
+        });
+
+        if (allPres) {
+            allPres.addEventListener('change', function() {
+                if (allPres.checked) {
+                    if (allAus) allAus.checked = false;
+                    rows.forEach(function(row) {
+                        var pres = row.querySelector('.asis-present');
+                        if (pres) pres.checked = true;
+                    });
+                }
+                updateMetrics();
+            });
+        }
+
+        if (allAus) {
+            allAus.addEventListener('change', function() {
+                if (allAus.checked) {
+                    if (allPres) allPres.checked = false;
+                    rows.forEach(function(row) {
+                        var aus = row.querySelector('.asis-absent');
+                        if (aus) aus.checked = true;
+                    });
+                }
+                updateMetrics();
+            });
+        }
+
+        updateMetrics();
+    })();
+    </script>
+
+    <script nonce="{{ request.csp_nonce }}">
+    (function() {
+        var card = document.getElementById('asisTabla');
+        if (!card) return;
+
+        var PAGE_SIZE = 10;
+        var body = document.getElementById('asisTablaBody');
+        var conteoEl = document.getElementById('asisConteo');
+        var pagerEl = document.getElementById('asisPager');
+        var prevBtn = document.getElementById('asisPrev');
+        var nextBtn = document.getElementById('asisNext');
+        if (!body) return;
+
+        var allRows = Array.prototype.slice.call(body.querySelectorAll('.asis-row'));
+        var currentPage = 1;
+
+        function render() {
+            var total = allRows.length;
+            var totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+            if (currentPage > totalPages) currentPage = totalPages;
+            if (currentPage < 1) currentPage = 1;
+
+            var start = (currentPage - 1) * PAGE_SIZE;
+            var end = start + PAGE_SIZE;
+
+            allRows.forEach(function(row, idx) {
+                row.classList.toggle('d-none', !(idx >= start && idx < end));
+            });
+
+            if (conteoEl) {
+                var desde = total === 0 ? 0 : start + 1;
+                var hasta = Math.min(end, total);
+                conteoEl.textContent = 'Mostrando ' + desde + '-' + hasta + ' de ' + total;
+            }
+            if (pagerEl) {
+                pagerEl.textContent = currentPage + ' de ' + totalPages;
+            }
+            if (prevBtn) prevBtn.disabled = currentPage <= 1;
+            if (nextBtn) nextBtn.disabled = currentPage >= totalPages;
+        }
+
+        if (prevBtn) {
+            prevBtn.addEventListener('click', function() {
+                if (currentPage > 1) { currentPage -= 1; render(); }
+            });
+        }
+        if (nextBtn) {
+            nextBtn.addEventListener('click', function() {
+                currentPage += 1;
+                render();
+            });
+        }
+
+        render();
+    })();
+    </script>
 {% endblock %}

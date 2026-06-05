@@ -1843,6 +1843,12 @@ class ComisionCursoForm(forms.ModelForm):
         required=False,
         widget=forms.CheckboxInput(attrs={"class": "form-check-input"}),
     )
+    cupo_lista_espera = forms.IntegerField(
+        label="Cupo Lista de Espera",
+        required=False,
+        min_value=1,
+        widget=forms.NumberInput(attrs={"class": "form-control"}),
+    )
     fecha_inicio = forms.DateField(
         label="Fecha de Inicio",
         widget=forms.DateInput(attrs={"class": "form-control", "type": "date"}),
@@ -1869,6 +1875,7 @@ class ComisionCursoForm(forms.ModelForm):
             "ubicacion",
             "cupo_total",
             "acepta_lista_espera",
+            "cupo_lista_espera",
             "fecha_inicio",
             "fecha_fin",
             "estado",
@@ -1909,6 +1916,8 @@ class ComisionCursoForm(forms.ModelForm):
         curso = cleaned_data.get("curso")
         ubicacion = cleaned_data.get("ubicacion")
         cupo_total = cleaned_data.get("cupo_total")
+        acepta_lista_espera = cleaned_data.get("acepta_lista_espera")
+        cupo_lista_espera = cleaned_data.get("cupo_lista_espera")
         fecha_inicio = cleaned_data.get("fecha_inicio")
         fecha_fin = cleaned_data.get("fecha_fin")
 
@@ -1926,6 +1935,9 @@ class ComisionCursoForm(forms.ModelForm):
 
         if cupo_total is not None and cupo_total <= 0:
             self.add_error("cupo_total", "El cupo total debe ser mayor a 0.")
+
+        if not acepta_lista_espera:
+            cleaned_data["cupo_lista_espera"] = None
 
         return cleaned_data
 

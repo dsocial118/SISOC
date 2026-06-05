@@ -5815,6 +5815,38 @@ def test_comision_curso_form_no_expone_codigo_ni_nombre_y_los_autogenera(
 
 
 @pytest.mark.django_db
+def test_comision_curso_form_requiere_cupo_lista_espera_si_esta_habilitada(
+    vat_curso_base,
+):
+    centro, ubicacion, modalidad = vat_curso_base
+    curso = Curso.objects.create(
+        centro=centro,
+        nombre="Curso con espera obligatoria",
+        modalidad=modalidad,
+        estado="planificado",
+    )
+
+    form = ComisionCursoForm(
+        data={
+            "curso": str(curso.id),
+            "ubicacion": str(ubicacion.id),
+            "cupo_total": 25,
+            "acepta_lista_espera": "on",
+            "fecha_inicio": "2026-04-01",
+            "fecha_fin": "2026-04-30",
+            "estado": "planificada",
+            "observaciones": "",
+        }
+    )
+
+    assert not form.is_valid()
+    assert (
+        "Definí un cupo para la lista de espera cuando está habilitada."
+        in form.errors["cupo_lista_espera"]
+    )
+
+
+@pytest.mark.django_db
 def test_comision_curso_create_view_renderiza_formulario(client, vat_curso_base):
     centro, _, modalidad = vat_curso_base
     user = User.objects.create_superuser(
@@ -5837,6 +5869,7 @@ def test_comision_curso_create_view_renderiza_formulario(client, vat_curso_base)
 
     assert response.status_code == 200
     assert "ubicacion" in response.content.decode("utf-8")
+    assert "cupo_lista_espera" in response.content.decode("utf-8")
 
 
 @pytest.mark.django_db
@@ -7821,6 +7854,7 @@ def test_api_vat_inscripciones_curso_envia_a_lista_espera_si_no_hay_cupo(
         nombre="Comisión API Espera",
         cupo_total=1,
         acepta_lista_espera=True,
+        cupo_lista_espera=2,
         fecha_inicio=date(2026, 5, 1),
         fecha_fin=date(2026, 6, 1),
         estado="activa",
@@ -7868,6 +7902,104 @@ def test_api_vat_inscripciones_curso_envia_a_lista_espera_si_no_hay_cupo(
         ciudadano=aspirante,
         comision_curso=comision,
         estado="en_espera",
+    ).exists()
+
+
+@pytest.mark.django_db
+def test_api_vat_inscripciones_curso_rechaza_lista_espera_sin_cupo_disponible(
+    vat_api_client, vat_curso_base
+):
+    centro, ubicacion, modalidad = vat_curso_base
+    programa = Programa.objects.create(nombre="Programa API Espera Llena")
+    usuario = User.objects.create_user(
+        username="api-lista-espera-llena",
+        password="test1234",
+    )
+    sexo = Sexo.objects.create(sexo="No Binario")
+    curso = Curso.objects.create(
+        centro=centro,
+        nombre="Curso API Espera Llena",
+        modalidad=modalidad,
+        estado="activo",
+    )
+    voucher = VoucherParametria.objects.create(
+        nombre="Voucher API Espera Llena",
+        programa=programa,
+        cantidad_inicial=5,
+        fecha_vencimiento=date(2026, 12, 31),
+        creado_por=usuario,
+        activa=True,
+    )
+    curso.voucher_parametrias.add(voucher)
+    comision = ComisionCurso.objects.create(
+        curso=curso,
+        ubicacion=ubicacion,
+        codigo_comision="API-ESPERA-LLENA-01",
+        nombre="Comisión API Espera Llena",
+        cupo_total=1,
+        acepta_lista_espera=True,
+        cupo_lista_espera=1,
+        fecha_inicio=date(2026, 5, 1),
+        fecha_fin=date(2026, 6, 1),
+        estado="activa",
+    )
+    titular = Ciudadano.objects.create(
+        apellido="Titular",
+        nombre="Curso",
+        fecha_nacimiento=date(2000, 1, 1),
+        tipo_documento=Ciudadano.DOCUMENTO_DNI,
+        documento=40111226,
+        sexo=sexo,
+    )
+    espera = Ciudadano.objects.create(
+        apellido="Espera",
+        nombre="Actual",
+        fecha_nacimiento=date(2001, 1, 1),
+        tipo_documento=Ciudadano.DOCUMENTO_DNI,
+        documento=40111227,
+        sexo=sexo,
+    )
+    aspirante = Ciudadano.objects.create(
+        apellido="Espera",
+        nombre="Nueva",
+        fecha_nacimiento=date(2002, 1, 1),
+        tipo_documento=Ciudadano.DOCUMENTO_DNI,
+        documento=40111228,
+        sexo=sexo,
+    )
+    Inscripcion.objects.create(
+        ciudadano=titular,
+        comision_curso=comision,
+        programa=programa,
+        estado="inscripta",
+        origen_canal="backoffice",
+    )
+    Inscripcion.objects.create(
+        ciudadano=espera,
+        comision_curso=comision,
+        programa=programa,
+        estado="en_espera",
+        origen_canal="backoffice",
+    )
+
+    response = vat_api_client.post(
+        "/api/vat/inscripciones-curso/",
+        {
+            "ciudadano": aspirante.id,
+            "comision_curso": comision.id,
+            "estado": "inscripta",
+            "origen_canal": "api",
+        },
+        format="json",
+    )
+
+    payload = response.json()
+
+    assert response.status_code == 400
+    assert payload
+    assert not Inscripcion.objects.filter(
+        ciudadano=aspirante,
+        comision_curso=comision,
     ).exists()
 
 
@@ -8915,7 +9047,9 @@ def wizard_setup(db):
         modalidad=modalidad,
         estado="planificado",
     )
-    dia = Dia.objects.create(nombre="Miércoles WIZ")
+    # El nombre debe coincidir con DIA_A_WEEKDAY para que el servicio de
+    # sesiones pueda derivar el weekday y generar las SesionComision.
+    dia = Dia.objects.create(nombre="Miércoles")
     return SimpleNamespace(
         centro=centro,
         ubicacion=ubicacion,
@@ -9140,3 +9274,10 @@ def test_wizard_flujo_completo_crea_comision_y_horario(client, wizard_setup):
     assert horario.hora_desde == time(9, 0)
     assert horario.hora_hasta == time(11, 0)
     assert horario.vigente is True
+
+    # El wizard debe generar las sesiones automáticamente a partir de las
+    # fechas de la comisión y los días seleccionados en el paso de horarios.
+    sesiones = SesionComision.objects.filter(comision_curso=comision)
+    assert sesiones.exists()
+    assert sesiones.count() == horario.sesiones.count()
+    assert all(s.fecha.weekday() == 2 for s in sesiones)  # miércoles

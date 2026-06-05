@@ -2,6 +2,7 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
+from django.db.models import Count, Q
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
@@ -351,6 +352,7 @@ class ComisionCursoDetailView(LoginRequiredMixin, DetailView):
         puede_gestionar_comision = can_user_edit_centro(
             self.request.user, comision.curso.centro
         )
+        estados_inscripcion_asistencia = ["inscripta", "validada_presencial"]
         cancel_url = _centro_cursos_tab_url(comision.curso.centro_id)
         comision_form = ComisionCursoForm(instance=comision)
         scoped_centros = filter_centros_queryset_for_management(
@@ -376,6 +378,62 @@ class ComisionCursoDetailView(LoginRequiredMixin, DetailView):
             .select_related("ciudadano", "programa")
             .order_by("estado", "fecha_inscripcion")
         )
+        sesiones = list(
+            SesionComision.objects.filter(comision_curso=comision)
+            .select_related("horario__dia_semana")
+            .order_by("fecha", "horario__hora_desde")
+        )
+        asistencias = AsistenciaSesion.objects.filter(
+            sesion__comision_curso=comision,
+            inscripcion__comision_curso=comision,
+            inscripcion__estado__in=estados_inscripcion_asistencia,
+        )
+        total_asistencias = asistencias.count()
+        total_presentes = asistencias.filter(presente=True).count()
+        porcentaje_asistencia = round(
+            (total_presentes / total_asistencias) * 100, 0
+        ) if total_asistencias else 0
+        asistencia_por_inscripcion = {
+            fila["inscripcion"]: fila
+            for fila in AsistenciaSesion.objects.filter(
+                sesion__comision_curso=comision
+            )
+            .values("inscripcion")
+            .annotate(
+                total=Count("id"),
+                presentes=Count("id", filter=Q(presente=True)),
+            )
+        }
+        for inscripcion in inscripciones:
+            resumen = asistencia_por_inscripcion.get(inscripcion.pk)
+            if resumen and resumen["total"]:
+                inscripcion.porcentaje_asistencia = int(
+                    round((resumen["presentes"] / resumen["total"]) * 100)
+                )
+            else:
+                inscripcion.porcentaje_asistencia = None
+        asistencia_por_sesion = {
+            fila["sesion"]: fila
+            for fila in AsistenciaSesion.objects.filter(
+                sesion__comision_curso=comision
+            )
+            .values("sesion")
+            .annotate(
+                presentes=Count("id", filter=Q(presente=True)),
+                ausentes=Count("id", filter=Q(presente=False)),
+            )
+        }
+        for sesion in sesiones:
+            resumen = asistencia_por_sesion.get(sesion.pk)
+            sesion.presentes = resumen["presentes"] if resumen else 0
+            sesion.ausentes = resumen["ausentes"] if resumen else 0
+        clases_dictadas = sum(1 for sesion in sesiones if sesion.estado == "realizada")
+        clases_pendientes = sum(
+            1 for sesion in sesiones if sesion.estado == "programada"
+        )
+        total_inscriptos = sum(
+            1 for inscripcion in inscripciones if inscripcion.estado != "en_espera"
+        )
         context.update(
             {
                 "comision_curso": comision,
@@ -390,11 +448,9 @@ class ComisionCursoDetailView(LoginRequiredMixin, DetailView):
                         comision_curso=comision
                     ).select_related("dia_semana")
                 ),
-                "sesiones": list(
-                    SesionComision.objects.filter(comision_curso=comision)
-                    .select_related("horario__dia_semana")
-                    .order_by("fecha", "horario__hora_desde")
-                ),
+                "sesiones": sesiones,
+                "clases_dictadas": clases_dictadas,
+                "clases_pendientes": clases_pendientes,
                 "inscripciones": [
                     inscripcion
                     for inscripcion in inscripciones
@@ -410,6 +466,38 @@ class ComisionCursoDetailView(LoginRequiredMixin, DetailView):
                     for inscripcion in inscripciones
                     if inscripcion.estado in ESTADOS_INSCRIPCION_OCUPAN_CUPO
                 ),
+                "metricas_comision": [
+                    {
+                        "valor": int(porcentaje_asistencia),
+                        "sufijo": "%",
+                        "label": "Asistencia general",
+                    },
+                    {
+                        "valor": len(sesiones),
+                        "sufijo": "",
+                        "label": "Clases Totales",
+                    },
+                    {
+                        "valor": clases_dictadas,
+                        "sufijo": "",
+                        "label": "Clases dictadas",
+                    },
+                    {
+                        "valor": clases_pendientes,
+                        "sufijo": "",
+                        "label": "Clases pendientes",
+                    },
+                    {
+                        "valor": comision.cupo,
+                        "sufijo": "",
+                        "label": "Cupo total",
+                    },
+                    {
+                        "valor": total_inscriptos,
+                        "sufijo": "",
+                        "label": "Inscriptos",
+                    },
+                ],
                 "estado_choices": Inscripcion.ESTADO_INSCRIPCION_CHOICES,
                 "comision_tipo_titulo": "Comisión de Curso",
                 "comision_back_url": cancel_url,
@@ -429,6 +517,8 @@ class ComisionCursoDetailView(LoginRequiredMixin, DetailView):
                 and self.request.user.has_perm("VAT.add_inscripcion"),
                 "puede_cambiar_inscripcion": puede_gestionar_comision
                 and self.request.user.has_perm("VAT.change_inscripcion"),
+                "puede_eliminar_inscripcion": puede_gestionar_comision
+                and self.request.user.has_perm("VAT.delete_inscripcion"),
                 "puede_gestionar_asistencia": puede_gestionar_comision
                 and self.request.user.has_perm("VAT.change_inscripcion"),
                 "puede_agregar_comision_horario": puede_gestionar_comision
@@ -645,17 +735,30 @@ class AsistenciaSesionCursoView(LoginRequiredMixin, TemplateView):
             )
         }
         filas = []
+        total_presentes = 0
+        total_ausentes = 0
+        total_sin_marcar = 0
         for inscripcion in inscripciones:
             asistencia = asistencias_existentes.get(inscripcion.pk)
+            presente = asistencia.presente if asistencia else None
+            if presente is True:
+                total_presentes += 1
+            elif presente is False:
+                total_ausentes += 1
+            else:
+                total_sin_marcar += 1
             filas.append(
                 {
                     "inscripcion": inscripcion,
-                    "presente": asistencia.presente if asistencia else None,
+                    "presente": presente,
                     "observaciones": asistencia.observaciones if asistencia else "",
                 }
             )
         context["sesion"] = sesion
         context["filas"] = filas
+        context["total_presentes"] = total_presentes
+        context["total_ausentes"] = total_ausentes
+        context["total_sin_marcar"] = total_sin_marcar
         context["ya_tomada"] = bool(asistencias_existentes)
         context["comision_detail_url"] = reverse(
             "vat_comision_curso_detail", kwargs={"pk": sesion.comision_curso_id}

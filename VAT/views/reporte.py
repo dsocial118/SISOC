@@ -4,6 +4,7 @@ from django.views.generic import TemplateView
 
 from VAT.models import Inscripcion
 from VAT.services.reportes_inscripciones_asistencia import (
+    build_detalle_personas_inscriptas,
     ReporteFiltros,
     build_reporte_inscripciones_asistencia,
     export_rows_to_csv,
@@ -67,6 +68,7 @@ class ReporteInscriptosAsistenciasView(LoginRequiredMixin, TemplateView):
 
         paginator = Paginator(reporte["rows"], self.paginate_by)
         page_obj = paginator.get_page(self.request.GET.get("page") or 1)
+        detalle_rows = build_detalle_personas_inscriptas(self.request.user, filtros)
 
         context.update(
             {
@@ -96,6 +98,7 @@ class ReporteInscriptosAsistenciasView(LoginRequiredMixin, TemplateView):
                     ("false", "No"),
                 ],
                 "querystring": querystring,
+                "detalle_rows": detalle_rows,
                 **get_filter_options(self.request.user),
             }
         )
