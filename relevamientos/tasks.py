@@ -63,14 +63,18 @@ def build_relevamiento_payload(relevamiento):
 
 
 def build_primer_seguimiento_payload(seguimiento):
+    # IMPORTANTE: el alta SOLO debe mandar Id_Relevamiento. En la tabla AppSheet
+    # `Seguimientos1erVisita`, `ID_Seguimiento1` es la CLAVE autogenerada: si el
+    # payload la incluye, AppSheet rechaza el alta en silencio (responde 200 con
+    # cuerpo vacio y no crea la fila). GESTIONAR genera el `ID_Seguimiento1` y lo
+    # devuelve en la respuesta; SISOC lo persiste en `gestionar_id`. `Id_SISOC` no
+    # es columna de esa tabla. Verificado contra la API real el 2026-06-04.
     return {
         "Action": "Add",
         "Properties": {"Locale": "es-ES"},
         "Rows": [
             {
-                "ID_Seguimiento1": f"{seguimiento.id}",
                 "Id_Relevamiento": f"{seguimiento.id_relevamiento_id}",
-                "Id_SISOC": f"{seguimiento.id}",
             }
         ],
     }
@@ -119,16 +123,27 @@ class AsyncSendRelevamientoToGestionar(threading.Thread):
                 timeout=TIMEOUT,
             )
             response.raise_for_status()
-            response_data = response.json()
-            logger.info(
-                f"RELEVAMIENTO {self.relevamiento_id} sincronizado con GESTIONAR con exito"
-            )
-            gestionar_pdf = response_data["Rows"][0].get("docPDF", "")
-            if gestionar_pdf:
-                # El .update() en el queryset es para evitar que salten las signals
-                Relevamiento.objects.filter(pk=self.relevamiento_id).update(
-                    docPDF=gestionar_pdf
+            response_data = response.json() if response.content else {}
+            rows = response_data.get("Rows") or []
+            if not rows:
+                logger.warning(
+                    "RELEVAMIENTO %s: GESTIONAR respondio 2xx pero no devolvio filas; "
+                    "la alta podria no haberse registrado. Respuesta: %s",
+                    self.relevamiento_id,
+                    response_data,
                 )
+                return
+            # GESTIONAR confirmo la fila: marcamos sincronizado (mas el docPDF si
+            # lo devolvio). El .update() en el queryset evita disparar signals.
+            campos_sync = {"sincronizado_gestionar": True}
+            gestionar_pdf = rows[0].get("docPDF", "")
+            if gestionar_pdf:
+                campos_sync["docPDF"] = gestionar_pdf
+            Relevamiento.objects.filter(pk=self.relevamiento_id).update(**campos_sync)
+            logger.info(
+                "RELEVAMIENTO %s sincronizado con GESTIONAR con exito",
+                self.relevamiento_id,
+            )
 
         except Exception:
             logger.exception(
@@ -240,14 +255,30 @@ class AsyncSendPrimerSeguimientoToGestionar(threading.Thread):
             )
             response.raise_for_status()
             response_data = response.json() if response.content else {}
-            gestionar_id = ""
             rows = response_data.get("Rows") or []
-            if rows:
-                gestionar_id = (rows[0].get("ID_Seguimiento1") or "").strip()
-            if gestionar_id:
-                PrimerSeguimiento.objects.filter(pk=self.seguimiento_id).update(
-                    gestionar_id=gestionar_id
+            if not rows:
+                # AppSheet responde 200 aunque rechace el alta (p. ej. el
+                # Id_Relevamiento apunta a un relevamiento que GESTIONAR no tiene,
+                # o falta una columna requerida de la tabla): en esos casos no
+                # devuelve filas. No marcamos sincronizado para no mostrar un
+                # estado enganoso, y dejamos el cuerpo en el log para diagnostico.
+                logger.warning(
+                    "PRIMER SEGUIMIENTO %s: GESTIONAR respondio 2xx pero no devolvio "
+                    "filas; la alta podria no haberse registrado. Respuesta: %s",
+                    self.seguimiento_id,
+                    response_data,
                 )
+                return
+            # GESTIONAR confirmo la fila: marcamos sincronizado (mas el
+            # gestionar_id si lo devolvio). El PATCH entrante con los bloques
+            # completos lo mantiene en True.
+            gestionar_id = (rows[0].get("ID_Seguimiento1") or "").strip()
+            campos_sync = {"sincronizado_gestionar": True}
+            if gestionar_id:
+                campos_sync["gestionar_id"] = gestionar_id
+            PrimerSeguimiento.objects.filter(pk=self.seguimiento_id).update(
+                **campos_sync
+            )
             logger.info(
                 "PRIMER SEGUIMIENTO %s sincronizado con GESTIONAR con exito",
                 self.seguimiento_id,
@@ -264,10 +295,11 @@ class AsyncSendPrimerSeguimientoToGestionar(threading.Thread):
 class AsyncRemovePrimerSeguimientoToGestionar(threading.Thread):
     """Hilo para eliminar primer seguimiento de GESTIONAR asincronamente"""
 
-    def __init__(self, seguimiento_id, gestionar_id):
+    def __init__(self, seguimiento_id, gestionar_id, relevamiento_id=None):
         super().__init__()
         self.seguimiento_id = seguimiento_id
         self.gestionar_id = gestionar_id
+        self.relevamiento_id = relevamiento_id
 
     def start(self):  # type: ignore[override]
         if not _is_gestionar_integration_enabled():
@@ -292,10 +324,18 @@ class AsyncRemovePrimerSeguimientoToGestionar(threading.Thread):
         if not _is_gestionar_integration_enabled():
             return
         close_old_connections()
+        # La tabla `Seguimientos1erVisita` tiene CLAVE COMPUESTA
+        # (ID_Seguimiento1 + Id_Relevamiento): el Delete debe informar ambos o
+        # AppSheet responde 400 "Row key field 'Id_Relevamiento' value is missing".
         data = {
             "Action": "Delete",
             "Properties": {"Locale": "es-ES"},
-            "Rows": [{"ID_Seguimiento1": f"{self.gestionar_id}"}],
+            "Rows": [
+                {
+                    "ID_Seguimiento1": f"{self.gestionar_id}",
+                    "Id_Relevamiento": f"{self.relevamiento_id}",
+                }
+            ],
         }
         headers = {
             "applicationAccessKey": os.getenv("GESTIONAR_API_KEY"),

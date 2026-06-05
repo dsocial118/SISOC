@@ -5,24 +5,6 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db import models as dj_models
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse, reverse_lazy
-
-from comedores.forms.comedor_form import ReferenteForm
-from comedores.models import Comedor
-from relevamientos.form import (
-    AnexoForm,
-    ColaboradoresForm,
-    EspacioCocinaForm,
-    EspacioForm,
-    EspacioPrestacionForm,
-    FuenteComprasForm,
-    FuenteRecursosForm,
-    FuncionamientoPrestacionForm,
-    PrestacionForm,
-    PuntosEntregaForm,
-    RelevamientoForm,
-)
-from relevamientos.models import Prestacion, PrimerSeguimiento, Relevamiento
-from relevamientos.service import RelevamientoService
 from django.views.generic import (
     CreateView,
     DeleteView,
@@ -31,12 +13,12 @@ from django.views.generic import (
     UpdateView,
 )
 from django.views.generic.base import View
-from core.soft_delete.view_helpers import SoftDeleteDeleteViewMixin
 
 from comedores.models import Comedor
+from core.soft_delete.view_helpers import SoftDeleteDeleteViewMixin
 from relevamientos.form import RelevamientoForm
 from relevamientos.helpers import RelevamientoFormManager
-from relevamientos.models import Relevamiento
+from relevamientos.models import PrimerSeguimiento, Relevamiento
 from relevamientos.service import RelevamientoService
 
 
@@ -127,6 +109,7 @@ class RelevamientoListView(LoginRequiredMixin, ListView):
 
         items = []
         for rel in context["relevamientos"]:
+            seguimiento = _get_primer_seguimiento(rel)
             items.append(
                 {
                     "id": rel.id,
@@ -135,9 +118,9 @@ class RelevamientoListView(LoginRequiredMixin, ListView):
                     "numero_if": rel.numero_if,
                     "is_child": False,
                     "parent_id": None,
+                    "has_seguimiento": seguimiento is not None,
                 }
             )
-            seguimiento = _get_primer_seguimiento(rel)
             if seguimiento is not None:
                 items.append(
                     {
