@@ -143,9 +143,7 @@
                 <nav class="nomina-tabs" aria-label="Filtro de nómina">
                     {% for option in nomina_tab_options %}
                         <a href="?tab={{ option.key }}{% if dni_query %}&dni={{ dni_query|urlencode }}{% endif %}"
-                           class="nomina-tab-link {% if option.active %}active{% endif %}">
-                            {{ option.label }}
-                        </a>
+                           class="nomina-tab-link {% if option.active %}active{% endif %}">{{ option.label }}</a>
                     {% endfor %}
                 </nav>
             {% endif %}
@@ -154,9 +152,7 @@
         <!-- Barra de búsqueda y acciones -->
         <div class="nomina-actions-bar">
             <form method="get" class="nomina-search-box">
-                {% if mostrar_tabs_nomina %}
-                    <input type="hidden" name="tab" value="{{ nomina_tab }}" />
-                {% endif %}
+                {% if mostrar_tabs_nomina %}<input type="hidden" name="tab" value="{{ nomina_tab }}" />{% endif %}
                 <div class="nomina-search-field">
                     <i class="fas fa-search nomina-search-icon"></i>
                     <input type="text"
@@ -224,12 +220,8 @@
                                     {{ e.ciudadano.nombre }}
                                     {% if e.pwa_comunidad_indigena or e.pwa_situacion_calle %}
                                         <div class="nomina-person-badges">
-                                            {% if e.pwa_comunidad_indigena %}
-                                                <span class="nomina-person-badge">Comunidad indígena</span>
-                                            {% endif %}
-                                            {% if e.pwa_situacion_calle %}
-                                                <span class="nomina-person-badge">Sit. de calle</span>
-                                            {% endif %}
+                                            {% if e.pwa_comunidad_indigena %}<span class="nomina-person-badge">Comunidad indígena</span>{% endif %}
+                                            {% if e.pwa_situacion_calle %}<span class="nomina-person-badge">Sit. de calle</span>{% endif %}
                                         </div>
                                     {% endif %}
                                 </td>

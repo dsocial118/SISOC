@@ -52,16 +52,13 @@ class ActividadPnudListView(ActividadPnudPermissionMixin, ListView):
         busqueda = (self.request.GET.get("q") or "").strip()
         if busqueda:
             queryset = queryset.filter(
-                Q(categoria__icontains=busqueda)
-                | Q(actividad__icontains=busqueda)
+                Q(categoria__icontains=busqueda) | Q(actividad__icontains=busqueda)
             )
         return queryset
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["estado_filtro"] = (
-            self.request.GET.get("estado") or "activa"
-        ).strip()
+        context["estado_filtro"] = (self.request.GET.get("estado") or "activa").strip()
         context["busqueda"] = (self.request.GET.get("q") or "").strip()
         context["can_manage_actividades_pnud"] = self.request.user.has_perm(
             "auth.role_admin"

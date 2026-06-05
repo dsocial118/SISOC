@@ -242,23 +242,23 @@ urlpatterns = [
     ),
     path(
         "comedores/configuracion/actividades-pnud/crear/",
-        permissions_any_required(["auth.role_admin", "pwa.manage_catalogoactividadpwa"])(
-            ActividadPnudCreateView.as_view()
-        ),
+        permissions_any_required(
+            ["auth.role_admin", "pwa.manage_catalogoactividadpwa"]
+        )(ActividadPnudCreateView.as_view()),
         name="actividades_pnud_crear",
     ),
     path(
         "comedores/configuracion/actividades-pnud/<int:pk>/editar/",
-        permissions_any_required(["auth.role_admin", "pwa.manage_catalogoactividadpwa"])(
-            ActividadPnudUpdateView.as_view()
-        ),
+        permissions_any_required(
+            ["auth.role_admin", "pwa.manage_catalogoactividadpwa"]
+        )(ActividadPnudUpdateView.as_view()),
         name="actividades_pnud_editar",
     ),
     path(
         "comedores/configuracion/actividades-pnud/<int:pk>/baja/",
-        permissions_any_required(["auth.role_admin", "pwa.manage_catalogoactividadpwa"])(
-            ActividadPnudDeactivateView.as_view()
-        ),
+        permissions_any_required(
+            ["auth.role_admin", "pwa.manage_catalogoactividadpwa"]
+        )(ActividadPnudDeactivateView.as_view()),
         name="actividades_pnud_baja",
     ),
     path(

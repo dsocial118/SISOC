@@ -68,9 +68,7 @@
                class="btn {% if estado_filtro == 'inactiva' %}btn-primary{% else %}btn-outline-primary{% endif %}">Inactivas</a>
         </div>
         <form method="get" class="actividades-pnud-search" role="search">
-            {% if estado_filtro %}
-                <input type="hidden" name="estado" value="{{ estado_filtro }}" />
-            {% endif %}
+            {% if estado_filtro %}<input type="hidden" name="estado" value="{{ estado_filtro }}" />{% endif %}
             <input type="search"
                    name="q"
                    value="{{ busqueda }}"
@@ -93,49 +91,49 @@
             <div class="card">
                 <div class="card-body">
                     <div class="table-responsive">
-                    <table class="table table-bordered table-striped projects mb-0">
-                        <thead>
-                            <tr>
-                                <th>Categoría</th>
-                                <th>Actividad</th>
-                                <th>Estado</th>
-                                <th style="width: 220px">Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for actividad in actividades %}
+                        <table class="table table-bordered table-striped projects mb-0">
+                            <thead>
                                 <tr>
-                                    <td>{{ actividad.categoria }}</td>
-                                    <td>{{ actividad.actividad }}</td>
-                                    <td>
-                                        {% if actividad.activo %}
-                                            <span class="actividades-pnud-status actividades-pnud-status--active">Activo</span>
-                                        {% else %}
-                                            <span class="actividades-pnud-status actividades-pnud-status--inactive">Inactivo</span>
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if can_manage_actividades_pnud %}
-                                            <div class="actividades-pnud-actions">
-                                                <a href="{% url 'actividades_pnud_editar' actividad.pk %}"
-                                                   class="btn btn-sm btn-warning">Editar</a>
-                                                {% if actividad.activo %}
-                                                    <a href="{% url 'actividades_pnud_baja' actividad.pk %}"
-                                                       class="btn btn-sm btn-danger">Dar de baja</a>
-                                                {% endif %}
-                                            </div>
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    </td>
+                                    <th>Categoría</th>
+                                    <th>Actividad</th>
+                                    <th>Estado</th>
+                                    <th style="width: 220px">Acciones</th>
                                 </tr>
-                            {% empty %}
-                                <tr>
-                                    <td colspan="4" class="text-center">No hay actividades cargadas.</td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                                {% for actividad in actividades %}
+                                    <tr>
+                                        <td>{{ actividad.categoria }}</td>
+                                        <td>{{ actividad.actividad }}</td>
+                                        <td>
+                                            {% if actividad.activo %}
+                                                <span class="actividades-pnud-status actividades-pnud-status--active">Activo</span>
+                                            {% else %}
+                                                <span class="actividades-pnud-status actividades-pnud-status--inactive">Inactivo</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if can_manage_actividades_pnud %}
+                                                <div class="actividades-pnud-actions">
+                                                    <a href="{% url 'actividades_pnud_editar' actividad.pk %}"
+                                                       class="btn btn-sm btn-warning">Editar</a>
+                                                    {% if actividad.activo %}
+                                                        <a href="{% url 'actividades_pnud_baja' actividad.pk %}"
+                                                           class="btn btn-sm btn-danger">Dar de baja</a>
+                                                    {% endif %}
+                                                </div>
+                                            {% else %}
+                                                -
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                {% empty %}
+                                    <tr>
+                                        <td colspan="4" class="text-center">No hay actividades cargadas.</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
