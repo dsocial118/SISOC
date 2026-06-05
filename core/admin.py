@@ -26,7 +26,6 @@ class ProgramaAdmin(admin.ModelAdmin):
     list_display = ("nombre", "estado", "organismo")
     list_filter = ("estado",)
     search_fields = ("nombre",)
-    readonly_fields = ("descripcion",)
 
 
 @admin.register(Nacionalidad)

@@ -79,7 +79,6 @@ class CiudadanosImportJobAdmin(admin.ModelAdmin):
     list_display = ("id", "requested_by", "original_filename", "status", "total_rows", "processed_rows", "requested_at")
     list_filter = ("status",)
     search_fields = ("original_filename", "requested_by__username")
-    raw_id_fields = ("requested_by",)
     readonly_fields = (
         "requested_by", "original_filename", "archivo", "status",
         "total_rows", "processed_rows", "created_rows", "existing_rows", "failed_rows",

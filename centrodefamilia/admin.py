@@ -99,3 +99,5 @@ class InformeCabalRegistroAdmin(admin.ModelAdmin):
     list_filter = ("no_coincidente",)
     search_fields = ("nro_comercio", "razon_social", "nro_tarjeta")
     raw_id_fields = ("archivo", "centro")
+    date_hierarchy = "fecha_trx"
+    list_per_page = 50
