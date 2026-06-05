@@ -79,7 +79,9 @@ class ActividadPnudListView(ActividadPnudPermissionMixin, ListView):
         return context
 
 
-class ActividadPnudCreateView(ActividadPnudFormMixin, ActividadPnudManagePermissionMixin, CreateView):
+class ActividadPnudCreateView(
+    ActividadPnudFormMixin, ActividadPnudManagePermissionMixin, CreateView
+):
     model = CatalogoActividadPWA
     form_class = ActividadPnudForm
     template_name = "comedor/actividades_pnud_form.html"
@@ -90,7 +92,9 @@ class ActividadPnudCreateView(ActividadPnudFormMixin, ActividadPnudManagePermiss
         return super().form_valid(form)
 
 
-class ActividadPnudUpdateView(ActividadPnudFormMixin, ActividadPnudManagePermissionMixin, UpdateView):
+class ActividadPnudUpdateView(
+    ActividadPnudFormMixin, ActividadPnudManagePermissionMixin, UpdateView
+):
     model = CatalogoActividadPWA
     form_class = ActividadPnudForm
     template_name = "comedor/actividades_pnud_form.html"
@@ -101,7 +105,9 @@ class ActividadPnudUpdateView(ActividadPnudFormMixin, ActividadPnudManagePermiss
         return super().form_valid(form)
 
 
-class ActividadPnudDeactivateView(ActividadPnudManagePermissionMixin, SingleObjectMixin, TemplateView):
+class ActividadPnudDeactivateView(
+    ActividadPnudManagePermissionMixin, SingleObjectMixin, TemplateView
+):
     model = CatalogoActividadPWA
     template_name = "comedor/actividades_pnud_confirm_deactivate.html"
 
