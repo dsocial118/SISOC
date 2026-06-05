@@ -62,6 +62,12 @@
                    target="_blank"
                    class="btn btn-secondary mr-1 d-none d-sm-inline">Imprimir</a>
             {% endif %}
+            {% with ps=relevamiento.primer_seguimiento %}
+                {% if ps %}
+                    <a href="#section-primer-seguimiento"
+                       class="btn btn-info mr-1 d-none d-sm-inline">Ver primer seguimiento</a>
+                {% endif %}
+            {% endwith %}
             {% if perms.auditlog.view_logentry %}
                 <a href="{% url 'audittrail:log_instance' 'relevamientos' 'relevamiento' relevamiento.pk %}"
                    class="btn btn-outline-light mr-1">Historial</a>
@@ -1391,7 +1397,7 @@
     </div>
     {% with seguimiento=relevamiento.primer_seguimiento %}
         {% if seguimiento %}
-            <div class="card mt-4">
+            <div class="card mt-4" id="section-primer-seguimiento">
                 <div class="card-header d-flex align-items-center justify-content-between">
                     <h5 class="mb-0">Primer seguimiento</h5>
                     <div class="d-flex gap-2">
