@@ -7,6 +7,8 @@ from VAT.services.reportes_inscripciones_asistencia import (
     build_detalle_personas_inscriptas,
     ReporteFiltros,
     build_reporte_inscripciones_asistencia,
+    export_detalle_to_csv,
+    export_detalle_to_excel,
     export_rows_to_csv,
     export_rows_to_excel,
     get_filter_options,
@@ -51,6 +53,10 @@ class ReporteInscriptosAsistenciasView(LoginRequiredMixin, TemplateView):
             return export_rows_to_csv(reporte["rows"], reporte["group_by"])
         if export in {"xlsx", "excel"}:
             return export_rows_to_excel(reporte["rows"])
+        if export in {"detalle_csv", "detalle-csv"}:
+            return export_detalle_to_csv(request.user, filtros)
+        if export in {"detalle_xlsx", "detalle_excel", "detalle-xlsx"}:
+            return export_detalle_to_excel(request.user, filtros)
 
         return self.render_to_response(
             self.get_context_data(reporte=reporte, filtros=filtros)

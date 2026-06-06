@@ -185,6 +185,60 @@
         }
         .rep-btn--ghost:hover { background: rgba(255, 255, 255, 0.08); color: #ffffff; }
 
+        .rep-detalle-export {
+            margin-left: auto;
+            display: flex;
+            gap: .5rem;
+            flex-wrap: wrap;
+        }
+        .rep-detalle-export .rep-btn { min-height: 32px; padding: 5px 12px; font-size: 12px; }
+
+        /* ── Filtros dinámicos ── */
+        .rep-filter-toolbar {
+            display: flex;
+            align-items: center;
+            gap: .65rem;
+            flex-wrap: wrap;
+            margin-bottom: 1.1rem;
+        }
+        .rep-filter-toolbar > .rep-filter-toolbar__title {
+            font-size: 13px;
+            font-weight: 700;
+            color: #ffffff;
+        }
+        .rep-add-filter {
+            min-height: 38px;
+            border-radius: 8px;
+            border: 1px dashed rgba(255, 255, 255, 0.5);
+            background: rgba(255, 255, 255, 0.05);
+            color: #ffffff;
+            padding: 0 14px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .rep-add-filter:focus { outline: none; border-color: #E7BA61; }
+        .rep-add-filter option { color: #1c2742; background: #ffffff; }
+        .rep-filter-hint { color: rgba(255, 255, 255, 0.6); font-size: 12px; }
+        .rep-field.is-hidden { display: none !important; }
+        .rep-field { position: relative; }
+        .rep-field__remove {
+            position: absolute;
+            top: 0; right: 0;
+            width: 22px; height: 22px;
+            border: 0;
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+            cursor: pointer;
+            font-size: 14px;
+            line-height: 1;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .rep-field__remove:hover { background: rgba(198, 40, 40, 0.65); }
+
         /* ── Métricas ── */
         .rep-metric-grid {
             display: grid;
@@ -376,6 +430,13 @@
             </div>
             <div class="rep-card-body">
                 <form method="get">
+                    <div class="rep-filter-toolbar">
+                        <span class="rep-filter-toolbar__title">Filtros</span>
+                        <select class="rep-add-filter" id="repAddFilter" aria-label="Agregar filtro">
+                            <option value="">+ Agregar filtro…</option>
+                        </select>
+                        <span class="rep-filter-hint" id="repFilterHint"></span>
+                    </div>
                     <div class="rep-filter-grid">
                         <label class="rep-field" for="id_nivel">
                             <span class="rep-field__label">Nivel</span>
@@ -538,16 +599,122 @@
                         <a href="{% url 'vat_reporte_inscripciones_asistencias' %}" class="rep-btn rep-btn--ghost">
                             <i class="bi bi-arrow-clockwise"></i>Limpiar
                         </a>
-                        <a href="?{% if querystring %}{{ querystring }}&{% endif %}export=csv" class="rep-btn rep-btn--ghost">
-                            <i class="bi bi-filetype-csv"></i>Exportar CSV
+                        <a href="?{% if querystring %}{{ querystring }}&{% endif %}export=csv"
+                           class="rep-btn rep-btn--ghost"
+                           title="Exporta el resumen agrupado (una fila por grupo)">
+                            <i class="bi bi-filetype-csv"></i>Resumen CSV
                         </a>
-                        <a href="?{% if querystring %}{{ querystring }}&{% endif %}export=xlsx" class="rep-btn rep-btn--ghost">
-                            <i class="bi bi-file-earmark-excel"></i>Exportar Excel
+                        <a href="?{% if querystring %}{{ querystring }}&{% endif %}export=xlsx"
+                           class="rep-btn rep-btn--ghost"
+                           title="Exporta el resumen agrupado (una fila por grupo)">
+                            <i class="bi bi-file-earmark-excel"></i>Resumen Excel
                         </a>
                     </div>
                 </form>
             </div>
         </div>
+
+        <script nonce="{{ request.csp_nonce }}">
+            (function () {
+                function init() {
+                    var grid = document.querySelector(".rep-filter-grid");
+                    var addSelect = document.getElementById("repAddFilter");
+                    var hint = document.getElementById("repFilterHint");
+                    if (!grid || !addSelect) return;
+
+                    // Estos definen la forma del reporte: siempre visibles.
+                    var permanent = ["nivel", "group_by"];
+                    var fields = [];
+
+                    function hasValue(control) {
+                        return control && control.value !== "" && control.value != null;
+                    }
+
+                    function showField(item) {
+                        item.field.classList.remove("is-hidden");
+                        rebuild();
+                    }
+
+                    function hideField(item) {
+                        item.field.classList.add("is-hidden");
+                        if (item.control.tagName === "SELECT") {
+                            item.control.value = "";
+                            if (item.control.value !== "") item.control.selectedIndex = 0;
+                        } else {
+                            item.control.value = "";
+                        }
+                        rebuild();
+                    }
+
+                    function rebuild() {
+                        var html = '<option value="">+ Agregar filtro…</option>';
+                        var visibles = 0;
+                        fields.forEach(function (item) {
+                            if (item.field.classList.contains("is-hidden")) {
+                                html += '<option value="' + item.key + '">' + item.label + "</option>";
+                            } else {
+                                visibles += 1;
+                            }
+                        });
+                        addSelect.innerHTML = html;
+                        if (hint) {
+                            hint.textContent = visibles
+                                ? (visibles === 1 ? "1 filtro aplicado" : visibles + " filtros aplicados")
+                                : "Sin filtros adicionales — se muestra todo.";
+                        }
+                    }
+
+                    Array.prototype.forEach.call(grid.querySelectorAll(".rep-field"), function (field) {
+                        var control = field.querySelector("select, input");
+                        if (!control || permanent.indexOf(control.name) !== -1) return;
+
+                        var labelEl = field.querySelector(".rep-field__label");
+                        var item = {
+                            field: field,
+                            control: control,
+                            key: control.name,
+                            label: labelEl ? labelEl.textContent.trim() : control.name,
+                        };
+
+                        var rm = document.createElement("button");
+                        rm.type = "button";
+                        rm.className = "rep-field__remove";
+                        rm.setAttribute("aria-label", "Quitar filtro " + item.label);
+                        rm.innerHTML = "&times;";
+                        rm.addEventListener("click", function () { hideField(item); });
+                        field.appendChild(rm);
+
+                        fields.push(item);
+                        if (hasValue(control)) {
+                            field.classList.remove("is-hidden");
+                        } else {
+                            field.classList.add("is-hidden");
+                        }
+                    });
+
+                    addSelect.addEventListener("change", function () {
+                        var key = addSelect.value;
+                        if (!key) return;
+                        for (var i = 0; i < fields.length; i++) {
+                            if (fields[i].key === key) {
+                                showField(fields[i]);
+                                if (fields[i].control.focus) fields[i].control.focus();
+                                break;
+                            }
+                        }
+                        addSelect.value = "";
+                    });
+
+                    rebuild();
+                }
+
+                if (document.readyState === "loading") {
+                    document.addEventListener("DOMContentLoaded", init);
+                } else {
+                    init();
+                }
+            })();
+        </script>
 
         {# ── Métricas ── #}
         <div class="rep-metric-grid">
@@ -587,7 +754,7 @@
                 <span id="reporteQuickCounter" class="rep-tbl-counter"></span>
             </div>
             <div class="rep-tbl-scroll">
-                <table class="rep-tbl">
+                <table class="rep-tbl" id="reporteResumenTabla">
                     <thead>
                         <tr>
                             <th>{% for value, label in group_by_choices %}{% if value == group_by %}{{ label }}{% endif %}{% endfor %}</th>
@@ -667,7 +834,19 @@
         <div class="rep-card" id="repDetalleTabla">
             <div class="rep-card-head">
                 <i class="bi bi-person-lines-fill"></i>
-                <span>Personas inscriptas (muestra hasta 250)</span>
+                <span>Personas inscriptas <small style="font-weight:400;opacity:.8">(en pantalla: muestra hasta 250)</small></span>
+                <div class="rep-detalle-export">
+                    <a href="?{% if querystring %}{{ querystring }}&{% endif %}export=detalle_csv"
+                       class="rep-btn rep-btn--ghost"
+                       title="Exporta TODAS las personas (con los filtros aplicados)">
+                        <i class="bi bi-filetype-csv"></i>Detalle CSV
+                    </a>
+                    <a href="?{% if querystring %}{{ querystring }}&{% endif %}export=detalle_xlsx"
+                       class="rep-btn rep-btn--ghost"
+                       title="Exporta TODAS las personas (con los filtros aplicados)">
+                        <i class="bi bi-file-earmark-excel"></i>Detalle Excel
+                    </a>
+                </div>
             </div>
             <div class="rep-tbl-scroll">
                 <table class="rep-tbl">
@@ -811,4 +990,6 @@
             render();
         })();
     </script>
+
+    {% include "vat/partials/tour.html" with vat_tour_section="reporte_inscripciones" %}
 {% endblock %}

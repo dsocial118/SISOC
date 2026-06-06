@@ -37,13 +37,32 @@
         try { localStorage.removeItem(k); } catch (e) {}
     }
 
-    // Conserva solo los steps cuyo selector exista en el DOM. Steps sin
-    // element (popovers centrados) siempre se conservan.
+    // Un elemento sirve para resaltar solo si esta presente Y visible: si esta
+    // oculto o tiene tamaño 0, driver.js termina mostrando el popover en una
+    // esquina. Se considera no visible si display:none/visibility:hidden o si
+    // su bounding box es 0x0.
+    function isElementVisible(el) {
+        if (!el) return false;
+        var style = window.getComputedStyle(el);
+        if (style.display === "none" || style.visibility === "hidden") {
+            return false;
+        }
+        var rect = el.getBoundingClientRect();
+        return rect.width > 0 && rect.height > 0;
+    }
+
+    // Conserva solo los steps utilizables. Steps sin element (popovers
+    // centrados) siempre se conservan. Steps con onHighlightStarted se
+    // conservan aunque el elemento este oculto, porque ese callback revela su
+    // panel (ej. pestañas del detalle de centro). El resto debe estar visible.
     function keepExistingSteps(steps) {
         return steps.filter(function (step) {
             if (!step.element) return true;
             try {
-                return document.querySelector(step.element) !== null;
+                var el = document.querySelector(step.element);
+                if (el === null) return false;
+                if (step.onHighlightStarted) return true;
+                return isElementVisible(el);
             } catch (e) {
                 return false;
             }
@@ -358,15 +377,6 @@
                 },
             },
             {
-                element: ".sisoc-header-actions",
-                popover: {
-                    title: "Acciones del centro",
-                    description:
-                        "<b>Editar</b> abre el formulario completo del centro. <b>Eliminar</b> hace borrado lógico (queda inactivo, no se pierde).",
-                    side: "left",
-                },
-            },
-            {
                 element: ".sisoc-side-tabs--left",
                 popover: {
                     title: "Pestañas laterales",
@@ -517,7 +527,7 @@
                 popover: {
                     title: "Badge de estado",
                     description:
-                        "Verde = <b>Creado con comisión</b>. Gris = <b>Creado sin comisión</b> (falta darle al menos una comisión para poder inscribir).",
+                        "Dorado = <b>Creado con comisión</b>. Rojo = <b>Creado sin comisión</b> (falta darle al menos una comisión para poder inscribir).",
                 },
             },
             {
@@ -825,49 +835,59 @@
         asistencia: [
             {
                 popover: {
-                    title: "Asistencia de la sesion",
+                    title: "Asistencia de la sesión",
                     description:
-                        "Pantalla para marcar quien estuvo presente y quien no en una sesion concreta de la comision.",
+                        "Pantalla para registrar quién estuvo presente y quién ausente en esta sesión de la comisión.",
                 },
             },
             {
-                element: ".card-header, h1, h2, h3",
+                element: ".asis-title-row",
                 popover: {
-                    title: "Datos de la sesion",
+                    title: "Datos de la sesión",
                     description:
-                        "Fecha y comision de la sesion que estas registrando. Verifica antes de guardar.",
+                        "Comisión, día y fecha de la clase que estás registrando, y el estado de la comisión. Verificá antes de guardar.",
                 },
             },
             {
-                element: "table, .list-group",
+                element: ".asis-metric-grid",
                 popover: {
-                    title: "Nomina",
+                    title: "Resumen en vivo",
                     description:
-                        "Cada fila es un inscripto activo de la comision. Marcas presente/ausente con los controles de la fila.",
+                        "Contadores de <b>presentes</b>, <b>ausentes</b> y <b>sin marcar</b>. Se actualizan a medida que marcás cada fila.",
                 },
             },
             {
-                element: "input[type='checkbox'], input[type='radio'][value='presente'], .form-check-input",
+                element: ".asis-tbl",
                 popover: {
-                    title: "Marcar presente / ausente",
+                    title: "Nómina",
                     description:
-                        "Tildas presentes y dejas en blanco los ausentes. Algunas vistas permiten cargar observaciones por persona.",
+                        "Cada fila es un inscripto aceptado de la comisión, con su apellido y nombre.",
                 },
             },
             {
-                element: "textarea, input[name*='observ']",
+                element: ".asis-row .asis-mark",
                 popover: {
-                    title: "Observaciones (opcional)",
+                    title: "Marcar Presente / Ausente",
                     description:
-                        "Notas justificativas o comentarios sobre la asistencia (ej. ausente con aviso).",
+                        "Por cada persona marcás <b>Presente</b> o <b>Ausente</b>. Son opciones excluyentes: al elegir una se desmarca la otra.",
                 },
             },
             {
-                element: "form button[type='submit']",
+                element: ".asis-mark-all",
+                popover: {
+                    title: "Marcar todos",
+                    description:
+                        "Los recuadros del encabezado marcan a <b>todos</b> los inscriptos como presentes o como ausentes de una sola vez.",
+                    side: "left",
+                },
+            },
+            {
+                element: ".asis-save",
                 popover: {
                     title: "Guardar asistencia",
                     description:
-                        "Persiste la asistencia de toda la sesion. Podes volver a editar mientras la comision no este finalizada.",
+                        "Guarda la asistencia de toda la sesión. Podés volver a editarla mientras la comisión no esté finalizada.",
+                    side: "left",
                 },
             },
         ],
@@ -941,6 +961,117 @@
                 },
             },
         ],
+
+        // ---------- REPORTE DE INSCRIPCIONES Y ASISTENCIA ----------
+        reporte_inscripciones: [
+            {
+                popover: {
+                    title: "Reporte de inscripciones y asistencia",
+                    description:
+                        "Vista consolidada de inscripciones y asistencia. Elegís el alcance y cómo ver los totales, filtrás lo que necesites y podés exportar. Te muestro todo.",
+                },
+            },
+            {
+                element: ".rep-title-row",
+                popover: {
+                    title: "Nivel del reporte",
+                    description:
+                        "El pill <b>Nivel</b> indica el alcance del corte: <b>Centro</b>, <b>Provincia</b> o <b>INET (global)</b>. Se controla desde el filtro \"Nivel\".",
+                    side: "bottom",
+                },
+            },
+            {
+                element: ".rep-filter-toolbar",
+                popover: {
+                    title: "Filtros dinámicos",
+                    description:
+                        "Arrancás solo con <b>Nivel</b> y <b>Agrupar por</b>. Los demás filtros no aparecen hasta que los agregás, así la pantalla no se llena de campos.",
+                },
+            },
+            {
+                element: "#repAddFilter",
+                popover: {
+                    title: "Agregar un filtro",
+                    description:
+                        "Elegí un filtro de la lista (provincia, centro, curso, comisión, fechas, estado, voucher, etc.) y aparece abajo listo para usar. Cada filtro agregado se quita con la <b>×</b>.",
+                    side: "right",
+                },
+            },
+            {
+                element: "#id_nivel",
+                popover: {
+                    title: "Nivel",
+                    description:
+                        "Define el alcance del reporte: <b>Centro</b>, <b>Provincia</b> o <b>INET (global)</b>. Acota qué universo de datos entra.",
+                },
+            },
+            {
+                element: "#id_group_by",
+                popover: {
+                    title: "Agrupar por",
+                    description:
+                        "Define <b>cómo se consolidan las filas</b> del resumen: una fila por <b>centro</b>, <b>provincia</b>, <b>curso/oferta</b>, <b>comisión</b> o <b>mes</b>. No filtra: solo cambia el desglose.",
+                },
+            },
+            {
+                element: ".rep-filter-actions",
+                popover: {
+                    title: "Aplicar, limpiar y exportar resumen",
+                    description:
+                        "<b>Aplicar filtros</b> recalcula el reporte. <b>Limpiar</b> vuelve al estado inicial. <b>Resumen CSV/Excel</b> exportan la tabla agrupada (una fila por grupo).",
+                },
+            },
+            {
+                element: ".rep-metric-grid",
+                popover: {
+                    title: "Métricas del corte",
+                    description:
+                        "Totales de lo filtrado: <b>inscriptos</b>, <b>presentes</b>, <b>ausentes</b> y <b>% de asistencia</b> (sobre presentes + ausentes).",
+                },
+            },
+            {
+                element: "#reporteResumenTabla",
+                popover: {
+                    title: "Resumen por grupo",
+                    description:
+                        "Una fila por grupo (según \"Agrupar por\") con todas las columnas de inscripción y asistencia. El título y la primera columna se renombran según el agrupador elegido.",
+                },
+            },
+            {
+                element: "#reporteQuickSearch",
+                popover: {
+                    title: "Buscar en esta página",
+                    description:
+                        "Filtra <b>en vivo</b> las filas visibles del resumen, sin recargar. Actúa solo sobre lo que ya está en pantalla, no sobre toda la base.",
+                },
+            },
+            {
+                element: "#repDetalleTabla",
+                popover: {
+                    title: "Personas inscriptas (detalle)",
+                    description:
+                        "La nómina real, persona por persona. En pantalla se muestran hasta 250 filas como muestra.",
+                },
+            },
+            {
+                element: ".rep-detalle-export",
+                popover: {
+                    title: "Exportar el detalle completo",
+                    description:
+                        "<b>Detalle CSV/Excel</b> bajan <b>todas</b> las personas (sin el tope de 250 de la pantalla), respetando los filtros aplicados.",
+                    side: "left",
+                },
+            },
+            {
+                element: '[data-vat-tour="help-button"]',
+                popover: {
+                    title: "Volver a ver el tour",
+                    description:
+                        "Desde el botón <b>Tour de ayuda</b> podés relanzar este recorrido cuando quieras.",
+                    side: "left",
+                },
+            },
+        ],
     };
 
     // ------------------------- Deteccion de seccion -------------------------
@@ -961,6 +1092,7 @@
         if (/\/vat\/inscripciones-oferta\/?$/.test(p)) return "inscripcion_oferta_list";
         if (/\/asistencia\/?$/.test(p)) return "asistencia";
         if (/\/vat\/cursos\/.+\/comision\//.test(p)) return "curso_wizard";
+        if (/\/vat\/reportes\/inscripciones-asistencias\/?$/.test(p)) return "reporte_inscripciones";
         return null;
     }
 
@@ -1006,25 +1138,10 @@
     window.SisocVatTour = SisocVatTour;
 
     // --------------------------- Auto-launch ---------------------------
-    document.addEventListener("DOMContentLoaded", function () {
-        var cfg = window.SISOC_VAT_TOUR || {};
-        if (cfg.autoStart === false) return;
-
-        var section = detectSection();
-        var isGeneralEntry = GENERAL_ENTRY_PATH_RE.test(window.location.pathname);
-        var generalSeen = !!safeGet(GENERAL_KEY);
-        var sectionSeen = section ? !!safeGet(SECTION_KEY_PREFIX + section) : true;
-
-        // Tour general: solo en /vat/centros/ y solo la primera vez.
-        if (isGeneralEntry && !generalSeen) {
-            setTimeout(function () { SisocVatTour.runGeneral(); }, 500);
-            return;
-        }
-
-        // Tour de seccion: primera visita de esa pantalla.
-        // (runSection ya espera el panel AJAX si la seccion lo requiere.)
-        if (section && !sectionSeen) {
-            setTimeout(function () { SisocVatTour.runSection(section); }, 500);
-        }
-    });
+    // Deshabilitado a proposito: el tour NO se inicia solo. Se lanza unica y
+    // exclusivamente cuando el usuario abre el boton "Tour de ayuda" y elige
+    // "Tour de esta pantalla" o "Tour general". Antes se auto-lanzaba en la
+    // primera visita de cada seccion (y el general al entrar a /vat/centros/),
+    // lo cual resultaba molesto. La API publica (SisocVatTour) y el control de
+    // "tours vistos" se conservan intactos para los disparadores manuales.
 })();

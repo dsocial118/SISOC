@@ -442,6 +442,94 @@ def get_filter_options(user):
     }
 
 
+DETALLE_HEADERS = [
+    "Documento",
+    "Apellido",
+    "Nombre",
+    "Estado",
+    "Fecha inscripción",
+    "Centro",
+    "Provincia",
+    "Curso/Oferta",
+    "Comisión",
+]
+
+
+def _detalle_export_queryset(user, filtros: ReporteFiltros):
+    """Detalle nominal completo (sin tope de filas) para exportar."""
+    queryset = _apply_filters(_base_queryset_for_user(user), filtros)
+    return (
+        queryset.values(
+            "id",
+            "ciudadano__documento",
+            "ciudadano__apellido",
+            "ciudadano__nombre",
+            "estado",
+            "fecha_inscripcion",
+            "centro_nombre_ref",
+            "provincia_nombre_ref",
+            "unidad_formativa_nombre",
+            "comision_codigo_ref",
+        )
+        .order_by("centro_nombre_ref", "ciudadano__apellido", "ciudadano__nombre")
+    )
+
+
+def _detalle_row_cells(row, estado_labels):
+    fecha = row.get("fecha_inscripcion")
+    estado = row.get("estado") or ""
+    return [
+        row.get("ciudadano__documento") or "",
+        row.get("ciudadano__apellido") or "",
+        row.get("ciudadano__nombre") or "",
+        estado_labels.get(estado, estado),
+        fecha.strftime("%Y-%m-%d %H:%M") if fecha else "",
+        row.get("centro_nombre_ref") or "",
+        row.get("provincia_nombre_ref") or "",
+        row.get("unidad_formativa_nombre") or "",
+        row.get("comision_codigo_ref") or "",
+    ]
+
+
+def export_detalle_to_csv(user, filtros: ReporteFiltros) -> HttpResponse:
+    response = HttpResponse(content_type="text/csv; charset=utf-8")
+    response["Content-Disposition"] = (
+        "attachment; filename=vat_reporte_detalle_inscripciones.csv"
+    )
+    response.write("﻿")  # BOM: Excel respeta los acentos en UTF-8
+    estado_labels = dict(Inscripcion.ESTADO_INSCRIPCION_CHOICES)
+    writer = csv.writer(response)
+    writer.writerow(DETALLE_HEADERS)
+    for row in _detalle_export_queryset(user, filtros).iterator():
+        writer.writerow(_detalle_row_cells(row, estado_labels))
+    return response
+
+
+def export_detalle_to_excel(user, filtros: ReporteFiltros) -> HttpResponse:
+    workbook = Workbook()
+    worksheet = workbook.active
+    worksheet.title = "Detalle inscripciones"
+    worksheet.freeze_panes = "A2"
+    worksheet.append(DETALLE_HEADERS)
+    for cell in worksheet[1]:
+        cell.font = Font(bold=True)
+
+    estado_labels = dict(Inscripcion.ESTADO_INSCRIPCION_CHOICES)
+    for row in _detalle_export_queryset(user, filtros).iterator():
+        worksheet.append(_detalle_row_cells(row, estado_labels))
+
+    output = BytesIO()
+    workbook.save(output)
+    response = HttpResponse(
+        output.getvalue(),
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    )
+    response["Content-Disposition"] = (
+        "attachment; filename=vat_reporte_detalle_inscripciones.xlsx"
+    )
+    return response
+
+
 def export_rows_to_csv(rows, group_by: str) -> HttpResponse:
     response = HttpResponse(content_type="text/csv")
     response["Content-Disposition"] = (
