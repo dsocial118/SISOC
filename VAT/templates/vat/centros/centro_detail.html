@@ -9,6 +9,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Lora:wght@600;700&family=Montserrat:wght@400;500;600;700&display=swap"
           rel="stylesheet" />
+    <link rel="stylesheet" href="{% static 'custom/css/vat_design.css' %}" />
 {% endblock %}
 {% block content %}
     <link rel="stylesheet" href="{% static 'custom/css/centro_detail.css' %}" />
@@ -1711,7 +1712,7 @@
 
     {% if can_edit_centro %}
         <!-- Modal Contacto -->
-        <div class="modal fade"
+        <div class="modal fade vat-ui-modal"
              id="modalContacto"
              tabindex="-1"
              aria-labelledby="modalContactoLabel"
@@ -1740,7 +1741,7 @@
         </div>
 
         <!-- Modal Identificador -->
-        <div class="modal fade"
+        <div class="modal fade vat-ui-modal"
              id="modalIdentificador"
              tabindex="-1"
              aria-labelledby="modalIdentificadorLabel"
@@ -1769,7 +1770,7 @@
         </div>
 
         <!-- Modal Ubicacion -->
-        <div class="modal fade"
+        <div class="modal fade vat-ui-modal"
              id="modalUbicacion"
              tabindex="-1"
              aria-labelledby="modalUbicacionLabel"

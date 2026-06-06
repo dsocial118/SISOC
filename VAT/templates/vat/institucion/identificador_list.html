@@ -5,7 +5,9 @@
 
 {% block content %}
     <link rel="stylesheet" href="{% static 'custom/css/listModerno.css' %}" />
+    <link rel="stylesheet" href="{% static 'custom/css/vat_design.css' %}" />
 
+    <div class="vat-ui">
     {% url 'vat_institucion_identificador_list' as reset_url %}
     {% include 'components/search_bar.html' with titulo="Buscar Identificador" placeholder="Buscar por centro, tipo o valor" help_text="Buscar por centro, tipo o valor" reset_url=reset_url add_url='vat_institucion_identificador_create' add_text='Agregar' query=request.GET.busqueda %}
 
@@ -92,6 +94,7 @@
     </div>
 
     {% include 'components/pagination.html' with is_paginated=is_paginated page_obj=page_obj prev_text='Volver' next_text='Continuar' %}
+    </div>
 
 {% endblock %}
 

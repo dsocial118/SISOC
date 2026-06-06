@@ -375,6 +375,7 @@
 }
 .vat-ui .badge-validacion.validado { background: var(--cgreen); }
 .vat-ui .badge-validacion.no-validado { background: var(--cred); }
+.vat-ui .badge-validacion.pendiente { background: rgba(231, 186, 97, 0.5); border: 1px solid var(--cgold); }
 
 /* ---------- Search bar component (scoped) ---------- */
 .vat-ui .search-bar-container,
@@ -471,3 +472,52 @@
 
 .vat-ui dl,
 .vat-ui .detail-grid { color: var(--ctext); }
+
+/* Bootstrap utility/colour reconciliations inside the dark surface */
+.vat-ui .bg-light { background: rgba(255, 255, 255, 0.05) !important; color: var(--ctext) !important; }
+.vat-ui .card.bg-light { background: var(--cnav) !important; }
+.vat-ui .text-primary { color: #9fcbff !important; }
+.vat-ui .text-dark { color: var(--ctext) !important; }
+.vat-ui hr { border-color: var(--cline); opacity: 1; }
+
+.vat-ui .input-group-text {
+    background: #eef2f8 !important;
+    border: 1px solid rgba(255, 255, 255, 0.4) !important;
+    color: #1f3a93;
+}
+
+.vat-ui .btn-light {
+    background: #ffffff;
+    color: #37465b;
+    border: 1px solid rgba(196, 201, 209, 0.9);
+}
+.vat-ui .btn-outline-secondary {
+    color: #e1e9f5;
+    border-color: rgba(255, 255, 255, 0.4);
+    background: transparent;
+}
+.vat-ui .btn-outline-secondary:hover { background: rgba(255, 255, 255, 0.1); color: #ffffff; }
+
+.vat-ui .form-switch .form-check-input { background-color: rgba(255, 255, 255, 0.12); }
+.vat-ui .form-check-input:checked { background-color: var(--cteal); border-color: var(--cteal); }
+
+.vat-ui .alert-danger {
+    background: rgba(198, 40, 40, 0.18);
+    border-color: rgba(198, 40, 40, 0.5);
+    color: #ffd9d9;
+}
+.vat-ui .alert-light {
+    background: rgba(255, 255, 255, 0.06) !important;
+    border-color: var(--cline) !important;
+    color: var(--ctext);
+}
+.vat-ui .alert-warning {
+    background: rgba(231, 186, 97, 0.18);
+    border-color: rgba(231, 186, 97, 0.5);
+    color: #ffe9bf;
+}
+.vat-ui .alert-warning strong { color: #ffe9bf; }
+
+/* Centered confirm-delete card */
+.vat-ui .card.border-danger { border-color: rgba(198, 40, 40, 0.6) !important; }
+.vat-ui .card.border-danger .card-body { text-align: center; }
