@@ -398,33 +398,37 @@
 }
 
 /* ---------- Modals ---------- */
+/* Los fallbacks son necesarios porque los tokens (--cnav, etc.) estan
+   definidos bajo .vat-ui y el modal puede renderizarse fuera de ese
+   contenedor (p. ej. el panel de cursos), donde la variable no resuelve
+   y el fondo quedaria transparente. */
 .vat-ui-modal .modal-content,
 .modal.vat-ui-modal .modal-content {
-    background: var(--cnav) !important;
-    border: 1px solid var(--cline);
+    background: var(--cnav, #232D4F) !important;
+    border: 1px solid var(--cline, rgba(255, 255, 255, 0.16));
     border-radius: 16px;
-    color: var(--ctext);
+    color: var(--ctext, #F2F2F2);
     overflow: hidden;
     opacity: 1 !important;
 }
 .vat-ui-modal .modal-header {
-    background: var(--cteal) !important;
+    background: var(--cteal, #3B8681) !important;
     border-bottom: 2px solid #ffffff;
     color: #ffffff;
     opacity: 1 !important;
 }
 .vat-ui-modal .modal-header .modal-title { color: #ffffff; font-weight: 700; }
 .vat-ui-modal .modal-header .btn-close { filter: brightness(0) invert(1); opacity: 1; }
-.vat-ui-modal .modal-body { 
-    background: var(--cnav) !important; 
-    color: var(--ctext); 
+.vat-ui-modal .modal-body {
+    background: var(--cnav, #232D4F) !important;
+    color: var(--ctext, #F2F2F2);
     opacity: 1 !important;
 }
 .vat-ui-modal .modal-body label,
 .vat-ui-modal .modal-body .form-label { color: #e7eefb !important; }
-.vat-ui-modal .modal-footer { 
-    background: var(--cnav) !important; 
-    border-top: 1px solid var(--cline); 
+.vat-ui-modal .modal-footer {
+    background: var(--cnav, #232D4F) !important;
+    border-top: 1px solid var(--cline, rgba(255, 255, 255, 0.16));
     opacity: 1 !important;
 }
 .vat-ui-modal .modal-backdrop { opacity: 0.5 !important; }

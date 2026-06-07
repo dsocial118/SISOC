@@ -636,22 +636,23 @@
         .ci-modal .modal-content {
             border-radius: 12px;
             border: 1px solid #2a3a4a;
-            background: #1e2a40;
+            background: #1e2a40 !important;
             color: #f2f7ff;
             overflow: hidden;
+            opacity: 1 !important;
         }
         .ci-modal .modal-header {
             padding: .85rem 1rem;
-            background: #1f3b6d;
+            background: #1f3b6d !important;
             border-bottom: 1px solid #2a3a4a;
         }
         .ci-modal .modal-title { font-size: .98rem; font-weight: 600; color: #ffffff; }
         .ci-modal .btn-close { filter: invert(1); }
-        .ci-modal .modal-body { padding: 1rem; }
+        .ci-modal .modal-body { padding: 1rem; background: #1e2a40 !important; }
         .ci-modal .modal-footer {
             padding: .75rem 1rem;
             border-top: 1px solid #2a3a4a;
-            background: #16243a;
+            background: #16243a !important;
         }
 
         @media (max-width: 991.98px) {
@@ -1236,12 +1237,6 @@
                                             {% if puede_cambiar_inscripcion or puede_eliminar_inscripcion %}
                                                 <td>
                                                     <div class="ci-tbl-actions">
-                                                        {% if puede_cambiar_inscripcion %}
-                                                            <a href="{% url 'vat_inscripcion_update' insc.pk %}"
-                                                               class="sisoc-btn sisoc-btn--edit">
-                                                                <i class="bi bi-pencil-square"></i><span>Editar</span>
-                                                            </a>
-                                                        {% endif %}
                                                         {% if puede_eliminar_inscripcion %}
                                                             <a href="{% url 'vat_inscripcion_delete' insc.pk %}"
                                                                class="sisoc-btn sisoc-btn--delete">
@@ -1893,7 +1888,32 @@
                         {% csrf_token %}
                         <div class="modal-body">
                             <div id="comisionHorarioAlert" class="alert d-none" role="alert"></div>
-                            {{ horario_form.as_p }}
+                            <div class="row g-3">
+                                {% for field in horario_form %}
+                                    {% if field.name == "comision_curso" or field.name == "comision" %}
+                                        <div class="d-none">{{ field }}</div>
+                                    {% elif field.name == "vigente" %}
+                                        <div class="col-md-6">
+                                            <div class="form-check mt-4 pt-2">
+                                                {{ field }}
+                                                <label for="{{ field.id_for_label }}" class="form-check-label fw-bold">{{ field.label }}</label>
+                                            </div>
+                                            {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors.0 }}</div>{% endif %}
+                                            {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+                                        </div>
+                                    {% else %}
+                                        <div class="col-md-6">
+                                            <label for="{{ field.id_for_label }}" class="form-label fw-bold">
+                                                {{ field.label }}
+                                                {% if field.field.required %}<span class="text-danger">*</span>{% endif %}
+                                            </label>
+                                            {{ field }}
+                                            {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors.0 }}</div>{% endif %}
+                                            {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+                                        </div>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
                         </div>
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
