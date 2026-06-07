@@ -400,23 +400,34 @@
 /* ---------- Modals ---------- */
 .vat-ui-modal .modal-content,
 .modal.vat-ui-modal .modal-content {
-    background: var(--cnav);
+    background: var(--cnav) !important;
     border: 1px solid var(--cline);
     border-radius: 16px;
     color: var(--ctext);
     overflow: hidden;
+    opacity: 1 !important;
 }
 .vat-ui-modal .modal-header {
-    background: var(--cteal);
+    background: var(--cteal) !important;
     border-bottom: 2px solid #ffffff;
     color: #ffffff;
+    opacity: 1 !important;
 }
 .vat-ui-modal .modal-header .modal-title { color: #ffffff; font-weight: 700; }
-.vat-ui-modal .modal-header .btn-close { filter: brightness(0) invert(1); }
-.vat-ui-modal .modal-body { background: var(--cnav); color: var(--ctext); }
+.vat-ui-modal .modal-header .btn-close { filter: brightness(0) invert(1); opacity: 1; }
+.vat-ui-modal .modal-body { 
+    background: var(--cnav) !important; 
+    color: var(--ctext); 
+    opacity: 1 !important;
+}
 .vat-ui-modal .modal-body label,
 .vat-ui-modal .modal-body .form-label { color: #e7eefb !important; }
-.vat-ui-modal .modal-footer { background: var(--cnav); border-top: 1px solid var(--cline); }
+.vat-ui-modal .modal-footer { 
+    background: var(--cnav) !important; 
+    border-top: 1px solid var(--cline); 
+    opacity: 1 !important;
+}
+.vat-ui-modal .modal-backdrop { opacity: 0.5 !important; }
 
 /* ---------- Detail metric cards ---------- */
 .vat-ui .vp-hero-actions { display: flex; gap: .5rem; flex-wrap: wrap; }
