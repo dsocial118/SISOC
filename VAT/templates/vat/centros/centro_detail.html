@@ -2319,26 +2319,21 @@
                 return r.text();
             })
             .then(html => {
-                var parser = new DOMParser();
-                var doc = parser.parseFromString(html, 'text/html');
-                var form = doc.querySelector('form');
-                if (form) {
-                    var modal = document.getElementById('modalContacto');
-                    var modalBody = modal.querySelector('.modal-body');
-                    var modalTitle = modal.querySelector('.modal-title');
-                    modalBody.innerHTML = form.outerHTML;
-                    modalTitle.textContent = 'Editar Contacto';
-                    var formElement = modalBody.querySelector('form');
-                    formElement.setAttribute('id', 'formContacto');
-                    formElement.setAttribute('action', `/vat/institucion/contactos/${id}/editar/`);
-                    setupModalForm('formContacto', 'modalContacto');
-                    var bsModal = window.bootstrap ? new bootstrap.Modal(modal) : new window.bootstrap.Modal(modal);
-                    bsModal.show();
-                }
+                // El fragmento contiene SOLO los campos del formulario. Se inyectan
+                // en el .modal-body existente, reutilizando el <form id="formContacto">
+                // envolvente (con su csrf y su boton Guardar). Solo cambia el action.
+                var modal = document.getElementById('modalContacto');
+                var form = document.getElementById('formContacto');
+                var modalBody = modal.querySelector('.modal-body');
+                var modalTitle = modal.querySelector('.modal-title');
+                modalBody.innerHTML = html;
+                modalTitle.textContent = 'Editar Contacto';
+                form.setAttribute('action', `/vat/institucion/contactos/${id}/editar/`);
+                bootstrap.Modal.getOrCreateInstance(modal).show();
             })
             .catch(err => {
-                console.error('Error:', err);
-                alert('Error al cargar el formulario de edición');
+                console.error('Error en editContacto:', err);
+                alert('Error al cargar el formulario de edición: ' + err.message);
             });
         }
         function deleteContacto(id) {

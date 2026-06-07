@@ -145,7 +145,7 @@ class InstitucionContactoUpdateView(LoginRequiredMixin, UpdateView):
 
     def get_template_names(self):
         if _is_ajax_request(self.request):
-            return ['vat/institucion/contacto_form.html']
+            return ['vat/institucion/contacto_form_modal.html']
         return [self.template_name]
 
     def form_valid(self, form):
@@ -335,7 +335,7 @@ class InstitucionUbicacionUpdateView(LoginRequiredMixin, UpdateView):
 
     def get_template_names(self):
         if _is_ajax_request(self.request):
-            return ['vat/institucion/ubicacion_form.html']
+            return ['vat/institucion/ubicacion_form_modal.html']
         return [self.template_name]
 
     def get_success_url(self):
