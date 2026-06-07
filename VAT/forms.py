@@ -2713,6 +2713,23 @@ class ComisionCursoWizardStep1Form(forms.Form):
             }
         ),
     )
+    acepta_lista_espera = forms.BooleanField(
+        label="Acepta lista de espera",
+        required=False,
+        widget=forms.CheckboxInput(attrs={"class": "form-check-input"}),
+    )
+    cupo_lista_espera = forms.IntegerField(
+        label="Cupo de lista de espera",
+        required=False,
+        min_value=1,
+        widget=forms.NumberInput(
+            attrs={
+                "class": "form-control sisoc-wizard-input",
+                "placeholder": "Cantidad de personas que acepta la lista de espera",
+                "min": "1",
+            }
+        ),
+    )
     estado = forms.ChoiceField(
         label="Estado",
         choices=ComisionCurso.ESTADO_COMISION_CURSO_CHOICES,
@@ -2769,6 +2786,14 @@ class ComisionCursoWizardStep1Form(forms.Form):
                 "fecha_fin",
                 "La fecha de finalización debe ser posterior a la fecha de inicio.",
             )
+        if cleaned.get("acepta_lista_espera"):
+            if not cleaned.get("cupo_lista_espera"):
+                self.add_error(
+                    "cupo_lista_espera",
+                    "Definí un cupo para la lista de espera cuando está habilitada.",
+                )
+        else:
+            cleaned["cupo_lista_espera"] = None
         return cleaned
 
 

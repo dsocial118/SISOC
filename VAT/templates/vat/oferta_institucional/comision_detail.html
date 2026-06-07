@@ -632,27 +632,75 @@
         .ci-row-name:hover { color: var(--cblue); }
         .ci-row-sub { display: block; font-size: .76rem; color: var(--cmuted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-        /* ── Modales (mismo estilo navy) ──────────── */
+        /* ── Modales (diseño nuevo navy/teal) ──────────── */
         .ci-modal .modal-content {
-            border-radius: 12px;
-            border: 1px solid #2a3a4a;
-            background: #1e2a40 !important;
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            background: #232D4F !important;
             color: #f2f7ff;
             overflow: hidden;
             opacity: 1 !important;
         }
         .ci-modal .modal-header {
             padding: .85rem 1rem;
-            background: #1f3b6d !important;
-            border-bottom: 1px solid #2a3a4a;
+            background: #3B8681 !important;
+            border-bottom: 2px solid #ffffff;
         }
         .ci-modal .modal-title { font-size: .98rem; font-weight: 600; color: #ffffff; }
-        .ci-modal .btn-close { filter: invert(1); }
-        .ci-modal .modal-body { padding: 1rem; background: #1e2a40 !important; }
+        .ci-modal .btn-close { filter: brightness(0) invert(1); opacity: 1; }
+        .ci-modal .modal-body { padding: 1rem; background: #232D4F !important; }
         .ci-modal .modal-footer {
             padding: .75rem 1rem;
-            border-top: 1px solid #2a3a4a;
-            background: #16243a !important;
+            border-top: 1px solid rgba(255, 255, 255, 0.16);
+            background: #232D4F !important;
+        }
+        /* ── Inputs dentro de los modales (diseño nuevo) ── */
+        .ci-modal .form-label,
+        .ci-modal .modal-body label {
+            color: #e7eefb;
+            font-weight: 600;
+        }
+        .ci-modal .form-control,
+        .ci-modal .form-select,
+        .ci-modal textarea,
+        .ci-modal select,
+        .ci-modal input[type="text"],
+        .ci-modal input[type="email"],
+        .ci-modal input[type="number"],
+        .ci-modal input[type="date"],
+        .ci-modal input[type="time"],
+        .ci-modal input[type="tel"] {
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.55);
+            background: rgba(255, 255, 255, 0.06);
+            color: #ffffff;
+            min-height: 40px;
+            box-shadow: none;
+            color-scheme: dark;
+        }
+        .ci-modal .form-control::placeholder,
+        .ci-modal input::placeholder,
+        .ci-modal textarea::placeholder {
+            color: rgba(255, 255, 255, 0.55);
+        }
+        .ci-modal .form-control:focus,
+        .ci-modal .form-select:focus,
+        .ci-modal textarea:focus,
+        .ci-modal select:focus,
+        .ci-modal input:focus {
+            border-color: #3B8681;
+            background: rgba(59, 134, 129, 0.12);
+            box-shadow: 0 0 0 .18rem rgba(59, 134, 129, 0.25);
+            color: #ffffff;
+            outline: none;
+        }
+        .ci-modal select option {
+            color: #ffffff;
+            background: #1e2e40;
+        }
+        .ci-modal input[type="checkbox"],
+        .ci-modal input[type="radio"] {
+            accent-color: #3B8681;
         }
 
         @media (max-width: 991.98px) {

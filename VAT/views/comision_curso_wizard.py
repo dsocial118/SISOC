@@ -146,6 +146,8 @@ class ComisionCursoWizardView(LoginRequiredMixin, SessionWizardView):
                 curso=self.curso,
                 ubicacion=info["ubicacion"],
                 cupo_total=info["cupo_total"],
+                acepta_lista_espera=info.get("acepta_lista_espera", False),
+                cupo_lista_espera=info.get("cupo_lista_espera"),
                 estado=info["estado"],
                 fecha_inicio=info["fecha_inicio"],
                 fecha_fin=info["fecha_fin"],
