@@ -73,6 +73,13 @@ class InstitucionContactoCreateView(LoginRequiredMixin, CreateView):
             initial["centro"] = centro_id
         return initial
 
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        centro_id = self.request.GET.get("centro")
+        if centro_id:
+            kwargs["lock_centro"] = True
+        return kwargs
+
     def form_valid(self, form):
         messages.success(self.request, "Contacto creado exitosamente.")
         return super().form_valid(form)
@@ -223,6 +230,13 @@ class InstitucionUbicacionCreateView(LoginRequiredMixin, CreateView):
         if centro_id:
             initial["centro"] = centro_id
         return initial
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        centro_id = self.request.GET.get("centro")
+        if centro_id:
+            kwargs["lock_centro"] = True
+        return kwargs
 
     def form_valid(self, form):
         messages.success(self.request, "Ubicación creada exitosamente.")

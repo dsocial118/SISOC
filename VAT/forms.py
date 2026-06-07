@@ -1418,6 +1418,14 @@ class InstitucionContactoForm(forms.ModelForm):
             "es_principal",
         ]
 
+    def __init__(self, *args, **kwargs):
+        lock_centro = kwargs.pop("lock_centro", False)
+        super().__init__(*args, **kwargs)
+        
+        if lock_centro:
+            self.fields["centro"].disabled = True
+            self.fields["centro"].widget.attrs["readonly"] = True
+
     def clean_nombre_contacto(self):
         value = self.cleaned_data.get("nombre_contacto")
         if not value:
@@ -1578,6 +1586,7 @@ class InstitucionUbicacionForm(forms.ModelForm):
     )
 
     def __init__(self, *args, **kwargs):
+        lock_centro = kwargs.pop("lock_centro", False)
         super().__init__(*args, **kwargs)
         modal_dropdown_parent = "#modalUbicacion .modal-body"
         self.fields["centro"].widget.attrs.update(
@@ -1592,6 +1601,10 @@ class InstitucionUbicacionForm(forms.ModelForm):
                 "data-dropdown-parent": modal_dropdown_parent,
             }
         )
+        
+        if lock_centro:
+            self.fields["centro"].disabled = True
+            self.fields["centro"].widget.attrs["readonly"] = True
 
     class Meta:
         model = InstitucionUbicacion
