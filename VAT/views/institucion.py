@@ -97,6 +97,11 @@ class InstitucionContactoUpdateView(LoginRequiredMixin, UpdateView):
     template_name = "vat/institucion/contacto_form.html"
     success_url = reverse_lazy("vat_institucion_contacto_list")
 
+    def get_template_names(self):
+        if self.request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return ['vat/institucion/contacto_form.html']
+        return [self.template_name]
+
     def form_valid(self, form):
         messages.success(self.request, "Contacto actualizado exitosamente.")
         return super().form_valid(form)
@@ -253,6 +258,11 @@ class InstitucionUbicacionUpdateView(LoginRequiredMixin, UpdateView):
     model = InstitucionUbicacion
     form_class = InstitucionUbicacionForm
     template_name = "vat/institucion/ubicacion_form.html"
+
+    def get_template_names(self):
+        if self.request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return ['vat/institucion/ubicacion_form.html']
+        return [self.template_name]
 
     def get_success_url(self):
         return reverse("vat_centro_detail", kwargs={"pk": self.object.centro_id})

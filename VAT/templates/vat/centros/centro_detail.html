@@ -2307,9 +2307,31 @@
     </style>
     <script src="{% static 'custom/js/vat.js' %}"></script>
     <script nonce="{{ request.csp_nonce }}">
-        // Funciones para editar (redirigir a pagina de edicion)
+        // Funciones para editar (ahora cargan contenido en modal)
         function editContacto(id) {
-            window.location.href = `/vat/institucion/contactos/${id}/editar/`;
+            fetch(`/vat/institucion/contactos/${id}/editar/?modal=1`, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(r => r.text())
+            .then(html => {
+                var parser = new DOMParser();
+                var doc = parser.parseFromString(html, 'text/html');
+                var form = doc.querySelector('form');
+                if (form) {
+                    var modal = document.getElementById('modalContacto');
+                    var modalBody = modal.querySelector('.modal-body');
+                    var modalTitle = modal.querySelector('.modal-title');
+                    modalBody.innerHTML = form.outerHTML;
+                    modalTitle.textContent = 'Editar Contacto';
+                    var formElement = modalBody.querySelector('form');
+                    formElement.setAttribute('id', 'formContacto');
+                    formElement.setAttribute('action', `/vat/institucion/contactos/${id}/editar/`);
+                    setupModalForm('formContacto', 'modalContacto');
+                    bootstrap.Modal.getOrCreateInstance(modal).show();
+                }
+            });
         }
         function deleteContacto(id) {
             if (confirm('Eliminar contacto?')) {
@@ -2337,7 +2359,34 @@
             }
         }
         function editUbicacion(id) {
-            window.location.href = `/vat/institucion/ubicaciones/${id}/editar/`;
+            fetch(`/vat/institucion/ubicaciones/${id}/editar/?modal=1`, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(r => r.text())
+            .then(html => {
+                var parser = new DOMParser();
+                var doc = parser.parseFromString(html, 'text/html');
+                var form = doc.querySelector('form');
+                if (form) {
+                    var modal = document.getElementById('modalUbicacion');
+                    var modalBody = modal.querySelector('.modal-body');
+                    var modalTitle = modal.querySelector('.modal-title');
+                    modalBody.innerHTML = form.outerHTML;
+                    modalTitle.textContent = 'Editar Ubicación';
+                    var formElement = modalBody.querySelector('form');
+                    formElement.setAttribute('id', 'formUbicacion');
+                    formElement.setAttribute('action', `/vat/institucion/ubicaciones/${id}/editar/`);
+                    setupModalForm('formUbicacion', 'modalUbicacion');
+                    if (window.initSelect2Elements) {
+                        modal.querySelectorAll('select.select2').forEach(function(select) {
+                            window.initSelect2Elements(select);
+                        });
+                    }
+                    bootstrap.Modal.getOrCreateInstance(modal).show();
+                }
+            });
         }
         function deleteUbicacion(id) {
             if (confirm('Eliminar ubicacion?')) {
