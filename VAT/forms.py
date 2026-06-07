@@ -1421,7 +1421,7 @@ class InstitucionContactoForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         lock_centro = kwargs.pop("lock_centro", False)
         super().__init__(*args, **kwargs)
-        
+
         if lock_centro:
             self.fields["centro"].disabled = True
             self.fields["centro"].widget.attrs["readonly"] = True
@@ -1601,7 +1601,7 @@ class InstitucionUbicacionForm(forms.ModelForm):
                 "data-dropdown-parent": modal_dropdown_parent,
             }
         )
-        
+
         if lock_centro:
             self.fields["centro"].disabled = True
             self.fields["centro"].widget.attrs["readonly"] = True
@@ -1930,7 +1930,6 @@ class ComisionCursoForm(forms.ModelForm):
         ubicacion = cleaned_data.get("ubicacion")
         cupo_total = cleaned_data.get("cupo_total")
         acepta_lista_espera = cleaned_data.get("acepta_lista_espera")
-        cupo_lista_espera = cleaned_data.get("cupo_lista_espera")
         fecha_inicio = cleaned_data.get("fecha_inicio")
         fecha_fin = cleaned_data.get("fecha_fin")
 

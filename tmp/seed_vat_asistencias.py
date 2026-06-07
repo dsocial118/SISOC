@@ -8,7 +8,9 @@ random.seed(123)
 admin = get_user_model().objects.get(username="admin_preview")
 
 created_count = 0
-for inscripcion in Inscripcion.objects.filter(comision_curso__codigo_comision__startswith="DUMI-COM-"):
+for inscripcion in Inscripcion.objects.filter(
+    comision_curso__codigo_comision__startswith="DUMI-COM-"
+):
     sesiones = list(inscripcion.comision_curso.sesiones.all())
     random.shuffle(sesiones)
     for sesion in sesiones[: random.randint(2, 4)]:

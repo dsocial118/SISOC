@@ -72,9 +72,9 @@ def _unique_choice_tuples(*choices_lists):
 
 
 def _base_queryset_for_user(user):
-    centros_ids = filter_centros_queryset_for_user(
-        Centro.objects.all(), user
-    ).values("id")
+    centros_ids = filter_centros_queryset_for_user(Centro.objects.all(), user).values(
+        "id"
+    )
     return (
         Inscripcion.objects.select_related(
             "comision",
@@ -223,7 +223,9 @@ def _apply_filters(queryset, filtros: ReporteFiltros):
     if filtros.estado:
         queryset = queryset.filter(estado=filtros.estado)
     if filtros.usa_voucher.lower() in BOOLEAN_TEXT:
-        queryset = queryset.filter(usa_voucher_ref=BOOLEAN_TEXT[filtros.usa_voucher.lower()])
+        queryset = queryset.filter(
+            usa_voucher_ref=BOOLEAN_TEXT[filtros.usa_voucher.lower()]
+        )
     if filtros.estado_curso:
         queryset = queryset.filter(estado_curso_ref=filtros.estado_curso)
     if filtros.estado_comision:
@@ -337,9 +339,11 @@ def build_reporte_inscripciones_asistencia(user, filtros: ReporteFiltros):
     resumen_ausentes = resumen.get("ausentes") or 0
     resumen_total_asistencia = resumen_presentes + resumen_ausentes
     resumen["porcentaje_asistencia"] = round(
-        (resumen_presentes * 100 / resumen_total_asistencia)
-        if resumen_total_asistencia
-        else 0,
+        (
+            (resumen_presentes * 100 / resumen_total_asistencia)
+            if resumen_total_asistencia
+            else 0
+        ),
         2,
     )
 
@@ -368,8 +372,7 @@ def build_detalle_personas_inscriptas(
             "centro_nombre_ref",
             "comision_codigo_ref",
             "unidad_formativa_nombre",
-        )
-        .order_by("-fecha_inscripcion")[:max_rows]
+        ).order_by("-fecha_inscripcion")[:max_rows]
     )
 
 
@@ -458,21 +461,18 @@ DETALLE_HEADERS = [
 def _detalle_export_queryset(user, filtros: ReporteFiltros):
     """Detalle nominal completo (sin tope de filas) para exportar."""
     queryset = _apply_filters(_base_queryset_for_user(user), filtros)
-    return (
-        queryset.values(
-            "id",
-            "ciudadano__documento",
-            "ciudadano__apellido",
-            "ciudadano__nombre",
-            "estado",
-            "fecha_inscripcion",
-            "centro_nombre_ref",
-            "provincia_nombre_ref",
-            "unidad_formativa_nombre",
-            "comision_codigo_ref",
-        )
-        .order_by("centro_nombre_ref", "ciudadano__apellido", "ciudadano__nombre")
-    )
+    return queryset.values(
+        "id",
+        "ciudadano__documento",
+        "ciudadano__apellido",
+        "ciudadano__nombre",
+        "estado",
+        "fecha_inscripcion",
+        "centro_nombre_ref",
+        "provincia_nombre_ref",
+        "unidad_formativa_nombre",
+        "comision_codigo_ref",
+    ).order_by("centro_nombre_ref", "ciudadano__apellido", "ciudadano__nombre")
 
 
 def _detalle_row_cells(row, estado_labels):

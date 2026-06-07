@@ -1479,9 +1479,7 @@ def test_plan_version_curricular_form_inet_provincia_restringe_campos_estrategic
     assert form.fields["modalidad_cursada"].disabled is True
     assert form.fields["activo"].disabled is True
     assert form.fields["subsector"].widget.__class__.__name__ == "HiddenInput"
-    assert (
-        form.fields["modalidad_cursada"].widget.__class__.__name__ == "HiddenInput"
-    )
+    assert form.fields["modalidad_cursada"].widget.__class__.__name__ == "HiddenInput"
     assert form.fields["activo"].widget.__class__.__name__ == "HiddenInput"
 
 
@@ -1838,7 +1836,9 @@ def test_inet_provincia_visualiza_aviso_de_campos_bloqueados_en_oferta_update(
         localidad=localidad,
     )
     sector = Sector.objects.create(nombre="Sector UI Oferta")
-    modalidad = ModalidadCursada.objects.create(nombre="Modalidad UI Oferta", activo=True)
+    modalidad = ModalidadCursada.objects.create(
+        nombre="Modalidad UI Oferta", activo=True
+    )
     plan = PlanVersionCurricular.objects.create(
         nombre="Plan UI Oferta",
         provincia=provincia,

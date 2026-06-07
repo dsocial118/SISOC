@@ -390,14 +390,14 @@ class ComisionCursoDetailView(LoginRequiredMixin, DetailView):
         )
         total_asistencias = asistencias.count()
         total_presentes = asistencias.filter(presente=True).count()
-        porcentaje_asistencia = round(
-            (total_presentes / total_asistencias) * 100, 0
-        ) if total_asistencias else 0
+        porcentaje_asistencia = (
+            round((total_presentes / total_asistencias) * 100, 0)
+            if total_asistencias
+            else 0
+        )
         asistencia_por_inscripcion = {
             fila["inscripcion"]: fila
-            for fila in AsistenciaSesion.objects.filter(
-                sesion__comision_curso=comision
-            )
+            for fila in AsistenciaSesion.objects.filter(sesion__comision_curso=comision)
             .values("inscripcion")
             .annotate(
                 total=Count("id"),
@@ -414,9 +414,7 @@ class ComisionCursoDetailView(LoginRequiredMixin, DetailView):
                 inscripcion.porcentaje_asistencia = None
         asistencia_por_sesion = {
             fila["sesion"]: fila
-            for fila in AsistenciaSesion.objects.filter(
-                sesion__comision_curso=comision
-            )
+            for fila in AsistenciaSesion.objects.filter(sesion__comision_curso=comision)
             .values("sesion")
             .annotate(
                 presentes=Count("id", filter=Q(presente=True)),

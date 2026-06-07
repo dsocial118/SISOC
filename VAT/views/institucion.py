@@ -117,9 +117,7 @@ class InstitucionContactoCreateView(LoginRequiredMixin, CreateView):
         messages.success(self.request, success_message)
         if _is_ajax_request(self.request):
             self.object = form.save()
-            return _modal_json_success_response(
-                self.get_success_url(), success_message
-            )
+            return _modal_json_success_response(self.get_success_url(), success_message)
         return super().form_valid(form)
 
     def form_invalid(self, form):
@@ -145,7 +143,7 @@ class InstitucionContactoUpdateView(LoginRequiredMixin, UpdateView):
 
     def get_template_names(self):
         if _is_ajax_request(self.request):
-            return ['vat/institucion/contacto_form_modal.html']
+            return ["vat/institucion/contacto_form_modal.html"]
         return [self.template_name]
 
     def form_valid(self, form):
@@ -153,9 +151,7 @@ class InstitucionContactoUpdateView(LoginRequiredMixin, UpdateView):
         messages.success(self.request, success_message)
         if _is_ajax_request(self.request):
             self.object = form.save()
-            return _modal_json_success_response(
-                self.get_success_url(), success_message
-            )
+            return _modal_json_success_response(self.get_success_url(), success_message)
         return super().form_valid(form)
 
     def form_invalid(self, form):
@@ -308,9 +304,7 @@ class InstitucionUbicacionCreateView(LoginRequiredMixin, CreateView):
         messages.success(self.request, success_message)
         if _is_ajax_request(self.request):
             self.object = form.save()
-            return _modal_json_success_response(
-                self.get_success_url(), success_message
-            )
+            return _modal_json_success_response(self.get_success_url(), success_message)
         return super().form_valid(form)
 
     def form_invalid(self, form):
@@ -335,7 +329,7 @@ class InstitucionUbicacionUpdateView(LoginRequiredMixin, UpdateView):
 
     def get_template_names(self):
         if _is_ajax_request(self.request):
-            return ['vat/institucion/ubicacion_form_modal.html']
+            return ["vat/institucion/ubicacion_form_modal.html"]
         return [self.template_name]
 
     def get_success_url(self):
@@ -351,9 +345,7 @@ class InstitucionUbicacionUpdateView(LoginRequiredMixin, UpdateView):
         messages.success(self.request, success_message)
         if _is_ajax_request(self.request):
             self.object = form.save()
-            return _modal_json_success_response(
-                self.get_success_url(), success_message
-            )
+            return _modal_json_success_response(self.get_success_url(), success_message)
         return super().form_valid(form)
 
     def form_invalid(self, form):
