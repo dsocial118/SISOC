@@ -2314,7 +2314,10 @@
                     'X-Requested-With': 'XMLHttpRequest'
                 }
             })
-            .then(r => r.text())
+            .then(r => {
+                if (!r.ok) throw new Error('Error al cargar el contacto');
+                return r.text();
+            })
             .then(html => {
                 var parser = new DOMParser();
                 var doc = parser.parseFromString(html, 'text/html');
@@ -2329,12 +2332,17 @@
                     formElement.setAttribute('id', 'formContacto');
                     formElement.setAttribute('action', `/vat/institucion/contactos/${id}/editar/`);
                     setupModalForm('formContacto', 'modalContacto');
-                    bootstrap.Modal.getOrCreateInstance(modal).show();
+                    var bsModal = window.bootstrap ? new bootstrap.Modal(modal) : new window.bootstrap.Modal(modal);
+                    bsModal.show();
                 }
+            })
+            .catch(err => {
+                console.error('Error:', err);
+                alert('Error al cargar el formulario de edición');
             });
         }
         function deleteContacto(id) {
-            if (confirm('Eliminar contacto?')) {
+            if (confirm('¿Eliminar contacto?')) {
                 fetch(`/vat/institucion/contactos/${id}/eliminar/`, {
                     method: 'POST',
                     headers: {
@@ -2348,7 +2356,7 @@
             window.location.href = `/vat/institucion/identificadores/${id}/editar/`;
         }
         function deleteIdentificador(id) {
-            if (confirm('Eliminar identificador?')) {
+            if (confirm('¿Eliminar identificador?')) {
                 fetch(`/vat/institucion/identificadores/${id}/eliminar/`, {
                     method: 'POST',
                     headers: {
@@ -2359,17 +2367,24 @@
             }
         }
         function editUbicacion(id) {
+            console.log('editUbicacion llamado con id:', id);
             fetch(`/vat/institucion/ubicaciones/${id}/editar/?modal=1`, {
                 headers: {
                     'X-Requested-With': 'XMLHttpRequest'
                 }
             })
-            .then(r => r.text())
+            .then(r => {
+                console.log('Respuesta recibida:', r.status);
+                if (!r.ok) throw new Error('Error al cargar la ubicación');
+                return r.text();
+            })
             .then(html => {
+                console.log('HTML recibido, parseando...');
                 var parser = new DOMParser();
                 var doc = parser.parseFromString(html, 'text/html');
                 var form = doc.querySelector('form');
                 if (form) {
+                    console.log('Formulario encontrado, mostrando modal...');
                     var modal = document.getElementById('modalUbicacion');
                     var modalBody = modal.querySelector('.modal-body');
                     var modalTitle = modal.querySelector('.modal-title');
@@ -2379,13 +2394,22 @@
                     formElement.setAttribute('id', 'formUbicacion');
                     formElement.setAttribute('action', `/vat/institucion/ubicaciones/${id}/editar/`);
                     setupModalForm('formUbicacion', 'modalUbicacion');
+                    setupUbicacionModalSelect2();
                     if (window.initSelect2Elements) {
                         modal.querySelectorAll('select.select2').forEach(function(select) {
                             window.initSelect2Elements(select);
                         });
                     }
-                    bootstrap.Modal.getOrCreateInstance(modal).show();
+                    var bsModal = window.bootstrap ? new bootstrap.Modal(modal) : new window.bootstrap.Modal(modal);
+                    bsModal.show();
+                } else {
+                    console.error('No se encontró el formulario en la respuesta');
+                    alert('Error: No se pudo cargar el formulario');
                 }
+            })
+            .catch(err => {
+                console.error('Error en editUbicacion:', err);
+                alert('Error al cargar el formulario de edición: ' + err.message);
             });
         }
         function deleteUbicacion(id) {
