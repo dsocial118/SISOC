@@ -2362,45 +2362,28 @@
             }
         }
         function editUbicacion(id) {
-            console.log('editUbicacion llamado con id:', id);
             fetch(`/vat/institucion/ubicaciones/${id}/editar/?modal=1`, {
                 headers: {
                     'X-Requested-With': 'XMLHttpRequest'
                 }
             })
             .then(r => {
-                console.log('Respuesta recibida:', r.status);
                 if (!r.ok) throw new Error('Error al cargar la ubicación');
                 return r.text();
             })
             .then(html => {
-                console.log('HTML recibido, parseando...');
-                var parser = new DOMParser();
-                var doc = parser.parseFromString(html, 'text/html');
-                var form = doc.querySelector('form');
-                if (form) {
-                    console.log('Formulario encontrado, mostrando modal...');
-                    var modal = document.getElementById('modalUbicacion');
-                    var modalBody = modal.querySelector('.modal-body');
-                    var modalTitle = modal.querySelector('.modal-title');
-                    modalBody.innerHTML = form.outerHTML;
-                    modalTitle.textContent = 'Editar Ubicación';
-                    var formElement = modalBody.querySelector('form');
-                    formElement.setAttribute('id', 'formUbicacion');
-                    formElement.setAttribute('action', `/vat/institucion/ubicaciones/${id}/editar/`);
-                    setupModalForm('formUbicacion', 'modalUbicacion');
-                    setupUbicacionModalSelect2();
-                    if (window.initSelect2Elements) {
-                        modal.querySelectorAll('select.select2').forEach(function(select) {
-                            window.initSelect2Elements(select);
-                        });
-                    }
-                    var bsModal = window.bootstrap ? new bootstrap.Modal(modal) : new window.bootstrap.Modal(modal);
-                    bsModal.show();
-                } else {
-                    console.error('No se encontró el formulario en la respuesta');
-                    alert('Error: No se pudo cargar el formulario');
-                }
+                // El fragmento contiene SOLO los campos del formulario. Se inyectan
+                // en el .modal-body existente, reutilizando el <form id="formUbicacion">
+                // envolvente (con su csrf y su boton Guardar). Solo cambia el action.
+                var modal = document.getElementById('modalUbicacion');
+                var form = document.getElementById('formUbicacion');
+                var modalBody = modal.querySelector('.modal-body');
+                var modalTitle = modal.querySelector('.modal-title');
+                modalBody.innerHTML = html;
+                modalTitle.textContent = 'Editar Ubicación';
+                form.setAttribute('action', `/vat/institucion/ubicaciones/${id}/editar/`);
+                // setupUbicacionModalSelect2 ya re-inicializa select2 en 'shown.bs.modal'.
+                bootstrap.Modal.getOrCreateInstance(modal).show();
             })
             .catch(err => {
                 console.error('Error en editUbicacion:', err);
@@ -2553,6 +2536,46 @@
             });
         }
         setupUbicacionModalSelect2();
+
+        function setupContactoModalSelect2() {
+            var modal = document.getElementById('modalContacto');
+            if (!modal || modal.dataset.contactoSelect2Bound === '1') return;
+            modal.dataset.contactoSelect2Bound = '1';
+            modal.addEventListener('shown.bs.modal', function() {
+                modal.querySelectorAll('select.select2').forEach(function(select) {
+                    if (window.refreshSelect2Element) {
+                        window.refreshSelect2Element(select);
+                    } else if (window.initSelect2Elements) {
+                        window.initSelect2Elements(select);
+                    }
+                });
+            });
+        }
+        setupContactoModalSelect2();
+
+        // Al reabrir un modal con el boton "Agregar" luego de haber editado, se
+        // restaura el cuerpo y el action originales (modo alta). El <form>
+        // envolvente y su boton Guardar nunca se reemplazan, asi que el submit
+        // handler de setupModalForm sigue activo.
+        function setupModalAddReset(modalId, defaultTitle) {
+            var modal = document.getElementById(modalId);
+            if (!modal) return;
+            var form = modal.querySelector('form');
+            var modalBody = modal.querySelector('.modal-body');
+            var modalTitle = modal.querySelector('.modal-title');
+            if (!form || !modalBody) return;
+            var pristineBody = modalBody.innerHTML;
+            var createAction = form.getAttribute('action');
+            document.querySelectorAll('[data-bs-target="#' + modalId + '"]').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    modalBody.innerHTML = pristineBody;
+                    form.setAttribute('action', createAction);
+                    if (modalTitle) modalTitle.textContent = defaultTitle;
+                });
+            });
+        }
+        setupModalAddReset('modalUbicacion', 'Agregar Ubicacion');
+        setupModalAddReset('modalContacto', 'Agregar Contacto');
 
         var modalComisionCurso = document.getElementById('modalComisionCurso');
         if (modalComisionCurso) {
