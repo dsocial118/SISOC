@@ -198,37 +198,125 @@ def test_detalle_filtro_favorito_paths(mocker):
     assert module.detalle_filtro_favorito(req_bad_sec, 1).status_code == 400
 
 
-def test_load_localidad_y_load_municipios(mocker):
+class _MunicipioQS:
+    """Queryset double para tests de load_municipios."""
+
+    def __init__(self, items):
+        self._items = list(items)
+
+    def order_by(self, *_):
+        return self
+
+    def filter(self, **kw):
+        if "pk__in" in kw:
+            allowed = set(kw["pk__in"])
+            return _MunicipioQS([i for i in self._items if i["id"] in allowed])
+        return self
+
+    def values(self, *_):
+        return list(self._items)
+
+
+def test_load_municipios_no_territorial(mocker):
+    rf = RequestFactory()
+    req = rf.get("/core/municipios", {"provincia_id": "2"})
+    req.user = _auth_user()
+
+    mocker.patch("core.views.get_geography_scope_map", return_value=None)
+    mocker.patch(
+        "core.views.Municipio.objects.filter",
+        return_value=_MunicipioQS(
+            [{"id": 1, "nombre": "M1"}, {"id": 2, "nombre": "M2"}]
+        ),
+    )
+
+    import json
+
+    data = json.loads(module.load_municipios(req).content)
+    assert len(data) == 2
+
+
+def test_load_municipios_territorial_municipios_especificos(mocker):
+    rf = RequestFactory()
+    req = rf.get("/core/municipios", {"provincia_id": "2"})
+    req.user = _auth_user()
+
+    mocker.patch("core.views.get_geography_scope_map", return_value={2: {1}})
+    mocker.patch(
+        "core.views.Municipio.objects.filter",
+        return_value=_MunicipioQS(
+            [{"id": 1, "nombre": "M1"}, {"id": 2, "nombre": "M2"}]
+        ),
+    )
+
+    import json
+
+    data = json.loads(module.load_municipios(req).content)
+    assert len(data) == 1
+    assert data[0]["id"] == 1
+
+
+def test_load_municipios_territorial_provincia_completa(mocker):
+    rf = RequestFactory()
+    req = rf.get("/core/municipios", {"provincia_id": "2"})
+    req.user = _auth_user()
+
+    mocker.patch("core.views.get_geography_scope_map", return_value={2: None})
+    mocker.patch(
+        "core.views.Municipio.objects.filter",
+        return_value=_MunicipioQS(
+            [{"id": 1, "nombre": "M1"}, {"id": 2, "nombre": "M2"}]
+        ),
+    )
+
+    import json
+
+    data = json.loads(module.load_municipios(req).content)
+    assert len(data) == 2
+
+
+def test_load_municipios_territorial_provincia_fuera_scope(mocker):
+    rf = RequestFactory()
+    req = rf.get("/core/municipios", {"provincia_id": "5"})
+    req.user = _auth_user()
+
+    mocker.patch("core.views.get_geography_scope_map", return_value={2: {1}})
+    mocker.patch(
+        "core.views.Municipio.objects.filter",
+        return_value=_MunicipioQS([{"id": 3, "nombre": "M3"}]),
+    )
+    mocker.patch(
+        "core.views.Municipio.objects.none",
+        return_value=_MunicipioQS([]),
+    )
+
+    import json
+
+    data = json.loads(module.load_municipios(req).content)
+    assert data == []
+
+
+def test_load_localidad(mocker):
     rf = RequestFactory()
     user = _auth_user()
 
-    req_m = rf.get("/core/municipios", {"provincia_id": "2"})
-    req_m.user = user
-    mocker.patch(
-        "core.views.Municipio.objects.filter",
-        return_value=SimpleNamespace(
-            values=lambda *_a, **_k: [{"id": 1, "nombre": "M"}]
-        ),
-    )
-    assert module.load_municipios(req_m).status_code == 200
-
-    req_l_none = rf.get("/core/localidades")
-    req_l_none.user = user
+    req_none = rf.get("/core/localidades")
+    req_none.user = user
     mocker.patch(
         "core.views.Localidad.objects.none",
         return_value=SimpleNamespace(values=lambda *_a, **_k: []),
     )
-    assert module.load_localidad(req_l_none).status_code == 200
+    assert module.load_localidad(req_none).status_code == 200
 
-    req_l = rf.get("/core/localidades", {"municipio_id": "9"})
-    req_l.user = user
+    req = rf.get("/core/localidades", {"municipio_id": "9"})
+    req.user = user
     mocker.patch(
         "core.views.Localidad.objects.filter",
         return_value=SimpleNamespace(
             values=lambda *_a, **_k: [{"id": 1, "nombre": "L"}]
         ),
     )
-    assert module.load_localidad(req_l).status_code == 200
+    assert module.load_localidad(req).status_code == 200
 
 
 def test_load_organizaciones_paginado(mocker):

@@ -47,6 +47,7 @@ from core.services.favorite_filters import (
 )
 from organizaciones.models import Organizacion
 from historial.services.historial_service import HistorialService
+from users.territorial_scope import get_geography_scope_map
 
 logger = logging.getLogger(__name__)
 
@@ -62,9 +63,22 @@ CHANGELOG_HEADER_PATTERN = re.compile(
 @login_required
 @require_GET
 def load_municipios(request):
-    """Carga municipios filtrados por provincia."""
+    """Carga municipios filtrados por provincia y por el scope territorial del usuario."""
     provincia_id = request.GET.get("provincia_id")
-    municipios = Municipio.objects.filter(provincia=provincia_id)
+    municipios = Municipio.objects.filter(provincia=provincia_id).order_by("nombre")
+
+    scope_map = get_geography_scope_map(request.user)
+    if scope_map is not None:
+        try:
+            pid = int(provincia_id) if provincia_id else None
+        except (ValueError, TypeError):
+            pid = None
+
+        if pid not in scope_map:
+            municipios = Municipio.objects.none()
+        elif scope_map[pid] is not None:
+            municipios = municipios.filter(pk__in=scope_map[pid])
+
     return JsonResponse(list(municipios.values("id", "nombre")), safe=False)
 
 

@@ -1,6 +1,10 @@
 from django.db.models import Q
 
-from users.territorial_scope import get_effective_scopes, is_territorial_user
+from users.territorial_scope import (
+    get_effective_scopes,
+    get_geography_scope_map,
+    is_territorial_user,
+)
 
 from .models import Dispositivo
 
@@ -46,26 +50,9 @@ def apply_dispositivos_scope(queryset, user):
 def get_dispositivos_geography_scope(user):
     """Mapa ``provincia_id -> set(municipio_id) | None`` para acotar el formulario.
 
-    Devuelve ``None`` si el usuario no tiene restricción territorial (sin usuario,
-    superusuario o usuario no provincial). Cuando el valor de una provincia es
-    ``None`` significa que se permite la provincia completa; un ``set`` limita a
-    esos municipios.
+    Devuelve ``None`` si el usuario no tiene restricción territorial.
     """
-    if not user or not getattr(user, "is_authenticated", False):
-        return None
-    if getattr(user, "is_superuser", False) or not is_territorial_user(user):
-        return None
-
-    restriccion = {}
-    for scope in get_effective_scopes(user):
-        provincia_id = scope.provincia_id
-        if provincia_id in restriccion and restriccion[provincia_id] is None:
-            continue
-        if scope.municipio_id is None:
-            restriccion[provincia_id] = None
-        else:
-            restriccion.setdefault(provincia_id, set()).add(scope.municipio_id)
-    return restriccion
+    return get_geography_scope_map(user)
 
 
 def save_dispositivo_from_form(form, *, instance=None):
