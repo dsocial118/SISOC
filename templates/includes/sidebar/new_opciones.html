@@ -56,8 +56,8 @@
             </ul>
         </li>
     {% endif %}
-    {% if not vat_sidebar_only and request.user|has_any_perm:"auth.role_admin,core.view_montoprestacionprograma" %}
-        <li class="nav-item {% if 'dupla' in pagina_actual or 'equipo-tecnico' in pagina_actual or 'montoprestacion' in pagina_actual or 'cursos-app-mobile' in pagina_actual %}menu-open{% endif %}"
+    {% if not vat_sidebar_only and request.user|has_any_perm:"auth.role_admin,core.view_montoprestacionprograma,pwa.view_catalogoactividadpwa,pwa.manage_catalogoactividadpwa" %}
+        <li class="nav-item {% if 'dupla' in pagina_actual or 'equipo-tecnico' in pagina_actual or 'montoprestacion' in pagina_actual or 'cursos-app-mobile' in pagina_actual or 'actividades-pnud' in pagina_actual %}menu-open{% endif %}"
             style="order: 5">
             <a href="#"
                class="nav-link {% if 'dupla' in pagina_actual or 'equipo-tecnico' in pagina_actual or 'montoprestacion' in pagina_actual %}active{% endif %}">
@@ -92,6 +92,15 @@
                            class="nav-link {% if 'cursos-app-mobile' in pagina_actual %}active{% endif %}">
                             <i class="far fa-dot-circle nav-icon"></i>
                             <p>Cursos App Mobile</p>
+                        </a>
+                    </li>
+                {% endif %}
+                {% if request.user|has_any_perm:"auth.role_admin,pwa.view_catalogoactividadpwa,pwa.manage_catalogoactividadpwa" %}
+                    <li class="nav-item">
+                        <a href="{% url 'actividades_pnud_list' %}"
+                           class="nav-link {% if 'actividades-pnud' in pagina_actual %}active{% endif %}">
+                            <i class="far fa-dot-circle nav-icon"></i>
+                            <p>Actividades PNUD</p>
                         </a>
                     </li>
                 {% endif %}
@@ -151,7 +160,7 @@
                     </a>
                 </li>
             {% endif %}
-            {% if request.user|has_any_perm:"comedores.view_comedor,admisiones.view_admision,acompanamientos.view_informacionrelevante" %}
+            {% if request.user|has_perm_code:"rendicioncuentasmensual.view_rendicioncuentamensual" %}
                 <li class="nav-item">
                     <a href="{% url 'rendicioncuentasmensual_global_list' %}"
                        class="nav-link {% if 'rendicioncuentasmensual' in pagina_actual %}active{% endif %}">
@@ -160,7 +169,7 @@
                     </a>
                 </li>
             {% endif %}
-            {% if not vat_sidebar_only and request.user|has_any_perm:"comedores.view_comedor,admisiones.view_admision,acompanamientos.view_informacionrelevante,expedientespagos.view_expedientepago" or request.user|has_any_perm:"comedores.view_comedor,expedientespagos.view_expedientepago" or request.user|has_any_perm:"comedores.view_comedor,admisiones.view_admision,acompanamientos.view_informacionrelevante" or request.user|has_any_perm:"comedores.view_comedor,admisiones.view_admision,acompanamientos.view_informacionrelevante" %}
+            {% if not vat_sidebar_only and request.user|has_perm_code:"rendicioncuentasfinal.view_rendicioncuentasfinal" %}
                 <li class="nav-item">
                     <a href="{% url 'rendicion_cuentas_final_listar' %}"
                        class="nav-link {% if 'rendicion_cuentas_final/listar' in pagina_actual %}active{% endif %}">

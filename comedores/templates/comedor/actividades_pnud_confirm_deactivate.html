@@ -1,0 +1,26 @@
+{% extends "includes/main.html" %}
+{% block title %}Dar de baja actividad PNUD{% endblock %}
+{% block content %}
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card card-danger">
+                <div class="card-header">
+                    <h3 class="card-title">Dar de baja actividad PNUD</h3>
+                </div>
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="card-body">
+                        <p>
+                            Se marcará como inactiva la actividad
+                            <strong>{{ object.categoria }} - {{ object.actividad }}</strong>.
+                        </p>
+                    </div>
+                    <div class="card-footer d-flex justify-content-between">
+                        <a href="{{ cancel_url }}" class="btn btn-outline-secondary">Cancelar</a>
+                        <button type="submit" class="btn btn-danger">Dar de baja</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock %}

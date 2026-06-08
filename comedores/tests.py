@@ -961,6 +961,39 @@ def test_relevamiento_create_edit_ajax_crea_primer_seguimiento(
 
 
 @pytest.mark.django_db
+def test_relevamiento_create_edit_ajax_primer_seguimiento_reenvia_relevamiento_id(
+    client_logged_fixture, comedor_fixture, monkeypatch
+):
+    """El alta desde el boton de una fila puntual reenvia su relevamiento_id."""
+    relevamiento_mock = mock.Mock()
+    relevamiento_mock.pk = 1002
+    relevamiento_mock.comedor = mock.Mock()
+    relevamiento_mock.comedor.pk = comedor_fixture.pk
+    seguimiento_mock = mock.Mock()
+    seguimiento_mock.id_relevamiento = relevamiento_mock
+    create_mock = mock.Mock(return_value=seguimiento_mock)
+
+    monkeypatch.setattr(
+        "comedores.views.relevamientos.PrimerSeguimientoService.create_asignado",
+        create_mock,
+    )
+
+    url = reverse("relevamiento_create_edit_ajax", kwargs={"pk": comedor_fixture.pk})
+    response = client_logged_fixture.post(
+        url,
+        {
+            "tipo_relevamiento": "primer_seguimiento",
+            "territorial": '{"gestionar_uid":"uid-1","nombre":"Territorial Norte"}',
+            "relevamiento_id": "777",
+        },
+        HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+    )
+
+    assert response.status_code == 200
+    assert create_mock.call_args.kwargs["relevamiento_id"] == "777"
+
+
+@pytest.mark.django_db
 def test_relevamiento_create_edit_ajax_rechaza_segundo_seguimiento(
     client_logged_fixture, comedor_fixture
 ):
@@ -2373,3 +2406,135 @@ def test_comedores_views_exporta_vistas_directas():
     assert NominaDirectaDetailView.__name__ == "NominaDirectaDetailView"
     assert NominaDirectaCreateView.__name__ == "NominaDirectaCreateView"
     assert NominaDirectaDeleteView.__name__ == "NominaDirectaDeleteView"
+
+
+# ---------------------------------------------------------------------------
+# normalize_nomina_tab
+# ---------------------------------------------------------------------------
+
+from comedores.services.comedor_service.impl import normalize_nomina_tab
+from comedores.utils import is_pnud_comedor
+from comedores.services.colaborador_espacio_service import ColaboradorEspacioService
+
+
+@pytest.mark.parametrize(
+    "tab,expected",
+    [
+        ("alimentaria", "alimentaria"),
+        ("actividades", "actividades"),
+        ("todas", "todas"),
+        ("ALIMENTARIA", "alimentaria"),
+        ("  Actividades  ", "actividades"),
+        ("", "alimentaria"),
+        (None, "alimentaria"),
+        ("invalido", "alimentaria"),
+        ("  ", "alimentaria"),
+    ],
+)
+def test_normalize_nomina_tab(tab, expected):
+    assert normalize_nomina_tab(tab) == expected
+
+
+# ---------------------------------------------------------------------------
+# is_pnud_comedor
+# ---------------------------------------------------------------------------
+
+
+def test_is_pnud_comedor_por_id():
+    for pk in (3, 4):
+        comedor = SimpleNamespace(
+            programa_id=pk, programa=SimpleNamespace(nombre="Otro")
+        )
+        assert is_pnud_comedor(comedor) is True
+
+
+def test_is_pnud_comedor_por_nombre():
+    comedor = SimpleNamespace(
+        programa_id=99, programa=SimpleNamespace(nombre="PNUD Prog Especial")
+    )
+    assert is_pnud_comedor(comedor) is True
+
+
+def test_is_pnud_comedor_nombre_case_insensitive():
+    comedor = SimpleNamespace(
+        programa_id=99, programa=SimpleNamespace(nombre="pnud comedores")
+    )
+    assert is_pnud_comedor(comedor) is True
+
+
+def test_is_pnud_comedor_no_pnud():
+    comedor = SimpleNamespace(
+        programa_id=1, programa=SimpleNamespace(nombre="Abordaje comunitario")
+    )
+    assert is_pnud_comedor(comedor) is False
+
+
+def test_is_pnud_comedor_sin_programa():
+    comedor = SimpleNamespace(programa_id=99, programa=None)
+    assert is_pnud_comedor(comedor) is False
+
+
+# ---------------------------------------------------------------------------
+# ColaboradorEspacioService.soft_delete — idempotente y guard de fecha
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.django_db
+def test_soft_delete_idempotente_cuando_colaborador_ya_dado_de_baja(comedor_fixture):
+    """soft_delete retorna success=True si el colaborador ya tiene fecha_baja."""
+    sexo = Sexo.objects.create(sexo="Sin especificar")
+    ciudadano = Ciudadano.objects.create(
+        apellido="Lopez",
+        nombre="Ana",
+        fecha_nacimiento="1990-01-01",
+        tipo_documento=Ciudadano.DOCUMENTO_DNI,
+        documento=40000001,
+        sexo=sexo,
+        cuil_cuit="27400000012",
+    )
+    colaborador = ColaboradorEspacio.objects.create(
+        comedor=comedor_fixture,
+        ciudadano=ciudadano,
+        genero=ColaboradorEspacio.GeneroChoices.MUJER,
+        fecha_alta="2026-01-01",
+        fecha_baja="2026-02-01",
+    )
+    actor = SimpleNamespace(is_authenticated=False)
+
+    result = ColaboradorEspacioService.soft_delete(colaborador=colaborador, actor=actor)
+
+    assert result["success"] is True
+    assert "dado de baja" in result["message"]
+    colaborador.refresh_from_db()
+    assert str(colaborador.fecha_baja) == "2026-02-01"
+
+
+@pytest.mark.django_db
+def test_soft_delete_fecha_baja_no_queda_antes_de_fecha_alta(comedor_fixture):
+    """Si fecha_alta es futura, fecha_baja se ajusta para no quedar antes."""
+    from datetime import date, timedelta
+
+    fecha_alta_futura = date.today() + timedelta(days=5)
+    sexo = Sexo.objects.create(sexo="Sin datos")
+    ciudadano = Ciudadano.objects.create(
+        apellido="Torres",
+        nombre="Juan",
+        fecha_nacimiento="1985-05-15",
+        tipo_documento=Ciudadano.DOCUMENTO_DNI,
+        documento=40000002,
+        sexo=sexo,
+        cuil_cuit="20400000023",
+    )
+    colaborador = ColaboradorEspacio.objects.create(
+        comedor=comedor_fixture,
+        ciudadano=ciudadano,
+        genero=ColaboradorEspacio.GeneroChoices.VARON,
+        fecha_alta=fecha_alta_futura,
+    )
+    actor = SimpleNamespace(is_authenticated=False)
+
+    result = ColaboradorEspacioService.soft_delete(colaborador=colaborador, actor=actor)
+
+    assert result["success"] is True
+    colaborador.refresh_from_db()
+    assert colaborador.fecha_baja == fecha_alta_futura

@@ -1,7 +1,7 @@
 # API Inventory — SISOC
 
 Todas las APIs (internas y externas) están documentadas en la colección única:
-**`SISOC APIs.postman_collection.json`** · 167 requests · 11 carpetas · entorno: `Local.postman_environment.json`
+**`SISOC APIs.postman_collection.json`** · 170 requests · 11 carpetas · entorno: `Local.postman_environment.json`
 
 ---
 
@@ -18,7 +18,7 @@ Todas las APIs (internas y externas) están documentadas en la colección única
 | PWA | 33 | Health, push, colaboradores, actividades, formación, mensajes, nómina (`/api/espacios/`) |
 | Ticketera | 3 | Alta usuario, verificar auth, cambiar password (`/api/ticketera/`) |
 | VAT | 74 | Ver detalle abajo |
-| Integraciones Externas | 9 | GESTIONAR (AppSheet) + RENAPER API externa |
+| Integraciones Externas | 12 | GESTIONAR (AppSheet) + RENAPER API externa |
 | Docs | 2 | OpenAPI schema SISOC + VAT (`/api/schema/`) |
 
 ---
@@ -34,14 +34,16 @@ Todas las APIs (internas y externas) están documentadas en la colección única
 
 ---
 
-## Integraciones Externas (9 requests)
+## Integraciones Externas (12 requests)
 
 | Servicio | Acción | Método | Tabla / Endpoint |
 |----------|--------|--------|-----------------|
-| GESTIONAR (AppSheet) | Find/Crear Comedor | POST | `Comedores` |
+| GESTIONAR (AppSheet) | Find/Crear/Borrar Comedor | POST | `Comedores` |
 | GESTIONAR (AppSheet) | Crear/Eliminar Relevamiento | POST | `RelevamientoComedores` |
 | GESTIONAR (AppSheet) | Crear DiasPrestacion | POST | `DiasPrestacion` |
 | GESTIONAR (AppSheet) | Crear/Eliminar PrimerSeguimiento | POST | `Seguimientos1erVisita` |
+| GESTIONAR (AppSheet) | Crear Referente | POST | `Referentes` |
+| GESTIONAR (AppSheet) | Crear Observación | POST | `Observaciones` |
 | RENAPER | Login | POST | `/auth/login` |
 | RENAPER | Consultar ciudadano por DNI | GET | `/consultarenaper` |
 
@@ -97,10 +99,13 @@ Todas las APIs (internas y externas) están documentadas en la colección única
 | Variable | Descripción |
 |----------|-------------|
 | `gestionarApiKey` | `applicationAccessKey` (secret) |
-| `gestionarComedorAction` | URL tabla `Comedores` |
+| `gestionarComedorAction` | URL tabla `Comedores` (alta y find) |
+| `gestionarBorrarComedorAction` | URL tabla `Comedores` (baja) |
 | `gestionarRelevamientoAction` | URL tabla `RelevamientoComedores` |
 | `gestionarDiasPrestacionAction` | URL tabla `DiasPrestacion` |
 | `gestionarPrimerSeguimientoAction` | URL tabla `Seguimientos1erVisita` |
+| `gestionarReferenteAction` | URL tabla `Referentes` |
+| `gestionarObservacionAction` | URL tabla `Observaciones` |
 
 ### RENAPER (API Externa)
 
@@ -118,7 +123,10 @@ Todas las APIs (internas y externas) están documentadas en la colección única
 | Variable Django | Descripción |
 |----------------|-------------|
 | `GESTIONAR_API_KEY` | Clave de autenticación AppSheet (= `gestionarApiKey`) |
-| `GESTIONAR_API_COMEDORES` | URL acción tabla Comedores |
+| `GESTIONAR_API_COMEDORES` | URL acción tabla Comedores (alta) |
+| `GESTIONAR_API_BORRAR_COMEDOR` | URL acción tabla Comedores (baja) |
+| `GESTIONAR_API_CREAR_REFERENTE` | URL acción tabla Referentes |
+| `GESTIONAR_API_CREAR_OBSERVACION` | URL acción tabla Observaciones |
 | `GESTIONAR_API_CREAR_PRIMER_SEGUIMIENTO` | URL acción tabla Seguimientos1erVisita |
 | `GESTIONAR_API_BORRAR_PRIMER_SEGUIMIENTO` | URL acción tabla Seguimientos1erVisita (mismo endpoint) |
 | `RENAPER_API_URL` | URL base API RENAPER (= `renaperBaseUrl`) |

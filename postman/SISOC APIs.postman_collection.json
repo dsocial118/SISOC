@@ -6835,6 +6835,41 @@
                     "description": "Da de alta un comedor en GESTIONAR (`Action: Add`).\n\n**Campos clave:**\n- `ComedorID` / `ID_Sisoc`: PK del comedor en SISOC.\n- `TipoComedor`: `\"Comedor\"` o `\"Merendero\"` u otros valores del catalogo.\n- `Imagen`: URL publica a la imagen del comedor (puede quedar vacia)."
                   },
                   "response": []
+                },
+                {
+                  "name": "Borrar Comedor",
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "applicationAccessKey",
+                        "value": "{{gestionarApiKey}}",
+                        "type": "text"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json",
+                        "type": "text"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n    \"Action\": \"Delete\",\n    \"Properties\": {\n        \"Locale\": \"es-ES\"\n    },\n    \"Rows\": [\n        {\n            \"ComedorID\": \"10\"\n        }\n    ]\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    },
+                    "url": {
+                      "raw": "{{gestionarBorrarComedorAction}}",
+                      "host": [
+                        "{{gestionarBorrarComedorAction}}"
+                      ]
+                    },
+                    "description": "Baja de Comedor en GESTIONAR (`Action: Delete`). Disparado por `AsyncRemoveComedorToGestionar` (`comedores/tasks.py`) en el signal `pre_delete` del modelo Comedor. El `ComedorID` se envia como string. Endpoint configurado en `GESTIONAR_API_BORRAR_COMEDOR`."
+                  },
+                  "response": []
                 }
               ]
             },
@@ -7018,6 +7053,86 @@
                       ]
                     },
                     "description": "Baja de PrimerSeguimiento en GESTIONAR. Misma URL que el alta; solo cambia `Action: Delete`.\n\nDisparada por `AsyncRemovePrimerSeguimientoToGestionar` (`relevamientos/tasks.py`).\n\nEl payload usa `gestionar_id` (el string corto que GESTIONAR devolvio al momento del alta), NO la PK de SISOC. Si `gestionar_id` esta vacio, la tarea no realiza la llamada."
+                  },
+                  "response": []
+                }
+              ]
+            },
+            {
+              "name": "Referentes",
+              "item": [
+                {
+                  "name": "Crear Referente",
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "applicationAccessKey",
+                        "value": "{{gestionarApiKey}}",
+                        "type": "text"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json",
+                        "type": "text"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n    \"Action\": \"Add\",\n    \"Properties\": {\n        \"Locale\": \"es-ES\"\n    },\n    \"Rows\": [\n        {\n            \"documento\": \"12345678\",\n            \"nombre\": \"Juan\",\n            \"apellido\": \"Perez\",\n            \"mail\": \"juan@example.com\",\n            \"celular\": \"1123456789\"\n        }\n    ]\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    },
+                    "url": {
+                      "raw": "{{gestionarReferenteAction}}",
+                      "host": [
+                        "{{gestionarReferenteAction}}"
+                      ]
+                    },
+                    "description": "Alta de Referente en GESTIONAR (`Action: Add`). Disparado por `AsyncSendReferenteToGestionar` (`comedores/tasks.py`) en el signal `post_save` del modelo Referente. Solo se envia si `documento` no esta vacio. Endpoint configurado en `GESTIONAR_API_CREAR_REFERENTE`."
+                  },
+                  "response": []
+                }
+              ]
+            },
+            {
+              "name": "Observaciones",
+              "item": [
+                {
+                  "name": "Crear Observacion",
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "applicationAccessKey",
+                        "value": "{{gestionarApiKey}}",
+                        "type": "text"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json",
+                        "type": "text"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n    \"Action\": \"Add\",\n    \"Properties\": {\n        \"Locale\": \"es-ES\"\n    },\n    \"Rows\": [\n        {\n            \"Comedor_Id\": 10,\n            \"OBSERVACION\": \"Texto de la observacion\",\n            \"Adjunto\": \"\",\n            \"Usr\": \"\",\n            \"FechaHora\": \"04/06/2026 10:00\"\n        }\n    ]\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    },
+                    "url": {
+                      "raw": "{{gestionarObservacionAction}}",
+                      "host": [
+                        "{{gestionarObservacionAction}}"
+                      ]
+                    },
+                    "description": "Alta de Observacion en GESTIONAR (`Action: Add`). Disparado por `AsyncSendObservacionToGestionar` (`comedores/tasks.py`) en el signal `post_save` del modelo Observacion. `FechaHora` se formatea como DD/MM/YYYY HH:MM. Endpoint configurado en `GESTIONAR_API_CREAR_OBSERVACION`."
                   },
                   "response": []
                 }
