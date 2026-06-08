@@ -52,5 +52,7 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(assign_rendicion_final_permission, revoke_rendicion_final_permission),
+        migrations.RunPython(
+            assign_rendicion_final_permission, revoke_rendicion_final_permission
+        ),
     ]
