@@ -1401,15 +1401,17 @@
                 <div class="card-header d-flex align-items-center justify-content-between">
                     <h5 class="mb-0">Primer seguimiento</h5>
                     <div class="d-flex gap-2">
-                        {% if seguimiento.sincronizado_gestionar %}
-                            <span class="badge bg-success" title="El primer seguimiento se sincronizó con GESTIONAR">Sincronizado con GESTIONAR</span>
-                        {% else %}
-                            <span class="badge bg-danger" title="Todavía no se sincronizó con GESTIONAR">No sincronizado con GESTIONAR</span>
-                        {% endif %}
                         {% if seguimiento.estado == "Completo" %}
-                            <span class="badge bg-success">Completo</span>
+                            <span class="badge bg-success">Completado</span>
                         {% else %}
-                            <span class="badge bg-danger">No completo</span>
+                            <span class="badge bg-secondary">No completado</span>
+                        {% endif %}
+                        {% if seguimiento.sincronizado_gestionar %}
+                            <span class="badge bg-success"
+                                  title="El primer seguimiento se sincronizó con GESTIONAR">Sincronizado con GESTIONAR</span>
+                        {% else %}
+                            <span class="badge bg-secondary"
+                                  title="Todavía no se sincronizó con GESTIONAR">Pendiente sincronización</span>
                         {% endif %}
                     </div>
                 </div>
