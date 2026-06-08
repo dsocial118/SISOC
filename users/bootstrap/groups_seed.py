@@ -305,6 +305,10 @@ LISTADO_DEFINED_GROUPS = (
             "VAT.view_planversioncurricular",
             "VAT.add_planversioncurricular",
             "VAT.change_planversioncurricular",
+            "VAT.view_ofertainstitucional",
+            "VAT.change_ofertainstitucional",
+            "VAT.view_comision",
+            "VAT.change_comision",
         ),
     ),
     BootstrapGroupSeed(

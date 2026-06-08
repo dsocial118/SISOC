@@ -1248,6 +1248,18 @@
                                     <i class="bi bi-plus-lg"></i><span>Agregar inscripto</span>
                                 </button>
                             {% endif %}
+                            {% if export_preinscriptos_url %}
+                                <a href="{{ export_preinscriptos_url }}"
+                                   class="sisoc-btn sisoc-btn--ghost">
+                                    <i class="bi bi-file-earmark-excel"></i><span>Descargar preinscriptos</span>
+                                </a>
+                            {% endif %}
+                            {% if export_inscriptos_url %}
+                                <a href="{{ export_inscriptos_url }}"
+                                   class="sisoc-btn sisoc-btn--ghost">
+                                    <i class="bi bi-file-earmark-excel"></i><span>Descargar inscriptos</span>
+                                </a>
+                            {% endif %}
                         </div>
                         <div class="ci-tbl-scroll">
                             <table class="ci-tbl">

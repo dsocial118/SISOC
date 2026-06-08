@@ -900,7 +900,7 @@
 {% endblock %}
 
 {% block customJS %}
-    <script>
+    <script nonce="{{ request.csp_nonce }}">
         document.addEventListener("DOMContentLoaded", function () {
             var quickSearch = document.getElementById("reporteQuickSearch");
             var quickCounter = document.getElementById("reporteQuickCounter");
@@ -934,7 +934,7 @@
         });
     </script>
 
-    <script>
+    <script nonce="{{ request.csp_nonce }}">
         (function () {
             var card = document.getElementById("repDetalleTabla");
             if (!card) return;

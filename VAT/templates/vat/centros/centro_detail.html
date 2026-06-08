@@ -2574,8 +2574,10 @@
                 });
             });
         }
-        setupModalAddReset('modalUbicacion', 'Agregar Ubicacion');
-        setupModalAddReset('modalContacto', 'Agregar Contacto');
+        {% if can_edit_centro %}
+            setupModalAddReset('modalUbicacion', 'Agregar Ubicacion');
+            setupModalAddReset('modalContacto', 'Agregar Contacto');
+        {% endif %}
 
         var modalComisionCurso = document.getElementById('modalComisionCurso');
         if (modalComisionCurso) {

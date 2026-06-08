@@ -251,9 +251,17 @@ def _row_annotations():
         ),
         "completados": Count("id", filter=Q(estado="completada"), distinct=True),
         "abandonados": Count("id", filter=Q(estado="abandonada"), distinct=True),
-        "registros_asistencia": Count("asistencias__id"),
-        "presentes": Count("asistencias__id", filter=Q(asistencias__presente=True)),
-        "ausentes": Count("asistencias__id", filter=Q(asistencias__presente=False)),
+        "registros_asistencia": Count("asistencias__id", distinct=True),
+        "presentes": Count(
+            "asistencias__id",
+            filter=Q(asistencias__presente=True),
+            distinct=True,
+        ),
+        "ausentes": Count(
+            "asistencias__id",
+            filter=Q(asistencias__presente=False),
+            distinct=True,
+        ),
         "sesiones_programadas": Count(
             "comision_curso__sesiones__id",
             filter=Q(comision_curso__sesiones__estado="programada"),

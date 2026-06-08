@@ -33,12 +33,14 @@ def _grant_referente_role(user):
 
 
 def _build_comision_curso(*, centro, localidad, modalidad, suffix, usa_voucher=False):
-    ubicacion = InstitucionUbicacion.objects.create(
+    ubicacion, _ = InstitucionUbicacion.objects.get_or_create(
         centro=centro,
         localidad=localidad,
         rol_ubicacion="sede_principal",
-        domicilio=f"Domicilio {suffix}",
-        es_principal=True,
+        defaults={
+            "domicilio": f"Domicilio {suffix}",
+            "es_principal": True,
+        },
     )
     curso = Curso.objects.create(
         centro=centro,

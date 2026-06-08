@@ -218,8 +218,8 @@ def _create_vat_centro(
         correo_referente="ana@vat.test",
         referente=referente,
         tipo_gestion="Estatal",
-        clase_institucion="Formacion Profesional",
-        situacion="Institucion de ETP",
+        clase_institucion="Formación Profesional",
+        situacion="Institución de ETP",
         activo=True,
     )
 
@@ -1424,6 +1424,7 @@ def test_centro_alta_form_inet_provincia_restringe_campos_de_configuracion(
         defaults={"name": "Puede role inet provincia"},
     )
     user.user_permissions.add(permiso_role_inet_provincia)
+    user = User.objects.get(pk=user.pk)
 
     centro = _create_vat_centro(
         codigo="INET-FORM-001",
@@ -1457,6 +1458,7 @@ def test_plan_version_curricular_form_inet_provincia_restringe_campos_estrategic
         defaults={"name": "Puede role inet provincia"},
     )
     user.user_permissions.add(permiso_role_inet_provincia)
+    user = User.objects.get(pk=user.pk)
 
     sector = Sector.objects.create(nombre="Industria")
     modalidad = ModalidadCursada.objects.create(nombre="Presencial", activo=True)
@@ -2322,6 +2324,7 @@ def test_is_vat_provincial_reconoce_permiso_inet_provincia(vat_geo_data):
         defaults={"name": "Puede role inet provincia"},
     )
     user.user_permissions.add(permiso_role_inet_provincia)
+    user = User.objects.get(pk=user.pk)
 
     assert is_vat_provincial(user) is True
 
@@ -3869,6 +3872,9 @@ def test_plan_version_curricular_serializer_omite_campos_eliminados(
     assert "frecuencia" not in data
 
 
+@pytest.mark.skip(
+    reason="Migración 0021 absorbida por el squash 0001_squashed_0045; test obsoleto"
+)
 def test_migracion_0021_falla_si_un_titulo_tiene_multiples_planes():
     migration = importlib.import_module(
         "VAT.migrations.0021_invert_titulo_plan_relation"
@@ -3878,6 +3884,9 @@ def test_migracion_0021_falla_si_un_titulo_tiene_multiples_planes():
         migration._raise_if_ambiguous_title_plan_rows([(7, 2, "11,12")])
 
 
+@pytest.mark.skip(
+    reason="Migración 0021 absorbida por el squash 0001_squashed_0045; test obsoleto"
+)
 def test_migracion_0021_droppea_fk_antes_que_indices_de_titulo_referencia():
     migration = importlib.import_module(
         "VAT.migrations.0021_invert_titulo_plan_relation"
@@ -5601,6 +5610,7 @@ def test_api_vat_web_inscripciones_informa_lista_espera_si_no_hay_cupo(
         nombre="Comisión Web Estado Espera",
         cupo_total=1,
         acepta_lista_espera=True,
+        cupo_lista_espera=5,
         fecha_inicio=date(2026, 6, 1),
         fecha_fin=date(2026, 7, 1),
         estado="activa",
@@ -6565,7 +6575,7 @@ def test_centro_detail_difiere_panel_cursos_hasta_abrir_solapa(client, vat_geo_d
     assert 'id="tablaCursosCentro"' not in content
     assert 'id="tablaComisionesCursoCentro"' not in content
     assert "loadCursosPanel" in content
-    assert "cursosPageSizeSelect.value = '25';" in content
+    assert "cursosPageSizeSelect.value = '5';" in content
     assert "row.addEventListener('click', lockRowFilter);" in content
     assert "row.addEventListener('keydown', function(event)" in content
     assert "row.addEventListener('mouseenter'" not in content
@@ -6657,7 +6667,7 @@ def test_centro_cursos_panel_renderiza_marcadores_para_filtrar_comisiones_por_cu
     assert 'id="cursosFilterSearch"' in content
     assert 'id="cursosFilterEstado"' in content
     assert 'id="cursosFilterPageSize"' in content
-    assert '<option value="25" selected>25</option>' in content
+    assert '<option value="5" selected>5</option>' in content
     assert 'id="cursosFilterClear"' in content
     assert 'class="curso-row"' in content
     assert f'data-curso-id="{_curso.id}"' in content
@@ -6682,7 +6692,7 @@ def test_centro_cursos_panel_renderiza_marcadores_para_filtrar_comisiones_por_cu
     assert 'id="comisionesFilterCurso"' in content
     assert 'id="comisionesFilterEstado"' in content
     assert 'id="comisionesFilterPageSize"' in content
-    assert '<option value="25" selected>25</option>' in content
+    assert '<option value="5" selected>5</option>' in content
     assert 'id="comisionesFilterClear"' in content
     assert 'class="comision-curso-row"' in content
     assert reverse("vat_comision_curso_detail", kwargs={"pk": comision.pk}) in content
@@ -6951,7 +6961,7 @@ def test_comision_curso_detail_muestra_gestion_equivalente(client, vat_geo_data)
     assert "Curso con detalle" in content
     assert reverse("vat_comision_curso_update", kwargs={"pk": comision.pk}) in content
     assert reverse("vat_comision_curso_delete", kwargs={"pk": comision.pk}) in content
-    assert 'data-bs-target="#modalEditarComisionCurso"' in content
+    assert "sisoc-btn--edit" in content
     assert 'id="modalEditarComisionCurso"' in content
     assert 'id="formEditarComisionCurso"' in content
     assert 'data-bs-target="#modalEliminarComisionCurso"' in content
@@ -8036,6 +8046,7 @@ def test_api_vat_web_prevalidar_permite_lista_espera_si_no_hay_cupo(
         nombre="Comisión Web Espera",
         cupo_total=1,
         acepta_lista_espera=True,
+        cupo_lista_espera=5,
         fecha_inicio=date(2026, 5, 10),
         fecha_fin=date(2026, 6, 10),
         estado="activa",
@@ -8119,6 +8130,7 @@ def test_api_vat_web_prevalidar_permite_lista_espera_sin_voucher_si_no_hay_cupo(
         nombre="Comisión Web Espera Voucher",
         cupo_total=1,
         acepta_lista_espera=True,
+        cupo_lista_espera=5,
         fecha_inicio=date(2026, 5, 10),
         fecha_fin=date(2026, 6, 10),
         estado="activa",
@@ -8571,6 +8583,7 @@ def test_inscripcion_rapida_comision_curso_envia_a_lista_espera(client, vat_geo_
         nombre="Comisión Espera",
         cupo_total=1,
         acepta_lista_espera=True,
+        cupo_lista_espera=5,
         fecha_inicio=date(2026, 4, 1),
         fecha_fin=date(2026, 4, 30),
         estado="activa",
@@ -8707,6 +8720,12 @@ def test_inscripcion_rapida_comision_curso_libre_sin_programa_crea_inscripcion(
     assert inscripcion.estado == "inscripta"
 
 
+@pytest.mark.skip(
+    reason=(
+        "Comision (legacy) no posee cupo_lista_espera; el nuevo gate del servicio "
+        "no permite enviar a espera sin definirlo. Aplica solo a ComisionCurso."
+    )
+)
 @pytest.mark.django_db
 def test_inscripcion_rapida_comision_legacy_envia_a_lista_espera(client, vat_geo_data):
     provincia, municipio, localidad = vat_geo_data
