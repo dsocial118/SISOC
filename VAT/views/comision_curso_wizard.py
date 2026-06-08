@@ -24,6 +24,7 @@ from VAT.models import (
     Curso,
 )
 from VAT.services.access_scope import can_user_edit_centro
+from VAT.services.sesion_comision_service.impl import SesionComisionService
 
 
 WIZARD_FORMS = [
@@ -145,26 +146,31 @@ class ComisionCursoWizardView(LoginRequiredMixin, SessionWizardView):
                 curso=self.curso,
                 ubicacion=info["ubicacion"],
                 cupo_total=info["cupo_total"],
+                acepta_lista_espera=info.get("acepta_lista_espera", False),
+                cupo_lista_espera=info.get("cupo_lista_espera"),
                 estado=info["estado"],
                 fecha_inicio=info["fecha_inicio"],
                 fecha_fin=info["fecha_fin"],
                 observaciones=info.get("observaciones") or "",
             )
+            total_sesiones = 0
             for horario_form in horarios_formset.forms:
                 data = horario_form.cleaned_data
                 if not data or data.get("DELETE"):
                     continue
-                ComisionHorario.objects.create(
+                horario = ComisionHorario.objects.create(
                     comision_curso=comision,
                     dia_semana=data["dia_semana"],
                     hora_desde=data["hora_desde"],
                     hora_hasta=data["hora_hasta"],
                     vigente=data["vigente"] == "1",
                 )
+                total_sesiones += SesionComisionService.generar_para_horario(horario)
 
         messages.success(
             self.request,
-            f"Comisión creada con {comision.horarios.count()} horario(s).",
+            f"Comisión creada con {comision.horarios.count()} horario(s) "
+            f"y {total_sesiones} sesión(es).",
         )
         base = reverse("vat_centro_detail", kwargs={"pk": self.curso.centro_id})
         return redirect(f"{base}?refresh=1#cursos")

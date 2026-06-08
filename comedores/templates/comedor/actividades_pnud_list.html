@@ -1,0 +1,96 @@
+{% extends "includes/main.html" %}
+{% load static %}
+{% block title %}Actividades PNUD{% endblock %}
+{% block breadcrumb %}
+    <ol class="breadcrumb float-sm-right">
+        <li class="breadcrumb-item active">Actividades PNUD</li>
+    </ol>
+{% endblock %}
+{% block content %}
+    <link rel="stylesheet" href="{% static 'custom/css/listModerno.css' %}" />
+    <link rel="stylesheet" href="{% static 'custom/css/actividadesPnud.css' %}" />
+    <div class="action-bar mb-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <div class="actividades-pnud-filter" aria-label="Filtro por estado">
+            <a href="{% url 'actividades_pnud_list' %}?estado=todas{% if busqueda %}&q={{ busqueda|urlencode }}{% endif %}"
+               class="btn {% if estado_filtro == 'todas' %}btn-primary{% else %}btn-outline-primary{% endif %}">Todas</a>
+            <a href="{% url 'actividades_pnud_list' %}?estado=activa{% if busqueda %}&q={{ busqueda|urlencode }}{% endif %}"
+               class="btn {% if estado_filtro == 'activa' %}btn-primary{% else %}btn-outline-primary{% endif %}">Activas</a>
+            <a href="{% url 'actividades_pnud_list' %}?estado=inactiva{% if busqueda %}&q={{ busqueda|urlencode }}{% endif %}"
+               class="btn {% if estado_filtro == 'inactiva' %}btn-primary{% else %}btn-outline-primary{% endif %}">Inactivas</a>
+        </div>
+        <form method="get" class="actividades-pnud-search" role="search">
+            {% if estado_filtro %}<input type="hidden" name="estado" value="{{ estado_filtro }}" />{% endif %}
+            <input type="search"
+                   name="q"
+                   value="{{ busqueda }}"
+                   class="form-control"
+                   placeholder="Buscar por categoria o actividad" />
+            <button type="submit" class="btn btn-outline-primary">Buscar</button>
+            {% if busqueda %}
+                <a href="{% url 'actividades_pnud_list' %}?estado={{ estado_filtro }}"
+                   class="btn btn-outline-secondary">Limpiar</a>
+            {% endif %}
+        </form>
+        {% if can_manage_actividades_pnud %}
+            <a href="{% url 'actividades_pnud_crear' %}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Agregar
+            </a>
+        {% endif %}
+    </div>
+    <div class="row mt-3 max-width-100">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-striped projects mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Categoría</th>
+                                    <th>Actividad</th>
+                                    <th>Estado</th>
+                                    <th style="width: 220px">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for actividad in actividades %}
+                                    <tr>
+                                        <td>{{ actividad.categoria }}</td>
+                                        <td>{{ actividad.actividad }}</td>
+                                        <td>
+                                            {% if actividad.activo %}
+                                                <span class="actividades-pnud-status actividades-pnud-status--active">Activo</span>
+                                            {% else %}
+                                                <span class="actividades-pnud-status actividades-pnud-status--inactive">Inactivo</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if can_manage_actividades_pnud %}
+                                                <div class="actividades-pnud-actions">
+                                                    <a href="{% url 'actividades_pnud_editar' actividad.pk %}"
+                                                       class="btn btn-sm btn-warning">Editar</a>
+                                                    {% if actividad.activo %}
+                                                        <a href="{% url 'actividades_pnud_baja' actividad.pk %}"
+                                                           class="btn btn-sm btn-danger">Dar de baja</a>
+                                                    {% endif %}
+                                                </div>
+                                            {% else %}
+                                                -
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                {% empty %}
+                                    <tr>
+                                        <td colspan="4" class="text-center">No hay actividades cargadas.</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="pagination-container">
+        {% include 'components/pagination.html' with is_paginated=is_paginated page_obj=page_obj prev_text='Volver' next_text='Continuar' %}
+    </div>
+{% endblock %}

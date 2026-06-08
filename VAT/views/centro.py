@@ -691,6 +691,7 @@ class CentroCreateView(LoginRequiredMixin, CreateView):
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
         creator_provincia = self._get_creator_provincia()
+        kwargs["actor"] = self.request.user
         kwargs["hide_provincia"] = self._should_hide_provincia_field()
         kwargs["provincia_inicial"] = creator_provincia
 
@@ -811,6 +812,7 @@ class CentroUpdateView(LoginRequiredMixin, UpdateView):
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
+        kwargs["actor"] = self.request.user
         kwargs["hide_provincia"] = True
         kwargs["provincia_inicial"] = self.object.provincia
 

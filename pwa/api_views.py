@@ -86,7 +86,15 @@ from comedores.models import (
 )
 from comedores.services.colaborador_espacio_service import ColaboradorEspacioService
 from comedores.services.comedor_service.impl import ComedorService
+from comedores.utils import is_pnud_comedor
 from ciudadanos.models import Ciudadano
+
+
+def _get_pnud_scoped_comedor_or_404(comedor_id, user):
+    comedor = ComedorService.get_scoped_comedor_or_404(comedor_id, user)
+    if not is_pnud_comedor(comedor):
+        raise Http404("Modulo de actividades no disponible para este programa.")
+    return comedor
 
 
 class PwaHealthViewSet(viewsets.ViewSet):
@@ -526,6 +534,7 @@ class CatalogoActividadPWAViewSet(viewsets.ViewSet):
     permission_classes = [IsAuthenticated, IsPWARepresentativeForComedor]
 
     def list(self, request, comedor_id=None):
+        _get_pnud_scoped_comedor_or_404(comedor_id, request.user)
         queryset = CatalogoActividadPWA.objects.filter(activo=True).order_by(
             "categoria", "actividad", "id"
         )
@@ -533,6 +542,7 @@ class CatalogoActividadPWAViewSet(viewsets.ViewSet):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def dias(self, request, comedor_id=None):
+        _get_pnud_scoped_comedor_or_404(comedor_id, request.user)
         queryset = Dia.objects.order_by("id")
         serializer = DiaSerializer(queryset, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -547,6 +557,7 @@ class ActividadEspacioPWAViewSet(viewsets.ViewSet):
 
     def _get_queryset(self):
         comedor_id = self.kwargs["comedor_id"]
+        _get_pnud_scoped_comedor_or_404(comedor_id, self.request.user)
         return (
             ActividadEspacioPWA.objects.filter(
                 comedor_id=comedor_id,
@@ -586,6 +597,7 @@ class ActividadEspacioPWAViewSet(viewsets.ViewSet):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def create(self, request, comedor_id=None):
+        _get_pnud_scoped_comedor_or_404(comedor_id, request.user)
         serializer = ActividadEspacioPWACreateUpdateSerializer(
             data=request.data,
             context={"comedor_id": comedor_id},

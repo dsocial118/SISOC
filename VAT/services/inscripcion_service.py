@@ -132,6 +132,10 @@ class InscripcionService:
         return bool(getattr(comision, "acepta_lista_espera", False))
 
     @staticmethod
+    def _resolver_cupo_lista_espera(comision) -> int:
+        return int(getattr(comision, "cupo_lista_espera", 0) or 0)
+
+    @staticmethod
     def _inscripciones_queryset_para_comision(comision):
         return Inscripcion.objects.filter(
             **InscripcionService._resolver_lookup_comision(comision)
@@ -161,6 +165,27 @@ class InscripcionService:
             exclude_inscripcion=exclude_inscripcion,
         )
         return max(cupo_total - total_inscriptos, 0)
+
+    @staticmethod
+    def contar_inscripciones_en_espera(comision, *, exclude_inscripcion=None) -> int:
+        queryset = InscripcionService._inscripciones_queryset_para_comision(
+            comision
+        ).filter(estado="en_espera")
+        exclude_id = InscripcionService._resolve_lookup_id(exclude_inscripcion)
+        if exclude_id:
+            queryset = queryset.exclude(pk=exclude_id)
+        return queryset.count()
+
+    @staticmethod
+    def calcular_cupos_lista_espera_disponibles(
+        comision, *, exclude_inscripcion=None
+    ) -> int:
+        cupo_lista_espera = InscripcionService._resolver_cupo_lista_espera(comision)
+        total_en_espera = InscripcionService.contar_inscripciones_en_espera(
+            comision,
+            exclude_inscripcion=exclude_inscripcion,
+        )
+        return max(cupo_lista_espera - total_en_espera, 0)
 
     @staticmethod
     def _debitar_voucher_para_oferta(  # pylint: disable=too-many-arguments
@@ -316,8 +341,13 @@ class InscripcionService:
         unidad_formativa, _ = InscripcionService._resolver_unidad_formativa(comision)
         programa = programa or unidad_formativa.programa
         cupos_disponibles = InscripcionService.calcular_cupos_disponibles(comision)
+        cupos_lista_espera_disponibles = (
+            InscripcionService.calcular_cupos_lista_espera_disponibles(comision)
+        )
         pasa_a_lista_espera = (
-            cupos_disponibles <= 0 and InscripcionService._acepta_lista_espera(comision)
+            cupos_disponibles <= 0
+            and InscripcionService._acepta_lista_espera(comision)
+            and cupos_lista_espera_disponibles > 0
         )
         motivos: list[str] = []
 
@@ -333,6 +363,12 @@ class InscripcionService:
             comision
         ):
             motivos.append("La comisión no tiene cupos disponibles.")
+        elif (
+            cupos_disponibles <= 0
+            and InscripcionService._acepta_lista_espera(comision)
+            and cupos_lista_espera_disponibles <= 0
+        ):
+            motivos.append("La lista de espera no tiene cupos disponibles.")
 
         if programa is None:
             motivos.append(
@@ -502,6 +538,15 @@ class InscripcionService:
                 )
                 if cupos_disponibles <= 0:
                     if InscripcionService._acepta_lista_espera(comision_locked):
+                        if (
+                            InscripcionService.calcular_cupos_lista_espera_disponibles(
+                                comision_locked
+                            )
+                            <= 0
+                        ):
+                            raise ValueError(
+                                "La lista de espera no tiene cupos disponibles."
+                            )
                         estado_final = "en_espera"
                     else:
                         raise ValueError("La comisión no tiene cupos disponibles.")
@@ -509,6 +554,14 @@ class InscripcionService:
                 comision_locked
             ):
                 raise ValueError("La comisión no acepta lista de espera.")
+            elif estado == "en_espera":
+                if (
+                    InscripcionService.calcular_cupos_lista_espera_disponibles(
+                        comision_locked
+                    )
+                    <= 0
+                ):
+                    raise ValueError("La lista de espera no tiene cupos disponibles.")
 
             inscripcion_kwargs = {
                 "ciudadano": ciudadano,

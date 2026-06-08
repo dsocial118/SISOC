@@ -17,7 +17,8 @@
         {{ relevamiento.estado | default_if_none:"Sin información" }}
     </span>
     {% if relevamiento.sincronizado_gestionar %}
-        <span class="badge bg-success ml-2" title="Datos recibidos desde GESTIONAR">Sincronizado con GESTIONAR</span>
+        <span class="badge bg-success ml-2"
+              title="El relevamiento se sincronizó con GESTIONAR">Sincronizado con GESTIONAR</span>
     {% endif %}
 {% endblock %}
 
@@ -61,6 +62,12 @@
                    target="_blank"
                    class="btn btn-secondary mr-1 d-none d-sm-inline">Imprimir</a>
             {% endif %}
+            {% with ps=relevamiento.primer_seguimiento %}
+                {% if ps %}
+                    <a href="#section-primer-seguimiento"
+                       class="btn btn-info mr-1 d-none d-sm-inline">Ver primer seguimiento</a>
+                {% endif %}
+            {% endwith %}
             {% if perms.auditlog.view_logentry %}
                 <a href="{% url 'audittrail:log_instance' 'relevamientos' 'relevamiento' relevamiento.pk %}"
                    class="btn btn-outline-light mr-1">Historial</a>
@@ -1390,15 +1397,23 @@
     </div>
     {% with seguimiento=relevamiento.primer_seguimiento %}
         {% if seguimiento %}
-            <div class="card mt-4">
+            <div class="card mt-4" id="section-primer-seguimiento">
                 <div class="card-header d-flex align-items-center justify-content-between">
                     <h5 class="mb-0">Primer seguimiento</h5>
-                    {% if seguimiento.sincronizado_gestionar %}
-                        <span class="badge bg-success" title="Datos recibidos desde GESTIONAR">Sincronizado con GESTIONAR</span>
-                    {% else %}
-                        <span class="badge bg-secondary"
-                              title="Aún no se recibieron datos desde GESTIONAR">Pendiente sincronización</span>
-                    {% endif %}
+                    <div class="d-flex gap-2">
+                        {% if seguimiento.estado == "Completo" %}
+                            <span class="badge bg-success">Completado</span>
+                        {% else %}
+                            <span class="badge bg-secondary">No completado</span>
+                        {% endif %}
+                        {% if seguimiento.sincronizado_gestionar %}
+                            <span class="badge bg-success"
+                                  title="El primer seguimiento se sincronizó con GESTIONAR">Sincronizado con GESTIONAR</span>
+                        {% else %}
+                            <span class="badge bg-secondary"
+                                  title="Todavía no se sincronizó con GESTIONAR">Pendiente sincronización</span>
+                        {% endif %}
+                    </div>
                 </div>
                 <div class="card-body d-flex align-items-center justify-content-between flex-wrap gap-2">
                     <span class="text-muted">Ver el detalle completo del primer seguimiento cargado para este relevamiento.</span>
