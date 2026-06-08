@@ -2442,22 +2442,30 @@ def test_normalize_nomina_tab(tab, expected):
 
 def test_is_pnud_comedor_por_id():
     for pk in (3, 4):
-        comedor = SimpleNamespace(programa_id=pk, programa=SimpleNamespace(nombre="Otro"))
+        comedor = SimpleNamespace(
+            programa_id=pk, programa=SimpleNamespace(nombre="Otro")
+        )
         assert is_pnud_comedor(comedor) is True
 
 
 def test_is_pnud_comedor_por_nombre():
-    comedor = SimpleNamespace(programa_id=99, programa=SimpleNamespace(nombre="PNUD Prog Especial"))
+    comedor = SimpleNamespace(
+        programa_id=99, programa=SimpleNamespace(nombre="PNUD Prog Especial")
+    )
     assert is_pnud_comedor(comedor) is True
 
 
 def test_is_pnud_comedor_nombre_case_insensitive():
-    comedor = SimpleNamespace(programa_id=99, programa=SimpleNamespace(nombre="pnud comedores"))
+    comedor = SimpleNamespace(
+        programa_id=99, programa=SimpleNamespace(nombre="pnud comedores")
+    )
     assert is_pnud_comedor(comedor) is True
 
 
 def test_is_pnud_comedor_no_pnud():
-    comedor = SimpleNamespace(programa_id=1, programa=SimpleNamespace(nombre="Abordaje comunitario"))
+    comedor = SimpleNamespace(
+        programa_id=1, programa=SimpleNamespace(nombre="Abordaje comunitario")
+    )
     assert is_pnud_comedor(comedor) is False
 
 

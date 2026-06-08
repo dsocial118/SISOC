@@ -98,11 +98,16 @@ def test_pnud_scope_levanta_404_para_comedor_no_pnud():
     """Si el comedor no es PNUD, la función lanza Http404."""
     from pwa.api_views import _get_pnud_scoped_comedor_or_404
 
-    fake_comedor = SimpleNamespace(programa_id=1, programa=SimpleNamespace(nombre="Otro programa"))
+    fake_comedor = SimpleNamespace(
+        programa_id=1, programa=SimpleNamespace(nombre="Otro programa")
+    )
     fake_user = SimpleNamespace()
 
     with (
-        patch("pwa.api_views.ComedorService.get_scoped_comedor_or_404", return_value=fake_comedor),
+        patch(
+            "pwa.api_views.ComedorService.get_scoped_comedor_or_404",
+            return_value=fake_comedor,
+        ),
         patch("pwa.api_views.is_pnud_comedor", return_value=False),
     ):
         with pytest.raises(Http404):
@@ -113,11 +118,16 @@ def test_pnud_scope_retorna_comedor_para_comedor_pnud():
     """Si el comedor es PNUD, la función retorna el objeto comedor."""
     from pwa.api_views import _get_pnud_scoped_comedor_or_404
 
-    fake_comedor = SimpleNamespace(programa_id=3, programa=SimpleNamespace(nombre="PNUD"))
+    fake_comedor = SimpleNamespace(
+        programa_id=3, programa=SimpleNamespace(nombre="PNUD")
+    )
     fake_user = SimpleNamespace()
 
     with (
-        patch("pwa.api_views.ComedorService.get_scoped_comedor_or_404", return_value=fake_comedor),
+        patch(
+            "pwa.api_views.ComedorService.get_scoped_comedor_or_404",
+            return_value=fake_comedor,
+        ),
         patch("pwa.api_views.is_pnud_comedor", return_value=True),
     ):
         result = _get_pnud_scoped_comedor_or_404(comedor_id=3, user=fake_user)
