@@ -225,7 +225,9 @@ def test_load_municipios_no_territorial(mocker):
     mocker.patch("core.views.get_geography_scope_map", return_value=None)
     mocker.patch(
         "core.views.Municipio.objects.filter",
-        return_value=_MunicipioQS([{"id": 1, "nombre": "M1"}, {"id": 2, "nombre": "M2"}]),
+        return_value=_MunicipioQS(
+            [{"id": 1, "nombre": "M1"}, {"id": 2, "nombre": "M2"}]
+        ),
     )
 
     import json
@@ -242,7 +244,9 @@ def test_load_municipios_territorial_municipios_especificos(mocker):
     mocker.patch("core.views.get_geography_scope_map", return_value={2: {1}})
     mocker.patch(
         "core.views.Municipio.objects.filter",
-        return_value=_MunicipioQS([{"id": 1, "nombre": "M1"}, {"id": 2, "nombre": "M2"}]),
+        return_value=_MunicipioQS(
+            [{"id": 1, "nombre": "M1"}, {"id": 2, "nombre": "M2"}]
+        ),
     )
 
     import json
@@ -260,7 +264,9 @@ def test_load_municipios_territorial_provincia_completa(mocker):
     mocker.patch("core.views.get_geography_scope_map", return_value={2: None})
     mocker.patch(
         "core.views.Municipio.objects.filter",
-        return_value=_MunicipioQS([{"id": 1, "nombre": "M1"}, {"id": 2, "nombre": "M2"}]),
+        return_value=_MunicipioQS(
+            [{"id": 1, "nombre": "M1"}, {"id": 2, "nombre": "M2"}]
+        ),
     )
 
     import json

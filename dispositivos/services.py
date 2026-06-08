@@ -1,6 +1,10 @@
 from django.db.models import Q
 
-from users.territorial_scope import get_effective_scopes, get_geography_scope_map, is_territorial_user
+from users.territorial_scope import (
+    get_effective_scopes,
+    get_geography_scope_map,
+    is_territorial_user,
+)
 
 from .models import Dispositivo
 
