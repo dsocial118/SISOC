@@ -151,9 +151,17 @@ from VAT.views.evaluacion import (
     ResultadoEvaluacionUpdateView,
     ResultadoEvaluacionDeleteView,
 )
+from VAT.views.reporte import ReporteInscriptosAsistenciasView
 
 
 urlpatterns = [
+    path(
+        "vat/reportes/inscripciones-asistencias/",
+        permissions_any_required(
+            ["VAT.view_inscripcion", "VAT.view_comisioncurso", "VAT.view_centro"]
+        )(ReporteInscriptosAsistenciasView.as_view()),
+        name="vat_reporte_inscripciones_asistencias",
+    ),
     path(
         "vat/centros/",
         permissions_any_required(["VAT.view_centro"])(CentroListView.as_view()),

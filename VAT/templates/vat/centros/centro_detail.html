@@ -7,8 +7,9 @@
 {% block head %}
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Lora:wght@700&family=Montserrat:wght@400;600;700&display=swap"
+    <link href="https://fonts.googleapis.com/css2?family=Lora:wght@600;700&family=Montserrat:wght@400;500;600;700&display=swap"
           rel="stylesheet" />
+    <link rel="stylesheet" href="{% static 'custom/css/vat_design.css' %}" />
 {% endblock %}
 {% block content %}
     <link rel="stylesheet" href="{% static 'custom/css/centro_detail.css' %}" />
@@ -309,16 +310,61 @@
         .modal-content {
             border-radius: 12px;
             border: none;
+            background: #232D4F !important;
+            opacity: 1 !important;
         }
 
         .modal-header {
             border-radius: 12px 12px 0 0;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #3B8681 !important;
             color: white;
+            opacity: 1 !important;
+            border-bottom: 2px solid #ffffff;
         }
 
         .modal-header .btn-close {
             filter: invert(1);
+            opacity: 1 !important;
+        }
+
+        .modal-body {
+            background: #232D4F !important;
+            color: #F2F2F2 !important;
+            opacity: 1 !important;
+        }
+
+        .modal-footer {
+            background: #232D4F !important;
+            opacity: 1 !important;
+            border-top: 1px solid rgba(255, 255, 255, 0.16);
+        }
+
+        #modalContacto .modal-content,
+        #modalIdentificador .modal-content,
+        #modalUbicacion .modal-content {
+            background: #232D4F !important;
+            opacity: 1 !important;
+        }
+
+        #modalContacto .modal-header,
+        #modalIdentificador .modal-header,
+        #modalUbicacion .modal-header {
+            background: #3B8681 !important;
+            opacity: 1 !important;
+        }
+
+        #modalContacto .modal-body,
+        #modalIdentificador .modal-body,
+        #modalUbicacion .modal-body {
+            background: #232D4F !important;
+            opacity: 1 !important;
+        }
+
+        #modalContacto .modal-footer,
+        #modalIdentificador .modal-footer,
+        #modalUbicacion .modal-footer {
+            background: #232D4F !important;
+            opacity: 1 !important;
         }
 
         .form-label {
@@ -449,14 +495,13 @@
         }
 
         .sisoc-centro-page {
-            font-family: Inter, Roboto, sans-serif;
+            font-family: 'Montserrat', Inter, Roboto, sans-serif;
             color: #ffffff;
             max-width: 1620px;
             margin: 0 auto 1rem;
-            background: #3E5A7E;
-            border-radius: 20px;
-            padding: 1rem;
-            margin-bottom: 1rem;
+            background: transparent;
+            border-radius: 0;
+            padding: 0;
         }
 
         .sisoc-page-top {
@@ -742,7 +787,7 @@
             height: 2px;
             border: 0;
             margin: 0 0 20px;
-            background: rgba(255, 255, 255, 0.95);
+            background: #ffffff;
         }
 
         .sisoc-general-layout {
@@ -750,6 +795,16 @@
             grid-template-columns: minmax(0, 1fr) 195px;
             gap: 30px;
             align-items: stretch;
+        }
+
+        .sisoc-general-main {
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+
+        .sisoc-general-main .sisoc-general-grid {
+            flex: 1 1 auto;
         }
 
         .sisoc-general-grid {
@@ -795,7 +850,7 @@
 
         .sisoc-map-preview {
             width: 100%;
-            height: 140px;
+            min-height: 170px;
             overflow: hidden;
             border-radius: 12.56px;
             border: 1px solid rgba(255, 255, 255, 0.2);
@@ -939,10 +994,10 @@
         }
 
         .sisoc-table-shell {
-            border: 1px solid #2a3a4a;
-            border-radius: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 15px;
             overflow: hidden;
-            background: #1a2836;
+            background: #232D4F;
         }
 
         .sisoc-table-wrap {
@@ -956,9 +1011,11 @@
         }
 
         .sisoc-table thead th {
-            padding: 10px 12px;
-            border-bottom: 1px solid #2a3a4a;
-            color: #a9b5c7;
+            padding: 12px 14px;
+            background: #232D4F;
+            border-top: 1px solid rgba(255, 255, 255, 0.18);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.18);
+            color: #ffffff;
             font-size: 12px;
             font-weight: 700;
             text-transform: uppercase;
@@ -968,8 +1025,8 @@
         }
 
         .sisoc-table tbody td {
-            padding: 10px 12px;
-            border-bottom: 1px solid #2a3a4a;
+            padding: 10px 14px;
+            border-bottom: 1px solid rgba(229, 231, 235, 0.16);
             color: #ffffff;
             font-size: 13px;
             vertical-align: middle;
@@ -1037,6 +1094,37 @@
             font-weight: 600;
         }
 
+        .sisoc-page-buttons {
+            display: inline-flex;
+            align-items: center;
+            gap: .35rem;
+            flex-wrap: wrap;
+        }
+
+        .sisoc-page-buttons button {
+            min-width: 30px;
+            height: 30px;
+            border: 1px solid #2a3a4a;
+            border-radius: 6px;
+            background: #16242f;
+            color: #d8e0eb;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            padding: 0 8px;
+            line-height: 1;
+        }
+
+        .sisoc-page-buttons button:hover {
+            background: #22364a;
+        }
+
+        .sisoc-page-buttons button.is-active {
+            background: #2f6aa3;
+            border-color: #2f6aa3;
+            color: #ffffff;
+        }
+
         .sisoc-empty-state {
             padding: 1.4rem 1rem;
             text-align: center;
@@ -1050,22 +1138,23 @@
         }
 
         .sisoc-section-header-bar {
-            min-height: 40px;
             display: flex;
             align-items: center;
-            padding: 0 18px;
-            border-radius: 20px 20px 0 0;
-            background: #3f958d;
+            padding: 10px 30px;
+            border-radius: 15px 15px 0 0;
+            background: #3B8681;
+            border-bottom: 2px solid #ffffff;
             color: #ffffff;
-            font-size: 15px;
+            font-size: 20px;
             font-weight: 700;
+            letter-spacing: .5px;
         }
 
         .sisoc-section-card {
-            background: #1e2e40;
-            border: 1px solid #2a3a4a;
+            background: #232D4F;
+            border: 1px solid rgba(255, 255, 255, 0.12);
             border-top: 0;
-            border-radius: 0 0 20px 20px;
+            border-radius: 0 0 15px 15px;
             padding: 1rem;
         }
 
@@ -1083,12 +1172,16 @@
         }
 
         .sisoc-data-badge--commission {
-            background: #b58a3a;
+            background: rgba(231, 186, 97, 0.5);
+            border: 1px solid #E7BA61;
+            border-radius: 10px;
             color: #ffffff;
         }
 
         .sisoc-data-badge--no-commission {
-            background: #c8484c;
+            background: rgba(198, 40, 40, 0.5);
+            border: 1px solid #C62828;
+            border-radius: 10px;
             color: #ffffff;
         }
 
@@ -1276,6 +1369,7 @@
         }
     </style>
 
+    <div class="sisoc-centro-page">
     {% with primary_contacto=contactos.0 %}
         <div class="ci-hero d-print-none">
             <div class="sisoc-title-row">
@@ -1320,12 +1414,13 @@
                 <div class="sisoc-info-content">
                     <section class="sisoc-info-panel is-active" data-sisoc-panel="general">
                         <div class="sisoc-panel-section">
-                            <div class="sisoc-section-header">
-                                <h2>Información general sobre el establecimiento</h2>
-                            </div>
-                            <hr class="sisoc-section-divider" />
                             <div class="sisoc-general-layout">
-                                <div class="sisoc-general-grid">
+                                <div class="sisoc-general-main">
+                                    <div class="sisoc-section-header">
+                                        <h2>Información general sobre el establecimiento</h2>
+                                    </div>
+                                    <hr class="sisoc-section-divider" />
+                                    <div class="sisoc-general-grid">
                                     <div class="sisoc-data-item">
                                         <p class="sisoc-data-label">CUE</p>
                                         <p class="sisoc-data-value">#{{ centro.codigo|default:"-" }}</p>
@@ -1364,12 +1459,15 @@
                                         </p>
                                     </div>
                                 </div>
+                                </div>
                                 <div class="sisoc-map-preview">
-                                    {% if centro.calle and centro.localidad and centro.municipio and centro.provincia %}
+                                    {% if centro.calle and centro.localidad and centro.provincia %}
                                         <iframe title="Mapa del centro"
                                                 frameborder="0"
                                                 style="border:0"
-                                                src="https://maps.google.com/maps?q={{ centro.calle|urlencode }}{% if centro.numero %}+{{ centro.numero|urlencode }}{% endif %},+{{ centro.localidad.nombre|urlencode }},+{{ centro.municipio.nombre|urlencode }},+{{ centro.provincia.nombre|urlencode }}&output=embed"
+                                                loading="lazy"
+                                                referrerpolicy="no-referrer-when-downgrade"
+                                                src="https://maps.google.com/maps?hl=es&amp;q={{ centro.calle|urlencode }}{% if centro.numero %}+{{ centro.numero|urlencode }}{% endif %},+{{ centro.localidad.nombre|urlencode }},+{{ centro.provincia.nombre|urlencode }},+Argentina+({{ centro.nombre|urlencode }})&amp;t=&amp;z=16&amp;ie=UTF8&amp;iwloc=B&amp;output=embed"
                                                 allowfullscreen>
                                         </iframe>
                                     {% else %}
@@ -1655,10 +1753,11 @@
             </div>
         </div>
     </div>
+    </div>
 
     {% if can_edit_centro %}
         <!-- Modal Contacto -->
-        <div class="modal fade"
+        <div class="modal fade vat-ui-modal"
              id="modalContacto"
              tabindex="-1"
              aria-labelledby="modalContactoLabel"
@@ -1687,7 +1786,7 @@
         </div>
 
         <!-- Modal Identificador -->
-        <div class="modal fade"
+        <div class="modal fade vat-ui-modal"
              id="modalIdentificador"
              tabindex="-1"
              aria-labelledby="modalIdentificadorLabel"
@@ -1716,7 +1815,7 @@
         </div>
 
         <!-- Modal Ubicacion -->
-        <div class="modal fade"
+        <div class="modal fade vat-ui-modal"
              id="modalUbicacion"
              tabindex="-1"
              aria-labelledby="modalUbicacionLabel"
@@ -2208,12 +2307,37 @@
     </style>
     <script src="{% static 'custom/js/vat.js' %}"></script>
     <script nonce="{{ request.csp_nonce }}">
-        // Funciones para editar (redirigir a pagina de edicion)
+        // Funciones para editar (ahora cargan contenido en modal)
         function editContacto(id) {
-            window.location.href = `/vat/institucion/contactos/${id}/editar/`;
+            fetch(`/vat/institucion/contactos/${id}/editar/?modal=1`, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(r => {
+                if (!r.ok) throw new Error('Error al cargar el contacto');
+                return r.text();
+            })
+            .then(html => {
+                // El fragmento contiene SOLO los campos del formulario. Se inyectan
+                // en el .modal-body existente, reutilizando el <form id="formContacto">
+                // envolvente (con su csrf y su boton Guardar). Solo cambia el action.
+                var modal = document.getElementById('modalContacto');
+                var form = document.getElementById('formContacto');
+                var modalBody = modal.querySelector('.modal-body');
+                var modalTitle = modal.querySelector('.modal-title');
+                modalBody.innerHTML = html;
+                modalTitle.textContent = 'Editar Contacto';
+                form.setAttribute('action', `/vat/institucion/contactos/${id}/editar/`);
+                bootstrap.Modal.getOrCreateInstance(modal).show();
+            })
+            .catch(err => {
+                console.error('Error en editContacto:', err);
+                alert('Error al cargar el formulario de edición: ' + err.message);
+            });
         }
         function deleteContacto(id) {
-            if (confirm('Eliminar contacto?')) {
+            if (confirm('¿Eliminar contacto?')) {
                 fetch(`/vat/institucion/contactos/${id}/eliminar/`, {
                     method: 'POST',
                     headers: {
@@ -2227,7 +2351,7 @@
             window.location.href = `/vat/institucion/identificadores/${id}/editar/`;
         }
         function deleteIdentificador(id) {
-            if (confirm('Eliminar identificador?')) {
+            if (confirm('¿Eliminar identificador?')) {
                 fetch(`/vat/institucion/identificadores/${id}/eliminar/`, {
                     method: 'POST',
                     headers: {
@@ -2238,7 +2362,33 @@
             }
         }
         function editUbicacion(id) {
-            window.location.href = `/vat/institucion/ubicaciones/${id}/editar/`;
+            fetch(`/vat/institucion/ubicaciones/${id}/editar/?modal=1`, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(r => {
+                if (!r.ok) throw new Error('Error al cargar la ubicación');
+                return r.text();
+            })
+            .then(html => {
+                // El fragmento contiene SOLO los campos del formulario. Se inyectan
+                // en el .modal-body existente, reutilizando el <form id="formUbicacion">
+                // envolvente (con su csrf y su boton Guardar). Solo cambia el action.
+                var modal = document.getElementById('modalUbicacion');
+                var form = document.getElementById('formUbicacion');
+                var modalBody = modal.querySelector('.modal-body');
+                var modalTitle = modal.querySelector('.modal-title');
+                modalBody.innerHTML = html;
+                modalTitle.textContent = 'Editar Ubicación';
+                form.setAttribute('action', `/vat/institucion/ubicaciones/${id}/editar/`);
+                // setupUbicacionModalSelect2 ya re-inicializa select2 en 'shown.bs.modal'.
+                bootstrap.Modal.getOrCreateInstance(modal).show();
+            })
+            .catch(err => {
+                console.error('Error en editUbicacion:', err);
+                alert('Error al cargar el formulario de edición: ' + err.message);
+            });
         }
         function deleteUbicacion(id) {
             if (confirm('Eliminar ubicacion?')) {
@@ -2386,6 +2536,48 @@
             });
         }
         setupUbicacionModalSelect2();
+
+        function setupContactoModalSelect2() {
+            var modal = document.getElementById('modalContacto');
+            if (!modal || modal.dataset.contactoSelect2Bound === '1') return;
+            modal.dataset.contactoSelect2Bound = '1';
+            modal.addEventListener('shown.bs.modal', function() {
+                modal.querySelectorAll('select.select2').forEach(function(select) {
+                    if (window.refreshSelect2Element) {
+                        window.refreshSelect2Element(select);
+                    } else if (window.initSelect2Elements) {
+                        window.initSelect2Elements(select);
+                    }
+                });
+            });
+        }
+        setupContactoModalSelect2();
+
+        // Al reabrir un modal con el boton "Agregar" luego de haber editado, se
+        // restaura el cuerpo y el action originales (modo alta). El <form>
+        // envolvente y su boton Guardar nunca se reemplazan, asi que el submit
+        // handler de setupModalForm sigue activo.
+        function setupModalAddReset(modalId, defaultTitle) {
+            var modal = document.getElementById(modalId);
+            if (!modal) return;
+            var form = modal.querySelector('form');
+            var modalBody = modal.querySelector('.modal-body');
+            var modalTitle = modal.querySelector('.modal-title');
+            if (!form || !modalBody) return;
+            var pristineBody = modalBody.innerHTML;
+            var createAction = form.getAttribute('action');
+            document.querySelectorAll('[data-bs-target="#' + modalId + '"]').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    modalBody.innerHTML = pristineBody;
+                    form.setAttribute('action', createAction);
+                    if (modalTitle) modalTitle.textContent = defaultTitle;
+                });
+            });
+        }
+        {% if can_edit_centro %}
+            setupModalAddReset('modalUbicacion', 'Agregar Ubicacion');
+            setupModalAddReset('modalContacto', 'Agregar Contacto');
+        {% endif %}
 
         var modalComisionCurso = document.getElementById('modalComisionCurso');
         if (modalComisionCurso) {
@@ -2865,17 +3057,21 @@
             var cursosClearBtn = document.getElementById('cursosFilterClear');
             var cursosSummary = document.getElementById('cursosFilterSummary');
             var cursosEmptyState = document.getElementById('cursosTableEmptyState');
+            var cursosPagination = document.getElementById('cursosPagination');
             var comisionesSearchInput = document.getElementById('comisionesFilterSearch');
             var comisionesCursoSelect = document.getElementById('comisionesFilterCurso');
             var comisionesEstadoSelect = document.getElementById('comisionesFilterEstado');
             var comisionesPageSizeSelect = document.getElementById('comisionesFilterPageSize');
             var comisionesClearBtn = document.getElementById('comisionesFilterClear');
             var comisionesSummary = document.getElementById('comisionesFilterSummary');
+            var comisionesPagination = document.getElementById('comisionesPagination');
             var hint = document.getElementById('comisionesCursoHint');
             var emptyState = document.getElementById('comisionesCursoEmptyState');
             var defaultHint = hint ? hint.textContent : '';
             var lockedCursoId = '';
             var lockedCursoNombre = '';
+            var cursosCurrentPage = 1;
+            var comisionesCurrentPage = 1;
 
             if (window.initSelect2Elements && comisionesCursoSelect) {
                 window.initSelect2Elements(comisionesCursoSelect);
@@ -2905,18 +3101,56 @@
                 return 'Curso';
             }
 
-            function updateCursoSummary(visibleRows) {
+            function updateCursoSummary(visibleRows, matchedRows, pageSize, currentPage) {
                 if (!cursosSummary) return;
-                cursosSummary.textContent = visibleRows > 0
-                    ? 'Mostrando 1-' + visibleRows + ' de ' + cursoRows.length
-                    : 'Mostrando 0 de ' + cursoRows.length;
+                if (matchedRows === 0) {
+                    cursosSummary.textContent = 'Mostrando 0 de 0';
+                    return;
+                }
+                var startRow = pageSize === null
+                    ? 1
+                    : ((currentPage - 1) * pageSize) + 1;
+                var endRow = startRow + visibleRows - 1;
+                cursosSummary.textContent = 'Mostrando ' + startRow + '-' + endRow + ' de ' + matchedRows;
             }
 
-            function updateComisionesSummary(visibleRows, matchedRows) {
+            function updateComisionesSummary(visibleRows, matchedRows, pageSize, currentPage) {
                 if (!comisionesSummary) return;
-                comisionesSummary.textContent = visibleRows > 0
-                    ? 'Mostrando 1-' + visibleRows + ' de ' + matchedRows
-                    : 'Mostrando 0 de ' + matchedRows;
+                if (matchedRows === 0) {
+                    comisionesSummary.textContent = 'Mostrando 0 de 0';
+                    return;
+                }
+                var startRow = pageSize === null
+                    ? 1
+                    : ((currentPage - 1) * pageSize) + 1;
+                var endRow = startRow + visibleRows - 1;
+                comisionesSummary.textContent = 'Mostrando ' + startRow + '-' + endRow + ' de ' + matchedRows;
+            }
+
+            function renderPagination(container, totalRows, pageSize, currentPage, onPageSelected) {
+                if (!container) return;
+                container.innerHTML = '';
+
+                if (pageSize === null || totalRows <= pageSize) {
+                    return;
+                }
+
+                var totalPages = Math.ceil(totalRows / pageSize);
+                for (var page = 1; page <= totalPages; page += 1) {
+                    var pageButton = document.createElement('button');
+                    pageButton.type = 'button';
+                    pageButton.textContent = String(page);
+                    if (page === currentPage) {
+                        pageButton.classList.add('is-active');
+                        pageButton.setAttribute('aria-current', 'page');
+                    }
+                    pageButton.addEventListener('click', (function(pageNumber) {
+                        return function() {
+                            onPageSelected(pageNumber);
+                        };
+                    })(page));
+                    container.appendChild(pageButton);
+                }
             }
 
             function getPageSizeValue(selectEl) {
@@ -2972,17 +3206,39 @@
                 });
 
                 matchedRows.forEach(function(row, index) {
-                    var isVisible = pageSize === null || index < pageSize;
+                    var isVisible = true;
+                    if (pageSize !== null) {
+                        var pageStartIndex = (cursosCurrentPage - 1) * pageSize;
+                        var pageEndIndex = pageStartIndex + pageSize;
+                        isVisible = index >= pageStartIndex && index < pageEndIndex;
+                    }
                     row.classList.toggle('d-none', !isVisible);
                     if (isVisible) {
                         visibleRows += 1;
                     }
                 });
 
+                var totalPages = pageSize === null ? 1 : Math.max(Math.ceil(matchedRows.length / pageSize), 1);
+                if (cursosCurrentPage > totalPages) {
+                    cursosCurrentPage = totalPages;
+                    return applyCourseFilters();
+                }
+
+                renderPagination(
+                    cursosPagination,
+                    matchedRows.length,
+                    pageSize,
+                    cursosCurrentPage,
+                    function(pageNumber) {
+                        cursosCurrentPage = pageNumber;
+                        applyCourseFilters();
+                    }
+                );
+
                 if (cursosEmptyState) {
                     cursosEmptyState.classList.toggle('d-none', visibleRows > 0);
                 }
-                updateCursoSummary(visibleRows);
+                updateCursoSummary(visibleRows, matchedRows.length, pageSize, cursosCurrentPage);
             }
 
             function applyCursoFilter() {
@@ -3016,12 +3272,34 @@
                 });
 
                 matchedRows.forEach(function(row, index) {
-                    var isVisible = pageSize === null || index < pageSize;
+                    var isVisible = true;
+                    if (pageSize !== null) {
+                        var pageStartIndex = (comisionesCurrentPage - 1) * pageSize;
+                        var pageEndIndex = pageStartIndex + pageSize;
+                        isVisible = index >= pageStartIndex && index < pageEndIndex;
+                    }
                     row.classList.toggle('d-none', !isVisible);
                     if (isVisible) {
                         visibleRows += 1;
                     }
                 });
+
+                var totalPages = pageSize === null ? 1 : Math.max(Math.ceil(matchedRows.length / pageSize), 1);
+                if (comisionesCurrentPage > totalPages) {
+                    comisionesCurrentPage = totalPages;
+                    return applyCursoFilter();
+                }
+
+                renderPagination(
+                    comisionesPagination,
+                    matchedRows.length,
+                    pageSize,
+                    comisionesCurrentPage,
+                    function(pageNumber) {
+                        comisionesCurrentPage = pageNumber;
+                        applyCursoFilter();
+                    }
+                );
 
                 if (hint) {
                     hint.textContent = cursoId
@@ -3029,7 +3307,12 @@
                         : defaultHint;
                 }
 
-                updateComisionesSummary(visibleRows, matchedRows.length);
+                updateComisionesSummary(
+                    visibleRows,
+                    matchedRows.length,
+                    pageSize,
+                    comisionesCurrentPage
+                );
 
                 if (emptyState) {
                     emptyState.classList.toggle('d-none', visibleRows > 0);
@@ -3066,6 +3349,7 @@
                         lockedCursoId = '';
                         lockedCursoNombre = '';
                         syncCursoSelect('');
+                        comisionesCurrentPage = 1;
                         applyCursoFilter();
                         return;
                     }
@@ -3073,6 +3357,7 @@
                     lockedCursoId = rowCursoId;
                     lockedCursoNombre = row.getAttribute('data-curso-nombre') || 'Curso';
                     syncCursoSelect(lockedCursoId);
+                    comisionesCurrentPage = 1;
                     applyCursoFilter();
                 }
 
@@ -3086,19 +3371,29 @@
                         lockedCursoId = '';
                         lockedCursoNombre = '';
                         syncCursoSelect('');
+                        comisionesCurrentPage = 1;
                         applyCursoFilter();
                     }
                 });
             });
 
             if (cursosSearchInput) {
-                cursosSearchInput.addEventListener('input', applyCourseFilters);
+                cursosSearchInput.addEventListener('input', function() {
+                    cursosCurrentPage = 1;
+                    applyCourseFilters();
+                });
             }
             if (cursosEstadoSelect) {
-                cursosEstadoSelect.addEventListener('change', applyCourseFilters);
+                cursosEstadoSelect.addEventListener('change', function() {
+                    cursosCurrentPage = 1;
+                    applyCourseFilters();
+                });
             }
             if (cursosPageSizeSelect) {
-                cursosPageSizeSelect.addEventListener('change', applyCourseFilters);
+                cursosPageSizeSelect.addEventListener('change', function() {
+                    cursosCurrentPage = 1;
+                    applyCourseFilters();
+                });
             }
             if (cursosClearBtn) {
                 cursosClearBtn.addEventListener('click', function() {
@@ -3109,26 +3404,37 @@
                         cursosEstadoSelect.value = '';
                     }
                     if (cursosPageSizeSelect) {
-                        cursosPageSizeSelect.value = '25';
+                        cursosPageSizeSelect.value = '5';
                     }
+                    cursosCurrentPage = 1;
                     applyCourseFilters();
                 });
             }
             if (comisionesSearchInput) {
-                comisionesSearchInput.addEventListener('input', applyCursoFilter);
+                comisionesSearchInput.addEventListener('input', function() {
+                    comisionesCurrentPage = 1;
+                    applyCursoFilter();
+                });
             }
             if (comisionesCursoSelect) {
                 comisionesCursoSelect.addEventListener('change', function() {
                     lockedCursoId = comisionesCursoSelect.value || '';
                     lockedCursoNombre = getSelectedCursoName(lockedCursoId);
+                    comisionesCurrentPage = 1;
                     applyCursoFilter();
                 });
             }
             if (comisionesEstadoSelect) {
-                comisionesEstadoSelect.addEventListener('change', applyCursoFilter);
+                comisionesEstadoSelect.addEventListener('change', function() {
+                    comisionesCurrentPage = 1;
+                    applyCursoFilter();
+                });
             }
             if (comisionesPageSizeSelect) {
-                comisionesPageSizeSelect.addEventListener('change', applyCursoFilter);
+                comisionesPageSizeSelect.addEventListener('change', function() {
+                    comisionesCurrentPage = 1;
+                    applyCursoFilter();
+                });
             }
             if (comisionesClearBtn) {
                 comisionesClearBtn.addEventListener('click', function() {
@@ -3140,10 +3446,11 @@
                         comisionesEstadoSelect.value = '';
                     }
                     if (comisionesPageSizeSelect) {
-                        comisionesPageSizeSelect.value = '25';
+                        comisionesPageSizeSelect.value = '5';
                     }
                     lockedCursoId = '';
                     lockedCursoNombre = '';
+                    comisionesCurrentPage = 1;
                     applyCursoFilter();
                 });
             }
