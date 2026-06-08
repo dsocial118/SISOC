@@ -1,7 +1,7 @@
-from pwa.models import CatalogoActividadPWA
+from django.db import migrations
 
 
-CATALOGO_ACTIVIDADES_INICIAL = [
+CATALOGO_ACTIVIDADES = [
     ("Educativas", "Jardines maternales"),
     ("Educativas", "Jardines de Infantes/preescolar"),
     ("Educativas", "Apoyo escolar"),
@@ -56,11 +56,27 @@ CATALOGO_ACTIVIDADES_INICIAL = [
 ]
 
 
-def bootstrap_catalogo_actividades(*, using: str = "default") -> None:
-    """Garantiza el catalogo inicial de actividades PWA de forma idempotente."""
-    for categoria, actividad in CATALOGO_ACTIVIDADES_INICIAL:
-        CatalogoActividadPWA.objects.using(using).update_or_create(
+def sync_catalogo_actividades(apps, schema_editor):
+    catalogo_model = apps.get_model("pwa", "CatalogoActividadPWA")
+    using = schema_editor.connection.alias
+    catalogo_actualizado = set(CATALOGO_ACTIVIDADES)
+    for categoria, actividad in CATALOGO_ACTIVIDADES:
+        catalogo_model.objects.using(using).update_or_create(
             categoria=categoria,
             actividad=actividad,
             defaults={"activo": True},
         )
+    for item in catalogo_model.objects.using(using).filter(activo=True):
+        if (item.categoria, item.actividad) not in catalogo_actualizado:
+            item.activo = False
+            item.save(update_fields=["activo", "fecha_actualizacion"])
+
+
+class Migration(migrations.Migration):
+    dependencies = [
+        ("pwa", "0016_nominaespaciopwa_flags_sociales"),
+    ]
+
+    operations = [
+        migrations.RunPython(sync_catalogo_actividades, migrations.RunPython.noop),
+    ]
