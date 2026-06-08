@@ -961,6 +961,39 @@ def test_relevamiento_create_edit_ajax_crea_primer_seguimiento(
 
 
 @pytest.mark.django_db
+def test_relevamiento_create_edit_ajax_primer_seguimiento_reenvia_relevamiento_id(
+    client_logged_fixture, comedor_fixture, monkeypatch
+):
+    """El alta desde el boton de una fila puntual reenvia su relevamiento_id."""
+    relevamiento_mock = mock.Mock()
+    relevamiento_mock.pk = 1002
+    relevamiento_mock.comedor = mock.Mock()
+    relevamiento_mock.comedor.pk = comedor_fixture.pk
+    seguimiento_mock = mock.Mock()
+    seguimiento_mock.id_relevamiento = relevamiento_mock
+    create_mock = mock.Mock(return_value=seguimiento_mock)
+
+    monkeypatch.setattr(
+        "comedores.views.relevamientos.PrimerSeguimientoService.create_asignado",
+        create_mock,
+    )
+
+    url = reverse("relevamiento_create_edit_ajax", kwargs={"pk": comedor_fixture.pk})
+    response = client_logged_fixture.post(
+        url,
+        {
+            "tipo_relevamiento": "primer_seguimiento",
+            "territorial": '{"gestionar_uid":"uid-1","nombre":"Territorial Norte"}',
+            "relevamiento_id": "777",
+        },
+        HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+    )
+
+    assert response.status_code == 200
+    assert create_mock.call_args.kwargs["relevamiento_id"] == "777"
+
+
+@pytest.mark.django_db
 def test_relevamiento_create_edit_ajax_rechaza_segundo_seguimiento(
     client_logged_fixture, comedor_fixture
 ):

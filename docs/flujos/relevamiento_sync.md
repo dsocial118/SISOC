@@ -20,12 +20,12 @@ Registrar el relevamiento inicial de comedores y crear el primer seguimiento aso
 
 ## Primer seguimiento
 
-1. `PrimerSeguimientoService` valida el territorial usando el mismo parser del relevamiento inicial.
-2. Busca el ultimo `Relevamiento` del comedor que no este eliminado y cuyo estado no sea `Finalizado` ni `Finalizado/Excepciones`.
-3. Si no existe ancla activa, crea un `Relevamiento` local con `_skip_gestionar_sync=True`. Ese ancla no envia un relevamiento inicial a GESTIONAR.
-4. Crea `PrimerSeguimiento` en estado `Asignado`, guarda el tecnico externo en `tecnico` y lo vincula por `id_relevamiento`.
-5. Envia el alta con `AsyncSendPrimerSeguimientoToGestionar` usando `GESTIONAR_API_CREAR_PRIMER_SEGUIMIENTO`. El payload contiene `{"ID_Seguimiento1": "<pk>", "Id_Relevamiento": "<id>", "Id_SISOC": "<pk>"}`; `ID_Seguimiento1` viaja con el PK de SISOC para que ambos sistemas usen el mismo identificador. SISOC persiste lo que GESTIONAR devuelve en `Rows[0].ID_Seguimiento1` en `PrimerSeguimiento.gestionar_id` (en el flujo normal coincide con el sisoc_id; si GESTIONAR responde con otra cosa, queda registrado).
-6. La baja usa `AsyncRemovePrimerSeguimientoToGestionar` y `GESTIONAR_API_BORRAR_PRIMER_SEGUIMIENTO`, enviando el `gestionar_id` guardado. Si el seguimiento no tiene `gestionar_id` (por ejemplo el alta nunca llego a GESTIONAR), la baja se omite con un log informativo.
+1. `PrimerSeguimientoService.create_asignado` resuelve el `Relevamiento` ancla y el territorial del seguimiento:
+   - si llega `relevamiento_id` (alta desde el boton de una fila puntual del listado) o ya existe un relevamiento activo (no eliminado y cuyo estado no sea `Finalizado` ni `Finalizado/Excepciones`), usa ese relevamiento y **hereda** su `territorial_uid` como `tecnico` del seguimiento;
+   - si no hay relevamiento previo, valida el territorial del formulario (mismo parser del relevamiento inicial) y crea un `Relevamiento` ancla **asignado** (estado `Visita pendiente`, con ese territorial) que **SI** se sincroniza con GESTIONAR. El seguimiento referencia ese relevamiento por `Id_Relevamiento`, asi que GESTIONAR necesita conocerlo para poder enlazar la fila de `Seguimientos1erVisita`.
+2. Crea `PrimerSeguimiento` en estado `Asignado`, guarda el tecnico (heredado o del formulario) en `tecnico` y lo vincula por `id_relevamiento`.
+3. Envia el alta con `AsyncSendPrimerSeguimientoToGestionar` usando `GESTIONAR_API_CREAR_PRIMER_SEGUIMIENTO`. El payload contiene `{"ID_Seguimiento1": "<pk>", "Id_Relevamiento": "<id>", "Id_SISOC": "<pk>"}`; `ID_Seguimiento1` viaja con el PK de SISOC para que ambos sistemas usen el mismo identificador. SISOC persiste lo que GESTIONAR devuelve en `Rows[0].ID_Seguimiento1` en `PrimerSeguimiento.gestionar_id` (en el flujo normal coincide con el sisoc_id; si GESTIONAR responde con otra cosa, queda registrado).
+4. La baja usa `AsyncRemovePrimerSeguimientoToGestionar` y `GESTIONAR_API_BORRAR_PRIMER_SEGUIMIENTO`, enviando el `gestionar_id` guardado. Si el seguimiento no tiene `gestionar_id` (por ejemplo el alta nunca llego a GESTIONAR), la baja se omite con un log informativo.
 
 ## API externa
 
@@ -47,7 +47,10 @@ Respuestas esperadas:
 
 ## Estado de sincronizacion
 
-Tanto `Relevamiento` como `PrimerSeguimiento` exponen el booleano `sincronizado_gestionar` (default `False`). Cada `PATCH` exitoso desde GESTIONAR lo marca en `True` via `update()` (sin disparar signals). El detalle de relevamiento muestra un badge verde "Sincronizado con GESTIONAR" cuando esta en `True`, y un badge gris "Pendiente sincronizacion" en el bloque del primer seguimiento mientras siga en `False`.
+Tanto `Relevamiento` como `PrimerSeguimiento` exponen el booleano `sincronizado_gestionar` (default `False`). El detalle muestra un badge verde "Sincronizado con GESTIONAR" cuando esta en `True`, y un badge gris "Pendiente sincronizacion" mientras siga en `False`. Se marca `True` por dos vias:
+
+1. **POST saliente confirmado:** tanto `AsyncSendRelevamientoToGestionar` como `AsyncSendPrimerSeguimientoToGestionar` marcan `sincronizado_gestionar=True` solo cuando GESTIONAR responde `2xx` **y devuelve filas** (`Rows`). AppSheet responde `200` aun cuando rechaza el alta (p. ej. el `Id_Relevamiento` no existe en GESTIONAR o falta una columna requerida), pero en ese caso devuelve `Rows` vacio: ahi NO se marca sincronizado y se deja un `logger.warning` con el cuerpo para diagnostico. Esto evita el falso "exito" del log cuando la fila no se registro realmente.
+2. **PATCH entrante:** cada `PATCH` exitoso desde GESTIONAR tambien lo marca en `True` via `update()` (sin disparar signals), y trae los bloques completos.
 
 ## Referente en el PATCH del primer seguimiento
 
@@ -62,7 +65,7 @@ Si no viene `documento` ni `sisoc_id`, cae al patron previo de busqueda por nomb
 
 - No mas de un relevamiento con estado `Pendiente` o `Visita pendiente` por comedor.
 - No mas de un `PrimerSeguimiento` para el mismo `Relevamiento`, reforzado por `OneToOneField`.
-- El modal exige territorial para crear relevamiento inicial o primer seguimiento.
+- El alta exige territorial cuando se crea un relevamiento (inicial o ancla de un primer seguimiento sin relevamiento previo). El primer seguimiento sobre un relevamiento existente NO pide territorial: lo hereda del relevamiento.
 - `Segundo seguimiento` queda rechazado hasta implementar la fase 2.
 - Los choices no confirmados se guardan como `CharField`; las escalas usan validadores 1..4 o 1..11.
 - Las firmas recibidas desde GESTIONAR se guardan como URL/string, no como `FileField`.
@@ -71,7 +74,7 @@ Si no viene `documento` ni `sisoc_id`, cae al patron previo de busqueda por nomb
 
 - ValidationError por relevamiento activo duplicado: revisar estados pendientes del comedor.
 - ValidationError por primer seguimiento duplicado: revisar si el ancla ya tiene `primer_seguimiento`.
-- Si se creo ancla local y aparece un alta de relevamiento inicial en GESTIONAR, revisar que el signal respete `_skip_gestionar_sync`.
+- El primer seguimiento "llega" a GESTIONAR con `2xx` pero no aparece la fila: revisar el `logger.warning` de `Rows` vacio. Causa tipica: el `Id_Relevamiento` apunta a un relevamiento que GESTIONAR no tiene. Desde 2026-06-04 el ancla creada para un primer seguimiento sin relevamiento previo SI se sincroniza (ya no usa `_skip_gestionar_sync`); si igual no enlaza, validar con el dueno de la app AppSheet que la tabla `Seguimientos1erVisita` no exija columnas adicionales.
 - Fallas HTTP a GESTIONAR: revisar `GESTIONAR_API_KEY`, `GESTIONAR_API_CREAR_RELEVAMIENTO`, `GESTIONAR_API_BORRAR_RELEVAMIENTO`, `GESTIONAR_API_CREAR_PRIMER_SEGUIMIENTO` y `GESTIONAR_API_BORRAR_PRIMER_SEGUIMIENTO`.
 
 ## Tests
