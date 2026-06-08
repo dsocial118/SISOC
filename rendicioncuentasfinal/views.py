@@ -231,15 +231,7 @@ def switch_rendicion_final_fisicamente_presentada(request, rendicion_id):
 def documentos_rendicion_cuentas_final_ajax(request):
     """Endpoint AJAX para búsqueda filtrada de documentos de rendición de cuentas final"""
 
-    # Aplicar el decorador manualmente para mantener permisos
-    @permissions_any_required(
-        [
-            "comedores.view_comedor",
-            "expedientespagos.view_expedientepago",
-            "admisiones.view_admision",
-            "acompanamientos.view_informacionrelevante",
-        ]
-    )
+    @permissions_any_required(["rendicioncuentasfinal.view_rendicioncuentasfinal"])
     def _documentos_rendicion_ajax(request):
         query = request.GET.get("busqueda", "")
         page = request.GET.get("page", 1)

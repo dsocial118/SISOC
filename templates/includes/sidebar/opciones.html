@@ -343,7 +343,7 @@
                                     </a>
                                 </li>
                             {% endif %}
-                            {% if request.user|has_any_perm:"comedores.view_comedor,admisiones.view_admision,acompanamientos.view_informacionrelevante" %}
+                            {% if request.user|has_perm_code:"rendicioncuentasmensual.view_rendicioncuentamensual" %}
                                 <li class="nav-item">
                                     <a href="{% url 'rendicioncuentasmensual_global_list' %}"
                                        class="nav-link ms-4 {% if 'rendicioncuentasmensual' in pagina_actual %}active{% endif %}">
@@ -354,7 +354,7 @@
                             {% endif %}
                             {% comment %}
                         <!-- RENDICIÓN DE CUENTAS FINAL -->
-                        {% if request.user|has_any_perm:"comedores.view_comedor,admisiones.view_admision,acompanamientos.view_informacionrelevante,expedientespagos.view_expedientepago" or request.user|has_any_perm:"comedores.view_comedor,expedientespagos.view_expedientepago" or request.user|has_any_perm:"comedores.view_comedor,admisiones.view_admision,acompanamientos.view_informacionrelevante" or request.user|has_any_perm:"comedores.view_comedor,admisiones.view_admision,acompanamientos.view_informacionrelevante" %}
+                        {% if not vat_sidebar_only and request.user|has_perm_code:"rendicioncuentasfinal.view_rendicioncuentasfinal" %}
                             <li class="nav-item">
                                 <a href="{% url 'rendicion_cuentas_final_listar' %}" class="nav-link ms-4 {% if 'rendicion_cuentas_final/listar' in pagina_actual %}active{% endif %}">
                                     <i class="nav-icon bi bi-arrow-return-right"></i>
