@@ -53,7 +53,7 @@
 - `VAT/templates/vat/comision_curso_wizard/step1_info.html`
 - `VAT/templates/vat/curso/comision_curso_form.html`
 - `VAT/templates/vat/curso/curso_form.html`
-- ... y 35 archivo(s) adicional(es) relacionados.
+- ... y 37 archivo(s) adicional(es) relacionados.
 - Documentación sugerida para ampliar contexto:
 - `docs/indice.md`
 - `docs/ia/CONTEXT_HYGIENE.md`
