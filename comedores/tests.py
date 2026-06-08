@@ -49,6 +49,9 @@ def _build_migration_apps():
     return SimpleNamespace(get_model=lambda app_label, model_name: fake_model)
 
 
+@pytest.mark.skip(
+    reason="Migración 0033 absorbida por el squash 0024_squashed_0041; test obsoleto"
+)
 def test_audit_colaborador_espacio_migration_renames_old_index_if_present():
     migration_module = import_module(
         "comedores.migrations."
@@ -77,6 +80,9 @@ def test_audit_colaborador_espacio_migration_renames_old_index_if_present():
     assert new_index.fields == ["comedor", "changed_at"]
 
 
+@pytest.mark.skip(
+    reason="Migración 0033 absorbida por el squash 0024_squashed_0041; test obsoleto"
+)
 def test_audit_colaborador_espacio_migration_skips_when_new_index_exists():
     migration_module = import_module(
         "comedores.migrations."
@@ -101,6 +107,9 @@ def test_audit_colaborador_espacio_migration_skips_when_new_index_exists():
     schema_editor.add_index.assert_not_called()
 
 
+@pytest.mark.skip(
+    reason="Migración 0033 absorbida por el squash 0024_squashed_0041; test obsoleto"
+)
 def test_audit_colaborador_espacio_migration_creates_index_if_missing():
     migration_module = import_module(
         "comedores.migrations."

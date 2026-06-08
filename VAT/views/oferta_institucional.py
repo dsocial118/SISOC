@@ -48,8 +48,18 @@ from VAT.services.access_scope import (
     filter_sesiones_queryset_for_user,
 )
 from VAT.services.sesion_comision_service.impl import SesionComisionService
+from iam.services import user_has_permission_code
 
 logger = logging.getLogger("django")
+
+
+def _is_inet_provincia_actor(user):
+    if not user or not getattr(user, "is_authenticated", False):
+        return False
+    profile = getattr(user, "profile", None)
+    if not getattr(profile, "es_usuario_provincial", False):
+        return False
+    return user_has_permission_code(user, "auth.role_inet_provincia")
 
 
 # ============================================================================
@@ -110,6 +120,11 @@ class OfertaInstitucionalCreateView(LoginRequiredMixin, CreateView):
             initial["centro"] = centro_id
         return initial
 
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["actor"] = self.request.user
+        return kwargs
+
     def get_form(self, form_class=None):
         form = super().get_form(form_class)
         form.fields["centro"].queryset = filter_centros_queryset_for_management(
@@ -154,6 +169,11 @@ class OfertaInstitucionalUpdateView(LoginRequiredMixin, UpdateView):
         )
         return filter_ofertas_queryset_for_management(queryset, self.request.user)
 
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["actor"] = self.request.user
+        return kwargs
+
     def get_form(self, form_class=None):
         form = super().get_form(form_class)
         form.fields["centro"].queryset = filter_centros_queryset_for_management(
@@ -164,6 +184,17 @@ class OfertaInstitucionalUpdateView(LoginRequiredMixin, UpdateView):
     def form_valid(self, form):
         messages.success(self.request, "Oferta institucional actualizada exitosamente.")
         return super().form_valid(form)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        if _is_inet_provincia_actor(self.request.user):
+            context["inet_provincia_restricted_fields"] = [
+                "Centro",
+                "Título de referencia",
+                "Programa",
+                "Ciclo lectivo",
+            ]
+        return context
 
 
 class OfertaInstitucionalDeleteView(
@@ -242,6 +273,11 @@ class ComisionCreateView(LoginRequiredMixin, CreateView):
         ):
             initial["oferta"] = oferta_id
         return initial
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["actor"] = self.request.user
+        return kwargs
 
     def get_form(self, form_class=None):
         form = super().get_form(form_class)
@@ -509,6 +545,11 @@ class ComisionUpdateView(LoginRequiredMixin, UpdateView):
         queryset = Comision.objects.select_related("oferta__centro")
         return filter_comisiones_queryset_for_management(queryset, self.request.user)
 
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["actor"] = self.request.user
+        return kwargs
+
     def get_form(self, form_class=None):
         form = super().get_form(form_class)
         scoped_ofertas = filter_ofertas_queryset_for_management(
@@ -530,6 +571,16 @@ class ComisionUpdateView(LoginRequiredMixin, UpdateView):
         if fechas_cambiaron:
             SesionComisionService.regenerar_para_comision(self.object)
         return response
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        if _is_inet_provincia_actor(self.request.user):
+            context["inet_provincia_restricted_fields"] = [
+                "Oferta institucional",
+                "Ubicación",
+                "Código de comisión",
+            ]
+        return context
 
 
 class ComisionDeleteView(SoftDeleteDeleteViewMixin, LoginRequiredMixin, DeleteView):

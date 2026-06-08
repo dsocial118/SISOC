@@ -29,6 +29,38 @@ from VAT.forms import (
 logger = logging.getLogger("django")
 
 
+def _is_ajax_request(request):
+    return request.headers.get("x-requested-with") == "XMLHttpRequest"
+
+
+def _serialize_form_errors(form):
+    return {
+        field_name: [error["message"] for error in errors]
+        for field_name, errors in form.errors.get_json_data().items()
+    }
+
+
+def _modal_json_error_response(form, message):
+    return JsonResponse(
+        {
+            "ok": False,
+            "message": message,
+            "errors": _serialize_form_errors(form),
+        },
+        status=400,
+    )
+
+
+def _modal_json_success_response(redirect_url, message):
+    return JsonResponse(
+        {
+            "ok": True,
+            "message": message,
+            "redirect_url": redirect_url,
+        }
+    )
+
+
 # ============================================================================
 # INSTITUCIÓN CONTACTO VIEWS
 # ============================================================================
@@ -73,9 +105,28 @@ class InstitucionContactoCreateView(LoginRequiredMixin, CreateView):
             initial["centro"] = centro_id
         return initial
 
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        centro_id = self.request.GET.get("centro")
+        if centro_id:
+            kwargs["lock_centro"] = True
+        return kwargs
+
     def form_valid(self, form):
-        messages.success(self.request, "Contacto creado exitosamente.")
+        success_message = "Contacto creado exitosamente."
+        messages.success(self.request, success_message)
+        if _is_ajax_request(self.request):
+            self.object = form.save()
+            return _modal_json_success_response(self.get_success_url(), success_message)
         return super().form_valid(form)
+
+    def form_invalid(self, form):
+        if _is_ajax_request(self.request):
+            return _modal_json_error_response(
+                form,
+                "No se pudo guardar el contacto. Revisá los datos e intentá nuevamente.",
+            )
+        return super().form_invalid(form)
 
 
 class InstitucionContactoDetailView(LoginRequiredMixin, DetailView):
@@ -90,9 +141,26 @@ class InstitucionContactoUpdateView(LoginRequiredMixin, UpdateView):
     template_name = "vat/institucion/contacto_form.html"
     success_url = reverse_lazy("vat_institucion_contacto_list")
 
+    def get_template_names(self):
+        if _is_ajax_request(self.request):
+            return ["vat/institucion/contacto_form_modal.html"]
+        return [self.template_name]
+
     def form_valid(self, form):
-        messages.success(self.request, "Contacto actualizado exitosamente.")
+        success_message = "Contacto actualizado exitosamente."
+        messages.success(self.request, success_message)
+        if _is_ajax_request(self.request):
+            self.object = form.save()
+            return _modal_json_success_response(self.get_success_url(), success_message)
         return super().form_valid(form)
+
+    def form_invalid(self, form):
+        if _is_ajax_request(self.request):
+            return _modal_json_error_response(
+                form,
+                "No se pudo actualizar el contacto. Revisá los datos e intentá nuevamente.",
+            )
+        return super().form_invalid(form)
 
 
 class InstitucionContactoDeleteView(
@@ -224,9 +292,28 @@ class InstitucionUbicacionCreateView(LoginRequiredMixin, CreateView):
             initial["centro"] = centro_id
         return initial
 
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        centro_id = self.request.GET.get("centro")
+        if centro_id:
+            kwargs["lock_centro"] = True
+        return kwargs
+
     def form_valid(self, form):
-        messages.success(self.request, "Ubicación creada exitosamente.")
+        success_message = "Ubicación creada exitosamente."
+        messages.success(self.request, success_message)
+        if _is_ajax_request(self.request):
+            self.object = form.save()
+            return _modal_json_success_response(self.get_success_url(), success_message)
         return super().form_valid(form)
+
+    def form_invalid(self, form):
+        if _is_ajax_request(self.request):
+            return _modal_json_error_response(
+                form,
+                "No se pudo guardar la ubicación. Revisá los datos e intentá nuevamente.",
+            )
+        return super().form_invalid(form)
 
 
 class InstitucionUbicacionDetailView(LoginRequiredMixin, DetailView):
@@ -240,6 +327,11 @@ class InstitucionUbicacionUpdateView(LoginRequiredMixin, UpdateView):
     form_class = InstitucionUbicacionForm
     template_name = "vat/institucion/ubicacion_form.html"
 
+    def get_template_names(self):
+        if _is_ajax_request(self.request):
+            return ["vat/institucion/ubicacion_form_modal.html"]
+        return [self.template_name]
+
     def get_success_url(self):
         return reverse("vat_centro_detail", kwargs={"pk": self.object.centro_id})
 
@@ -249,8 +341,20 @@ class InstitucionUbicacionUpdateView(LoginRequiredMixin, UpdateView):
         return context
 
     def form_valid(self, form):
-        messages.success(self.request, "Ubicación actualizada exitosamente.")
+        success_message = "Ubicación actualizada exitosamente."
+        messages.success(self.request, success_message)
+        if _is_ajax_request(self.request):
+            self.object = form.save()
+            return _modal_json_success_response(self.get_success_url(), success_message)
         return super().form_valid(form)
+
+    def form_invalid(self, form):
+        if _is_ajax_request(self.request):
+            return _modal_json_error_response(
+                form,
+                "No se pudo actualizar la ubicación. Revisá los datos e intentá nuevamente.",
+            )
+        return super().form_invalid(form)
 
 
 class InstitucionUbicacionDeleteView(
