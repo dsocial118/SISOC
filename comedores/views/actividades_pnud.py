@@ -122,10 +122,10 @@ class ActividadPnudDeactivateView(
         return context
 
     def post(self, request, *args, **kwargs):
-        actividad = self.get_object()
-        if actividad.activo:
-            actividad.activo = False
-            actividad.save(update_fields=["activo", "fecha_actualizacion"])
+        self.object = self.get_object()
+        if self.object.activo:
+            self.object.activo = False
+            self.object.save(update_fields=["activo", "fecha_actualizacion"])
             messages.success(request, "Actividad PNUD dada de baja correctamente.")
         else:
             messages.info(request, "La actividad PNUD ya se encontraba inactiva.")
