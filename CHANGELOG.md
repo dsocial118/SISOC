@@ -4,8 +4,8 @@
 ## Actualizaciones
 
 - [relevamientos] Depuración de imports duplicados y sin uso en relevamientos/views/web_views.py para limpiar el job pylint de CI. (PR #1856)
-- [INET] Inet provincia. (PR #1870)
-- [Comeodores] feat(relevamientos): badges Completo/Sincronizado y mejoras UX en seguimiento. (PR #1861)
+- [sin-area] feat(relevamientos): badges Completo/Sincronizado y mejoras UX en seguimiento. (PR #1861)
+- [sin-area] Inet provincia. (PR #1870)
 <!-- AUTO-GENERATED RELEASE END: 2026-06-10 -->
 
 <!-- AUTO-GENERATED RELEASE START: 2026-06-03 -->

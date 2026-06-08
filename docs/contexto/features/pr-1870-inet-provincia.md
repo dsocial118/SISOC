@@ -33,6 +33,7 @@
 
 - Empezar por `docs/registro/prs/PR-1870.md` para contexto resumido del PR.
 - Revisar primero estos archivos del diff:
+- `CHANGELOG.md`
 - `VAT/forms.py`
 - `VAT/migrations/0049_comisioncurso_cupo_lista_espera.py`
 - `VAT/models.py`
@@ -52,13 +53,15 @@
 - `VAT/templates/vat/comision_curso_wizard/step1_info.html`
 - `VAT/templates/vat/curso/comision_curso_form.html`
 - `VAT/templates/vat/curso/curso_form.html`
-- `VAT/templates/vat/institucion/contacto_confirm_delete.html`
-- ... y 32 archivo(s) adicional(es) relacionados.
+- ... y 35 archivo(s) adicional(es) relacionados.
 - Documentación sugerida para ampliar contexto:
 - `docs/indice.md`
 - `docs/ia/CONTEXT_HYGIENE.md`
 - `docs/ia/ARCHITECTURE.md`
 - `docs/ia/TESTING.md`
+- `docs/contexto/features/pr-1870-inet-provincia.md`
+- `docs/registro/prs/PR-1870.md`
+- `docs/registro/releases/pending/2026-06-10-pr-1870.md`
 
 ## Trazabilidad
 
