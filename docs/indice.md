@@ -42,6 +42,7 @@
 - `docs/flujos/relevamiento_sync.md`: flujo completo del sincronizador de relevamientos.
 - `docs/flujos/consulta_renaper.md`: integración con RENAPER para la consulta de datos ciudadanos.
 - `docs/flujos/cambio_programa_comedor.md`: procedimiento para cambiar programas asignados a comedores.
+- `docs/integraciones/ticketera_api.md`: contrato server-to-server de la API Ticketera (5 endpoints, dirigido al desarrollador de la Ticketera).
 
 ### 6. IA, planes y registro spec-as-source
 - `docs/agentes/guia.md`: guía rápida para asistentes automáticos y flujo de documentación.
