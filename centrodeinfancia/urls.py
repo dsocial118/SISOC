@@ -22,6 +22,7 @@ from centrodeinfancia.views import (
     ObservacionCentroInfanciaUpdateView,
     TrabajadorCentroInfanciaCreateView,
     TrabajadorCentroInfanciaDeleteView,
+    TrabajadorCentroInfanciaDetailView,
     TrabajadorCentroInfanciaUpdateView,
     centrodeinfancia_ajax,
     load_departamentos_ipi,
@@ -114,6 +115,13 @@ urlpatterns = [
             NominaCentroInfanciaFormularioDetailView.as_view()
         ),
         name="centrodeinfancia_nomina_formulario_ver",
+    ),
+    path(
+        "centrodeinfancia/<int:pk>/trabajadores/<int:trabajador_id>/",
+        permissions_any_required(["centrodeinfancia.view_centrodeinfancia"])(
+            TrabajadorCentroInfanciaDetailView.as_view()
+        ),
+        name="centrodeinfancia_trabajador_ver",
     ),
     path(
         "centrodeinfancia/<int:pk>/trabajadores/crear/",
