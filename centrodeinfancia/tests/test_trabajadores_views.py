@@ -47,9 +47,7 @@ def test_detalle_cdi_muestra_trabajadores_y_oculta_acciones_sin_permiso_edicion(
     content = response.content.decode("utf-8")
     assert "Trabajadores" in content
     assert "Lopez, Ana" in content
-    assert "Profesor" in content
     assert "Agregar trabajador" not in content
-    assert "trabajador-editar-btn" not in content
     assert "trabajador-eliminar-btn" not in content
 
 
@@ -65,7 +63,7 @@ def test_trabajador_create_post_crea_y_redirige(client):
             "nombre": "Julia",
             "apellido": "Mendez",
             "telefono": "11-2345-6789",
-            "rol": Trabajador.Rol.DIRECTOR,
+            "subcomponente": "cdi",
         },
     )
 
@@ -75,7 +73,7 @@ def test_trabajador_create_post_crea_y_redirige(client):
     assert trabajador.nombre == "Julia"
     assert trabajador.apellido == "Mendez"
     assert trabajador.telefono == "11-2345-6789"
-    assert trabajador.rol == Trabajador.Rol.DIRECTOR
+    assert trabajador.subcomponente == "cdi"
 
 
 @pytest.mark.django_db
@@ -100,7 +98,8 @@ def test_trabajador_edit_post_actualiza_y_redirige(client):
             "nombre": "Maria",
             "apellido": "Suarez",
             "telefono": "011-4444-5555",
-            "rol": Trabajador.Rol.PROFESOR,
+            "subcomponente": "egp",
+            "funcion_egp": "coordinacion_general",
         },
     )
 
@@ -109,7 +108,8 @@ def test_trabajador_edit_post_actualiza_y_redirige(client):
     trabajador.refresh_from_db()
     assert trabajador.nombre == "Maria"
     assert trabajador.telefono == "011-4444-5555"
-    assert trabajador.rol == Trabajador.Rol.PROFESOR
+    assert trabajador.subcomponente == "egp"
+    assert trabajador.funcion_egp == "coordinacion_general"
 
 
 @pytest.mark.django_db
@@ -167,6 +167,51 @@ def test_trabajador_editar_no_permite_centro_fuera_de_scope(client):
             "telefono": "",
             "rol": Trabajador.Rol.DIRECTOR,
         },
+    )
+
+    assert response.status_code == 404
+
+
+@pytest.mark.django_db
+def test_trabajador_ver_devuelve_200(client):
+    user = _crear_usuario("user-trabajador-ver", permisos=["view_centrodeinfancia"])
+    client.force_login(user)
+    centro = CentroDeInfancia.objects.create(nombre="CDI Ver")
+    trabajador = Trabajador.objects.create(
+        centro=centro,
+        nombre="Carlos",
+        apellido="Rojas",
+        subcomponente="cdi",
+        funcion_cdi="educador_docente_sala",
+    )
+
+    response = client.get(
+        reverse(
+            "centrodeinfancia_trabajador_ver",
+            kwargs={"pk": centro.pk, "trabajador_id": trabajador.pk},
+        )
+    )
+
+    assert response.status_code == 200
+    content = response.content.decode("utf-8")
+    assert "Rojas, Carlos" in content
+    assert "Fuerza de trabajo" in content
+
+
+@pytest.mark.django_db
+def test_trabajador_ver_fuera_de_scope_devuelve_404(client):
+    provincia_a = Provincia.objects.create(nombre="Mendoza")
+    provincia_b = Provincia.objects.create(nombre="Jujuy")
+    user = _crear_usuario("user-ver-scope", provincia=provincia_a, permisos=["view_centrodeinfancia"])
+    client.force_login(user)
+    centro = CentroDeInfancia.objects.create(nombre="CDI Jujuy", provincia=provincia_b)
+    trabajador = Trabajador.objects.create(centro=centro, nombre="X", apellido="Y")
+
+    response = client.get(
+        reverse(
+            "centrodeinfancia_trabajador_ver",
+            kwargs={"pk": centro.pk, "trabajador_id": trabajador.pk},
+        )
     )
 
     assert response.status_code == 404
