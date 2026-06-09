@@ -493,7 +493,11 @@ def test_subir_cruce_excel_and_revisar_legajo_branches(mocker):
 
     req_subs = SimpleNamespace(
         user=_user_stub(user_id=1, tec=True),
-        POST={"accion": "SUBSANAR", "motivo": "faltan docs"},
+        POST={
+            "accion": "SUBSANAR",
+            "motivo": "faltan docs",
+            "tipo_subsanacion": "DOCUMENTACION",
+        },
     )
     resp_sub = revisar.post(req_subs, pk=1, legajo_id=3)
     assert resp_sub.status_code == 400
@@ -517,6 +521,9 @@ def test_subir_cruce_excel_and_revisar_legajo_branches(mocker):
     resp_subsanado = revisar.post(req_subs, pk=1, legajo_id=3)
     assert resp_subsanado.status_code == 200
     assert leg.estado_validacion_renaper == 3
+    # El tipo y el motivo elegidos deben persistir en el legajo.
+    assert leg.subsanacion_tipo == "DOCUMENTACION"
+    assert leg.subsanacion_motivo == "faltan docs"
 
 
 def test_expediente_import_view_success_and_errors(mocker):
