@@ -175,14 +175,21 @@
                                     <option value="segundo_seguimiento" disabled>Segundo seguimiento</option>
                                 </select>
                             </div>
-                            <div class="mb-2">
-                                <label for="new_territorial_select" class="form-label">Territorial asignado</label>
-                                <select id="new_territorial_select"
-                                        name="territorial"
-                                        class="form-select"
-                                        required>
-                                    <option value="" selected disabled>Seleccionar territorial</option>
-                                </select>
+                            <div id="new_territorial_container" class="mb-2 position-relative territorial-autocomplete">
+                                <label for="new_territorial_input" class="form-label">Territorial asignado</label>
+                                <input type="text"
+                                       id="new_territorial_input"
+                                       class="form-control"
+                                       placeholder="Escribí el nombre del territorial"
+                                       autocomplete="off"
+                                       aria-autocomplete="list"
+                                       aria-controls="new_territorial_suggestions"
+                                       required />
+                                <input type="hidden" name="territorial" id="new_territorial_value" value="" />
+                                <div id="new_territorial_suggestions"
+                                     class="territorial-suggestions d-none"
+                                     role="listbox"
+                                     aria-label="Sugerencias de territoriales"></div>
                             </div>
                             <small class="text-muted">El relevamiento se crea asignado al territorial seleccionado.</small>
                         </div>
