@@ -344,9 +344,13 @@
                                             <td>{{ trabajador.apellido }}, {{ trabajador.nombre }}</td>
                                             <td>{{ trabajador.get_subcomponente_display|default:"-" }}</td>
                                             <td>
-                                                {% if trabajador.funcion_cdi %}{{ trabajador.get_funcion_cdi_display }}
-                                                {% elif trabajador.funcion_egp %}{{ trabajador.get_funcion_egp_display }}
-                                                {% else %}-{% endif %}
+                                                {% if trabajador.funcion_cdi %}
+                                                    {{ trabajador.get_funcion_cdi_display }}
+                                                {% elif trabajador.funcion_egp %}
+                                                    {{ trabajador.get_funcion_egp_display }}
+                                                {% else %}
+                                                    -
+                                                {% endif %}
                                             </td>
                                             <td>{{ trabajador.fecha_carga|default:"-" }}</td>
                                             <td>

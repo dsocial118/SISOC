@@ -15,6 +15,7 @@ def _trabajador(**kwargs):
 
 # ─── clean(): funciones condicionales por subcomponente ────────────────────
 
+
 @pytest.mark.django_db
 def test_clean_borra_funcion_egp_cuando_subcomponente_no_es_egp():
     t = _trabajador(subcomponente="cdi", funcion_egp="coordinacion_general")
@@ -45,10 +46,17 @@ def test_clean_preserva_funcion_cdi_cuando_subcomponente_es_cdi():
 
 # ─── clean(): formación condicional por nivel educativo ────────────────────
 
+
 @pytest.mark.django_db
-@pytest.mark.parametrize("nivel", [
-    "nunca", "primario_completo", "secundario_incompleto", "secundario_en_curso",
-])
+@pytest.mark.parametrize(
+    "nivel",
+    [
+        "nunca",
+        "primario_completo",
+        "secundario_incompleto",
+        "secundario_en_curso",
+    ],
+)
 def test_clean_borra_formacion_cuando_nivel_no_habilita(nivel):
     t = _trabajador(nivel_educativo=nivel, formacion_academica="psicologia")
     t.full_clean()
@@ -56,9 +64,15 @@ def test_clean_borra_formacion_cuando_nivel_no_habilita(nivel):
 
 
 @pytest.mark.django_db
-@pytest.mark.parametrize("nivel", [
-    "secundario_completo", "superior_incompleto", "superior_en_curso", "superior_completo",
-])
+@pytest.mark.parametrize(
+    "nivel",
+    [
+        "secundario_completo",
+        "superior_incompleto",
+        "superior_en_curso",
+        "superior_completo",
+    ],
+)
 def test_clean_preserva_formacion_cuando_nivel_habilita(nivel):
     t = _trabajador(nivel_educativo=nivel, formacion_academica="psicologia")
     t.full_clean()
@@ -66,6 +80,7 @@ def test_clean_preserva_formacion_cuando_nivel_habilita(nivel):
 
 
 # ─── clean(): pueblo originario condicional ────────────────────────────────
+
 
 @pytest.mark.django_db
 def test_clean_borra_pueblo_originario_si_no_es_indigena():
@@ -88,6 +103,7 @@ def test_clean_preserva_pueblo_originario_si_es_indigena():
 
 
 # ─── clean(): discapacidad condicional ────────────────────────────────────
+
 
 @pytest.mark.django_db
 def test_clean_borra_tipo_y_apoyo_discapacidad_si_no_tiene():
@@ -128,6 +144,7 @@ def test_clean_preserva_numero_cud_si_tiene_cud():
 
 # ─── clean(): validación multiselect ───────────────────────────────────────
 
+
 @pytest.mark.django_db
 def test_clean_rechaza_capacitacion_invalida():
     t = _trabajador(capacitaciones_certificadas=["valor_inexistente"])
@@ -143,6 +160,7 @@ def test_clean_acepta_capacitaciones_validas():
 
 
 # ─── propiedad edad ────────────────────────────────────────────────────────
+
 
 @pytest.mark.django_db
 def test_edad_calcula_correctamente():

@@ -1,11 +1,24 @@
 {% extends "includes/main.html" %}
 {% load static crispy_forms_tags %}
 
-{% block title %}{% if is_edit %}Editar trabajador{% else %}Agregar trabajador{% endif %}{% endblock %}
-{% block titulo-pagina %}{% if is_edit %}Editar trabajador{% else %}Agregar trabajador{% endif %}{% endblock %}
+{% block title %}
+    {% if is_edit %}
+        Editar trabajador
+    {% else %}
+        Agregar trabajador
+    {% endif %}
+{% endblock %}
+{% block titulo-pagina %}
+    {% if is_edit %}
+        Editar trabajador
+    {% else %}
+        Agregar trabajador
+    {% endif %}
+{% endblock %}
 
 {% block content %}
-    <link rel="stylesheet" href="{% static 'custom/css/comedorFormModerno.css' %}" />
+    <link rel="stylesheet"
+          href="{% static 'custom/css/comedorFormModerno.css' %}" />
 
     <div class="d-flex justify-content-between align-items-center mb-3">
         <nav aria-label="breadcrumb">
@@ -14,16 +27,23 @@
                     <a href="{% url 'centrodeinfancia_detalle' centro.id %}">{{ centro.nombre }}</a>
                 </li>
                 <li class="breadcrumb-item active">
-                    {% if is_edit %}Editar trabajador{% else %}Agregar trabajador{% endif %}
+                    {% if is_edit %}
+                        Editar trabajador
+                    {% else %}
+                        Agregar trabajador
+                    {% endif %}
                 </li>
             </ol>
         </nav>
-        <a href="{% url 'centrodeinfancia_detalle' centro.id %}" class="btn btn-secondary btn-sm">Volver al CDI</a>
+        <a href="{% url 'centrodeinfancia_detalle' centro.id %}"
+           class="btn btn-secondary btn-sm">Volver al CDI</a>
     </div>
 
     {% if not is_edit %}
         {# ── Búsqueda por DNI ─────────────────────────────────────── #}
-        <div class="card mb-4" style="background:#2c3e50; border:1px solid #374151;">
+        <div class="card mb-4"
+             style="background:#2c3e50;
+                    border:1px solid #374151">
             <div class="card-body">
                 <h5 class="mb-3" style="color:#e5e7eb;">
                     <i class="fas fa-search me-2" style="color:#f39c12;"></i>Buscar por DNI
@@ -46,14 +66,19 @@
         </div>
 
         {% if ciudadanos and not selected_ciudadano %}
-            <div class="card mb-4" style="background:#2c3e50; border:1px solid #374151;">
+            <div class="card mb-4"
+                 style="background:#2c3e50;
+                        border:1px solid #374151">
                 <div class="card-body">
                     <h6 class="mb-3" style="color:#e5e7eb;">Resultados de búsqueda</h6>
                     <div class="table-responsive">
                         <table class="table table-hover mb-0" style="color:#e5e7eb;">
                             <thead style="border-color:#374151;">
                                 <tr>
-                                    <th>Apellido</th><th>Nombre</th><th>DNI</th><th></th>
+                                    <th>Apellido</th>
+                                    <th>Nombre</th>
+                                    <th>DNI</th>
+                                    <th></th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -76,7 +101,10 @@
         {% endif %}
 
         {% if query and no_resultados %}
-            <div class="alert mb-4" style="background:rgba(243,156,18,0.15); border:1px solid rgba(243,156,18,0.4); color:#f39c12;">
+            <div class="alert mb-4"
+                 style="background:rgba(243,156,18,0.15);
+                        border:1px solid rgba(243,156,18,0.4);
+                        color:#f39c12">
                 <i class="fas fa-info-circle me-2"></i>
                 {% if renaper_precarga %}
                     No se encontró el DNI en el sistema. Se precargaron datos desde RENAPER; complete la ficha para agregar al CDI.
@@ -87,7 +115,10 @@
         {% endif %}
 
         {% if selected_ciudadano %}
-            <div class="alert mb-4" style="background:rgba(52,152,219,0.15); border:1px solid rgba(52,152,219,0.4); color:#74b9e7;">
+            <div class="alert mb-4"
+                 style="background:rgba(52,152,219,0.15);
+                        border:1px solid rgba(52,152,219,0.4);
+                        color:#74b9e7">
                 <i class="fas fa-user-check me-2"></i>
                 Ficha para: <strong>{{ selected_ciudadano.apellido }}, {{ selected_ciudadano.nombre }}</strong>
                 (DNI {{ selected_ciudadano.documento|default:"-" }})
@@ -101,9 +132,7 @@
             {% if selected_ciudadano %}<input type="hidden" name="ciudadano_id" value="{{ selected_ciudadano.id }}" />{% endif %}
             {% if renaper_precarga %}<input type="hidden" name="origen_dato" value="renaper" />{% endif %}
 
-            {% if form.non_field_errors %}
-                <div class="alert alert-danger mb-3">{{ form.non_field_errors }}</div>
-            {% endif %}
+            {% if form.non_field_errors %}<div class="alert alert-danger mb-3">{{ form.non_field_errors }}</div>{% endif %}
 
             {# ── Barra de progreso ─────────────────────────────────── #}
             <div class="progress-indicator">
@@ -124,7 +153,9 @@
             <div class="section-card" data-section="institucion">
                 <div class="section-header" data-toggle-section="institucion">
                     <div class="section-header-left">
-                        <div class="section-icon"><i class="fas fa-building"></i></div>
+                        <div class="section-icon">
+                            <i class="fas fa-building"></i>
+                        </div>
                         <div class="section-title-group">
                             <h3 class="section-title">Institución</h3>
                             <p class="section-subtitle">Datos del CDI y fecha de carga</p>
@@ -134,32 +165,54 @@
                         <span class="status-badge empty" id="status-institucion">
                             <i class="fas fa-circle"></i> Sin completar
                         </span>
-                        <div class="collapse-indicator"><i class="fas fa-chevron-down"></i></div>
+                        <div class="collapse-indicator">
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
                     </div>
                 </div>
                 <div class="section-body collapse show" id="section-institucion">
                     <div class="form-group row">
                         <div class="col-md-4">
                             <label for="cdi-jurisdiccion" class="form-label">Jurisdicción</label>
-                            <input id="cdi-jurisdiccion" type="text" class="form-control" value="{{ centro.provincia|default:'-' }}" readonly />
+                            <input id="cdi-jurisdiccion"
+                                   type="text"
+                                   class="form-control"
+                                   value="{{ centro.provincia|default:'-' }}"
+                                   readonly />
                         </div>
                         <div class="col-md-4">
                             <label for="cdi-departamento" class="form-label">Departamento</label>
-                            <input id="cdi-departamento" type="text" class="form-control" value="{{ centro.departamento|default:'-' }}" readonly />
+                            <input id="cdi-departamento"
+                                   type="text"
+                                   class="form-control"
+                                   value="{{ centro.departamento|default:'-' }}"
+                                   readonly />
                         </div>
                         <div class="col-md-4">
                             <label for="cdi-localidad" class="form-label">Localidad</label>
-                            <input id="cdi-localidad" type="text" class="form-control" value="{{ centro.localidad|default:'-' }}" readonly />
+                            <input id="cdi-localidad"
+                                   type="text"
+                                   class="form-control"
+                                   value="{{ centro.localidad|default:'-' }}"
+                                   readonly />
                         </div>
                     </div>
                     <div class="form-group row">
                         <div class="col-md-5">
                             <label for="cdi-nombre" class="form-label">Nombre del CDI</label>
-                            <input id="cdi-nombre" type="text" class="form-control" value="{{ centro.nombre }}" readonly />
+                            <input id="cdi-nombre"
+                                   type="text"
+                                   class="form-control"
+                                   value="{{ centro.nombre }}"
+                                   readonly />
                         </div>
                         <div class="col-md-3">
                             <label for="cdi-codigo" class="form-label">Código CDI</label>
-                            <input id="cdi-codigo" type="text" class="form-control" value="{{ centro.codigo_cdi|default:'-' }}" readonly />
+                            <input id="cdi-codigo"
+                                   type="text"
+                                   class="form-control"
+                                   value="{{ centro.codigo_cdi|default:'-' }}"
+                                   readonly />
                         </div>
                         <div class="col-md-3">{{ form.fecha_carga|as_crispy_field }}</div>
                     </div>
@@ -170,7 +223,9 @@
             <div class="section-card" data-section="fuerza_trabajo">
                 <div class="section-header" data-toggle-section="fuerza_trabajo">
                     <div class="section-header-left">
-                        <div class="section-icon"><i class="fas fa-id-card"></i></div>
+                        <div class="section-icon">
+                            <i class="fas fa-id-card"></i>
+                        </div>
                         <div class="section-title-group">
                             <h3 class="section-title">Fuerza de trabajo</h3>
                             <p class="section-subtitle">Rol, función y datos personales (RENAPER/ANSES)</p>
@@ -180,7 +235,9 @@
                         <span class="status-badge empty" id="status-fuerza_trabajo">
                             <i class="fas fa-circle"></i> Sin completar
                         </span>
-                        <div class="collapse-indicator"><i class="fas fa-chevron-down"></i></div>
+                        <div class="collapse-indicator">
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
                     </div>
                 </div>
                 <div class="section-body collapse show" id="section-fuerza_trabajo">
@@ -217,7 +274,9 @@
             <div class="section-card" data-section="formacion">
                 <div class="section-header" data-toggle-section="formacion">
                     <div class="section-header-left">
-                        <div class="section-icon"><i class="fas fa-graduation-cap"></i></div>
+                        <div class="section-icon">
+                            <i class="fas fa-graduation-cap"></i>
+                        </div>
                         <div class="section-title-group">
                             <h3 class="section-title">Formación y experiencia</h3>
                             <p class="section-subtitle">Nivel educativo, capacitaciones y trayectoria</p>
@@ -227,7 +286,9 @@
                         <span class="status-badge empty" id="status-formacion">
                             <i class="fas fa-circle"></i> Sin completar
                         </span>
-                        <div class="collapse-indicator"><i class="fas fa-chevron-down"></i></div>
+                        <div class="collapse-indicator">
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
                     </div>
                 </div>
                 <div class="section-body collapse show" id="section-formacion">
@@ -237,17 +298,13 @@
                         <div class="col-md-3">{{ form.anos_trabajo_primera_infancia|as_crispy_field }}</div>
                     </div>
                     <div class="form-group">
-                        <p class="form-label fw-semibold mb-2" style="color:#e5e7eb;">
-                            Capacitaciones certificadas (últimos tres años)
-                        </p>
+                        <p class="form-label fw-semibold mb-2" style="color:#e5e7eb;">Capacitaciones certificadas (últimos tres años)</p>
                         <div class="row g-2">
                             {% for checkbox in form.capacitaciones_certificadas %}
                                 <div class="col-md-4 col-sm-6">
                                     <div class="form-check">
                                         {{ checkbox.tag }}
-                                        <label class="form-check-label" for="{{ checkbox.id_for_label }}">
-                                            {{ checkbox.choice_label }}
-                                        </label>
+                                        <label class="form-check-label" for="{{ checkbox.id_for_label }}">{{ checkbox.choice_label }}</label>
                                     </div>
                                 </div>
                             {% endfor %}
@@ -263,7 +320,9 @@
             <div class="section-card" data-section="contratacion">
                 <div class="section-header" data-toggle-section="contratacion">
                     <div class="section-header-left">
-                        <div class="section-icon"><i class="fas fa-file-contract"></i></div>
+                        <div class="section-icon">
+                            <i class="fas fa-file-contract"></i>
+                        </div>
                         <div class="section-title-group">
                             <h3 class="section-title">Contratación</h3>
                             <p class="section-subtitle">Tipo de contrato y carga horaria</p>
@@ -273,7 +332,9 @@
                         <span class="status-badge empty" id="status-contratacion">
                             <i class="fas fa-circle"></i> Sin completar
                         </span>
-                        <div class="collapse-indicator"><i class="fas fa-chevron-down"></i></div>
+                        <div class="collapse-indicator">
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
                     </div>
                 </div>
                 <div class="section-body collapse show" id="section-contratacion">
@@ -288,7 +349,9 @@
             <div class="section-card" data-section="contacto">
                 <div class="section-header" data-toggle-section="contacto">
                     <div class="section-header-left">
-                        <div class="section-icon"><i class="fas fa-phone"></i></div>
+                        <div class="section-icon">
+                            <i class="fas fa-phone"></i>
+                        </div>
                         <div class="section-title-group">
                             <h3 class="section-title">Contacto</h3>
                             <p class="section-subtitle">Datos de contacto y domicilio</p>
@@ -298,7 +361,9 @@
                         <span class="status-badge empty" id="status-contacto">
                             <i class="fas fa-circle"></i> Sin completar
                         </span>
-                        <div class="collapse-indicator"><i class="fas fa-chevron-down"></i></div>
+                        <div class="collapse-indicator">
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
                     </div>
                 </div>
                 <div class="section-body collapse show" id="section-contacto">
@@ -323,7 +388,9 @@
             <div class="section-card" data-section="identidad">
                 <div class="section-header" data-toggle-section="identidad">
                     <div class="section-header-left">
-                        <div class="section-icon"><i class="fas fa-globe-americas"></i></div>
+                        <div class="section-icon">
+                            <i class="fas fa-globe-americas"></i>
+                        </div>
                         <div class="section-title-group">
                             <h3 class="section-title">Cultura e identidad</h3>
                             <p class="section-subtitle">Pertenencia, lenguajes e interculturalidad</p>
@@ -333,22 +400,20 @@
                         <span class="status-badge empty" id="status-identidad">
                             <i class="fas fa-circle"></i> Sin completar
                         </span>
-                        <div class="collapse-indicator"><i class="fas fa-chevron-down"></i></div>
+                        <div class="collapse-indicator">
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
                     </div>
                 </div>
                 <div class="section-body collapse show" id="section-identidad">
                     <div class="form-group">
-                        <p class="form-label fw-semibold mb-2" style="color:#e5e7eb;">
-                            {{ form.grupo_pertenencia.label }}
-                        </p>
+                        <p class="form-label fw-semibold mb-2" style="color:#e5e7eb;">{{ form.grupo_pertenencia.label }}</p>
                         <div class="row g-2">
                             {% for checkbox in form.grupo_pertenencia %}
                                 <div class="col-md-6">
                                     <div class="form-check">
                                         {{ checkbox.tag }}
-                                        <label class="form-check-label" for="{{ checkbox.id_for_label }}">
-                                            {{ checkbox.choice_label }}
-                                        </label>
+                                        <label class="form-check-label" for="{{ checkbox.id_for_label }}">{{ checkbox.choice_label }}</label>
                                     </div>
                                 </div>
                             {% endfor %}
@@ -361,24 +426,18 @@
                         <div class="col-md-5">{{ form.pueblo_originario|as_crispy_field }}</div>
                     </div>
                     <div class="form-group">
-                        <p class="form-label fw-semibold mb-2" style="color:#e5e7eb;">
-                            {{ form.lenguajes.label }}
-                        </p>
+                        <p class="form-label fw-semibold mb-2" style="color:#e5e7eb;">{{ form.lenguajes.label }}</p>
                         <div class="row g-2">
                             {% for checkbox in form.lenguajes %}
                                 <div class="col-md-4 col-sm-6">
                                     <div class="form-check">
                                         {{ checkbox.tag }}
-                                        <label class="form-check-label" for="{{ checkbox.id_for_label }}">
-                                            {{ checkbox.choice_label }}
-                                        </label>
+                                        <label class="form-check-label" for="{{ checkbox.id_for_label }}">{{ checkbox.choice_label }}</label>
                                     </div>
                                 </div>
                             {% endfor %}
                         </div>
-                        {% if form.lenguajes.errors %}
-                            <div class="text-danger small mt-1">{{ form.lenguajes.errors }}</div>
-                        {% endif %}
+                        {% if form.lenguajes.errors %}<div class="text-danger small mt-1">{{ form.lenguajes.errors }}</div>{% endif %}
                     </div>
                     <div class="form-group row">
                         <div class="col-md-3">{{ form.es_interprete|as_crispy_field }}</div>
@@ -390,7 +449,9 @@
             <div class="section-card" data-section="discapacidad">
                 <div class="section-header" data-toggle-section="discapacidad">
                     <div class="section-header-left">
-                        <div class="section-icon"><i class="fas fa-heartbeat"></i></div>
+                        <div class="section-icon">
+                            <i class="fas fa-heartbeat"></i>
+                        </div>
                         <div class="section-title-group">
                             <h3 class="section-title">Discapacidad</h3>
                             <p class="section-subtitle">Condición, apoyos y Certificado Único de Discapacidad</p>
@@ -400,7 +461,9 @@
                         <span class="status-badge empty" id="status-discapacidad">
                             <i class="fas fa-circle"></i> Sin completar
                         </span>
-                        <div class="collapse-indicator"><i class="fas fa-chevron-down"></i></div>
+                        <div class="collapse-indicator">
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
                     </div>
                 </div>
                 <div class="section-body collapse show" id="section-discapacidad">
@@ -409,17 +472,13 @@
                     </div>
                     <div id="bloque-discapacidad">
                         <div class="form-group">
-                            <p class="form-label fw-semibold mb-2" style="color:#e5e7eb;">
-                                {{ form.tipo_discapacidad.label }}
-                            </p>
+                            <p class="form-label fw-semibold mb-2" style="color:#e5e7eb;">{{ form.tipo_discapacidad.label }}</p>
                             <div class="row g-2">
                                 {% for checkbox in form.tipo_discapacidad %}
                                     <div class="col-md-4">
                                         <div class="form-check">
                                             {{ checkbox.tag }}
-                                            <label class="form-check-label" for="{{ checkbox.id_for_label }}">
-                                                {{ checkbox.choice_label }}
-                                            </label>
+                                            <label class="form-check-label" for="{{ checkbox.id_for_label }}">{{ checkbox.choice_label }}</label>
                                         </div>
                                     </div>
                                 {% endfor %}
@@ -441,17 +500,25 @@
 
             {# ── Acciones ──────────────────────────────────────────── #}
             <div class="d-flex gap-2 mt-3 mb-5">
-                <button type="submit" class="btn btn-warning" data-submit-with-spinner="Guardando...">
+                <button type="submit"
+                        class="btn btn-warning"
+                        data-submit-with-spinner="Guardando...">
                     <i class="fas fa-save me-1"></i>
-                    {% if is_edit %}Guardar cambios{% else %}Agregar trabajador{% endif %}
+                    {% if is_edit %}
+                        Guardar cambios
+                    {% else %}
+                        Agregar trabajador
+                    {% endif %}
                 </button>
-                <a href="{% url 'centrodeinfancia_detalle' centro.id %}" class="btn btn-secondary">Cancelar</a>
+                <a href="{% url 'centrodeinfancia_detalle' centro.id %}"
+                   class="btn btn-secondary">Cancelar</a>
             </div>
 
         </form>
     {% else %}
         <div class="mt-3">
-            <a href="{% url 'centrodeinfancia_detalle' centro.id %}" class="btn btn-secondary">Volver</a>
+            <a href="{% url 'centrodeinfancia_detalle' centro.id %}"
+               class="btn btn-secondary">Volver</a>
         </div>
     {% endif %}
 
@@ -462,5 +529,6 @@
         window.ajaxLoadMunicipiosUrl  = "{% url 'ajax_load_municipios' %}";
         window.ajaxLoadLocalidadesUrl = "{% url 'ajax_load_localidades' %}";
     </script>
-    <script src="{% static 'custom/js/trabajadorForm.js' %}" nonce="{{ request.csp_nonce }}"></script>
+    <script src="{% static 'custom/js/trabajadorForm.js' %}"
+            nonce="{{ request.csp_nonce }}"></script>
 {% endblock %}

@@ -431,8 +431,14 @@ TRABAJADOR_SALA_CDI_CHOICES = [
 
 TRABAJADOR_TIPO_DOCUMENTACION_CHOICES = [
     ("ninguna", "Ninguna documentación"),
-    ("origen_con_tramite", "Sólo tengo mi documento de origen, pero inicié los trámites de radicación"),
-    ("origen_sin_tramite", "Sólo tengo mi documento de origen y no inicié ningún trámite de radicación"),
+    (
+        "origen_con_tramite",
+        "Sólo tengo mi documento de origen, pero inicié los trámites de radicación",
+    ),
+    (
+        "origen_sin_tramite",
+        "Sólo tengo mi documento de origen y no inicié ningún trámite de radicación",
+    ),
     ("res_precaria_migraciones", "Certificado de residencia precaria de Migraciones"),
     ("res_precaria_conare", "Certificado de residencia precaria de la CONARE"),
     ("dni_temporario", "DNI temporario"),
@@ -649,12 +655,14 @@ TRABAJADOR_TIPO_DISCAPACIDAD_CHOICES = [
     ("no_sabe", "No sabe"),
 ]
 
-_TRABAJADOR_NIVELES_HABILITAN_FORMACION = frozenset({
-    "secundario_completo",
-    "superior_incompleto",
-    "superior_en_curso",
-    "superior_completo",
-})
+_TRABAJADOR_NIVELES_HABILITAN_FORMACION = frozenset(
+    {
+        "secundario_completo",
+        "superior_incompleto",
+        "superior_en_curso",
+        "superior_completo",
+    }
+)
 
 
 class Trabajador(SoftDeleteModelMixin, models.Model):
@@ -674,9 +682,7 @@ class Trabajador(SoftDeleteModelMixin, models.Model):
     rol = models.CharField(max_length=20, choices=Rol.choices, blank=True)
 
     # Sección Institución
-    fecha_carga = models.DateField(
-        blank=True, null=True, verbose_name="Fecha de carga"
-    )
+    fecha_carga = models.DateField(blank=True, null=True, verbose_name="Fecha de carga")
 
     # Sección Fuerza de trabajo
     subcomponente = models.CharField(
@@ -791,9 +797,7 @@ class Trabajador(SoftDeleteModelMixin, models.Model):
     )
 
     # Sección Contacto
-    email = models.EmailField(
-        blank=True, null=True, verbose_name="Correo electrónico"
-    )
+    email = models.EmailField(blank=True, null=True, verbose_name="Correo electrónico")
     calle_contacto = models.CharField(
         max_length=255, blank=True, null=True, verbose_name="Calle y numeración"
     )

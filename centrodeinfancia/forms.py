@@ -994,8 +994,12 @@ class TrabajadorCDIForm(forms.ModelForm):
             "numero_cud",
         ]
         widgets = {
-            "fecha_carga": forms.DateInput(attrs={"type": "date", "class": "form-control"}),
-            "fecha_nacimiento": forms.DateInput(attrs={"type": "date", "class": "form-control"}),
+            "fecha_carga": forms.DateInput(
+                attrs={"type": "date", "class": "form-control"}
+            ),
+            "fecha_nacimiento": forms.DateInput(
+                attrs={"type": "date", "class": "form-control"}
+            ),
         }
 
     def __init__(self, *args, **kwargs):

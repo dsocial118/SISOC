@@ -741,7 +741,9 @@ class TrabajadorCentroInfanciaCreateView(LoginRequiredMixin, CreateView):
         selected_ciudadano = self._get_selected_ciudadano()
         ciudadanos, renaper_data = self._buscar_por_query(query, kwargs.get("form"))
 
-        self._set_form_initial(context, selected_ciudadano, renaper_data, ciudadanos, query)
+        self._set_form_initial(
+            context, selected_ciudadano, renaper_data, ciudadanos, query
+        )
 
         no_resultados = bool(query) and not ciudadanos
         context["query"] = query
@@ -773,7 +775,9 @@ class TrabajadorCentroInfanciaCreateView(LoginRequiredMixin, CreateView):
             messages.warning(self.request, renaper_result["message"])
         return [], None
 
-    def _set_form_initial(self, context, selected_ciudadano, renaper_data, ciudadanos, query):
+    def _set_form_initial(
+        self, context, selected_ciudadano, renaper_data, ciudadanos, query
+    ):
         form = context.get("form")
         if form and form.is_bound:
             return
@@ -789,14 +793,20 @@ class TrabajadorCentroInfanciaCreateView(LoginRequiredMixin, CreateView):
             )
 
     def _get_selected_ciudadano(self):
-        ciudadano_id = self.request.GET.get("ciudadano_id") or self.request.POST.get("ciudadano_id")
+        ciudadano_id = self.request.GET.get("ciudadano_id") or self.request.POST.get(
+            "ciudadano_id"
+        )
         if not str(ciudadano_id or "").isdigit():
             return None
         return Ciudadano.objects.filter(pk=ciudadano_id).first()
 
     def _build_initial_from_ciudadano(self, ciudadano):
         sexo_str = getattr(ciudadano.sexo, "sexo", None) if ciudadano.sexo_id else None
-        nac_str = getattr(ciudadano.nacionalidad, "nacionalidad", None) if ciudadano.nacionalidad_id else None
+        nac_str = (
+            getattr(ciudadano.nacionalidad, "nacionalidad", None)
+            if ciudadano.nacionalidad_id
+            else None
+        )
         return {
             "nombre": ciudadano.nombre or "",
             "apellido": ciudadano.apellido or "",
@@ -820,21 +830,21 @@ class TrabajadorCentroInfanciaCreateView(LoginRequiredMixin, CreateView):
         )
         fecha_nacimiento = _parse_fecha_renaper(fecha_raw)
 
-        sexo_raw = (
-            data.get("sexo")
-            or datos_api.get("sexo")
-            or ""
-        )
+        sexo_raw = data.get("sexo") or datos_api.get("sexo") or ""
         sexo = self._SEXO_RENAPER_MAP.get(sexo_raw, "")
 
         return {
             "nombre": data.get("nombre") or data.get("nombres") or "",
             "apellido": data.get("apellido") or data.get("apellidos") or "",
-            "dni": data.get("dni") or data.get("documento") or datos_api.get("nroDocumento"),
+            "dni": data.get("dni")
+            or data.get("documento")
+            or datos_api.get("nroDocumento"),
             "fecha_nacimiento": fecha_nacimiento,
             "cuit": data.get("cuit") or datos_api.get("cuil") or "",
             "sexo_registral": sexo,
-            "nacionalidad_trabajador": data.get("nacionalidad") or datos_api.get("pais") or "",
+            "nacionalidad_trabajador": data.get("nacionalidad")
+            or datos_api.get("pais")
+            or "",
         }
 
     def form_valid(self, form):

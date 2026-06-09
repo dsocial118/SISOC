@@ -202,7 +202,9 @@ def test_trabajador_ver_devuelve_200(client):
 def test_trabajador_ver_fuera_de_scope_devuelve_404(client):
     provincia_a = Provincia.objects.create(nombre="Mendoza")
     provincia_b = Provincia.objects.create(nombre="Jujuy")
-    user = _crear_usuario("user-ver-scope", provincia=provincia_a, permisos=["view_centrodeinfancia"])
+    user = _crear_usuario(
+        "user-ver-scope", provincia=provincia_a, permisos=["view_centrodeinfancia"]
+    )
     client.force_login(user)
     centro = CentroDeInfancia.objects.create(nombre="CDI Jujuy", provincia=provincia_b)
     trabajador = Trabajador.objects.create(centro=centro, nombre="X", apellido="Y")
