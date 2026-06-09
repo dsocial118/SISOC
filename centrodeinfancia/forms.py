@@ -28,6 +28,22 @@ from centrodeinfancia.models import (
     NominaCentroInfancia,
     Trabajador,
     normalizar_cuit,
+    TRABAJADOR_SUBCOMPONENTE_CHOICES,
+    TRABAJADOR_FUNCION_EGP_CHOICES,
+    TRABAJADOR_FUNCION_CDI_CHOICES,
+    TRABAJADOR_SALA_CDI_CHOICES,
+    TRABAJADOR_TIPO_DOCUMENTACION_CHOICES,
+    TRABAJADOR_SEXO_REGISTRAL_CHOICES,
+    TRABAJADOR_NIVEL_EDUCATIVO_CHOICES,
+    TRABAJADOR_FORMACION_ACADEMICA_CHOICES,
+    TRABAJADOR_CAPACITACIONES_CHOICES,
+    TRABAJADOR_ANOS_TRABAJO_CHOICES,
+    TRABAJADOR_TIPO_CONTRATACION_CHOICES,
+    TRABAJADOR_TIPO_BARRIO_CHOICES,
+    TRABAJADOR_GRUPO_PERTENENCIA_CHOICES,
+    TRABAJADOR_PUEBLO_ORIGINARIO_CHOICES,
+    TRABAJADOR_LENGUAJES_CHOICES,
+    TRABAJADOR_TIPO_DISCAPACIDAD_CHOICES,
 )
 from centrodeinfancia.forms_observacion import ObservacionCentroInfanciaForm
 from centrodeinfancia.forms_formulario_cdi import (
@@ -44,6 +60,7 @@ __all__ = [
     "NominaCentroInfanciaCreateForm",
     "IntervencionCentroInfanciaForm",
     "TrabajadorForm",
+    "TrabajadorCDIForm",
     "ObservacionCentroInfanciaForm",
     "FormularioCDIForm",
     "construir_filas_iniciales_fijas",
@@ -899,6 +916,121 @@ class TrabajadorForm(forms.ModelForm):
         for field_name in ["nombre", "apellido", "telefono"]:
             self.fields[field_name].widget.attrs["class"] = "form-control"
         self.fields["rol"].widget.attrs["class"] = "form-select"
+
+
+_MULTISELECT_FIELDS_TRABAJADOR = (
+    "capacitaciones_certificadas",
+    "grupo_pertenencia",
+    "lenguajes",
+    "tipo_discapacidad",
+)
+
+
+class TrabajadorCDIForm(forms.ModelForm):
+    capacitaciones_certificadas = forms.MultipleChoiceField(
+        choices=TRABAJADOR_CAPACITACIONES_CHOICES,
+        widget=forms.CheckboxSelectMultiple,
+        required=False,
+        label="Capacitaciones certificadas (últimos tres años)",
+    )
+    grupo_pertenencia = forms.MultipleChoiceField(
+        choices=TRABAJADOR_GRUPO_PERTENENCIA_CHOICES,
+        widget=forms.CheckboxSelectMultiple,
+        required=False,
+        label="¿Desciende, tiene antepasados o pertenece a alguno de los siguientes grupos?",
+    )
+    lenguajes = forms.MultipleChoiceField(
+        choices=TRABAJADOR_LENGUAJES_CHOICES,
+        widget=forms.CheckboxSelectMultiple,
+        required=False,
+        label="Lenguajes que utiliza",
+    )
+    tipo_discapacidad = forms.MultipleChoiceField(
+        choices=TRABAJADOR_TIPO_DISCAPACIDAD_CHOICES,
+        widget=forms.CheckboxSelectMultiple,
+        required=False,
+        label="¿Qué tipo de discapacidad presenta? (puede marcar más de una opción)",
+    )
+
+    class Meta:
+        model = Trabajador
+        fields = [
+            "fecha_carga",
+            "subcomponente",
+            "funcion_egp",
+            "funcion_cdi",
+            "sala_cdi",
+            "nombre",
+            "apellido",
+            "fecha_nacimiento",
+            "tipo_documentacion",
+            "dni",
+            "sexo_registral",
+            "cuit",
+            "pais_nacimiento",
+            "nacionalidad_trabajador",
+            "nivel_educativo",
+            "formacion_academica",
+            "capacitaciones_certificadas",
+            "anos_trabajo_primera_infancia",
+            "tipo_contratacion",
+            "carga_horaria_semanal",
+            "email",
+            "telefono",
+            "calle_contacto",
+            "unidad_funcional",
+            "tipo_barrio",
+            "provincia_contacto",
+            "municipio_contacto",
+            "localidad_contacto",
+            "grupo_pertenencia",
+            "pueblo_originario",
+            "lenguajes",
+            "es_interprete",
+            "tiene_discapacidad",
+            "tipo_discapacidad",
+            "recibe_apoyo_discapacidad",
+            "tiene_cud",
+            "numero_cud",
+        ]
+        widgets = {
+            "fecha_carga": forms.DateInput(attrs={"type": "date", "class": "form-control"}),
+            "fecha_nacimiento": forms.DateInput(attrs={"type": "date", "class": "form-control"}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # Precarga de valores para campos multiselect desde JSONField
+        if self.instance.pk:
+            for fname in _MULTISELECT_FIELDS_TRABAJADOR:
+                value = getattr(self.instance, fname, None) or []
+                if value:
+                    self.initial[fname] = value
+
+        # CSS classes
+        for fname, field in self.fields.items():
+            if isinstance(field.widget, forms.CheckboxSelectMultiple):
+                continue
+            if isinstance(field.widget, forms.Select):
+                field.widget.attrs.setdefault("class", "form-select")
+            else:
+                field.widget.attrs.setdefault("class", "form-control")
+
+        # Tooltip en teléfono
+        self.fields["telefono"].widget.attrs["placeholder"] = "Incluir código de área"
+
+    def clean_capacitaciones_certificadas(self):
+        return self.cleaned_data.get("capacitaciones_certificadas") or []
+
+    def clean_grupo_pertenencia(self):
+        return self.cleaned_data.get("grupo_pertenencia") or []
+
+    def clean_lenguajes(self):
+        return self.cleaned_data.get("lenguajes") or []
+
+    def clean_tipo_discapacidad(self):
+        return self.cleaned_data.get("tipo_discapacidad") or []
 
 
 class IntervencionCentroInfanciaForm(forms.ModelForm):
