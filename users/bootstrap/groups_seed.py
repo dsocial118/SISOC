@@ -295,6 +295,23 @@ LISTADO_DEFINED_GROUPS = (
         ),
     ),
     BootstrapGroupSeed(
+        "INET_PROVINCIA",
+        (
+            "auth.role_inet_provincia",
+            "auth.role_provincia_vat",
+            "VAT.view_centro",
+            "VAT.add_centro",
+            "VAT.change_centro",
+            "VAT.view_planversioncurricular",
+            "VAT.add_planversioncurricular",
+            "VAT.change_planversioncurricular",
+            "VAT.view_ofertainstitucional",
+            "VAT.change_ofertainstitucional",
+            "VAT.view_comision",
+            "VAT.change_comision",
+        ),
+    ),
+    BootstrapGroupSeed(
         "CFP",
         (
             "auth.role_referentecentrovat",
@@ -695,6 +712,17 @@ LISTADO_DEFINED_GROUPS = (
     BootstrapGroupSeed(
         UserGroups.COMUNICADO_COMEDORES_ARCHIVAR,
         ("auth.role_comunicado_comedores_archivar",),
+    ),
+    BootstrapGroupSeed(
+        UserGroups.ACTIVIDADES_PNUD_VER,
+        ("pwa.view_catalogoactividadpwa",),
+    ),
+    BootstrapGroupSeed(
+        UserGroups.ACTIVIDADES_PNUD_GESTIONAR,
+        (
+            "pwa.view_catalogoactividadpwa",
+            "pwa.manage_catalogoactividadpwa",
+        ),
     ),
     BootstrapGroupSeed(
         UserGroups.ADMIN,

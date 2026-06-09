@@ -1,4 +1,5 @@
 {% extends "includes/main.html" %}
+{% load static %}
 {% block title %}Confirmar eliminación{% endblock %}
 {% block breadcrumb %}
     <ol class="breadcrumb float-sm-right">
@@ -9,7 +10,8 @@
     </ol>
 {% endblock %}
 {% block content %}
-    <div class="row">
+    <link rel="stylesheet" href="{% static 'custom/css/vat_design.css' %}" />
+    <div class="vat-ui row">
         <div class="col-md-6">
             <div class="card card-danger">
                 <div class="card-header bg-danger text-white">
@@ -33,4 +35,5 @@
             </div>
         </div>
     </div>
+    {# /.vat-ui #}
 {% endblock %}

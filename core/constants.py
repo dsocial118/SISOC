@@ -30,6 +30,8 @@ class UserGroups:
     COMEDOR_VER = "Comedores Ver"
     ACOMPANAMIENTO_LISTAR = "Acompanamiento Listar"
     ACOMPANAMIENTO_DETALLE = "Acompanamiento Detalle"
+    ACTIVIDADES_PNUD_VER = "Actividades PNUD Ver"
+    ACTIVIDADES_PNUD_GESTIONAR = "Actividades PNUD Gestionar"
 
     # =========================================================================
     # Grupos de permisos de Comunicados (v1 - compatibilidad)

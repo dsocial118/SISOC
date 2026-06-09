@@ -6,6 +6,19 @@ from django.db.models import Model
 
 from comedores.models import ValorComida
 
+# IDs de programa PNUD en la tabla core_programa (prog 3 = PNUD Prog1, prog 4 = PNUD Prog2).
+# Se complementa con la búsqueda por nombre para tolerar entornos donde los IDs difieren.
+_PNUD_PROGRAMA_IDS = frozenset((3, 4))
+
+
+def is_pnud_comedor(comedor) -> bool:
+    """Devuelve True si el comedor pertenece a un programa PNUD."""
+    programa_nombre = str(
+        getattr(getattr(comedor, "programa", None), "nombre", "") or ""
+    )
+    normalized = " ".join(programa_nombre.lower().split())
+    return comedor.programa_id in _PNUD_PROGRAMA_IDS or "pnud" in normalized
+
 
 def get_object_by_filter(model: Type[Model], **kwargs):
     """Obtener el primer objeto de ``model`` que coincida con ``kwargs``."""

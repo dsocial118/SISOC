@@ -301,6 +301,12 @@ class CatalogoActividadPWA(models.Model):
         verbose_name = "Catalogo Actividad PWA"
         verbose_name_plural = "Catalogo Actividades PWA"
         ordering = ("categoria", "actividad", "id")
+        permissions = [
+            (
+                "manage_catalogoactividadpwa",
+                "Puede gestionar actividades PNUD PWA",
+            ),
+        ]
         constraints = [
             models.UniqueConstraint(
                 fields=("categoria", "actividad"),

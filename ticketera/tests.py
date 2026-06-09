@@ -115,6 +115,37 @@ def test_cambiar_password_responde_503_con_flag_deshabilitado(api_client):
 
 @pytest.mark.smoke
 @pytest.mark.django_db
+@override_settings(TICKETERA_ENABLED=False)
+def test_patch_usuarios_responde_503_con_flag_deshabilitado(api_client):
+    response = api_client.patch(
+        reverse(
+            "ticketera-usuarios-detail",
+            kwargs={"username": "juan.perez"},
+        ),
+        {"email": "x@ejemplo.gob.ar"},
+        format="json",
+    )
+
+    assert response.status_code == status.HTTP_503_SERVICE_UNAVAILABLE
+    assert response.json()["error"] == "integration_disabled"
+
+
+@pytest.mark.smoke
+@pytest.mark.django_db
+@override_settings(TICKETERA_ENABLED=False)
+def test_solicitar_reset_responde_503_con_flag_deshabilitado(api_client):
+    response = api_client.post(
+        reverse("ticketera-auth-solicitar-reset-password"),
+        {"username": "juan.perez"},
+        format="json",
+    )
+
+    assert response.status_code == status.HTTP_503_SERVICE_UNAVAILABLE
+    assert response.json()["error"] == "integration_disabled"
+
+
+@pytest.mark.smoke
+@pytest.mark.django_db
 @override_settings(TICKETERA_ENABLED=True)
 def test_usuarios_opera_con_flag_habilitado(api_client):
     response = api_client.post(

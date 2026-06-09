@@ -119,6 +119,7 @@ class RelevamientoListView(LoginRequiredMixin, ListView):
                     "is_child": False,
                     "parent_id": None,
                     "has_seguimiento": seguimiento is not None,
+                    "sincronizado_gestionar": rel.sincronizado_gestionar,
                 }
             )
             if seguimiento is not None:
@@ -130,6 +131,7 @@ class RelevamientoListView(LoginRequiredMixin, ListView):
                         "numero_if": None,
                         "is_child": True,
                         "parent_id": rel.id,
+                        "sincronizado_gestionar": seguimiento.sincronizado_gestionar,
                     }
                 )
         context["relevamientos_items"] = items
