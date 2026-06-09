@@ -421,11 +421,15 @@ class ValidacionRenaperView(View):
             comentario = request.POST.get("comentario")
             if validacion_estado == "3" and comentario:
                 legajo.subsanacion_motivo = comentario
+                # Subsanación originada en la validación RENAPER: registrar el tipo
+                # para que el detalle muestre el motivo y no el texto genérico.
+                legajo.subsanacion_tipo = "RENAPER"
                 legajo.revision_tecnico = "SUBSANAR"
                 legajo.save(
                     update_fields=[
                         "estado_validacion_renaper",
                         "subsanacion_motivo",
+                        "subsanacion_tipo",
                         "revision_tecnico",
                         "modificado_en",
                     ]
