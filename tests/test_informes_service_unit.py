@@ -169,7 +169,7 @@ def test_generar_y_guardar_pdf_and_context_helpers(mocker):
         side_effect=["<html>pdf</html>", "<html>docx</html>"],
     )
     mocker.patch(
-        "admisiones.services.informes_service.HTML",
+        "weasyprint.HTML",
         return_value=SimpleNamespace(write_pdf=lambda: b"pdf"),
     )
     mocker.patch.object(
@@ -428,7 +428,7 @@ def test_revision_and_complementarios_flows(mocker):
         return_value="<html></html>",
     )
     mocker.patch(
-        "admisiones.services.informes_service.HTML",
+        "weasyprint.HTML",
         return_value=SimpleNamespace(write_pdf=lambda: b"pdf"),
     )
     mocker.patch(

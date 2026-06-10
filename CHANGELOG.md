@@ -1,12 +1,29 @@
 <!-- AUTO-GENERATED RELEASE START: 2026-06-10 -->
 # Versión SISOC 10.06.2026
 
+## Nuevas Funcionalidades
+
+- [comedores] ABM web de Actividades PNUD, rediseño de nómina con tabs Alimentaria/Actividades/Todas, badges de comunidad indígena y situación de calle, y correcciones PWA mobile (overflow, skeleton, selectores, colaboradores, notificaciones). (PR #1862)
+- [centrodeinfancia] Formulario extendido de trabajadores CDI con 35 campos nuevos en 8 secciones colapsables, barra de progreso, búsqueda RENAPER por DNI y pantalla de detalle read-only. (PR #1883)
+- [comunicados] Herramienta de mailing masivo con carga de destinatarios desde Excel, worker de procesamiento asíncrono, seguimiento de estado por fila y soporte de adjuntos por envío. (PR #1888)
+
 ## Actualizaciones
 
 - [relevamientos] Depuración de imports duplicados y sin uso en relevamientos/views/web_views.py para limpiar el job pylint de CI. (PR #1856)
 - [sin-area] feat(relevamientos): badges Completo/Sincronizado y mejoras UX en seguimiento. (PR #1861)
 - [sin-area] feat(relevamientos): badges Completado/Sincronizado en detalle y listado. (PR #1864)
+- [rendicioncuentas] Los módulos de Rendición Mensual y Rendición Final usan permisos propios del módulo en lugar de permisos de comedores; se actualizan menús de navegación y se asignan permisos a los grupos correspondientes mediante migraciones. (PR #1866)
 - [sin-area] Inet provincia. (PR #1870)
+- [ticketera] Se agregan endpoint PATCH para editar email/nombre de usuarios Ticketera y endpoint de solicitud de reset de contraseña con anti-enumeración y rate limit propio. (PR #1874)
+- [sin-area] Se agrega buscador de texto en listados de gestión. (PR #1881)
+
+## Corrección de Errores
+
+- [celiaquia] Se corrige error 500 en la vista reporter-provincias de celiaquía causado por CONVERT_TZ cuando el servidor MySQL no tiene tablas de zona horaria cargadas. (PR #1849)
+- [VAT] Se corrige la escala de las barras en el gráfico de tendencia del reporter de provincias que mostraba proporciones incorrectas. (PR #1850)
+- [relevamientos] Se corrige la sincronización del primer seguimiento con GESTIONAR (la tabla Seguimientos1erVisita ahora recibe los registros) y se mejora la UI del listado de relevamientos. (PR #1858)
+- [dispositivos] El dropdown de Municipio en el formulario de dispositivos se filtra por el scope territorial del usuario desde la carga inicial, no solo tras el primer submit. (PR #1863)
+- [celiaquia] La subsanación de expedientes de celiaquía ahora muestra el motivo específico elegido por el usuario en lugar del mensaje genérico. (PR #1880)
 <!-- AUTO-GENERATED RELEASE END: 2026-06-10 -->
 
 <!-- AUTO-GENERATED RELEASE START: 2026-06-03 -->

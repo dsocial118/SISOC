@@ -1,15 +1,18 @@
 from django.contrib import admin
 
 from comedores.models import (
+    CapacitacionComedorCertificado,
+    ComedorDatosConvenioPnud,
+    ColaboradorEspacio,
     Comedor,
+    HistorialValidacion,
+    ImagenComedor,
+    Nomina,
     Observacion,
+    Programas,
+    Referente,
     TipoDeComedor,
     ValorComida,
-    Programas,
-    Nomina,
-    Referente,
-    ImagenComedor,
-    HistorialValidacion,
 )
 
 
@@ -46,3 +49,46 @@ admin.site.register(Programas)
 admin.site.register(Nomina)
 admin.site.register(Referente)
 admin.site.register(ImagenComedor)
+
+
+@admin.register(ComedorDatosConvenioPnud)
+class ComedorDatosConvenioPnudAdmin(admin.ModelAdmin):
+    list_display = (
+        "comedor",
+        "nro_convenio",
+        "monto_total_conveniado",
+        "personas_conveniadas",
+        "actualizado_en",
+    )
+    search_fields = ("comedor__nombre", "nro_convenio")
+    raw_id_fields = ("comedor",)
+    readonly_fields = ("actualizado_en",)
+
+
+@admin.register(ColaboradorEspacio)
+class ColaboradorEspacioAdmin(admin.ModelAdmin):
+    list_display = ("ciudadano", "comedor", "genero", "fecha_alta", "fecha_baja")
+    list_filter = ("genero",)
+    search_fields = (
+        "ciudadano__apellido",
+        "ciudadano__nombre",
+        "ciudadano__documento",
+        "comedor__nombre",
+    )
+    raw_id_fields = ("comedor", "ciudadano", "creado_por", "modificado_por")
+    readonly_fields = ("fecha_creado", "fecha_modificado")
+
+
+@admin.register(CapacitacionComedorCertificado)
+class CapacitacionComedorCertificadoAdmin(admin.ModelAdmin):
+    list_display = (
+        "comedor",
+        "capacitacion",
+        "estado",
+        "fecha_presentacion",
+        "fecha_revision",
+    )
+    list_filter = ("estado", "capacitacion")
+    search_fields = ("comedor__nombre",)
+    raw_id_fields = ("comedor", "presentado_por", "revisado_por")
+    readonly_fields = ("observacion", "creado", "modificado")

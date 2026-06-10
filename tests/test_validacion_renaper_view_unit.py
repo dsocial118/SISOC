@@ -143,6 +143,8 @@ def test_guardar_validacion_estado_paths(mocker):
     assert json.loads(subsanar.content)["success"] is True
     assert legajo.revision_tecnico == "SUBSANAR"
     assert "subsanacion_motivo" in legajo.saved_fields
+    assert legajo.subsanacion_tipo == "RENAPER"
+    assert "subsanacion_tipo" in legajo.saved_fields
 
     mocker.patch(
         "celiaquia.views.validacion_renaper.get_object_or_404",

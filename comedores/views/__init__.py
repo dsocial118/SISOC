@@ -40,8 +40,18 @@ from .cursos_app_mobile import (
     CursoAppMobileListView,
     CursoAppMobileUpdateView,
 )
+from .actividades_pnud import (
+    ActividadPnudCreateView,
+    ActividadPnudDeactivateView,
+    ActividadPnudListView,
+    ActividadPnudUpdateView,
+)
 
 __all__ = [
+    "ActividadPnudCreateView",
+    "ActividadPnudDeactivateView",
+    "ActividadPnudListView",
+    "ActividadPnudUpdateView",
     "AsignarDuplaListView",
     "ColaboradorEspacioCreateView",
     "ColaboradorEspacioDeleteView",

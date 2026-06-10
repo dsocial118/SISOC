@@ -495,6 +495,8 @@ document.addEventListener('DOMContentLoaded', () => {
       modalSubsanar.querySelector('#subsanar-legajo-id').value = legajoId;
       const ta = modalSubsanar.querySelector('#subsanar-motivo');
       if (ta) ta.value = '';
+      const tipoSel = modalSubsanar.querySelector('#subsanar-tipo');
+      if (tipoSel) tipoSel.value = '';
     });
 
     const formSubsanar = document.getElementById('form-subsanar');
@@ -503,11 +505,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const legajoId = modalSubsanar.querySelector('#subsanar-legajo-id').value;
       const motivo = (modalSubsanar.querySelector('#subsanar-motivo').value || '').trim();
+      const tipoSubsanacion = (modalSubsanar.querySelector('#subsanar-tipo')?.value || '').trim();
       const btn = document.getElementById('btn-confirm-subsanar');
       const original = btn.innerHTML;
 
       if (!legajoId) {
         showAlert('danger', 'No se pudo identificar el legajo.');
+        return;
+      }
+      if (!tipoSubsanacion) {
+        showAlert('warning', 'Seleccioná el tipo de subsanación.');
         return;
       }
       if (!motivo) {
@@ -529,6 +536,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Enviar exactamente lo que espera RevisarLegajoView
         const fd = new FormData();
         fd.append('accion', 'SUBSANAR');
+        fd.append('tipo_subsanacion', tipoSubsanacion);
         fd.append('motivo', motivo);
 
         const resp = await fetch(url, {

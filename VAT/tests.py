@@ -1500,11 +1500,17 @@ def test_inet_provincia_no_puede_modificar_campos_bloqueados_en_centro_update(
     user.groups.add(Group.objects.get(name="INET_PROVINCIA"))
     _assign_user_profile_provincia(user, provincia, es_usuario_provincial=True)
 
+    referente = User.objects.create_user(
+        username="inet-prov-centro-ref", password="test1234"
+    )
+    referente.groups.add(Group.objects.get_or_create(name="CFP")[0])
+
     centro = _create_vat_centro(
-        codigo="INET-LOCK-001",
+        codigo="500144901",
         provincia=provincia,
         municipio=municipio,
         localidad=localidad,
+        referente=referente,
         nombre="Centro INET Lock",
     )
 
@@ -1532,7 +1538,7 @@ def test_inet_provincia_no_puede_modificar_campos_bloqueados_en_centro_update(
             "celular": "221-2222222",
             "correo": "inet-lock@vat.test",
             "sitio_web": "https://inet-lock.test",
-            "referentes": [],
+            "referentes": [str(referente.pk)],
             "revisores": [],
             "tipo_gestion": "Privada",
             "clase_institucion": "Secundario Orientado",
@@ -1755,7 +1761,7 @@ def test_inet_provincia_no_puede_modificar_campos_bloqueados_en_comision_update(
         plan_curricular=plan,
         programa=programa,
         nombre_local="Oferta Comision B",
-        ciclo_lectivo=2026,
+        ciclo_lectivo=2025,
         estado="publicada",
     )
 

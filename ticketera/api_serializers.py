@@ -36,12 +36,71 @@ class TicketeraAuthCambiarPasswordSerializer(serializers.Serializer):
     source = serializers.CharField(max_length=50, required=False, default="ticketera")
 
 
+class TicketeraUsuarioPatchSerializer(serializers.Serializer):
+    """Payload para editar datos básicos de un usuario provisionado por la Ticketera.
+
+    Todos los campos son opcionales. Los campos no incluidos en la lista
+    (username, password, is_active, source) no son editables por este canal;
+    `source` se acepta solo como hint informativo para auditoría.
+    """
+
+    email = serializers.EmailField(max_length=254, required=False)
+    first_name = serializers.CharField(max_length=150, allow_blank=True, required=False)
+    last_name = serializers.CharField(max_length=150, allow_blank=True, required=False)
+    source = serializers.CharField(max_length=50, required=False, default="ticketera")
+
+
+class TicketeraSolicitarResetSerializer(serializers.Serializer):
+    """Payload para iniciar el reset de contraseña desde la Ticketera.
+
+    Mismo XOR que `users.api_serializers.PasswordResetRequestSerializer`: se
+    espera exactamente uno de ``username`` o ``email``.
+    """
+
+    username = serializers.CharField(max_length=150, required=False)
+    email = serializers.EmailField(max_length=254, required=False)
+    source = serializers.CharField(max_length=50, required=False, default="ticketera")
+
+    def validate(self, attrs):
+        email = (attrs.get("email") or "").strip()
+        username = (attrs.get("username") or "").strip()
+
+        if bool(email) == bool(username):
+            raise serializers.ValidationError(
+                {"detail": ("Debe enviar email o username para solicitar el reseteo.")}
+            )
+
+        if username:
+            attrs["username"] = username
+            attrs.pop("email", None)
+        else:
+            attrs["email"] = email
+            attrs.pop("username", None)
+        return attrs
+
+
 class TicketeraUsuarioResponseSerializer(serializers.Serializer):
     """Datos del usuario devueltos al crear o reconciliar (201/200)."""
 
     id = serializers.IntegerField()
     username = serializers.CharField()
     email = serializers.EmailField()
+
+
+class TicketeraUsuarioDetailSerializer(serializers.Serializer):
+    """Snapshot completo devuelto por el PATCH de usuario (200)."""
+
+    id = serializers.IntegerField()
+    username = serializers.CharField()
+    email = serializers.EmailField()
+    first_name = serializers.CharField(allow_blank=True)
+    last_name = serializers.CharField(allow_blank=True)
+
+
+class TicketeraSolicitarResetResponseSerializer(serializers.Serializer):
+    """Respuesta genérica del solicitar-reset (200 anti-enumeration)."""
+
+    detail = serializers.CharField()
 
 
 class TicketeraAuthVerificarUserSerializer(serializers.Serializer):
