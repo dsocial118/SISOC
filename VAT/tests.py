@@ -1488,7 +1488,7 @@ def test_plan_version_curricular_form_inet_provincia_restringe_campos_estrategic
 @pytest.mark.django_db
 @override_settings(ROOT_URLCONF="config.urls")
 def test_inet_provincia_no_puede_modificar_campos_bloqueados_en_centro_update(
-    client, vat_geo_data
+    client, vat_geo_data, vat_referente_user
 ):
     provincia, municipio, localidad = vat_geo_data
     call_command("create_groups", verbosity=0)
@@ -1501,7 +1501,7 @@ def test_inet_provincia_no_puede_modificar_campos_bloqueados_en_centro_update(
     _assign_user_profile_provincia(user, provincia, es_usuario_provincial=True)
 
     centro = _create_vat_centro(
-        codigo="INET-LOCK-001",
+        codigo="500144901",
         provincia=provincia,
         municipio=municipio,
         localidad=localidad,
@@ -1532,6 +1532,7 @@ def test_inet_provincia_no_puede_modificar_campos_bloqueados_en_centro_update(
             "celular": "221-2222222",
             "correo": "inet-lock@vat.test",
             "sitio_web": "https://inet-lock.test",
+            "referente": str(vat_referente_user.pk),
             "referentes": [],
             "revisores": [],
             "tipo_gestion": "Privada",
@@ -1755,7 +1756,7 @@ def test_inet_provincia_no_puede_modificar_campos_bloqueados_en_comision_update(
         plan_curricular=plan,
         programa=programa,
         nombre_local="Oferta Comision B",
-        ciclo_lectivo=2026,
+        ciclo_lectivo=2027,
         estado="publicada",
     )
 

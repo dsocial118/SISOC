@@ -61,6 +61,7 @@ def test_nomina_detail_context_data(mocker):
         "comedores.views.nomina._get_admision_del_comedor_or_404",
         return_value=SimpleNamespace(pk=77, comedor="comedor"),
     )
+    mocker.patch("comedores.views.nomina.is_pnud_comedor", return_value=False)
 
     view = module.NominaDetailView()
     view.kwargs = {"pk": 9, "admision_pk": 77}
@@ -73,7 +74,9 @@ def test_nomina_detail_context_data(mocker):
     assert ctx["cantidad_nomina"] == 6
     assert ctx["menores"] == 5
     assert ctx["dni_query"] == "1234"
-    get_nomina_detail_mock.assert_called_once_with(77, 2, dni_query="1234")
+    get_nomina_detail_mock.assert_called_once_with(
+        77, 2, dni_query="1234", nomina_tab="todas"
+    )
 
 
 def test_prepare_renaper_initial_data_uses_data_and_datos_api(mocker):

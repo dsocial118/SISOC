@@ -160,13 +160,20 @@ def test_list_view_get_context_data_agrega_comedor(mocker):
 
 
 def _make_relevamiento_stub(
-    rel_id, *, fecha="2026-01-01", estado="Pendiente", numero_if=None, seguimiento=None
+    rel_id,
+    *,
+    fecha="2026-01-01",
+    estado="Pendiente",
+    numero_if=None,
+    seguimiento=None,
+    sincronizado_gestionar=False,
 ):
     rel = SimpleNamespace(
         id=rel_id,
         fecha_visita=fecha,
         estado=estado,
         numero_if=numero_if,
+        sincronizado_gestionar=sincronizado_gestionar,
     )
     if seguimiento is None:
         from relevamientos.models import PrimerSeguimiento
@@ -209,6 +216,7 @@ def test_list_view_construye_items_solo_padre_sin_seguimiento(mocker):
             "is_child": False,
             "parent_id": None,
             "has_seguimiento": False,
+            "sincronizado_gestionar": False,
         }
     ]
 
@@ -217,7 +225,9 @@ def test_list_view_construye_items_padre_seguido_de_hijo(mocker):
     view = RelevamientoListView()
     view.kwargs = {"comedor_pk": 5}
     rel = _make_relevamiento_stub(42, numero_if="IF-42")
-    seguimiento = SimpleNamespace(id=900, fecha_hora="2026-02-02", estado="Asignado")
+    seguimiento = SimpleNamespace(
+        id=900, fecha_hora="2026-02-02", estado="Asignado", sincronizado_gestionar=True
+    )
     mocker.patch(
         "django.views.generic.list.MultipleObjectMixin.get_context_data",
         return_value={"relevamientos": [rel]},
@@ -244,6 +254,8 @@ def test_list_view_construye_items_padre_seguido_de_hijo(mocker):
     assert items[1]["fecha"] == "2026-02-02"
     assert items[1]["estado"] == "Asignado"
     assert items[1]["numero_if"] is None
+    assert items[0]["sincronizado_gestionar"] is False
+    assert items[1]["sincronizado_gestionar"] is True
 
 
 def test_get_primer_seguimiento_helper_devuelve_none_si_no_existe():

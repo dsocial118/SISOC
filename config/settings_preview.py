@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from config.settings import *  # noqa: F401,F403
+from config.settings import *  # noqa: F401,F403  # pylint: disable=wildcard-import,unused-wildcard-import
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 ROOT_URLCONF = "config.urls_preview"

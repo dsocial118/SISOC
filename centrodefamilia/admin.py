@@ -69,7 +69,14 @@ class ResponsableAdmin(admin.ModelAdmin):
 
 @admin.register(Beneficiario)
 class BeneficiarioAdmin(admin.ModelAdmin):
-    list_display = ("apellido", "nombre", "dni", "cuil", "genero", "maximo_nivel_educativo")
+    list_display = (
+        "apellido",
+        "nombre",
+        "dni",
+        "cuil",
+        "genero",
+        "maximo_nivel_educativo",
+    )
     list_filter = ("genero", "maximo_nivel_educativo", "estado_academico")
     search_fields = ("apellido", "nombre", "dni", "cuil")
     raw_id_fields = ("responsable", "creado_por")
@@ -87,15 +94,35 @@ class AccesoCDFAdmin(admin.ModelAdmin):
 
 @admin.register(CabalArchivo)
 class CabalArchivoAdmin(admin.ModelAdmin):
-    list_display = ("nombre_original", "usuario", "fecha_subida", "total_filas", "total_validas", "total_invalidas")
+    list_display = (
+        "nombre_original",
+        "usuario",
+        "fecha_subida",
+        "total_filas",
+        "total_validas",
+        "total_invalidas",
+    )
     search_fields = ("nombre_original",)
     raw_id_fields = ("usuario",)
-    readonly_fields = ("fecha_subida", "total_filas", "total_validas", "total_invalidas")
+    readonly_fields = (
+        "fecha_subida",
+        "total_filas",
+        "total_validas",
+        "total_invalidas",
+    )
 
 
 @admin.register(InformeCabalRegistro)
 class InformeCabalRegistroAdmin(admin.ModelAdmin):
-    list_display = ("archivo", "centro", "nro_comercio", "razon_social", "importe", "fecha_trx", "no_coincidente")
+    list_display = (
+        "archivo",
+        "centro",
+        "nro_comercio",
+        "razon_social",
+        "importe",
+        "fecha_trx",
+        "no_coincidente",
+    )
     list_filter = ("no_coincidente",)
     search_fields = ("nro_comercio", "razon_social", "nro_tarjeta")
     raw_id_fields = ("archivo", "centro")

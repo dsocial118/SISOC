@@ -36,7 +36,14 @@ class NacionalidadAdmin(admin.ModelAdmin):
 
 @admin.register(MontoPrestacionPrograma)
 class MontoPrestacionProgramaAdmin(admin.ModelAdmin):
-    list_display = ("programa", "desayuno_valor", "almuerzo_valor", "merienda_valor", "cena_valor", "fecha_creacion")
+    list_display = (
+        "programa",
+        "desayuno_valor",
+        "almuerzo_valor",
+        "merienda_valor",
+        "cena_valor",
+        "fecha_creacion",
+    )
     list_filter = ("programa",)
     raw_id_fields = ("usuario_creador",)
     readonly_fields = ("fecha_creacion", "fecha_modificacion")

@@ -6,7 +6,7 @@ from rest_framework.test import APIClient
 
 from admisiones.models.admisiones import Admision
 from ciudadanos.models import Ciudadano
-from comedores.models import Comedor, Nomina
+from comedores.models import Comedor, Nomina, Programas
 from core.models import Dia, Provincia, Sexo
 from pwa.models import (
     ActividadEspacioPWA,
@@ -20,7 +20,10 @@ from users.models import AccesoComedorPWA
 @pytest.fixture
 def comedor(db):
     provincia = Provincia.objects.create(nombre="Buenos Aires")
-    return Comedor.objects.create(nombre="Comedor Actividades API", provincia=provincia)
+    programa = Programas.objects.create(nombre="PNUD")
+    return Comedor.objects.create(
+        nombre="Comedor Actividades API", provincia=provincia, programa=programa
+    )
 
 
 @pytest.fixture
