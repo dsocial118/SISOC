@@ -223,4 +223,3 @@ class MailingUploadForm(forms.Form):
         widget=MultipleFileInput(attrs={"class": "form-control", "multiple": True}),
         help_text="Opcionalmente, seleccione uno o más archivos para adjuntar al correo.",
     )
-

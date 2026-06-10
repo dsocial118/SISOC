@@ -207,7 +207,9 @@ class MailingJobRow(models.Model):
         verbose_name_plural = "Resultados de filas de mailing"
 
     def __str__(self):
-        return f"Lote Mailing {self.job_id} fila {self.fila} ({self.get_status_display()})"
+        return (
+            f"Lote Mailing {self.job_id} fila {self.fila} ({self.get_status_display()})"
+        )
 
 
 class MailingJobAttachment(models.Model):
