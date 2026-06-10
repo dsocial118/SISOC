@@ -7,21 +7,41 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('comunicados', '0007_mailingjob_mailingjobrow_and_more'),
+        ("comunicados", "0007_mailingjob_mailingjobrow_and_more"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='MailingJobAttachment',
+            name="MailingJobAttachment",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('archivo', models.FileField(upload_to='comunicados/mailing/attachments/%Y/%m/%d/')),
-                ('nombre_original', models.CharField(max_length=255)),
-                ('job', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='attachments', to='comunicados.mailingjob')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "archivo",
+                    models.FileField(
+                        upload_to="comunicados/mailing/attachments/%Y/%m/%d/"
+                    ),
+                ),
+                ("nombre_original", models.CharField(max_length=255)),
+                (
+                    "job",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="attachments",
+                        to="comunicados.mailingjob",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Adjunto de lote de mailing',
-                'verbose_name_plural': 'Adjuntos de lotes de mailing',
+                "verbose_name": "Adjunto de lote de mailing",
+                "verbose_name_plural": "Adjuntos de lotes de mailing",
             },
         ),
     ]

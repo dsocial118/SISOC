@@ -121,9 +121,7 @@
                                     {% for attachment in job.attachments.all %}
                                         <li>
                                             <i class="fas fa-paperclip me-1 text-muted"></i>
-                                            <a href="{{ attachment.archivo.url }}" target="_blank">
-                                                {{ attachment.nombre_original }}
-                                            </a>
+                                            <a href="{{ attachment.archivo.url }}" target="_blank">{{ attachment.nombre_original }}</a>
                                         </li>
                                     {% endfor %}
                                 </ul>
