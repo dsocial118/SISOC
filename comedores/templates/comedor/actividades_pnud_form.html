@@ -79,7 +79,7 @@
             </div>
         </div>
     </div>
-    <script>
+    <script nonce="{{ request.csp_nonce }}">
         (function () {
             const modeInput = document.getElementById('{{ form.categoria_modo.id_for_label }}');
             const buttons = document.querySelectorAll('[data-categoria-mode-button]');
