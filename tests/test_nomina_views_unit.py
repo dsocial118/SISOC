@@ -57,9 +57,10 @@ def test_nomina_detail_context_data(mocker):
             {"ninos": 2, "adolescentes": 3, "cantidad_activos": 6},
         ),
     )
+    comedor = SimpleNamespace(programa_id=None, programa=None)
     mocker.patch(
         "comedores.views.nomina._get_admision_del_comedor_or_404",
-        return_value=SimpleNamespace(pk=77, comedor="comedor"),
+        return_value=SimpleNamespace(pk=77, comedor=comedor),
     )
 
     view = module.NominaDetailView()
@@ -69,11 +70,14 @@ def test_nomina_detail_context_data(mocker):
     )
 
     ctx = view.get_context_data()
-    assert ctx["object"] == "comedor"
+    assert ctx["object"] is comedor
     assert ctx["cantidad_nomina"] == 6
     assert ctx["menores"] == 5
     assert ctx["dni_query"] == "1234"
-    get_nomina_detail_mock.assert_called_once_with(77, 2, dni_query="1234")
+    assert ctx["mostrar_tabs_nomina"] is False
+    get_nomina_detail_mock.assert_called_once_with(
+        77, 2, dni_query="1234", nomina_tab="todas"
+    )
 
 
 def test_prepare_renaper_initial_data_uses_data_and_datos_api(mocker):

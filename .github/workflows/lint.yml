@@ -240,17 +240,15 @@ jobs:
               run: |
                   python - <<'PY'
                   import json
-                  import multiprocessing
                   import os
                   import subprocess
 
                   templates = json.loads(
                       os.environ.get("TEMPLATE_FILES_JSON") or "[]"
                   )
-                  workers = max(1, multiprocessing.cpu_count())
-                  print("Running djlint on", len(templates), "template file(s) with", workers, "worker(s)")
+                  print("Running djlint on", len(templates), "template file(s)")
                   subprocess.run(
-                      ["djlint", *templates, "--check", "--configuration=.djlintrc", f"--workers={workers}"],
+                      ["djlint", *templates, "--check", "--configuration=.djlintrc"],
                       check=True,
                   )
                   PY

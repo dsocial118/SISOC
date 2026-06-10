@@ -1,3 +1,4 @@
+# pylint: disable=too-many-lines
 from django.urls import path
 from core.decorators import permissions_any_required
 

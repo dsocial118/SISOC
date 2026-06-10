@@ -30,8 +30,8 @@ def admision(comedor):
 @pytest.mark.django_db
 def test_catalogo_actividades_seed_inicial_existe():
     assert CatalogoActividadPWA.objects.filter(
-        categoria="Cultura",
-        actividad="Taller de pintura",
+        categoria="Culturales y/o artísticas",
+        actividad="Taller de pintura/dibujo",
         activo=True,
     ).exists()
 
