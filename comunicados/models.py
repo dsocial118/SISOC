@@ -210,6 +210,25 @@ class MailingJobRow(models.Model):
         return f"Lote Mailing {self.job_id} fila {self.fila} ({self.get_status_display()})"
 
 
+class MailingJobAttachment(models.Model):
+    job = models.ForeignKey(
+        MailingJob,
+        on_delete=models.CASCADE,
+        related_name="attachments",
+    )
+    archivo = models.FileField(
+        upload_to="comunicados/mailing/attachments/%Y/%m/%d/",
+    )
+    nombre_original = models.CharField(max_length=255)
+
+    class Meta:
+        verbose_name = "Adjunto de lote de mailing"
+        verbose_name_plural = "Adjuntos de lotes de mailing"
+
+    def __str__(self):
+        return self.nombre_original
+
+
 class ComunicadoAdjunto(models.Model):
     comunicado = models.ForeignKey(
         Comunicado,

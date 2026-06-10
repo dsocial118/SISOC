@@ -113,6 +113,24 @@
                         </div>
                     </div>
 
+                    {% if job.attachments.exists %}
+                        <div class="card mb-4">
+                            <div class="card-header">Archivos adjuntos</div>
+                            <div class="card-body">
+                                <ul class="list-unstyled mb-0">
+                                    {% for attachment in job.attachments.all %}
+                                        <li>
+                                            <i class="fas fa-paperclip me-1 text-muted"></i>
+                                            <a href="{{ attachment.archivo.url }}" target="_blank">
+                                                {{ attachment.nombre_original }}
+                                            </a>
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        </div>
+                    {% endif %}
+
                     {% if job.last_error_message %}
                         <div class="alert alert-danger">
                             <div class="font-weight-bold">Causa del error</div>

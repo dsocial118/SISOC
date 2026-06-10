@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from io import BytesIO
 
 from django.core.exceptions import ValidationError
-from django.core.mail import send_mail
+from django.core.mail import EmailMessage
 from django.core.validators import validate_email
 from openpyxl import Workbook, load_workbook
 
@@ -136,7 +136,10 @@ def validate_mailing_workbook(uploaded_file):
 
 
 def process_mailing_row(
-    row: ParsedMailingRow, asunto: str, cuerpo: str
+    row: ParsedMailingRow,
+    asunto: str,
+    cuerpo: str,
+    attachments: list[tuple[str, bytes, str]] | None = None,
 ) -> dict[str, object]:
     mail_destino = row.mail
     try:
@@ -145,13 +148,16 @@ def process_mailing_row(
         raise ValidationError(f"El mail '{mail_destino}' no es valido.")
 
     try:
-        send_mail(
+        email = EmailMessage(
             subject=asunto,
-            message=cuerpo,
+            body=cuerpo,
             from_email=None,  # Use default
-            recipient_list=[mail_destino],
-            fail_silently=False,
+            to=[mail_destino],
         )
+        if attachments:
+            for filename, content, mimetype in attachments:
+                email.attach(filename, content, mimetype)
+        email.send(fail_silently=False)
     except Exception as exc:
         logger.exception("Error enviando mail masivo a %s", mail_destino)
         raise ValidationError(f"Error enviando mail: {str(exc)}")

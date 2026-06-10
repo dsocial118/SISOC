@@ -217,4 +217,10 @@ class MailingUploadForm(forms.Form):
         ),
         help_text="Cargue un archivo .xlsx con una columna 'mail'.",
     )
+    archivos_adjuntos = MultipleFileField(
+        label="Archivos adjuntos",
+        required=False,
+        widget=MultipleFileInput(attrs={"class": "form-control", "multiple": True}),
+        help_text="Opcionalmente, seleccione uno o más archivos para adjuntar al correo.",
+    )
 

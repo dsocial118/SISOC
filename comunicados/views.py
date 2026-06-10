@@ -423,6 +423,7 @@ class MailingUploadView(LoginRequiredMixin, FormView):
                 asunto=form.cleaned_data["asunto"],
                 cuerpo=form.cleaned_data["cuerpo"],
                 requested_by=self.request.user,
+                attachments=self.request.FILES.getlist("archivos_adjuntos"),
             )
         except ValidationError as exc:
             form.add_error("archivo", build_mailing_error_message(exc))

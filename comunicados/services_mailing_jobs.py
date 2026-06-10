@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import mimetypes
 import os
 import time
 from datetime import timedelta
@@ -10,7 +11,7 @@ from django.db import OperationalError, models
 from django.http import Http404
 from django.utils import timezone
 
-from comunicados.models import MailingJob, MailingJobRow
+from comunicados.models import MailingJob, MailingJobRow, MailingJobAttachment
 from comunicados.services_mailing import (
     _load_mailing_workbook_rows,
     build_mailing_error_message,
@@ -49,7 +50,9 @@ def get_mailing_job_stale_seconds() -> int:
     )
 
 
-def create_mailing_job(*, uploaded_file, asunto: str, cuerpo: str, requested_by):
+def create_mailing_job(
+    *, uploaded_file, asunto: str, cuerpo: str, requested_by, attachments=None
+):
     validate_mailing_workbook(uploaded_file)
     job = MailingJob(
         requested_by=requested_by,
@@ -60,6 +63,14 @@ def create_mailing_job(*, uploaded_file, asunto: str, cuerpo: str, requested_by)
     uploaded_file.seek(0)
     job.archivo.save(job.original_filename, uploaded_file, save=False)
     job.save()
+
+    if attachments:
+        for attachment_file in attachments:
+            MailingJobAttachment.objects.create(
+                job=job,
+                archivo=attachment_file,
+                nombre_original=attachment_file.name,
+            )
     return job
 
 
@@ -427,6 +438,23 @@ def process_mailing_job(job: MailingJob) -> MailingJob:
     if rows is None:
         return job
 
+    # Cache attachments in memory
+    cached_attachments = []
+    for attachment in job.attachments.all():
+        try:
+            attachment.archivo.open("rb")
+            content = attachment.archivo.read()
+            mimetype, _ = mimetypes.guess_type(attachment.nombre_original)
+            cached_attachments.append(
+                (
+                    attachment.nombre_original,
+                    content,
+                    mimetype or "application/octet-stream",
+                )
+            )
+        finally:
+            attachment.archivo.close()
+
     total_rows = len(rows)
     _sync_job_total_rows(job=job, total_rows=total_rows)
     if job.next_row_index >= total_rows:
@@ -446,6 +474,7 @@ def process_mailing_job(job: MailingJob) -> MailingJob:
                 row=row,
                 asunto=job.asunto,
                 cuerpo=job.cuerpo,
+                attachments=cached_attachments,
             )
         except ValidationError as exc:
             return _record_row_failure(
