@@ -15,6 +15,7 @@ DEPLOY_GUNICORN_ENVIRONMENTS = {"qa", "homologacion", "prd"}
 SERVICE_ROLE_WEB = "web"
 SERVICE_ROLE_BULK_CREDENTIALS_WORKER = "bulk_credentials_worker"
 SERVICE_ROLE_CIUDADANOS_IMPORT_WORKER = "ciudadanos_import_worker"
+SERVICE_ROLE_MAILING_WORKER = "mailing_worker"
 
 
 def run_command(cmd, *, stage, **kwargs):
@@ -192,6 +193,15 @@ def run_ciudadanos_import_worker():
     )
 
 
+def run_mailing_worker():
+    """Inicia el worker dedicado de mailing masivo."""
+    logger.info("[worker] Iniciando worker de mailing masivo...")
+    run_command(
+        ["python", "manage.py", "process_mailing_jobs"],
+        stage="mailing_worker",
+    )
+
+
 def main():
     wait_for_mysql()
     service_role = os.getenv("DJANGO_SERVICE_ROLE", SERVICE_ROLE_WEB).strip().lower()
@@ -200,6 +210,9 @@ def main():
         return
     if service_role == SERVICE_ROLE_CIUDADANOS_IMPORT_WORKER:
         run_ciudadanos_import_worker()
+        return
+    if service_role == SERVICE_ROLE_MAILING_WORKER:
+        run_mailing_worker()
         return
     run_django_commands()
 
