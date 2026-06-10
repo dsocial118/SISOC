@@ -1,6 +1,6 @@
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.core.exceptions import PermissionDenied
+from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.paginator import Paginator
 from django.db import transaction
 from django.db.models import Count, Q
@@ -25,7 +25,6 @@ from .models import (
     EstadoComunicado,
     TipoComunicado,
     SubtipoComunicado,
-    MailingJob,
 )
 from .services_mailing import (
     generate_mailing_template,

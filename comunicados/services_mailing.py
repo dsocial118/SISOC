@@ -144,8 +144,8 @@ def process_mailing_row(
     mail_destino = row.mail
     try:
         validate_email(mail_destino)
-    except ValidationError:
-        raise ValidationError(f"El mail '{mail_destino}' no es valido.")
+    except ValidationError as exc:
+        raise ValidationError(f"El mail '{mail_destino}' no es valido.") from exc
 
     try:
         email = EmailMessage(
@@ -160,7 +160,7 @@ def process_mailing_row(
         email.send(fail_silently=False)
     except Exception as exc:
         logger.exception("Error enviando mail masivo a %s", mail_destino)
-        raise ValidationError(f"Error enviando mail: {str(exc)}")
+        raise ValidationError(f"Error enviando mail: {str(exc)}") from exc
 
     return {
         "mail_destino": mail_destino,
