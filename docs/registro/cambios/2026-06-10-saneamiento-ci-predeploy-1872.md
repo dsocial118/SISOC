@@ -26,6 +26,9 @@
 ### Seguridad (CSP)
 - `comedores/templates/comedor/actividades_pnud_form.html`: el `<script>` inline ahora incluye `nonce="{{ request.csp_nonce }}"` (lo exige `test_all_inline_script_tags_have_nonce`).
 
+### CI (djlint)
+- `.github/workflows/lint.yml`: se quita el flag `--workers` del job `djlint` (djlint 1.34.2 no lo soporta → `No such option '--workers'`, exit 2 → el job falla en cualquier PR con templates cambiados). Reaplica el fix `78ee17512` que un merge volvió a pisar. El template editado pasa `djlint --check` sin drift.
+
 ## Validación local (Docker, SQLite, igual que CI)
 - `pytest -n auto`: 2797 passed, 8 skipped, 0 failed.
 - `black --check`: sin drift en los archivos tocados.
