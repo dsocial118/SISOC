@@ -59,7 +59,6 @@ __all__ = [
     "NominaCentroInfanciaForm",
     "NominaCentroInfanciaCreateForm",
     "IntervencionCentroInfanciaForm",
-    "TrabajadorForm",
     "TrabajadorCDIForm",
     "ObservacionCentroInfanciaForm",
     "FormularioCDIForm",
@@ -904,18 +903,6 @@ class NominaCentroInfanciaForm(NominaCentroInfanciaBaseForm):
 
 class NominaCentroInfanciaCreateForm(NominaCentroInfanciaBaseForm):
     pass
-
-
-class TrabajadorForm(forms.ModelForm):
-    class Meta:
-        model = Trabajador
-        fields = ["nombre", "apellido", "telefono", "rol"]
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        for field_name in ["nombre", "apellido", "telefono"]:
-            self.fields[field_name].widget.attrs["class"] = "form-control"
-        self.fields["rol"].widget.attrs["class"] = "form-select"
 
 
 _MULTISELECT_FIELDS_TRABAJADOR = (

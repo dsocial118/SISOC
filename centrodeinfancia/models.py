@@ -665,6 +665,12 @@ _TRABAJADOR_NIVELES_HABILITAN_FORMACION = frozenset(
 )
 
 
+def _trabajador_etiquetas(values, choices):
+    """Traduce claves de un multiselect (JSONField) a sus etiquetas legibles."""
+    etiquetas = dict(choices)
+    return [etiquetas.get(valor, valor) for valor in (values or [])]
+
+
 class Trabajador(SoftDeleteModelMixin, models.Model):
     class Rol(models.TextChoices):
         PROFESOR = "profesor", "Profesor"
@@ -919,6 +925,28 @@ class Trabajador(SoftDeleteModelMixin, models.Model):
                 (hoy.month, hoy.day)
                 < (self.fecha_nacimiento.month, self.fecha_nacimiento.day)
             )
+        )
+
+    @property
+    def capacitaciones_certificadas_display(self):
+        return _trabajador_etiquetas(
+            self.capacitaciones_certificadas, TRABAJADOR_CAPACITACIONES_CHOICES
+        )
+
+    @property
+    def grupo_pertenencia_display(self):
+        return _trabajador_etiquetas(
+            self.grupo_pertenencia, TRABAJADOR_GRUPO_PERTENENCIA_CHOICES
+        )
+
+    @property
+    def lenguajes_display(self):
+        return _trabajador_etiquetas(self.lenguajes, TRABAJADOR_LENGUAJES_CHOICES)
+
+    @property
+    def tipo_discapacidad_display(self):
+        return _trabajador_etiquetas(
+            self.tipo_discapacidad, TRABAJADOR_TIPO_DISCAPACIDAD_CHOICES
         )
 
     @staticmethod

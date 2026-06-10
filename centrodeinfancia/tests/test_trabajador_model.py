@@ -174,3 +174,28 @@ def test_edad_calcula_correctamente():
 def test_edad_es_none_sin_fecha_nacimiento():
     t = _trabajador()
     assert t.edad is None
+
+
+# ─── propiedades *_display de multiselect ──────────────────────────────────
+
+
+@pytest.mark.django_db
+def test_display_multiselect_traduce_claves_a_etiquetas():
+    t = _trabajador(
+        capacitaciones_certificadas=["juego", "lactancia"],
+        lenguajes=["espanol_castellano", "lsa"],
+        tipo_discapacidad=["motora"],
+    )
+    assert t.capacitaciones_certificadas_display == ["Juego", "Lactancia"]
+    assert t.lenguajes_display == [
+        "Español / Castellano",
+        "Lengua de Señas de Argentina (LSA)",
+    ]
+    assert t.tipo_discapacidad_display == ["Motora"]
+
+
+@pytest.mark.django_db
+def test_display_multiselect_vacio_devuelve_lista_vacia():
+    t = _trabajador()
+    assert t.grupo_pertenencia_display == []
+    assert t.lenguajes_display == []

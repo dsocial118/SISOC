@@ -1326,29 +1326,6 @@ class NominaCentroInfanciaCreateView(LoginRequiredMixin, CreateView):
         return context
 
     @staticmethod
-    def _parse_fecha_renaper(fecha_raw):
-        if not fecha_raw:
-            return None
-        if isinstance(fecha_raw, date):
-            return fecha_raw
-        if isinstance(fecha_raw, datetime):
-            return fecha_raw.date()
-
-        value = str(fecha_raw).strip()
-        formatos = ("%Y-%m-%d", "%d/%m/%Y", "%Y%m%d")
-        for fmt in formatos:
-            try:
-                return datetime.strptime(value, fmt).date()
-            except ValueError:
-                continue
-
-        try:
-            value_iso = value.replace("Z", "")
-            return datetime.fromisoformat(value_iso).date()
-        except ValueError:
-            return None
-
-    @staticmethod
     def _build_nomina_initial_from_renaper(renaper_result):
         renaper_data = dict(renaper_result.get("data") or {})
         renaper_result_data = dict(renaper_result.get("result") or {})
@@ -1364,9 +1341,7 @@ class NominaCentroInfanciaCreateView(LoginRequiredMixin, CreateView):
             or datos_api.get("fechaNacimiento")
             or datos_api.get("fecha_nacimiento")
         )
-        fecha_nacimiento = NominaCentroInfanciaCreateView._parse_fecha_renaper(
-            fecha_raw
-        )
+        fecha_nacimiento = _parse_fecha_renaper(fecha_raw)
 
         return {
             "dni": renaper_data.get("documento") or renaper_data.get("dni"),

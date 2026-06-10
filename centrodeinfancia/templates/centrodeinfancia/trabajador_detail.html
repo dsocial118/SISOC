@@ -126,7 +126,7 @@
                 <div class="mt-3">
                     <p class="small mb-2" style="color:#9ca3af;">Capacitaciones certificadas (últimos tres años)</p>
                     <div class="d-flex flex-wrap gap-2">
-                        {% for cap in trabajador.capacitaciones_certificadas %}
+                        {% for cap in trabajador.capacitaciones_certificadas_display %}
                             <span class="badge"
                                   style="background:rgba(243,156,18,0.15);
                                          color:#f39c12;
@@ -225,7 +225,7 @@
                 <div class="mb-3">
                     <p class="small mb-2" style="color:#9ca3af;">Grupos de pertenencia</p>
                     <div class="d-flex flex-wrap gap-2">
-                        {% for g in trabajador.grupo_pertenencia %}
+                        {% for g in trabajador.grupo_pertenencia_display %}
                             <span class="badge"
                                   style="background:rgba(243,156,18,0.15);
                                          color:#f39c12;
@@ -240,7 +240,7 @@
                 <div>
                     <p class="small mb-2" style="color:#9ca3af;">Lenguajes</p>
                     <div class="d-flex flex-wrap gap-2">
-                        {% for l in trabajador.lenguajes %}
+                        {% for l in trabajador.lenguajes_display %}
                             <span class="badge"
                                   style="background:rgba(52,152,219,0.15);
                                          color:#74b9e7;
@@ -283,7 +283,7 @@
                 <div>
                     <p class="small mb-2" style="color:#9ca3af;">Tipo de discapacidad</p>
                     <div class="d-flex flex-wrap gap-2">
-                        {% for t in trabajador.tipo_discapacidad %}
+                        {% for t in trabajador.tipo_discapacidad_display %}
                             <span class="badge"
                                   style="background:rgba(231,76,60,0.15);
                                          color:#e74c3c;
@@ -306,9 +306,9 @@
                 header.setAttribute("tabindex", "0");
                 header.setAttribute("role", "button");
                 header.setAttribute("aria-expanded", "true");
+                const sectionId = header.closest(".section-card").dataset.section;
+                const body = document.getElementById("section-" + sectionId);
                 header.addEventListener("click", function () {
-                    const sectionId = this.closest(".section-card").dataset.section;
-                    const body = document.getElementById("section-" + sectionId);
                     if (body) {
                         $(body).collapse("toggle");
                         this.classList.toggle("collapsed");
@@ -320,6 +320,14 @@
                         this.click();
                     }
                 });
+                if (body) {
+                    $(body).on("shown.bs.collapse", function () {
+                        header.setAttribute("aria-expanded", "true");
+                    });
+                    $(body).on("hidden.bs.collapse", function () {
+                        header.setAttribute("aria-expanded", "false");
+                    });
+                }
             });
         });
     </script>
