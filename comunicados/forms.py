@@ -1,5 +1,6 @@
 from django import forms
 from django.core.exceptions import ValidationError
+from django.core.validators import FileExtensionValidator
 from .models import Comunicado, ComunicadoAdjunto, TipoComunicado, SubtipoComunicado
 from .permissions import (
     es_tecnico,
@@ -194,3 +195,26 @@ ComunicadoAdjuntoFormSet = forms.inlineformset_factory(
     extra=1,
     can_delete=True,
 )
+
+
+class MailingUploadForm(forms.Form):
+    asunto = forms.CharField(
+        label="Asunto",
+        max_length=255,
+        widget=forms.TextInput(attrs={"class": "form-control"}),
+        help_text="El asunto que tendrá el correo electrónico.",
+    )
+    cuerpo = forms.CharField(
+        label="Cuerpo",
+        widget=forms.Textarea(attrs={"class": "form-control", "rows": 10}),
+        help_text="El contenido del correo electrónico.",
+    )
+    archivo = forms.FileField(
+        label="Archivo Excel",
+        validators=[FileExtensionValidator(["xlsx"])],
+        widget=forms.ClearableFileInput(
+            attrs={"accept": ".xlsx", "class": "form-control"}
+        ),
+        help_text="Cargue un archivo .xlsx con una columna 'mail'.",
+    )
+
