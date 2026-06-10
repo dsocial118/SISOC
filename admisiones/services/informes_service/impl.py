@@ -6,7 +6,6 @@ from django.utils import timezone
 from django.utils.text import slugify
 from django.utils.html import strip_tags
 from django.conf import settings
-from weasyprint import HTML
 from django.core.files.base import ContentFile
 from io import BytesIO
 from docx import Document
@@ -298,6 +297,8 @@ class InformeService:
         """
         Genera y guarda PDF y DOCX del informe técnico
         """
+        from weasyprint import HTML
+
         try:
             context = {
                 "informe": informe,

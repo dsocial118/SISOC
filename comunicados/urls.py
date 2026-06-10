@@ -51,4 +51,25 @@ urlpatterns = [
         views.ComunicadoToggleDestacadoView.as_view(),
         name="comunicados_toggle_destacado",
     ),
+    # Mailing
+    path(
+        "comunicados/mailing/",
+        views.MailingUploadView.as_view(),
+        name="comunicados_mailing",
+    ),
+    path(
+        "comunicados/mailing/plantilla/",
+        views.MailingTemplateView.as_view(),
+        name="comunicados_mailing_plantilla",
+    ),
+    path(
+        "comunicados/mailing/lotes/<int:pk>/",
+        views.MailingJobDetailView.as_view(),
+        name="comunicados_mailing_detalle",
+    ),
+    path(
+        "comunicados/mailing/lotes/<int:pk>/reanudar/",
+        views.MailingJobResumeView.as_view(),
+        name="comunicados_mailing_reanudar",
+    ),
 ]
