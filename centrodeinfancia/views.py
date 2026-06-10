@@ -775,7 +775,7 @@ class TrabajadorCentroInfanciaCreateView(LoginRequiredMixin, CreateView):
             messages.warning(self.request, renaper_result["message"])
         return [], None
 
-    def _set_form_initial(
+    def _set_form_initial(  # pylint: disable=too-many-arguments
         self, context, selected_ciudadano, renaper_data, ciudadanos, query
     ):
         form = context.get("form")
