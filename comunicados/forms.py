@@ -217,4 +217,3 @@ class MailingUploadForm(forms.Form):
         ),
         help_text="Cargue un archivo .xlsx con una columna 'mail'.",
     )
-

@@ -392,9 +392,9 @@ class MailingTemplateView(LoginRequiredMixin, View):
                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             ),
         )
-        response[
-            "Content-Disposition"
-        ] = 'attachment; filename="plantilla_mailing.xlsx"'
+        response["Content-Disposition"] = (
+            'attachment; filename="plantilla_mailing.xlsx"'
+        )
         return response
 
 
