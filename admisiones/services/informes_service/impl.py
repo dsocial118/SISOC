@@ -745,6 +745,8 @@ class InformeService:
                     "creado_por": creado_por,
                 }
 
+                from weasyprint import HTML
+
                 pdf_template = "admisiones/pdf/informe_tecnico_complementario.html"
                 html_pdf = render_to_string(pdf_template, context)
                 pdf_bytes = HTML(
