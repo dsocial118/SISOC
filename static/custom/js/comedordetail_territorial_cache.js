@@ -624,7 +624,7 @@
         }
 
         .territorial-suggestion-stale {
-            color: #856404;
+            color: black;
         }
 
         .territorial-suggestion-empty {

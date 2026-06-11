@@ -44,6 +44,16 @@
                             <i class="bi bi-trash me-1"></i>Eliminar
                         </a>
                     </li>
+                        <li>
+                            <a class="dropdown-item" href="{% url 'dupla_asignar' pk=comedor.id %}">
+                                <i class="bi bi-person-workspace me-1"></i>
+                                    {% if comedor.estado == "Sin Ingreso" %}
+                                        Asignar Equipo T&eacute;cnico
+                                    {% else %}
+                                        Modificar Equipo T&eacute;cnico
+                                    {% endif %}
+                            </a>
+                        </li>
                     {% if comedor.estado != "Sin Ingreso" %}
                         <li>
                             <button class="dropdown-item text-start"
@@ -52,11 +62,6 @@
                                     data-bs-target="#modalAdmision">
                                 <i class="bi bi-box-arrow-in-up-right me-1"></i>Comenzar Admisión
                             </button>
-                        </li>
-                        <li>
-                            <a class="dropdown-item" href="{% url 'dupla_asignar' pk=comedor.id %}">
-                                <i class="bi bi-person-workspace me-1"></i>Modificar Equipo Técnico
-                            </a>
                         </li>
                     {% endif %}
                 </ul>
@@ -1167,14 +1172,6 @@
 </strong>
 </p>
 <div class="mt-3 d-flex flex-column flex-sm-row justify-content-center gap-2">
-    <a href="{% url 'dupla_asignar' pk=comedor.id %}"
-       class="btn btn-primary px-2 py-1 fs-7 w-100 w-sm-auto">
-        {% if comedor.estado == "Sin Ingreso" %}
-            Asignar Equipo T&eacute;cnico
-        {% else %}
-            Modificar Equipo T&eacute;cnico
-        {% endif %}
-    </a>
     {% if display_admision %}
         <a href="{% url 'admision_detalle' comedor.id display_admision.id %}"
            class="btn btn-primary px-2 py-1 fs-7 w-100 w-sm-auto">Ver detalles</a>
