@@ -17,7 +17,11 @@
            class="vat-back"><i class="bi bi-arrow-left"></i> Volver</a>
         <div class="vp-hero">
             <h1>
-                {% if form.instance.id %}Editar Ubicación{% else %}Nueva Ubicación{% endif %}
+                {% if form.instance.id %}
+                    Editar Ubicación
+                {% else %}
+                    Nueva Ubicación
+                {% endif %}
             </h1>
         </div>
 

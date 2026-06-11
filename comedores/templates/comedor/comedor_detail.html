@@ -44,16 +44,16 @@
                             <i class="bi bi-trash me-1"></i>Eliminar
                         </a>
                     </li>
-                        <li>
-                            <a class="dropdown-item" href="{% url 'dupla_asignar' pk=comedor.id %}">
-                                <i class="bi bi-person-workspace me-1"></i>
-                                    {% if comedor.estado == "Sin Ingreso" %}
-                                        Asignar Equipo T&eacute;cnico
-                                    {% else %}
-                                        Modificar Equipo T&eacute;cnico
-                                    {% endif %}
-                            </a>
-                        </li>
+                    <li>
+                        <a class="dropdown-item" href="{% url 'dupla_asignar' pk=comedor.id %}">
+                            <i class="bi bi-person-workspace me-1"></i>
+                            {% if comedor.estado == "Sin Ingreso" %}
+                                Asignar Equipo T&eacute;cnico
+                            {% else %}
+                                Modificar Equipo T&eacute;cnico
+                            {% endif %}
+                        </a>
+                    </li>
                     {% if comedor.estado != "Sin Ingreso" %}
                         <li>
                             <button class="dropdown-item text-start"

@@ -13,12 +13,17 @@
 {% block content %}
     <link rel="stylesheet" href="{% static 'custom/css/vat_design.css' %}" />
     <div class="vat-ui container-fluid py-4">
-        <a href="{% url 'vat_institucion_identificador_list' %}" class="vat-back">
+        <a href="{% url 'vat_institucion_identificador_list' %}"
+           class="vat-back">
             <i class="bi bi-arrow-left"></i> Volver
         </a>
         <div class="vp-hero">
             <h1>
-                {% if form.instance.id %}Editar Identificador{% else %}Nuevo Identificador{% endif %}
+                {% if form.instance.id %}
+                    Editar Identificador
+                {% else %}
+                    Nuevo Identificador
+                {% endif %}
             </h1>
         </div>
 
