@@ -32,6 +32,9 @@ from centrodeinfancia.models import (
     TRABAJADOR_GRUPO_PERTENENCIA_CHOICES,
     TRABAJADOR_LENGUAJES_CHOICES,
     TRABAJADOR_TIPO_DISCAPACIDAD_CHOICES,
+    NOMINA_ALERGIA_CHOICES,
+    NOMINA_DOSIS_VACUNA_CHOICES,
+    NOMINA_VACUNAS,
 )
 from centrodeinfancia.forms_observacion import ObservacionCentroInfanciaForm
 from centrodeinfancia.forms_formulario_cdi import (
@@ -46,6 +49,7 @@ __all__ = [
     "CentroDeInfanciaForm",
     "NominaCentroInfanciaForm",
     "NominaCentroInfanciaCreateForm",
+    "NominaCentroInfanciaDestinatariosForm",
     "IntervencionCentroInfanciaForm",
     "TrabajadorCDIForm",
     "ObservacionCentroInfanciaForm",
@@ -891,6 +895,251 @@ class NominaCentroInfanciaForm(NominaCentroInfanciaBaseForm):
 
 class NominaCentroInfanciaCreateForm(NominaCentroInfanciaBaseForm):
     pass
+
+
+class NominaCentroInfanciaDestinatariosForm(NominaCentroInfanciaBaseForm):
+    """Formulario de página completa para el legajo 201 (Destinatarios CDI)."""
+
+    # ── JSONField multiselects ────────────────────────────────────────────────
+    grupo_pertenencia = forms.MultipleChoiceField(
+        choices=TRABAJADOR_GRUPO_PERTENENCIA_CHOICES,
+        widget=forms.CheckboxSelectMultiple,
+        required=False,
+        label=(
+            "¿Desciende, tiene antepasados o pertenece a alguno de los siguientes grupos?"
+        ),
+    )
+    lenguajes = forms.MultipleChoiceField(
+        choices=TRABAJADOR_LENGUAJES_CHOICES,
+        widget=forms.CheckboxSelectMultiple,
+        required=False,
+        label="Lenguajes que utiliza",
+    )
+    tipo_discapacidad = forms.MultipleChoiceField(
+        choices=TRABAJADOR_TIPO_DISCAPACIDAD_CHOICES,
+        widget=forms.CheckboxSelectMultiple,
+        required=False,
+        label="¿Qué tipo de discapacidad presenta?",
+    )
+    alergias_alimentarias = forms.MultipleChoiceField(
+        choices=NOMINA_ALERGIA_CHOICES,
+        widget=forms.CheckboxSelectMultiple,
+        required=False,
+        label="Alergias alimentarias",
+    )
+
+    class Meta(NominaCentroInfanciaBaseForm.Meta):
+        fields = list(NominaCentroInfanciaBaseForm.Meta.fields) + [
+            # Sección 3: Registro
+            "tipo_registro",
+            "fecha_registro",
+            # Sección 4: Trabajador que registra
+            "trabajador_registra",
+            # Sección 5: Responsable 1 (extendido)
+            "responsable_legal_1_relacion",
+            "responsable_legal_1_fecha_nacimiento",
+            "responsable_legal_1_tipo_documentacion",
+            "responsable_legal_1_cuit",
+            "responsable_legal_1_pais_nacimiento",
+            "responsable_legal_1_nacionalidad",
+            "responsable_legal_1_sexo_registral",
+            "responsable_legal_1_nivel_educativo",
+            "responsable_legal_1_consentimiento",
+            # Sección 6: Responsable 2 (extendido)
+            "responsable_legal_2_relacion",
+            "responsable_legal_2_fecha_nacimiento",
+            "responsable_legal_2_tipo_documentacion",
+            "responsable_legal_2_cuit",
+            "responsable_legal_2_pais_nacimiento",
+            "responsable_legal_2_nacionalidad",
+            "responsable_legal_2_sexo_registral",
+            "responsable_legal_2_nivel_educativo",
+            "responsable_legal_2_consentimiento",
+            # Sección 7: Datos del niño/a (extendido)
+            "tipo_documentacion",
+            "cuit_nino",
+            "pais_nacimiento",
+            "edad_unidad",
+            # Sección 8: Domicilio (extendido)
+            "tipo_barrio",
+            "convivientes",
+            # Sección 9: Cultura e identidad
+            "grupo_pertenencia",
+            "lenguajes",
+            "necesito_interprete",
+            # Sección 10: Discapacidad (extendido)
+            "tipo_discapacidad",
+            "numero_cud",
+            # Sección 11: Salud
+            "cobertura_salud",
+            "controles_sanitarios_ultimo_anio",
+            # Sección 12: Antropometría
+            "longitud_acostado",
+            "perimetro_cefalico",
+            # Sección 13: Nutrición
+            "lactancia",
+            "diagnostico_peso",
+            "diagnostico_talla",
+            "orientacion_msal",
+            "alergias_alimentarias",
+            # Sección 14: ANSES
+            "anses_auh",
+            "anses_aue",
+            "anses_acsi",
+            "anses_acn",
+            # Sección 16: Desarrollo Infantil Temprano
+            "recibe_apoyo_desarrollo",
+            # vacunacion_nomivac se maneja con campos dinámicos, no aparece aquí
+        ]
+        widgets = {
+            **NominaCentroInfanciaBaseForm.Meta.widgets,
+            "fecha_registro": forms.DateInput(
+                format="%Y-%m-%d", attrs={"type": "date"}
+            ),
+            "responsable_legal_1_fecha_nacimiento": forms.DateInput(
+                format="%Y-%m-%d", attrs={"type": "date"}
+            ),
+            "responsable_legal_2_fecha_nacimiento": forms.DateInput(
+                format="%Y-%m-%d", attrs={"type": "date"}
+            ),
+        }
+
+    _NEW_LABELS = {
+        "tipo_registro": "Tipo de registro",
+        "fecha_registro": "Fecha de alta, seguimiento o baja",
+        "trabajador_registra": "Trabajador/a que registra",
+        "responsable_legal_1_relacion": "Relación con el/la infante",
+        "responsable_legal_1_fecha_nacimiento": "Fecha de nacimiento",
+        "responsable_legal_1_tipo_documentacion": "Tipo de documentación",
+        "responsable_legal_1_cuit": "CUIT",
+        "responsable_legal_1_pais_nacimiento": "País de nacimiento",
+        "responsable_legal_1_nacionalidad": "Nacionalidad",
+        "responsable_legal_1_sexo_registral": "Sexo registral",
+        "responsable_legal_1_nivel_educativo": "Nivel educativo",
+        "responsable_legal_1_consentimiento": "Consentimiento libre, previo e informado",
+        "responsable_legal_2_relacion": "Relación con el/la infante",
+        "responsable_legal_2_fecha_nacimiento": "Fecha de nacimiento",
+        "responsable_legal_2_tipo_documentacion": "Tipo de documentación",
+        "responsable_legal_2_cuit": "CUIT",
+        "responsable_legal_2_pais_nacimiento": "País de nacimiento",
+        "responsable_legal_2_nacionalidad": "Nacionalidad",
+        "responsable_legal_2_sexo_registral": "Sexo registral",
+        "responsable_legal_2_nivel_educativo": "Nivel educativo",
+        "responsable_legal_2_consentimiento": "Consentimiento libre, previo e informado",
+        "tipo_documentacion": "Tipo de documentación",
+        "cuit_nino": "CUIT",
+        "pais_nacimiento": "País de nacimiento",
+        "edad_unidad": "Unidad de medida de la edad",
+        "tipo_barrio": "Tipo de barrio",
+        "convivientes": "Cantidad de personas convivientes",
+        "necesito_interprete": "¿Se necesitó intérprete?",
+        "numero_cud": "Número de CUD (ANSES)",
+        "cobertura_salud": "Cobertura de salud",
+        "controles_sanitarios_ultimo_anio": "Controles sanitarios en el último año",
+        "longitud_acostado": "Longitud (cm, medida acostado)",
+        "perimetro_cefalico": "Perímetro cefálico (cm)",
+        "lactancia": "Lactancia",
+        "diagnostico_peso": "Estimación del peso",
+        "diagnostico_talla": "Estimación de la talla",
+        "orientacion_msal": "Orientación Ministerio de Salud",
+        "anses_auh": "Asignación Universal por Hijo (AUH)",
+        "anses_aue": "Asignación por Embarazo (AUE)",
+        "anses_acsi": "Asignación por Cuidado de Salud Integral (ACSI)",
+        "anses_acn": "Asignación de Complemento Nutricional (ACN)",
+        "recibe_apoyo_desarrollo": (
+            "¿Recibe apoyo, tratamiento o acompañamiento para su desarrollo?"
+        ),
+    }
+
+    def __init__(self, *args, centro=None, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # Scope trabajador_registra al CDI recibido
+        if centro:
+            self.fields["trabajador_registra"].queryset = Trabajador.objects.filter(
+                centro=centro
+            ).order_by("apellido", "nombre")
+        else:
+            self.fields["trabajador_registra"].queryset = Trabajador.objects.none()
+
+        # Pre-popular MultipleChoiceField desde la instancia
+        for fname in ("grupo_pertenencia", "lenguajes", "tipo_discapacidad", "alergias_alimentarias"):
+            if self.instance.pk:
+                self.fields[fname].initial = getattr(self.instance, fname) or []
+
+        # Aplicar labels nuevos
+        for fname, label in self._NEW_LABELS.items():
+            if fname in self.fields:
+                self.fields[fname].label = label
+
+        # Aplicar CSS a campos nuevos (CheckboxSelectMultiple se salta)
+        for fname, field in self.fields.items():
+            widget = field.widget
+            if isinstance(widget, forms.CheckboxSelectMultiple):
+                continue
+            css = "form-select" if isinstance(widget, forms.Select) else "form-control"
+            current = widget.attrs.get("class", "")
+            if css not in current:
+                widget.attrs["class"] = f"{current} {css}".strip()
+
+        # Agregar campos dinámicos por vacuna (Sección 15)
+        nomivac_data = {}
+        if self.instance.pk and self.instance.vacunacion_nomivac:
+            nomivac_data = self.instance.vacunacion_nomivac
+        for code, label in NOMINA_VACUNAS:
+            vaccine_data = nomivac_data.get(code, {})
+            dosis_field = forms.ChoiceField(
+                choices=[("", "---------")] + list(NOMINA_DOSIS_VACUNA_CHOICES),
+                required=False,
+                label=label,
+                initial=vaccine_data.get("dosis", ""),
+            )
+            dosis_field.widget.attrs["class"] = "form-select form-select-sm"
+            self.fields[f"vacuna_{code}_dosis"] = dosis_field
+            fecha_field = forms.DateField(
+                required=False,
+                label=f"{label} — última dosis",
+                initial=vaccine_data.get("fecha") or None,
+                widget=forms.DateInput(
+                    format="%Y-%m-%d",
+                    attrs={"type": "date", "class": "form-control form-control-sm"},
+                ),
+            )
+            self.fields[f"vacuna_{code}_fecha"] = fecha_field
+
+    def clean_grupo_pertenencia(self):
+        return self.cleaned_data.get("grupo_pertenencia") or []
+
+    def clean_lenguajes(self):
+        return self.cleaned_data.get("lenguajes") or []
+
+    def clean_tipo_discapacidad(self):
+        return self.cleaned_data.get("tipo_discapacidad") or []
+
+    def clean_alergias_alimentarias(self):
+        return self.cleaned_data.get("alergias_alimentarias") or []
+
+    def clean(self):
+        cleaned_data = super().clean()
+        # Construir vacunacion_nomivac desde los campos dinámicos
+        nomivac = {}
+        for code, _label in NOMINA_VACUNAS:
+            dosis = cleaned_data.get(f"vacuna_{code}_dosis") or ""
+            fecha_val = cleaned_data.get(f"vacuna_{code}_fecha")
+            if dosis or fecha_val:
+                nomivac[code] = {
+                    "dosis": dosis,
+                    "fecha": fecha_val.isoformat() if fecha_val else "",
+                }
+        cleaned_data["vacunacion_nomivac"] = nomivac
+        return cleaned_data
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        instance.vacunacion_nomivac = self.cleaned_data.get("vacunacion_nomivac", {})
+        if commit:
+            instance.save()
+        return instance
 
 
 _MULTISELECT_FIELDS_TRABAJADOR = (
