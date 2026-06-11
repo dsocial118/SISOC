@@ -18,6 +18,7 @@ from django.db.models import (
     Func,
     OuterRef,
     Subquery,
+    BooleanField,
 )
 from django.db import IntegrityError, transaction
 from django.core.paginator import Paginator
@@ -174,6 +175,42 @@ def _build_nomina_qs_and_age_qs(admision_pk):
     ).select_related("ciudadano__sexo")
     age_expr = TimestampDiffYears(F("ciudadano__fecha_nacimiento"), Now())
     return qs_nomina, qs_nomina.annotate(edad=age_expr)
+
+
+def normalize_nomina_tab(tab):
+    tab = str(tab or "").strip().lower()
+    if tab in {"alimentaria", "actividades", "todas"}:
+        return tab
+    return "alimentaria"
+
+
+def _apply_nomina_tab_filter(qs_nomina, tab):
+    tab = normalize_nomina_tab(tab)
+    if tab == "alimentaria":
+        return qs_nomina.filter(
+            Q(perfil_pwa__asistencia_alimentaria=True) | Q(perfil_pwa__isnull=True)
+        )
+    if tab == "actividades":
+        return qs_nomina.filter(
+            Q(perfil_pwa__asistencia_actividades=True)
+            | Q(inscripciones_actividad_pwa__activo=True)
+        ).distinct()
+    return qs_nomina
+
+
+def _with_nomina_pwa_flags(qs_nomina):
+    return qs_nomina.annotate(
+        pwa_comunidad_indigena=Coalesce(
+            "perfil_pwa__pertenece_comunidad_indigena",
+            Value(False),
+            output_field=BooleanField(),
+        ),
+        pwa_situacion_calle=Coalesce(
+            "perfil_pwa__situacion_calle",
+            Value(False),
+            output_field=BooleanField(),
+        ),
+    )
 
 
 def _apply_nomina_dni_filter(qs_nomina, dni_query):
@@ -928,11 +965,17 @@ class ComedorService:
         return total_almuerzo_cena * 763 + total_desayuno_merienda * 383
 
     @staticmethod
-    def get_nomina_detail(admision_pk, page=1, per_page=100, dni_query=""):
+    def get_nomina_detail(
+        admision_pk, page=1, per_page=100, dni_query="", nomina_tab="alimentaria"
+    ):
         qs_nomina, qs_nomina_age = _build_nomina_qs_and_age_qs(admision_pk)
+        qs_nomina = _apply_nomina_tab_filter(qs_nomina, nomina_tab)
+        qs_nomina_age = _apply_nomina_tab_filter(qs_nomina_age, nomina_tab)
         resumen = _aggregate_nomina_resumen(qs_nomina_age)
         rangos_resumen = _build_nomina_rangos_resumen(resumen)
-        qs_nomina_filtrada = _apply_nomina_dni_filter(qs_nomina, dni_query)
+        qs_nomina_filtrada = _with_nomina_pwa_flags(
+            _apply_nomina_dni_filter(qs_nomina, dni_query)
+        )
         page_obj = _build_nomina_page(qs_nomina_filtrada, page, per_page)
         return (
             page_obj,
@@ -945,7 +988,9 @@ class ComedorService:
         )
 
     @staticmethod
-    def get_nomina_detail_by_comedor(comedor_pk, page=1, per_page=100, dni_query=""):
+    def get_nomina_detail_by_comedor(
+        comedor_pk, page=1, per_page=100, dni_query="", nomina_tab="alimentaria"
+    ):
         """
         Variante de get_nomina_detail para prog 3/4: nóminas asociadas
         directamente al comedor (admision=null, comedor_id=comedor_pk).
@@ -955,9 +1000,13 @@ class ComedorService:
         ).select_related("ciudadano__sexo")
         age_expr = TimestampDiffYears(F("ciudadano__fecha_nacimiento"), Now())
         qs_nomina_age = qs_nomina.annotate(edad=age_expr)
+        qs_nomina = _apply_nomina_tab_filter(qs_nomina, nomina_tab)
+        qs_nomina_age = _apply_nomina_tab_filter(qs_nomina_age, nomina_tab)
         resumen = _aggregate_nomina_resumen(qs_nomina_age)
         rangos_resumen = _build_nomina_rangos_resumen(resumen)
-        qs_nomina_filtrada = _apply_nomina_dni_filter(qs_nomina, dni_query)
+        qs_nomina_filtrada = _with_nomina_pwa_flags(
+            _apply_nomina_dni_filter(qs_nomina, dni_query)
+        )
         page_obj = _build_nomina_page(qs_nomina_filtrada, page, per_page)
         return (
             page_obj,

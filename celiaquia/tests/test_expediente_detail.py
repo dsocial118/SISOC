@@ -449,3 +449,121 @@ def test_expediente_detail_expone_motivo_rechazo_para_tecnico(client):
     assert "Falta certificado" in row_html
     assert "Motivo del Rechazo" in response.content.decode()
     assert "Falta certificado" in response.content.decode()
+
+
+def test_subsanacion_tipo_display_devuelve_etiqueta_legible():
+    """La property traduce el código de tipo a un texto legible."""
+    assert (
+        ExpedienteCiudadano(subsanacion_tipo="DOCUMENTACION").subsanacion_tipo_display
+        == "Documentación"
+    )
+    assert (
+        ExpedienteCiudadano(
+            subsanacion_tipo="DATOS_PERSONALES"
+        ).subsanacion_tipo_display
+        == "Datos personales"
+    )
+    assert (
+        ExpedienteCiudadano(subsanacion_tipo="RENAPER").subsanacion_tipo_display
+        == "RENAPER"
+    )
+    # Sin tipo registrado (subsanaciones antiguas) no rompe y cae a vacío.
+    assert ExpedienteCiudadano().subsanacion_tipo_display == ""
+
+
+def test_subsanacion_respuesta_label_refleja_el_tipo():
+    """El rótulo de la respuesta lleva el motivo y no el viejo sufijo 'Renaper'."""
+    assert (
+        ExpedienteCiudadano(
+            subsanacion_tipo="DATOS_PERSONALES"
+        ).subsanacion_respuesta_label
+        == "Respuesta a subsanación (Datos personales)"
+    )
+    # Sin tipo: genérico, nunca "Renaper".
+    assert (
+        ExpedienteCiudadano().subsanacion_respuesta_label == "Respuesta a subsanación"
+    )
+
+
+@pytest.mark.django_db
+def test_expediente_detail_muestra_motivo_subsanacion_solicitada(client):
+    """El estado de la subsanación refleja el tipo elegido, no el genérico."""
+    user = User.objects.create_user(username="prov_sub_tipo", password="pass")
+    permission = Permission.objects.get(
+        content_type__app_label="celiaquia",
+        codename="view_expediente",
+    )
+    user.user_permissions.add(permission)
+
+    estado_expediente = EstadoExpediente.objects.create(nombre="EN_ESPERA_SUB_TIPO")
+    estado_legajo = EstadoLegajo.objects.create(nombre="PENDIENTE_SUBSANACION_TIPO")
+    expediente = Expediente.objects.create(
+        usuario_provincia=user,
+        estado=estado_expediente,
+    )
+    ciudadano = Ciudadano.objects.create(
+        apellido="Lopez",
+        nombre="Sofia",
+        fecha_nacimiento=date(2000, 3, 3),
+        documento=34555666,
+    )
+    ExpedienteCiudadano.objects.create(
+        expediente=expediente,
+        ciudadano=ciudadano,
+        estado=estado_legajo,
+        revision_tecnico=RevisionTecnico.SUBSANAR,
+        estado_validacion_renaper=3,
+        subsanacion_tipo="DOCUMENTACION",
+        subsanacion_motivo="Falta el certificado médico",
+    )
+
+    client.force_login(user)
+    response = client.get(reverse("expediente_detail", args=[expediente.pk]))
+
+    assert response.status_code == 200
+    content = response.content.decode()
+    assert "Subsanación por documentación solicitada" in content
+    # No debe quedar el texto genérico cuando hay un tipo seleccionado.
+    assert "Subsanación solicitada" not in content
+
+
+@pytest.mark.django_db
+def test_expediente_detail_respuesta_subsanacion_refleja_tipo(client):
+    """La respuesta a la subsanación conserva el motivo y no se rotula 'Renaper'."""
+    user = User.objects.create_user(username="prov_resp_tipo", password="pass")
+    permission = Permission.objects.get(
+        content_type__app_label="celiaquia",
+        codename="view_expediente",
+    )
+    user.user_permissions.add(permission)
+
+    estado_expediente = EstadoExpediente.objects.create(nombre="EN_ESPERA_RESP_TIPO")
+    estado_legajo = EstadoLegajo.objects.create(nombre="PENDIENTE_SUBSANACION_RESP")
+    expediente = Expediente.objects.create(
+        usuario_provincia=user,
+        estado=estado_expediente,
+    )
+    ciudadano = Ciudadano.objects.create(
+        apellido="Diaz",
+        nombre="Marta",
+        fecha_nacimiento=date(1999, 9, 9),
+        documento=35666777,
+    )
+    ExpedienteCiudadano.objects.create(
+        expediente=expediente,
+        ciudadano=ciudadano,
+        estado=estado_legajo,
+        revision_tecnico=RevisionTecnico.SUBSANAR,
+        estado_validacion_renaper=3,
+        subsanacion_tipo="DATOS_PERSONALES",
+        subsanacion_motivo="Corregir fecha de nacimiento",
+        subsanacion_renaper_comentario="Se adjunta partida corregida",
+    )
+
+    client.force_login(user)
+    response = client.get(reverse("expediente_detail", args=[expediente.pk]))
+
+    assert response.status_code == 200
+    content = response.content.decode()
+    assert "Respuesta a subsanación (Datos personales)" in content
+    assert "Respuesta subsanación Renaper" not in content

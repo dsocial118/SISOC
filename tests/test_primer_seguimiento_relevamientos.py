@@ -7,6 +7,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Permission
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import IntegrityError
+from django.http import Http404
 from django.urls import reverse
 
 from comedores.models import Comedor, Referente
@@ -83,7 +84,12 @@ def test_primer_seguimiento_bloquea_duplicado_por_ancla(comedor):
 
 def test_servicio_usa_ultimo_relevamiento_activo_no_finalizado(comedor, mocker):
     Relevamiento.objects.create(comedor=comedor, estado="En Proceso")
-    esperado = Relevamiento.objects.create(comedor=comedor, estado="Pendiente")
+    esperado = Relevamiento.objects.create(
+        comedor=comedor,
+        estado="Pendiente",
+        territorial_uid="uid-esperado",
+        territorial_nombre="Territorial Esperado",
+    )
     Relevamiento.objects.create(comedor=comedor, estado="Finalizado")
     send_task = mocker.patch(
         "relevamientos.primer_seguimiento_service.AsyncSendPrimerSeguimientoToGestionar"
@@ -96,15 +102,21 @@ def test_servicio_usa_ultimo_relevamiento_activo_no_finalizado(comedor, mocker):
 
     assert seguimiento.id_relevamiento_id == esperado.id
     assert seguimiento.estado == PrimerSeguimiento.ESTADO_ASIGNADO
-    assert seguimiento.tecnico == "uid-1"
+    # El relevamiento ya existia: el tecnico se HEREDA del relevamiento, no del
+    # territorial del formulario.
+    assert seguimiento.tecnico == "uid-esperado"
     assert Relevamiento.objects.filter(comedor=comedor).count() == 3
     send_task.assert_called_once()
     send_task.return_value.start.assert_called_once_with()
 
 
-def test_servicio_crea_ancla_local_sin_sync_inicial_si_no_existe(comedor, mocker):
-    initial_sync = mocker.patch(
-        "relevamientos.signals.AsyncSendRelevamientoToGestionar.start"
+def test_servicio_crea_ancla_con_territorial_y_sincroniza_a_gestionar(comedor, mocker):
+    # Sin relevamiento previo se crea un ancla que LLEVA el territorial del
+    # formulario (para el relevamiento y el seguimiento) y se envia a GESTIONAR
+    # de forma sincronica ANTES que el seguimiento (el seguimiento lo referencia
+    # por Id_Relevamiento, asi que GESTIONAR necesita conocerlo primero).
+    rel_send = mocker.patch(
+        "relevamientos.primer_seguimiento_service.AsyncSendRelevamientoToGestionar"
     )
     send_task = mocker.patch(
         "relevamientos.primer_seguimiento_service.AsyncSendPrimerSeguimientoToGestionar"
@@ -117,9 +129,54 @@ def test_servicio_crea_ancla_local_sin_sync_inicial_si_no_existe(comedor, mocker
 
     relevamiento = seguimiento.id_relevamiento
     assert relevamiento.comedor_id == comedor.id
-    assert relevamiento.territorial_uid is None
-    assert initial_sync.call_count == 0
-    assert send_task.called
+    assert relevamiento.territorial_uid == "uid-1"
+    assert relevamiento.territorial_nombre == "Territorial Norte"
+    assert relevamiento.estado == "Visita pendiente"
+    assert seguimiento.tecnico == "uid-1"
+    # El ancla se envia sincronicamente (run) y antes del seguimiento.
+    rel_send.assert_called_once()
+    rel_send.return_value.run.assert_called_once_with()
+    send_task.assert_called_once()
+    send_task.return_value.start.assert_called_once_with()
+
+
+def test_servicio_usa_relevamiento_id_explicito_y_hereda_territorial(comedor, mocker):
+    # Hay un relevamiento "mas activo" (Pendiente) que el servicio elegiria por
+    # defecto, pero al pasar relevamiento_id se ancla al relevamiento puntual y
+    # el tecnico se HEREDA de ese relevamiento (no del territorial del form).
+    Relevamiento.objects.create(comedor=comedor, estado="Pendiente")
+    objetivo = Relevamiento.objects.create(
+        comedor=comedor,
+        estado="En Proceso",
+        territorial_uid="uid-objetivo",
+        territorial_nombre="Territorial Objetivo",
+    )
+    send_task = mocker.patch(
+        "relevamientos.primer_seguimiento_service.AsyncSendPrimerSeguimientoToGestionar"
+    )
+
+    seguimiento = PrimerSeguimientoService.create_asignado(
+        comedor.id,
+        _territorial_payload(),
+        relevamiento_id=objetivo.id,
+    )
+
+    assert seguimiento.id_relevamiento_id == objetivo.id
+    assert seguimiento.tecnico == "uid-objetivo"
+    assert Relevamiento.objects.filter(comedor=comedor).count() == 2
+    send_task.assert_called_once()
+
+
+def test_servicio_relevamiento_id_de_otro_comedor_no_resuelve(comedor):
+    otro_comedor = Comedor.objects.create(nombre="Otro comedor")
+    ajeno = Relevamiento.objects.create(comedor=otro_comedor, estado="En Proceso")
+
+    with pytest.raises(Http404):
+        PrimerSeguimientoService.create_asignado(
+            comedor.id,
+            _territorial_payload(),
+            relevamiento_id=ajeno.id,
+        )
 
 
 def test_servicio_exige_territorial_valido(comedor):
@@ -153,13 +210,9 @@ def test_build_payload_primer_seguimiento(comedor):
 
     assert payload["Action"] == "Add"
     assert payload["Properties"] == {"Locale": "es-ES"}
-    assert payload["Rows"] == [
-        {
-            "ID_Seguimiento1": str(seguimiento.id),
-            "Id_Relevamiento": str(relevamiento.id),
-            "Id_SISOC": str(seguimiento.id),
-        }
-    ]
+    # Solo Id_Relevamiento: GESTIONAR genera ID_Seguimiento1 (mandar la clave
+    # autogenerada hace que AppSheet rechace el alta).
+    assert payload["Rows"] == [{"Id_Relevamiento": str(relevamiento.id)}]
 
 
 def test_async_send_guarda_gestionar_id_de_la_respuesta(comedor, mocker, settings):
@@ -183,6 +236,35 @@ def test_async_send_guarda_gestionar_id_de_la_respuesta(comedor, mocker, setting
 
     seguimiento.refresh_from_db()
     assert seguimiento.gestionar_id == "afbeaa6c"
+    assert seguimiento.sincronizado_gestionar is True
+
+
+def test_async_send_no_marca_sincronizado_si_gestionar_no_devuelve_filas(
+    comedor, mocker, settings
+):
+    settings.GESTIONAR_INTEGRATION_ENABLED = True
+    relevamiento = Relevamiento.objects.create(comedor=comedor, estado="En Proceso")
+    seguimiento = PrimerSeguimiento.objects.create(
+        id_relevamiento=relevamiento,
+        estado=PrimerSeguimiento.ESTADO_ASIGNADO,
+    )
+
+    response = mocker.Mock()
+    response.raise_for_status.return_value = None
+    response.content = b'{"Rows": []}'
+    response.json.return_value = {"Rows": []}
+    mocker.patch("relevamientos.tasks.requests.post", return_value=response)
+
+    AsyncSendPrimerSeguimientoToGestionar(
+        seguimiento.id,
+        build_primer_seguimiento_payload(seguimiento),
+    ).run()
+
+    seguimiento.refresh_from_db()
+    # AppSheet respondio 200 pero sin filas (alta rechazada / no registrada):
+    # NO se marca sincronizado para no mostrar un estado enganoso.
+    assert seguimiento.sincronizado_gestionar is False
+    assert seguimiento.gestionar_id is None
 
 
 def test_async_remove_usa_gestionar_id_y_omite_si_falta(comedor, mocker, settings):
@@ -196,15 +278,18 @@ def test_async_remove_usa_gestionar_id_y_omite_si_falta(comedor, mocker, setting
     post_mock = mocker.patch("relevamientos.tasks.requests.post")
 
     AsyncRemovePrimerSeguimientoToGestionar(
-        seguimiento.id, seguimiento.gestionar_id
+        seguimiento.id, seguimiento.gestionar_id, relevamiento.id
     ).run()
 
     body_enviado = post_mock.call_args.kwargs["json"]
     assert body_enviado["Action"] == "Delete"
-    assert body_enviado["Rows"] == [{"ID_Seguimiento1": "afbeaa6c"}]
+    # Clave compuesta: ID_Seguimiento1 + Id_Relevamiento.
+    assert body_enviado["Rows"] == [
+        {"ID_Seguimiento1": "afbeaa6c", "Id_Relevamiento": str(relevamiento.id)}
+    ]
 
     post_mock.reset_mock()
-    AsyncRemovePrimerSeguimientoToGestionar(seguimiento.id, "").start()
+    AsyncRemovePrimerSeguimientoToGestionar(seguimiento.id, "", relevamiento.id).start()
     post_mock.assert_not_called()
 
 

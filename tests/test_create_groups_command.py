@@ -120,6 +120,27 @@ def test_create_groups_creates_cfp_secondary_groups_with_expected_permissions():
     }.issubset(set(cfp.permissions.values_list("codename", flat=True)))
 
 
+def test_create_groups_creates_inet_provincia_with_expected_permissions():
+    """INET_PROVINCIA debe tener rol provincial INET y permisos VAT base."""
+    Group.objects.all().delete()
+
+    call_command("create_groups", verbosity=0)
+
+    inet_provincia = Group.objects.get(name="INET_PROVINCIA")
+    group_codes = set(inet_provincia.permissions.values_list("codename", flat=True))
+
+    assert {
+        "role_inet_provincia",
+        "role_provincia_vat",
+        "view_centro",
+        "add_centro",
+        "change_centro",
+        "view_planversioncurricular",
+        "add_planversioncurricular",
+        "change_planversioncurricular",
+    }.issubset(group_codes)
+
+
 def test_create_groups_creates_cfp_revisor_readonly_group():
     """CFPRevisor debe existir para visualizacion acotada sin permisos de gestion."""
     Group.objects.all().delete()

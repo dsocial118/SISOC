@@ -307,3 +307,19 @@ Cuatro correcciones sobre los endpoints **sin cambiar los contratos existentes**
   nuevo endpoint (happy path/ciclo, `401`/`400`/`429`, auditoría, `503` por flag).
 - `docs/registro/cambios/2026-05-28-integracion-ticketera-cambiar-password.md`.
 - Reutiliza sin modificar: `users.services_auth.change_password_for_authenticated_user`.
+
+---
+
+## Extensiones (2026-06-08)
+
+Extensiones aditivas al canal Ticketera. **Los contratos de los tres endpoints
+originales no cambian.** Detalle completo en
+[docs/registro/decisiones/2026-06-08-ticketera-edit-usuarios-y-reset-password.md](2026-06-08-ticketera-edit-usuarios-y-reset-password.md).
+
+- `PATCH /api/ticketera/usuarios/<username>/` — edita `email`, `first_name`,
+  `last_name` solo si `_is_ticketera_source(profile.source)` (403 en otro
+  caso, 404 si no existe). Idempotente.
+- `POST /api/ticketera/auth/solicitar-reset-password/` — dispara
+  `request_password_reset_for_email` con anti-enumeration (200 siempre) y
+  rate limit `ticketera_solicitar_reset` (5/15 min). Reusa el flujo web de
+  reset (link a `password_reset_confirm`).

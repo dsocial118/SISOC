@@ -1,3 +1,4 @@
+# pylint: disable=too-many-lines
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
@@ -364,6 +365,37 @@ class ExpedienteCiudadano(SoftDeleteModelMixin, models.Model):
                 HistorialComentarios.TIPO_SUBSANACION_RESPUESTA,
             ],
         )
+
+    SUBSANACION_TIPO_LABELS = {
+        "RENAPER": "RENAPER",
+        "DOCUMENTACION": "Documentación",
+        "DATOS_PERSONALES": "Datos personales",
+        "OTROS": "Otros",
+    }
+
+    @property
+    def subsanacion_tipo_display(self):
+        """Etiqueta legible del tipo de subsanación elegido al solicitarla.
+
+        Devuelve cadena vacía cuando el legajo no tiene tipo registrado
+        (subsanaciones antiguas o creadas por flujos que no lo guardan).
+        """
+        if not self.subsanacion_tipo:
+            return ""
+        return self.SUBSANACION_TIPO_LABELS.get(
+            self.subsanacion_tipo, self.subsanacion_tipo
+        )
+
+    @property
+    def subsanacion_respuesta_label(self):
+        """Rótulo de la respuesta de la provincia, reflejando el motivo original.
+
+        Sin tipo registrado cae al texto genérico, sin el viejo sufijo "Renaper".
+        """
+        tipo = self.subsanacion_tipo_display
+        if tipo:
+            return f"Respuesta a subsanación ({tipo})"
+        return "Respuesta a subsanación"
 
     def tiene_documento(self, tipo_documento_nombre):
         """Verifica si tiene un documento específico."""

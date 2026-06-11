@@ -16,8 +16,8 @@ from comedores.forms.comedor_form import (
     NominaForm,
 )
 from comedores.models import Nomina
-from comedores.services.comedor_service import ComedorService
-from comedores.utils import comedor_usa_admision_para_nomina
+from comedores.services.comedor_service import ComedorService, normalize_nomina_tab
+from comedores.utils import comedor_usa_admision_para_nomina, is_pnud_comedor
 from core.soft_delete.view_helpers import SoftDeleteDeleteViewMixin
 from pwa.models import RegistroAsistenciaNominaPWA
 from pwa.utils import parse_periodo_referencia
@@ -55,6 +55,26 @@ def _get_admision_del_comedor_or_404(comedor_pk, admision_pk, user):
 
 def _get_cantidad_asistentes_activos(rangos):
     return (rangos or {}).get("cantidad_activos") or 0
+
+
+def _get_nomina_tab_options(active_tab):
+    options = (
+        ("alimentaria", "Alimentaria"),
+        ("actividades", "Actividades"),
+        ("todas", "Todas"),
+    )
+    return [
+        {"key": key, "label": label, "active": key == active_tab}
+        for key, label in options
+    ]
+
+
+def _get_nomina_total_label(tab):
+    if tab == "actividades":
+        return "Con actividades"
+    if tab == "todas":
+        return "Total personas"
+    return "Asistentes"
 
 
 def _get_asistencia_nomina_context(request, *, admision_id=None, comedor_id=None):
@@ -127,9 +147,18 @@ class NominaDetailView(LoginRequiredMixin, TemplateView):
         )
         page = int(self.request.GET.get("page", 1))
         dni_query = (self.request.GET.get("dni") or "").strip()
+        is_pnud = is_pnud_comedor(admision.comedor)
+        nomina_tab = (
+            normalize_nomina_tab(self.request.GET.get("tab")) if is_pnud else "todas"
+        )
 
         page_obj, nomina_m, nomina_f, nomina_x, espera, _total, rangos = (
-            ComedorService.get_nomina_detail(admision.pk, page, dni_query=dni_query)
+            ComedorService.get_nomina_detail(
+                admision.pk,
+                page,
+                dni_query=dni_query,
+                nomina_tab=nomina_tab,
+            )
         )
 
         menores = (rangos.get("ninos") or 0) + (rangos.get("adolescentes") or 0)
@@ -148,6 +177,12 @@ class NominaDetailView(LoginRequiredMixin, TemplateView):
                 "admision_pk": admision.pk,
                 "dni_query": dni_query,
                 "estados": Nomina.ESTADO_CHOICES,
+                "mostrar_tabs_nomina": is_pnud,
+                "nomina_tab": nomina_tab,
+                "nomina_tab_options": _get_nomina_tab_options(nomina_tab),
+                "nomina_total_label": (
+                    _get_nomina_total_label(nomina_tab) if is_pnud else "Asistentes"
+                ),
             }
         )
         return context
@@ -445,10 +480,17 @@ class NominaDirectaDetailView(LoginRequiredMixin, TemplateView):
         comedor = _get_comedor_directo_or_404(self.kwargs["pk"], self.request.user)
         page = int(self.request.GET.get("page", 1))
         dni_query = (self.request.GET.get("dni") or "").strip()
+        is_pnud = is_pnud_comedor(comedor)
+        nomina_tab = (
+            normalize_nomina_tab(self.request.GET.get("tab")) if is_pnud else "todas"
+        )
 
         page_obj, nomina_m, nomina_f, nomina_x, espera, _total, rangos = (
             ComedorService.get_nomina_detail_by_comedor(
-                comedor.pk, page, dni_query=dni_query
+                comedor.pk,
+                page,
+                dni_query=dni_query,
+                nomina_tab=nomina_tab,
             )
         )
 
@@ -468,6 +510,12 @@ class NominaDirectaDetailView(LoginRequiredMixin, TemplateView):
                 "admision_pk": None,
                 "dni_query": dni_query,
                 "estados": Nomina.ESTADO_CHOICES,
+                "mostrar_tabs_nomina": is_pnud,
+                "nomina_tab": nomina_tab,
+                "nomina_tab_options": _get_nomina_tab_options(nomina_tab),
+                "nomina_total_label": (
+                    _get_nomina_total_label(nomina_tab) if is_pnud else "Asistentes"
+                ),
             }
         )
         return context

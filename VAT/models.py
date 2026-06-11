@@ -1130,6 +1130,12 @@ class ComisionCurso(SoftDeleteModelMixin, models.Model):
             "las nuevas inscripciones pasan a espera."
         ),
     )
+    cupo_lista_espera = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        verbose_name="Cupo Lista de Espera",
+        help_text="Cantidad máxima de inscripciones permitidas en espera.",
+    )
     fecha_inicio = models.DateField(verbose_name="Fecha de Inicio")
     fecha_fin = models.DateField(verbose_name="Fecha de Fin")
     estado = models.CharField(
@@ -1167,6 +1173,18 @@ class ComisionCurso(SoftDeleteModelMixin, models.Model):
 
         if self.cupo_total is not None and self.cupo_total == 0:
             raise ValidationError({"cupo_total": "El cupo total debe ser mayor a 0."})
+
+        if self.acepta_lista_espera:
+            if not self.cupo_lista_espera:
+                raise ValidationError(
+                    {
+                        "cupo_lista_espera": (
+                            "Definí un cupo para la lista de espera cuando está habilitada."
+                        )
+                    }
+                )
+        else:
+            self.cupo_lista_espera = None
 
     def __str__(self):
         return f"{self.codigo_comision} - {self.nombre}"
@@ -1462,6 +1480,16 @@ class ComisionHorario(models.Model):
     @property
     def entidad_comision(self):
         return self.comision if self.comision_id else self.comision_curso
+
+    @property
+    def duracion_label(self):
+        """Duración del horario formateada como 'H hs M minutos'."""
+        if self.hora_desde is None or self.hora_hasta is None:
+            return ""
+        inicio = self.hora_desde.hour * 60 + self.hora_desde.minute
+        fin = self.hora_hasta.hour * 60 + self.hora_hasta.minute
+        total = max(fin - inicio, 0)
+        return f"{total // 60} hs {total % 60} minutos"
 
     def clean(self):
         from django.core.exceptions import ValidationError

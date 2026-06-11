@@ -3,8 +3,16 @@
 import re
 
 from django.core.exceptions import ValidationError
-from django.core.validators import EmailValidator, punycode
+from django.core.validators import EmailValidator
 from django.utils.deconstruct import deconstructible
+
+
+def punycode(domain):
+    """Implementación local de punycode para compatibilidad."""
+    try:
+        return domain.encode("idna").decode("ascii")
+    except UnicodeError:
+        return domain
 
 
 UNICODE_USER_REGEX = re.compile(
