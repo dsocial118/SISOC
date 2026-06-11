@@ -12,6 +12,7 @@ CURSO_BUSCAR_EXAMPLES = [
                 {
                     "id": 120,
                     "nombre": "Herramientas Digitales",
+                    "tipo": ["empleoinet"],
                     "prioritario": True,
                     "estado": "activo",
                     "observaciones": None,
@@ -28,6 +29,7 @@ CURSO_BUSCAR_EXAMPLES = [
                         "referentes": [],
                         "referentes_nombres": [],
                         "codigo": "CFP-401",
+                        "cue": "060123400",
                         "activo": True,
                         "provincia": {"id": 2, "nombre": "Buenos Aires"},
                         "ciudad": {
@@ -100,6 +102,7 @@ CURSO_BUSCAR_EXAMPLES = [
                 {
                     "id": 120,
                     "nombre": "Herramientas Digitales",
+                    "tipo": ["empleoinet"],
                     "prioritario": True,
                     "estado": "activo",
                     "observaciones": None,
@@ -115,6 +118,7 @@ CURSO_BUSCAR_EXAMPLES = [
                         "referentes": [],
                         "referentes_nombres": [],
                         "codigo": "CFP-401",
+                        "cue": "060123400",
                         "activo": True,
                         "provincia": {"id": 2, "nombre": "Buenos Aires"},
                         "ciudad": {
@@ -178,6 +182,7 @@ CURSO_PRIORITARIOS_EXAMPLES = [
                 {
                     "id": 140,
                     "nombre": "Herramientas de Gestión Prioritaria",
+                    "tipo": ["empleoinet"],
                     "prioritario": True,
                     "estado": "activo",
                     "observaciones": None,
@@ -194,6 +199,7 @@ CURSO_PRIORITARIOS_EXAMPLES = [
                         "referentes": [],
                         "referentes_nombres": [],
                         "codigo": "CFP-401",
+                        "cue": "060123400",
                         "activo": True,
                         "provincia": {"id": 2, "nombre": "Buenos Aires"},
                         "ciudad": {

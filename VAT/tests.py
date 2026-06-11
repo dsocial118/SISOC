@@ -3607,6 +3607,7 @@ def test_api_vat_cursos_buscar_por_texto_devuelve_info_enriquecida(
     curso = Curso.objects.create(
         centro=centro,
         nombre="Administración Contable Avanzada",
+        tipo=["empleoinet"],
         modalidad=modalidad,
         estado="activo",
         inscripcion_libre=True,
@@ -3622,6 +3623,12 @@ def test_api_vat_cursos_buscar_por_texto_devuelve_info_enriquecida(
         activa=True,
     )
     curso.voucher_parametrias.add(voucher_parametria)
+    InstitucionIdentificadorHist.objects.create(
+        centro=centro,
+        tipo_identificador="cue",
+        valor_identificador="060123400",
+        es_actual=True,
+    )
     comision = ComisionCurso.objects.create(
         curso=curso,
         ubicacion=ubicacion,
@@ -3657,8 +3664,10 @@ def test_api_vat_cursos_buscar_por_texto_devuelve_info_enriquecida(
     assert payload["count"] == 1
     result = payload["results"][0]
     assert result["id"] == curso.id
+    assert result["tipo"] == ["empleoinet"]
     assert result["inscripcion_libre"] is True
     assert result["centro"]["id"] == centro.id
+    assert result["centro"]["cue"] == "060123400"
     assert result["centro"]["provincia"]["id"] == centro.provincia_id
     assert result["centro"]["provincia"]["nombre"] == centro.provincia.nombre
     assert result["centro"]["ciudad"]["provincia"]["id"] == centro.provincia_id

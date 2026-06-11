@@ -430,6 +430,7 @@ class CursoSerializer(serializers.ModelSerializer):
             "plan_estudio",
             "plan_estudio_nombre",
             "nombre",
+            "tipo",
             "prioritario",
             "modalidad",
             "modalidad_nombre",
@@ -584,6 +585,7 @@ class CursoBusquedaCentroSerializer(serializers.ModelSerializer):
     )
     referentes = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
     referentes_nombres = serializers.SerializerMethodField()
+    cue = serializers.SerializerMethodField()
     provincia = ProvinciaSerializer(read_only=True)
     ciudad = CursoBusquedaCiudadSerializer(source="*", read_only=True)
 
@@ -597,6 +599,7 @@ class CursoBusquedaCentroSerializer(serializers.ModelSerializer):
             "referentes",
             "referentes_nombres",
             "codigo",
+            "cue",
             "activo",
             "provincia",
             "ciudad",
@@ -617,6 +620,16 @@ class CursoBusquedaCentroSerializer(serializers.ModelSerializer):
         return [
             referente.get_full_name() or referente.username for referente in referentes
         ]
+
+    def get_cue(self, obj):
+        # El CUE vigente se guarda en InstitucionIdentificadorHist
+        # (tipo_identificador="cue", es_actual=True). El queryset del buscador
+        # lo prefetchea en `cue_actual`; si no hay, se cae al codigo interno,
+        # igual que la anotacion codigo_cue de la vista web de centros.
+        cue_actual = getattr(obj, "cue_actual", None)
+        if cue_actual:
+            return cue_actual[0].valor_identificador
+        return obj.codigo
 
 
 class CursoBusquedaUbicacionSerializer(serializers.ModelSerializer):
@@ -728,6 +741,7 @@ class CursoBusquedaSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "nombre",
+            "tipo",
             "prioritario",
             "estado",
             "observaciones",
