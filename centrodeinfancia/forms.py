@@ -35,6 +35,8 @@ from centrodeinfancia.models import (
     NOMINA_ALERGIA_CHOICES,
     NOMINA_DOSIS_VACUNA_CHOICES,
     NOMINA_VACUNAS,
+    NominaPais,
+    NominaNacionalidad,
 )
 from centrodeinfancia.forms_observacion import ObservacionCentroInfanciaForm
 from centrodeinfancia.forms_formulario_cdi import (
@@ -927,6 +929,36 @@ class NominaCentroInfanciaDestinatariosForm(NominaCentroInfanciaBaseForm):
         required=False,
         label="Alergias alimentarias",
     )
+    nacionalidad = forms.ChoiceField(
+        choices=[],
+        required=False,
+        label="Nacionalidad",
+    )
+    pais_nacimiento = forms.ChoiceField(
+        choices=[],
+        required=False,
+        label="¿Cuál es su país de nacimiento?",
+    )
+    responsable_legal_1_pais_nacimiento = forms.ChoiceField(
+        choices=[],
+        required=False,
+        label="¿Cuál es su país de nacimiento?",
+    )
+    responsable_legal_1_nacionalidad = forms.ChoiceField(
+        choices=[],
+        required=False,
+        label="¿Cuál es su nacionalidad?",
+    )
+    responsable_legal_2_pais_nacimiento = forms.ChoiceField(
+        choices=[],
+        required=False,
+        label="¿Cuál es su país de nacimiento?",
+    )
+    responsable_legal_2_nacionalidad = forms.ChoiceField(
+        choices=[],
+        required=False,
+        label="¿Cuál es su nacionalidad?",
+    )
 
     class Meta(NominaCentroInfanciaBaseForm.Meta):
         fields = list(NominaCentroInfanciaBaseForm.Meta.fields) + [
@@ -1051,8 +1083,22 @@ class NominaCentroInfanciaDestinatariosForm(NominaCentroInfanciaBaseForm):
         ),
     }
 
+    def _configure_pais_nacionalidad_fields(self):
+        empty = ("", "---------")
+        paises = [empty] + [
+            (p.nombre, p.nombre) for p in NominaPais.objects.order_by("nombre")
+        ]
+        nacionalidades = [empty] + [
+            (n.nombre, n.nombre) for n in NominaNacionalidad.objects.order_by("nombre")
+        ]
+        for fname in ("pais_nacimiento", "responsable_legal_1_pais_nacimiento", "responsable_legal_2_pais_nacimiento"):
+            self.fields[fname].choices = paises
+        for fname in ("nacionalidad", "responsable_legal_1_nacionalidad", "responsable_legal_2_nacionalidad"):
+            self.fields[fname].choices = nacionalidades
+
     def __init__(self, *args, centro=None, **kwargs):
         super().__init__(*args, **kwargs)
+        self._configure_pais_nacionalidad_fields()
 
         # Scope trabajador_registra al CDI recibido
         if centro:
