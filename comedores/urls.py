@@ -58,7 +58,7 @@ from intervenciones.views import (
     IntervencionDetailIndividualView,
     IntervencionDetailView,
 )
-from core.decorators import permissions_any_required
+from core.decorators import permissions_all_required, permissions_any_required
 
 urlpatterns = [
     path(
@@ -322,7 +322,9 @@ urlpatterns = [
     ),
     path(
         "comedores/nomina/<int:pk>/derivar/",
-        permissions_any_required(["comedores.change_nomina"])(nomina_derivar),
+        permissions_all_required(
+            ["comedores.change_nomina", "comedores.add_nomina"]
+        )(nomina_derivar),
         name="nomina_derivar",
     ),
     path(

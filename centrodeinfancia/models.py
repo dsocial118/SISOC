@@ -1274,6 +1274,16 @@ class NominaCentroInfanciaDerivacion(models.Model):
         on_delete=models.PROTECT,
         related_name="derivaciones_destino",
     )
+    centro_origen = models.ForeignKey(
+        CentroDeInfancia,
+        on_delete=models.PROTECT,
+        related_name="+",
+    )
+    centro_destino = models.ForeignKey(
+        CentroDeInfancia,
+        on_delete=models.PROTECT,
+        related_name="+",
+    )
     usuario = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
@@ -1283,8 +1293,6 @@ class NominaCentroInfanciaDerivacion(models.Model):
     )
     fecha = models.DateTimeField(auto_now_add=True)
     motivo = models.TextField(blank=True)
-    centro_origen_id = models.IntegerField()
-    centro_destino_id = models.IntegerField()
 
     class Meta:
         verbose_name = "Derivación de nómina CDI"

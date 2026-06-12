@@ -116,17 +116,29 @@ class FormularioCDIArticulationFrequencyAdmin(admin.ModelAdmin):
 
 @admin.register(NominaCentroInfanciaDerivacion)
 class NominaCentroInfanciaDerivacionAdmin(admin.ModelAdmin):
-    list_display = ("id", "nomina_origen", "nomina_destino", "usuario", "fecha")
+    list_display = (
+        "id",
+        "nomina_origen",
+        "nomina_destino",
+        "centro_origen",
+        "centro_destino",
+        "usuario",
+        "fecha",
+    )
     list_filter = ("fecha",)
-    search_fields = ("usuario__username",)
+    search_fields = (
+        "usuario__username",
+        "centro_origen__nombre",
+        "centro_destino__nombre",
+    )
     readonly_fields = (
         "nomina_origen",
         "nomina_destino",
+        "centro_origen",
+        "centro_destino",
         "usuario",
         "fecha",
         "motivo",
-        "centro_origen_id",
-        "centro_destino_id",
     )
 
     def has_add_permission(self, request):

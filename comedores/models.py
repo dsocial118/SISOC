@@ -571,6 +571,16 @@ class NominaDerivacion(models.Model):
         on_delete=models.PROTECT,
         related_name="derivaciones_destino",
     )
+    comedor_origen = models.ForeignKey(
+        "comedores.Comedor",
+        on_delete=models.PROTECT,
+        related_name="+",
+    )
+    comedor_destino = models.ForeignKey(
+        "comedores.Comedor",
+        on_delete=models.PROTECT,
+        related_name="+",
+    )
     usuario = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
@@ -580,8 +590,6 @@ class NominaDerivacion(models.Model):
     )
     fecha = models.DateTimeField(auto_now_add=True)
     motivo = models.TextField(blank=True)
-    comedor_origen_id = models.IntegerField()
-    comedor_destino_id = models.IntegerField()
 
     class Meta:
         verbose_name = "Derivación de nómina"

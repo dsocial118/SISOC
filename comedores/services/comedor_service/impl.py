@@ -1648,8 +1648,6 @@ class ComedorService:
         if nomina_origen.estado != Nomina.ESTADO_ACTIVO:
             return False, "Solo se pueden derivar personas con estado Activo."
 
-        comedor_destino = Comedor.objects.get(pk=comedor_destino_pk)
-
         if nomina_origen.admision:
             comedor_origen_id = nomina_origen.admision.comedor_id
         else:
@@ -1657,6 +1655,17 @@ class ComedorService:
 
         if comedor_origen_id is None:
             return False, "El registro no tiene un centro de origen válido."
+
+        comedor_destino = (
+            ComedorService.get_scoped_comedor_queryset(usuario)
+            .filter(pk=comedor_destino_pk)
+            .first()
+        )
+        if comedor_destino is None:
+            return (
+                False,
+                "El centro destino no existe o no está dentro de tu alcance.",
+            )
 
         if comedor_destino.pk == comedor_origen_id:
             return False, "El centro destino debe ser diferente al centro de origen."
@@ -1752,7 +1761,7 @@ class ComedorService:
                     usuario=usuario,
                     motivo=motivo,
                     comedor_origen_id=comedor_origen_id,
-                    comedor_destino_id=comedor_destino.pk,
+                    comedor_destino=comedor_destino,
                 )
 
             return True, "Derivación realizada correctamente."

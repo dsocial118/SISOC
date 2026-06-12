@@ -1,6 +1,6 @@
 from django.urls import path
 
-from core.decorators import permissions_any_required
+from core.decorators import permissions_all_required, permissions_any_required
 from centrodeinfancia.views import (
     CentroDeInfanciaCreateView,
     CentroDeInfanciaDeleteView,
@@ -168,9 +168,12 @@ urlpatterns = [
     ),
     path(
         "centrodeinfancia/nomina/<int:pk>/derivar/",
-        permissions_any_required(["centrodeinfancia.change_nominacentroinfancia"])(
-            nomina_centrodeinfancia_derivar
-        ),
+        permissions_all_required(
+            [
+                "centrodeinfancia.change_nominacentroinfancia",
+                "centrodeinfancia.add_nominacentroinfancia",
+            ]
+        )(nomina_centrodeinfancia_derivar),
         name="centrodeinfancia_nomina_derivar",
     ),
     path(

@@ -3,6 +3,7 @@ from django.contrib.auth import get_user_model
 from django.urls import reverse
 
 from ciudadanos.models import Ciudadano
+from core.models import Provincia
 from centrodeinfancia.models import (
     CentroDeInfancia,
     NominaCentroInfancia,
@@ -60,9 +61,12 @@ def test_transferir_camino_feliz():
         ciudadano=ciudadano, centro=centro_destino
     )
     assert nomina_destino.estado == NominaCentroInfancia.ESTADO_PENDIENTE
-    assert NominaCentroInfanciaDerivacion.objects.filter(
+    derivacion = NominaCentroInfanciaDerivacion.objects.get(
         nomina_origen=nomina, nomina_destino=nomina_destino
-    ).exists()
+    )
+    assert derivacion.centro_origen_id == centro_origen.pk
+    assert derivacion.centro_destino_id == centro_destino.pk
+    assert derivacion.usuario == usuario
 
 
 @pytest.mark.django_db
@@ -70,6 +74,7 @@ def test_transferir_camino_feliz_copia_campos():
     centro_origen = _make_centro("CDI Campos Origen")
     centro_destino = _make_centro("CDI Campos Destino")
     ciudadano = _make_ciudadano(doc=21222222)
+    provincia = Provincia.objects.create(nombre="Provincia derivar test")
     nomina = NominaCentroInfancia.objects.create(
         centro=centro_origen,
         ciudadano=ciudadano,
@@ -77,6 +82,7 @@ def test_transferir_camino_feliz_copia_campos():
         apellido="Derivar",
         nombre="CDI",
         sala="Sala Azul",
+        provincia_domicilio=provincia,
     )
     usuario = _make_user("cdi_campos_user")
 
@@ -93,6 +99,7 @@ def test_transferir_camino_feliz_copia_campos():
     assert nomina_destino.apellido == "Derivar"
     assert nomina_destino.nombre == "CDI"
     assert nomina_destino.sala == "Sala Azul"
+    assert nomina_destino.provincia_domicilio_id == provincia.pk
 
 
 @pytest.mark.django_db

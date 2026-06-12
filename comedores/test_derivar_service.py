@@ -1,7 +1,5 @@
 import pytest
 from django.contrib.auth import get_user_model
-from django.contrib.auth.models import Permission
-from django.test import Client
 from django.urls import reverse
 
 from admisiones.models.admisiones import Admision
@@ -58,9 +56,12 @@ def test_transferir_camino_feliz_directo():
         ciudadano=ciudadano, comedor=comedor_destino, admision__isnull=True
     )
     assert nomina_destino.estado == Nomina.ESTADO_ESPERA
-    assert NominaDerivacion.objects.filter(
+    derivacion = NominaDerivacion.objects.get(
         nomina_origen=nomina, nomina_destino=nomina_destino
-    ).exists()
+    )
+    assert derivacion.comedor_origen_id == comedor_origen.pk
+    assert derivacion.comedor_destino_id == comedor_destino.pk
+    assert derivacion.usuario == usuario
 
 
 @pytest.mark.django_db
@@ -220,7 +221,7 @@ def test_nomina_derivar_view_sin_autenticacion(client):
     )
     url = reverse("nomina_derivar", kwargs={"pk": nomina.pk})
 
-    response = client.post(url, data={"comedor_destino_id": "1"})
+    response = client.post(url, data={"centro_destino_id": "1"})
 
     assert response.status_code in (302, 403)
 
@@ -237,7 +238,7 @@ def test_nomina_derivar_view_centro_destino_invalido(client):
     )
     url = reverse("nomina_derivar", kwargs={"pk": nomina.pk})
 
-    response = client.post(url, data={"comedor_destino_id": "no_es_numero"})
+    response = client.post(url, data={"centro_destino_id": "no_es_numero"})
 
     assert response.status_code == 400
 
@@ -257,7 +258,7 @@ def test_nomina_derivar_view_post_exitoso(client):
     )
     url = reverse("nomina_derivar", kwargs={"pk": nomina.pk})
 
-    response = client.post(url, data={"comedor_destino_id": str(comedor_destino.pk)})
+    response = client.post(url, data={"centro_destino_id": str(comedor_destino.pk)})
 
     assert response.status_code == 200
     data = response.json()

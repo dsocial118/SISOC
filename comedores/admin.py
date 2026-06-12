@@ -82,17 +82,29 @@ class ColaboradorEspacioAdmin(admin.ModelAdmin):
 
 @admin.register(NominaDerivacion)
 class NominaDerivacionAdmin(admin.ModelAdmin):
-    list_display = ("id", "nomina_origen", "nomina_destino", "usuario", "fecha")
+    list_display = (
+        "id",
+        "nomina_origen",
+        "nomina_destino",
+        "comedor_origen",
+        "comedor_destino",
+        "usuario",
+        "fecha",
+    )
     list_filter = ("fecha",)
-    search_fields = ("usuario__username",)
+    search_fields = (
+        "usuario__username",
+        "comedor_origen__nombre",
+        "comedor_destino__nombre",
+    )
     readonly_fields = (
         "nomina_origen",
         "nomina_destino",
+        "comedor_origen",
+        "comedor_destino",
         "usuario",
         "fecha",
         "motivo",
-        "comedor_origen_id",
-        "comedor_destino_id",
     )
 
     def has_add_permission(self, request):

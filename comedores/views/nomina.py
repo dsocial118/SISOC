@@ -15,7 +15,7 @@ from comedores.forms.comedor_form import (
     NominaExtraForm,
     NominaForm,
 )
-from comedores.models import Comedor, Nomina
+from comedores.models import Nomina
 from comedores.services.comedor_service import ComedorService, normalize_nomina_tab
 from comedores.utils import comedor_usa_admision_para_nomina, is_pnud_comedor
 from core.soft_delete.view_helpers import SoftDeleteDeleteViewMixin
@@ -55,6 +55,25 @@ def _get_admision_del_comedor_or_404(comedor_pk, admision_pk, user):
 
 def _get_cantidad_asistentes_activos(rangos):
     return (rangos or {}).get("cantidad_activos") or 0
+
+
+def _comedores_destino_para_derivar(user, exclude_pk):
+    """Lista de comedores elegibles como destino de derivación.
+
+    Aplica scope territorial del usuario y excluye comedores con admisión
+    obligatoria que no tienen ninguna admisión activa (no podrían recibir).
+    """
+    scoped_qs = ComedorService.get_scoped_comedor_queryset(user)
+    return list(
+        scoped_qs.exclude(pk=exclude_pk)
+        .filter(
+            Q(programa__usa_admision_para_nomina=False)
+            | Q(admision__activa=True)
+        )
+        .values("id", "nombre")
+        .distinct()
+        .order_by("nombre")
+    )
 
 
 def _get_nomina_tab_options(active_tab):
@@ -163,10 +182,8 @@ class NominaDetailView(LoginRequiredMixin, TemplateView):
 
         menores = (rangos.get("ninos") or 0) + (rangos.get("adolescentes") or 0)
 
-        comedores_para_derivar = list(
-            Comedor.objects.exclude(pk=admision.comedor_id)
-            .values("id", "nombre")
-            .order_by("nombre")
+        comedores_para_derivar = _comedores_destino_para_derivar(
+            self.request.user, admision.comedor_id
         )
 
         context.update(
@@ -453,16 +470,16 @@ def nomina_derivar(request, pk):
     """Transfiere una persona de nómina activa a otro centro vía AJAX (POST)."""
     if request.method != "POST":
         return JsonResponse(
-            {"success": False, "error": "Método no permitido."}, status=405
+            {"success": False, "message": "Método no permitido."}, status=405
         )
 
     _get_nomina_scoped_or_404(pk, request.user)
 
     try:
-        comedor_destino_pk = int(request.POST.get("comedor_destino_id", ""))
+        comedor_destino_pk = int(request.POST.get("centro_destino_id", ""))
     except (ValueError, TypeError):
         return JsonResponse(
-            {"success": False, "error": "Centro destino inválido."}, status=400
+            {"success": False, "message": "Centro destino inválido."}, status=400
         )
 
     motivo = (request.POST.get("motivo") or "").strip()
@@ -532,10 +549,8 @@ class NominaDirectaDetailView(LoginRequiredMixin, TemplateView):
 
         menores = (rangos.get("ninos") or 0) + (rangos.get("adolescentes") or 0)
 
-        comedores_para_derivar = list(
-            Comedor.objects.exclude(pk=comedor.pk)
-            .values("id", "nombre")
-            .order_by("nombre")
+        comedores_para_derivar = _comedores_destino_para_derivar(
+            self.request.user, comedor.pk
         )
 
         context.update(

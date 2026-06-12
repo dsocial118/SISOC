@@ -1126,7 +1126,10 @@ class NominaCentroInfanciaDetailView(LoginRequiredMixin, ListView):
         page_obj = context.get("page_obj")
 
         centros_para_derivar = list(
-            CentroDeInfancia.objects.exclude(pk=centro.pk)
+            _aplicar_scope_centros_cdi(
+                CentroDeInfancia.objects.all(), self.request.user
+            )
+            .exclude(pk=centro.pk)
             .values("id", "nombre")
             .order_by("nombre")
         )
@@ -1527,7 +1530,7 @@ def nomina_centrodeinfancia_derivar(request, pk):
     """Transfiere una persona de nómina activa a otro CDI vía AJAX (POST)."""
     if request.method != "POST":
         return JsonResponse(
-            {"success": False, "error": "Método no permitido."}, status=405
+            {"success": False, "message": "Método no permitido."}, status=405
         )
 
     get_object_or_404(_nomina_cdi_queryset_scoped(request.user), pk=pk)
@@ -1536,7 +1539,7 @@ def nomina_centrodeinfancia_derivar(request, pk):
         centro_destino_pk = int(request.POST.get("centro_destino_id", ""))
     except (ValueError, TypeError):
         return JsonResponse(
-            {"success": False, "error": "Centro destino inválido."}, status=400
+            {"success": False, "message": "Centro destino inválido."}, status=400
         )
 
     motivo = (request.POST.get("motivo") or "").strip()

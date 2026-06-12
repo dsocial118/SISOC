@@ -2,6 +2,7 @@ import logging
 
 from django.db import transaction
 
+from centrodeinfancia.access import aplicar_scope_centros_cdi
 from centrodeinfancia.models import (
     CentroDeInfancia,
     NominaCentroInfancia,
@@ -69,7 +70,16 @@ class CentroDeInfanciaService:
         if nomina_origen.estado != NominaCentroInfancia.ESTADO_ACTIVO:
             return False, "Solo se pueden derivar personas con estado Activo."
 
-        centro_destino = CentroDeInfancia.objects.get(pk=centro_destino_pk)
+        centro_destino = (
+            aplicar_scope_centros_cdi(CentroDeInfancia.objects.all(), usuario)
+            .filter(pk=centro_destino_pk)
+            .first()
+        )
+        if centro_destino is None:
+            return (
+                False,
+                "El centro destino no existe o no está dentro de tu alcance.",
+            )
 
         if centro_destino.pk == nomina_origen.centro_id:
             return False, "El centro destino debe ser diferente al centro de origen."
@@ -135,7 +145,7 @@ class CentroDeInfanciaService:
                     usuario=usuario,
                     motivo=motivo,
                     centro_origen_id=centro_origen_id,
-                    centro_destino_id=centro_destino.pk,
+                    centro_destino=centro_destino,
                 )
 
             return True, "Derivación realizada correctamente."

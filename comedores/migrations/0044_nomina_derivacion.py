@@ -27,8 +27,22 @@ class Migration(migrations.Migration):
                 ),
                 ("fecha", models.DateTimeField(auto_now_add=True)),
                 ("motivo", models.TextField(blank=True)),
-                ("comedor_origen_id", models.IntegerField()),
-                ("comedor_destino_id", models.IntegerField()),
+                (
+                    "comedor_destino",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.PROTECT,
+                        related_name="+",
+                        to="comedores.comedor",
+                    ),
+                ),
+                (
+                    "comedor_origen",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.PROTECT,
+                        related_name="+",
+                        to="comedores.comedor",
+                    ),
+                ),
                 (
                     "nomina_destino",
                     models.ForeignKey(

@@ -27,8 +27,22 @@ class Migration(migrations.Migration):
                 ),
                 ("fecha", models.DateTimeField(auto_now_add=True)),
                 ("motivo", models.TextField(blank=True)),
-                ("centro_origen_id", models.IntegerField()),
-                ("centro_destino_id", models.IntegerField()),
+                (
+                    "centro_destino",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.PROTECT,
+                        related_name="+",
+                        to="centrodeinfancia.centrodeinfancia",
+                    ),
+                ),
+                (
+                    "centro_origen",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.PROTECT,
+                        related_name="+",
+                        to="centrodeinfancia.centrodeinfancia",
+                    ),
+                ),
                 (
                     "nomina_destino",
                     models.ForeignKey(
