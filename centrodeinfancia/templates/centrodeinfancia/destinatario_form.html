@@ -30,7 +30,7 @@
     <div class="progress-container mb-4">
         <div class="progress-header">
             <h4 class="progress-title">
-                <i class="fas fa-child me-2" style="color:#f39c12;"></i>Legajo 201 — Destinatario CDI
+                <i class="fas fa-child me-2" style="color:#f39c12;"></i>Destinatario CDI
             </h4>
             <div class="progress-stats">
                 <span id="completedSections">0</span> / 10 secciones completadas
@@ -123,6 +123,54 @@
             {% if renaper_precarga %}
                 <input type="hidden" name="origen_dato" value="renaper" />
             {% endif %}
+
+            {# ── 0. Institución y Espacio Temporal (read-only) ─────── #}
+            <div class="section-card" data-section="institucion">
+                <div class="section-header" data-toggle-section="institucion">
+                    <div class="section-header-left">
+                        <div class="section-icon"><i class="fas fa-building"></i></div>
+                        <div class="section-title-group">
+                            <h3 class="section-title">Institución y Espacio Temporal</h3>
+                            <p class="section-subtitle">Datos del CDI donde se registra la ficha</p>
+                        </div>
+                    </div>
+                    <div class="section-status">
+                        <div class="collapse-indicator"><i class="fas fa-chevron-down"></i></div>
+                    </div>
+                </div>
+                <div class="section-body collapse show" id="section-institucion">
+                    <div class="form-group row">
+                        <div class="col-md-4">
+                            <p class="small mb-1" style="color:#9ca3af;">Nombre de institución</p>
+                            <p class="mb-2" style="color:#e5e7eb;">{{ centro.nombre|default:"—" }}</p>
+                        </div>
+                        <div class="col-md-2">
+                            <p class="small mb-1" style="color:#9ca3af;">Código CDI</p>
+                            <p class="mb-2" style="color:#e5e7eb;">{{ centro.codigo_cdi|default:"—" }}</p>
+                        </div>
+                        <div class="col-md-3">
+                            <p class="small mb-1" style="color:#9ca3af;">Jurisdicción</p>
+                            <p class="mb-2" style="color:#e5e7eb;">{{ centro.provincia|default:"—" }}</p>
+                        </div>
+                        <div class="col-md-3">
+                            <p class="small mb-1" style="color:#9ca3af;">Departamento</p>
+                            <p class="mb-2" style="color:#e5e7eb;">
+                                {% if centro.departamento %}{{ centro.departamento.nombre }} ({{ centro.departamento.codigo_departamento }}){% else %}—{% endif %}
+                            </p>
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <div class="col-md-3">
+                            <p class="small mb-1" style="color:#9ca3af;">Municipio</p>
+                            <p class="mb-2" style="color:#e5e7eb;">{{ centro.municipio|default:"—" }}</p>
+                        </div>
+                        <div class="col-md-3">
+                            <p class="small mb-1" style="color:#9ca3af;">Localidad</p>
+                            <p class="mb-2" style="color:#e5e7eb;">{{ centro.localidad|default:"—" }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
             {# ── 1. Registro ───────────────────────────────────────── #}
             <div class="section-card" data-section="registro">
