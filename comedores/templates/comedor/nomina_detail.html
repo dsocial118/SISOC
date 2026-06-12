@@ -268,6 +268,19 @@
                                                     <i class="fas fa-eye"></i> Ver detalles
                                                 </a>
                                             </li>
+                                            {% if e.estado == "activo" %}
+                                                <li>
+                                                    <a class="dropdown-item nomina-derivar-btn"
+                                                       href="#"
+                                                       data-nomina-id="{{ e.id }}"
+                                                       data-url="{% url 'nomina_derivar' e.id %}"
+                                                       data-ciudadano="{{ e.ciudadano.nombre }} {{ e.ciudadano.apellido }}"
+                                                       data-bs-toggle="modal"
+                                                       data-bs-target="#derivarNominaModal">
+                                                        <i class="fas fa-share-square"></i> Derivar
+                                                    </a>
+                                                </li>
+                                            {% endif %}
                                         </ul>
                                         {% if admision_pk %}
                                             <a href="{% url 'nomina_borrar' object.id admision_pk e.id %}"
@@ -326,6 +339,50 @@
                     </div>
                 {% endif %}
             </div>
+            <!-- Modal Derivar -->
+            <div class="modal fade"
+                 id="derivarNominaModal"
+                 tabindex="-1"
+                 aria-labelledby="derivarNominaLabel"
+                 aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="derivarNominaLabel">Derivar persona</h5>
+                            <button type="button"
+                                    class="btn-close"
+                                    data-bs-dismiss="modal"
+                                    aria-label="Cerrar"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p class="mb-3">
+                                Persona: <strong id="derivarNombreCiudadano"></strong>
+                            </p>
+                            <div class="mb-3">
+                                <label for="derivarCentroSelect" class="form-label">Centro destino</label>
+                                <select id="derivarCentroSelect" class="form-select">
+                                    <option value="">-- Seleccionar centro --</option>
+                                    {% for c in comedores_para_derivar %}<option value="{{ c.id }}">{{ c.nombre }}</option>{% endfor %}
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="derivarMotivo" class="form-label">
+                                    Motivo / observaciones <span class="text-muted">(opcional)</span>
+                                </label>
+                                <textarea id="derivarMotivo" class="form-control" rows="3"></textarea>
+                            </div>
+                            <div id="derivarMensaje" class="alert d-none"></div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button"
+                                    class="btn btn-sm btn-secondary"
+                                    data-bs-dismiss="modal">Cancelar</button>
+                            <button type="button" id="derivarConfirmarBtn" class="btn btn-sm btn-primary">Confirmar derivación</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Modal Editar -->
             <div class="modal fade"
                  id="editarNominaModal"
@@ -359,4 +416,5 @@
         {% block customJS %}
             {% csrf_token %}
             <script src="{% static 'custom/js/nomina_detail.js' %}"></script>
+            <script src="{% static 'custom/js/nomina_derivar.js' %}"></script>
         {% endblock %}
