@@ -43,6 +43,7 @@ def _base_data(**extra):
 # Validación básica del formulario
 # ─────────────────────────────────────────────────────────
 
+
 @pytest.mark.django_db
 class TestNominaCentroInfanciaDestinatariosFormValidation:
 
@@ -88,6 +89,7 @@ class TestNominaCentroInfanciaDestinatariosFormValidation:
 # JSONField multiselects — guardado correcto
 # ─────────────────────────────────────────────────────────
 
+
 @pytest.mark.django_db
 class TestNominaCentroInfanciaDestinatariosFormJsonFields:
 
@@ -116,7 +118,9 @@ class TestNominaCentroInfanciaDestinatariosFormJsonFields:
         assert set(nomina.grupo_pertenencia) == {"africano", "indigena"}
 
     def test_tipo_discapacidad_se_guarda_como_lista(self, centro, ciudadano):
-        data = _base_data(tiene_discapacidad="si", tipo_discapacidad=["motora", "visual"])
+        data = _base_data(
+            tiene_discapacidad="si", tipo_discapacidad=["motora", "visual"]
+        )
         form = NominaCentroInfanciaDestinatariosForm(data, centro=centro)
         assert form.is_valid(), form.errors
         nomina = form.save(commit=False)
@@ -172,6 +176,7 @@ class TestNominaCentroInfanciaDestinatariosFormJsonFields:
 # ─────────────────────────────────────────────────────────
 # Pre-población al editar
 # ─────────────────────────────────────────────────────────
+
 
 @pytest.mark.django_db
 class TestNominaCentroInfanciaDestinatariosFormEdit:

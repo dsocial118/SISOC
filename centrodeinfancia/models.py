@@ -1663,7 +1663,9 @@ class NominaCentroInfancia(SoftDeleteModelMixin, models.Model):
 
     @property
     def grupo_pertenencia_display(self):
-        return _trabajador_etiquetas(self.grupo_pertenencia, TRABAJADOR_GRUPO_PERTENENCIA_CHOICES)
+        return _trabajador_etiquetas(
+            self.grupo_pertenencia, TRABAJADOR_GRUPO_PERTENENCIA_CHOICES
+        )
 
     @property
     def lenguajes_display(self):
@@ -1671,7 +1673,9 @@ class NominaCentroInfancia(SoftDeleteModelMixin, models.Model):
 
     @property
     def tipo_discapacidad_display(self):
-        return _trabajador_etiquetas(self.tipo_discapacidad, TRABAJADOR_TIPO_DISCAPACIDAD_CHOICES)
+        return _trabajador_etiquetas(
+            self.tipo_discapacidad, TRABAJADOR_TIPO_DISCAPACIDAD_CHOICES
+        )
 
     @property
     def alergias_alimentarias_display(self):

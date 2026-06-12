@@ -15,6 +15,7 @@ from users.models import Profile
 # Fixtures
 # ─────────────────────────────────────────────────────────
 
+
 @pytest.fixture
 def provincia():
     return Provincia.objects.create(nombre="Buenos Aires")
@@ -89,6 +90,7 @@ _VALID_POST = {
 # Create view
 # ─────────────────────────────────────────────────────────
 
+
 @pytest.mark.django_db
 class TestNominaCentroInfanciaCreateView:
 
@@ -106,7 +108,9 @@ class TestNominaCentroInfanciaCreateView:
         assert resp.status_code == 200
         assert not resp.context.get("mostrar_formulario")
 
-    def test_get_con_ciudadano_id_muestra_formulario(self, usuario_add, centro, ciudadano):
+    def test_get_con_ciudadano_id_muestra_formulario(
+        self, usuario_add, centro, ciudadano
+    ):
         client = Client()
         client.force_login(usuario_add)
         url = self._url(centro) + f"?ciudadano_id={ciudadano.pk}"
@@ -162,9 +166,12 @@ class TestNominaCentroInfanciaCreateView:
         data = {**_VALID_POST, "ciudadano_id": ciudadano.pk}
         resp = client.post(self._url(centro), data)
         assert resp.status_code == 302
-        assert NominaCentroInfancia.objects.filter(
-            centro=centro, ciudadano=ciudadano, deleted_at__isnull=True
-        ).count() == 1
+        assert (
+            NominaCentroInfancia.objects.filter(
+                centro=centro, ciudadano=ciudadano, deleted_at__isnull=True
+            ).count()
+            == 1
+        )
 
     def test_post_invalido_no_redirige(self, usuario_add, centro):
         client = Client()
@@ -183,6 +190,7 @@ class TestNominaCentroInfanciaCreateView:
 # Edit view
 # ─────────────────────────────────────────────────────────
 
+
 @pytest.mark.django_db
 class TestNominaCentroInfanciaEditView:
 
@@ -196,9 +204,7 @@ class TestNominaCentroInfanciaEditView:
         resp = Client().get(self._url(centro, nomina))
         assert resp.status_code in (302, 403)
 
-    def test_get_renderiza_template_destinatario(
-        self, usuario_change, centro, nomina
-    ):
+    def test_get_renderiza_template_destinatario(self, usuario_change, centro, nomina):
         client = Client()
         client.force_login(usuario_change)
         resp = client.get(self._url(centro, nomina))
@@ -265,6 +271,7 @@ class TestNominaCentroInfanciaEditView:
 # Detail view
 # ─────────────────────────────────────────────────────────
 
+
 @pytest.mark.django_db
 class TestNominaCentroInfanciaDestinatarioDetailView:
 
@@ -300,9 +307,7 @@ class TestNominaCentroInfanciaDestinatarioDetailView:
         assert resp.context["centro"] == centro
         assert "puede_editar" in resp.context
 
-    def test_scope_nomina_de_otro_centro_da_404(
-        self, usuario_view, centro, ciudadano
-    ):
+    def test_scope_nomina_de_otro_centro_da_404(self, usuario_view, centro, ciudadano):
         otro_centro = CentroDeInfancia.objects.create(
             nombre="CDI Otro", provincia=centro.provincia
         )

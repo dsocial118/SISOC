@@ -1091,9 +1091,17 @@ class NominaCentroInfanciaDestinatariosForm(NominaCentroInfanciaBaseForm):
         nacionalidades = [empty] + [
             (n.nombre, n.nombre) for n in NominaNacionalidad.objects.order_by("nombre")
         ]
-        for fname in ("pais_nacimiento", "responsable_legal_1_pais_nacimiento", "responsable_legal_2_pais_nacimiento"):
+        for fname in (
+            "pais_nacimiento",
+            "responsable_legal_1_pais_nacimiento",
+            "responsable_legal_2_pais_nacimiento",
+        ):
             self.fields[fname].choices = paises
-        for fname in ("nacionalidad", "responsable_legal_1_nacionalidad", "responsable_legal_2_nacionalidad"):
+        for fname in (
+            "nacionalidad",
+            "responsable_legal_1_nacionalidad",
+            "responsable_legal_2_nacionalidad",
+        ):
             self.fields[fname].choices = nacionalidades
 
     def __init__(self, *args, centro=None, **kwargs):
@@ -1109,7 +1117,12 @@ class NominaCentroInfanciaDestinatariosForm(NominaCentroInfanciaBaseForm):
             self.fields["trabajador_registra"].queryset = Trabajador.objects.none()
 
         # Pre-popular MultipleChoiceField desde la instancia
-        for fname in ("grupo_pertenencia", "lenguajes", "tipo_discapacidad", "alergias_alimentarias"):
+        for fname in (
+            "grupo_pertenencia",
+            "lenguajes",
+            "tipo_discapacidad",
+            "alergias_alimentarias",
+        ):
             if self.instance.pk:
                 self.fields[fname].initial = getattr(self.instance, fname) or []
 
