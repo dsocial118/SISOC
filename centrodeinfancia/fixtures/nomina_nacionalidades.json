@@ -1,0 +1,1374 @@
+[
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 1,
+    "fields": {
+      "nombre": "Afgano"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 2,
+    "fields": {
+      "nombre": "Albanes"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 3,
+    "fields": {
+      "nombre": "Alemán"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 4,
+    "fields": {
+      "nombre": "Andorrano"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 5,
+    "fields": {
+      "nombre": "Angoleño"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 6,
+    "fields": {
+      "nombre": "Antiguano"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 7,
+    "fields": {
+      "nombre": "Argelino"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 8,
+    "fields": {
+      "nombre": "Argentino"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 9,
+    "fields": {
+      "nombre": "Armenio"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 10,
+    "fields": {
+      "nombre": "Australiano"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 11,
+    "fields": {
+      "nombre": "Austríaco"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 12,
+    "fields": {
+      "nombre": "Azerbaiyano"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 13,
+    "fields": {
+      "nombre": "Bahameño"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 14,
+    "fields": {
+      "nombre": "Bangladeshí"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 15,
+    "fields": {
+      "nombre": "Barbadense"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 16,
+    "fields": {
+      "nombre": "Bareiní"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 17,
+    "fields": {
+      "nombre": "Belga"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 18,
+    "fields": {
+      "nombre": "Beliceño"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 19,
+    "fields": {
+      "nombre": "Beninés"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 20,
+    "fields": {
+      "nombre": "Bieloruso"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 21,
+    "fields": {
+      "nombre": "Birmano"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 22,
+    "fields": {
+      "nombre": "Bisauguineano"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 23,
+    "fields": {
+      "nombre": "Bosnio"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 24,
+    "fields": {
+      "nombre": "Botsuano"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 25,
+    "fields": {
+      "nombre": "Brasileño"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 26,
+    "fields": {
+      "nombre": "Británico"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 27,
+    "fields": {
+      "nombre": "Bruneano"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 28,
+    "fields": {
+      "nombre": "Búlgaro"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 29,
+    "fields": {
+      "nombre": "Burkinés"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 30,
+    "fields": {
+      "nombre": "Burundés"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 31,
+    "fields": {
+      "nombre": "Butanés"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 32,
+    "fields": {
+      "nombre": "Caboverdiano"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 33,
+    "fields": {
+      "nombre": "Camboyano"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 34,
+    "fields": {
+      "nombre": "Camerunés"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 35,
+    "fields": {
+      "nombre": "Canadiense"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 36,
+    "fields": {
+      "nombre": "Catarí"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 37,
+    "fields": {
+      "nombre": "Ceilanés"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 38,
+    "fields": {
+      "nombre": "Centroafricano"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 39,
+    "fields": {
+      "nombre": "Chadiano"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 40,
+    "fields": {
+      "nombre": "Checo"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 41,
+    "fields": {
+      "nombre": "Chileno"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 42,
+    "fields": {
+      "nombre": "Chino"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 43,
+    "fields": {
+      "nombre": "Chipriota"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 44,
+    "fields": {
+      "nombre": "Colombiano"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 45,
+    "fields": {
+      "nombre": "Comorense"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 46,
+    "fields": {
+      "nombre": "Congoleño"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 47,
+    "fields": {
+      "nombre": "Costarricense"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 48,
+    "fields": {
+      "nombre": "Croato"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 49,
+    "fields": {
+      "nombre": "Cubano"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 50,
+    "fields": {
+      "nombre": "Danés"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 51,
+    "fields": {
+      "nombre": "Dominicano"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 52,
+    "fields": {
+      "nombre": "Dominiqués"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 53,
+    "fields": {
+      "nombre": "Ecuatoguineano"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 54,
+    "fields": {
+      "nombre": "Ecuatoriano"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 55,
+    "fields": {
+      "nombre": "Egipcio"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 56,
+    "fields": {
+      "nombre": "Emiratí"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 57,
+    "fields": {
+      "nombre": "Eritreo"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 58,
+    "fields": {
+      "nombre": "Eslovena"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 59,
+    "fields": {
+      "nombre": "Esloveno"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 60,
+    "fields": {
+      "nombre": "Español"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 61,
+    "fields": {
+      "nombre": "Estadounidense"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 62,
+    "fields": {
+      "nombre": "Estonio"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 63,
+    "fields": {
+      "nombre": "Etíope"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 64,
+    "fields": {
+      "nombre": "Filipino"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 65,
+    "fields": {
+      "nombre": "Finlandés"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 66,
+    "fields": {
+      "nombre": "Fiyiano"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 67,
+    "fields": {
+      "nombre": "Frances"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 68,
+    "fields": {
+      "nombre": "Gabones"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 69,
+    "fields": {
+      "nombre": "Gambiano"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 70,
+    "fields": {
+      "nombre": "Georgiano"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 71,
+    "fields": {
+      "nombre": "Ghanés"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 72,
+    "fields": {
+      "nombre": "Granadino"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 73,
+    "fields": {
+      "nombre": "Griego"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 74,
+    "fields": {
+      "nombre": "Guatemalteco"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 75,
+    "fields": {
+      "nombre": "Guineano"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 76,
+    "fields": {
+      "nombre": "Guyanés"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 77,
+    "fields": {
+      "nombre": "Haitiano"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 78,
+    "fields": {
+      "nombre": "Hondureño"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 79,
+    "fields": {
+      "nombre": "Húngaro"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 80,
+    "fields": {
+      "nombre": "Indio"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 81,
+    "fields": {
+      "nombre": "Indonesio"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 82,
+    "fields": {
+      "nombre": "Iraní"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 83,
+    "fields": {
+      "nombre": "Iraquí"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 84,
+    "fields": {
+      "nombre": "Irlandés"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 85,
+    "fields": {
+      "nombre": "Islandés"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 86,
+    "fields": {
+      "nombre": "Israelí"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 87,
+    "fields": {
+      "nombre": "Italiano"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 88,
+    "fields": {
+      "nombre": "Jamaicano"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 89,
+    "fields": {
+      "nombre": "Japonés"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 90,
+    "fields": {
+      "nombre": "Jordano"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 91,
+    "fields": {
+      "nombre": "Kazajo"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 92,
+    "fields": {
+      "nombre": "Keniata"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 93,
+    "fields": {
+      "nombre": "Kirguís"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 94,
+    "fields": {
+      "nombre": "Kiribatiano"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 95,
+    "fields": {
+      "nombre": "Kosovar"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 96,
+    "fields": {
+      "nombre": "Kuwaití"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 97,
+    "fields": {
+      "nombre": "Laosiano"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 98,
+    "fields": {
+      "nombre": "Lesotense"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 99,
+    "fields": {
+      "nombre": "Letonio"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 100,
+    "fields": {
+      "nombre": "Libanés"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 101,
+    "fields": {
+      "nombre": "Liberiano"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 102,
+    "fields": {
+      "nombre": "Libio"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 103,
+    "fields": {
+      "nombre": "Liechtensteiniano"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 104,
+    "fields": {
+      "nombre": "Lituano"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 105,
+    "fields": {
+      "nombre": "Luxemburgués"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 106,
+    "fields": {
+      "nombre": "Macedonio"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 107,
+    "fields": {
+      "nombre": "Mafileño"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 108,
+    "fields": {
+      "nombre": "Malauí"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 109,
+    "fields": {
+      "nombre": "Malayo"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 110,
+    "fields": {
+      "nombre": "Maldivo"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 111,
+    "fields": {
+      "nombre": "Malgache"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 112,
+    "fields": {
+      "nombre": "Maliense"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 113,
+    "fields": {
+      "nombre": "Maltés"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 114,
+    "fields": {
+      "nombre": "Marroquí"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 115,
+    "fields": {
+      "nombre": "Marshalés"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 116,
+    "fields": {
+      "nombre": "Mauriciano"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 117,
+    "fields": {
+      "nombre": "Mauritano"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 118,
+    "fields": {
+      "nombre": "Mexicano"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 119,
+    "fields": {
+      "nombre": "Micronesio"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 120,
+    "fields": {
+      "nombre": "Moldavo"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 121,
+    "fields": {
+      "nombre": "Monaqués"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 122,
+    "fields": {
+      "nombre": "Mongol"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 123,
+    "fields": {
+      "nombre": "Montenegrino"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 124,
+    "fields": {
+      "nombre": "Mozambiqueño"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 125,
+    "fields": {
+      "nombre": "Namibio"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 126,
+    "fields": {
+      "nombre": "Nauruano"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 127,
+    "fields": {
+      "nombre": "Neerlandés"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 128,
+    "fields": {
+      "nombre": "Neozelandés"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 129,
+    "fields": {
+      "nombre": "Nepalí"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 130,
+    "fields": {
+      "nombre": "Nicaragüense"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 131,
+    "fields": {
+      "nombre": "Nigeriano"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 132,
+    "fields": {
+      "nombre": "Norcoreano"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 133,
+    "fields": {
+      "nombre": "Noruego"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 134,
+    "fields": {
+      "nombre": "Omaní"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 135,
+    "fields": {
+      "nombre": "Pakistaní"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 136,
+    "fields": {
+      "nombre": "Palauano"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 137,
+    "fields": {
+      "nombre": "Palestino"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 138,
+    "fields": {
+      "nombre": "Panameño"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 139,
+    "fields": {
+      "nombre": "Papú / papú neoguineano"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 140,
+    "fields": {
+      "nombre": "Paraguayo"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 141,
+    "fields": {
+      "nombre": "Peruano"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 142,
+    "fields": {
+      "nombre": "Polaco"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 143,
+    "fields": {
+      "nombre": "Portugués"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 144,
+    "fields": {
+      "nombre": "Puertorriqueño"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 145,
+    "fields": {
+      "nombre": "Ruandés"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 146,
+    "fields": {
+      "nombre": "Rumano"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 147,
+    "fields": {
+      "nombre": "Ruso"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 148,
+    "fields": {
+      "nombre": "Salomonense"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 149,
+    "fields": {
+      "nombre": "Salvadoreño"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 150,
+    "fields": {
+      "nombre": "Samoano"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 151,
+    "fields": {
+      "nombre": "Sancristobaleño"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 152,
+    "fields": {
+      "nombre": "Sanmarinense"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 153,
+    "fields": {
+      "nombre": "Santalucense"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 154,
+    "fields": {
+      "nombre": "Santotomense"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 155,
+    "fields": {
+      "nombre": "Sanvicentino"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 156,
+    "fields": {
+      "nombre": "Saudí/Saudita"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 157,
+    "fields": {
+      "nombre": "Senegalés"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 158,
+    "fields": {
+      "nombre": "Serbio"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 159,
+    "fields": {
+      "nombre": "Seychellense"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 160,
+    "fields": {
+      "nombre": "Sierraleonés"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 161,
+    "fields": {
+      "nombre": "Singapurense"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 162,
+    "fields": {
+      "nombre": "Sirio"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 163,
+    "fields": {
+      "nombre": "Somalí"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 164,
+    "fields": {
+      "nombre": "Suazi"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 165,
+    "fields": {
+      "nombre": "Sudafricano"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 166,
+    "fields": {
+      "nombre": "Sudanés"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 167,
+    "fields": {
+      "nombre": "Sueco"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 168,
+    "fields": {
+      "nombre": "Suizo"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 169,
+    "fields": {
+      "nombre": "Surcoreano"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 170,
+    "fields": {
+      "nombre": "Surinamés"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 171,
+    "fields": {
+      "nombre": "Sursudanés"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 172,
+    "fields": {
+      "nombre": "Tailandés"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 173,
+    "fields": {
+      "nombre": "Taiwanes"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 174,
+    "fields": {
+      "nombre": "Tanzano"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 175,
+    "fields": {
+      "nombre": "Tayiko"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 176,
+    "fields": {
+      "nombre": "Timorense"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 177,
+    "fields": {
+      "nombre": "Togolés"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 178,
+    "fields": {
+      "nombre": "Tongano"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 179,
+    "fields": {
+      "nombre": "Trinitense"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 180,
+    "fields": {
+      "nombre": "Tunecino"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 181,
+    "fields": {
+      "nombre": "Turco"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 182,
+    "fields": {
+      "nombre": "Turkmeno"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 183,
+    "fields": {
+      "nombre": "Tuvaluano"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 184,
+    "fields": {
+      "nombre": "Ucraniano"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 185,
+    "fields": {
+      "nombre": "Ugandés"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 186,
+    "fields": {
+      "nombre": "Uruguayo"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 187,
+    "fields": {
+      "nombre": "Uzbeko"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 188,
+    "fields": {
+      "nombre": "Vanuatuense"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 189,
+    "fields": {
+      "nombre": "Vaticano"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 190,
+    "fields": {
+      "nombre": "Venezolano"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 191,
+    "fields": {
+      "nombre": "Vietnamita"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 192,
+    "fields": {
+      "nombre": "Yemení"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 193,
+    "fields": {
+      "nombre": "Yibutiano"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 194,
+    "fields": {
+      "nombre": "Zambiono"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 195,
+    "fields": {
+      "nombre": "Zimbabuense"
+    }
+  },
+  {
+    "model": "centrodeinfancia.nominanacionalidad",
+    "pk": 196,
+    "fields": {
+      "nombre": "Otro"
+    }
+  }
+]
