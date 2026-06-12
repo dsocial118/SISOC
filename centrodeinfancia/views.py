@@ -63,6 +63,7 @@ from centrodeinfancia.models import (
     ObservacionCentroInfancia,
     Trabajador,
 )
+from centrodeinfancia.services import CentroDeInfanciaService
 from centrodeinfancia.views_formulario_cdi import construir_resumenes_formularios
 from intervenciones.constants import PROGRAMA_ALIASES_CENTRO_INFANCIA
 
@@ -1125,6 +1126,15 @@ class NominaCentroInfanciaDetailView(LoginRequiredMixin, ListView):
         stats = self._build_nomina_stats(self.object_list)
         page_obj = context.get("page_obj")
 
+        centros_para_derivar = list(
+            _aplicar_scope_centros_cdi(
+                CentroDeInfancia.objects.all(), self.request.user
+            )
+            .exclude(pk=centro.pk)
+            .values("id", "nombre")
+            .order_by("nombre")
+        )
+
         context["object"] = centro
         context["nomina"] = page_obj
         context["nominaM"] = stats["nomina_m"]
@@ -1137,6 +1147,7 @@ class NominaCentroInfanciaDetailView(LoginRequiredMixin, ListView):
         context["ejecucion_inicio"] = centro.fecha_inicio
         context["ejecucion_fin"] = None
         context["plazo_ejecucion"] = "-"
+        context["centros_para_derivar"] = centros_para_derivar
         return context
 
 
@@ -1540,6 +1551,35 @@ def nomina_centrodeinfancia_editar_ajax(request, pk):
         "centrodeinfancia/nomina_editar_ajax.html",
         {"form": form},
     )
+
+
+@login_required
+def nomina_centrodeinfancia_derivar(request, pk):
+    """Transfiere una persona de nómina activa a otro CDI vía AJAX (POST)."""
+    if request.method != "POST":
+        return JsonResponse(
+            {"success": False, "message": "Método no permitido."}, status=405
+        )
+
+    get_object_or_404(_nomina_cdi_queryset_scoped(request.user), pk=pk)
+
+    try:
+        centro_destino_pk = int(request.POST.get("centro_destino_id", ""))
+    except (ValueError, TypeError):
+        return JsonResponse(
+            {"success": False, "message": "Centro destino inválido."}, status=400
+        )
+
+    motivo = (request.POST.get("motivo") or "").strip()
+
+    ok, msg = CentroDeInfanciaService.transferir_ciudadano_entre_centros(
+        nomina_pk=pk,
+        centro_destino_pk=centro_destino_pk,
+        usuario=request.user,
+        motivo=motivo,
+    )
+    status_code = 200 if ok else 400
+    return JsonResponse({"success": ok, "message": msg}, status=status_code)
 
 
 class IntervencionCentroInfanciaCreateView(LoginRequiredMixin, CreateView):

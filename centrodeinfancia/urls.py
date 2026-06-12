@@ -1,6 +1,6 @@
 from django.urls import path
 
-from core.decorators import permissions_any_required
+from core.decorators import permissions_all_required, permissions_any_required
 from centrodeinfancia.views import (
     CentroDeInfanciaCreateView,
     CentroDeInfanciaDeleteView,
@@ -29,6 +29,7 @@ from centrodeinfancia.views import (
     load_departamentos_ipi,
     eliminar_archivo_intervencion_centrodeinfancia,
     nomina_centrodeinfancia_editar_ajax,
+    nomina_centrodeinfancia_derivar,
     subir_archivo_intervencion_centrodeinfancia,
 )
 from centrodeinfancia.views_formulario_cdi import (
@@ -172,6 +173,16 @@ urlpatterns = [
             nomina_centrodeinfancia_editar_ajax
         ),
         name="centrodeinfancia_nomina_editar_ajax",
+    ),
+    path(
+        "centrodeinfancia/nomina/<int:pk>/derivar/",
+        permissions_all_required(
+            [
+                "centrodeinfancia.change_nominacentroinfancia",
+                "centrodeinfancia.add_nominacentroinfancia",
+            ]
+        )(nomina_centrodeinfancia_derivar),
+        name="centrodeinfancia_nomina_derivar",
     ),
     path(
         "centrodeinfancia/<int:pk>/nomina/<int:pk2>/eliminar/",

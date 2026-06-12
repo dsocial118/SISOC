@@ -1653,6 +1653,43 @@ class NominaCentroInfancia(SoftDeleteModelMixin, models.Model):
         return _trabajador_etiquetas(self.alergias_alimentarias, NOMINA_ALERGIA_CHOICES)
 
 
+class NominaCentroInfanciaDerivacion(models.Model):
+    nomina_origen = models.ForeignKey(
+        NominaCentroInfancia,
+        on_delete=models.PROTECT,
+        related_name="derivaciones_origen",
+    )
+    nomina_destino = models.ForeignKey(
+        NominaCentroInfancia,
+        on_delete=models.PROTECT,
+        related_name="derivaciones_destino",
+    )
+    centro_origen = models.ForeignKey(
+        CentroDeInfancia,
+        on_delete=models.PROTECT,
+        related_name="+",
+    )
+    centro_destino = models.ForeignKey(
+        CentroDeInfancia,
+        on_delete=models.PROTECT,
+        related_name="+",
+    )
+    usuario = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+    )
+    fecha = models.DateTimeField(auto_now_add=True)
+    motivo = models.TextField(blank=True)
+
+    class Meta:
+        verbose_name = "Derivación de nómina CDI"
+        verbose_name_plural = "Derivaciones de nómina CDI"
+        ordering = ["-fecha"]
+
+
 class FormularioCDI(SoftDeleteModelMixin, models.Model):
     centro = models.ForeignKey(
         CentroDeInfancia,

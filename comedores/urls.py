@@ -37,6 +37,7 @@ from comedores.views import (
     capacitacion_certificado_estado_ajax,
     nomina_editar_ajax,
     nomina_cambiar_estado,
+    nomina_derivar,
     validar_comedor,
 )
 from comedores.views.export import ComedorExportView
@@ -57,7 +58,7 @@ from intervenciones.views import (
     IntervencionDetailIndividualView,
     IntervencionDetailView,
 )
-from core.decorators import permissions_any_required
+from core.decorators import permissions_all_required, permissions_any_required
 
 urlpatterns = [
     path(
@@ -318,6 +319,13 @@ urlpatterns = [
         "comedores/nomina/<int:pk>/cambiar-estado/",
         permissions_any_required(["comedores.change_nomina"])(nomina_cambiar_estado),
         name="nomina_cambiar_estado",
+    ),
+    path(
+        "comedores/nomina/<int:pk>/derivar/",
+        permissions_all_required(["comedores.change_nomina", "comedores.add_nomina"])(
+            nomina_derivar
+        ),
+        name="nomina_derivar",
     ),
     path(
         "comedores/<int:pk>/admision/<int:admision_pk>/nomina/crear/",
