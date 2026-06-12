@@ -615,11 +615,13 @@
             background: transparent;
             text-align: left;
             font-size: 0.875rem;
+            color: #212529;
         }
 
         .territorial-suggestion-item:hover,
         .territorial-suggestion-item:focus {
             background: #f8f9fa;
+            color: #212529;
             outline: none;
         }
 

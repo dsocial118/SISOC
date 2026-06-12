@@ -1048,39 +1048,31 @@
             </div>
         </div>
 
-        <div class="sisoc-tabs-rail" role="tablist" aria-label="Secciones de la comisión">
+        <div class="sisoc-tabs-rail"
+             role="tablist"
+             aria-label="Secciones de la comisión">
             <button type="button"
                     class="sisoc-tab-chip is-active"
                     data-sisoc-tab-target="general"
-                    aria-selected="true">
-                Información
-            </button>
+                    aria-selected="true">Información</button>
             <button type="button"
                     class="sisoc-tab-chip"
                     data-sisoc-tab-target="inscriptos"
-                    aria-selected="false">
-                Inscriptos
-            </button>
+                    aria-selected="false">Inscriptos</button>
             {% if comision.acepta_lista_espera or lista_espera %}
                 <button type="button"
                         class="sisoc-tab-chip"
                         data-sisoc-tab-target="espera"
-                        aria-selected="false">
-                    Lista de espera
-                </button>
+                        aria-selected="false">Lista de espera</button>
             {% endif %}
             <button type="button"
                     class="sisoc-tab-chip"
                     data-sisoc-tab-target="sesiones"
-                    aria-selected="false">
-                Clases
-            </button>
+                    aria-selected="false">Clases</button>
             <button type="button"
                     class="sisoc-tab-chip"
                     data-sisoc-tab-target="horarios"
-                    aria-selected="false">
-                Horarios
-            </button>
+                    aria-selected="false">Horarios</button>
         </div>
 
         <div class="sisoc-metric-grid" id="sisocMetricGridGlobal">
@@ -1255,8 +1247,7 @@
                                 </a>
                             {% endif %}
                             {% if export_inscriptos_url %}
-                                <a href="{{ export_inscriptos_url }}"
-                                   class="sisoc-btn sisoc-btn--ghost">
+                                <a href="{{ export_inscriptos_url }}" class="sisoc-btn sisoc-btn--ghost">
                                     <i class="bi bi-file-earmark-excel"></i><span>Descargar inscriptos</span>
                                 </a>
                             {% endif %}
@@ -1271,9 +1262,7 @@
                                         <th>Email</th>
                                         <th>Teléfono</th>
                                         <th>Asistencia</th>
-                                        {% if puede_cambiar_inscripcion or puede_eliminar_inscripcion %}
-                                            <th class="ci-tbl-col-actions">&nbsp;</th>
-                                        {% endif %}
+                                        {% if puede_cambiar_inscripcion or puede_eliminar_inscripcion %}<th class="ci-tbl-col-actions">&nbsp;</th>{% endif %}
                                     </tr>
                                 </thead>
                                 <tbody id="inscriptosTablaBody">
@@ -1374,9 +1363,7 @@
                                             <th>Documento</th>
                                             <th>Fecha</th>
                                             <th>Estado</th>
-                                            {% if puede_cambiar_inscripcion %}
-                                                <th class="ci-tbl-col-actions">Acciones</th>
-                                            {% endif %}
+                                            {% if puede_cambiar_inscripcion %}<th class="ci-tbl-col-actions">Acciones</th>{% endif %}
                                         </tr>
                                     </thead>
                                     <tbody id="esperaTablaBody">
@@ -1388,7 +1375,9 @@
                                                 <td>{{ insc.ciudadano.nombre|default:"—" }}</td>
                                                 <td>{{ insc.ciudadano.documento|default:"—" }}</td>
                                                 <td>{{ insc.fecha_inscripcion|date:"d/m/Y" }}</td>
-                                                <td><span class="ci-pill ci-pill-yellow">{{ insc.get_estado_display }}</span></td>
+                                                <td>
+                                                    <span class="ci-pill ci-pill-yellow">{{ insc.get_estado_display }}</span>
+                                                </td>
                                                 {% if puede_cambiar_inscripcion %}
                                                     <td>
                                                         <div class="ci-tbl-actions">
@@ -1487,9 +1476,7 @@
                                         <th>Estado</th>
                                         <th>Presentes</th>
                                         <th>Ausentes</th>
-                                        {% if puede_gestionar_asistencia %}
-                                            <th class="ci-tbl-col-actions">Acciones</th>
-                                        {% endif %}
+                                        {% if puede_gestionar_asistencia %}<th class="ci-tbl-col-actions">Acciones</th>{% endif %}
                                     </tr>
                                 </thead>
                                 <tbody id="sesionesTablaBody">
@@ -1509,8 +1496,20 @@
                                                     <span class="ci-pill ci-pill-gray"><i class="bi bi-circle me-1"></i>Pendiente</span>
                                                 {% endif %}
                                             </td>
-                                            <td>{% if sesion.estado == 'realizada' %}{{ sesion.presentes }}{% else %}—{% endif %}</td>
-                                            <td>{% if sesion.estado == 'realizada' %}{{ sesion.ausentes }}{% else %}—{% endif %}</td>
+                                            <td>
+                                                {% if sesion.estado == 'realizada' %}
+                                                    {{ sesion.presentes }}
+                                                {% else %}
+                                                    —
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if sesion.estado == 'realizada' %}
+                                                    {{ sesion.ausentes }}
+                                                {% else %}
+                                                    —
+                                                {% endif %}
+                                            </td>
                                             {% if puede_gestionar_asistencia %}
                                                 <td>
                                                     <div class="ci-tbl-actions">
@@ -1605,7 +1604,11 @@
                                             <td>{{ horario.aula_espacio|default:"—" }}</td>
                                             <td>
                                                 <span class="ci-pill {% if horario.vigente %}ci-pill-green{% else %}ci-pill-gray{% endif %}">
-                                                    {% if horario.vigente %}Vigente{% else %}Inactivo{% endif %}
+                                                    {% if horario.vigente %}
+                                                        Vigente
+                                                    {% else %}
+                                                        Inactivo
+                                                    {% endif %}
                                                 </span>
                                             </td>
                                             {% if puede_editar_comision_horario or puede_eliminar_comision_horario %}
