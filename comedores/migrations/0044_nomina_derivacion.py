@@ -8,27 +8,58 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('comedores', '0043_prestacionalimentariaconformidad'),
+        ("comedores", "0043_prestacionalimentariaconformidad"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='NominaDerivacion',
+            name="NominaDerivacion",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('fecha', models.DateTimeField(auto_now_add=True)),
-                ('motivo', models.TextField(blank=True)),
-                ('comedor_origen_id', models.IntegerField()),
-                ('comedor_destino_id', models.IntegerField()),
-                ('nomina_destino', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='derivaciones_destino', to='comedores.nomina')),
-                ('nomina_origen', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='derivaciones_origen', to='comedores.nomina')),
-                ('usuario', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='+', to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("fecha", models.DateTimeField(auto_now_add=True)),
+                ("motivo", models.TextField(blank=True)),
+                ("comedor_origen_id", models.IntegerField()),
+                ("comedor_destino_id", models.IntegerField()),
+                (
+                    "nomina_destino",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.PROTECT,
+                        related_name="derivaciones_destino",
+                        to="comedores.nomina",
+                    ),
+                ),
+                (
+                    "nomina_origen",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.PROTECT,
+                        related_name="derivaciones_origen",
+                        to="comedores.nomina",
+                    ),
+                ),
+                (
+                    "usuario",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="+",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Derivación de nómina',
-                'verbose_name_plural': 'Derivaciones de nómina',
-                'ordering': ['-fecha'],
+                "verbose_name": "Derivación de nómina",
+                "verbose_name_plural": "Derivaciones de nómina",
+                "ordering": ["-fecha"],
             },
         ),
     ]

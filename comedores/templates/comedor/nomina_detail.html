@@ -361,13 +361,13 @@
                                 <label for="derivarComedorSelect" class="form-label">Centro destino</label>
                                 <select id="derivarComedorSelect" class="form-select">
                                     <option value="">-- Seleccionar centro --</option>
-                                    {% for c in comedores_para_derivar %}
-                                        <option value="{{ c.id }}">{{ c.nombre }}</option>
-                                    {% endfor %}
+                                    {% for c in comedores_para_derivar %}<option value="{{ c.id }}">{{ c.nombre }}</option>{% endfor %}
                                 </select>
                             </div>
                             <div class="mb-3">
-                                <label for="derivarMotivo" class="form-label">Motivo / observaciones <span class="text-muted">(opcional)</span></label>
+                                <label for="derivarMotivo" class="form-label">
+                                    Motivo / observaciones <span class="text-muted">(opcional)</span>
+                                </label>
                                 <textarea id="derivarMotivo" class="form-control" rows="3"></textarea>
                             </div>
                             <div id="derivarMensaje" class="alert d-none"></div>
@@ -376,9 +376,7 @@
                             <button type="button"
                                     class="btn btn-sm btn-secondary"
                                     data-bs-dismiss="modal">Cancelar</button>
-                            <button type="button"
-                                    id="derivarConfirmarBtn"
-                                    class="btn btn-sm btn-primary">Confirmar derivación</button>
+                            <button type="button" id="derivarConfirmarBtn" class="btn btn-sm btn-primary">Confirmar derivación</button>
                         </div>
                     </div>
                 </div>
