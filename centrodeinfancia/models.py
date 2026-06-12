@@ -1263,6 +1263,35 @@ class NominaCentroInfancia(SoftDeleteModelMixin, models.Model):
             raise ValidationError(errors)
 
 
+class NominaCentroInfanciaDerivacion(models.Model):
+    nomina_origen = models.ForeignKey(
+        NominaCentroInfancia,
+        on_delete=models.PROTECT,
+        related_name="derivaciones_origen",
+    )
+    nomina_destino = models.ForeignKey(
+        NominaCentroInfancia,
+        on_delete=models.PROTECT,
+        related_name="derivaciones_destino",
+    )
+    usuario = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+    )
+    fecha = models.DateTimeField(auto_now_add=True)
+    motivo = models.TextField(blank=True)
+    centro_origen_id = models.IntegerField()
+    centro_destino_id = models.IntegerField()
+
+    class Meta:
+        verbose_name = "Derivación de nómina CDI"
+        verbose_name_plural = "Derivaciones de nómina CDI"
+        ordering = ["-fecha"]
+
+
 class FormularioCDI(SoftDeleteModelMixin, models.Model):
     centro = models.ForeignKey(
         CentroDeInfancia,

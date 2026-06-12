@@ -23,6 +23,7 @@ from .nomina import (
     NominaDirectaDetailView,
     NominaImportarView,
     nomina_cambiar_estado,
+    nomina_derivar,
     nomina_editar_ajax,
 )
 from .observacion import (
@@ -76,6 +77,7 @@ __all__ = [
     "ObservacionDetailView",
     "ObservacionUpdateView",
     "nomina_cambiar_estado",
+    "nomina_derivar",
     "nomina_editar_ajax",
     "relevamiento_crear_editar_ajax",
     "capacitacion_certificado_estado_ajax",

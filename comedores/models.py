@@ -560,6 +560,35 @@ class Nomina(SoftDeleteModelMixin, models.Model):
         return f"{ciudadano} en {comedor_nombre} ({self.get_estado_display()})"
 
 
+class NominaDerivacion(models.Model):
+    nomina_origen = models.ForeignKey(
+        Nomina,
+        on_delete=models.PROTECT,
+        related_name="derivaciones_origen",
+    )
+    nomina_destino = models.ForeignKey(
+        Nomina,
+        on_delete=models.PROTECT,
+        related_name="derivaciones_destino",
+    )
+    usuario = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+    )
+    fecha = models.DateTimeField(auto_now_add=True)
+    motivo = models.TextField(blank=True)
+    comedor_origen_id = models.IntegerField()
+    comedor_destino_id = models.IntegerField()
+
+    class Meta:
+        verbose_name = "Derivación de nómina"
+        verbose_name_plural = "Derivaciones de nómina"
+        ordering = ["-fecha"]
+
+
 class CapacitacionComedorCertificado(models.Model):
     CAPACITACION_CREACION_USUARIO = "creacion_usuario_plataforma"
     CAPACITACION_CRITERIOS_NUTRICIONALES = "criterios_nutricionales"

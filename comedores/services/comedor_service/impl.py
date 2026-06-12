@@ -1636,6 +1636,105 @@ class ComedorService:
         return True, f"Se importaron {len(nuevas)} personas a la nómina.", len(nuevas)
 
     @staticmethod
+    def transferir_ciudadano_entre_centros(
+        nomina_pk, comedor_destino_pk, usuario, motivo=""
+    ):
+        from comedores.models import NominaDerivacion
+
+        nomina_origen = get_object_or_404(
+            Nomina.objects.select_related("admision__comedor", "comedor", "ciudadano"),
+            pk=nomina_pk,
+        )
+
+        if nomina_origen.estado != Nomina.ESTADO_ACTIVO:
+            return False, "Solo se pueden derivar personas con estado Activo."
+
+        comedor_destino = get_object_or_404(Comedor, pk=comedor_destino_pk)
+
+        if nomina_origen.admision:
+            comedor_origen_id = nomina_origen.admision.comedor_id
+        else:
+            comedor_origen_id = nomina_origen.comedor_id
+
+        if comedor_destino.pk == comedor_origen_id:
+            return False, "El centro destino debe ser diferente al centro de origen."
+
+        admision_destino_id = None
+        comedor_destino_direct_id = None
+
+        if comedor_usa_admision_para_nomina(comedor_destino):
+            admision_destino = (
+                Admision.objects.filter(comedor=comedor_destino, activa=True)
+                .order_by("-id")
+                .first()
+            )
+            if not admision_destino:
+                return (
+                    False,
+                    f"El centro «{comedor_destino.nombre}» no tiene una admisión activa.",
+                )
+            admision_destino_id = admision_destino.pk
+        else:
+            comedor_destino_direct_id = comedor_destino.pk
+
+        ciudadano = nomina_origen.ciudadano
+        if admision_destino_id:
+            ya_existe = Nomina.objects.filter(
+                ciudadano=ciudadano,
+                admision_id=admision_destino_id,
+                estado__in=[Nomina.ESTADO_ACTIVO, Nomina.ESTADO_ESPERA],
+            ).exists()
+        else:
+            ya_existe = Nomina.objects.filter(
+                ciudadano=ciudadano,
+                comedor_id=comedor_destino_direct_id,
+                admision__isnull=True,
+                estado__in=[Nomina.ESTADO_ACTIVO, Nomina.ESTADO_ESPERA],
+            ).exists()
+
+        if ya_existe:
+            return (
+                False,
+                f"La persona ya tiene un registro activo o en espera en «{comedor_destino.nombre}».",
+            )
+
+        try:
+            with transaction.atomic():
+                nomina_origen = Nomina.objects.select_for_update().get(pk=nomina_pk)
+                if nomina_origen.estado != Nomina.ESTADO_ACTIVO:
+                    return (
+                        False,
+                        "El registro fue modificado antes de completar la derivación.",
+                    )
+
+                nomina_origen.estado = Nomina.ESTADO_BAJA
+                nomina_origen.save(update_fields=["estado"])
+
+                nomina_destino = Nomina.objects.create(
+                    ciudadano=ciudadano,
+                    admision_id=admision_destino_id,
+                    comedor_id=comedor_destino_direct_id,
+                    estado=Nomina.ESTADO_ESPERA,
+                )
+
+                NominaDerivacion.objects.create(
+                    nomina_origen=nomina_origen,
+                    nomina_destino=nomina_destino,
+                    usuario=usuario,
+                    motivo=motivo,
+                    comedor_origen_id=comedor_origen_id,
+                    comedor_destino_id=comedor_destino.pk,
+                )
+
+            return True, "Derivación realizada correctamente."
+        except Exception:
+            logger.exception("Error al transferir ciudadano entre centros.")
+            return (
+                False,
+                "Ocurrió un error al realizar la derivación. Intentá nuevamente.",
+            )
+
+    @staticmethod
     def crear_admision_desde_comedor(request, comedor):
         """
         Crea una nueva admisión asociada al comedor actual.
