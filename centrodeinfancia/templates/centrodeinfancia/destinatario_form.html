@@ -2,14 +2,23 @@
 {% load static crispy_forms_tags %}
 
 {% block title %}
-    {% if is_edit %}Editar destinatario{% else %}Agregar destinatario{% endif %}
+    {% if is_edit %}
+        Editar destinatario
+    {% else %}
+        Agregar destinatario
+    {% endif %}
 {% endblock %}
 {% block titulo-pagina %}
-    {% if is_edit %}Editar destinatario{% else %}Agregar destinatario{% endif %}
+    {% if is_edit %}
+        Editar destinatario
+    {% else %}
+        Agregar destinatario
+    {% endif %}
 {% endblock %}
 
 {% block content %}
-    <link rel="stylesheet" href="{% static 'custom/css/comedorFormModerno.css' %}" />
+    <link rel="stylesheet"
+          href="{% static 'custom/css/comedorFormModerno.css' %}" />
 
     <div class="d-flex justify-content-between align-items-center mb-3">
         <nav aria-label="breadcrumb">
@@ -18,7 +27,11 @@
                     <a href="{% url 'centrodeinfancia_nomina_ver' centro.id %}">{{ centro.nombre }} — Nómina</a>
                 </li>
                 <li class="breadcrumb-item active">
-                    {% if is_edit %}Editar destinatario{% else %}Agregar destinatario{% endif %}
+                    {% if is_edit %}
+                        Editar destinatario
+                    {% else %}
+                        Agregar destinatario
+                    {% endif %}
                 </li>
             </ol>
         </nav>
@@ -117,25 +130,25 @@
 
         <form method="post" id="destinatarioForm">
             {% csrf_token %}
-            {% if selected_ciudadano %}
-                <input type="hidden" name="ciudadano_id" value="{{ selected_ciudadano.id }}" />
-            {% endif %}
-            {% if renaper_precarga %}
-                <input type="hidden" name="origen_dato" value="renaper" />
-            {% endif %}
+            {% if selected_ciudadano %}<input type="hidden" name="ciudadano_id" value="{{ selected_ciudadano.id }}" />{% endif %}
+            {% if renaper_precarga %}<input type="hidden" name="origen_dato" value="renaper" />{% endif %}
 
             {# ── 0. Institución y Espacio Temporal (read-only) ─────── #}
             <div class="section-card" data-section="institucion">
                 <div class="section-header" data-toggle-section="institucion">
                     <div class="section-header-left">
-                        <div class="section-icon"><i class="fas fa-building"></i></div>
+                        <div class="section-icon">
+                            <i class="fas fa-building"></i>
+                        </div>
                         <div class="section-title-group">
                             <h3 class="section-title">Institución y Espacio Temporal</h3>
                             <p class="section-subtitle">Datos del CDI donde se registra la ficha</p>
                         </div>
                     </div>
                     <div class="section-status">
-                        <div class="collapse-indicator"><i class="fas fa-chevron-down"></i></div>
+                        <div class="collapse-indicator">
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
                     </div>
                 </div>
                 <div class="section-body collapse show" id="section-institucion">
@@ -155,7 +168,11 @@
                         <div class="col-md-3">
                             <p class="small mb-1" style="color:#9ca3af;">Departamento</p>
                             <p class="mb-2" style="color:#e5e7eb;">
-                                {% if centro.departamento %}{{ centro.departamento.nombre }} ({{ centro.departamento.codigo_departamento }}){% else %}—{% endif %}
+                                {% if centro.departamento %}
+                                    {{ centro.departamento.nombre }} ({{ centro.departamento.codigo_departamento }})
+                                {% else %}
+                                    —
+                                {% endif %}
                             </p>
                         </div>
                     </div>
@@ -176,7 +193,9 @@
             <div class="section-card" data-section="registro">
                 <div class="section-header" data-toggle-section="registro">
                     <div class="section-header-left">
-                        <div class="section-icon"><i class="fas fa-clipboard-list"></i></div>
+                        <div class="section-icon">
+                            <i class="fas fa-clipboard-list"></i>
+                        </div>
                         <div class="section-title-group">
                             <h3 class="section-title">Registro</h3>
                             <p class="section-subtitle">Tipo de registro, fecha y referente del CDI</p>
@@ -186,7 +205,9 @@
                         <span class="status-badge empty" id="status-registro">
                             <i class="fas fa-circle"></i> Sin completar
                         </span>
-                        <div class="collapse-indicator"><i class="fas fa-chevron-down"></i></div>
+                        <div class="collapse-indicator">
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
                     </div>
                 </div>
                 <div class="section-body collapse show" id="section-registro">
@@ -203,7 +224,9 @@
             <div class="section-card" data-section="nino">
                 <div class="section-header" data-toggle-section="nino">
                     <div class="section-header-left">
-                        <div class="section-icon"><i class="fas fa-baby"></i></div>
+                        <div class="section-icon">
+                            <i class="fas fa-baby"></i>
+                        </div>
                         <div class="section-title-group">
                             <h3 class="section-title">Datos del niño/a</h3>
                             <p class="section-subtitle">Identidad, documentación y sala</p>
@@ -213,7 +236,9 @@
                         <span class="status-badge empty" id="status-nino">
                             <i class="fas fa-circle"></i> Sin completar
                         </span>
-                        <div class="collapse-indicator"><i class="fas fa-chevron-down"></i></div>
+                        <div class="collapse-indicator">
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
                     </div>
                 </div>
                 <div class="section-body collapse show" id="section-nino">
@@ -242,7 +267,9 @@
             <div class="section-card" data-section="responsable1">
                 <div class="section-header" data-toggle-section="responsable1">
                     <div class="section-header-left">
-                        <div class="section-icon"><i class="fas fa-user-shield"></i></div>
+                        <div class="section-icon">
+                            <i class="fas fa-user-shield"></i>
+                        </div>
                         <div class="section-title-group">
                             <h3 class="section-title">Responsable 1</h3>
                             <p class="section-subtitle">Progenitor/a, tutor/a, curador/a o referente afectivo</p>
@@ -252,7 +279,9 @@
                         <span class="status-badge empty" id="status-responsable1">
                             <i class="fas fa-circle"></i> Sin completar
                         </span>
-                        <div class="collapse-indicator"><i class="fas fa-chevron-down"></i></div>
+                        <div class="collapse-indicator">
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
                     </div>
                 </div>
                 <div class="section-body collapse show" id="section-responsable1">
@@ -284,7 +313,9 @@
             <div class="section-card" data-section="responsable2">
                 <div class="section-header" data-toggle-section="responsable2">
                     <div class="section-header-left">
-                        <div class="section-icon"><i class="fas fa-user-friends"></i></div>
+                        <div class="section-icon">
+                            <i class="fas fa-user-friends"></i>
+                        </div>
                         <div class="section-title-group">
                             <h3 class="section-title">Responsable 2</h3>
                             <p class="section-subtitle">Opcional — obligatorio solo si se completa algún dato del bloque</p>
@@ -294,7 +325,9 @@
                         <span class="status-badge empty" id="status-responsable2">
                             <i class="fas fa-circle"></i> Sin completar
                         </span>
-                        <div class="collapse-indicator"><i class="fas fa-chevron-down"></i></div>
+                        <div class="collapse-indicator">
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
                     </div>
                 </div>
                 <div class="section-body collapse show" id="section-responsable2">
@@ -326,7 +359,9 @@
             <div class="section-card" data-section="domicilio">
                 <div class="section-header" data-toggle-section="domicilio">
                     <div class="section-header-left">
-                        <div class="section-icon"><i class="fas fa-home"></i></div>
+                        <div class="section-icon">
+                            <i class="fas fa-home"></i>
+                        </div>
                         <div class="section-title-group">
                             <h3 class="section-title">Domicilio principal</h3>
                             <p class="section-subtitle">Donde vive la mayor parte del tiempo</p>
@@ -336,7 +371,9 @@
                         <span class="status-badge empty" id="status-domicilio">
                             <i class="fas fa-circle"></i> Sin completar
                         </span>
-                        <div class="collapse-indicator"><i class="fas fa-chevron-down"></i></div>
+                        <div class="collapse-indicator">
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
                     </div>
                 </div>
                 <div class="section-body collapse show" id="section-domicilio">
@@ -360,7 +397,9 @@
             <div class="section-card" data-section="cultura">
                 <div class="section-header" data-toggle-section="cultura">
                     <div class="section-header-left">
-                        <div class="section-icon"><i class="fas fa-globe-americas"></i></div>
+                        <div class="section-icon">
+                            <i class="fas fa-globe-americas"></i>
+                        </div>
                         <div class="section-title-group">
                             <h3 class="section-title">Cultura e Identidad</h3>
                             <p class="section-subtitle">Grupos de pertenencia y lenguajes del niño/a</p>
@@ -370,15 +409,15 @@
                         <span class="status-badge empty" id="status-cultura">
                             <i class="fas fa-circle"></i> Sin completar
                         </span>
-                        <div class="collapse-indicator"><i class="fas fa-chevron-down"></i></div>
+                        <div class="collapse-indicator">
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
                     </div>
                 </div>
                 <div class="section-body collapse show" id="section-cultura">
                     <div class="form-group row">
                         <div class="col-md-6">{{ form.grupo_pertenencia|as_crispy_field }}</div>
-                        <div class="col-md-6" id="row-pueblo-originario">
-                            {{ form.pueblo_originario_cual|as_crispy_field }}
-                        </div>
+                        <div class="col-md-6" id="row-pueblo-originario">{{ form.pueblo_originario_cual|as_crispy_field }}</div>
                     </div>
                     <div class="form-group row">
                         <div class="col-md-6">{{ form.lenguajes|as_crispy_field }}</div>
@@ -391,7 +430,9 @@
             <div class="section-card" data-section="discapacidad">
                 <div class="section-header" data-toggle-section="discapacidad">
                     <div class="section-header-left">
-                        <div class="section-icon"><i class="fas fa-wheelchair"></i></div>
+                        <div class="section-icon">
+                            <i class="fas fa-wheelchair"></i>
+                        </div>
                         <div class="section-title-group">
                             <h3 class="section-title">Discapacidad</h3>
                             <p class="section-subtitle">Tipo de discapacidad, apoyos y CUD</p>
@@ -401,7 +442,9 @@
                         <span class="status-badge empty" id="status-discapacidad">
                             <i class="fas fa-circle"></i> Sin completar
                         </span>
-                        <div class="collapse-indicator"><i class="fas fa-chevron-down"></i></div>
+                        <div class="collapse-indicator">
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
                     </div>
                 </div>
                 <div class="section-body collapse show" id="section-discapacidad">
@@ -425,7 +468,9 @@
             <div class="section-card" data-section="salud">
                 <div class="section-header" data-toggle-section="salud">
                     <div class="section-header-left">
-                        <div class="section-icon"><i class="fas fa-heartbeat"></i></div>
+                        <div class="section-icon">
+                            <i class="fas fa-heartbeat"></i>
+                        </div>
                         <div class="section-title-group">
                             <h3 class="section-title">Salud y Antropometría</h3>
                             <p class="section-subtitle">Cobertura, controles y medidas</p>
@@ -435,7 +480,9 @@
                         <span class="status-badge empty" id="status-salud">
                             <i class="fas fa-circle"></i> Sin completar
                         </span>
-                        <div class="collapse-indicator"><i class="fas fa-chevron-down"></i></div>
+                        <div class="collapse-indicator">
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
                     </div>
                 </div>
                 <div class="section-body collapse show" id="section-salud">
@@ -458,7 +505,9 @@
             <div class="section-card" data-section="nutricion">
                 <div class="section-header" data-toggle-section="nutricion">
                     <div class="section-header-left">
-                        <div class="section-icon"><i class="fas fa-apple-alt"></i></div>
+                        <div class="section-icon">
+                            <i class="fas fa-apple-alt"></i>
+                        </div>
                         <div class="section-title-group">
                             <h3 class="section-title">Nutrición y Asistencia ANSES</h3>
                             <p class="section-subtitle">Lactancia, diagnósticos, alergias y asignaciones</p>
@@ -468,7 +517,9 @@
                         <span class="status-badge empty" id="status-nutricion">
                             <i class="fas fa-circle"></i> Sin completar
                         </span>
-                        <div class="collapse-indicator"><i class="fas fa-chevron-down"></i></div>
+                        <div class="collapse-indicator">
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
                     </div>
                 </div>
                 <div class="section-body collapse show" id="section-nutricion">
@@ -496,7 +547,9 @@
             <div class="section-card" data-section="vacunacion">
                 <div class="section-header" data-toggle-section="vacunacion">
                     <div class="section-header-left">
-                        <div class="section-icon"><i class="fas fa-syringe"></i></div>
+                        <div class="section-icon">
+                            <i class="fas fa-syringe"></i>
+                        </div>
                         <div class="section-title-group">
                             <h3 class="section-title">Vacunación NOMIVAC y Desarrollo Infantil</h3>
                             <p class="section-subtitle">Plan de vacunación obligatorio y apoyo al desarrollo</p>
@@ -506,7 +559,9 @@
                         <span class="status-badge empty" id="status-vacunacion">
                             <i class="fas fa-circle"></i> Sin completar
                         </span>
-                        <div class="collapse-indicator"><i class="fas fa-chevron-down"></i></div>
+                        <div class="collapse-indicator">
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
                     </div>
                 </div>
                 <div class="section-body collapse show" id="section-vacunacion">
@@ -604,14 +659,18 @@
             <div class="section-card" data-section="observaciones">
                 <div class="section-header" data-toggle-section="observaciones">
                     <div class="section-header-left">
-                        <div class="section-icon"><i class="fas fa-comment-alt"></i></div>
+                        <div class="section-icon">
+                            <i class="fas fa-comment-alt"></i>
+                        </div>
                         <div class="section-title-group">
                             <h3 class="section-title">Observaciones</h3>
                             <p class="section-subtitle">Información adicional relevante</p>
                         </div>
                     </div>
                     <div class="section-status">
-                        <div class="collapse-indicator"><i class="fas fa-chevron-down"></i></div>
+                        <div class="collapse-indicator">
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
                     </div>
                 </div>
                 <div class="section-body collapse show" id="section-observaciones">
@@ -626,7 +685,11 @@
                    class="btn btn-secondary">Cancelar</a>
                 <button type="submit" class="btn btn-success btn-lg">
                     <i class="fas fa-save me-2"></i>
-                    {% if is_edit %}Guardar cambios{% else %}Agregar a nómina{% endif %}
+                    {% if is_edit %}
+                        Guardar cambios
+                    {% else %}
+                        Agregar a nómina
+                    {% endif %}
                 </button>
             </div>
         </form>

@@ -5,7 +5,8 @@
 {% block titulo-pagina %}Detalle de destinatario{% endblock %}
 
 {% block content %}
-    <link rel="stylesheet" href="{% static 'custom/css/comedorFormModerno.css' %}" />
+    <link rel="stylesheet"
+          href="{% static 'custom/css/comedorFormModerno.css' %}" />
 
     <div class="d-flex justify-content-between align-items-center mb-3">
         <nav aria-label="breadcrumb">
@@ -32,13 +33,19 @@
     <div class="section-card" data-section="registro">
         <div class="section-header" data-toggle-section="registro">
             <div class="section-header-left">
-                <div class="section-icon"><i class="fas fa-clipboard-list"></i></div>
+                <div class="section-icon">
+                    <i class="fas fa-clipboard-list"></i>
+                </div>
                 <div class="section-title-group">
                     <h3 class="section-title">Registro</h3>
                     <p class="section-subtitle">Tipo de registro, fecha y referente del CDI</p>
                 </div>
             </div>
-            <div class="section-status"><div class="collapse-indicator"><i class="fas fa-chevron-down"></i></div></div>
+            <div class="section-status">
+                <div class="collapse-indicator">
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+            </div>
         </div>
         <div class="section-body collapse show" id="section-registro">
             <div class="row g-3">
@@ -56,13 +63,19 @@
     <div class="section-card" data-section="nino">
         <div class="section-header" data-toggle-section="nino">
             <div class="section-header-left">
-                <div class="section-icon"><i class="fas fa-baby"></i></div>
+                <div class="section-icon">
+                    <i class="fas fa-baby"></i>
+                </div>
                 <div class="section-title-group">
                     <h3 class="section-title">Datos del niño/a</h3>
                     <p class="section-subtitle">Identidad, documentación y sala</p>
                 </div>
             </div>
-            <div class="section-status"><div class="collapse-indicator"><i class="fas fa-chevron-down"></i></div></div>
+            <div class="section-status">
+                <div class="collapse-indicator">
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+            </div>
         </div>
         <div class="section-body collapse show" id="section-nino">
             <div class="row g-3">
@@ -86,13 +99,19 @@
     <div class="section-card" data-section="responsable1">
         <div class="section-header" data-toggle-section="responsable1">
             <div class="section-header-left">
-                <div class="section-icon"><i class="fas fa-user-shield"></i></div>
+                <div class="section-icon">
+                    <i class="fas fa-user-shield"></i>
+                </div>
                 <div class="section-title-group">
                     <h3 class="section-title">Responsable 1</h3>
                     <p class="section-subtitle">Progenitor/a, tutor/a, curador/a o referente</p>
                 </div>
             </div>
-            <div class="section-status"><div class="collapse-indicator"><i class="fas fa-chevron-down"></i></div></div>
+            <div class="section-status">
+                <div class="collapse-indicator">
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+            </div>
         </div>
         <div class="section-body collapse show" id="section-responsable1">
             <div class="row g-3">
@@ -118,12 +137,18 @@
         <div class="section-card" data-section="responsable2">
             <div class="section-header" data-toggle-section="responsable2">
                 <div class="section-header-left">
-                    <div class="section-icon"><i class="fas fa-user-friends"></i></div>
+                    <div class="section-icon">
+                        <i class="fas fa-user-friends"></i>
+                    </div>
                     <div class="section-title-group">
                         <h3 class="section-title">Responsable 2</h3>
                     </div>
                 </div>
-                <div class="section-status"><div class="collapse-indicator"><i class="fas fa-chevron-down"></i></div></div>
+                <div class="section-status">
+                    <div class="collapse-indicator">
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                </div>
             </div>
             <div class="section-body collapse show" id="section-responsable2">
                 <div class="row g-3">
@@ -149,12 +174,18 @@
     <div class="section-card" data-section="domicilio">
         <div class="section-header" data-toggle-section="domicilio">
             <div class="section-header-left">
-                <div class="section-icon"><i class="fas fa-home"></i></div>
+                <div class="section-icon">
+                    <i class="fas fa-home"></i>
+                </div>
                 <div class="section-title-group">
                     <h3 class="section-title">Domicilio principal</h3>
                 </div>
             </div>
-            <div class="section-status"><div class="collapse-indicator"><i class="fas fa-chevron-down"></i></div></div>
+            <div class="section-status">
+                <div class="collapse-indicator">
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+            </div>
         </div>
         <div class="section-body collapse show" id="section-domicilio">
             <div class="row g-3">
@@ -175,12 +206,18 @@
     <div class="section-card" data-section="cultura">
         <div class="section-header" data-toggle-section="cultura">
             <div class="section-header-left">
-                <div class="section-icon"><i class="fas fa-globe-americas"></i></div>
+                <div class="section-icon">
+                    <i class="fas fa-globe-americas"></i>
+                </div>
                 <div class="section-title-group">
                     <h3 class="section-title">Cultura e Identidad</h3>
                 </div>
             </div>
-            <div class="section-status"><div class="collapse-indicator"><i class="fas fa-chevron-down"></i></div></div>
+            <div class="section-status">
+                <div class="collapse-indicator">
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+            </div>
         </div>
         <div class="section-body collapse show" id="section-cultura">
             <div class="row g-3 mb-3">
@@ -193,9 +230,11 @@
                     <div class="d-flex flex-wrap gap-2">
                         {% for g in nomina.grupo_pertenencia_display %}
                             <span class="badge"
-                                  style="background:rgba(243,156,18,0.15);color:#f39c12;
+                                  style="background:rgba(243,156,18,0.15);
+                                         color:#f39c12;
                                          border:1px solid rgba(243,156,18,0.3);
-                                         font-size:0.8rem;padding:5px 10px">{{ g }}</span>
+                                         font-size:0.8rem;
+                                         padding:5px 10px">{{ g }}</span>
                         {% endfor %}
                     </div>
                 </div>
@@ -206,9 +245,11 @@
                     <div class="d-flex flex-wrap gap-2">
                         {% for l in nomina.lenguajes_display %}
                             <span class="badge"
-                                  style="background:rgba(52,152,219,0.15);color:#74b9e7;
+                                  style="background:rgba(52,152,219,0.15);
+                                         color:#74b9e7;
                                          border:1px solid rgba(52,152,219,0.3);
-                                         font-size:0.8rem;padding:5px 10px">{{ l }}</span>
+                                         font-size:0.8rem;
+                                         padding:5px 10px">{{ l }}</span>
                         {% endfor %}
                     </div>
                 </div>
@@ -220,12 +261,18 @@
     <div class="section-card" data-section="discapacidad">
         <div class="section-header" data-toggle-section="discapacidad">
             <div class="section-header-left">
-                <div class="section-icon"><i class="fas fa-wheelchair"></i></div>
+                <div class="section-icon">
+                    <i class="fas fa-wheelchair"></i>
+                </div>
                 <div class="section-title-group">
                     <h3 class="section-title">Discapacidad</h3>
                 </div>
             </div>
-            <div class="section-status"><div class="collapse-indicator"><i class="fas fa-chevron-down"></i></div></div>
+            <div class="section-status">
+                <div class="collapse-indicator">
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+            </div>
         </div>
         <div class="section-body collapse show" id="section-discapacidad">
             <div class="row g-3 mb-3">
@@ -240,9 +287,11 @@
                     <div class="d-flex flex-wrap gap-2">
                         {% for t in nomina.tipo_discapacidad_display %}
                             <span class="badge"
-                                  style="background:rgba(231,76,60,0.15);color:#e74c3c;
+                                  style="background:rgba(231,76,60,0.15);
+                                         color:#e74c3c;
                                          border:1px solid rgba(231,76,60,0.3);
-                                         font-size:0.8rem;padding:5px 10px">{{ t }}</span>
+                                         font-size:0.8rem;
+                                         padding:5px 10px">{{ t }}</span>
                         {% endfor %}
                     </div>
                 </div>
@@ -254,12 +303,18 @@
     <div class="section-card" data-section="salud">
         <div class="section-header" data-toggle-section="salud">
             <div class="section-header-left">
-                <div class="section-icon"><i class="fas fa-heartbeat"></i></div>
+                <div class="section-icon">
+                    <i class="fas fa-heartbeat"></i>
+                </div>
                 <div class="section-title-group">
                     <h3 class="section-title">Salud y Antropometría</h3>
                 </div>
             </div>
-            <div class="section-status"><div class="collapse-indicator"><i class="fas fa-chevron-down"></i></div></div>
+            <div class="section-status">
+                <div class="collapse-indicator">
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+            </div>
         </div>
         <div class="section-body collapse show" id="section-salud">
             <div class="row g-3">
@@ -279,12 +334,18 @@
     <div class="section-card" data-section="nutricion">
         <div class="section-header" data-toggle-section="nutricion">
             <div class="section-header-left">
-                <div class="section-icon"><i class="fas fa-apple-alt"></i></div>
+                <div class="section-icon">
+                    <i class="fas fa-apple-alt"></i>
+                </div>
                 <div class="section-title-group">
                     <h3 class="section-title">Nutrición y Asistencia ANSES</h3>
                 </div>
             </div>
-            <div class="section-status"><div class="collapse-indicator"><i class="fas fa-chevron-down"></i></div></div>
+            <div class="section-status">
+                <div class="collapse-indicator">
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+            </div>
         </div>
         <div class="section-body collapse show" id="section-nutricion">
             <div class="row g-3 mb-3">
@@ -299,9 +360,11 @@
                     <div class="d-flex flex-wrap gap-2">
                         {% for a in nomina.alergias_alimentarias_display %}
                             <span class="badge"
-                                  style="background:rgba(243,156,18,0.15);color:#f39c12;
+                                  style="background:rgba(243,156,18,0.15);
+                                         color:#f39c12;
                                          border:1px solid rgba(243,156,18,0.3);
-                                         font-size:0.8rem;padding:5px 10px">{{ a }}</span>
+                                         font-size:0.8rem;
+                                         padding:5px 10px">{{ a }}</span>
                         {% endfor %}
                     </div>
                 </div>
@@ -321,12 +384,18 @@
     <div class="section-card" data-section="vacunacion">
         <div class="section-header" data-toggle-section="vacunacion">
             <div class="section-header-left">
-                <div class="section-icon"><i class="fas fa-syringe"></i></div>
+                <div class="section-icon">
+                    <i class="fas fa-syringe"></i>
+                </div>
                 <div class="section-title-group">
                     <h3 class="section-title">Vacunación NOMIVAC y Desarrollo Infantil</h3>
                 </div>
             </div>
-            <div class="section-status"><div class="collapse-indicator"><i class="fas fa-chevron-down"></i></div></div>
+            <div class="section-status">
+                <div class="collapse-indicator">
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+            </div>
         </div>
         <div class="section-body collapse show" id="section-vacunacion">
             {% if nomina.vacunacion_nomivac %}
@@ -458,12 +527,18 @@
         <div class="section-card mb-4" data-section="observaciones">
             <div class="section-header" data-toggle-section="observaciones">
                 <div class="section-header-left">
-                    <div class="section-icon"><i class="fas fa-comment-alt"></i></div>
+                    <div class="section-icon">
+                        <i class="fas fa-comment-alt"></i>
+                    </div>
                     <div class="section-title-group">
                         <h3 class="section-title">Observaciones</h3>
                     </div>
                 </div>
-                <div class="section-status"><div class="collapse-indicator"><i class="fas fa-chevron-down"></i></div></div>
+                <div class="section-status">
+                    <div class="collapse-indicator">
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                </div>
             </div>
             <div class="section-body collapse show" id="section-observaciones">
                 <p style="color:#e5e7eb;white-space:pre-line">{{ nomina.observaciones }}</p>
