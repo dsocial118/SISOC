@@ -12,7 +12,7 @@ CURSO_BUSCAR_EXAMPLES = [
                 {
                     "id": 120,
                     "nombre": "Herramientas Digitales",
-                    "tipo": ["empleoinet"],
+                    "tipo": ["empleo", "inet"],
                     "prioritario": True,
                     "estado": "activo",
                     "observaciones": None,
@@ -102,7 +102,7 @@ CURSO_BUSCAR_EXAMPLES = [
                 {
                     "id": 120,
                     "nombre": "Herramientas Digitales",
-                    "tipo": ["empleoinet"],
+                    "tipo": ["empleo", "inet"],
                     "prioritario": True,
                     "estado": "activo",
                     "observaciones": None,
@@ -182,7 +182,7 @@ CURSO_PRIORITARIOS_EXAMPLES = [
                 {
                     "id": 140,
                     "nombre": "Herramientas de Gestión Prioritaria",
-                    "tipo": ["empleoinet"],
+                    "tipo": ["empleo", "inet"],
                     "prioritario": True,
                     "estado": "activo",
                     "observaciones": None,

@@ -1,5 +1,3 @@
-# pylint: disable=too-many-lines
-
 import logging
 
 from django.db.models import Count, Prefetch, Q
