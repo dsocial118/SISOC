@@ -1,7 +1,6 @@
 import logging
 
 from django.db import transaction
-from django.shortcuts import get_object_or_404
 
 from centrodeinfancia.models import (
     CentroDeInfancia,
@@ -63,21 +62,20 @@ class CentroDeInfanciaService:
     def transferir_ciudadano_entre_centros(
         nomina_pk, centro_destino_pk, usuario, motivo=""
     ):
-        nomina_origen = get_object_or_404(
-            NominaCentroInfancia.objects.select_related("centro", "ciudadano"),
-            pk=nomina_pk,
-        )
+        nomina_origen = NominaCentroInfancia.objects.select_related(
+            "centro", "ciudadano"
+        ).get(pk=nomina_pk)
 
         if nomina_origen.estado != NominaCentroInfancia.ESTADO_ACTIVO:
             return False, "Solo se pueden derivar personas con estado Activo."
 
-        centro_destino = get_object_or_404(CentroDeInfancia, pk=centro_destino_pk)
+        centro_destino = CentroDeInfancia.objects.get(pk=centro_destino_pk)
 
         if centro_destino.pk == nomina_origen.centro_id:
             return False, "El centro destino debe ser diferente al centro de origen."
 
         ya_existe = NominaCentroInfancia.objects.filter(
-            ciudadano=nomina_origen.ciudadano,
+            ciudadano_id=nomina_origen.ciudadano_id,
             centro=centro_destino,
             estado__in=[
                 NominaCentroInfancia.ESTADO_ACTIVO,
@@ -102,6 +100,20 @@ class CentroDeInfanciaService:
                         "El registro fue modificado antes de completar la derivación.",
                     )
 
+                ya_existe = NominaCentroInfancia.objects.filter(
+                    ciudadano_id=nomina_origen.ciudadano_id,
+                    centro=centro_destino,
+                    estado__in=[
+                        NominaCentroInfancia.ESTADO_ACTIVO,
+                        NominaCentroInfancia.ESTADO_PENDIENTE,
+                    ],
+                ).exists()
+                if ya_existe:
+                    return (
+                        False,
+                        f"La persona ya tiene un registro activo o pendiente en «{centro_destino.nombre}».",
+                    )
+
                 centro_origen_id = nomina_origen.centro_id
 
                 nomina_origen.estado = NominaCentroInfancia.ESTADO_BAJA
@@ -112,7 +124,7 @@ class CentroDeInfanciaService:
                 }
                 nomina_destino = NominaCentroInfancia.objects.create(
                     centro=centro_destino,
-                    ciudadano=nomina_origen.ciudadano,
+                    ciudadano_id=nomina_origen.ciudadano_id,
                     estado=NominaCentroInfancia.ESTADO_PENDIENTE,
                     **nomina_destino_data,
                 )

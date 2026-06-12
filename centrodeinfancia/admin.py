@@ -10,6 +10,7 @@ from centrodeinfancia.models import (
     FormularioCDIWaitlistByAgeGroup,
     IntervencionCentroInfancia,
     NominaCentroInfancia,
+    NominaCentroInfanciaDerivacion,
     ObservacionCentroInfancia,
     OfertaServicio,
     Trabajador,
@@ -111,6 +112,28 @@ class FormularioCDIWaitlistByAgeGroupAdmin(admin.ModelAdmin):
 class FormularioCDIArticulationFrequencyAdmin(admin.ModelAdmin):
     list_display = ("id", "formulario", "tipo_institucion", "frecuencia")
     list_filter = ("frecuencia",)
+
+
+@admin.register(NominaCentroInfanciaDerivacion)
+class NominaCentroInfanciaDerivacionAdmin(admin.ModelAdmin):
+    list_display = ("id", "nomina_origen", "nomina_destino", "usuario", "fecha")
+    list_filter = ("fecha",)
+    search_fields = ("usuario__username",)
+    readonly_fields = (
+        "nomina_origen",
+        "nomina_destino",
+        "usuario",
+        "fecha",
+        "motivo",
+        "centro_origen_id",
+        "centro_destino_id",
+    )
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
 
 
 @admin.register(AccesoCDI)

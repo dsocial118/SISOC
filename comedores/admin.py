@@ -8,6 +8,7 @@ from comedores.models import (
     HistorialValidacion,
     ImagenComedor,
     Nomina,
+    NominaDerivacion,
     Observacion,
     Programas,
     Referente,
@@ -77,6 +78,28 @@ class ColaboradorEspacioAdmin(admin.ModelAdmin):
     )
     raw_id_fields = ("comedor", "ciudadano", "creado_por", "modificado_por")
     readonly_fields = ("fecha_creado", "fecha_modificado")
+
+
+@admin.register(NominaDerivacion)
+class NominaDerivacionAdmin(admin.ModelAdmin):
+    list_display = ("id", "nomina_origen", "nomina_destino", "usuario", "fecha")
+    list_filter = ("fecha",)
+    search_fields = ("usuario__username",)
+    readonly_fields = (
+        "nomina_origen",
+        "nomina_destino",
+        "usuario",
+        "fecha",
+        "motivo",
+        "comedor_origen_id",
+        "comedor_destino_id",
+    )
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
 
 
 @admin.register(CapacitacionComedorCertificado)

@@ -295,7 +295,8 @@
                                                 <a class="dropdown-item nomina-derivar-btn"
                                                    href="#"
                                                    data-nomina-id="{{ e.id }}"
-                                                   data-ciudadano="{{ e.nombre|default:e.ciudadano.nombre }} {{ e.apellido|default:e.ciudadano.apellido }}"
+                                                   data-url="{% url 'centrodeinfancia_nomina_derivar' e.id %}"
+                                                   data-ciudadano="{{ e.nombre }} {{ e.apellido }}"
                                                    data-bs-toggle="modal"
                                                    data-bs-target="#derivarNominaModal">
                                                     <i class="fas fa-share-square"></i> Derivar
@@ -435,13 +436,13 @@
     <script src="{% static 'custom/js/nomina_detail.js' %}"></script>
     <script>
     (function () {
-        var derivarNominaId = null;
+        var derivarUrl = null;
         var csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
 
         document.addEventListener('click', function (e) {
             var btn = e.target.closest('.nomina-derivar-btn');
             if (!btn) return;
-            derivarNominaId = btn.dataset.nominaId;
+            derivarUrl = btn.dataset.url;
             document.getElementById('derivarNombreCiudadano').textContent = btn.dataset.ciudadano;
             document.getElementById('derivarCentroSelect').value = '';
             document.getElementById('derivarMotivo').value = '';
@@ -464,7 +465,7 @@
             var btn = document.getElementById('derivarConfirmarBtn');
             btn.disabled = true;
 
-            fetch('/centrodeinfancia/nomina/' + derivarNominaId + '/derivar/', {
+            fetch(derivarUrl, {
                 method: 'POST',
                 headers: {
                     'X-CSRFToken': csrfToken,

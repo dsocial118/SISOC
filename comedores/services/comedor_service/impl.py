@@ -1641,20 +1641,22 @@ class ComedorService:
     ):
         from comedores.models import NominaDerivacion
 
-        nomina_origen = get_object_or_404(
-            Nomina.objects.select_related("admision__comedor", "comedor", "ciudadano"),
-            pk=nomina_pk,
-        )
+        nomina_origen = Nomina.objects.select_related(
+            "admision__comedor", "comedor"
+        ).get(pk=nomina_pk)
 
         if nomina_origen.estado != Nomina.ESTADO_ACTIVO:
             return False, "Solo se pueden derivar personas con estado Activo."
 
-        comedor_destino = get_object_or_404(Comedor, pk=comedor_destino_pk)
+        comedor_destino = Comedor.objects.get(pk=comedor_destino_pk)
 
         if nomina_origen.admision:
             comedor_origen_id = nomina_origen.admision.comedor_id
         else:
             comedor_origen_id = nomina_origen.comedor_id
+
+        if comedor_origen_id is None:
+            return False, "El registro no tiene un centro de origen válido."
 
         if comedor_destino.pk == comedor_origen_id:
             return False, "El centro destino debe ser diferente al centro de origen."
@@ -1677,16 +1679,15 @@ class ComedorService:
         else:
             comedor_destino_direct_id = comedor_destino.pk
 
-        ciudadano = nomina_origen.ciudadano
         if admision_destino_id:
             ya_existe = Nomina.objects.filter(
-                ciudadano=ciudadano,
+                ciudadano_id=nomina_origen.ciudadano_id,
                 admision_id=admision_destino_id,
                 estado__in=[Nomina.ESTADO_ACTIVO, Nomina.ESTADO_ESPERA],
             ).exists()
         else:
             ya_existe = Nomina.objects.filter(
-                ciudadano=ciudadano,
+                ciudadano_id=nomina_origen.ciudadano_id,
                 comedor_id=comedor_destino_direct_id,
                 admision__isnull=True,
                 estado__in=[Nomina.ESTADO_ACTIVO, Nomina.ESTADO_ESPERA],
@@ -1707,11 +1708,39 @@ class ComedorService:
                         "El registro fue modificado antes de completar la derivación.",
                     )
 
+                if admision_destino_id:
+                    if not Admision.objects.filter(
+                        pk=admision_destino_id, activa=True
+                    ).exists():
+                        return (
+                            False,
+                            f"La admisión del centro «{comedor_destino.nombre}» dejó de estar activa.",
+                        )
+
+                if admision_destino_id:
+                    ya_existe = Nomina.objects.filter(
+                        ciudadano_id=nomina_origen.ciudadano_id,
+                        admision_id=admision_destino_id,
+                        estado__in=[Nomina.ESTADO_ACTIVO, Nomina.ESTADO_ESPERA],
+                    ).exists()
+                else:
+                    ya_existe = Nomina.objects.filter(
+                        ciudadano_id=nomina_origen.ciudadano_id,
+                        comedor_id=comedor_destino_direct_id,
+                        admision__isnull=True,
+                        estado__in=[Nomina.ESTADO_ACTIVO, Nomina.ESTADO_ESPERA],
+                    ).exists()
+                if ya_existe:
+                    return (
+                        False,
+                        f"La persona ya tiene un registro activo o en espera en «{comedor_destino.nombre}».",
+                    )
+
                 nomina_origen.estado = Nomina.ESTADO_BAJA
                 nomina_origen.save(update_fields=["estado"])
 
                 nomina_destino = Nomina.objects.create(
-                    ciudadano=ciudadano,
+                    ciudadano_id=nomina_origen.ciudadano_id,
                     admision_id=admision_destino_id,
                     comedor_id=comedor_destino_direct_id,
                     estado=Nomina.ESTADO_ESPERA,
