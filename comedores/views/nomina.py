@@ -66,10 +66,7 @@ def _comedores_destino_para_derivar(user, exclude_pk):
     scoped_qs = ComedorService.get_scoped_comedor_queryset(user)
     return list(
         scoped_qs.exclude(pk=exclude_pk)
-        .filter(
-            Q(programa__usa_admision_para_nomina=False)
-            | Q(admision__activa=True)
-        )
+        .filter(Q(programa__usa_admision_para_nomina=False) | Q(admision__activa=True))
         .values("id", "nombre")
         .distinct()
         .order_by("nombre")

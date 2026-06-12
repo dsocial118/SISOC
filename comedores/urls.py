@@ -322,9 +322,9 @@ urlpatterns = [
     ),
     path(
         "comedores/nomina/<int:pk>/derivar/",
-        permissions_all_required(
-            ["comedores.change_nomina", "comedores.add_nomina"]
-        )(nomina_derivar),
+        permissions_all_required(["comedores.change_nomina", "comedores.add_nomina"])(
+            nomina_derivar
+        ),
         name="nomina_derivar",
     ),
     path(
