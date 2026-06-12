@@ -206,7 +206,7 @@ function initializeConditionalFields() {
 
     function applyNumeroCud() {
         if (!posee_cudSelect) return;
-        toggleVisible(rowNumeroCud, posee_cudSelect.value === "si");
+        toggleVisible(rowNumeroCud, posee_cudSelect.value === "true");
     }
 
     // Estado inicial
