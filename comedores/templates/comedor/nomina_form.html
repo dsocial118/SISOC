@@ -176,6 +176,51 @@
                                 <label for="observaciones" class="form-label">Observaciones</label>
                                 <textarea name="observaciones" id="observaciones" class="form-control" rows="3"></textarea>
                             </div>
+                            {% if mostrar_asistencia_pnud %}
+                                <div class="col-md-12 mt-4">
+                                    <div class="border rounded p-3">
+                                        <div class="fw-bold mb-2">Asistencia</div>
+                                        <div class="form-check">
+                                            <input type="checkbox"
+                                                   class="form-check-input"
+                                                   id="modal_asistencia_alimentaria"
+                                                   name="asistencia_alimentaria"
+                                                   checked />
+                                            <label class="form-check-label" for="modal_asistencia_alimentaria">
+                                                Prestacion alimentaria
+                                            </label>
+                                        </div>
+                                        <div class="form-check mt-2">
+                                            <input type="checkbox"
+                                                   class="form-check-input"
+                                                   id="modal_asistencia_actividades"
+                                                   name="asistencia_actividades" />
+                                            <label class="form-check-label" for="modal_asistencia_actividades">
+                                                Actividades
+                                            </label>
+                                        </div>
+                                        <div class="mt-3">
+                                            <div class="form-label mb-2">Actividades asociadas</div>
+                                            {% if actividades_pnud %}
+                                                {% for actividad in actividades_pnud %}
+                                                    <div class="form-check">
+                                                        <input type="checkbox"
+                                                               class="form-check-input modal-actividad-pnud"
+                                                               id="modal_actividad_{{ actividad.id }}"
+                                                               name="actividad_ids"
+                                                               value="{{ actividad.id }}" />
+                                                        <label class="form-check-label" for="modal_actividad_{{ actividad.id }}">
+                                                            {{ actividad.catalogo_actividad }} - {{ actividad.dia_actividad }} {{ actividad.horario_actividad }}
+                                                        </label>
+                                                    </div>
+                                                {% endfor %}
+                                            {% else %}
+                                                <div class="text-muted small">No hay actividades activas para asociar.</div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endif %}
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -202,6 +247,17 @@
                         "Ciudadano seleccionado: " + ciudadanoNombre;
                     document.getElementById("estado").value = "";
                     document.getElementById("observaciones").value = "";
+                    const asistenciaAlimentaria = document.getElementById("modal_asistencia_alimentaria");
+                    const asistenciaActividades = document.getElementById("modal_asistencia_actividades");
+                    if (asistenciaAlimentaria) {
+                        asistenciaAlimentaria.checked = true;
+                    }
+                    if (asistenciaActividades) {
+                        asistenciaActividades.checked = false;
+                    }
+                    document.querySelectorAll(".modal-actividad-pnud").forEach(function(input) {
+                        input.checked = false;
+                    });
                     document.getElementById("form-nomina").classList.remove("was-validated");
                     document.getElementById("estado").classList.remove("is-invalid");
                 });

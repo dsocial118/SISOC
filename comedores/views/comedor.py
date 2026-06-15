@@ -10,7 +10,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.cache import cache
 from django.core.paginator import Paginator
 from django.db import transaction
-from django.db.models import Count
+from django.db.models import Count, Q
 from django.shortcuts import redirect
 from django.urls import reverse, reverse_lazy
 from django.utils import timezone
@@ -45,7 +45,13 @@ from comedores.services.capacitaciones_certificados_service import (
 )
 from comedores.services.dw_transacciones_service import DWTransaccionesService
 from comedores.services.filter_config import get_filters_ui_config
-from comedores.utils import comedor_usa_admision_para_nomina
+from comedores.utils import (
+    comedor_usa_admision_para_nomina,
+    get_prestacion_conformidad_pending_period,
+    is_abordaje_comunitario_linea_secos_program,
+    is_pnud_comedor,
+    is_prestacion_alimentaria_conformidad_program,
+)
 from core.pagination import NoCountPaginator, build_no_count_page_range
 from core.services.column_preferences import build_columns_context_from_fields
 from core.services.favorite_filters import SeccionesFiltrosFavoritos
@@ -57,6 +63,7 @@ from intervenciones.models.intervenciones import Intervencion
 from intervenciones.forms import IntervencionForm, build_programa_aliases
 from expedientespagos.models import ExpedientePago
 from expedientespagos.services import ordenar_expedientes_por_periodo_desc
+from pwa.models import ActividadEspacioPWA
 
 MESES_ES_CORTOS = [
     "Ene",
@@ -215,6 +222,40 @@ def _build_nomina_metrics(nomina_total, nomina_rangos):
         "nomina_pct_adulto_mayor_avanzado": _pct(
             nomina_rangos.get("adulto_mayor_avanzado")
         ),
+    }
+
+
+def _build_actividades_pnud_legajo_context(comedor):
+    if not is_pnud_comedor(comedor):
+        return {
+            "actividades_pnud_legajo": [],
+            "actividades_pnud_legajo_count": 0,
+        }
+
+    actividades = list(
+        ActividadEspacioPWA.objects.filter(comedor=comedor)
+        .select_related(
+            "catalogo_actividad",
+            "dia_actividad",
+            "creado_por",
+            "actualizado_por",
+        )
+        .annotate(
+            inscriptos_activos_count=Count(
+                "inscriptos",
+                filter=Q(inscriptos__activo=True),
+            )
+        )
+        .order_by(
+            "-activo",
+            "catalogo_actividad__categoria",
+            "catalogo_actividad__actividad",
+            "id",
+        )
+    )
+    return {
+        "actividades_pnud_legajo": actividades,
+        "actividades_pnud_legajo_count": len(actividades),
     }
 
 
@@ -1136,6 +1177,9 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
             "actividades_comunitarias_count": actividades_comunitarias_count,
             "comedor_categoria": comedor_categoria,
             "colaboradores_espacio": colaboradores_espacio,
+            "permite_alta_colaboradores": (
+                not is_abordaje_comunitario_linea_secos_program(self.object)
+            ),
         }
 
     def _build_relaciones_table_contexts(self, admisiones_qs):
@@ -1290,6 +1334,12 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
             **table_contexts,
         }
 
+    def _build_conformidad_prestacion_context(self):
+        if not is_prestacion_alimentaria_conformidad_program(self.object):
+            return {"pendiente": False, "periodo": None}
+        pending_period = get_prestacion_conformidad_pending_period(self.object)
+        return {"pendiente": pending_period is not None, "periodo": pending_period}
+
     def get_context_data(self, **kwargs) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)
         presupuestos_data = self.get_presupuestos_data()
@@ -1307,6 +1357,8 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
         informe_tecnico = selected_admision_context["informe_tecnico"]
         responsables_context = _build_organizacion_responsables_context(self.object)
         mes_ejecucion_context = _build_mes_ejecucion_context(self.object)
+        actividades_pnud_context = _build_actividades_pnud_legajo_context(self.object)
+        es_programa_pnud = is_pnud_comedor(self.object)
 
         # Nómina del convenio seleccionado
         selected_admision_pk = getattr(selected_admision, "pk", None)
@@ -1373,11 +1425,13 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
                     if is_alimentar_comunidad_program(self.object)
                     else []
                 ),
-                "es_programa_pnud": getattr(self.object, "programa_id", None) in (3, 4),
+                "es_programa_pnud": es_programa_pnud,
                 "datos_convenio_pnud": getattr(
                     self.object, "datos_convenio_pnud", None
                 ),
                 "domicilio_completo_comedor": _build_domicilio_completo(self.object),
+                "conformidad_prestacion_pendiente": self._build_conformidad_prestacion_context(),
+                **actividades_pnud_context,
                 **responsables_context,
                 **mes_ejecucion_context,
             }

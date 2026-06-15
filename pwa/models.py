@@ -343,6 +343,8 @@ class ActividadEspacioPWA(models.Model):
     horario_actividad = models.CharField(max_length=60)
     hora_inicio = models.TimeField(null=True, blank=True)
     hora_fin = models.TimeField(null=True, blank=True)
+    responsable_actividad = models.CharField(max_length=255, blank=True, default="")
+    vigencia_actividad_meses = models.PositiveSmallIntegerField(null=True, blank=True)
     activo = models.BooleanField(default=True)
     fecha_alta = models.DateTimeField(auto_now_add=True)
     fecha_actualizacion = models.DateTimeField(auto_now=True)

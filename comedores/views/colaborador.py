@@ -164,7 +164,10 @@ class ColaboradorEspacioUpdateView(LoginRequiredMixin, UpdateView):
 
     def get_queryset(self):
         return (
-            ColaboradorEspacio.objects.filter(comedor=self._get_comedor())
+            ColaboradorEspacio.objects.filter(
+                comedor=self._get_comedor(),
+                fecha_baja__isnull=True,
+            )
             .select_related("ciudadano__sexo")
             .prefetch_related("actividades")
         )

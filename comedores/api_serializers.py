@@ -14,6 +14,10 @@ from comedores.models import (
     PrestacionAlimentariaConformidad,
 )
 from comedores.services.comedor_service import ComedorService
+from comedores.utils import (
+    get_prestacion_conformidad_pending_period,
+    is_prestacion_alimentaria_conformidad_program,
+)
 from core.models import Localidad, Municipio, Provincia
 from duplas.models import Dupla
 from organizaciones.models import Organizacion
@@ -116,6 +120,7 @@ class ComedorDetailSerializer(serializers.ModelSerializer):
     programa_changes = serializers.SerializerMethodField()
     relevamiento_actual_mobile = serializers.SerializerMethodField()
     datos_convenio_mobile = serializers.SerializerMethodField()
+    conformidad_prestacion_pendiente = serializers.SerializerMethodField()
 
     class Meta:
         model = Comedor
@@ -160,6 +165,7 @@ class ComedorDetailSerializer(serializers.ModelSerializer):
             "programa_changes",
             "relevamiento_actual_mobile",
             "datos_convenio_mobile",
+            "conformidad_prestacion_pendiente",
         )
 
     def _absolute_url(self, file_field):
@@ -178,6 +184,12 @@ class ComedorDetailSerializer(serializers.ModelSerializer):
         if not obj.programa:
             return None
         return {"id": obj.programa.id, "nombre": obj.programa.nombre}
+
+    def get_conformidad_prestacion_pendiente(self, obj):
+        if not is_prestacion_alimentaria_conformidad_program(obj):
+            return {"pendiente": False, "periodo": None}
+        pending_period = get_prestacion_conformidad_pending_period(obj)
+        return {"pendiente": pending_period is not None, "periodo": pending_period}
 
     def get_tipocomedor(self, obj):
         if not obj.tipocomedor:

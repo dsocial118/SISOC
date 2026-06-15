@@ -364,6 +364,8 @@ class ActividadEspacioPWAListSerializer(serializers.ModelSerializer):
             "hora_inicio",
             "hora_fin",
             "horario_actividad",
+            "responsable_actividad",
+            "vigencia_actividad_meses",
             "cantidad_inscriptos",
             "activo",
             "fecha_alta",
@@ -389,6 +391,8 @@ class ActividadEspacioPWACreateUpdateSerializer(serializers.ModelSerializer):
             "hora_inicio",
             "hora_fin",
             "horario_actividad",
+            "responsable_actividad",
+            "vigencia_actividad_meses",
             "activo",
             "fecha_alta",
             "fecha_actualizacion",
@@ -406,6 +410,8 @@ class ActividadEspacioPWACreateUpdateSerializer(serializers.ModelSerializer):
             "horario_actividad": {"required": False, "allow_blank": True},
             "hora_inicio": {"required": False},
             "hora_fin": {"required": False},
+            "responsable_actividad": {"required": False, "allow_blank": True},
+            "vigencia_actividad_meses": {"required": False, "allow_null": True},
         }
 
     def validate_catalogo_actividad(self, value):
@@ -417,6 +423,14 @@ class ActividadEspacioPWACreateUpdateSerializer(serializers.ModelSerializer):
 
     def validate_horario_actividad(self, value):
         value = (value or "").strip()
+        return value
+
+    def validate_responsable_actividad(self, value):
+        return (value or "").strip()
+
+    def validate_vigencia_actividad_meses(self, value):
+        if value is not None and value < 1:
+            raise serializers.ValidationError("La vigencia debe ser mayor a 0 meses.")
         return value
 
     def validate(self, attrs):
@@ -505,6 +519,8 @@ class InscriptoActividadPWAListSerializer(serializers.ModelSerializer):
             "dni",
             "genero",
             "fecha_nacimiento",
+            "activo",
+            "fecha_baja",
         )
 
     def _get_ciudadano(self, obj):
@@ -783,8 +799,8 @@ class NominaEspacioPWACreateUpdateSerializer(serializers.Serializer):
     identificador_interno = serializers.CharField(
         required=False, allow_blank=True, allow_null=True
     )
-    asistencia_alimentaria = serializers.BooleanField(required=False, default=False)
-    asistencia_actividades = serializers.BooleanField(required=False, default=False)
+    asistencia_alimentaria = serializers.BooleanField(required=False)
+    asistencia_actividades = serializers.BooleanField(required=False)
     actividad_ids = serializers.ListField(
         child=serializers.IntegerField(min_value=1),
         required=False,
@@ -807,7 +823,7 @@ class NominaEspacioPWACreateUpdateSerializer(serializers.Serializer):
         attrs = super().validate(attrs)
         es_indocumentado = bool(attrs.get("es_indocumentado"))
         if es_indocumentado:
-            for field in ("nombre", "apellido", "fecha_nacimiento", "sexo_id"):
+            for field in ("nombre", "apellido", "sexo_id"):
                 if field not in attrs:
                     raise serializers.ValidationError(
                         {field: "Este campo es obligatorio para indocumentados."}
