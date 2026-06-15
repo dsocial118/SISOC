@@ -1,0 +1,583 @@
+{% extends "includes/main.html" %}
+{% load static %}
+
+{% block title %}Destinatario — {{ nomina.apellido }}, {{ nomina.nombre }}{% endblock %}
+{% block titulo-pagina %}Detalle de destinatario{% endblock %}
+
+{% block content %}
+    <link rel="stylesheet"
+          href="{% static 'custom/css/comedorFormModerno.css' %}" />
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item">
+                    <a href="{% url 'centrodeinfancia_nomina_ver' centro.id %}">{{ centro.nombre }} — Nómina</a>
+                </li>
+                <li class="breadcrumb-item active">{{ nomina.apellido }}, {{ nomina.nombre }}</li>
+            </ol>
+        </nav>
+        <div class="d-flex gap-2">
+            {% if puede_editar %}
+                <a href="{% url 'centrodeinfancia_nomina_editar' centro.id nomina.id %}"
+                   class="btn btn-warning btn-sm">
+                    <i class="fas fa-edit me-1"></i>Editar
+                </a>
+            {% endif %}
+            <a href="{% url 'centrodeinfancia_nomina_ver' centro.id %}"
+               class="btn btn-secondary btn-sm">Volver a la nómina</a>
+        </div>
+    </div>
+
+    {# ── 1. Registro ───────────────────────────────────────── #}
+    <div class="section-card" data-section="registro">
+        <div class="section-header" data-toggle-section="registro">
+            <div class="section-header-left">
+                <div class="section-icon">
+                    <i class="fas fa-clipboard-list"></i>
+                </div>
+                <div class="section-title-group">
+                    <h3 class="section-title">Registro</h3>
+                    <p class="section-subtitle">Tipo de registro, fecha y referente del CDI</p>
+                </div>
+            </div>
+            <div class="section-status">
+                <div class="collapse-indicator">
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+            </div>
+        </div>
+        <div class="section-body collapse show" id="section-registro">
+            <div class="row g-3">
+                {% include "centrodeinfancia/_nomina_campo.html" with label="Estado" value=nomina.get_estado_display %}
+                {% include "centrodeinfancia/_nomina_campo.html" with label="Tipo de registro" value=nomina.get_tipo_registro_display %}
+                {% include "centrodeinfancia/_nomina_campo.html" with label="Fecha de registro" value=nomina.fecha_registro %}
+                {% include "centrodeinfancia/_nomina_campo.html" with label="Trabajador/a que registra" value=nomina.trabajador_registra %}
+                {% include "centrodeinfancia/_nomina_campo.html" with label="CDI" value=centro.nombre %}
+                {% include "centrodeinfancia/_nomina_campo.html" with label="Código CDI" value=centro.codigo_cdi %}
+            </div>
+        </div>
+    </div>
+
+    {# ── 2. Datos del niño/a ───────────────────────────────── #}
+    <div class="section-card" data-section="nino">
+        <div class="section-header" data-toggle-section="nino">
+            <div class="section-header-left">
+                <div class="section-icon">
+                    <i class="fas fa-baby"></i>
+                </div>
+                <div class="section-title-group">
+                    <h3 class="section-title">Datos del niño/a</h3>
+                    <p class="section-subtitle">Identidad, documentación y sala</p>
+                </div>
+            </div>
+            <div class="section-status">
+                <div class="collapse-indicator">
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+            </div>
+        </div>
+        <div class="section-body collapse show" id="section-nino">
+            <div class="row g-3">
+                {% include "centrodeinfancia/_nomina_campo.html" with label="Apellido" value=nomina.apellido %}
+                {% include "centrodeinfancia/_nomina_campo.html" with label="Nombre" value=nomina.nombre %}
+                {% include "centrodeinfancia/_nomina_campo.html" with label="Fecha de nacimiento" value=nomina.fecha_nacimiento %}
+                {% include "centrodeinfancia/_nomina_campo.html" with label="Edad" value=nomina.edad_calculada %}
+                {% include "centrodeinfancia/_nomina_campo.html" with label="Unidad de edad" value=nomina.get_edad_unidad_display %}
+                {% include "centrodeinfancia/_nomina_campo.html" with label="Sexo registral" value=nomina.get_sexo_display %}
+                {% include "centrodeinfancia/_nomina_campo.html" with label="Tipo de documentación" value=nomina.get_tipo_documentacion_display %}
+                {% include "centrodeinfancia/_nomina_campo.html" with label="DNI" value=nomina.dni %}
+                {% include "centrodeinfancia/_nomina_campo.html" with label="CUIT" value=nomina.cuit_nino %}
+                {% include "centrodeinfancia/_nomina_campo.html" with label="País de nacimiento" value=nomina.pais_nacimiento %}
+                {% include "centrodeinfancia/_nomina_campo.html" with label="Nacionalidad" value=nomina.nacionalidad %}
+                {% include "centrodeinfancia/_nomina_campo.html" with label="Sala" value=nomina.sala %}
+            </div>
+        </div>
+    </div>
+
+    {# ── 3. Responsable 1 ──────────────────────────────────── #}
+    <div class="section-card" data-section="responsable1">
+        <div class="section-header" data-toggle-section="responsable1">
+            <div class="section-header-left">
+                <div class="section-icon">
+                    <i class="fas fa-user-shield"></i>
+                </div>
+                <div class="section-title-group">
+                    <h3 class="section-title">Responsable 1</h3>
+                    <p class="section-subtitle">Progenitor/a, tutor/a, curador/a o referente</p>
+                </div>
+            </div>
+            <div class="section-status">
+                <div class="collapse-indicator">
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+            </div>
+        </div>
+        <div class="section-body collapse show" id="section-responsable1">
+            <div class="row g-3">
+                {% include "centrodeinfancia/_nomina_campo.html" with label="Relación" value=nomina.get_responsable_legal_1_relacion_display %}
+                {% include "centrodeinfancia/_nomina_campo.html" with label="Apellido" value=nomina.responsable_legal_1_apellido %}
+                {% include "centrodeinfancia/_nomina_campo.html" with label="Nombre" value=nomina.responsable_legal_1_nombre %}
+                {% include "centrodeinfancia/_nomina_campo.html" with label="Fecha de nacimiento" value=nomina.responsable_legal_1_fecha_nacimiento %}
+                {% include "centrodeinfancia/_nomina_campo.html" with label="Tipo doc." value=nomina.get_responsable_legal_1_tipo_documentacion_display %}
+                {% include "centrodeinfancia/_nomina_campo.html" with label="DNI" value=nomina.responsable_legal_1_dni %}
+                {% include "centrodeinfancia/_nomina_campo.html" with label="CUIT" value=nomina.responsable_legal_1_cuit %}
+                {% include "centrodeinfancia/_nomina_campo.html" with label="Teléfono" value=nomina.responsable_legal_1_telefono %}
+                {% include "centrodeinfancia/_nomina_campo.html" with label="País de nacimiento" value=nomina.responsable_legal_1_pais_nacimiento %}
+                {% include "centrodeinfancia/_nomina_campo.html" with label="Nacionalidad" value=nomina.responsable_legal_1_nacionalidad %}
+                {% include "centrodeinfancia/_nomina_campo.html" with label="Sexo registral" value=nomina.get_responsable_legal_1_sexo_registral_display %}
+                {% include "centrodeinfancia/_nomina_campo.html" with label="Nivel educativo" value=nomina.get_responsable_legal_1_nivel_educativo_display %}
+                {% include "centrodeinfancia/_nomina_campo.html" with label="Consentimiento" value=nomina.get_responsable_legal_1_consentimiento_display %}
+            </div>
+        </div>
+    </div>
+
+    {# ── 4. Responsable 2 ──────────────────────────────────── #}
+    {% if nomina.responsable_legal_2_relacion %}
+        <div class="section-card" data-section="responsable2">
+            <div class="section-header" data-toggle-section="responsable2">
+                <div class="section-header-left">
+                    <div class="section-icon">
+                        <i class="fas fa-user-friends"></i>
+                    </div>
+                    <div class="section-title-group">
+                        <h3 class="section-title">Responsable 2</h3>
+                    </div>
+                </div>
+                <div class="section-status">
+                    <div class="collapse-indicator">
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="section-body collapse show" id="section-responsable2">
+                <div class="row g-3">
+                    {% include "centrodeinfancia/_nomina_campo.html" with label="Relación" value=nomina.get_responsable_legal_2_relacion_display %}
+                    {% include "centrodeinfancia/_nomina_campo.html" with label="Apellido" value=nomina.responsable_legal_2_apellido %}
+                    {% include "centrodeinfancia/_nomina_campo.html" with label="Nombre" value=nomina.responsable_legal_2_nombre %}
+                    {% include "centrodeinfancia/_nomina_campo.html" with label="Fecha de nacimiento" value=nomina.responsable_legal_2_fecha_nacimiento %}
+                    {% include "centrodeinfancia/_nomina_campo.html" with label="Tipo doc." value=nomina.get_responsable_legal_2_tipo_documentacion_display %}
+                    {% include "centrodeinfancia/_nomina_campo.html" with label="DNI" value=nomina.responsable_legal_2_dni %}
+                    {% include "centrodeinfancia/_nomina_campo.html" with label="CUIT" value=nomina.responsable_legal_2_cuit %}
+                    {% include "centrodeinfancia/_nomina_campo.html" with label="Teléfono" value=nomina.responsable_legal_2_telefono %}
+                    {% include "centrodeinfancia/_nomina_campo.html" with label="País de nacimiento" value=nomina.responsable_legal_2_pais_nacimiento %}
+                    {% include "centrodeinfancia/_nomina_campo.html" with label="Nacionalidad" value=nomina.responsable_legal_2_nacionalidad %}
+                    {% include "centrodeinfancia/_nomina_campo.html" with label="Sexo registral" value=nomina.get_responsable_legal_2_sexo_registral_display %}
+                    {% include "centrodeinfancia/_nomina_campo.html" with label="Nivel educativo" value=nomina.get_responsable_legal_2_nivel_educativo_display %}
+                    {% include "centrodeinfancia/_nomina_campo.html" with label="Consentimiento" value=nomina.get_responsable_legal_2_consentimiento_display %}
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
+    {# ── 5. Domicilio ──────────────────────────────────────── #}
+    <div class="section-card" data-section="domicilio">
+        <div class="section-header" data-toggle-section="domicilio">
+            <div class="section-header-left">
+                <div class="section-icon">
+                    <i class="fas fa-home"></i>
+                </div>
+                <div class="section-title-group">
+                    <h3 class="section-title">Domicilio principal</h3>
+                </div>
+            </div>
+            <div class="section-status">
+                <div class="collapse-indicator">
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+            </div>
+        </div>
+        <div class="section-body collapse show" id="section-domicilio">
+            <div class="row g-3">
+                {% include "centrodeinfancia/_nomina_campo.html" with label="Calle" value=nomina.calle_domicilio %}
+                {% include "centrodeinfancia/_nomina_campo.html" with label="Altura" value=nomina.altura_domicilio %}
+                {% include "centrodeinfancia/_nomina_campo.html" with label="Piso" value=nomina.piso_domicilio %}
+                {% include "centrodeinfancia/_nomina_campo.html" with label="Dpto." value=nomina.departamento_domicilio %}
+                {% include "centrodeinfancia/_nomina_campo.html" with label="Tipo de barrio" value=nomina.get_tipo_barrio_display %}
+                {% include "centrodeinfancia/_nomina_campo.html" with label="Jurisdicción" value=nomina.provincia_domicilio %}
+                {% include "centrodeinfancia/_nomina_campo.html" with label="Municipio" value=nomina.municipio_domicilio %}
+                {% include "centrodeinfancia/_nomina_campo.html" with label="Localidad" value=nomina.localidad_domicilio %}
+                {% include "centrodeinfancia/_nomina_campo.html" with label="Convivientes" value=nomina.convivientes %}
+            </div>
+        </div>
+    </div>
+
+    {# ── 6. Cultura e Identidad ────────────────────────────── #}
+    <div class="section-card" data-section="cultura">
+        <div class="section-header" data-toggle-section="cultura">
+            <div class="section-header-left">
+                <div class="section-icon">
+                    <i class="fas fa-globe-americas"></i>
+                </div>
+                <div class="section-title-group">
+                    <h3 class="section-title">Cultura e Identidad</h3>
+                </div>
+            </div>
+            <div class="section-status">
+                <div class="collapse-indicator">
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+            </div>
+        </div>
+        <div class="section-body collapse show" id="section-cultura">
+            <div class="row g-3 mb-3">
+                {% include "centrodeinfancia/_nomina_campo.html" with label="¿Necesita intérprete?" value=nomina.get_necesito_interprete_display %}
+                {% include "centrodeinfancia/_nomina_campo.html" with label="Pueblo originario" value=nomina.pueblo_originario_cual %}
+            </div>
+            {% if nomina.grupo_pertenencia %}
+                <div class="mb-3">
+                    <p class="small mb-2" style="color:#9ca3af;">Grupos de pertenencia</p>
+                    <div class="d-flex flex-wrap gap-2">
+                        {% for g in nomina.grupo_pertenencia_display %}
+                            <span class="badge"
+                                  style="background:rgba(243,156,18,0.15);
+                                         color:#f39c12;
+                                         border:1px solid rgba(243,156,18,0.3);
+                                         font-size:0.8rem;
+                                         padding:5px 10px">{{ g }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endif %}
+            {% if nomina.lenguajes %}
+                <div>
+                    <p class="small mb-2" style="color:#9ca3af;">Lenguajes</p>
+                    <div class="d-flex flex-wrap gap-2">
+                        {% for l in nomina.lenguajes_display %}
+                            <span class="badge"
+                                  style="background:rgba(52,152,219,0.15);
+                                         color:#74b9e7;
+                                         border:1px solid rgba(52,152,219,0.3);
+                                         font-size:0.8rem;
+                                         padding:5px 10px">{{ l }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    {# ── 7. Discapacidad ───────────────────────────────────── #}
+    <div class="section-card" data-section="discapacidad">
+        <div class="section-header" data-toggle-section="discapacidad">
+            <div class="section-header-left">
+                <div class="section-icon">
+                    <i class="fas fa-wheelchair"></i>
+                </div>
+                <div class="section-title-group">
+                    <h3 class="section-title">Discapacidad</h3>
+                </div>
+            </div>
+            <div class="section-status">
+                <div class="collapse-indicator">
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+            </div>
+        </div>
+        <div class="section-body collapse show" id="section-discapacidad">
+            <div class="row g-3 mb-3">
+                {% include "centrodeinfancia/_nomina_campo.html" with label="¿Tiene discapacidad?" value=nomina.get_tiene_discapacidad_display %}
+                {% include "centrodeinfancia/_nomina_campo.html" with label="¿Recibe apoyo?" value=nomina.recibe_apoyo_discapacidad|yesno:"Sí,No,—" %}
+                {% include "centrodeinfancia/_nomina_campo.html" with label="¿Posee CUD?" value=nomina.posee_cud|yesno:"Sí,No,—" %}
+                {% include "centrodeinfancia/_nomina_campo.html" with label="N° CUD" value=nomina.numero_cud %}
+            </div>
+            {% if nomina.tipo_discapacidad %}
+                <div>
+                    <p class="small mb-2" style="color:#9ca3af;">Tipo de discapacidad</p>
+                    <div class="d-flex flex-wrap gap-2">
+                        {% for t in nomina.tipo_discapacidad_display %}
+                            <span class="badge"
+                                  style="background:rgba(231,76,60,0.15);
+                                         color:#e74c3c;
+                                         border:1px solid rgba(231,76,60,0.3);
+                                         font-size:0.8rem;
+                                         padding:5px 10px">{{ t }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    {# ── 8. Salud y Antropometría ──────────────────────────── #}
+    <div class="section-card" data-section="salud">
+        <div class="section-header" data-toggle-section="salud">
+            <div class="section-header-left">
+                <div class="section-icon">
+                    <i class="fas fa-heartbeat"></i>
+                </div>
+                <div class="section-title-group">
+                    <h3 class="section-title">Salud y Antropometría</h3>
+                </div>
+            </div>
+            <div class="section-status">
+                <div class="collapse-indicator">
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+            </div>
+        </div>
+        <div class="section-body collapse show" id="section-salud">
+            <div class="row g-3">
+                {% include "centrodeinfancia/_nomina_campo.html" with label="Cobertura de salud" value=nomina.get_cobertura_salud_display %}
+                {% include "centrodeinfancia/_nomina_campo.html" with label="Controles sanitarios" value=nomina.get_controles_sanitarios_ultimo_anio_display %}
+                {% include "centrodeinfancia/_nomina_campo.html" with label="Cal. vacunación al día" value=nomina.calendario_vacunacion_al_dia|yesno:"Sí,No,—" %}
+                {% include "centrodeinfancia/_nomina_campo.html" with label="Posee obra social" value=nomina.posee_obra_social|yesno:"Sí,No,—" %}
+                {% include "centrodeinfancia/_nomina_campo.html" with label="Talla (cm)" value=nomina.talla %}
+                {% include "centrodeinfancia/_nomina_campo.html" with label="Peso (kg)" value=nomina.peso %}
+                {% include "centrodeinfancia/_nomina_campo.html" with label="Longitud acostado (cm)" value=nomina.longitud_acostado %}
+                {% include "centrodeinfancia/_nomina_campo.html" with label="Perímetro cefálico (cm)" value=nomina.perimetro_cefalico %}
+            </div>
+        </div>
+    </div>
+
+    {# ── 9. Nutrición y ANSES ──────────────────────────────── #}
+    <div class="section-card" data-section="nutricion">
+        <div class="section-header" data-toggle-section="nutricion">
+            <div class="section-header-left">
+                <div class="section-icon">
+                    <i class="fas fa-apple-alt"></i>
+                </div>
+                <div class="section-title-group">
+                    <h3 class="section-title">Nutrición y Asistencia ANSES</h3>
+                </div>
+            </div>
+            <div class="section-status">
+                <div class="collapse-indicator">
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+            </div>
+        </div>
+        <div class="section-body collapse show" id="section-nutricion">
+            <div class="row g-3 mb-3">
+                {% include "centrodeinfancia/_nomina_campo.html" with label="Lactancia" value=nomina.get_lactancia_display %}
+                {% include "centrodeinfancia/_nomina_campo.html" with label="Diagnóstico de peso" value=nomina.get_diagnostico_peso_display %}
+                {% include "centrodeinfancia/_nomina_campo.html" with label="Diagnóstico de talla" value=nomina.get_diagnostico_talla_display %}
+                {% include "centrodeinfancia/_nomina_campo.html" with label="Orientación MSAL" value=nomina.get_orientacion_msal_display %}
+            </div>
+            {% if nomina.alergias_alimentarias %}
+                <div class="mb-3">
+                    <p class="small mb-2" style="color:#9ca3af;">Alergias alimentarias</p>
+                    <div class="d-flex flex-wrap gap-2">
+                        {% for a in nomina.alergias_alimentarias_display %}
+                            <span class="badge"
+                                  style="background:rgba(243,156,18,0.15);
+                                         color:#f39c12;
+                                         border:1px solid rgba(243,156,18,0.3);
+                                         font-size:0.8rem;
+                                         padding:5px 10px">{{ a }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endif %}
+            <hr style="border-color:#374151" />
+            <p class="small mb-2" style="color:#9ca3af;">Asistencia ANSES</p>
+            <div class="row g-3">
+                {% include "centrodeinfancia/_nomina_campo.html" with label="AUH" value=nomina.get_anses_auh_display %}
+                {% include "centrodeinfancia/_nomina_campo.html" with label="AUE" value=nomina.get_anses_aue_display %}
+                {% include "centrodeinfancia/_nomina_campo.html" with label="ACSI" value=nomina.get_anses_acsi_display %}
+                {% include "centrodeinfancia/_nomina_campo.html" with label="ACN" value=nomina.get_anses_acn_display %}
+            </div>
+        </div>
+    </div>
+
+    {# ── 10. Vacunación NOMIVAC ────────────────────────────── #}
+    <div class="section-card" data-section="vacunacion">
+        <div class="section-header" data-toggle-section="vacunacion">
+            <div class="section-header-left">
+                <div class="section-icon">
+                    <i class="fas fa-syringe"></i>
+                </div>
+                <div class="section-title-group">
+                    <h3 class="section-title">Vacunación NOMIVAC y Desarrollo Infantil</h3>
+                </div>
+            </div>
+            <div class="section-status">
+                <div class="collapse-indicator">
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+            </div>
+        </div>
+        <div class="section-body collapse show" id="section-vacunacion">
+            {% if nomina.vacunacion_nomivac %}
+                <div class="table-responsive">
+                    <table class="table table-sm table-dark" style="font-size:0.875rem">
+                        <thead>
+                            <tr>
+                                <th>Vacuna</th>
+                                <th>Dosis recibidas</th>
+                                <th>Fecha de última dosis</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% with vac=nomina.vacunacion_nomivac %}
+                                {% if vac.bcg %}
+                                    <tr>
+                                        <td>BCG</td>
+                                        <td>{{ vac.bcg.dosis|default:"—" }}</td>
+                                        <td>{{ vac.bcg.fecha|default:"—" }}</td>
+                                    </tr>
+                                {% endif %}
+                                {% if vac.neumococo %}
+                                    <tr>
+                                        <td>Neumococo Conjugada</td>
+                                        <td>{{ vac.neumococo.dosis|default:"—" }}</td>
+                                        <td>{{ vac.neumococo.fecha|default:"—" }}</td>
+                                    </tr>
+                                {% endif %}
+                                {% if vac.quintuple %}
+                                    <tr>
+                                        <td>Quíntuple o Pentavalente</td>
+                                        <td>{{ vac.quintuple.dosis|default:"—" }}</td>
+                                        <td>{{ vac.quintuple.fecha|default:"—" }}</td>
+                                    </tr>
+                                {% endif %}
+                                {% if vac.polio %}
+                                    <tr>
+                                        <td>Polio (IPV o SALK)</td>
+                                        <td>{{ vac.polio.dosis|default:"—" }}</td>
+                                        <td>{{ vac.polio.fecha|default:"—" }}</td>
+                                    </tr>
+                                {% endif %}
+                                {% if vac.rotavirus %}
+                                    <tr>
+                                        <td>Rotavirus</td>
+                                        <td>{{ vac.rotavirus.dosis|default:"—" }}</td>
+                                        <td>{{ vac.rotavirus.fecha|default:"—" }}</td>
+                                    </tr>
+                                {% endif %}
+                                {% if vac.meningococo %}
+                                    <tr>
+                                        <td>Meningococo ACYW</td>
+                                        <td>{{ vac.meningococo.dosis|default:"—" }}</td>
+                                        <td>{{ vac.meningococo.fecha|default:"—" }}</td>
+                                    </tr>
+                                {% endif %}
+                                {% if vac.antigripal %}
+                                    <tr>
+                                        <td>Antigripal</td>
+                                        <td>{{ vac.antigripal.dosis|default:"—" }}</td>
+                                        <td>{{ vac.antigripal.fecha|default:"—" }}</td>
+                                    </tr>
+                                {% endif %}
+                                {% if vac.hepatitis_a %}
+                                    <tr>
+                                        <td>Hepatitis A</td>
+                                        <td>{{ vac.hepatitis_a.dosis|default:"—" }}</td>
+                                        <td>{{ vac.hepatitis_a.fecha|default:"—" }}</td>
+                                    </tr>
+                                {% endif %}
+                                {% if vac.triple_viral %}
+                                    <tr>
+                                        <td>Triple Viral</td>
+                                        <td>{{ vac.triple_viral.dosis|default:"—" }}</td>
+                                        <td>{{ vac.triple_viral.fecha|default:"—" }}</td>
+                                    </tr>
+                                {% endif %}
+                                {% if vac.varicela %}
+                                    <tr>
+                                        <td>Varicela</td>
+                                        <td>{{ vac.varicela.dosis|default:"—" }}</td>
+                                        <td>{{ vac.varicela.fecha|default:"—" }}</td>
+                                    </tr>
+                                {% endif %}
+                                {% if vac.triple_bacteriana_celular %}
+                                    <tr>
+                                        <td>Triple Bacteriana Celular</td>
+                                        <td>{{ vac.triple_bacteriana_celular.dosis|default:"—" }}</td>
+                                        <td>{{ vac.triple_bacteriana_celular.fecha|default:"—" }}</td>
+                                    </tr>
+                                {% endif %}
+                                {% if vac.triple_bacteriana_acelular %}
+                                    <tr>
+                                        <td>Triple Bacteriana Acelular</td>
+                                        <td>{{ vac.triple_bacteriana_acelular.dosis|default:"—" }}</td>
+                                        <td>{{ vac.triple_bacteriana_acelular.fecha|default:"—" }}</td>
+                                    </tr>
+                                {% endif %}
+                                {% if vac.sincicial_respiratorio %}
+                                    <tr>
+                                        <td>Virus Sincicial Respiratorio</td>
+                                        <td>{{ vac.sincicial_respiratorio.dosis|default:"—" }}</td>
+                                        <td>{{ vac.sincicial_respiratorio.fecha|default:"—" }}</td>
+                                    </tr>
+                                {% endif %}
+                                {% if vac.fiebre_amarilla %}
+                                    <tr>
+                                        <td>Fiebre Amarilla</td>
+                                        <td>{{ vac.fiebre_amarilla.dosis|default:"—" }}</td>
+                                        <td>{{ vac.fiebre_amarilla.fecha|default:"—" }}</td>
+                                    </tr>
+                                {% endif %}
+                            {% endwith %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p style="color:#9ca3af;" class="mb-0">Sin datos de vacunación cargados.</p>
+            {% endif %}
+            <hr style="border-color:#374151" />
+            <div class="row g-3">
+                {% include "centrodeinfancia/_nomina_campo.html" with label="¿Recibe apoyo al desarrollo?" value=nomina.get_recibe_apoyo_desarrollo_display %}
+            </div>
+        </div>
+    </div>
+
+    {# ── Observaciones ─────────────────────────────────────── #}
+    {% if nomina.observaciones %}
+        <div class="section-card mb-4" data-section="observaciones">
+            <div class="section-header" data-toggle-section="observaciones">
+                <div class="section-header-left">
+                    <div class="section-icon">
+                        <i class="fas fa-comment-alt"></i>
+                    </div>
+                    <div class="section-title-group">
+                        <h3 class="section-title">Observaciones</h3>
+                    </div>
+                </div>
+                <div class="section-status">
+                    <div class="collapse-indicator">
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="section-body collapse show" id="section-observaciones">
+                <p style="color:#e5e7eb;white-space:pre-line">{{ nomina.observaciones }}</p>
+            </div>
+        </div>
+    {% endif %}
+
+{% endblock %}
+
+{% block customJS %}
+    <script nonce="{{ request.csp_nonce }}">
+        document.addEventListener("DOMContentLoaded", function () {
+            document.querySelectorAll(".section-header").forEach(function (header) {
+                header.setAttribute("tabindex", "0");
+                header.setAttribute("role", "button");
+                header.setAttribute("aria-expanded", "true");
+                const sectionId = header.closest(".section-card").dataset.section;
+                const body = document.getElementById("section-" + sectionId);
+                header.addEventListener("click", function () {
+                    if (body) {
+                        $(body).collapse("toggle");
+                        this.classList.toggle("collapsed");
+                    }
+                });
+                header.addEventListener("keydown", function (e) {
+                    if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        this.click();
+                    }
+                });
+                if (body) {
+                    $(body).on("shown.bs.collapse", function () {
+                        header.setAttribute("aria-expanded", "true");
+                    });
+                    $(body).on("hidden.bs.collapse", function () {
+                        header.setAttribute("aria-expanded", "false");
+                    });
+                }
+            });
+        });
+    </script>
+{% endblock %}

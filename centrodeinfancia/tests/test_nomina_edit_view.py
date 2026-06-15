@@ -105,7 +105,7 @@ class TestNominaCentroInfanciaEditView:
         response = client.get(url)
 
         assert response.status_code == 200
-        assert "centrodeinfancia/nomina_form_edit.html" in [
+        assert "centrodeinfancia/destinatario_form.html" in [
             t.name for t in response.templates
         ]
 

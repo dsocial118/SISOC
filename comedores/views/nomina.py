@@ -57,6 +57,22 @@ def _get_cantidad_asistentes_activos(rangos):
     return (rangos or {}).get("cantidad_activos") or 0
 
 
+def _comedores_destino_para_derivar(user, exclude_pk):
+    """Lista de comedores elegibles como destino de derivación.
+
+    Aplica scope territorial del usuario y excluye comedores con admisión
+    obligatoria que no tienen ninguna admisión activa (no podrían recibir).
+    """
+    scoped_qs = ComedorService.get_scoped_comedor_queryset(user)
+    return list(
+        scoped_qs.exclude(pk=exclude_pk)
+        .filter(Q(programa__usa_admision_para_nomina=False) | Q(admision__activa=True))
+        .values("id", "nombre")
+        .distinct()
+        .order_by("nombre")
+    )
+
+
 def _get_nomina_tab_options(active_tab):
     options = (
         ("alimentaria", "Alimentaria"),
@@ -163,6 +179,10 @@ class NominaDetailView(LoginRequiredMixin, TemplateView):
 
         menores = (rangos.get("ninos") or 0) + (rangos.get("adolescentes") or 0)
 
+        comedores_para_derivar = _comedores_destino_para_derivar(
+            self.request.user, admision.comedor_id
+        )
+
         context.update(
             {
                 "nomina": page_obj,
@@ -176,6 +196,7 @@ class NominaDetailView(LoginRequiredMixin, TemplateView):
                 "object": admision.comedor,
                 "admision_pk": admision.pk,
                 "dni_query": dni_query,
+                "comedores_para_derivar": comedores_para_derivar,
                 "estados": Nomina.ESTADO_CHOICES,
                 "mostrar_tabs_nomina": is_pnud,
                 "nomina_tab": nomina_tab,
@@ -441,6 +462,35 @@ def nomina_cambiar_estado(request, pk):
     return JsonResponse({"success": True, "estado": nuevo_estado})
 
 
+@login_required
+def nomina_derivar(request, pk):
+    """Transfiere una persona de nómina activa a otro centro vía AJAX (POST)."""
+    if request.method != "POST":
+        return JsonResponse(
+            {"success": False, "message": "Método no permitido."}, status=405
+        )
+
+    _get_nomina_scoped_or_404(pk, request.user)
+
+    try:
+        comedor_destino_pk = int(request.POST.get("centro_destino_id", ""))
+    except (ValueError, TypeError):
+        return JsonResponse(
+            {"success": False, "message": "Centro destino inválido."}, status=400
+        )
+
+    motivo = (request.POST.get("motivo") or "").strip()
+
+    ok, msg = ComedorService.transferir_ciudadano_entre_centros(
+        nomina_pk=pk,
+        comedor_destino_pk=comedor_destino_pk,
+        usuario=request.user,
+        motivo=motivo,
+    )
+    status_code = 200 if ok else 400
+    return JsonResponse({"success": ok, "message": msg}, status=status_code)
+
+
 class NominaImportarView(LoginRequiredMixin, View):
     """
     Importa la nómina del convenio anterior al convenio actual.
@@ -496,6 +546,10 @@ class NominaDirectaDetailView(LoginRequiredMixin, TemplateView):
 
         menores = (rangos.get("ninos") or 0) + (rangos.get("adolescentes") or 0)
 
+        comedores_para_derivar = _comedores_destino_para_derivar(
+            self.request.user, comedor.pk
+        )
+
         context.update(
             {
                 "nomina": page_obj,
@@ -516,6 +570,7 @@ class NominaDirectaDetailView(LoginRequiredMixin, TemplateView):
                 "nomina_total_label": (
                     _get_nomina_total_label(nomina_tab) if is_pnud else "Asistentes"
                 ),
+                "comedores_para_derivar": comedores_para_derivar,
             }
         )
         return context

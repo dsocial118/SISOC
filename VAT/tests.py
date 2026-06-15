@@ -4248,6 +4248,7 @@ def test_api_vat_cursos_buscar_por_texto_devuelve_info_enriquecida(
     curso = Curso.objects.create(
         centro=centro,
         nombre="Administración Contable Avanzada",
+        tipo=["empleo", "inet"],
         modalidad=modalidad,
         estado="activo",
         inscripcion_libre=True,
@@ -4263,6 +4264,12 @@ def test_api_vat_cursos_buscar_por_texto_devuelve_info_enriquecida(
         activa=True,
     )
     curso.voucher_parametrias.add(voucher_parametria)
+    InstitucionIdentificadorHist.objects.create(
+        centro=centro,
+        tipo_identificador="cue",
+        valor_identificador="060123400",
+        es_actual=True,
+    )
     comision = ComisionCurso.objects.create(
         curso=curso,
         ubicacion=ubicacion,
@@ -4298,8 +4305,10 @@ def test_api_vat_cursos_buscar_por_texto_devuelve_info_enriquecida(
     assert payload["count"] == 1
     result = payload["results"][0]
     assert result["id"] == curso.id
+    assert result["tipo"] == ["empleo", "inet"]
     assert result["inscripcion_libre"] is True
     assert result["centro"]["id"] == centro.id
+    assert result["centro"]["cue"] == "060123400"
     assert result["centro"]["provincia"]["id"] == centro.provincia_id
     assert result["centro"]["provincia"]["nombre"] == centro.provincia.nombre
     assert result["centro"]["ciudad"]["provincia"]["id"] == centro.provincia_id
@@ -4314,6 +4323,39 @@ def test_api_vat_cursos_buscar_por_texto_devuelve_info_enriquecida(
     assert result["comisiones"][0]["cupos_disponibles"] == 12
     assert result["comisiones"][0]["horarios"][0]["id"] == horario.id
     assert result["comisiones"][0]["ubicacion"]["id"] == ubicacion.id
+
+
+@pytest.mark.django_db
+def test_api_vat_cursos_buscar_devuelve_codigo_como_cue_cuando_no_hay_identificador(
+    vat_api_client, vat_curso_base
+):
+    centro, ubicacion, modalidad = vat_curso_base
+    curso = Curso.objects.create(
+        centro=centro,
+        nombre="Curso Sin Identificador CUE",
+        modalidad=modalidad,
+        estado="activo",
+    )
+    ComisionCurso.objects.create(
+        curso=curso,
+        ubicacion=ubicacion,
+        codigo_comision="SIN-CUE-01",
+        nombre="Comisión Sin CUE",
+        cupo_total=10,
+        fecha_inicio=date(2026, 4, 15),
+        fecha_fin=date(2026, 5, 15),
+        estado="activa",
+    )
+
+    response = vat_api_client.get("/api/vat/cursos/buscar/?q=identificador")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["count"] == 1
+    result = payload["results"][0]
+    assert result["centro"]["id"] == centro.id
+    assert result["centro"]["codigo"] == centro.codigo
+    assert result["centro"]["cue"] == centro.codigo
 
 
 @pytest.mark.django_db
