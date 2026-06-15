@@ -458,9 +458,8 @@ class ComedorDetailViewSet(
             ),
             None,
         )
-        selected_period = (
-            pending_period
-            or (periodos_disponibles[0]["periodo"] if periodos_disponibles else None)
+        selected_period = pending_period or (
+            periodos_disponibles[0]["periodo"] if periodos_disponibles else None
         )
         conformidad_actual = next(
             (item for item in conformidades_list if item.periodo == selected_period),

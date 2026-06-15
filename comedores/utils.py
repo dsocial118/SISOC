@@ -38,9 +38,7 @@ def is_abordaje_comunitario_linea_secos_program(comedor) -> bool:
         getattr(getattr(comedor, "programa", None), "nombre", "") or ""
     )
     normalized = unicodedata.normalize("NFD", programa_nombre)
-    normalized = "".join(
-        char for char in normalized if not unicodedata.combining(char)
-    )
+    normalized = "".join(char for char in normalized if not unicodedata.combining(char))
     normalized = " ".join(normalized.lower().split())
     return "abordaje comunitario" in normalized and "linea secos" in normalized
 
@@ -74,9 +72,11 @@ def get_prestacion_conformidad_convenio_bounds(comedor):
     if latest.convenio:
         queryset = queryset.filter(convenio=latest.convenio)
 
-    start = queryset.order_by("periodo_inicio", "id").values_list(
-        "periodo_inicio", flat=True
-    ).first()
+    start = (
+        queryset.order_by("periodo_inicio", "id")
+        .values_list("periodo_inicio", flat=True)
+        .first()
+    )
     if not start:
         return None
 

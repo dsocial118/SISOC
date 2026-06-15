@@ -341,9 +341,7 @@ class NominaCreateView(LoginRequiredMixin, CreateView):
                 "estados": Nomina.ESTADO_CHOICES,
                 "renaper_precarga": renaper_precarga,
                 "mostrar_asistencia_pnud": is_pnud_comedor(admision.comedor),
-                "actividades_pnud": _get_actividades_pnud_for_context(
-                    admision.comedor
-                ),
+                "actividades_pnud": _get_actividades_pnud_for_context(admision.comedor),
             }
         )
         return context
@@ -454,10 +452,14 @@ class NominaCreateView(LoginRequiredMixin, CreateView):
                 )
 
                 if ok:
-                    ciudadano = Ciudadano.objects.filter(
-                        documento=ciudadano_data.get("documento"),
-                        tipo_documento=ciudadano_data.get("tipo_documento"),
-                    ).order_by("-id").first()
+                    ciudadano = (
+                        Ciudadano.objects.filter(
+                            documento=ciudadano_data.get("documento"),
+                            tipo_documento=ciudadano_data.get("tipo_documento"),
+                        )
+                        .order_by("-id")
+                        .first()
+                    )
                     nomina = (
                         _get_nomina_creada(
                             ciudadano_id=ciudadano.id,
@@ -790,10 +792,14 @@ class NominaDirectaCreateView(LoginRequiredMixin, CreateView):
                     comedor_id=comedor_id,
                 )
                 if ok:
-                    ciudadano = Ciudadano.objects.filter(
-                        documento=ciudadano_data.get("documento"),
-                        tipo_documento=ciudadano_data.get("tipo_documento"),
-                    ).order_by("-id").first()
+                    ciudadano = (
+                        Ciudadano.objects.filter(
+                            documento=ciudadano_data.get("documento"),
+                            tipo_documento=ciudadano_data.get("tipo_documento"),
+                        )
+                        .order_by("-id")
+                        .first()
+                    )
                     nomina = (
                         _get_nomina_creada(
                             ciudadano_id=ciudadano.id,

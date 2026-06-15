@@ -20,8 +20,7 @@
                    class="btn btn-md btn-outline-light"><i class="bi bi-file-earmark-text me-1"></i>Cargar datos del Convenio</a>
             {% endif %}
             {% if es_programa_pnud %}
-                <a href="#legajo-actividades-pnud"
-                   class="btn btn-md btn-outline-light"><i class="bi bi-person-walking me-1"></i>Actividades</a>
+                <a href="#legajo-actividades-pnud" class="btn btn-md btn-outline-light"><i class="bi bi-person-walking me-1"></i>Actividades</a>
             {% else %}
                 <a href="{% url 'relevamientos' comedor.id %}"
                    class="btn btn-md btn-outline-light"><i class="bi bi-clipboard-check me-1"></i>Relevamientos</a>
@@ -771,13 +770,27 @@
                                                     <details>
                                                         <summary class="btn btn-sm btn-outline-light py-0">Ver detalles</summary>
                                                         <div class="mt-2 small">
-                                                            <div>Hora inicio: <strong>{{ actividad.hora_inicio|time:"H:i"|default:"-" }}</strong></div>
-                                                            <div>Hora fin: <strong>{{ actividad.hora_fin|time:"H:i"|default:"-" }}</strong></div>
-                                                            <div>Fecha alta: <strong>{{ actividad.fecha_alta|date:"d/m/Y H:i"|default:"-" }}</strong></div>
-                                                            <div>Ultima actualizacion: <strong>{{ actividad.fecha_actualizacion|date:"d/m/Y H:i"|default:"-" }}</strong></div>
-                                                            <div>Fecha baja: <strong>{{ actividad.fecha_baja|date:"d/m/Y H:i"|default:"-" }}</strong></div>
-                                                            <div>Creado por: <strong>{{ actividad.creado_por|default:"-" }}</strong></div>
-                                                            <div>Actualizado por: <strong>{{ actividad.actualizado_por|default:"-" }}</strong></div>
+                                                            <div>
+                                                                Hora inicio: <strong>{{ actividad.hora_inicio|time:"H:i"|default:"-" }}</strong>
+                                                            </div>
+                                                            <div>
+                                                                Hora fin: <strong>{{ actividad.hora_fin|time:"H:i"|default:"-" }}</strong>
+                                                            </div>
+                                                            <div>
+                                                                Fecha alta: <strong>{{ actividad.fecha_alta|date:"d/m/Y H:i"|default:"-" }}</strong>
+                                                            </div>
+                                                            <div>
+                                                                Ultima actualizacion: <strong>{{ actividad.fecha_actualizacion|date:"d/m/Y H:i"|default:"-" }}</strong>
+                                                            </div>
+                                                            <div>
+                                                                Fecha baja: <strong>{{ actividad.fecha_baja|date:"d/m/Y H:i"|default:"-" }}</strong>
+                                                            </div>
+                                                            <div>
+                                                                Creado por: <strong>{{ actividad.creado_por|default:"-" }}</strong>
+                                                            </div>
+                                                            <div>
+                                                                Actualizado por: <strong>{{ actividad.actualizado_por|default:"-" }}</strong>
+                                                            </div>
                                                         </div>
                                                     </details>
                                                 </td>
@@ -791,177 +804,177 @@
                         {% endif %}
                     {% else %}
                         {% with relevamiento=relevamientos.0 %}
-                        <div class="row mb-4">
-                            <div class="col-12 col-lg-4 mb-4 mb-lg-0">
-                                <h4 class="mb-3 fw-bold">Donaciones</h4>
-                                <ul class="list-unstyled mb-0">
-                                    <li class="mb-1">
-                                        {% if relevamiento and relevamiento.recursos and relevamiento.recursos.recibe_donaciones_particulares %}
-                                            <i class="bi bi-check-circle-fill text-white me-2"></i>
-                                        {% else %}
-                                            <i class="bi bi-circle text-white me-2"></i>
-                                        {% endif %}
-                                        Particulares
-                                    </li>
-                                    <li class="mb-1">
-                                        {% if relevamiento and relevamiento.recursos and relevamiento.recursos.recibe_estado_nacional %}
-                                            <i class="bi bi-check-circle-fill text-white me-2"></i>
-                                        {% else %}
-                                            <i class="bi bi-circle text-white me-2"></i>
-                                        {% endif %}
-                                        Estado nacional
-                                    </li>
-                                    <li class="mb-1">
-                                        {% if relevamiento and relevamiento.recursos and relevamiento.recursos.recibe_estado_provincial %}
-                                            <i class="bi bi-check-circle-fill text-white me-2"></i>
-                                        {% else %}
-                                            <i class="bi bi-circle text-white me-2"></i>
-                                        {% endif %}
-                                        Estado provincial
-                                    </li>
-                                    <li class="mb-1">
-                                        {% if relevamiento and relevamiento.recursos and relevamiento.recursos.recibe_estado_municipal %}
-                                            <i class="bi bi-check-circle-fill text-white me-2"></i>
-                                        {% else %}
-                                            <i class="bi bi-circle text-white me-2"></i>
-                                        {% endif %}
-                                        Estado municipal
-                                    </li>
-                                    <li class="mb-1">
-                                        {% if relevamiento and relevamiento.recursos and relevamiento.recursos.recibe_otros %}
-                                            <i class="bi bi-check-circle-fill text-white me-2"></i>
-                                        {% else %}
-                                            <i class="bi bi-circle text-white me-2"></i>
-                                        {% endif %}
-                                        Otros
-                                    </li>
-                                </ul>
+                            <div class="row mb-4">
+                                <div class="col-12 col-lg-4 mb-4 mb-lg-0">
+                                    <h4 class="mb-3 fw-bold">Donaciones</h4>
+                                    <ul class="list-unstyled mb-0">
+                                        <li class="mb-1">
+                                            {% if relevamiento and relevamiento.recursos and relevamiento.recursos.recibe_donaciones_particulares %}
+                                                <i class="bi bi-check-circle-fill text-white me-2"></i>
+                                            {% else %}
+                                                <i class="bi bi-circle text-white me-2"></i>
+                                            {% endif %}
+                                            Particulares
+                                        </li>
+                                        <li class="mb-1">
+                                            {% if relevamiento and relevamiento.recursos and relevamiento.recursos.recibe_estado_nacional %}
+                                                <i class="bi bi-check-circle-fill text-white me-2"></i>
+                                            {% else %}
+                                                <i class="bi bi-circle text-white me-2"></i>
+                                            {% endif %}
+                                            Estado nacional
+                                        </li>
+                                        <li class="mb-1">
+                                            {% if relevamiento and relevamiento.recursos and relevamiento.recursos.recibe_estado_provincial %}
+                                                <i class="bi bi-check-circle-fill text-white me-2"></i>
+                                            {% else %}
+                                                <i class="bi bi-circle text-white me-2"></i>
+                                            {% endif %}
+                                            Estado provincial
+                                        </li>
+                                        <li class="mb-1">
+                                            {% if relevamiento and relevamiento.recursos and relevamiento.recursos.recibe_estado_municipal %}
+                                                <i class="bi bi-check-circle-fill text-white me-2"></i>
+                                            {% else %}
+                                                <i class="bi bi-circle text-white me-2"></i>
+                                            {% endif %}
+                                            Estado municipal
+                                        </li>
+                                        <li class="mb-1">
+                                            {% if relevamiento and relevamiento.recursos and relevamiento.recursos.recibe_otros %}
+                                                <i class="bi bi-check-circle-fill text-white me-2"></i>
+                                            {% else %}
+                                                <i class="bi bi-circle text-white me-2"></i>
+                                            {% endif %}
+                                            Otros
+                                        </li>
+                                    </ul>
+                                </div>
+                                <div class="col-12 col-lg-4 mb-4 mb-lg-0">
+                                    <h4 class="mb-3 fw-bold">Tipo de servicio</h4>
+                                    <ul class="list-unstyled mb-0">
+                                        <li class="mb-1">
+                                            {% if relevamiento and relevamiento.funcionamiento and relevamiento.funcionamiento.modalidad_prestacion and relevamiento.funcionamiento.modalidad_prestacion.nombre == "Servicio en el lugar" %}
+                                                <i class="bi bi-check-circle-fill text-white me-2"></i>
+                                            {% else %}
+                                                <i class="bi bi-circle text-white me-2"></i>
+                                            {% endif %}
+                                            Servicio en el lugar
+                                        </li>
+                                        <li class="mb-1">
+                                            {% if relevamiento and relevamiento.funcionamiento and relevamiento.funcionamiento.modalidad_prestacion and relevamiento.funcionamiento.modalidad_prestacion.nombre == "Vianda" %}
+                                                <i class="bi bi-check-circle-fill text-white me-2"></i>
+                                            {% else %}
+                                                <i class="bi bi-circle text-white me-2"></i>
+                                            {% endif %}
+                                            Vianda
+                                        </li>
+                                        <li class="mb-1">
+                                            {% if relevamiento and relevamiento.funcionamiento and relevamiento.funcionamiento.modalidad_prestacion and relevamiento.funcionamiento.modalidad_prestacion.nombre == "Vianda y servicio" %}
+                                                <i class="bi bi-check-circle-fill text-white me-2"></i>
+                                            {% else %}
+                                                <i class="bi bi-circle text-white me-2"></i>
+                                            {% endif %}
+                                            Vianda y servicio
+                                        </li>
+                                    </ul>
+                                </div>
+                                <div class="col-12 col-lg-4">
+                                    <h4 class="mb-3 fw-bold">Tipo de espacio</h4>
+                                    <ul class="list-unstyled mb-0">
+                                        <li class="mb-1">
+                                            {% if relevamiento and relevamiento.espacio and relevamiento.espacio.tipo_espacio_fisico and relevamiento.espacio.tipo_espacio_fisico.nombre == "Propio" %}
+                                                <i class="bi bi-check-circle-fill text-white me-2"></i>
+                                            {% else %}
+                                                <i class="bi bi-circle text-white me-2"></i>
+                                            {% endif %}
+                                            Propio
+                                        </li>
+                                        <li class="mb-1">
+                                            {% if relevamiento and relevamiento.espacio and relevamiento.espacio.tipo_espacio_fisico and relevamiento.espacio.tipo_espacio_fisico.nombre == "Alquilado" %}
+                                                <i class="bi bi-check-circle-fill text-white me-2"></i>
+                                            {% else %}
+                                                <i class="bi bi-circle text-white me-2"></i>
+                                            {% endif %}
+                                            Alquilado
+                                        </li>
+                                        <li class="mb-1">
+                                            {% if relevamiento and relevamiento.espacio and relevamiento.espacio.tipo_espacio_fisico and relevamiento.espacio.tipo_espacio_fisico.nombre == "Prestado (uso exclusivo)" %}
+                                                <i class="bi bi-check-circle-fill text-white me-2"></i>
+                                            {% else %}
+                                                <i class="bi bi-circle text-white me-2"></i>
+                                            {% endif %}
+                                            Prestado (uso exclusivo)
+                                        </li>
+                                        <li class="mb-1">
+                                            {% if relevamiento and relevamiento.espacio and relevamiento.espacio.tipo_espacio_fisico and relevamiento.espacio.tipo_espacio_fisico.nombre == "Comunitario (compartido)" %}
+                                                <i class="bi bi-check-circle-fill text-white me-2"></i>
+                                            {% else %}
+                                                <i class="bi bi-circle text-white me-2"></i>
+                                            {% endif %}
+                                            Comunitario (compartido)
+                                        </li>
+                                        <li class="mb-1">
+                                            {% if relevamiento and relevamiento.espacio and relevamiento.espacio.tipo_espacio_fisico and relevamiento.espacio.tipo_espacio_fisico.nombre == "Casa de familia" %}
+                                                <i class="bi bi-check-circle-fill text-white me-2"></i>
+                                            {% else %}
+                                                <i class="bi bi-circle text-white me-2"></i>
+                                            {% endif %}
+                                            Casa de familia
+                                        </li>
+                                        <li class="mb-1">
+                                            {% if relevamiento and relevamiento.espacio and relevamiento.espacio.tipo_espacio_fisico and relevamiento.espacio.tipo_espacio_fisico.nombre == "Otro" %}
+                                                <i class="bi bi-check-circle-fill text-white me-2"></i>
+                                            {% else %}
+                                                <i class="bi bi-circle text-white me-2"></i>
+                                            {% endif %}
+                                            Otro
+                                        </li>
+                                    </ul>
+                                </div>
                             </div>
-                            <div class="col-12 col-lg-4 mb-4 mb-lg-0">
-                                <h4 class="mb-3 fw-bold">Tipo de servicio</h4>
-                                <ul class="list-unstyled mb-0">
-                                    <li class="mb-1">
-                                        {% if relevamiento and relevamiento.funcionamiento and relevamiento.funcionamiento.modalidad_prestacion and relevamiento.funcionamiento.modalidad_prestacion.nombre == "Servicio en el lugar" %}
-                                            <i class="bi bi-check-circle-fill text-white me-2"></i>
-                                        {% else %}
-                                            <i class="bi bi-circle text-white me-2"></i>
-                                        {% endif %}
-                                        Servicio en el lugar
-                                    </li>
-                                    <li class="mb-1">
-                                        {% if relevamiento and relevamiento.funcionamiento and relevamiento.funcionamiento.modalidad_prestacion and relevamiento.funcionamiento.modalidad_prestacion.nombre == "Vianda" %}
-                                            <i class="bi bi-check-circle-fill text-white me-2"></i>
-                                        {% else %}
-                                            <i class="bi bi-circle text-white me-2"></i>
-                                        {% endif %}
-                                        Vianda
-                                    </li>
-                                    <li class="mb-1">
-                                        {% if relevamiento and relevamiento.funcionamiento and relevamiento.funcionamiento.modalidad_prestacion and relevamiento.funcionamiento.modalidad_prestacion.nombre == "Vianda y servicio" %}
-                                            <i class="bi bi-check-circle-fill text-white me-2"></i>
-                                        {% else %}
-                                            <i class="bi bi-circle text-white me-2"></i>
-                                        {% endif %}
-                                        Vianda y servicio
-                                    </li>
-                                </ul>
+                            <div class="row">
+                                <div class="col-12 d-flex flex-wrap gap-2">
+                                    {% if relevamiento and relevamiento.anexo %}
+                                        {% with anexo=relevamiento.anexo %}
+                                            {% if anexo.apoyo_escolar or anexo.promocion_salud or anexo.actividades_recreativas or anexo.actividades_religiosas or anexo.actividades_jardin_maternal or anexo.alfabetizacion_terminalidad or anexo.actividades_huerta or anexo.actividades_culturales %}
+                                                {% if anexo.apoyo_escolar %}
+                                                    <span class="badge rounded-pill border border-light text-light fw-normal px-2 py-1">Apoyo escolar</span>
+                                                {% endif %}
+                                                {% if anexo.promocion_salud %}
+                                                    <span class="badge rounded-pill border border-light text-light fw-normal px-2 py-1">Promocion de la salud</span>
+                                                {% endif %}
+                                                {% if anexo.actividades_recreativas %}
+                                                    <span class="badge rounded-pill border border-light text-light fw-normal px-2 py-1">Recreacion</span>
+                                                {% endif %}
+                                                {% if anexo.actividades_recreativas %}
+                                                    <span class="badge rounded-pill border border-light text-light fw-normal px-2 py-1">Deportes</span>
+                                                {% endif %}
+                                                {% if anexo.actividades_religiosas %}
+                                                    <span class="badge rounded-pill border border-light text-light fw-normal px-2 py-1">Actividades religiosas</span>
+                                                {% endif %}
+                                                {% if anexo.actividades_jardin_maternal %}
+                                                    <span class="badge rounded-pill border border-light text-light fw-normal px-2 py-1">Jardin Maternal</span>
+                                                {% endif %}
+                                                {% if anexo.alfabetizacion_terminalidad %}
+                                                    <span class="badge rounded-pill border border-light text-light fw-normal px-2 py-1">Terminalidad educativa</span>
+                                                {% endif %}
+                                                {% if anexo.actividades_huerta %}
+                                                    <span class="badge rounded-pill border border-light text-light fw-normal px-2 py-1">Huerta</span>
+                                                {% endif %}
+                                                {% if anexo.actividades_culturales %}
+                                                    <span class="badge rounded-pill border border-light text-light fw-normal px-2 py-1">Actividades culturales</span>
+                                                {% endif %}
+                                            {% else %}
+                                                <span class="text-white">-</span>
+                                            {% endif %}
+                                        {% endwith %}
+                                    {% else %}
+                                        <span class="text-white">-</span>
+                                    {% endif %}
+                                </div>
                             </div>
-                            <div class="col-12 col-lg-4">
-                                <h4 class="mb-3 fw-bold">Tipo de espacio</h4>
-                                <ul class="list-unstyled mb-0">
-                                    <li class="mb-1">
-                                        {% if relevamiento and relevamiento.espacio and relevamiento.espacio.tipo_espacio_fisico and relevamiento.espacio.tipo_espacio_fisico.nombre == "Propio" %}
-                                            <i class="bi bi-check-circle-fill text-white me-2"></i>
-                                        {% else %}
-                                            <i class="bi bi-circle text-white me-2"></i>
-                                        {% endif %}
-                                        Propio
-                                    </li>
-                                    <li class="mb-1">
-                                        {% if relevamiento and relevamiento.espacio and relevamiento.espacio.tipo_espacio_fisico and relevamiento.espacio.tipo_espacio_fisico.nombre == "Alquilado" %}
-                                            <i class="bi bi-check-circle-fill text-white me-2"></i>
-                                        {% else %}
-                                            <i class="bi bi-circle text-white me-2"></i>
-                                        {% endif %}
-                                        Alquilado
-                                    </li>
-                                    <li class="mb-1">
-                                        {% if relevamiento and relevamiento.espacio and relevamiento.espacio.tipo_espacio_fisico and relevamiento.espacio.tipo_espacio_fisico.nombre == "Prestado (uso exclusivo)" %}
-                                            <i class="bi bi-check-circle-fill text-white me-2"></i>
-                                        {% else %}
-                                            <i class="bi bi-circle text-white me-2"></i>
-                                        {% endif %}
-                                        Prestado (uso exclusivo)
-                                    </li>
-                                    <li class="mb-1">
-                                        {% if relevamiento and relevamiento.espacio and relevamiento.espacio.tipo_espacio_fisico and relevamiento.espacio.tipo_espacio_fisico.nombre == "Comunitario (compartido)" %}
-                                            <i class="bi bi-check-circle-fill text-white me-2"></i>
-                                        {% else %}
-                                            <i class="bi bi-circle text-white me-2"></i>
-                                        {% endif %}
-                                        Comunitario (compartido)
-                                    </li>
-                                    <li class="mb-1">
-                                        {% if relevamiento and relevamiento.espacio and relevamiento.espacio.tipo_espacio_fisico and relevamiento.espacio.tipo_espacio_fisico.nombre == "Casa de familia" %}
-                                            <i class="bi bi-check-circle-fill text-white me-2"></i>
-                                        {% else %}
-                                            <i class="bi bi-circle text-white me-2"></i>
-                                        {% endif %}
-                                        Casa de familia
-                                    </li>
-                                    <li class="mb-1">
-                                        {% if relevamiento and relevamiento.espacio and relevamiento.espacio.tipo_espacio_fisico and relevamiento.espacio.tipo_espacio_fisico.nombre == "Otro" %}
-                                            <i class="bi bi-check-circle-fill text-white me-2"></i>
-                                        {% else %}
-                                            <i class="bi bi-circle text-white me-2"></i>
-                                        {% endif %}
-                                        Otro
-                                    </li>
-                                </ul>
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-12 d-flex flex-wrap gap-2">
-                                {% if relevamiento and relevamiento.anexo %}
-                                    {% with anexo=relevamiento.anexo %}
-                                        {% if anexo.apoyo_escolar or anexo.promocion_salud or anexo.actividades_recreativas or anexo.actividades_religiosas or anexo.actividades_jardin_maternal or anexo.alfabetizacion_terminalidad or anexo.actividades_huerta or anexo.actividades_culturales %}
-                                            {% if anexo.apoyo_escolar %}
-                                                <span class="badge rounded-pill border border-light text-light fw-normal px-2 py-1">Apoyo escolar</span>
-                                            {% endif %}
-                                            {% if anexo.promocion_salud %}
-                                                <span class="badge rounded-pill border border-light text-light fw-normal px-2 py-1">Promocion de la salud</span>
-                                            {% endif %}
-                                            {% if anexo.actividades_recreativas %}
-                                                <span class="badge rounded-pill border border-light text-light fw-normal px-2 py-1">Recreacion</span>
-                                            {% endif %}
-                                            {% if anexo.actividades_recreativas %}
-                                                <span class="badge rounded-pill border border-light text-light fw-normal px-2 py-1">Deportes</span>
-                                            {% endif %}
-                                            {% if anexo.actividades_religiosas %}
-                                                <span class="badge rounded-pill border border-light text-light fw-normal px-2 py-1">Actividades religiosas</span>
-                                            {% endif %}
-                                            {% if anexo.actividades_jardin_maternal %}
-                                                <span class="badge rounded-pill border border-light text-light fw-normal px-2 py-1">Jardin Maternal</span>
-                                            {% endif %}
-                                            {% if anexo.alfabetizacion_terminalidad %}
-                                                <span class="badge rounded-pill border border-light text-light fw-normal px-2 py-1">Terminalidad educativa</span>
-                                            {% endif %}
-                                            {% if anexo.actividades_huerta %}
-                                                <span class="badge rounded-pill border border-light text-light fw-normal px-2 py-1">Huerta</span>
-                                            {% endif %}
-                                            {% if anexo.actividades_culturales %}
-                                                <span class="badge rounded-pill border border-light text-light fw-normal px-2 py-1">Actividades culturales</span>
-                                            {% endif %}
-                                        {% else %}
-                                            <span class="text-white">-</span>
-                                        {% endif %}
-                                    {% endwith %}
-                                {% else %}
-                                    <span class="text-white">-</span>
-                                {% endif %}
-                            </div>
-                        </div>
-                    {% endwith %}
+                        {% endwith %}
                     {% endif %}
                 </div>
             </div>
