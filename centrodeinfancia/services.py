@@ -60,7 +60,7 @@ _CAMPOS_COPIABLES = [
 
 class CentroDeInfanciaService:
     @staticmethod
-    def transferir_ciudadano_entre_centros(
+    def transferir_ciudadano_entre_centros(  # pylint: disable=too-many-return-statements
         nomina_pk, centro_destino_pk, usuario, motivo=""
     ):
         nomina_origen = NominaCentroInfancia.objects.select_related(
