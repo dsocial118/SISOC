@@ -24,22 +24,26 @@ def is_pnud_comedor(comedor) -> bool:
     return comedor.programa_id in _PNUD_PROGRAMA_IDS or "pnud" in normalized
 
 
+def _normalize_programa(nombre: str) -> str:
+    """Remueve acentos y normaliza espacios/mayúsculas en un nombre de programa."""
+    sin_acentos = unicodedata.normalize("NFD", nombre)
+    sin_acentos = "".join(c for c in sin_acentos if not unicodedata.combining(c))
+    return " ".join(sin_acentos.lower().split())
+
+
+def _get_programa_nombre_normalizado(comedor) -> str:
+    nombre = str(getattr(getattr(comedor, "programa", None), "nombre", "") or "")
+    return _normalize_programa(nombre)
+
+
 def is_prestacion_alimentaria_conformidad_program(comedor) -> bool:
     """Programas que gestionan conformidad mensual de prestaciones en mobile."""
-    programa_nombre = str(
-        getattr(getattr(comedor, "programa", None), "nombre", "") or ""
-    )
-    normalized = " ".join(programa_nombre.lower().split())
+    normalized = _get_programa_nombre_normalizado(comedor)
     return normalized == "alimentar comunidad" or "abordaje comunitario" in normalized
 
 
 def is_abordaje_comunitario_linea_secos_program(comedor) -> bool:
-    programa_nombre = str(
-        getattr(getattr(comedor, "programa", None), "nombre", "") or ""
-    )
-    normalized = unicodedata.normalize("NFD", programa_nombre)
-    normalized = "".join(char for char in normalized if not unicodedata.combining(char))
-    normalized = " ".join(normalized.lower().split())
+    normalized = _get_programa_nombre_normalizado(comedor)
     return "abordaje comunitario" in normalized and "linea secos" in normalized
 
 

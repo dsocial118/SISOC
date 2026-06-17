@@ -19,7 +19,8 @@ from comedores.models import Nomina
 from comedores.services.comedor_service import ComedorService, normalize_nomina_tab
 from comedores.utils import comedor_usa_admision_para_nomina, is_pnud_comedor
 from core.soft_delete.view_helpers import SoftDeleteDeleteViewMixin
-from pwa.models import RegistroAsistenciaNominaPWA
+from pwa.models import ActividadEspacioPWA, RegistroAsistenciaNominaPWA
+from pwa.services.nomina_service import sync_nomina_asistencia_actividades_web
 from pwa.utils import parse_periodo_referencia
 
 
@@ -105,8 +106,6 @@ def _get_nomina_creada(*, ciudadano_id, admision_id=None, comedor_id=None):
 def _sync_pnud_nomina_web(*, form_nomina_extra, nomina, comedor, user):
     if not (nomina and is_pnud_comedor(comedor)):
         return
-    from pwa.services.nomina_service import sync_nomina_asistencia_actividades_web
-
     sync_nomina_asistencia_actividades_web(
         nomina=nomina,
         comedor_id=comedor.id,
@@ -125,9 +124,12 @@ def _sync_pnud_nomina_web(*, form_nomina_extra, nomina, comedor, user):
 
 
 def _get_actividades_pnud_for_context(comedor):
-    form = NominaExtraForm(comedor=comedor)
-    field = form.fields.get("actividad_ids")
-    return field.queryset if field else []
+    if not is_pnud_comedor(comedor):
+        return ActividadEspacioPWA.objects.none()
+    return (
+        ActividadEspacioPWA.objects.filter(comedor=comedor, activo=True)
+        .select_related("catalogo_actividad", "dia_actividad")
+    )
 
 
 def _get_asistencia_nomina_context(request, *, admision_id=None, comedor_id=None):
