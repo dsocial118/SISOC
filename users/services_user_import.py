@@ -262,8 +262,6 @@ def process_single_user_import_row(*, row_data: dict, job: UserImportJob) -> dic
     nombre = row_data.get("nombre", "").strip()
     apellido = row_data.get("apellido", "").strip()
     email_raw = row_data.get("correo", "").strip()
-    permisos_raw = row_data.get("permisos", "").strip()
-    provincias_raw = row_data.get("provincias", "").strip()
     rol = row_data.get("rol", "").strip()
 
     if not email_raw:
@@ -283,14 +281,12 @@ def process_single_user_import_row(*, row_data: dict, job: UserImportJob) -> dic
             "mensaje": f"Ya existe un usuario con el correo {email}.",
         }
 
-    grupos = _resolver_grupos(permisos_raw)
-    provincias_objs = _resolver_provincias(provincias_raw)
-
-    username = _generar_username_unico(_slug_base_desde_email(email))
+    grupos = _resolver_grupos(row_data.get("permisos", "").strip())
+    provincias_objs = _resolver_provincias(row_data.get("provincias", "").strip())
 
     with transaction.atomic():
         user = User(
-            username=username,
+            username=_generar_username_unico(_slug_base_desde_email(email)),
             email=email,
             first_name=nombre,
             last_name=apellido,
