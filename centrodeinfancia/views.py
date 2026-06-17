@@ -1191,6 +1191,7 @@ class NominaCentroInfanciaEditView(LoginRequiredMixin, UpdateView):
         centro = self._get_centro()
         context["centro"] = centro
         context["is_edit"] = True
+        context["selected_ciudadano"] = self.object.ciudadano if self.object else None
         return context
 
     def get_success_url(self):
@@ -1211,7 +1212,7 @@ class NominaCentroInfanciaCreateView(LoginRequiredMixin, CreateView):
         return self._centro_cache
 
     @staticmethod
-    def _crear_nomina_con_bloqueo(centro, ciudadano, form):
+    def _crear_nomina_con_bloqueo(centro, ciudadano, cleaned_data):
         CentroDeInfancia.objects.select_for_update().filter(pk=centro.pk).exists()
         existente = NominaCentroInfancia.objects.filter(
             centro=centro,
@@ -1221,9 +1222,9 @@ class NominaCentroInfanciaCreateView(LoginRequiredMixin, CreateView):
         if existente:
             return False
 
-        nomina = form.save(commit=False)
-        nomina.centro = centro
-        nomina.ciudadano = ciudadano
+        nomina = NominaCentroInfancia(centro=centro, ciudadano=ciudadano)
+        for field, value in cleaned_data.items():
+            setattr(nomina, field, value)
         nomina.clean()
         nomina.save()
         return True
@@ -1467,7 +1468,7 @@ class NominaCentroInfanciaCreateView(LoginRequiredMixin, CreateView):
                 creado = self._crear_nomina_con_bloqueo(
                     centro=centro,
                     ciudadano=ciudadano,
-                    form=form,
+                    cleaned_data=form.cleaned_data,
                 )
         except Exception:  # noqa: BLE001
             logger.exception(
