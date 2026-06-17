@@ -324,7 +324,7 @@ def process_single_user_import_row(*, row_data: dict, job: UserImportJob) -> dic
 
     return {
         "status": UserImportJobRow.Status.CREATED,
-        "mensaje": f"Usuario {username} creado correctamente.",
+        "mensaje": f"Usuario {user.username} creado correctamente.",
         "email": email,
     }
 

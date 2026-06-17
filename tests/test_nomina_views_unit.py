@@ -60,7 +60,11 @@ def test_nomina_detail_context_data(mocker):
     comedor = SimpleNamespace(programa_id=None, programa=None)
     mocker.patch(
         "comedores.views.nomina._get_admision_del_comedor_or_404",
-        return_value=SimpleNamespace(pk=77, comedor=comedor),
+        return_value=SimpleNamespace(pk=77, comedor=comedor, comedor_id=9),
+    )
+    mocker.patch(
+        "comedores.views.nomina._comedores_destino_para_derivar",
+        return_value=[],
     )
 
     view = module.NominaDetailView()
