@@ -6,7 +6,11 @@ from django.test import Client
 from django.urls import reverse
 
 from ciudadanos.models import Ciudadano
-from centrodeinfancia.models import CentroDeInfancia, NominaCentroInfancia, NominaNacionalidad
+from centrodeinfancia.models import (
+    CentroDeInfancia,
+    NominaCentroInfancia,
+    NominaNacionalidad,
+)
 from core.models import Provincia, Sexo
 from users.models import Profile
 
