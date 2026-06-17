@@ -107,7 +107,9 @@ def test_nomina_create_get_context_data_with_renaper(mocker):
     )
     mocker.patch(
         "comedores.views.nomina._get_admision_del_comedor_or_404",
-        return_value=SimpleNamespace(pk=77, comedor=SimpleNamespace(pk=77, programa_id=None, programa=None)),
+        return_value=SimpleNamespace(
+            pk=77, comedor=SimpleNamespace(pk=77, programa_id=None, programa=None)
+        ),
     )
     mocker.patch(
         "comedores.views.nomina.ComedorService.buscar_ciudadanos_por_documento",
@@ -153,7 +155,9 @@ def test_nomina_create_get_context_data_muestra_form_si_solo_hay_revision(mocker
     )
     mocker.patch(
         "comedores.views.nomina._get_admision_del_comedor_or_404",
-        return_value=SimpleNamespace(pk=77, comedor=SimpleNamespace(pk=77, programa_id=None, programa=None)),
+        return_value=SimpleNamespace(
+            pk=77, comedor=SimpleNamespace(pk=77, programa_id=None, programa=None)
+        ),
     )
     ciudadano_revision = SimpleNamespace(requiere_revision_manual=True)
     mocker.patch(
