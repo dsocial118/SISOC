@@ -1612,7 +1612,7 @@ class ComedorDetailViewSet(
         url_path="prestacion-alimentaria/conformidad",
         permission_classes=[IsPWARepresentativeForComedor],
     )
-    def prestacion_alimentaria_conformidad(self, request, pk=None):
+    def prestacion_alimentaria_conformidad(self, request, pk=None):  # pylint: disable=too-many-return-statements
         comedor = self.get_object()
         if not is_prestacion_alimentaria_conformidad_program(comedor):
             return Response(
