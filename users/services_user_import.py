@@ -27,8 +27,22 @@ USER_IMPORT_CREDENTIALS_EMAIL_TEMPLATE = "user/bulk_credentials_email.txt"
 USER_IMPORT_CREDENTIALS_EMAIL_SUBJECT = "SISOC - Credenciales de acceso"
 USER_IMPORT_TEMPLATE_FILENAME = "plantilla_importacion_usuarios.xlsx"
 USER_IMPORT_SHEET_NAME = "usuarios"
-USER_IMPORT_REQUIRED_COLUMNS = ("nombre", "apellido", "correo", "permisos", "provincias", "rol")
-USER_IMPORT_TEMPLATE_HEADERS = ("Nombre", "Apellido", "Correo", "Permisos", "Provincias", "Rol")
+USER_IMPORT_REQUIRED_COLUMNS = (
+    "nombre",
+    "apellido",
+    "correo",
+    "permisos",
+    "provincias",
+    "rol",
+)
+USER_IMPORT_TEMPLATE_HEADERS = (
+    "Nombre",
+    "Apellido",
+    "Correo",
+    "Permisos",
+    "Provincias",
+    "Rol",
+)
 USERNAME_MAX_LENGTH = 150
 
 
@@ -38,10 +52,7 @@ def _build_login_url() -> str:
     except Exception:
         path = "/"
     domain = (
-        str(settings.DOMINIO)
-        .replace("http://", "")
-        .replace("https://", "")
-        .rstrip("/")
+        str(settings.DOMINIO).replace("http://", "").replace("https://", "").rstrip("/")
     )
     scheme = "https" if settings.ENVIRONMENT == "prd" else "http"
     return f"{scheme}://{domain}{path}"
@@ -125,7 +136,9 @@ def validate_user_import_workbook(uploaded_file) -> None:
                 uploaded_file.seek(0)
                 return
 
-        raise ValidationError("El archivo Excel no contiene filas con datos para procesar.")
+        raise ValidationError(
+            "El archivo Excel no contiene filas con datos para procesar."
+        )
     finally:
         workbook.close()
 
@@ -181,18 +194,20 @@ def create_user_import_job(
     job.archivo.save(job.original_filename, uploaded_file, save=False)
     job.save()
 
-    UserImportJobRow.objects.bulk_create([
-        UserImportJobRow(
-            job=job,
-            fila=row["fila"],
-            nombre=row.get("nombre", ""),
-            apellido=row.get("apellido", ""),
-            email=row.get("correo", ""),
-            rol=row.get("rol", ""),
-            status=UserImportJobRow.Status.PENDING,
-        )
-        for row in rows
-    ])
+    UserImportJobRow.objects.bulk_create(
+        [
+            UserImportJobRow(
+                job=job,
+                fila=row["fila"],
+                nombre=row.get("nombre", ""),
+                apellido=row.get("apellido", ""),
+                email=row.get("correo", ""),
+                rol=row.get("rol", ""),
+                status=UserImportJobRow.Status.PENDING,
+            )
+            for row in rows
+        ]
+    )
 
     return job
 
@@ -235,7 +250,9 @@ def process_single_user_import_row(*, row_data: dict, job: UserImportJob) -> dic
     try:
         validate_email(email_raw)
     except ValidationError as exc:
-        raise ValidationError(f"El correo '{email_raw}' no tiene formato valido.") from exc
+        raise ValidationError(
+            f"El correo '{email_raw}' no tiene formato valido."
+        ) from exc
 
     email = email_raw.lower()
 
@@ -256,7 +273,9 @@ def process_single_user_import_row(*, row_data: dict, job: UserImportJob) -> dic
     for nombre_prov in _parse_semicolon_field(provincias_raw):
         prov = Provincia.objects.filter(nombre__iexact=nombre_prov).first()
         if prov is None:
-            raise ValidationError(f"La provincia '{nombre_prov}' no existe en el sistema.")
+            raise ValidationError(
+                f"La provincia '{nombre_prov}' no existe en el sistema."
+            )
         provincias_objs.append(prov)
 
     username = _generar_username_unico(_slug_base_desde_email(email))

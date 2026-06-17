@@ -209,7 +209,13 @@ def _start_job_row_attempt(
 
 
 def _record_row_skipped(
-    *, job: UserImportJob, row_log: UserImportJobRow, old_status, message: str, row_index: int, total_rows: int
+    *,
+    job: UserImportJob,
+    row_log: UserImportJobRow,
+    old_status,
+    message: str,
+    row_index: int,
+    total_rows: int,
 ) -> UserImportJob:
     if old_status == UserImportJobRow.Status.SKIPPED:
         pass
@@ -250,14 +256,22 @@ def _record_row_skipped(
         job.finished_at = timezone.now()
         job.last_error_message = ""
         job.last_error_at = None
-        update_fields.extend(["status", "finished_at", "last_error_message", "last_error_at"])
+        update_fields.extend(
+            ["status", "finished_at", "last_error_message", "last_error_at"]
+        )
 
     job.save(update_fields=update_fields)
     return job
 
 
 def _record_row_created(
-    *, job: UserImportJob, row_log: UserImportJobRow, old_status, result: dict, row_index: int, total_rows: int
+    *,
+    job: UserImportJob,
+    row_log: UserImportJobRow,
+    old_status,
+    result: dict,
+    row_index: int,
+    total_rows: int,
 ) -> UserImportJob:
     if old_status == UserImportJobRow.Status.CREATED:
         pass
@@ -303,7 +317,9 @@ def _record_row_created(
         job.finished_at = timezone.now()
         job.last_error_message = ""
         job.last_error_at = None
-        update_fields.extend(["status", "finished_at", "last_error_message", "last_error_at"])
+        update_fields.extend(
+            ["status", "finished_at", "last_error_message", "last_error_at"]
+        )
 
     job.save(update_fields=update_fields)
     return job
@@ -467,7 +483,9 @@ def run_user_import_jobs_worker(*, once: bool = False) -> None:
         try:
             processed_job = process_next_user_import_job()
         except Exception:
-            logger.exception("Fallo inesperado en el worker de importacion de usuarios.")
+            logger.exception(
+                "Fallo inesperado en el worker de importacion de usuarios."
+            )
             if once:
                 raise
             time.sleep(poll_seconds)

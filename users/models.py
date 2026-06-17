@@ -580,4 +580,6 @@ class UserImportJobRow(models.Model):
         verbose_name_plural = "Filas de importacion masiva de usuarios"
 
     def __str__(self):
-        return f"Importacion {self.job_id} fila {self.fila} ({self.get_status_display()})"
+        return (
+            f"Importacion {self.job_id} fila {self.fila} ({self.get_status_display()})"
+        )

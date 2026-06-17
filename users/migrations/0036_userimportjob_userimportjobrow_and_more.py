@@ -9,83 +9,172 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('users', '0035_merge_actividades_pnud_rendicion_final'),
+        ("users", "0035_merge_actividades_pnud_rendicion_final"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='UserImportJob',
+            name="UserImportJob",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('archivo', models.FileField(upload_to=users.models.user_import_job_upload_to)),
-                ('original_filename', models.CharField(max_length=255)),
-                ('send_credentials', models.BooleanField(default=True)),
-                ('status', models.CharField(choices=[('pending', 'Pendiente'), ('processing', 'Procesando'), ('completed', 'Completado'), ('completed_with_errors', 'Completado con errores'), ('failed', 'Fallido')], db_index=True, default='pending', max_length=25)),
-                ('total_rows', models.PositiveIntegerField(default=0)),
-                ('processed_rows', models.PositiveIntegerField(default=0)),
-                ('created_rows', models.PositiveIntegerField(default=0)),
-                ('skipped_rows', models.PositiveIntegerField(default=0)),
-                ('failed_rows', models.PositiveIntegerField(default=0)),
-                ('next_row_index', models.PositiveIntegerField(default=0)),
-                ('last_successful_row', models.PositiveIntegerField(blank=True, null=True)),
-                ('last_successful_email', models.EmailField(blank=True, max_length=254)),
-                ('last_attempted_row', models.PositiveIntegerField(blank=True, null=True)),
-                ('last_attempted_email', models.EmailField(blank=True, max_length=254)),
-                ('last_error_message', models.TextField(blank=True)),
-                ('last_error_at', models.DateTimeField(blank=True, null=True)),
-                ('resume_count', models.PositiveIntegerField(default=0)),
-                ('requested_at', models.DateTimeField(auto_now_add=True, db_index=True)),
-                ('started_at', models.DateTimeField(blank=True, null=True)),
-                ('finished_at', models.DateTimeField(blank=True, null=True)),
-                ('last_activity_at', models.DateTimeField(blank=True, db_index=True, null=True)),
-                ('requested_by', models.ForeignKey(on_delete=django.db.models.deletion.DO_NOTHING, related_name='user_import_jobs', to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "archivo",
+                    models.FileField(upload_to=users.models.user_import_job_upload_to),
+                ),
+                ("original_filename", models.CharField(max_length=255)),
+                ("send_credentials", models.BooleanField(default=True)),
+                (
+                    "status",
+                    models.CharField(
+                        choices=[
+                            ("pending", "Pendiente"),
+                            ("processing", "Procesando"),
+                            ("completed", "Completado"),
+                            ("completed_with_errors", "Completado con errores"),
+                            ("failed", "Fallido"),
+                        ],
+                        db_index=True,
+                        default="pending",
+                        max_length=25,
+                    ),
+                ),
+                ("total_rows", models.PositiveIntegerField(default=0)),
+                ("processed_rows", models.PositiveIntegerField(default=0)),
+                ("created_rows", models.PositiveIntegerField(default=0)),
+                ("skipped_rows", models.PositiveIntegerField(default=0)),
+                ("failed_rows", models.PositiveIntegerField(default=0)),
+                ("next_row_index", models.PositiveIntegerField(default=0)),
+                (
+                    "last_successful_row",
+                    models.PositiveIntegerField(blank=True, null=True),
+                ),
+                (
+                    "last_successful_email",
+                    models.EmailField(blank=True, max_length=254),
+                ),
+                (
+                    "last_attempted_row",
+                    models.PositiveIntegerField(blank=True, null=True),
+                ),
+                ("last_attempted_email", models.EmailField(blank=True, max_length=254)),
+                ("last_error_message", models.TextField(blank=True)),
+                ("last_error_at", models.DateTimeField(blank=True, null=True)),
+                ("resume_count", models.PositiveIntegerField(default=0)),
+                (
+                    "requested_at",
+                    models.DateTimeField(auto_now_add=True, db_index=True),
+                ),
+                ("started_at", models.DateTimeField(blank=True, null=True)),
+                ("finished_at", models.DateTimeField(blank=True, null=True)),
+                (
+                    "last_activity_at",
+                    models.DateTimeField(blank=True, db_index=True, null=True),
+                ),
+                (
+                    "requested_by",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.DO_NOTHING,
+                        related_name="user_import_jobs",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Lote de importacion masiva de usuarios',
-                'verbose_name_plural': 'Lotes de importacion masiva de usuarios',
-                'ordering': ['-requested_at', '-id'],
+                "verbose_name": "Lote de importacion masiva de usuarios",
+                "verbose_name_plural": "Lotes de importacion masiva de usuarios",
+                "ordering": ["-requested_at", "-id"],
             },
         ),
         migrations.CreateModel(
-            name='UserImportJobRow',
+            name="UserImportJobRow",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('fila', models.PositiveIntegerField()),
-                ('nombre', models.CharField(blank=True, max_length=150)),
-                ('apellido', models.CharField(blank=True, max_length=150)),
-                ('email', models.EmailField(blank=True, max_length=254)),
-                ('rol', models.CharField(blank=True, max_length=100)),
-                ('status', models.CharField(choices=[('pending', 'Pendiente'), ('created', 'Creado'), ('skipped', 'Omitido'), ('failed', 'Fallido')], db_index=True, default='pending', max_length=20)),
-                ('mensaje', models.TextField(blank=True)),
-                ('attempts', models.PositiveIntegerField(default=0)),
-                ('processed_at', models.DateTimeField(blank=True, db_index=True, null=True)),
-                ('job', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='rows', to='users.userimportjob')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("fila", models.PositiveIntegerField()),
+                ("nombre", models.CharField(blank=True, max_length=150)),
+                ("apellido", models.CharField(blank=True, max_length=150)),
+                ("email", models.EmailField(blank=True, max_length=254)),
+                ("rol", models.CharField(blank=True, max_length=100)),
+                (
+                    "status",
+                    models.CharField(
+                        choices=[
+                            ("pending", "Pendiente"),
+                            ("created", "Creado"),
+                            ("skipped", "Omitido"),
+                            ("failed", "Fallido"),
+                        ],
+                        db_index=True,
+                        default="pending",
+                        max_length=20,
+                    ),
+                ),
+                ("mensaje", models.TextField(blank=True)),
+                ("attempts", models.PositiveIntegerField(default=0)),
+                (
+                    "processed_at",
+                    models.DateTimeField(blank=True, db_index=True, null=True),
+                ),
+                (
+                    "job",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="rows",
+                        to="users.userimportjob",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Fila de importacion masiva de usuarios',
-                'verbose_name_plural': 'Filas de importacion masiva de usuarios',
-                'ordering': ['fila', 'id'],
+                "verbose_name": "Fila de importacion masiva de usuarios",
+                "verbose_name_plural": "Filas de importacion masiva de usuarios",
+                "ordering": ["fila", "id"],
             },
         ),
         migrations.AddIndex(
-            model_name='userimportjob',
-            index=models.Index(fields=['status', 'requested_at'], name='users_useri_status_93b136_idx'),
+            model_name="userimportjob",
+            index=models.Index(
+                fields=["status", "requested_at"], name="users_useri_status_93b136_idx"
+            ),
         ),
         migrations.AddIndex(
-            model_name='userimportjob',
-            index=models.Index(fields=['requested_by', 'requested_at'], name='users_useri_request_83d6f3_idx'),
+            model_name="userimportjob",
+            index=models.Index(
+                fields=["requested_by", "requested_at"],
+                name="users_useri_request_83d6f3_idx",
+            ),
         ),
         migrations.AddIndex(
-            model_name='userimportjobrow',
-            index=models.Index(fields=['job', 'status'], name='users_useri_job_id_7a32a6_idx'),
+            model_name="userimportjobrow",
+            index=models.Index(
+                fields=["job", "status"], name="users_useri_job_id_7a32a6_idx"
+            ),
         ),
         migrations.AddIndex(
-            model_name='userimportjobrow',
-            index=models.Index(fields=['job', 'processed_at'], name='users_useri_job_id_1c9e47_idx'),
+            model_name="userimportjobrow",
+            index=models.Index(
+                fields=["job", "processed_at"], name="users_useri_job_id_1c9e47_idx"
+            ),
         ),
         migrations.AddConstraint(
-            model_name='userimportjobrow',
-            constraint=models.UniqueConstraint(fields=('job', 'fila'), name='users_user_import_job_row_unique'),
+            model_name="userimportjobrow",
+            constraint=models.UniqueConstraint(
+                fields=("job", "fila"), name="users_user_import_job_row_unique"
+            ),
         ),
     ]
