@@ -1,0 +1,198 @@
+{% extends "includes/main.html" %}
+{% block title %}Detalle de lote de importacion{% endblock %}
+{% block titulo-pagina %}Detalle de lote de importacion{% endblock %}
+{% block breadcrumb %}
+    <ol class="breadcrumb float-sm-right">
+        <li class="breadcrumb-item">Administracion</li>
+        <li class="breadcrumb-item">
+            <a href="{% url 'usuarios' %}">Usuarios</a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{{ upload_url }}">Importacion masiva</a>
+        </li>
+        <li class="breadcrumb-item active">Lote #{{ job.id }}</li>
+    </ol>
+{% endblock %}
+{% block content %}
+    <div class="row justify-content-center">
+        <div class="col-12 col-xl-10">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
+                    <div>
+                        <h3 class="mb-0">Lote #{{ job.id }}</h3>
+                        <small class="text-muted">{{ job.original_filename }} | {{ job.requested_at|date:"d/m/Y H:i" }}</small>
+                    </div>
+                    <div class="d-flex flex-wrap gap-2">
+                        <a href="{% url 'usuarios_importar_detalle' job.id %}"
+                           class="btn btn-outline-primary">Actualizar estado</a>
+                        {% if is_resume_available %}
+                            <form method="post"
+                                  action="{% url 'usuarios_importar_reanudar' job.id %}">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-warning">Reanudar</button>
+                            </form>
+                        {% endif %}
+                        <a href="{{ upload_url }}" class="btn btn-secondary">Volver</a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="mb-4">
+                        {% if job.status == "completed" %}
+                            <span class="badge badge-success">Completado</span>
+                        {% elif job.status == "completed_with_errors" %}
+                            <span class="badge badge-warning">Completado con errores</span>
+                        {% elif job.status == "failed" %}
+                            <span class="badge badge-danger">Fallido</span>
+                        {% elif job.status == "processing" %}
+                            <span class="badge badge-warning">Procesando</span>
+                        {% else %}
+                            <span class="badge badge-secondary">Pendiente</span>
+                        {% endif %}
+                        <span class="ml-2 text-muted">
+                            Credenciales por email:
+                            <strong>{% if job.send_credentials %}Si{% else %}No{% endif %}</strong>
+                        </span>
+                        <span class="ml-2 text-muted">
+                            Reanudaciones: <strong>{{ job.resume_count }}</strong>
+                        </span>
+                    </div>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-sm-6 col-xl-3">
+                            <div class="border rounded p-3 h-100">
+                                <div class="text-muted small">Filas totales</div>
+                                <div class="h4 mb-0">{{ job.total_rows }}</div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6 col-xl-3">
+                            <div class="border rounded p-3 h-100">
+                                <div class="text-muted small">Procesadas</div>
+                                <div class="h4 mb-0">{{ job.processed_rows }}</div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6 col-xl-3">
+                            <div class="border rounded p-3 h-100 border-success">
+                                <div class="text-muted small">Creados</div>
+                                <div class="h4 mb-0 text-success">{{ job.created_rows }}</div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6 col-xl-3">
+                            <div class="border rounded p-3 h-100">
+                                <div class="text-muted small">Omitidos</div>
+                                <div class="h4 mb-0 text-secondary">{{ job.skipped_rows }}</div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6 col-xl-3">
+                            <div class="border rounded p-3 h-100 border-danger">
+                                <div class="text-muted small">Fallidos</div>
+                                <div class="h4 mb-0 text-danger">{{ job.failed_rows }}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {% if job.last_error_message %}
+                        <div class="alert alert-danger">
+                            <div class="font-weight-bold">Causa del error</div>
+                            <div>{{ job.last_error_message }}</div>
+                            {% if job.last_error_at %}
+                                <small class="d-block mt-2">Registrado el {{ job.last_error_at|date:"d/m/Y H:i" }}</small>
+                            {% endif %}
+                        </div>
+                    {% elif job.status == "processing" or job.status == "pending" %}
+                        <div class="alert alert-info">
+                            El lote esta en curso fuera de la request web. Use
+                            <strong>Actualizar estado</strong> para refrescar el detalle.
+                        </div>
+                    {% endif %}
+
+                    <div class="d-flex flex-wrap gap-2 mb-3">
+                        <a href="?"
+                           class="btn btn-sm {% if not status_filter %}btn-primary{% else %}btn-outline-secondary{% endif %}">
+                            Todos
+                        </a>
+                        <a href="?estado=created"
+                           class="btn btn-sm {% if status_filter == 'created' %}btn-success{% else %}btn-outline-secondary{% endif %}">
+                            Creados
+                        </a>
+                        <a href="?estado=skipped"
+                           class="btn btn-sm {% if status_filter == 'skipped' %}btn-secondary{% else %}btn-outline-secondary{% endif %}">
+                            Omitidos
+                        </a>
+                        <a href="?estado=failed"
+                           class="btn btn-sm {% if status_filter == 'failed' %}btn-danger{% else %}btn-outline-secondary{% endif %}">
+                            Fallidos
+                        </a>
+                        <a href="?estado=pending"
+                           class="btn btn-sm {% if status_filter == 'pending' %}btn-warning{% else %}btn-outline-secondary{% endif %}">
+                            Pendientes
+                        </a>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-hover align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Fila</th>
+                                    <th scope="col">Nombre</th>
+                                    <th scope="col">Email</th>
+                                    <th scope="col">Estado</th>
+                                    <th scope="col">Intentos</th>
+                                    <th scope="col">Detalle</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for row in page_obj %}
+                                    <tr>
+                                        <td>{{ row.fila }}</td>
+                                        <td>{{ row.nombre }} {{ row.apellido }}</td>
+                                        <td>{{ row.email|default:"-" }}</td>
+                                        <td>
+                                            {% if row.status == "created" %}
+                                                <span class="badge badge-success">Creado</span>
+                                            {% elif row.status == "skipped" %}
+                                                <span class="badge badge-secondary">Omitido</span>
+                                            {% elif row.status == "failed" %}
+                                                <span class="badge badge-danger">Fallido</span>
+                                            {% else %}
+                                                <span class="badge badge-light">Pendiente</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ row.attempts }}</td>
+                                        <td>{{ row.mensaje|default:"-" }}</td>
+                                    </tr>
+                                {% empty %}
+                                    <tr>
+                                        <td colspan="6"
+                                            class="text-center text-muted py-4">Aun no hay filas procesadas para este lote.</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {% if page_obj.paginator.num_pages > 1 %}
+                        <nav aria-label="Paginacion de filas" class="mt-3">
+                            <ul class="pagination mb-0">
+                                {% if page_obj.has_previous %}
+                                    <li class="page-item">
+                                        <a class="page-link"
+                                           href="?{% if status_filter %}estado={{ status_filter }}&{% endif %}page={{ page_obj.previous_page_number }}">Anterior</a>
+                                    </li>
+                                {% endif %}
+                                <li class="page-item active">
+                                    <span class="page-link">Pagina {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span>
+                                </li>
+                                {% if page_obj.has_next %}
+                                    <li class="page-item">
+                                        <a class="page-link"
+                                           href="?{% if status_filter %}estado={{ status_filter }}&{% endif %}page={{ page_obj.next_page_number }}">Siguiente</a>
+                                    </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
