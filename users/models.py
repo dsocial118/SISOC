@@ -478,3 +478,106 @@ class BulkCredentialsJobRow(models.Model):
 
     def __str__(self):
         return f"Lote {self.job_id} fila {self.fila} ({self.get_status_display()})"
+
+
+def user_import_job_upload_to(instance, filename):
+    return f"users/import_jobs/{instance.requested_by_id}/{filename}"
+
+
+class UserImportJob(models.Model):
+    class Status(models.TextChoices):
+        PENDING = "pending", "Pendiente"
+        PROCESSING = "processing", "Procesando"
+        COMPLETED = "completed", "Completado"
+        COMPLETED_WITH_ERRORS = "completed_with_errors", "Completado con errores"
+        FAILED = "failed", "Fallido"
+
+    requested_by = models.ForeignKey(
+        User,
+        on_delete=models.DO_NOTHING,
+        related_name="user_import_jobs",
+    )
+    archivo = models.FileField(upload_to=user_import_job_upload_to)
+    original_filename = models.CharField(max_length=255)
+    send_credentials = models.BooleanField(default=True)
+    status = models.CharField(
+        max_length=25,
+        choices=Status.choices,
+        default=Status.PENDING,
+        db_index=True,
+    )
+    total_rows = models.PositiveIntegerField(default=0)
+    processed_rows = models.PositiveIntegerField(default=0)
+    created_rows = models.PositiveIntegerField(default=0)
+    skipped_rows = models.PositiveIntegerField(default=0)
+    failed_rows = models.PositiveIntegerField(default=0)
+    next_row_index = models.PositiveIntegerField(default=0)
+    last_successful_row = models.PositiveIntegerField(null=True, blank=True)
+    last_successful_email = models.EmailField(max_length=254, blank=True)
+    last_attempted_row = models.PositiveIntegerField(null=True, blank=True)
+    last_attempted_email = models.EmailField(max_length=254, blank=True)
+    last_error_message = models.TextField(blank=True)
+    last_error_at = models.DateTimeField(null=True, blank=True)
+    resume_count = models.PositiveIntegerField(default=0)
+    requested_at = models.DateTimeField(auto_now_add=True, db_index=True)
+    started_at = models.DateTimeField(null=True, blank=True)
+    finished_at = models.DateTimeField(null=True, blank=True)
+    last_activity_at = models.DateTimeField(null=True, blank=True, db_index=True)
+
+    class Meta:
+        ordering = ["-requested_at", "-id"]
+        indexes = [
+            models.Index(fields=["status", "requested_at"]),
+            models.Index(fields=["requested_by", "requested_at"]),
+        ]
+        verbose_name = "Lote de importacion masiva de usuarios"
+        verbose_name_plural = "Lotes de importacion masiva de usuarios"
+
+    def __str__(self):
+        return f"Importacion {self.id} ({self.get_status_display()})"
+
+
+class UserImportJobRow(models.Model):
+    class Status(models.TextChoices):
+        PENDING = "pending", "Pendiente"
+        CREATED = "created", "Creado"
+        SKIPPED = "skipped", "Omitido"
+        FAILED = "failed", "Fallido"
+
+    job = models.ForeignKey(
+        UserImportJob,
+        on_delete=models.CASCADE,
+        related_name="rows",
+    )
+    fila = models.PositiveIntegerField()
+    nombre = models.CharField(max_length=150, blank=True)
+    apellido = models.CharField(max_length=150, blank=True)
+    email = models.EmailField(max_length=254, blank=True)
+    rol = models.CharField(max_length=100, blank=True)
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.PENDING,
+        db_index=True,
+    )
+    mensaje = models.TextField(blank=True)
+    attempts = models.PositiveIntegerField(default=0)
+    processed_at = models.DateTimeField(null=True, blank=True, db_index=True)
+
+    class Meta:
+        ordering = ["fila", "id"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["job", "fila"],
+                name="users_user_import_job_row_unique",
+            )
+        ]
+        indexes = [
+            models.Index(fields=["job", "status"]),
+            models.Index(fields=["job", "processed_at"]),
+        ]
+        verbose_name = "Fila de importacion masiva de usuarios"
+        verbose_name_plural = "Filas de importacion masiva de usuarios"
+
+    def __str__(self):
+        return f"Importacion {self.job_id} fila {self.fila} ({self.get_status_display()})"
