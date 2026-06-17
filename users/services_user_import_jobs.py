@@ -208,7 +208,7 @@ def _start_job_row_attempt(
     )
 
 
-def _record_row_skipped(
+def _record_row_skipped(  # pylint: disable=too-many-arguments
     *,
     job: UserImportJob,
     row_log: UserImportJobRow,
@@ -264,7 +264,7 @@ def _record_row_skipped(
     return job
 
 
-def _record_row_created(
+def _record_row_created(  # pylint: disable=too-many-arguments
     *,
     job: UserImportJob,
     row_log: UserImportJobRow,

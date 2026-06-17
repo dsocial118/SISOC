@@ -12,9 +12,8 @@ from django.core.mail import send_mail
 from django.core.validators import validate_email
 from django.db import transaction
 from django.template.loader import render_to_string
-from openpyxl import Workbook, load_workbook
-
 from django.urls import reverse
+from openpyxl import Workbook, load_workbook
 
 from core.models import Provincia
 from users.models import ProfileTerritorialScope, UserImportJob, UserImportJobRow
@@ -237,6 +236,28 @@ def _enviar_credenciales_import(*, user, password: str) -> bool:
         return False
 
 
+def _resolver_grupos(permisos_raw: str) -> list:
+    grupos = []
+    for nombre_grupo in _parse_semicolon_field(permisos_raw):
+        grupo = Group.objects.filter(name=nombre_grupo).first()
+        if grupo is None:
+            raise ValidationError(f"El grupo '{nombre_grupo}' no existe en el sistema.")
+        grupos.append(grupo)
+    return grupos
+
+
+def _resolver_provincias(provincias_raw: str) -> list:
+    provincias = []
+    for nombre_prov in _parse_semicolon_field(provincias_raw):
+        prov = Provincia.objects.filter(nombre__iexact=nombre_prov).first()
+        if prov is None:
+            raise ValidationError(
+                f"La provincia '{nombre_prov}' no existe en el sistema."
+            )
+        provincias.append(prov)
+    return provincias
+
+
 def process_single_user_import_row(*, row_data: dict, job: UserImportJob) -> dict:
     nombre = row_data.get("nombre", "").strip()
     apellido = row_data.get("apellido", "").strip()
@@ -262,21 +283,8 @@ def process_single_user_import_row(*, row_data: dict, job: UserImportJob) -> dic
             "mensaje": f"Ya existe un usuario con el correo {email}.",
         }
 
-    grupos = []
-    for nombre_grupo in _parse_semicolon_field(permisos_raw):
-        grupo = Group.objects.filter(name=nombre_grupo).first()
-        if grupo is None:
-            raise ValidationError(f"El grupo '{nombre_grupo}' no existe en el sistema.")
-        grupos.append(grupo)
-
-    provincias_objs = []
-    for nombre_prov in _parse_semicolon_field(provincias_raw):
-        prov = Provincia.objects.filter(nombre__iexact=nombre_prov).first()
-        if prov is None:
-            raise ValidationError(
-                f"La provincia '{nombre_prov}' no existe en el sistema."
-            )
-        provincias_objs.append(prov)
+    grupos = _resolver_grupos(permisos_raw)
+    provincias_objs = _resolver_provincias(provincias_raw)
 
     username = _generar_username_unico(_slug_base_desde_email(email))
 
