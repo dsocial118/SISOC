@@ -1166,7 +1166,9 @@ def test_prestacion_alimentaria_conformidad_crea_registro():
     assert response.data["conforme"] is True
     conformidad = PrestacionAlimentariaConformidad.objects.get(comedor=comedor)
     assert conformidad.conforme is True
-    assert conformidad.periodo == timezone.localdate().replace(day=1)
+    from comedores.utils import previous_month_period
+
+    assert conformidad.periodo == previous_month_period()
 
 
 @pytest.mark.django_db

@@ -896,3 +896,18 @@ class BulkCredentialsUploadForm(forms.Form):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["tipo_envio"].choices = get_bulk_credentials_send_type_choices()
+
+
+class UserImportForm(forms.Form):
+    archivo = forms.FileField(
+        label="Archivo Excel",
+        validators=[FileExtensionValidator(["xlsx"])],
+        widget=forms.ClearableFileInput(attrs={"accept": ".xlsx"}),
+        help_text="Archivo .xlsx con columnas: Nombre, Apellido, Correo, Permisos, Provincias, Rol.",
+    )
+    enviar_credenciales = forms.BooleanField(
+        label="Enviar credenciales por email",
+        required=False,
+        initial=True,
+        help_text="Si esta marcado, se enviara un email con usuario y contrasena temporal a cada usuario creado.",
+    )

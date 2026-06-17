@@ -586,7 +586,7 @@ def test_nomina_bulk_attendance_alimentaria_syncs_current_period(
 
 @pytest.mark.django_db
 def test_nomina_bulk_attendance_alimentaria_rejects_non_alimentaria_rows(
-    comedor, admision, sexo_f
+    comedor, admision, sexo_f, fecha_fija_en_ventana
 ):
     representante = _create_representante(
         comedor=comedor, username="rep_nomina_bulk_invalid"

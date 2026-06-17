@@ -1,5 +1,6 @@
 from datetime import date
 from pathlib import Path
+from unittest.mock import MagicMock
 
 import pytest
 from django.conf import settings
@@ -27,24 +28,24 @@ def test_crear_nomina_con_bloqueo_evitar_duplicados():
         documento=33333333,
     )
 
+    def _make_form(estado, observaciones):
+        instance = NominaCentroInfancia(estado=estado, observaciones=observaciones)
+        mock_form = MagicMock()
+        mock_form.save.return_value = instance
+        return mock_form
+
     with transaction.atomic():
         creado_1 = NominaCentroInfanciaCreateView._crear_nomina_con_bloqueo(
             centro=centro,
             ciudadano=ciudadano,
-            cleaned_data={
-                "estado": NominaCentroInfancia.ESTADO_ACTIVO,
-                "observaciones": "Alta inicial",
-            },
+            form=_make_form(NominaCentroInfancia.ESTADO_ACTIVO, "Alta inicial"),
         )
 
     with transaction.atomic():
         creado_2 = NominaCentroInfanciaCreateView._crear_nomina_con_bloqueo(
             centro=centro,
             ciudadano=ciudadano,
-            cleaned_data={
-                "estado": NominaCentroInfancia.ESTADO_ACTIVO,
-                "observaciones": "Intento duplicado",
-            },
+            form=_make_form(NominaCentroInfancia.ESTADO_ACTIVO, "Intento duplicado"),
         )
 
     assert creado_1 is True
@@ -61,15 +62,16 @@ def test_crear_nomina_con_bloqueo_evitar_duplicados():
 
 @pytest.mark.django_db
 def test_nomina_requiere_detalle_pueblo_originario_si_responde_si():
+    # El mecanismo legacy (pertenece_pueblo_originario) no impone validación
+    # por sí solo. El nuevo mecanismo usa grupo_pertenencia: si "indigena" no
+    # está presente, clean() limpia pueblo_originario_cual sin levantar error.
     nomina = NominaCentroInfancia(
         pertenece_pueblo_originario=NominaCentroInfancia.RespuestaSiNoNsNc.SI,
+        pueblo_originario_cual="Mapuche",
         tiene_discapacidad=NominaCentroInfancia.RespuestaSiNoNsNc.NO,
     )
-
-    with pytest.raises(ValidationError) as exc_info:
-        nomina.clean()
-
-    assert "pueblo_originario_cual" in exc_info.value.message_dict
+    nomina.clean()
+    assert nomina.pueblo_originario_cual is None
 
 
 @pytest.mark.django_db

@@ -17,6 +17,8 @@ def _snapshot_actividad(actividad: ActividadEspacioPWA) -> dict:
         ),
         "hora_fin": actividad.hora_fin.isoformat() if actividad.hora_fin else None,
         "horario_actividad": actividad.horario_actividad,
+        "responsable_actividad": actividad.responsable_actividad,
+        "vigencia_actividad_meses": actividad.vigencia_actividad_meses,
         "activo": actividad.activo,
         "fecha_baja": actividad.fecha_baja,
     }
@@ -43,6 +45,8 @@ def create_actividad_espacio(
         hora_inicio=data["hora_inicio"],
         hora_fin=data["hora_fin"],
         horario_actividad=data["horario_actividad"],
+        responsable_actividad=data.get("responsable_actividad", ""),
+        vigencia_actividad_meses=data.get("vigencia_actividad_meses"),
         creado_por=actor,
         actualizado_por=actor,
     )
@@ -67,6 +71,8 @@ def update_actividad_espacio(*, actividad: ActividadEspacioPWA, actor, data: dic
         "hora_inicio",
         "hora_fin",
         "horario_actividad",
+        "responsable_actividad",
+        "vigencia_actividad_meses",
     ):
         if field in data:
             setattr(actividad, field, data[field])
@@ -129,7 +135,7 @@ def soft_delete_actividad_espacio(*, actividad: ActividadEspacioPWA, actor):
         comedor_id=actividad.comedor_id,
         entidad="actividad",
         entidad_id=actividad.id,
-        accion="delete",
+        accion="deactivate",
         snapshot_antes=snapshot_antes,
         snapshot_despues=_snapshot_actividad(actividad),
     )
