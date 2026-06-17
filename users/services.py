@@ -221,6 +221,18 @@ class UsuariosService:
                 ]
                 if UsuariosService.can_manage_bulk_credentials(request.user)
                 else []
+            )
+            + (
+                [
+                    {
+                        "label": "IMPORTAR USUARIOS",
+                        "url": reverse("usuarios_importar"),
+                        "class": "btn btn-lg btn-primary",
+                        "title": "Importar usuarios masivamente desde Excel",
+                    }
+                ]
+                if request.user.has_perm("auth.add_user") or request.user.is_superuser
+                else []
             ),
         }
 

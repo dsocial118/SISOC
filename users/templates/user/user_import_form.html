@@ -1,0 +1,130 @@
+{% extends "includes/main.html" %}
+{% load crispy_forms_tags %}
+{% block title %}Importacion masiva de usuarios{% endblock %}
+{% block titulo-pagina %}Importacion masiva de usuarios{% endblock %}
+{% block breadcrumb %}
+    <ol class="breadcrumb float-sm-right">
+        <li class="breadcrumb-item">Administracion</li>
+        <li class="breadcrumb-item">
+            <a href="{% url 'usuarios' %}">Usuarios</a>
+        </li>
+        <li class="breadcrumb-item active">Importacion masiva</li>
+    </ol>
+{% endblock %}
+{% block content %}
+    <div class="row justify-content-center">
+        <div class="col-12 col-lg-8">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h3 class="mb-0">Importacion masiva de usuarios</h3>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">
+                        Cargue un archivo <code>.xlsx</code> con los usuarios a crear.
+                        El sistema validara el archivo, creara los usuarios en background
+                        y podra seguir el estado desde el detalle del lote.
+                        Si un usuario ya existe (mismo correo), la fila se omite sin error.
+                    </p>
+
+                    <div class="alert alert-light border">
+                        <div class="font-weight-bold mb-2">Formato del archivo</div>
+                        <p class="mb-2">
+                            Descargue la plantilla y complete una fila por usuario.
+                            Las columnas requeridas son:
+                        </p>
+                        <ul class="mb-2 pl-3">
+                            <li>
+                                <code>Nombre</code> — nombre del usuario
+                            </li>
+                            <li>
+                                <code>Apellido</code> — apellido del usuario
+                            </li>
+                            <li>
+                                <code>Correo</code> — email (se usara como identificador unico)
+                            </li>
+                            <li>
+                                <code>Permisos</code> — nombres de grupos separados por <code>;</code>
+                                <br />
+                                <small class="text-muted">Ej: <code>Comedores Ver;Comedores Listar;Comedores Crear</code></small>
+                            </li>
+                            <li>
+                                <code>Provincias</code> — nombres de provincias separados por <code>;</code>
+                                <br />
+                                <small class="text-muted">Ej: <code>CABA;BUENOS AIRES</code></small>
+                            </li>
+                            <li>
+                                <code>Rol</code> — descripcion textual del rol (ej: <code>TERRITORIAL</code>)
+                            </li>
+                        </ul>
+                        <p class="mb-0 text-muted small">
+                            Los nombres de grupos y provincias deben coincidir exactamente con los registros del sistema.
+                            Una fila invalida detiene el lote y puede reanudarse desde esa fila.
+                        </p>
+                    </div>
+
+                    <form method="post" enctype="multipart/form-data" novalidate>
+                        {% csrf_token %}
+                        <div class="mb-3">{{ form.archivo|as_crispy_field }}</div>
+                        <div class="mb-3">{{ form.enviar_credenciales|as_crispy_field }}</div>
+                        <div class="d-flex flex-wrap gap-2">
+                            <a href="{{ template_download_url }}" class="btn btn-outline-primary">Descargar plantilla</a>
+                            <button type="submit" class="btn btn-success">Crear lote</button>
+                            <a href="{% url 'usuarios' %}" class="btn btn-secondary">Volver</a>
+                        </div>
+                    </form>
+
+                    {% if recent_jobs %}
+                        <hr class="my-4" />
+                        <h4 class="mb-3">Ultimos lotes</h4>
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-hover align-middle mb-0">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Lote</th>
+                                        <th scope="col">Fecha</th>
+                                        <th scope="col">Estado</th>
+                                        <th scope="col">Creados</th>
+                                        <th scope="col">Omitidos</th>
+                                        <th scope="col">Fallidos</th>
+                                        <th scope="col">Detalle</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for job in recent_jobs %}
+                                        <tr>
+                                            <td>#{{ job.id }}</td>
+                                            <td>{{ job.requested_at|date:"d/m/Y H:i" }}</td>
+                                            <td>
+                                                {% if job.status == "completed" %}
+                                                    <span class="badge badge-success">Completado</span>
+                                                {% elif job.status == "completed_with_errors" %}
+                                                    <span class="badge badge-warning">Completado con errores</span>
+                                                {% elif job.status == "failed" %}
+                                                    <span class="badge badge-danger">Fallido</span>
+                                                {% elif job.status == "processing" %}
+                                                    <span class="badge badge-warning">Procesando</span>
+                                                {% else %}
+                                                    <span class="badge badge-secondary">Pendiente</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>{{ job.created_rows }}</td>
+                                            <td>{{ job.skipped_rows }}</td>
+                                            <td>{{ job.failed_rows }}</td>
+                                            <td>
+                                                <a href="{% url 'usuarios_importar_detalle' job.id %}"
+                                                   class="btn btn-sm btn-outline-primary">Ver detalle</a>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <hr class="my-4" />
+                        <div class="alert alert-light border mb-0">Todavia no hay lotes de importacion creados.</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
