@@ -6,7 +6,11 @@ from django.test import Client
 from django.urls import reverse
 
 from ciudadanos.models import Ciudadano
-from centrodeinfancia.models import CentroDeInfancia, NominaCentroInfancia
+from centrodeinfancia.models import (
+    CentroDeInfancia,
+    NominaCentroInfancia,
+    NominaNacionalidad,
+)
 from core.models import Provincia, Sexo
 from users.models import Profile
 
@@ -310,6 +314,7 @@ class TestNominaCentroInfanciaEditView:
 
     def test_actualiza_multiples_campos(self, usuario_con_permisos, centro, ciudadano):
         """Verifica que se pueden actualizar múltiples campos correctamente."""
+        NominaNacionalidad.objects.create(nombre="Argentina")
         nomina = NominaCentroInfancia.objects.create(
             centro=centro,
             ciudadano=ciudadano,
