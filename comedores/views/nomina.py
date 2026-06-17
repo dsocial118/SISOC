@@ -126,10 +126,9 @@ def _sync_pnud_nomina_web(*, form_nomina_extra, nomina, comedor, user):
 def _get_actividades_pnud_for_context(comedor):
     if not is_pnud_comedor(comedor):
         return ActividadEspacioPWA.objects.none()
-    return (
-        ActividadEspacioPWA.objects.filter(comedor=comedor, activo=True)
-        .select_related("catalogo_actividad", "dia_actividad")
-    )
+    return ActividadEspacioPWA.objects.filter(
+        comedor=comedor, activo=True
+    ).select_related("catalogo_actividad", "dia_actividad")
 
 
 def _get_asistencia_nomina_context(request, *, admision_id=None, comedor_id=None):

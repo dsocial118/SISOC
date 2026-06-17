@@ -58,11 +58,17 @@ def test_normalize_programa_remueve_acentos():
     ],
 )
 def test_is_prestacion_alimentaria_conformidad_program(nombre, expected):
-    assert module.is_prestacion_alimentaria_conformidad_program(_comedor(nombre)) is expected
+    assert (
+        module.is_prestacion_alimentaria_conformidad_program(_comedor(nombre))
+        is expected
+    )
 
 
 def test_is_prestacion_alimentaria_conformidad_program_sin_programa():
-    assert module.is_prestacion_alimentaria_conformidad_program(_comedor_sin_programa()) is False
+    assert (
+        module.is_prestacion_alimentaria_conformidad_program(_comedor_sin_programa())
+        is False
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -84,7 +90,9 @@ def test_is_prestacion_alimentaria_conformidad_program_sin_programa():
     ],
 )
 def test_is_abordaje_comunitario_linea_secos_program(nombre, expected):
-    assert module.is_abordaje_comunitario_linea_secos_program(_comedor(nombre)) is expected
+    assert (
+        module.is_abordaje_comunitario_linea_secos_program(_comedor(nombre)) is expected
+    )
 
 
 # ---------------------------------------------------------------------------
