@@ -14,10 +14,12 @@ from comedores.models import (
     EstadoDetalle,
 )
 from comedores.services.estado_manager import registrar_cambio_estado
+from comedores.utils import is_pnud_comedor
 
 from core.models import Municipio, Provincia
 from core.models import Localidad
 from organizaciones.models import Organizacion
+from pwa.models import ActividadEspacioPWA
 from core.validators import validate_unicode_email
 from users.services import UserPermissionService
 
@@ -72,7 +74,62 @@ class NominaForm(forms.ModelForm):
 
 
 class NominaExtraForm(NominaForm):
-    pass
+    asistencia_alimentaria = forms.BooleanField(
+        label="Prestacion alimentaria",
+        required=False,
+        initial=True,
+        widget=forms.CheckboxInput(attrs={"class": "form-check-input"}),
+    )
+    asistencia_actividades = forms.BooleanField(
+        label="Actividades",
+        required=False,
+        widget=forms.CheckboxInput(attrs={"class": "form-check-input"}),
+    )
+    actividad_ids = forms.ModelMultipleChoiceField(
+        label="Actividades asociadas",
+        queryset=ActividadEspacioPWA.objects.none(),
+        required=False,
+        widget=forms.CheckboxSelectMultiple(),
+    )
+
+    def __init__(self, *args, **kwargs):
+        self.comedor = kwargs.pop("comedor", None)
+        super().__init__(*args, **kwargs)
+        self.es_pnud = bool(self.comedor and is_pnud_comedor(self.comedor))
+        if not self.es_pnud:
+            self.fields.pop("asistencia_alimentaria", None)
+            self.fields.pop("asistencia_actividades", None)
+            self.fields.pop("actividad_ids", None)
+            return
+
+        self.fields["actividad_ids"].queryset = ActividadEspacioPWA.objects.filter(
+            comedor=self.comedor,
+            activo=True,
+        ).select_related("catalogo_actividad", "dia_actividad")
+
+    def clean(self):
+        cleaned_data = super().clean()
+        if not self.es_pnud:
+            return cleaned_data
+
+        actividad_ids = cleaned_data.get("actividad_ids") or []
+        asistencia_alimentaria = bool(cleaned_data.get("asistencia_alimentaria"))
+        asistencia_actividades = bool(cleaned_data.get("asistencia_actividades"))
+
+        if actividad_ids and not asistencia_actividades:
+            asistencia_actividades = True
+            cleaned_data["asistencia_actividades"] = True
+
+        if not asistencia_alimentaria and not asistencia_actividades:
+            raise ValidationError(
+                "Debe seleccionar al menos Prestacion alimentaria o Actividades."
+            )
+        if asistencia_actividades and not actividad_ids:
+            self.add_error(
+                "actividad_ids",
+                "Debe seleccionar al menos una actividad.",
+            )
+        return cleaned_data
 
 
 class CiudadanoFormParaNomina(forms.ModelForm):

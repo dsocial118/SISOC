@@ -123,7 +123,7 @@ def test_create_update_delete_actividad_ok(comedor, dia):
         .order_by("id")
         .values_list("accion", flat=True)
     )
-    assert eventos == ["create", "update", "delete"]
+    assert eventos == ["create", "update", "deactivate"]
 
 
 @pytest.mark.django_db

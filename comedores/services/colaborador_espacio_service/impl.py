@@ -150,6 +150,13 @@ class ColaboradorEspacioService:
 
     @staticmethod
     def update_for_comedor(*, colaborador, actor, cleaned_data):
+        if colaborador.fecha_baja:
+            return ColaboradorEspacioService._build_create_response(
+                False,
+                "Solo se pueden editar colaboradores activos.",
+                colaborador=colaborador,
+                ciudadano=colaborador.ciudadano,
+            )
         colaborador_antes = (
             ColaboradorEspacio.objects.select_related("ciudadano")
             .prefetch_related("actividades")

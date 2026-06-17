@@ -185,8 +185,6 @@ def _create_or_resolve_ciudadano(*, actor, data: dict) -> Ciudadano:
             raise ValidationError({"nombre": "Este campo es obligatorio."})
         if not apellido:
             raise ValidationError({"apellido": "Este campo es obligatorio."})
-        if not fecha_nacimiento:
-            raise ValidationError({"fecha_nacimiento": "Este campo es obligatorio."})
         if not sexo:
             raise ValidationError({"sexo_id": "Este campo es obligatorio."})
 
@@ -440,6 +438,70 @@ def _validate_asistencia(
 
 
 @transaction.atomic
+def sync_nomina_asistencia_actividades_web(
+    *,
+    nomina: Nomina,
+    comedor_id: int,
+    actor,
+    asistencia_alimentaria: bool,
+    asistencia_actividades: bool,
+    activity_ids,
+):
+    normalized_activity_ids = [
+        int(getattr(activity_id, "pk", activity_id))
+        for activity_id in (activity_ids or [])
+    ]
+    asistencia_alimentaria, asistencia_actividades = _validate_asistencia(
+        asistencia_alimentaria=asistencia_alimentaria,
+        asistencia_actividades=asistencia_actividades,
+        activity_ids=normalized_activity_ids,
+    )
+    profile, created = NominaEspacioPWA.objects.get_or_create(
+        nomina=nomina,
+        defaults={
+            "asistencia_alimentaria": asistencia_alimentaria,
+            "asistencia_actividades": asistencia_actividades,
+            "activo": True,
+            "creado_por": actor,
+            "actualizado_por": actor,
+        },
+    )
+    snapshot_antes = None if created else _snapshot_nomina_profile(profile)
+    profile.asistencia_alimentaria = asistencia_alimentaria
+    profile.asistencia_actividades = asistencia_actividades
+    profile.activo = True
+    profile.fecha_baja = None
+    profile.actualizado_por = actor
+    profile.save(
+        update_fields=[
+            "asistencia_alimentaria",
+            "asistencia_actividades",
+            "activo",
+            "fecha_baja",
+            "actualizado_por",
+            "fecha_actualizacion",
+        ]
+    )
+    _sync_inscripciones_actividades(
+        nomina=nomina,
+        comedor_id=comedor_id,
+        activity_ids=normalized_activity_ids if asistencia_actividades else [],
+        actor=actor,
+    )
+    registrar_evento_operacion(
+        actor=actor,
+        comedor_id=comedor_id,
+        entidad="nomina_perfil",
+        entidad_id=profile.id,
+        accion="create" if created else "update",
+        snapshot_antes=snapshot_antes,
+        snapshot_despues=_snapshot_nomina_profile(profile),
+        metadata={"origen": "web_nomina"},
+    )
+    return profile
+
+
+@transaction.atomic
 def create_nomina_persona(*, comedor_id: int, actor, data: dict) -> Nomina:
     asistencia_alimentaria = bool(data.get("asistencia_alimentaria"))
     asistencia_actividades = bool(data.get("asistencia_actividades"))
@@ -593,32 +655,44 @@ def update_nomina_persona(*, nomina: Nomina, actor, data: dict) -> Nomina:
         ciudadano_fields.append("modificado")
         ciudadano.save(update_fields=ciudadano_fields)
 
-    asistencia_alimentaria = (
-        bool(data.get("asistencia_alimentaria"))
-        if "asistencia_alimentaria" in data
-        else bool(profile.asistencia_alimentaria)
-    )
-    asistencia_actividades = (
-        bool(data.get("asistencia_actividades"))
-        if "asistencia_actividades" in data
-        else bool(profile.asistencia_actividades)
-    )
-    activity_ids = (
-        [int(activity_id) for activity_id in (data.get("actividad_ids") or [])]
-        if "actividad_ids" in data
-        else list(
-            InscriptoActividadEspacioPWA.objects.filter(
-                nomina=nomina,
-                actividad_espacio__comedor_id=_nomina_comedor_id(nomina),
-                activo=True,
-            ).values_list("actividad_espacio_id", flat=True)
+    touches_asistencia = any(
+        key in data
+        for key in (
+            "asistencia_alimentaria",
+            "asistencia_actividades",
+            "actividad_ids",
         )
     )
-    asistencia_alimentaria, asistencia_actividades = _validate_asistencia(
-        asistencia_alimentaria=asistencia_alimentaria,
-        asistencia_actividades=asistencia_actividades,
-        activity_ids=activity_ids,
-    )
+    asistencia_alimentaria = bool(profile.asistencia_alimentaria)
+    asistencia_actividades = bool(profile.asistencia_actividades)
+    activity_ids = None
+    if touches_asistencia:
+        asistencia_alimentaria = (
+            bool(data.get("asistencia_alimentaria"))
+            if "asistencia_alimentaria" in data
+            else asistencia_alimentaria
+        )
+        asistencia_actividades = (
+            bool(data.get("asistencia_actividades"))
+            if "asistencia_actividades" in data
+            else asistencia_actividades
+        )
+        activity_ids = (
+            [int(activity_id) for activity_id in (data.get("actividad_ids") or [])]
+            if "actividad_ids" in data
+            else list(
+                InscriptoActividadEspacioPWA.objects.filter(
+                    nomina=nomina,
+                    actividad_espacio__comedor_id=_nomina_comedor_id(nomina),
+                    activo=True,
+                ).values_list("actividad_espacio_id", flat=True)
+            )
+        )
+        asistencia_alimentaria, asistencia_actividades = _validate_asistencia(
+            asistencia_alimentaria=asistencia_alimentaria,
+            asistencia_actividades=asistencia_actividades,
+            activity_ids=activity_ids,
+        )
 
     nomina_fields = []
     if "observaciones" in data:
@@ -665,12 +739,13 @@ def update_nomina_persona(*, nomina: Nomina, actor, data: dict) -> Nomina:
         ]
     )
 
-    _sync_inscripciones_actividades(
-        nomina=nomina,
-        comedor_id=_nomina_comedor_id(nomina),
-        activity_ids=activity_ids if asistencia_actividades else [],
-        actor=actor,
-    )
+    if touches_asistencia:
+        _sync_inscripciones_actividades(
+            nomina=nomina,
+            comedor_id=_nomina_comedor_id(nomina),
+            activity_ids=activity_ids if asistencia_actividades else [],
+            actor=actor,
+        )
     registrar_evento_operacion(
         actor=actor,
         comedor_id=_nomina_comedor_id(nomina),

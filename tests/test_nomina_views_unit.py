@@ -107,7 +107,9 @@ def test_nomina_create_get_context_data_with_renaper(mocker):
     )
     mocker.patch(
         "comedores.views.nomina._get_admision_del_comedor_or_404",
-        return_value=SimpleNamespace(pk=77, comedor="comedor"),
+        return_value=SimpleNamespace(
+            pk=77, comedor=SimpleNamespace(pk=77, programa_id=None, programa=None)
+        ),
     )
     mocker.patch(
         "comedores.views.nomina.ComedorService.buscar_ciudadanos_por_documento",
@@ -153,7 +155,9 @@ def test_nomina_create_get_context_data_muestra_form_si_solo_hay_revision(mocker
     )
     mocker.patch(
         "comedores.views.nomina._get_admision_del_comedor_or_404",
-        return_value=SimpleNamespace(pk=77, comedor="comedor"),
+        return_value=SimpleNamespace(
+            pk=77, comedor=SimpleNamespace(pk=77, programa_id=None, programa=None)
+        ),
     )
     ciudadano_revision = SimpleNamespace(requiere_revision_manual=True)
     mocker.patch(
@@ -197,7 +201,7 @@ def test_nomina_directa_get_context_data_muestra_form_si_solo_hay_revision(mocke
     )
     mocker.patch(
         "comedores.views.nomina._get_comedor_directo_or_404",
-        return_value=SimpleNamespace(pk=77),
+        return_value=SimpleNamespace(pk=77, programa_id=None, programa=None),
     )
     ciudadano_revision = SimpleNamespace(requiere_revision_manual=True)
     mocker.patch(
@@ -242,9 +246,10 @@ def test_nomina_create_post_ciudadano_existente(mocker):
 
     req = SimpleNamespace(POST={"ciudadano_id": "10"}, user="u")
     view.request = req
+    _comedor_stub = SimpleNamespace(pk=88, id=88, programa_id=None, programa=None)
     mocker.patch(
         "comedores.views.nomina._get_admision_del_comedor_or_404",
-        return_value=SimpleNamespace(pk=88),
+        return_value=SimpleNamespace(pk=88, comedor=_comedor_stub),
     )
     # Mock de la validación de identidad agregada en Fix_dni
     _ciudadano_validado = SimpleNamespace(requiere_revision_manual=False)
@@ -252,6 +257,7 @@ def test_nomina_create_post_ciudadano_existente(mocker):
         "comedores.views.nomina.Ciudadano.objects.only",
         return_value=SimpleNamespace(get=lambda **kw: _ciudadano_validado),
     )
+    mocker.patch("comedores.views.nomina._get_nomina_creada", return_value=None)
 
     form = SimpleNamespace(
         is_valid=lambda: True, cleaned_data={"estado": "A", "observaciones": "o"}
@@ -277,10 +283,12 @@ def test_nomina_create_post_ciudadano_nuevo_success_and_error(mocker):
 
     req = SimpleNamespace(POST={"origen_dato": "renaper"}, user="u")
     view.request = req
+    _comedor_stub = SimpleNamespace(pk=88, id=88, programa_id=None, programa=None)
     mocker.patch(
         "comedores.views.nomina._get_admision_del_comedor_or_404",
-        return_value=SimpleNamespace(pk=88),
+        return_value=SimpleNamespace(pk=88, comedor=_comedor_stub),
     )
+    mocker.patch("comedores.views.nomina._get_nomina_creada", return_value=None)
 
     form_ciudadano = SimpleNamespace(
         is_valid=lambda: True, cleaned_data={"nombre": "A"}
@@ -299,6 +307,12 @@ def test_nomina_create_post_ciudadano_nuevo_success_and_error(mocker):
     mocker.patch("comedores.views.nomina.messages.success")
     mocker.patch.object(view, "get_success_url", return_value="/ok")
     mocker.patch("comedores.views.nomina.redirect", return_value="redir")
+    mocker.patch(
+        "comedores.views.nomina.Ciudadano.objects.filter",
+        return_value=SimpleNamespace(
+            order_by=lambda *a: SimpleNamespace(first=lambda: None)
+        ),
+    )
 
     assert view.post(req) == "redir"
 
