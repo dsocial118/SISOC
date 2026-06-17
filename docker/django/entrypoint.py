@@ -16,6 +16,7 @@ SERVICE_ROLE_WEB = "web"
 SERVICE_ROLE_BULK_CREDENTIALS_WORKER = "bulk_credentials_worker"
 SERVICE_ROLE_CIUDADANOS_IMPORT_WORKER = "ciudadanos_import_worker"
 SERVICE_ROLE_MAILING_WORKER = "mailing_worker"
+SERVICE_ROLE_USER_IMPORT_WORKER = "user_import_worker"
 
 
 def run_command(cmd, *, stage, **kwargs):
@@ -202,6 +203,15 @@ def run_mailing_worker():
     )
 
 
+def run_user_import_worker():
+    """Inicia el worker dedicado de importacion masiva de usuarios."""
+    logger.info("[worker] Iniciando worker de importacion masiva de usuarios...")
+    run_command(
+        ["python", "manage.py", "process_user_import_jobs"],
+        stage="user_import_worker",
+    )
+
+
 def main():
     wait_for_mysql()
     service_role = os.getenv("DJANGO_SERVICE_ROLE", SERVICE_ROLE_WEB).strip().lower()
@@ -213,6 +223,9 @@ def main():
         return
     if service_role == SERVICE_ROLE_MAILING_WORKER:
         run_mailing_worker()
+        return
+    if service_role == SERVICE_ROLE_USER_IMPORT_WORKER:
+        run_user_import_worker()
         return
     run_django_commands()
 
