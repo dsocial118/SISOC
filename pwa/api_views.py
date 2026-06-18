@@ -561,7 +561,6 @@ class ActividadEspacioPWAViewSet(viewsets.ViewSet):
         return (
             ActividadEspacioPWA.objects.filter(
                 comedor_id=comedor_id,
-                activo=True,
             )
             .select_related("catalogo_actividad", "dia_actividad")
             .annotate(
@@ -657,9 +656,14 @@ class ActividadEspacioPWAViewSet(viewsets.ViewSet):
                 status=status.HTTP_404_NOT_FOUND,
             )
         queryset = (
-            actividad.inscriptos.filter(activo=True)
+            actividad.inscriptos.all()
             .select_related("nomina", "nomina__ciudadano", "nomina__ciudadano__sexo")
-            .order_by("nomina__ciudadano__apellido", "nomina__ciudadano__nombre", "id")
+            .order_by(
+                "-activo",
+                "nomina__ciudadano__apellido",
+                "nomina__ciudadano__nombre",
+                "id",
+            )
         )
         serializer = InscriptoActividadPWAListSerializer(queryset, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)

@@ -55,6 +55,11 @@ from comedores.services.capacitaciones_certificados_service import (
     serialize_certificate,
     submit_certificate,
 )
+from comedores.utils import (
+    get_prestacion_conformidad_periods,
+    is_prestacion_alimentaria_conformidad_program,
+    is_prestacion_conformidad_period_enabled,
+)
 from intervenciones.models.intervenciones import Intervencion
 from relevamientos.models import ClasificacionComedor, Relevamiento
 from rendicioncuentasfinal.models import DocumentoRendicionFinal
@@ -364,6 +369,37 @@ class ComedorDetailViewSet(
         today = timezone.localdate()
         return today.replace(day=1)
 
+    def _previous_month_period(self):
+        current = self._current_month_period()
+        if current.month == 1:
+            return current.replace(year=current.year - 1, month=12)
+        return current.replace(month=current.month - 1)
+
+    def _parse_conformidad_period(self, value):
+        if not value:
+            return self._previous_month_period()
+        value = str(value).strip()
+        parsed = parse_date(f"{value}-01" if len(value) == 7 else value)
+        if not parsed or parsed.day != 1:
+            return None
+        if parsed >= self._current_month_period():
+            return None
+        return parsed
+
+    def _period_label(self, period):
+        return f"{period.month:02d}/{period.year}"
+
+    def _available_conformidad_periods(self, comedor, conformidades):
+        existing = {item.periodo for item in conformidades}
+        return [
+            {
+                "periodo": period,
+                "label": self._period_label(period),
+                "registrada": period in existing,
+            }
+            for period in get_prestacion_conformidad_periods(comedor)
+        ]
+
     def _get_latest_prestacion_alimentaria_informe(self, comedor):
         return (
             InformeTecnico.objects.filter(
@@ -404,21 +440,42 @@ class ComedorDetailViewSet(
             }
             payload.update({field: None for field in APROBADAS_FIELDS})
 
-        current_period = self._current_month_period()
         conformidades = (
             PrestacionAlimentariaConformidad.objects.filter(comedor=comedor)
             .select_related("usuario")
             .order_by("-periodo", "-creado")
         )
-        conformidad_actual = conformidades.filter(periodo=current_period).first()
-        payload["periodo_actual"] = current_period
+        conformidades_list = list(conformidades)
+        periodos_disponibles = self._available_conformidad_periods(
+            comedor,
+            conformidades_list,
+        )
+        pending_period = next(
+            (
+                item["periodo"]
+                for item in periodos_disponibles
+                if not item["registrada"]
+            ),
+            None,
+        )
+        selected_period = pending_period or (
+            periodos_disponibles[0]["periodo"] if periodos_disponibles else None
+        )
+        conformidad_actual = next(
+            (item for item in conformidades_list if item.periodo == selected_period),
+            None,
+        )
+        payload["periodo_actual"] = selected_period
+        payload["periodo_pendiente"] = pending_period
+        payload["conformidad_pendiente"] = pending_period is not None
+        payload["periodos_disponibles"] = periodos_disponibles
         payload["conformidad_actual"] = (
             PrestacionAlimentariaConformidadSerializer(conformidad_actual).data
             if conformidad_actual
             else None
         )
         payload["historial_conformidad"] = PrestacionAlimentariaConformidadSerializer(
-            conformidades,
+            conformidades_list,
             many=True,
         ).data
         return payload
@@ -1533,9 +1590,9 @@ class ComedorDetailViewSet(
     @action(detail=True, methods=["get"], url_path="prestacion-alimentaria")
     def prestacion_alimentaria(self, request, pk=None):
         comedor = self.get_object()
-        if not is_alimentar_comunidad_program(comedor):
+        if not is_prestacion_alimentaria_conformidad_program(comedor):
             return Response(
-                {"detail": "Disponible solo para Alimentar Comunidad."},
+                {"detail": "Disponible solo para programas con conformidad mensual."},
                 status=status.HTTP_404_NOT_FOUND,
             )
         informe = self._get_latest_prestacion_alimentaria_informe(comedor)
@@ -1555,11 +1612,11 @@ class ComedorDetailViewSet(
         url_path="prestacion-alimentaria/conformidad",
         permission_classes=[IsPWARepresentativeForComedor],
     )
-    def prestacion_alimentaria_conformidad(self, request, pk=None):
+    def prestacion_alimentaria_conformidad(self, request, pk=None):  # pylint: disable=too-many-return-statements
         comedor = self.get_object()
-        if not is_alimentar_comunidad_program(comedor):
+        if not is_prestacion_alimentaria_conformidad_program(comedor):
             return Response(
-                {"detail": "Disponible solo para Alimentar Comunidad."},
+                {"detail": "Disponible solo para programas con conformidad mensual."},
                 status=status.HTTP_404_NOT_FOUND,
             )
 
@@ -1579,7 +1636,22 @@ class ComedorDetailViewSet(
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        periodo = self._current_month_period()
+        periodo = self._parse_conformidad_period(request.data.get("periodo"))
+        if not periodo:
+            return Response(
+                {"detail": "El periodo debe ser un mes vencido en formato YYYY-MM."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if not is_prestacion_conformidad_period_enabled(comedor, periodo):
+            return Response(
+                {
+                    "detail": (
+                        "El periodo debe estar dentro de los 6 meses vencidos "
+                        "habilitados por el convenio."
+                    )
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         if PrestacionAlimentariaConformidad.objects.filter(
             comedor=comedor,
             periodo=periodo,
