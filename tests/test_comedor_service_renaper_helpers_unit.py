@@ -664,6 +664,67 @@ def test_relevamiento_resumen_presupuestos_and_aprobadas(mocker):
     )
 
 
+class _FakeQS:
+    """Queryset minimo encadenable para mockear .filter().order_by().first()."""
+
+    def __init__(self, result):
+        self._result = result
+
+    def filter(self, **_kwargs):
+        return self
+
+    def order_by(self, *_args, **_kwargs):
+        return self
+
+    def first(self):
+        return self._result
+
+
+def test_get_prestaciones_aprobadas_resumen_usa_aprobadas(mocker):
+    from comedores.services.comedor_service import impl as impl_module
+
+    admision = SimpleNamespace(id=7, activa=True)
+    informe = SimpleNamespace(
+        aprobadas_desayuno_lunes="2",
+        aprobadas_almuerzo_martes=3,
+        aprobadas_merienda_lunes=1,
+        aprobadas_cena_lunes=4,
+    )
+    mocker.patch.object(
+        impl_module.Admision,
+        "objects",
+        SimpleNamespace(filter=lambda **k: _FakeQS(admision)),
+    )
+    mocker.patch.object(
+        impl_module.InformeTecnico,
+        "objects",
+        SimpleNamespace(filter=lambda **k: _FakeQS(informe)),
+    )
+
+    resumen = impl_module.ComedorService.get_prestaciones_aprobadas_resumen(123)
+
+    # Mismo origen y formula que el detalle web (acordeon Prestaciones).
+    assert resumen["prestaciones_mensuales"] == 2 + 3 + 1 + 4
+    assert resumen["monto_prestacion_mensual"] == (3 + 4) * 763 + (2 + 1) * 383
+
+
+def test_get_prestaciones_aprobadas_resumen_sin_admision(mocker):
+    from comedores.services.comedor_service import impl as impl_module
+
+    mocker.patch.object(
+        impl_module.Admision,
+        "objects",
+        SimpleNamespace(filter=lambda **k: _FakeQS(None)),
+    )
+
+    resumen = impl_module.ComedorService.get_prestaciones_aprobadas_resumen(123)
+
+    assert resumen == {
+        "prestaciones_mensuales": None,
+        "monto_prestacion_mensual": None,
+    }
+
+
 def test_handle_legacy_relevamiento_post_branches(mocker):
     view = comedor_views_module.ComedorDetailView()
     view.object = SimpleNamespace(pk=22)
