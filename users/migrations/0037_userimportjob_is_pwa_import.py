@@ -6,13 +6,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('users', '0036_userimportjob_userimportjobrow_and_more'),
+        ("users", "0036_userimportjob_userimportjobrow_and_more"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='userimportjob',
-            name='is_pwa_import',
+            model_name="userimportjob",
+            name="is_pwa_import",
             field=models.BooleanField(default=False),
         ),
     ]
