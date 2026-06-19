@@ -1,7 +1,5 @@
 from datetime import date
 from pathlib import Path
-from unittest.mock import MagicMock
-
 import pytest
 from django.conf import settings
 from django.contrib.auth.models import User
@@ -28,24 +26,24 @@ def test_crear_nomina_con_bloqueo_evitar_duplicados():
         documento=33333333,
     )
 
-    def _make_form(estado, observaciones):
-        instance = NominaCentroInfancia(estado=estado, observaciones=observaciones)
-        mock_form = MagicMock()
-        mock_form.save.return_value = instance
-        return mock_form
-
     with transaction.atomic():
         creado_1 = NominaCentroInfanciaCreateView._crear_nomina_con_bloqueo(
             centro=centro,
             ciudadano=ciudadano,
-            form=_make_form(NominaCentroInfancia.ESTADO_ACTIVO, "Alta inicial"),
+            cleaned_data={
+                "estado": NominaCentroInfancia.ESTADO_ACTIVO,
+                "observaciones": "Alta inicial",
+            },
         )
 
     with transaction.atomic():
         creado_2 = NominaCentroInfanciaCreateView._crear_nomina_con_bloqueo(
             centro=centro,
             ciudadano=ciudadano,
-            form=_make_form(NominaCentroInfancia.ESTADO_ACTIVO, "Intento duplicado"),
+            cleaned_data={
+                "estado": NominaCentroInfancia.ESTADO_ACTIVO,
+                "observaciones": "Intento duplicado",
+            },
         )
 
     assert creado_1 is True

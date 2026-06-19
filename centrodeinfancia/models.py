@@ -1612,10 +1612,7 @@ class NominaCentroInfancia(SoftDeleteModelMixin, models.Model):
         # ── Pueblo originario ─────────────────────────────────────────────────
         # El campo se preserva cuando cualquiera de los dos indicadores está activo.
         # La obligatoriedad se exige sólo cuando el campo legacy es explícitamente SI.
-        si_pueblo_originario = (
-            self.pertenece_pueblo_originario == self.RespuestaSiNoNsNc.SI
-            or "indigena" in (self.grupo_pertenencia or [])
-        )
+        si_pueblo_originario = "indigena" in (self.grupo_pertenencia or [])
         if not si_pueblo_originario:
             self.pueblo_originario_cual = None
         elif (
