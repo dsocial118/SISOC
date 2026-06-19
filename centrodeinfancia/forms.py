@@ -1264,6 +1264,7 @@ class TrabajadorCDIForm(forms.ModelForm):
             "unidad_funcional",
             "tipo_barrio",
             "provincia_contacto",
+            "departamento_contacto",
             "municipio_contacto",
             "localidad_contacto",
             "grupo_pertenencia",
@@ -1278,10 +1279,12 @@ class TrabajadorCDIForm(forms.ModelForm):
         ]
         widgets = {
             "fecha_carga": forms.DateInput(
-                attrs={"type": "date", "class": "form-control"}
+                attrs={"type": "date", "class": "form-control"},
+                format="%Y-%m-%d",
             ),
             "fecha_nacimiento": forms.DateInput(
-                attrs={"type": "date", "class": "form-control"}
+                attrs={"type": "date", "class": "form-control"},
+                format="%Y-%m-%d",
             ),
         }
 
@@ -1306,6 +1309,9 @@ class TrabajadorCDIForm(forms.ModelForm):
 
         # Tooltip en teléfono
         self.fields["telefono"].widget.attrs["placeholder"] = "Incluir código de área"
+
+        # Límite HTML en carga horaria
+        self.fields["carga_horaria_semanal"].widget.attrs.update({"min": "1", "max": "60"})
 
     def clean_capacitaciones_certificadas(self):
         return self.cleaned_data.get("capacitaciones_certificadas") or []
