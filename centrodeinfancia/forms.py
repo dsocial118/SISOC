@@ -1311,7 +1311,9 @@ class TrabajadorCDIForm(forms.ModelForm):
         self.fields["telefono"].widget.attrs["placeholder"] = "Incluir código de área"
 
         # Límite HTML en carga horaria
-        self.fields["carga_horaria_semanal"].widget.attrs.update({"min": "1", "max": "60"})
+        self.fields["carga_horaria_semanal"].widget.attrs.update(
+            {"min": "1", "max": "60"}
+        )
 
     def clean_capacitaciones_certificadas(self):
         return self.cleaned_data.get("capacitaciones_certificadas") or []
