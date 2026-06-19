@@ -67,13 +67,13 @@ function initializeProgressTracking() {
 
 function updateProgress() {
     const sections = {
-        institucion:    checkSectionInstitucion(),
-        fuerza_trabajo: checkSectionFuerzaTrabajo(),
-        formacion:      checkSectionFormacion(),
-        contratacion:   checkSectionContratacion(),
-        contacto:       checkSectionContacto(),
-        identidad:      checkSectionIdentidad(),
-        discapacidad:   checkSectionDiscapacidad(),
+        espacio_temporal: checkSectionEspacioTemporal(),
+        fuerza_trabajo:   checkSectionFuerzaTrabajo(),
+        formacion:        checkSectionFormacion(),
+        contratacion:     checkSectionContratacion(),
+        contacto:         checkSectionContacto(),
+        identidad:        checkSectionIdentidad(),
+        discapacidad:     checkSectionDiscapacidad(),
     };
 
     let completed = 0;
@@ -105,7 +105,7 @@ function val(id) {
     return el ? el.value.trim() : "";
 }
 
-function checkSectionInstitucion() {
+function checkSectionEspacioTemporal() {
     return val("id_fecha_carga") !== "";
 }
 
@@ -167,6 +167,7 @@ function initializeConditionalFields() {
     const subcomponenteSelect  = document.getElementById("id_subcomponente");
     const rowFuncionEgp        = document.getElementById("row-funcion-egp");
     const rowFuncionCdi        = document.getElementById("row-funcion-cdi");
+    const rowSalaCdi           = document.getElementById("row-sala-cdi");
     const nivelEducativoSelect = document.getElementById("id_nivel_educativo");
     const rowFormacionAcad     = document.getElementById("row-formacion-academica");
     const tieneDiscapSelect    = document.getElementById("id_tiene_discapacidad");
@@ -177,8 +178,11 @@ function initializeConditionalFields() {
 
     function applyFunciones() {
         if (!subcomponenteSelect) return;
-        toggleVisible(rowFuncionEgp, subcomponenteSelect.value === "egp");
-        toggleVisible(rowFuncionCdi, subcomponenteSelect.value === "cdi");
+        const esCdi = subcomponenteSelect.value === "cdi";
+        const esEgp = subcomponenteSelect.value === "egp";
+        toggleVisible(rowFuncionEgp, esEgp);
+        toggleVisible(rowFuncionCdi, esCdi);
+        toggleVisible(rowSalaCdi,    esCdi);
     }
 
     function applyFormacion() {
