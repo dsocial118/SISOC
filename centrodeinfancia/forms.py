@@ -1315,6 +1315,14 @@ class TrabajadorCDIForm(forms.ModelForm):
             {"min": "1", "max": "60"}
         )
 
+    def clean_carga_horaria_semanal(self):
+        value = self.cleaned_data.get("carga_horaria_semanal")
+        if value is not None and value > 60:
+            raise forms.ValidationError(
+                "La carga horaria no puede superar las 60 horas semanales."
+            )
+        return value
+
     def clean_capacitaciones_certificadas(self):
         return self.cleaned_data.get("capacitaciones_certificadas") or []
 
