@@ -21,7 +21,8 @@ def is_pnud_comedor(comedor) -> bool:
         getattr(getattr(comedor, "programa", None), "nombre", "") or ""
     )
     normalized = " ".join(programa_nombre.lower().split())
-    return comedor.programa_id in _PNUD_PROGRAMA_IDS or "pnud" in normalized
+    programa_id = getattr(comedor, "programa_id", None)
+    return programa_id in _PNUD_PROGRAMA_IDS or "pnud" in normalized
 
 
 def _normalize_programa(nombre: str) -> str:
