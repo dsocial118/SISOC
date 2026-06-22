@@ -31,7 +31,7 @@ Componente para mostrar los archivos requeridos segun el tipo de legajo (hijo o 
             </div>
         {% endif %}
         {% if is_prov %}
-            {% if expediente.estado.nombre == 'EN_ESPERA' or legajo.revision_tecnico == 'SUBSANAR' %}
+            {% if expediente.estado.nombre == 'EN_ESPERA' and legajo.revision_tecnico != 'SUBSANAR' %}
                 <button type="button"
                         class="btn btn-outline-info btn-sm"
                         data-bs-toggle="modal"
@@ -70,7 +70,7 @@ Componente para mostrar los archivos requeridos segun el tipo de legajo (hijo o 
             </div>
         {% endif %}
         {% if is_prov %}
-            {% if expediente.estado.nombre == 'EN_ESPERA' or legajo.revision_tecnico == 'SUBSANAR' %}
+            {% if expediente.estado.nombre == 'EN_ESPERA' and legajo.revision_tecnico != 'SUBSANAR' %}
                 <button type="button"
                         class="btn btn-outline-info btn-sm"
                         data-bs-toggle="modal"
@@ -110,7 +110,7 @@ Componente para mostrar los archivos requeridos segun el tipo de legajo (hijo o 
                 </div>
             {% endif %}
             {% if is_prov %}
-                {% if expediente.estado.nombre == 'EN_ESPERA' or legajo.revision_tecnico == 'SUBSANAR' %}
+                {% if expediente.estado.nombre == 'EN_ESPERA' and legajo.revision_tecnico != 'SUBSANAR' %}
                     <button type="button"
                             class="btn btn-outline-info btn-sm"
                             data-bs-toggle="modal"
@@ -130,6 +130,104 @@ Componente para mostrar los archivos requeridos segun el tipo de legajo (hijo o 
                     </button>
                 {% endif %}
             {% endif %}
+        </div>
+    {% endif %}
+
+    {% if legajo.revision_tecnico == 'SUBSANAR' and legajo.subsanacion_activa and legajo.estado_validacion_renaper != 3 %}
+        <div class="mt-3 p-2 rounded" style="background:rgba(255,193,7,.08);">
+            <div class="small font-weight-bold mb-1">Subsanación solicitada</div>
+            <div class="small text-muted mb-2">
+                {% if legajo.subsanacion_activa.solicitada_por %}
+                    Por {{ legajo.subsanacion_activa.solicitada_por.get_full_name|default:legajo.subsanacion_activa.solicitada_por.username }}
+                {% endif %}
+                {% if legajo.subsanacion_activa.solicitada_en %}el {{ legajo.subsanacion_activa.solicitada_en|date:"d/m/Y H:i" }}{% endif %}
+            </div>
+            <!-- Observaciones (motivos múltiples) -->
+            <ul class="small mb-2 ps-3">
+                {% for obs in legajo.subsanacion_activa.observaciones.all %}
+                    <li>
+                        <strong>{{ obs.get_tipo_display }}</strong>
+                        {% if obs.detalle %}: {{ obs.detalle }}{% endif %}
+                    </li>
+                {% endfor %}
+            </ul>
+            <div class="small font-weight-bold mb-1">Archivos corregidos (evidencia nueva)</div>
+            <div class="small text-muted mb-2">
+                Los documentos originales se conservan; los corregidos se agregan sin reemplazarlos.
+            </div>
+            {% for arch in legajo.subsanacion_activa.archivos.all %}
+                <div class="small mb-1">
+                    <a href="{{ arch.archivo.url }}" target="_blank">
+                        <i class="fas fa-file"></i> {{ arch.archivo.name }}
+                    </a>
+                    {% if arch.observacion %}<span class="badge badge-info">{{ arch.observacion.get_tipo_display }}</span>{% endif %}
+                    {% if arch.descripcion %}— {{ arch.descripcion }}{% endif %}
+                    <span class="text-muted">
+                        ({{ arch.creado_en|date:"d/m/Y H:i" }}
+                        {% if arch.usuario %}· {{ arch.usuario.get_full_name|default:arch.usuario.username }}{% endif %}
+                        )
+                    </span>
+                </div>
+            {% empty %}
+                <div class="small text-muted mb-1">Sin archivos de respuesta todavía.</div>
+            {% endfor %}
+            {% if is_prov %}
+                {{ legajo.subsanacion_obs_data|json_script:legajo.subsanacion_obs_dom_id }}
+                <button type="button"
+                        class="btn btn-warning btn-sm mt-1 btn-responder-subsanacion"
+                        data-bs-toggle="modal"
+                        data-bs-target="#modalRespuestaSubsanacion"
+                        data-legajo-id="{{ legajo.pk }}"
+                        data-observaciones-id="{{ legajo.subsanacion_obs_dom_id }}"
+                        data-action-url="{% url 'subsanacion_responder' expediente.pk legajo.pk %}">
+                    <i class="fas fa-upload"></i> Adjuntar archivos de subsanación
+                </button>
+            {% endif %}
+        </div>
+    {% endif %}
+
+    {% if legajo.subsanaciones_historial %}
+        <div class="mt-3">
+            <div class="small font-weight-bold mb-2">Historial de subsanaciones</div>
+            {% for sub in legajo.subsanaciones_historial %}
+                <div class="small border rounded p-2 mb-2">
+                    <div class="mb-1">
+                        <strong>#{{ sub.pk }}</strong>
+                        <span class="badge {% if sub.estado == 'RESPONDIDA' %}badge-success{% else %}badge-warning{% endif %}">{{ sub.get_estado_display }}</span>
+                    </div>
+                    <div class="text-muted">
+                        Solicitada
+                        {% if sub.solicitada_por %}por {{ sub.solicitada_por.get_full_name|default:sub.solicitada_por.username }}{% endif %}
+                        {% if sub.solicitada_en %}el {{ sub.solicitada_en|date:"d/m/Y H:i" }}{% endif %}
+                    </div>
+                    {% if sub.respondida_en %}
+                        <div class="text-muted">
+                            Respondida
+                            {% if sub.respondida_por %}por {{ sub.respondida_por.get_full_name|default:sub.respondida_por.username }}{% endif %}
+                            el {{ sub.respondida_en|date:"d/m/Y H:i" }}
+                        </div>
+                    {% endif %}
+                    {% for obs in sub.observaciones.all %}
+                        <div>
+                            • <strong>{{ obs.get_tipo_display }}</strong>
+                            {% if obs.detalle %}: {{ obs.detalle }}{% endif %}
+                        </div>
+                    {% endfor %}
+                    {% for arch in sub.archivos.all %}
+                        <div>
+                            <a href="{{ arch.archivo.url }}" target="_blank">
+                                <i class="fas fa-file"></i> {{ arch.archivo.name }}
+                            </a>
+                            {% if arch.observacion %}<span class="badge badge-info">{{ arch.observacion.get_tipo_display }}</span>{% endif %}
+                            <span class="text-muted">
+                                ({{ arch.creado_en|date:"d/m/Y H:i" }}
+                                {% if arch.usuario %}· {{ arch.usuario.get_full_name|default:arch.usuario.username }}{% endif %}
+                                )
+                            </span>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endfor %}
         </div>
     {% endif %}
 

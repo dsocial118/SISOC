@@ -4,7 +4,7 @@ from contextlib import nullcontext
 from types import SimpleNamespace
 
 import pytest
-from django.core.exceptions import PermissionDenied, ValidationError
+from django.core.exceptions import PermissionDenied
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import RequestFactory
 
@@ -40,7 +40,7 @@ def test_archivo_upload_dispatch_and_post_paths(mocker):
     rf = RequestFactory()
     leg = SimpleNamespace(
         pk=2,
-        expediente=SimpleNamespace(pk=3),
+        expediente=SimpleNamespace(pk=3, estado=SimpleNamespace(nombre="EN_ESPERA")),
         archivo2=None,
         archivo3=None,
         revision_tecnico="OTRO",
@@ -58,6 +58,11 @@ def test_archivo_upload_dispatch_and_post_paths(mocker):
 
     view = module.LegajoArchivoUploadView()
     view.exp_ciud = leg
+    # En EN_ESPERA sin subsanación pendiente la carga inicial no está bloqueada.
+    mocker.patch(
+        "celiaquia.views.legajo.Subsanacion.objects.filter",
+        return_value=SimpleNamespace(exists=lambda: False),
+    )
 
     bad_file = SimpleUploadedFile("a.txt", b"x")
     req_bad = rf.post("/", {"slot": "abc", "archivo": bad_file})
@@ -78,11 +83,14 @@ def test_archivo_upload_dispatch_and_post_paths(mocker):
     assert resp_missing.status_code == 400
 
 
-def test_archivo_upload_double_and_subsanacion_paths(mocker):
+def test_archivo_upload_subsanacion_bloqueada(mocker):
+    """Durante SUBSANAR, el reemplazo de documentos originales por este endpoint
+    queda bloqueado (409): las correcciones se cargan como archivos de
+    subsanación. No se invoca el viejo actualizar_archivos_subsanacion."""
     rf = RequestFactory()
     leg = SimpleNamespace(
         pk=4,
-        expediente=SimpleNamespace(pk=3),
+        expediente=SimpleNamespace(pk=3, estado=SimpleNamespace(nombre="EN_ESPERA")),
         archivo2=object(),
         archivo3=object(),
         revision_tecnico=module.RevisionTecnico.SUBSANAR,
@@ -103,15 +111,8 @@ def test_archivo_upload_double_and_subsanacion_paths(mocker):
         "celiaquia.views.legajo.LegajoService.actualizar_archivos_subsanacion"
     )
     resp = _call_post_unwrapped(view, req)
-    assert resp.status_code == 200
-    assert upd.called
-
-    mocker.patch(
-        "celiaquia.views.legajo.LegajoService.actualizar_archivos_subsanacion",
-        side_effect=ValidationError("no"),
-    )
-    resp_val = _call_post_unwrapped(view, req)
-    assert resp_val.status_code == 400
+    assert resp.status_code == 409
+    assert not upd.called
 
 
 def test_rechazar_view_paths(mocker):

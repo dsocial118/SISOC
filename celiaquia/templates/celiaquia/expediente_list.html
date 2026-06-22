@@ -89,6 +89,13 @@
                                         </span>
                                     </div>
                                 {% endif %}
+                                {% if exp.legajos_subsanado_count > 0 %}
+                                    <div class="mt-1">
+                                        <span class="badge bg-success">
+                                            <i class="fa fa-check-circle"></i> {{ exp.legajos_subsanado_count }} subsanados
+                                        </span>
+                                    </div>
+                                {% endif %}
                             </td>
                             {% if show_tecnico_column_celiaquia %}
                                 <td>
@@ -99,7 +106,9 @@
                                                 <select class="form-select form-select-sm js-tecnico"
                                                         style="min-width: 200px">
                                                     <option value="">— Agregar técnico —</option>
-                                                    {% for t in tecnicos %}<option value="{{ t.id }}">{{ t.get_full_name|default:t.username }}</option>{% endfor %}
+                                                    {% for t in tecnicos %}
+                                                        <option value="{{ t.id }}">{{ t.get_full_name|default:t.username }}</option>
+                                                    {% endfor %}
                                                 </select>
                                                 <!-- Badges de técnicos asignados -->
                                                 {% if exp.asignaciones_tecnicos.all %}

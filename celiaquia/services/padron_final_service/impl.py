@@ -2,6 +2,7 @@
 Servicio para generar padrón final del expediente de celiaquía.
 """
 
+from datetime import date, datetime
 from io import BytesIO
 import re
 
@@ -20,6 +21,13 @@ DOCUMENTO_COLUMN_CANDIDATES = {
     "cuil",
 }
 
+FECHA_NACIMIENTO_COLUMN_CANDIDATES = {
+    "fecha_nacimiento",
+    "fecha_de_nacimiento_responsable",
+}
+
+FECHA_NUMBER_FORMAT = "DD/MM/YYYY"
+
 
 class PadronFinalService:
     """Genera nomina final aprobada en Excel para expediente de celiaquia."""
@@ -37,6 +45,7 @@ class PadronFinalService:
         """
         headers, rows = PadronFinalService._leer_nomina_original(expediente)
         documento_index = PadronFinalService._documento_column_index(headers)
+        fecha_indices = PadronFinalService._fecha_nacimiento_column_indices(headers)
         documentos_aprobados = PadronFinalService._documentos_aprobados(expediente)
 
         filtered_rows = []
@@ -48,7 +57,7 @@ class PadronFinalService:
                 if documento in documentos_aprobados:
                     filtered_rows.append(row)
 
-        return PadronFinalService._build_excel(headers, filtered_rows)
+        return PadronFinalService._build_excel(headers, filtered_rows, fecha_indices)
 
     @staticmethod
     def _leer_nomina_original(expediente):
@@ -108,6 +117,15 @@ class PadronFinalService:
         return None
 
     @staticmethod
+    def _fecha_nacimiento_column_indices(headers) -> set[int]:
+        return {
+            index
+            for index, header in enumerate(headers)
+            if PadronFinalService._normalize_header(header)
+            in FECHA_NACIMIENTO_COLUMN_CANDIDATES
+        }
+
+    @staticmethod
     def _normalize_documento(value) -> str:
         if value is None:
             return ""
@@ -116,7 +134,8 @@ class PadronFinalService:
         return re.sub(r"\D", "", str(value)).lstrip("0")
 
     @staticmethod
-    def _build_excel(headers, rows) -> bytes:
+    def _build_excel(headers, rows, fecha_indices=None) -> bytes:
+        fecha_indices = fecha_indices or set()
         wb = Workbook()
         ws = wb.active
         ws.title = "nomina_aprobados"
@@ -124,8 +143,25 @@ class PadronFinalService:
             ws.append(headers)
         for row in rows:
             ws.append(row)
+            if fecha_indices:
+                PadronFinalService._formatear_fechas_fila(
+                    ws[ws.max_row], fecha_indices
+                )
 
         output = BytesIO()
         wb.save(output)
         output.seek(0)
         return output.getvalue()
+
+    @staticmethod
+    def _formatear_fechas_fila(cells, fecha_indices) -> None:
+        """Muestra las fechas de nacimiento como fecha sin hora (DD/MM/AAAA)."""
+        for index in fecha_indices:
+            if index >= len(cells):
+                continue
+            cell = cells[index]
+            value = cell.value
+            if isinstance(value, datetime):
+                cell.value = value.date()
+            if isinstance(cell.value, date):
+                cell.number_format = FECHA_NUMBER_FORMAT

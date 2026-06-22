@@ -1,5 +1,6 @@
 """Tests de exportacion de nomina aprobada Celiaquia."""
 
+from datetime import datetime
 from io import BytesIO
 
 import pytest
@@ -241,6 +242,44 @@ def test_nomina_aprobados_se_recalcula_con_resultado_sintys_actual(settings, tmp
         "20392317001",
         "20392317002",
     ]
+
+
+@pytest.mark.django_db
+def test_nomina_aprobados_exporta_fecha_nacimiento_sin_hora(settings, tmp_path):
+    owner = _user("prov-fechas")
+    rows = [
+        _row(
+            "20392317500",
+            "con",
+            "fecha",
+            fecha_nacimiento=datetime(2010, 3, 15, 0, 0, 0),
+            FECHA_DE_NACIMIENTO_RESPONSABLE=datetime(1980, 7, 9, 12, 30, 0),
+        )
+    ]
+    expediente = _expediente_con_excel(settings, tmp_path, owner, rows)
+    _crear_legajo(
+        expediente,
+        "20392317500",
+        revision=RevisionTecnico.APROBADO,
+        sintys=ResultadoSintys.MATCH,
+    )
+
+    content = PadronFinalService.generar_padron_final_excel(expediente)
+    wb = load_workbook(BytesIO(content))
+    ws = wb.active
+
+    fecha_nac_col = NOMINA_HEADERS.index("fecha_nacimiento") + 1
+    fecha_resp_col = NOMINA_HEADERS.index("FECHA_DE_NACIMIENTO_RESPONSABLE") + 1
+    fecha_nac_cell = ws.cell(row=2, column=fecha_nac_col)
+    fecha_resp_cell = ws.cell(row=2, column=fecha_resp_col)
+
+    assert fecha_nac_cell.value.hour == 0
+    assert fecha_nac_cell.value.date().isoformat() == "2010-03-15"
+    assert fecha_resp_cell.value.date().isoformat() == "1980-07-09"
+    assert "H" not in fecha_nac_cell.number_format
+    assert "H" not in fecha_resp_cell.number_format
+    assert fecha_nac_cell.number_format == "DD/MM/YYYY"
+    assert fecha_resp_cell.number_format == "DD/MM/YYYY"
 
 
 @pytest.mark.django_db

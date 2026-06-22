@@ -34,6 +34,7 @@ from celiaquia.views.expediente import (
     EliminarRegistroErroneoView,
 )
 from celiaquia.views.confirm_envio import ExpedienteConfirmView
+from celiaquia.views.subsanacion import SubsanacionRespuestaUploadView
 from celiaquia.views.legajo import (
     LegajoArchivoUploadView,
     LegajoSubsanarView,
@@ -312,6 +313,13 @@ urlpatterns = [
             EditarLegajoView.as_view()
         ),
         name="legajo_editar",
+    ),
+    path(
+        "expedientes/<int:pk>/legajos/<int:legajo_id>/subsanacion/responder/",
+        permissions_any_required(["celiaquia.view_expediente"])(
+            SubsanacionRespuestaUploadView.as_view()
+        ),
+        name="subsanacion_responder",
     ),
     path(
         "expedientes/<int:expediente_id>/padron-final/",

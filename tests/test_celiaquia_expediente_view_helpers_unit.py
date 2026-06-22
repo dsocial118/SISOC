@@ -5,7 +5,7 @@ from contextlib import nullcontext
 from types import SimpleNamespace
 from unittest.mock import Mock
 
-from django.http import JsonResponse
+from django.http import JsonResponse, QueryDict
 
 from celiaquia.views import expediente as module
 
@@ -483,6 +483,19 @@ def test_subir_cruce_excel_and_revisar_legajo_branches(mocker):
     mocker.patch("celiaquia.views.expediente._user_has_permission", return_value=True)
     mocker.patch("celiaquia.views.expediente._is_admin", return_value=False)
     mocker.patch("celiaquia.views.expediente.HistorialValidacionTecnica.objects.create")
+    # La acción SUBSANAR crea Subsanacion + observaciones dentro de una
+    # transacción: se mockean para mantener este test unitario sin DB.
+    mocker.patch(
+        "celiaquia.views.expediente.transaction.atomic",
+        side_effect=lambda *a, **k: nullcontext(),
+    )
+    mocker.patch(
+        "celiaquia.views.expediente.Subsanacion.objects.create",
+        return_value=SimpleNamespace(pk=1),
+    )
+    mocker.patch(
+        "celiaquia.views.expediente.SubsanacionObservacion.objects.bulk_create"
+    )
 
     req_aprobar = SimpleNamespace(
         user=_user_stub(user_id=1, tec=True), POST={"accion": "APROBAR"}
@@ -491,13 +504,13 @@ def test_subir_cruce_excel_and_revisar_legajo_branches(mocker):
     assert resp_ap.status_code == 200
     assert leg.estado_validacion_renaper == 1
 
+    subs_post = QueryDict(mutable=True)
+    subs_post["accion"] = "SUBSANAR"
+    subs_post["motivo"] = "faltan docs"
+    subs_post["tipo_subsanacion"] = "DOCUMENTACION"
     req_subs = SimpleNamespace(
         user=_user_stub(user_id=1, tec=True),
-        POST={
-            "accion": "SUBSANAR",
-            "motivo": "faltan docs",
-            "tipo_subsanacion": "DOCUMENTACION",
-        },
+        POST=subs_post,
     )
     resp_sub = revisar.post(req_subs, pk=1, legajo_id=3)
     assert resp_sub.status_code == 400
@@ -520,7 +533,9 @@ def test_subir_cruce_excel_and_revisar_legajo_branches(mocker):
     leg.estado_validacion_renaper = 0
     resp_subsanado = revisar.post(req_subs, pk=1, legajo_id=3)
     assert resp_subsanado.status_code == 200
-    assert leg.estado_validacion_renaper == 3
+    # La subsanación técnica ya NO marca estado_validacion_renaper=3: ese estado
+    # queda reservado para la validación RENAPER real.
+    assert leg.estado_validacion_renaper == 0
     # El tipo y el motivo elegidos deben persistir en el legajo.
     assert leg.subsanacion_tipo == "DOCUMENTACION"
     assert leg.subsanacion_motivo == "faltan docs"
