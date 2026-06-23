@@ -151,12 +151,9 @@ class CruceService:
                 # Es responsable, exportar
                 rows.append(
                     {
-                        "Numero_documento": CruceService.normalize_dni_str(
+                        "numero_cuil": CruceService.normalize_dni_str(
                             getattr(ciudadano, "documento", "")
                         ),
-                        "TipoDocumento": getattr(
-                            ciudadano, "get_tipo_documento_display", lambda: ""
-                        )(),
                         "nombre": getattr(ciudadano, "nombre", "") or "",
                         "apellido": getattr(ciudadano, "apellido", "") or "",
                         "sexo": sexo,
@@ -169,12 +166,9 @@ class CruceService:
                     # No tiene responsable, exportar
                     rows.append(
                         {
-                            "Numero_documento": CruceService.normalize_dni_str(
+                            "numero_cuil": CruceService.normalize_dni_str(
                                 getattr(ciudadano, "documento", "")
                             ),
-                            "TipoDocumento": getattr(
-                                ciudadano, "get_tipo_documento_display", lambda: ""
-                            )(),
                             "nombre": getattr(ciudadano, "nombre", "") or "",
                             "apellido": getattr(ciudadano, "apellido", "") or "",
                             "sexo": sexo,
@@ -185,8 +179,7 @@ class CruceService:
         df = pd.DataFrame(
             rows,
             columns=[
-                "Numero_documento",
-                "TipoDocumento",
+                "numero_cuil",
                 "nombre",
                 "apellido",
                 "sexo",

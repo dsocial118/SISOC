@@ -48,6 +48,7 @@ from comedores.services.filter_config import get_filters_ui_config
 from comedores.utils import (
     comedor_usa_admision_para_nomina,
     get_prestacion_conformidad_pending_period,
+    is_abordaje_comunitario_relevamientos_header_program,
     is_abordaje_comunitario_linea_secos_program,
     is_pnud_comedor,
     is_prestacion_alimentaria_conformidad_program,
@@ -1359,6 +1360,10 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
         mes_ejecucion_context = _build_mes_ejecucion_context(self.object)
         actividades_pnud_context = _build_actividades_pnud_legajo_context(self.object)
         es_programa_pnud = is_pnud_comedor(self.object)
+        mostrar_relevamientos_header = (
+            not es_programa_pnud
+            or is_abordaje_comunitario_relevamientos_header_program(self.object)
+        )
 
         # Nómina del convenio seleccionado
         selected_admision_pk = getattr(selected_admision, "pk", None)
@@ -1426,6 +1431,7 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
                     else []
                 ),
                 "es_programa_pnud": es_programa_pnud,
+                "mostrar_relevamientos_header": mostrar_relevamientos_header,
                 "datos_convenio_pnud": getattr(
                     self.object, "datos_convenio_pnud", None
                 ),

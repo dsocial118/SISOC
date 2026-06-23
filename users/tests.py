@@ -510,3 +510,63 @@ def test_user_list_without_delegation_scope_keeps_default_visibility():
 
     assert "sin_scope" in usernames
     assert other_user.username in usernames
+
+
+def _import_row_data(correo):
+    return {
+        "nombre": "Nombre",
+        "apellido": "Apellido",
+        "correo": correo,
+        "permisos": "",
+        "provincias": "",
+        "rol": "TERRITORIAL",
+    }
+
+
+@pytest.mark.django_db
+def test_import_pwa_crea_usuario_sin_staff():
+    from users.models import UserImportJob
+    from users.services_user_import import process_single_user_import_row
+
+    admin = User.objects.create_user(username="import_admin_pwa", password="x")
+    job = UserImportJob(
+        requested_by=admin,
+        original_filename="usuarios.xlsx",
+        send_credentials=False,
+        is_pwa_import=True,
+    )
+
+    result = process_single_user_import_row(
+        row_data=_import_row_data("pwa.user@example.com"),
+        job=job,
+    )
+
+    from users.models import UserImportJobRow
+
+    assert result["status"] == UserImportJobRow.Status.CREATED
+    creado = User.objects.get(email="pwa.user@example.com")
+    assert creado.is_staff is False
+    assert creado.is_active is True
+
+
+@pytest.mark.django_db
+def test_import_no_pwa_crea_usuario_staff():
+    from users.models import UserImportJob
+    from users.services_user_import import process_single_user_import_row
+
+    admin = User.objects.create_user(username="import_admin_staff", password="x")
+    job = UserImportJob(
+        requested_by=admin,
+        original_filename="usuarios.xlsx",
+        send_credentials=False,
+        is_pwa_import=False,
+    )
+
+    process_single_user_import_row(
+        row_data=_import_row_data("staff.user@example.com"),
+        job=job,
+    )
+
+    creado = User.objects.get(email="staff.user@example.com")
+    assert creado.is_staff is True
+    assert creado.is_active is True

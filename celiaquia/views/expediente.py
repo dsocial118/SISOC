@@ -34,6 +34,10 @@ from celiaquia.models import (
     ExpedienteCiudadano,
     RevisionTecnico,
     HistorialValidacionTecnica,
+    Subsanacion,
+    SubsanacionEstado,
+    SubsanacionObservacion,
+    TipoSubsanacion,
 )
 from ciudadanos.models import Ciudadano
 from celiaquia.services.ciudadano_service import CiudadanoService
@@ -54,6 +58,7 @@ from celiaquia.services.importacion_service import (
     _resolver_nacionalidad_payload_importacion,
     validar_y_normalizar_payloads_importacion,
 )
+from celiaquia.permissions import can_delete_legajo
 from celiaquia.services.cruce_service import CruceService
 from celiaquia.services.cupo_service import CupoService, CupoNoConfigurado
 from django.utils import timezone
@@ -686,7 +691,19 @@ class ExpedienteListView(ListView):
                         .values("c")
                     ),
                     0,
-                )
+                ),
+                legajos_subsanado_count=Coalesce(
+                    Subquery(
+                        ExpedienteCiudadano.objects.filter(
+                            expediente=OuterRef("pk"),
+                            revision_tecnico="SUBSANADO",
+                        )
+                        .values("expediente")
+                        .annotate(c=Count("id"))
+                        .values("c")
+                    ),
+                    0,
+                ),
             )
             .only(
                 "id",
@@ -1079,9 +1096,20 @@ class ExpedienteDetailView(DetailView):
         # Enriquecer legajos con informacion de tipo (hijo/responsable)
         from celiaquia.services.legajo_service import LegajoService
         from celiaquia.services.familia_service import FamiliaService
+        from celiaquia.services.subsanacion_service import SubsanacionService
 
         legajos_enriquecidos = []
-        legajos_list = list(q.all())
+        # Prefetch de subsanaciones solo para la lista que se enriquece y muestra
+        # (evita disparar estas consultas en las querysets de conteo/listas).
+        legajos_list = list(
+            q.prefetch_related(
+                "subsanaciones__observaciones",
+                "subsanaciones__archivos__usuario",
+                "subsanaciones__archivos__observacion",
+                "subsanaciones__solicitada_por",
+                "subsanaciones__respondida_por",
+            ).all()
+        )
         ultimo_historial_tecnico_con_motivo = (
             HistorialValidacionTecnica.objects.filter(legajo_id=OuterRef("legajo_id"))
             .exclude(Q(motivo__isnull=True) | Q(motivo=""))
@@ -1161,6 +1189,47 @@ class ExpedienteDetailView(DetailView):
                     legajo, responsables_ids
                 )
             )
+            # Indicadores de documentos: uno por cada archivo obligatorio del
+            # legajo. Los legajos estandar requieren 2 (archivo2/archivo3) y los
+            # de doble rol (beneficiario y responsable) requieren 3
+            # (archivo1/archivo2/archivo3). Cada indicador refleja si el archivo
+            # correspondiente esta cargado o pendiente.
+            legajo.doc_indicadores = [
+                {
+                    "label": f"Doc{idx}",
+                    "nombre": nombre,
+                    "cargado": bool(getattr(legajo, campo, None)),
+                }
+                for idx, (campo, nombre) in enumerate(
+                    legajo.archivos_requeridos.items(), start=1
+                )
+            ]
+            # Subsanación activa (pendiente de respuesta) para que la provincia
+            # adjunte archivos correctivos y se listen las evidencias cargadas.
+            # Historial completo de subsanaciones (usa el prefetch del queryset).
+            historial_subsanaciones = list(legajo.subsanaciones.all())
+            legajo.subsanaciones_historial = historial_subsanaciones
+            legajo.subsanacion_activa = None
+            legajo.subsanacion_tiene_evidencia = False
+            legajo.subsanacion_obs_dom_id = f"subs-obs-{legajo.pk}"
+            legajo.subsanacion_obs_data = []
+            if (
+                legajo.revision_tecnico == RevisionTecnico.SUBSANAR
+                and historial_subsanaciones
+            ):
+                legajo.subsanacion_activa = historial_subsanaciones[0]
+                legajo.subsanacion_tiene_evidencia = SubsanacionService.tiene_evidencia(
+                    legajo
+                )
+                legajo.subsanacion_obs_data = [
+                    {
+                        "id": obs.pk,
+                        "label": obs.get_tipo_display()
+                        + (f" — {obs.detalle}" if obs.detalle else ""),
+                    }
+                    for obs in legajo.subsanacion_activa.observaciones.all()
+                ]
+
             legajo.observacion_tecnica_titulo = None
             legajo.observacion_tecnica_texto = None
 
@@ -1802,8 +1871,115 @@ class SubirCruceExcelView(View):
         return HttpResponseNotAllowed(["POST"])
 
 
+def _parse_observaciones_subsanacion(request, motivo_general):
+    """Construye la lista de (tipo, detalle) de una solicitud de subsanación.
+
+    Soporta el formato nuevo (múltiples observaciones tipo+detalle y/o múltiples
+    motivos seleccionados) y cae al formato legacy (un único tipo_subsanacion).
+    Siempre devuelve al menos una observación."""
+    tipos_validos = {value for value, _ in TipoSubsanacion.choices}
+
+    # Observaciones específicas (tipo + detalle) del formato nuevo.
+    obs_tipos = request.POST.getlist("observacion_tipo")
+    obs_detalles = request.POST.getlist("observacion_detalle")
+    observaciones = []
+    for tipo, detalle in zip(obs_tipos, obs_detalles):
+        tipo = (tipo or "").strip().upper()
+        detalle = (detalle or "").strip()
+        if tipo in tipos_validos:
+            observaciones.append((tipo, detalle[:500]))
+
+    # Motivos seleccionados (checkboxes) que aún no tengan una observación propia:
+    # se registran con el detalle general para no perder la categoría elegida.
+    tipos_en_observaciones = {tipo for tipo, _ in observaciones}
+    motivos_sel = [
+        m.strip().upper() for m in request.POST.getlist("motivos") if m.strip()
+    ]
+    for tipo in motivos_sel:
+        if tipo in tipos_validos and tipo not in tipos_en_observaciones:
+            observaciones.append((tipo, motivo_general[:500]))
+            tipos_en_observaciones.add(tipo)
+
+    # Fallback legacy: un único tipo_subsanacion.
+    if not observaciones:
+        tipo_legacy = (request.POST.get("tipo_subsanacion") or "OTROS").strip().upper()
+        if tipo_legacy not in tipos_validos:
+            tipo_legacy = TipoSubsanacion.OTROS
+        observaciones.append((tipo_legacy, motivo_general[:500]))
+
+    return observaciones
+
+
 @method_decorator(csrf_protect, name="dispatch")
 class RevisarLegajoView(View):
+    def _eliminar_legajo(self, request, user, leg):
+        """Elimina un legajo (baja lógica en cascada) liberando el cupo si estaba
+        ocupado. Soporta el modo `preview` para confirmar antes de eliminar y
+        registra la acción. Devuelve siempre una JsonResponse."""
+        try:
+            get_data = getattr(request, "GET", {})
+            post_data = getattr(request, "POST", {})
+            preview_enabled = str(
+                post_data.get("preview") or get_data.get("preview") or ""
+            )
+            if preview_enabled in {
+                "1",
+                "true",
+                "True",
+            } and is_soft_deletable_instance(leg):
+                return JsonResponse(
+                    {
+                        "success": True,
+                        "preview": build_delete_preview(leg),
+                    }
+                )
+
+            estado_expediente = getattr(
+                getattr(leg.expediente, "estado", None), "nombre", ""
+            )
+
+            with transaction.atomic():
+                # Liberar cupo si estaba ocupado
+                if leg.estado_cupo == "DENTRO":
+                    try:
+                        CupoService.liberar_slot(
+                            legajo=leg,
+                            usuario=user,
+                            motivo="Eliminación de legajo del expediente",
+                        )
+                    except Exception as e:
+                        logger.error(
+                            "Error al liberar cupo para legajo %s: %s",
+                            leg.pk,
+                            e,
+                            exc_info=True,
+                        )
+
+                if is_soft_deletable_instance(leg):
+                    leg.delete(user=user, cascade=True)
+                else:
+                    leg.delete()
+
+            logger.info(
+                "Legajo %s eliminado por user=%s (expediente=%s, estado=%s).",
+                leg.pk,
+                getattr(user, "id", None),
+                leg.expediente_id,
+                estado_expediente,
+            )
+            return JsonResponse(
+                {"success": True, "message": "Legajo eliminado correctamente."}
+            )
+        except Exception as e:
+            logger.error("Error al eliminar legajo %s: %s", leg.pk, e, exc_info=True)
+            return JsonResponse(
+                {
+                    "success": False,
+                    "message": "Ocurrió un error al eliminar el legajo. Inténtelo nuevamente más tarde.",
+                },
+                status=500,
+            )
+
     def post(self, request, pk, legajo_id):
         user = request.user
         expediente = get_object_or_404(Expediente, pk=pk)
@@ -1811,6 +1987,27 @@ class RevisarLegajoView(View):
         es_admin = _is_admin(user)
         es_tecnico = _user_has_permission(user, ROLE_TECNICO_CELIAQUIA_PERMISSION)
         es_coord = _user_has_permission(user, ROLE_COORDINADOR_CELIAQUIA_PERMISSION)
+        es_prov = _is_provincial(user)
+
+        accion = (request.POST.get("accion") or "").upper()
+
+        # Provincia (sin rol técnico/coordinador/admin): únicamente puede
+        # ELIMINAR legajos y solo antes del envío del expediente. Las acciones de
+        # revisión (APROBAR/RECHAZAR/SUBSANAR) quedan reservadas a técnicos y
+        # coordinadores.
+        if es_prov and not (es_admin or es_tecnico or es_coord):
+            if accion != "ELIMINAR":
+                return JsonResponse(
+                    {"success": False, "error": "Permiso denegado."}, status=403
+                )
+            leg = get_object_or_404(
+                ExpedienteCiudadano, pk=legajo_id, expediente=expediente
+            )
+            try:
+                can_delete_legajo(user, expediente, leg)
+            except PermissionDenied as exc:
+                return JsonResponse({"success": False, "error": str(exc)}, status=403)
+            return self._eliminar_legajo(request, user, leg)
 
         # Permisos: admin, técnico o coordinador
         if not (es_admin or es_tecnico or es_coord):
@@ -1834,7 +2031,6 @@ class RevisarLegajoView(View):
             ExpedienteCiudadano, pk=legajo_id, expediente=expediente
         )
 
-        accion = (request.POST.get("accion") or "").upper()
         if accion not in ("APROBAR", "RECHAZAR", "SUBSANAR", "ELIMINAR"):
             return JsonResponse(
                 {"success": False, "error": "Acción inválida."}, status=400
@@ -1954,7 +2150,7 @@ class RevisarLegajoView(View):
                 {"success": True, "estado": leg.revision_tecnico, "cupo_liberado": True}
             )
 
-        # ELIMINAR - Solo coordinadores
+        # ELIMINAR - Solo coordinadores y admin (técnicos no eliminan)
         if accion == "ELIMINAR":
             if not (
                 _is_admin(user)
@@ -1967,59 +2163,7 @@ class RevisarLegajoView(View):
                     },
                     status=403,
                 )
-
-            try:
-                get_data = getattr(request, "GET", {})
-                post_data = getattr(request, "POST", {})
-                preview_enabled = str(
-                    post_data.get("preview") or get_data.get("preview") or ""
-                )
-                if preview_enabled in {
-                    "1",
-                    "true",
-                    "True",
-                } and is_soft_deletable_instance(leg):
-                    return JsonResponse(
-                        {
-                            "success": True,
-                            "preview": build_delete_preview(leg),
-                        }
-                    )
-
-                # Liberar cupo si estaba ocupado
-                if leg.estado_cupo == "DENTRO":
-                    try:
-                        CupoService.liberar_slot(
-                            legajo=leg,
-                            usuario=user,
-                            motivo="Eliminación de legajo del expediente",
-                        )
-                    except Exception as e:
-                        logger.error(
-                            "Error al liberar cupo para legajo %s: %s",
-                            leg.pk,
-                            e,
-                            exc_info=True,
-                        )
-
-                if is_soft_deletable_instance(leg):
-                    leg.delete(user=user, cascade=True)
-                else:
-                    leg.delete()
-                return JsonResponse(
-                    {"success": True, "message": "Legajo eliminado correctamente."}
-                )
-            except Exception as e:
-                logger.error(
-                    "Error al eliminar legajo %s: %s", leg.pk, e, exc_info=True
-                )
-                return JsonResponse(
-                    {
-                        "success": False,
-                        "message": "Ocurrió un error al eliminar el legajo. Inténtelo nuevamente más tarde.",
-                    },
-                    status=500,
-                )
+            return self._eliminar_legajo(request, user, leg)
 
         # SUBSANAR
         tipo_subsanacion = (request.POST.get("tipo_subsanacion") or "").strip()
@@ -2029,42 +2173,67 @@ class RevisarLegajoView(View):
                 status=400,
             )
 
+        observaciones = _parse_observaciones_subsanacion(request, motivo)
+
         estado_anterior = leg.revision_tecnico
         leg.revision_tecnico = RevisionTecnico.SUBSANAR
-        leg.subsanacion_tipo = tipo_subsanacion if tipo_subsanacion else None
+        # Campos legacy: se preserva el primer tipo y el motivo general para
+        # compatibilidad con la UI y los datos previos a la Fase 1.
+        leg.subsanacion_tipo = (
+            observaciones[0][0] if observaciones else (tipo_subsanacion or None)
+        )
         leg.subsanacion_motivo = motivo[:500]
         leg.subsanacion_solicitada_en = timezone.now()
         leg.subsanacion_usuario = user
-        # Marcar RENAPER como subsanar también
-        if leg.estado_validacion_renaper == 0:
-            leg.estado_validacion_renaper = 3
-        leg.save(
-            update_fields=[
-                "revision_tecnico",
-                "subsanacion_tipo",
-                "subsanacion_motivo",
-                "subsanacion_solicitada_en",
-                "subsanacion_usuario",
-                "estado_validacion_renaper",
-                "modificado_en",
-                "estado_cupo",
-                "es_titular_activo",
-            ]
-        )
+        # Nota: la subsanación técnica ya no marca estado_validacion_renaper=3.
+        # Ese estado queda reservado para la validación RENAPER real
+        # (ValidacionRenaperView). Así la respuesta se gestiona por el flujo
+        # unificado de subsanación (multi-archivo) en lugar del modal RENAPER.
 
-        HistorialValidacionTecnica.objects.create(
-            legajo=leg,
-            estado_anterior=estado_anterior,
-            estado_nuevo=RevisionTecnico.SUBSANAR,
-            usuario=user,
-            motivo=motivo[:500],
-        )
+        with transaction.atomic():
+            leg.save(
+                update_fields=[
+                    "revision_tecnico",
+                    "subsanacion_tipo",
+                    "subsanacion_motivo",
+                    "subsanacion_solicitada_en",
+                    "subsanacion_usuario",
+                    "modificado_en",
+                    "estado_cupo",
+                    "es_titular_activo",
+                ]
+            )
+
+            HistorialValidacionTecnica.objects.create(
+                legajo=leg,
+                estado_anterior=estado_anterior,
+                estado_nuevo=RevisionTecnico.SUBSANAR,
+                usuario=user,
+                motivo=motivo[:500],
+            )
+
+            subsanacion = Subsanacion.objects.create(
+                legajo=leg,
+                estado=SubsanacionEstado.PENDIENTE,
+                motivo_general=motivo[:500],
+                solicitada_por=user,
+            )
+            SubsanacionObservacion.objects.bulk_create(
+                [
+                    SubsanacionObservacion(
+                        subsanacion=subsanacion, tipo=tipo, detalle=detalle
+                    )
+                    for tipo, detalle in observaciones
+                ]
+            )
 
         return JsonResponse(
             {
                 "success": True,
                 "estado": str(RevisionTecnico.SUBSANAR),
                 "cupo_liberado": True,
+                "subsanacion_id": subsanacion.pk,
+                "observaciones": len(observaciones),
             }
         )
 

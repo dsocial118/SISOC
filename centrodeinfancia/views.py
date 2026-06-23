@@ -1210,7 +1210,7 @@ class NominaCentroInfanciaCreateView(LoginRequiredMixin, CreateView):
         return self._centro_cache
 
     @staticmethod
-    def _crear_nomina_con_bloqueo(centro, ciudadano, cleaned_data):
+    def _crear_nomina_con_bloqueo(centro, ciudadano, form):
         CentroDeInfancia.objects.select_for_update().filter(pk=centro.pk).exists()
         existente = NominaCentroInfancia.objects.filter(
             centro=centro,
@@ -1220,9 +1220,9 @@ class NominaCentroInfanciaCreateView(LoginRequiredMixin, CreateView):
         if existente:
             return False
 
-        nomina = NominaCentroInfancia(centro=centro, ciudadano=ciudadano)
-        for field, value in cleaned_data.items():
-            setattr(nomina, field, value)
+        nomina = form.save(commit=False)
+        nomina.centro = centro
+        nomina.ciudadano = ciudadano
         nomina.clean()
         nomina.save()
         return True
@@ -1466,7 +1466,7 @@ class NominaCentroInfanciaCreateView(LoginRequiredMixin, CreateView):
                 creado = self._crear_nomina_con_bloqueo(
                     centro=centro,
                     ciudadano=ciudadano,
-                    cleaned_data=form.cleaned_data,
+                    form=form,
                 )
         except Exception:  # noqa: BLE001
             logger.exception(

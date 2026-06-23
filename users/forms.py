@@ -911,3 +911,9 @@ class UserImportForm(forms.Form):
         initial=True,
         help_text="Si esta marcado, se enviara un email con usuario y contrasena temporal a cada usuario creado.",
     )
+    es_pwa = forms.BooleanField(
+        label="Usuarios de la PWA",
+        required=False,
+        initial=False,
+        help_text="Los usuarios importados son usuarios de la app movil (PWA).",
+    )
