@@ -6,7 +6,7 @@
         <li class="breadcrumb-item">
             <a href="{% url 'expediente_list' %}">Expedientes</a>
         </li>
-        <li class="breadcrumb-item active"></li>
+        <li class="breadcrumb-item active">Expediente #{{ expediente.pk }}</li>
     </ol>
 {% endblock %}
 {% block content %}
@@ -126,9 +126,14 @@
         <div class="p-3 rounded shadow mb-4"
              style="background-color: #1c2a3a;
                     color: #e0e0e0">
-            <h5 class="mb-3">Detalle del Expediente</h5>
+            <h5 class="mb-3">
+                Detalle del Expediente <span class="badge bg-primary ms-1">ID #{{ expediente.pk }}</span>
+            </h5>
             <div class="row">
                 <div class="col-md-6">
+                    <p>
+                        <strong>ID del expediente:</strong> {{ expediente.pk }}
+                    </p>
                     <p>
                         <strong>Numero de expediente:</strong> {{ expediente.numero_expediente|default:"-" }}
                     </p>
@@ -467,8 +472,12 @@
                                 </td>
                                 <td>
                                     <div class="d-flex gap-1">
-                                        <span class="badge {% if leg.archivo2 %}bg-success{% else %}bg-warning{% endif %}">Doc1</span>
-                                        <span class="badge {% if leg.archivo3 %}bg-success{% else %}bg-warning{% endif %}">Doc2</span>
+                                        {% for doc in leg.doc_indicadores %}
+                                            <span class="badge {% if doc.cargado %}bg-success{% else %}bg-warning text-dark{% endif %}"
+                                                  title="{{ doc.nombre }} ({% if doc.cargado %}cargado{% else %}pendiente{% endif %})">
+                                                {{ doc.nombre|truncatechars:24 }}
+                                            </span>
+                                        {% endfor %}
                                     </div>
                                 </td>
                                 <td>
@@ -499,7 +508,7 @@
                                             <i class="fas fa-edit"></i>
                                         </button>
                                     {% endif %}
-                                    {% if is_coord %}
+                                    {% if is_coord or is_prov and expediente.estado.nombre == 'EN_ESPERA' %}
                                         <button class="btn btn-outline-danger btn-sm ms-1 btn-eliminar-legajo"
                                                 data-legajo-id="{{ leg.pk }}"
                                                 data-expediente-id="{{ expediente.pk }}"
@@ -614,7 +623,7 @@
                                                         {% include 'components/legajo_comentarios.html' with legajo=leg is_tec=is_tec is_coord=is_coord %}
                                                     {% endif %}
                                                     <!-- Botón confirmar subsanación individual (solo para subsanación técnica, no Renaper) -->
-                                                    {% if is_prov and leg.revision_tecnico == 'SUBSANAR' and leg.estado_validacion_renaper != 3 and leg.archivo2 and leg.archivo3 %}
+                                                    {% if is_prov and leg.revision_tecnico == 'SUBSANAR' and leg.estado_validacion_renaper != 3 and leg.archivo2 and leg.archivo3 and leg.subsanacion_tiene_evidencia %}
                                                         <div class="mt-3">
                                                             <button type="button"
                                                                     class="btn btn-warning btn-sm w-100 btn-confirmar-subsanacion-individual"
@@ -822,7 +831,7 @@
                                 <div class="col-lg-5">
                                     {% include 'components/legajo_archivos_requeridos.html' with legajo=leg is_prov=is_prov expediente=expediente %}
                                     <!-- Botón confirmar subsanación individual (solo para subsanación técnica, no Renaper) -->
-                                    {% if is_prov and leg.revision_tecnico == 'SUBSANAR' and leg.estado_validacion_renaper != 3 and leg.archivo2 and leg.archivo3 %}
+                                    {% if is_prov and leg.revision_tecnico == 'SUBSANAR' and leg.estado_validacion_renaper != 3 and leg.archivo2 and leg.archivo3 and leg.subsanacion_tiene_evidencia %}
                                         <div class="mt-3">
                                             <button type="button"
                                                     class="btn btn-warning btn-sm w-100 btn-confirmar-subsanacion-individual"
@@ -1408,26 +1417,63 @@
                 <input type="hidden" name="accion" value="SUBSANAR" />
                 <input type="hidden" id="subsanar-legajo-id" name="legajo_id" value="" />
                 <div class="mb-3">
-                    <label for="subsanar-tipo" class="form-label">Tipo de subsanación *</label>
-                    <select id="subsanar-tipo"
-                            name="tipo_subsanacion"
-                            class="form-select"
-                            required>
-                        <option value="">Seleccionar...</option>
-                        <option value="DOCUMENTACION">Documentación</option>
-                        <option value="DATOS_PERSONALES">Datos personales</option>
-                        <option value="RENAPER">RENAPER</option>
-                        <option value="OTROS">Otros</option>
-                    </select>
+                    <label class="form-label d-block">Motivos de subsanación *</label>
+                    <div id="subsanar-motivos" class="d-flex flex-wrap gap-3">
+                        <div class="form-check">
+                            <input class="form-check-input"
+                                   type="checkbox"
+                                   name="motivos"
+                                   value="DOCUMENTACION"
+                                   id="motivo-documentacion" />
+                            <label class="form-check-label" for="motivo-documentacion">Documentación</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input"
+                                   type="checkbox"
+                                   name="motivos"
+                                   value="DATOS_PERSONALES"
+                                   id="motivo-datos-personales" />
+                            <label class="form-check-label" for="motivo-datos-personales">Datos personales</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input"
+                                   type="checkbox"
+                                   name="motivos"
+                                   value="RENAPER"
+                                   id="motivo-renaper" />
+                            <label class="form-check-label" for="motivo-renaper">RENAPER</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input"
+                                   type="checkbox"
+                                   name="motivos"
+                                   value="OTROS"
+                                   id="motivo-otros" />
+                            <label class="form-check-label" for="motivo-otros">Otros</label>
+                        </div>
+                    </div>
+                    <small class="text-muted d-block mt-1">Podés seleccionar más de un motivo.</small>
                 </div>
-                <div class="mb-2">
-                    <label for="subsanar-motivo" class="form-label">Indicar el motivo *</label>
+                <div class="mb-3">
+                    <label for="subsanar-motivo" class="form-label">Detalle general *</label>
                     <textarea id="subsanar-motivo"
                               name="motivo"
                               class="form-control"
                               rows="3"
                               required
                               maxlength="500"></textarea>
+                </div>
+                <div class="mb-2">
+                    <label class="form-label d-block">Observaciones específicas (opcional)</label>
+                    <div id="subsanar-observaciones"></div>
+                    <button type="button"
+                            class="btn btn-sm btn-outline-secondary"
+                            id="btn-add-observacion">
+                        <i class="fa fa-plus"></i> Agregar observación
+                    </button>
+                    <small class="text-muted d-block mt-1">
+                        Cada observación registra un requerimiento puntual (ej: "Adjuntar nuevamente DNI frente").
+                    </small>
                 </div>
                 <small class="text-muted d-block">
                     El legajo quedará en estado <strong>SUBSANAR</strong> y la provincia podrá actualizar los archivos.
@@ -1436,6 +1482,62 @@
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                 <button type="submit" class="btn btn-warning" id="btn-confirm-subsanar">Confirmar</button>
+            </div>
+        </form>
+    </div>
+</div>
+<!-- Modal: respuesta a subsanación (carga múltiple de archivos) -->
+<div class="modal fade"
+     id="modalRespuestaSubsanacion"
+     tabindex="-1"
+     aria-labelledby="modalRespuestaSubsanacionLabel"
+     aria-hidden="true">
+    <div class="modal-dialog">
+        <form class="modal-content"
+              id="form-respuesta-subsanacion"
+              method="post"
+              enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalRespuestaSubsanacionLabel">Responder subsanación</h5>
+                <button type="button"
+                        class="btn-close"
+                        data-bs-dismiss="modal"
+                        aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="resp-subs-legajo-id" value="" />
+                <div class="mb-3">
+                    <label for="resp-subs-observacion" class="form-label">Observación que corrige (opcional)</label>
+                    <select id="resp-subs-observacion" name="observacion_id" class="form-select">
+                        <option value="">General (toda la subsanación)</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="resp-subs-archivos" class="form-label">Archivos corregidos *</label>
+                    <input type="file"
+                           id="resp-subs-archivos"
+                           name="archivos"
+                           class="form-control"
+                           multiple
+                           required />
+                    <small class="text-muted d-block mt-1">
+                        Podés seleccionar varios archivos. La documentación original del legajo se conserva.
+                    </small>
+                </div>
+                <div class="mb-2">
+                    <label for="resp-subs-descripcion" class="form-label">Descripción (opcional)</label>
+                    <input type="text"
+                           id="resp-subs-descripcion"
+                           name="descripcion"
+                           class="form-control"
+                           maxlength="255"
+                           placeholder="Ej: DNI frente corregido y nueva biopsia" />
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="submit" class="btn btn-warning" id="btn-resp-subs">Subir archivos</button>
             </div>
         </form>
     </div>
@@ -2056,10 +2158,10 @@
     <meta name="editar-legajo-url-template"
           content="{% url 'legajo_editar' expediente.pk 0 %}" />
     <meta name="expediente-id" content="{{ expediente.pk }}" />
-    <script src="{% static 'custom/js/expediente_detail_config.js' %}?v=20260425b-editar-legajo"></script>
+    <script src="{% static 'custom/js/expediente_detail_config.js' %}?v=20260623-subsanacion-multimotivo"></script>
     <script src="{% static 'custom/js/registros_erroneos.js' %}?v=20260326-guardado-parcial-siempre"></script>
     <script src="{% static 'custom/js/utils.js' %}"></script>
-    <script src="{% static 'custom/js/expediente_detail.js' %}?v=20260425b-editar-legajo"></script>
+    <script src="{% static 'custom/js/expediente_detail.js' %}?v=20260623-subsanacion-multimotivo"></script>
     <script src="{% static 'custom/js/global_pagination.js' %}"></script>
     <script src="{% static 'custom/js/pagination_fix.js' %}"></script>
     <script src="{% static 'custom/js/legajo_comentarios.js' %}"></script>

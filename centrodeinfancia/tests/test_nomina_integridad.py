@@ -5,6 +5,7 @@ from pathlib import Path
 import pytest
 from django.conf import settings
 from django.contrib.auth.models import User
+from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.test import RequestFactory
 from django.urls import reverse
@@ -33,24 +34,36 @@ def test_crear_nomina_con_bloqueo_evitar_duplicados():
             "observaciones": observaciones,
         }
 
+    class _FormStub:
+        def __init__(self, **attrs):
+            self._attrs = attrs
+
+        def save(self, commit=False):
+            assert commit is False
+            return NominaCentroInfancia(**self._attrs)
+
     with transaction.atomic():
         creado_1 = NominaCentroInfanciaCreateView._crear_nomina_con_bloqueo(
             centro=centro,
             ciudadano=ciudadano,
-            cleaned_data={
-                "estado": NominaCentroInfancia.ESTADO_ACTIVO,
-                "observaciones": "Alta inicial",
-            },
+            form=_FormStub(
+                **_cleaned_data(
+                    NominaCentroInfancia.ESTADO_ACTIVO,
+                    "Alta inicial",
+                )
+            ),
         )
 
     with transaction.atomic():
         creado_2 = NominaCentroInfanciaCreateView._crear_nomina_con_bloqueo(
             centro=centro,
             ciudadano=ciudadano,
-            cleaned_data={
-                "estado": NominaCentroInfancia.ESTADO_ACTIVO,
-                "observaciones": "Intento duplicado",
-            },
+            form=_FormStub(
+                **_cleaned_data(
+                    NominaCentroInfancia.ESTADO_ACTIVO,
+                    "Intento duplicado",
+                )
+            ),
         )
 
     assert creado_1 is True
@@ -76,7 +89,7 @@ def test_nomina_legacy_pueblo_originario_no_impone_detalle_sin_indigena():
         tiene_discapacidad=NominaCentroInfancia.RespuestaSiNoNsNc.NO,
     )
     nomina.clean()
-    assert nomina.pueblo_originario_cual == "Mapuche"
+    assert nomina.pueblo_originario_cual is None
 
 
 @pytest.mark.django_db
