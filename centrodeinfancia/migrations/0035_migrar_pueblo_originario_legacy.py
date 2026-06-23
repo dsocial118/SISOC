@@ -3,24 +3,34 @@
 from django.db import migrations
 
 
+BATCH_SIZE = 500
+
+
 def migrar_pueblo_originario_legacy(apps, schema_editor):
     """
-    Registros con pertenece_pueblo_originario='si' pero sin 'indigena' en
-    grupo_pertenencia perderían pueblo_originario_cual al guardarse (clean() nuevo).
-    Esta migración agrega 'indigena' a grupo_pertenencia para preservar esos datos.
+    Preserva registros legacy que respondieron pueblo originario por el campo
+    anterior pero todavia no tienen el nuevo valor multiselect "indigena".
     """
     nomina_model = apps.get_model("centrodeinfancia", "NominaCentroInfancia")
+    pendientes = []
     qs = nomina_model.objects.filter(
         pertenece_pueblo_originario="si",
-    ).exclude(
-        grupo_pertenencia__contains="indigena",
-    )
-    for nomina in qs.iterator():
-        gp = list(nomina.grupo_pertenencia or [])
-        if "indigena" not in gp:
-            gp.append("indigena")
-            nomina.grupo_pertenencia = gp
-            nomina.save(update_fields=["grupo_pertenencia"])
+    ).only("id", "grupo_pertenencia")
+
+    for nomina in qs.iterator(chunk_size=BATCH_SIZE):
+        grupo_pertenencia = list(nomina.grupo_pertenencia or [])
+        if "indigena" in grupo_pertenencia:
+            continue
+        grupo_pertenencia.append("indigena")
+        nomina.grupo_pertenencia = grupo_pertenencia
+        pendientes.append(nomina)
+
+        if len(pendientes) >= BATCH_SIZE:
+            nomina_model.objects.bulk_update(pendientes, ["grupo_pertenencia"])
+            pendientes = []
+
+    if pendientes:
+        nomina_model.objects.bulk_update(pendientes, ["grupo_pertenencia"])
 
 
 class Migration(migrations.Migration):
