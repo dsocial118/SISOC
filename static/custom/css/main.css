@@ -1,4 +1,9 @@
 /* Footer personalizado */
+
+:root {
+    --sidebar-border-color: #46505f;
+}
+
 .app-wrapper .app-footer,
 footer.app-footer {
     position: sticky;
@@ -129,7 +134,7 @@ body.sidebar-collapse .app-main {
 
 
 .nav-main-item>a {
-    border-top: 1px solid var(--lte-sidebar-color);
+    border-top: 1px solid var(--sidebar-border-color);
     padding: 8px 24px;
 }
 
@@ -143,7 +148,7 @@ ul > .nav-main-item:first-child>a {
 }
 
 .nav-main-item:last-child {
-    border-bottom: 1px solid var(--lte-sidebar-color);
+    border-bottom: none;
 }
 
 .nav-main-item.menu-open::before {
@@ -227,4 +232,20 @@ aside .nav-link p {
     border-color: #e7ba61;
 }
 
+
+.sidebar-wrapper .sidebar-menu > .nav-item:hover > .nav-link {
+    color: #e7ba61 !important;
+}
+
+.sidebar-wrapper .sidebar-menu > .nav-item:hover > .nav-link img {
+    filter: invert(67%) sepia(54%) saturate(559%) hue-rotate(340deg) brightness(230%) contrast(50%);
+}
+
+ul.nav:not(.sidebar-menu) .nav-link p {
+    padding-left: 0;
+}
+
+.sidebar-wrapper .nav-treeview > .nav-item > .nav-link:hover {
+    background-color: none !important;
+}
 /* 
