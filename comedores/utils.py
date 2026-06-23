@@ -21,7 +21,8 @@ def is_pnud_comedor(comedor) -> bool:
         getattr(getattr(comedor, "programa", None), "nombre", "") or ""
     )
     normalized = " ".join(programa_nombre.lower().split())
-    return comedor.programa_id in _PNUD_PROGRAMA_IDS or "pnud" in normalized
+    programa_id = getattr(comedor, "programa_id", None)
+    return programa_id in _PNUD_PROGRAMA_IDS or "pnud" in normalized
 
 
 def _normalize_programa(nombre: str) -> str:
@@ -45,6 +46,13 @@ def is_prestacion_alimentaria_conformidad_program(comedor) -> bool:
 def is_abordaje_comunitario_linea_secos_program(comedor) -> bool:
     normalized = _get_programa_nombre_normalizado(comedor)
     return "abordaje comunitario" in normalized and "linea secos" in normalized
+
+
+def is_abordaje_comunitario_relevamientos_header_program(comedor) -> bool:
+    normalized = _get_programa_nombre_normalizado(comedor)
+    return "abordaje comunitario" in normalized and (
+        "linea secos" in normalized or "linea tradicional" in normalized
+    )
 
 
 def add_months_period(period: date, months: int) -> date:

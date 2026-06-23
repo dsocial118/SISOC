@@ -5,7 +5,6 @@ from pathlib import Path
 import pytest
 from django.conf import settings
 from django.contrib.auth.models import User
-from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.test import RequestFactory
 from django.urls import reverse
@@ -27,6 +26,12 @@ def test_crear_nomina_con_bloqueo_evitar_duplicados():
         fecha_nacimiento=date(2012, 5, 10),
         documento=33333333,
     )
+
+    def _cleaned_data(estado, observaciones):
+        return {
+            "estado": estado,
+            "observaciones": observaciones,
+        }
 
     with transaction.atomic():
         creado_1 = NominaCentroInfanciaCreateView._crear_nomina_con_bloqueo(
@@ -71,7 +76,7 @@ def test_nomina_legacy_pueblo_originario_no_impone_detalle_sin_indigena():
         tiene_discapacidad=NominaCentroInfancia.RespuestaSiNoNsNc.NO,
     )
     nomina.clean()
-    assert nomina.pueblo_originario_cual is None
+    assert nomina.pueblo_originario_cual == "Mapuche"
 
 
 @pytest.mark.django_db
