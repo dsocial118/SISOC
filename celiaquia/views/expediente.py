@@ -1871,7 +1871,6 @@ class SubirCruceExcelView(View):
         return HttpResponseNotAllowed(["POST"])
 
 
-@method_decorator(csrf_protect, name="dispatch")
 def _parse_observaciones_subsanacion(request, motivo_general):
     """Construye la lista de (tipo, detalle) de una solicitud de subsanación.
 
@@ -1911,6 +1910,7 @@ def _parse_observaciones_subsanacion(request, motivo_general):
     return observaciones
 
 
+@method_decorator(csrf_protect, name="dispatch")
 class RevisarLegajoView(View):
     def _eliminar_legajo(self, request, user, leg):
         """Elimina un legajo (baja lógica en cascada) liberando el cupo si estaba
