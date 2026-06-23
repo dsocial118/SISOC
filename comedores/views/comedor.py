@@ -64,7 +64,7 @@ from intervenciones.models.intervenciones import Intervencion
 from intervenciones.forms import IntervencionForm, build_programa_aliases
 from expedientespagos.models import ExpedientePago
 from expedientespagos.services import ordenar_expedientes_por_periodo_desc
-from pwa.models import ActividadEspacioPWA
+from pwa.models import ActividadEspacioPWA, NominaDestinatariosDocumentoPWA
 
 MESES_ES_CORTOS = [
     "Ene",
@@ -396,6 +396,54 @@ def _build_intervenciones_table_context(comedor_obj, request, admision_id=None):
                             else None
                         )
                     },
+                    {"content": _safe_cell_content(usuario_creador)},
+                    {"content": actions_html},
+                ]
+            }
+        )
+
+    documentos_nomina_pwa = (
+        NominaDestinatariosDocumentoPWA.objects.filter(
+            comedor=comedor_obj,
+            archivo__isnull=False,
+        )
+        .exclude(archivo="")
+        .select_related("generado_por")
+        .order_by("-periodo_referencia", "-version", "-id")[:10]
+    )
+    for documento in documentos_nomina_pwa:
+        fecha_display = (
+            documento.fecha_generacion.strftime("%d/%m/%Y")
+            if documento.fecha_generacion
+            else None
+        )
+        usuario_creador = "-"
+        if documento.generado_por:
+            full_name = documento.generado_por.get_full_name()
+            usuario_creador = (
+                full_name or getattr(documento.generado_por, "username", None) or "-"
+            )
+        actions_html = format_html(
+            '<a href="{}" class="btn btn-sm btn-primary" target="_blank" rel="noopener">Ver</a>',
+            documento.archivo.url,
+        )
+        intervenciones_items.append(
+            {
+                "cells": [
+                    {"content": _safe_cell_content(fecha_display)},
+                    {"content": _safe_cell_content("Nomina mensual PWA")},
+                    {
+                        "content": _safe_cell_content(
+                            f"Destinatarios {documento.periodo_referencia:%m/%Y} "
+                            f"v{documento.version}"
+                        )
+                    },
+                    {
+                        "content": format_html(
+                            '<span class="badge bg-success">Si</span>'
+                        )
+                    },
+                    {"content": _safe_cell_content("Destinatarios")},
                     {"content": _safe_cell_content(usuario_creador)},
                     {"content": actions_html},
                 ]

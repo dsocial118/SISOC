@@ -68,6 +68,9 @@ from pwa.services.nomina_service import (
     split_gender_bucket,
     update_nomina_persona,
 )
+from pwa.services.nomina_destinatarios_pdf_service import (
+    serialize_nomina_destinatarios_documento,
+)
 from pwa.utils import parse_periodo_referencia
 from pwa.view_helpers import (
     build_mensaje_espacio_summary,
@@ -76,6 +79,8 @@ from pwa.view_helpers import (
     serialize_ciudadano_local,
     serialize_renaper_data,
 )
+from users.api_permissions import HasPwaColaboradoresPermission
+from users.api_permissions import HasPwaNominaPermission
 from users.api_permissions import IsPWAAuthenticatedToken
 from users.api_permissions import IsPWARepresentativeForComedor
 from comedores.models import (
@@ -336,6 +341,13 @@ class ColaboradorEspacioPWAViewSet(viewsets.ViewSet):
 
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated, IsPWARepresentativeForComedor]
+    write_actions = {"create", "partial_update", "destroy", "preview_dni"}
+
+    def get_permissions(self):
+        permissions = [IsAuthenticated(), IsPWARepresentativeForComedor()]
+        if getattr(self, "action", None) in self.write_actions:
+            permissions.append(HasPwaColaboradoresPermission())
+        return permissions
 
     def _get_queryset(self):
         comedor_id = self.kwargs["comedor_id"]
@@ -675,6 +687,20 @@ class NominaEspacioPWAViewSet(viewsets.ViewSet):
 
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated, IsPWARepresentativeForComedor]
+    write_actions = {
+        "create",
+        "partial_update",
+        "destroy",
+        "preview_dni",
+        "registrar_asistencia",
+        "registrar_asistencia_alimentaria",
+    }
+
+    def get_permissions(self):
+        permissions = [IsAuthenticated(), IsPWARepresentativeForComedor()]
+        if getattr(self, "action", None) in self.write_actions:
+            permissions.append(HasPwaNominaPermission())
+        return permissions
 
     def _safe_profile(self, row):
         try:
@@ -1064,6 +1090,13 @@ class NominaEspacioPWAViewSet(viewsets.ViewSet):
         except ValidationError as exc:
             detail = exc.message_dict if hasattr(exc, "message_dict") else exc.messages
             return Response({"detail": detail}, status=status.HTTP_400_BAD_REQUEST)
+        documento_nomina = result.pop("_nomina_destinatarios_documento", None)
+        result["nomina_destinatarios_documento"] = (
+            serialize_nomina_destinatarios_documento(
+                documento_nomina,
+                request=request,
+            )
+        )
         return Response(result, status=status.HTTP_200_OK)
 
     def generos(self, request, comedor_id=None):

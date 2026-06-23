@@ -19,6 +19,9 @@ from pwa.models import (
     RegistroAsistenciaNominaPWA,
 )
 from pwa.services.auditoria_operacion_service import registrar_evento_operacion
+from pwa.services.nomina_destinatarios_pdf_service import (
+    generar_nomina_destinatarios_pdf,
+)
 
 DNI_REGEX = re.compile(r"^\d{7,8}$")
 
@@ -52,6 +55,7 @@ def _snapshot_nomina_profile(profile: NominaEspacioPWA | None) -> dict | None:
         "es_indocumentado": profile.es_indocumentado,
         "pertenece_comunidad_indigena": profile.pertenece_comunidad_indigena,
         "situacion_calle": profile.situacion_calle,
+        "persona_con_celiaquia": profile.persona_con_celiaquia,
         "identificador_interno": profile.identificador_interno,
         "activo": profile.activo,
         "fecha_baja": profile.fecha_baja,
@@ -558,6 +562,7 @@ def create_nomina_persona(*, comedor_id: int, actor, data: dict) -> Nomina:
         data.get("pertenece_comunidad_indigena")
     )
     profile.situacion_calle = bool(data.get("situacion_calle"))
+    profile.persona_con_celiaquia = bool(data.get("persona_con_celiaquia"))
     profile.identificador_interno = (
         data.get("identificador_interno") or ""
     ).strip() or None
@@ -571,6 +576,7 @@ def create_nomina_persona(*, comedor_id: int, actor, data: dict) -> Nomina:
             "es_indocumentado",
             "pertenece_comunidad_indigena",
             "situacion_calle",
+            "persona_con_celiaquia",
             "identificador_interno",
             "activo",
             "fecha_baja",
@@ -725,6 +731,8 @@ def update_nomina_persona(*, nomina: Nomina, actor, data: dict) -> Nomina:
         )
     if "situacion_calle" in data:
         profile.situacion_calle = bool(data.get("situacion_calle"))
+    if "persona_con_celiaquia" in data:
+        profile.persona_con_celiaquia = bool(data.get("persona_con_celiaquia"))
     profile.actualizado_por = actor
     profile.save(
         update_fields=[
@@ -733,6 +741,7 @@ def update_nomina_persona(*, nomina: Nomina, actor, data: dict) -> Nomina:
             "es_indocumentado",
             "pertenece_comunidad_indigena",
             "situacion_calle",
+            "persona_con_celiaquia",
             "identificador_interno",
             "actualizado_por",
             "fecha_actualizacion",
@@ -905,6 +914,7 @@ def sync_asistencia_alimentaria_nomina_mes_actual(
 ):
     validar_asistencia_nomina_habilitada()
     periodo_referencia = get_periodo_mensual_actual()
+    comedor = Comedor.objects.get(pk=comedor_id)
     queryset = (
         _active_nomina_queryset(comedor_id=comedor_id)
         .select_related("perfil_pwa")
@@ -983,10 +993,17 @@ def sync_asistencia_alimentaria_nomina_mes_actual(
             },
         )
 
+    documento_nomina = generar_nomina_destinatarios_pdf(
+        comedor=comedor,
+        periodo_referencia=periodo_referencia,
+        actor=actor,
+    )
+
     return {
         "periodo_referencia": periodo_referencia,
         "periodo_label": periodo_referencia.strftime("%m/%Y"),
         "selected_nomina_ids": sorted(selected_ids),
         "created_count": len(created_records),
         "deleted_count": len(deleted_records),
+        "_nomina_destinatarios_documento": documento_nomina,
     }
