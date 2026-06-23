@@ -144,9 +144,7 @@ class PadronFinalService:
         for row in rows:
             ws.append(row)
             if fecha_indices:
-                PadronFinalService._formatear_fechas_fila(
-                    ws[ws.max_row], fecha_indices
-                )
+                PadronFinalService._formatear_fechas_fila(ws[ws.max_row], fecha_indices)
 
         output = BytesIO()
         wb.save(output)

@@ -106,9 +106,7 @@
                                                 <select class="form-select form-select-sm js-tecnico"
                                                         style="min-width: 200px">
                                                     <option value="">— Agregar técnico —</option>
-                                                    {% for t in tecnicos %}
-                                                        <option value="{{ t.id }}">{{ t.get_full_name|default:t.username }}</option>
-                                                    {% endfor %}
+                                                    {% for t in tecnicos %}<option value="{{ t.id }}">{{ t.get_full_name|default:t.username }}</option>{% endfor %}
                                                 </select>
                                                 <!-- Badges de técnicos asignados -->
                                                 {% if exp.asignaciones_tecnicos.all %}

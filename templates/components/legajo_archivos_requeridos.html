@@ -140,7 +140,9 @@ Componente para mostrar los archivos requeridos segun el tipo de legajo (hijo o 
                 {% if legajo.subsanacion_activa.solicitada_por %}
                     Por {{ legajo.subsanacion_activa.solicitada_por.get_full_name|default:legajo.subsanacion_activa.solicitada_por.username }}
                 {% endif %}
-                {% if legajo.subsanacion_activa.solicitada_en %}el {{ legajo.subsanacion_activa.solicitada_en|date:"d/m/Y H:i" }}{% endif %}
+                {% if legajo.subsanacion_activa.solicitada_en %}
+                    el {{ legajo.subsanacion_activa.solicitada_en|date:"d/m/Y H:i" }}
+                {% endif %}
             </div>
             <!-- Observaciones (motivos múltiples) -->
             <ul class="small mb-2 ps-3">

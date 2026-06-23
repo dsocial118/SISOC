@@ -213,9 +213,7 @@
                             </div>
                             <div class="text-end small">
                                 {% if h.usuario %}{{ h.usuario.get_full_name|default:h.usuario.username }}{% endif %}
-                                {% if h.observaciones %}
-                                    <div class="text-muted mt-1">{{ h.observaciones }}</div>
-                                {% endif %}
+                                {% if h.observaciones %}<div class="text-muted mt-1">{{ h.observaciones }}</div>{% endif %}
                             </div>
                         </div>
                     </div>
@@ -323,9 +321,7 @@
                     <tbody id="preview-tbody">
                         {% for row in preview.rows %}
                             <tr class="preview-row">
-                                {% for h in preview.headers %}
-                                    <td>{{ row|get_item:h }}</td>
-                                {% endfor %}
+                                {% for h in preview.headers %}<td>{{ row|get_item:h }}</td>{% endfor %}
                             </tr>
                         {% endfor %}
                     </tbody>
