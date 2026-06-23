@@ -1610,6 +1610,9 @@ class NominaCentroInfancia(SoftDeleteModelMixin, models.Model):
         errors = {}
 
         # ── Pueblo originario ─────────────────────────────────────────────────
+        # El formulario ampliado usa grupo_pertenencia como indicador vigente.
+        if "indigena" not in (self.grupo_pertenencia or []):
+            self.pueblo_originario_cual = None
         # El campo nuevo (grupo_pertenencia) es el único determinante.
         # El campo legacy (pertenece_pueblo_originario) ya no controla la lógica.
         si_pueblo_originario = "indigena" in (self.grupo_pertenencia or [])
