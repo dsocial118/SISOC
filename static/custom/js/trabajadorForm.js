@@ -157,6 +157,20 @@ function toggleVisible(el, show) {
     if (el) el.classList.toggle("d-none", !show);
 }
 
+function setContainerControlsEnabled(container, enabled, clearWhenDisabled) {
+    if (!container) return;
+    container.querySelectorAll("input, select, textarea").forEach(function (control) {
+        if (!enabled && clearWhenDisabled) {
+            if (control.type === "checkbox" || control.type === "radio") {
+                control.checked = false;
+            } else {
+                control.value = "";
+            }
+        }
+        control.disabled = !enabled;
+    });
+}
+
 function getCheckedValues(containerId) {
     const container = document.getElementById(containerId);
     if (!container) return [];
@@ -183,6 +197,7 @@ function initializeConditionalFields() {
         toggleVisible(rowFuncionEgp, esEgp);
         toggleVisible(rowFuncionCdi, esCdi);
         toggleVisible(rowSalaCdi,    esCdi);
+        setContainerControlsEnabled(rowSalaCdi, esCdi, true);
     }
 
     function applyFormacion() {
