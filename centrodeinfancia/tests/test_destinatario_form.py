@@ -107,7 +107,7 @@ class TestNominaCentroInfanciaDestinatariosFormJsonFields:
         assert set(nomina.alergias_alimentarias) == {"leche_vaca", "tacc"}
 
     def test_grupo_pertenencia_se_guarda_como_lista(self, centro, ciudadano):
-        data = _base_data(grupo_pertenencia=["africano", "indigena"])
+        data = _base_data(grupo_pertenencia=["africano", "asiatico"])
         form = NominaCentroInfanciaDestinatariosForm(data, centro=centro)
         assert form.is_valid(), form.errors
         nomina = form.save(commit=False)
@@ -115,7 +115,7 @@ class TestNominaCentroInfanciaDestinatariosFormJsonFields:
         nomina.ciudadano = ciudadano
         nomina.save()
         nomina.refresh_from_db()
-        assert set(nomina.grupo_pertenencia) == {"africano", "indigena"}
+        assert set(nomina.grupo_pertenencia) == {"africano", "asiatico"}
 
     def test_tipo_discapacidad_se_guarda_como_lista(self, centro, ciudadano):
         data = _base_data(
