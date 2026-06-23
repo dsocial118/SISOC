@@ -470,6 +470,8 @@ def test_subir_cruce_excel_and_revisar_legajo_branches(mocker):
         estado_cupo="NO_EVAL",
         es_titular_activo=True,
         estado_validacion_renaper=0,
+        expediente=expediente,
+        expediente_id=1,
         save=mocker.Mock(),
         delete=mocker.Mock(),
     )
@@ -491,7 +493,7 @@ def test_subir_cruce_excel_and_revisar_legajo_branches(mocker):
     )
     mocker.patch(
         "celiaquia.views.expediente.Subsanacion.objects.create",
-        return_value=SimpleNamespace(pk=1),
+        return_value=module.Subsanacion(pk=1),
     )
     mocker.patch(
         "celiaquia.views.expediente.SubsanacionObservacion.objects.bulk_create"
@@ -705,6 +707,8 @@ def test_revisar_legajo_invalid_and_eliminar_paths(mocker):
         revision_tecnico="PENDIENTE",
         estado_cupo="DENTRO",
         es_titular_activo=True,
+        expediente=expediente,
+        expediente_id=1,
         save=mocker.Mock(),
         delete=mocker.Mock(),
     )
@@ -717,6 +721,10 @@ def test_revisar_legajo_invalid_and_eliminar_paths(mocker):
     mocker.patch("celiaquia.views.expediente.get_object_or_404", side_effect=_go404)
     mocker.patch("celiaquia.views.expediente._is_admin", return_value=False)
     mocker.patch("celiaquia.views.expediente._user_has_permission", return_value=True)
+    mocker.patch(
+        "celiaquia.views.expediente.transaction.atomic",
+        side_effect=lambda *a, **k: nullcontext(),
+    )
 
     invalid_req = SimpleNamespace(
         user=_user_stub(user_id=1, tec=True), POST={"accion": "foo"}
