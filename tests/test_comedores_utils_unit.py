@@ -96,6 +96,33 @@ def test_is_abordaje_comunitario_linea_secos_program(nombre, expected):
 
 
 # ---------------------------------------------------------------------------
+# is_abordaje_comunitario_relevamientos_header_program
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "nombre,expected",
+    [
+        ("Abordaje Comunitario - Linea Secos", True),
+        ("Abordaje Comunitario - Línea Secos", True),
+        ("Abordaje Comunitario - Linea Tradicional", True),
+        ("Abordaje Comunitario - Línea Tradicional", True),
+        ("Abordaje Comunitario", False),
+        ("Linea Secos", False),
+        ("Linea Tradicional", False),
+        ("PNUD Prog Especial", False),
+        ("Alimentar Comunidad", False),
+        ("", False),
+    ],
+)
+def test_is_abordaje_comunitario_relevamientos_header_program(nombre, expected):
+    assert (
+        module.is_abordaje_comunitario_relevamientos_header_program(_comedor(nombre))
+        is expected
+    )
+
+
+# ---------------------------------------------------------------------------
 # add_months_period
 # ---------------------------------------------------------------------------
 

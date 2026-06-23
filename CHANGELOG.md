@@ -1,3 +1,11 @@
+<!-- AUTO-GENERATED RELEASE START: 2026-06-24 -->
+# Versión SISOC 24.06.2026
+
+## Actualizaciones
+
+- [sin-area] fix(comedores): alinear monto_prestacion_mensual mobile con la web. (PR #1925)
+<!-- AUTO-GENERATED RELEASE END: 2026-06-24 -->
+
 <!-- AUTO-GENERATED RELEASE START: 2026-06-10 -->
 # Versión SISOC 10.06.2026
 

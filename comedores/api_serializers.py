@@ -1064,9 +1064,11 @@ class ComedorDetailSerializer(serializers.ModelSerializer):
 
     @staticmethod
     def _get_datos_convenio_alimentar(obj):
-        presupuestos = ComedorService.get_presupuestos(obj.id)
-        prestaciones_mensuales = presupuestos[0]
-        monto_prestacion_mensual = presupuestos[5]
+        # Misma fuente que el detalle web: prestaciones aprobadas del
+        # InformeTecnico finalizado de la admisión vigente (no el relevamiento).
+        resumen = ComedorService.get_prestaciones_aprobadas_resumen(obj.id)
+        prestaciones_mensuales = resumen["prestaciones_mensuales"]
+        monto_prestacion_mensual = resumen["monto_prestacion_mensual"]
         return {
             "tipo": "alimentar_comunidad",
             "vigencia_convenio_meses": 6,
