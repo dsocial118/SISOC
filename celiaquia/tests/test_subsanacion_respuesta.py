@@ -158,3 +158,123 @@ def test_responder_sin_subsanacion_pendiente_falla(client):
     assert response.status_code == 400
     assert response.json().get("success") is False
     assert SubsanacionArchivo.objects.count() == 0
+
+
+@pytest.mark.django_db
+def test_responder_falla_si_hay_subsanacion_renaper_pendiente(client):
+    provincia = Provincia.objects.create(nombre="Salta Renaper")
+    municipio = Municipio.objects.create(nombre="Capital Renaper", provincia=provincia)
+    localidad = Localidad.objects.create(nombre="Centro Renaper", municipio=municipio)
+    user = _provincial_user("prov-resp-renaper", provincia)
+
+    estado_exp = EstadoExpediente.objects.create(nombre="EN_ESPERA")
+    estado_legajo = EstadoLegajo.objects.create(nombre="DOCUMENTO_PENDIENTE")
+    expediente = Expediente.objects.create(usuario_provincia=user, estado=estado_exp)
+    ciudadano = Ciudadano.objects.create(
+        apellido="Test",
+        nombre="Renaper",
+        documento=99003,
+        fecha_nacimiento=date(1990, 1, 1),
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad,
+    )
+    legajo = ExpedienteCiudadano.objects.create(
+        expediente=expediente,
+        ciudadano=ciudadano,
+        estado=estado_legajo,
+        revision_tecnico=RevisionTecnico.SUBSANAR,
+        estado_validacion_renaper=3,
+    )
+    Subsanacion.objects.create(
+        legajo=legajo,
+        estado=SubsanacionEstado.PENDIENTE,
+        solicitada_por=user,
+    )
+
+    client.force_login(user)
+    response = client.post(
+        reverse("subsanacion_responder", args=[expediente.pk, legajo.pk]),
+        data={"archivos": [SimpleUploadedFile("x.pdf", b"x")]},
+    )
+
+    assert response.status_code == 400
+    assert response.json().get("success") is False
+    assert SubsanacionArchivo.objects.count() == 0
+
+
+@pytest.mark.django_db
+def test_responder_falla_si_observacion_no_pertenece_a_subsanacion_activa(client):
+    provincia = Provincia.objects.create(nombre="Salta Obs")
+    municipio = Municipio.objects.create(nombre="Capital Obs", provincia=provincia)
+    localidad = Localidad.objects.create(nombre="Centro Obs", municipio=municipio)
+    user = _provincial_user("prov-resp-obs", provincia)
+
+    estado_exp = EstadoExpediente.objects.create(nombre="EN_ESPERA")
+    estado_legajo = EstadoLegajo.objects.create(nombre="DOCUMENTO_PENDIENTE")
+    expediente = Expediente.objects.create(usuario_provincia=user, estado=estado_exp)
+    ciudadano = Ciudadano.objects.create(
+        apellido="Test",
+        nombre="Observacion",
+        documento=99004,
+        fecha_nacimiento=date(1990, 1, 1),
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad,
+    )
+    legajo = ExpedienteCiudadano.objects.create(
+        expediente=expediente,
+        ciudadano=ciudadano,
+        estado=estado_legajo,
+        revision_tecnico=RevisionTecnico.SUBSANAR,
+        archivo2=SimpleUploadedFile("original2.pdf", b"orig2"),
+        archivo3=SimpleUploadedFile("original3.pdf", b"orig3"),
+    )
+    subsanacion = Subsanacion.objects.create(
+        legajo=legajo,
+        estado=SubsanacionEstado.PENDIENTE,
+        solicitada_por=user,
+    )
+    SubsanacionObservacion.objects.create(
+        subsanacion=subsanacion,
+        tipo="DOCUMENTACION",
+        detalle="Pedir DNI",
+    )
+    otro_ciudadano = Ciudadano.objects.create(
+        apellido="Test",
+        nombre="Ajeno",
+        documento=99005,
+        fecha_nacimiento=date(1991, 1, 1),
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad,
+    )
+    otro_legajo = ExpedienteCiudadano.objects.create(
+        expediente=expediente,
+        ciudadano=otro_ciudadano,
+        estado=estado_legajo,
+        revision_tecnico=RevisionTecnico.SUBSANAR,
+    )
+    otra_subsanacion = Subsanacion.objects.create(
+        legajo=otro_legajo,
+        estado=SubsanacionEstado.PENDIENTE,
+        solicitada_por=user,
+    )
+    observacion_ajena = SubsanacionObservacion.objects.create(
+        subsanacion=otra_subsanacion,
+        tipo="OTROS",
+        detalle="No corresponde",
+    )
+
+    client.force_login(user)
+    response = client.post(
+        reverse("subsanacion_responder", args=[expediente.pk, legajo.pk]),
+        data={
+            "archivos": [SimpleUploadedFile("x.pdf", b"x")],
+            "observacion_id": str(observacion_ajena.pk),
+        },
+    )
+
+    assert response.status_code == 400
+    assert response.json().get("success") is False
+    assert SubsanacionArchivo.objects.count() == 0

@@ -9,7 +9,7 @@ from django.utils.decorators import method_decorator
 from django.views import View
 from django.views.decorators.csrf import csrf_protect
 
-from celiaquia.models import ExpedienteCiudadano
+from celiaquia.models import ExpedienteCiudadano, RevisionTecnico
 from celiaquia.permissions import can_edit_legajo_files
 from celiaquia.services.subsanacion_service import SubsanacionService
 from celiaquia.utils import error_response, success_response
@@ -33,6 +33,18 @@ class SubsanacionRespuestaUploadView(View):
             can_edit_legajo_files(request.user, legajo.expediente, legajo)
         except PermissionDenied as exc:
             return error_response(str(exc) or "Permiso denegado.", status=403)
+
+        if legajo.revision_tecnico != RevisionTecnico.SUBSANAR:
+            return error_response(
+                "El legajo no tiene una subsanación técnica activa.",
+                status=400,
+            )
+
+        if legajo.estado_validacion_renaper == 3:
+            return error_response(
+                "El legajo tiene una subsanación Renaper pendiente.",
+                status=400,
+            )
 
         archivos = request.FILES.getlist("archivos")
         if not archivos:

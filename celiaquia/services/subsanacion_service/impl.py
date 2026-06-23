@@ -92,6 +92,10 @@ class SubsanacionService:
             observacion = SubsanacionObservacion.objects.filter(
                 pk=observacion_id, subsanacion=subsanacion
             ).first()
+            if observacion is None:
+                raise ValidationError(
+                    "La observación seleccionada no pertenece a la subsanación activa."
+                )
 
         descripcion = (descripcion or "").strip()[:255]
         creados = [
