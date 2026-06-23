@@ -1,0 +1,5 @@
+# Dependencias del check de arquitectura (import-linter / grimp).
+# Aisladas del runtime: solo se instalan en el job de CI architecture_imports
+# y al correr `lint-imports` localmente.
+import-linter==2.12
+grimp==3.14
