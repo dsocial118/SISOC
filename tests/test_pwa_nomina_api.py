@@ -16,6 +16,7 @@ from pwa.models import (
     AuditoriaOperacionPWA,
     CatalogoActividadPWA,
     InscriptoActividadEspacioPWA,
+    NominaDestinatariosDocumentoPWA,
     NominaEspacioPWA,
     RegistroAsistenciaNominaPWA,
 )
@@ -592,6 +593,12 @@ def test_nomina_bulk_attendance_alimentaria_syncs_current_period(
         entidad_id=registro_existente.id,
         metadata__origen="bulk_alimentaria",
     ).exists()
+    documento = NominaDestinatariosDocumentoPWA.objects.get()
+    assert documento.cantidad_destinatarios == 1
+    assert documento.metadata["nomina_ids"] == [nomina_1.id]
+    assert (
+        response.data["nomina_destinatarios_documento"]["cantidad_destinatarios"] == 1
+    )
 
 
 @pytest.mark.django_db
