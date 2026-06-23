@@ -33,7 +33,10 @@ class Migration(migrations.Migration):
                     models.FileField(upload_to="pwa/nomina_destinatarios/"),
                 ),
                 ("cantidad_destinatarios", models.PositiveIntegerField(default=0)),
-                ("fecha_generacion", models.DateTimeField(auto_now_add=True, db_index=True)),
+                (
+                    "fecha_generacion",
+                    models.DateTimeField(auto_now_add=True, db_index=True),
+                ),
                 ("metadata", models.JSONField(blank=True, default=dict)),
                 (
                     "comedor",
