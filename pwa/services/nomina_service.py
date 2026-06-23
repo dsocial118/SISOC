@@ -997,6 +997,7 @@ def sync_asistencia_alimentaria_nomina_mes_actual(
         comedor=comedor,
         periodo_referencia=periodo_referencia,
         actor=actor,
+        nomina_ids=sorted(selected_ids),
     )
 
     return {

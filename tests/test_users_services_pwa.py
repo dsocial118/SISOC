@@ -158,6 +158,30 @@ def test_create_operador_for_comedor_rejects_duplicate_email(comedores):
 
 
 @pytest.mark.django_db
+def test_create_operador_for_comedor_rejects_weak_password(comedores):
+    comedor_1, _ = comedores
+    representante = _create_user("rep_weak_password")
+    AccesoComedorPWA.objects.create(
+        user=representante,
+        comedor=comedor_1,
+        rol=AccesoComedorPWA.ROL_REPRESENTANTE,
+        activo=True,
+    )
+
+    with pytest.raises(ValidationError) as exc_info:
+        create_operador_for_comedor(
+            comedor_id=comedor_1.id,
+            actor=representante,
+            username="op_weak_password",
+            email="op_weak_password@example.com",
+            password="123",
+        )
+
+    assert "password" in exc_info.value.message_dict
+    assert not get_user_model().objects.filter(username="op_weak_password").exists()
+
+
+@pytest.mark.django_db
 def test_create_operador_for_comedor_handles_integrity_error(comedores, monkeypatch):
     comedor_1, _ = comedores
     representante = _create_user("rep_race")

@@ -1,4 +1,5 @@
 from io import BytesIO
+from typing import Iterable
 
 from django.core.files.base import ContentFile
 from django.db.models import Max, Q
@@ -212,8 +213,16 @@ def serialize_nomina_destinatarios_documento(documento, request=None):
     }
 
 
-def generar_nomina_destinatarios_pdf(*, comedor, periodo_referencia, actor=None):
+def generar_nomina_destinatarios_pdf(
+    *,
+    comedor,
+    periodo_referencia,
+    actor=None,
+    nomina_ids: Iterable[int] | None = None,
+):
     nominas_queryset = _nomina_alimentaria_activa_queryset(comedor.id)
+    if nomina_ids is not None:
+        nominas_queryset = nominas_queryset.filter(id__in=list(nomina_ids))
     programa_nombre = str(
         getattr(getattr(comedor, "programa", None), "nombre", "") or ""
     )

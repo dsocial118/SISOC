@@ -6,6 +6,7 @@ from datetime import timedelta
 from typing import Iterable
 
 from django.conf import settings
+from django.contrib.auth import password_validation
 from django.contrib.auth.models import Permission
 from django.contrib.auth import get_user_model
 from django.core.exceptions import PermissionDenied, ValidationError
@@ -242,6 +243,11 @@ def create_operador_for_comedor(
         raise ValidationError({"email": "Este campo es obligatorio."})
     if not password:
         raise ValidationError({"password": "Este campo es obligatorio."})
+    password_user = User(username=username, email=email)
+    try:
+        password_validation.validate_password(password, user=password_user)
+    except ValidationError as exc:
+        raise ValidationError({"password": list(exc.messages)}) from exc
 
     if User.objects.filter(username__iexact=username).exists():
         raise ValidationError({"username": "Ya existe un usuario con ese username."})
