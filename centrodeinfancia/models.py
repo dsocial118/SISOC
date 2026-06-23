@@ -953,6 +953,12 @@ class Trabajador(SoftDeleteModelMixin, models.Model):
         related_name="+",
         verbose_name="Jurisdicción",
     )
+    departamento_contacto = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        verbose_name="Departamento",
+    )
     municipio_contacto = models.ForeignKey(
         "core.Municipio",
         on_delete=models.SET_NULL,
@@ -1607,6 +1613,15 @@ class NominaCentroInfancia(SoftDeleteModelMixin, models.Model):
         # El formulario ampliado usa grupo_pertenencia como indicador vigente.
         if "indigena" not in (self.grupo_pertenencia or []):
             self.pueblo_originario_cual = None
+        # El campo nuevo (grupo_pertenencia) es el único determinante.
+        # El campo legacy (pertenece_pueblo_originario) ya no controla la lógica.
+        si_pueblo_originario = "indigena" in (self.grupo_pertenencia or [])
+        if not si_pueblo_originario:
+            self.pueblo_originario_cual = None
+        elif not self.pueblo_originario_cual:
+            errors["pueblo_originario_cual"] = (
+                "Este campo es obligatorio cuando pertenece a un pueblo originario."
+            )
 
         # ── Discapacidad ─────────────────────────────────────────────────────
         if self.tiene_discapacidad != self.RespuestaSiNoNsNc.SI:
