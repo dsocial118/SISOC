@@ -47,6 +47,13 @@ def is_abordaje_comunitario_linea_secos_program(comedor) -> bool:
     return "abordaje comunitario" in normalized and "linea secos" in normalized
 
 
+def is_abordaje_comunitario_relevamientos_header_program(comedor) -> bool:
+    normalized = _get_programa_nombre_normalizado(comedor)
+    return "abordaje comunitario" in normalized and (
+        "linea secos" in normalized or "linea tradicional" in normalized
+    )
+
+
 def add_months_period(period: date, months: int) -> date:
     month_index = period.year * 12 + period.month - 1 + months
     return date(month_index // 12, month_index % 12 + 1, 1)

@@ -21,7 +21,8 @@
             {% endif %}
             {% if es_programa_pnud %}
                 <a href="#legajo-actividades-pnud" class="btn btn-md btn-outline-light"><i class="bi bi-person-walking me-1"></i>Actividades</a>
-            {% else %}
+            {% endif %}
+            {% if mostrar_relevamientos_header %}
                 <a href="{% url 'relevamientos' comedor.id %}"
                    class="btn btn-md btn-outline-light"><i class="bi bi-clipboard-check me-1"></i>Relevamientos</a>
             {% endif %}
