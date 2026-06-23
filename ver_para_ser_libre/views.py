@@ -404,6 +404,7 @@ class ItinerarioListView(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         query = (self.request.GET.get("busqueda") or "").strip()
+        buscar_por = (self.request.GET.get("buscar_por") or "todos").strip()
         estado = (self.request.GET.get("estado") or "").strip()
         provincia_id = (self.request.GET.get("provincia") or "").strip()
         localidad = (self.request.GET.get("localidad") or "").strip()
@@ -416,14 +417,25 @@ class ItinerarioListView(LoginRequiredMixin, ListView):
         )
         queryset = _filtrar_itinerarios_por_usuario(queryset, self.request.user)
         if query:
-            queryset = queryset.filter(
-                Q(codigo__icontains=query)
-                | Q(provincia__nombre__icontains=query)
-                | Q(referente_nombre__icontains=query)
-                | Q(referente_apellido__icontains=query)
-                | Q(sedes__nombre__icontains=query)
-                | Q(sedes__cueanexo__icontains=query)
-            )
+            filtros_busqueda = {
+                "codigo": Q(codigo__icontains=query),
+                "provincia": Q(provincia__nombre__icontains=query),
+                "estado": Q(estado__icontains=query),
+                "referente": Q(referente_nombre__icontains=query)
+                | Q(referente_apellido__icontains=query),
+            }
+            filtro = filtros_busqueda.get(buscar_por)
+            if filtro is None:
+                filtro = (
+                    Q(codigo__icontains=query)
+                    | Q(provincia__nombre__icontains=query)
+                    | Q(estado__icontains=query)
+                    | Q(referente_nombre__icontains=query)
+                    | Q(referente_apellido__icontains=query)
+                    | Q(sedes__nombre__icontains=query)
+                    | Q(sedes__cueanexo__icontains=query)
+                )
+            queryset = queryset.filter(filtro)
         if estado:
             queryset = queryset.filter(estado=estado)
         if provincia_id and self.request.user.is_superuser:
@@ -446,6 +458,7 @@ class ItinerarioListView(LoginRequiredMixin, ListView):
         context["query"] = self.request.GET.get("busqueda", "")
         context["filtros"] = {
             "busqueda": context["query"],
+            "buscar_por": self.request.GET.get("buscar_por", "todos"),
             "estado": self.request.GET.get("estado", ""),
             "provincia": self.request.GET.get("provincia", ""),
             "localidad": self.request.GET.get("localidad", ""),
@@ -552,6 +565,26 @@ class ItinerarioUpdateView(LoginRequiredMixin, UpdateView):
             {"text": self.object.codigo, "url": self.get_success_url()},
             {"text": "Editar", "active": True},
         )
+        return context
+
+
+class ItinerarioDeleteView(SoftDeleteDeleteViewMixin, LoginRequiredMixin, DeleteView):
+    model = ItinerarioVPSL
+    template_name = "ver_para_ser_libre/confirm_delete.html"
+    success_url = reverse_lazy("vpsl_itinerario_list")
+    success_message = "Itinerario eliminado correctamente."
+
+    def get_queryset(self):
+        return _filtrar_itinerarios_por_usuario(
+            ItinerarioVPSL.objects.all(),
+            self.request.user,
+        )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["delete_title"] = "Eliminar itinerario"
+        context["delete_name"] = self.object.codigo
+        context["cancel_url"] = reverse("vpsl_itinerario_list")
         return context
 
 
@@ -901,9 +934,16 @@ class SedeUpdateView(LoginRequiredMixin, SedeMixin, UpdateView):
 
 class SedeDeleteView(SoftDeleteDeleteViewMixin, LoginRequiredMixin, DeleteView):
     model = SedeVPSL
-    template_name = "ver_para_ser_libre/sede_confirm_delete.html"
+    template_name = "ver_para_ser_libre/confirm_delete.html"
     success_url = reverse_lazy("vpsl_sede_list")
     success_message = "Sede eliminada correctamente."
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["delete_title"] = "Eliminar sede"
+        context["delete_name"] = self.object.nombre
+        context["cancel_url"] = reverse("vpsl_sede_list")
+        return context
 
 
 def presentar_itinerario(request, pk):
@@ -1135,6 +1175,31 @@ class JornadaUpdateView(LoginRequiredMixin, UpdateView):
             },
             {"text": "Editar jornada", "active": True},
         )
+        return context
+
+
+class JornadaDeleteView(SoftDeleteDeleteViewMixin, LoginRequiredMixin, DeleteView):
+    model = JornadaVPSL
+    template_name = "ver_para_ser_libre/confirm_delete.html"
+    success_message = "Jornada eliminada correctamente."
+
+    def get_queryset(self):
+        return _filtrar_jornadas_por_usuario(
+            JornadaVPSL.objects.select_related("itinerario"),
+            self.request.user,
+        )
+
+    def get_success_url(self):
+        return reverse(
+            "vpsl_itinerario_detail",
+            kwargs={"pk": self.object.itinerario_id},
+        )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["delete_title"] = "Eliminar jornada"
+        context["delete_name"] = self.object.fecha.strftime("%d/%m/%Y")
+        context["cancel_url"] = self.get_success_url()
         return context
 
 
@@ -1564,6 +1629,38 @@ class RegistroNominalUpdateView(LoginRequiredMixin, UpdateView):
             {"text": "Jornada", "url": self.get_success_url()},
             {"text": "Editar registro", "active": True},
         )
+        return context
+
+
+class RegistroNominalDeleteView(
+    SoftDeleteDeleteViewMixin, LoginRequiredMixin, DeleteView
+):
+    model = RegistroNominalVPSL
+    template_name = "ver_para_ser_libre/confirm_delete.html"
+    success_message = "Registro nominal eliminado correctamente."
+
+    def get_queryset(self):
+        return RegistroNominalVPSL.objects.filter(
+            jornada__in=_filtrar_jornadas_por_usuario(
+                JornadaVPSL.objects.all(),
+                self.request.user,
+            )
+        ).select_related("jornada")
+
+    def get_success_url(self):
+        return reverse(
+            "vpsl_jornada_detail",
+            kwargs={"pk": self.object.jornada_id},
+        )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["delete_title"] = "Eliminar registro nominal"
+        context["delete_name"] = (
+            f"{self.object.apellido}, {self.object.nombre} "
+            f"- Acta {self.object.numero_acta}"
+        )
+        context["cancel_url"] = self.get_success_url()
         return context
 
 

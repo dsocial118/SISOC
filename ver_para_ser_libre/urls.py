@@ -92,6 +92,13 @@ urlpatterns = [
         name="vpsl_itinerario_update",
     ),
     path(
+        "ver-para-ser-libre/<int:pk>/eliminar/",
+        permissions_any_required(["ver_para_ser_libre.delete_itinerariovpsl"])(
+            views.ItinerarioDeleteView.as_view()
+        ),
+        name="vpsl_itinerario_delete",
+    ),
+    path(
         "ver-para-ser-libre/<int:pk>/subsanar/",
         permissions_any_required(["ver_para_ser_libre.change_itinerariovpsl"])(
             views.ItinerarioSubsanarView.as_view()
@@ -141,6 +148,13 @@ urlpatterns = [
         name="vpsl_jornada_update",
     ),
     path(
+        "ver-para-ser-libre/jornadas/<int:pk>/eliminar/",
+        permissions_any_required(["ver_para_ser_libre.delete_jornadavpsl"])(
+            views.JornadaDeleteView.as_view()
+        ),
+        name="vpsl_jornada_delete",
+    ),
+    path(
         "ver-para-ser-libre/jornadas/<int:pk>/habilitar/",
         permissions_any_required(["ver_para_ser_libre.change_jornadavpsl"])(
             require_POST(views.habilitar_jornada)
@@ -174,6 +188,13 @@ urlpatterns = [
             views.RegistroNominalUpdateView.as_view()
         ),
         name="vpsl_registro_update",
+    ),
+    path(
+        "ver-para-ser-libre/registros/<int:pk>/eliminar/",
+        permissions_any_required(["ver_para_ser_libre.delete_registronominalvpsl"])(
+            views.RegistroNominalDeleteView.as_view()
+        ),
+        name="vpsl_registro_delete",
     ),
     path(
         "ver-para-ser-libre/laboratorio/<int:pk>/editar/",

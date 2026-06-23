@@ -13,26 +13,29 @@
 {% block content %}
     <div class="row vpsl-page">
         <div class="col-12 col-xl-10 offset-xl-1">
+            <div class="vpsl-page-toolbar">
+                <a href="{% url 'vpsl_itinerario_detail' itinerario.pk %}"
+                   class="btn btn-light">
+                    <i class="bi bi-arrow-left"></i> Volver
+                </a>
+            </div>
             <div class="card vpsl-title-card vpsl-header">
                 <div class="card-body d-flex flex-wrap justify-content-between align-items-center gap-2">
                     <div>
-                        <h2 class="vpsl-title">Jornada VPSL</h2>
+                        <h2 class="vpsl-title">{{ itinerario.codigo }}</h2>
                         <p class="vpsl-subtitle mb-0">
-                            {{ itinerario.codigo }} · {{ itinerario.fecha_inicio|date:"d/m/Y" }} a {{ itinerario.fecha_fin|date:"d/m/Y" }}
+                            {{ itinerario.provincia }} &middot; {{ itinerario.fecha_inicio|date:"d/m/Y" }} a {{ itinerario.fecha_fin|date:"d/m/Y" }}
                         </p>
                     </div>
-                    <a href="{% url 'vpsl_itinerario_detail' itinerario.pk %}"
-                       class="btn btn-secondary">
-                        <i class="bi bi-arrow-left"></i> Volver
-                    </a>
+                    <span class="badge bg-success vpsl-status-badge">{{ itinerario.get_estado_display }}</span>
                 </div>
             </div>
-            <div class="card">
+            <div class="card vpsl-form-card">
                 <form method="post" enctype="multipart/form-data">
                     {% csrf_token %}
                     <div class="card-body">
                         {% include "ver_para_ser_libre/partials/form_errors.html" with form=form %}
-                        <div class="alert alert-info">
+                        <div class="vpsl-extra-info mb-2">
                             Fechas permitidas: {{ itinerario.fecha_inicio|date:"d/m/Y" }} a {{ itinerario.fecha_fin|date:"d/m/Y" }}.
                         </div>
                         <div class="vpsl-form-shell">
@@ -59,24 +62,23 @@
                                             {% for error in form.sede_vpsl.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
                                         </div>
                                         <div class="col-12">
-                                            <div id="sede-info" class="alert alert-secondary d-none mb-0"></div>
+                                            <div id="sede-info" class="vpsl-extra-info d-none mb-0"></div>
                                         </div>
-                                        {% for field in form %}
-                                            {% if field.name == "vehiculo" %}
-                                                <div class="col-12 col-md-6">
-                                                    <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
-                                                    {{ field }}
-                                                    {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
-                                                </div>
-                                            {% endif %}
-                                            {% if field.name == "horario_inicio" or field.name == "horario_fin" %}
-                                                <div class="col-12 col-md-6">
-                                                    <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
-                                                    {{ field }}
-                                                    {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
-                                                </div>
-                                            {% endif %}
-                                        {% endfor %}
+                                        <div class="col-12 col-md-6">
+                                            <label class="form-label" for="{{ form.horario_inicio.id_for_label }}">{{ form.horario_inicio.label }}</label>
+                                            {{ form.horario_inicio }}
+                                            {% for error in form.horario_inicio.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                                        </div>
+                                        <div class="col-12 col-md-6">
+                                            <label class="form-label" for="{{ form.horario_fin.id_for_label }}">{{ form.horario_fin.label }}</label>
+                                            {{ form.horario_fin }}
+                                            {% for error in form.horario_fin.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                                        </div>
+                                        <div class="col-12 col-md-6">
+                                            <label class="form-label" for="{{ form.vehiculo.id_for_label }}">{{ form.vehiculo.label }}</label>
+                                            {{ form.vehiculo }}
+                                            {% for error in form.vehiculo.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                                        </div>
                                     </div>
                                 </div>
                             </section>
@@ -86,7 +88,7 @@
                                         <i class="bi bi-person-vcard"></i>
                                     </div>
                                     <div>
-                                        <h3 class="vpsl-section-title">Referente de jornada</h3>
+                                        <h3 class="vpsl-section-title">Referente de la jornada</h3>
                                         <p class="vpsl-section-subtitle">Validacion RENAPER y datos de contacto</p>
                                     </div>
                                 </div>
@@ -150,8 +152,8 @@
                     </div>
                     <div class="card-footer d-flex gap-2 justify-content-end">
                         <a href="{% url 'vpsl_itinerario_detail' itinerario.pk %}"
-                           class="btn btn-secondary">Volver</a>
-                        <button type="submit" class="btn btn-primary">Guardar</button>
+                           class="btn btn-light">Cancelar</a>
+                        <button type="submit" class="btn btn-success">Guardar</button>
                     </div>
                 </form>
             </div>

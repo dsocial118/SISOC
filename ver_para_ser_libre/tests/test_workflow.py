@@ -989,7 +989,11 @@ def test_itinerario_list_restringe_usuario_provincial_y_filtra(client):
 
     response = client.get(
         reverse("vpsl_itinerario_list"),
-        {"estado": EstadoItinerario.APROBADO, "busqueda": "Laura"},
+        {
+            "estado": EstadoItinerario.APROBADO,
+            "buscar_por": "referente",
+            "busqueda": "Laura",
+        },
     )
 
     html = response.content.decode()
@@ -998,6 +1002,8 @@ def test_itinerario_list_restringe_usuario_provincial_y_filtra(client):
     assert itinerario_oculto.codigo not in html
     assert "Cordoba" in html
     assert "Santa Fe" not in html
+    assert 'value="referente"' in html
+    assert response.context["filtros"]["buscar_por"] == "referente"
 
 
 def test_itinerario_detail_muestra_localidad_de_sede_en_jornadas(client):
@@ -1066,11 +1072,11 @@ def test_jornada_detail_muestra_escuela_en_resumen_de_ubicacion(client):
 
     assert response.status_code == 200
     html = response.content.decode()
-    assert "Escuela" in html
+    assert "Lugar" in html
     assert "ESCUELA PRIMARIA 1" in html
-    assert html.index("Escuela") < html.index("Provincia")
-    assert html.index("Provincia") < html.index("Localidad")
-    assert html.index("Localidad") < html.index("Calle y altura")
+    assert html.index("Lugar") < html.index("Localidad")
+    assert html.index("Localidad") < html.index("Provincia")
+    assert html.index("Provincia") < html.index("Calle y altura")
 
 
 def test_jornada_detail_muestra_resumen_cierre_compacto(client):
@@ -1867,3 +1873,81 @@ def test_sede_delete_es_logico(client):
     assert response.status_code == 302
     assert not SedeVPSL.objects.filter(pk=sede.pk).exists()
     assert SedeVPSL.all_objects.filter(pk=sede.pk, deleted_at__isnull=False).exists()
+
+
+def test_itinerario_delete_es_logico(client):
+    user = get_user_model().objects.create_superuser(
+        username="vpsl-itinerario-delete",
+        email="vpsl-itinerario-delete@example.com",
+        password="testpass123",
+    )
+    itinerario = crear_itinerario()
+    client.force_login(user)
+
+    response = client.post(
+        reverse("vpsl_itinerario_delete", kwargs={"pk": itinerario.pk})
+    )
+
+    assert response.status_code == 302
+    assert response.url == reverse("vpsl_itinerario_list")
+    assert not ItinerarioVPSL.objects.filter(pk=itinerario.pk).exists()
+    assert ItinerarioVPSL.all_objects.filter(
+        pk=itinerario.pk,
+        deleted_at__isnull=False,
+    ).exists()
+
+
+def test_jornada_delete_es_logico_y_vuelve_al_itinerario(client):
+    user = get_user_model().objects.create_superuser(
+        username="vpsl-jornada-delete",
+        email="vpsl-jornada-delete@example.com",
+        password="testpass123",
+    )
+    jornada = crear_jornada()
+    itinerario_pk = jornada.itinerario_id
+    client.force_login(user)
+
+    response = client.post(reverse("vpsl_jornada_delete", kwargs={"pk": jornada.pk}))
+
+    assert response.status_code == 302
+    assert response.url == reverse(
+        "vpsl_itinerario_detail",
+        kwargs={"pk": itinerario_pk},
+    )
+    assert not JornadaVPSL.objects.filter(pk=jornada.pk).exists()
+    assert JornadaVPSL.all_objects.filter(
+        pk=jornada.pk,
+        deleted_at__isnull=False,
+    ).exists()
+
+
+def test_registro_delete_es_logico_y_vuelve_a_la_jornada(client):
+    user = get_user_model().objects.create_superuser(
+        username="vpsl-registro-delete",
+        email="vpsl-registro-delete@example.com",
+        password="testpass123",
+    )
+    jornada = crear_jornada(estado=EstadoJornada.HABILITADA)
+    registro = RegistroNominalVPSL.objects.create(
+        jornada=jornada,
+        dni="12345678",
+        nombre="Ana",
+        apellido="Pérez",
+        numero_acta="A-1",
+        resultado=ResultadoAtencion.NO_REQUIERE,
+        cantidad_lentes=0,
+    )
+    client.force_login(user)
+
+    response = client.post(reverse("vpsl_registro_delete", kwargs={"pk": registro.pk}))
+
+    assert response.status_code == 302
+    assert response.url == reverse(
+        "vpsl_jornada_detail",
+        kwargs={"pk": jornada.pk},
+    )
+    assert not RegistroNominalVPSL.objects.filter(pk=registro.pk).exists()
+    assert RegistroNominalVPSL.all_objects.filter(
+        pk=registro.pk,
+        deleted_at__isnull=False,
+    ).exists()
