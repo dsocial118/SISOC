@@ -241,11 +241,19 @@ aside .nav-link p {
     filter: invert(67%) sepia(54%) saturate(559%) hue-rotate(340deg) brightness(230%) contrast(50%);
 }
 
+.sidebar-menu>li>.nav-link {
+    font-weight:bold;
+}
+
+ul.nav:not(.sidebar-menu) .nav-link {
+    padding-left: 3rem;
+}
+
 ul.nav:not(.sidebar-menu) .nav-link p {
     padding-left: 0;
 }
 
 .sidebar-wrapper .nav-treeview > .nav-item > .nav-link:hover {
-    background-color: none !important;
+    background-color: transparent !important;
 }
 /* 
