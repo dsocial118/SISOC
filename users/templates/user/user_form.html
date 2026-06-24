@@ -93,145 +93,235 @@
                                 </div>
                             {% endif %}
                         {% endif %}
-                        <div id="mobile-toggle-wrapper">{{ form.es_representante_pwa | as_crispy_field }}</div>
-                        <div id="mobile-rendicion-permission-wrapper" style="display: none">
-                            {{ form.puede_gestionar_rendiciones_mobile|as_crispy_field }}
-                        </div>
-                        <div id="mobile-association-type-wrapper" style="display: none">{{ form.tipo_asociacion_pwa | as_crispy_field }}</div>
-                        <div id="mobile-association-choice-wrapper" class="mb-3">
-                            <div class="mobile-selector-intro">
-                                <div>
-                                    <h6 class="mb-1">Configuración de alcance mobile</h6>
-                                    <p class="mb-0">
-                                        Podés seleccionar una o más organizaciones, elegir todos o algunos
-                                        de sus espacios y además sumar espacios por fuera de esas organizaciones.
+                        {% if pwa_operator_context %}
+                            <div class="alert alert-info mb-3" role="alert">
+                                <strong>Subusuario mobile.</strong>
+                                Este usuario fue creado desde SISOC - Mobile
+                                {% if pwa_operator_context.created_by %}por {{ pwa_operator_context.created_by.username }}{% endif %}
+                                . El acceso y sus permisos se administran desde la app mobile por el usuario principal que lo creo.
+                            </div>
+                            <div class="table-responsive mb-3">
+                                <table class="table table-sm table-hover align-middle mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>Espacio</th>
+                                            <th>Creado por</th>
+                                            <th>Permisos mobile</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for acceso in pwa_operator_context.accesses %}
+                                            <tr>
+                                                <td>{{ acceso.comedor.nombre }}</td>
+                                                <td>{{ acceso.creado_por.username|default:"-" }}</td>
+                                                <td>
+                                                    {% for permission_label in pwa_operator_context.permission_labels %}
+                                                        <div>{{ permission_label }}</div>
+                                                    {% empty %}
+                                                        -
+                                                    {% endfor %}
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% else %}
+                            <div id="mobile-toggle-wrapper">{{ form.es_representante_pwa | as_crispy_field }}</div>
+                            <div id="mobile-rendicion-permission-wrapper" style="display: none">
+                                {{ form.puede_gestionar_rendiciones_mobile|as_crispy_field }}
+                            </div>
+                            <div id="mobile-association-type-wrapper" style="display: none">{{ form.tipo_asociacion_pwa | as_crispy_field }}</div>
+                            <div id="mobile-association-choice-wrapper" class="mb-3">
+                                <div class="mobile-selector-intro">
+                                    <div>
+                                        <h6 class="mb-1">Configuración de alcance mobile</h6>
+                                        <p class="mb-0">
+                                            Podés seleccionar una o más organizaciones, elegir todos o algunos
+                                            de sus espacios y además sumar espacios por fuera de esas organizaciones.
+                                        </p>
+                                    </div>
+                                </div>
+                                <div id="mobile-tabs"
+                                     class="mobile-tabs"
+                                     role="tablist"
+                                     aria-label="Configuración de alcance">
+                                    <button type="button"
+                                            class="mobile-tab-button is-active"
+                                            data-mobile-tab="organizaciones"
+                                            role="tab"
+                                            aria-selected="true">Organizaciones</button>
+                                    <button type="button"
+                                            class="mobile-tab-button"
+                                            data-mobile-tab="espacios"
+                                            role="tab"
+                                            aria-selected="false">Espacios</button>
+                                </div>
+                            </div>
+                            <div id="mobile-organizaciones-wrapper">
+                                <div class="d-none">{{ form.organizaciones_pwa | as_crispy_field }}</div>
+                                <div id="mobile-organizaciones-table-panel"
+                                     class="mobile-organizaciones-table-panel">
+                                    <div class="mobile-selector-panel__header">
+                                        <div>
+                                            <h6 class="mb-1">Organizaciones habilitadas</h6>
+                                            <p class="mb-0">Seleccioná una o más organizaciones para construir el alcance.</p>
+                                        </div>
+                                    </div>
+                                    <label class="form-label" for="mobile-organizaciones-search">Buscar organizaciones</label>
+                                    <input type="text"
+                                           id="mobile-organizaciones-search"
+                                           class="form-control mobile-selector-search mb-3"
+                                           placeholder="Escriba para filtrar organizaciones" />
+                                    <div class="table-responsive mobile-organizaciones-table-scroll">
+                                        <table class="table table-sm table-hover align-middle mb-0">
+                                            <thead>
+                                                <tr>
+                                                    <th class="mobile-org-check-column" scope="col">Seleccionar</th>
+                                                    <th scope="col">Organización</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="mobile-organizaciones-table-body">
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <p id="mobile-organizaciones-empty-state"
+                                       class="text-muted small mb-0 mt-2"
+                                       style="display: none">No hay organizaciones que coincidan con la búsqueda.</p>
+                                </div>
+                                <div id="mobile-comedores-organizacion-panel"
+                                     class="mobile-selector-table-panel mt-3">
+                                    <div class="mobile-selector-panel__header">
+                                        <div>
+                                            <h6 class="mb-1">Espacios de las organizaciones seleccionadas</h6>
+                                            <p class="mb-0">
+                                                Al seleccionar una organización se marcan sus espacios y aquí podés
+                                                deseleccionar los que no correspondan.
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <label class="form-label" for="mobile-comedores-organizacion-search">Buscar espacios de organizaciones</label>
+                                    <input type="text"
+                                           id="mobile-comedores-organizacion-search"
+                                           class="form-control mobile-selector-search mb-3"
+                                           placeholder="Escriba para filtrar espacios de organizaciones" />
+                                    <div class="table-responsive mobile-selector-table-scroll">
+                                        <table class="table table-sm table-hover align-middle mb-0">
+                                            <thead>
+                                                <tr>
+                                                    <th class="mobile-selector-check-column" scope="col">Seleccionar</th>
+                                                    <th scope="col">Espacio</th>
+                                                    <th scope="col">Organización</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="mobile-comedores-organizacion-table-body">
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <p id="mobile-comedores-organizacion-hint"
+                                       class="text-muted small mb-0 mt-2">
+                                        Seleccioná al menos una organización para ver sus espacios.
+                                    </p>
+                                    <p id="mobile-comedores-organizacion-empty-state"
+                                       class="text-muted small mb-0 mt-2"
+                                       style="display: none">
+                                        No hay espacios de organizaciones que coincidan con la búsqueda.
                                     </p>
                                 </div>
                             </div>
-                            <div id="mobile-tabs"
-                                 class="mobile-tabs"
-                                 role="tablist"
-                                 aria-label="Configuración de alcance">
-                                <button type="button"
-                                        class="mobile-tab-button is-active"
-                                        data-mobile-tab="organizaciones"
-                                        role="tab"
-                                        aria-selected="true">Organizaciones</button>
-                                <button type="button"
-                                        class="mobile-tab-button"
-                                        data-mobile-tab="espacios"
-                                        role="tab"
-                                        aria-selected="false">Espacios</button>
+                            <div id="mobile-comedores-wrapper">
+                                <div class="d-none">{{ form.comedores_pwa | as_crispy_field }}</div>
+                                <div id="mobile-comedores-table-panel" class="mobile-selector-table-panel">
+                                    <div class="mobile-selector-panel__header">
+                                        <div>
+                                            <h6 class="mb-1">Espacios</h6>
+                                            <p class="mb-0">
+                                                Sumá espacios por fuera de las organizaciones seleccionadas.
+                                                Los espacios ya mostrados en la pestaña de organizaciones no se repiten acá.
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <label class="form-label" for="mobile-comedores-search">Buscar espacios</label>
+                                    <input type="text"
+                                           id="mobile-comedores-search"
+                                           class="form-control mobile-selector-search mb-3"
+                                           placeholder="Escriba para filtrar espacios" />
+                                    <div class="table-responsive mobile-selector-table-scroll">
+                                        <table class="table table-sm table-hover align-middle mb-0">
+                                            <thead>
+                                                <tr>
+                                                    <th class="mobile-selector-check-column" scope="col">Seleccionar</th>
+                                                    <th scope="col">Espacio</th>
+                                                    <th scope="col">Organización</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="mobile-comedores-table-body">
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <p id="mobile-comedores-empty-state"
+                                       class="text-muted small mb-0 mt-2"
+                                       style="display: none">No hay espacios que coincidan con la búsqueda.</p>
+                                </div>
                             </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                {% if pwa_created_users %}
+                    <div class="card card-custom mb-3 shadow-sm"
+                         id="mobile-created-users-card">
+                        <div class="card-header card-header-custom">
+                            <h5 class="mb-0">
+                                <i class="fas fa-users mr-3"></i>Usuarios mobile creados por este usuario
+                            </h5>
                         </div>
-                        <div id="mobile-organizaciones-wrapper">
-                            <div class="d-none">{{ form.organizaciones_pwa | as_crispy_field }}</div>
-                            <div id="mobile-organizaciones-table-panel"
-                                 class="mobile-organizaciones-table-panel">
-                                <div class="mobile-selector-panel__header">
-                                    <div>
-                                        <h6 class="mb-1">Organizaciones habilitadas</h6>
-                                        <p class="mb-0">Seleccioná una o más organizaciones para construir el alcance.</p>
-                                    </div>
-                                </div>
-                                <label class="form-label" for="mobile-organizaciones-search">Buscar organizaciones</label>
-                                <input type="text"
-                                       id="mobile-organizaciones-search"
-                                       class="form-control mobile-selector-search mb-3"
-                                       placeholder="Escriba para filtrar organizaciones" />
-                                <div class="table-responsive mobile-organizaciones-table-scroll">
-                                    <table class="table table-sm table-hover align-middle mb-0">
-                                        <thead>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-sm table-hover align-middle mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>Usuario</th>
+                                            <th>Email</th>
+                                            <th>Estado</th>
+                                            <th>Espacios</th>
+                                            <th>Permisos</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for item in pwa_created_users %}
                                             <tr>
-                                                <th class="mobile-org-check-column" scope="col">Seleccionar</th>
-                                                <th scope="col">Organización</th>
+                                                <td>{{ item.user.username }}</td>
+                                                <td>{{ item.user.email|default:"-" }}</td>
+                                                <td>
+                                                    {% if item.activo %}
+                                                        <span class="badge badge-success">Activo</span>
+                                                    {% else %}
+                                                        <span class="badge badge-secondary">Inactivo</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td>
+                                                    {% for comedor in item.comedores %}
+                                                        <div>{{ comedor.nombre }}</div>
+                                                    {% empty %}
+                                                        -
+                                                    {% endfor %}
+                                                </td>
+                                                <td>
+                                                    {% for permission_label in item.permission_labels %}
+                                                        <div>{{ permission_label }}</div>
+                                                    {% empty %}
+                                                        -
+                                                    {% endfor %}
+                                                </td>
                                             </tr>
-                                        </thead>
-                                        <tbody id="mobile-organizaciones-table-body">
-                                        </tbody>
-                                    </table>
-                                </div>
-                                <p id="mobile-organizaciones-empty-state"
-                                   class="text-muted small mb-0 mt-2"
-                                   style="display: none">No hay organizaciones que coincidan con la búsqueda.</p>
-                            </div>
-                            <div id="mobile-comedores-organizacion-panel"
-                                 class="mobile-selector-table-panel mt-3">
-                                <div class="mobile-selector-panel__header">
-                                    <div>
-                                        <h6 class="mb-1">Espacios de las organizaciones seleccionadas</h6>
-                                        <p class="mb-0">
-                                            Al seleccionar una organización se marcan sus espacios y aquí podés
-                                            deseleccionar los que no correspondan.
-                                        </p>
-                                    </div>
-                                </div>
-                                <label class="form-label" for="mobile-comedores-organizacion-search">Buscar espacios de organizaciones</label>
-                                <input type="text"
-                                       id="mobile-comedores-organizacion-search"
-                                       class="form-control mobile-selector-search mb-3"
-                                       placeholder="Escriba para filtrar espacios de organizaciones" />
-                                <div class="table-responsive mobile-selector-table-scroll">
-                                    <table class="table table-sm table-hover align-middle mb-0">
-                                        <thead>
-                                            <tr>
-                                                <th class="mobile-selector-check-column" scope="col">Seleccionar</th>
-                                                <th scope="col">Espacio</th>
-                                                <th scope="col">Organización</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="mobile-comedores-organizacion-table-body">
-                                        </tbody>
-                                    </table>
-                                </div>
-                                <p id="mobile-comedores-organizacion-hint"
-                                   class="text-muted small mb-0 mt-2">
-                                    Seleccioná al menos una organización para ver sus espacios.
-                                </p>
-                                <p id="mobile-comedores-organizacion-empty-state"
-                                   class="text-muted small mb-0 mt-2"
-                                   style="display: none">
-                                    No hay espacios de organizaciones que coincidan con la búsqueda.
-                                </p>
-                            </div>
-                        </div>
-                        <div id="mobile-comedores-wrapper">
-                            <div class="d-none">{{ form.comedores_pwa | as_crispy_field }}</div>
-                            <div id="mobile-comedores-table-panel" class="mobile-selector-table-panel">
-                                <div class="mobile-selector-panel__header">
-                                    <div>
-                                        <h6 class="mb-1">Espacios</h6>
-                                        <p class="mb-0">
-                                            Sumá espacios por fuera de las organizaciones seleccionadas.
-                                            Los espacios ya mostrados en la pestaña de organizaciones no se repiten acá.
-                                        </p>
-                                    </div>
-                                </div>
-                                <label class="form-label" for="mobile-comedores-search">Buscar espacios</label>
-                                <input type="text"
-                                       id="mobile-comedores-search"
-                                       class="form-control mobile-selector-search mb-3"
-                                       placeholder="Escriba para filtrar espacios" />
-                                <div class="table-responsive mobile-selector-table-scroll">
-                                    <table class="table table-sm table-hover align-middle mb-0">
-                                        <thead>
-                                            <tr>
-                                                <th class="mobile-selector-check-column" scope="col">Seleccionar</th>
-                                                <th scope="col">Espacio</th>
-                                                <th scope="col">Organización</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="mobile-comedores-table-body">
-                                        </tbody>
-                                    </table>
-                                </div>
-                                <p id="mobile-comedores-empty-state"
-                                   class="text-muted small mb-0 mt-2"
-                                   style="display: none">No hay espacios que coincidan con la búsqueda.</p>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
                     </div>
-                </div>
+                {% endif %}
 
                 <!-- Permisos y Roles -->
                 <div class="card card-custom mb-3 shadow-sm" id="backoffice-permisos-card">
