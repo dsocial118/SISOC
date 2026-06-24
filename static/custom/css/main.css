@@ -260,4 +260,13 @@ ul.nav:not(.sidebar-menu) .nav-link p {
 .sidebar-menu .nav-link.nav-dot::before {
     font-size: 0.4rem;
 }
+
+.sidebar-menu ul > .nav-item {
+    min-height: 45px !important;
+}
+
+.sidebar-menu ul > .nav-item > .nav-link {
+    min-height: 45px !important;
+    height: 45px !important;
+}
 /* 
