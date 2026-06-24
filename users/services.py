@@ -208,6 +208,32 @@ class UsuariosService:
             USUARIOS_LIST_KEY,
             columns_catalog,
         )
+        additional_buttons = []
+        bulk_credentials_url = _reverse_optional("usuarios_credenciales_masivas")
+        if (
+            UsuariosService.can_manage_bulk_credentials(request.user)
+            and bulk_credentials_url
+        ):
+            additional_buttons.append(
+                {
+                    "label": "ENVIO DE CREDENCIALES",
+                    "url": bulk_credentials_url,
+                    "class": "btn btn-lg btn-export-csv",
+                    "title": "Enviar credenciales vigentes desde Excel",
+                }
+            )
+        users_import_url = _reverse_optional("usuarios_importar")
+        if (
+            request.user.has_perm("auth.add_user") or request.user.is_superuser
+        ) and users_import_url:
+            additional_buttons.append(
+                {
+                    "label": "IMPORTAR USUARIOS",
+                    "url": users_import_url,
+                    "class": "btn btn-lg btn-primary",
+                    "title": "Importar usuarios masivamente desde Excel",
+                }
+            )
         return {
             **columns_context,
             "table_actions": [
@@ -235,36 +261,7 @@ class UsuariosService:
             "filters_action": reverse("usuarios"),
             "seccion_filtros_favoritos": SeccionesFiltrosFavoritos.USUARIOS,
             "show_add_button": True,
-            "additional_buttons": (
-                [
-                    {
-                        "label": "ENVIO DE CREDENCIALES",
-                        "url": bulk_credentials_url,
-                        "class": "btn btn-lg btn-export-csv",
-                        "title": "Enviar credenciales vigentes desde Excel",
-                    }
-                ]
-                if UsuariosService.can_manage_bulk_credentials(request.user)
-                and (
-                    bulk_credentials_url := _reverse_optional(
-                        "usuarios_credenciales_masivas"
-                    )
-                )
-                else []
-            )
-            + (
-                [
-                    {
-                        "label": "IMPORTAR USUARIOS",
-                        "url": users_import_url,
-                        "class": "btn btn-lg btn-primary",
-                        "title": "Importar usuarios masivamente desde Excel",
-                    }
-                ]
-                if (request.user.has_perm("auth.add_user") or request.user.is_superuser)
-                and (users_import_url := _reverse_optional("usuarios_importar"))
-                else []
-            ),
+            "additional_buttons": additional_buttons,
         }
 
     @staticmethod
