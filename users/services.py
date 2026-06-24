@@ -3,7 +3,7 @@ from typing import List, Tuple
 
 from django.contrib.auth.models import User
 from django.db.models import Case, CharField, Count, F, Q, Value, When
-from django.urls import reverse
+from django.urls import NoReverseMatch, reverse
 
 from core.services.advanced_filters import AdvancedFilterEngine
 from core.services.column_preferences import build_columns_context
@@ -34,6 +34,13 @@ BENEFICIARIO_ADVANCED_FILTER = AdvancedFilterEngine(
         "number": BENEFICIARIO_NUM_OPS,
     },
 )
+
+
+def _reverse_optional(url_name):
+    try:
+        return reverse(url_name)
+    except NoReverseMatch:
+        return None
 
 
 class UsuariosService:
@@ -232,24 +239,30 @@ class UsuariosService:
                 [
                     {
                         "label": "ENVIO DE CREDENCIALES",
-                        "url": reverse("usuarios_credenciales_masivas"),
+                        "url": bulk_credentials_url,
                         "class": "btn btn-lg btn-export-csv",
                         "title": "Enviar credenciales vigentes desde Excel",
                     }
                 ]
                 if UsuariosService.can_manage_bulk_credentials(request.user)
+                and (
+                    bulk_credentials_url := _reverse_optional(
+                        "usuarios_credenciales_masivas"
+                    )
+                )
                 else []
             )
             + (
                 [
                     {
                         "label": "IMPORTAR USUARIOS",
-                        "url": reverse("usuarios_importar"),
+                        "url": users_import_url,
                         "class": "btn btn-lg btn-primary",
                         "title": "Importar usuarios masivamente desde Excel",
                     }
                 ]
-                if request.user.has_perm("auth.add_user") or request.user.is_superuser
+                if (request.user.has_perm("auth.add_user") or request.user.is_superuser)
+                and (users_import_url := _reverse_optional("usuarios_importar"))
                 else []
             ),
         }
