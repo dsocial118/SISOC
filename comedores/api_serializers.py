@@ -1051,7 +1051,9 @@ class ComedorDetailSerializer(serializers.ModelSerializer):
             "id_externo": obj.id_externo,
             "domicilio_completo_espacio": self._build_domicilio_convenio(obj),
             "monto_convenio_prestaciones_alimentarias": (
-                datos_pnud.monto_convenio_prestaciones_alimentarias if datos_pnud else None
+                datos_pnud.monto_convenio_prestaciones_alimentarias
+                if datos_pnud
+                else None
             ),
             "monto_convenio_siph": (
                 datos_pnud.monto_convenio_siph if datos_pnud else None

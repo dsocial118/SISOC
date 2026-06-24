@@ -15,11 +15,15 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name="comedordatosconveniopnud",
             name="monto_convenio_prestaciones_alimentarias",
-            field=models.DecimalField(blank=True, decimal_places=2, max_digits=14, null=True),
+            field=models.DecimalField(
+                blank=True, decimal_places=2, max_digits=14, null=True
+            ),
         ),
         migrations.AddField(
             model_name="comedordatosconveniopnud",
             name="monto_convenio_siph",
-            field=models.DecimalField(blank=True, decimal_places=2, max_digits=14, null=True),
+            field=models.DecimalField(
+                blank=True, decimal_places=2, max_digits=14, null=True
+            ),
         ),
     ]
