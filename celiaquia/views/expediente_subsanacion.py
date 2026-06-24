@@ -85,16 +85,20 @@ class ExpedienteConfirmSubsanacionView(View):
         return success_response("Subsanación confirmada correctamente.")
 
     def _confirmar_masiva(self, request, exp):
-        # Confirmación masiva (todos los legajos en SUBSANAR)
+        # Confirmación masiva de subsanaciones técnicas. Las subsanaciones RENAPER
+        # (estado_validacion_renaper=3) se confirman por su propio flujo, por lo
+        # que se excluyen de la masiva.
+        base_qs = ExpedienteCiudadano.objects.filter(
+            expediente=exp, revision_tecnico=RevisionTecnico.SUBSANAR
+        ).exclude(estado_validacion_renaper=3)
+
         query_archivos_faltantes = (
             Q(archivo2__isnull=True)
             | Q(archivo2="")
             | Q(archivo3__isnull=True)
             | Q(archivo3="")
         )
-        legajos_sin_archivos = ExpedienteCiudadano.objects.filter(
-            expediente=exp, revision_tecnico=RevisionTecnico.SUBSANAR
-        ).filter(query_archivos_faltantes)
+        legajos_sin_archivos = base_qs.filter(query_archivos_faltantes)
 
         if legajos_sin_archivos.exists():
             dnis = list(
@@ -116,10 +120,8 @@ class ExpedienteConfirmSubsanacionView(View):
                 extra_data={"ejemplo_dnis": dnis},
             )
 
-        # Cambiar SUBSANAR → SUBSANADO
-        actualizados = ExpedienteCiudadano.objects.filter(
-            expediente=exp, revision_tecnico=RevisionTecnico.SUBSANAR
-        ).update(
+        # Cambiar SUBSANAR → SUBSANADO (excluyendo subsanaciones RENAPER)
+        actualizados = base_qs.update(
             revision_tecnico=RevisionTecnico.SUBSANADO,
             modificado_en=timezone.now(),
             subsanacion_enviada_en=timezone.now(),

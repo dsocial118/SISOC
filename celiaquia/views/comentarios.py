@@ -236,8 +236,9 @@ class LegajoComentarioListView(View):
         )
 
         # Los comentarios internos solo son visibles para Nación. Un usuario
-        # provincial (sin rol de Nación) nunca los recibe.
-        es_nacion = is_admin or is_coord or is_tec
+        # territorial (provincial) nunca los recibe, aún si por configuración
+        # tuviera además algún rol de Nación.
+        es_nacion = (is_admin or is_coord or is_tec) and not is_territorial_user(user)
         if not es_nacion:
             comentarios_qs = comentarios_qs.filter(es_interno=False)
 
