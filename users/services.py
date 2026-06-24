@@ -3,7 +3,7 @@ from typing import List, Tuple
 
 from django.contrib.auth.models import User
 from django.db.models import Case, CharField, Count, F, Q, Value, When
-from django.urls import reverse
+from django.urls import NoReverseMatch, reverse
 
 from core.services.advanced_filters import AdvancedFilterEngine
 from core.services.column_preferences import build_columns_context
@@ -34,6 +34,13 @@ BENEFICIARIO_ADVANCED_FILTER = AdvancedFilterEngine(
         "number": BENEFICIARIO_NUM_OPS,
     },
 )
+
+
+def _reverse_optional(url_name):
+    try:
+        return reverse(url_name)
+    except NoReverseMatch:
+        return None
 
 
 class UsuariosService:
@@ -77,6 +84,14 @@ class UsuariosService:
         return BENEFICIARIO_ADVANCED_FILTER.filter_queryset(base_qs, request_or_get)
 
     @staticmethod
+    def get_usuarios_en_alcance(request_or_get):
+        """Usuarios que el actor puede administrar (solo alcance, sin filtros de
+        búsqueda). Se usa para restringir las vistas de edición/borrado y evitar
+        accesos por URL a usuarios fuera del alcance del actor (IDOR)."""
+        base_qs = UsuariosService.get_usuarios_queryset()
+        return UsuariosService._apply_actor_scope(base_qs, request_or_get)
+
+    @staticmethod
     def _apply_actor_scope(base_qs, request_or_get):
         """
         Restringe visibilidad de usuarios segun el alcance delegable del actor.
@@ -91,9 +106,13 @@ class UsuariosService:
         if actor.is_superuser:
             return base_qs
 
+        # Deny-by-default: un actor no-superuser que gestiona usuarios pero no
+        # tiene un alcance delegable configurado solo se ve a sí mismo. Debe
+        # configurarse su `grupos_asignables`/`roles_asignables` para que pueda
+        # administrar a otros usuarios.
         profile = getattr(actor, "profile", None)
         if not profile:
-            return base_qs
+            return base_qs.filter(pk=actor.pk)
 
         allowed_groups = profile.grupos_asignables.all()
         allowed_roles = profile.roles_asignables.filter(
@@ -104,7 +123,7 @@ class UsuariosService:
         has_group_scope = allowed_groups.exists()
         has_role_scope = allowed_roles.exists()
         if not has_group_scope and not has_role_scope:
-            return base_qs
+            return base_qs.filter(pk=actor.pk)
 
         scoped_qs = base_qs.annotate(
             total_groups=Count("groups", distinct=True),
@@ -136,7 +155,13 @@ class UsuariosService:
                 total_role_permissions=F("allowed_role_permissions_count")
             )
 
-        scoped_qs = scoped_qs.filter(Q(pk=actor.pk) | scope_filter)
+        # Los superadministradores (sin grupos ni roles propios) satisfacen el
+        # filtro de subconjunto trivialmente (0 == 0); se excluyen para que un
+        # actor con alcance no los vea ni pueda administrarlos. El actor es
+        # siempre no-superuser (los superuser retornan base_qs antes).
+        scoped_qs = scoped_qs.filter(Q(pk=actor.pk) | scope_filter).exclude(
+            is_superuser=True
+        )
 
         return scoped_qs.distinct().order_by("-id")
 
@@ -183,6 +208,32 @@ class UsuariosService:
             USUARIOS_LIST_KEY,
             columns_catalog,
         )
+        additional_buttons = []
+        bulk_credentials_url = _reverse_optional("usuarios_credenciales_masivas")
+        if (
+            UsuariosService.can_manage_bulk_credentials(request.user)
+            and bulk_credentials_url
+        ):
+            additional_buttons.append(
+                {
+                    "label": "ENVIO DE CREDENCIALES",
+                    "url": bulk_credentials_url,
+                    "class": "btn btn-lg btn-export-csv",
+                    "title": "Enviar credenciales vigentes desde Excel",
+                }
+            )
+        users_import_url = _reverse_optional("usuarios_importar")
+        if (
+            request.user.has_perm("auth.add_user") or request.user.is_superuser
+        ) and users_import_url:
+            additional_buttons.append(
+                {
+                    "label": "IMPORTAR USUARIOS",
+                    "url": users_import_url,
+                    "class": "btn btn-lg btn-primary",
+                    "title": "Importar usuarios masivamente desde Excel",
+                }
+            )
         return {
             **columns_context,
             "table_actions": [
@@ -210,30 +261,7 @@ class UsuariosService:
             "filters_action": reverse("usuarios"),
             "seccion_filtros_favoritos": SeccionesFiltrosFavoritos.USUARIOS,
             "show_add_button": True,
-            "additional_buttons": (
-                [
-                    {
-                        "label": "ENVIO DE CREDENCIALES",
-                        "url": reverse("usuarios_credenciales_masivas"),
-                        "class": "btn btn-lg btn-export-csv",
-                        "title": "Enviar credenciales vigentes desde Excel",
-                    }
-                ]
-                if UsuariosService.can_manage_bulk_credentials(request.user)
-                else []
-            )
-            + (
-                [
-                    {
-                        "label": "IMPORTAR USUARIOS",
-                        "url": reverse("usuarios_importar"),
-                        "class": "btn btn-lg btn-primary",
-                        "title": "Importar usuarios masivamente desde Excel",
-                    }
-                ]
-                if request.user.has_perm("auth.add_user") or request.user.is_superuser
-                else []
-            ),
+            "additional_buttons": additional_buttons,
         }
 
     @staticmethod

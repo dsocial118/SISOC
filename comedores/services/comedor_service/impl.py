@@ -210,6 +210,11 @@ def _with_nomina_pwa_flags(qs_nomina):
             Value(False),
             output_field=BooleanField(),
         ),
+        pwa_persona_con_celiaquia=Coalesce(
+            "perfil_pwa__persona_con_celiaquia",
+            Value(False),
+            output_field=BooleanField(),
+        ),
     )
 
 

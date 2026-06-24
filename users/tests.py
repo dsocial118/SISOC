@@ -5,10 +5,11 @@ import pytest
 from django.contrib.auth.models import Group, Permission, User
 from django.contrib.contenttypes.models import ContentType
 from django.test import RequestFactory
+from django.urls import reverse
 
 from ciudadanos.models import Ciudadano
 from core.models import Localidad, Municipio, Provincia
-from users.forms import UserCreationForm
+from users.forms import CustomUserChangeForm, UserCreationForm
 from users.models import ProfileTerritorialScope
 from users.services import UsuariosService
 from users.territorial_scope import apply_territorial_scope
@@ -423,6 +424,67 @@ def test_user_list_is_scoped_by_actor_delegation_scope():
 
 
 @pytest.mark.django_db
+def test_user_list_scoped_actor_excludes_superusers():
+    """Un actor con alcance configurado no debe ver a los superadministradores
+    (que sin grupos/roles propios satisfacían el filtro de subconjunto)."""
+    request_factory = RequestFactory()
+
+    actor = User.objects.create_user(username="delegador_no_super", password="secret")
+    allowed_group = Group.objects.create(name="Grupo Scope Sin Super")
+    actor.profile.grupos_asignables.set([allowed_group])
+
+    usuario_con_rol = User.objects.create_user(
+        username="usuario_con_rol", password="secret"
+    )
+    usuario_con_rol.groups.set([allowed_group])
+
+    User.objects.create_superuser(username="super_admin_x", password="secret")
+
+    request = request_factory.get("/usuarios/")
+    request.user = actor
+    usernames = set(
+        UsuariosService.get_filtered_usuarios(request).values_list(
+            "username", flat=True
+        )
+    )
+
+    assert "usuario_con_rol" in usernames
+    assert "super_admin_x" not in usernames
+
+
+@pytest.mark.django_db
+def test_change_form_muestra_y_preserva_grupos_fuera_de_alcance():
+    """Al editar, el actor con alcance VE los grupos actuales del usuario (aunque
+    estén fuera de su alcance) y, al guardar, esos grupos se preservan."""
+    actor = User.objects.create_user(username="actor_form_scope", password="secret")
+    asignable = Group.objects.create(name="Grupo Asignable Form")
+    fuera = Group.objects.create(name="Grupo Fuera Form")
+    actor.profile.grupos_asignables.set([asignable])
+
+    target = User.objects.create_user(username="target_form_scope", password="secret")
+    target.groups.set([fuera])
+
+    form = CustomUserChangeForm(instance=target, actor=actor)
+
+    # Display: el grupo actual (fuera de alcance) y el asignable están disponibles.
+    visibles = set(form.fields["groups"].queryset.values_list("id", flat=True))
+    assert {asignable.id, fuera.id} <= visibles
+
+    # Preservación: el actor asigna el grupo permitido; el fuera de alcance no se
+    # pierde al guardar.
+    form.cleaned_data = {
+        "groups": list(Group.objects.filter(id=asignable.id)),
+        "user_permissions": [],
+    }
+    form._aplicar_grupos_y_permisos(target)  # pylint: disable=protected-access
+
+    assert set(target.groups.values_list("id", flat=True)) == {
+        asignable.id,
+        fuera.id,
+    }
+
+
+@pytest.mark.django_db
 def test_user_list_with_only_group_scope_does_not_hide_users_without_roles():
     request_factory = RequestFactory()
 
@@ -495,7 +557,9 @@ def test_user_list_with_only_role_scope_does_not_hide_users_with_allowed_groups(
 
 
 @pytest.mark.django_db
-def test_user_list_without_delegation_scope_keeps_default_visibility():
+def test_user_list_without_delegation_scope_only_shows_self():
+    """Deny-by-default: un actor no-superuser sin alcance delegable configurado
+    solo se ve a sí mismo en el listado."""
     request_factory = RequestFactory()
     actor = User.objects.create_user(username="sin_scope", password="secret")
     other_user = User.objects.create_user(username="otro", password="secret")
@@ -509,4 +573,94 @@ def test_user_list_without_delegation_scope_keeps_default_visibility():
     )
 
     assert "sin_scope" in usernames
-    assert other_user.username in usernames
+    assert other_user.username not in usernames
+
+
+@pytest.mark.django_db
+def test_user_update_view_blocks_user_out_of_actor_scope(client):
+    """Un actor con alcance configurado no puede editar (IDOR) un usuario cuyos
+    grupos estan fuera de su alcance: la vista responde 404."""
+    allowed_group = Group.objects.create(name="Grupo Editable")
+    denied_group = Group.objects.create(name="Grupo Fuera de Alcance")
+
+    actor = User.objects.create_user(username="editor_acotado", password="secret")
+    change_user_permission = Permission.objects.get(
+        content_type__app_label="auth",
+        codename="change_user",
+    )
+    actor.user_permissions.add(change_user_permission)
+    actor.profile.grupos_asignables.set([allowed_group])
+
+    fuera = User.objects.create_user(username="fuera_de_alcance", password="secret")
+    fuera.groups.set([denied_group])
+
+    dentro = User.objects.create_user(username="dentro_de_alcance", password="secret")
+    dentro.groups.set([allowed_group])
+
+    client.force_login(actor)
+
+    resp_fuera = client.get(reverse("usuario_editar", kwargs={"pk": fuera.pk}))
+    assert resp_fuera.status_code == 404
+
+    resp_dentro = client.get(reverse("usuario_editar", kwargs={"pk": dentro.pk}))
+    assert resp_dentro.status_code == 200
+
+
+def _import_row_data(correo):
+    return {
+        "nombre": "Nombre",
+        "apellido": "Apellido",
+        "correo": correo,
+        "permisos": "",
+        "provincias": "",
+        "rol": "TERRITORIAL",
+    }
+
+
+@pytest.mark.django_db
+def test_import_pwa_crea_usuario_sin_staff():
+    from users.models import UserImportJob
+    from users.services_user_import import process_single_user_import_row
+
+    admin = User.objects.create_user(username="import_admin_pwa", password="x")
+    job = UserImportJob(
+        requested_by=admin,
+        original_filename="usuarios.xlsx",
+        send_credentials=False,
+        is_pwa_import=True,
+    )
+
+    result = process_single_user_import_row(
+        row_data=_import_row_data("pwa.user@example.com"),
+        job=job,
+    )
+
+    from users.models import UserImportJobRow
+
+    assert result["status"] == UserImportJobRow.Status.CREATED
+    creado = User.objects.get(email="pwa.user@example.com")
+    assert creado.is_staff is False
+    assert creado.is_active is True
+
+
+@pytest.mark.django_db
+def test_import_no_pwa_crea_usuario_staff():
+    from users.models import UserImportJob
+    from users.services_user_import import process_single_user_import_row
+
+    admin = User.objects.create_user(username="import_admin_staff", password="x")
+    job = UserImportJob(
+        requested_by=admin,
+        original_filename="usuarios.xlsx",
+        send_credentials=False,
+        is_pwa_import=False,
+    )
+
+    process_single_user_import_row(
+        row_data=_import_row_data("staff.user@example.com"),
+        job=job,
+    )
+
+    creado = User.objects.get(email="staff.user@example.com")
+    assert creado.is_staff is True
+    assert creado.is_active is True

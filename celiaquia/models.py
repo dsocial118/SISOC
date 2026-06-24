@@ -851,6 +851,140 @@ class SubsanacionRespuesta(models.Model):
         return f"{self.legajo} - Respuesta #{self.pk}"
 
 
+class TipoSubsanacion(models.TextChoices):
+    DOCUMENTACION = "DOCUMENTACION", "Documentación"
+    DATOS_PERSONALES = "DATOS_PERSONALES", "Datos personales"
+    RENAPER = "RENAPER", "RENAPER"
+    OTROS = "OTROS", "Otros"
+
+
+class SubsanacionEstado(models.TextChoices):
+    PENDIENTE = "PENDIENTE", "Pendiente de respuesta"
+    RESPONDIDA = "RESPONDIDA", "Respondida por la provincia"
+
+
+class Subsanacion(models.Model):
+    """Solicitud de subsanación sobre un legajo. Agrupa una o varias
+    observaciones (cada una con su tipo/motivo) y, en la respuesta de la
+    provincia, los archivos corregidos como evidencia nueva (sin reemplazar la
+    documentación original del legajo)."""
+
+    legajo = models.ForeignKey(
+        ExpedienteCiudadano, on_delete=models.CASCADE, related_name="subsanaciones"
+    )
+    estado = models.CharField(
+        max_length=12,
+        choices=SubsanacionEstado.choices,
+        default=SubsanacionEstado.PENDIENTE,
+        db_index=True,
+    )
+    motivo_general = models.TextField(
+        null=True, blank=True, help_text="Motivo general/observación libre"
+    )
+    solicitada_por = models.ForeignKey(
+        User,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="subsanaciones_solicitadas",
+    )
+    solicitada_en = models.DateTimeField(auto_now_add=True)
+    respondida_por = models.ForeignKey(
+        User,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="subsanaciones_v2_respondidas",
+    )
+    respondida_en = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        verbose_name = "Subsanación"
+        verbose_name_plural = "Subsanaciones"
+        ordering = ("-solicitada_en", "pk")
+        indexes = [
+            models.Index(
+                fields=["legajo", "-solicitada_en"], name="subs_legajo_fecha_idx"
+            ),
+        ]
+
+    def __str__(self):
+        return f"Subsanación #{self.pk} legajo {self.legajo_id} ({self.estado})"
+
+    @property
+    def tipos(self):
+        """Tipos de motivo distintos presentes en las observaciones."""
+        return list(self.observaciones.values_list("tipo", flat=True).distinct())
+
+    @property
+    def tipos_display(self):
+        labels = dict(TipoSubsanacion.choices)
+        return [labels.get(t, t) for t in self.tipos]
+
+
+class SubsanacionObservacion(models.Model):
+    """Cada requerimiento individual dentro de una subsanación: un tipo de
+    motivo (documentación, datos personales, RENAPER, otros) y su detalle."""
+
+    subsanacion = models.ForeignKey(
+        Subsanacion, on_delete=models.CASCADE, related_name="observaciones"
+    )
+    tipo = models.CharField(max_length=20, choices=TipoSubsanacion.choices)
+    detalle = models.TextField(null=True, blank=True)
+    creado_en = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Observación de Subsanación"
+        verbose_name_plural = "Observaciones de Subsanación"
+        ordering = ("pk",)
+        indexes = [
+            models.Index(fields=["subsanacion"], name="subs_obs_subs_idx"),
+        ]
+
+    def __str__(self):
+        return f"{self.get_tipo_display()} (subsanación {self.subsanacion_id})"
+
+
+class SubsanacionArchivo(models.Model):
+    """Archivo de respuesta de la provincia a una subsanación. La documentación
+    corregida se incorpora como evidencia nueva, sin reemplazar los archivos
+    originales del legajo (se usa a partir de la Fase 2)."""
+
+    subsanacion = models.ForeignKey(
+        Subsanacion, on_delete=models.CASCADE, related_name="archivos"
+    )
+    observacion = models.ForeignKey(
+        SubsanacionObservacion,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="archivos",
+    )
+    archivo = models.FileField(upload_to="legajos/subsanaciones/")
+    descripcion = models.CharField(max_length=255, blank=True)
+    usuario = models.ForeignKey(
+        User,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="subsanacion_archivos_subidos",
+    )
+    creado_en = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Archivo de Subsanación"
+        verbose_name_plural = "Archivos de Subsanación"
+        ordering = ("-creado_en", "pk")
+        indexes = [
+            models.Index(
+                fields=["subsanacion", "-creado_en"], name="subs_arch_subs_fecha_idx"
+            ),
+        ]
+
+    def __str__(self):
+        return f"Archivo subsanación {self.subsanacion_id} - {self.archivo.name}"
+
+
 class RegistroErroneoReprocesado(models.Model):
     RESULTADO_CHOICES = [
         ("EXITOSO", "Exitoso"),
@@ -994,6 +1128,11 @@ class HistorialComentarios(models.Model):
         null=True,
         blank=True,
         help_text="Estado del legajo al momento del comentario",
+    )
+    es_interno = models.BooleanField(
+        default=False,
+        db_index=True,
+        help_text="Comentario interno: visible solo para usuarios de Nación",
     )
 
     class Meta:

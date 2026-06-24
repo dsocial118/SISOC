@@ -362,7 +362,7 @@ def test_comedor_detail_get_context_data_selected_admision_flow(mocker):
     view = module.ComedorDetailView()
     view.request = _Req(user=SimpleNamespace(is_superuser=False), post={})
     view.request.GET = {"admision_id": "1"}
-    view.object = SimpleNamespace(id=7)
+    view.object = SimpleNamespace(id=7, programa_id=None)
 
     admision_1 = SimpleNamespace(id=1, convenio_numero="C-1")
     admisiones_qs = _AdmisionesQS([admision_1])
@@ -413,7 +413,7 @@ def test_comedor_detail_no_consulta_transacciones_sin_permiso_comedor(mocker):
     view = module.ComedorDetailView()
     view.request = _Req(user=SimpleNamespace(is_superuser=False), post={})
     view.request.GET = {}
-    view.object = SimpleNamespace(id=7)
+    view.object = SimpleNamespace(id=7, programa_id=None)
 
     mocker.patch(
         "django.views.generic.detail.SingleObjectMixin.get_context_data",
@@ -457,7 +457,7 @@ def test_comedor_detail_consulta_transacciones_con_permiso_comedor(mocker):
     view = module.ComedorDetailView()
     view.request = _Req(user=SimpleNamespace(is_superuser=False), post={})
     view.request.GET = {}
-    view.object = SimpleNamespace(id=7)
+    view.object = SimpleNamespace(id=7, programa_id=None)
 
     mocker.patch(
         "django.views.generic.detail.SingleObjectMixin.get_context_data",
@@ -610,6 +610,9 @@ def test_build_intervenciones_table_context(mocker):
         def order_by(self, *_args):
             return self
 
+        def exclude(self, *_args, **_kwargs):
+            return self
+
     class _FakePage(list):
         number = 1
 
@@ -635,6 +638,11 @@ def test_build_intervenciones_table_context(mocker):
         module.Intervencion,
         "objects",
         SimpleNamespace(filter=lambda **_kwargs: _FakeQS([intervencion])),
+    )
+    mocker.patch.object(
+        module.NominaDestinatariosDocumentoPWA,
+        "objects",
+        SimpleNamespace(filter=lambda **_kwargs: _FakeQS([])),
     )
     mocker.patch("comedores.views.comedor.Paginator", return_value=paginator)
     mocker.patch(

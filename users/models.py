@@ -327,11 +327,13 @@ class AuditAccesoComedorPWA(models.Model):
     ACCION_CREATE = "create"
     ACCION_REACTIVATE = "reactivate"
     ACCION_DEACTIVATE = "deactivate"
+    ACCION_UPDATE_PERMISSIONS = "update_permissions"
 
     ACCION_CHOICES = (
         (ACCION_CREATE, "Alta"),
         (ACCION_REACTIVATE, "Reactivación"),
         (ACCION_DEACTIVATE, "Baja"),
+        (ACCION_UPDATE_PERMISSIONS, "Edicion de permisos"),
     )
 
     acceso = models.ForeignKey(
@@ -500,6 +502,7 @@ class UserImportJob(models.Model):
     archivo = models.FileField(upload_to=user_import_job_upload_to)
     original_filename = models.CharField(max_length=255)
     send_credentials = models.BooleanField(default=True)
+    is_pwa_import = models.BooleanField(default=False)
     status = models.CharField(
         max_length=25,
         choices=Status.choices,

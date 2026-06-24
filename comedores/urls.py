@@ -2,6 +2,8 @@ from django.contrib.auth.decorators import login_required
 from django.urls import path
 from django.views.generic.base import RedirectView
 from comedores.views import (
+    ActividadEspacioPWACreateView,
+    ActividadEspacioPWAUpdateView,
     ActividadPnudCreateView,
     ActividadPnudDeactivateView,
     ActividadPnudListView,
@@ -133,6 +135,20 @@ urlpatterns = [
             ColaboradorEspacioCreateView.as_view()
         ),
         name="colaborador_espacio_crear",
+    ),
+    path(
+        "comedores/<int:pk>/actividades/crear/",
+        permissions_any_required(["auth.role_admin", "pwa.manage_colaboradores_pwa"])(
+            ActividadEspacioPWACreateView.as_view()
+        ),
+        name="actividad_espacio_pwa_crear",
+    ),
+    path(
+        "comedores/<int:pk>/actividades/<int:pk2>/editar/",
+        permissions_any_required(["auth.role_admin", "pwa.manage_colaboradores_pwa"])(
+            ActividadEspacioPWAUpdateView.as_view()
+        ),
+        name="actividad_espacio_pwa_editar",
     ),
     path(
         "comedores/<int:pk>/colaboradores/<int:pk2>/editar/",

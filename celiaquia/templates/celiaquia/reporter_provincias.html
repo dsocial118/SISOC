@@ -349,6 +349,36 @@
             </article>
         </section>
 
+        <section class="reporter-layout">
+            <article class="reporter-panel">
+                <div class="reporter-panel__header">
+                    <div>
+                        <p class="reporter-panel__eyebrow">Aprobados</p>
+                        <h3 class="reporter-panel__title">Clasificación por rol</h3>
+                        <p class="reporter-panel__hint">
+                            {{ clasificacion_aprobados.total }} legajo{{ clasificacion_aprobados.total|pluralize }} aprobado{{ clasificacion_aprobados.total|pluralize }} sobre {{ total_casos }} casos de la lectura actual.
+                        </p>
+                    </div>
+                </div>
+                <div class="status-list">
+                    {% for item in clasificacion_aprobados.items %}
+                        <div class="status-chip status-chip--{{ item.tone }}">
+                            <div>
+                                <strong>{{ item.label }}</strong>
+                                <span>{{ item.count }} legajo{{ item.count|pluralize }}</span>
+                            </div>
+                            <div class="status-chip__aside">
+                                <strong>{{ item.percentage }}%</strong>
+                                <span class="status-chip__bar">
+                                    <span style="--size: {{ item.size }};"></span>
+                                </span>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </article>
+        </section>
+
         <section class="reporter-panel reporter-panel--table">
             <div class="reporter-panel__header reporter-panel__header--table">
                 <div>

@@ -44,6 +44,7 @@ class UserImportJobCreateView(AdminRequiredMixin, View):
                 uploaded_file=form.cleaned_data["archivo"],
                 requested_by=request.user,
                 send_credentials=bool(form.cleaned_data["enviar_credenciales"]),
+                is_pwa_import=bool(form.cleaned_data["es_pwa"]),
             )
         except ValidationError as exc:
             form.add_error("archivo", " ".join(exc.messages))
