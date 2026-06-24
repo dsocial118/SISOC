@@ -9,7 +9,7 @@ from django.urls import reverse
 
 from ciudadanos.models import Ciudadano
 from core.models import Localidad, Municipio, Provincia
-from users.forms import UserCreationForm
+from users.forms import CustomUserChangeForm, UserCreationForm
 from users.models import ProfileTerritorialScope
 from users.services import UsuariosService
 from users.territorial_scope import apply_territorial_scope
@@ -450,6 +450,38 @@ def test_user_list_scoped_actor_excludes_superusers():
 
     assert "usuario_con_rol" in usernames
     assert "super_admin_x" not in usernames
+
+
+@pytest.mark.django_db
+def test_change_form_muestra_y_preserva_grupos_fuera_de_alcance():
+    """Al editar, el actor con alcance VE los grupos actuales del usuario (aunque
+    estén fuera de su alcance) y, al guardar, esos grupos se preservan."""
+    actor = User.objects.create_user(username="actor_form_scope", password="secret")
+    asignable = Group.objects.create(name="Grupo Asignable Form")
+    fuera = Group.objects.create(name="Grupo Fuera Form")
+    actor.profile.grupos_asignables.set([asignable])
+
+    target = User.objects.create_user(username="target_form_scope", password="secret")
+    target.groups.set([fuera])
+
+    form = CustomUserChangeForm(instance=target, actor=actor)
+
+    # Display: el grupo actual (fuera de alcance) y el asignable están disponibles.
+    visibles = set(form.fields["groups"].queryset.values_list("id", flat=True))
+    assert {asignable.id, fuera.id} <= visibles
+
+    # Preservación: el actor asigna el grupo permitido; el fuera de alcance no se
+    # pierde al guardar.
+    form.cleaned_data = {
+        "groups": list(Group.objects.filter(id=asignable.id)),
+        "user_permissions": [],
+    }
+    form._aplicar_grupos_y_permisos(target)  # pylint: disable=protected-access
+
+    assert set(target.groups.values_list("id", flat=True)) == {
+        asignable.id,
+        fuera.id,
+    }
 
 
 @pytest.mark.django_db
