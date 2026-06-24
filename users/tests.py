@@ -5,6 +5,7 @@ import pytest
 from django.contrib.auth.models import Group, Permission, User
 from django.contrib.contenttypes.models import ContentType
 from django.test import RequestFactory
+from django.urls import reverse
 
 from ciudadanos.models import Ciudadano
 from core.models import Localidad, Municipio, Provincia
@@ -495,7 +496,9 @@ def test_user_list_with_only_role_scope_does_not_hide_users_with_allowed_groups(
 
 
 @pytest.mark.django_db
-def test_user_list_without_delegation_scope_keeps_default_visibility():
+def test_user_list_without_delegation_scope_only_shows_self():
+    """Deny-by-default: un actor no-superuser sin alcance delegable configurado
+    solo se ve a sí mismo en el listado."""
     request_factory = RequestFactory()
     actor = User.objects.create_user(username="sin_scope", password="secret")
     other_user = User.objects.create_user(username="otro", password="secret")
@@ -509,7 +512,37 @@ def test_user_list_without_delegation_scope_keeps_default_visibility():
     )
 
     assert "sin_scope" in usernames
-    assert other_user.username in usernames
+    assert other_user.username not in usernames
+
+
+@pytest.mark.django_db
+def test_user_update_view_blocks_user_out_of_actor_scope(client):
+    """Un actor con alcance configurado no puede editar (IDOR) un usuario cuyos
+    grupos estan fuera de su alcance: la vista responde 404."""
+    allowed_group = Group.objects.create(name="Grupo Editable")
+    denied_group = Group.objects.create(name="Grupo Fuera de Alcance")
+
+    actor = User.objects.create_user(username="editor_acotado", password="secret")
+    change_user_permission = Permission.objects.get(
+        content_type__app_label="auth",
+        codename="change_user",
+    )
+    actor.user_permissions.add(change_user_permission)
+    actor.profile.grupos_asignables.set([allowed_group])
+
+    fuera = User.objects.create_user(username="fuera_de_alcance", password="secret")
+    fuera.groups.set([denied_group])
+
+    dentro = User.objects.create_user(username="dentro_de_alcance", password="secret")
+    dentro.groups.set([allowed_group])
+
+    client.force_login(actor)
+
+    resp_fuera = client.get(reverse("usuario_editar", kwargs={"pk": fuera.pk}))
+    assert resp_fuera.status_code == 404
+
+    resp_dentro = client.get(reverse("usuario_editar", kwargs={"pk": dentro.pk}))
+    assert resp_dentro.status_code == 200
 
 
 def _import_row_data(correo):

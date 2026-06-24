@@ -77,6 +77,14 @@ class UsuariosService:
         return BENEFICIARIO_ADVANCED_FILTER.filter_queryset(base_qs, request_or_get)
 
     @staticmethod
+    def get_usuarios_en_alcance(request_or_get):
+        """Usuarios que el actor puede administrar (solo alcance, sin filtros de
+        búsqueda). Se usa para restringir las vistas de edición/borrado y evitar
+        accesos por URL a usuarios fuera del alcance del actor (IDOR)."""
+        base_qs = UsuariosService.get_usuarios_queryset()
+        return UsuariosService._apply_actor_scope(base_qs, request_or_get)
+
+    @staticmethod
     def _apply_actor_scope(base_qs, request_or_get):
         """
         Restringe visibilidad de usuarios segun el alcance delegable del actor.
@@ -91,9 +99,13 @@ class UsuariosService:
         if actor.is_superuser:
             return base_qs
 
+        # Deny-by-default: un actor no-superuser que gestiona usuarios pero no
+        # tiene un alcance delegable configurado solo se ve a sí mismo. Debe
+        # configurarse su `grupos_asignables`/`roles_asignables` para que pueda
+        # administrar a otros usuarios.
         profile = getattr(actor, "profile", None)
         if not profile:
-            return base_qs
+            return base_qs.filter(pk=actor.pk)
 
         allowed_groups = profile.grupos_asignables.all()
         allowed_roles = profile.roles_asignables.filter(
@@ -104,7 +116,7 @@ class UsuariosService:
         has_group_scope = allowed_groups.exists()
         has_role_scope = allowed_roles.exists()
         if not has_group_scope and not has_role_scope:
-            return base_qs
+            return base_qs.filter(pk=actor.pk)
 
         scoped_qs = base_qs.annotate(
             total_groups=Count("groups", distinct=True),

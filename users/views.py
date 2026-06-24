@@ -142,6 +142,10 @@ class UserUpdateView(AdminRequiredMixin, UpdateView):
     success_url = reverse_lazy("usuarios")
     required_permissions = ("auth.change_user",)
 
+    def get_queryset(self):
+        # Solo se pueden editar usuarios dentro del alcance del actor.
+        return UsuariosService.get_usuarios_en_alcance(self.request)
+
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
         kwargs["actor"] = self.request.user
@@ -180,6 +184,9 @@ class UserDeleteView(AdminRequiredMixin, DeleteView):
     success_url = reverse_lazy("usuarios")
     required_permissions = ("auth.delete_user",)
 
+    def get_queryset(self):
+        return UsuariosService.get_usuarios_en_alcance(self.request)
+
     def post(self, request, *args, **kwargs):
         self.object = self.get_object()
         self.object.is_active = False
@@ -192,7 +199,13 @@ class UserGenerateTemporaryPasswordView(AdminRequiredMixin, View):
     required_permissions = ("auth.change_user",)
 
     def post(self, request, *args, **kwargs):
-        user = User.objects.select_related("profile").filter(pk=kwargs["pk"]).first()
+        # Restringido al alcance del actor: no se puede resetear la contraseña de
+        # usuarios fuera del alcance accediendo por URL.
+        user = (
+            UsuariosService.get_usuarios_en_alcance(request)
+            .filter(pk=kwargs["pk"])
+            .first()
+        )
         if not user:
             messages.error(request, "Usuario inexistente.")
             return HttpResponseRedirect(reverse("usuarios"))
@@ -225,6 +238,9 @@ class UserActiveView(AdminRequiredMixin, UpdateView):
     success_url = reverse_lazy("usuarios")
     required_permissions = ("auth.delete_user",)
     fields = []
+
+    def get_queryset(self):
+        return UsuariosService.get_usuarios_en_alcance(self.request)
 
     def post(self, request, *args, **kwargs):
         self.object = self.get_object()
