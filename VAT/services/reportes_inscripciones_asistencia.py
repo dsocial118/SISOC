@@ -19,7 +19,8 @@ from VAT.services.access_scope import filter_centros_queryset_for_user
 DATE_INPUT_FORMAT = "%Y-%m-%d"
 # Las opciones de los filtros dependen solo del alcance del usuario (no de los
 # filtros aplicados), por lo que se cachean para evitar ~8 queries pesadas en
-# cada carga del reporte.
+# cada carga del reporte. No hay invalidación explícita: un cambio de alcance o
+# el alta de un centro/comisión se refleja al vencer el TTL (5 min).
 FILTER_OPTIONS_CACHE_TTL = 300
 DETALLE_PER_PAGE = 50
 GROUP_BY_ALLOWED = ("centro", "provincia", "curso", "comision", "mes")
@@ -395,10 +396,6 @@ def build_detalle_personas_inscriptas(
     max_rows: int = 250,
 ):
     return list(build_detalle_queryset(user, filtros)[:max_rows])
-
-
-def invalidate_filter_options_cache(user_id) -> None:
-    cache.delete(f"vat_reporte_filter_options_v1_{user_id}")
 
 
 def get_filter_options(user):
