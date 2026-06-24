@@ -1,0 +1,199 @@
+{% extends "includes/main.html" %}
+{% load crispy_forms_tags %}
+{% block title %}
+    {% if edit_mode %}
+        Editar actividad
+    {% else %}
+        Agregar actividad
+    {% endif %}
+{% endblock %}
+{% block breadcrumb %}
+    <ol class="breadcrumb float-sm-right">
+        <li class="breadcrumb-item">
+            <a href="{% url 'comedor_detalle' comedor.id %}">Comedor</a>
+        </li>
+        <li class="breadcrumb-item active">
+            {% if edit_mode %}
+                Editar actividad
+            {% else %}
+                Agregar actividad
+            {% endif %}
+        </li>
+    </ol>
+{% endblock %}
+{% block content %}
+    <div class="container">
+        <h2 class="text-center display-4 mb-4">
+            {% if edit_mode %}
+                Editar actividad del espacio
+            {% else %}
+                Agregar actividad del espacio
+            {% endif %}
+        </h2>
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show"
+                     role="alert">
+                    {{ message }}
+                    <button type="button"
+                            class="btn-close"
+                            data-bs-dismiss="alert"
+                            aria-label="Cerrar"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+        <div class="card">
+            <div class="card-header font-weight-bold">{{ comedor.nombre }}</div>
+            <form method="post" novalidate>
+                <div class="card-body">
+                    {% csrf_token %}
+                    {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
+                    <div class="row">
+                        <div class="col-md-8">{{ form.catalogo_actividad|as_crispy_field }}</div>
+                        <div class="col-md-4">{{ form.vigencia_actividad_meses|as_crispy_field }}</div>
+                    </div>
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <label class="font-weight-bold mb-0">Dias y horarios</label>
+                            <button type="button"
+                                    class="btn btn-outline-primary btn-sm"
+                                    id="add-schedule-row">
+                                <i class="fas fa-plus" aria-hidden="true"></i> Agregar horario
+                            </button>
+                        </div>
+                        <div id="schedule-rows">
+                            {% for row in form.schedule_form_rows %}
+                                <div class="schedule-row border rounded p-3 mb-2">
+                                    <div class="row align-items-start">
+                                        <div class="col-md-4">
+                                            <label class="form-label">Dia</label>
+                                            <select name="schedule_dia_actividad" class="form-control">
+                                                <option value="">Seleccionar</option>
+                                                {% for day in form.day_options %}
+                                                    <option value="{{ day.id }}"
+                                                            {% if day.id|stringformat:"s" == row.values.dia_actividad %}selected{% endif %}>
+                                                        {{ day.nombre }}
+                                                    </option>
+                                                {% endfor %}
+                                            </select>
+                                            {% if row.errors.dia_actividad %}
+                                                <div class="invalid-feedback d-block">{{ row.errors.dia_actividad }}</div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label class="form-label">Hora inicio</label>
+                                            <input type="time"
+                                                   name="schedule_hora_inicio"
+                                                   class="form-control"
+                                                   value="{{ row.values.hora_inicio }}">
+                                            {% if row.errors.hora_inicio %}
+                                                <div class="invalid-feedback d-block">{{ row.errors.hora_inicio }}</div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label class="form-label">Hora fin</label>
+                                            <input type="time"
+                                                   name="schedule_hora_fin"
+                                                   class="form-control"
+                                                   value="{{ row.values.hora_fin }}">
+                                            {% if row.errors.hora_fin %}
+                                                <div class="invalid-feedback d-block">{{ row.errors.hora_fin }}</div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="col-md-2 pt-md-4 mt-2 mt-md-0 text-md-right">
+                                            <button type="button"
+                                                    class="btn btn-outline-danger btn-sm remove-schedule-row">
+                                                <i class="fas fa-trash" aria-hidden="true"></i> Quitar
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-12">{{ form.responsable_actividad|as_crispy_field }}</div>
+                    </div>
+                </div>
+                <div class="card-footer d-flex justify-content-between">
+                    <a href="{% url 'comedor_detalle' comedor.id %}#legajo-actividades-pnud"
+                       class="btn btn-outline-secondary">Volver</a>
+                    <button type="submit" class="btn btn-primary">
+                        {% if edit_mode %}
+                            Actualizar actividad
+                        {% else %}
+                            Guardar actividad
+                        {% endif %}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <template id="schedule-row-template">
+        <div class="schedule-row border rounded p-3 mb-2">
+            <div class="row align-items-start">
+                <div class="col-md-4">
+                    <label class="form-label">Dia</label>
+                    <select name="schedule_dia_actividad" class="form-control">
+                        <option value="">Seleccionar</option>
+                        {% for day in form.day_options %}<option value="{{ day.id }}">{{ day.nombre }}</option>{% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Hora inicio</label>
+                    <input type="time" name="schedule_hora_inicio" class="form-control">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Hora fin</label>
+                    <input type="time" name="schedule_hora_fin" class="form-control">
+                </div>
+                <div class="col-md-2 pt-md-4 mt-2 mt-md-0 text-md-right">
+                    <button type="button"
+                            class="btn btn-outline-danger btn-sm remove-schedule-row">
+                        <i class="fas fa-trash" aria-hidden="true"></i> Quitar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </template>
+{% endblock %}
+{% block customJS %}
+    <script nonce="{{ request.csp_nonce }}">
+        (function () {
+            const rowsContainer = document.getElementById('schedule-rows');
+            const addButton = document.getElementById('add-schedule-row');
+            const template = document.getElementById('schedule-row-template');
+
+            function updateRemoveButtons() {
+                const rows = rowsContainer.querySelectorAll('.schedule-row');
+                rows.forEach((row) => {
+                    const removeButton = row.querySelector('.remove-schedule-row');
+                    if (removeButton) {
+                        removeButton.disabled = rows.length <= 1;
+                    }
+                });
+            }
+
+            if (rowsContainer && addButton && template) {
+                addButton.addEventListener('click', function () {
+                    rowsContainer.appendChild(template.content.cloneNode(true));
+                    updateRemoveButtons();
+                });
+
+                rowsContainer.addEventListener('click', function (event) {
+                    const target = event.target;
+                    const removeButton = target instanceof Element
+                        ? target.closest('.remove-schedule-row')
+                        : null;
+                    if (!removeButton || removeButton.disabled) {
+                        return;
+                    }
+                    removeButton.closest('.schedule-row').remove();
+                    updateRemoveButtons();
+                });
+
+                updateRemoveButtons();
+            }
+        })();
+    </script>
+{% endblock %}

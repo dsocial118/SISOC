@@ -131,6 +131,12 @@
                             <div id="mobile-rendicion-permission-wrapper" style="display: none">
                                 {{ form.puede_gestionar_rendiciones_mobile|as_crispy_field }}
                             </div>
+                            <div id="mobile-pwa-permissions-wrapper" style="display: none">
+                                {{ form.puede_gestionar_colaboradores_pwa|as_crispy_field }}
+                                {{ form.puede_gestionar_usuarios_pwa|as_crispy_field }}
+                                {{ form.puede_gestionar_nomina_pwa|as_crispy_field }}
+                                {{ form.puede_gestionar_prestaciones_mensuales_pwa|as_crispy_field }}
+                            </div>
                             <div id="mobile-association-type-wrapper" style="display: none">{{ form.tipo_asociacion_pwa | as_crispy_field }}</div>
                             <div id="mobile-association-choice-wrapper" class="mb-3">
                                 <div class="mobile-selector-intro">
@@ -398,6 +404,7 @@
     const mobileTabs = document.getElementById('mobile-tabs');
     const permisosCard = document.getElementById('backoffice-permisos-card');
     const mobileRendicionPermissionWrapper = document.getElementById('mobile-rendicion-permission-wrapper');
+    const mobilePwaPermissionsWrapper = document.getElementById('mobile-pwa-permissions-wrapper');
     const configCard = document.getElementById('backoffice-config-card');
     const passwordFieldWrapper = document.getElementById('password-field-wrapper');
     const mobilePasswordHelp = document.getElementById('mobile-password-help');
@@ -673,6 +680,9 @@
       }
       if (mobileRendicionPermissionWrapper) {
         mobileRendicionPermissionWrapper.style.display = isPwaRep ? '' : 'none';
+      }
+      if (mobilePwaPermissionsWrapper) {
+        mobilePwaPermissionsWrapper.style.display = isPwaRep ? '' : 'none';
       }
       if (configCard) {
         configCard.style.display = isPwaRep ? 'none' : '';

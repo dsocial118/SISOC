@@ -308,9 +308,7 @@ class PWAAccessMixin:
             self.instance.has_perm(MOBILE_RENDICION_PERMISSION_CODE)
         )
         for field_name, (permission_code, _) in PWA_OPERATION_PERMISSION_FIELDS.items():
-            self.fields[field_name].initial = bool(
-                comedor_ids
-            ) or self.instance.has_perm(permission_code)
+            self.fields[field_name].initial = self.instance.has_perm(permission_code)
         self.fields["tipo_asociacion_pwa"].initial = (
             tipos_asociacion[0] if len(tipos_asociacion) == 1 else ""
         )
@@ -336,9 +334,7 @@ class PWAAccessMixin:
     def _sync_pwa_operation_permissions(self, user):
         for field_name, (permission_code, _) in PWA_OPERATION_PERMISSION_FIELDS.items():
             permission = self._get_permission_from_code(permission_code)
-            if self.cleaned_data.get("es_representante_pwa") or self.cleaned_data.get(
-                field_name
-            ):
+            if self.cleaned_data.get(field_name):
                 user.user_permissions.add(permission)
             else:
                 user.user_permissions.remove(permission)
