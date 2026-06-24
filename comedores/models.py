@@ -481,7 +481,13 @@ class ComedorDatosConvenioPnud(models.Model):
         blank=True,
     )
     nro_convenio = models.CharField(max_length=120, null=True, blank=True)
-    monto_total_convenio_por_espacio = models.DecimalField(
+    monto_convenio_prestaciones_alimentarias = models.DecimalField(
+        max_digits=14,
+        decimal_places=2,
+        null=True,
+        blank=True,
+    )
+    monto_convenio_siph = models.DecimalField(
         max_digits=14,
         decimal_places=2,
         null=True,

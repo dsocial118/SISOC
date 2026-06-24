@@ -742,6 +742,96 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
 
+  /* ===== MODAL CORREGIR EVALUACIÓN FINAL (Nación autorizada) ===== */
+  const modalCorregir = document.getElementById('modalCorregirEvaluacion');
+  if (modalCorregir) {
+    const ESTADO_LABELS = { APROBADO: 'Aceptado', RECHAZADO: 'Rechazado', SUBSANADO: 'Subsanado' };
+    const expedienteIdCorregir = document.querySelector('meta[name="expediente-id"]')?.content;
+
+    modalCorregir.addEventListener('show.bs.modal', function (event) {
+      const trigger = event.relatedTarget;
+      const legajoId = trigger?.getAttribute('data-legajo-id') || '';
+      const estadoActual = trigger?.getAttribute('data-estado-actual') || '';
+      modalCorregir.querySelector('#corregir-legajo-id').value = legajoId;
+      modalCorregir.querySelector('#corregir-estado-actual').textContent =
+        ESTADO_LABELS[estadoActual] || estadoActual || '—';
+      const sel = modalCorregir.querySelector('#corregir-nuevo-estado');
+      if (sel) {
+        sel.value = '';
+        // Ocultar el estado actual como opción (no tiene sentido "corregir" al mismo).
+        Array.from(sel.options).forEach((opt) => {
+          opt.hidden = opt.value !== '' && opt.value === estadoActual;
+        });
+      }
+      const mot = modalCorregir.querySelector('#corregir-motivo');
+      if (mot) mot.value = '';
+    });
+
+    const formCorregir = document.getElementById('form-corregir-evaluacion');
+    formCorregir.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const legajoId = modalCorregir.querySelector('#corregir-legajo-id').value;
+      const nuevoEstado = modalCorregir.querySelector('#corregir-nuevo-estado').value;
+      const motivo = (modalCorregir.querySelector('#corregir-motivo').value || '').trim();
+      const btn = document.getElementById('btn-confirm-corregir');
+      const original = btn.innerHTML;
+
+      if (!legajoId || !expedienteIdCorregir) {
+        showAlert('danger', 'No se pudo identificar el legajo.');
+        return;
+      }
+      if (!nuevoEstado) {
+        showAlert('warning', 'Seleccioná el nuevo estado.');
+        return;
+      }
+      const etiqueta = ESTADO_LABELS[nuevoEstado] || nuevoEstado;
+      if (!confirm(`¿Confirmás cambiar la evaluación final a "${etiqueta}"? La acción queda registrada en el historial.`)) {
+        return;
+      }
+
+      const url = `/celiaquia/expedientes/${expedienteIdCorregir}/legajos/${legajoId}/corregir-evaluacion/`;
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Guardando…';
+
+      try {
+        const fd = new FormData();
+        fd.append('nuevo_estado', nuevoEstado);
+        if (motivo) fd.append('motivo', motivo);
+
+        const resp = await fetch(url, {
+          method: 'POST',
+          body: fd,
+          credentials: 'same-origin',
+          headers: {
+            'X-CSRFToken': getCsrfToken(),
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json'
+          }
+        });
+
+        const data = await resp.json();
+        if (!resp.ok || data.success === false) {
+          throw new Error(data.error || data.message || `HTTP ${resp.status}`);
+        }
+
+        showAlert('success', 'Evaluación corregida correctamente.');
+        setTimeout(() => {
+          const modal = bootstrap.Modal.getInstance(modalCorregir);
+          if (modal) modal.hide();
+          window.location.reload();
+        }, 800);
+      } catch (err) {
+        console.error('Corregir evaluación:', err);
+        showAlert('danger', 'No se pudo corregir la evaluación. ', err.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = original;
+      }
+    });
+  }
+
+
   /* ===== MODAL RECHAZAR (técnico) ===== */
   const modalRechazar = document.getElementById('modalRechazar');
   if (modalRechazar) {

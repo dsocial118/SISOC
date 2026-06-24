@@ -23,4 +23,3 @@ Issue #1935 reporto que los comedores con programa `Abordaje Comunitario - Linea
   - PNUD fuera de esas dos lineas manteniendo oculto `Relevamientos`.
   - Comedor no PNUD manteniendo `Relevamientos`.
 - `black --check` sobre Python tocado.
-

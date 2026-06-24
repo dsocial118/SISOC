@@ -2238,6 +2238,136 @@ class RevisarLegajoView(View):
         )
 
 
+ESTADOS_EVALUACION_FINAL = {"APROBADO", "RECHAZADO", "SUBSANADO"}
+
+
+@method_decorator(csrf_protect, name="dispatch")
+class CorregirEvaluacionView(View):
+    """Corrección de la evaluación final de un legajo por Nación autorizada.
+
+    Permite cambiar el estado entre APROBADO, RECHAZADO y SUBSANADO ante errores
+    posteriores a la evaluación. Reservado a administradores y coordinadores; no
+    disponible para usuarios provinciales ni técnicos. Cada cambio queda
+    registrado en HistorialValidacionTecnica (usuario, fecha/hora, estado
+    anterior y nuevo)."""
+
+    def get(self, *_a, **_k):
+        return HttpResponseNotAllowed(["POST"])
+
+    def post(self, request, pk, legajo_id):
+        user = request.user
+        if not user.is_authenticated:
+            return JsonResponse(
+                {"success": False, "error": "Autenticación requerida."}, status=403
+            )
+
+        es_admin = _is_admin(user)
+        es_coord = _user_has_permission(user, ROLE_COORDINADOR_CELIAQUIA_PERMISSION)
+        if not (es_admin or es_coord):
+            return JsonResponse(
+                {
+                    "success": False,
+                    "error": "No tenés permiso para corregir evaluaciones finales.",
+                },
+                status=403,
+            )
+
+        expediente = get_object_or_404(Expediente, pk=pk)
+        leg = get_object_or_404(
+            ExpedienteCiudadano, pk=legajo_id, expediente=expediente
+        )
+
+        nuevo_estado = (request.POST.get("nuevo_estado") or "").strip().upper()
+        if nuevo_estado not in ESTADOS_EVALUACION_FINAL:
+            return JsonResponse(
+                {"success": False, "error": "Estado de evaluación inválido."},
+                status=400,
+            )
+
+        estado_anterior = leg.revision_tecnico
+        if estado_anterior not in ESTADOS_EVALUACION_FINAL:
+            return JsonResponse(
+                {
+                    "success": False,
+                    "error": "El legajo no tiene una evaluación final para corregir.",
+                },
+                status=400,
+            )
+        if nuevo_estado == estado_anterior:
+            return JsonResponse(
+                {"success": False, "error": "El legajo ya está en ese estado."},
+                status=400,
+            )
+
+        motivo = (request.POST.get("motivo") or "").strip()
+        cupo_liberado = False
+
+        with transaction.atomic():
+            # Regla de negocio de cupo: si la corrección saca al legajo de
+            # APROBADO (a RECHAZADO/SUBSANADO) y ocupaba cupo, se libera.
+            if (
+                nuevo_estado in ("RECHAZADO", "SUBSANADO")
+                and leg.estado_cupo == "DENTRO"
+            ):
+                try:
+                    CupoService.liberar_slot(
+                        legajo=leg,
+                        usuario=user,
+                        motivo=f"Corrección de evaluación final a {nuevo_estado}",
+                    )
+                    leg.estado_cupo = "NO_EVAL"
+                    leg.es_titular_activo = False
+                    cupo_liberado = True
+                except CupoNoConfigurado as exc:
+                    logger.warning(
+                        "Corrección legajo %s sin cupo configurado: %s", leg.pk, exc
+                    )
+                except Exception as exc:  # pragma: no cover - log y continuar
+                    logger.error(
+                        "Error al liberar cupo en corrección de legajo %s: %s",
+                        leg.pk,
+                        exc,
+                        exc_info=True,
+                    )
+
+            leg.revision_tecnico = nuevo_estado
+            leg.save(
+                update_fields=[
+                    "revision_tecnico",
+                    "modificado_en",
+                    "estado_cupo",
+                    "es_titular_activo",
+                ]
+            )
+
+            motivo_historial = "Corrección de evaluación final."
+            if motivo:
+                motivo_historial = f"{motivo_historial} {motivo}"
+            HistorialValidacionTecnica.objects.create(
+                legajo=leg,
+                estado_anterior=estado_anterior,
+                estado_nuevo=nuevo_estado,
+                usuario=user,
+                motivo=motivo_historial[:500],
+            )
+
+        logger.info(
+            "Evaluación corregida: legajo=%s %s -> %s por user=%s",
+            leg.pk,
+            estado_anterior,
+            nuevo_estado,
+            user.id,
+        )
+        return JsonResponse(
+            {
+                "success": True,
+                "estado": nuevo_estado,
+                "estado_anterior": estado_anterior,
+                "cupo_liberado": cupo_liberado,
+            }
+        )
+
+
 class ActualizarRegistroErroneoView(View):
     def post(self, request, pk, registro_id):
         user = request.user

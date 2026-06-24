@@ -503,7 +503,16 @@ class DelegationScopeMixin:
             "name",
         )
 
-        self.fields["groups"].queryset = allowed_groups
+        # El campo de grupos debe MOSTRAR los grupos actuales del usuario aunque
+        # estén fuera del alcance del actor; el alcance real de edición se valida
+        # y se preserva por separado (un actor con alcance no puede quitar grupos
+        # que no administra). user_permissions ya muestra el catálogo completo.
+        if self.instance and self.instance.pk:
+            groups_field_qs = (allowed_groups | self.instance.groups.all()).distinct()
+        else:
+            groups_field_qs = allowed_groups
+
+        self.fields["groups"].queryset = groups_field_qs
         self.fields["user_permissions"].queryset = all_permissions
         self.fields["grupos_asignables"].queryset = allowed_groups
         self.fields["roles_asignables"].queryset = allowed_roles
@@ -521,6 +530,19 @@ class DelegationScopeMixin:
         if self._is_unrestricted_actor():
             return
 
+        # Valores actuales del usuario: se permiten conservar aunque estén fuera
+        # del alcance del actor (no se pueden AGREGAR nuevos fuera de alcance).
+        original_group_ids = (
+            set(self.instance.groups.values_list("id", flat=True))
+            if self.instance and self.instance.pk
+            else set()
+        )
+        original_perm_ids = (
+            set(self.instance.user_permissions.values_list("id", flat=True))
+            if self.instance and self.instance.pk
+            else set()
+        )
+
         allowed_group_ids = set(
             self._allowed_groups_for_actor().values_list("id", flat=True)
         )
@@ -533,7 +555,7 @@ class DelegationScopeMixin:
             )
         )
 
-        if not selected_group_ids.issubset(allowed_group_ids):
+        if not selected_group_ids.issubset(allowed_group_ids | original_group_ids):
             self.add_error(
                 "groups",
                 "Solo puede asignar grupos habilitados para su usuario.",
@@ -558,7 +580,7 @@ class DelegationScopeMixin:
             )
         )
 
-        if not selected_role_ids.issubset(allowed_role_ids):
+        if not selected_role_ids.issubset(allowed_role_ids | original_perm_ids):
             self.add_error(
                 "user_permissions",
                 "Solo puede asignar roles habilitados para su usuario.",
@@ -568,6 +590,42 @@ class DelegationScopeMixin:
                 "roles_asignables",
                 "Solo puede delegar roles que usted mismo puede asignar.",
             )
+
+    def _aplicar_grupos_y_permisos(self, user):
+        """Asigna grupos y permisos directos preservando los que están fuera del
+        alcance del actor: un actor con alcance administra solo lo habilitado y
+        no puede quitar grupos/roles que no le corresponden. Un actor sin
+        restricción (superusuario) asigna exactamente lo seleccionado."""
+        selected_groups = self.cleaned_data.get("groups", [])
+        selected_permissions = self.cleaned_data.get("user_permissions", [])
+
+        if self._is_unrestricted_actor():
+            user.groups.set(selected_groups)
+            user.user_permissions.set(selected_permissions)
+            return
+
+        allowed_group_ids = set(
+            self._allowed_groups_for_actor().values_list("id", flat=True)
+        )
+        allowed_role_ids = set(
+            self._allowed_roles_for_actor().values_list("id", flat=True)
+        )
+        original_group_ids = set(user.groups.values_list("id", flat=True))
+        original_permission_ids = set(
+            user.user_permissions.values_list("id", flat=True)
+        )
+        selected_group_ids = {group.pk for group in selected_groups}
+        selected_permission_ids = {perm.pk for perm in selected_permissions}
+
+        final_group_ids = (selected_group_ids & allowed_group_ids) | (
+            original_group_ids - allowed_group_ids
+        )
+        final_permission_ids = (selected_permission_ids & allowed_role_ids) | (
+            original_permission_ids - allowed_role_ids
+        )
+
+        user.groups.set(list(final_group_ids))
+        user.user_permissions.set(list(final_permission_ids))
 
 
 class UserCreationForm(
@@ -701,8 +759,7 @@ class UserCreationForm(
                 if pwa_permission_ids:
                     user.user_permissions.add(*pwa_permission_ids)
             else:
-                user.groups.set(self.cleaned_data.get("groups", []))
-                user.user_permissions.set(self.cleaned_data.get("user_permissions", []))
+                self._aplicar_grupos_y_permisos(user)
             self._sync_mobile_rendicion_permission(user)
             if self.cleaned_data.get("es_representante_pwa", False):
                 self._sync_pwa_operation_permissions(user)
@@ -888,8 +945,7 @@ class CustomUserChangeForm(
                     if is_pwa_operator
                     else []
                 )
-                user.groups.set(self.cleaned_data.get("groups", []))
-                user.user_permissions.set(self.cleaned_data.get("user_permissions", []))
+                self._aplicar_grupos_y_permisos(user)
                 if pwa_permission_ids:
                     user.user_permissions.add(*pwa_permission_ids)
             if not is_pwa_operator:
