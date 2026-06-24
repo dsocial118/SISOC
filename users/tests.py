@@ -424,6 +424,35 @@ def test_user_list_is_scoped_by_actor_delegation_scope():
 
 
 @pytest.mark.django_db
+def test_user_list_scoped_actor_excludes_superusers():
+    """Un actor con alcance configurado no debe ver a los superadministradores
+    (que sin grupos/roles propios satisfacían el filtro de subconjunto)."""
+    request_factory = RequestFactory()
+
+    actor = User.objects.create_user(username="delegador_no_super", password="secret")
+    allowed_group = Group.objects.create(name="Grupo Scope Sin Super")
+    actor.profile.grupos_asignables.set([allowed_group])
+
+    usuario_con_rol = User.objects.create_user(
+        username="usuario_con_rol", password="secret"
+    )
+    usuario_con_rol.groups.set([allowed_group])
+
+    User.objects.create_superuser(username="super_admin_x", password="secret")
+
+    request = request_factory.get("/usuarios/")
+    request.user = actor
+    usernames = set(
+        UsuariosService.get_filtered_usuarios(request).values_list(
+            "username", flat=True
+        )
+    )
+
+    assert "usuario_con_rol" in usernames
+    assert "super_admin_x" not in usernames
+
+
+@pytest.mark.django_db
 def test_user_list_with_only_group_scope_does_not_hide_users_without_roles():
     request_factory = RequestFactory()
 

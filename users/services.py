@@ -148,7 +148,13 @@ class UsuariosService:
                 total_role_permissions=F("allowed_role_permissions_count")
             )
 
-        scoped_qs = scoped_qs.filter(Q(pk=actor.pk) | scope_filter)
+        # Los superadministradores (sin grupos ni roles propios) satisfacen el
+        # filtro de subconjunto trivialmente (0 == 0); se excluyen para que un
+        # actor con alcance no los vea ni pueda administrarlos. El actor es
+        # siempre no-superuser (los superuser retornan base_qs antes).
+        scoped_qs = scoped_qs.filter(Q(pk=actor.pk) | scope_filter).exclude(
+            is_superuser=True
+        )
 
         return scoped_qs.distinct().order_by("-id")
 

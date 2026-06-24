@@ -65,6 +65,34 @@ class ReporteInscriptosAsistenciasView(LoginRequiredMixin, TemplateView):
             self.get_context_data(reporte=reporte, filtros=filtros)
         )
 
+    def _paginar_detalle(self, filtros, resumen):
+        """Detalle nominal paginado en el servidor (LIMIT/OFFSET): solo trae la
+        página visible. El total se reutiliza del resumen ya calculado para
+        evitar un COUNT extra."""
+        detalle_qs = build_detalle_queryset(self.request.user, filtros)
+        total = resumen.get("inscripciones_total") or 0
+        num_pages = max(1, ceil(total / DETALLE_PER_PAGE))
+        try:
+            page = int(self.request.GET.get("detalle_page") or 1)
+        except (TypeError, ValueError):
+            page = 1
+        page = max(1, min(page, num_pages))
+        offset = (page - 1) * DETALLE_PER_PAGE
+        rows = list(detalle_qs[offset : offset + DETALLE_PER_PAGE])
+        info = {
+            "number": page,
+            "num_pages": num_pages,
+            "count": total,
+            "per_page": DETALLE_PER_PAGE,
+            "has_previous": page > 1,
+            "has_next": page < num_pages,
+            "previous_page_number": page - 1,
+            "next_page_number": page + 1,
+            "start_index": offset + 1 if total else 0,
+            "end_index": min(offset + DETALLE_PER_PAGE, total),
+        }
+        return rows, info
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         reporte = kwargs["reporte"]
@@ -85,33 +113,9 @@ class ReporteInscriptosAsistenciasView(LoginRequiredMixin, TemplateView):
         paginator = Paginator(reporte["rows"], self.paginate_by)
         page_obj = paginator.get_page(self.request.GET.get("page") or 1)
 
-        # Detalle nominal paginado en el servidor (LIMIT/OFFSET): solo trae la
-        # página visible en lugar de un volcado completo. El total se reutiliza
-        # del resumen ya calculado para evitar un COUNT extra.
-        detalle_qs = build_detalle_queryset(self.request.user, filtros)
-        total_detalle = reporte["resumen"].get("inscripciones_total") or 0
-        detalle_num_pages = max(1, ceil(total_detalle / DETALLE_PER_PAGE))
-        try:
-            detalle_page = int(self.request.GET.get("detalle_page") or 1)
-        except (TypeError, ValueError):
-            detalle_page = 1
-        detalle_page = max(1, min(detalle_page, detalle_num_pages))
-        detalle_offset = (detalle_page - 1) * DETALLE_PER_PAGE
-        detalle_rows = list(
-            detalle_qs[detalle_offset : detalle_offset + DETALLE_PER_PAGE]
+        detalle_rows, detalle_page_info = self._paginar_detalle(
+            filtros, reporte["resumen"]
         )
-        detalle_page_info = {
-            "number": detalle_page,
-            "num_pages": detalle_num_pages,
-            "count": total_detalle,
-            "per_page": DETALLE_PER_PAGE,
-            "has_previous": detalle_page > 1,
-            "has_next": detalle_page < detalle_num_pages,
-            "previous_page_number": detalle_page - 1,
-            "next_page_number": detalle_page + 1,
-            "start_index": detalle_offset + 1 if total_detalle else 0,
-            "end_index": min(detalle_offset + DETALLE_PER_PAGE, total_detalle),
-        }
 
         context.update(
             {
