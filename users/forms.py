@@ -730,77 +730,86 @@ class UserCreationForm(
         with transaction.atomic():
             return self._save_atomic(commit=commit)
 
-    def _save_atomic(self, commit=True):
-        user = super().save(commit=False)
-        user.email = self.cleaned_data.get("email", "")
-
+    def _configure_created_user(self, user):
         if self.cleaned_data.get("es_representante_pwa", False):
             self.generated_password = get_random_string(12)
             user.set_password(self.generated_password)
             user.is_staff = False
             self.password_was_auto_generated = True
-        elif self.cleaned_data.get("es_coordinador", False):
-            user.set_password(self.cleaned_data["password"])
+            return
+        user.set_password(self.cleaned_data["password"])
+        self.generated_password = None
+        self.password_was_auto_generated = False
+        if self.cleaned_data.get("es_coordinador", False):
             user.is_staff = True
-            self.generated_password = None
-            self.password_was_auto_generated = False
+
+    def _save_user_security_and_permissions(self, user):
+        if self.cleaned_data.get("es_representante_pwa", False):
+            user.groups.clear()
+            pwa_permission_ids = self._preserve_current_pwa_operation_permission_ids(
+                user
+            )
+            user.user_permissions.clear()
+            if pwa_permission_ids:
+                user.user_permissions.add(*pwa_permission_ids)
         else:
-            user.set_password(self.cleaned_data["password"])
-            self.generated_password = None
-            self.password_was_auto_generated = False
+            self._aplicar_grupos_y_permisos(user)
+        self._sync_mobile_rendicion_permission(user)
+        if self.cleaned_data.get("es_representante_pwa", False):
+            self._sync_pwa_operation_permissions(user)
 
-        if commit:
-            user.save()
-            if self.cleaned_data.get("es_representante_pwa", False):
-                user.groups.clear()
-                pwa_permission_ids = (
-                    self._preserve_current_pwa_operation_permission_ids(user)
-                )
-                user.user_permissions.clear()
-                if pwa_permission_ids:
-                    user.user_permissions.add(*pwa_permission_ids)
-            else:
-                self._aplicar_grupos_y_permisos(user)
-            self._sync_mobile_rendicion_permission(user)
-            if self.cleaned_data.get("es_representante_pwa", False):
-                self._sync_pwa_operation_permissions(user)
+    def _save_user_profile(self, user):
+        profile, _ = Profile.objects.get_or_create(user=user)
+        profile.es_usuario_provincial = self.cleaned_data.get(
+            "es_usuario_provincial", False
+        )
+        profile.provincia = None
+        profile.es_coordinador = self.cleaned_data.get("es_coordinador", False)
+        profile.rol = self.cleaned_data.get("rol")
+        profile.must_change_password = True
+        profile.password_changed_at = None
+        profile.initial_password_expires_at = timezone.now() + timedelta(
+            hours=settings.INITIAL_PASSWORD_MAX_AGE_HOURS
+        )
+        profile.temporary_password_plaintext = self.generated_password
+        profile.save()
+        sync_profile_territorial_scopes(
+            profile,
+            self.cleaned_data.get("territorial_scopes_data", []),
+        )
+        # Evita devolver un profile cacheado con valores viejos tras el signal de User.
+        user.refresh_from_db()
+        profile.grupos_asignables.set(self.cleaned_data.get("grupos_asignables", []))
+        profile.roles_asignables.set(self.cleaned_data.get("roles_asignables", []))
+        return profile
 
-            profile, _ = Profile.objects.get_or_create(user=user)
-            profile.es_usuario_provincial = self.cleaned_data.get(
-                "es_usuario_provincial", False
-            )
-            profile.provincia = None
-            profile.es_coordinador = self.cleaned_data.get("es_coordinador", False)
-            profile.rol = self.cleaned_data.get("rol")
-            profile.must_change_password = True
-            profile.password_changed_at = None
-            profile.initial_password_expires_at = timezone.now() + timedelta(
-                hours=settings.INITIAL_PASSWORD_MAX_AGE_HOURS
-            )
-            profile.temporary_password_plaintext = self.generated_password
-            profile.save()
-            sync_profile_territorial_scopes(
-                profile,
-                self.cleaned_data.get("territorial_scopes_data", []),
-            )
-            # Evita devolver un profile cacheado con valores viejos tras el signal de User.
-            user.refresh_from_db()
-            profile.grupos_asignables.set(
-                self.cleaned_data.get("grupos_asignables", [])
-            )
-            profile.roles_asignables.set(self.cleaned_data.get("roles_asignables", []))
+    @staticmethod
+    def _sync_coordinator_duplas(profile, duplas):
+        if profile.es_coordinador and duplas:
+            profile.duplas_asignadas.set(duplas)
+            return
+        profile.duplas_asignadas.clear()
 
-            duplas = self.cleaned_data.get("duplas_asignadas", [])
-            if profile.es_coordinador and duplas:
-                profile.duplas_asignadas.set(duplas)
-            else:
-                profile.duplas_asignadas.clear()
-
-            self._sync_pwa_access(user)
-
+    @staticmethod
+    def _clear_permission_caches(user):
         for attr in ("_perm_cache", "_user_perm_cache"):
             if hasattr(user, attr):
                 delattr(user, attr)
+
+    def _save_atomic(self, commit=True):
+        user = super().save(commit=False)
+        user.email = self.cleaned_data.get("email", "")
+        self._configure_created_user(user)
+
+        if commit:
+            user.save()
+            self._save_user_security_and_permissions(user)
+            profile = self._save_user_profile(user)
+            duplas = self.cleaned_data.get("duplas_asignadas", [])
+            self._sync_coordinator_duplas(profile, duplas)
+            self._sync_pwa_access(user)
+
+        self._clear_permission_caches(user)
         return user
 
 
