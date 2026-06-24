@@ -1151,7 +1151,10 @@
                                 Domicilio completo: <strong>{{ domicilio_completo_comedor|default_if_none:"Sin informaci&oacute;n" }}</strong>
                             </p>
                             <p class="mb-0 fs-7">
-                                Monto total de convenio por espacio: <strong>{{ datos_convenio_pnud.monto_total_convenio_por_espacio|default_if_none:"Sin informaci&oacute;n" }}</strong>
+                                Monto total de convenio por Espacio - Prestaciones Alimentarias: <strong>{{ datos_convenio_pnud.monto_convenio_prestaciones_alimentarias|default_if_none:"Sin informaci&oacute;n" }}</strong>
+                            </p>
+                            <p class="mb-0 fs-7">
+                                Monto total de convenio por Espacio - Servicio Integral de Promoci&oacute;n Humana: <strong>{{ datos_convenio_pnud.monto_convenio_siph|default_if_none:"Sin informaci&oacute;n" }}</strong>
                             </p>
                             <p class="mb-0 fs-7">
                                 Prestaciones financiadas mensuales: <strong>{{ datos_convenio_pnud.prestaciones_financiadas_mensuales|default_if_none:"Sin informaci&oacute;n" }}</strong>

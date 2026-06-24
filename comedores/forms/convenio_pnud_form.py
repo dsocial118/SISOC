@@ -9,7 +9,8 @@ class ComedorDatosConvenioPnudForm(forms.ModelForm):
         fields = [
             "monto_total_conveniado",
             "nro_convenio",
-            "monto_total_convenio_por_espacio",
+            "monto_convenio_prestaciones_alimentarias",
+            "monto_convenio_siph",
             "prestaciones_financiadas_mensuales",
             "personas_conveniadas",
             "cantidad_modulos",
@@ -17,7 +18,8 @@ class ComedorDatosConvenioPnudForm(forms.ModelForm):
         labels = {
             "monto_total_conveniado": "Monto total conveniado",
             "nro_convenio": "Nro convenio",
-            "monto_total_convenio_por_espacio": "Monto total de convenio por espacio",
+            "monto_convenio_prestaciones_alimentarias": "Monto total de convenio por Espacio - Prestaciones Alimentarias",
+            "monto_convenio_siph": "Monto total de convenio por Espacio - Servicio Integral de Promoción Humana",
             "prestaciones_financiadas_mensuales": "Prestaciones financiadas mensuales",
             "personas_conveniadas": "Personas conveniadas",
             "cantidad_modulos": "Cantidad modulos",

@@ -1050,8 +1050,13 @@ class ComedorDetailSerializer(serializers.ModelSerializer):
             "nombre_espacio_comunitario": obj.nombre,
             "id_externo": obj.id_externo,
             "domicilio_completo_espacio": self._build_domicilio_convenio(obj),
-            "monto_total_convenio_por_espacio": (
-                datos_pnud.monto_total_convenio_por_espacio if datos_pnud else None
+            "monto_convenio_prestaciones_alimentarias": (
+                datos_pnud.monto_convenio_prestaciones_alimentarias
+                if datos_pnud
+                else None
+            ),
+            "monto_convenio_siph": (
+                datos_pnud.monto_convenio_siph if datos_pnud else None
             ),
             "prestaciones_financiadas_mensuales": (
                 datos_pnud.prestaciones_financiadas_mensuales if datos_pnud else None
