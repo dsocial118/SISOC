@@ -193,7 +193,6 @@ def _validate_assignable_permissions(
     requested_codes = {
         str(code).strip() for code in permission_codes or [] if str(code).strip()
     }
-    requested_codes.discard(PWA_USUARIOS_PERMISSION_CODE)
     allowed_codes = set(get_assignable_pwa_permission_codes(actor))
     denied_codes = sorted(requested_codes - allowed_codes)
     if denied_codes:
@@ -364,7 +363,7 @@ def update_operador_permissions(
         .first()
     )
     if not acceso:
-        raise ValidationError("El usuario no es un operador activo de este comedor.")
+        raise PermissionDenied("No tiene acceso para editar este operador.")
     if acceso.creado_por_id != getattr(actor, "id", None):
         raise PermissionDenied("Solo puede editar usuarios creados por usted.")
 
