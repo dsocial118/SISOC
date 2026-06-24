@@ -269,4 +269,8 @@ ul.nav:not(.sidebar-menu) .nav-link p {
     min-height: 45px !important;
     height: 45px !important;
 }
+
+.sidebar-menu .nav-link > .nav-arrow, .sidebar-menu .nav-link > p > .nav-arrow {
+    right: 1.5rem !important;
+}
 /* 
