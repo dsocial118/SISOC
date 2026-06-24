@@ -218,10 +218,11 @@
                                 </td>
                                 <td>
                                     {{ e.ciudadano.nombre }}
-                                    {% if e.pwa_comunidad_indigena or e.pwa_situacion_calle %}
+                                    {% if e.pwa_comunidad_indigena or e.pwa_situacion_calle or e.pwa_persona_con_celiaquia %}
                                         <div class="nomina-person-badges">
                                             {% if e.pwa_comunidad_indigena %}<span class="nomina-person-badge">Comunidad indígena</span>{% endif %}
                                             {% if e.pwa_situacion_calle %}<span class="nomina-person-badge">Sit. de calle</span>{% endif %}
+                                            {% if e.pwa_persona_con_celiaquia %}<span class="nomina-person-badge">Celiaquía</span>{% endif %}
                                         </div>
                                     {% endif %}
                                 </td>

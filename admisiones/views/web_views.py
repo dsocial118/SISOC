@@ -618,6 +618,8 @@ def actualizar_estado_archivo(request):
                 "mostrar_select": resultado.get("mostrar_select", False),
                 "opciones": resultado.get("opciones", []),
                 "gde_html": resultado.get("gde_html"),
+                "html": resultado.get("html"),
+                "row_id": resultado.get("row_id"),
             }
         )
     else:

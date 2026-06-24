@@ -610,6 +610,9 @@ def test_build_intervenciones_table_context(mocker):
         def order_by(self, *_args):
             return self
 
+        def exclude(self, *_args, **_kwargs):
+            return self
+
     class _FakePage(list):
         number = 1
 
@@ -635,6 +638,11 @@ def test_build_intervenciones_table_context(mocker):
         module.Intervencion,
         "objects",
         SimpleNamespace(filter=lambda **_kwargs: _FakeQS([intervencion])),
+    )
+    mocker.patch.object(
+        module.NominaDestinatariosDocumentoPWA,
+        "objects",
+        SimpleNamespace(filter=lambda **_kwargs: _FakeQS([])),
     )
     mocker.patch("comedores.views.comedor.Paginator", return_value=paginator)
     mocker.patch(
