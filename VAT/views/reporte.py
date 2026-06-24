@@ -1,11 +1,14 @@
+from math import ceil
+
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.paginator import Paginator
 from django.views.generic import TemplateView
 
 from VAT.models import Inscripcion
 from VAT.services.reportes_inscripciones_asistencia import (
-    build_detalle_personas_inscriptas,
+    DETALLE_PER_PAGE,
     ReporteFiltros,
+    build_detalle_queryset,
     build_reporte_inscripciones_asistencia,
     export_detalle_to_csv,
     export_detalle_to_excel,
@@ -72,9 +75,43 @@ class ReporteInscriptosAsistenciasView(LoginRequiredMixin, TemplateView):
         query_params.pop("export", None)
         querystring = query_params.urlencode()
 
+        # Querystring para el paginador del detalle: conserva la página del
+        # resumen (`page`) pero descarta `detalle_page`/`export`.
+        detalle_query_params = self.request.GET.copy()
+        detalle_query_params.pop("detalle_page", None)
+        detalle_query_params.pop("export", None)
+        querystring_detalle = detalle_query_params.urlencode()
+
         paginator = Paginator(reporte["rows"], self.paginate_by)
         page_obj = paginator.get_page(self.request.GET.get("page") or 1)
-        detalle_rows = build_detalle_personas_inscriptas(self.request.user, filtros)
+
+        # Detalle nominal paginado en el servidor (LIMIT/OFFSET): solo trae la
+        # página visible en lugar de un volcado completo. El total se reutiliza
+        # del resumen ya calculado para evitar un COUNT extra.
+        detalle_qs = build_detalle_queryset(self.request.user, filtros)
+        total_detalle = reporte["resumen"].get("inscripciones_total") or 0
+        detalle_num_pages = max(1, ceil(total_detalle / DETALLE_PER_PAGE))
+        try:
+            detalle_page = int(self.request.GET.get("detalle_page") or 1)
+        except (TypeError, ValueError):
+            detalle_page = 1
+        detalle_page = max(1, min(detalle_page, detalle_num_pages))
+        detalle_offset = (detalle_page - 1) * DETALLE_PER_PAGE
+        detalle_rows = list(
+            detalle_qs[detalle_offset : detalle_offset + DETALLE_PER_PAGE]
+        )
+        detalle_page_info = {
+            "number": detalle_page,
+            "num_pages": detalle_num_pages,
+            "count": total_detalle,
+            "per_page": DETALLE_PER_PAGE,
+            "has_previous": detalle_page > 1,
+            "has_next": detalle_page < detalle_num_pages,
+            "previous_page_number": detalle_page - 1,
+            "next_page_number": detalle_page + 1,
+            "start_index": detalle_offset + 1 if total_detalle else 0,
+            "end_index": min(detalle_offset + DETALLE_PER_PAGE, total_detalle),
+        }
 
         context.update(
             {
@@ -104,7 +141,9 @@ class ReporteInscriptosAsistenciasView(LoginRequiredMixin, TemplateView):
                     ("false", "No"),
                 ],
                 "querystring": querystring,
+                "querystring_detalle": querystring_detalle,
                 "detalle_rows": detalle_rows,
+                "detalle_page_info": detalle_page_info,
                 **get_filter_options(self.request.user),
             }
         )
