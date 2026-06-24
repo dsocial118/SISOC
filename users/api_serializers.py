@@ -107,6 +107,23 @@ class OperadorCreateSerializer(serializers.Serializer):
         return self._raise_read_only()
 
 
+class OperadorPermissionsUpdateSerializer(serializers.Serializer):
+    permission_codes = serializers.ListField(
+        child=serializers.CharField(max_length=150),
+        required=False,
+        allow_empty=True,
+    )
+
+    def _raise_read_only(self):
+        raise NotImplementedError("Serializer de solo lectura.")
+
+    def create(self, validated_data):
+        return self._raise_read_only()
+
+    def update(self, instance, validated_data):
+        return self._raise_read_only()
+
+
 class OperadorListSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(source="user_id", read_only=True)
     username = serializers.CharField(source="user.username", read_only=True)

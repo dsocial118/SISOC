@@ -1,7 +1,7 @@
 from rest_framework.permissions import BasePermission
 
 from iam.services import user_has_permission_code
-from users.services_pwa import is_pwa_user, is_representante
+from users.services_pwa import has_pwa_access_to_comedor, is_pwa_user, is_representante
 
 MOBILE_RENDICION_PERMISSION_CODE = "rendicioncuentasmensual.manage_mobile_rendicion"
 PWA_PRESTACIONES_MENSUALES_PERMISSION_CODE = "pwa.manage_prestaciones_mensuales_pwa"
@@ -39,6 +39,25 @@ class IsPWARepresentativeForComedor(BasePermission):
         except (TypeError, ValueError):
             return False
         return is_representante(user, comedor_id)
+
+
+class IsPWAUserForComedor(BasePermission):
+    """Permite usuarios PWA con acceso activo al comedor de la URL."""
+
+    message = "No tiene acceso PWA para este comedor."
+
+    def has_permission(self, request, view):
+        user = request.user
+        if not user or not user.is_authenticated:
+            return False
+        comedor_id = view.kwargs.get("comedor_id") or view.kwargs.get("pk")
+        if not comedor_id:
+            return False
+        try:
+            comedor_id = int(comedor_id)
+        except (TypeError, ValueError):
+            return False
+        return has_pwa_access_to_comedor(user, comedor_id)
 
 
 class HasMobileRendicionPermission(BasePermission):
