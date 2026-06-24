@@ -2,6 +2,7 @@ from datetime import date
 
 import pytest
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Permission
 from django.utils import timezone
 from rest_framework.authtoken.models import Token
 from rest_framework.test import APIClient
@@ -20,6 +21,14 @@ from pwa.models import (
     RegistroAsistenciaNominaPWA,
 )
 from users.models import AccesoComedorPWA
+
+
+def _grant_pwa_permission(user, codename):
+    permission = Permission.objects.get(
+        content_type__app_label="pwa",
+        codename=codename,
+    )
+    user.user_permissions.add(permission)
 
 
 @pytest.fixture
@@ -61,6 +70,7 @@ def _create_representante(*, comedor, username="rep_nomina", password="testpass1
         rol=AccesoComedorPWA.ROL_REPRESENTANTE,
         activo=True,
     )
+    _grant_pwa_permission(user, "manage_nomina_pwa")
     return user
 
 

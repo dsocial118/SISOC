@@ -327,11 +327,13 @@ class AuditAccesoComedorPWA(models.Model):
     ACCION_CREATE = "create"
     ACCION_REACTIVATE = "reactivate"
     ACCION_DEACTIVATE = "deactivate"
+    ACCION_UPDATE_PERMISSIONS = "update_permissions"
 
     ACCION_CHOICES = (
         (ACCION_CREATE, "Alta"),
         (ACCION_REACTIVATE, "Reactivación"),
         (ACCION_DEACTIVATE, "Baja"),
+        (ACCION_UPDATE_PERMISSIONS, "Edicion de permisos"),
     )
 
     acceso = models.ForeignKey(

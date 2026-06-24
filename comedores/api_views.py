@@ -71,12 +71,14 @@ from users.api_permissions import (
     HasMobileRendicionPermission,
     HasPwaPrestacionesMensualesPermission,
     HasPwaUsuariosPermission,
+    IsPWAUserForComedor,
     IsPWARepresentativeForComedor,
 )
 from users.api_serializers import (
     OperadorCreateResponseSerializer,
     OperadorCreateSerializer,
     OperadorListSerializer,
+    OperadorPermissionsUpdateSerializer,
 )
 from users.models import AccesoComedorPWA
 from users.services_pwa import (
@@ -87,6 +89,7 @@ from users.services_pwa import (
     get_access_rows,
     is_pwa_user,
     list_operadores_for_comedor,
+    update_operador_permissions,
 )
 
 MAX_COMPROBANTE_FILE_SIZE = 10 * 1024 * 1024  # 10 MB
@@ -1126,6 +1129,49 @@ class ComedorDetailViewSet(
     @action(
         detail=True,
         methods=["patch"],
+        url_path=r"usuarios/(?P<user_id>[^/.]+)/permisos",
+        permission_classes=[IsPWARepresentativeForComedor, HasPwaUsuariosPermission],
+    )
+    def editar_usuario_permisos(self, request, pk=None, user_id=None):
+        comedor = self.get_object()
+        serializer = OperadorPermissionsUpdateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        try:
+            acceso = update_operador_permissions(
+                comedor_id=comedor.id,
+                user_id=int(user_id),
+                actor=request.user,
+                permission_codes=serializer.validated_data.get("permission_codes")
+                or [],
+            )
+        except ValueError:
+            return Response(
+                {"detail": "user_id invalido."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except PermissionDenied as exc:
+            return Response(
+                {"detail": str(exc)},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        except ValidationError as exc:
+            return Response(
+                {"detail": self._format_validation_error(exc)},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        return Response(
+            OperadorCreateResponseSerializer(acceso).data,
+            status=status.HTTP_200_OK,
+        )
+
+    @extend_schema(
+        request=None,
+        tags=["Comedores"],
+    )
+    @action(
+        detail=True,
+        methods=["patch"],
         url_path=r"usuarios/(?P<user_id>[^/.]+)/desactivar",
         permission_classes=[IsPWARepresentativeForComedor, HasPwaUsuariosPermission],
     )
@@ -1677,7 +1723,7 @@ class ComedorDetailViewSet(
         methods=["post"],
         url_path="prestacion-alimentaria/conformidad",
         permission_classes=[
-            IsPWARepresentativeForComedor,
+            IsPWAUserForComedor,
             HasPwaPrestacionesMensualesPermission,
         ],
     )
