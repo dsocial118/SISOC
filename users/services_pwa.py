@@ -215,6 +215,7 @@ def _validate_assignable_comedores(actor, comedor_ids: Iterable[int]) -> list[in
 
 
 @transaction.atomic
+# pylint: disable-next=too-many-arguments,too-many-locals
 def create_operador_for_comedor(
     *,
     comedor_id: int,
