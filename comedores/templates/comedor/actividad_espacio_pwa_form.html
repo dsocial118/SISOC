@@ -76,29 +76,23 @@
                                                     </option>
                                                 {% endfor %}
                                             </select>
-                                            {% if row.errors.dia_actividad %}
-                                                <div class="invalid-feedback d-block">{{ row.errors.dia_actividad }}</div>
-                                            {% endif %}
+                                            {% if row.errors.dia_actividad %}<div class="invalid-feedback d-block">{{ row.errors.dia_actividad }}</div>{% endif %}
                                         </div>
                                         <div class="col-md-3">
                                             <label class="form-label">Hora inicio</label>
                                             <input type="time"
                                                    name="schedule_hora_inicio"
                                                    class="form-control"
-                                                   value="{{ row.values.hora_inicio }}">
-                                            {% if row.errors.hora_inicio %}
-                                                <div class="invalid-feedback d-block">{{ row.errors.hora_inicio }}</div>
-                                            {% endif %}
+                                                   value="{{ row.values.hora_inicio }}" />
+                                            {% if row.errors.hora_inicio %}<div class="invalid-feedback d-block">{{ row.errors.hora_inicio }}</div>{% endif %}
                                         </div>
                                         <div class="col-md-3">
                                             <label class="form-label">Hora fin</label>
                                             <input type="time"
                                                    name="schedule_hora_fin"
                                                    class="form-control"
-                                                   value="{{ row.values.hora_fin }}">
-                                            {% if row.errors.hora_fin %}
-                                                <div class="invalid-feedback d-block">{{ row.errors.hora_fin }}</div>
-                                            {% endif %}
+                                                   value="{{ row.values.hora_fin }}" />
+                                            {% if row.errors.hora_fin %}<div class="invalid-feedback d-block">{{ row.errors.hora_fin }}</div>{% endif %}
                                         </div>
                                         <div class="col-md-2 pt-md-4 mt-2 mt-md-0 text-md-right">
                                             <button type="button"
@@ -141,11 +135,11 @@
                 </div>
                 <div class="col-md-3">
                     <label class="form-label">Hora inicio</label>
-                    <input type="time" name="schedule_hora_inicio" class="form-control">
+                    <input type="time" name="schedule_hora_inicio" class="form-control" />
                 </div>
                 <div class="col-md-3">
                     <label class="form-label">Hora fin</label>
-                    <input type="time" name="schedule_hora_fin" class="form-control">
+                    <input type="time" name="schedule_hora_fin" class="form-control" />
                 </div>
                 <div class="col-md-2 pt-md-4 mt-2 mt-md-0 text-md-right">
                     <button type="button"

@@ -79,9 +79,7 @@ class ActividadEspacioPWACreateView(ActividadEspacioPWAWebPermissionMixin, FormV
         return redirect(self.get_success_url())
 
 
-class ActividadEspacioPWAUpdateView(
-    ActividadEspacioPWAWebPermissionMixin, UpdateView
-):
+class ActividadEspacioPWAUpdateView(ActividadEspacioPWAWebPermissionMixin, UpdateView):
     model = ActividadEspacioPWA
     form_class = ActividadEspacioPWAWebForm
     template_name = "comedor/actividad_espacio_pwa_form.html"

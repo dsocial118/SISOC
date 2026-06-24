@@ -373,9 +373,7 @@ def test_update_operador_permissions_success(comedores):
     )
 
     assert result == acceso
-    perm_codenames = set(
-        operador.user_permissions.values_list("codename", flat=True)
-    )
+    perm_codenames = set(operador.user_permissions.values_list("codename", flat=True))
     assert "manage_colaboradores_pwa" in perm_codenames
     audit = AuditAccesoComedorPWA.objects.filter(
         acceso=acceso,

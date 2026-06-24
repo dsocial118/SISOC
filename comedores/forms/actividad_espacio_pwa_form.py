@@ -242,9 +242,7 @@ class ActividadEspacioPWAWebForm(forms.ModelForm):
         rows = []
         for index, row in enumerate(self.schedule_rows):
             errors = (
-                self.schedule_errors[index]
-                if index < len(self.schedule_errors)
-                else {}
+                self.schedule_errors[index] if index < len(self.schedule_errors) else {}
             )
             rows.append({"values": row, "errors": errors})
         return rows
