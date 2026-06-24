@@ -75,6 +75,35 @@ function displayState(td, estado, observaciones) {
     }
 }
 
+function replaceAdmisionDocumentRow(rowId, html, documentoId, sourceElement) {
+    if (!html) {
+        return false;
+    }
+
+    const sourceRow = sourceElement ? sourceElement.closest('tr') : null;
+    const targetRow = rowId ? document.getElementById(`fila-${rowId}`) : sourceRow;
+    if (!targetRow) {
+        return false;
+    }
+
+    [rowId, documentoId].filter(Boolean).forEach(function (id) {
+        const obsRow = document.getElementById(`fila-obs-${id}`);
+        if (obsRow) {
+            obsRow.remove();
+        }
+    });
+
+    const nextRow = targetRow.nextElementSibling;
+    if (nextRow && nextRow.id && nextRow.id.indexOf('fila-obs-') === 0) {
+        nextRow.remove();
+    }
+
+    const template = document.createElement('template');
+    template.innerHTML = html.trim();
+    targetRow.replaceWith(template.content);
+    return true;
+}
+
 document.addEventListener("DOMContentLoaded", function () {
     const modalElement = document.getElementById("modalObservacionRectificar");
     if (modalElement) {
@@ -236,9 +265,18 @@ function actualizarEstado(selectElement, observacionForzada = null) {
 
             const nuevoEstado = data.nuevo_estado;
             const grupo = data.grupo_usuario;
+            const toastEl = document.getElementById("toastEstadoExito");
 
             if (selectElement.dataset) {
                 selectElement.dataset.currentValue = nuevoEstado;
+            }
+
+            if (toastEl) {
+                new bootstrap.Toast(toastEl).show();
+            }
+
+            if (replaceAdmisionDocumentRow(data.row_id, data.html, documentoId, selectElement)) {
+                return;
             }
 
             // Re-render de la celda "Número de GDE": al cambiar el estado del
@@ -249,11 +287,6 @@ function actualizarEstado(selectElement, observacionForzada = null) {
                 if (gdeCell) {
                     gdeCell.innerHTML = data.gde_html;
                 }
-            }
-
-            const toastEl = document.getElementById("toastEstadoExito");
-            if (toastEl) {
-                new bootstrap.Toast(toastEl).show();
             }
 
             if (!td) {

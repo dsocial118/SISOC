@@ -576,6 +576,7 @@ class NominaEspacioPWAListSerializer(serializers.ModelSerializer):
     es_indocumentado = serializers.SerializerMethodField()
     pertenece_comunidad_indigena = serializers.SerializerMethodField()
     situacion_calle = serializers.SerializerMethodField()
+    persona_con_celiaquia = serializers.SerializerMethodField()
     identificador_interno = serializers.SerializerMethodField()
     asistencia_mes_actual = serializers.SerializerMethodField()
     historial_asistencias = serializers.SerializerMethodField()
@@ -598,6 +599,7 @@ class NominaEspacioPWAListSerializer(serializers.ModelSerializer):
             "es_indocumentado",
             "pertenece_comunidad_indigena",
             "situacion_calle",
+            "persona_con_celiaquia",
             "identificador_interno",
             "asistencia_mes_actual",
             "historial_asistencias",
@@ -711,6 +713,10 @@ class NominaEspacioPWAListSerializer(serializers.ModelSerializer):
         profile = self._get_profile(obj)
         return bool(profile.situacion_calle) if profile else False
 
+    def get_persona_con_celiaquia(self, obj):
+        profile = self._get_profile(obj)
+        return bool(profile.persona_con_celiaquia) if profile else False
+
     def get_identificador_interno(self, obj):
         profile = self._get_profile(obj)
         return profile.identificador_interno if profile else None
@@ -796,6 +802,7 @@ class NominaEspacioPWACreateUpdateSerializer(serializers.Serializer):
         required=False, default=False
     )
     situacion_calle = serializers.BooleanField(required=False, default=False)
+    persona_con_celiaquia = serializers.BooleanField(required=False, default=False)
     identificador_interno = serializers.CharField(
         required=False, allow_blank=True, allow_null=True
     )

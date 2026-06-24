@@ -218,6 +218,7 @@ class NominaEspacioPWAAdmin(admin.ModelAdmin):
         "es_indocumentado",
         "pertenece_comunidad_indigena",
         "situacion_calle",
+        "persona_con_celiaquia",
         "identificador_interno",
         "activo",
         "fecha_alta",
@@ -227,6 +228,7 @@ class NominaEspacioPWAAdmin(admin.ModelAdmin):
         "es_indocumentado",
         "pertenece_comunidad_indigena",
         "situacion_calle",
+        "persona_con_celiaquia",
         "asistencia_alimentaria",
         "asistencia_actividades",
     )

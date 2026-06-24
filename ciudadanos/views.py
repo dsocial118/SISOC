@@ -363,6 +363,9 @@ class CiudadanosDetailView(LoginRequiredMixin, DetailView):
                 pertenece_comunidad_indigena=True
             ).exists(),
             "situacion_calle_pwa": perfiles.filter(situacion_calle=True).exists(),
+            "persona_con_celiaquia_pwa": perfiles.filter(
+                persona_con_celiaquia=True
+            ).exists(),
         }
 
     def get_vat_context(

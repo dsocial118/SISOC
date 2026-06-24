@@ -405,6 +405,10 @@
                         {% if situacion_calle_pwa %}
                             <span class="badge bg-danger ms-2 align-middle" style="font-size: 0.75rem;">Situación de calle</span>
                         {% endif %}
+                        {% if persona_con_celiaquia_pwa %}
+                            <span class="badge bg-warning text-dark ms-2 align-middle"
+                                  style="font-size: 0.75rem">Persona con Celiaquía</span>
+                        {% endif %}
                     </h1>
                     <p class="subtitle mb-0">
                         {{ ciudadano.get_tipo_documento_display }} {{ ciudadano.documento|default:"Sin documento" }}
@@ -639,6 +643,16 @@
                                         <strong>Situación de calle:</strong>
                                         <span class="value">
                                             {% if situacion_calle_pwa %}
+                                                Sí
+                                            {% else %}
+                                                No
+                                            {% endif %}
+                                        </span>
+                                    </div>
+                                    <div class="info-row">
+                                        <strong>Persona con Celiaquía:</strong>
+                                        <span class="value">
+                                            {% if persona_con_celiaquia_pwa %}
                                                 Sí
                                             {% else %}
                                                 No
