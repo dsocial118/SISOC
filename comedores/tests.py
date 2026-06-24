@@ -2182,6 +2182,7 @@ def test_comedor_detail_view_muestra_nomina_directa_para_programa_sin_admision(
     ciudadano_fixture,
 ):
     """El detalle del comedor debe enlazar a la nómina directa cuando no usa admisión."""
+    from django.contrib.auth.models import AnonymousUser
     from django.test import RequestFactory
 
     prog = _programa(4, "Abordaje comunitario - Línea Tradicional")
@@ -2191,7 +2192,9 @@ def test_comedor_detail_view_muestra_nomina_directa_para_programa_sin_admision(
     )
 
     view = ComedorDetailView()
-    view.request = RequestFactory().get(f"/comedores/{comedor.pk}")
+    request = RequestFactory().get(f"/comedores/{comedor.pk}")
+    request.user = AnonymousUser()
+    view.request = request
     view.object = comedor
 
     context = view.get_context_data()

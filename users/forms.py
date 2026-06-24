@@ -1,3 +1,4 @@
+# pylint: disable=too-many-lines
 import json
 from datetime import timedelta
 
@@ -797,6 +798,9 @@ class UserCreationForm(
 
             self._sync_pwa_access(user)
 
+        for attr in ("_perm_cache", "_user_perm_cache"):
+            if hasattr(user, attr):
+                delattr(user, attr)
         return user
 
 
@@ -913,7 +917,9 @@ class CustomUserChangeForm(
         with transaction.atomic():
             return self._save_atomic(commit=commit)
 
-    def _save_atomic(self, commit=True):
+    def _save_atomic(  # pylint: disable=too-many-branches,too-many-statements
+        self, commit=True
+    ):
         new_pwd = self.cleaned_data.get("password")
         user = super().save(commit=False)
         user.email = self.cleaned_data.get("email", "")
