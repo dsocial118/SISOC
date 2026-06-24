@@ -17,7 +17,9 @@ def grant_permissions_to_existing_representantes(apps, schema_editor):
 
     permissions = list(
         Permission.objects.filter(
-            content_type__app_label__in={app_label for app_label, _ in PWA_PERMISSION_CODES},
+            content_type__app_label__in={
+                app_label for app_label, _ in PWA_PERMISSION_CODES
+            },
             codename__in={codename for _, codename in PWA_PERMISSION_CODES},
         )
     )
