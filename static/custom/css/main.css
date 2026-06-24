@@ -256,4 +256,8 @@ ul.nav:not(.sidebar-menu) .nav-link p {
 .sidebar-wrapper .nav-treeview > .nav-item > .nav-link:hover {
     background-color: transparent !important;
 }
+
+.sidebar-menu .nav-link.nav-dot::before {
+    font-size: 0.4rem;
+}
 /* 
