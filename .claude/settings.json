@@ -1,5 +1,10 @@
 {
   "worktree": {
     "baseRef": "fresh"
+  },
+  "permissions": {
+    "allow": [
+      "Bash(grep -E \"\\\\.js$\")"
+    ]
   }
 }

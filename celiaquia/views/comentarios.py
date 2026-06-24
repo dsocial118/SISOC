@@ -111,6 +111,15 @@ class LegajoComentarioCreateView(View):
                 status=400,
             )
 
+        # Comentario interno: visible solo para Nación. Solo usuarios de Nación
+        # llegan a esta vista (provincia no puede crear comentarios).
+        es_interno = str(request.POST.get("es_interno", "")).strip().lower() in {
+            "1",
+            "true",
+            "on",
+            "yes",
+        }
+
         archivo = request.FILES.get("archivo")
         if archivo:
             if archivo.content_type not in ALLOWED_UPLOAD_TYPES:
@@ -132,6 +141,7 @@ class LegajoComentarioCreateView(View):
             usuario=user,
             archivo_adjunto=archivo,
             estado_relacionado=legajo.revision_tecnico,
+            es_interno=es_interno,
         )
 
         logger.info(
@@ -158,6 +168,7 @@ class LegajoComentarioCreateView(View):
                     "es_provincia": _has_permission(
                         user, ROLE_PROVINCIA_CELIAQUIA_PERMISSION
                     ),
+                    "es_interno": comentario.es_interno,
                 },
             }
         )
@@ -217,14 +228,21 @@ class LegajoComentarioListView(View):
                     status=403,
                 )
 
+        comentarios_qs = legajo.historial_comentarios.filter(
+            tipo_comentario__in=[
+                HistorialComentarios.TIPO_OBSERVACION_GENERAL,
+                HistorialComentarios.TIPO_VALIDACION_TECNICA,
+            ]
+        )
+
+        # Los comentarios internos solo son visibles para Nación. Un usuario
+        # provincial (sin rol de Nación) nunca los recibe.
+        es_nacion = is_admin or is_coord or is_tec
+        if not es_nacion:
+            comentarios_qs = comentarios_qs.filter(es_interno=False)
+
         comentarios = (
-            legajo.historial_comentarios.filter(
-                tipo_comentario__in=[
-                    HistorialComentarios.TIPO_OBSERVACION_GENERAL,
-                    HistorialComentarios.TIPO_VALIDACION_TECNICA,
-                ]
-            )
-            .select_related("usuario")
+            comentarios_qs.select_related("usuario")
             .prefetch_related("usuario__groups")
             .order_by("-fecha_creacion")
         )
@@ -241,6 +259,7 @@ class LegajoComentarioListView(View):
                     c.usuario,
                     ROLE_PROVINCIA_CELIAQUIA_PERMISSION,
                 ),
+                "es_interno": c.es_interno,
             }
             for c in comentarios
         ]

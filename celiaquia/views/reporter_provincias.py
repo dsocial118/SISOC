@@ -364,11 +364,19 @@ def _build_clasificacion_aprobados(queryset):
     return {"total": total, "items": items}
 
 
-def _build_case_context(queryset, total_cases):
+def _build_case_context(queryset, total_cases, excluir_comentarios_internos=False):
     ok_cases = queryset.filter(archivos_ok=True).count()
     incomplete_cases = total_cases - ok_cases
+    # Los comentarios internos no deben contarse para usuarios provinciales: un
+    # legajo con solo comentarios internos no figura como "con comentarios".
     comments_count = (
-        queryset.filter(historial_comentarios__isnull=False)
+        queryset.filter(
+            **(
+                {"historial_comentarios__es_interno": False}
+                if excluir_comentarios_internos
+                else {"historial_comentarios__isnull": False}
+            )
+        )
         .values("id")
         .distinct()
         .count()
@@ -458,7 +466,11 @@ def _build_report_context(request):
 
     provincia_actual = _get_provincia_actual(request, es_usuario_provincial)
     total_casos = queryset.count()
-    report_context = _build_case_context(queryset, total_casos)
+    report_context = _build_case_context(
+        queryset,
+        total_casos,
+        excluir_comentarios_internos=es_usuario_provincial,
+    )
     provincias = _get_provincias_disponibles(user, es_usuario_provincial)
     paginator, page_obj, current_querystring = _build_pagination(queryset, request)
 

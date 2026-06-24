@@ -1129,6 +1129,11 @@ class HistorialComentarios(models.Model):
         blank=True,
         help_text="Estado del legajo al momento del comentario",
     )
+    es_interno = models.BooleanField(
+        default=False,
+        db_index=True,
+        help_text="Comentario interno: visible solo para usuarios de Nación",
+    )
 
     class Meta:
         verbose_name = "Historial de Comentarios"

@@ -10,7 +10,7 @@
     </ol>
 {% endblock %}
 {% block content %}
-    {% with is_tec=is_tecnico_celiaquia is_coord=is_coord_celiaquia is_prov=is_provincial_celiaquia %}
+    {% with is_tec=is_tecnico_celiaquia is_coord=is_coord_celiaquia is_prov=is_provincial_celiaquia is_admin=is_admin_celiaquia %}
         <style>
             .form-editar-error [aria-invalid="true"] {
                 border: 1px solid rgba(154, 42, 54, 0.92) !important;
@@ -213,7 +213,9 @@
                             </div>
                             <div class="text-end small">
                                 {% if h.usuario %}{{ h.usuario.get_full_name|default:h.usuario.username }}{% endif %}
-                                {% if h.observaciones %}<div class="text-muted mt-1">{{ h.observaciones }}</div>{% endif %}
+                                {% if h.observaciones %}
+                                    <div class="text-muted mt-1">{{ h.observaciones }}</div>
+                                {% endif %}
                             </div>
                         </div>
                     </div>
@@ -321,7 +323,9 @@
                     <tbody id="preview-tbody">
                         {% for row in preview.rows %}
                             <tr class="preview-row">
-                                {% for h in preview.headers %}<td>{{ row|get_item:h }}</td>{% endfor %}
+                                {% for h in preview.headers %}
+                                    <td>{{ row|get_item:h }}</td>
+                                {% endfor %}
                             </tr>
                         {% endfor %}
                     </tbody>
@@ -734,6 +738,21 @@
                                                     </div>
                                                 {% endif %}
                                             {% endif %}
+                                            {% if is_admin or is_coord %}
+                                                {% if leg.revision_tecnico == 'APROBADO' or leg.revision_tecnico == 'RECHAZADO' or leg.revision_tecnico == 'SUBSANADO' %}
+                                                    <div class="d-flex justify-content-end mt-2">
+                                                        <button type="button"
+                                                                class="btn btn-sm btn-outline-dark btn-corregir-evaluacion"
+                                                                data-legajo-id="{{ leg.pk }}"
+                                                                data-estado-actual="{{ leg.revision_tecnico }}"
+                                                                data-bs-toggle="modal"
+                                                                data-bs-target="#modalCorregirEvaluacion"
+                                                                title="Corregir resultado de la evaluación final">
+                                                            <i class="fas fa-pen-to-square"></i> Corregir evaluación
+                                                        </button>
+                                                    </div>
+                                                {% endif %}
+                                            {% endif %}
                                         </div>
                                     </div>
                                 </td>
@@ -935,6 +954,21 @@
                                                 </div>
                                             {% endwith %}
                                         </div>
+                                    </div>
+                                {% endif %}
+                            {% endif %}
+                            {% if is_admin or is_coord %}
+                                {% if leg.revision_tecnico == 'APROBADO' or leg.revision_tecnico == 'RECHAZADO' or leg.revision_tecnico == 'SUBSANADO' %}
+                                    <div class="d-flex justify-content-end mt-2">
+                                        <button type="button"
+                                                class="btn btn-sm btn-outline-dark btn-corregir-evaluacion"
+                                                data-legajo-id="{{ leg.pk }}"
+                                                data-estado-actual="{{ leg.revision_tecnico }}"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#modalCorregirEvaluacion"
+                                                title="Corregir resultado de la evaluación final">
+                                            <i class="fas fa-pen-to-square"></i> Corregir evaluación
+                                        </button>
                                     </div>
                                 {% endif %}
                             {% endif %}
@@ -1482,6 +1516,56 @@
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                 <button type="submit" class="btn btn-warning" id="btn-confirm-subsanar">Confirmar</button>
+            </div>
+        </form>
+    </div>
+</div>
+<!-- Modal: corregir evaluación final (Nación autorizada) -->
+<div class="modal fade"
+     id="modalCorregirEvaluacion"
+     tabindex="-1"
+     aria-labelledby="modalCorregirEvaluacionLabel"
+     aria-hidden="true">
+    <div class="modal-dialog">
+        <form class="modal-content" id="form-corregir-evaluacion" method="post">
+            {% csrf_token %}
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalCorregirEvaluacionLabel">Corregir evaluación final</h5>
+                <button type="button"
+                        class="btn-close"
+                        data-bs-dismiss="modal"
+                        aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="corregir-legajo-id" value="" />
+                <p class="small text-muted mb-2">
+                    Estado actual: <strong id="corregir-estado-actual">—</strong>
+                </p>
+                <div class="mb-3">
+                    <label for="corregir-nuevo-estado" class="form-label">Nuevo estado *</label>
+                    <select id="corregir-nuevo-estado"
+                            name="nuevo_estado"
+                            class="form-select"
+                            required>
+                        <option value="">Seleccionar...</option>
+                        <option value="APROBADO">Aceptado</option>
+                        <option value="RECHAZADO">Rechazado</option>
+                        <option value="SUBSANADO">Subsanado</option>
+                    </select>
+                </div>
+                <div class="mb-2">
+                    <label for="corregir-motivo" class="form-label">Motivo de la corrección (opcional)</label>
+                    <textarea id="corregir-motivo"
+                              name="motivo"
+                              class="form-control"
+                              rows="2"
+                              maxlength="500"></textarea>
+                </div>
+                <small class="text-muted d-block">La corrección quedará registrada en el historial del legajo.</small>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="submit" class="btn btn-dark" id="btn-confirm-corregir">Confirmar corrección</button>
             </div>
         </form>
     </div>
@@ -2063,6 +2147,17 @@
                                accept=".pdf,.jpg,.jpeg,.png" />
                         <small class="text-muted">PDF o imagen</small>
                     </div>
+                    {% if is_tec or is_coord %}
+                        <div class="mb-3 form-check">
+                            <input type="checkbox"
+                                   class="form-check-input"
+                                   id="comentario-interno"
+                                   name="es_interno"
+                                   value="1" />
+                            <label class="form-check-label" for="comentario-interno">Comentario interno (visible solo para Nación)</label>
+                            <small class="text-muted d-block">No será visible para los usuarios provinciales.</small>
+                        </div>
+                    {% endif %}
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
@@ -2164,5 +2259,5 @@
     <script src="{% static 'custom/js/expediente_detail.js' %}?v=20260623-subsanacion-multimotivo"></script>
     <script src="{% static 'custom/js/global_pagination.js' %}"></script>
     <script src="{% static 'custom/js/pagination_fix.js' %}"></script>
-    <script src="{% static 'custom/js/legajo_comentarios.js' %}"></script>
+    <script src="{% static 'custom/js/legajo_comentarios.js' %}?v=20260623-comentarios-internos"></script>
 {% endblock %}
