@@ -1123,7 +1123,7 @@ class ComedorDetailViewSet(
         )
 
     @extend_schema(
-        request=None,
+        request=OperadorPermissionsUpdateSerializer,
         tags=["Comedores"],
     )
     @action(
