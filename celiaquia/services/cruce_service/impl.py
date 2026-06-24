@@ -63,6 +63,12 @@ DOCUMENTO_COL_CANDIDATAS = {
     "número_cuit",
     "cuit_nro",
     "cuit_número",
+    "cuil",
+    "nro_cuil",
+    "numero_cuil",
+    "número_cuil",
+    "cuil_nro",
+    "cuil_número",
     "dni",
     "nro_dni",
     "numero_dni",
@@ -262,6 +268,12 @@ class CruceService:
             "número_cuit",
             "cuit_nro",
             "cuit_número",
+            "cuil",
+            "nro_cuil",
+            "numero_cuil",
+            "número_cuil",
+            "cuil_nro",
+            "cuil_número",
             "dni",
             "nro_dni",
             "numero_dni",
@@ -295,7 +307,8 @@ class CruceService:
                 "Columnas aceptadas: documento, nro_documento, numero_documento, "
                 "número_documento, doc, nro_doc, num_doc, cuit, c.u.i.t, "
                 "nro_cuit, numero_cuit, número_cuit, cuit_nro, cuit_número (cuit "
-                "número), dni, "
+                "número), cuil, nro_cuil, numero_cuil, número_cuil, cuil_nro, "
+                "cuil_número, dni, "
                 "nro_dni, numero_dni, número_dni."
             )
 

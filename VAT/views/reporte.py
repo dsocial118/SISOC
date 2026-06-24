@@ -1,11 +1,14 @@
+from math import ceil
+
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.paginator import Paginator
 from django.views.generic import TemplateView
 
 from VAT.models import Inscripcion
 from VAT.services.reportes_inscripciones_asistencia import (
-    build_detalle_personas_inscriptas,
+    DETALLE_PER_PAGE,
     ReporteFiltros,
+    build_detalle_queryset,
     build_reporte_inscripciones_asistencia,
     export_detalle_to_csv,
     export_detalle_to_excel,
@@ -62,6 +65,34 @@ class ReporteInscriptosAsistenciasView(LoginRequiredMixin, TemplateView):
             self.get_context_data(reporte=reporte, filtros=filtros)
         )
 
+    def _paginar_detalle(self, filtros, resumen):
+        """Detalle nominal paginado en el servidor (LIMIT/OFFSET): solo trae la
+        página visible. El total se reutiliza del resumen ya calculado para
+        evitar un COUNT extra."""
+        detalle_qs = build_detalle_queryset(self.request.user, filtros)
+        total = resumen.get("inscripciones_total") or 0
+        num_pages = max(1, ceil(total / DETALLE_PER_PAGE))
+        try:
+            page = int(self.request.GET.get("detalle_page") or 1)
+        except (TypeError, ValueError):
+            page = 1
+        page = max(1, min(page, num_pages))
+        offset = (page - 1) * DETALLE_PER_PAGE
+        rows = list(detalle_qs[offset : offset + DETALLE_PER_PAGE])
+        info = {
+            "number": page,
+            "num_pages": num_pages,
+            "count": total,
+            "per_page": DETALLE_PER_PAGE,
+            "has_previous": page > 1,
+            "has_next": page < num_pages,
+            "previous_page_number": page - 1,
+            "next_page_number": page + 1,
+            "start_index": offset + 1 if total else 0,
+            "end_index": min(offset + DETALLE_PER_PAGE, total),
+        }
+        return rows, info
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         reporte = kwargs["reporte"]
@@ -72,9 +103,19 @@ class ReporteInscriptosAsistenciasView(LoginRequiredMixin, TemplateView):
         query_params.pop("export", None)
         querystring = query_params.urlencode()
 
+        # Querystring para el paginador del detalle: conserva la página del
+        # resumen (`page`) pero descarta `detalle_page`/`export`.
+        detalle_query_params = self.request.GET.copy()
+        detalle_query_params.pop("detalle_page", None)
+        detalle_query_params.pop("export", None)
+        querystring_detalle = detalle_query_params.urlencode()
+
         paginator = Paginator(reporte["rows"], self.paginate_by)
         page_obj = paginator.get_page(self.request.GET.get("page") or 1)
-        detalle_rows = build_detalle_personas_inscriptas(self.request.user, filtros)
+
+        detalle_rows, detalle_page_info = self._paginar_detalle(
+            filtros, reporte["resumen"]
+        )
 
         context.update(
             {
@@ -104,7 +145,9 @@ class ReporteInscriptosAsistenciasView(LoginRequiredMixin, TemplateView):
                     ("false", "No"),
                 ],
                 "querystring": querystring,
+                "querystring_detalle": querystring_detalle,
                 "detalle_rows": detalle_rows,
+                "detalle_page_info": detalle_page_info,
                 **get_filter_options(self.request.user),
             }
         )

@@ -26,6 +26,7 @@ from celiaquia.views.expediente import (
     ProcesarExpedienteView,
     RecepcionarExpedienteView,
     RevisarLegajoView,
+    CorregirEvaluacionView,
     ExpedienteNominaSintysExportView,
     SubirCruceExcelView,
     LocalidadesLookupView,
@@ -63,6 +64,13 @@ urlpatterns = [
         "expedientes/<int:pk>/legajos/<int:legajo_id>/revisar/",
         RevisarLegajoView.as_view(),
         name="legajo_revisar",
+    ),
+    path(
+        "expedientes/<int:pk>/legajos/<int:legajo_id>/corregir-evaluacion/",
+        permissions_any_required(["celiaquia.view_expediente"])(
+            CorregirEvaluacionView.as_view()
+        ),
+        name="legajo_corregir_evaluacion",
     ),
     path(
         "expedientes/<int:pk>/legajos/<int:legajo_id>/subsanar/",

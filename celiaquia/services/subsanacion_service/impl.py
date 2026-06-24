@@ -54,10 +54,15 @@ class SubsanacionService:
     @staticmethod
     def legajos_sin_evidencia(expediente):
         """Legajos en SUBSANAR cuya subsanación activa todavía no tiene archivos
-        de respuesta cargados."""
-        legajos = expediente.expediente_ciudadanos.filter(
-            revision_tecnico=RevisionTecnico.SUBSANAR
-        ).select_related("ciudadano")
+        de respuesta cargados. Excluye las subsanaciones RENAPER
+        (estado_validacion_renaper=3), que se responden por su propio flujo."""
+        legajos = (
+            expediente.expediente_ciudadanos.filter(
+                revision_tecnico=RevisionTecnico.SUBSANAR
+            )
+            .exclude(estado_validacion_renaper=3)
+            .select_related("ciudadano")
+        )
         return [
             legajo
             for legajo in legajos

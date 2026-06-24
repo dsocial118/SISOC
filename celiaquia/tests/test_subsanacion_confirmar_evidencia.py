@@ -116,3 +116,65 @@ def test_confirmar_con_evidencia_pasa_a_subsanado(client):
     assert response.json().get("success") is True
     legajo.refresh_from_db()
     assert legajo.revision_tecnico == RevisionTecnico.SUBSANADO
+
+
+@pytest.mark.django_db
+def test_confirmacion_masiva_ignora_subsanaciones_renaper(client):
+    """La confirmación masiva confirma las subsanaciones técnicas con evidencia y
+    NO se traba por legajos de subsanación RENAPER (que se resuelven aparte)."""
+    admin = User.objects.create_superuser(username="admin-masiva", password="pass")
+    estado_exp = EstadoExpediente.objects.create(nombre="EST_MASIVA")
+    estado_legajo = EstadoLegajo.objects.create(nombre="EST_LEG_MASIVA")
+    expediente = Expediente.objects.create(usuario_provincia=admin, estado=estado_exp)
+
+    # Legajo técnico: archivos originales + evidencia de subsanación.
+    ciud_tec = Ciudadano.objects.create(
+        apellido="Tec",
+        nombre="Conalt",
+        documento=97001,
+        fecha_nacimiento=date(1990, 1, 1),
+    )
+    legajo_tec = ExpedienteCiudadano.objects.create(
+        expediente=expediente,
+        ciudadano=ciud_tec,
+        estado=estado_legajo,
+        revision_tecnico=RevisionTecnico.SUBSANAR,
+        archivo2=SimpleUploadedFile("o2.pdf", b"o2"),
+        archivo3=SimpleUploadedFile("o3.pdf", b"o3"),
+    )
+    sub = Subsanacion.objects.create(
+        legajo=legajo_tec, estado=SubsanacionEstado.PENDIENTE, solicitada_por=admin
+    )
+    SubsanacionArchivo.objects.create(
+        subsanacion=sub,
+        archivo=SimpleUploadedFile("corregido.pdf", b"x"),
+        usuario=admin,
+    )
+
+    # Legajo RENAPER (estado_validacion_renaper=3, sin Subsanacion ni evidencia).
+    ciud_ren = Ciudadano.objects.create(
+        apellido="Ren",
+        nombre="Aper",
+        documento=97002,
+        fecha_nacimiento=date(1990, 1, 1),
+    )
+    legajo_ren = ExpedienteCiudadano.objects.create(
+        expediente=expediente,
+        ciudadano=ciud_ren,
+        estado=estado_legajo,
+        revision_tecnico=RevisionTecnico.SUBSANAR,
+        estado_validacion_renaper=3,
+    )
+
+    client.force_login(admin)
+    response = client.post(
+        reverse("expediente_confirm_subsanacion", args=[expediente.pk]),
+        data={},
+    )
+
+    assert response.status_code == 200
+    legajo_tec.refresh_from_db()
+    legajo_ren.refresh_from_db()
+    # El técnico se confirma; el RENAPER no se toca (lo resuelve su propio flujo).
+    assert legajo_tec.revision_tecnico == RevisionTecnico.SUBSANADO
+    assert legajo_ren.revision_tecnico == RevisionTecnico.SUBSANAR

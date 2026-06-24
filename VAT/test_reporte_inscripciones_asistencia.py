@@ -17,6 +17,7 @@ from VAT.models import (
 )
 from VAT.services.reportes_inscripciones_asistencia import (
     ReporteFiltros,
+    build_detalle_queryset,
     build_reporte_inscripciones_asistencia,
 )
 from ciudadanos.models import Ciudadano
@@ -450,3 +451,92 @@ def test_reporte_filtra_por_usa_voucher():
 
     assert resultado_true["resumen"]["inscripciones_total"] == 1
     assert resultado_false["resumen"]["inscripciones_total"] == 1
+
+
+def _centro_basico(nombre, codigo, provincia, municipio, localidad, referente=None):
+    return Centro.objects.create(
+        nombre=nombre,
+        codigo=codigo,
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad,
+        calle="1",
+        numero=1,
+        domicilio_actividad="Calle 1",
+        telefono="2210000",
+        celular="2210001",
+        correo=f"{codigo}@vat.test",
+        nombre_referente="Ref",
+        apellido_referente="Erente",
+        telefono_referente="2210002",
+        correo_referente=f"ref-{codigo}@vat.test",
+        tipo_gestion="Estatal",
+        clase_institucion="Formación Profesional",
+        situacion="Institución de ETP",
+        activo=True,
+        referente=referente,
+    )
+
+
+@pytest.mark.django_db
+def test_build_detalle_queryset_respeta_scope_y_pagina():
+    provincia = Provincia.objects.create(nombre="Córdoba Det")
+    municipio = Municipio.objects.create(nombre="Capital Det", provincia=provincia)
+    localidad = Localidad.objects.create(nombre="Centro Det", municipio=municipio)
+    sexo = Sexo.objects.create(sexo="F")
+    modalidad = ModalidadCursada.objects.create(nombre="Presencial Det", activo=True)
+
+    referente = User.objects.create_user(username="rep-det", password="test1234")
+    _grant_referente_role(referente)
+
+    centro_visible = _centro_basico(
+        "CFP Det Visible", "CFP-DET-VIS", provincia, municipio, localidad, referente
+    )
+    centro_oculto = _centro_basico(
+        "CFP Det Oculto", "CFP-DET-OCU", provincia, municipio, localidad
+    )
+    comision_visible = _build_comision_curso(
+        centro=centro_visible, localidad=localidad, modalidad=modalidad, suffix="DETV"
+    )
+    comision_oculta = _build_comision_curso(
+        centro=centro_oculto, localidad=localidad, modalidad=modalidad, suffix="DETO"
+    )
+
+    for i in range(3):
+        ciudadano = Ciudadano.objects.create(
+            apellido=f"Visible{i}",
+            nombre="Det",
+            fecha_nacimiento=date(2000, 1, 1),
+            tipo_documento=Ciudadano.DOCUMENTO_DNI,
+            documento=40222000 + i,
+            sexo=sexo,
+        )
+        Inscripcion.objects.create(
+            ciudadano=ciudadano, comision_curso=comision_visible, estado="inscripta"
+        )
+
+    ciudadano_oculto = Ciudadano.objects.create(
+        apellido="Oculto",
+        nombre="Det",
+        fecha_nacimiento=date(2000, 1, 2),
+        tipo_documento=Ciudadano.DOCUMENTO_DNI,
+        documento=40222999,
+        sexo=sexo,
+    )
+    Inscripcion.objects.create(
+        ciudadano=ciudadano_oculto, comision_curso=comision_oculta, estado="inscripta"
+    )
+
+    qs = build_detalle_queryset(referente, ReporteFiltros())
+    docs = [row["ciudadano__documento"] for row in qs]
+
+    # Scope: el oculto no aparece; solo los 3 del centro del referente.
+    assert 40222999 not in docs
+    assert len(docs) == 3
+
+    # Paginación por slicing (LIMIT/OFFSET): páginas disjuntas que cubren todo.
+    page1_ids = {row["id"] for row in qs[:2]}
+    page2_ids = {row["id"] for row in qs[2:4]}
+    assert len(page1_ids) == 2
+    assert len(page2_ids) == 1
+    assert page1_ids.isdisjoint(page2_ids)
