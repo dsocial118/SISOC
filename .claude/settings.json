@@ -1,12 +1,4 @@
 {
-  "permissions": {
-    "allow": [
-      "Bash(grep -E \"\\\\.js$\")",
-      "Bash(python -m py_compile VAT/views/reporte.py VAT/services/reportes_inscripciones_asistencia.py)",
-      "Bash(python -m black --check VAT/views/reporte.py VAT/services/reportes_inscripciones_asistencia.py)",
-      "Bash(python -m djlint VAT/templates/vat/reportes/inscripciones_asistencia.html --check)"
-    ]
-  },
   "worktree": {
     "baseRef": "fresh"
   }
