@@ -126,7 +126,19 @@ poder comparar y aplicar el guardrail.
 
 El procesamiento OCR no bloquea la request HTTP. Un worker dedicado procesa los lotes pendientes en segundo plano.
 
-### Local
+### Local (Docker Compose, dev)
+
+El `docker-compose.yml` de desarrollo incluye un servicio `ocr_worker`
+gestionado (con `restart: unless-stopped`) que arranca el worker
+automáticamente y se reinicia solo si se cae:
+
+```bash
+docker compose up -d ocr_worker
+docker compose logs -f ocr_worker   # ver actividad
+```
+
+Sin este servicio (o con el worker caído) los lotes quedan en **pendiente**
+indefinidamente. También se puede correr el worker a mano dentro del contenedor:
 
 ```bash
 python manage.py process_ocr_jobs
