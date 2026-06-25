@@ -271,8 +271,24 @@ ul.nav:not(.sidebar-menu) .nav-link p {
     transform: rotate(90deg) !important;
 }
 
-.sidebar-wrapper .nav-treeview > .nav-item > .nav-link:hover {
+/* Hover: sin fondo gris, texto amarillo */
+.sidebar-menu .nav-link:hover {
     background-color: transparent !important;
+    color: #e7ba61 !important;
+}
+
+.sidebar-menu .nav-link:hover img {
+    filter: invert(67%) sepia(54%) saturate(559%) hue-rotate(340deg) brightness(230%) contrast(50%);
+}
+
+/* Active: texto amarillo, sin fondo */
+.sidebar-menu .nav-link.active {
+    color: #e7ba61 !important;
+    background-color: transparent !important;
+}
+
+.sidebar-menu .nav-link.active img {
+    filter: invert(67%) sepia(54%) saturate(559%) hue-rotate(340deg) brightness(230%) contrast(50%);
 }
 
 .sidebar-menu .nav-link.nav-dot::before {
