@@ -253,13 +253,14 @@ ul.nav:not(.sidebar-menu) .nav-link p {
     padding-left: 0;
 }
 
-/* Arrow inline with text: override AdminLTE's absolute positioning */
+/* Arrow at far right, vertically centered via flex (not position:absolute) */
 .sidebar-menu .nav-link > .nav-arrow {
     position: static !important;
     top: auto !important;
     right: auto !important;
     align-self: center;
     flex-shrink: 0;
+    margin-left: auto;
 }
 
 .sidebar-menu .nav-item > .nav-link > .nav-arrow {
