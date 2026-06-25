@@ -953,6 +953,12 @@ class Trabajador(SoftDeleteModelMixin, models.Model):
         related_name="+",
         verbose_name="Jurisdicción",
     )
+    departamento_contacto = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        verbose_name="Departamento",
+    )
     municipio_contacto = models.ForeignKey(
         "core.Municipio",
         on_delete=models.SET_NULL,
@@ -1604,18 +1610,15 @@ class NominaCentroInfancia(SoftDeleteModelMixin, models.Model):
         errors = {}
 
         # ── Pueblo originario ─────────────────────────────────────────────────
-        # El campo se preserva cuando cualquiera de los dos indicadores está activo.
-        # La obligatoriedad se exige sólo cuando el campo legacy es explícitamente SI.
-        si_pueblo_originario = (
-            self.pertenece_pueblo_originario == self.RespuestaSiNoNsNc.SI
-            or "indigena" in (self.grupo_pertenencia or [])
-        )
+        # El formulario ampliado usa grupo_pertenencia como indicador vigente.
+        if "indigena" not in (self.grupo_pertenencia or []):
+            self.pueblo_originario_cual = None
+        # El campo nuevo (grupo_pertenencia) es el único determinante.
+        # El campo legacy (pertenece_pueblo_originario) ya no controla la lógica.
+        si_pueblo_originario = "indigena" in (self.grupo_pertenencia or [])
         if not si_pueblo_originario:
             self.pueblo_originario_cual = None
-        elif (
-            self.pertenece_pueblo_originario == self.RespuestaSiNoNsNc.SI
-            and not self.pueblo_originario_cual
-        ):
+        elif not self.pueblo_originario_cual:
             errors["pueblo_originario_cual"] = (
                 "Este campo es obligatorio cuando pertenece a un pueblo originario."
             )

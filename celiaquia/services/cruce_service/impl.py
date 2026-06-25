@@ -63,6 +63,12 @@ DOCUMENTO_COL_CANDIDATAS = {
     "número_cuit",
     "cuit_nro",
     "cuit_número",
+    "cuil",
+    "nro_cuil",
+    "numero_cuil",
+    "número_cuil",
+    "cuil_nro",
+    "cuil_número",
     "dni",
     "nro_dni",
     "numero_dni",
@@ -151,12 +157,9 @@ class CruceService:
                 # Es responsable, exportar
                 rows.append(
                     {
-                        "Numero_documento": CruceService.normalize_dni_str(
+                        "numero_cuil": CruceService.normalize_dni_str(
                             getattr(ciudadano, "documento", "")
                         ),
-                        "TipoDocumento": getattr(
-                            ciudadano, "get_tipo_documento_display", lambda: ""
-                        )(),
                         "nombre": getattr(ciudadano, "nombre", "") or "",
                         "apellido": getattr(ciudadano, "apellido", "") or "",
                         "sexo": sexo,
@@ -169,12 +172,9 @@ class CruceService:
                     # No tiene responsable, exportar
                     rows.append(
                         {
-                            "Numero_documento": CruceService.normalize_dni_str(
+                            "numero_cuil": CruceService.normalize_dni_str(
                                 getattr(ciudadano, "documento", "")
                             ),
-                            "TipoDocumento": getattr(
-                                ciudadano, "get_tipo_documento_display", lambda: ""
-                            )(),
                             "nombre": getattr(ciudadano, "nombre", "") or "",
                             "apellido": getattr(ciudadano, "apellido", "") or "",
                             "sexo": sexo,
@@ -185,8 +185,7 @@ class CruceService:
         df = pd.DataFrame(
             rows,
             columns=[
-                "Numero_documento",
-                "TipoDocumento",
+                "numero_cuil",
                 "nombre",
                 "apellido",
                 "sexo",
@@ -269,6 +268,12 @@ class CruceService:
             "número_cuit",
             "cuit_nro",
             "cuit_número",
+            "cuil",
+            "nro_cuil",
+            "numero_cuil",
+            "número_cuil",
+            "cuil_nro",
+            "cuil_número",
             "dni",
             "nro_dni",
             "numero_dni",
@@ -302,7 +307,8 @@ class CruceService:
                 "Columnas aceptadas: documento, nro_documento, numero_documento, "
                 "número_documento, doc, nro_doc, num_doc, cuit, c.u.i.t, "
                 "nro_cuit, numero_cuit, número_cuit, cuit_nro, cuit_número (cuit "
-                "número), dni, "
+                "número), cuil, nro_cuil, numero_cuil, número_cuil, cuil_nro, "
+                "cuil_número, dni, "
                 "nro_dni, numero_dni, número_dni."
             )
 

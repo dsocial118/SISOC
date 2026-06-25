@@ -5,6 +5,7 @@ from io import BytesIO
 from dataclasses import dataclass
 from datetime import datetime
 
+from django.core.cache import cache
 from django.db.models import Count, F, Q, Value
 from django.db.models.functions import Coalesce, TruncMonth
 from django.http import HttpResponse
@@ -16,6 +17,12 @@ from VAT.services.access_scope import filter_centros_queryset_for_user
 
 
 DATE_INPUT_FORMAT = "%Y-%m-%d"
+# Las opciones de los filtros dependen solo del alcance del usuario (no de los
+# filtros aplicados), por lo que se cachean para evitar ~8 queries pesadas en
+# cada carga del reporte. No hay invalidación explícita: un cambio de alcance o
+# el alta de un centro/comisión se refleja al vencer el TTL (5 min).
+FILTER_OPTIONS_CACHE_TTL = 300
+DETALLE_PER_PAGE = 50
 GROUP_BY_ALLOWED = ("centro", "provincia", "curso", "comision", "mes")
 NIVEL_ALLOWED = ("centro", "provincia", "inet")
 BOOLEAN_TEXT = {"true": True, "false": False}
@@ -363,28 +370,45 @@ def build_reporte_inscripciones_asistencia(user, filtros: ReporteFiltros):
     }
 
 
+DETALLE_VALUES = (
+    "id",
+    "ciudadano__documento",
+    "ciudadano__apellido",
+    "ciudadano__nombre",
+    "estado",
+    "fecha_inscripcion",
+    "centro_nombre_ref",
+    "comision_codigo_ref",
+    "unidad_formativa_nombre",
+)
+
+
+def build_detalle_queryset(user, filtros: ReporteFiltros):
+    """Queryset (sin materializar) del detalle nominal, ordenado de forma estable
+    para paginar con LIMIT/OFFSET sin solapamientos entre páginas."""
+    queryset = _apply_filters(_base_queryset_for_user(user), filtros)
+    return queryset.values(*DETALLE_VALUES).order_by("-fecha_inscripcion", "id")
+
+
 def build_detalle_personas_inscriptas(
     user,
     filtros: ReporteFiltros,
     max_rows: int = 250,
 ):
-    queryset = _apply_filters(_base_queryset_for_user(user), filtros)
-    return list(
-        queryset.values(
-            "id",
-            "ciudadano__documento",
-            "ciudadano__apellido",
-            "ciudadano__nombre",
-            "estado",
-            "fecha_inscripcion",
-            "centro_nombre_ref",
-            "comision_codigo_ref",
-            "unidad_formativa_nombre",
-        ).order_by("-fecha_inscripcion")[:max_rows]
-    )
+    return list(build_detalle_queryset(user, filtros)[:max_rows])
 
 
 def get_filter_options(user):
+    cache_key = f"vat_reporte_filter_options_v1_{getattr(user, 'id', 'anon')}"
+    cached = cache.get(cache_key)
+    if cached is not None:
+        return cached
+    options = _build_filter_options(user)
+    cache.set(cache_key, options, FILTER_OPTIONS_CACHE_TTL)
+    return options
+
+
+def _build_filter_options(user):
     centros_qs = filter_centros_queryset_for_user(
         Centro.objects.select_related("provincia", "municipio"), user
     )

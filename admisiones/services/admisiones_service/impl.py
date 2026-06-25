@@ -1773,16 +1773,47 @@ class AdmisionService:
     def _build_success_actualizar_estado_ajax_response(
         archivo, display_objetivo, grupo_usuario, request=None
     ):
+        fila_html, row_id = AdmisionService._render_fila_documento_html(
+            archivo, request
+        )
         return {
             "success": True,
             "nuevo_estado": display_objetivo,
             "grupo_usuario": grupo_usuario,
             "observaciones": archivo.observaciones,
+            "html": fila_html,
+            "row_id": row_id,
             # Re-render de la celda "Número de GDE": al cambiar el estado del
             # documento (p.ej. -> Aceptado) debe aparecer/ocultarse el campo GDE
             # sin recargar la pagina (issue #1799, feedback punto 4).
             "gde_html": AdmisionService._render_celda_gde_html(archivo, request),
         }
+
+    @staticmethod
+    def _render_fila_documento_html(archivo, request):
+        if request is None or archivo is None:
+            return None, None
+        try:
+            if archivo.documentacion_id:
+                doc = AdmisionService._serialize_documentacion(
+                    archivo.documentacion, archivo
+                )
+            else:
+                doc = AdmisionService.serialize_documento_personalizado(archivo)
+            return (
+                render_to_string(
+                    "admisiones/includes/documento_row.html",
+                    {"doc": doc, "admision": archivo.admision},
+                    request=request,
+                ),
+                doc.get("row_id"),
+            )
+        except Exception:
+            logger.exception(
+                "No se pudo renderizar la fila de documento para el re-render AJAX",
+                extra={"archivo_pk": getattr(archivo, "pk", None)},
+            )
+            return None, None
 
     @staticmethod
     def _render_celda_gde_html(archivo, request):
@@ -1995,18 +2026,15 @@ class AdmisionService:
 
         try:
 
-            if user_has_any_permission_codes(
-                user,
-                [
-                    "comedores.view_comedor",
-                    "admisiones.view_admision",
-                    "acompanamientos.view_informacionrelevante",
-                ],
-            ):
+            if user_has_permission_code(user, "auth.role_abogado_dupla"):
 
                 return "Abogado Dupla"
 
-            elif user_has_any_permission_codes(
+            if user_has_permission_code(user, "auth.role_tecnico_comedor"):
+
+                return "Tecnico Comedor"
+
+            if user_has_any_permission_codes(
                 user,
                 [
                     "comedores.view_comedor",

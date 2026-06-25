@@ -881,7 +881,7 @@
         <div class="rep-card" id="repDetalleTabla">
             <div class="rep-card-head">
                 <i class="bi bi-person-lines-fill"></i>
-                <span>Personas inscriptas <small style="font-weight:400;opacity:.8">(en pantalla: muestra hasta 250)</small></span>
+                <span>Personas inscriptas <small style="font-weight:400;opacity:.8">({{ detalle_page_info.count|default:0 }} en total)</small></span>
                 <div class="rep-detalle-export">
                     <a href="?{% if querystring %}{{ querystring }}&{% endif %}export=detalle_csv"
                        class="rep-btn rep-btn--ghost"
@@ -931,25 +931,31 @@
             </div>
             <div class="rep-tbl-foot">
                 <span id="repDetalleConteo">
-                    Mostrando {{ detalle_rows|length|yesno:"1,0" }}-{{ detalle_rows|length }} de {{ detalle_rows|length }}
+                    Mostrando {{ detalle_page_info.start_index }}-{{ detalle_page_info.end_index }} de {{ detalle_page_info.count }}
                 </span>
-                <div class="rep-pager">
-                    <button type="button"
-                            class="rep-pager-prev"
-                            id="repDetallePrev"
-                            aria-label="Página anterior"
-                            disabled>
-                        <i class="bi bi-chevron-left"></i>
-                    </button>
-                    <span class="rep-pager-label" id="repDetallePager">1 de 1</span>
-                    <button type="button"
-                            class="rep-pager-next"
-                            id="repDetalleNext"
-                            aria-label="Página siguiente"
-                            disabled>
-                        <i class="bi bi-chevron-right"></i>
-                    </button>
-                </div>
+                {% if detalle_page_info.num_pages > 1 %}
+                    <div class="rep-pager">
+                        {% if detalle_page_info.has_previous %}
+                            <a class="rep-pager-prev"
+                               aria-label="Página anterior"
+                               href="?{% if querystring_detalle %}{{ querystring_detalle }}&{% endif %}detalle_page={{ detalle_page_info.previous_page_number }}#repDetalleTabla">
+                                <i class="bi bi-chevron-left"></i>
+                            </a>
+                        {% else %}
+                            <span class="rep-pager-prev is-disabled"><i class="bi bi-chevron-left"></i></span>
+                        {% endif %}
+                        <span class="rep-pager-label">{{ detalle_page_info.number }} de {{ detalle_page_info.num_pages }}</span>
+                        {% if detalle_page_info.has_next %}
+                            <a class="rep-pager-next"
+                               aria-label="Página siguiente"
+                               href="?{% if querystring_detalle %}{{ querystring_detalle }}&{% endif %}detalle_page={{ detalle_page_info.next_page_number }}#repDetalleTabla">
+                                <i class="bi bi-chevron-right"></i>
+                            </a>
+                        {% else %}
+                            <span class="rep-pager-next is-disabled"><i class="bi bi-chevron-right"></i></span>
+                        {% endif %}
+                    </div>
+                {% endif %}
             </div>
         </div>
 
@@ -989,63 +995,6 @@
             quickSearch.addEventListener("input", updateTableFilter);
             updateTableFilter();
         });
-    </script>
-
-    <script nonce="{{ request.csp_nonce }}">
-        (function () {
-            var card = document.getElementById("repDetalleTabla");
-            if (!card) return;
-
-            var PAGE_SIZE = 25;
-            var body = document.getElementById("repDetalleBody");
-            var conteoEl = document.getElementById("repDetalleConteo");
-            var pagerEl = document.getElementById("repDetallePager");
-            var prevBtn = document.getElementById("repDetallePrev");
-            var nextBtn = document.getElementById("repDetalleNext");
-            if (!body) return;
-
-            var allRows = Array.prototype.slice.call(body.querySelectorAll(".rep-detalle-row"));
-            var currentPage = 1;
-
-            function render() {
-                var total = allRows.length;
-                var totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
-                if (currentPage > totalPages) currentPage = totalPages;
-                if (currentPage < 1) currentPage = 1;
-
-                var start = (currentPage - 1) * PAGE_SIZE;
-                var end = start + PAGE_SIZE;
-
-                allRows.forEach(function (row, idx) {
-                    row.style.display = (idx >= start && idx < end) ? "" : "none";
-                });
-
-                if (conteoEl) {
-                    var desde = total === 0 ? 0 : start + 1;
-                    var hasta = Math.min(end, total);
-                    conteoEl.textContent = "Mostrando " + desde + "-" + hasta + " de " + total;
-                }
-                if (pagerEl) {
-                    pagerEl.textContent = currentPage + " de " + totalPages;
-                }
-                if (prevBtn) prevBtn.disabled = currentPage <= 1;
-                if (nextBtn) nextBtn.disabled = currentPage >= totalPages;
-            }
-
-            if (prevBtn) {
-                prevBtn.addEventListener("click", function () {
-                    if (currentPage > 1) { currentPage -= 1; render(); }
-                });
-            }
-            if (nextBtn) {
-                nextBtn.addEventListener("click", function () {
-                    currentPage += 1;
-                    render();
-                });
-            }
-
-            render();
-        })();
     </script>
 
     {% include "vat/partials/tour.html" with vat_tour_section="reporte_inscripciones" %}

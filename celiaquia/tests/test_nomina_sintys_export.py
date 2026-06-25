@@ -48,18 +48,16 @@ def test_exportar_nomina_sintys(client):
     ws = wb.active
     header = [cell.value for cell in next(ws.iter_rows(max_row=1))]
     assert header == [
-        "Numero_documento",
-        "TipoDocumento",
+        "numero_cuil",
         "nombre",
         "apellido",
         "sexo",
     ]
     row = [cell.value for cell in next(ws.iter_rows(min_row=2, max_row=2))]
     assert str(row[0]) == "12345678"
-    assert row[1] == "DNI"
-    assert row[2] == "Juan"
-    assert row[3] == "Perez"
-    assert row[4] == "Masculino"
+    assert row[1] == "Juan"
+    assert row[2] == "Perez"
+    assert row[3] == "Masculino"
 
 
 @pytest.mark.django_db
@@ -92,4 +90,4 @@ def test_exportar_nomina_sintys_normaliza_sexo_abreviado_a_texto(client):
     wb = load_workbook(BytesIO(content))
     ws = wb.active
     row = [cell.value for cell in next(ws.iter_rows(min_row=2, max_row=2))]
-    assert row[4] == "Masculino"
+    assert row[3] == "Masculino"

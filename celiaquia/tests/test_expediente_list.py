@@ -245,3 +245,56 @@ def test_legajos_subsanar_count_no_cambia_con_busqueda(client):
 
     assert count_sin_filtro == 1
     assert count_con_filtro == 1
+
+
+@pytest.mark.django_db
+def test_legajos_subsanado_count(client):
+    """El contador de legajos SUBSANADOS debe reflejar solo los legajos
+    con revision_tecnico=SUBSANADO, sin contaminarse con A Subsanar/Pendiente."""
+    provincia = Provincia.objects.create(nombre="Córdoba Subsanado")
+    municipio = Municipio.objects.create(nombre="Capital Subs", provincia=provincia)
+    localidad = Localidad.objects.create(nombre="Centro Subs", municipio=municipio)
+    admin = User.objects.create_superuser(username="admin-subsanado", password="pass")
+    owner = User.objects.create_user(username="owner-subsanado", password="pass")
+
+    estado_exp = EstadoExpediente.objects.create(nombre="ASIGNADO_SUBSANADO")
+    estado_legajo, _ = EstadoLegajo.objects.get_or_create(nombre="DOCUMENTO_PENDIENTE")
+    expediente = Expediente.objects.create(usuario_provincia=owner, estado=estado_exp)
+
+    def _ciudadano(doc):
+        return Ciudadano.objects.create(
+            apellido="Test",
+            nombre=f"Ciudadano {doc}",
+            fecha_nacimiento=date(2010, 1, 1),
+            documento=doc,
+            provincia=provincia,
+            municipio=municipio,
+            localidad=localidad,
+        )
+
+    ExpedienteCiudadano.objects.create(
+        expediente=expediente,
+        ciudadano=_ciudadano(601),
+        estado=estado_legajo,
+        revision_tecnico=RevisionTecnico.SUBSANADO,
+    )
+    ExpedienteCiudadano.objects.create(
+        expediente=expediente,
+        ciudadano=_ciudadano(602),
+        estado=estado_legajo,
+        revision_tecnico=RevisionTecnico.SUBSANADO,
+    )
+    ExpedienteCiudadano.objects.create(
+        expediente=expediente,
+        ciudadano=_ciudadano(603),
+        estado=estado_legajo,
+        revision_tecnico=RevisionTecnico.SUBSANAR,
+    )
+
+    client.force_login(admin)
+
+    response = client.get(reverse("expediente_list"))
+    exp = next(e for e in response.context["expedientes"] if e.pk == expediente.pk)
+
+    assert exp.legajos_subsanado_count == 2
+    assert exp.legajos_subsanar_count == 1

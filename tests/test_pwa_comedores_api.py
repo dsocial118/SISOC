@@ -52,6 +52,14 @@ from rendicioncuentasmensual.models import DocumentacionAdjunta, RendicionCuenta
 from users.models import AccesoComedorPWA
 
 
+def _grant_pwa_permission(user, codename):
+    permission = Permission.objects.get(
+        content_type__app_label="pwa",
+        codename=codename,
+    )
+    user.user_permissions.add(permission)
+
+
 @pytest.fixture
 def comedores(db):
     provincia = Provincia.objects.create(nombre="Cordoba")
@@ -81,6 +89,9 @@ def _create_pwa_user(
         creado_por=created_by,
         activo=True,
     )
+    _grant_pwa_permission(user, "manage_prestaciones_mensuales_pwa")
+    _grant_pwa_permission(user, "manage_nomina_pwa")
+    _grant_pwa_permission(user, "manage_usuarios_pwa")
     return user
 
 

@@ -1,8 +1,13 @@
+import unicodedata
+
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 
 from comedores.models import CapacitacionComedorCertificado
 
+FORMANDO_CAPITAL_HUMANO_URL = (
+    "https://capacitacionalimentaria.secretarianaf.gob.ar/" "alimentacion-y-nutricion/"
+)
 
 ALLOWED_CERTIFICATE_CONTENT_TYPES = {
     "application/pdf",
@@ -29,6 +34,50 @@ def _capacitacion_order_map():
     }
 
 
+def _normalize_label(value):
+    text = unicodedata.normalize("NFD", str(value or ""))
+    text = "".join(char for char in text if not unicodedata.combining(char))
+    return " ".join(text.lower().split())
+
+
+def _legacy_intervenciones_by_capacitacion(comedor):
+    from intervenciones.models.intervenciones import Intervencion
+
+    labels_by_code = {
+        code: _normalize_label(label)
+        for code, label in CapacitacionComedorCertificado.CAPACITACION_CHOICES
+    }
+    result = {}
+    intervenciones = (
+        Intervencion.objects.filter(
+            comedor=comedor,
+            deleted_at__isnull=True,
+            tiene_documentacion=True,
+            documentacion__isnull=False,
+        )
+        .exclude(documentacion="")
+        .select_related("subintervencion", "tipo_intervencion")
+        .order_by("-fecha", "-id")
+    )
+    for intervencion in intervenciones:
+        sub_label = _normalize_label(
+            getattr(intervencion.subintervencion, "nombre", "")
+        )
+        tipo_label = _normalize_label(
+            getattr(intervencion.tipo_intervencion, "nombre", "")
+        )
+        if not sub_label:
+            continue
+        if "formando capital humano" not in f"{tipo_label} {sub_label}":
+            continue
+        for code, label in labels_by_code.items():
+            if code in result:
+                continue
+            if label == sub_label or label in sub_label or sub_label in label:
+                result[code] = intervencion
+    return result
+
+
 def ensure_capacitaciones_certificados(comedor):
     existing_codes = set(
         CapacitacionComedorCertificado.objects.filter(comedor=comedor).values_list(
@@ -52,12 +101,15 @@ def ensure_capacitaciones_certificados(comedor):
 
 def list_capacitaciones_certificados(comedor):
     ensure_capacitaciones_certificados(comedor)
+    legacy_by_capacitacion = _legacy_intervenciones_by_capacitacion(comedor)
     records = list(
         CapacitacionComedorCertificado.objects.filter(comedor=comedor).select_related(
             "presentado_por",
             "revisado_por",
         )
     )
+    for record in records:
+        record.pwa_intervencion_legacy = legacy_by_capacitacion.get(record.capacitacion)
     order_map = _capacitacion_order_map()
     records.sort(key=lambda row: order_map.get(row.capacitacion, 999))
     return records
@@ -181,21 +233,47 @@ def delete_certificate(certificado):
 def serialize_certificate(certificado, request=None):
     archivo_url = None
     archivo_nombre = None
+    origen = "capacitacion"
+    intervencion_id = None
+    fecha_origen = None
+    estado = certificado.estado
+    estado_label = certificado.get_estado_display()
     if certificado.archivo:
         archivo_nombre = certificado.archivo.name.split("/")[-1]
+        fecha_origen = certificado.fecha_presentacion
         if request is not None:
             archivo_url = request.build_absolute_uri(certificado.archivo.url)
         else:
             archivo_url = certificado.archivo.url
+    else:
+        legacy_intervencion = getattr(certificado, "pwa_intervencion_legacy", None)
+        legacy_archivo = getattr(legacy_intervencion, "documentacion", None)
+        if legacy_archivo:
+            origen = "intervencion"
+            intervencion_id = legacy_intervencion.id
+            fecha_origen = legacy_intervencion.fecha
+            estado = CapacitacionComedorCertificado.ESTADO_PRESENTADO
+            estado_label = dict(CapacitacionComedorCertificado.ESTADO_CHOICES).get(
+                estado,
+                "PRESENTADO",
+            )
+            archivo_nombre = legacy_archivo.name.split("/")[-1]
+            if request is not None:
+                archivo_url = request.build_absolute_uri(legacy_archivo.url)
+            else:
+                archivo_url = legacy_archivo.url
 
     return {
         "id": certificado.id,
         "capacitacion": certificado.capacitacion,
         "capacitacion_label": certificado.get_capacitacion_display(),
-        "estado": certificado.estado,
-        "estado_label": certificado.get_estado_display(),
+        "estado": estado,
+        "estado_label": estado_label,
         "archivo_url": archivo_url,
         "archivo_nombre": archivo_nombre,
+        "origen": origen,
+        "intervencion_id": intervencion_id,
+        "fecha_origen": fecha_origen,
         "observacion": certificado.observacion,
         "fecha_presentacion": certificado.fecha_presentacion,
         "fecha_revision": certificado.fecha_revision,
