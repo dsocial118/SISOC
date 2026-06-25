@@ -6,9 +6,24 @@ from django import forms
 from django.conf import settings
 
 
+class MultipleFileInput(forms.ClearableFileInput):
+    allow_multiple_selected = True
+
+
+class MultipleFileField(forms.FileField):
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault("widget", MultipleFileInput())
+        super().__init__(*args, **kwargs)
+
+    def clean(self, data, initial=None):
+        single_clean = super().clean
+        if isinstance(data, (list, tuple)):
+            return [single_clean(d, initial) for d in data]
+        return single_clean(data, initial)
+
+
 class OCRUploadForm(forms.Form):
-    archivos = forms.FileField(
-        widget=forms.ClearableFileInput(attrs={"multiple": True}),
+    archivos = MultipleFileField(
         label="Archivos",
         help_text="Formatos admitidos: JPG, JPEG, PNG, PDF.",
         required=False,
