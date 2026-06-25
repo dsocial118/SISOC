@@ -147,6 +147,26 @@ python manage.py test ocr.tests.test_views
 
 Los tests usan mocks para aislar Tesseract, pdf2image y OpenCV (cv2), por lo que **no requieren que Tesseract esté instalado localmente**.
 
+## Evaluación de calidad (recall)
+
+Para medir el impacto de cambios en el preprocesado o en la configuración de
+Tesseract hay un comando que procesa un archivo con el pipeline real y lo
+compara contra un texto de referencia (*ground-truth*), reportando recall /
+precision / F1 de palabras (ver `ocr/eval_metrics.py`):
+
+```bash
+# Recall del pipeline actual contra un ground-truth
+python manage.py ocr_eval --file ruta/al/documento.pdf --ground-truth ruta/al/referencia.txt
+
+# Baseline sin preprocesado (para comparar antes/después)
+python manage.py ocr_eval --file documento.pdf --ground-truth referencia.txt --no-preprocess
+```
+
+El *recall* (proporción de palabras del ground-truth recuperadas por el OCR) es
+la métrica principal: es robusta frente a orden, espaciado y puntuación. El
+archivo y el ground-truth se pasan por argumento y **no se versionan** (pueden
+contener datos personales).
+
 ## Limitaciones del MVP
 
 - Idioma OCR fijo en español (configurable por env var, no por usuario).
