@@ -47,8 +47,14 @@ from .actividades_pnud import (
     ActividadPnudListView,
     ActividadPnudUpdateView,
 )
+from .actividad_espacio_pwa import (
+    ActividadEspacioPWACreateView,
+    ActividadEspacioPWAUpdateView,
+)
 
 __all__ = [
+    "ActividadEspacioPWACreateView",
+    "ActividadEspacioPWAUpdateView",
     "ActividadPnudCreateView",
     "ActividadPnudDeactivateView",
     "ActividadPnudListView",

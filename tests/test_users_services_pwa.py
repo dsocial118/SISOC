@@ -9,12 +9,14 @@ from comedores.models import Comedor
 from core.models import Provincia
 from organizaciones.models import Organizacion
 from users.models import AccesoComedorPWA
+from users.models import AuditAccesoComedorPWA
 from users.services_pwa import (
     create_operador_for_comedor,
     deactivate_operador,
     get_accessible_comedor_ids,
     is_pwa_user,
     sync_representante_accesses,
+    update_operador_permissions,
 )
 
 
@@ -328,3 +330,165 @@ def test_sync_representante_accesses_supports_mixed_association(comedores):
     assert acceso_org.organizacion_id == comedor_1.organizacion_id
     assert acceso_espacio.tipo_asociacion == AccesoComedorPWA.TIPO_ASOCIACION_ESPACIO
     assert acceso_espacio.organizacion_id is None
+
+
+def _create_representante_with_permission(comedor, username, permission_codename):
+    from django.contrib.auth.models import Permission
+
+    user = _create_user(username)
+    AccesoComedorPWA.objects.create(
+        user=user,
+        comedor=comedor,
+        rol=AccesoComedorPWA.ROL_REPRESENTANTE,
+        activo=True,
+    )
+    perm = Permission.objects.get(
+        content_type__app_label="pwa",
+        codename=permission_codename,
+    )
+    user.user_permissions.add(perm)
+    return user
+
+
+@pytest.mark.django_db
+def test_update_operador_permissions_success(comedores):
+    comedor_1, _ = comedores
+    representante = _create_representante_with_permission(
+        comedor_1, "rep_update_perms", "manage_colaboradores_pwa"
+    )
+    acceso = create_operador_for_comedor(
+        comedor_id=comedor_1.id,
+        actor=representante,
+        username="op_update_perms",
+        email="op_update_perms@example.com",
+        password="Secreta123!",
+    )
+    operador = acceso.user
+
+    result = update_operador_permissions(
+        comedor_id=comedor_1.id,
+        user_id=operador.id,
+        actor=representante,
+        permission_codes=["pwa.manage_colaboradores_pwa"],
+    )
+
+    assert result == acceso
+    perm_codenames = set(operador.user_permissions.values_list("codename", flat=True))
+    assert "manage_colaboradores_pwa" in perm_codenames
+    audit = AuditAccesoComedorPWA.objects.filter(
+        acceso=acceso,
+        accion=AuditAccesoComedorPWA.ACCION_UPDATE_PERMISSIONS,
+    ).last()
+    assert audit is not None
+    assert audit.actor == representante
+    assert "new_permission_codes" in audit.metadata
+
+
+@pytest.mark.django_db
+def test_update_operador_permissions_requires_representante(comedores):
+    comedor_1, _ = comedores
+    representante = _create_representante_with_permission(
+        comedor_1, "rep_upd_reqs", "manage_colaboradores_pwa"
+    )
+    acceso = create_operador_for_comedor(
+        comedor_id=comedor_1.id,
+        actor=representante,
+        username="op_upd_reqs",
+        email="op_upd_reqs@example.com",
+        password="Secreta123!",
+    )
+    non_rep = _create_user("non_rep_upd")
+
+    with pytest.raises(PermissionDenied):
+        update_operador_permissions(
+            comedor_id=comedor_1.id,
+            user_id=acceso.user_id,
+            actor=non_rep,
+            permission_codes=[],
+        )
+
+
+@pytest.mark.django_db
+def test_update_operador_permissions_rejects_foreign_operador(comedores):
+    comedor_1, comedor_2 = comedores
+    rep_1 = _create_representante_with_permission(
+        comedor_1, "rep_upd_foreign_1", "manage_colaboradores_pwa"
+    )
+    rep_2 = _create_representante_with_permission(
+        comedor_2, "rep_upd_foreign_2", "manage_colaboradores_pwa"
+    )
+    acceso = create_operador_for_comedor(
+        comedor_id=comedor_1.id,
+        actor=rep_1,
+        username="op_foreign",
+        email="op_foreign@example.com",
+        password="Secreta123!",
+    )
+
+    with pytest.raises(PermissionDenied):
+        update_operador_permissions(
+            comedor_id=comedor_2.id,
+            user_id=acceso.user_id,
+            actor=rep_2,
+            permission_codes=[],
+        )
+
+
+@pytest.mark.django_db
+def test_update_operador_permissions_rejects_operador_not_created_by_actor(comedores):
+    comedor_1, _ = comedores
+    rep_a = _create_representante_with_permission(
+        comedor_1, "rep_a_notcreated", "manage_colaboradores_pwa"
+    )
+    rep_b = _create_representante_with_permission(
+        comedor_1, "rep_b_notcreated", "manage_colaboradores_pwa"
+    )
+    acceso = create_operador_for_comedor(
+        comedor_id=comedor_1.id,
+        actor=rep_a,
+        username="op_notcreated",
+        email="op_notcreated@example.com",
+        password="Secreta123!",
+    )
+
+    with pytest.raises(PermissionDenied):
+        update_operador_permissions(
+            comedor_id=comedor_1.id,
+            user_id=acceso.user_id,
+            actor=rep_b,
+            permission_codes=[],
+        )
+
+
+@pytest.mark.django_db
+def test_update_operador_permissions_rejects_unassignable_permission(comedores):
+    comedor_1, _ = comedores
+    representante = _create_user("rep_unassignable")
+    AccesoComedorPWA.objects.create(
+        user=representante,
+        comedor=comedor_1,
+        rol=AccesoComedorPWA.ROL_REPRESENTANTE,
+        activo=True,
+    )
+    from django.contrib.auth.models import Permission
+
+    perm = Permission.objects.get(
+        content_type__app_label="pwa",
+        codename="manage_colaboradores_pwa",
+    )
+    representante.user_permissions.add(perm)
+    acceso = create_operador_for_comedor(
+        comedor_id=comedor_1.id,
+        actor=representante,
+        username="op_unassignable",
+        email="op_unassignable@example.com",
+        password="Secreta123!",
+    )
+
+    with pytest.raises(ValidationError):
+        update_operador_permissions(
+            comedor_id=comedor_1.id,
+            user_id=acceso.user_id,
+            actor=representante,
+            permission_codes=["pwa.manage_usuarios_pwa"],
+        )

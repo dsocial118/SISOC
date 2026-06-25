@@ -20,7 +20,12 @@
                    class="btn btn-md btn-outline-light"><i class="bi bi-file-earmark-text me-1"></i>Cargar datos del Convenio</a>
             {% endif %}
             {% if es_programa_pnud %}
-                <a href="#legajo-actividades-pnud" class="btn btn-md btn-outline-light"><i class="bi bi-person-walking me-1"></i>Actividades</a>
+                {% if puede_gestionar_actividades_espacio %}
+                    <a href="{% url 'actividad_espacio_pwa_crear' comedor.id %}"
+                       class="btn btn-md btn-outline-light"><i class="bi bi-person-walking me-1"></i>Actividades</a>
+                {% else %}
+                    <a href="#legajo-actividades-pnud" class="btn btn-md btn-outline-light"><i class="bi bi-person-walking me-1"></i>Actividades</a>
+                {% endif %}
             {% endif %}
             {% if mostrar_relevamientos_header %}
                 <a href="{% url 'relevamientos' comedor.id %}"
@@ -728,6 +733,12 @@
                 </div>
                 <div class="accordion-content">
                     {% if es_programa_pnud %}
+                        {% if puede_gestionar_actividades_espacio %}
+                            <div class="mb-3">
+                                <a href="{% url 'actividad_espacio_pwa_crear' comedor.id %}"
+                                   class="btn btn-primary btn-sm">Agregar actividad</a>
+                            </div>
+                        {% endif %}
                         {% if actividades_pnud_legajo %}
                             <div class="table-responsive">
                                 <table class="table table-sm table-bordered align-middle text-white mb-0">
@@ -742,6 +753,7 @@
                                             <th>Inscriptos</th>
                                             <th>Estado</th>
                                             <th>Detalle</th>
+                                            {% if puede_gestionar_actividades_espacio %}<th>Acciones</th>{% endif %}
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -795,6 +807,16 @@
                                                         </div>
                                                     </details>
                                                 </td>
+                                                {% if puede_gestionar_actividades_espacio %}
+                                                    <td>
+                                                        {% if actividad.activo %}
+                                                            <a href="{% url 'actividad_espacio_pwa_editar' comedor.id actividad.id %}"
+                                                               class="btn btn-sm btn-primary">Editar</a>
+                                                        {% else %}
+                                                            -
+                                                        {% endif %}
+                                                    </td>
+                                                {% endif %}
                                             </tr>
                                         {% endfor %}
                                     </tbody>

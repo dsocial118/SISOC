@@ -1,9 +1,24 @@
 <!-- AUTO-GENERATED RELEASE START: 2026-06-24 -->
 # Versión SISOC 24.06.2026
 
+## Nuevas Funcionalidades
+
+- [users] Importacion masiva permite crear usuarios PWA sin acceso staff, preservando el comportamiento staff por defecto. (PR #1927)
+- [celiaquia] Celiaquia incorpora subsanaciones multimotivo, respuesta con evidencia, comentarios internos y mejoras de reporter/exportaciones. (PR #1938)
+- [pwa] PWA suma permisos granulares, gestion de subusuarios, documentos de nomina, flag de celiaquia y ajustes mobile. (PR #1941)
+
 ## Actualizaciones
 
 - [sin-area] fix(comedores): alinear monto_prestacion_mensual mobile con la web. (PR #1925)
+- [arquitectura] Se documenta la Fase 0 del monolito modular y el plan de ratchet de dependencias. (PR #1932)
+- [arquitectura] Se agrega import-linter con contratos de arquitectura para impedir que empeore el acoplamiento del kernel. (PR #1940)
+- [comedores] Datos de Convenio PNUD reemplaza el monto unico por Prestaciones Alimentarias y Servicio Integral de Promocion Humana. (PR #1944)
+- [celiaquia] Se completa Celiaquia V3 con hardening de permisos, comentarios internos y alcance de usuarios deny-by-default. (PR #1948)
+
+## Corrección de Errores
+
+- [centrodeinfancia] Se corrigen secciones, condicionales, precarga RENAPER, departamento y validaciones del formulario de Trabajadores CDI. (PR #1929)
+- [comedores] El legajo vuelve a mostrar Relevamientos para Abordaje Comunitario Linea Secos y Linea Tradicional. (PR #1937)
 <!-- AUTO-GENERATED RELEASE END: 2026-06-24 -->
 
 <!-- AUTO-GENERATED RELEASE START: 2026-06-10 -->

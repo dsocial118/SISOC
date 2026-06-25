@@ -1408,6 +1408,10 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
         mes_ejecucion_context = _build_mes_ejecucion_context(self.object)
         actividades_pnud_context = _build_actividades_pnud_legajo_context(self.object)
         es_programa_pnud = is_pnud_comedor(self.object)
+        puede_gestionar_actividades_espacio = es_programa_pnud and (
+            self.request.user.has_perm("auth.role_admin")
+            or self.request.user.has_perm("pwa.manage_colaboradores_pwa")
+        )
         mostrar_relevamientos_header = (
             not es_programa_pnud
             or is_abordaje_comunitario_relevamientos_header_program(self.object)
@@ -1479,6 +1483,7 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
                     else []
                 ),
                 "es_programa_pnud": es_programa_pnud,
+                "puede_gestionar_actividades_espacio": puede_gestionar_actividades_espacio,
                 "mostrar_relevamientos_header": mostrar_relevamientos_header,
                 "datos_convenio_pnud": getattr(
                     self.object, "datos_convenio_pnud", None

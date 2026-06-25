@@ -24,6 +24,7 @@ from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.generic import CreateView, DeleteView, FormView, ListView, UpdateView
 
 from core.services.column_preferences import build_columns_context
+from iam.services import get_effective_permission_codes
 
 from .forms import (
     BackofficeAuthenticationForm,
@@ -33,6 +34,7 @@ from .forms import (
     UserCreationForm,
 )
 from .grupos_column_config import GRUPOS_COLUMNS, GRUPOS_LIST_KEY
+from .models import AccesoComedorPWA
 from .services import BULK_CREDENTIALS_PERMISSION_CODE, UsuariosService
 from .services_auth import generate_temporary_password_for_user
 from .services_bulk_credentials import (
@@ -49,6 +51,24 @@ from .services_bulk_credentials_jobs import (
     request_resume_bulk_credentials_job,
 )
 from .temporary_passwords import clear_temporary_password, get_temporary_password
+
+
+PWA_PERMISSION_LABELS = {
+    "rendicioncuentasmensual.manage_mobile_rendicion": "Gestionar rendiciones mobile",
+    "pwa.manage_colaboradores_pwa": "Gestionar colaboradores mobile",
+    "pwa.manage_usuarios_pwa": "Crear y gestionar usuarios mobile",
+    "pwa.manage_nomina_pwa": "Gestionar nomina mobile",
+    "pwa.manage_prestaciones_mensuales_pwa": "Gestionar prestaciones mensuales mobile",
+}
+
+
+def _get_pwa_permission_labels(user):
+    permission_codes = (
+        code
+        for code in get_effective_permission_codes(user)
+        if code.startswith("pwa.") or code.startswith("rendicioncuentasmensual.")
+    )
+    return [PWA_PERMISSION_LABELS.get(code, code) for code in sorted(permission_codes)]
 
 
 class AdminRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
@@ -169,6 +189,46 @@ class UserUpdateView(AdminRequiredMixin, UpdateView):
             )
         context["temporary_password_plaintext"] = temporary_password_plaintext
         context["temporary_password_visible"] = bool(temporary_password_plaintext)
+        operator_accesses = (
+            AccesoComedorPWA.objects.filter(
+                user=self.object,
+                rol=AccesoComedorPWA.ROL_OPERADOR,
+                activo=True,
+            )
+            .select_related("comedor", "creado_por")
+            .order_by("comedor__nombre", "id")
+        )
+        operator_access_list = list(operator_accesses)
+        if operator_access_list:
+            context["pwa_operator_context"] = {
+                "accesses": operator_access_list,
+                "created_by": operator_access_list[0].creado_por,
+                "permission_labels": _get_pwa_permission_labels(self.object),
+            }
+        operadores = (
+            AccesoComedorPWA.objects.filter(
+                creado_por=self.object,
+                rol=AccesoComedorPWA.ROL_OPERADOR,
+            )
+            .select_related("user", "comedor")
+            .order_by("user__username", "comedor__nombre", "id")
+        )
+        created_users = {}
+        for acceso in operadores:
+            item = created_users.setdefault(
+                acceso.user_id,
+                {
+                    "user": acceso.user,
+                    "comedores": [],
+                    "activo": False,
+                    "permission_labels": _get_pwa_permission_labels(acceso.user),
+                },
+            )
+            item["comedores"].append(acceso.comedor)
+            item["activo"] = item["activo"] or (
+                acceso.activo and getattr(acceso.user, "is_active", False)
+            )
+        context["pwa_created_users"] = list(created_users.values())
         return context
 
     def form_valid(self, form):

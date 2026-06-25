@@ -41,6 +41,15 @@ def _registrar_auditoria_acceso(*, acceso, accion: str, actor=None, metadata=Non
     )
 
 
+def _get_effective_mobile_permission_codes(user) -> list[str]:
+    return sorted(
+        code
+        for code in get_effective_permission_codes(user)
+        if code in PWA_ASSIGNABLE_PERMISSION_CODES
+        or code == PWA_USUARIOS_PERMISSION_CODE
+    )
+
+
 def get_access_rows(user):
     """Retorna accesos PWA activos del usuario."""
     if not user or not getattr(user, "is_authenticated", False):
@@ -80,6 +89,13 @@ def is_representante(user, comedor_id: int) -> bool:
         )
         .exists()
     )
+
+
+def has_pwa_access_to_comedor(user, comedor_id: int) -> bool:
+    """Indica si el usuario tiene acceso PWA activo al comedor."""
+    if not comedor_id:
+        return False
+    return get_access_rows(user).filter(comedor_id=comedor_id).exists()
 
 
 def get_pwa_context(user) -> dict:
@@ -177,7 +193,6 @@ def _validate_assignable_permissions(
     requested_codes = {
         str(code).strip() for code in permission_codes or [] if str(code).strip()
     }
-    requested_codes.discard(PWA_USUARIOS_PERMISSION_CODE)
     allowed_codes = set(get_assignable_pwa_permission_codes(actor))
     denied_codes = sorted(requested_codes - allowed_codes)
     if denied_codes:
@@ -215,6 +230,7 @@ def _validate_assignable_comedores(actor, comedor_ids: Iterable[int]) -> list[in
 
 
 @transaction.atomic
+# pylint: disable-next=too-many-arguments,too-many-locals
 def create_operador_for_comedor(
     *,
     comedor_id: int,
@@ -319,6 +335,57 @@ def list_operadores_for_comedor(comedor_id: int):
         .prefetch_related("user__user_permissions__content_type")
         .order_by("-fecha_creacion", "-id")
     )
+
+
+@transaction.atomic
+def update_operador_permissions(
+    *,
+    comedor_id: int,
+    user_id: int,
+    actor,
+    permission_codes: Iterable[str] | None = None,
+):
+    """Actualiza permisos delegados de un operador creado por el representante."""
+    if not is_representante(actor, comedor_id):
+        raise PermissionDenied(
+            "Solo representantes del comedor pueden editar operadores."
+        )
+
+    acceso = (
+        AccesoComedorPWA.objects.select_related("user", "creado_por")
+        .filter(
+            comedor_id=comedor_id,
+            user_id=user_id,
+            rol=AccesoComedorPWA.ROL_OPERADOR,
+            activo=True,
+            user__is_active=True,
+        )
+        .first()
+    )
+    if not acceso:
+        raise PermissionDenied("No tiene acceso para editar este operador.")
+    if acceso.creado_por_id != getattr(actor, "id", None):
+        raise PermissionDenied("Solo puede editar usuarios creados por usted.")
+
+    requested_permission_codes = _validate_assignable_permissions(
+        actor,
+        permission_codes or [],
+    )
+    previous_permission_codes = _get_effective_mobile_permission_codes(acceso.user)
+    acceso.user.user_permissions.set(
+        _resolve_permission_codes(requested_permission_codes)
+    )
+    _registrar_auditoria_acceso(
+        acceso=acceso,
+        accion=AuditAccesoComedorPWA.ACCION_UPDATE_PERMISSIONS,
+        actor=actor,
+        metadata={
+            "rol": AccesoComedorPWA.ROL_OPERADOR,
+            "previous_permission_codes": previous_permission_codes,
+            "new_permission_codes": requested_permission_codes,
+        },
+    )
+    return acceso
 
 
 @transaction.atomic
