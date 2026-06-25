@@ -38,7 +38,9 @@ class OCRUploadView(AdminRequiredMixin, View):
             return render(request, self.template_name, self._context(form))
 
         files = form.cleaned_data["archivos"]
-        job = create_ocr_job(requested_by=request.user, files=files)
+        job = create_ocr_job(
+            requested_by=request.user, files=files, options=form.get_options()
+        )
         messages.success(
             request,
             f"Lote OCR #{job.id} creado con {job.total_documents} archivo(s). "

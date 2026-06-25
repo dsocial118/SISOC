@@ -113,7 +113,10 @@ class PreprocessIntegrationTest(TestCase):
         _extract_from_image("/fake/img.png", "spa")
 
         mock_preprocess.assert_called_once_with(opened)
-        mock_image_to_string.assert_called_once_with("processed", lang="spa")
+        mock_image_to_string.assert_called_once()
+        args, kwargs = mock_image_to_string.call_args
+        self.assertEqual(args[0], "processed")
+        self.assertEqual(kwargs["lang"], "spa")
 
     @override_settings(OCR_PREPROCESS=False)
     @patch("ocr.services_preprocess.preprocess_for_ocr")
@@ -131,7 +134,10 @@ class PreprocessIntegrationTest(TestCase):
         _extract_from_image("/fake/img.png", "spa")
 
         mock_preprocess.assert_not_called()
-        mock_image_to_string.assert_called_once_with(opened, lang="spa")
+        mock_image_to_string.assert_called_once()
+        args, kwargs = mock_image_to_string.call_args
+        self.assertEqual(args[0], opened)
+        self.assertEqual(kwargs["lang"], "spa")
 
     @override_settings(OCR_PREPROCESS=True)
     @patch("ocr.services_preprocess.preprocess_for_ocr")

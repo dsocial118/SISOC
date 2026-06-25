@@ -39,11 +39,19 @@ def get_ocr_job_stale_seconds() -> int:
     )
 
 
-def create_ocr_job(*, requested_by, files: list) -> OCRJob:
-    """Crea un OCRJob con sus documentos a partir de una lista de archivos subidos."""
+def create_ocr_job(*, requested_by, files: list, options: dict | None = None) -> OCRJob:
+    """Crea un OCRJob con sus documentos a partir de una lista de archivos subidos.
+
+    ``options`` lleva los toggles de calidad por lote (``preprocess``,
+    ``pdf_text_layer``, ``auto_orient``); por default todos en True.
+    """
+    options = options or {}
     job = OCRJob(
         requested_by=requested_by,
         total_documents=len(files),
+        opt_preprocess=options.get("preprocess", True),
+        opt_pdf_text_layer=options.get("pdf_text_layer", True),
+        opt_auto_orient=options.get("auto_orient", True),
     )
     job.save()
 
@@ -138,6 +146,11 @@ def _process_document(doc: OCRJobDocument) -> bool:
         result = extract_text_from_file(
             file_path=file_path,
             original_filename=doc.original_filename,
+            options={
+                "preprocess": doc.job.opt_preprocess,
+                "pdf_text_layer": doc.job.opt_pdf_text_layer,
+                "auto_orient": doc.job.opt_auto_orient,
+            },
         )
 
         if result["text"]:

@@ -62,6 +62,19 @@
                         </div>
                     </div>
 
+                    <div class="mb-4">
+                        <div class="text-muted small mb-1">Opciones de calidad del lote</div>
+                        <span class="badge {% if job.opt_preprocess %}badge-success{% else %}badge-secondary{% endif %}">
+                            Preprocesado: {% if job.opt_preprocess %}ON{% else %}OFF{% endif %}
+                        </span>
+                        <span class="badge {% if job.opt_pdf_text_layer %}badge-success{% else %}badge-secondary{% endif %}">
+                            Capa de texto PDF: {% if job.opt_pdf_text_layer %}ON{% else %}OFF{% endif %}
+                        </span>
+                        <span class="badge {% if job.opt_auto_orient %}badge-success{% else %}badge-secondary{% endif %}">
+                            Auto-orientación: {% if job.opt_auto_orient %}ON{% else %}OFF{% endif %}
+                        </span>
+                    </div>
+
                     {% if job.last_error_message %}
                         <div class="alert alert-danger mb-4">
                             <strong>Error del lote:</strong> {{ job.last_error_message }}

@@ -720,3 +720,36 @@ OCR_MAX_FILE_SIZE_MB = _safe_int_env("OCR_MAX_FILE_SIZE_MB", 20)
 OCR_LANGUAGE = os.getenv("OCR_LANGUAGE", "spa")
 OCR_ALLOWED_EXTENSIONS = {"jpg", "jpeg", "png", "pdf"}
 OCR_PREPROCESS = _safe_bool_env("OCR_PREPROCESS", True)
+
+# Hibrido: usar la capa de texto embebida del PDF en paginas born-digital y
+# OCR en las escaneadas. El guardrail nunca usa la capa embebida si tendria
+# menos palabras que el OCR (señal de capa parcial), para no perder contenido.
+OCR_PDF_TEXT_LAYER = _safe_bool_env("OCR_PDF_TEXT_LAYER", True)
+# Minimo de palabras embebidas para considerar una pagina como born-digital.
+OCR_PDF_TEXT_LAYER_MIN_WORDS = _safe_int_env("OCR_PDF_TEXT_LAYER_MIN_WORDS", 8)
+# Lado mayor (px) de un raster a partir del cual se asume escaneo de pagina.
+OCR_PDF_TEXT_LAYER_IMG_MAXSIDE = _safe_int_env("OCR_PDF_TEXT_LAYER_IMG_MAXSIDE", 1000)
+
+# Directorio de modelos Tesseract (tessdata). Vacio = usar el del sistema.
+# Permite apuntar a tessdata_best (mas preciso) sin romper el fallback al
+# estandar: si el dir o el modelo no existen, Tesseract usa el del sistema.
+OCR_TESSDATA_DIR = os.getenv("OCR_TESSDATA_DIR", "")
+
+# Correccion ortografica local (offline, pyspellchecker) del texto OCR.
+# Conservadora pero off por default: en escaneos puede tocar plurales/terminos
+# fuera de diccionario. Ver docs/ocr.md.
+OCR_SPELLCHECK = _safe_bool_env("OCR_SPELLCHECK", False)
+
+# Auto-correccion de orientacion (OSD de Tesseract) antes del OCR. Best-effort:
+# si el OSD falla, se sigue sin rotar.
+OCR_AUTO_ORIENT = _safe_bool_env("OCR_AUTO_ORIENT", True)
+
+# Remocion de sellos de color (HSV) en el preprocesado: blanquea tinta de color
+# (azul/rojo) preservando texto negro. Off por default; no separa sellos negros.
+OCR_REMOVE_COLOR_STAMPS = _safe_bool_env("OCR_REMOVE_COLOR_STAMPS", False)
+OCR_COLOR_SAT_THRESHOLD = _safe_int_env("OCR_COLOR_SAT_THRESHOLD", 90)
+
+# Parametros de Tesseract. Valores < 0 omiten la flag (default de Tesseract:
+# psm 3, oem 3). El default de SISOC se elige por evidencia (ver docs/ocr.md).
+OCR_TESSERACT_PSM = _safe_int_env("OCR_TESSERACT_PSM", -1)
+OCR_TESSERACT_OEM = _safe_int_env("OCR_TESSERACT_OEM", -1)

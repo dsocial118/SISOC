@@ -31,6 +31,18 @@ class OCRJob(models.Model):
     processed_documents = models.PositiveIntegerField(default=0)
     failed_documents = models.PositiveIntegerField(default=0)
     last_error_message = models.TextField(blank=True)
+
+    # Opciones de calidad por lote (toggles de la UI). Todas ON por default;
+    # apagarlas degrada la calidad del OCR (ver docs/ocr.md).
+    opt_preprocess = models.BooleanField(
+        default=True, verbose_name="Preprocesado de imagen"
+    )
+    opt_pdf_text_layer = models.BooleanField(
+        default=True, verbose_name="Capa de texto del PDF (híbrido)"
+    )
+    opt_auto_orient = models.BooleanField(
+        default=True, verbose_name="Auto-corrección de orientación"
+    )
     requested_at = models.DateTimeField(auto_now_add=True, db_index=True)
     started_at = models.DateTimeField(null=True, blank=True)
     finished_at = models.DateTimeField(null=True, blank=True)

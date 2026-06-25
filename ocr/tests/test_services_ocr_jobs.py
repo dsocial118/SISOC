@@ -142,6 +142,7 @@ class ProcessOCRJobTest(TestCase):
         doc = OCRJobDocument.objects.create(
             job=job,
             original_filename="test.png",
+            archivo="ocr/test.png",
         )
         process_ocr_job(job)
         job.refresh_from_db()
@@ -165,7 +166,9 @@ class ProcessOCRJobTest(TestCase):
             status=OCRJob.Status.PROCESSING,
             total_documents=1,
         )
-        OCRJobDocument.objects.create(job=job, original_filename="blank.png")
+        OCRJobDocument.objects.create(
+            job=job, original_filename="blank.png", archivo="ocr/blank.png"
+        )
         process_ocr_job(job)
         job.refresh_from_db()
         doc = job.documents.first()
@@ -183,7 +186,9 @@ class ProcessOCRJobTest(TestCase):
             status=OCRJob.Status.PROCESSING,
             total_documents=1,
         )
-        OCRJobDocument.objects.create(job=job, original_filename="bad.jpg")
+        OCRJobDocument.objects.create(
+            job=job, original_filename="bad.jpg", archivo="ocr/bad.jpg"
+        )
         process_ocr_job(job)
         job.refresh_from_db()
         doc = job.documents.first()
@@ -204,8 +209,12 @@ class ProcessOCRJobTest(TestCase):
             status=OCRJob.Status.PROCESSING,
             total_documents=2,
         )
-        OCRJobDocument.objects.create(job=job, original_filename="bad.jpg")
-        OCRJobDocument.objects.create(job=job, original_filename="good.png")
+        OCRJobDocument.objects.create(
+            job=job, original_filename="bad.jpg", archivo="ocr/bad.jpg"
+        )
+        OCRJobDocument.objects.create(
+            job=job, original_filename="good.png", archivo="ocr/good.png"
+        )
         process_ocr_job(job)
         job.refresh_from_db()
         docs = list(job.documents.order_by("id"))
@@ -228,7 +237,9 @@ class ProcessOCRJobTest(TestCase):
             status=OCRJob.Status.PROCESSING,
             total_documents=1,
         )
-        OCRJobDocument.objects.create(job=job, original_filename="multi.pdf")
+        OCRJobDocument.objects.create(
+            job=job, original_filename="multi.pdf", archivo="ocr/multi.pdf"
+        )
         process_ocr_job(job)
         doc = job.documents.first()
         self.assertEqual(doc.page_count, 2)

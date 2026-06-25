@@ -28,6 +28,45 @@ class OCRUploadForm(forms.Form):
         help_text="Formatos admitidos: JPG, JPEG, PNG, PDF.",
         required=False,
     )
+    # Toggles de calidad por lote. Todos ON por default; apagarlos degrada el OCR.
+    opt_preprocess = forms.BooleanField(
+        label="Preprocesado de imagen",
+        help_text="Limpieza con OpenCV antes del OCR. Apagarlo degrada en escaneos.",
+        required=False,
+        initial=True,
+        widget=forms.CheckboxInput(
+            attrs={"class": "form-check-input", "role": "switch"}
+        ),
+    )
+    opt_pdf_text_layer = forms.BooleanField(
+        label="Usar capa de texto del PDF",
+        help_text=(
+            "Aprovecha el texto digital embebido en páginas born-digital. "
+            "Apagarlo degrada en PDFs con capa de texto."
+        ),
+        required=False,
+        initial=True,
+        widget=forms.CheckboxInput(
+            attrs={"class": "form-check-input", "role": "switch"}
+        ),
+    )
+    opt_auto_orient = forms.BooleanField(
+        label="Auto-corregir orientación",
+        help_text="Detecta y endereza páginas rotadas (OSD). Apagarlo degrada en escaneos rotados.",
+        required=False,
+        initial=True,
+        widget=forms.CheckboxInput(
+            attrs={"class": "form-check-input", "role": "switch"}
+        ),
+    )
+
+    def get_options(self) -> dict:
+        """Devuelve los toggles de calidad elegidos (dict para create_ocr_job)."""
+        return {
+            "preprocess": self.cleaned_data.get("opt_preprocess", True),
+            "pdf_text_layer": self.cleaned_data.get("opt_pdf_text_layer", True),
+            "auto_orient": self.cleaned_data.get("opt_auto_orient", True),
+        }
 
     def clean_archivos(self):
         files = self.files.getlist("archivos")
