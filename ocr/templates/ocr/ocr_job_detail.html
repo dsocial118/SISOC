@@ -1,0 +1,190 @@
+{% extends "includes/main.html" %}
+{% block title %}Detalle de lote OCR{% endblock %}
+{% block titulo-pagina %}Detalle de lote OCR{% endblock %}
+{% block breadcrumb %}
+    <ol class="breadcrumb float-sm-right">
+        <li class="breadcrumb-item">Administración</li>
+        <li class="breadcrumb-item">
+            <a href="{{ upload_url }}">OCR</a>
+        </li>
+        <li class="breadcrumb-item active">Lote #{{ job.id }}</li>
+    </ol>
+{% endblock %}
+{% block content %}
+    <div class="row justify-content-center">
+        <div class="col-12 col-xl-10">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
+                    <div>
+                        <h3 class="mb-0">Lote OCR #{{ job.id }}</h3>
+                        <small class="text-muted">{{ job.requested_at|date:"d/m/Y H:i" }}</small>
+                    </div>
+                    <div class="d-flex flex-wrap gap-2">
+                        <a href="{% url 'ocr_job_detail' job.id %}"
+                           class="btn btn-outline-primary">Actualizar estado</a>
+                        <a href="{{ upload_url }}" class="btn btn-secondary">Volver</a>
+                    </div>
+                </div>
+                <div class="card-body">
+
+                    <div class="mb-4">
+                        {% if job.status == "completed" %}
+                            <span class="badge badge-success">Completado</span>
+                        {% elif job.status == "completed_with_errors" %}
+                            <span class="badge badge-warning">Completado con errores</span>
+                        {% elif job.status == "failed" %}
+                            <span class="badge badge-danger">Fallido</span>
+                        {% elif job.status == "processing" %}
+                            <span class="badge badge-warning">Procesando</span>
+                        {% else %}
+                            <span class="badge badge-secondary">Pendiente</span>
+                        {% endif %}
+                    </div>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-sm-4">
+                            <div class="border rounded p-3 h-100">
+                                <div class="text-muted small">Archivos totales</div>
+                                <div class="h4 mb-0">{{ job.total_documents }}</div>
+                            </div>
+                        </div>
+                        <div class="col-sm-4">
+                            <div class="border rounded p-3 h-100">
+                                <div class="text-muted small">Procesados</div>
+                                <div class="h4 mb-0">{{ job.processed_documents }}</div>
+                            </div>
+                        </div>
+                        <div class="col-sm-4">
+                            <div class="border rounded p-3 h-100">
+                                <div class="text-muted small">Con error</div>
+                                <div class="h4 mb-0 {% if job.failed_documents > 0 %}text-danger{% endif %}">
+                                    {{ job.failed_documents }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {% if job.last_error_message %}
+                        <div class="alert alert-danger mb-4">
+                            <strong>Error del lote:</strong> {{ job.last_error_message }}
+                        </div>
+                    {% endif %}
+
+                    {% if documents %}
+                        <h5 class="mb-3">Resultados por archivo</h5>
+                        {% for doc in documents %}
+                            <div class="card mb-3 border">
+                                <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2 py-2">
+                                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                                        <strong class="text-break">{{ doc.original_filename }}</strong>
+                                        {% if doc.status == "completed" %}
+                                            <span class="badge badge-success">Completado</span>
+                                        {% elif doc.status == "no_text" %}
+                                            <span class="badge badge-warning">Sin texto</span>
+                                        {% elif doc.status == "failed" %}
+                                            <span class="badge badge-danger">Error</span>
+                                        {% elif doc.status == "processing" %}
+                                            <span class="badge badge-warning">Procesando</span>
+                                        {% else %}
+                                            <span class="badge badge-secondary">Pendiente</span>
+                                        {% endif %}
+                                        {% if doc.page_count %}
+                                            <span class="text-muted small">{{ doc.page_count }} página{{ doc.page_count|pluralize }}</span>
+                                        {% endif %}
+                                        {% if doc.file_size %}
+                                            <span class="text-muted small">{{ doc.file_size|filesizeformat }}</span>
+                                        {% endif %}
+                                    </div>
+                                    {% if doc.status == "completed" and doc.extracted_text %}
+                                        <div class="d-flex gap-2">
+                                            <button type="button"
+                                                    class="btn btn-sm btn-outline-secondary"
+                                                    onclick="copiarTexto('texto-doc-{{ doc.id }}', this)"
+                                                    title="Copiar texto extraído">
+                                                Copiar
+                                            </button>
+                                            <a href="{% url 'ocr_document_download' doc.id %}"
+                                               class="btn btn-sm btn-outline-primary"
+                                               title="Descargar como .txt">
+                                                Descargar .txt
+                                            </a>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                <div class="card-body py-2">
+                                    {% if doc.status == "completed" and doc.extracted_text %}
+                                        <div id="texto-doc-{{ doc.id }}-wrapper">
+                                            <pre id="texto-doc-{{ doc.id }}"
+                                                 class="ocr-text-preview mb-2"
+                                                 style="white-space: pre-wrap; word-break: break-word; font-size: 0.875rem; max-height: 200px; overflow-y: auto; background: var(--bs-body-bg); border: 1px solid var(--bs-border-color); border-radius: 4px; padding: 0.75rem;">{{ doc.extracted_text }}</pre>
+                                            <button type="button"
+                                                    class="btn btn-sm btn-link p-0 text-muted"
+                                                    onclick="expandirTexto('texto-doc-{{ doc.id }}', this)">
+                                                Ver texto completo
+                                            </button>
+                                        </div>
+                                    {% elif doc.status == "no_text" %}
+                                        <p class="text-muted mb-0">
+                                            <em>No se pudo extraer texto legible del archivo.</em>
+                                            {% if doc.error_message %}
+                                                <span class="d-block small">{{ doc.error_message }}</span>
+                                            {% endif %}
+                                        </p>
+                                    {% elif doc.status == "failed" %}
+                                        <div class="alert alert-danger mb-0 py-2">
+                                            <strong>Error:</strong>
+                                            {{ doc.error_message|default:"Error desconocido al procesar el archivo." }}
+                                        </div>
+                                    {% elif doc.status in "pending processing" %}
+                                        <p class="text-muted mb-0">
+                                            <em>Esperando procesamiento...</em>
+                                        </p>
+                                    {% endif %}
+                                    {% if doc.processed_at %}
+                                        <small class="text-muted d-block mt-1">
+                                            Procesado: {{ doc.processed_at|date:"d/m/Y H:i:s" }}
+                                        </small>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="alert alert-light border">Todavía no hay documentos en este lote.</div>
+                    {% endif %}
+
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+{% block customJS %}
+    <script nonce="{{ request.csp_nonce }}">
+        function copiarTexto(elementId, btn) {
+            const el = document.getElementById(elementId);
+            if (!el) return;
+            navigator.clipboard.writeText(el.textContent).then(function () {
+                const original = btn.textContent;
+                btn.textContent = "¡Copiado!";
+                btn.disabled = true;
+                setTimeout(function () {
+                    btn.textContent = original;
+                    btn.disabled = false;
+                }, 2000);
+            }).catch(function () {
+                alert("No se pudo copiar el texto. Selecciónelo manualmente.");
+            });
+        }
+
+        function expandirTexto(elementId, btn) {
+            const el = document.getElementById(elementId);
+            if (!el) return;
+            if (el.style.maxHeight === "none") {
+                el.style.maxHeight = "200px";
+                btn.textContent = "Ver texto completo";
+            } else {
+                el.style.maxHeight = "none";
+                btn.textContent = "Colapsar texto";
+            }
+        }
+    </script>
+{% endblock %}

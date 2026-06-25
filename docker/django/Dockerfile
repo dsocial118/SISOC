@@ -22,7 +22,10 @@ RUN apt-get update && \
       libharfbuzz0b \
       libpangoft2-1.0-0 \
       libfontconfig1 \
-      libcairo2 && \
+      libcairo2 \
+      tesseract-ocr \
+      tesseract-ocr-spa \
+      poppler-utils && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 

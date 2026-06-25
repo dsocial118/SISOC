@@ -188,6 +188,7 @@ INSTALLED_APPS = [
     "dispositivos",
     "pwa",
     "ticketera",
+    "ocr",
 ]
 
 # Middleware (orden CORS correcto)
@@ -708,3 +709,13 @@ VOUCHER_CONFIG = {
     "PROGRAMA_DEFECTO": "Programa VAT",
     "DIAS_ANTES_VENCIMIENTO_NOTIFICACION": 7,  # Days before expiration to notify
 }
+
+# ============================================================================
+# OCR
+# ============================================================================
+
+OCR_JOB_POLL_SECONDS = _safe_int_env("OCR_JOB_POLL_SECONDS", 2)
+OCR_JOB_STALE_SECONDS = _safe_int_env("OCR_JOB_STALE_SECONDS", 600)
+OCR_MAX_FILE_SIZE_MB = _safe_int_env("OCR_MAX_FILE_SIZE_MB", 20)
+OCR_LANGUAGE = os.getenv("OCR_LANGUAGE", "spa")
+OCR_ALLOWED_EXTENSIONS = {"jpg", "jpeg", "png", "pdf"}

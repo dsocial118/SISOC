@@ -1,0 +1,143 @@
+{% extends "includes/main.html" %}
+{% load crispy_forms_tags %}
+{% block title %}OCR{% endblock %}
+{% block titulo-pagina %}OCR{% endblock %}
+{% block breadcrumb %}
+    <ol class="breadcrumb float-sm-right">
+        <li class="breadcrumb-item">Administración</li>
+        <li class="breadcrumb-item active">OCR</li>
+    </ol>
+{% endblock %}
+{% block content %}
+    <div class="row justify-content-center">
+        <div class="col-12 col-lg-8">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h3 class="mb-0">Extracción de texto (OCR)</h3>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">
+                        Cargue uno o varios archivos para extraer su texto automáticamente.
+                        El procesamiento se ejecuta en segundo plano. Puede consultar el
+                        resultado desde la pantalla de detalle del lote.
+                    </p>
+
+                    <div class="alert alert-light border">
+                        <div class="font-weight-bold mb-2">Formatos admitidos</div>
+                        <ul class="mb-0 pl-3">
+                            <li><strong>Imágenes:</strong> JPG, JPEG, PNG</li>
+                            <li><strong>Documentos:</strong> PDF (incluye multipágina y escaneos)</li>
+                        </ul>
+                    </div>
+
+                    <div class="alert alert-info">
+                        <div class="font-weight-bold mb-2">Consideraciones</div>
+                        <ul class="mb-0 pl-3">
+                            <li>El texto se extrae en idioma español por defecto.</li>
+                            <li>Los archivos se eliminan del servidor una vez procesados.</li>
+                            <li>Si una imagen está en blanco o es ilegible, se informará sin error.</li>
+                            <li>Tamaño máximo por archivo: {{ max_file_size_mb }} MB.</li>
+                        </ul>
+                    </div>
+
+                    {% if form.errors %}
+                        <div class="alert alert-danger">
+                            {% for field in form %}
+                                {% for error in field.errors %}
+                                    <div>{{ error }}</div>
+                                {% endfor %}
+                            {% endfor %}
+                            {% for error in form.non_field_errors %}
+                                <div>{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+
+                    <form method="post" enctype="multipart/form-data" novalidate>
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="id_archivos" class="form-label fw-bold">Archivos</label>
+                            <input type="file"
+                                   name="archivos"
+                                   id="id_archivos"
+                                   multiple
+                                   accept=".jpg,.jpeg,.png,.pdf"
+                                   class="form-control {% if form.archivos.errors %}is-invalid{% endif %}" />
+                            <div class="form-text text-muted">
+                                Puede seleccionar varios archivos a la vez.
+                            </div>
+                        </div>
+                        <div class="d-flex flex-wrap gap-2">
+                            <button type="submit" class="btn btn-success">Procesar archivos</button>
+                            <a href="{% url 'inicio' %}" class="btn btn-secondary">Volver</a>
+                        </div>
+                    </form>
+
+                    {% if recent_jobs %}
+                        <hr class="my-4" />
+                        <h4 class="mb-3">Últimos lotes</h4>
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-hover align-middle mb-0">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Lote</th>
+                                        <th scope="col">Fecha</th>
+                                        <th scope="col">Estado</th>
+                                        <th scope="col">Archivos</th>
+                                        <th scope="col">Detalle</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for job in recent_jobs %}
+                                        <tr>
+                                            <td>#{{ job.id }}</td>
+                                            <td>{{ job.requested_at|date:"d/m/Y H:i" }}</td>
+                                            <td>
+                                                {% if job.status == "completed" %}
+                                                    <span class="badge badge-success">Completado</span>
+                                                {% elif job.status == "completed_with_errors" %}
+                                                    <span class="badge badge-warning">Completado con errores</span>
+                                                {% elif job.status == "failed" %}
+                                                    <span class="badge badge-danger">Fallido</span>
+                                                {% elif job.status == "processing" %}
+                                                    <span class="badge badge-warning">Procesando</span>
+                                                {% else %}
+                                                    <span class="badge badge-secondary">Pendiente</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>{{ job.processed_documents }}/{{ job.total_documents }}</td>
+                                            <td>
+                                                <a href="{% url 'ocr_job_detail' job.id %}"
+                                                   class="btn btn-sm btn-outline-primary">Ver detalle</a>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <hr class="my-4" />
+                        <div class="alert alert-light border mb-0">Todavía no hay lotes OCR creados.</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+{% block customJS %}
+    <script nonce="{{ request.csp_nonce }}">
+        (function () {
+            const input = document.getElementById("id_archivos");
+            if (!input) return;
+            input.addEventListener("change", function () {
+                const count = this.files.length;
+                const label = this.nextElementSibling;
+                if (label && count > 0) {
+                    label.textContent = count === 1
+                        ? "1 archivo seleccionado"
+                        : count + " archivos seleccionados";
+                }
+            });
+        })();
+    </script>
+{% endblock %}
