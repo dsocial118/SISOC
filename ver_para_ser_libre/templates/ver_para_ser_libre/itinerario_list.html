@@ -5,18 +5,16 @@
 {% block head %}
     <link rel="stylesheet" href="{% static 'custom/css/listModerno.css' %}" />
     <link rel="stylesheet"
-          href="{% static 'custom/css/ver_para_ser_libre.css' %}" />
+          href="{% static 'custom/css/ver_para_ser_libre.css' %}?v=home-ux-20260623" />
 {% endblock %}
 {% block breadcrumb %}
     {% include "components/breadcrumb.html" with items=breadcrumb_items %}
 {% endblock %}
 
 {% block content %}
-    <div class="comedor-list-container vpsl-page">
+    <div class="comedor-list-container vpsl-page vpsl-home">
         <div class="vpsl-page-toolbar">
-            <a href="{% url 'inicio' %}" class="btn btn-light">
-                <i class="bi bi-arrow-left"></i> Volver
-            </a>
+            <a href="{% url 'inicio' %}" class="btn btn-light">Volver</a>
         </div>
         <section class="vpsl-search-hero" aria-labelledby="vpsl-search-title">
             <h1 id="vpsl-search-title" class="vpsl-search-title">Buscar Itinerarios</h1>
@@ -56,7 +54,7 @@
                             data-bs-target="#vpslAdvancedFilters"
                             aria-expanded="false"
                             aria-controls="vpslAdvancedFilters">
-                        <i class="bi bi-plus-lg" aria-hidden="true"></i> Filtro
+                        <i class="bi bi-plus" aria-hidden="true"></i> Filtro
                     </button>
                 </div>
                 <div id="vpslAdvancedFilters"
@@ -140,7 +138,7 @@
                             <table class="table table-comedor-moderno">
                                 <thead>
                                     <tr>
-                                        <th>Codigo</th>
+                                        <th>Código</th>
                                         <th>Provincia</th>
                                         <th>Fechas</th>
                                         <th>Estado</th>

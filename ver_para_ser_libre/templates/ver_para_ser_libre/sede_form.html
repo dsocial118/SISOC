@@ -4,14 +4,14 @@
 {% block title %}Sede VPSL{% endblock %}
 {% block head %}
     <link rel="stylesheet"
-          href="{% static 'custom/css/ver_para_ser_libre.css' %}" />
+          href="{% static 'custom/css/ver_para_ser_libre.css' %}?v=sede-form-ux-20260624" />
 {% endblock %}
 {% block breadcrumb %}
     {% include "components/breadcrumb.html" with items=breadcrumb_items %}
 {% endblock %}
 
 {% block content %}
-    <div class="row vpsl-page">
+    <div class="row vpsl-page vpsl-sede-form">
         <div class="col-12 col-xl-10 offset-xl-1">
             <div class="card vpsl-title-card vpsl-header">
                 <div class="card-body d-flex flex-wrap justify-content-between align-items-center gap-2">
@@ -24,7 +24,7 @@
                     </a>
                 </div>
             </div>
-            <div class="card">
+            <div class="card vpsl-form-card">
                 <form method="post" enctype="multipart/form-data">
                     {% csrf_token %}
                     <div class="card-body">
@@ -37,7 +37,6 @@
                                     </div>
                                     <div>
                                         <h3 class="vpsl-section-title">Datos de la sede</h3>
-                                        <p class="vpsl-section-subtitle">Identificacion escolar y contacto institucional</p>
                                     </div>
                                 </div>
                                 <div class="vpsl-section-body">
@@ -61,7 +60,6 @@
                                     </div>
                                     <div>
                                         <h3 class="vpsl-section-title">Ubicacion</h3>
-                                        <p class="vpsl-section-subtitle">Coordenadas y previsualizacion del mapa</p>
                                     </div>
                                 </div>
                                 <div class="vpsl-section-body">
@@ -76,17 +74,23 @@
                                             {% endif %}
                                         {% endfor %}
                                     </div>
-                                    {% if mapa_query %}
-                                        <iframe title="Mapa sede"
-                                                width="100%"
-                                                height="260"
-                                                style="border:0"
-                                                loading="lazy"
-                                                allowfullscreen
-                                                src="https://www.google.com/maps?q={{ mapa_query }}&output=embed"></iframe>
-                                    {% else %}
-                                        <p class="text-muted mb-0">Guarde latitud/longitud o domicilio para ver el mapa.</p>
-                                    {% endif %}
+                                    <div class="vpsl-sede-map-toolbar">
+                                        <button type="button"
+                                                id="vpsl-sede-map-search"
+                                                class="btn btn-secondary">
+                                            <i class="bi bi-search"></i> Buscar ubicación en mapa
+                                        </button>
+                                        <p id="vpsl-sede-map-status" class="vpsl-field-note text-muted mb-0">
+                                            La búsqueda usa nombre, domicilio, localidad, departamento, jurisdicción, código postal y coordenadas si están cargadas.
+                                        </p>
+                                    </div>
+                                    <iframe id="vpsl-sede-map"
+                                            title="Mapa sede"
+                                            class="vpsl-sede-map"
+                                            loading="lazy"
+                                            allowfullscreen
+                                            src="https://www.google.com/maps?q={% if mapa_query %}{{ mapa_query }}{% else %}Argentina{% endif %}&output=embed">
+                                    </iframe>
                                 </div>
                             </section>
                             <section class="vpsl-section">
@@ -96,7 +100,6 @@
                                     </div>
                                     <div>
                                         <h3 class="vpsl-section-title">Checklist</h3>
-                                        <p class="vpsl-section-subtitle">Condiciones criticas para habilitar jornadas</p>
                                     </div>
                                 </div>
                                 <div class="vpsl-section-body">
@@ -134,4 +137,74 @@
             </div>
         </div>
     </div>
+{% endblock %}
+
+{% block customJS %}
+    <script nonce="{{ request.csp_nonce }}">
+      document.addEventListener("DOMContentLoaded", function () {
+        const mapFrame = document.getElementById("vpsl-sede-map");
+        const searchButton = document.getElementById("vpsl-sede-map-search");
+        const statusElement = document.getElementById("vpsl-sede-map-status");
+        const fields = {
+          nombre: document.getElementById("id_nombre"),
+          domicilio: document.getElementById("id_domicilio"),
+          localidad: document.getElementById("id_localidad"),
+          departamento: document.getElementById("id_departamento"),
+          jurisdiccion: document.getElementById("id_jurisdiccion"),
+          codigoPostal: document.getElementById("id_codigo_postal"),
+          latitud: document.getElementById("id_latitud"),
+          longitud: document.getElementById("id_longitud"),
+        };
+
+        function valueOf(field) {
+          return field && field.value ? field.value.trim() : "";
+        }
+
+        function coordinateQuery() {
+          const latitud = valueOf(fields.latitud).replace(",", ".");
+          const longitud = valueOf(fields.longitud).replace(",", ".");
+          if (!latitud || !longitud) return "";
+          const lat = Number(latitud);
+          const lng = Number(longitud);
+          if (!Number.isFinite(lat) || !Number.isFinite(lng)) return "";
+          return `${latitud},${longitud}`;
+        }
+
+        function buildLocationQuery() {
+          const coordinates = coordinateQuery();
+          if (coordinates) return coordinates;
+          return [
+            valueOf(fields.nombre),
+            valueOf(fields.domicilio),
+            valueOf(fields.localidad),
+            valueOf(fields.departamento),
+            valueOf(fields.jurisdiccion),
+            valueOf(fields.codigoPostal),
+            "Argentina",
+          ].filter(Boolean).join(", ");
+        }
+
+        function updateMap() {
+          if (!mapFrame) return;
+          const query = buildLocationQuery();
+          if (!query) {
+            if (statusElement) {
+              statusElement.textContent = "Completá al menos un dato de ubicación para buscar en el mapa.";
+              statusElement.classList.add("text-danger");
+            }
+            return;
+          }
+          mapFrame.src = `https://www.google.com/maps?q=${encodeURIComponent(query)}&output=embed`;
+          if (statusElement) {
+            statusElement.textContent = `Buscando en el mapa: ${query}`;
+            statusElement.classList.remove("text-danger");
+            statusElement.classList.add("text-muted");
+          }
+        }
+
+        if (searchButton) {
+          searchButton.addEventListener("click", updateMap);
+        }
+      });
+    </script>
 {% endblock %}

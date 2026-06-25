@@ -4,14 +4,14 @@
 {% block title %}Jornada VPSL{% endblock %}
 {% block head %}
     <link rel="stylesheet"
-          href="{% static 'custom/css/ver_para_ser_libre.css' %}" />
+          href="{% static 'custom/css/ver_para_ser_libre.css' %}?v=jornada-detail-ux-20260624" />
 {% endblock %}
 {% block breadcrumb %}
     {% include "components/breadcrumb.html" with items=breadcrumb_items %}
 {% endblock %}
 
 {% block content %}
-    <div class="vpsl-page">
+    <div class="vpsl-page vpsl-jornada-detail">
         <div class="vpsl-page-toolbar">
             <a href="{% url 'vpsl_itinerario_detail' jornada.itinerario.pk %}"
                class="btn btn-light">
@@ -127,53 +127,57 @@
             </div>
             <div class="col-12">
                 <div class="card h-100 vpsl-table-card">
-                    <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
+                    <div class="card-header">
                         <h3 class="card-title mb-0">Registros nominales</h3>
-                        {% if puede_registrar_jornada %}
-                            <a href="{% url 'vpsl_registro_create' jornada.pk %}"
-                               class="btn btn-sm btn-success"><i class="bi bi-plus-lg"></i> Nuevo registro</a>
-                        {% endif %}
                     </div>
-                    <div class="card-body table-responsive">
-                        <table class="table table-sm align-middle">
-                            <thead>
-                                <tr>
-                                    <th>Acta</th>
-                                    <th>DNI</th>
-                                    <th>Persona</th>
-                                    <th>Resultado</th>
-                                    <th>Lentes</th>
-                                    <th>Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for registro in registros %}
+                    <div class="card-body">
+                        {% if puede_registrar_jornada %}
+                            <div class="vpsl-table-toolbar vpsl-registros-toolbar">
+                                <a href="{% url 'vpsl_registro_create' jornada.pk %}"
+                                   class="btn btn-sm btn-success"><i class="bi bi-plus-lg"></i> Nuevo registro</a>
+                            </div>
+                        {% endif %}
+                        <div class="table-responsive">
+                            <table class="table table-sm align-middle">
+                                <thead>
                                     <tr>
-                                        <td>{{ registro.numero_acta }}</td>
-                                        <td>{{ registro.dni|default:registro.identificador_alternativo }}</td>
-                                        <td>{{ registro.apellido }}, {{ registro.nombre }}</td>
-                                        <td>{{ registro.get_resultado_display }}</td>
-                                        <td>{{ registro.cantidad_lentes }}</td>
-                                        <td class="text-nowrap">
-                                            <a href="{% url 'vpsl_registro_update' registro.pk %}"
-                                               class="btn btn-sm btn-secondary"><i class="bi bi-pencil-square"></i> Editar</a>
-                                            {% if perms.ver_para_ser_libre.delete_registronominalvpsl %}
-                                                <button type="button"
-                                                        class="btn btn-sm btn-danger"
-                                                        data-bs-toggle="modal"
-                                                        data-bs-target="#deleteRegistro{{ registro.pk }}">
-                                                    <i class="bi bi-trash"></i> Borrar
-                                                </button>
-                                            {% endif %}
-                                        </td>
+                                        <th>Acta</th>
+                                        <th>DNI</th>
+                                        <th>Persona</th>
+                                        <th>Resultado</th>
+                                        <th>Lentes</th>
+                                        <th>Acciones</th>
                                     </tr>
-                                {% empty %}
-                                    <tr>
-                                        <td colspan="6" class="text-center text-muted">Sin registros nominales.</td>
-                                    </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody>
+                                    {% for registro in registros %}
+                                        <tr>
+                                            <td>{{ registro.numero_acta }}</td>
+                                            <td>{{ registro.dni|default:registro.identificador_alternativo }}</td>
+                                            <td>{{ registro.apellido }}, {{ registro.nombre }}</td>
+                                            <td>{{ registro.get_resultado_display }}</td>
+                                            <td>{{ registro.cantidad_lentes }}</td>
+                                            <td class="text-nowrap">
+                                                <a href="{% url 'vpsl_registro_update' registro.pk %}"
+                                                   class="btn btn-sm btn-secondary"><i class="bi bi-pencil-square"></i> Editar</a>
+                                                {% if perms.ver_para_ser_libre.delete_registronominalvpsl %}
+                                                    <button type="button"
+                                                            class="btn btn-sm btn-danger"
+                                                            data-bs-toggle="modal"
+                                                            data-bs-target="#deleteRegistro{{ registro.pk }}">
+                                                        <i class="bi bi-trash"></i> Borrar
+                                                    </button>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                    {% empty %}
+                                        <tr>
+                                            <td colspan="6" class="text-center text-muted">Sin registros nominales.</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -186,10 +190,10 @@
                         <div class="row g-3">
                             <div class="col-12">
                                 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
-                                    <h4 class="h6 mb-0">Casos laboratorio</h4>
+                                    <h4 class="h6 mb-0 vpsl-lab-section-title">Casos laboratorio</h4>
                                     {% if casos_laboratorio %}
                                         <button type="button"
-                                                class="btn btn-sm btn-outline-primary"
+                                                class="btn btn-sm btn-secondary"
                                                 id="btn-actualizar-lab-masivo"
                                                 data-bs-toggle="modal"
                                                 data-bs-target="#actualizarLabMasivo"
@@ -204,7 +208,7 @@
                                                 <th>DNI</th>
                                                 <th>Persona</th>
                                                 <th>Estado</th>
-                                                <th>Acciones</th>
+                                                <th class="vpsl-lab-actions-heading">Acciones</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -224,10 +228,10 @@
                                                     <td>{{ caso.registro.dni }}</td>
                                                     <td>{{ caso.registro.apellido }}, {{ caso.registro.nombre }}</td>
                                                     <td>{{ caso.get_estado_display }}</td>
-                                                    <td>
+                                                    <td class="vpsl-lab-actions-cell">
                                                         {% if caso.estado_siguiente %}
                                                             <button type="button"
-                                                                    class="btn btn-sm btn-warning"
+                                                                    class="btn btn-sm btn-secondary"
                                                                     data-bs-toggle="modal"
                                                                     data-bs-target="#actualizarLab{{ caso.pk }}">
                                                                 Actualizar Estado
@@ -236,10 +240,10 @@
                                                             <button type="button" class="btn btn-sm btn-secondary" disabled>Estado final</button>
                                                         {% endif %}
                                                         <button type="button"
-                                                                class="btn btn-sm btn-outline-secondary"
+                                                                class="btn btn-sm btn-secondary"
                                                                 data-bs-toggle="modal"
                                                                 data-bs-target="#historialLab{{ caso.pk }}">
-                                                            Ver historial
+                                                            <i class="bi bi-eye"></i> Ver historial
                                                         </button>
                                                     </td>
                                                 </tr>
@@ -253,66 +257,73 @@
                                 </div>
                             </div>
                             <div class="col-12">
-                                <h4 class="h6">Cierre diario</h4>
-                                {% if cierre %}
-                                    {% if cierre_inconsistente %}
-                                        <div class="alert alert-warning">No hay coincidencia entre los registros nominales y el cierre.</div>
-                                    {% endif %}
-                                    <div class="vpsl-cierre-summary">
-                                        <div class="vpsl-cierre-item">
-                                            <span>Total controles</span>
-                                            <strong>{{ cierre.total_controles }}</strong>
-                                        </div>
-                                        <div class="vpsl-cierre-item">
-                                            <span>Anteojos entregados</span>
-                                            <strong>{{ cierre.anteojos_entregados }}</strong>
-                                        </div>
-                                        <div class="vpsl-cierre-item">
-                                            <span>Casos laboratorio</span>
-                                            <strong>{{ cierre.casos_laboratorio }}</strong>
-                                        </div>
-                                        <div class="vpsl-cierre-item">
-                                            <span>Total anteojos</span>
-                                            <strong>{{ cierre.total_anteojos }}</strong>
-                                        </div>
-                                        <div class="vpsl-cierre-item">
-                                            <span>No requiere anteojos</span>
-                                            <strong>{{ cierre.no_requiere_anteojos }}</strong>
-                                        </div>
-                                        <div class="vpsl-cierre-item">
-                                            <span>Derivados</span>
-                                            <strong>{{ cierre.derivados }}</strong>
-                                        </div>
-                                    </div>
-                                    <div class="d-flex flex-wrap gap-2 mt-3">
+                                <div class="vpsl-cierre-card">
+                                    <h4 class="vpsl-cierre-title">Cierre Diario</h4>
+                                    {% if cierre %}
                                         {% if cierre_inconsistente %}
-                                            <a href="{% url 'vpsl_cierre_create' jornada.pk %}"
-                                               class="btn btn-warning">Subsanar Cierre</a>
+                                            <div class="alert alert-warning my-3">No hay coincidencia entre los registros nominales y el cierre.</div>
                                         {% endif %}
-                                        {% if puede_cierre_definitivo %}
-                                            <form method="post"
-                                                  action="{% url 'vpsl_jornada_cierre_definitivo' jornada.pk %}">
-                                                {% csrf_token %}
-                                                <button type="submit" class="btn btn-success">Cierre definitivo</button>
-                                            </form>
-                                        {% else %}
-                                            <button type="button"
-                                                    class="btn btn-success disabled"
-                                                    title="Las cantidades del acta de cierre no coincide con los registros nominales. Subsanar para continuar">
-                                                Cierre definitivo
-                                            </button>
+                                        <div class="table-responsive">
+                                            <table class="table table-sm align-middle vpsl-cierre-table vpsl-cierre-summary">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Total Controles</th>
+                                                        <th>Anteojos Entregados</th>
+                                                        <th>Casos De Laboratorio</th>
+                                                        <th>Total Anteojos</th>
+                                                        <th>No Requiere Anteojos</th>
+                                                        <th>Derivados</th>
+                                                        <th class="vpsl-cierre-actions-heading"></th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <tr>
+                                                        <td>{{ cierre.total_controles }}</td>
+                                                        <td>{{ cierre.anteojos_entregados }}</td>
+                                                        <td>{{ cierre.casos_laboratorio }}</td>
+                                                        <td>{{ cierre.total_anteojos }}</td>
+                                                        <td>{{ cierre.no_requiere_anteojos }}</td>
+                                                        <td>{{ cierre.derivados }}</td>
+                                                        <td class="vpsl-cierre-actions-cell">
+                                                            <div class="vpsl-cierre-actions">
+                                                                <button type="button"
+                                                                        class="btn btn-sm btn-secondary"
+                                                                        data-bs-toggle="modal"
+                                                                        data-bs-target="#historialCierre">
+                                                                    Historial de subsanación
+                                                                </button>
+                                                                {% if cierre.acta_adjunta %}
+                                                                    <a href="{{ cierre.acta_adjunta.url }}" class="btn btn-sm btn-secondary">Descargar</a>
+                                                                {% endif %}
+                                                                {% if puede_cierre_definitivo %}
+                                                                    <form method="post"
+                                                                          action="{% url 'vpsl_jornada_cierre_definitivo' jornada.pk %}">
+                                                                        {% csrf_token %}
+                                                                        <button type="submit" class="btn btn-sm btn-success">Cierre definitivo</button>
+                                                                    </form>
+                                                                {% else %}
+                                                                    <button type="button"
+                                                                            class="btn btn-sm btn-success disabled"
+                                                                            title="Las cantidades del acta de cierre no coincide con los registros nominales. Subsanar para continuar">
+                                                                        Cierre definitivo
+                                                                    </button>
+                                                                {% endif %}
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                        {% if cierre_inconsistente %}
+                                            <div class="vpsl-cierre-subsanar">
+                                                <a href="{% url 'vpsl_cierre_create' jornada.pk %}"
+                                                   class="btn btn-sm btn-warning">Subsanar Cierre</a>
+                                            </div>
                                         {% endif %}
-                                        {% if cierre.acta_adjunta %}
-                                            <a href="{{ cierre.acta_adjunta.url }}" class="btn btn-outline-primary">Descargar adjunto</a>
-                                        {% endif %}
-                                        <button type="button"
-                                                class="btn btn-outline-secondary"
-                                                data-bs-toggle="modal"
-                                                data-bs-target="#historialCierre">Historial de subsanacion</button>
-                                    </div>
-                                {% else %}
-                                    <p class="text-muted mb-0">La jornada todavia no tiene cierre.</p>
-                                {% endif %}
+                                    {% else %}
+                                        <p class="text-muted mb-0 py-3">La jornada todavía no tiene cierre.</p>
+                                    {% endif %}
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -542,7 +553,18 @@
           }
         }
 
-        checkboxes.forEach((checkbox) => checkbox.addEventListener("change", refreshBulkSelection));
+        checkboxes.forEach((checkbox) => {
+          const row = checkbox.closest("tr");
+          checkbox.addEventListener("change", refreshBulkSelection);
+
+          if (!row) return;
+          row.classList.add("vpsl-lab-select-row");
+          row.addEventListener("click", function (event) {
+            if (event.target.closest("button, a, input, label, select, textarea")) return;
+            checkbox.checked = !checkbox.checked;
+            checkbox.dispatchEvent(new Event("change", { bubbles: true }));
+          });
+        });
         refreshBulkSelection();
       });
     </script>

@@ -8,9 +8,12 @@ from ver_para_ser_libre import views
 urlpatterns = [
     path(
         "ver-para-ser-libre/",
-        permissions_any_required(["ver_para_ser_libre.view_itinerariovpsl"])(
-            views.ItinerarioListView.as_view()
-        ),
+        permissions_any_required(
+            [
+                "ver_para_ser_libre.view_itinerariovpsl",
+                "ver_para_ser_libre.view_all_itinerarios_vpsl",
+            ]
+        )(views.ItinerarioListView.as_view()),
         name="vpsl_itinerario_list",
     ),
     path(
@@ -72,9 +75,12 @@ urlpatterns = [
     ),
     path(
         "ver-para-ser-libre/<int:pk>/",
-        permissions_any_required(["ver_para_ser_libre.view_itinerariovpsl"])(
-            views.ItinerarioDetailView.as_view()
-        ),
+        permissions_any_required(
+            [
+                "ver_para_ser_libre.view_itinerariovpsl",
+                "ver_para_ser_libre.view_all_itinerarios_vpsl",
+            ]
+        )(views.ItinerarioDetailView.as_view()),
         name="vpsl_itinerario_detail",
     ),
     path(

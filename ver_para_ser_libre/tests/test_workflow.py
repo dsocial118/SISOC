@@ -1006,6 +1006,67 @@ def test_itinerario_list_restringe_usuario_provincial_y_filtra(client):
     assert response.context["filtros"]["buscar_por"] == "referente"
 
 
+def test_itinerario_list_permiso_global_ve_todas_las_provincias(client):
+    provincia_buenos_aires = Provincia.objects.create(nombre="Buenos Aires")
+    provincia_santa_fe = Provincia.objects.create(nombre="Santa Fe")
+    itinerario_buenos_aires = crear_itinerario(
+        provincia=provincia_buenos_aires,
+        referente_nombre="Laura",
+        sedes=[crear_sede(cueanexo="BA001", jurisdiccion="Buenos Aires")],
+    )
+    itinerario_santa_fe = crear_itinerario(
+        provincia=provincia_santa_fe,
+        referente_nombre="Sofia",
+        sedes=[crear_sede(cueanexo="SF002", jurisdiccion="Santa Fe")],
+    )
+    user = get_user_model().objects.create_user(
+        username="vpsl-list-global",
+        email="vpsl-list-global@example.com",
+        password="testpass123",
+    )
+    asignar_permiso(user, "view_all_itinerarios_vpsl")
+    client.force_login(user)
+
+    response = client.get(reverse("vpsl_itinerario_list"))
+
+    html = response.content.decode()
+    assert response.status_code == 200
+    assert itinerario_buenos_aires.codigo in html
+    assert itinerario_santa_fe.codigo in html
+    assert response.context["provincia_restringida"] is None
+
+    response = client.get(
+        reverse("vpsl_itinerario_list"),
+        {"provincia": str(provincia_santa_fe.pk)},
+    )
+
+    html = response.content.decode()
+    assert response.status_code == 200
+    assert itinerario_buenos_aires.codigo not in html
+    assert itinerario_santa_fe.codigo in html
+
+
+def test_itinerario_detail_permiso_global_accede_sin_provincia_asignada(client):
+    itinerario = crear_itinerario(
+        provincia=Provincia.objects.create(nombre="Tucuman"),
+        sedes=[crear_sede(cueanexo="TU001", jurisdiccion="Tucuman")],
+    )
+    user = get_user_model().objects.create_user(
+        username="vpsl-detail-global",
+        email="vpsl-detail-global@example.com",
+        password="testpass123",
+    )
+    asignar_permiso(user, "view_all_itinerarios_vpsl")
+    client.force_login(user)
+
+    response = client.get(
+        reverse("vpsl_itinerario_detail", kwargs={"pk": itinerario.pk})
+    )
+
+    assert response.status_code == 200
+    assert itinerario.codigo in response.content.decode()
+
+
 def test_itinerario_detail_muestra_localidad_de_sede_en_jornadas(client):
     user = get_user_model().objects.create_superuser(
         username="vpsl-jornada-localidad",

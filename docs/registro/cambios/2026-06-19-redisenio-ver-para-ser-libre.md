@@ -19,6 +19,8 @@
 - Se alineó la paleta con los tokens exactos del diseño (`#3E5A7E`, `#232D4F`, `#3B8681` y `#E7BA61`).
 - Se diferenció la jerarquía de tablas: los listados independientes conservan encabezado turquesa, mientras que las tablas contenidas en bloques usan encabezados de columna azul marino debajo del título turquesa.
 
+- Se ajustó la pantalla Home de itinerarios con criterio Poncho, conservando la densidad previa de tabla y botones; se corrigió el botón `Filtro` para que no sea transparente y se alineó `Crear itinerario` a la derecha.
+
 ## Impacto esperado
 
 - Cambia la presentación visual del módulo y sus submódulos.

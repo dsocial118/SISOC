@@ -51,6 +51,9 @@ from ver_para_ser_libre.models import (
 from ver_para_ser_libre.services import workflow
 
 
+VIEW_ALL_ITINERARIOS_PERMISSION = "ver_para_ser_libre.view_all_itinerarios_vpsl"
+
+
 def _breadcrumb(*items):
     base = [{"text": "Ver Para Ser Libres", "url": reverse("vpsl_itinerario_list")}]
     return [*base, *items]
@@ -115,8 +118,15 @@ def _provincia_usuario_provincial(user):
     return None
 
 
+def _puede_ver_todos_los_itinerarios(user):
+    return bool(
+        getattr(user, "is_superuser", False)
+        or user_has_permission_code(user, VIEW_ALL_ITINERARIOS_PERMISSION)
+    )
+
+
 def _filtrar_itinerarios_por_usuario(queryset, user):
-    if getattr(user, "is_superuser", False):
+    if _puede_ver_todos_los_itinerarios(user):
         return queryset
     provincia = _provincia_usuario_provincial(user)
     if provincia:
@@ -125,7 +135,7 @@ def _filtrar_itinerarios_por_usuario(queryset, user):
 
 
 def _filtrar_jornadas_por_usuario(queryset, user):
-    if getattr(user, "is_superuser", False):
+    if _puede_ver_todos_los_itinerarios(user):
         return queryset
     provincia = _provincia_usuario_provincial(user)
     if provincia:
@@ -134,7 +144,7 @@ def _filtrar_jornadas_por_usuario(queryset, user):
 
 
 def _filtrar_casos_laboratorio_por_usuario(queryset, user):
-    if getattr(user, "is_superuser", False):
+    if _puede_ver_todos_los_itinerarios(user):
         return queryset
     provincia = _provincia_usuario_provincial(user)
     if provincia:
@@ -438,7 +448,7 @@ class ItinerarioListView(LoginRequiredMixin, ListView):
             queryset = queryset.filter(filtro)
         if estado:
             queryset = queryset.filter(estado=estado)
-        if provincia_id and self.request.user.is_superuser:
+        if provincia_id and _puede_ver_todos_los_itinerarios(self.request.user):
             queryset = queryset.filter(provincia_id=provincia_id)
         if localidad:
             queryset = queryset.filter(
@@ -454,7 +464,11 @@ class ItinerarioListView(LoginRequiredMixin, ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        provincia_usuario = _provincia_usuario_provincial(self.request.user)
+        provincia_usuario = (
+            None
+            if _puede_ver_todos_los_itinerarios(self.request.user)
+            else _provincia_usuario_provincial(self.request.user)
+        )
         context["query"] = self.request.GET.get("busqueda", "")
         context["filtros"] = {
             "busqueda": context["query"],

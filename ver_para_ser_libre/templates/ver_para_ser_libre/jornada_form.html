@@ -4,7 +4,7 @@
 {% block title %}Jornada VPSL{% endblock %}
 {% block head %}
     <link rel="stylesheet"
-          href="{% static 'custom/css/ver_para_ser_libre.css' %}" />
+          href="{% static 'custom/css/ver_para_ser_libre.css' %}?v=jornada-form-ux-20260624" />
 {% endblock %}
 {% block breadcrumb %}
     {% include "components/breadcrumb.html" with items=breadcrumb_items %}
@@ -27,17 +27,13 @@
                             {{ itinerario.provincia }} &middot; {{ itinerario.fecha_inicio|date:"d/m/Y" }} a {{ itinerario.fecha_fin|date:"d/m/Y" }}
                         </p>
                     </div>
-                    <span class="badge bg-success vpsl-status-badge">{{ itinerario.get_estado_display }}</span>
                 </div>
             </div>
             <div class="card vpsl-form-card">
-                <form method="post" enctype="multipart/form-data">
+                <form method="post" enctype="multipart/form-data" novalidate>
                     {% csrf_token %}
                     <div class="card-body">
                         {% include "ver_para_ser_libre/partials/form_errors.html" with form=form %}
-                        <div class="vpsl-extra-info mb-2">
-                            Fechas permitidas: {{ itinerario.fecha_inicio|date:"d/m/Y" }} a {{ itinerario.fecha_fin|date:"d/m/Y" }}.
-                        </div>
                         <div class="vpsl-form-shell">
                             <section class="vpsl-section">
                                 <div class="vpsl-section-header">
@@ -46,14 +42,16 @@
                                     </div>
                                     <div>
                                         <h3 class="vpsl-section-title">Planificacion</h3>
-                                        <p class="vpsl-section-subtitle">Fecha, sede y horario operativo</p>
                                     </div>
                                 </div>
                                 <div class="vpsl-section-body">
                                     <div class="row g-3">
                                         <div class="col-12 col-md-6">
                                             <label class="form-label" for="{{ form.fecha.id_for_label }}">{{ form.fecha.label }}</label>
-                                            {{ form.fecha }}
+                                            <div class="vpsl-date-field"
+                                                 data-placeholder="Fechas permitidas: {{ itinerario.fecha_inicio|date:'d/m/Y' }} a {{ itinerario.fecha_fin|date:'d/m/Y' }}">
+                                                {{ form.fecha }}
+                                            </div>
                                             {% for error in form.fecha.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
                                         </div>
                                         <div class="col-12 col-md-6">
@@ -89,7 +87,6 @@
                                     </div>
                                     <div>
                                         <h3 class="vpsl-section-title">Referente de la jornada</h3>
-                                        <p class="vpsl-section-subtitle">Validacion RENAPER y datos de contacto</p>
                                     </div>
                                 </div>
                                 <div class="vpsl-section-body">
@@ -135,7 +132,6 @@
                                     </div>
                                     <div>
                                         <h3 class="vpsl-section-title">Observaciones</h3>
-                                        <p class="vpsl-section-subtitle">Notas complementarias de la jornada</p>
                                     </div>
                                 </div>
                                 <div class="vpsl-section-body">
@@ -168,6 +164,79 @@
         const select = document.getElementById("id_sede_vpsl");
         const info = document.getElementById("sede-info");
         const sedes = JSON.parse(document.getElementById("sede-data-json").textContent);
+        const form = document.querySelector(".vpsl-form-card form");
+        const fecha = document.getElementById("id_fecha");
+        const fechaWrapper = fecha ? fecha.closest(".vpsl-date-field") : null;
+        const requiredMessage = "Falta completar este campo.";
+
+        function refreshFechaPlaceholder() {
+          if (!fechaWrapper || !fecha) return;
+          fechaWrapper.classList.toggle("has-value", Boolean(fecha.value));
+        }
+
+        function activarFechaNativa() {
+          if (!fecha) return;
+          fecha.type = "date";
+        }
+
+        function desactivarFechaNativaSiVacia() {
+          if (!fecha || fecha.value) return;
+          fecha.type = "text";
+        }
+
+        function feedbackTarget(field) {
+          return field.closest(".vpsl-date-field") || field;
+        }
+
+        function getFeedback(field) {
+          const target = feedbackTarget(field);
+          let feedback = target.nextElementSibling;
+          if (!feedback || !feedback.classList.contains("vpsl-required-feedback")) {
+            feedback = document.createElement("div");
+            feedback.className = "vpsl-required-feedback";
+            target.insertAdjacentElement("afterend", feedback);
+          }
+          return feedback;
+        }
+
+        function fieldIsMissing(field) {
+          if (field.disabled || field.type === "hidden") return false;
+          if (!field.required) return false;
+          if (field.type === "checkbox" || field.type === "radio") {
+            const group = form.querySelectorAll(`[name="${field.name}"]`);
+            return ![...group].some((item) => item.checked);
+          }
+          return !String(field.value || "").trim();
+        }
+
+        function setFieldInvalid(field, invalid) {
+          const feedback = getFeedback(field);
+          field.classList.toggle("is-invalid", invalid);
+          if (field.closest(".vpsl-date-field")) {
+            field.closest(".vpsl-date-field").classList.toggle("is-invalid", invalid);
+          }
+          feedback.textContent = invalid ? requiredMessage : "";
+          feedback.classList.toggle("d-none", !invalid);
+        }
+
+        function validateRequiredFields(event) {
+          if (!form) return;
+          const fields = [...form.querySelectorAll("[required]")];
+          let firstInvalid = null;
+          fields.forEach((field) => {
+            const invalid = fieldIsMissing(field);
+            setFieldInvalid(field, invalid);
+            if (invalid && !firstInvalid) {
+              firstInvalid = field;
+            }
+          });
+          if (!firstInvalid) return;
+          event.preventDefault();
+          event.stopPropagation();
+          const target = feedbackTarget(firstInvalid);
+          target.scrollIntoView({ behavior: "smooth", block: "center" });
+          setTimeout(() => firstInvalid.focus({ preventScroll: true }), 300);
+        }
 
         function render() {
           const data = sedes[String(select.value)];
@@ -181,6 +250,21 @@
         }
         select.addEventListener("change", render);
         render();
+        if (fecha) {
+          desactivarFechaNativaSiVacia();
+          fecha.addEventListener("focus", activarFechaNativa);
+          fecha.addEventListener("blur", desactivarFechaNativaSiVacia);
+          fecha.addEventListener("change", refreshFechaPlaceholder);
+          fecha.addEventListener("input", refreshFechaPlaceholder);
+          refreshFechaPlaceholder();
+        }
+        if (form) {
+          form.addEventListener("submit", validateRequiredFields);
+          form.querySelectorAll("[required]").forEach((field) => {
+            field.addEventListener("input", () => setFieldInvalid(field, fieldIsMissing(field)));
+            field.addEventListener("change", () => setFieldInvalid(field, fieldIsMissing(field)));
+          });
+        }
 
         const validarBtn = document.getElementById("validar-renaper");
         const resumen = document.getElementById("referente-renaper-resumen");
