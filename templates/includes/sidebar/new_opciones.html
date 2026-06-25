@@ -1,4 +1,4 @@
-{% load static custom_filters %}
+﻿{% load static custom_filters %}
 {% with pagina_actual=request.resolver_match.route vat_sidebar_only=request.user|is_vat_sidebar_only %}
     <li class="nav-item" style="order: 3;">
         <a href="{% url 'dashboard' %}"
@@ -13,8 +13,8 @@
                 <i class="nav-icon fas fa-users"></i>
                 <p>
                     Administración del sistema
-                    <i class="nav-arrow bi bi-chevron-right"></i>
                 </p>
+                    <i class="nav-arrow bi bi-chevron-right"></i>
             </a>
             <ul class="nav nav-treeview">
                 <li class="nav-item">
@@ -64,8 +64,8 @@
                 <i class="nav-icon fa fa-address-card"></i>
                 <p>
                     Configuración de Comedores
-                    <i class="nav-arrow bi bi-chevron-right"></i>
                 </p>
+                    <i class="nav-arrow bi bi-chevron-right"></i>
             </a>
             <ul class="nav nav-treeview">
                 {% if request.user|has_perm_code:"auth.role_admin" %}
@@ -113,8 +113,8 @@
             <i class="nav-icon fa fa-address-card"></i>
             <p>
                 Legajos
-                <i class="nav-arrow bi bi-chevron-right"></i>
             </p>
+                <i class="nav-arrow bi bi-chevron-right"></i>
         </a>
         <ul class="nav nav-treeview">
             {% if not vat_sidebar_only and request.user|has_perm_code:"comedores.view_comedor" %}
@@ -130,8 +130,8 @@
                         <i class="far fa-circle nav-icon"></i>
                         <p>
                             Admision - Comedores
-                            <i class="nav-arrow bi bi-chevron-right"></i>
                         </p>
+                            <i class="nav-arrow bi bi-chevron-right"></i>
                     </a>
                     <ul class="nav nav-treeview" style="display: none;">
                         <li class="nav-item">

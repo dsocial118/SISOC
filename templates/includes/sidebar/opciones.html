@@ -1,4 +1,4 @@
-{% load static custom_filters dashboard_tags %}
+﻿{% load static custom_filters dashboard_tags %}
 {% with pagina_actual=request.resolver_match.route vat_sidebar_only=request.user|is_vat_sidebar_only %}
     <!-- INFORMACIÓN DE USUARIO -->
     <li class="nav-item user-info mb-2 mt-2">
@@ -45,8 +45,8 @@
                 <i class="nav-icon bi bi-newspaper"></i>
                 <p>
                     Comunicados
-                    <i class="nav-arrow bi bi-chevron-right"></i>
                 </p>
+                    <i class="nav-arrow bi bi-chevron-right"></i>
             </a>
             <ul class="nav nav-treeview">
                 <li class="nav-item">
@@ -74,8 +74,8 @@
                      alt="" />
                 <p>
                     Administración del sistema
-                    <i class="nav-arrow bi bi-chevron-right"></i>
                 </p>
+                    <i class="nav-arrow bi bi-chevron-right"></i>
             </a>
             <ul class="nav nav-treeview">
                 <li class="nav-item">
@@ -129,8 +129,8 @@
                 <img src="{% static 'custom/img/iconos_sidebar/legajos.svg' %}" alt="" />
                 <p>
                     Configuración de Comedores
-                    <i class="nav-arrow bi bi-chevron-right"></i>
                 </p>
+                    <i class="nav-arrow bi bi-chevron-right"></i>
             </a>
             <ul class="nav nav-treeview">
                 {% if request.user|has_perm_code:"auth.role_admin" %}
@@ -179,8 +179,8 @@
                         <img src="{% static 'custom/img/iconos_sidebar/tableros.svg' %}" alt="" />
                         <p>
                             Tableros
-                            <i class="nav-arrow bi bi-chevron-right"></i>
                         </p>
+                            <i class="nav-arrow bi bi-chevron-right"></i>
                     </a>
                     <ul class="nav nav-treeview">
                         {% if has_dashboard_cf %}
@@ -189,8 +189,8 @@
                                    class="nav-link nav-dot ms-2 {% if 'centro-de-familia' in pagina_actual %}active{% endif %}">
                                     <p>
                                         Centros de Familia
-                                        <i class="nav-arrow bi bi-chevron-right"></i>
                                     </p>
+                                        <i class="nav-arrow bi bi-chevron-right"></i>
                                 </a>
                                 <ul class="nav nav-treeview">
                                     <li class="nav-item">
@@ -210,8 +210,8 @@
                                        class="nav-link nav-dot ms-2 {% if request.get_full_path == tablero_url %}active{% endif %}">
                                         <p>
                                             {{ tablero.nombre }}
-                                            <i class="nav-arrow bi bi-chevron-right"></i>
                                         </p>
+                                            <i class="nav-arrow bi bi-chevron-right"></i>
                                     </a>
                                     <ul class="nav nav-treeview">
                                         <li class="nav-item">
@@ -237,8 +237,8 @@
             <img src="{% static 'custom/img/iconos_sidebar/legajos.svg' %}" alt="" />
             <p>
                 Legajos
-                <i class="nav-arrow bi bi-chevron-right"></i>
             </p>
+                <i class="nav-arrow bi bi-chevron-right"></i>
         </a>
         <ul class="nav nav-treeview">
             {% if not vat_sidebar_only %}
@@ -249,8 +249,8 @@
                            class="nav-link nav-dot ms-2 {% if 'ciudadanos' in pagina_actual %}active{% endif %}">
                             <p>
                                 Historia Social Digital
-                                <i class="nav-arrow bi bi-chevron-right"></i>
                             </p>
+                                <i class="nav-arrow bi bi-chevron-right"></i>
                         </a>
                         <ul class="nav nav-treeview">
                             {% if request.user|has_perm_code:"ciudadanos.view_ciudadano" %}
@@ -290,8 +290,8 @@
                            class="nav-link nav-dot ms-2 {% if 'comedores' in pagina_actual %}active{% endif %}">
                             <p>
                                 Comedores
-                                <i class="nav-arrow bi bi-chevron-right"></i>
                             </p>
+                                <i class="nav-arrow bi bi-chevron-right"></i>
                         </a>
                         <ul class="nav nav-treeview">
                             {% if request.user|has_perm_code:"comedores.view_comedor" %}
@@ -310,8 +310,8 @@
                                         <i class="nav-icon bi bi-arrow-return-right"></i>
                                         <p>
                                             Admisión - Comedores
-                                            <i class="nav-arrow bi bi-chevron-right"></i>
                                         </p>
+                                            <i class="nav-arrow bi bi-chevron-right"></i>
                                     </a>
                                     <ul class="nav nav-treeview">
                                         {% if request.user|has_perm_code:"admisiones.view_admision" %}
@@ -373,8 +373,8 @@
                            class="nav-link nav-dot ms-2 {% if 'organizaciones' in pagina_actual %}active{% endif %}">
                             <p>
                                 Organizaciones
-                                <i class="nav-arrow bi bi-chevron-right"></i>
                             </p>
+                                <i class="nav-arrow bi bi-chevron-right"></i>
                         </a>
                         <ul class="nav nav-treeview">
                             <li class="nav-item">
@@ -394,8 +394,8 @@
                            class="nav-link nav-dot ms-2 {% if 'importarexpediente' in pagina_actual %}active{% endif %}">
                             <p>
                                 Importar Expediente de Pago
-                                <i class="nav-arrow bi bi-chevron-right"></i>
                             </p>
+                                <i class="nav-arrow bi bi-chevron-right"></i>
                         </a>
                         <ul class="nav nav-treeview">
                             <li class="nav-item">
@@ -416,8 +416,8 @@
                            class="nav-link nav-dot ms-2 {% if 'centrodeinfancia' in pagina_actual %}active{% endif %}">
                             <p>
                                 Centro de Infancia
-                                <i class="nav-arrow bi bi-chevron-right"></i>
                             </p>
+                                <i class="nav-arrow bi bi-chevron-right"></i>
                         </a>
                         <ul class="nav nav-treeview">
                             <li class="nav-item">
@@ -437,8 +437,8 @@
                            class="nav-link nav-dot ms-2 {% if 'ver-para-ser-libre' in pagina_actual %}active{% endif %}">
                             <p>
                                 Ver Para Ser Libres
-                                <i class="nav-arrow bi bi-chevron-right"></i>
                             </p>
+                                <i class="nav-arrow bi bi-chevron-right"></i>
                         </a>
                         <ul class="nav nav-treeview">
                             <li class="nav-item">
@@ -467,8 +467,8 @@
                            class="nav-link nav-dot ms-2 {% if 'dispositivos' in pagina_actual %}active{% endif %}">
                             <p>
                                 Situación de Calle
-                                <i class="nav-arrow bi bi-chevron-right"></i>
                             </p>
+                                <i class="nav-arrow bi bi-chevron-right"></i>
                         </a>
                         <ul class="nav nav-treeview">
                             <li class="nav-item">
@@ -488,8 +488,8 @@
                            class="nav-link nav-dot {% if 'centros' in pagina_actual %}active{% endif %} ms-2">
                             <p>
                                 Centro de Familia
-                                <i class="nav-arrow bi bi-chevron-right"></i>
                             </p>
+                                <i class="nav-arrow bi bi-chevron-right"></i>
                         </a>
                         <ul class="nav nav-treeview">
                             <li class="nav-item">
@@ -531,8 +531,8 @@
                        class="nav-link nav-dot {% if 'vat/' in pagina_actual %}active{% endif %} ms-2">
                         <p>
                             INET
-                            <i class="nav-arrow bi bi-chevron-right"></i>
                         </p>
+                            <i class="nav-arrow bi bi-chevron-right"></i>
                     </a>
                     <ul class="nav nav-treeview">
                         <!-- Centros -->
@@ -587,8 +587,8 @@
                                     <i class="nav-icon bi bi-arrow-return-right"></i>
                                     <p>
                                         Oferta Educativa
-                                        <i class="nav-arrow bi bi-chevron-right"></i>
                                     </p>
+                                        <i class="nav-arrow bi bi-chevron-right"></i>
                                 </a>
                                 <ul class="nav nav-treeview">
                                     {% if request.user|has_perm_code:"VAT.view_ofertainstitucional" %}
@@ -625,8 +625,8 @@
                                     <i class="nav-icon bi bi-arrow-return-right"></i>
                                     <p>
                                         Datos Institución
-                                        <i class="nav-arrow bi bi-chevron-right"></i>
                                     </p>
+                                        <i class="nav-arrow bi bi-chevron-right"></i>
                                 </a>
                                 <ul class="nav nav-treeview">
                                     {% if request.user|has_perm_code:"VAT.view_institucioncontacto" %}
@@ -663,8 +663,8 @@
                                     <i class="nav-icon bi bi-arrow-return-right"></i>
                                     <p>
                                         Catálogos
-                                        <i class="nav-arrow bi bi-chevron-right"></i>
                                     </p>
+                                        <i class="nav-arrow bi bi-chevron-right"></i>
                                 </a>
                                 <ul class="nav nav-treeview">
                                     {% if request.user|has_perm_code:"VAT.view_modalidadcursada" and not request.user|has_any_group:'CFPINET' %}
@@ -696,8 +696,8 @@
                         <a href="#" class="nav-link nav-dot ms-2">
                             <p>
                                 Celiaquía
-                                <i class="nav-arrow bi bi-chevron-right"></i>
                             </p>
+                                <i class="nav-arrow bi bi-chevron-right"></i>
                         </a>
                         <ul class="nav nav-treeview">
                             <li class="nav-item">

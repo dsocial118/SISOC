@@ -253,6 +253,23 @@ ul.nav:not(.sidebar-menu) .nav-link p {
     padding-left: 0;
 }
 
+/* Arrow inline with text: override AdminLTE's absolute positioning */
+.sidebar-menu .nav-link > .nav-arrow {
+    position: static !important;
+    top: auto !important;
+    right: auto !important;
+    align-self: center;
+    flex-shrink: 0;
+}
+
+.sidebar-menu .nav-item > .nav-link > .nav-arrow {
+    transform: none !important;
+}
+
+.sidebar-menu .menu-open > .nav-link > .nav-arrow {
+    transform: rotate(90deg) !important;
+}
+
 .sidebar-wrapper .nav-treeview > .nav-item > .nav-link:hover {
     background-color: transparent !important;
 }
@@ -268,9 +285,5 @@ ul.nav:not(.sidebar-menu) .nav-link p {
 .sidebar-menu ul > .nav-item > .nav-link {
     min-height: 45px !important;
     height: 45px !important;
-}
-
-.sidebar-menu .nav-link > .nav-arrow, .sidebar-menu .nav-link > p > .nav-arrow {
-    right: 1.5rem !important;
 }
 /* 
