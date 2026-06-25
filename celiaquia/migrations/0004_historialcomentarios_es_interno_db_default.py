@@ -29,6 +29,10 @@ def drop_db_default(apps, schema_editor):
 
 class Migration(migrations.Migration):
 
+    # MySQL no puede hacer rollback de DDL: la migración no debe ejecutarse
+    # dentro de una transacción (de lo contrario Django prohíbe el ALTER).
+    atomic = False
+
     dependencies = [
         ("celiaquia", "0003_historialcomentarios_es_interno"),
     ]
