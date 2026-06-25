@@ -15,10 +15,19 @@ def _get_language() -> str:
     return getattr(settings, "OCR_LANGUAGE", "spa")
 
 
+def _maybe_preprocess(image: Image.Image) -> Image.Image:
+    if not getattr(settings, "OCR_PREPROCESS", True):
+        return image
+    from ocr.services_preprocess import preprocess_for_ocr
+
+    return preprocess_for_ocr(image)
+
+
 def _extract_from_image(file_path: str, language: str) -> dict:
     import pytesseract
 
     image = Image.open(file_path)
+    image = _maybe_preprocess(image)
     text = pytesseract.image_to_string(image, lang=language)
     text = text.strip()
     return {
@@ -32,10 +41,11 @@ def _extract_from_pdf(file_path: str, language: str) -> dict:
     import pytesseract
     from pdf2image import convert_from_path
 
-    pages = convert_from_path(file_path)
+    pages = convert_from_path(file_path, dpi=300)
     page_count = len(pages)
     texts = []
     for page_image in pages:
+        page_image = _maybe_preprocess(page_image)
         page_text = pytesseract.image_to_string(page_image, lang=language).strip()
         if page_text:
             texts.append(page_text)

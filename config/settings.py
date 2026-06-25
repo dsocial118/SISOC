@@ -719,3 +719,4 @@ OCR_JOB_STALE_SECONDS = _safe_int_env("OCR_JOB_STALE_SECONDS", 600)
 OCR_MAX_FILE_SIZE_MB = _safe_int_env("OCR_MAX_FILE_SIZE_MB", 20)
 OCR_LANGUAGE = os.getenv("OCR_LANGUAGE", "spa")
 OCR_ALLOWED_EXTENSIONS = {"jpg", "jpeg", "png", "pdf"}
+OCR_PREPROCESS = _safe_bool_env("OCR_PREPROCESS", True)
