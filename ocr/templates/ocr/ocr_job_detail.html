@@ -57,9 +57,7 @@
                         <div class="col-sm-4">
                             <div class="border rounded p-3 h-100">
                                 <div class="text-muted small">Con error</div>
-                                <div class="h4 mb-0 {% if job.failed_documents > 0 %}text-danger{% endif %}">
-                                    {{ job.failed_documents }}
-                                </div>
+                                <div class="h4 mb-0 {% if job.failed_documents > 0 %}text-danger{% endif %}">{{ job.failed_documents }}</div>
                             </div>
                         </div>
                     </div>
@@ -91,23 +89,17 @@
                                         {% if doc.page_count %}
                                             <span class="text-muted small">{{ doc.page_count }} página{{ doc.page_count|pluralize }}</span>
                                         {% endif %}
-                                        {% if doc.file_size %}
-                                            <span class="text-muted small">{{ doc.file_size|filesizeformat }}</span>
-                                        {% endif %}
+                                        {% if doc.file_size %}<span class="text-muted small">{{ doc.file_size|filesizeformat }}</span>{% endif %}
                                     </div>
                                     {% if doc.status == "completed" and doc.extracted_text %}
                                         <div class="d-flex gap-2">
                                             <button type="button"
                                                     class="btn btn-sm btn-outline-secondary"
                                                     onclick="copiarTexto('texto-doc-{{ doc.id }}', this)"
-                                                    title="Copiar texto extraído">
-                                                Copiar
-                                            </button>
+                                                    title="Copiar texto extraído">Copiar</button>
                                             <a href="{% url 'ocr_document_download' doc.id %}"
                                                class="btn btn-sm btn-outline-primary"
-                                               title="Descargar como .txt">
-                                                Descargar .txt
-                                            </a>
+                                               title="Descargar como .txt">Descargar .txt</a>
                                         </div>
                                     {% endif %}
                                 </div>
@@ -116,7 +108,15 @@
                                         <div id="texto-doc-{{ doc.id }}-wrapper">
                                             <pre id="texto-doc-{{ doc.id }}"
                                                  class="ocr-text-preview mb-2"
-                                                 style="white-space: pre-wrap; word-break: break-word; font-size: 0.875rem; max-height: 200px; overflow-y: auto; background: var(--bs-body-bg); border: 1px solid var(--bs-border-color); border-radius: 4px; padding: 0.75rem;">{{ doc.extracted_text }}</pre>
+                                                 style="white-space: pre-wrap;
+                                                        word-break: break-word;
+                                                        font-size: 0.875rem;
+                                                        max-height: 200px;
+                                                        overflow-y: auto;
+                                                        background: var(--bs-body-bg);
+                                                        border: 1px solid var(--bs-border-color);
+                                                        border-radius: 4px;
+                                                        padding: 0.75rem">{{ doc.extracted_text }}</pre>
                                             <button type="button"
                                                     class="btn btn-sm btn-link p-0 text-muted"
                                                     onclick="expandirTexto('texto-doc-{{ doc.id }}', this)">
@@ -126,9 +126,7 @@
                                     {% elif doc.status == "no_text" %}
                                         <p class="text-muted mb-0">
                                             <em>No se pudo extraer texto legible del archivo.</em>
-                                            {% if doc.error_message %}
-                                                <span class="d-block small">{{ doc.error_message }}</span>
-                                            {% endif %}
+                                            {% if doc.error_message %}<span class="d-block small">{{ doc.error_message }}</span>{% endif %}
                                         </p>
                                     {% elif doc.status == "failed" %}
                                         <div class="alert alert-danger mb-0 py-2">
@@ -141,9 +139,7 @@
                                         </p>
                                     {% endif %}
                                     {% if doc.processed_at %}
-                                        <small class="text-muted d-block mt-1">
-                                            Procesado: {{ doc.processed_at|date:"d/m/Y H:i:s" }}
-                                        </small>
+                                        <small class="text-muted d-block mt-1">Procesado: {{ doc.processed_at|date:"d/m/Y H:i:s" }}</small>
                                     {% endif %}
                                 </div>
                             </div>

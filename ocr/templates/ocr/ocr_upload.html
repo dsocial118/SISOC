@@ -25,8 +25,12 @@
                     <div class="alert alert-light border">
                         <div class="font-weight-bold mb-2">Formatos admitidos</div>
                         <ul class="mb-0 pl-3">
-                            <li><strong>Imágenes:</strong> JPG, JPEG, PNG</li>
-                            <li><strong>Documentos:</strong> PDF (incluye multipágina y escaneos)</li>
+                            <li>
+                                <strong>Imágenes:</strong> JPG, JPEG, PNG
+                            </li>
+                            <li>
+                                <strong>Documentos:</strong> PDF (incluye multipágina y escaneos)
+                            </li>
                         </ul>
                     </div>
 
@@ -43,13 +47,9 @@
                     {% if form.errors %}
                         <div class="alert alert-danger">
                             {% for field in form %}
-                                {% for error in field.errors %}
-                                    <div>{{ error }}</div>
-                                {% endfor %}
+                                {% for error in field.errors %}<div>{{ error }}</div>{% endfor %}
                             {% endfor %}
-                            {% for error in form.non_field_errors %}
-                                <div>{{ error }}</div>
-                            {% endfor %}
+                            {% for error in form.non_field_errors %}<div>{{ error }}</div>{% endfor %}
                         </div>
                     {% endif %}
 
@@ -63,9 +63,7 @@
                                    multiple
                                    accept=".jpg,.jpeg,.png,.pdf"
                                    class="form-control {% if form.archivos.errors %}is-invalid{% endif %}" />
-                            <div class="form-text text-muted">
-                                Puede seleccionar varios archivos a la vez.
-                            </div>
+                            <div class="form-text text-muted">Puede seleccionar varios archivos a la vez.</div>
                         </div>
                         <div class="d-flex flex-wrap gap-2">
                             <button type="submit" class="btn btn-success">Procesar archivos</button>

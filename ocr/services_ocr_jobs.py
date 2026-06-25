@@ -83,7 +83,9 @@ def mark_stale_ocr_jobs_as_failed() -> int:
         finished_at=timezone.now(),
     )
     if updated:
-        logger.warning("[ocr] %s lote(s) marcados como fallidos por inactividad.", updated)
+        logger.warning(
+            "[ocr] %s lote(s) marcados como fallidos por inactividad.", updated
+        )
     return updated
 
 
@@ -199,7 +201,11 @@ def process_ocr_job(job: OCRJob) -> None:
         job.failed_documents = models.F("failed_documents") + (0 if success else 1)
         job.last_activity_at = timezone.now()
         job.save(
-            update_fields=["processed_documents", "failed_documents", "last_activity_at"]
+            update_fields=[
+                "processed_documents",
+                "failed_documents",
+                "last_activity_at",
+            ]
         )
         job.refresh_from_db(
             fields=["processed_documents", "failed_documents", "last_activity_at"]
@@ -229,7 +235,9 @@ def process_next_ocr_job() -> bool:
     logger.info("[ocr] Procesando lote OCR #%s...", job.id)
     try:
         process_ocr_job(job)
-        logger.info("[ocr] Lote OCR #%s finalizado con estado '%s'.", job.id, job.status)
+        logger.info(
+            "[ocr] Lote OCR #%s finalizado con estado '%s'.", job.id, job.status
+        )
     except Exception as exc:
         logger.exception("[ocr] Error inesperado en lote OCR #%s: %s", job.id, exc)
         OCRJob.objects.filter(pk=job.pk).update(

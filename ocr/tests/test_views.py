@@ -80,9 +80,7 @@ class OCRUploadViewTest(TestCase):
         mock_create.assert_called_once()
 
     def test_superuser_can_access_without_permission(self):
-        superuser = User.objects.create_superuser(
-            username="super", password="pass"
-        )
+        superuser = User.objects.create_superuser(username="super", password="pass")
         self.client.force_login(superuser)
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)

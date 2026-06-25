@@ -27,7 +27,10 @@ class CreateOCRJobTest(TestCase):
         self.user = User.objects.create_user(username="creator", password="pass")
 
     def test_creates_job_and_documents(self):
-        files = [_make_file("a.png"), _make_file("b.pdf", content_type="application/pdf")]
+        files = [
+            _make_file("a.png"),
+            _make_file("b.pdf", content_type="application/pdf"),
+        ]
         job = create_ocr_job(requested_by=self.user, files=files)
         self.assertEqual(job.requested_by, self.user)
         self.assertEqual(job.status, OCRJob.Status.PENDING)
@@ -62,7 +65,9 @@ class ClaimNextOCRJobTest(TestCase):
         self.assertIsNone(result)
 
     def test_claims_pending_job(self):
-        job = OCRJob.objects.create(requested_by=self.user, status=OCRJob.Status.PENDING)
+        job = OCRJob.objects.create(
+            requested_by=self.user, status=OCRJob.Status.PENDING
+        )
         claimed = claim_next_ocr_job()
         self.assertIsNotNone(claimed)
         self.assertEqual(claimed.pk, job.pk)
@@ -79,9 +84,7 @@ class ClaimNextOCRJobTest(TestCase):
         self.assertIsNone(result)
 
     def test_does_not_claim_completed_job(self):
-        OCRJob.objects.create(
-            requested_by=self.user, status=OCRJob.Status.COMPLETED
-        )
+        OCRJob.objects.create(requested_by=self.user, status=OCRJob.Status.COMPLETED)
         result = claim_next_ocr_job()
         self.assertIsNone(result)
 
@@ -171,7 +174,9 @@ class ProcessOCRJobTest(TestCase):
 
     @patch("ocr.services_ocr_jobs.extract_text_from_file")
     @patch("ocr.services_ocr_jobs._delete_file")
-    def test_failed_doc_marks_job_completed_with_errors(self, mock_delete, mock_extract):
+    def test_failed_doc_marks_job_completed_with_errors(
+        self, mock_delete, mock_extract
+    ):
         mock_extract.side_effect = Exception("OCR crash")
         job = OCRJob.objects.create(
             requested_by=self.user,
