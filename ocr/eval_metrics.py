@@ -8,6 +8,7 @@ de orden, espaciado y puntuación, que no importan para juzgar si el OCR
 
 Solo usa la librería estándar para que sea testeable sin Tesseract.
 """
+
 from __future__ import annotations
 
 import re
@@ -46,7 +47,9 @@ def word_recall(extracted: str, ground_truth: str, min_len: int = 3) -> dict:
 
     recall = matched / gt_total if gt_total else 0.0
     precision = matched / extracted_total if extracted_total else 0.0
-    f1 = (2 * precision * recall / (precision + recall)) if (precision + recall) else 0.0
+    f1 = (
+        (2 * precision * recall / (precision + recall)) if (precision + recall) else 0.0
+    )
 
     return {
         "recall": recall,

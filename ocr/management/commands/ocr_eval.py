@@ -13,6 +13,7 @@ Ejemplos:
     python manage.py ocr_eval --file doc.pdf --ground-truth ref.txt
     python manage.py ocr_eval --file doc.pdf --ground-truth ref.txt --no-preprocess
 """
+
 from pathlib import Path
 
 from django.conf import settings
