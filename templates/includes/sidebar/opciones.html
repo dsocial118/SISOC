@@ -115,6 +115,15 @@
                         <p>Parametrías de Voucher</p>
                     </a>
                 </li>
+                {% if perms.ocr.use_ocr or request.user.is_superuser %}
+                    <li class="nav-item">
+                        <a href="{% url 'ocr_upload' %}"
+                           class="nav-link nav-dot ms-2 {% if 'ocr/' in pagina_actual %}active{% endif %}">
+                            <i class="nav-icon bi bi-file-text"></i>
+                            <p>OCR</p>
+                        </a>
+                    </li>
+                {% endif %}
             </ul>
         </li>
     {% endif %}
