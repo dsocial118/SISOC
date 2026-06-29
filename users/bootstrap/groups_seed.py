@@ -273,6 +273,26 @@ LISTADO_DEFINED_GROUPS = (
         ),
     ),
     BootstrapGroupSeed(
+        "Comedor Insumos Gestión",
+        (
+            "insumos.view_insumo",
+            "insumos.add_insumo",
+            "insumos.change_insumo",
+            "insumos.delete_insumo",
+            "insumos.view_insumocategoria",
+            "insumos.add_insumocategoria",
+            "insumos.change_insumocategoria",
+            "insumos.delete_insumocategoria",
+        ),
+    ),
+    BootstrapGroupSeed(
+        "Comedor Insumos Consulta",
+        (
+            "insumos.view_insumo",
+            "insumos.view_insumocategoria",
+        ),
+    ),
+    BootstrapGroupSeed(
         "Celiaquia Total",
         (
             "auth.role_ciudadanos",
@@ -862,6 +882,14 @@ LISTADO_DEFINED_GROUPS = (
             "dashboard.view_dashboard",
             "duplas.change_dupla",
             "expedientespagos.view_expedientepago",
+            "insumos.view_insumo",
+            "insumos.add_insumo",
+            "insumos.change_insumo",
+            "insumos.delete_insumo",
+            "insumos.view_insumocategoria",
+            "insumos.add_insumocategoria",
+            "insumos.change_insumocategoria",
+            "insumos.delete_insumocategoria",
             "intervenciones.add_intervencion",
             "intervenciones.change_intervencion",
             "intervenciones.view_intervencion",
