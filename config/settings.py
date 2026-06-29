@@ -186,6 +186,7 @@ INSTALLED_APPS = [
     "centrodeinfancia",
     "ver_para_ser_libre",
     "dispositivos",
+    "insumos",
     "pwa",
     "ticketera",
 ]
