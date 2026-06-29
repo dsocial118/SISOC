@@ -122,8 +122,8 @@
             </ul>
         </li>
     {% endif %}
-    {% if not vat_sidebar_only and request.user|has_any_perm:"auth.role_admin,core.view_montoprestacionprograma,pwa.view_catalogoactividadpwa,pwa.manage_catalogoactividadpwa" %}
-        <li class="nav-item nav-main-item {% if 'dupla' in pagina_actual or 'equipo-tecnico' in pagina_actual or 'montoprestacion' in pagina_actual or 'cursos-app-mobile' in pagina_actual or 'actividades-pnud' in pagina_actual %}menu-open{% endif %}"
+    {% if not vat_sidebar_only and request.user|has_any_perm:"auth.role_admin,core.view_montoprestacionprograma,pwa.view_catalogoactividadpwa,pwa.manage_catalogoactividadpwa,insumos.view_insumo" %}
+        <li class="nav-item nav-main-item {% if 'dupla' in pagina_actual or 'equipo-tecnico' in pagina_actual or 'montoprestacion' in pagina_actual or 'cursos-app-mobile' in pagina_actual or 'actividades-pnud' in pagina_actual or 'insumos' in pagina_actual %}menu-open{% endif %}"
             style="order: 5">
             <a href="#" class="nav-link">
                 <img src="{% static 'custom/img/iconos_sidebar/legajos.svg' %}" alt="" />
@@ -162,6 +162,14 @@
                         <a href="{% url 'actividades_pnud_list' %}"
                            class="nav-link nav-dot ms-2 {% if 'actividades-pnud' in pagina_actual %}active{% endif %}">
                             <p>Actividades PNUD</p>
+                        </a>
+                    </li>
+                {% endif %}
+                {% if request.user|has_perm_code:"insumos.view_insumo" %}
+                    <li class="nav-item">
+                        <a href="{% url 'insumos_listar' %}"
+                           class="nav-link nav-dot ms-2 {% if 'insumos' in pagina_actual %}active{% endif %}">
+                            <p>Insumos</p>
                         </a>
                     </li>
                 {% endif %}
