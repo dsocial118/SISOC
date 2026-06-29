@@ -14,8 +14,8 @@
 {% block content %}
     <div class="vpsl-sedes-shell">
         <div class="comedor-list-container vpsl-page vpsl-sedes-list">
-        {% include "components/search_bar.html" with titulo="Buscar sedes VPSL" placeholder="Nombre, CUE, provincia, localidad o domicilio" help_text="Ingresar nombre, CUE, provincia, localidad o domicilio." reset_url="vpsl_sede_list" add_url="vpsl_sede_create" add_text="Nueva sede" query=query %}
-        <div class="vpsl-sedes-table-wrap max-width-100">
+            {% include "components/search_bar.html" with titulo="Buscar sedes VPSL" placeholder="Nombre, CUE, provincia, localidad o domicilio" help_text="Ingresar nombre, CUE, provincia, localidad o domicilio." reset_url="vpsl_sede_list" add_url="vpsl_sede_create" add_text="Nueva sede" query=query %}
+            <div class="vpsl-sedes-table-wrap max-width-100">
                 <div class="card comedor-table-card vpsl-table-card vpsl-table-card--standalone">
                     <div class="card-body">
                         <div class="table-responsive-lg">
@@ -63,7 +63,7 @@
                         </div>
                     </div>
                 </div>
+            </div>
+            {% include "components/pagination.html" with is_paginated=is_paginated page_obj=page_obj query=query %}
         </div>
-        {% include "components/pagination.html" with is_paginated=is_paginated page_obj=page_obj query=query %}
-    </div>
-{% endblock %}
+    {% endblock %}
