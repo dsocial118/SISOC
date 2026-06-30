@@ -433,20 +433,11 @@ class PWAAccessMixin:
             return
         deactivate_representante_accesses(user)
 
-    def _validate_required_email(self, cleaned):
-        email = (cleaned.get("email") or "").strip()
-        if not email:
-            self.add_error("email", "Este campo es obligatorio.")
-            return cleaned
-
-        qs = User.objects.filter(email__iexact=email)
-        if getattr(self.instance, "pk", None):
-            qs = qs.exclude(pk=self.instance.pk)
-        if qs.exists():
-            self.add_error("email", "Ya existe un usuario con ese email.")
-            return cleaned
-
-        cleaned["email"] = email
+    def _clean_optional_email(self, cleaned):
+        # El email es opcional y puede repetirse entre usuarios; la unicidad
+        # vive en username. Solo normalizamos espacios para evitar registros
+        # inconsistentes.
+        cleaned["email"] = (cleaned.get("email") or "").strip()
         return cleaned
 
 
@@ -706,7 +697,7 @@ class UserCreationForm(
         self._setup_pwa_fields()
         self._setup_delegation_fields()
         self._scope_assignable_fields_for_actor()
-        self.fields["email"].required = True
+        self.fields["email"].required = False
         self.fields["password"].required = False
         self.generated_password = None
         self.password_was_auto_generated = False
@@ -714,7 +705,7 @@ class UserCreationForm(
 
     def clean(self):
         cleaned = super().clean()
-        cleaned = self._validate_required_email(cleaned)
+        cleaned = self._clean_optional_email(cleaned)
         if (
             not cleaned.get("es_representante_pwa")
             and not (cleaned.get("password") or "").strip()
@@ -894,7 +885,7 @@ class CustomUserChangeForm(
         self._setup_pwa_fields()
         self._setup_delegation_fields()
         self._scope_assignable_fields_for_actor()
-        self.fields["email"].required = True
+        self.fields["email"].required = False
         self._original_password_hash = self.instance.password
         self.fields["password"].initial = ""
         self._init_pwa_fields()
@@ -915,7 +906,7 @@ class CustomUserChangeForm(
 
     def clean(self):
         cleaned = super().clean()
-        cleaned = self._validate_required_email(cleaned)
+        cleaned = self._clean_optional_email(cleaned)
         cleaned = self._clean_territorial_scope_fields(cleaned)
         if cleaned.get("es_coordinador") and not cleaned.get("duplas_asignadas"):
             self.add_error("duplas_asignadas", "Seleccione al menos una dupla.")
