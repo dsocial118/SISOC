@@ -160,6 +160,21 @@ class ParsedCredentialRow:
         return self.data.get("nombre_del_centro", "")
 
 
+@dataclass(frozen=True)
+class BulkCredentialEntry:
+    """Una credencial individual dentro de un envío (posiblemente agrupado)."""
+
+    username: str
+    plain_password: str
+    first_name: str
+    last_name: str
+    nombre_del_centro: str = ""
+
+    @property
+    def full_name(self) -> str:
+        return f"{self.first_name} {self.last_name}".strip()
+
+
 BULK_CREDENTIALS_SEND_TYPES = {
     "standard": BulkCredentialsSendTypeConfig(
         key="standard",
@@ -401,21 +416,27 @@ def get_bulk_credentials_template_filename(send_type: str | None = None) -> str:
     return send_type_config.template_filename
 
 
-def _send_bulk_credentials_email_once(  # pylint: disable=too-many-arguments
+def _send_bulk_credentials_email_once(
     *,
-    user,
     recipient_email: str,
-    plain_password: str,
+    entries: list[BulkCredentialEntry],
     login_url: str,
     send_type: str | None = None,
-    nombre_del_centro: str = "",
 ) -> None:
     send_type_config = get_bulk_credentials_send_type_config(send_type)
+    # nombre_del_centro y first_name/last_name del primer entry se exponen al
+    # template para mantener compatibilidad con los placeholders existentes
+    # cuando la lista tiene un solo elemento.
+    first = entries[0]
     context = {
-        "user": user,
-        "plain_password": plain_password,
+        "entries": entries,
         "login_url": login_url,
-        "nombre_del_centro": nombre_del_centro,
+        "is_grouped": len(entries) > 1,
+        # Compatibilidad: campos del primer (o único) usuario.
+        "user_username": first.username,
+        "user_full_name": first.full_name,
+        "plain_password": first.plain_password,
+        "nombre_del_centro": first.nombre_del_centro,
     }
     message = render_to_string(send_type_config.email_template_name, context)
     send_mail(
@@ -464,16 +485,16 @@ def _build_email_retry_failure_message(last_error: Exception | None) -> str:
     return f"{base_message} El envio se reintento sin exito."
 
 
-def send_bulk_credentials_email(  # pylint: disable=too-many-arguments
+def send_bulk_credentials_email(
     *,
-    user,
     recipient_email: str,
-    plain_password: str,
+    entries: list[BulkCredentialEntry],
     login_url: str,
     send_type: str | None = None,
-    nombre_del_centro: str = "",
     max_total_seconds: float | None = None,
 ) -> None:
+    if not entries:
+        raise ValidationError("No hay credenciales para enviar.")
     timeout_seconds = _get_bulk_credentials_email_attempt_timeout_seconds()
     total_deadline = (
         time.monotonic() + max_total_seconds
@@ -481,6 +502,7 @@ def send_bulk_credentials_email(  # pylint: disable=too-many-arguments
         else None
     )
     last_error = None
+    usernames_log = ",".join(entry.username for entry in entries)
 
     for attempt in range(1, BULK_CREDENTIALS_EMAIL_MAX_ATTEMPTS + 1):
         remaining_total_seconds = _get_remaining_processing_seconds(total_deadline)
@@ -497,12 +519,10 @@ def send_bulk_credentials_email(  # pylint: disable=too-many-arguments
         try:
             with _mail_send_timeout_guard(attempt_timeout_seconds):
                 _send_bulk_credentials_email_once(
-                    user=user,
                     recipient_email=recipient_email,
-                    plain_password=plain_password,
+                    entries=entries,
                     login_url=login_url,
                     send_type=send_type,
-                    nombre_del_centro=nombre_del_centro,
                 )
             return
         except (
@@ -515,9 +535,9 @@ def send_bulk_credentials_email(  # pylint: disable=too-many-arguments
             logger.warning(
                 (
                     "Fallo enviando credenciales por correo. "
-                    "usuario=%s intento=%s/%s tipo=%s"
+                    "usuarios=%s intento=%s/%s tipo=%s"
                 ),
-                user.username,
+                usernames_log,
                 attempt,
                 BULK_CREDENTIALS_EMAIL_MAX_ATTEMPTS,
                 send_type or DEFAULT_BULK_CREDENTIALS_SEND_TYPE,
@@ -590,6 +610,101 @@ def _get_user_plain_password(user) -> str:
     return plain_password
 
 
+def _resolve_row_for_send(
+    row: ParsedCredentialRow,
+    *,
+    send_type_config: BulkCredentialsSendTypeConfig,
+):
+    """Valida un row y resuelve user, destinatario y entry para el envío.
+
+    Levanta ValidationError si falta data, no existe el usuario, no hay mail
+    válido o el usuario no tiene contraseña temporal visible.
+    """
+    _validate_row_data(row, send_type_config=send_type_config)
+    user = (
+        User.objects.select_related("profile")
+        .filter(username__iexact=row.usuario)
+        .first()
+    )
+    if not user:
+        raise ValidationError("No existe un usuario con ese nombre.")
+    recipient_email = _get_recipient_email(row=row, user=user)
+    plain_password = _get_user_plain_password(user)
+    entry = BulkCredentialEntry(
+        username=user.username,
+        plain_password=plain_password,
+        first_name=user.first_name or "",
+        last_name=user.last_name or "",
+        nombre_del_centro=row.nombre_del_centro,
+    )
+    return user, recipient_email, entry
+
+
+def _row_success_result(
+    *, row: ParsedCredentialRow, recipient_email: str, grouped: bool
+):
+    base_message = "Credenciales enviadas correctamente."
+    if grouped:
+        base_message = (
+            "Credenciales enviadas correctamente "
+            "(agrupadas con otras del mismo destinatario)."
+        )
+    return {
+        "fila": row.fila,
+        "usuario": row.usuario,
+        "mail_destino": recipient_email,
+        "estado": "enviada",
+        "mensaje": base_message,
+        "password_actualizada": False,
+    }
+
+
+def process_bulk_credentials_group(
+    *,
+    rows: list[ParsedCredentialRow],
+    send_type_config: BulkCredentialsSendTypeConfig,
+    login_url: str,
+    max_total_seconds: float | None = None,
+) -> list[dict[str, object]]:
+    """Envía un único correo con las credenciales de todas las filas del grupo.
+
+    Todas las filas deben compartir destinatario (ya resuelto). Si alguna falla
+    validación se levanta ValidationError sin enviar el correo: el caller debe
+    decidir cómo registrar el fallo por fila.
+    """
+    if not rows:
+        raise ValidationError("No hay filas para procesar en el grupo.")
+
+    resolved: list[tuple[ParsedCredentialRow, BulkCredentialEntry]] = []
+    recipient_email: str | None = None
+    with transaction.atomic():
+        for row in rows:
+            _user, row_recipient, entry = _resolve_row_for_send(
+                row, send_type_config=send_type_config
+            )
+            if recipient_email is None:
+                recipient_email = row_recipient
+            elif row_recipient.lower() != recipient_email.lower():
+                raise ValidationError(
+                    "Las filas del grupo no comparten el mismo destinatario."
+                )
+            resolved.append((row, entry))
+
+        send_bulk_credentials_email(
+            recipient_email=recipient_email,
+            entries=[entry for _row, entry in resolved],
+            login_url=login_url,
+            send_type=send_type_config.key,
+            max_total_seconds=max_total_seconds,
+        )
+
+    grouped = len(resolved) > 1
+    return [
+        _row_success_result(row=row, recipient_email=recipient_email, grouped=grouped)
+        for row, _entry in resolved
+    ]
+
+
 def process_bulk_credentials_row(
     *,
     row: ParsedCredentialRow,
@@ -597,37 +712,132 @@ def process_bulk_credentials_row(
     login_url: str,
     max_total_seconds: float | None = None,
 ) -> dict[str, object]:
-    _validate_row_data(row, send_type_config=send_type_config)
-    with transaction.atomic():
-        user = (
-            User.objects.select_related("profile")
-            .filter(username__iexact=row.usuario)
-            .first()
-        )
-        if not user:
-            raise ValidationError("No existe un usuario con ese nombre.")
+    """Procesa una sola fila sin agrupamiento. Mantenido para compatibilidad."""
+    results = process_bulk_credentials_group(
+        rows=[row],
+        send_type_config=send_type_config,
+        login_url=login_url,
+        max_total_seconds=max_total_seconds,
+    )
+    return results[0]
 
-        recipient_email = _get_recipient_email(row=row, user=user)
-        plain_password = _get_user_plain_password(user)
 
-        send_bulk_credentials_email(
-            user=user,
-            recipient_email=recipient_email,
-            plain_password=plain_password,
-            login_url=login_url,
-            send_type=send_type_config.key,
-            nombre_del_centro=row.nombre_del_centro,
-            max_total_seconds=max_total_seconds,
-        )
+def _build_recipient_cache(
+    rows: list[ParsedCredentialRow],
+) -> dict[str, str]:
+    """Pre-carga `username -> email` en una sola query para evitar N lookups.
 
-    return {
-        "fila": row.fila,
-        "usuario": row.usuario,
-        "mail_destino": recipient_email,
-        "estado": "enviada",
-        "mensaje": "Credenciales enviadas correctamente.",
-        "password_actualizada": False,
+    Solo se incluyen los usuarios efectivamente referenciados por filas que no
+    informan mail explícito. Devuelve un dict indexado por username en minúsculas.
+    """
+    usernames_needed = {
+        row.usuario.strip().lower()
+        for row in rows
+        if row.usuario and not row.mail.strip()
     }
+    if not usernames_needed:
+        return {}
+    user_qs = User.objects.filter(username__in=list(usernames_needed)).only(
+        "username", "email"
+    )
+    cache = {
+        (u.username or "").strip().lower(): (u.email or "").strip().lower()
+        for u in user_qs
+    }
+    return cache
+
+
+def _row_grouping_key(
+    row: ParsedCredentialRow,
+    *,
+    send_type_config: BulkCredentialsSendTypeConfig,
+    recipient_cache: dict[str, str] | None = None,
+) -> tuple[str, str] | None:
+    """Devuelve la clave de agrupamiento (destinatario, centro) para una fila.
+
+    Si el send_type requiere `nombre_del_centro`, el centro forma parte de la
+    clave: dos filas con mismo destinatario pero distinto centro NO se agrupan
+    (evita mensajes mezclando datos de centros). Si la fila no puede resolver
+    destinatario, retorna None y el row se procesa solo.
+    """
+    if not row.data.get("usuario"):
+        return None
+
+    explicit_mail = row.mail.strip()
+    if explicit_mail:
+        recipient = explicit_mail.lower()
+    else:
+        username_key = row.usuario.strip().lower()
+        cached = (recipient_cache or {}).get(username_key)
+        if cached is None and recipient_cache is None:
+            user = (
+                User.objects.filter(username__iexact=row.usuario).only("email").first()
+            )
+            cached = (user.email or "").strip().lower() if user else ""
+        recipient = cached or ""
+
+    if not recipient:
+        return None
+
+    requires_centro = "nombre_del_centro" in send_type_config.required_columns
+    centro_key = ""
+    if requires_centro:
+        # Normalizamos para que diferencias de espacios/caso no fragmenten el grupo.
+        centro_key = " ".join(row.nombre_del_centro.lower().split())
+
+    return recipient, centro_key
+
+
+def _peek_recipient_email(
+    row: ParsedCredentialRow,
+    *,
+    send_type_config: BulkCredentialsSendTypeConfig,
+    recipient_cache: dict[str, str] | None = None,
+) -> str | None:
+    """Compatibilidad: devuelve solo el destinatario (sin el componente centro)."""
+    key = _row_grouping_key(
+        row,
+        send_type_config=send_type_config,
+        recipient_cache=recipient_cache,
+    )
+    return key[0] if key else None
+
+
+def _collect_group_indices(
+    *,
+    rows: list[ParsedCredentialRow],
+    start_index: int,
+    send_type_config: BulkCredentialsSendTypeConfig,
+    skip_indices: set[int],
+    recipient_cache: dict[str, str] | None = None,
+) -> tuple[list[int], str | None]:
+    """Identifica los índices de filas que comparten clave de agrupamiento con
+    rows[start_index]. Para INET, la clave incluye `nombre_del_centro`.
+
+    Retorna la lista de índices (incluido start_index) y el destinatario común.
+    Si el row inicial no puede resolver clave, retorna ([start_index], None).
+    """
+    primary_key = _row_grouping_key(
+        rows[start_index],
+        send_type_config=send_type_config,
+        recipient_cache=recipient_cache,
+    )
+    if primary_key is None:
+        return [start_index], None
+
+    primary_recipient = primary_key[0]
+    group = [start_index]
+    for index in range(start_index + 1, len(rows)):
+        if index in skip_indices:
+            continue
+        candidate_key = _row_grouping_key(
+            rows[index],
+            send_type_config=send_type_config,
+            recipient_cache=recipient_cache,
+        )
+        if candidate_key == primary_key:
+            group.append(index)
+    return group, primary_recipient
 
 
 def process_bulk_credentials_file(
@@ -651,66 +861,98 @@ def process_bulk_credentials_file(
     }
     login_url = _build_login_url(request=request)
     processing_deadline = _get_bulk_credentials_batch_deadline()
+    results_by_index: dict[int, dict[str, object]] = {}
+    handled_indices: set[int] = set()
+    recipient_cache = _build_recipient_cache(rows)
 
     for row_index, row in enumerate(rows):
+        if row_index in handled_indices:
+            continue
         if not _has_enough_batch_time(processing_deadline):
             timeout_message = _get_batch_timeout_message()
-            for pending_row in rows[row_index:]:
+            for pending_index in range(row_index, len(rows)):
+                if pending_index in handled_indices:
+                    continue
+                pending_row = rows[pending_index]
                 summary["procesadas"] += 1
                 summary["rechazadas"] += 1
-                results.append(
-                    {
-                        "fila": pending_row.fila,
-                        "usuario": pending_row.usuario,
-                        "mail_destino": pending_row.mail,
-                        "estado": "rechazada",
-                        "mensaje": timeout_message,
-                        "password_actualizada": False,
-                    }
-                )
+                results_by_index[pending_index] = {
+                    "fila": pending_row.fila,
+                    "usuario": pending_row.usuario,
+                    "mail_destino": pending_row.mail,
+                    "estado": "rechazada",
+                    "mensaje": timeout_message,
+                    "password_actualizada": False,
+                }
+                handled_indices.add(pending_index)
             break
 
-        summary["procesadas"] += 1
-        row_result = {
-            "fila": row.fila,
-            "usuario": row.usuario,
-            "mail_destino": row.mail,
-            "estado": "rechazada",
-            "mensaje": "",
-            "password_actualizada": False,
-        }
+        group_indices, _recipient = _collect_group_indices(
+            rows=rows,
+            start_index=row_index,
+            send_type_config=send_type_config,
+            skip_indices=handled_indices,
+            recipient_cache=recipient_cache,
+        )
+        group_rows = [rows[i] for i in group_indices]
 
         try:
-            row_result = process_bulk_credentials_row(
-                row=row,
+            group_results = process_bulk_credentials_group(
+                rows=group_rows,
                 send_type_config=send_type_config,
                 login_url=login_url,
                 max_total_seconds=_get_remaining_processing_seconds(
                     processing_deadline
                 ),
             )
-            if row_result["password_actualizada"]:
-                summary["actualizadas"] += 1
-            else:
-                summary["sin_cambios"] += 1
-            summary["enviadas"] += 1
+            for idx, group_result in zip(group_indices, group_results):
+                summary["procesadas"] += 1
+                if group_result.get("password_actualizada"):
+                    summary["actualizadas"] += 1
+                else:
+                    summary["sin_cambios"] += 1
+                summary["enviadas"] += 1
+                results_by_index[idx] = group_result
+                handled_indices.add(idx)
         except ValidationError as exc:
-            summary["rechazadas"] += 1
-            row_result["mensaje"] = build_bulk_credentials_error_message(exc)
+            message = build_bulk_credentials_error_message(exc)
+            for idx in group_indices:
+                fail_row = rows[idx]
+                summary["procesadas"] += 1
+                summary["rechazadas"] += 1
+                results_by_index[idx] = {
+                    "fila": fail_row.fila,
+                    "usuario": fail_row.usuario,
+                    "mail_destino": fail_row.mail,
+                    "estado": "rechazada",
+                    "mensaje": message,
+                    "password_actualizada": False,
+                }
+                handled_indices.add(idx)
         except Exception as exc:
-            summary["rechazadas"] += 1
-            row_result["mensaje"] = build_bulk_credentials_error_message(exc)
+            message = build_bulk_credentials_error_message(exc)
             logger.exception(
-                (
-                    "Fallo procesando envio masivo de credenciales. "
-                    "tipo=%s fila=%s usuario=%s"
-                ),
+                ("Fallo procesando envio masivo de credenciales. " "tipo=%s filas=%s"),
                 send_type_config.key,
-                row.fila,
-                row.usuario,
+                [rows[i].fila for i in group_indices],
             )
+            for idx in group_indices:
+                fail_row = rows[idx]
+                summary["procesadas"] += 1
+                summary["rechazadas"] += 1
+                results_by_index[idx] = {
+                    "fila": fail_row.fila,
+                    "usuario": fail_row.usuario,
+                    "mail_destino": fail_row.mail,
+                    "estado": "rechazada",
+                    "mensaje": message,
+                    "password_actualizada": False,
+                }
+                handled_indices.add(idx)
 
-        results.append(row_result)
+    for idx in range(len(rows)):
+        if idx in results_by_index:
+            results.append(results_by_index[idx])
 
     return {
         "summary": summary,

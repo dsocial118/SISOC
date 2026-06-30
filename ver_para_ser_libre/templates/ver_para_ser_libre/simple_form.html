@@ -1,10 +1,15 @@
 {% extends "includes/main.html" %}
+{% load static %}
 
 {% block title %}Ver Para Ser Libres{% endblock %}
+{% block head %}
+    <link rel="stylesheet"
+          href="{% static 'custom/css/ver_para_ser_libre.css' %}" />
+{% endblock %}
 {% block content %}
-    <div class="row">
+    <div class="row vpsl-page">
         <div class="col-12 col-xl-8 offset-xl-2">
-            <div class="card">
+            <div class="card vpsl-info-card">
                 <div class="card-header">
                     <h3 class="card-title mb-0">Carga VPSL</h3>
                 </div>
