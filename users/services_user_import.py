@@ -308,6 +308,25 @@ def process_single_user_import_row(  # pylint: disable=too-many-locals
         email = email_raw.lower()
 
     grupos = _resolver_grupos(row_data.get("permisos", "").strip())
+
+    if email:
+        existing_user = User.objects.filter(email__iexact=email).first()
+        if existing_user:
+            grupos_actuales = set(existing_user.groups.all())
+            nuevos = [g for g in grupos if g not in grupos_actuales]
+            if nuevos:
+                existing_user.groups.add(*nuevos)
+                return {
+                    "status": UserImportJobRow.Status.CREATED,
+                    "mensaje": f"Usuario {existing_user.username} actualizado: {len(nuevos)} grupo(s) añadido(s).",
+                    "email": email,
+                }
+            return {
+                "status": UserImportJobRow.Status.SKIPPED,
+                "mensaje": f"Usuario {existing_user.username} ya existe y ya tiene todos los grupos indicados.",
+                "email": email,
+            }
+
     provincias_objs = _resolver_provincias(row_data.get("provincias", "").strip())
 
     username_base = (

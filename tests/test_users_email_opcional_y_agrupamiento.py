@@ -157,8 +157,11 @@ def test_user_import_row_sin_correo_genera_username_desde_nombre():
 
 
 @pytest.mark.django_db
-def test_user_import_row_emails_repetidos_no_son_rechazados():
-    User.objects.create_user(
+def test_user_import_row_email_existente_actualiza_grupos():
+    from django.contrib.auth.models import Group
+
+    grupo_nuevo = Group.objects.create(name="GrupoNuevo")
+    existing = User.objects.create_user(
         username="primer.import", email="shared@example.com", password="Pass!"
     )
     job = _StubImportJob()
@@ -167,15 +170,47 @@ def test_user_import_row_emails_repetidos_no_son_rechazados():
             "nombre": "Carla",
             "apellido": "Ruiz",
             "correo": "shared@example.com",
-            "permisos": "",
+            "permisos": "GrupoNuevo",
             "provincias": "",
             "rol": "",
             "fila": 2,
         },
         job=job,
     )
-    assert resultado["status"] and resultado.get("mensaje", "").startswith("Usuario ")
-    assert User.objects.filter(email__iexact="shared@example.com").count() == 2
+    from users.models import UserImportJobRow
+
+    assert resultado["status"] == UserImportJobRow.Status.CREATED
+    assert resultado.get("mensaje", "").startswith("Usuario primer.import actualizado")
+    assert User.objects.filter(email__iexact="shared@example.com").count() == 1
+    assert existing.groups.filter(pk=grupo_nuevo.pk).exists()
+
+
+@pytest.mark.django_db
+def test_user_import_row_email_existente_sin_grupos_nuevos_marca_skipped():
+    from django.contrib.auth.models import Group
+
+    grupo = Group.objects.create(name="GrupoExistente")
+    existing = User.objects.create_user(
+        username="primer.import2", email="shared2@example.com", password="Pass!"
+    )
+    existing.groups.add(grupo)
+    job = _StubImportJob()
+    resultado = process_single_user_import_row(
+        row_data={
+            "nombre": "Carla",
+            "apellido": "Ruiz",
+            "correo": "shared2@example.com",
+            "permisos": "GrupoExistente",
+            "provincias": "",
+            "rol": "",
+            "fila": 3,
+        },
+        job=job,
+    )
+    from users.models import UserImportJobRow
+
+    assert resultado["status"] == UserImportJobRow.Status.SKIPPED
+    assert resultado.get("mensaje", "").startswith("Usuario primer.import2 ya existe")
 
 
 def test_user_import_template_headers_incluye_correo():
