@@ -14,6 +14,7 @@
           href="{% static 'custom/css/comedorFormModerno.css' %}" />
     <link rel="stylesheet"
           href="{% static 'custom/css/dispositivoFormModerno.css' %}" />
+    <link rel="stylesheet" href="{% static 'custom/css/nuevo_comedor.css' %}" />
     <style nonce="{{ request.csp_nonce }}">
         .detail-item-label {
             font-size: 11px;
@@ -177,7 +178,93 @@
         </div>
     </div>
 
-    <!-- Secciones -->
+    <!-- Secciones (carrusel horizontal) -->
+    <div class="accordion-shell is-loading">
+        <div class="accordion-loader" aria-live="polite" aria-busy="true">
+            <div class="d-flex align-items-center gap-2">
+                <div class="spinner-border text-warning" role="status">
+                    <span class="visually-hidden">Cargando...</span>
+                </div>
+                <span class="fw-semibold">Cargando información...</span>
+            </div>
+        </div>
+        <div class="accordion-horizontal border rounded shadow shadow-sm mb-3">
+            {% for seccion in detalle_secciones %}
+                <div class="accordion-panel{% if forloop.first %} open{% endif %}">
+                    <button type="button"
+                            class="accordion-header h5 {% cycle 'accordion-header--informacion' 'accordion-header--funcionamiento' 'accordion-header--ubicacion' 'accordion-header--responsables' 'accordion-header--trabajadores' 'accordion-header--nomina' 'accordion-header--formularios' 'accordion-header--prestaciones' 'accordion-header--relevamientos' %}">
+                        {{ seccion.titulo }}
+                    </button>
+                    <div class="accordion-content">
+                        <div class="mb-3 d-flex align-items-center gap-2">
+                            <i class="{{ seccion.icono }}"></i>
+                            <h4 class="mb-0">{{ seccion.titulo }}</h4>
+                        </div>
+
+                        <!-- Items de texto/lista -->
+                        <div class="row">
+                            {% for item in seccion.items %}
+                                {% if item.kind != "file" %}
+                                    <div class="{% if item.wide %}col-md-12{% elif item.kind == 'list' %}col-md-6{% else %}col-md-4{% endif %}">
+                                        <div class="detail-item-label">{{ item.label }}</div>
+
+                                        {% if item.kind == "list" %}
+                                            {% if item.value %}
+                                                <div class="chip-list">
+                                                    {% for chip in item.value %}<span class="chip">{{ chip }}</span>{% endfor %}
+                                                </div>
+                                            {% else %}
+                                                <div class="detail-item-value empty">—</div>
+                                            {% endif %}
+
+                                        {% else %}
+                                            <div class="detail-item-value {% if item.value == '-' %}empty{% endif %}">
+                                                {% if item.value == "-" %}
+                                                    —
+                                                {% else %}
+                                                    {{ item.value }}
+                                                {% endif %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+
+                        <!-- Archivos adjuntos (solo si hay alguno con valor) -->
+                        {% with file_items=seccion.items %}
+                            {% for item in file_items %}
+                                {% if item.kind == "file" and item.value %}
+                                    {% if forloop.first %}
+                                        <div class="docs-section-divider"></div>
+                                        <div class="docs-section-label">
+                                            <i class="fas fa-paperclip mr-1"></i>Archivos adjuntos
+                                        </div>
+                                        <div class="doc-cards-grid">
+                                        {% endif %}
+                                        {% with ext=item.value.name|slice:"-4:"|lower %}
+                                            <a href="{{ item.value.url }}"
+                                               target="_blank"
+                                               rel="noopener"
+                                               class="doc-card-ro"
+                                               title="{{ item.label }}">
+                                                <i class="doc-card-icon fas {% if ext == '.pdf' %}fa-file-pdf pdf{% else %}fa-file-image img{% endif %}"></i>
+                                                <span class="doc-card-name">{{ item.value.name }}</span>
+                                                <i class="fas fa-external-link-alt" style="font-size:10px; opacity:0.5;"></i>
+                                            </a>
+                                        {% endwith %}
+                                        {% if forloop.last %}</div>{% endif %}
+                                {% endif %}
+                            {% endfor %}
+                        {% endwith %}
+
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Secciones (detalle completo) -->
     {% for seccion in detalle_secciones %}
         <div class="section-card" style="margin-bottom: 16px;">
 
@@ -255,4 +342,130 @@
         </div>
     {% endfor %}
 
+{% endblock %}
+
+{% block customJS %}
+    <script nonce="{{ request.csp_nonce }}">
+        document.addEventListener("DOMContentLoaded", function() {
+            const shell = document.querySelector(".accordion-shell");
+            const accordion = document.querySelector(".accordion-horizontal");
+            const panels = Array.from(document.querySelectorAll(".accordion-panel"));
+            const closedWidth = 60;
+
+            if (!accordion || panels.length === 0) {
+                if (shell) {
+                    shell.classList.remove("is-loading");
+                }
+                return;
+            }
+
+            function isMobile() {
+                return window.innerWidth <= 768;
+            }
+
+            function getOpenPanel() {
+                return panels.find(function(panel) {
+                    return panel.classList.contains("open");
+                }) || null;
+            }
+
+            function setOpenPanel(panelToOpen) {
+                panels.forEach(function(panel) {
+                    panel.classList.toggle("open", panel === panelToOpen);
+                    const header = panel.querySelector(".accordion-header");
+                    if (header) {
+                        header.setAttribute("aria-expanded", panel === panelToOpen ? "true" : "false");
+                    }
+                });
+            }
+
+            function configurarA11yAccordion() {
+                panels.forEach(function(panel, index) {
+                    const header = panel.querySelector(".accordion-header");
+                    const content = panel.querySelector(".accordion-content");
+                    if (!header || !content) {
+                        return;
+                    }
+                    const contentId = content.id || `dispositivo-accordion-panel-${index + 1}`;
+                    content.id = contentId;
+                    content.setAttribute("role", "region");
+                    header.setAttribute("aria-controls", contentId);
+                    header.setAttribute(
+                        "aria-expanded",
+                        panel.classList.contains("open") ? "true" : "false",
+                    );
+                });
+            }
+
+            function ensureSingleOpenPanel() {
+                const openedPanels = panels.filter(function(panel) {
+                    return panel.classList.contains("open");
+                });
+
+                if (openedPanels.length === 0) {
+                    setOpenPanel(panels[0]);
+                    return;
+                }
+
+                if (openedPanels.length > 1) {
+                    setOpenPanel(openedPanels[0]);
+                }
+            }
+
+            function ajustarLayout() {
+                ensureSingleOpenPanel();
+
+                if (isMobile()) {
+                    accordion.style.height = "auto";
+                    panels.forEach(function(panel) {
+                        panel.style.width = "100%";
+                        panel.style.height = "auto";
+                    });
+                    return;
+                }
+
+                const openPanel = getOpenPanel() || panels[0];
+                const openWidth = `calc(100% - ${(panels.length - 1) * closedWidth}px)`;
+
+                panels.forEach(function(panel) {
+                    panel.style.width = panel === openPanel ? openWidth : `${closedWidth}px`;
+                    panel.style.height = "100%";
+                });
+
+                accordion.style.height = "400px";
+            }
+
+            configurarA11yAccordion();
+
+            panels.forEach(function(panel) {
+                const header = panel.querySelector(".accordion-header");
+                if (!header) {
+                    return;
+                }
+
+                header.addEventListener("click", function(event) {
+                    if (event.target.closest("a")) {
+                        return;
+                    }
+                    setOpenPanel(panel);
+                    ajustarLayout();
+                });
+            });
+
+            window.addEventListener("resize", ajustarLayout);
+            window.addEventListener("load", function() {
+                ajustarLayout();
+                if (shell) {
+                    shell.classList.remove("is-loading");
+                }
+            });
+
+            ajustarLayout();
+            setTimeout(function() {
+                if (shell) {
+                    shell.classList.remove("is-loading");
+                }
+            }, 250);
+        });
+    </script>
 {% endblock %}
