@@ -158,7 +158,10 @@ def test_create_operador_for_comedor_allows_duplicate_email(comedores):
     )
 
     assert acceso.user.email == "duplicado@example.com"
-    assert get_user_model().objects.filter(email__iexact="duplicado@example.com").count() == 2
+    assert (
+        get_user_model().objects.filter(email__iexact="duplicado@example.com").count()
+        == 2
+    )
 
 
 @pytest.mark.django_db
