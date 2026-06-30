@@ -29,11 +29,12 @@ USER_IMPORT_SHEET_NAME = "usuarios"
 USER_IMPORT_REQUIRED_COLUMNS = (
     "nombre",
     "apellido",
-    "correo",
     "permisos",
     "provincias",
     "rol",
 )
+USER_IMPORT_OPTIONAL_COLUMNS = ("correo",)
+USER_IMPORT_KNOWN_COLUMNS = USER_IMPORT_REQUIRED_COLUMNS + USER_IMPORT_OPTIONAL_COLUMNS
 USER_IMPORT_TEMPLATE_HEADERS = (
     "Nombre",
     "Apellido",
@@ -86,6 +87,15 @@ def _slug_base_desde_email(email: str) -> str:
     return cleaned[:USERNAME_MAX_LENGTH] or "usuario"
 
 
+def _slug_base_desde_nombre(*, nombre: str, apellido: str) -> str:
+    raw = f"{apellido} {nombre}".strip()
+    normalized = unicodedata.normalize("NFKD", raw)
+    normalized = "".join(ch for ch in normalized if not unicodedata.combining(ch))
+    cleaned = "".join(ch if ch.isalnum() else "." for ch in normalized.lower())
+    cleaned = ".".join(part for part in cleaned.split(".") if part)
+    return cleaned[:USERNAME_MAX_LENGTH] or "usuario"
+
+
 def _generar_username_unico(base: str) -> str:
     if not User.objects.filter(username__iexact=base).exists():
         return base
@@ -129,6 +139,8 @@ def validate_user_import_workbook(uploaded_file) -> None:
             raise ValidationError(
                 f"El archivo debe incluir las columnas obligatorias: {', '.join(missing)}."
             )
+        # Correo es opcional: si no viene la columna, todas las filas se procesan
+        # sin email y la generación de username se hace a partir de nombre+apellido.
 
         for row in rows:
             if any(_clean_cell(v) for v in row):
@@ -155,7 +167,7 @@ def load_user_import_rows(uploaded_file) -> list[dict]:
         col_map = {
             col: idx
             for idx, col in enumerate(headers)
-            if col in USER_IMPORT_REQUIRED_COLUMNS
+            if col in USER_IMPORT_KNOWN_COLUMNS
         }
 
         parsed = []
@@ -217,9 +229,23 @@ def _enviar_credenciales_import(*, user, password: str) -> bool:
     if not user.email:
         return False
     try:
+        from users.services_bulk_credentials import (  # noqa: PLC0415
+            BulkCredentialEntry,
+        )
+
+        entry = BulkCredentialEntry(
+            username=user.username,
+            plain_password=password,
+            first_name=user.first_name or "",
+            last_name=user.last_name or "",
+        )
         context = {
-            "user": user,
+            "entries": [entry],
+            "is_grouped": False,
+            "user_username": entry.username,
+            "user_full_name": entry.full_name,
             "plain_password": password,
+            "nombre_del_centro": "",
             "login_url": _build_login_url(),
         }
         message = render_to_string(USER_IMPORT_CREDENTIALS_EMAIL_TEMPLATE, context)
@@ -260,35 +286,39 @@ def _resolver_provincias(provincias_raw: str) -> list:
     return provincias
 
 
-def process_single_user_import_row(*, row_data: dict, job: UserImportJob) -> dict:
+def process_single_user_import_row(  # pylint: disable=too-many-locals
+    *, row_data: dict, job: UserImportJob
+) -> dict:
     nombre = row_data.get("nombre", "").strip()
     apellido = row_data.get("apellido", "").strip()
     email_raw = row_data.get("correo", "").strip()
     rol = row_data.get("rol", "").strip()
 
-    if not email_raw:
-        raise ValidationError("El campo Correo es obligatorio.")
-    try:
-        validate_email(email_raw)
-    except ValidationError as exc:
-        raise ValidationError(
-            f"El correo '{email_raw}' no tiene formato valido."
-        ) from exc
+    if not nombre or not apellido:
+        raise ValidationError("Los campos Nombre y Apellido son obligatorios.")
 
-    email = email_raw.lower()
-
-    if User.objects.filter(email__iexact=email).exists():
-        return {
-            "status": UserImportJobRow.Status.SKIPPED,
-            "mensaje": f"Ya existe un usuario con el correo {email}.",
-        }
+    email = ""
+    if email_raw:
+        try:
+            validate_email(email_raw)
+        except ValidationError as exc:
+            raise ValidationError(
+                f"El correo '{email_raw}' no tiene formato valido."
+            ) from exc
+        email = email_raw.lower()
 
     grupos = _resolver_grupos(row_data.get("permisos", "").strip())
     provincias_objs = _resolver_provincias(row_data.get("provincias", "").strip())
 
+    username_base = (
+        _slug_base_desde_email(email)
+        if email
+        else _slug_base_desde_nombre(nombre=nombre, apellido=apellido)
+    )
+
     with transaction.atomic():
         user = User(
-            username=_generar_username_unico(_slug_base_desde_email(email)),
+            username=_generar_username_unico(username_base),
             email=email,
             first_name=nombre,
             last_name=apellido,

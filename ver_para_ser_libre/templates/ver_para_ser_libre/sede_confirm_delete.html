@@ -1,22 +1,24 @@
 {% extends "includes/main.html" %}
+{% load static %}
 
 {% block title %}Eliminar sede VPSL{% endblock %}
+{% block head %}
+    <link rel="stylesheet"
+          href="{% static 'custom/css/ver_para_ser_libre.css' %}?v=sede-delete-ux-20260624" />
+{% endblock %}
 
 {% block content %}
-    <div class="row">
-        <div class="col-12 col-lg-8 offset-lg-2">
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title mb-0">Eliminar sede</h3>
-                </div>
+    <div class="vpsl-page vpsl-confirm-page">
+        <div class="card vpsl-confirm-card">
+            <div class="card-body text-center">
                 <form method="post">
                     {% csrf_token %}
-                    <div class="card-body">
-                        <div class="alert alert-warning mb-0">
-                            Confirme la eliminacion logica de la sede <strong>{{ object.nombre }}</strong>.
-                        </div>
-                    </div>
-                    <div class="card-footer d-flex justify-content-end gap-2">
+                    <div class="vpsl-delete-icon">!</div>
+                    <h3 class="vpsl-delete-title">Eliminar sede</h3>
+                    <p class="vpsl-delete-message">
+                        Confirmá la eliminación lógica de la sede <strong>{{ object.nombre }}</strong>.
+                    </p>
+                    <div class="vpsl-delete-actions">
                         <a href="{% url 'vpsl_sede_list' %}" class="btn btn-secondary">Cancelar</a>
                         <button type="submit" class="btn btn-danger">Eliminar</button>
                     </div>

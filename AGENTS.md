@@ -35,6 +35,7 @@ Usar `docs/ia/CONTEXT_HYGIENE.md` para decidir si hace falta ampliar. Abrir mas 
 ## Documentacion
 
 Registrar en `docs/registro/` cambios funcionales visibles, decisiones de arquitectura o diseno, temas de seguridad o permisos y trade-offs importantes. Si el cambio es trivial y no necesita registro, decirlo en la entrega.
+- Actualizar `AGENT_REPO_MAP.md` en cualquier cambio que altere de forma relevante la estructura del repo, sus hotspots de navegacion, comandos operativos, validaciones, modulos, flujos, puntos de entrada o advertencias utiles para futuros agentes y desarrolladores.
 
 ## Validacion
 

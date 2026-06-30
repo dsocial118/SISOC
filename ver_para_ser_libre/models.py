@@ -190,6 +190,12 @@ class ItinerarioVPSL(SoftDeleteModelMixin, models.Model):
         ordering = ["-fecha_inicio", "provincia__nombre"]
         verbose_name = "Itinerario VPSL"
         verbose_name_plural = "Itinerarios VPSL"
+        permissions = [
+            (
+                "view_all_itinerarios_vpsl",
+                "Puede ver todos los itinerarios VPSL sin restriccion provincial",
+            ),
+        ]
         indexes = [
             models.Index(fields=["estado", "fecha_inicio"]),
             models.Index(fields=["provincia", "estado"]),

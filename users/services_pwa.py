@@ -267,8 +267,6 @@ def create_operador_for_comedor(
 
     if User.objects.filter(username__iexact=username).exists():
         raise ValidationError({"username": "Ya existe un usuario con ese username."})
-    if User.objects.filter(email__iexact=email).exists():
-        raise ValidationError({"email": "Ya existe un usuario con ese email."})
 
     try:
         operador = User.objects.create_user(
