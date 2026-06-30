@@ -24,6 +24,15 @@ _ADAPTIVE_BLOCK_SIZE = 31
 _ADAPTIVE_C = 10
 
 
+def _cv2_attr(name: str):
+    """Obtiene símbolos de OpenCV en runtime.
+
+    Evita falsos positivos de pylint sobre miembros expuestos por la extensión
+    C y mantiene compatibilidad con tests que parchean `services_preprocess.cv2`.
+    """
+    return getattr(cv2, name)
+
+
 def preprocess_for_ocr(pil_image: Image.Image) -> Image.Image:
     """
     Limpia una imagen PIL antes del OCR para mejorar la precisión en
@@ -45,15 +54,15 @@ def preprocess_for_ocr(pil_image: Image.Image) -> Image.Image:
     try:
         rgb = np.array(pil_image.convert("RGB"))
         rgb = _maybe_remove_color_stamps(rgb)
-        gray = cv2.cvtColor(rgb, cv2.COLOR_RGB2GRAY)
+        gray = _cv2_attr("cvtColor")(rgb, _cv2_attr("COLOR_RGB2GRAY"))
 
         gray = _resize_if_small(gray)
 
-        binary = cv2.adaptiveThreshold(
+        binary = _cv2_attr("adaptiveThreshold")(
             gray,
             255,
-            cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
-            cv2.THRESH_BINARY,
+            _cv2_attr("ADAPTIVE_THRESH_GAUSSIAN_C"),
+            _cv2_attr("THRESH_BINARY"),
             _ADAPTIVE_BLOCK_SIZE,
             _ADAPTIVE_C,
         )
@@ -80,7 +89,7 @@ def _maybe_remove_color_stamps(rgb: np.ndarray) -> np.ndarray:
         threshold = getattr(
             settings, "OCR_COLOR_SAT_THRESHOLD", _DEFAULT_COLOR_SAT_THRESHOLD
         )
-        hsv = cv2.cvtColor(rgb, cv2.COLOR_RGB2HSV)
+        hsv = _cv2_attr("cvtColor")(rgb, _cv2_attr("COLOR_RGB2HSV"))
         color_mask = hsv[:, :, 1] > threshold
         out = rgb.copy()
         out[color_mask] = (255, 255, 255)
@@ -100,4 +109,4 @@ def _resize_if_small(gray: np.ndarray) -> np.ndarray:
 
     scale = _MIN_LONG_SIDE / long_side
     new_size = (int(round(width * scale)), int(round(height * scale)))
-    return cv2.resize(gray, new_size, interpolation=cv2.INTER_CUBIC)
+    return _cv2_attr("resize")(gray, new_size, interpolation=_cv2_attr("INTER_CUBIC"))
