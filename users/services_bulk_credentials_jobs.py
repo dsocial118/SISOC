@@ -529,7 +529,7 @@ def _advance_job_pointer(
     return job
 
 
-def _select_group_for_row(
+def _select_group_for_row(  # pylint: disable=too-many-arguments
     *,
     job: BulkCredentialsJob,
     rows,
@@ -587,7 +587,9 @@ def _select_group_for_row(
     return fresh, [rows[i] for i in fresh]
 
 
-def process_bulk_credentials_job(job: BulkCredentialsJob) -> BulkCredentialsJob:
+def process_bulk_credentials_job(  # pylint: disable=too-many-locals,too-many-return-statements
+    job: BulkCredentialsJob,
+) -> BulkCredentialsJob:
     send_type_config = get_bulk_credentials_send_type_config(job.send_type)
     login_url = _build_login_url()
     rows = _load_job_rows(job=job, send_type_config=send_type_config)

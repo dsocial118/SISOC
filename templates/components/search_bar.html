@@ -145,14 +145,26 @@ Modo búsqueda AJAX dinámica: {% include 'components/search_bar.html' with titu
                    {% if filters_mode %}data-restablecer-filtros-favoritos="true"{% endif %}>Resetear</a>
             {% endif %}
             {% if export_url %}
-                {% with export_group=export_group|default:"Exportar a csv" %}
-                    {% if request.user|has_perm_code:export_group or request.user.is_superuser %}
+                {% firstof export_permissions export_group "auth.role_exportar_a_csv" as export_permissions_value %}
+                {% firstof export_admin_permissions "" as export_admin_permissions_value %}
+                {% if request.user.is_superuser or request.user|has_any_perm:export_admin_permissions_value %}
+                    <button type="button"
+                            class="btn btn-lg btn-export-csv"
+                            data-url="{{ export_url }}"
+                            title="Exportar listado actual a CSV">Exportar</button>
+                {% elif export_required_permission %}
+                    {% if request.user|has_any_perm:export_permissions_value and request.user|has_perm_code:export_required_permission %}
                         <button type="button"
                                 class="btn btn-lg btn-export-csv"
                                 data-url="{{ export_url }}"
                                 title="Exportar listado actual a CSV">Exportar</button>
                     {% endif %}
-                {% endwith %}
+                {% elif request.user|has_any_perm:export_permissions_value %}
+                    <button type="button"
+                            class="btn btn-lg btn-export-csv"
+                            data-url="{{ export_url }}"
+                            title="Exportar listado actual a CSV">Exportar</button>
+                {% endif %}
             {% endif %}
             <!-- Botones adicionales personalizados -->
 
