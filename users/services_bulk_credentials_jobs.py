@@ -562,11 +562,14 @@ def _select_group_for_row(
     if len(group_indices) == 1:
         return group_indices, [rows[row_index]]
 
-    if primary_recipient and BulkCredentialsJobRow.objects.filter(
-        job=job,
-        status=BulkCredentialsJobRow.Status.SENT,
-        mail_destino__iexact=primary_recipient,
-    ).exists():
+    if (
+        primary_recipient
+        and BulkCredentialsJobRow.objects.filter(
+            job=job,
+            status=BulkCredentialsJobRow.Status.SENT,
+            mail_destino__iexact=primary_recipient,
+        ).exists()
+    ):
         # Destinatario ya recibió un correo de este job; no re-agrupar.
         return [row_index], [rows[row_index]]
 
@@ -677,9 +680,7 @@ def process_bulk_credentials_job(job: BulkCredentialsJob) -> BulkCredentialsJob:
                 job=job, row=fresh_row, row_state=other_state, result=result
             )
 
-        job = _advance_job_pointer(
-            job=job, row_index=row_index, total_rows=total_rows
-        )
+        job = _advance_job_pointer(job=job, row_index=row_index, total_rows=total_rows)
         if job.status == BulkCredentialsJob.Status.COMPLETED:
             return job
 

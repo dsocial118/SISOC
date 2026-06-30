@@ -58,9 +58,7 @@ def _set_visible_temporary_password(user, plain_password):
     profile = user.profile
     profile.must_change_password = True
     profile.temporary_password_plaintext = plain_password
-    profile.save(
-        update_fields=["must_change_password", "temporary_password_plaintext"]
-    )
+    profile.save(update_fields=["must_change_password", "temporary_password_plaintext"])
     return user
 
 
@@ -103,9 +101,7 @@ def test_user_creation_form_acepta_email_repetido():
     assert form.is_valid(), form.errors
     nuevo = form.save()
     assert nuevo.email == "repetido@example.com"
-    assert (
-        User.objects.filter(email__iexact="repetido@example.com").count() == 2
-    )
+    assert User.objects.filter(email__iexact="repetido@example.com").count() == 2
 
 
 @pytest.mark.django_db
@@ -178,13 +174,8 @@ def test_user_import_row_emails_repetidos_no_son_rechazados():
         },
         job=job,
     )
-    assert (
-        resultado["status"]
-        and resultado.get("mensaje", "").startswith("Usuario ")
-    )
-    assert (
-        User.objects.filter(email__iexact="shared@example.com").count() == 2
-    )
+    assert resultado["status"] and resultado.get("mensaje", "").startswith("Usuario ")
+    assert User.objects.filter(email__iexact="shared@example.com").count() == 2
 
 
 def test_user_import_template_headers_incluye_correo():
@@ -253,9 +244,7 @@ def test_bulk_credentials_agrupa_credenciales_por_mismo_destinatario():
         ]
     )
 
-    result = process_bulk_credentials_file(
-        uploaded_file=upload, send_type="standard"
-    )
+    result = process_bulk_credentials_file(uploaded_file=upload, send_type="standard")
 
     # 3 filas procesadas y enviadas, pero solo 2 correos (1 agrupado + 1 solo)
     assert result["summary"]["procesadas"] == 3
@@ -263,18 +252,14 @@ def test_bulk_credentials_agrupa_credenciales_por_mismo_destinatario():
     assert len(mail.outbox) == 2
 
     # El correo agrupado contiene ambas credenciales
-    agrupado = next(
-        msg for msg in mail.outbox if msg.to == ["compartido@example.com"]
-    )
+    agrupado = next(msg for msg in mail.outbox if msg.to == ["compartido@example.com"])
     assert "user_uno" in agrupado.body
     assert "user_dos" in agrupado.body
     assert "Pass1!" in agrupado.body
     assert "Pass2!" in agrupado.body
 
     # El correo individual sólo trae sus datos
-    individual = next(
-        msg for msg in mail.outbox if msg.to == ["solo@example.com"]
-    )
+    individual = next(msg for msg in mail.outbox if msg.to == ["solo@example.com"])
     assert "user_solo" in individual.body
     assert "Pass3!" in individual.body
     assert "user_uno" not in individual.body
@@ -301,12 +286,8 @@ def test_bulk_credentials_agrupa_cuando_destinatario_se_resuelve_desde_user_emai
     _set_visible_temporary_password(user1, "Aaa1!")
     _set_visible_temporary_password(user2, "Bbb2!")
 
-    upload = _build_excel_file(
-        [("vacio_uno", ""), ("vacio_dos", "")]
-    )
-    result = process_bulk_credentials_file(
-        uploaded_file=upload, send_type="standard"
-    )
+    upload = _build_excel_file([("vacio_uno", ""), ("vacio_dos", "")])
+    result = process_bulk_credentials_file(uploaded_file=upload, send_type="standard")
 
     assert result["summary"]["enviadas"] == 2
     assert len(mail.outbox) == 1
@@ -347,9 +328,7 @@ def test_inet_no_agrupa_cuando_centros_son_distintos():
         ],
         headers=("usuario", "mail", "Nombre del Centro"),
     )
-    result = process_bulk_credentials_file(
-        uploaded_file=upload, send_type="inet"
-    )
+    result = process_bulk_credentials_file(uploaded_file=upload, send_type="inet")
 
     assert result["summary"]["enviadas"] == 2
     # Dos correos distintos al mismo destinatario, uno por centro
@@ -387,9 +366,7 @@ def test_inet_agrupa_cuando_centro_y_destinatario_coinciden():
         ],
         headers=("usuario", "mail", "Nombre del Centro"),
     )
-    result = process_bulk_credentials_file(
-        uploaded_file=upload, send_type="inet"
-    )
+    result = process_bulk_credentials_file(uploaded_file=upload, send_type="inet")
 
     assert result["summary"]["enviadas"] == 2
     assert len(mail.outbox) == 1
@@ -479,9 +456,7 @@ def test_worker_no_re_agrupa_si_destinatario_ya_recibio_envio_previo(
 
 @pytest.mark.django_db
 @override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
-def test_worker_no_agrupa_cuando_primary_tiene_attempts_previos(
-    settings, tmp_path
-):
+def test_worker_no_agrupa_cuando_primary_tiene_attempts_previos(settings, tmp_path):
     """Si la fila primaria ya tenía attempts > 0 (resume tras fallo posible
     post-envío), debe procesarse sola para acotar duplicación al destinatario."""
     settings.MEDIA_ROOT = tmp_path
@@ -556,9 +531,7 @@ def test_recipient_cache_resuelve_destinatarios_con_una_query(
             email=f"cache_user_{index}@example.com",
             password="Pass!",
         )
-    upload = _build_excel_file(
-        [(f"cache_user_{i}", "") for i in range(5)]
-    )
+    upload = _build_excel_file([(f"cache_user_{i}", "") for i in range(5)])
     config = get_bulk_credentials_send_type_config("standard")
     rows = _load_workbook_rows(upload, send_type_config=config)
 

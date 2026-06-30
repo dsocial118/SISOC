@@ -640,7 +640,9 @@ def _resolve_row_for_send(
     return user, recipient_email, entry
 
 
-def _row_success_result(*, row: ParsedCredentialRow, recipient_email: str, grouped: bool):
+def _row_success_result(
+    *, row: ParsedCredentialRow, recipient_email: str, grouped: bool
+):
     base_message = "Credenciales enviadas correctamente."
     if grouped:
         base_message = (
@@ -735,9 +737,9 @@ def _build_recipient_cache(
     }
     if not usernames_needed:
         return {}
-    user_qs = User.objects.filter(
-        username__in=list(usernames_needed)
-    ).only("username", "email")
+    user_qs = User.objects.filter(username__in=list(usernames_needed)).only(
+        "username", "email"
+    )
     cache = {
         (u.username or "").strip().lower(): (u.email or "").strip().lower()
         for u in user_qs
@@ -769,9 +771,7 @@ def _row_grouping_key(
         cached = (recipient_cache or {}).get(username_key)
         if cached is None and recipient_cache is None:
             user = (
-                User.objects.filter(username__iexact=row.usuario)
-                .only("email")
-                .first()
+                User.objects.filter(username__iexact=row.usuario).only("email").first()
             )
             cached = (user.email or "").strip().lower() if user else ""
         recipient = cached or ""
@@ -932,10 +932,7 @@ def process_bulk_credentials_file(
         except Exception as exc:
             message = build_bulk_credentials_error_message(exc)
             logger.exception(
-                (
-                    "Fallo procesando envio masivo de credenciales. "
-                    "tipo=%s filas=%s"
-                ),
+                ("Fallo procesando envio masivo de credenciales. " "tipo=%s filas=%s"),
                 send_type_config.key,
                 [rows[i].fila for i in group_indices],
             )
