@@ -218,6 +218,55 @@ def _extract_pdf_page_text(
     return page_text, source, len(ocr_text.split())
 
 
+def _collect_pdf_page_results(
+    pages: list[Image.Image],
+    *,
+    language: str,
+    opts: dict,
+    layer: list[dict] | None,
+) -> tuple[list[str], dict[str, int]]:
+    """Procesa todas las paginas y devuelve textos + métricas agregadas."""
+    texts: list[str] = []
+    stats = {"hybrid_words": 0, "ocr_only_words": 0, "layer_pages": 0}
+
+    for index, page_image in enumerate(pages):
+        layer_entry = layer[index] if layer and index < len(layer) else None
+        page_text, source, page_ocr_words = _extract_pdf_page_text(
+            page_image,
+            language=language,
+            opts=opts,
+            layer_entry=layer_entry,
+        )
+        stats["ocr_only_words"] += page_ocr_words
+        stats["hybrid_words"] += len(page_text.split())
+        if source == "text_layer":
+            stats["layer_pages"] += 1
+        if page_text:
+            texts.append(page_text)
+
+    return texts, stats
+
+
+def _log_pdf_layer_stats(stats: dict[str, int], page_count: int) -> None:
+    """Registra métricas del híbrido capa de texto + OCR."""
+    # Guardrail medible: el hibrido nunca debe perder palabras frente al OCR
+    # solo. Se loguea para auditar el comportamiento sobre datos reales.
+    logger.info(
+        "OCR PDF hibrido: %d/%d paginas por capa de texto; "
+        "palabras hibrido=%d ocr_only=%d",
+        stats["layer_pages"],
+        page_count,
+        stats["hybrid_words"],
+        stats["ocr_only_words"],
+    )
+    if stats["hybrid_words"] < stats["ocr_only_words"]:
+        logger.warning(
+            "OCR PDF hibrido perdio palabras (%d < %d); revisar heuristica",
+            stats["hybrid_words"],
+            stats["ocr_only_words"],
+        )
+
+
 def _extract_from_pdf(file_path: str, language: str, opts: dict | None = None) -> dict:
     from pdf2image import convert_from_path
 
@@ -227,43 +276,15 @@ def _extract_from_pdf(file_path: str, language: str, opts: dict | None = None) -
 
     layer = _read_text_layer(file_path) if opts["pdf_text_layer"] else None
 
-    texts = []
-    hybrid_words = 0  # palabras del resultado hibrido
-    ocr_only_words = 0  # palabras si solo se usara OCR
-    layer_pages = 0
-    for i, page_image in enumerate(pages):
-        layer_entry = layer[i] if layer and i < len(layer) else None
-        page_text, source, page_ocr_words = _extract_pdf_page_text(
-            page_image,
-            language=language,
-            opts=opts,
-            layer_entry=layer_entry,
-        )
-
-        ocr_only_words += page_ocr_words
-        hybrid_words += len(page_text.split())
-        if source == "text_layer":
-            layer_pages += 1
-        if page_text:
-            texts.append(page_text)
+    texts, stats = _collect_pdf_page_results(
+        pages,
+        language=language,
+        opts=opts,
+        layer=layer,
+    )
 
     if layer is not None:
-        # Guardrail medible: el hibrido nunca debe perder palabras frente al OCR
-        # solo. Se loguea para auditar el comportamiento sobre datos reales.
-        logger.info(
-            "OCR PDF hibrido: %d/%d paginas por capa de texto; "
-            "palabras hibrido=%d ocr_only=%d",
-            layer_pages,
-            page_count,
-            hybrid_words,
-            ocr_only_words,
-        )
-        if hybrid_words < ocr_only_words:
-            logger.warning(
-                "OCR PDF hibrido perdio palabras (%d < %d); revisar heuristica",
-                hybrid_words,
-                ocr_only_words,
-            )
+        _log_pdf_layer_stats(stats, page_count)
 
     text = "\n\n".join(texts)
     return {

@@ -2,15 +2,24 @@ from __future__ import annotations
 
 import logging
 
-import cv2  # pylint: disable=no-member
+import cv2
 import numpy as np
 from django.conf import settings
 from PIL import Image
 
 logger = logging.getLogger("django")
 
-# OpenCV expone muchos símbolos desde una extensión C y pylint no los infiere
-# de forma confiable en este módulo.
+# OpenCV expone estos símbolos desde una extensión C y pylint no los resuelve
+# bien por inferencia estática; se levantan una vez para usarlos con nombres
+# explícitos dentro del módulo.
+_CVT_COLOR = getattr(cv2, "cvtColor")
+_COLOR_RGB2GRAY = getattr(cv2, "COLOR_RGB2GRAY")
+_ADAPTIVE_THRESHOLD = getattr(cv2, "adaptiveThreshold")
+_ADAPTIVE_THRESH_GAUSSIAN_C = getattr(cv2, "ADAPTIVE_THRESH_GAUSSIAN_C")
+_THRESH_BINARY = getattr(cv2, "THRESH_BINARY")
+_COLOR_RGB2HSV = getattr(cv2, "COLOR_RGB2HSV")
+_RESIZE = getattr(cv2, "resize")
+_INTER_CUBIC = getattr(cv2, "INTER_CUBIC")
 
 # Lado mayor mínimo (px) por debajo del cual se reescala la imagen para
 # acercarla a ~300 DPI efectivos y darle más detalle a Tesseract.
@@ -48,15 +57,15 @@ def preprocess_for_ocr(pil_image: Image.Image) -> Image.Image:
     try:
         rgb = np.array(pil_image.convert("RGB"))
         rgb = _maybe_remove_color_stamps(rgb)
-        gray = cv2.cvtColor(rgb, cv2.COLOR_RGB2GRAY)
+        gray = _CVT_COLOR(rgb, _COLOR_RGB2GRAY)
 
         gray = _resize_if_small(gray)
 
-        binary = cv2.adaptiveThreshold(
+        binary = _ADAPTIVE_THRESHOLD(
             gray,
             255,
-            cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
-            cv2.THRESH_BINARY,
+            _ADAPTIVE_THRESH_GAUSSIAN_C,
+            _THRESH_BINARY,
             _ADAPTIVE_BLOCK_SIZE,
             _ADAPTIVE_C,
         )
@@ -83,7 +92,7 @@ def _maybe_remove_color_stamps(rgb: np.ndarray) -> np.ndarray:
         threshold = getattr(
             settings, "OCR_COLOR_SAT_THRESHOLD", _DEFAULT_COLOR_SAT_THRESHOLD
         )
-        hsv = cv2.cvtColor(rgb, cv2.COLOR_RGB2HSV)
+        hsv = _CVT_COLOR(rgb, _COLOR_RGB2HSV)
         color_mask = hsv[:, :, 1] > threshold
         out = rgb.copy()
         out[color_mask] = (255, 255, 255)
@@ -103,4 +112,4 @@ def _resize_if_small(gray: np.ndarray) -> np.ndarray:
 
     scale = _MIN_LONG_SIDE / long_side
     new_size = (int(round(width * scale)), int(round(height * scale)))
-    return cv2.resize(gray, new_size, interpolation=cv2.INTER_CUBIC)
+    return _RESIZE(gray, new_size, interpolation=_INTER_CUBIC)
