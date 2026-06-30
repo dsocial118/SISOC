@@ -9,18 +9,6 @@ from PIL import Image
 
 logger = logging.getLogger("django")
 
-# OpenCV expone estos símbolos desde una extensión C y pylint no los resuelve
-# bien por inferencia estática; se levantan una vez para usarlos con nombres
-# explícitos dentro del módulo.
-_CVT_COLOR = getattr(cv2, "cvtColor")
-_COLOR_RGB2GRAY = getattr(cv2, "COLOR_RGB2GRAY")
-_ADAPTIVE_THRESHOLD = getattr(cv2, "adaptiveThreshold")
-_ADAPTIVE_THRESH_GAUSSIAN_C = getattr(cv2, "ADAPTIVE_THRESH_GAUSSIAN_C")
-_THRESH_BINARY = getattr(cv2, "THRESH_BINARY")
-_COLOR_RGB2HSV = getattr(cv2, "COLOR_RGB2HSV")
-_RESIZE = getattr(cv2, "resize")
-_INTER_CUBIC = getattr(cv2, "INTER_CUBIC")
-
 # Lado mayor mínimo (px) por debajo del cual se reescala la imagen para
 # acercarla a ~300 DPI efectivos y darle más detalle a Tesseract.
 _MIN_LONG_SIDE = 1500
@@ -34,6 +22,15 @@ _DEFAULT_COLOR_SAT_THRESHOLD = 90
 # los caracteres. Valores elegidos empíricamente sobre documentos reales.
 _ADAPTIVE_BLOCK_SIZE = 31
 _ADAPTIVE_C = 10
+
+
+def _cv2_attr(name: str):
+    """Obtiene símbolos de OpenCV en runtime.
+
+    Evita falsos positivos de pylint sobre miembros expuestos por la extensión
+    C y mantiene compatibilidad con tests que parchean `services_preprocess.cv2`.
+    """
+    return getattr(cv2, name)
 
 
 def preprocess_for_ocr(pil_image: Image.Image) -> Image.Image:
@@ -57,15 +54,15 @@ def preprocess_for_ocr(pil_image: Image.Image) -> Image.Image:
     try:
         rgb = np.array(pil_image.convert("RGB"))
         rgb = _maybe_remove_color_stamps(rgb)
-        gray = _CVT_COLOR(rgb, _COLOR_RGB2GRAY)
+        gray = _cv2_attr("cvtColor")(rgb, _cv2_attr("COLOR_RGB2GRAY"))
 
         gray = _resize_if_small(gray)
 
-        binary = _ADAPTIVE_THRESHOLD(
+        binary = _cv2_attr("adaptiveThreshold")(
             gray,
             255,
-            _ADAPTIVE_THRESH_GAUSSIAN_C,
-            _THRESH_BINARY,
+            _cv2_attr("ADAPTIVE_THRESH_GAUSSIAN_C"),
+            _cv2_attr("THRESH_BINARY"),
             _ADAPTIVE_BLOCK_SIZE,
             _ADAPTIVE_C,
         )
@@ -92,7 +89,7 @@ def _maybe_remove_color_stamps(rgb: np.ndarray) -> np.ndarray:
         threshold = getattr(
             settings, "OCR_COLOR_SAT_THRESHOLD", _DEFAULT_COLOR_SAT_THRESHOLD
         )
-        hsv = _CVT_COLOR(rgb, _COLOR_RGB2HSV)
+        hsv = _cv2_attr("cvtColor")(rgb, _cv2_attr("COLOR_RGB2HSV"))
         color_mask = hsv[:, :, 1] > threshold
         out = rgb.copy()
         out[color_mask] = (255, 255, 255)
@@ -112,4 +109,4 @@ def _resize_if_small(gray: np.ndarray) -> np.ndarray:
 
     scale = _MIN_LONG_SIDE / long_side
     new_size = (int(round(width * scale)), int(round(height * scale)))
-    return _RESIZE(gray, new_size, interpolation=_INTER_CUBIC)
+    return _cv2_attr("resize")(gray, new_size, interpolation=_cv2_attr("INTER_CUBIC"))
