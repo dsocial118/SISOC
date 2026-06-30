@@ -2,12 +2,15 @@ from __future__ import annotations
 
 import logging
 
-import cv2
+import cv2  # pylint: disable=no-member
 import numpy as np
 from django.conf import settings
 from PIL import Image
 
 logger = logging.getLogger("django")
+
+# OpenCV expone muchos símbolos desde una extensión C y pylint no los infiere
+# de forma confiable en este módulo.
 
 # Lado mayor mínimo (px) por debajo del cual se reescala la imagen para
 # acercarla a ~300 DPI efectivos y darle más detalle a Tesseract.

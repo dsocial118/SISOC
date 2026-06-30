@@ -199,8 +199,26 @@ def _choose_page_text(ocr_text: str, layer_entry: dict | None) -> tuple[str, str
     return ocr_text, "ocr"
 
 
-def _extract_from_pdf(file_path: str, language: str, opts: dict | None = None) -> dict:
+def _extract_pdf_page_text(
+    page_image: Image.Image,
+    *,
+    language: str,
+    opts: dict,
+    layer_entry: dict | None,
+) -> tuple[str, str, int]:
+    """Ejecuta OCR de una pagina y decide si conviene usar la capa embebida."""
     import pytesseract
+
+    page_image = _maybe_auto_orient(page_image, opts["auto_orient"])
+    page_image = _maybe_preprocess(page_image, opts["preprocess"])
+    ocr_text = pytesseract.image_to_string(
+        page_image, lang=language, config=_tesseract_config(language)
+    ).strip()
+    page_text, source = _choose_page_text(ocr_text, layer_entry)
+    return page_text, source, len(ocr_text.split())
+
+
+def _extract_from_pdf(file_path: str, language: str, opts: dict | None = None) -> dict:
     from pdf2image import convert_from_path
 
     opts = opts or _resolve_options(None)
@@ -214,15 +232,15 @@ def _extract_from_pdf(file_path: str, language: str, opts: dict | None = None) -
     ocr_only_words = 0  # palabras si solo se usara OCR
     layer_pages = 0
     for i, page_image in enumerate(pages):
-        page_image = _maybe_auto_orient(page_image, opts["auto_orient"])
-        page_image = _maybe_preprocess(page_image, opts["preprocess"])
-        ocr_text = pytesseract.image_to_string(
-            page_image, lang=language, config=_tesseract_config(language)
-        ).strip()
         layer_entry = layer[i] if layer and i < len(layer) else None
-        page_text, source = _choose_page_text(ocr_text, layer_entry)
+        page_text, source, page_ocr_words = _extract_pdf_page_text(
+            page_image,
+            language=language,
+            opts=opts,
+            layer_entry=layer_entry,
+        )
 
-        ocr_only_words += len(ocr_text.split())
+        ocr_only_words += page_ocr_words
         hybrid_words += len(page_text.split())
         if source == "text_layer":
             layer_pages += 1
