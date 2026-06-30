@@ -1,5 +1,6 @@
 import pytest
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Permission
 from rest_framework.authtoken.models import Token
 from rest_framework.test import APIClient
 
@@ -12,6 +13,14 @@ from comedores.models import (
 )
 from core.models import Provincia, Sexo
 from users.models import AccesoComedorPWA
+
+
+def _grant_pwa_permission(user, codename):
+    permission = Permission.objects.get(
+        content_type__app_label="pwa",
+        codename=codename,
+    )
+    user.user_permissions.add(permission)
 
 
 @pytest.fixture
@@ -47,6 +56,7 @@ def _create_representante(*, comedor, username="rep_colab", password="testpass12
         rol=AccesoComedorPWA.ROL_REPRESENTANTE,
         activo=True,
     )
+    _grant_pwa_permission(user, "manage_colaboradores_pwa")
     return user
 
 

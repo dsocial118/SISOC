@@ -5,9 +5,9 @@
 {% endblock %}
 {% block breadcrumb %}{% endblock %}
 {% block content %}
-    <div class="inicio-presentacion {% if user|has_any_group:'CFP,CFPJuridicccion,CFPINET' %}inicio-presentacion--inet{% else %}inicio-presentacion--default{% endif %}">
+    <div class="inicio-presentacion {% if not user.is_superuser and user|has_any_group:'CFP,CFPJuridicccion,CFPINET' %}inicio-presentacion--inet{% else %}inicio-presentacion--default{% endif %}">
         <div class="card-body d-flex align-items-center justify-content-center">
-            {% if user|has_any_group:'CFP,CFPJuridicccion,CFPINET' %}
+            {% if not user.is_superuser and user|has_any_group:'CFP,CFPJuridicccion,CFPINET' %}
                 <div class="inicio-presentacion__inet-card">
                     <img src="{% static 'custom/img/LOGOS-INET-SE_BLANCO.png' %}"
                          alt="INET Secretaría de Educación"

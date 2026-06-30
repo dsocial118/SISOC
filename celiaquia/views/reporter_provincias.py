@@ -45,6 +45,21 @@ CUPO_ITEMS = [
     {"code": EstadoCupo.FUERA, "label": "Fuera", "tone": "danger"},
 ]
 
+# Clasificación de legajos APROBADOS por tipo de rol/edad. Las categorías son
+# mutuamente excluyentes (un legajo cae en una sola) con esta precedencia:
+# menor de edad -> doble rol -> responsable -> beneficiario. Así los subtotales
+# suman el total de aprobados.
+CLASIFICACION_APROBADOS_ITEMS = [
+    {"code": "beneficiario", "label": "Beneficiario únicamente", "tone": "success"},
+    {
+        "code": "doble_rol",
+        "label": "Beneficiario y responsable (doble rol)",
+        "tone": "accent",
+    },
+    {"code": "responsable", "label": "Responsable únicamente", "tone": "primary"},
+    {"code": "menor", "label": "Menor de edad", "tone": "warning"},
+]
+
 VALIDACION_LABELS = {item["code"]: item["label"] for item in VALIDACION_ITEMS}
 SINTYS_LABELS = {item["code"]: item["label"] for item in SINTYS_ITEMS}
 CUPO_LABELS = {item["code"]: item["label"] for item in CUPO_ITEMS}
@@ -295,11 +310,73 @@ def _apply_report_filters(queryset, filter_values):
     return queryset
 
 
-def _build_case_context(queryset, total_cases):
+def _es_menor(fecha_nacimiento, hoy):
+    if not fecha_nacimiento:
+        return False
+    edad = (
+        hoy.year
+        - fecha_nacimiento.year
+        - ((hoy.month, hoy.day) < (fecha_nacimiento.month, fecha_nacimiento.day))
+    )
+    return edad < 18
+
+
+def _clasificar_legajo_aprobado(rol, fecha_nacimiento, hoy):
+    if _es_menor(fecha_nacimiento, hoy):
+        return "menor"
+    rol = (rol or "").strip().lower()
+    if rol == ExpedienteCiudadano.ROLE_BENEFICIARIO_Y_RESPONSABLE:
+        return "doble_rol"
+    if rol == ExpedienteCiudadano.ROLE_RESPONSABLE:
+        return "responsable"
+    return "beneficiario"
+
+
+def _build_clasificacion_aprobados(queryset):
+    """Clasifica los legajos APROBADOS por tipo de rol/edad (categorías mutuamente
+    excluyentes). Devuelve el total de aprobados y los subtotales por categoría."""
+    hoy = timezone.localdate()
+    filas = queryset.filter(revision_tecnico=RevisionTecnico.APROBADO).values_list(
+        "rol", "ciudadano__fecha_nacimiento"
+    )
+
+    counts = Counter(
+        _clasificar_legajo_aprobado(rol, fecha_nacimiento, hoy)
+        for rol, fecha_nacimiento in filas
+    )
+    total = sum(counts.values())
+    max_count = max(counts.values(), default=0)
+
+    items = [
+        {
+            **item,
+            "count": counts.get(item["code"], 0),
+            "percentage": _percentage(counts.get(item["code"], 0), total),
+            "size": (
+                round((counts.get(item["code"], 0) / max_count) * 100, 1)
+                if max_count
+                else 0.0
+            ),
+        }
+        for item in CLASIFICACION_APROBADOS_ITEMS
+    ]
+
+    return {"total": total, "items": items}
+
+
+def _build_case_context(queryset, total_cases, excluir_comentarios_internos=False):
     ok_cases = queryset.filter(archivos_ok=True).count()
     incomplete_cases = total_cases - ok_cases
+    # Los comentarios internos no deben contarse para usuarios provinciales: un
+    # legajo con solo comentarios internos no figura como "con comentarios".
     comments_count = (
-        queryset.filter(historial_comentarios__isnull=False)
+        queryset.filter(
+            **(
+                {"historial_comentarios__es_interno": False}
+                if excluir_comentarios_internos
+                else {"historial_comentarios__isnull": False}
+            )
+        )
         .values("id")
         .distinct()
         .count()
@@ -358,6 +435,7 @@ def _build_case_context(queryset, total_cases):
         "resumen_validacion": resumen_validacion,
         "resumen_sintys": resumen_sintys,
         "resumen_cupo": resumen_cupo,
+        "clasificacion_aprobados": _build_clasificacion_aprobados(queryset),
         "tendencia_mensual": _build_tendencia_mensual(queryset),
         "expedientes_por_provincia": _build_expedientes_por_provincia(
             queryset,
@@ -388,7 +466,11 @@ def _build_report_context(request):
 
     provincia_actual = _get_provincia_actual(request, es_usuario_provincial)
     total_casos = queryset.count()
-    report_context = _build_case_context(queryset, total_casos)
+    report_context = _build_case_context(
+        queryset,
+        total_casos,
+        excluir_comentarios_internos=es_usuario_provincial,
+    )
     provincias = _get_provincias_disponibles(user, es_usuario_provincial)
     paginator, page_obj, current_querystring = _build_pagination(queryset, request)
 

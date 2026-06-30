@@ -2182,6 +2182,7 @@ def test_comedor_detail_view_muestra_nomina_directa_para_programa_sin_admision(
     ciudadano_fixture,
 ):
     """El detalle del comedor debe enlazar a la nómina directa cuando no usa admisión."""
+    from django.contrib.auth.models import AnonymousUser
     from django.test import RequestFactory
 
     prog = _programa(4, "Abordaje comunitario - Línea Tradicional")
@@ -2191,7 +2192,9 @@ def test_comedor_detail_view_muestra_nomina_directa_para_programa_sin_admision(
     )
 
     view = ComedorDetailView()
-    view.request = RequestFactory().get(f"/comedores/{comedor.pk}")
+    request = RequestFactory().get(f"/comedores/{comedor.pk}")
+    request.user = AnonymousUser()
+    view.request = request
     view.object = comedor
 
     context = view.get_context_data()
@@ -2226,6 +2229,8 @@ def test_flujo_integrado_comedor_sin_admision_muestra_y_abre_nomina_directa(
     )
     assert detalle_response.context["nomina_total"] == 1
     assert reverse("nomina_directa_ver", kwargs={"pk": comedor.pk}) in detalle_body
+    assert reverse("relevamientos", kwargs={"comedor_pk": comedor.pk}) in detalle_body
+    assert "Actividades" in detalle_body
     assert "Este comedor usa nómina directa y no depende de admisiones." in detalle_body
 
     nomina_directa_url = reverse("nomina_directa_ver", kwargs={"pk": comedor.pk})
@@ -2235,6 +2240,32 @@ def test_flujo_integrado_comedor_sin_admision_muestra_y_abre_nomina_directa(
     assert nomina_directa_response.context["admision_pk"] is None
     assert nomina_directa_response.context["cantidad_nomina"] == 1
     assert nomina_directa_response.context["object"].pk == comedor.pk
+
+
+@pytest.mark.django_db
+def test_comedor_detail_pnud_no_abordaje_mantiene_relevamientos_oculto(
+    client_logged_fixture, monkeypatch
+):
+    """Un PNUD fuera de las dos lineas del issue mantiene solo Actividades."""
+    prog = _programa(99, "PNUD Prog Especial")
+    prog.usa_admision_para_nomina = False
+    prog.save(update_fields=["usa_admision_para_nomina"])
+    comedor = Comedor.objects.create(nombre="Comedor PNUD Especial", programa=prog)
+    monkeypatch.setattr(
+        "comedores.views.comedor.ComedorService.get_comedor_detail_object",
+        lambda pk, user=None: comedor,
+    )
+
+    response = client_logged_fixture.get(
+        reverse("comedor_detalle", kwargs={"pk": comedor.pk})
+    )
+    body = response.content.decode()
+
+    assert response.status_code == 200
+    assert response.context["es_programa_pnud"] is True
+    assert response.context["mostrar_relevamientos_header"] is False
+    assert "Actividades" in body
+    assert reverse("relevamientos", kwargs={"comedor_pk": comedor.pk}) not in body
 
 
 # ---------------------------------------------------------------------------

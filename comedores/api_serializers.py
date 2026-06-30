@@ -1050,8 +1050,13 @@ class ComedorDetailSerializer(serializers.ModelSerializer):
             "nombre_espacio_comunitario": obj.nombre,
             "id_externo": obj.id_externo,
             "domicilio_completo_espacio": self._build_domicilio_convenio(obj),
-            "monto_total_convenio_por_espacio": (
-                datos_pnud.monto_total_convenio_por_espacio if datos_pnud else None
+            "monto_convenio_prestaciones_alimentarias": (
+                datos_pnud.monto_convenio_prestaciones_alimentarias
+                if datos_pnud
+                else None
+            ),
+            "monto_convenio_siph": (
+                datos_pnud.monto_convenio_siph if datos_pnud else None
             ),
             "prestaciones_financiadas_mensuales": (
                 datos_pnud.prestaciones_financiadas_mensuales if datos_pnud else None
@@ -1064,9 +1069,11 @@ class ComedorDetailSerializer(serializers.ModelSerializer):
 
     @staticmethod
     def _get_datos_convenio_alimentar(obj):
-        presupuestos = ComedorService.get_presupuestos(obj.id)
-        prestaciones_mensuales = presupuestos[0]
-        monto_prestacion_mensual = presupuestos[5]
+        # Misma fuente que el detalle web: prestaciones aprobadas del
+        # InformeTecnico finalizado de la admisión vigente (no el relevamiento).
+        resumen = ComedorService.get_prestaciones_aprobadas_resumen(obj.id)
+        prestaciones_mensuales = resumen["prestaciones_mensuales"]
+        monto_prestacion_mensual = resumen["monto_prestacion_mensual"]
         return {
             "tipo": "alimentar_comunidad",
             "vigencia_convenio_meses": 6,

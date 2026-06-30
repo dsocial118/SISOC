@@ -179,6 +179,7 @@ def create_user_import_job(
     uploaded_file,
     requested_by,
     send_credentials: bool,
+    is_pwa_import: bool = False,
 ) -> UserImportJob:
     validate_user_import_workbook(uploaded_file)
     rows = load_user_import_rows(uploaded_file)
@@ -187,6 +188,7 @@ def create_user_import_job(
         requested_by=requested_by,
         original_filename=getattr(uploaded_file, "name", "usuarios.xlsx"),
         send_credentials=send_credentials,
+        is_pwa_import=is_pwa_import,
         total_rows=len(rows),
     )
     uploaded_file.seek(0)
@@ -290,7 +292,7 @@ def process_single_user_import_row(*, row_data: dict, job: UserImportJob) -> dic
             email=email,
             first_name=nombre,
             last_name=apellido,
-            is_staff=True,
+            is_staff=not job.is_pwa_import,
             is_active=True,
         )
         user.set_unusable_password()

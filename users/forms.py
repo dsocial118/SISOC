@@ -1,3 +1,4 @@
+# pylint: disable=too-many-lines
 import json
 from datetime import timedelta
 
@@ -18,6 +19,8 @@ from duplas.models import Dupla
 from organizaciones.models import Organizacion
 from users.models import AccesoComedorPWA, Profile
 from users.services_pwa import (
+    PWA_ASSIGNABLE_PERMISSION_CODES,
+    PWA_USUARIOS_PERMISSION_CODE,
     deactivate_representante_accesses,
     is_pwa_user,
     sync_representante_accesses,
@@ -30,6 +33,27 @@ from users.territorial_scope import (
 )
 
 MOBILE_RENDICION_PERMISSION_CODE = "rendicioncuentasmensual.manage_mobile_rendicion"
+PWA_OPERATION_PERMISSION_CODES = PWA_ASSIGNABLE_PERMISSION_CODES | {
+    PWA_USUARIOS_PERMISSION_CODE,
+}
+PWA_OPERATION_PERMISSION_FIELDS = {
+    "puede_gestionar_colaboradores_pwa": (
+        "pwa.manage_colaboradores_pwa",
+        "Puede gestionar colaboradores mobile",
+    ),
+    "puede_gestionar_usuarios_pwa": (
+        "pwa.manage_usuarios_pwa",
+        "Puede crear y gestionar usuarios mobile",
+    ),
+    "puede_gestionar_nomina_pwa": (
+        "pwa.manage_nomina_pwa",
+        "Puede gestionar nomina mobile",
+    ),
+    "puede_gestionar_prestaciones_mensuales_pwa": (
+        "pwa.manage_prestaciones_mensuales_pwa",
+        "Puede gestionar prestaciones mensuales mobile",
+    ),
+}
 
 
 ROLE_PERMISSION_QUERYSET = (
@@ -188,6 +212,14 @@ class PWAAccessMixin:
         )
 
     @staticmethod
+    def _get_permission_from_code(permission_code):
+        app_label, codename = permission_code.split(".", 1)
+        return Permission.objects.get(
+            content_type__app_label=app_label,
+            codename=codename,
+        )
+
+    @staticmethod
     def _set_initial_password_flags(
         profile,
         *,
@@ -217,6 +249,11 @@ class PWAAccessMixin:
             label="Puede gestionar rendiciones mobile",
             help_text="Habilita el módulo Rendición de Cuentas en SISOC - Mobile.",
         )
+        for field_name, (_, label) in PWA_OPERATION_PERMISSION_FIELDS.items():
+            self.fields[field_name] = forms.BooleanField(
+                required=False,
+                label=label,
+            )
         self.fields["tipo_asociacion_pwa"] = forms.ChoiceField(
             required=False,
             choices=(
@@ -271,11 +308,22 @@ class PWAAccessMixin:
         self.fields["puede_gestionar_rendiciones_mobile"].initial = (
             self.instance.has_perm(MOBILE_RENDICION_PERMISSION_CODE)
         )
+        for field_name, (permission_code, _) in PWA_OPERATION_PERMISSION_FIELDS.items():
+            self.fields[field_name].initial = self.instance.has_perm(permission_code)
         self.fields["tipo_asociacion_pwa"].initial = (
             tipos_asociacion[0] if len(tipos_asociacion) == 1 else ""
         )
         self.fields["organizaciones_pwa"].initial = organizacion_ids
         self.fields["comedores_pwa"].initial = comedor_ids
+
+    def _is_active_pwa_operator(self) -> bool:
+        if not self.instance or not self.instance.pk:
+            return False
+        return AccesoComedorPWA.objects.filter(
+            user=self.instance,
+            rol=AccesoComedorPWA.ROL_OPERADOR,
+            activo=True,
+        ).exists()
 
     def _sync_mobile_rendicion_permission(self, user):
         permission = self._get_mobile_rendicion_permission()
@@ -283,6 +331,30 @@ class PWAAccessMixin:
             user.user_permissions.add(permission)
             return
         user.user_permissions.remove(permission)
+
+    def _sync_pwa_operation_permissions(self, user):
+        for field_name, (permission_code, _) in PWA_OPERATION_PERMISSION_FIELDS.items():
+            permission = self._get_permission_from_code(permission_code)
+            if self.cleaned_data.get(field_name):
+                user.user_permissions.add(permission)
+            else:
+                user.user_permissions.remove(permission)
+
+    @staticmethod
+    def _preserve_current_pwa_operation_permission_ids(user):
+        permission_ids = []
+        effective_codes = (
+            set(user.get_all_permissions()) & PWA_OPERATION_PERMISSION_CODES
+        )
+        for permission_code in effective_codes:
+            app_label, codename = permission_code.split(".", 1)
+            permission = Permission.objects.filter(
+                content_type__app_label=app_label,
+                codename=codename,
+            ).first()
+            if permission:
+                permission_ids.append(permission.id)
+        return permission_ids
 
     def _clean_pwa_fields(self, cleaned):
         es_representante_pwa = cleaned.get("es_representante_pwa", False)
@@ -432,7 +504,16 @@ class DelegationScopeMixin:
             "name",
         )
 
-        self.fields["groups"].queryset = allowed_groups
+        # El campo de grupos debe MOSTRAR los grupos actuales del usuario aunque
+        # estén fuera del alcance del actor; el alcance real de edición se valida
+        # y se preserva por separado (un actor con alcance no puede quitar grupos
+        # que no administra). user_permissions ya muestra el catálogo completo.
+        if self.instance and self.instance.pk:
+            groups_field_qs = (allowed_groups | self.instance.groups.all()).distinct()
+        else:
+            groups_field_qs = allowed_groups
+
+        self.fields["groups"].queryset = groups_field_qs
         self.fields["user_permissions"].queryset = all_permissions
         self.fields["grupos_asignables"].queryset = allowed_groups
         self.fields["roles_asignables"].queryset = allowed_roles
@@ -450,6 +531,19 @@ class DelegationScopeMixin:
         if self._is_unrestricted_actor():
             return
 
+        # Valores actuales del usuario: se permiten conservar aunque estén fuera
+        # del alcance del actor (no se pueden AGREGAR nuevos fuera de alcance).
+        original_group_ids = (
+            set(self.instance.groups.values_list("id", flat=True))
+            if self.instance and self.instance.pk
+            else set()
+        )
+        original_perm_ids = (
+            set(self.instance.user_permissions.values_list("id", flat=True))
+            if self.instance and self.instance.pk
+            else set()
+        )
+
         allowed_group_ids = set(
             self._allowed_groups_for_actor().values_list("id", flat=True)
         )
@@ -462,7 +556,7 @@ class DelegationScopeMixin:
             )
         )
 
-        if not selected_group_ids.issubset(allowed_group_ids):
+        if not selected_group_ids.issubset(allowed_group_ids | original_group_ids):
             self.add_error(
                 "groups",
                 "Solo puede asignar grupos habilitados para su usuario.",
@@ -487,7 +581,7 @@ class DelegationScopeMixin:
             )
         )
 
-        if not selected_role_ids.issubset(allowed_role_ids):
+        if not selected_role_ids.issubset(allowed_role_ids | original_perm_ids):
             self.add_error(
                 "user_permissions",
                 "Solo puede asignar roles habilitados para su usuario.",
@@ -497,6 +591,42 @@ class DelegationScopeMixin:
                 "roles_asignables",
                 "Solo puede delegar roles que usted mismo puede asignar.",
             )
+
+    def _aplicar_grupos_y_permisos(self, user):
+        """Asigna grupos y permisos directos preservando los que están fuera del
+        alcance del actor: un actor con alcance administra solo lo habilitado y
+        no puede quitar grupos/roles que no le corresponden. Un actor sin
+        restricción (superusuario) asigna exactamente lo seleccionado."""
+        selected_groups = self.cleaned_data.get("groups", [])
+        selected_permissions = self.cleaned_data.get("user_permissions", [])
+
+        if self._is_unrestricted_actor():
+            user.groups.set(selected_groups)
+            user.user_permissions.set(selected_permissions)
+            return
+
+        allowed_group_ids = set(
+            self._allowed_groups_for_actor().values_list("id", flat=True)
+        )
+        allowed_role_ids = set(
+            self._allowed_roles_for_actor().values_list("id", flat=True)
+        )
+        original_group_ids = set(user.groups.values_list("id", flat=True))
+        original_permission_ids = set(
+            user.user_permissions.values_list("id", flat=True)
+        )
+        selected_group_ids = {group.pk for group in selected_groups}
+        selected_permission_ids = {perm.pk for perm in selected_permissions}
+
+        final_group_ids = (selected_group_ids & allowed_group_ids) | (
+            original_group_ids - allowed_group_ids
+        )
+        final_permission_ids = (selected_permission_ids & allowed_role_ids) | (
+            original_permission_ids - allowed_role_ids
+        )
+
+        user.groups.set(list(final_group_ids))
+        user.user_permissions.set(list(final_permission_ids))
 
 
 class UserCreationForm(
@@ -600,68 +730,86 @@ class UserCreationForm(
         with transaction.atomic():
             return self._save_atomic(commit=commit)
 
-    def _save_atomic(self, commit=True):
-        user = super().save(commit=False)
-        user.email = self.cleaned_data.get("email", "")
-
+    def _configure_created_user(self, user):
         if self.cleaned_data.get("es_representante_pwa", False):
             self.generated_password = get_random_string(12)
             user.set_password(self.generated_password)
             user.is_staff = False
             self.password_was_auto_generated = True
-        elif self.cleaned_data.get("es_coordinador", False):
-            user.set_password(self.cleaned_data["password"])
+            return
+        user.set_password(self.cleaned_data["password"])
+        self.generated_password = None
+        self.password_was_auto_generated = False
+        if self.cleaned_data.get("es_coordinador", False):
             user.is_staff = True
-            self.generated_password = None
-            self.password_was_auto_generated = False
+
+    def _save_user_security_and_permissions(self, user):
+        if self.cleaned_data.get("es_representante_pwa", False):
+            user.groups.clear()
+            pwa_permission_ids = self._preserve_current_pwa_operation_permission_ids(
+                user
+            )
+            user.user_permissions.clear()
+            if pwa_permission_ids:
+                user.user_permissions.add(*pwa_permission_ids)
         else:
-            user.set_password(self.cleaned_data["password"])
-            self.generated_password = None
-            self.password_was_auto_generated = False
+            self._aplicar_grupos_y_permisos(user)
+        self._sync_mobile_rendicion_permission(user)
+        if self.cleaned_data.get("es_representante_pwa", False):
+            self._sync_pwa_operation_permissions(user)
+
+    def _save_user_profile(self, user):
+        profile, _ = Profile.objects.get_or_create(user=user)
+        profile.es_usuario_provincial = self.cleaned_data.get(
+            "es_usuario_provincial", False
+        )
+        profile.provincia = None
+        profile.es_coordinador = self.cleaned_data.get("es_coordinador", False)
+        profile.rol = self.cleaned_data.get("rol")
+        profile.must_change_password = True
+        profile.password_changed_at = None
+        profile.initial_password_expires_at = timezone.now() + timedelta(
+            hours=settings.INITIAL_PASSWORD_MAX_AGE_HOURS
+        )
+        profile.temporary_password_plaintext = self.generated_password
+        profile.save()
+        sync_profile_territorial_scopes(
+            profile,
+            self.cleaned_data.get("territorial_scopes_data", []),
+        )
+        # Evita devolver un profile cacheado con valores viejos tras el signal de User.
+        user.refresh_from_db()
+        profile.grupos_asignables.set(self.cleaned_data.get("grupos_asignables", []))
+        profile.roles_asignables.set(self.cleaned_data.get("roles_asignables", []))
+        return profile
+
+    @staticmethod
+    def _sync_coordinator_duplas(profile, duplas):
+        if profile.es_coordinador and duplas:
+            profile.duplas_asignadas.set(duplas)
+            return
+        profile.duplas_asignadas.clear()
+
+    @staticmethod
+    def _clear_permission_caches(user):
+        for attr in ("_perm_cache", "_user_perm_cache"):
+            if hasattr(user, attr):
+                delattr(user, attr)
+
+    def _save_atomic(self, commit=True):
+        user = super().save(commit=False)
+        user.email = self.cleaned_data.get("email", "")
+        self._configure_created_user(user)
 
         if commit:
             user.save()
-            if self.cleaned_data.get("es_representante_pwa", False):
-                user.groups.clear()
-                user.user_permissions.clear()
-            else:
-                user.groups.set(self.cleaned_data.get("groups", []))
-                user.user_permissions.set(self.cleaned_data.get("user_permissions", []))
-            self._sync_mobile_rendicion_permission(user)
-
-            profile, _ = Profile.objects.get_or_create(user=user)
-            profile.es_usuario_provincial = self.cleaned_data.get(
-                "es_usuario_provincial", False
-            )
-            profile.provincia = None
-            profile.es_coordinador = self.cleaned_data.get("es_coordinador", False)
-            profile.rol = self.cleaned_data.get("rol")
-            profile.must_change_password = True
-            profile.password_changed_at = None
-            profile.initial_password_expires_at = timezone.now() + timedelta(
-                hours=settings.INITIAL_PASSWORD_MAX_AGE_HOURS
-            )
-            profile.temporary_password_plaintext = self.generated_password
-            profile.save()
-            sync_profile_territorial_scopes(
-                profile,
-                self.cleaned_data.get("territorial_scopes_data", []),
-            )
-            # Evita devolver un profile cacheado con valores viejos tras el signal de User.
-            user.refresh_from_db()
-            profile.grupos_asignables.set(
-                self.cleaned_data.get("grupos_asignables", [])
-            )
-            profile.roles_asignables.set(self.cleaned_data.get("roles_asignables", []))
-
+            self._save_user_security_and_permissions(user)
+            profile = self._save_user_profile(user)
             duplas = self.cleaned_data.get("duplas_asignadas", [])
-            if profile.es_coordinador and duplas:
-                profile.duplas_asignadas.set(duplas)
-            else:
-                profile.duplas_asignadas.clear()
-
+            self._sync_coordinator_duplas(profile, duplas)
             self._sync_pwa_access(user)
 
+        self._clear_permission_caches(user)
         return user
 
 
@@ -778,7 +926,9 @@ class CustomUserChangeForm(
         with transaction.atomic():
             return self._save_atomic(commit=commit)
 
-    def _save_atomic(self, commit=True):
+    def _save_atomic(  # pylint: disable=too-many-branches,too-many-statements
+        self, commit=True
+    ):
         new_pwd = self.cleaned_data.get("password")
         user = super().save(commit=False)
         user.email = self.cleaned_data.get("email", "")
@@ -788,6 +938,7 @@ class CustomUserChangeForm(
         else:
             user.password = self._original_password_hash
 
+        is_pwa_operator = self._is_active_pwa_operator()
         if self.cleaned_data.get("es_representante_pwa", False):
             user.is_staff = False
         elif self.cleaned_data.get("es_coordinador", False):
@@ -797,11 +948,25 @@ class CustomUserChangeForm(
             user.save()
             if self.cleaned_data.get("es_representante_pwa", False):
                 user.groups.clear()
+                pwa_permission_ids = (
+                    self._preserve_current_pwa_operation_permission_ids(user)
+                )
                 user.user_permissions.clear()
+                if pwa_permission_ids:
+                    user.user_permissions.add(*pwa_permission_ids)
             else:
-                user.groups.set(self.cleaned_data.get("groups", []))
-                user.user_permissions.set(self.cleaned_data.get("user_permissions", []))
-            self._sync_mobile_rendicion_permission(user)
+                pwa_permission_ids = (
+                    self._preserve_current_pwa_operation_permission_ids(user)
+                    if is_pwa_operator
+                    else []
+                )
+                self._aplicar_grupos_y_permisos(user)
+                if pwa_permission_ids:
+                    user.user_permissions.add(*pwa_permission_ids)
+            if not is_pwa_operator:
+                self._sync_mobile_rendicion_permission(user)
+            if self.cleaned_data.get("es_representante_pwa", False):
+                self._sync_pwa_operation_permissions(user)
 
             profile, _ = Profile.objects.get_or_create(user=user)
             profile.es_usuario_provincial = self.cleaned_data.get(
@@ -817,7 +982,10 @@ class CustomUserChangeForm(
                     temporary_password_plaintext=None,
                     password_reset_requested_at=None,
                 )
-            elif not self.cleaned_data.get("es_representante_pwa", False):
+            elif (
+                not self.cleaned_data.get("es_representante_pwa", False)
+                and not is_pwa_operator
+            ):
                 profile.password_reset_requested_at = None
                 profile.must_change_password = False
                 profile.password_changed_at = None
@@ -910,4 +1078,10 @@ class UserImportForm(forms.Form):
         required=False,
         initial=True,
         help_text="Si esta marcado, se enviara un email con usuario y contrasena temporal a cada usuario creado.",
+    )
+    es_pwa = forms.BooleanField(
+        label="Usuarios de la PWA",
+        required=False,
+        initial=False,
+        help_text="Los usuarios importados son usuarios de la app movil (PWA).",
     )

@@ -51,7 +51,7 @@ from comedores.utils import (
 )
 from centrodefamilia.services.consulta_renaper import consultar_datos_renaper
 from core.models import Provincia, Municipio, Localidad, Nacionalidad
-from admisiones.models.admisiones import Admision
+from admisiones.models.admisiones import Admision, InformeTecnico
 from rendicioncuentasmensual.models import RendicionCuentaMensual
 from intervenciones.models.intervenciones import Intervencion
 from expedientespagos.models import ExpedientePago
@@ -207,6 +207,11 @@ def _with_nomina_pwa_flags(qs_nomina):
         ),
         pwa_situacion_calle=Coalesce(
             "perfil_pwa__situacion_calle",
+            Value(False),
+            output_field=BooleanField(),
+        ),
+        pwa_persona_con_celiaquia=Coalesce(
+            "perfil_pwa__persona_con_celiaquia",
             Value(False),
             output_field=BooleanField(),
         ),
@@ -963,6 +968,49 @@ class ComedorService:
             "desayuno", 0
         ) + prestaciones_por_tipo.get("merienda", 0)
         return total_almuerzo_cena * 763 + total_desayuno_merienda * 383
+
+    @staticmethod
+    def get_prestaciones_aprobadas_resumen(comedor_id):
+        """Resumen de prestaciones/monto mensual basado en las prestaciones
+        aprobadas del InformeTecnico finalizado de la admision vigente del
+        comedor. Es la misma fuente que muestra el detalle web (acordeon
+        Prestaciones), por lo que web y mobile quedan alineados.
+
+        Devuelve None en ambos campos si no hay admision/informe tecnico
+        finalizado (la web muestra "-" en ese caso).
+        """
+        admisiones_qs = Admision.objects.filter(comedor_id=comedor_id).order_by("-id")
+        admision = admisiones_qs.filter(activa=True).first() or admisiones_qs.first()
+        if not admision:
+            return {
+                "prestaciones_mensuales": None,
+                "monto_prestacion_mensual": None,
+            }
+
+        informe_tecnico = (
+            InformeTecnico.objects.filter(
+                admision=admision, estado_formulario="finalizado"
+            )
+            .order_by("-id")
+            .first()
+        )
+        prestaciones_por_tipo = ComedorService.get_prestaciones_aprobadas_por_tipo(
+            informe_tecnico
+        )
+        if prestaciones_por_tipo is None:
+            return {
+                "prestaciones_mensuales": None,
+                "monto_prestacion_mensual": None,
+            }
+
+        return {
+            "prestaciones_mensuales": sum(prestaciones_por_tipo.values()),
+            "monto_prestacion_mensual": (
+                ComedorService.calcular_monto_prestacion_mensual_por_aprobadas(
+                    prestaciones_por_tipo
+                )
+            ),
+        }
 
     @staticmethod
     def get_nomina_detail(

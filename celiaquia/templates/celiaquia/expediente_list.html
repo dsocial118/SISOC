@@ -89,6 +89,13 @@
                                         </span>
                                     </div>
                                 {% endif %}
+                                {% if exp.legajos_subsanado_count > 0 %}
+                                    <div class="mt-1">
+                                        <span class="badge bg-success">
+                                            <i class="fa fa-check-circle"></i> {{ exp.legajos_subsanado_count }} subsanados
+                                        </span>
+                                    </div>
+                                {% endif %}
                             </td>
                             {% if show_tecnico_column_celiaquia %}
                                 <td>

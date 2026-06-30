@@ -65,14 +65,21 @@ function mostrarComentarios(legajoId, comentarios) {
         const fecha = escapeHtml(c.fecha || "");
         const texto = escapeHtml(c.texto || "");
         const archivoUrl = c.archivo_url ? escapeHtml(encodeURI(c.archivo_url)) : "";
-        const bgColor = c.es_provincia ? 'rgba(13, 110, 253, .1)' : 'rgba(25, 135, 84, .1)';
-        const borderColor = c.es_provincia ? 'rgba(13, 110, 253, .3)' : 'rgba(25, 135, 84, .3)';
+        let bgColor = c.es_provincia ? 'rgba(13, 110, 253, .1)' : 'rgba(25, 135, 84, .1)';
+        let borderColor = c.es_provincia ? 'rgba(13, 110, 253, .3)' : 'rgba(25, 135, 84, .3)';
         const badge = c.es_provincia ? '<span class="badge bg-primary">Provincia</span>' : '<span class="badge bg-success">Técnico</span>';
-        
+        // Comentario interno (solo Nación lo recibe del backend): se resalta.
+        let internoBadge = '';
+        if (c.es_interno) {
+            bgColor = 'rgba(33, 37, 41, .08)';
+            borderColor = 'rgba(33, 37, 41, .35)';
+            internoBadge = ' <span class="badge bg-dark"><i class="fas fa-lock"></i> Interno</span>';
+        }
+
         return `
         <div class="comentario-item mb-2 p-2 rounded" style="background:${bgColor}; border:1px solid ${borderColor}">
             <div class="d-flex justify-content-between align-items-start mb-1">
-                <small class="text-muted"><i class="fas fa-user"></i> ${usuario} ${badge}</small>
+                <small class="text-muted"><i class="fas fa-user"></i> ${usuario} ${badge}${internoBadge}</small>
                 <small class="text-muted">${fecha}</small>
             </div>
             <p class="mb-1 small">${texto}</p>
