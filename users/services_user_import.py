@@ -286,7 +286,9 @@ def _resolver_provincias(provincias_raw: str) -> list:
     return provincias
 
 
-def process_single_user_import_row(*, row_data: dict, job: UserImportJob) -> dict:
+def process_single_user_import_row(  # pylint: disable=too-many-locals
+    *, row_data: dict, job: UserImportJob
+) -> dict:
     nombre = row_data.get("nombre", "").strip()
     apellido = row_data.get("apellido", "").strip()
     email_raw = row_data.get("correo", "").strip()

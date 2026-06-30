@@ -840,7 +840,7 @@ def _collect_group_indices(
     return group, primary_recipient
 
 
-def process_bulk_credentials_file(
+def process_bulk_credentials_file(  # pylint: disable=too-many-locals,too-many-branches,too-many-statements
     *,
     uploaded_file,
     send_type: str | None = None,
@@ -865,7 +865,7 @@ def process_bulk_credentials_file(
     handled_indices: set[int] = set()
     recipient_cache = _build_recipient_cache(rows)
 
-    for row_index, row in enumerate(rows):
+    for row_index, _row in enumerate(rows):
         if row_index in handled_indices:
             continue
         if not _has_enough_batch_time(processing_deadline):
@@ -932,7 +932,7 @@ def process_bulk_credentials_file(
         except Exception as exc:
             message = build_bulk_credentials_error_message(exc)
             logger.exception(
-                ("Fallo procesando envio masivo de credenciales. " "tipo=%s filas=%s"),
+                "Fallo procesando envio masivo de credenciales. tipo=%s filas=%s",
                 send_type_config.key,
                 [rows[i].fila for i in group_indices],
             )

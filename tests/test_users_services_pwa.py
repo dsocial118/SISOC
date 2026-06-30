@@ -135,7 +135,7 @@ def test_create_operador_for_comedor_requires_representante(comedores):
 
 
 @pytest.mark.django_db
-def test_create_operador_for_comedor_rejects_duplicate_email(comedores):
+def test_create_operador_for_comedor_allows_duplicate_email(comedores):
     comedor_1, _ = comedores
     representante = _create_user("rep_dup")
     _create_user("usuario_existente")
@@ -149,14 +149,16 @@ def test_create_operador_for_comedor_rejects_duplicate_email(comedores):
         activo=True,
     )
 
-    with pytest.raises(ValidationError):
-        create_operador_for_comedor(
-            comedor_id=comedor_1.id,
-            actor=representante,
-            username="op_dup",
-            email="duplicado@example.com",
-            password="Secreta123!",
-        )
+    acceso = create_operador_for_comedor(
+        comedor_id=comedor_1.id,
+        actor=representante,
+        username="op_dup",
+        email="duplicado@example.com",
+        password="Secreta123!",
+    )
+
+    assert acceso.user.email == "duplicado@example.com"
+    assert get_user_model().objects.filter(email__iexact="duplicado@example.com").count() == 2
 
 
 @pytest.mark.django_db

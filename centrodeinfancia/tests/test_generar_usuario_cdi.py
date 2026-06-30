@@ -115,21 +115,25 @@ def test_service_respeta_limite():
 
 
 @pytest.mark.django_db
-def test_service_rechaza_email_duplicado():
+def test_service_permite_email_duplicado():
     provincia = Provincia.objects.create(nombre="Salta")
     centro = CentroDeInfancia.objects.create(nombre="CDI 4", provincia=provincia)
     actor = _provincial("prov-4", provincia)
     User.objects.create_user(username="existente", email="dup@example.com")
 
-    with pytest.raises(ValidationError):
-        generar_usuario_delegado(
-            actor=actor,
-            datos=DatosUsuarioDelegado(
-                first_name="X", last_name="Y", email="dup@example.com"
-            ),
-            grupo_nombre=GRUPO,
-            vinculo_callback=_vinculo(centro, actor),
-        )
+    resultado = generar_usuario_delegado(
+        actor=actor,
+        datos=DatosUsuarioDelegado(
+            first_name="X",
+            last_name="Y",
+            email="dup@example.com",
+        ),
+        grupo_nombre=GRUPO,
+        vinculo_callback=_vinculo(centro, actor),
+    )
+
+    assert resultado["user"].email == "dup@example.com"
+    assert User.objects.filter(email__iexact="dup@example.com").count() == 2
 
 
 # --------------------------- Acceso / botón --------------------------------
