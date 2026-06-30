@@ -13,10 +13,12 @@ from django.utils import timezone
 from users.models import BulkCredentialsJob, BulkCredentialsJobRow
 from users.services_bulk_credentials import (
     _build_login_url,
+    _build_recipient_cache,
+    _collect_group_indices,
     _load_workbook_rows,
     build_bulk_credentials_error_message,
     get_bulk_credentials_send_type_config,
-    process_bulk_credentials_row,
+    process_bulk_credentials_group,
     validate_bulk_credentials_workbook,
 )
 
@@ -344,6 +346,40 @@ def _record_row_failure(
     return job
 
 
+def _persist_grouped_row_success(
+    *,
+    job: BulkCredentialsJob,
+    row,
+    row_state,
+    result: dict[str, object],
+) -> BulkCredentialsJob:
+    """Persiste el éxito de UNA fila dentro de un envío agrupado.
+
+    A diferencia de _record_row_success, no toca next_row_index ni marca el job
+    como completado: el caller decide cuándo avanzar y cuándo cerrar el lote.
+    """
+    row_log = row_state["row_log"]
+    row_log.usuario = row.usuario
+    row_log.mail_destino = str(result["mail_destino"])
+    row_log.status = BulkCredentialsJobRow.Status.SENT
+    row_log.password_actualizada = bool(result["password_actualizada"])
+    row_log.mensaje = str(result["mensaje"])
+    row_log.attempts += 1
+    row_log.processed_at = timezone.now()
+    row_log.save()
+
+    _apply_row_outcome(
+        job=job,
+        old_status=row_state["old_status"],
+        old_password_updated=row_state["old_password_updated"],
+        new_status=row_log.status,
+        new_password_updated=row_log.password_actualizada,
+    )
+    job.last_successful_row = row.fila
+    job.last_successful_username = row.usuario
+    return job
+
+
 def _record_row_success(
     *,
     job: BulkCredentialsJob,
@@ -455,6 +491,99 @@ def _load_job_rows(job: BulkCredentialsJob, *, send_type_config):
     return None
 
 
+def _advance_job_pointer(
+    *,
+    job: BulkCredentialsJob,
+    row_index: int,
+    total_rows: int,
+) -> BulkCredentialsJob:
+    """Avanza next_row_index al row siguiente al `row_index` y persiste contadores."""
+    now = timezone.now()
+    job.next_row_index = row_index + 1
+    job.last_activity_at = now
+    update_fields = [
+        "processed_rows",
+        "sent_rows",
+        "updated_password_rows",
+        "unchanged_password_rows",
+        "rejected_rows",
+        "next_row_index",
+        "last_successful_row",
+        "last_successful_username",
+        "last_activity_at",
+    ]
+    if job.next_row_index >= total_rows:
+        job.status = BulkCredentialsJob.Status.COMPLETED
+        job.finished_at = now
+        job.last_error_message = ""
+        job.last_error_at = None
+        update_fields.extend(
+            [
+                "status",
+                "finished_at",
+                "last_error_message",
+                "last_error_at",
+            ]
+        )
+    job.save(update_fields=update_fields)
+    return job
+
+
+def _select_group_for_row(
+    *,
+    job: BulkCredentialsJob,
+    rows,
+    row_index: int,
+    send_type_config,
+    recipient_cache: dict[str, str] | None = None,
+    primary_attempts: int = 0,
+) -> tuple[list[int], list]:
+    """Identifica el grupo del row actual con defensas contra duplicación.
+
+    Reglas defensivas (issue #1979):
+    - Si la fila primaria ya tiene attempts > 0 (caso resume de un grupo que
+      ya pudo haber sido enviado), se procesa SOLA. Re-enviar el grupo entero
+      duplicaría el correo previo en el inbox del destinatario.
+    - Si el destinatario del grupo ya recibió un envío exitoso previo en este
+      mismo job (cualquier fila SENT con `mail_destino` igual), no se agrupa
+      con otras filas pendientes: cada una se envía sola.
+    - Las filas posteriores del grupo que ya están SENT en BD se excluyen.
+    """
+    if primary_attempts > 0:
+        return [row_index], [rows[row_index]]
+
+    group_indices, primary_recipient = _collect_group_indices(
+        rows=rows,
+        start_index=row_index,
+        send_type_config=send_type_config,
+        skip_indices=set(),
+        recipient_cache=recipient_cache,
+    )
+    if len(group_indices) == 1:
+        return group_indices, [rows[row_index]]
+
+    if primary_recipient and BulkCredentialsJobRow.objects.filter(
+        job=job,
+        status=BulkCredentialsJobRow.Status.SENT,
+        mail_destino__iexact=primary_recipient,
+    ).exists():
+        # Destinatario ya recibió un correo de este job; no re-agrupar.
+        return [row_index], [rows[row_index]]
+
+    candidate_filas = [rows[i].fila for i in group_indices]
+    already_sent_filas = set(
+        BulkCredentialsJobRow.objects.filter(
+            job=job,
+            status=BulkCredentialsJobRow.Status.SENT,
+            fila__in=candidate_filas,
+        ).values_list("fila", flat=True)
+    )
+    fresh = [i for i in group_indices if rows[i].fila not in already_sent_filas]
+    if not fresh:
+        fresh = [row_index]
+    return fresh, [rows[i] for i in fresh]
+
+
 def process_bulk_credentials_job(job: BulkCredentialsJob) -> BulkCredentialsJob:
     send_type_config = get_bulk_credentials_send_type_config(job.send_type)
     login_url = _build_login_url()
@@ -467,19 +596,40 @@ def process_bulk_credentials_job(job: BulkCredentialsJob) -> BulkCredentialsJob:
     if job.next_row_index >= total_rows:
         return _mark_job_completed(job=job)
 
+    recipient_cache = _build_recipient_cache(rows)
+
     for row_index in range(job.next_row_index, total_rows):
         row = rows[row_index]
         _start_job_row_attempt(job=job, row_index=row_index, row=row)
         row_log, old_status, old_password_updated = _get_job_row_log(job=job, row=row)
+
+        if row_log.status == BulkCredentialsJobRow.Status.SENT:
+            # Ya enviada por un agrupamiento anterior; solo avanzo el puntero.
+            job = _advance_job_pointer(
+                job=job, row_index=row_index, total_rows=total_rows
+            )
+            if job.status == BulkCredentialsJob.Status.COMPLETED:
+                return job
+            continue
+
         row_state = _build_row_processing_state(
             row_log=row_log,
             old_status=old_status,
             old_password_updated=old_password_updated,
         )
 
+        fresh_indices, group_rows = _select_group_for_row(
+            job=job,
+            rows=rows,
+            row_index=row_index,
+            send_type_config=send_type_config,
+            recipient_cache=recipient_cache,
+            primary_attempts=row_log.attempts,
+        )
+
         try:
-            result = process_bulk_credentials_row(
-                row=row,
+            results = process_bulk_credentials_group(
+                rows=group_rows,
                 send_type_config=send_type_config,
                 login_url=login_url,
                 max_total_seconds=None,
@@ -507,12 +657,28 @@ def process_bulk_credentials_job(job: BulkCredentialsJob) -> BulkCredentialsJob:
                 row_state=row_state,
                 message=build_bulk_credentials_error_message(exc),
             )
-        job = _record_row_success(
-            job=job,
-            row=row,
-            row_state=row_state,
-            result=result,
-            progress=_build_row_progress(row_index=row_index, total_rows=total_rows),
+
+        for fresh_idx, result in zip(fresh_indices, results):
+            fresh_row = rows[fresh_idx]
+            if fresh_idx == row_index:
+                _persist_grouped_row_success(
+                    job=job, row=fresh_row, row_state=row_state, result=result
+                )
+                continue
+            other_log, other_old_status, other_old_password = _get_job_row_log(
+                job=job, row=fresh_row
+            )
+            other_state = _build_row_processing_state(
+                row_log=other_log,
+                old_status=other_old_status,
+                old_password_updated=other_old_password,
+            )
+            _persist_grouped_row_success(
+                job=job, row=fresh_row, row_state=other_state, result=result
+            )
+
+        job = _advance_job_pointer(
+            job=job, row_index=row_index, total_rows=total_rows
         )
         if job.status == BulkCredentialsJob.Status.COMPLETED:
             return job

@@ -454,7 +454,9 @@ def test_process_bulk_credentials_rejects_user_without_visible_password():
 
 @pytest.mark.django_db
 @override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
-def test_process_bulk_credentials_allows_shared_recipient_email():
+def test_process_bulk_credentials_groups_shared_recipient_into_one_email():
+    """Cuando varias filas comparten destinatario, se envía un solo correo
+    con todas las credenciales (issue #1979)."""
     first_user = User.objects.create_user(
         username="bulk_shared_one",
         email="one@example.com",
@@ -492,10 +494,9 @@ def test_process_bulk_credentials_allows_shared_recipient_email():
     assert second_user.email == "two@example.com"
     assert first_user.check_password("Inicial123!") is True
     assert second_user.check_password("Inicial123!") is True
-    assert [email.to for email in mail.outbox] == [
-        ["shared@example.com"],
-        ["shared@example.com"],
-    ]
+    assert [email.to for email in mail.outbox] == [["shared@example.com"]]
+    assert "bulk_shared_one" in mail.outbox[0].body
+    assert "bulk_shared_two" in mail.outbox[0].body
 
 
 @pytest.mark.django_db
@@ -824,8 +825,8 @@ def test_process_bulk_credentials_job_stops_on_first_failure_and_tracks_checkpoi
     )
 
     def _send_side_effect(*args, **kwargs):
-        user = kwargs["user"]
-        if user.username == "bulk_job_second":
+        first_username = kwargs["entries"][0].username
+        if first_username == "bulk_job_second":
             raise smtplib.SMTPAuthenticationError(535, b"auth failed")
         return None
 
@@ -921,8 +922,8 @@ def test_process_bulk_credentials_job_can_resume_from_failed_row(
     failure_state = {"enabled": True}
 
     def _send_side_effect(*args, **kwargs):
-        user = kwargs["user"]
-        if failure_state["enabled"] and user.username == "bulk_resume_second":
+        first_username = kwargs["entries"][0].username
+        if failure_state["enabled"] and first_username == "bulk_resume_second":
             raise smtplib.SMTPAuthenticationError(535, b"auth failed")
         return None
 
@@ -1073,7 +1074,7 @@ def test_bulk_credentials_job_detail_view_shows_failure_context(
     )
 
     def _send_side_effect(*args, **kwargs):
-        if kwargs["user"].username == "bulk_detail_second":
+        if kwargs["entries"][0].username == "bulk_detail_second":
             raise smtplib.SMTPAuthenticationError(535, b"auth failed")
         return None
 
