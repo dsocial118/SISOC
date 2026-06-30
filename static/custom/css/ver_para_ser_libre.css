@@ -389,19 +389,19 @@ body:has(.vpsl-page) .app-content-header {
 }
 
 .select2-dropdown {
-  border-color: var(--vpsl-section);
-  background-color: var(--vpsl-panel);
-  color: var(--vpsl-text);
+  border-color: var(--vpsl-section, #3b8681);
+  background-color: var(--vpsl-panel, #232d4f);
+  color: var(--vpsl-text, #ffffff);
 }
 
 .select2-container--default .select2-results__option {
-  background-color: var(--vpsl-panel);
-  color: var(--vpsl-text);
+  background-color: var(--vpsl-panel, #232d4f);
+  color: var(--vpsl-text, #ffffff);
 }
 
 .select2-container--default .select2-results__option--highlighted[aria-selected] {
-  background-color: var(--vpsl-section);
-  color: var(--vpsl-text);
+  background-color: var(--vpsl-section, #3b8681);
+  color: var(--vpsl-text, #ffffff);
 }
 
 .vpsl-info-card {

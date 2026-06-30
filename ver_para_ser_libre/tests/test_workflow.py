@@ -1006,6 +1006,41 @@ def test_itinerario_list_restringe_usuario_provincial_y_filtra(client):
     assert response.context["filtros"]["buscar_por"] == "referente"
 
 
+def test_itinerario_list_busca_estado_por_etiqueta_visible(client):
+    provincia = Provincia.objects.create(nombre="Cordoba")
+    itinerario_revision = crear_itinerario(
+        provincia=provincia,
+        estado=EstadoItinerario.EN_REVISION,
+        sedes=[crear_sede(cueanexo="CB002", jurisdiccion="Cordoba")],
+    )
+    itinerario_aprobado = crear_itinerario(
+        provincia=provincia,
+        estado=EstadoItinerario.APROBADO,
+        sedes=[crear_sede(cueanexo="CB003", jurisdiccion="Cordoba")],
+    )
+    user = get_user_model().objects.create_user(
+        username="vpsl-list-estado-label",
+        email="vpsl-list-estado-label@example.com",
+        password="testpass123",
+    )
+    hacer_usuario_provincial(user, provincia)
+    asignar_permiso(user, "view_itinerariovpsl")
+    client.force_login(user)
+
+    response = client.get(
+        reverse("vpsl_itinerario_list"),
+        {
+            "buscar_por": "estado",
+            "busqueda": "revision nacion",
+        },
+    )
+
+    html = response.content.decode()
+    assert response.status_code == 200
+    assert itinerario_revision.codigo in html
+    assert itinerario_aprobado.codigo not in html
+
+
 def test_itinerario_list_permiso_global_ve_todas_las_provincias(client):
     provincia_buenos_aires = Provincia.objects.create(nombre="Buenos Aires")
     provincia_santa_fe = Provincia.objects.create(nombre="Santa Fe")
@@ -1181,6 +1216,56 @@ def test_jornada_detail_muestra_resumen_cierre_compacto(client):
     assert "No requiere anteojos" in html
     assert "Derivados" in html
     assert "vpsl-cierre-summary" in html
+
+
+def test_jornada_detail_muestra_acciones_segun_estado(client):
+    user = get_user_model().objects.create_superuser(
+        username="vpsl-jornada-acciones",
+        email="vpsl-jornada-acciones@example.com",
+        password="testpass123",
+    )
+    client.force_login(user)
+    provincia = Provincia.objects.create(nombre="Cordoba")
+    jornada_pendiente = crear_jornada(
+        itinerario=crear_itinerario(
+            provincia=provincia,
+            sedes=[crear_sede(cueanexo="CB004", jurisdiccion="Cordoba")],
+        ),
+        estado=EstadoJornada.PENDIENTE_HABILITACION,
+    )
+    jornada_habilitada = crear_jornada(
+        itinerario=crear_itinerario(
+            provincia=provincia,
+            sedes=[crear_sede(cueanexo="CB005", jurisdiccion="Cordoba")],
+        ),
+        estado=EstadoJornada.HABILITADA,
+    )
+
+    response = client.get(
+        reverse("vpsl_jornada_detail", kwargs={"pk": jornada_pendiente.pk})
+    )
+
+    html = response.content.decode()
+    assert response.status_code == 200
+    assert "Cerrar jornada" not in html
+    assert "Habilitar" in html
+    assert (
+        "Debe completar y aprobar el checklist de la sede antes de habilitar la jornada."
+        in html
+    )
+    assert (
+        "La jornada debe estar habilitada o en progreso para cargar registros nominales."
+        in html
+    )
+
+    response = client.get(
+        reverse("vpsl_jornada_detail", kwargs={"pk": jornada_habilitada.pk})
+    )
+
+    html = response.content.decode()
+    assert response.status_code == 200
+    assert "Cerrar jornada" in html
+    assert "Habilitar" not in html
 
 
 def test_itinerario_exporta_csv_con_jornadas(client):

@@ -30,11 +30,22 @@
                     <a href="{% url 'vpsl_cierre_create' jornada.pk %}"
                        class="btn btn-success">Cerrar jornada</a>
                 {% endif %}
-                {% if puede_habilitar_jornada and not habilitar_bloqueado %}
-                    <form method="post" action="{% url 'vpsl_jornada_habilitar' jornada.pk %}">
-                        {% csrf_token %}
-                        <button type="submit" class="btn btn-outline-light">Habilitar</button>
-                    </form>
+                {% if mostrar_habilitar_jornada %}
+                    {% if puede_habilitar_jornada %}
+                        <form method="post" action="{% url 'vpsl_jornada_habilitar' jornada.pk %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-outline-light">Habilitar</button>
+                        </form>
+                    {% else %}
+                        <span class="d-inline-block"
+                              title="Debe completar y aprobar el checklist de la sede antes de habilitar la jornada.">
+                            <button type="button"
+                                    class="btn btn-outline-light disabled"
+                                    disabled>
+                                Habilitar
+                            </button>
+                        </span>
+                    {% endif %}
                 {% endif %}
             </div>
         </div>
@@ -135,6 +146,17 @@
                             <div class="vpsl-table-toolbar vpsl-registros-toolbar">
                                 <a href="{% url 'vpsl_registro_create' jornada.pk %}"
                                    class="btn btn-sm btn-success"><i class="bi bi-plus-lg"></i> Nuevo registro</a>
+                            </div>
+                        {% else %}
+                            <div class="vpsl-table-toolbar vpsl-registros-toolbar">
+                                <span class="d-inline-block"
+                                      title="La jornada debe estar habilitada o en progreso para cargar registros nominales.">
+                                    <a class="btn btn-sm btn-success disabled"
+                                       aria-disabled="true"
+                                       tabindex="-1">
+                                        <i class="bi bi-plus-lg"></i> Nuevo registro
+                                    </a>
+                                </span>
                             </div>
                         {% endif %}
                         <div class="table-responsive">

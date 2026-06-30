@@ -152,6 +152,19 @@ def _filtrar_casos_laboratorio_por_usuario(queryset, user):
     return queryset.none()
 
 
+def _filtro_estado_itinerario_por_texto(query):
+    query_normalizado = _normalizar_busqueda(query)
+    if not query_normalizado:
+        return Q()
+    estados = [
+        value
+        for value, label in EstadoItinerario.choices
+        if query_normalizado in _normalizar_busqueda(label)
+        or query_normalizado in _normalizar_busqueda(value)
+    ]
+    return Q(estado__in=estados) if estados else Q(pk__in=[])
+
+
 def _puede_exportar(user):
     if getattr(user, "is_superuser", False):
         return True
@@ -427,10 +440,11 @@ class ItinerarioListView(LoginRequiredMixin, ListView):
         )
         queryset = _filtrar_itinerarios_por_usuario(queryset, self.request.user)
         if query:
+            filtro_estado = _filtro_estado_itinerario_por_texto(query)
             filtros_busqueda = {
                 "codigo": Q(codigo__icontains=query),
                 "provincia": Q(provincia__nombre__icontains=query),
-                "estado": Q(estado__icontains=query),
+                "estado": filtro_estado,
                 "referente": Q(referente_nombre__icontains=query)
                 | Q(referente_apellido__icontains=query),
             }
@@ -439,7 +453,7 @@ class ItinerarioListView(LoginRequiredMixin, ListView):
                 filtro = (
                     Q(codigo__icontains=query)
                     | Q(provincia__nombre__icontains=query)
-                    | Q(estado__icontains=query)
+                    | filtro_estado
                     | Q(referente_nombre__icontains=query)
                     | Q(referente_apellido__icontains=query)
                     | Q(sedes__nombre__icontains=query)
@@ -1258,8 +1272,12 @@ class JornadaDetailView(LoginRequiredMixin, DetailView):
             and sede.checklist.exists()
             and not sede.checklist.exclude(cumple=True).exists()
         )
+        context["mostrar_habilitar_jornada"] = (
+            self.object.estado in workflow.JORNADA_ESTADOS_HABILITABLES
+        )
         context["puede_habilitar_jornada"] = (
             self.object.estado in workflow.JORNADA_ESTADOS_HABILITABLES
+            and not context["habilitar_bloqueado"]
         )
         context["puede_cerrar_jornada"] = (
             self.object.estado in workflow.JORNADA_ESTADOS_CIERRE_PERMITIDO
