@@ -408,6 +408,19 @@ class _CrearUsuarioParams:
     job: object
 
 
+@dataclass
+class _DatosFilaValidados:
+    nombre: str
+    apellido: str
+    email: str
+    username_raw: str
+    rol: str
+    accion_grupos: str
+    grupos: list
+    provincias_objs: list
+    allowed_group_ids: set | None
+
+
 def _crear_usuario_nuevo(params: _CrearUsuarioParams) -> tuple[User, str]:
     user = User(
         username=params.username_raw,
@@ -445,16 +458,15 @@ def _crear_usuario_nuevo(params: _CrearUsuarioParams) -> tuple[User, str]:
     return user, password
 
 
-def process_single_user_import_row(
-    *, row_data: dict, job: UserImportJob
-) -> dict:
+def _validar_y_preparar_fila(
+    row_data: dict, job: UserImportJob
+) -> _DatosFilaValidados:
     nombre = row_data.get("nombre", "").strip()
     apellido = row_data.get("apellido", "").strip()
     email_raw = row_data.get("correo", "").strip()
     username_raw = row_data.get("username", "").strip()
     rol = row_data.get("rol", "").strip()
-    accion_grupos_raw = row_data.get("accion_grupos", "").strip().lower()
-    accion_grupos = accion_grupos_raw or GROUP_ACTION_AGREGAR
+    accion_grupos = row_data.get("accion_grupos", "").strip().lower() or GROUP_ACTION_AGREGAR
 
     if accion_grupos not in GROUP_ACTIONS:
         raise ValidationError(
@@ -478,9 +490,7 @@ def process_single_user_import_row(
         email = email_raw.lower()
 
     grupos = _resolver_grupos(row_data.get("permisos", "").strip())
-
-    actor = job.requested_by
-    allowed_group_ids = _get_allowed_group_ids(actor)
+    allowed_group_ids = _get_allowed_group_ids(job.requested_by)
 
     if allowed_group_ids is not None and grupos:
         out_of_scope = [g for g in grupos if g.pk not in allowed_group_ids]
@@ -488,42 +498,61 @@ def process_single_user_import_row(
             names = ", ".join(g.name for g in out_of_scope)
             raise ValidationError(f"No tiene permiso para operar los grupos: {names}.")
 
+    provincias_objs = _resolver_provincias(row_data.get("provincias", "").strip())
+
+    return _DatosFilaValidados(
+        nombre=nombre,
+        apellido=apellido,
+        email=email,
+        username_raw=username_raw,
+        rol=rol,
+        accion_grupos=accion_grupos,
+        grupos=grupos,
+        provincias_objs=provincias_objs,
+        allowed_group_ids=allowed_group_ids,
+    )
+
+
+def process_single_user_import_row(
+    *, row_data: dict, job: UserImportJob
+) -> dict:
+    datos = _validar_y_preparar_fila(row_data, job)
     existing_user = _resolver_usuario_objetivo(row_data)
 
     if existing_user is not None:
         params = _ActualizarUsuarioParams(
             user=existing_user,
-            email=email,
-            username_raw=username_raw,
-            grupos=grupos,
-            accion_grupos=accion_grupos,
-            allowed_group_ids=allowed_group_ids,
+            email=datos.email,
+            username_raw=datos.username_raw,
+            grupos=datos.grupos,
+            accion_grupos=datos.accion_grupos,
+            allowed_group_ids=datos.allowed_group_ids,
         )
         return _procesar_usuario_existente(params)
 
-    if not username_raw:
+    if not datos.username_raw:
         raise ValidationError(
             "No se encontro un usuario con ese correo. "
             "Para crear un usuario nuevo se requiere la columna Username."
         )
 
-    if not nombre or not apellido:
+    if not datos.nombre or not datos.apellido:
         raise ValidationError("Los campos Nombre y Apellido son obligatorios.")
 
-    if User.objects.filter(username__iexact=username_raw).exists():
-        raise ValidationError(f"Ya existe un usuario con el username '{username_raw}'.")
-
-    provincias_objs = _resolver_provincias(row_data.get("provincias", "").strip())
+    if User.objects.filter(username__iexact=datos.username_raw).exists():
+        raise ValidationError(
+            f"Ya existe un usuario con el username '{datos.username_raw}'."
+        )
 
     with transaction.atomic():
         params = _CrearUsuarioParams(
-            nombre=nombre,
-            apellido=apellido,
-            email=email,
-            username_raw=username_raw,
-            rol=rol,
-            grupos=grupos,
-            provincias_objs=provincias_objs,
+            nombre=datos.nombre,
+            apellido=datos.apellido,
+            email=datos.email,
+            username_raw=datos.username_raw,
+            rol=datos.rol,
+            grupos=datos.grupos,
+            provincias_objs=datos.provincias_objs,
             job=job,
         )
         user, password = _crear_usuario_nuevo(params)
@@ -534,7 +563,7 @@ def process_single_user_import_row(
     return {
         "status": UserImportJobRow.Status.CREATED,
         "mensaje": f"Usuario {user.username} creado correctamente.",
-        "email": email,
+        "email": datos.email,
     }
 
 
