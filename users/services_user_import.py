@@ -383,7 +383,11 @@ def _procesar_usuario_existente(params: _ActualizarUsuarioParams) -> dict:
         )
         changed = changed or grupos_changed
 
-    status = UserImportJobRow.Status.SKIPPED if not changed else UserImportJobRow.Status.CREATED
+    status = (
+        UserImportJobRow.Status.SKIPPED
+        if not changed
+        else UserImportJobRow.Status.CREATED
+    )
     mensaje = (
         f"Usuario {params.user.username}: sin cambios."
         if not changed
@@ -458,15 +462,15 @@ def _crear_usuario_nuevo(params: _CrearUsuarioParams) -> tuple[User, str]:
     return user, password
 
 
-def _validar_y_preparar_fila(
-    row_data: dict, job: UserImportJob
-) -> _DatosFilaValidados:
+def _validar_y_preparar_fila(row_data: dict, job: UserImportJob) -> _DatosFilaValidados:
     nombre = row_data.get("nombre", "").strip()
     apellido = row_data.get("apellido", "").strip()
     email_raw = row_data.get("correo", "").strip()
     username_raw = row_data.get("username", "").strip()
     rol = row_data.get("rol", "").strip()
-    accion_grupos = row_data.get("accion_grupos", "").strip().lower() or GROUP_ACTION_AGREGAR
+    accion_grupos = (
+        row_data.get("accion_grupos", "").strip().lower() or GROUP_ACTION_AGREGAR
+    )
 
     if accion_grupos not in GROUP_ACTIONS:
         raise ValidationError(
@@ -513,9 +517,7 @@ def _validar_y_preparar_fila(
     )
 
 
-def process_single_user_import_row(
-    *, row_data: dict, job: UserImportJob
-) -> dict:
+def process_single_user_import_row(*, row_data: dict, job: UserImportJob) -> dict:
     datos = _validar_y_preparar_fila(row_data, job)
     existing_user = _resolver_usuario_objetivo(row_data)
 
