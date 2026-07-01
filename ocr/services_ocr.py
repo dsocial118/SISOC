@@ -199,15 +199,16 @@ def _choose_page_text(ocr_text: str, layer_entry: dict | None) -> tuple[str, str
     return ocr_text, "ocr"
 
 
-def _extract_from_pdf(file_path: str, language: str, opts: dict | None = None) -> dict:
+def _ocr_pdf_pages(pages: list, language: str, opts: dict, layer: list | None):
+    """Procesa cada pagina del PDF y acumula texto y metricas de palabras.
+
+    Devuelve ``(texts, hybrid_words, ocr_only_words, layer_pages)``:
+      - texts: lista de textos por pagina (solo las no vacias)
+      - hybrid_words: palabras del resultado hibrido (capa de texto + OCR)
+      - ocr_only_words: palabras si solo se usara OCR (para el guardrail)
+      - layer_pages: cantidad de paginas resueltas por capa de texto
+    """
     import pytesseract
-    from pdf2image import convert_from_path
-
-    opts = opts or _resolve_options(None)
-    pages = convert_from_path(file_path, dpi=300)
-    page_count = len(pages)
-
-    layer = _read_text_layer(file_path) if opts["pdf_text_layer"] else None
 
     texts = []
     hybrid_words = 0  # palabras del resultado hibrido
@@ -228,6 +229,22 @@ def _extract_from_pdf(file_path: str, language: str, opts: dict | None = None) -
             layer_pages += 1
         if page_text:
             texts.append(page_text)
+
+    return texts, hybrid_words, ocr_only_words, layer_pages
+
+
+def _extract_from_pdf(file_path: str, language: str, opts: dict | None = None) -> dict:
+    from pdf2image import convert_from_path
+
+    opts = opts or _resolve_options(None)
+    pages = convert_from_path(file_path, dpi=300)
+    page_count = len(pages)
+
+    layer = _read_text_layer(file_path) if opts["pdf_text_layer"] else None
+
+    texts, hybrid_words, ocr_only_words, layer_pages = _ocr_pdf_pages(
+        pages, language, opts, layer
+    )
 
     if layer is not None:
         # Guardrail medible: el hibrido nunca debe perder palabras frente al OCR
