@@ -530,18 +530,22 @@ def process_single_user_import_row(
         )
         return _procesar_usuario_existente(params)
 
-    if not datos.username_raw:
-        raise ValidationError(
-            "No se encontro un usuario con ese correo. "
-            "Para crear un usuario nuevo se requiere la columna Username."
-        )
-
     if not datos.nombre or not datos.apellido:
         raise ValidationError("Los campos Nombre y Apellido son obligatorios.")
 
-    if User.objects.filter(username__iexact=datos.username_raw).exists():
+    username_to_create = datos.username_raw
+    if not username_to_create:
+        username_base = _slug_base_desde_nombre(
+            nombre=datos.nombre, apellido=datos.apellido
+        )
+        username_to_create = _generar_username_unico(username_base)
+
+    if (
+        datos.username_raw
+        and User.objects.filter(username__iexact=username_to_create).exists()
+    ):
         raise ValidationError(
-            f"Ya existe un usuario con el username '{datos.username_raw}'."
+            f"Ya existe un usuario con el username '{username_to_create}'."
         )
 
     with transaction.atomic():
@@ -549,7 +553,7 @@ def process_single_user_import_row(
             nombre=datos.nombre,
             apellido=datos.apellido,
             email=datos.email,
-            username_raw=datos.username_raw,
+            username_raw=username_to_create,
             rol=datos.rol,
             grupos=datos.grupos,
             provincias_objs=datos.provincias_objs,
