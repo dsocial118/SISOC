@@ -107,10 +107,10 @@ class ItinerarioVPSLForm(BootstrapModelForm):
             self.instance and self.instance.carta_archivo
         )
         self.fields["carta_archivo"].help_text = "Adjunte la carta obligatoria."
-        self.fields["referente_nombre"].label = "Nombre referente"
-        self.fields["referente_apellido"].label = "Apellido referente"
-        self.fields["referente_telefono"].label = "Telefono referente"
-        self.fields["referente_email"].label = "Email referente"
+        self.fields["referente_nombre"].label = "Nombre del referente"
+        self.fields["referente_apellido"].label = "Apellido del referente"
+        self.fields["referente_telefono"].label = "Teléfono"
+        self.fields["referente_email"].label = "Correo electrónico"
         self._set_localidad_choices()
         if self.provincia_bloqueada:
             self.fields["provincia"].initial = self.provincia_bloqueada.pk
@@ -303,10 +303,12 @@ class JornadaVPSLForm(BootstrapModelForm):
             )
         self.fields["sede_vpsl"].label = "Sede *"
         self.fields["sede_vpsl"].required = True
-        self.fields["vehiculo"].label = "Vehiculo"
+        self.fields["vehiculo"].label = "Vehículo"
         self.fields["vehiculo"].widget.attrs.update({"class": "form-control"})
-        self.fields["referente_dni"].label = "DNI referente"
-        self.fields["referente_sexo"].label = "Sexo referente"
+        self.fields["referente_dni"].label = "DNI"
+        self.fields["referente_sexo"].label = "Género referente"
+        self.fields["referente_telefono"].label = "Teléfono"
+        self.fields["referente_email"].label = "Correo electrónico"
         self.fields["referente_sexo"].widget = forms.Select(
             choices=self.SEXO_CHOICES,
             attrs={"class": "form-control"},

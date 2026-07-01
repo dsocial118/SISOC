@@ -104,3 +104,7 @@ docxtpl==0.16.7
 drf-spectacular==0.27.0
 markdown==3.6
 sentry-sdk==2.39.0
+pytesseract==0.3.13
+pdf2image==1.17.0
+opencv-python-headless==4.10.0.84
+pyspellchecker==0.8.1

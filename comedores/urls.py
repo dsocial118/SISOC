@@ -77,7 +77,11 @@ urlpatterns = [
     path(
         "comedores/exportar",
         permissions_any_required(
-            ["auth.role_exportar_a_csv", "auth.role_administrador"]
+            (
+                *ComedorExportView.list_permission_codes,
+                ComedorExportView.export_permission_code,
+                *ComedorExportView.admin_permission_codes,
+            )
         )(ComedorExportView.as_view()),
         name="comedor_export",
     ),
