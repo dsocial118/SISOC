@@ -1,0 +1,24 @@
+<div class="modal fade vpsl-delete-modal"
+     id="{{ modal_prefix }}{{ object_pk }}"
+     tabindex="-1"
+     aria-labelledby="{{ modal_prefix }}{{ object_pk }}Label"
+     aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content">
+            <form method="post" action="{% url delete_url_name object_pk %}">
+                {% csrf_token %}
+                <div class="modal-body text-center">
+                    <span class="vpsl-delete-icon" aria-hidden="true">
+                        <i class="bi bi-exclamation-lg"></i>
+                    </span>
+                    <h2 class="vpsl-delete-title" id="{{ modal_prefix }}{{ object_pk }}Label">{{ title }}</h2>
+                    <p class="vpsl-delete-message">{{ message }}</p>
+                    <div class="vpsl-delete-actions">
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">No</button>
+                        <button type="submit" class="btn btn-danger">Sí</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

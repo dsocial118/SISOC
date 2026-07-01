@@ -989,7 +989,11 @@ def test_itinerario_list_restringe_usuario_provincial_y_filtra(client):
 
     response = client.get(
         reverse("vpsl_itinerario_list"),
-        {"estado": EstadoItinerario.APROBADO, "busqueda": "Laura"},
+        {
+            "estado": EstadoItinerario.APROBADO,
+            "buscar_por": "referente",
+            "busqueda": "Laura",
+        },
     )
 
     html = response.content.decode()
@@ -998,6 +1002,104 @@ def test_itinerario_list_restringe_usuario_provincial_y_filtra(client):
     assert itinerario_oculto.codigo not in html
     assert "Cordoba" in html
     assert "Santa Fe" not in html
+    assert 'value="referente"' in html
+    assert response.context["filtros"]["buscar_por"] == "referente"
+
+
+def test_itinerario_list_busca_estado_por_etiqueta_visible(client):
+    provincia = Provincia.objects.create(nombre="Cordoba")
+    itinerario_revision = crear_itinerario(
+        provincia=provincia,
+        estado=EstadoItinerario.EN_REVISION,
+        sedes=[crear_sede(cueanexo="CB002", jurisdiccion="Cordoba")],
+    )
+    itinerario_aprobado = crear_itinerario(
+        provincia=provincia,
+        estado=EstadoItinerario.APROBADO,
+        sedes=[crear_sede(cueanexo="CB003", jurisdiccion="Cordoba")],
+    )
+    user = get_user_model().objects.create_user(
+        username="vpsl-list-estado-label",
+        email="vpsl-list-estado-label@example.com",
+        password="testpass123",
+    )
+    hacer_usuario_provincial(user, provincia)
+    asignar_permiso(user, "view_itinerariovpsl")
+    client.force_login(user)
+
+    response = client.get(
+        reverse("vpsl_itinerario_list"),
+        {
+            "buscar_por": "estado",
+            "busqueda": "revision nacion",
+        },
+    )
+
+    html = response.content.decode()
+    assert response.status_code == 200
+    assert itinerario_revision.codigo in html
+    assert itinerario_aprobado.codigo not in html
+
+
+def test_itinerario_list_permiso_global_ve_todas_las_provincias(client):
+    provincia_buenos_aires = Provincia.objects.create(nombre="Buenos Aires")
+    provincia_santa_fe = Provincia.objects.create(nombre="Santa Fe")
+    itinerario_buenos_aires = crear_itinerario(
+        provincia=provincia_buenos_aires,
+        referente_nombre="Laura",
+        sedes=[crear_sede(cueanexo="BA001", jurisdiccion="Buenos Aires")],
+    )
+    itinerario_santa_fe = crear_itinerario(
+        provincia=provincia_santa_fe,
+        referente_nombre="Sofia",
+        sedes=[crear_sede(cueanexo="SF002", jurisdiccion="Santa Fe")],
+    )
+    user = get_user_model().objects.create_user(
+        username="vpsl-list-global",
+        email="vpsl-list-global@example.com",
+        password="testpass123",
+    )
+    asignar_permiso(user, "view_all_itinerarios_vpsl")
+    client.force_login(user)
+
+    response = client.get(reverse("vpsl_itinerario_list"))
+
+    html = response.content.decode()
+    assert response.status_code == 200
+    assert itinerario_buenos_aires.codigo in html
+    assert itinerario_santa_fe.codigo in html
+    assert response.context["provincia_restringida"] is None
+
+    response = client.get(
+        reverse("vpsl_itinerario_list"),
+        {"provincia": str(provincia_santa_fe.pk)},
+    )
+
+    html = response.content.decode()
+    assert response.status_code == 200
+    assert itinerario_buenos_aires.codigo not in html
+    assert itinerario_santa_fe.codigo in html
+
+
+def test_itinerario_detail_permiso_global_accede_sin_provincia_asignada(client):
+    itinerario = crear_itinerario(
+        provincia=Provincia.objects.create(nombre="Tucuman"),
+        sedes=[crear_sede(cueanexo="TU001", jurisdiccion="Tucuman")],
+    )
+    user = get_user_model().objects.create_user(
+        username="vpsl-detail-global",
+        email="vpsl-detail-global@example.com",
+        password="testpass123",
+    )
+    asignar_permiso(user, "view_all_itinerarios_vpsl")
+    client.force_login(user)
+
+    response = client.get(
+        reverse("vpsl_itinerario_detail", kwargs={"pk": itinerario.pk})
+    )
+
+    assert response.status_code == 200
+    assert itinerario.codigo in response.content.decode()
 
 
 def test_itinerario_detail_muestra_localidad_de_sede_en_jornadas(client):
@@ -1066,11 +1168,11 @@ def test_jornada_detail_muestra_escuela_en_resumen_de_ubicacion(client):
 
     assert response.status_code == 200
     html = response.content.decode()
-    assert "Escuela" in html
+    assert "Lugar" in html
     assert "ESCUELA PRIMARIA 1" in html
-    assert html.index("Escuela") < html.index("Provincia")
-    assert html.index("Provincia") < html.index("Localidad")
-    assert html.index("Localidad") < html.index("Calle y altura")
+    assert html.index("Lugar") < html.index("Localidad")
+    assert html.index("Localidad") < html.index("Provincia")
+    assert html.index("Provincia") < html.index("Calle y altura")
 
 
 def test_jornada_detail_muestra_resumen_cierre_compacto(client):
@@ -1114,6 +1216,56 @@ def test_jornada_detail_muestra_resumen_cierre_compacto(client):
     assert "No requiere anteojos" in html
     assert "Derivados" in html
     assert "vpsl-cierre-summary" in html
+
+
+def test_jornada_detail_muestra_acciones_segun_estado(client):
+    user = get_user_model().objects.create_superuser(
+        username="vpsl-jornada-acciones",
+        email="vpsl-jornada-acciones@example.com",
+        password="testpass123",
+    )
+    client.force_login(user)
+    provincia = Provincia.objects.create(nombre="Cordoba")
+    jornada_pendiente = crear_jornada(
+        itinerario=crear_itinerario(
+            provincia=provincia,
+            sedes=[crear_sede(cueanexo="CB004", jurisdiccion="Cordoba")],
+        ),
+        estado=EstadoJornada.PENDIENTE_HABILITACION,
+    )
+    jornada_habilitada = crear_jornada(
+        itinerario=crear_itinerario(
+            provincia=provincia,
+            sedes=[crear_sede(cueanexo="CB005", jurisdiccion="Cordoba")],
+        ),
+        estado=EstadoJornada.HABILITADA,
+    )
+
+    response = client.get(
+        reverse("vpsl_jornada_detail", kwargs={"pk": jornada_pendiente.pk})
+    )
+
+    html = response.content.decode()
+    assert response.status_code == 200
+    assert "Cerrar jornada" not in html
+    assert "Habilitar" in html
+    assert (
+        "Debe completar y aprobar el checklist de la sede antes de habilitar la jornada."
+        in html
+    )
+    assert (
+        "La jornada debe estar habilitada o en progreso para cargar registros nominales."
+        in html
+    )
+
+    response = client.get(
+        reverse("vpsl_jornada_detail", kwargs={"pk": jornada_habilitada.pk})
+    )
+
+    html = response.content.decode()
+    assert response.status_code == 200
+    assert "Cerrar jornada" in html
+    assert "Habilitar" not in html
 
 
 def test_itinerario_exporta_csv_con_jornadas(client):
@@ -1867,3 +2019,81 @@ def test_sede_delete_es_logico(client):
     assert response.status_code == 302
     assert not SedeVPSL.objects.filter(pk=sede.pk).exists()
     assert SedeVPSL.all_objects.filter(pk=sede.pk, deleted_at__isnull=False).exists()
+
+
+def test_itinerario_delete_es_logico(client):
+    user = get_user_model().objects.create_superuser(
+        username="vpsl-itinerario-delete",
+        email="vpsl-itinerario-delete@example.com",
+        password="testpass123",
+    )
+    itinerario = crear_itinerario()
+    client.force_login(user)
+
+    response = client.post(
+        reverse("vpsl_itinerario_delete", kwargs={"pk": itinerario.pk})
+    )
+
+    assert response.status_code == 302
+    assert response.url == reverse("vpsl_itinerario_list")
+    assert not ItinerarioVPSL.objects.filter(pk=itinerario.pk).exists()
+    assert ItinerarioVPSL.all_objects.filter(
+        pk=itinerario.pk,
+        deleted_at__isnull=False,
+    ).exists()
+
+
+def test_jornada_delete_es_logico_y_vuelve_al_itinerario(client):
+    user = get_user_model().objects.create_superuser(
+        username="vpsl-jornada-delete",
+        email="vpsl-jornada-delete@example.com",
+        password="testpass123",
+    )
+    jornada = crear_jornada()
+    itinerario_pk = jornada.itinerario_id
+    client.force_login(user)
+
+    response = client.post(reverse("vpsl_jornada_delete", kwargs={"pk": jornada.pk}))
+
+    assert response.status_code == 302
+    assert response.url == reverse(
+        "vpsl_itinerario_detail",
+        kwargs={"pk": itinerario_pk},
+    )
+    assert not JornadaVPSL.objects.filter(pk=jornada.pk).exists()
+    assert JornadaVPSL.all_objects.filter(
+        pk=jornada.pk,
+        deleted_at__isnull=False,
+    ).exists()
+
+
+def test_registro_delete_es_logico_y_vuelve_a_la_jornada(client):
+    user = get_user_model().objects.create_superuser(
+        username="vpsl-registro-delete",
+        email="vpsl-registro-delete@example.com",
+        password="testpass123",
+    )
+    jornada = crear_jornada(estado=EstadoJornada.HABILITADA)
+    registro = RegistroNominalVPSL.objects.create(
+        jornada=jornada,
+        dni="12345678",
+        nombre="Ana",
+        apellido="Pérez",
+        numero_acta="A-1",
+        resultado=ResultadoAtencion.NO_REQUIERE,
+        cantidad_lentes=0,
+    )
+    client.force_login(user)
+
+    response = client.post(reverse("vpsl_registro_delete", kwargs={"pk": registro.pk}))
+
+    assert response.status_code == 302
+    assert response.url == reverse(
+        "vpsl_jornada_detail",
+        kwargs={"pk": jornada.pk},
+    )
+    assert not RegistroNominalVPSL.objects.filter(pk=registro.pk).exists()
+    assert RegistroNominalVPSL.all_objects.filter(
+        pk=registro.pk,
+        deleted_at__isnull=False,
+    ).exists()

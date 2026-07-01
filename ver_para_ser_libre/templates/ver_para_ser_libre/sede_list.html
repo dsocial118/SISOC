@@ -5,18 +5,18 @@
 {% block head %}
     <link rel="stylesheet" href="{% static 'custom/css/listModerno.css' %}" />
     <link rel="stylesheet"
-          href="{% static 'custom/css/ver_para_ser_libre.css' %}" />
+          href="{% static 'custom/css/ver_para_ser_libre.css' %}?v=sedes-ux-20260624-10" />
 {% endblock %}
 {% block breadcrumb %}
     {% include "components/breadcrumb.html" with items=breadcrumb_items %}
 {% endblock %}
 
 {% block content %}
-    <div class="comedor-list-container vpsl-page">
-        {% include "components/search_bar.html" with titulo="Buscar sedes VPSL" placeholder="Nombre, CUE, provincia, localidad o domicilio" help_text="Ingresar nombre, CUE, provincia, localidad o domicilio." reset_url="vpsl_sede_list" add_url="vpsl_sede_create" add_text="Nueva sede" query=query %}
-        <div class="row mt-5 max-width-100">
-            <div class="col-12">
-                <div class="card comedor-table-card vpsl-table-card">
+    <div class="vpsl-sedes-shell">
+        <div class="comedor-list-container vpsl-page vpsl-sedes-list">
+            {% include "components/search_bar.html" with titulo="Buscar sedes VPSL" placeholder="Nombre, CUE, provincia, localidad o domicilio" help_text="Ingresar nombre, CUE, provincia, localidad o domicilio." reset_url="vpsl_sede_list" add_url="vpsl_sede_create" add_text="Nueva sede" query=query %}
+            <div class="vpsl-sedes-table-wrap max-width-100">
+                <div class="card comedor-table-card vpsl-table-card vpsl-table-card--standalone">
                     <div class="card-body">
                         <div class="table-responsive-lg">
                             <table class="table table-comedor-moderno">
@@ -46,11 +46,11 @@
                                                     <span class="badge bg-warning text-dark">Pendiente</span>
                                                 {% endif %}
                                             </td>
-                                            <td class="d-flex flex-wrap gap-1">
+                                            <td class="text-nowrap">
                                                 <a href="{% url 'vpsl_sede_update' sede.pk %}"
-                                                   class="btn btn-sm btn-warning">Editar</a>
+                                                   class="btn btn-sm btn-secondary"><i class="bi bi-pencil-square"></i> Editar</a>
                                                 <a href="{% url 'vpsl_sede_delete' sede.pk %}"
-                                                   class="btn btn-sm btn-danger">Eliminar</a>
+                                                   class="btn btn-sm btn-danger"><i class="bi bi-trash"></i> Eliminar</a>
                                             </td>
                                         </tr>
                                     {% empty %}
@@ -64,7 +64,6 @@
                     </div>
                 </div>
             </div>
+            {% include "components/pagination.html" with is_paginated=is_paginated page_obj=page_obj query=query %}
         </div>
-        {% include "components/pagination.html" with is_paginated=is_paginated page_obj=page_obj query=query %}
-    </div>
-{% endblock %}
+    {% endblock %}

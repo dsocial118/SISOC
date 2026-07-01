@@ -205,6 +205,11 @@ LEGACY_ALIAS_TO_PERMISSION_CODES: dict[str, tuple[str, ...]] = {
     "TecnicoCeliaquia": ("celiaquia.view_expediente",),
     "CoordinadorCeliaquia": ("celiaquia.view_expediente",),
     "ProvinciaCeliaquia": ("celiaquia.view_expediente",),
+    # Ver Para Ser Libres
+    "Coordinador General VPSL": (
+        "ver_para_ser_libre.view_itinerariovpsl",
+        "ver_para_ser_libre.view_all_itinerarios_vpsl",
+    ),
     # Otros legacy usados en checks
     "Gestor prestaciones": ("core.view_montoprestacionprograma",),
     "Exportar a csv": ("auth.role_exportar_a_csv",),

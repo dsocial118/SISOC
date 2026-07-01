@@ -1,40 +1,59 @@
 {% extends "includes/main.html" %}
+{% load static %}
 
 {% block title %}Checklist VPSL{% endblock %}
+{% block head %}
+    <link rel="stylesheet"
+          href="{% static 'custom/css/ver_para_ser_libre.css' %}?v=sede-checklist-ux-20260624" />
+{% endblock %}
 {% block content %}
-    <div class="row">
+    <div class="row vpsl-page vpsl-sede-checklist-form">
         <div class="col-12 col-xl-10 offset-xl-1">
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title mb-0">Checklist de sede</h3>
+            <div class="card vpsl-title-card vpsl-header">
+                <div class="card-body d-flex flex-wrap justify-content-between align-items-center gap-2">
+                    <div>
+                        <h2 class="vpsl-title">Checklist de sede</h2>
+                        <p class="vpsl-subtitle mb-0">{{ sede.nombre }} · {{ sede.domicilio }}</p>
+                    </div>
+                    <a href="{% url 'vpsl_jornada_detail' jornada.pk %}"
+                       class="btn btn-secondary">
+                        <i class="bi bi-arrow-left"></i> Volver
+                    </a>
                 </div>
+            </div>
+            <div class="card vpsl-form-card">
                 <form method="post" enctype="multipart/form-data">
                     {% csrf_token %}
                     <div class="card-body">
                         {% include "ver_para_ser_libre/partials/form_errors.html" with form=form %}
-                        <p class="text-muted">{{ sede.nombre }} · {{ sede.domicilio }}</p>
-                        {% for group in field_groups %}
-                            <div class="border rounded p-3 mb-3">
-                                <h4 class="h6">{{ group.title }}</h4>
-                                <div class="row g-3">
-                                    <div class="col-12 col-md-4">
-                                        <label class="form-label" for="{{ group.cumple.id_for_label }}">{{ group.cumple.label }}</label>
-                                        {{ group.cumple }}
-                                        {% for error in group.cumple.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                        <div class="vpsl-form-shell">
+                            {% for group in field_groups %}
+                                <section class="vpsl-section">
+                                    <div class="vpsl-section-header">
+                                        <h4 class="vpsl-section-title">{{ group.title }}</h4>
                                     </div>
-                                    <div class="col-12 col-md-5">
-                                        <label class="form-label" for="{{ group.observacion.id_for_label }}">{{ group.observacion.label }}</label>
-                                        {{ group.observacion }}
-                                        {% for error in group.observacion.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                                    <div class="vpsl-section-body">
+                                        <div class="row g-3">
+                                            <div class="col-12 col-md-4">
+                                                <label class="form-label" for="{{ group.cumple.id_for_label }}">{{ group.cumple.label }}</label>
+                                                {{ group.cumple }}
+                                                {% for error in group.cumple.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                                            </div>
+                                            <div class="col-12 col-md-5">
+                                                <label class="form-label" for="{{ group.observacion.id_for_label }}">{{ group.observacion.label }}</label>
+                                                {{ group.observacion }}
+                                                {% for error in group.observacion.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                                            </div>
+                                            <div class="col-12 col-md-3">
+                                                <label class="form-label" for="{{ group.evidencia.id_for_label }}">{{ group.evidencia.label }}</label>
+                                                {{ group.evidencia }}
+                                                {% for error in group.evidencia.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div class="col-12 col-md-3">
-                                        <label class="form-label" for="{{ group.evidencia.id_for_label }}">{{ group.evidencia.label }}</label>
-                                        {{ group.evidencia }}
-                                        {% for error in group.evidencia.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
-                                    </div>
-                                </div>
-                            </div>
-                        {% endfor %}
+                                </section>
+                            {% endfor %}
+                        </div>
                     </div>
                     <div class="card-footer d-flex justify-content-end gap-2">
                         <a href="{% url 'vpsl_jornada_detail' jornada.pk %}"
