@@ -611,9 +611,11 @@ def _import_row_data(correo):
         "nombre": "Nombre",
         "apellido": "Apellido",
         "correo": correo,
+        "username": "",
         "permisos": "",
         "provincias": "",
         "rol": "TERRITORIAL",
+        "accion_grupos": "",
     }
 
 

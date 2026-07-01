@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import unicodedata
+from dataclasses import dataclass
 from io import BytesIO
 
 from django.conf import settings
@@ -33,17 +34,24 @@ USER_IMPORT_REQUIRED_COLUMNS = (
     "provincias",
     "rol",
 )
-USER_IMPORT_OPTIONAL_COLUMNS = ("correo",)
+USER_IMPORT_OPTIONAL_COLUMNS = ("correo", "username", "accion_grupos")
 USER_IMPORT_KNOWN_COLUMNS = USER_IMPORT_REQUIRED_COLUMNS + USER_IMPORT_OPTIONAL_COLUMNS
 USER_IMPORT_TEMPLATE_HEADERS = (
+    "Username",
     "Nombre",
     "Apellido",
     "Correo",
     "Permisos",
+    "Accion grupos",
     "Provincias",
     "Rol",
 )
 USERNAME_MAX_LENGTH = 150
+
+GROUP_ACTION_AGREGAR = "agregar"
+GROUP_ACTION_QUITAR = "quitar"
+GROUP_ACTION_REEMPLAZAR = "reemplazar"
+GROUP_ACTIONS = (GROUP_ACTION_AGREGAR, GROUP_ACTION_QUITAR, GROUP_ACTION_REEMPLAZAR)
 
 
 def _build_login_url() -> str:
@@ -139,8 +147,6 @@ def validate_user_import_workbook(uploaded_file) -> None:
             raise ValidationError(
                 f"El archivo debe incluir las columnas obligatorias: {', '.join(missing)}."
             )
-        # Correo es opcional: si no viene la columna, todas las filas se procesan
-        # sin email y la generación de username se hace a partir de nombre+apellido.
 
         for row in rows:
             if any(_clean_cell(v) for v in row):
@@ -286,16 +292,196 @@ def _resolver_provincias(provincias_raw: str) -> list:
     return provincias
 
 
-def process_single_user_import_row(  # pylint: disable=too-many-locals
-    *, row_data: dict, job: UserImportJob
-) -> dict:
+def _is_unrestricted_actor(actor) -> bool:
+    if actor is None:
+        return True
+    if getattr(actor, "is_superuser", False):
+        return True
+    profile = getattr(actor, "profile", None)
+    if not profile:
+        return True
+    return not profile.grupos_asignables.exists()
+
+
+def _get_allowed_group_ids(actor) -> set | None:
+    if _is_unrestricted_actor(actor):
+        return None
+    return set(actor.profile.grupos_asignables.values_list("id", flat=True))
+
+
+def _resolver_usuario_objetivo(row_data: dict):
+    username_raw = row_data.get("username", "").strip()
+    email_raw = row_data.get("correo", "").strip()
+    if username_raw:
+        return User.objects.filter(username__iexact=username_raw).first()
+    if email_raw:
+        return User.objects.filter(email__iexact=email_raw).first()
+    return None
+
+
+def _aplicar_accion_grupos(
+    *,
+    user,
+    grupos: list,
+    accion: str,
+    allowed_group_ids: set | None,
+) -> bool:
+    current_group_ids = set(user.groups.values_list("id", flat=True))
+    requested_group_ids = {g.pk for g in grupos}
+
+    if accion == GROUP_ACTION_AGREGAR:
+        to_add = requested_group_ids - current_group_ids
+        if to_add:
+            user.groups.add(*to_add)
+        return bool(to_add)
+
+    if accion == GROUP_ACTION_QUITAR:
+        to_remove = requested_group_ids & current_group_ids
+        if to_remove:
+            user.groups.remove(*to_remove)
+        return bool(to_remove)
+
+    final_group_ids = (
+        (current_group_ids - allowed_group_ids | requested_group_ids)
+        if allowed_group_ids
+        else requested_group_ids
+    )
+    if final_group_ids != current_group_ids:
+        user.groups.set(list(final_group_ids))
+        return True
+    return False
+
+
+@dataclass
+class _ActualizarUsuarioParams:
+    user: object
+    email: str
+    username_raw: str
+    grupos: list
+    accion_grupos: str
+    allowed_group_ids: set | None
+
+
+def _procesar_usuario_existente(params: _ActualizarUsuarioParams) -> dict:
+    changed = False
+
+    with transaction.atomic():
+        if (
+            params.username_raw
+            and params.email
+            and params.user.email.lower() != params.email.lower()
+        ):
+            params.user.email = params.email
+            params.user.save(update_fields=["email"])
+            changed = True
+
+        grupos_changed = _aplicar_accion_grupos(
+            user=params.user,
+            grupos=params.grupos,
+            accion=params.accion_grupos,
+            allowed_group_ids=params.allowed_group_ids,
+        )
+        changed = changed or grupos_changed
+
+    status = (
+        UserImportJobRow.Status.SKIPPED
+        if not changed
+        else UserImportJobRow.Status.CREATED
+    )
+    mensaje = (
+        f"Usuario {params.user.username}: sin cambios."
+        if not changed
+        else f"Usuario {params.user.username} actualizado ({params.accion_grupos} grupos)."
+    )
+    return {
+        "status": status,
+        "mensaje": mensaje,
+        "email": params.user.email,
+    }
+
+
+@dataclass
+class _CrearUsuarioParams:
+    nombre: str
+    apellido: str
+    email: str
+    username_raw: str
+    rol: str
+    grupos: list
+    provincias_objs: list
+    job: object
+
+
+@dataclass
+class _DatosFilaValidados:
+    nombre: str
+    apellido: str
+    email: str
+    username_raw: str
+    rol: str
+    accion_grupos: str
+    grupos: list
+    provincias_objs: list
+    allowed_group_ids: set | None
+
+
+def _crear_usuario_nuevo(params: _CrearUsuarioParams) -> tuple[User, str]:
+    user = User(
+        username=params.username_raw,
+        email=params.email,
+        first_name=params.nombre,
+        last_name=params.apellido,
+        is_staff=not params.job.is_pwa_import,
+        is_active=True,
+    )
+    user.set_unusable_password()
+    user.save()
+
+    if params.grupos:
+        user.groups.set(params.grupos)
+
+    profile = user.profile
+    profile.rol = params.rol
+    if params.provincias_objs:
+        profile.es_usuario_provincial = True
+    profile.save(update_fields=["rol", "es_usuario_provincial"])
+
+    for prov in params.provincias_objs:
+        scope_key = ProfileTerritorialScope.build_scope_key(prov.pk)
+        ProfileTerritorialScope.objects.get_or_create(
+            profile=profile,
+            scope_key=scope_key,
+            defaults={
+                "provincia_id": prov.pk,
+                "municipio": None,
+                "localidad": None,
+            },
+        )
+
+    password = generate_temporary_password_for_user(user=user)
+    return user, password
+
+
+def _validar_y_preparar_fila(row_data: dict, job: UserImportJob) -> _DatosFilaValidados:
     nombre = row_data.get("nombre", "").strip()
     apellido = row_data.get("apellido", "").strip()
     email_raw = row_data.get("correo", "").strip()
+    username_raw = row_data.get("username", "").strip()
     rol = row_data.get("rol", "").strip()
+    accion_grupos = (
+        row_data.get("accion_grupos", "").strip().lower() or GROUP_ACTION_AGREGAR
+    )
 
-    if not nombre or not apellido:
-        raise ValidationError("Los campos Nombre y Apellido son obligatorios.")
+    if accion_grupos not in GROUP_ACTIONS:
+        raise ValidationError(
+            f"Accion de grupos invalida: '{accion_grupos}'. "
+            f"Los valores validos son: {', '.join(GROUP_ACTIONS)}."
+        )
+
+    if not username_raw and not email_raw:
+        raise ValidationError(
+            "Debe indicar Username o Correo para identificar al usuario de la fila."
+        )
 
     email = ""
     if email_raw:
@@ -308,48 +494,74 @@ def process_single_user_import_row(  # pylint: disable=too-many-locals
         email = email_raw.lower()
 
     grupos = _resolver_grupos(row_data.get("permisos", "").strip())
+    allowed_group_ids = _get_allowed_group_ids(job.requested_by)
+
+    if allowed_group_ids is not None and grupos:
+        out_of_scope = [g for g in grupos if g.pk not in allowed_group_ids]
+        if out_of_scope:
+            names = ", ".join(g.name for g in out_of_scope)
+            raise ValidationError(f"No tiene permiso para operar los grupos: {names}.")
+
     provincias_objs = _resolver_provincias(row_data.get("provincias", "").strip())
 
-    username_base = (
-        _slug_base_desde_email(email)
-        if email
-        else _slug_base_desde_nombre(nombre=nombre, apellido=apellido)
+    return _DatosFilaValidados(
+        nombre=nombre,
+        apellido=apellido,
+        email=email,
+        username_raw=username_raw,
+        rol=rol,
+        accion_grupos=accion_grupos,
+        grupos=grupos,
+        provincias_objs=provincias_objs,
+        allowed_group_ids=allowed_group_ids,
     )
 
-    with transaction.atomic():
-        user = User(
-            username=_generar_username_unico(username_base),
-            email=email,
-            first_name=nombre,
-            last_name=apellido,
-            is_staff=not job.is_pwa_import,
-            is_active=True,
+
+def process_single_user_import_row(*, row_data: dict, job: UserImportJob) -> dict:
+    datos = _validar_y_preparar_fila(row_data, job)
+    existing_user = _resolver_usuario_objetivo(row_data)
+
+    if existing_user is not None:
+        params = _ActualizarUsuarioParams(
+            user=existing_user,
+            email=datos.email,
+            username_raw=datos.username_raw,
+            grupos=datos.grupos,
+            accion_grupos=datos.accion_grupos,
+            allowed_group_ids=datos.allowed_group_ids,
         )
-        user.set_unusable_password()
-        user.save()
+        return _procesar_usuario_existente(params)
 
-        if grupos:
-            user.groups.set(grupos)
+    if not datos.nombre or not datos.apellido:
+        raise ValidationError("Los campos Nombre y Apellido son obligatorios.")
 
-        profile = user.profile
-        profile.rol = rol
-        if provincias_objs:
-            profile.es_usuario_provincial = True
-        profile.save(update_fields=["rol", "es_usuario_provincial"])
+    username_to_create = datos.username_raw
+    if not username_to_create:
+        username_base = _slug_base_desde_nombre(
+            nombre=datos.nombre, apellido=datos.apellido
+        )
+        username_to_create = _generar_username_unico(username_base)
 
-        for prov in provincias_objs:
-            scope_key = ProfileTerritorialScope.build_scope_key(prov.pk)
-            ProfileTerritorialScope.objects.get_or_create(
-                profile=profile,
-                scope_key=scope_key,
-                defaults={
-                    "provincia_id": prov.pk,
-                    "municipio": None,
-                    "localidad": None,
-                },
-            )
+    if (
+        datos.username_raw
+        and User.objects.filter(username__iexact=username_to_create).exists()
+    ):
+        raise ValidationError(
+            f"Ya existe un usuario con el username '{username_to_create}'."
+        )
 
-        password = generate_temporary_password_for_user(user=user)
+    with transaction.atomic():
+        params = _CrearUsuarioParams(
+            nombre=datos.nombre,
+            apellido=datos.apellido,
+            email=datos.email,
+            username_raw=username_to_create,
+            rol=datos.rol,
+            grupos=datos.grupos,
+            provincias_objs=datos.provincias_objs,
+            job=job,
+        )
+        user, password = _crear_usuario_nuevo(params)
 
     if job.send_credentials:
         _enviar_credenciales_import(user=user, password=password)
@@ -357,7 +569,7 @@ def process_single_user_import_row(  # pylint: disable=too-many-locals
     return {
         "status": UserImportJobRow.Status.CREATED,
         "mensaje": f"Usuario {user.username} creado correctamente.",
-        "email": email,
+        "email": datos.email,
     }
 
 
