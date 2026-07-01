@@ -1,16 +1,19 @@
 import logging
 
-from django.db.models import Q
+from django.db.models import F, Q
 from django.db.models.signals import pre_save
 from django.dispatch import receiver
 
 from config.middlewares.threadlocals import get_current_user
-from core.soft_delete.signals import post_restore
+from core.soft_delete.signals import post_restore, post_soft_delete
 from .models import (
+    CupoMovimiento,
     EstadoCupo,
     Expediente,
     ExpedienteEstadoHistorial,
     ExpedienteCiudadano,
+    ProvinciaCupo,
+    TipoMovimientoCupo,
 )
 from .services.comentarios_service import ComentariosService
 
@@ -137,4 +140,82 @@ def resolver_conflictos_ciudadanos_tras_restauracion(sender, instance, user, **k
         "con ciudadano(s) activo(s) en otro expediente.",
         instance.pk,
         count,
+    )
+
+
+def _ajustar_usados_por_ciclo_vida_legajo(legajo, *, delta, tipo, motivo, user=None):
+    """Mantiene ``ProvinciaCupo.usados`` sincronizado cuando un titular con cupo
+    entra o sale del universo vivo por soft-delete/restore.
+
+    Un titular ocupa cupo si ``estado_cupo=DENTRO`` y su rol no es responsable
+    puro (los responsables no consumen cupo). Al soft-borrarlo se descuenta
+    ``usados`` (delta=-1) y al restaurarlo se vuelve a contar (delta=+1). Antes,
+    soft-borrar un titular dejaba ``usados`` inflado y descuadraba el cupo.
+    """
+    if legajo.estado_cupo != EstadoCupo.DENTRO:
+        return
+    if (legajo.rol or "").strip().lower() == ExpedienteCiudadano.ROLE_RESPONSABLE:
+        return
+
+    from ciudadanos.models import Ciudadano  # pylint: disable=import-outside-toplevel
+
+    provincia_id = (
+        Ciudadano.all_objects.filter(pk=legajo.ciudadano_id)
+        .values_list("provincia_id", flat=True)
+        .first()
+    )
+    if not provincia_id:
+        return
+    pc = ProvinciaCupo.objects.filter(provincia_id=provincia_id).first()
+    if pc is None:
+        return
+
+    if delta < 0:
+        cambiado = ProvinciaCupo.objects.filter(pk=pc.pk, usados__gt=0).update(
+            usados=F("usados") - 1
+        )
+    else:
+        cambiado = ProvinciaCupo.objects.filter(pk=pc.pk).update(usados=F("usados") + 1)
+    if not cambiado:
+        return
+
+    CupoMovimiento.objects.create(
+        provincia_id=provincia_id,
+        expediente_id=legajo.expediente_id,
+        legajo=legajo,
+        tipo=tipo,
+        delta=delta,
+        motivo=motivo[:255],
+        usuario=user,
+    )
+    logger.info(
+        "Cupo %s (%s): legajo=%s provincia=%s", tipo, motivo, legajo.pk, provincia_id
+    )
+
+
+@receiver(post_soft_delete, sender=ExpedienteCiudadano)
+def liberar_cupo_al_eliminar_legajo(sender, instance, user=None, **kwargs):
+    """Libera el cupo al soft-borrar un titular (estado_cupo=DENTRO).
+
+    Evita que ``ProvinciaCupo.usados`` quede inflado cuando se elimina (o se
+    elimina en cascada por su expediente) un legajo que ocupaba cupo.
+    """
+    _ajustar_usados_por_ciclo_vida_legajo(
+        instance,
+        delta=-1,
+        tipo=TipoMovimientoCupo.BAJA,
+        motivo="Baja de cupo por eliminación de legajo",
+        user=user,
+    )
+
+
+@receiver(post_restore, sender=ExpedienteCiudadano)
+def reservar_cupo_al_restaurar_legajo(sender, instance, user=None, **kwargs):
+    """Vuelve a contar el cupo al restaurar un titular que estaba DENTRO."""
+    _ajustar_usados_por_ciclo_vida_legajo(
+        instance,
+        delta=1,
+        tipo=TipoMovimientoCupo.ALTA,
+        motivo="Alta de cupo por restauración de legajo",
+        user=user,
     )

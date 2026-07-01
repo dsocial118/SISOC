@@ -13,6 +13,9 @@ comando los repara:
      cuidador, dejando afuera a celíacos que además cuidan a otro celíaco. Se los
      re-evalúa contra el archivo SINTYS del expediente (cruce_excel) por su propio
      documento y, si matchean, se les reserva cupo.
+  4. Cupo descuadrado: ProvinciaCupo.usados != cantidad real de titulares con
+     cupo vivos (por legajos DENTRO soft-deleted que no liberaron cupo, o por
+     contadores huérfanos) -> se recomputa usados.
 
 SEGURO POR DEFECTO: sin --apply solo REPORTA (dry-run, no escribe nada). Con
 --apply escribe. Es idempotente: re-ejecutarlo no vuelve a tocar lo ya corregido.
@@ -33,6 +36,7 @@ from celiaquia.models import (
     EstadoCupo,
     Expediente,
     ExpedienteCiudadano,
+    ProvinciaCupo,
     ResultadoSintys,
     RevisionTecnico,
 )
@@ -47,7 +51,7 @@ ROLES_BENEFICIARIOS = [
 
 
 class Command(BaseCommand):
-    help = "Sanea datos de celiaquía (RENAPER, responsable-MATCH, doble rol SIN_CRUCE)."
+    help = "Sanea datos de celiaquía (RENAPER, responsable-MATCH, doble rol, cupo)."
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -81,6 +85,11 @@ class Command(BaseCommand):
             help="Solo re-evaluar doble rol / beneficiario cuidador SIN_CRUCE.",
         )
         parser.add_argument(
+            "--cupo",
+            action="store_true",
+            help="Solo recomputar ProvinciaCupo.usados (= DENTRO reales vivos).",
+        )
+        parser.add_argument(
             "--usuario",
             help="username para atribuir los movimientos de cupo (opcional).",
         )
@@ -108,7 +117,10 @@ class Command(BaseCommand):
                 raise CommandError(f"Usuario '{options['usuario']}' no existe.")
 
         correr_todas = not (
-            options["renaper"] or options["responsable_match"] or options["doble_rol"]
+            options["renaper"]
+            or options["responsable_match"]
+            or options["doble_rol"]
+            or options["cupo"]
         )
 
         modo = "APLICANDO CAMBIOS" if apply else "DRY-RUN (no escribe nada)"
@@ -124,6 +136,8 @@ class Command(BaseCommand):
             )
         if correr_todas or options["doble_rol"]:
             resumen["doble_rol"] = self._reevaluar_doble_rol(base, apply, usuario)
+        if correr_todas or options["cupo"]:
+            resumen["cupo"] = self._recomputar_cupo(base, options, apply)
 
         self.stdout.write(self.style.SUCCESS("\n== Resumen =="))
         for clave, datos in resumen.items():
@@ -302,6 +316,49 @@ class Command(BaseCommand):
             "cupos_reservados": reservados,
             "expedientes_sin_excel": exp_sin_excel,
         }
+
+    # ------------------------------------------------------------------ #
+    #  4) Recompute de ProvinciaCupo.usados                               #
+    # ------------------------------------------------------------------ #
+    def _recomputar_cupo(self, base, options, apply):
+        """Corrige el contador ProvinciaCupo.usados dejándolo igual a la cantidad
+        real de titulares con cupo vivos (estado_cupo=DENTRO, no responsables).
+
+        Cubre descuadres por legajos DENTRO soft-deleted que no liberaron cupo y
+        contadores huérfanos.
+        """
+        cupos = ProvinciaCupo.objects.select_related("provincia")
+        if options["provincia"]:
+            cupos = cupos.filter(provincia_id=options["provincia"])
+        elif options["expedientes"]:
+            prov_ids = {
+                pid
+                for pid in base.values_list(
+                    "ciudadano__provincia_id", flat=True
+                ).distinct()
+                if pid
+            }
+            cupos = cupos.filter(provincia_id__in=prov_ids)
+
+        self.stdout.write(
+            self.style.HTTP_INFO("\n[4] Recompute de ProvinciaCupo.usados")
+        )
+        corregidas = 0
+        for pc in cupos:
+            real = ExpedienteCiudadano.objects.filter(
+                ciudadano__provincia=pc.provincia,
+                estado_cupo=EstadoCupo.DENTRO,
+                rol__in=ROLES_BENEFICIARIOS,
+            ).count()
+            if pc.usados != real:
+                corregidas += 1
+                self.stdout.write(
+                    f"  {pc.provincia}: usados {pc.usados} -> {real} "
+                    f"(dif {pc.usados - real})"
+                )
+                if apply:
+                    ProvinciaCupo.objects.filter(pk=pc.pk).update(usados=real)
+        return {"provincias_corregidas": corregidas}
 
     # ------------------------------------------------------------------ #
     def _liberar(self, legajo, usuario, motivo):

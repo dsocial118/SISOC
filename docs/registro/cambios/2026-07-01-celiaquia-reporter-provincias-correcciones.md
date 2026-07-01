@@ -127,15 +127,41 @@ expedientes ya procesados no se corrigen solos. Para repararlos se agregó
 - **Seguro por defecto**: sin `--apply` es *dry-run* (solo reporta, no escribe).
 - Alcance: `--provincia <id>`, `--expedientes <ids...>` o `--todas`.
 - Correcciones (todas por defecto, o seleccionables con `--renaper` /
-  `--responsable-match` / `--doble-rol`):
+  `--responsable-match` / `--doble-rol` / `--cupo`):
   1. RENAPER estado 2 + APROBADO → RECHAZADO + libera cupo.
   2. Responsable puro con MATCH → SIN_CRUCE (+ libera cupo si tuviera).
   3. Doble rol / beneficiario cuidador `SIN_CRUCE` → re-evalúa contra el
      `cruce_excel` del expediente (por su propio documento, reusando
      `CruceService`) y reserva cupo si matchea.
+  4. Cupo descuadrado → recomputa `ProvinciaCupo.usados` = cantidad real de
+     titulares con cupo vivos (`estado_cupo=DENTRO`, no responsables). Corrige
+     descuadres por legajos DENTRO soft-deleted que no liberaron cupo y por
+     contadores huérfanos.
 - Idempotente (re-ejecutable). Ejemplo: `sanear_celiaquia --provincia 23 --apply`.
-- Preview en Tucumán (dry-run): RENAPER=0, responsable-match=0, doble-rol=4
-  candidatos (2 doble rol + 2 beneficiarios cuidadores) a re-evaluar.
+
+### Reconciliación de integridad (barrido de solo lectura sobre prod)
+Se corrió una reconciliación punta a punta (flujo → reporte) sobre todas las
+provincias. Estado a la fecha:
+- **Reporte reconcilia**: total de legajos == suma por provincia (3362 = 3362).
+- **Estados limpios**: 0 MATCH-sin-aprobar, 0 responsable-con-MATCH, 0
+  cupo-DENTRO-sin-aprobar+match, 0 RENAPER-rechazado-que-sigue-aprobado.
+- **Doble rol / beneficiario cuidador salteados (bug viejo)**: 13 reales
+  (Tucumán 4, Catamarca 4, Jujuy 3, Salta 2) → los recupera la corrección #3.
+- **Descuadre de cupo**: Salta (`usados` 276 vs 275: 1 legajo DENTRO
+  soft-deleted que no liberó cupo) y CABA (`usados` 1 vs 0: contador huérfano)
+  → los corrige la corrección #4.
+
+### Prevención: liberar cupo al soft-borrar un titular (`celiaquia/signals.py`)
+Para que el descuadre de cupo **no vuelva a pasar**, se agregaron dos receivers
+del ciclo de vida soft-delete de `ExpedienteCiudadano`:
+- `post_soft_delete` → si el legajo estaba `estado_cupo=DENTRO` y no es
+  responsable, **descuenta** `ProvinciaCupo.usados` (delta −1 + `CupoMovimiento`
+  BAJA). Cubre el borrado individual y el borrado **en cascada** del expediente
+  (la cascada emite `post_soft_delete` por legajo).
+- `post_restore` → si el legajo vuelve `DENTRO`, **re-cuenta** `usados` (delta +1).
+
+Así se mantiene el invariante `usados == titulares DENTRO vivos`. El saneo
+`--cupo` sigue disponible para corregir el histórico ya descuadrado (Salta/CABA).
 
 ## Riesgo / Impacto (IMPORTANTE)
 - **RENAPER rechazado degrada a RECHAZADO y libera cupo**: es un cambio de
