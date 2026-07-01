@@ -11,6 +11,7 @@ from django.urls import reverse
 from openpyxl import Workbook, load_workbook
 
 from celiaquia.models import (
+    EstadoCupo,
     EstadoExpediente,
     EstadoLegajo,
     Expediente,
@@ -129,7 +130,9 @@ def _expediente_con_excel(
     return expediente
 
 
-def _crear_legajo(expediente, documento, *, revision, sintys, rol=None):
+def _crear_legajo(
+    expediente, documento, *, revision, sintys, rol=None, estado_cupo=None
+):
     estado_legajo, _ = EstadoLegajo.objects.get_or_create(nombre="VALIDO")
     ciudadano = Ciudadano.objects.create(
         apellido=f"Apellido {documento}",
@@ -137,6 +140,7 @@ def _crear_legajo(expediente, documento, *, revision, sintys, rol=None):
         fecha_nacimiento="2000-01-01",
         documento=int(documento),
     )
+    extra = {"estado_cupo": estado_cupo} if estado_cupo is not None else {}
     return ExpedienteCiudadano.objects.create(
         expediente=expediente,
         ciudadano=ciudadano,
@@ -144,6 +148,7 @@ def _crear_legajo(expediente, documento, *, revision, sintys, rol=None):
         revision_tecnico=revision,
         resultado_sintys=sintys,
         rol=rol or ExpedienteCiudadano.ROLE_BENEFICIARIO,
+        **extra,
     )
 
 
@@ -197,7 +202,7 @@ def test_nomina_aprobados_conserva_estructura_original_y_filtra_aprobados(
         PadronFinalService.generar_padron_final_excel(expediente)
     )
 
-    assert list(header) == NOMINA_HEADERS
+    assert list(header) == NOMINA_HEADERS + ["Estado de cupo"]
     assert len(data_rows) == 1
     assert data_rows[0][NOMINA_HEADERS.index("documento")] == "20392317989"
     assert data_rows[0][NOMINA_HEADERS.index("APELLIDO_RESPONSABLE")] == "adulto"
@@ -205,11 +210,108 @@ def test_nomina_aprobados_conserva_estructura_original_y_filtra_aprobados(
 
 
 @pytest.mark.django_db
+def test_nomina_aprobados_matchea_cuil_base_con_dni_excel(settings, tmp_path):
+    """Un titular aprobado cuyo documento en la base es CUIL (11 díg.) se incluye
+    aunque el Excel original lo tenga como DNI (8 díg.). Antes se descartaba."""
+    owner = _user("prov-cuil-dni")
+    # Excel original: documento como DNI de 8 dígitos.
+    rows = [_row("39231798", "cuil", "dni")]
+    expediente = _expediente_con_excel(settings, tmp_path, owner, rows)
+    # En la base el documento quedó como CUIL 20-39231798-9.
+    _crear_legajo(
+        expediente,
+        "20392317989",
+        revision=RevisionTecnico.APROBADO,
+        sintys=ResultadoSintys.MATCH,
+    )
+
+    _, data_rows = _workbook_rows(
+        PadronFinalService.generar_padron_final_excel(expediente)
+    )
+
+    assert len(data_rows) == 1
+    assert data_rows[0][NOMINA_HEADERS.index("documento")] == "39231798"
+
+
+@pytest.mark.django_db
+def test_nomina_aprobados_matchea_por_cuil_cuit_cuando_documento_no_coincide(
+    settings, tmp_path
+):
+    """El export identifica al aprobado también por cuil_cuit, no solo por
+    documento (igual que el cruce). Antes, si el cruce lo matcheaba por su
+    cuil_cuit, el export lo perdía en silencio."""
+    owner = _user("prov-cuilcuit")
+    # El Excel original trae el DNI (núcleo del CUIL 20-39988772-0).
+    rows = [_row("39988772", "por", "cuilcuit")]
+    expediente = _expediente_con_excel(settings, tmp_path, owner, rows)
+
+    estado_legajo, _ = EstadoLegajo.objects.get_or_create(nombre="VALIDO")
+    ciudadano = Ciudadano.objects.create(
+        apellido="Por",
+        nombre="Cuilcuit",
+        documento=99999999,  # no coincide con la fila del Excel
+        cuil_cuit="20399887720",  # su CUIL sí (núcleo DNI = 39988772)
+    )
+    ExpedienteCiudadano.objects.create(
+        expediente=expediente,
+        ciudadano=ciudadano,
+        estado=estado_legajo,
+        revision_tecnico=RevisionTecnico.APROBADO,
+        resultado_sintys=ResultadoSintys.MATCH,
+    )
+
+    _, data_rows = _workbook_rows(
+        PadronFinalService.generar_padron_final_excel(expediente)
+    )
+
+    assert len(data_rows) == 1
+    assert data_rows[0][NOMINA_HEADERS.index("documento")] == "39988772"
+
+
+@pytest.mark.django_db
+def test_nomina_aprobados_marca_estado_de_cupo(settings, tmp_path):
+    """El padrón incluye a TODOS los aprobados+match y agrega una columna que
+    distingue 'Con cupo asignado' de 'Lista de espera'."""
+    owner = _user("prov-estado-cupo")
+    rows = [
+        _row("20392317701", "con", "cupo"),
+        _row("20455317702", "en", "espera"),
+    ]
+    expediente = _expediente_con_excel(settings, tmp_path, owner, rows)
+    _crear_legajo(
+        expediente,
+        "20392317701",
+        revision=RevisionTecnico.APROBADO,
+        sintys=ResultadoSintys.MATCH,
+        estado_cupo=EstadoCupo.DENTRO,
+    )
+    _crear_legajo(
+        expediente,
+        "20455317702",
+        revision=RevisionTecnico.APROBADO,
+        sintys=ResultadoSintys.MATCH,
+        estado_cupo=EstadoCupo.FUERA,
+    )
+
+    header, data_rows = _workbook_rows(
+        PadronFinalService.generar_padron_final_excel(expediente)
+    )
+
+    assert header[-1] == "Estado de cupo"
+    assert len(data_rows) == 2  # ambos en el padrón, con o sin cupo
+    estado_por_doc = {
+        row[NOMINA_HEADERS.index("documento")]: row[-1] for row in data_rows
+    }
+    assert estado_por_doc["20392317701"] == "Con cupo asignado"
+    assert estado_por_doc["20455317702"] == "Lista de espera"
+
+
+@pytest.mark.django_db
 def test_nomina_aprobados_se_recalcula_con_resultado_sintys_actual(settings, tmp_path):
     owner = _user("prov-reproceso")
     rows = [
         _row("20392317001", "primero", "match"),
-        _row("20392317002", "segundo", "reprocesado"),
+        _row("20455317002", "segundo", "reprocesado"),
     ]
     expediente = _expediente_con_excel(settings, tmp_path, owner, rows)
     _crear_legajo(
@@ -220,7 +322,7 @@ def test_nomina_aprobados_se_recalcula_con_resultado_sintys_actual(settings, tmp
     )
     reprocesado = _crear_legajo(
         expediente,
-        "20392317002",
+        "20455317002",
         revision=RevisionTecnico.APROBADO,
         sintys=ResultadoSintys.NO_MATCH,
     )
@@ -240,7 +342,7 @@ def test_nomina_aprobados_se_recalcula_con_resultado_sintys_actual(settings, tmp
     )
     assert [row[NOMINA_HEADERS.index("documento")] for row in data_rows] == [
         "20392317001",
-        "20392317002",
+        "20455317002",
     ]
 
 
@@ -336,7 +438,7 @@ def test_descarga_nomina_aprobados_finalizada_devuelve_xlsx(client, settings, tm
         in response.headers["Content-Disposition"]
     )
     header, data_rows = _workbook_rows(response.content)
-    assert list(header) == NOMINA_HEADERS
+    assert list(header) == NOMINA_HEADERS + ["Estado de cupo"]
     assert data_rows[0][NOMINA_HEADERS.index("documento")] == "20392317201"
 
 

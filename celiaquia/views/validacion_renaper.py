@@ -2,6 +2,7 @@ import json
 import logging
 import time
 from django.conf import settings
+from django.db import transaction
 from django.shortcuts import get_object_or_404
 from django.views import View
 from django.http import JsonResponse
@@ -9,7 +10,8 @@ from django.core.exceptions import PermissionDenied
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_protect
 
-from celiaquia.models import ExpedienteCiudadano
+from celiaquia.models import EstadoCupo, ExpedienteCiudadano, RevisionTecnico
+from celiaquia.services.cupo_service import CupoService, CupoNoConfigurado
 from centrodefamilia.services.consulta_renaper import consultar_datos_renaper
 from iam.services import user_has_permission_code
 
@@ -434,6 +436,32 @@ class ValidacionRenaperView(View):
                         "modificado_en",
                     ]
                 )
+            elif validacion_estado == "2":
+                # Rechazado por RENAPER: el legajo deja de estar aprobado. Se degrada
+                # revision_tecnico a RECHAZADO para que el reporte, el padrón final y
+                # el pago dejen de contarlo como aprobado, y se libera el cupo si lo
+                # tenía ocupado (un rechazado no debe retener titularidad).
+                with transaction.atomic():
+                    legajo.revision_tecnico = RevisionTecnico.RECHAZADO
+                    legajo.save(
+                        update_fields=[
+                            "estado_validacion_renaper",
+                            "revision_tecnico",
+                            "modificado_en",
+                        ]
+                    )
+                    if legajo.estado_cupo == EstadoCupo.DENTRO:
+                        try:
+                            CupoService.liberar_slot(
+                                legajo=legajo,
+                                usuario=request.user,
+                                motivo="Rechazado en validación RENAPER",
+                            )
+                        except CupoNoConfigurado:
+                            logger.warning(
+                                "renaper.validation.cupo_no_configurado",
+                                extra={"data": {"legajo_id": legajo_id}},
+                            )
             else:
                 legajo.save(
                     update_fields=["estado_validacion_renaper", "modificado_en"]
