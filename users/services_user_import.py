@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import unicodedata
+from dataclasses import dataclass
 from io import BytesIO
 
 from django.conf import settings
@@ -330,104 +331,105 @@ def _aplicar_accion_grupos(
 
     if accion == GROUP_ACTION_AGREGAR:
         to_add = requested_group_ids - current_group_ids
-        if not to_add:
-            return False
-        user.groups.add(*to_add)
-        return True
+        if to_add:
+            user.groups.add(*to_add)
+        return bool(to_add)
 
     if accion == GROUP_ACTION_QUITAR:
         to_remove = requested_group_ids & current_group_ids
-        if not to_remove:
-            return False
-        user.groups.remove(*to_remove)
-        return True
+        if to_remove:
+            user.groups.remove(*to_remove)
+        return bool(to_remove)
 
-    if accion == GROUP_ACTION_REEMPLAZAR:
-        if allowed_group_ids is not None:
-            outside_scope = current_group_ids - allowed_group_ids
-            final_group_ids = outside_scope | requested_group_ids
-        else:
-            final_group_ids = requested_group_ids
-
-        if final_group_ids == current_group_ids:
-            return False
+    final_group_ids = (
+        (current_group_ids - allowed_group_ids | requested_group_ids)
+        if allowed_group_ids
+        else requested_group_ids
+    )
+    if final_group_ids != current_group_ids:
         user.groups.set(list(final_group_ids))
         return True
-
     return False
 
 
-def _procesar_usuario_existente(
-    *,
-    user,
-    email: str,
-    username_raw: str,
-    grupos: list,
-    accion_grupos: str,
-    allowed_group_ids: set | None,
-) -> dict:
+@dataclass
+class _ActualizarUsuarioParams:
+    user: object
+    email: str
+    username_raw: str
+    grupos: list
+    accion_grupos: str
+    allowed_group_ids: set | None
+
+
+def _procesar_usuario_existente(params: _ActualizarUsuarioParams) -> dict:
     changed = False
 
     with transaction.atomic():
-        if username_raw and email and user.email.lower() != email.lower():
-            user.email = email
-            user.save(update_fields=["email"])
+        if (
+            params.username_raw
+            and params.email
+            and params.user.email.lower() != params.email.lower()
+        ):
+            params.user.email = params.email
+            params.user.save(update_fields=["email"])
             changed = True
 
         grupos_changed = _aplicar_accion_grupos(
-            user=user,
-            grupos=grupos,
-            accion=accion_grupos,
-            allowed_group_ids=allowed_group_ids,
+            user=params.user,
+            grupos=params.grupos,
+            accion=params.accion_grupos,
+            allowed_group_ids=params.allowed_group_ids,
         )
         changed = changed or grupos_changed
 
-    if not changed:
-        return {
-            "status": UserImportJobRow.Status.SKIPPED,
-            "mensaje": f"Usuario {user.username}: sin cambios.",
-            "email": user.email,
-        }
-
+    status = UserImportJobRow.Status.SKIPPED if not changed else UserImportJobRow.Status.CREATED
+    mensaje = (
+        f"Usuario {params.user.username}: sin cambios."
+        if not changed
+        else f"Usuario {params.user.username} actualizado ({params.accion_grupos} grupos)."
+    )
     return {
-        "status": UserImportJobRow.Status.CREATED,
-        "mensaje": f"Usuario {user.username} actualizado ({accion_grupos} grupos).",
-        "email": user.email,
+        "status": status,
+        "mensaje": mensaje,
+        "email": params.user.email,
     }
 
 
-def _crear_usuario_nuevo(
-    *,
-    nombre: str,
-    apellido: str,
-    email: str,
-    username_raw: str,
-    rol: str,
-    grupos: list,
-    provincias_objs: list,
-    job: UserImportJob,
-) -> tuple[User, str]:
+@dataclass
+class _CrearUsuarioParams:
+    nombre: str
+    apellido: str
+    email: str
+    username_raw: str
+    rol: str
+    grupos: list
+    provincias_objs: list
+    job: object
+
+
+def _crear_usuario_nuevo(params: _CrearUsuarioParams) -> tuple[User, str]:
     user = User(
-        username=username_raw,
-        email=email,
-        first_name=nombre,
-        last_name=apellido,
-        is_staff=not job.is_pwa_import,
+        username=params.username_raw,
+        email=params.email,
+        first_name=params.nombre,
+        last_name=params.apellido,
+        is_staff=not params.job.is_pwa_import,
         is_active=True,
     )
     user.set_unusable_password()
     user.save()
 
-    if grupos:
-        user.groups.set(grupos)
+    if params.grupos:
+        user.groups.set(params.grupos)
 
     profile = user.profile
-    profile.rol = rol
-    if provincias_objs:
+    profile.rol = params.rol
+    if params.provincias_objs:
         profile.es_usuario_provincial = True
     profile.save(update_fields=["rol", "es_usuario_provincial"])
 
-    for prov in provincias_objs:
+    for prov in params.provincias_objs:
         scope_key = ProfileTerritorialScope.build_scope_key(prov.pk)
         ProfileTerritorialScope.objects.get_or_create(
             profile=profile,
@@ -489,7 +491,7 @@ def process_single_user_import_row(
     existing_user = _resolver_usuario_objetivo(row_data)
 
     if existing_user is not None:
-        return _procesar_usuario_existente(
+        params = _ActualizarUsuarioParams(
             user=existing_user,
             email=email,
             username_raw=username_raw,
@@ -497,6 +499,7 @@ def process_single_user_import_row(
             accion_grupos=accion_grupos,
             allowed_group_ids=allowed_group_ids,
         )
+        return _procesar_usuario_existente(params)
 
     if not username_raw:
         raise ValidationError(
@@ -513,7 +516,7 @@ def process_single_user_import_row(
     provincias_objs = _resolver_provincias(row_data.get("provincias", "").strip())
 
     with transaction.atomic():
-        user, password = _crear_usuario_nuevo(
+        params = _CrearUsuarioParams(
             nombre=nombre,
             apellido=apellido,
             email=email,
@@ -523,6 +526,7 @@ def process_single_user_import_row(
             provincias_objs=provincias_objs,
             job=job,
         )
+        user, password = _crear_usuario_nuevo(params)
 
     if job.send_credentials:
         _enviar_credenciales_import(user=user, password=password)
