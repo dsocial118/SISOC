@@ -58,6 +58,7 @@ class ComedorDatosConvenioPnudAdmin(admin.ModelAdmin):
         "comedor",
         "nro_convenio",
         "monto_total_conveniado",
+        "prestaciones_financiadas_mensuales",
         "personas_conveniadas",
         "actualizado_en",
     )

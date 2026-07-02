@@ -15,6 +15,8 @@ from django.views.generic import (
     DeleteView,
 )
 from comedores.models import Comedor
+from core.services.advanced_filters import AdvancedFilterEngine
+from core.services.favorite_filters import SeccionesFiltrosFavoritos
 from core.soft_delete.preview import build_delete_preview
 from core.soft_delete.view_helpers import (
     SoftDeleteDeleteViewMixin,
@@ -26,6 +28,16 @@ from rendicioncuentasmensual.services import RendicionCuentaMensualService
 from rendicioncuentasmensual.forms import (
     RendicionCuentaMensualForm,
     DocumentacionAdjuntaForm,
+)
+from rendicioncuentasmensual.filter_config import (
+    BOOL_OPS,
+    CHOICE_OPS,
+    DATE_OPS,
+    FIELD_MAP,
+    FIELD_TYPES,
+    NUM_OPS,
+    TEXT_OPS,
+    get_filters_ui_config,
 )
 
 
@@ -83,13 +95,31 @@ class RendicionCuentaMensualGlobalListView(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         """Retorna todas las rendiciones activas para el listado global."""
-        return (
+        queryset = (
             RendicionCuentaMensualService.obtener_todas_rendiciones_cuentas_mensuales()
         )
+        engine = AdvancedFilterEngine(
+            field_map=FIELD_MAP,
+            field_types=FIELD_TYPES,
+            allowed_ops={
+                "text": TEXT_OPS,
+                "number": NUM_OPS,
+                "date": DATE_OPS,
+                "choice": CHOICE_OPS,
+                "boolean": BOOL_OPS,
+            },
+        )
+        return engine.filter_queryset(queryset, self.request.GET)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["titulo_listado"] = "Rendiciones"
+        context["reset_url"] = "rendicioncuentasmensual_global_list"
+        context["filters_mode"] = True
+        context["filters_action"] = reverse("rendicioncuentasmensual_global_list")
+        context["filters_config"] = get_filters_ui_config()
+        context["filters_js"] = "custom/js/advanced_filters.js"
+        context["seccion_filtros_favoritos"] = SeccionesFiltrosFavoritos.RENDICIONES
         context["breadcrumb_items"] = [
             {"text": "Comedores", "url": reverse_lazy("comedores")},
             {"text": "Rendiciones", "active": True},

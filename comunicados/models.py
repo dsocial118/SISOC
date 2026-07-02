@@ -17,6 +17,7 @@ class TipoComunicado(models.TextChoices):
 class SubtipoComunicado(models.TextChoices):
     INSTITUCIONAL = "institucional", "Comunicación Institucional"
     COMEDORES = "comedores", "Comunicación a Comedores"
+    ORGANIZACIONES = "organizaciones", "Comunicación a Organizaciones"
 
 
 class Comunicado(models.Model):
@@ -51,6 +52,12 @@ class Comunicado(models.Model):
         blank=True,
         related_name="comunicados",
         verbose_name="Comedores destinatarios",
+    )
+    organizaciones = models.ManyToManyField(
+        "organizaciones.Organizacion",
+        blank=True,
+        related_name="comunicados",
+        verbose_name="Organizaciones destinatarias",
     )
     fecha_creacion = models.DateTimeField(
         auto_now_add=True, verbose_name="Fecha de creación"

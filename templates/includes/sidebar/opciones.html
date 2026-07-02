@@ -332,15 +332,6 @@
                                     </a>
                                 </li>
                             {% endif %}
-                            {% if request.user|has_perm_code:"rendicioncuentasmensual.view_rendicioncuentamensual" %}
-                                <li class="nav-item">
-                                    <a href="{% url 'rendicioncuentasmensual_global_list' %}"
-                                       class="nav-link ms-4 {% if 'rendicioncuentasmensual' in pagina_actual %}active{% endif %}">
-                                        <i class="nav-icon bi bi-arrow-return-right"></i>
-                                        <p>Rendiciones</p>
-                                    </a>
-                                </li>
-                            {% endif %}
                             {% comment %}
                         <!-- RENDICIÓN DE CUENTAS FINAL -->
                         {% if not vat_sidebar_only and request.user|has_perm_code:"rendicioncuentasfinal.view_rendicioncuentasfinal" %}
@@ -356,21 +347,32 @@
                     </li>
                 {% endif %}
                 <!-- ORGANIZACIONES -->
-                {% if request.user|has_perm_code:"organizaciones.view_organizacion" or request.user|has_perm_code:"auth.role_tecnico_comedor" or request.user|has_perm_code:"auth.role_abogado_dupla" %}
-                    <li class="nav-item {% if 'organizaciones' in pagina_actual %}menu-open{% endif %}">
+                {% if request.user|has_perm_code:"organizaciones.view_organizacion" or request.user|has_perm_code:"auth.role_tecnico_comedor" or request.user|has_perm_code:"auth.role_abogado_dupla" or request.user|has_perm_code:"rendicioncuentasmensual.view_rendicioncuentamensual" %}
+                    <li class="nav-item {% if 'organizaciones' in pagina_actual or 'rendicioncuentasmensual' in pagina_actual %}menu-open{% endif %}">
                         <a href="#"
-                           class="nav-link nav-dot ms-2 {% if 'organizaciones' in pagina_actual %}active{% endif %}">
+                           class="nav-link nav-dot ms-2 {% if 'organizaciones' in pagina_actual or 'rendicioncuentasmensual' in pagina_actual %}active{% endif %}">
                             <p>Organizaciones</p>
                             <i class="nav-arrow bi bi-chevron-right"></i>
                         </a>
                         <ul class="nav nav-treeview">
-                            <li class="nav-item">
-                                <a href="{% url 'organizaciones' %}"
-                                   class="nav-link ms-4 {% if 'organizaciones/listar' in pagina_actual %}active{% endif %}">
-                                    <i class="nav-icon bi bi-arrow-return-right"></i>
-                                    <p>Ver Organizaciones</p>
-                                </a>
-                            </li>
+                            {% if request.user|has_perm_code:"organizaciones.view_organizacion" or request.user|has_perm_code:"auth.role_tecnico_comedor" or request.user|has_perm_code:"auth.role_abogado_dupla" %}
+                                <li class="nav-item">
+                                    <a href="{% url 'organizaciones' %}"
+                                       class="nav-link ms-4 {% if 'organizaciones/listar' in pagina_actual %}active{% endif %}">
+                                        <i class="nav-icon bi bi-arrow-return-right"></i>
+                                        <p>Ver Organizaciones</p>
+                                    </a>
+                                </li>
+                            {% endif %}
+                            {% if request.user|has_perm_code:"rendicioncuentasmensual.view_rendicioncuentamensual" %}
+                                <li class="nav-item">
+                                    <a href="{% url 'rendicioncuentasmensual_global_list' %}"
+                                       class="nav-link ms-4 {% if 'rendicioncuentasmensual' in pagina_actual %}active{% endif %}">
+                                        <i class="nav-icon bi bi-arrow-return-right"></i>
+                                        <p>Rendiciones</p>
+                                    </a>
+                                </li>
+                            {% endif %}
                         </ul>
                     </li>
                 {% endif %}

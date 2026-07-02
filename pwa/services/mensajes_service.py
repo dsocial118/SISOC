@@ -12,6 +12,7 @@ from comunicados.models import (
     SubtipoComunicado,
     TipoComunicado,
 )
+from comedores.models import Comedor
 from pwa.models import LecturaMensajePWA
 from pwa.services.auditoria_operacion_service import registrar_evento_operacion
 from rendicioncuentasmensual.models import RendicionCuentaMensual
@@ -30,29 +31,42 @@ def _assert_user_has_comedor_access(*, user, comedor_id: int) -> None:
 
 
 def _visible_messages_queryset(*, comedor_id: int):
+    organizacion_id = (
+        Comedor.objects.filter(pk=comedor_id)
+        .values_list("organizacion_id", flat=True)
+        .first()
+    )
+    destinatarios_filter = (
+        Q(subtipo=SubtipoComunicado.INSTITUCIONAL)
+        | Q(
+            subtipo=SubtipoComunicado.COMEDORES,
+            para_todos_comedores=True,
+        )
+        | Q(
+            subtipo=SubtipoComunicado.COMEDORES,
+            comedores__id=comedor_id,
+        )
+    )
+    if organizacion_id:
+        destinatarios_filter |= Q(
+            subtipo=SubtipoComunicado.ORGANIZACIONES,
+            organizaciones__id=organizacion_id,
+        )
+
     return (
         Comunicado.objects.filter(
             tipo=TipoComunicado.EXTERNO,
             subtipo__in=(
                 SubtipoComunicado.INSTITUCIONAL,
                 SubtipoComunicado.COMEDORES,
+                SubtipoComunicado.ORGANIZACIONES,
             ),
             estado=EstadoComunicado.PUBLICADO,
         )
         .filter(
             Q(fecha_vencimiento__isnull=True) | Q(fecha_vencimiento__gt=timezone.now())
         )
-        .filter(
-            Q(subtipo=SubtipoComunicado.INSTITUCIONAL)
-            | Q(
-                subtipo=SubtipoComunicado.COMEDORES,
-                para_todos_comedores=True,
-            )
-            | Q(
-                subtipo=SubtipoComunicado.COMEDORES,
-                comedores__id=comedor_id,
-            )
-        )
+        .filter(destinatarios_filter)
         .distinct()
         .order_by("-fecha_publicacion", "-fecha_creacion", "-id")
     )
