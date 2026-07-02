@@ -7,7 +7,7 @@ from io import BytesIO
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.contrib.auth.models import Group
+from django.contrib.auth.models import Group, Permission
 from django.core.exceptions import ValidationError
 from django.core.mail import send_mail
 from django.core.validators import validate_email
@@ -16,9 +16,20 @@ from django.template.loader import render_to_string
 from django.urls import reverse
 from openpyxl import Workbook, load_workbook
 
+from comedores.models import Comedor
 from core.models import Provincia
-from users.models import ProfileTerritorialScope, UserImportJob, UserImportJobRow
+from organizaciones.models import Organizacion
+from users.models import (
+    AccesoComedorPWA,
+    ProfileTerritorialScope,
+    UserImportJob,
+    UserImportJobRow,
+)
 from users.services_auth import generate_temporary_password_for_user
+from users.services_pwa import (
+    get_assignable_pwa_permission_codes,
+    sync_representante_accesses,
+)
 
 User = get_user_model()
 logger = logging.getLogger("django")
@@ -34,7 +45,13 @@ USER_IMPORT_REQUIRED_COLUMNS = (
     "provincias",
     "rol",
 )
-USER_IMPORT_OPTIONAL_COLUMNS = ("correo", "username", "accion_grupos")
+USER_IMPORT_OPTIONAL_COLUMNS = (
+    "correo",
+    "username",
+    "accion_grupos",
+    "organizaciones",
+    "comedores",
+)
 USER_IMPORT_KNOWN_COLUMNS = USER_IMPORT_REQUIRED_COLUMNS + USER_IMPORT_OPTIONAL_COLUMNS
 USER_IMPORT_TEMPLATE_HEADERS = (
     "Username",
@@ -45,6 +62,8 @@ USER_IMPORT_TEMPLATE_HEADERS = (
     "Accion grupos",
     "Provincias",
     "Rol",
+    "Organizaciones",
+    "Comedores",
 )
 USERNAME_MAX_LENGTH = 150
 
@@ -292,6 +311,158 @@ def _resolver_provincias(provincias_raw: str) -> list:
     return provincias
 
 
+def _resolver_organizaciones(organizaciones_raw: str) -> list:
+    organizaciones = []
+    for token in _parse_semicolon_field(organizaciones_raw):
+        try:
+            organizacion_id = int(token)
+        except ValueError as exc:
+            raise ValidationError(
+                f"El ID de organizacion '{token}' no es valido."
+            ) from exc
+        organizacion = Organizacion.objects.filter(pk=organizacion_id).first()
+        if organizacion is None:
+            raise ValidationError(
+                f"La organizacion con ID '{token}' no existe en el sistema."
+            )
+        organizaciones.append(organizacion)
+    return organizaciones
+
+
+def _resolver_comedores(comedores_raw: str) -> list:
+    comedores = []
+    for token in _parse_semicolon_field(comedores_raw):
+        try:
+            comedor_id = int(token)
+        except ValueError as exc:
+            raise ValidationError(f"El ID de comedor '{token}' no es valido.") from exc
+        comedor = Comedor.objects.filter(pk=comedor_id).first()
+        if comedor is None:
+            raise ValidationError(
+                f"El comedor con ID '{token}' no existe en el sistema."
+            )
+        comedores.append(comedor)
+    return comedores
+
+
+def _build_pwa_access_specs(*, organizaciones: list, comedores: list) -> list[dict]:
+    """Arma los accesos PWA a partir de organizaciones y comedores de la fila.
+
+    Un usuario asociado a una organizacion opera con todos los comedores de
+    esa organizacion; un comedor asignado explicitamente que no pertenezca a
+    ninguna organizacion seleccionada queda asociado como espacio individual.
+    """
+    specs_by_comedor_id: dict[int, dict] = {}
+
+    organizacion_ids = {organizacion.pk for organizacion in organizaciones}
+    if organizacion_ids:
+        for comedor in Comedor.objects.filter(organizacion_id__in=organizacion_ids):
+            specs_by_comedor_id[comedor.pk] = {
+                "comedor_id": comedor.pk,
+                "tipo_asociacion": AccesoComedorPWA.TIPO_ASOCIACION_ORGANIZACION,
+                "organizacion_id": comedor.organizacion_id,
+            }
+
+    for comedor in comedores:
+        specs_by_comedor_id.setdefault(
+            comedor.pk,
+            {
+                "comedor_id": comedor.pk,
+                "tipo_asociacion": AccesoComedorPWA.TIPO_ASOCIACION_ESPACIO,
+                "organizacion_id": None,
+            },
+        )
+
+    return list(specs_by_comedor_id.values())
+
+
+def _get_pwa_permission_ids(codes: set) -> set:
+    permission_ids = set()
+    for code in codes:
+        app_label, codename = code.split(".", 1)
+        permission_id = (
+            Permission.objects.filter(
+                content_type__app_label=app_label, codename=codename
+            )
+            .values_list("id", flat=True)
+            .first()
+        )
+        if permission_id:
+            permission_ids.add(permission_id)
+    return permission_ids
+
+
+def _resolver_permisos_pwa(permisos_raw: str, *, actor) -> list:
+    allowed_codes = set(get_assignable_pwa_permission_codes(actor))
+    allowed_by_codename = {code.split(".", 1)[1]: code for code in allowed_codes}
+
+    permisos = []
+    for token in _parse_semicolon_field(permisos_raw):
+        matched_code = allowed_by_codename.get(token)
+        if matched_code is None:
+            raise ValidationError(
+                f"El permiso PWA '{token}' no existe o no tiene autorizacion "
+                "para asignarlo."
+            )
+        app_label, codename = matched_code.split(".", 1)
+        permission = Permission.objects.filter(
+            content_type__app_label=app_label, codename=codename
+        ).first()
+        if permission is None:
+            raise ValidationError(f"El permiso PWA '{token}' no existe en el sistema.")
+        permisos.append(permission)
+    return permisos
+
+
+@dataclass
+class _PermisosFila:
+    grupos: list
+    allowed_group_ids: set | None
+    permisos_pwa: list
+    allowed_permiso_ids: set | None
+    organizaciones: list
+    comedores: list
+
+
+def _resolver_permisos_fila_pwa(row_data: dict, job: UserImportJob) -> _PermisosFila:
+    permisos_pwa = _resolver_permisos_pwa(
+        row_data.get("permisos", "").strip(), actor=job.requested_by
+    )
+    allowed_permiso_ids = _get_pwa_permission_ids(
+        set(get_assignable_pwa_permission_codes(job.requested_by))
+    )
+    return _PermisosFila(
+        grupos=[],
+        allowed_group_ids=None,
+        permisos_pwa=permisos_pwa,
+        allowed_permiso_ids=allowed_permiso_ids,
+        organizaciones=_resolver_organizaciones(
+            row_data.get("organizaciones", "").strip()
+        ),
+        comedores=_resolver_comedores(row_data.get("comedores", "").strip()),
+    )
+
+
+def _resolver_permisos_fila_grupos(row_data: dict, job: UserImportJob) -> _PermisosFila:
+    grupos = _resolver_grupos(row_data.get("permisos", "").strip())
+    allowed_group_ids = _get_allowed_group_ids(job.requested_by)
+
+    if allowed_group_ids is not None and grupos:
+        out_of_scope = [g for g in grupos if g.pk not in allowed_group_ids]
+        if out_of_scope:
+            names = ", ".join(g.name for g in out_of_scope)
+            raise ValidationError(f"No tiene permiso para operar los grupos: {names}.")
+
+    return _PermisosFila(
+        grupos=grupos,
+        allowed_group_ids=allowed_group_ids,
+        permisos_pwa=[],
+        allowed_permiso_ids=None,
+        organizaciones=[],
+        comedores=[],
+    )
+
+
 def _is_unrestricted_actor(actor) -> bool:
     if actor is None:
         return True
@@ -319,6 +490,36 @@ def _resolver_usuario_objetivo(row_data: dict):
     return None
 
 
+def _aplicar_accion_m2m(
+    *,
+    manager,
+    requested_ids: set,
+    accion: str,
+    allowed_ids: set | None,
+) -> bool:
+    current_ids = set(manager.values_list("id", flat=True))
+
+    if accion == GROUP_ACTION_AGREGAR:
+        to_add = requested_ids - current_ids
+        if to_add:
+            manager.add(*to_add)
+        return bool(to_add)
+
+    if accion == GROUP_ACTION_QUITAR:
+        to_remove = requested_ids & current_ids
+        if to_remove:
+            manager.remove(*to_remove)
+        return bool(to_remove)
+
+    final_ids = (
+        (current_ids - allowed_ids | requested_ids) if allowed_ids else requested_ids
+    )
+    if final_ids != current_ids:
+        manager.set(list(final_ids))
+        return True
+    return False
+
+
 def _aplicar_accion_grupos(
     *,
     user,
@@ -326,30 +527,27 @@ def _aplicar_accion_grupos(
     accion: str,
     allowed_group_ids: set | None,
 ) -> bool:
-    current_group_ids = set(user.groups.values_list("id", flat=True))
-    requested_group_ids = {g.pk for g in grupos}
-
-    if accion == GROUP_ACTION_AGREGAR:
-        to_add = requested_group_ids - current_group_ids
-        if to_add:
-            user.groups.add(*to_add)
-        return bool(to_add)
-
-    if accion == GROUP_ACTION_QUITAR:
-        to_remove = requested_group_ids & current_group_ids
-        if to_remove:
-            user.groups.remove(*to_remove)
-        return bool(to_remove)
-
-    final_group_ids = (
-        (current_group_ids - allowed_group_ids | requested_group_ids)
-        if allowed_group_ids
-        else requested_group_ids
+    return _aplicar_accion_m2m(
+        manager=user.groups,
+        requested_ids={g.pk for g in grupos},
+        accion=accion,
+        allowed_ids=allowed_group_ids,
     )
-    if final_group_ids != current_group_ids:
-        user.groups.set(list(final_group_ids))
-        return True
-    return False
+
+
+def _aplicar_accion_permisos_pwa(
+    *,
+    user,
+    permisos: list,
+    accion: str,
+    allowed_permiso_ids: set | None,
+) -> bool:
+    return _aplicar_accion_m2m(
+        manager=user.user_permissions,
+        requested_ids={p.pk for p in permisos},
+        accion=accion,
+        allowed_ids=allowed_permiso_ids,
+    )
 
 
 @dataclass
@@ -360,6 +558,12 @@ class _ActualizarUsuarioParams:
     grupos: list
     accion_grupos: str
     allowed_group_ids: set | None
+    is_pwa_import: bool
+    permisos_pwa: list
+    allowed_permiso_ids: set | None
+    organizaciones: list
+    comedores: list
+    actor: object
 
 
 def _procesar_usuario_existente(params: _ActualizarUsuarioParams) -> dict:
@@ -375,13 +579,34 @@ def _procesar_usuario_existente(params: _ActualizarUsuarioParams) -> dict:
             params.user.save(update_fields=["email"])
             changed = True
 
-        grupos_changed = _aplicar_accion_grupos(
-            user=params.user,
-            grupos=params.grupos,
-            accion=params.accion_grupos,
-            allowed_group_ids=params.allowed_group_ids,
-        )
-        changed = changed or grupos_changed
+        if params.is_pwa_import:
+            permisos_changed = _aplicar_accion_permisos_pwa(
+                user=params.user,
+                permisos=params.permisos_pwa,
+                accion=params.accion_grupos,
+                allowed_permiso_ids=params.allowed_permiso_ids,
+            )
+            changed = changed or permisos_changed
+
+            if params.organizaciones or params.comedores:
+                access_specs = _build_pwa_access_specs(
+                    organizaciones=params.organizaciones,
+                    comedores=params.comedores,
+                )
+                sync_representante_accesses(
+                    user=params.user,
+                    access_specs=access_specs,
+                    actor=params.actor,
+                )
+                changed = True
+        else:
+            grupos_changed = _aplicar_accion_grupos(
+                user=params.user,
+                grupos=params.grupos,
+                accion=params.accion_grupos,
+                allowed_group_ids=params.allowed_group_ids,
+            )
+            changed = changed or grupos_changed
 
     status = (
         UserImportJobRow.Status.SKIPPED
@@ -410,6 +635,9 @@ class _CrearUsuarioParams:
     grupos: list
     provincias_objs: list
     job: object
+    permisos_pwa: list
+    organizaciones: list
+    comedores: list
 
 
 @dataclass
@@ -423,6 +651,10 @@ class _DatosFilaValidados:
     grupos: list
     provincias_objs: list
     allowed_group_ids: set | None
+    permisos_pwa: list
+    allowed_permiso_ids: set | None
+    organizaciones: list
+    comedores: list
 
 
 def _crear_usuario_nuevo(params: _CrearUsuarioParams) -> tuple[User, str]:
@@ -437,7 +669,20 @@ def _crear_usuario_nuevo(params: _CrearUsuarioParams) -> tuple[User, str]:
     user.set_unusable_password()
     user.save()
 
-    if params.grupos:
+    if params.job.is_pwa_import:
+        if params.permisos_pwa:
+            user.user_permissions.set(params.permisos_pwa)
+        if params.organizaciones or params.comedores:
+            access_specs = _build_pwa_access_specs(
+                organizaciones=params.organizaciones,
+                comedores=params.comedores,
+            )
+            sync_representante_accesses(
+                user=user,
+                access_specs=access_specs,
+                actor=params.job.requested_by,
+            )
+    elif params.grupos:
         user.groups.set(params.grupos)
 
     profile = user.profile
@@ -493,15 +738,11 @@ def _validar_y_preparar_fila(row_data: dict, job: UserImportJob) -> _DatosFilaVa
             ) from exc
         email = email_raw.lower()
 
-    grupos = _resolver_grupos(row_data.get("permisos", "").strip())
-    allowed_group_ids = _get_allowed_group_ids(job.requested_by)
-
-    if allowed_group_ids is not None and grupos:
-        out_of_scope = [g for g in grupos if g.pk not in allowed_group_ids]
-        if out_of_scope:
-            names = ", ".join(g.name for g in out_of_scope)
-            raise ValidationError(f"No tiene permiso para operar los grupos: {names}.")
-
+    permisos_fila = (
+        _resolver_permisos_fila_pwa(row_data, job)
+        if job.is_pwa_import
+        else _resolver_permisos_fila_grupos(row_data, job)
+    )
     provincias_objs = _resolver_provincias(row_data.get("provincias", "").strip())
 
     return _DatosFilaValidados(
@@ -511,9 +752,13 @@ def _validar_y_preparar_fila(row_data: dict, job: UserImportJob) -> _DatosFilaVa
         username_raw=username_raw,
         rol=rol,
         accion_grupos=accion_grupos,
-        grupos=grupos,
+        grupos=permisos_fila.grupos,
         provincias_objs=provincias_objs,
-        allowed_group_ids=allowed_group_ids,
+        allowed_group_ids=permisos_fila.allowed_group_ids,
+        permisos_pwa=permisos_fila.permisos_pwa,
+        allowed_permiso_ids=permisos_fila.allowed_permiso_ids,
+        organizaciones=permisos_fila.organizaciones,
+        comedores=permisos_fila.comedores,
     )
 
 
@@ -529,6 +774,12 @@ def process_single_user_import_row(*, row_data: dict, job: UserImportJob) -> dic
             grupos=datos.grupos,
             accion_grupos=datos.accion_grupos,
             allowed_group_ids=datos.allowed_group_ids,
+            is_pwa_import=job.is_pwa_import,
+            permisos_pwa=datos.permisos_pwa,
+            allowed_permiso_ids=datos.allowed_permiso_ids,
+            organizaciones=datos.organizaciones,
+            comedores=datos.comedores,
+            actor=job.requested_by,
         )
         return _procesar_usuario_existente(params)
 
@@ -560,6 +811,9 @@ def process_single_user_import_row(*, row_data: dict, job: UserImportJob) -> dic
             grupos=datos.grupos,
             provincias_objs=datos.provincias_objs,
             job=job,
+            permisos_pwa=datos.permisos_pwa,
+            organizaciones=datos.organizaciones,
+            comedores=datos.comedores,
         )
         user, password = _crear_usuario_nuevo(params)
 

@@ -666,3 +666,147 @@ def test_import_no_pwa_crea_usuario_staff():
     creado = User.objects.get(email="staff.user@example.com")
     assert creado.is_staff is True
     assert creado.is_active is True
+
+
+@pytest.mark.django_db
+def test_import_username_configurable_se_usa_tal_cual():
+    """Si la fila trae Username, se usa ese valor y no se autogenera."""
+    from users.models import UserImportJob
+    from users.services_user_import import process_single_user_import_row
+
+    admin = User.objects.create_user(username="import_admin_username", password="x")
+    job = UserImportJob(
+        requested_by=admin,
+        original_filename="usuarios.xlsx",
+        send_credentials=False,
+        is_pwa_import=False,
+    )
+
+    row_data = _import_row_data("con.username@example.com")
+    row_data["username"] = "usuario.manual"
+
+    process_single_user_import_row(row_data=row_data, job=job)
+
+    creado = User.objects.get(email="con.username@example.com")
+    assert creado.username == "usuario.manual"
+
+
+@pytest.mark.django_db
+def test_import_username_vacio_se_autogenera():
+    """Si la fila no trae Username, se genera automaticamente a partir del nombre."""
+    from users.models import UserImportJob
+    from users.services_user_import import process_single_user_import_row
+
+    admin = User.objects.create_user(username="import_admin_autouser", password="x")
+    job = UserImportJob(
+        requested_by=admin,
+        original_filename="usuarios.xlsx",
+        send_credentials=False,
+        is_pwa_import=False,
+    )
+
+    process_single_user_import_row(
+        row_data=_import_row_data("sin.username@example.com"), job=job
+    )
+
+    creado = User.objects.get(email="sin.username@example.com")
+    assert creado.username == "apellido.nombre"
+
+
+@pytest.mark.django_db
+def test_import_pwa_asigna_organizaciones_y_comedores():
+    """Un usuario PWA importado con Organizaciones y Comedores queda con
+    acceso a todos los comedores de esas organizaciones, mas los comedores
+    puntuales indicados."""
+    from organizaciones.models import Organizacion, TipoEntidad
+    from comedores.models import Comedor
+    from users.models import AccesoComedorPWA, UserImportJob
+    from users.services_user_import import process_single_user_import_row
+
+    admin = User.objects.create_user(username="import_admin_orgs", password="x")
+    tipo = TipoEntidad.objects.create(nombre="Personeria Juridica")
+    organizacion = Organizacion.objects.create(
+        nombre="Org Importada", tipo_entidad=tipo
+    )
+    comedor_de_org = Comedor.objects.create(
+        nombre="Comedor de Org", organizacion=organizacion
+    )
+    comedor_suelto = Comedor.objects.create(nombre="Comedor Suelto")
+
+    job = UserImportJob(
+        requested_by=admin,
+        original_filename="usuarios.xlsx",
+        send_credentials=False,
+        is_pwa_import=True,
+    )
+
+    row_data = _import_row_data("pwa.multi@example.com")
+    row_data["organizaciones"] = str(organizacion.pk)
+    row_data["comedores"] = str(comedor_suelto.pk)
+
+    process_single_user_import_row(row_data=row_data, job=job)
+
+    creado = User.objects.get(email="pwa.multi@example.com")
+    accesos = {
+        acceso.comedor_id: acceso
+        for acceso in AccesoComedorPWA.objects.filter(user=creado, activo=True)
+    }
+    assert accesos[comedor_de_org.pk].tipo_asociacion == (
+        AccesoComedorPWA.TIPO_ASOCIACION_ORGANIZACION
+    )
+    assert accesos[comedor_de_org.pk].organizacion_id == organizacion.pk
+    assert accesos[comedor_suelto.pk].tipo_asociacion == (
+        AccesoComedorPWA.TIPO_ASOCIACION_ESPACIO
+    )
+    assert accesos[comedor_suelto.pk].organizacion_id is None
+
+
+@pytest.mark.django_db
+def test_import_pwa_permiso_autorizado_se_asigna_directo():
+    """Un permiso de gestion PWA que el actor puede delegar se asigna como
+    permiso directo del usuario, no como grupo."""
+    from users.models import UserImportJob
+    from users.services_user_import import process_single_user_import_row
+
+    admin = User.objects.create_superuser(
+        username="import_admin_pwa_perm", password="x", email="admin@example.com"
+    )
+
+    job = UserImportJob(
+        requested_by=admin,
+        original_filename="usuarios.xlsx",
+        send_credentials=False,
+        is_pwa_import=True,
+    )
+
+    row_data = _import_row_data("pwa.permiso@example.com")
+    row_data["permisos"] = "manage_nomina_pwa"
+
+    process_single_user_import_row(row_data=row_data, job=job)
+
+    creado = User.objects.get(email="pwa.permiso@example.com")
+    assert creado.has_perm("pwa.manage_nomina_pwa")
+    assert creado.groups.count() == 0
+
+
+@pytest.mark.django_db
+def test_import_pwa_permiso_no_autorizado_lanza_error():
+    """Si el actor no puede delegar el permiso PWA solicitado, la fila falla."""
+    from django.core.exceptions import ValidationError
+    from users.models import UserImportJob
+    from users.services_user_import import process_single_user_import_row
+
+    admin = User.objects.create_user(username="import_admin_sin_perm", password="x")
+
+    job = UserImportJob(
+        requested_by=admin,
+        original_filename="usuarios.xlsx",
+        send_credentials=False,
+        is_pwa_import=True,
+    )
+
+    row_data = _import_row_data("pwa.denegado@example.com")
+    row_data["permisos"] = "manage_nomina_pwa"
+
+    with pytest.raises(ValidationError):
+        process_single_user_import_row(row_data=row_data, job=job)
