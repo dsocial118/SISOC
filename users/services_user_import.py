@@ -786,6 +786,12 @@ def process_single_user_import_row(*, row_data: dict, job: UserImportJob) -> dic
     if not datos.nombre or not datos.apellido:
         raise ValidationError("Los campos Nombre y Apellido son obligatorios.")
 
+    if job.is_pwa_import and not (datos.organizaciones or datos.comedores):
+        raise ValidationError(
+            "Los usuarios PWA deben tener al menos una organizacion o comedor "
+            "asignado en las columnas Organizaciones/Comedores del archivo."
+        )
+
     username_to_create = datos.username_raw
     if not username_to_create:
         username_base = _slug_base_desde_nombre(
