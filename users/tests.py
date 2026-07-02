@@ -621,10 +621,12 @@ def _import_row_data(correo):
 
 @pytest.mark.django_db
 def test_import_pwa_crea_usuario_sin_staff():
+    from comedores.models import Comedor
     from users.models import UserImportJob
     from users.services_user_import import process_single_user_import_row
 
     admin = User.objects.create_user(username="import_admin_pwa", password="x")
+    comedor = Comedor.objects.create(nombre="Comedor PWA Staff")
     job = UserImportJob(
         requested_by=admin,
         original_filename="usuarios.xlsx",
@@ -632,8 +634,11 @@ def test_import_pwa_crea_usuario_sin_staff():
         is_pwa_import=True,
     )
 
+    row_data = _import_row_data("pwa.user@example.com")
+    row_data["comedores"] = str(comedor.pk)
+
     result = process_single_user_import_row(
-        row_data=_import_row_data("pwa.user@example.com"),
+        row_data=row_data,
         job=job,
     )
 
@@ -765,12 +770,14 @@ def test_import_pwa_asigna_organizaciones_y_comedores():
 def test_import_pwa_permiso_autorizado_se_asigna_directo():
     """Un permiso de gestion PWA que el actor puede delegar se asigna como
     permiso directo del usuario, no como grupo."""
+    from comedores.models import Comedor
     from users.models import UserImportJob
     from users.services_user_import import process_single_user_import_row
 
     admin = User.objects.create_superuser(
         username="import_admin_pwa_perm", password="x", email="admin@example.com"
     )
+    comedor = Comedor.objects.create(nombre="Comedor PWA Permiso")
 
     job = UserImportJob(
         requested_by=admin,
@@ -781,6 +788,7 @@ def test_import_pwa_permiso_autorizado_se_asigna_directo():
 
     row_data = _import_row_data("pwa.permiso@example.com")
     row_data["permisos"] = "manage_nomina_pwa"
+    row_data["comedores"] = str(comedor.pk)
 
     process_single_user_import_row(row_data=row_data, job=job)
 
@@ -810,3 +818,56 @@ def test_import_pwa_permiso_no_autorizado_lanza_error():
 
     with pytest.raises(ValidationError):
         process_single_user_import_row(row_data=row_data, job=job)
+
+
+@pytest.mark.django_db
+def test_import_pwa_sin_organizaciones_ni_comedores_lanza_error():
+    """Un usuario PWA nuevo sin Organizaciones ni Comedores en la fila no debe
+    crearse, porque quedaria sin ningun acceso PWA activo (no podria loguear)."""
+    from django.core.exceptions import ValidationError
+    from users.models import UserImportJob
+    from users.services_user_import import process_single_user_import_row
+
+    admin = User.objects.create_user(username="import_admin_sin_espacio", password="x")
+
+    job = UserImportJob(
+        requested_by=admin,
+        original_filename="usuarios.xlsx",
+        send_credentials=False,
+        is_pwa_import=True,
+    )
+
+    row_data = _import_row_data("pwa.sin.espacio@example.com")
+
+    with pytest.raises(ValidationError):
+        process_single_user_import_row(row_data=row_data, job=job)
+
+    assert not User.objects.filter(email="pwa.sin.espacio@example.com").exists()
+
+
+@pytest.mark.django_db
+def test_import_pwa_username_configurable_se_usa_tal_cual():
+    """Igual que en la importacion no-PWA: si la fila trae Username, se usa
+    ese valor tal cual y no se autogenera a partir de nombre/apellido."""
+    from comedores.models import Comedor
+    from users.models import UserImportJob
+    from users.services_user_import import process_single_user_import_row
+
+    admin = User.objects.create_user(username="import_admin_pwa_username", password="x")
+    comedor = Comedor.objects.create(nombre="Comedor PWA Username")
+
+    job = UserImportJob(
+        requested_by=admin,
+        original_filename="usuarios.xlsx",
+        send_credentials=False,
+        is_pwa_import=True,
+    )
+
+    row_data = _import_row_data("pwa.con.username@example.com")
+    row_data["username"] = "usuario.pwa.manual"
+    row_data["comedores"] = str(comedor.pk)
+
+    process_single_user_import_row(row_data=row_data, job=job)
+
+    creado = User.objects.get(email="pwa.con.username@example.com")
+    assert creado.username == "usuario.pwa.manual"
