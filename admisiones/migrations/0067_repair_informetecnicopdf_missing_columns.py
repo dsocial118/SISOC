@@ -17,7 +17,9 @@ def repair_informetecnicopdf_missing_columns(apps, schema_editor):
     for field_name in ("archivo_docx_editado",):
         if field_name in existing_columns:
             continue
-        schema_editor.add_field(InformeTecnicoPDF, InformeTecnicoPDF._meta.get_field(field_name))
+        schema_editor.add_field(
+            InformeTecnicoPDF, InformeTecnicoPDF._meta.get_field(field_name)
+        )
         existing_columns.add(field_name)
 
 
