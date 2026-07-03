@@ -676,6 +676,12 @@ class _FakeQS:
     def order_by(self, *_args, **_kwargs):
         return self
 
+    def select_related(self, *_args, **_kwargs):
+        return self
+
+    def defer(self, *_args, **_kwargs):
+        return self
+
     def first(self):
         return self._result
 
@@ -691,6 +697,11 @@ def test_get_prestaciones_aprobadas_resumen_usa_aprobadas(mocker):
         aprobadas_cena_lunes=4,
     )
     mocker.patch.object(
+        impl_module.Comedor,
+        "objects",
+        SimpleNamespace(filter=lambda **k: _FakeQS(SimpleNamespace())),
+    )
+    mocker.patch.object(
         impl_module.Admision,
         "objects",
         SimpleNamespace(filter=lambda **k: _FakeQS(admision)),
@@ -699,6 +710,11 @@ def test_get_prestaciones_aprobadas_resumen_usa_aprobadas(mocker):
         impl_module.InformeTecnico,
         "objects",
         SimpleNamespace(filter=lambda **k: _FakeQS(informe)),
+    )
+    mocker.patch.object(
+        impl_module.InformeComplementario,
+        "objects",
+        SimpleNamespace(filter=lambda **k: _FakeQS(None)),
     )
 
     resumen = impl_module.ComedorService.get_prestaciones_aprobadas_resumen(123)
@@ -711,6 +727,11 @@ def test_get_prestaciones_aprobadas_resumen_usa_aprobadas(mocker):
 def test_get_prestaciones_aprobadas_resumen_sin_admision(mocker):
     from comedores.services.comedor_service import impl as impl_module
 
+    mocker.patch.object(
+        impl_module.Comedor,
+        "objects",
+        SimpleNamespace(filter=lambda **k: _FakeQS(SimpleNamespace())),
+    )
     mocker.patch.object(
         impl_module.Admision,
         "objects",

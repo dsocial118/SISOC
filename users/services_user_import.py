@@ -17,6 +17,9 @@ from django.urls import reverse
 from openpyxl import Workbook, load_workbook
 
 from comedores.models import Comedor
+from comedores.services.capacitaciones_certificados_service import (
+    is_alimentar_comunidad_program,
+)
 from core.models import Provincia
 from organizaciones.models import Organizacion
 from users.models import (
@@ -335,6 +338,13 @@ def _resolver_comedores(comedores_raw: str) -> list:
     return comedores
 
 
+def _comedor_id_alimentar_comunidad_en_lista(comedores: list) -> int | None:
+    for comedor in comedores:
+        if is_alimentar_comunidad_program(comedor):
+            return comedor.pk
+    return None
+
+
 def _build_pwa_access_specs(*, organizaciones: list, comedores: list) -> list[dict]:
     """Arma los accesos PWA a partir de organizaciones y comedores de la fila.
 
@@ -382,10 +392,12 @@ def _get_pwa_permission_ids(codes: set) -> set:
     return permission_ids
 
 
-def _resolver_grupos_y_permisos(permisos_raw: str, *, actor) -> tuple[list, list]:
+def _resolver_grupos_y_permisos(
+    permisos_raw: str, *, actor, comedor_id: int | None = None
+) -> tuple[list, list]:
     """Resuelve cada token de 'Permisos' como Group o, si no existe, como
     Permission PWA delegable por el actor. Aplica igual sea o no import PWA."""
-    allowed_codes = set(get_assignable_pwa_permission_codes(actor))
+    allowed_codes = set(get_assignable_pwa_permission_codes(actor, comedor_id))
     allowed_by_codename = {code.split(".", 1)[1]: code for code in allowed_codes}
 
     grupos = []
@@ -423,8 +435,20 @@ class _PermisosFila:
 
 
 def _resolver_permisos_fila(row_data: dict, job: UserImportJob) -> _PermisosFila:
+    if job.is_pwa_import:
+        organizaciones = _resolver_organizaciones(
+            row_data.get("organizaciones", "").strip()
+        )
+        comedores = _resolver_comedores(row_data.get("comedores", "").strip())
+    else:
+        organizaciones = []
+        comedores = []
+    comedor_id = _comedor_id_alimentar_comunidad_en_lista(comedores)
+
     grupos, permisos_pwa = _resolver_grupos_y_permisos(
-        row_data.get("permisos", "").strip(), actor=job.requested_by
+        row_data.get("permisos", "").strip(),
+        actor=job.requested_by,
+        comedor_id=comedor_id,
     )
 
     allowed_group_ids = _get_allowed_group_ids(job.requested_by)
@@ -435,17 +459,8 @@ def _resolver_permisos_fila(row_data: dict, job: UserImportJob) -> _PermisosFila
             raise ValidationError(f"No tiene permiso para operar los grupos: {names}.")
 
     allowed_permiso_ids = _get_pwa_permission_ids(
-        set(get_assignable_pwa_permission_codes(job.requested_by))
+        set(get_assignable_pwa_permission_codes(job.requested_by, comedor_id))
     )
-
-    if job.is_pwa_import:
-        organizaciones = _resolver_organizaciones(
-            row_data.get("organizaciones", "").strip()
-        )
-        comedores = _resolver_comedores(row_data.get("comedores", "").strip())
-    else:
-        organizaciones = []
-        comedores = []
 
     return _PermisosFila(
         grupos=grupos,

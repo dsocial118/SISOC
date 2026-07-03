@@ -51,7 +51,6 @@ from comedores.utils import (
     is_abordaje_comunitario_relevamientos_header_program,
     is_abordaje_comunitario_linea_secos_program,
     is_pnud_comedor,
-    is_prestacion_alimentaria_conformidad_program,
     usa_datos_convenio_pnud,
 )
 from core.pagination import NoCountPaginator, build_no_count_page_range
@@ -1377,8 +1376,6 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
         }
 
     def _build_conformidad_prestacion_context(self):
-        if not is_prestacion_alimentaria_conformidad_program(self.object):
-            return {"pendiente": False, "periodo": None}
         pending_period = get_prestacion_conformidad_pending_period(self.object)
         return {"pendiente": pending_period is not None, "periodo": pending_period}
 
