@@ -4,13 +4,12 @@ from django.views.generic import ListView, CreateView, DetailView, UpdateView
 from django.urls import reverse, reverse_lazy
 from django.contrib import messages
 from django.shortcuts import get_object_or_404
-from django.utils.decorators import method_decorator
 from django.http import JsonResponse
 
+from centrodefamilia.access import puede_tomar_asistencia_cdf
 from centrodefamilia.models import (
     ActividadCentro,
     Centro,
-    ParticipanteActividad,
     Actividad,
 )
 from centrodefamilia.forms import ActividadCentroForm, ActividadForm
@@ -99,6 +98,9 @@ class ActividadCentroDetailView(LoginRequiredMixin, DetailView):
                 "lista_espera": lista_espera,
                 "precio_total": precio_total,
                 "promo_error": self.request.GET.get("promo_error"),
+                "puede_tomar_asistencia": puede_tomar_asistencia_cdf(
+                    self.request.user, actividad.centro
+                ),
             }
         )
         return context

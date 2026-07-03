@@ -234,6 +234,47 @@ class ParticipanteActividad(SoftDeleteModelMixin, models.Model):
         unique_together = ("actividad_centro", "ciudadano")
 
 
+class AsistenciaActividad(models.Model):
+    """Asistencia de un participante inscrito a una actividad de CDF en una fecha.
+
+    Espeja el patrón de ``VAT.AsistenciaSesion`` adaptado a CDF: acá no hay
+    sesiones autogeneradas, la unidad de asistencia es (participante, fecha).
+    """
+
+    participante = models.ForeignKey(
+        ParticipanteActividad,
+        on_delete=models.CASCADE,
+        related_name="asistencias",
+        verbose_name="Participante",
+    )
+    fecha = models.DateField(verbose_name="Fecha")
+    presente = models.BooleanField(default=False, verbose_name="Presente")
+    registrado_por = models.ForeignKey(
+        User,
+        on_delete=models.PROTECT,
+        related_name="asistencias_cdf_registradas",
+        verbose_name="Registrado por",
+    )
+    fecha_registro = models.DateTimeField(
+        auto_now_add=True, verbose_name="Fecha de Registro"
+    )
+    fecha_modificacion = models.DateTimeField(
+        auto_now=True, verbose_name="Fecha de Última Modificación"
+    )
+
+    def __str__(self):
+        estado = "Presente" if self.presente else "Ausente"
+        return f"{self.participante.ciudadano} — {self.fecha} [{estado}]"
+
+    class Meta:
+        verbose_name = "Asistencia a Actividad"
+        verbose_name_plural = "Asistencias a Actividades"
+        unique_together = ("participante", "fecha")
+        indexes = [
+            models.Index(fields=["fecha", "presente"], name="cdf_asist_fecha_pres_idx"),
+        ]
+
+
 class ParticipanteActividadHistorial(models.Model):
     participante = models.ForeignKey(
         ParticipanteActividad, on_delete=models.CASCADE, related_name="historial"
