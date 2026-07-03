@@ -84,7 +84,7 @@ class UserContextSerializer(serializers.Serializer):
 
 class OperadorCreateSerializer(serializers.Serializer):
     username = serializers.CharField(max_length=150)
-    email = serializers.EmailField()
+    email = serializers.EmailField(required=False, allow_blank=True)
     password = serializers.CharField(write_only=True, trim_whitespace=False)
     comedor_ids = serializers.ListField(
         child=serializers.IntegerField(),

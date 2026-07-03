@@ -8,6 +8,7 @@
     var subtipoOptions = document.getElementById("subtipo-options");
     var subtipoSelect = document.getElementById("id_subtipo");
     var comedoresOptions = document.getElementById("comedores-options");
+    var organizacionesOptions = document.getElementById("organizaciones-options");
     var destacadoOption = document.getElementById("destacado-option");
     var paraTodosCheckbox = document.getElementById("id_para_todos_comedores");
     var comedoresSelector = document.getElementById("comedores-selector");
@@ -27,7 +28,9 @@
     function updateSubtipoVisibility() {
         if (!subtipoSelect) return;
         var isComedores = subtipoSelect.value === "comedores";
+        var isOrganizaciones = subtipoSelect.value === "organizaciones";
         if (comedoresOptions) comedoresOptions.classList.toggle("d-none", !isComedores);
+        if (organizacionesOptions) organizacionesOptions.classList.toggle("d-none", !isOrganizaciones);
     }
 
     function updateComedoresSelector() {
@@ -154,20 +157,21 @@
         }
     }
 
-    // --- Selector de comedores ---
-    var comedorSearch = document.getElementById("comedorSearch");
-    var comedoresLista = document.getElementById("comedoresLista");
-    var seleccionadosContainer = document.getElementById("comedoresSeleccionados");
-    var selectOriginal = document.getElementById("id_comedores");
+    function initDestinatariosSelector(config) {
+        var searchInput = document.getElementById(config.searchId);
+        var lista = document.getElementById(config.listaId);
+        var seleccionadosContainer = document.getElementById(config.seleccionadosId);
+        var selectOriginal = document.getElementById(config.selectId);
 
-    if (comedorSearch && selectOriginal && comedoresLista) {
+        if (!searchInput || !selectOriginal || !lista) return;
+
         var allOptions = [];
         Array.from(selectOriginal.options).forEach(function(opt) {
             allOptions.push({ value: opt.value, text: opt.text });
         });
 
         renderAll();
-        comedorSearch.addEventListener("input", function() {
+        searchInput.addEventListener("input", function() {
             renderLista(this.value.trim().toLowerCase());
         });
 
@@ -184,7 +188,7 @@
 
         function renderAll() {
             renderSeleccionados();
-            renderLista(comedorSearch.value.trim().toLowerCase());
+            renderLista(searchInput.value.trim().toLowerCase());
         }
 
         function renderSeleccionados() {
@@ -209,18 +213,18 @@
                 seleccionadosContainer.appendChild(badge);
             });
             if (!hay) {
-                seleccionadosContainer.innerHTML = '<p class="small mb-0" style="color:#6b7280;">No hay comedores seleccionados.</p>';
+                seleccionadosContainer.innerHTML = '<p class="small mb-0" style="color:#6b7280;">No hay ' + config.emptyLabel + ' seleccionados.</p>';
             }
         }
 
         function renderLista(query) {
-            comedoresLista.innerHTML = "";
+            lista.innerHTML = "";
             var filtered = allOptions.filter(function(opt) {
                 return !query || opt.text.toLowerCase().indexOf(query) !== -1;
             });
 
             if (filtered.length === 0) {
-                comedoresLista.innerHTML = '<div style="padding:16px;text-align:center;color:#6b7280;">No se encontraron comedores.</div>';
+                lista.innerHTML = '<div style="padding:16px;text-align:center;color:#6b7280;">No se encontraron ' + config.emptyLabel + '.</div>';
                 return;
             }
 
@@ -253,8 +257,24 @@
 
                 row.appendChild(name);
                 row.appendChild(btn);
-                comedoresLista.appendChild(row);
+                lista.appendChild(row);
             });
         }
     }
+
+    initDestinatariosSelector({
+        searchId: "comedorSearch",
+        listaId: "comedoresLista",
+        seleccionadosId: "comedoresSeleccionados",
+        selectId: "id_comedores",
+        emptyLabel: "comedores"
+    });
+
+    initDestinatariosSelector({
+        searchId: "organizacionSearch",
+        listaId: "organizacionesLista",
+        seleccionadosId: "organizacionesSeleccionadas",
+        selectId: "id_organizaciones",
+        emptyLabel: "organizaciones"
+    });
 })();

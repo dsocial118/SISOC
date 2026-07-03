@@ -53,6 +53,7 @@ from .permissions import (
     es_tecnico,
     is_admin,
     get_comedores_del_usuario,
+    get_organizaciones_del_usuario,
 )
 
 
@@ -107,9 +108,15 @@ class ComunicadoGestionListView(LoginRequiredMixin, ListView):
         # Si es técnico (no admin), solo ve comunicados externos de sus comedores
         if es_tecnico(user) and not is_admin(user):
             comedores_usuario = get_comedores_del_usuario(user)
-            queryset = queryset.filter(
-                tipo=TipoComunicado.EXTERNO, comedores__in=comedores_usuario
-            ).distinct()
+            organizaciones_usuario = get_organizaciones_del_usuario(user)
+            queryset = (
+                queryset.filter(tipo=TipoComunicado.EXTERNO)
+                .filter(
+                    Q(comedores__in=comedores_usuario)
+                    | Q(organizaciones__in=organizaciones_usuario)
+                )
+                .distinct()
+            )
 
         # Filtros
         titulo = self.request.GET.get("titulo")
@@ -189,15 +196,28 @@ class ComunicadoPersistMixin:
             if self.object.subtipo == SubtipoComunicado.INSTITUCIONAL:
                 # Institucional: broadcast, no necesita comedores
                 self.object.comedores.clear()
+                self.object.organizaciones.clear()
                 self.object.para_todos_comedores = False
                 self.object.save()
-            elif form.cleaned_data.get("para_todos_comedores"):
-                comedores = get_comedores_del_usuario(self.request.user)
-                self.object.comedores.set(comedores)
+            elif self.object.subtipo == SubtipoComunicado.COMEDORES:
+                self.object.organizaciones.clear()
+                if form.cleaned_data.get("para_todos_comedores"):
+                    comedores = get_comedores_del_usuario(self.request.user)
+                    self.object.comedores.set(comedores)
+                else:
+                    self.object.comedores.set(form.cleaned_data.get("comedores", []))
+            elif self.object.subtipo == SubtipoComunicado.ORGANIZACIONES:
+                self.object.comedores.clear()
+                self.object.organizaciones.set(
+                    form.cleaned_data.get("organizaciones", [])
+                )
+                self.object.para_todos_comedores = False
+                self.object.save()
             return
 
         # Interno: limpiar campos externos
         self.object.comedores.clear()
+        self.object.organizaciones.clear()
         self.object.para_todos_comedores = False
         self.object.subtipo = ""
         self.object.save()

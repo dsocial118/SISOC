@@ -25,6 +25,13 @@ def is_pnud_comedor(comedor) -> bool:
     return programa_id in _PNUD_PROGRAMA_IDS or "pnud" in normalized
 
 
+def usa_datos_convenio_pnud(comedor) -> bool:
+    """Devuelve True si el comedor usa la carga de convenio PNUD/Abordaje."""
+    return is_pnud_comedor(comedor) or (
+        "abordaje comunitario" in _get_programa_nombre_normalizado(comedor)
+    )
+
+
 def _normalize_programa(nombre: str) -> str:
     """Remueve acentos y normaliza espacios/mayúsculas en un nombre de programa."""
     sin_acentos = unicodedata.normalize("NFD", nombre)
@@ -124,14 +131,12 @@ def is_prestacion_conformidad_period_enabled(comedor, period: date) -> bool:
 
 
 def get_prestacion_conformidad_pending_period(comedor):
-    periods = get_prestacion_conformidad_periods(comedor)
-    existing = set(
-        PrestacionAlimentariaConformidad.objects.filter(
-            comedor=comedor,
-            periodo__in=periods,
-        ).values_list("periodo", flat=True)
-    )
-    return next((period for period in periods if period not in existing), None)
+    period = previous_month_period()
+    exists = PrestacionAlimentariaConformidad.objects.filter(
+        comedor=comedor,
+        periodo=period,
+    ).exists()
+    return None if exists else period
 
 
 def get_object_by_filter(model: Type[Model], **kwargs):
