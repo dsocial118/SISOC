@@ -70,14 +70,17 @@ class AsistenciaActividadService:
         return filas
 
     @classmethod
-    def registrar(cls, actividad_centro, fecha, marcas, usuario):
+    def registrar(cls, actividad_centro, fecha, marcas, usuario, participantes=None):
         """Guarda/actualiza la asistencia de la fecha para todos los inscritos.
 
         ``marcas`` mapea ``participante_id -> "1"|"0"|None`` (valores del POST);
         igual que en VAT, lo no marcado se registra como ausente.
-        Devuelve la cantidad de registros guardados.
+        ``participantes`` permite reutilizar la lista de inscritos ya obtenida
+        por quien llama (evita una segunda consulta); si es ``None`` se resuelve
+        acá. Devuelve la cantidad de registros guardados.
         """
-        participantes = cls.inscritos(actividad_centro)
+        if participantes is None:
+            participantes = cls.inscritos(actividad_centro)
         with transaction.atomic():
             for participante in participantes:
                 presente = marcas.get(participante.pk) == "1"
