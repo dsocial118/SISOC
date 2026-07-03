@@ -21,7 +21,6 @@ INSUMO_ALLOWED_CONTENT_TYPES = {
     "application/vnd.ms-excel",
     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     "text/csv",
-    "application/octet-stream",
 }
 INSUMO_MAX_SIZE_BYTES = 10 * 1024 * 1024
 INSUMO_ACCEPT_ATTR = ".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx,.csv"

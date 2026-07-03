@@ -87,7 +87,7 @@ class InsumoUpdateView(LoginRequiredMixin, UpdateView):
 
     def form_valid(self, form):
         self.object = save_insumo_from_form(
-            form, self.request.user, instance=self.get_object()
+            form, self.request.user, instance=self.object
         )
         messages.success(self.request, "Insumo actualizado correctamente.")
         return HttpResponseRedirect(self.get_success_url())
@@ -126,8 +126,12 @@ class InsumoDescargarView(LoginRequiredMixin, View):
         insumo = get_object_or_404(Insumo, pk=pk)
         if not insumo.archivo:
             raise Http404("El insumo no tiene archivo asociado.")
+        try:
+            archivo = insumo.archivo.open("rb")
+        except (FileNotFoundError, OSError) as exc:
+            raise Http404("El archivo del insumo no está disponible.") from exc
         return FileResponse(
-            insumo.archivo.open("rb"),
+            archivo,
             as_attachment=True,
             filename=insumo.nombre_archivo,
         )
@@ -162,7 +166,7 @@ class InsumoCategoriaUpdateView(LoginRequiredMixin, UpdateView):
     success_url = reverse_lazy("insumos_categorias_listar")
 
     def form_valid(self, form):
-        self.object = save_categoria_from_form(form, instance=self.get_object())
+        self.object = save_categoria_from_form(form)
         messages.success(self.request, "Categoría actualizada correctamente.")
         return HttpResponseRedirect(self.get_success_url())
 

@@ -1,4 +1,5 @@
 from django import forms
+from django.db.models import Q
 
 from core.models import Programa
 
@@ -16,7 +17,12 @@ class InsumoCategoriaForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields["programa"].queryset = Programa.objects.filter(estado=True)
+        programa_queryset = Programa.objects.filter(estado=True)
+        if self.instance.pk and self.instance.programa_id:
+            programa_queryset = Programa.objects.filter(
+                Q(estado=True) | Q(pk=self.instance.programa_id)
+            )
+        self.fields["programa"].queryset = programa_queryset
 
     def clean(self):
         cleaned_data = super().clean()
@@ -47,10 +53,21 @@ class InsumoForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields["programa"].queryset = Programa.objects.filter(estado=True)
-        self.fields["categoria"].queryset = InsumoCategoria.objects.filter(
-            activo=True
-        ).select_related("programa")
+        programa_queryset = Programa.objects.filter(estado=True)
+        categoria_queryset = InsumoCategoria.objects.filter(activo=True)
+        if self.instance.pk:
+            if self.instance.programa_id:
+                programa_queryset = Programa.objects.filter(
+                    Q(estado=True) | Q(pk=self.instance.programa_id)
+                )
+            if self.instance.categoria_id:
+                categoria_queryset = InsumoCategoria.objects.filter(
+                    Q(activo=True) | Q(pk=self.instance.categoria_id)
+                )
+        self.fields["programa"].queryset = programa_queryset
+        self.fields["categoria"].queryset = categoria_queryset.select_related(
+            "programa"
+        )
         self.fields["categoria"].required = False
         self.fields["categoria"].empty_label = "Sin categoría"
 
