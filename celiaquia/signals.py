@@ -145,7 +145,9 @@ def resolver_conflictos_ciudadanos_tras_restauracion(sender, instance, user, **k
     )
 
 
-def _ajustar_usados_por_ciclo_vida_legajo(legajo, *, delta, tipo, motivo, user=None):
+def _ajustar_usados_por_ciclo_vida_legajo(  # pylint: disable=too-many-return-statements
+    legajo, *, delta, tipo, motivo, user=None
+):
     """Mantiene ``ProvinciaCupo.usados`` sincronizado cuando un titular con cupo
     entra o sale del universo vivo por soft-delete/restore.
 
