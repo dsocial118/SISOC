@@ -4,6 +4,7 @@ from django.contrib.auth.models import User
 from django.contrib.postgres.indexes import GinIndex
 from django.utils import timezone
 from ciudadanos.models import Ciudadano
+from core.constants import UserGroups
 from core.models import Dia, Localidad, Municipio, Provincia, Sexo
 from core.soft_delete import SoftDeleteModelMixin
 from organizaciones.models import Organizacion
@@ -21,7 +22,13 @@ class Centro(SoftDeleteModelMixin, models.Model):
     referente = models.ForeignKey(
         User,
         on_delete=models.PROTECT,
-        limit_choices_to={"groups__name": "ReferenteCentro"},
+        # Incluye el grupo legacy "ReferenteCentro" previo al renombre.
+        limit_choices_to={
+            "groups__name__in": [
+                UserGroups.CDF_REFERENTE_CENTRO,
+                "ReferenteCentro",
+            ]
+        },
         related_name="centros",
         null=True,
         blank=False,
