@@ -871,3 +871,182 @@ def test_import_pwa_username_configurable_se_usa_tal_cual():
 
     creado = User.objects.get(email="pwa.con.username@example.com")
     assert creado.username == "usuario.pwa.manual"
+
+
+@pytest.mark.django_db
+def test_import_pwa_grupo_autorizado_se_asigna():
+    """En un import PWA, un token de 'Permisos' que matchea un grupo existente
+    se resuelve como grupo, igual que en import no-PWA."""
+    from comedores.models import Comedor
+    from users.models import UserImportJob
+    from users.services_user_import import process_single_user_import_row
+
+    admin = User.objects.create_superuser(
+        username="import_admin_pwa_grupo",
+        password="x",
+        email="admin_pwa_grupo@example.com",
+    )
+    grupo = Group.objects.create(name="Grupo PWA Test")
+    comedor = Comedor.objects.create(nombre="Comedor PWA Grupo")
+
+    job = UserImportJob(
+        requested_by=admin,
+        original_filename="usuarios.xlsx",
+        send_credentials=False,
+        is_pwa_import=True,
+    )
+
+    row_data = _import_row_data("pwa.grupo@example.com")
+    row_data["permisos"] = "Grupo PWA Test"
+    row_data["comedores"] = str(comedor.pk)
+
+    process_single_user_import_row(row_data=row_data, job=job)
+
+    creado = User.objects.get(email="pwa.grupo@example.com")
+    assert grupo in creado.groups.all()
+
+
+@pytest.mark.django_db
+def test_import_no_pwa_permiso_autorizado_se_asigna_directo():
+    """En un import no-PWA, un token de 'Permisos' que matchea un permiso PWA
+    delegable por el actor se asigna como permiso directo (no requiere grupo)."""
+    from users.models import UserImportJob
+    from users.services_user_import import process_single_user_import_row
+
+    admin = User.objects.create_superuser(
+        username="import_admin_staff_perm",
+        password="x",
+        email="admin_staff_perm@example.com",
+    )
+
+    job = UserImportJob(
+        requested_by=admin,
+        original_filename="usuarios.xlsx",
+        send_credentials=False,
+        is_pwa_import=False,
+    )
+
+    row_data = _import_row_data("staff.permiso@example.com")
+    row_data["permisos"] = "manage_nomina_pwa"
+
+    process_single_user_import_row(row_data=row_data, job=job)
+
+    creado = User.objects.get(email="staff.permiso@example.com")
+    assert creado.has_perm("pwa.manage_nomina_pwa")
+    assert creado.groups.count() == 0
+    assert creado.is_staff is True
+
+
+@pytest.mark.django_db
+def test_import_pwa_mezcla_grupo_y_permiso():
+    """Un mismo token 'Permisos' puede mezclar nombre de grupo y codename de
+    permiso PWA separados por ';', tambien en filas PWA."""
+    from comedores.models import Comedor
+    from users.models import UserImportJob
+    from users.services_user_import import process_single_user_import_row
+
+    admin = User.objects.create_superuser(
+        username="import_admin_pwa_mix", password="x", email="admin_pwa_mix@example.com"
+    )
+    grupo = Group.objects.create(name="Grupo Mix PWA")
+    comedor = Comedor.objects.create(nombre="Comedor Mix PWA")
+
+    job = UserImportJob(
+        requested_by=admin,
+        original_filename="usuarios.xlsx",
+        send_credentials=False,
+        is_pwa_import=True,
+    )
+
+    row_data = _import_row_data("pwa.mix@example.com")
+    row_data["permisos"] = "Grupo Mix PWA;manage_nomina_pwa"
+    row_data["comedores"] = str(comedor.pk)
+
+    process_single_user_import_row(row_data=row_data, job=job)
+
+    creado = User.objects.get(email="pwa.mix@example.com")
+    assert grupo in creado.groups.all()
+    assert creado.has_perm("pwa.manage_nomina_pwa")
+
+
+@pytest.mark.django_db
+def test_import_no_pwa_mezcla_grupo_y_permiso():
+    """Igual que en PWA, una fila no-PWA puede mezclar grupo y permiso en el
+    mismo token 'Permisos'."""
+    from users.models import UserImportJob
+    from users.services_user_import import process_single_user_import_row
+
+    admin = User.objects.create_superuser(
+        username="import_admin_staff_mix",
+        password="x",
+        email="admin_staff_mix@example.com",
+    )
+    grupo = Group.objects.create(name="Grupo Mix Staff")
+
+    job = UserImportJob(
+        requested_by=admin,
+        original_filename="usuarios.xlsx",
+        send_credentials=False,
+        is_pwa_import=False,
+    )
+
+    row_data = _import_row_data("staff.mix@example.com")
+    row_data["permisos"] = "Grupo Mix Staff;manage_nomina_pwa"
+
+    process_single_user_import_row(row_data=row_data, job=job)
+
+    creado = User.objects.get(email="staff.mix@example.com")
+    assert grupo in creado.groups.all()
+    assert creado.has_perm("pwa.manage_nomina_pwa")
+
+
+@pytest.mark.django_db
+def test_import_no_pwa_permiso_no_autorizado_lanza_error():
+    """Igual que en import PWA: si el actor no puede delegar el permiso PWA
+    solicitado, la fila falla aunque no sea import PWA."""
+    from django.core.exceptions import ValidationError
+    from users.models import UserImportJob
+    from users.services_user_import import process_single_user_import_row
+
+    admin = User.objects.create_user(
+        username="import_admin_staff_sin_perm", password="x"
+    )
+
+    job = UserImportJob(
+        requested_by=admin,
+        original_filename="usuarios.xlsx",
+        send_credentials=False,
+        is_pwa_import=False,
+    )
+
+    row_data = _import_row_data("staff.denegado@example.com")
+    row_data["permisos"] = "manage_nomina_pwa"
+
+    with pytest.raises(ValidationError):
+        process_single_user_import_row(row_data=row_data, job=job)
+
+
+@pytest.mark.django_db
+def test_import_token_no_matchea_grupo_ni_permiso_lanza_error():
+    """Un token que no es ni un grupo existente ni un permiso PWA delegable
+    lanza un error claro identificando el token."""
+    from django.core.exceptions import ValidationError
+    from users.models import UserImportJob
+    from users.services_user_import import process_single_user_import_row
+
+    admin = User.objects.create_user(
+        username="import_admin_token_invalido", password="x"
+    )
+
+    job = UserImportJob(
+        requested_by=admin,
+        original_filename="usuarios.xlsx",
+        send_credentials=False,
+        is_pwa_import=False,
+    )
+
+    row_data = _import_row_data("token.invalido@example.com")
+    row_data["permisos"] = "Grupo Que No Existe"
+
+    with pytest.raises(ValidationError, match="no es un grupo existente ni un permiso"):
+        process_single_user_import_row(row_data=row_data, job=job)
