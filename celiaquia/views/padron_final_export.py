@@ -53,7 +53,7 @@ class ExpedientePadronFinalExportView(LoginRequiredMixin, View):
     @staticmethod
     def _esta_disponible(expediente):
         estado = getattr(getattr(expediente, "estado", None), "nombre", None)
-        return estado == "CRUCE_FINALIZADO" and bool(expediente.excel_masivo)
+        return estado == "CRUCE_FINALIZADO"
 
     @staticmethod
     def _tiene_permiso(user):

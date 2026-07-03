@@ -1,30 +1,48 @@
 """
 Servicio para generar padrón final del expediente de celiaquía.
+
+La nómina de aprobados se construye desde la base de datos (legajos
+aprobados con MATCH de Sintys), no desde el Excel original cargado por la
+provincia. El archivo original queda estático, mientras que los datos de
+los ciudadanos pueden corregirse después de la importación; la base es la
+fuente de verdad.
 """
 
 from datetime import date, datetime
 from io import BytesIO
-import re
 
-from openpyxl import Workbook, load_workbook
+from openpyxl import Workbook
 
 from celiaquia.models import ExpedienteCiudadano, ResultadoSintys, RevisionTecnico
+from celiaquia.services.cruce_service import CruceService
 
 
-DOCUMENTO_COLUMN_CANDIDATES = {
+NOMINA_HEADERS = [
+    "apellido",
+    "nombre",
     "documento",
-    "numero_documento",
-    "nro_documento",
-    "número_documento",
-    "dni",
-    "cuit",
-    "cuil",
-}
-
-FECHA_NACIMIENTO_COLUMN_CANDIDATES = {
     "fecha_nacimiento",
-    "fecha_de_nacimiento_responsable",
-}
+    "sexo",
+    "nacionalidad",
+    "municipio",
+    "localidad",
+    "calle",
+    "altura",
+    "codigo_postal",
+    "telefono",
+    "email",
+    "APELLIDO_RESPONSABLE",
+    "NOMBRE_RESPONSABLE",
+    "CUIT_RESPONSABLE",
+    "FECHA_DE_NACIMIENTO_RESPONSABLE",
+    "SEXO_RESPONSABLE",
+    "DOMICILIO_RESPONSABLE",
+    "LOCALIDAD_RESPONSABLE",
+    "CELULAR_RESPONSABLE",
+    "CORREO_RESPONSABLE",
+]
+
+FECHA_COLUMNS = {"fecha_nacimiento", "FECHA_DE_NACIMIENTO_RESPONSABLE"}
 
 FECHA_NUMBER_FORMAT = "DD/MM/YYYY"
 
@@ -35,7 +53,11 @@ class PadronFinalService:
     @staticmethod
     def generar_padron_final_excel(expediente) -> bytes:
         """
-        Genera Excel con la nomina original filtrada por aprobados finales.
+        Genera Excel con la nomina de aprobados a partir de la base.
+
+        Incluye los legajos con revision tecnica APROBADO y resultado
+        Sintys MATCH, excluyendo a los responsables puros (sus datos se
+        vuelcan en las columnas *_RESPONSABLE de cada beneficiario).
 
         Args:
             expediente: Expediente object
@@ -43,104 +65,95 @@ class PadronFinalService:
         Returns:
             bytes: Contenido del archivo Excel
         """
-        headers, rows = PadronFinalService._leer_nomina_original(expediente)
-        documento_index = PadronFinalService._documento_column_index(headers)
-        fecha_indices = PadronFinalService._fecha_nacimiento_column_indices(headers)
-        documentos_aprobados = PadronFinalService._documentos_aprobados(expediente)
+        from celiaquia.services.familia_service import FamiliaService
 
-        filtered_rows = []
-        if documento_index is not None and documentos_aprobados:
-            for row in rows:
-                documento = PadronFinalService._normalize_documento(
-                    row[documento_index] if documento_index < len(row) else None
-                )
-                if documento in documentos_aprobados:
-                    filtered_rows.append(row)
+        legajos = list(PadronFinalService._legajos_aprobados(expediente))
+        responsables_por_hijo = FamiliaService.obtener_responsables_por_hijo(
+            [legajo.ciudadano_id for legajo in legajos]
+        )
 
-        return PadronFinalService._build_excel(headers, filtered_rows, fecha_indices)
+        rows = []
+        for legajo in legajos:
+            responsables = responsables_por_hijo.get(legajo.ciudadano_id, [])
+            responsable = responsables[0] if responsables else None
+            rows.append(PadronFinalService._fila_beneficiario(legajo, responsable))
 
-    @staticmethod
-    def _leer_nomina_original(expediente):
-        excel_masivo = getattr(expediente, "excel_masivo", None)
-        if not excel_masivo:
-            return [], []
-
-        try:
-            excel_masivo.open()
-        except Exception:  # pragma: no cover - FileField local ya suele estar abierto.
-            pass
-        excel_masivo.seek(0)
-        wb = load_workbook(BytesIO(excel_masivo.read()), data_only=True)
-        ws = wb.worksheets[0]
-        values = list(ws.iter_rows(values_only=True))
-        if not values:
-            return [], []
-
-        headers = list(values[0])
-        rows = [list(row) for row in values[1:]]
-        return headers, rows
+        return PadronFinalService._build_excel(NOMINA_HEADERS, rows)
 
     @staticmethod
-    def _documentos_aprobados(expediente) -> set[str]:
-        aprobados = (
+    def _legajos_aprobados(expediente):
+        return (
             ExpedienteCiudadano.objects.filter(
                 expediente=expediente,
                 revision_tecnico=RevisionTecnico.APROBADO,
                 resultado_sintys=ResultadoSintys.MATCH,
             )
             .exclude(rol=ExpedienteCiudadano.ROLE_RESPONSABLE)
-            .select_related("ciudadano")
-            .values_list("ciudadano__documento", flat=True)
-        )
-        return {
-            documento
-            for documento in (
-                PadronFinalService._normalize_documento(value) for value in aprobados
+            .select_related(
+                "ciudadano",
+                "ciudadano__sexo",
+                "ciudadano__nacionalidad",
+                "ciudadano__municipio",
+                "ciudadano__localidad",
             )
-            if documento
+            .order_by("ciudadano__apellido", "ciudadano__nombre")
+        )
+
+    @staticmethod
+    def _texto(value) -> str:
+        return "" if value is None else str(value)
+
+    @staticmethod
+    def _fila_beneficiario(legajo, responsable) -> list:
+        ciudadano = legajo.ciudadano
+        fila = [
+            ciudadano.apellido or "",
+            ciudadano.nombre or "",
+            PadronFinalService._texto(ciudadano.documento),
+            ciudadano.fecha_nacimiento,
+            CruceService.normalizar_sexo_para_exportacion(ciudadano),
+            PadronFinalService._texto(ciudadano.nacionalidad),
+            PadronFinalService._texto(ciudadano.municipio),
+            PadronFinalService._texto(ciudadano.localidad),
+            ciudadano.calle or "",
+            ciudadano.altura or "",
+            ciudadano.codigo_postal or "",
+            ciudadano.telefono or "",
+            ciudadano.email or "",
+        ]
+        if responsable is None:
+            fila.extend([""] * 9)
+            return fila
+
+        domicilio = " ".join(
+            PadronFinalService._texto(parte)
+            for parte in (responsable.calle, responsable.altura)
+            if parte not in (None, "")
+        )
+        fila.extend(
+            [
+                responsable.apellido or "",
+                responsable.nombre or "",
+                PadronFinalService._texto(responsable.documento),
+                responsable.fecha_nacimiento,
+                CruceService.normalizar_sexo_para_exportacion(responsable),
+                domicilio,
+                PadronFinalService._texto(responsable.localidad),
+                responsable.telefono or "",
+                responsable.email or "",
+            ]
+        )
+        return fila
+
+    @staticmethod
+    def _build_excel(headers, rows) -> bytes:
+        fecha_indices = {
+            index for index, header in enumerate(headers) if header in FECHA_COLUMNS
         }
-
-    @staticmethod
-    def _normalize_header(value) -> str:
-        normalized = str(value or "").strip().lower()
-        normalized = normalized.replace(" ", "_").replace(".", "")
-        return normalized
-
-    @staticmethod
-    def _documento_column_index(headers) -> int | None:
-        for index, header in enumerate(headers):
-            if (
-                PadronFinalService._normalize_header(header)
-                in DOCUMENTO_COLUMN_CANDIDATES
-            ):
-                return index
-        return None
-
-    @staticmethod
-    def _fecha_nacimiento_column_indices(headers) -> set[int]:
-        return {
-            index
-            for index, header in enumerate(headers)
-            if PadronFinalService._normalize_header(header)
-            in FECHA_NACIMIENTO_COLUMN_CANDIDATES
-        }
-
-    @staticmethod
-    def _normalize_documento(value) -> str:
-        if value is None:
-            return ""
-        if isinstance(value, float) and value.is_integer():
-            value = int(value)
-        return re.sub(r"\D", "", str(value)).lstrip("0")
-
-    @staticmethod
-    def _build_excel(headers, rows, fecha_indices=None) -> bytes:
-        fecha_indices = fecha_indices or set()
         wb = Workbook()
         ws = wb.active
         ws.title = "nomina_aprobados"
-        if headers:
-            ws.append(headers)
+        ws.append(headers)
         for row in rows:
             ws.append(row)
             if fecha_indices:

@@ -1064,7 +1064,6 @@ class ExpedienteDetailView(DetailView):
         ctx["can_download_nomina_aprobados"] = bool(
             (is_admin or is_coord or is_tecnico)
             and expediente.estado.nombre == "CRUCE_FINALIZADO"
-            and expediente.excel_masivo
         )
 
         preview = preview_error = None
