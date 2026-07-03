@@ -805,8 +805,13 @@ class AdmisionService:
             estado__in=["rectificar", "borrador"]
         ).first()
 
+        informe_tecnico_finalizado = InformeTecnico.objects.filter(
+            admision=admision,
+            estado_formulario="finalizado",
+        ).exists()
         mostrar_informe_complementario = (
-            admision.estado_legales == "Informe Complementario Solicitado"
+            informe_tecnico_finalizado
+            or admision.estado_legales == "Informe Complementario Solicitado"
             or (
                 informe_complementario_pendiente
                 and informe_complementario_pendiente.estado == "rectificar"
@@ -841,6 +846,27 @@ class AdmisionService:
             return False
         return user.is_superuser or AdmisionService._verificar_permiso_tecnico_dupla(
             user, admision.comedor
+        )
+
+    @staticmethod
+    def _puede_editar_personas_conveniadas_nomina(user):
+        if not user:
+            return False
+        return user.is_superuser or user_has_any_permission_codes(
+            user,
+            [
+                "comedores.view_comedor",
+                "admisiones.view_admision",
+                "acompanamientos.view_informacionrelevante",
+            ],
+        )
+
+    @staticmethod
+    def _admision_es_alimentar_comunidad(admision):
+        programa = getattr(getattr(admision, "comedor", None), "programa", None)
+        return (
+            AdmisionService._normalizar_nombre_tipo(getattr(programa, "nombre", ""))
+            == "alimentar comunidad"
         )
 
     @staticmethod
@@ -879,6 +905,7 @@ class AdmisionService:
         botones_disponibles,
         puede_editar_convenio_numero,
         puede_editar_num_expediente,
+        puede_editar_personas_conveniadas_nomina,
     ):
         organizacion = getattr(getattr(admision, "comedor", None), "organizacion", None)
         tipo_entidad_actual = getattr(organizacion, "tipo_entidad", None)
@@ -916,6 +943,10 @@ class AdmisionService:
             "botones_disponibles": botones_disponibles,
             "puede_editar_convenio_numero": puede_editar_convenio_numero,
             "puede_editar_num_expediente": puede_editar_num_expediente,
+            "mostrar_personas_conveniadas_nomina": (
+                AdmisionService._admision_es_alimentar_comunidad(admision)
+            ),
+            "puede_editar_personas_conveniadas_nomina": puede_editar_personas_conveniadas_nomina,
             "admision_desincronizada": admision_desincronizada,
             "tipo_entidad_actual_organizacion": tipo_entidad_actual,
             "tipo_entidad_origen_snapshot": getattr(
@@ -968,6 +999,9 @@ class AdmisionService:
                     user, admision
                 )
             )
+            puede_editar_personas_conveniadas_nomina = (
+                AdmisionService._puede_editar_personas_conveniadas_nomina(user)
+            )
 
             return AdmisionService._build_response_update_context(
                 admision=admision,
@@ -977,6 +1011,7 @@ class AdmisionService:
                 botones_disponibles=botones_disponibles,
                 puede_editar_convenio_numero=puede_editar_convenio_numero,
                 puede_editar_num_expediente=puede_editar_num_expediente,
+                puede_editar_personas_conveniadas_nomina=puede_editar_personas_conveniadas_nomina,
             )
 
         except Exception:
@@ -2849,6 +2884,87 @@ class AdmisionService:
             return {"success": False, "error": str(exc)}
 
     @staticmethod
+    def actualizar_vigente_pwa_ajax(request):
+        try:
+            admision_id = request.POST.get("admision_id")
+            vigente = str(request.POST.get("vigente_pwa", "")).lower() in (
+                "1",
+                "true",
+                "on",
+                "si",
+            )
+            if not admision_id:
+                return {"success": False, "error": "ID de admision requerido."}
+
+            admision = get_object_or_404(Admision, id=admision_id)
+            if not AdmisionService._puede_editar_convenio_numero(
+                request.user, admision
+            ):
+                return {
+                    "success": False,
+                    "error": "No tiene permisos para editar esta admision.",
+                }
+
+            if vigente and admision.comedor_id:
+                Admision.objects.filter(comedor_id=admision.comedor_id).update(
+                    vigente_pwa=False
+                )
+            admision.vigente_pwa = vigente
+            admision.save(update_fields=["vigente_pwa"])
+            return {"success": True, "vigente_pwa": admision.vigente_pwa}
+        except Exception as exc:
+            logger.exception("Error en actualizar_vigente_pwa_ajax")
+            return {"success": False, "error": str(exc)}
+
+    @staticmethod
+    def actualizar_personas_conveniadas_nomina_ajax(request):
+        try:
+            admision_id = request.POST.get("admision_id")
+            valor_raw = request.POST.get("personas_conveniadas_nomina", "").strip()
+            if not admision_id:
+                return {"success": False, "error": "ID de admision requerido."}
+
+            admision = get_object_or_404(Admision, id=admision_id)
+            if not AdmisionService._puede_editar_personas_conveniadas_nomina(
+                request.user
+            ):
+                return {
+                    "success": False,
+                    "error": "No tiene permisos para editar esta admision.",
+                }
+            if not AdmisionService._admision_es_alimentar_comunidad(admision):
+                return {
+                    "success": False,
+                    "error": "Disponible solo para Alimentar Comunidad.",
+                }
+
+            if valor_raw == "":
+                nuevo_valor = None
+            else:
+                try:
+                    nuevo_valor = int(valor_raw)
+                except ValueError:
+                    return {
+                        "success": False,
+                        "error": "Debe ingresar un numero valido.",
+                    }
+                if nuevo_valor < 0:
+                    return {
+                        "success": False,
+                        "error": "El valor no puede ser negativo.",
+                    }
+
+            admision.personas_conveniadas_nomina = nuevo_valor
+            admision.save(update_fields=["personas_conveniadas_nomina"])
+            return {
+                "success": True,
+                "personas_conveniadas_nomina": admision.personas_conveniadas_nomina,
+            }
+        except Exception as exc:
+            logger.exception("Error en actualizar_personas_conveniadas_nomina_ajax")
+            return {"success": False, "error": str(exc)}
+
+    @staticmethod
     def _build_error_response_actualizar_num_expediente(message):
         return {"success": False, "error": message}
 
@@ -3113,7 +3229,7 @@ class AdmisionService:
 
         if (
             informe_tecnico
-            and informe_tecnico.estado == "Validado"
+            and informe_tecnico.estado_formulario == "finalizado"
             and mostrar_informe_complementario
         ):
             botones.append("informe_tecnico_complementario")

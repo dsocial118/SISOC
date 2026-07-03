@@ -897,7 +897,7 @@ class RendicionCuentaMensualService:
         try:
             return (
                 RendicionCuentaMensual.objects.filter(deleted_at__isnull=True)
-                .select_related("comedor")
+                .select_related("comedor", "comedor__organizacion")
                 .order_by("-ultima_modificacion", "-id")
             )
         except Exception:

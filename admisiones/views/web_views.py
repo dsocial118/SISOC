@@ -727,6 +727,24 @@ def actualizar_convenio_numero(request):
 
 @login_required
 @require_POST
+def actualizar_vigente_pwa(request):
+    resultado = AdmisionService.actualizar_vigente_pwa_ajax(request)
+    if not resultado.get("success"):
+        return JsonResponse(resultado, status=400)
+    return JsonResponse(resultado)
+
+
+@login_required
+@require_POST
+def actualizar_personas_conveniadas_nomina(request):
+    resultado = AdmisionService.actualizar_personas_conveniadas_nomina_ajax(request)
+    if not resultado.get("success"):
+        return JsonResponse(resultado, status=400)
+    return JsonResponse(resultado)
+
+
+@login_required
+@require_POST
 def actualizar_num_expediente(request):
     resultado = AdmisionService.actualizar_num_expediente_ajax(request)
 
@@ -1456,6 +1474,7 @@ class InformeTecnicoComplementarioDetailView(LoginRequiredMixin, DetailView):
 
     def post(self, request, *args, **kwargs):
         self.object = self.get_object()
+        tipo = self.kwargs.get("tipo", "base")
 
         campos_modificados = {
             key.replace("campo_", ""): value.strip()

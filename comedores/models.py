@@ -499,6 +499,90 @@ class ComedorDatosConvenioPnud(models.Model):
     )
     personas_conveniadas = models.PositiveIntegerField(null=True, blank=True)
     cantidad_modulos = models.PositiveIntegerField(null=True, blank=True)
+    aprobadas_desayuno_lunes = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_desayuno_martes = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_desayuno_miercoles = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_desayuno_jueves = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_desayuno_viernes = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_desayuno_sabado = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_desayuno_domingo = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_almuerzo_lunes = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_almuerzo_martes = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_almuerzo_miercoles = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_almuerzo_jueves = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_almuerzo_viernes = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_almuerzo_sabado = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_almuerzo_domingo = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_merienda_lunes = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_merienda_martes = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_merienda_miercoles = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_merienda_jueves = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_merienda_viernes = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_merienda_sabado = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_merienda_domingo = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_cena_lunes = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_cena_martes = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_cena_miercoles = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_cena_jueves = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_cena_viernes = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_cena_sabado = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_cena_domingo = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
     actualizado_en = models.DateTimeField(auto_now=True)
 
     class Meta:

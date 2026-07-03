@@ -14,6 +14,7 @@ from django.urls import reverse
 from openpyxl import load_workbook
 
 from celiaquia.models import (
+    EstadoCupo,
     EstadoExpediente,
     EstadoLegajo,
     Expediente,
@@ -22,6 +23,7 @@ from celiaquia.models import (
     RevisionTecnico,
 )
 from celiaquia.services.padron_final_service import (
+    ESTADO_CUPO_HEADER,
     NOMINA_HEADERS,
     PadronFinalService,
 )
@@ -80,9 +82,19 @@ def _crear_ciudadano(documento, apellido=None, nombre=None, **extra):
     )
 
 
-def _crear_legajo(expediente, documento, *, revision, sintys, rol=None, **extra):
+def _crear_legajo(
+    expediente,
+    documento,
+    *,
+    revision,
+    sintys,
+    rol=None,
+    estado_cupo=None,
+    **extra,
+):
     estado_legajo, _ = EstadoLegajo.objects.get_or_create(nombre="VALIDO")
     ciudadano = _crear_ciudadano(documento, **extra)
+    legajo_extra = {"estado_cupo": estado_cupo} if estado_cupo is not None else {}
     return ExpedienteCiudadano.objects.create(
         expediente=expediente,
         ciudadano=ciudadano,
@@ -90,6 +102,7 @@ def _crear_legajo(expediente, documento, *, revision, sintys, rol=None, **extra)
         revision_tecnico=revision,
         resultado_sintys=sintys,
         rol=rol or ExpedienteCiudadano.ROLE_BENEFICIARIO,
+        **legajo_extra,
     )
 
 
@@ -143,7 +156,7 @@ def test_nomina_aprobados_se_genera_desde_base_y_filtra_aprobados():
         PadronFinalService.generar_padron_final_excel(expediente)
     )
 
-    assert list(header) == NOMINA_HEADERS
+    assert list(header) == NOMINA_HEADERS + [ESTADO_CUPO_HEADER]
     assert len(data_rows) == 1
     assert _col("documento", data_rows[0]) == "20392317989"
     assert _col("apellido", data_rows[0]) == "ALZUETA"
@@ -231,6 +244,37 @@ def test_nomina_aprobados_incluye_datos_del_responsable():
 
 
 @pytest.mark.django_db
+def test_nomina_aprobados_marca_estado_de_cupo():
+    """El padron incluye a todos los aprobados+match y marca el estado de cupo."""
+    owner = _user("prov-estado-cupo")
+    expediente = _expediente(owner)
+    _crear_legajo(
+        expediente,
+        "20392317701",
+        revision=RevisionTecnico.APROBADO,
+        sintys=ResultadoSintys.MATCH,
+        estado_cupo=EstadoCupo.DENTRO,
+    )
+    _crear_legajo(
+        expediente,
+        "20455317702",
+        revision=RevisionTecnico.APROBADO,
+        sintys=ResultadoSintys.MATCH,
+        estado_cupo=EstadoCupo.FUERA,
+    )
+
+    header, data_rows = _workbook_rows(
+        PadronFinalService.generar_padron_final_excel(expediente)
+    )
+
+    assert header[-1] == ESTADO_CUPO_HEADER
+    assert len(data_rows) == 2
+    estado_por_doc = {_col("documento", row): row[-1] for row in data_rows}
+    assert estado_por_doc["20392317701"] == "Con cupo asignado"
+    assert estado_por_doc["20455317702"] == "Lista de espera"
+
+
+@pytest.mark.django_db
 def test_nomina_aprobados_se_recalcula_con_resultado_sintys_actual():
     owner = _user("prov-reproceso")
     expediente = _expediente(owner)
@@ -243,7 +287,7 @@ def test_nomina_aprobados_se_recalcula_con_resultado_sintys_actual():
     )
     reprocesado = _crear_legajo(
         expediente,
-        "20392317002",
+        "20455317002",
         revision=RevisionTecnico.APROBADO,
         sintys=ResultadoSintys.NO_MATCH,
         apellido="BBB",
@@ -262,7 +306,7 @@ def test_nomina_aprobados_se_recalcula_con_resultado_sintys_actual():
     )
     assert [_col("documento", row) for row in data_rows] == [
         "20392317001",
-        "20392317002",
+        "20455317002",
     ]
 
 
@@ -352,7 +396,7 @@ def test_descarga_nomina_aprobados_finalizada_devuelve_xlsx(client):
         in response.headers["Content-Disposition"]
     )
     header, data_rows = _workbook_rows(response.content)
-    assert list(header) == NOMINA_HEADERS
+    assert list(header) == NOMINA_HEADERS + [ESTADO_CUPO_HEADER]
     assert _col("documento", data_rows[0]) == "20392317201"
 
 

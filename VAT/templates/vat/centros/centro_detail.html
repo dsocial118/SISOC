@@ -1425,10 +1425,12 @@
                                                 <p class="sisoc-data-label">CUE</p>
                                                 <p class="sisoc-data-value">#{{ centro.codigo|default:"-" }}</p>
                                             </div>
-                                            <div class="sisoc-data-item">
-                                                <p class="sisoc-data-label">Sector de gestión</p>
-                                                <p class="sisoc-data-value">{{ centro.tipo_gestion|default:"-" }}</p>
-                                            </div>
+                                            {% if mostrar_datos_administrativos %}
+                                                <div class="sisoc-data-item">
+                                                    <p class="sisoc-data-label">Sector de gestión</p>
+                                                    <p class="sisoc-data-value">{{ centro.tipo_gestion|default:"-" }}</p>
+                                                </div>
+                                            {% endif %}
                                             <div class="sisoc-data-item">
                                                 <p class="sisoc-data-label">Domicilio</p>
                                                 <p class="sisoc-data-value">

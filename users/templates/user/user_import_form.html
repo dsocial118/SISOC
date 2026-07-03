@@ -1,14 +1,14 @@
 {% extends "includes/main.html" %}
 {% load crispy_forms_tags %}
-{% block title %}Importacion masiva de usuarios{% endblock %}
-{% block titulo-pagina %}Importacion masiva de usuarios{% endblock %}
+{% block title %}Gestor masivo de usuarios{% endblock %}
+{% block titulo-pagina %}Gestor masivo de usuarios{% endblock %}
 {% block breadcrumb %}
     <ol class="breadcrumb float-sm-right">
         <li class="breadcrumb-item">Administracion</li>
         <li class="breadcrumb-item">
             <a href="{% url 'usuarios' %}">Usuarios</a>
         </li>
-        <li class="breadcrumb-item active">Importacion masiva</li>
+        <li class="breadcrumb-item active">Gestor masivo</li>
     </ol>
 {% endblock %}
 {% block content %}
@@ -16,7 +16,7 @@
         <div class="col-12 col-lg-8">
             <div class="card shadow-sm">
                 <div class="card-header">
-                    <h3 class="mb-0">Importacion masiva de usuarios</h3>
+                    <h3 class="mb-0">Gestor masivo de usuarios</h3>
                 </div>
                 <div class="card-body">
                     <p class="text-muted">
@@ -47,12 +47,29 @@
                                 <code>Correo</code> — email (se usara como identificador unico)
                             </li>
                             <li>
-                                <code>Permisos</code> — nombres de grupos separados por <code>;</code>
-                                (o codenames de permisos PWA si se marca "Usuarios de la PWA")
+                                <code>Permisos</code> — nombres de grupos y/o codenames de permisos PWA
+                                delegables, separados por <code>;</code>. Cada valor se busca primero
+                                como nombre de grupo; si no existe, se busca como permiso PWA que usted
+                                pueda delegar. Aplica igual con o sin "Usuarios de la PWA" marcado.
                                 <br />
-                                <small class="text-muted">Ej SISOC: <code>Comedores Ver;Comedores Listar;Comedores Crear</code></small>
-                                <br />
-                                <small class="text-muted">Ej PWA: <code>manage_nomina_pwa;manage_mobile_rendicion</code></small>
+                                <small class="text-muted">Ej: <code>Comedores Ver;Comedores Listar;manage_nomina_pwa</code></small>
+                            </li>
+                            <li>
+                                <code>Accion grupos</code> — opcional (si se deja en blanco se usa
+                                <code>agregar</code>). Define que hacer con los grupos y permisos de la
+                                columna <code>Permisos</code> cuando la fila actualiza un usuario
+                                existente:
+                                <ul class="mb-0">
+                                    <li>
+                                        <code>agregar</code>: suma los grupos/permisos indicados a los que ya tiene.
+                                    </li>
+                                    <li>
+                                        <code>quitar</code>: remueve los indicados, conserva el resto.
+                                    </li>
+                                    <li>
+                                        <code>reemplazar</code>: deja exactamente los indicados (salvo los que usted no pueda delegar, que se preservan).
+                                    </li>
+                                </ul>
                             </li>
                             <li>
                                 <code>Provincias</code> — nombres de provincias separados por <code>;</code>

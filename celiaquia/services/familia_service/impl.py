@@ -22,6 +22,33 @@ def _legajo_tiene_rol_responsable(legajo):
     return not rol or rol in ROLES_RESPONSABLE_EXPEDIENTE
 
 
+def _refrescar_archivos_ok(ciudadano_ids):
+    """Recalcula el flag cacheado ``archivos_ok`` de los legajos de esos ciudadanos.
+
+    El conjunto de documentos requeridos depende del rol y de la relación
+    familiar; al crear o cambiar una relación responsable-hijo ese conjunto
+    puede cambiar sin que se re-guarde el legajo, dejando ``archivos_ok``
+    desactualizado (y con él la métrica "Documentación completa" del reporter).
+    Se actualiza solo el campo, sin disparar el ``save()`` completo del modelo.
+    """
+    from celiaquia.models import (  # pylint: disable=import-outside-toplevel
+        ExpedienteCiudadano,
+    )
+    from celiaquia.services.legajo_service import (  # pylint: disable=import-outside-toplevel
+        LegajoService,
+    )
+
+    ids = [cid for cid in ciudadano_ids if cid]
+    if not ids:
+        return
+    for legajo in ExpedienteCiudadano.objects.filter(
+        ciudadano_id__in=ids
+    ).select_related("ciudadano"):
+        nuevo = LegajoService.tiene_archivos_requeridos(legajo)
+        if legajo.archivos_ok != nuevo:
+            ExpedienteCiudadano.objects.filter(pk=legajo.pk).update(archivos_ok=nuevo)
+
+
 class FamiliaService:
     """Servicios auxiliares para gestionar relaciones familiares."""
 
@@ -60,6 +87,10 @@ class FamiliaService:
 
                     if campos_actualizar:
                         relacion.save(update_fields=campos_actualizar)
+
+                # La nueva relación puede cambiar los documentos requeridos del
+                # responsable y del hijo: refrescar su archivos_ok cacheado.
+                _refrescar_archivos_ok([responsable_id, hijo_id])
 
                 logger.info(
                     "Relacion familiar responsable=%s hijo=%s creada=%s",

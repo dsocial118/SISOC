@@ -233,7 +233,7 @@ def test_get_prestacion_conformidad_pending_period_todos_pendientes(mocker):
     mocker.patch(
         "comedores.utils.PrestacionAlimentariaConformidad.objects.filter",
         return_value=SimpleNamespace(
-            values_list=lambda *_a, **_kw: [],
+            exists=lambda: False,
         ),
     )
 
@@ -248,18 +248,10 @@ def test_get_prestacion_conformidad_pending_period_sin_pendientes(mocker):
     _mock_today(mocker, date(2026, 6, 17))
 
     # Todos los períodos ya registrados
-    periodos_existentes = [
-        date(2026, 5, 1),
-        date(2026, 4, 1),
-        date(2026, 3, 1),
-        date(2026, 2, 1),
-        date(2026, 1, 1),
-        date(2025, 12, 1),
-    ]
     mocker.patch(
         "comedores.utils.PrestacionAlimentariaConformidad.objects.filter",
         return_value=SimpleNamespace(
-            values_list=lambda *_a, **_kw: periodos_existentes,
+            exists=lambda: True,
         ),
     )
 

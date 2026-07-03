@@ -1,6 +1,9 @@
 {% extends "includes/main.html" %}
 {% load static %}
 {% block title %}Actividades{% endblock %}
+{% block head %}
+    <link rel="stylesheet" href="{% static 'custom/css/cdf.css' %}" />
+{% endblock %}
 {% block breadcrumb %}
     {% include 'components/breadcrumb.html' with items=breadcrumb_items %}
 {% endblock %}
@@ -11,7 +14,7 @@
     {% include 'components/action_buttons.html' with buttons=action_buttons class="row mt-3" %}
 
     <!-- Actividad Data Table -->
-    <div class="row mt-4">
+    <div class="row mt-4 cdf-page">
         <div class="col-12">
             <div class="card">
                 <div class="card-body">

@@ -14,6 +14,10 @@ from django.db import IntegrityError, transaction
 from django.db.models import F, Q
 from django.utils import timezone
 
+from comedores.models import Comedor
+from comedores.services.capacitaciones_certificados_service import (
+    is_alimentar_comunidad_program,
+)
 from users.models import AccesoComedorPWA, AuditAccesoComedorPWA, Profile
 from users.profile_utils import get_profile_or_none
 from iam.services import get_effective_permission_codes
@@ -21,8 +25,9 @@ from iam.services import get_effective_permission_codes
 User = get_user_model()
 
 PWA_USUARIOS_PERMISSION_CODE = "pwa.manage_usuarios_pwa"
+MOBILE_RENDICION_PERMISSION_CODE = "rendicioncuentasmensual.manage_mobile_rendicion"
 PWA_ASSIGNABLE_PERMISSION_CODES = {
-    "rendicioncuentasmensual.manage_mobile_rendicion",
+    MOBILE_RENDICION_PERMISSION_CODE,
     "pwa.manage_prestaciones_mensuales_pwa",
     "pwa.manage_nomina_pwa",
     "pwa.manage_colaboradores_pwa",
@@ -181,19 +186,44 @@ def _resolve_permission_codes(permission_codes: Iterable[str]) -> list[Permissio
     return permissions
 
 
-def get_assignable_pwa_permission_codes(actor) -> list[str]:
+def _is_alimentar_comunidad_comedor(comedor_id: int | None) -> bool:
+    if not comedor_id:
+        return False
+    comedor = Comedor.objects.select_related("programa").filter(pk=comedor_id).first()
+    return bool(comedor and is_alimentar_comunidad_program(comedor))
+
+
+def _filter_permission_codes_for_comedor_context(
+    permission_codes: Iterable[str],
+    comedor_id: int | None,
+) -> list[str]:
+    codes = {str(code).strip() for code in permission_codes or [] if str(code).strip()}
+    if _is_alimentar_comunidad_comedor(comedor_id):
+        codes.discard(MOBILE_RENDICION_PERMISSION_CODE)
+    return sorted(codes)
+
+
+def get_assignable_pwa_permission_codes(
+    actor, comedor_id: int | None = None
+) -> list[str]:
     actor_codes = set(get_effective_permission_codes(actor))
     actor_codes.discard(PWA_USUARIOS_PERMISSION_CODE)
-    return sorted(actor_codes & PWA_ASSIGNABLE_PERMISSION_CODES)
+    return _filter_permission_codes_for_comedor_context(
+        actor_codes & PWA_ASSIGNABLE_PERMISSION_CODES,
+        comedor_id,
+    )
 
 
 def _validate_assignable_permissions(
-    actor, permission_codes: Iterable[str]
+    actor, permission_codes: Iterable[str], comedor_id: int | None = None
 ) -> list[str]:
     requested_codes = {
         str(code).strip() for code in permission_codes or [] if str(code).strip()
     }
-    allowed_codes = set(get_assignable_pwa_permission_codes(actor))
+    allowed_codes = set(get_assignable_pwa_permission_codes(actor, comedor_id))
+    requested_codes = set(
+        _filter_permission_codes_for_comedor_context(requested_codes, comedor_id)
+    )
     denied_codes = sorted(requested_codes - allowed_codes)
     if denied_codes:
         raise ValidationError(
@@ -249,14 +279,13 @@ def create_operador_for_comedor(
     requested_permission_codes = _validate_assignable_permissions(
         actor,
         permission_codes or [],
+        comedor_id,
     )
 
     username = (username or "").strip()
     email = (email or "").strip()
     if not username:
         raise ValidationError({"username": "Este campo es obligatorio."})
-    if not email:
-        raise ValidationError({"email": "Este campo es obligatorio."})
     if not password:
         raise ValidationError({"password": "Este campo es obligatorio."})
     password_user = User(username=username, email=email)
@@ -368,6 +397,7 @@ def update_operador_permissions(
     requested_permission_codes = _validate_assignable_permissions(
         actor,
         permission_codes or [],
+        comedor_id,
     )
     previous_permission_codes = _get_effective_mobile_permission_codes(acceso.user)
     acceso.user.user_permissions.set(

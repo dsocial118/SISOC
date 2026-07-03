@@ -43,6 +43,73 @@
                     <div class="col-md-6">{{ form.prestaciones_financiadas_mensuales|as_crispy_field }}</div>
                     <div class="col-md-6">{{ form.personas_conveniadas|as_crispy_field }}</div>
                     <div class="col-md-6">{{ form.cantidad_modulos|as_crispy_field }}</div>
+                    <div class="col-12 mt-3">
+                        <h6 class="fw-bold">Prestaciones por convenio</h6>
+                        <div class="table-responsive">
+                            <table class="table table-sm table-bordered align-middle">
+                                <thead>
+                                    <tr>
+                                        <th>D&iacute;a</th>
+                                        <th>Desayuno</th>
+                                        <th>Almuerzo</th>
+                                        <th>Merienda</th>
+                                        <th>Cena</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <th>Lunes</th>
+                                        <td>{{ form.aprobadas_desayuno_lunes }}{{ form.aprobadas_desayuno_lunes.errors }}</td>
+                                        <td>{{ form.aprobadas_almuerzo_lunes }}{{ form.aprobadas_almuerzo_lunes.errors }}</td>
+                                        <td>{{ form.aprobadas_merienda_lunes }}{{ form.aprobadas_merienda_lunes.errors }}</td>
+                                        <td>{{ form.aprobadas_cena_lunes }}{{ form.aprobadas_cena_lunes.errors }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Martes</th>
+                                        <td>{{ form.aprobadas_desayuno_martes }}{{ form.aprobadas_desayuno_martes.errors }}</td>
+                                        <td>{{ form.aprobadas_almuerzo_martes }}{{ form.aprobadas_almuerzo_martes.errors }}</td>
+                                        <td>{{ form.aprobadas_merienda_martes }}{{ form.aprobadas_merienda_martes.errors }}</td>
+                                        <td>{{ form.aprobadas_cena_martes }}{{ form.aprobadas_cena_martes.errors }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Mi&eacute;rcoles</th>
+                                        <td>{{ form.aprobadas_desayuno_miercoles }}{{ form.aprobadas_desayuno_miercoles.errors }}</td>
+                                        <td>{{ form.aprobadas_almuerzo_miercoles }}{{ form.aprobadas_almuerzo_miercoles.errors }}</td>
+                                        <td>{{ form.aprobadas_merienda_miercoles }}{{ form.aprobadas_merienda_miercoles.errors }}</td>
+                                        <td>{{ form.aprobadas_cena_miercoles }}{{ form.aprobadas_cena_miercoles.errors }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Jueves</th>
+                                        <td>{{ form.aprobadas_desayuno_jueves }}{{ form.aprobadas_desayuno_jueves.errors }}</td>
+                                        <td>{{ form.aprobadas_almuerzo_jueves }}{{ form.aprobadas_almuerzo_jueves.errors }}</td>
+                                        <td>{{ form.aprobadas_merienda_jueves }}{{ form.aprobadas_merienda_jueves.errors }}</td>
+                                        <td>{{ form.aprobadas_cena_jueves }}{{ form.aprobadas_cena_jueves.errors }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Viernes</th>
+                                        <td>{{ form.aprobadas_desayuno_viernes }}{{ form.aprobadas_desayuno_viernes.errors }}</td>
+                                        <td>{{ form.aprobadas_almuerzo_viernes }}{{ form.aprobadas_almuerzo_viernes.errors }}</td>
+                                        <td>{{ form.aprobadas_merienda_viernes }}{{ form.aprobadas_merienda_viernes.errors }}</td>
+                                        <td>{{ form.aprobadas_cena_viernes }}{{ form.aprobadas_cena_viernes.errors }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>S&aacute;bado</th>
+                                        <td>{{ form.aprobadas_desayuno_sabado }}{{ form.aprobadas_desayuno_sabado.errors }}</td>
+                                        <td>{{ form.aprobadas_almuerzo_sabado }}{{ form.aprobadas_almuerzo_sabado.errors }}</td>
+                                        <td>{{ form.aprobadas_merienda_sabado }}{{ form.aprobadas_merienda_sabado.errors }}</td>
+                                        <td>{{ form.aprobadas_cena_sabado }}{{ form.aprobadas_cena_sabado.errors }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Domingo</th>
+                                        <td>{{ form.aprobadas_desayuno_domingo }}{{ form.aprobadas_desayuno_domingo.errors }}</td>
+                                        <td>{{ form.aprobadas_almuerzo_domingo }}{{ form.aprobadas_almuerzo_domingo.errors }}</td>
+                                        <td>{{ form.aprobadas_merienda_domingo }}{{ form.aprobadas_merienda_domingo.errors }}</td>
+                                        <td>{{ form.aprobadas_cena_domingo }}{{ form.aprobadas_cena_domingo.errors }}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
                 <button type="submit" class="btn btn-primary">Guardar</button>
             </form>

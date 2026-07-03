@@ -1,10 +1,10 @@
 """
-Servicio para generar padrón final del expediente de celiaquía.
+Servicio para generar padron final del expediente de celiaquia.
 
-La nómina de aprobados se construye desde la base de datos (legajos
+La nomina de aprobados se construye desde la base de datos (legajos
 aprobados con MATCH de Sintys), no desde el Excel original cargado por la
-provincia. El archivo original queda estático, mientras que los datos de
-los ciudadanos pueden corregirse después de la importación; la base es la
+provincia. El archivo original queda estatico, mientras que los datos de
+los ciudadanos pueden corregirse despues de la importacion; la base es la
 fuente de verdad.
 """
 
@@ -13,9 +13,16 @@ from io import BytesIO
 
 from openpyxl import Workbook
 
-from celiaquia.models import ExpedienteCiudadano, ResultadoSintys, RevisionTecnico
+from celiaquia.models import (
+    EstadoCupo,
+    ExpedienteCiudadano,
+    ResultadoSintys,
+    RevisionTecnico,
+)
 from celiaquia.services.cruce_service import CruceService
 
+
+ESTADO_CUPO_HEADER = "Estado de cupo"
 
 NOMINA_HEADERS = [
     "apellido",
@@ -78,7 +85,9 @@ class PadronFinalService:
             responsable = responsables[0] if responsables else None
             rows.append(PadronFinalService._fila_beneficiario(legajo, responsable))
 
-        return PadronFinalService._build_excel(NOMINA_HEADERS, rows)
+        return PadronFinalService._build_excel(
+            [*NOMINA_HEADERS, ESTADO_CUPO_HEADER], rows
+        )
 
     @staticmethod
     def _legajos_aprobados(expediente):
@@ -104,6 +113,15 @@ class PadronFinalService:
         return "" if value is None else str(value)
 
     @staticmethod
+    def _estado_cupo_label(estado_cupo) -> str:
+        """Etiqueta legible del estado de cupo para la columna del padron."""
+        if estado_cupo == EstadoCupo.DENTRO:
+            return "Con cupo asignado"
+        if estado_cupo == EstadoCupo.FUERA:
+            return "Lista de espera"
+        return "Sin evaluar"
+
+    @staticmethod
     def _fila_beneficiario(legajo, responsable) -> list:
         ciudadano = legajo.ciudadano
         fila = [
@@ -123,26 +141,26 @@ class PadronFinalService:
         ]
         if responsable is None:
             fila.extend([""] * 9)
-            return fila
-
-        domicilio = " ".join(
-            PadronFinalService._texto(parte)
-            for parte in (responsable.calle, responsable.altura)
-            if parte not in (None, "")
-        )
-        fila.extend(
-            [
-                responsable.apellido or "",
-                responsable.nombre or "",
-                PadronFinalService._texto(responsable.documento),
-                responsable.fecha_nacimiento,
-                CruceService.normalizar_sexo_para_exportacion(responsable),
-                domicilio,
-                PadronFinalService._texto(responsable.localidad),
-                responsable.telefono or "",
-                responsable.email or "",
-            ]
-        )
+        else:
+            domicilio = " ".join(
+                PadronFinalService._texto(parte)
+                for parte in (responsable.calle, responsable.altura)
+                if parte not in (None, "")
+            )
+            fila.extend(
+                [
+                    responsable.apellido or "",
+                    responsable.nombre or "",
+                    PadronFinalService._texto(responsable.documento),
+                    responsable.fecha_nacimiento,
+                    CruceService.normalizar_sexo_para_exportacion(responsable),
+                    domicilio,
+                    PadronFinalService._texto(responsable.localidad),
+                    responsable.telefono or "",
+                    responsable.email or "",
+                ]
+            )
+        fila.append(PadronFinalService._estado_cupo_label(legajo.estado_cupo))
         return fila
 
     @staticmethod

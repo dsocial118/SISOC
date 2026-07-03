@@ -258,6 +258,74 @@
                         </li>
                         <li class="nav-item">
                             <div class="comment-text">
+                                Vigente PWA:
+                                {% if puede_editar_convenio_numero %}
+                                    <div class="form-check form-switch d-inline-block ms-2">
+                                        <input class="form-check-input"
+                                               type="checkbox"
+                                               role="switch"
+                                               id="vigente-pwa-input"
+                                               data-call-change="actualizarVigentePwa"
+                                               data-call-pass-this="true"
+                                               {% if admision.vigente_pwa %}checked{% endif %} />
+                                        <label class="form-check-label" for="vigente-pwa-input">Admisi&oacute;n vigente</label>
+                                    </div>
+                                {% elif admision.vigente_pwa %}
+                                    <span class="badge bg-success">Vigente</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">No vigente</span>
+                                {% endif %}
+                            </div>
+                        </li>
+                        {% if mostrar_personas_conveniadas_nomina %}
+                            <li class="nav-item">
+                                <div class="comment-text">
+                                    Personas conveniadas n&oacute;mina:
+                                    {% if puede_editar_personas_conveniadas_nomina %}
+                                        <div class="d-inline-flex align-items-center gap-2">
+                                            <div id="personas-conveniadas-nomina-display"
+                                                 class="convenio-numero-display"
+                                                 data-call-click="activarEdicionPersonasConveniadasNomina">
+                                                {% if admision.personas_conveniadas_nomina is not None %}
+                                                    <span class="text-success fw-bold">{{ admision.personas_conveniadas_nomina }}</span>
+                                                    <i class="bi bi-pencil-square ms-2 text-muted"
+                                                       title="Editar personas conveniadas n&oacute;mina"></i>
+                                                {% else %}
+                                                    <span class="text-muted">Sin personas conveniadas n&oacute;mina</span>
+                                                    <i class="bi bi-plus-circle ms-2 text-primary"
+                                                       title="Agregar personas conveniadas n&oacute;mina"></i>
+                                                {% endif %}
+                                            </div>
+                                            <div id="personas-conveniadas-nomina-edit"
+                                                 class="convenio-numero-edit d-none">
+                                                <input type="number"
+                                                       id="personas-conveniadas-nomina-input"
+                                                       class="form-control form-control-sm"
+                                                       value="{{ admision.personas_conveniadas_nomina|default_if_none:'' }}"
+                                                       min="0"
+                                                       step="1" />
+                                                <button type="button"
+                                                        class="btn btn-success btn-sm convenio-numero-btn"
+                                                        data-call-click="guardarPersonasConveniadasNomina"
+                                                        title="Guardar">
+                                                    <i class="bi bi-check-lg"></i>
+                                                </button>
+                                                <button type="button"
+                                                        class="btn btn-danger btn-sm convenio-numero-btn"
+                                                        data-call-click="cancelarEdicionPersonasConveniadasNomina"
+                                                        title="Cancelar">
+                                                    <i class="bi bi-x-lg"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    {% else %}
+                                        <span class="fw-bold">{{ admision.personas_conveniadas_nomina|default_if_none:"-" }}</span>
+                                    {% endif %}
+                                </div>
+                            </li>
+                        {% endif %}
+                        <li class="nav-item">
+                            <div class="comment-text">
                                 Tipo:
                                 <span class="fw-bold">{{ admision.get_tipo_display| default_if_none:"Sin información" }}</span>
                             </div>
@@ -898,6 +966,21 @@
                                     aria-label="Cerrar"></button>
                         </div>
                     </div>
+                    <div id="toastPersonasConveniadasNominaExito"
+                         class="toast align-items-center text-bg-success border-0"
+                         role="alert"
+                         aria-live="assertive"
+                         aria-atomic="true">
+                        <div class="d-flex">
+                            <div class="toast-body">
+                                <h6>Personas conveniadas n&oacute;mina actualizadas con &eacute;xito.</h6>
+                            </div>
+                            <button type="button"
+                                    class="btn-close btn-close-white me-2 m-auto"
+                                    data-bs-dismiss="toast"
+                                    aria-label="Cerrar"></button>
+                        </div>
+                    </div>
                     <div id="toastNumExpedienteExito"
                          class="toast align-items-center text-bg-success border-0"
                          role="alert"
@@ -1015,6 +1098,8 @@
                      data-url-actualizar-numero-gde="{% url 'actualizar_numero_gde_archivo' %}"
                      data-url-actualizar-numero-gde-organizacion="{% url 'actualizar_numero_gde_organizacion_admision' %}"
                      data-url-actualizar-convenio-numero="{% url 'actualizar_convenio_numero' %}"
+                     data-url-actualizar-vigente-pwa="{% url 'actualizar_vigente_pwa' %}"
+                     data-url-actualizar-personas-conveniadas-nomina="{% url 'actualizar_personas_conveniadas_nomina' %}"
                      data-url-actualizar-num-expediente="{% url 'actualizar_num_expediente' %}"
                      data-url-crear-documento-personalizado="{% url 'documento_personalizado_crear' admision.id %}"
                      data-url-resync-convenio="{% url 'admision_resync_convenio' admision.id %}"
