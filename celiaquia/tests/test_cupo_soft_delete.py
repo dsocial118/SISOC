@@ -65,6 +65,34 @@ def test_soft_delete_titular_libera_cupo_y_restore_lo_recupera():
 
 
 @pytest.mark.django_db
+def test_restore_titular_sin_cupo_disponible_no_supera_total_y_queda_fuera():
+    prov = Provincia.objects.create(nombre="Sin Cupo Restore")
+    ProvinciaCupo.objects.create(provincia=prov, total_asignado=1, usados=0)
+    user = User.objects.create_superuser("cupo-restore-full", password="x")
+    exp = Expediente.objects.create(
+        usuario_provincia=user,
+        estado=EstadoExpediente.objects.create(nombre="CRUCE_FINALIZADO"),
+    )
+    est_leg = EstadoLegajo.objects.create(nombre="VALIDO")
+
+    legajo_restaurado = _titular(exp, est_leg, prov, 30000004)
+    assert _usados(prov) == 1
+
+    legajo_restaurado.delete(user=user)
+    assert _usados(prov) == 0
+
+    _titular(exp, est_leg, prov, 30000005)
+    assert _usados(prov) == 1
+
+    legajo_restaurado.restore(user=user)
+    legajo_restaurado.refresh_from_db()
+
+    assert _usados(prov) == 1
+    assert legajo_restaurado.estado_cupo == EstadoCupo.FUERA
+    assert legajo_restaurado.es_titular_activo is False
+
+
+@pytest.mark.django_db
 def test_delete_expediente_en_cascada_libera_cupo_de_sus_titulares():
     prov = Provincia.objects.create(nombre="Cascadia")
     ProvinciaCupo.objects.create(provincia=prov, total_asignado=5, usados=0)

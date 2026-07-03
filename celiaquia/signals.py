@@ -1,5 +1,6 @@
 import logging
 
+from django.db import transaction
 from django.db.models import F, Q
 from django.db.models.signals import pre_save
 from django.dispatch import receiver
@@ -12,6 +13,7 @@ from .models import (
     Expediente,
     ExpedienteEstadoHistorial,
     ExpedienteCiudadano,
+    HistorialCupo,
     ProvinciaCupo,
     TipoMovimientoCupo,
 )
@@ -152,45 +154,82 @@ def _ajustar_usados_por_ciclo_vida_legajo(legajo, *, delta, tipo, motivo, user=N
     ``usados`` (delta=-1) y al restaurarlo se vuelve a contar (delta=+1). Antes,
     soft-borrar un titular dejaba ``usados`` inflado y descuadraba el cupo.
     """
-    if legajo.estado_cupo != EstadoCupo.DENTRO:
-        return
-    if (legajo.rol or "").strip().lower() == ExpedienteCiudadano.ROLE_RESPONSABLE:
-        return
-
     from ciudadanos.models import Ciudadano  # pylint: disable=import-outside-toplevel
 
-    provincia_id = (
-        Ciudadano.all_objects.filter(pk=legajo.ciudadano_id)
-        .values_list("provincia_id", flat=True)
-        .first()
-    )
-    if not provincia_id:
-        return
-    pc = ProvinciaCupo.objects.filter(provincia_id=provincia_id).first()
-    if pc is None:
-        return
+    with transaction.atomic():
+        if legajo.estado_cupo != EstadoCupo.DENTRO:
+            return
+        if ExpedienteCiudadano.es_rol_responsable_puro(legajo.rol):
+            return
 
-    if delta < 0:
-        cambiado = ProvinciaCupo.objects.filter(pk=pc.pk, usados__gt=0).update(
-            usados=F("usados") - 1
+        provincia_id = (
+            Ciudadano.all_objects.filter(pk=legajo.ciudadano_id)
+            .values_list("provincia_id", flat=True)
+            .first()
         )
-    else:
-        cambiado = ProvinciaCupo.objects.filter(pk=pc.pk).update(usados=F("usados") + 1)
-    if not cambiado:
-        return
+        if not provincia_id:
+            return
+        try:
+            pc = (
+                ProvinciaCupo.objects.select_for_update()
+                .only("id", "usados", "total_asignado", "provincia_id")
+                .get(provincia_id=provincia_id)
+            )
+        except ProvinciaCupo.DoesNotExist:
+            return
 
-    CupoMovimiento.objects.create(
-        provincia_id=provincia_id,
-        expediente_id=legajo.expediente_id,
-        legajo=legajo,
-        tipo=tipo,
-        delta=delta,
-        motivo=motivo[:255],
-        usuario=user,
-    )
-    logger.info(
-        "Cupo %s (%s): legajo=%s provincia=%s", tipo, motivo, legajo.pk, provincia_id
-    )
+        if delta < 0:
+            if int(pc.usados or 0) <= 0:
+                return
+            cambiado = ProvinciaCupo.objects.filter(pk=pc.pk).update(
+                usados=F("usados") - 1
+            )
+        else:
+            disponibles = int(pc.total_asignado or 0) - int(pc.usados or 0)
+            if disponibles <= 0:
+                logger.warning(
+                    "Cupo restore sin disponibles: legajo=%s provincia=%s",
+                    legajo.pk,
+                    provincia_id,
+                )
+                ExpedienteCiudadano.all_objects.filter(pk=legajo.pk).update(
+                    estado_cupo=EstadoCupo.FUERA,
+                    es_titular_activo=False,
+                )
+                return
+            cambiado = ProvinciaCupo.objects.filter(pk=pc.pk).update(
+                usados=F("usados") + 1
+            )
+        if not cambiado:
+            return
+
+        motivo_auditoria = motivo[:255]
+        HistorialCupo.objects.create(
+            legajo=legajo,
+            estado_cupo_anterior=EstadoCupo.DENTRO,
+            estado_cupo_nuevo=EstadoCupo.DENTRO,
+            es_titular_activo_anterior=legajo.es_titular_activo,
+            es_titular_activo_nuevo=legajo.es_titular_activo,
+            tipo_movimiento=tipo,
+            usuario=user,
+            motivo=motivo_auditoria,
+        )
+        CupoMovimiento.objects.create(
+            provincia_id=provincia_id,
+            expediente_id=legajo.expediente_id,
+            legajo=legajo,
+            tipo=tipo,
+            delta=delta,
+            motivo=motivo_auditoria,
+            usuario=user,
+        )
+        logger.info(
+            "Cupo %s (%s): legajo=%s provincia=%s",
+            tipo,
+            motivo,
+            legajo.pk,
+            provincia_id,
+        )
 
 
 @receiver(post_soft_delete, sender=ExpedienteCiudadano)

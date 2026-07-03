@@ -19,7 +19,6 @@ from celiaquia.models import (  # pylint: disable=import-error
 from core.models import Provincia  # pylint: disable=import-error
 from users.territorial_scope import (  # pylint: disable=import-error
     apply_territorial_scope,
-    get_effective_scopes,
     get_full_province_scope_ids,
     is_territorial_user,
 )
@@ -256,9 +255,7 @@ def _get_provincia_actual(request, es_usuario_provincial):
     # su scope: si el ?provincia= no pertenece a sus scopes, se ignora (evita que
     # el chip "Alcance"/"Provincia" muestre el nombre de una provincia ajena).
     if provincia_id and es_usuario_provincial:
-        provincia_ids = {
-            scope.provincia_id for scope in get_effective_scopes(request.user)
-        }
+        provincia_ids = set(get_full_province_scope_ids(request.user))
         try:
             solicitada = int(provincia_id)
         except (TypeError, ValueError):
@@ -272,7 +269,9 @@ def _get_provincia_actual(request, es_usuario_provincial):
     if not es_usuario_provincial:
         return None
 
-    provincia_ids = [scope.provincia_id for scope in get_effective_scopes(request.user)]
+    # Mismo criterio que la validación de arriba y que _get_provincias_disponibles:
+    # el default también debe limitarse a provincias con alcance completo.
+    provincia_ids = get_full_province_scope_ids(request.user)
     return Provincia.objects.filter(pk__in=provincia_ids).order_by("nombre").first()
 
 

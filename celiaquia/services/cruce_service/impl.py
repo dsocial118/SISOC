@@ -117,7 +117,7 @@ class CruceService:
         propio cupo y deben entrar al padrón, aunque además sean cuidadores de otro
         beneficiario.
         """
-        return (rol or "").strip().lower() == ExpedienteCiudadano.ROLE_RESPONSABLE
+        return ExpedienteCiudadano.es_rol_responsable_puro(rol)
 
     @staticmethod
     def resolver_cuit_ciudadano(ciudadano) -> str:
