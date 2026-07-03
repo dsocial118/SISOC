@@ -19,6 +19,7 @@ from users.territorial_scope import (
 )
 
 GRUPO_CDF_REFERENTE_CENTRO = UserGroups.CDF_REFERENTE_CENTRO
+ROLE_CDF_SSE_PERMISSION = "auth.role_cdf_sse"
 
 
 def actor_puede_delegar_grupo_nombre(user, grupo_nombre):
@@ -100,6 +101,29 @@ def puede_ver_usuarios_cdf(user, centro):
     if not user or not getattr(user, "is_authenticated", False):
         return False
     if user.is_superuser:
+        return True
+
+    from centrodefamilia.models import AccesoCDF  # noqa: PLC0415
+
+    return AccesoCDF.objects.filter(centro=centro, user=user, activo=True).exists()
+
+
+def puede_tomar_asistencia_cdf(user, centro):
+    """Quién puede tomar asistencia en las actividades de un CDF.
+
+    El referente del centro (FK legacy o ``AccesoCDF`` activo), un usuario con
+    rol CDF SSE o un superusuario. Espeja el criterio de edición del centro.
+    """
+    if not user or not getattr(user, "is_authenticated", False):
+        return False
+    if user.is_superuser:
+        return True
+
+    from iam.services import user_has_permission_code  # noqa: PLC0415
+
+    if user_has_permission_code(user, ROLE_CDF_SSE_PERMISSION):
+        return True
+    if centro.referente_id == user.pk:
         return True
 
     from centrodefamilia.models import AccesoCDF  # noqa: PLC0415

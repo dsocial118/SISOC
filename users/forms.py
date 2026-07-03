@@ -1062,7 +1062,10 @@ class UserImportForm(forms.Form):
         label="Archivo Excel",
         validators=[FileExtensionValidator(["xlsx"])],
         widget=forms.ClearableFileInput(attrs={"accept": ".xlsx"}),
-        help_text="Archivo .xlsx con columnas: Nombre, Apellido, Correo, Permisos, Provincias, Rol.",
+        help_text=(
+            "Archivo .xlsx con columnas: Username, Nombre, Apellido, Correo, "
+            "Permisos, Provincias, Rol, Organizaciones, Comedores."
+        ),
     )
     enviar_credenciales = forms.BooleanField(
         label="Enviar credenciales por email",

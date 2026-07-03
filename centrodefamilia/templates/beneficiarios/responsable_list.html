@@ -2,6 +2,9 @@
 {% load static %}
 {% block title %}Listado de responsables{% endblock %}
 {% block titulo-pagina %}Responsables{% endblock %}
+{% block head %}
+    <link rel="stylesheet" href="{% static 'custom/css/cdf.css' %}" />
+{% endblock %}
 {% block breadcrumb %}
     {% include 'components/breadcrumb.html' with items=breadcrumb_items %}
 {% endblock %}
@@ -9,7 +12,7 @@
     <!-- Estilos modernos reutilizables para listados -->
     <link rel="stylesheet" href="{% static 'custom/css/listModerno.css' %}" />
     {% include 'components/search_bar.html' with titulo="Buscar Responsable" reset_url=reset_url filters_mode=filters_mode filters_js=filters_js filters_action=filters_action show_add_button=show_add_button %}
-    <div class="container mt-4">
+    <div class="container mt-4 cdf-page">
         <h2>Listado de Responsables</h2>
         {% load custom_filters %}
         {% include 'components/data_table.html' with headers=table_headers items=responsables show_actions=True actions=table_actions empty_message='No hay responsables disponibles.' fields=table_fields %}

@@ -34,6 +34,10 @@
                         </p>
                         <ul class="mb-2 pl-3">
                             <li>
+                                <code>Username</code> — opcional. Si se completa, se usa tal cual; si se deja en
+                                blanco, se genera automaticamente a partir del nombre y apellido.
+                            </li>
+                            <li>
                                 <code>Nombre</code> — nombre del usuario
                             </li>
                             <li>
@@ -44,20 +48,38 @@
                             </li>
                             <li>
                                 <code>Permisos</code> — nombres de grupos separados por <code>;</code>
+                                (o codenames de permisos PWA si se marca "Usuarios de la PWA")
                                 <br />
-                                <small class="text-muted">Ej: <code>Comedores Ver;Comedores Listar;Comedores Crear</code></small>
+                                <small class="text-muted">Ej SISOC: <code>Comedores Ver;Comedores Listar;Comedores Crear</code></small>
+                                <br />
+                                <small class="text-muted">Ej PWA: <code>manage_nomina_pwa;manage_mobile_rendicion</code></small>
                             </li>
                             <li>
                                 <code>Provincias</code> — nombres de provincias separados por <code>;</code>
+                                (no aplica a usuarios PWA)
                                 <br />
                                 <small class="text-muted">Ej: <code>CABA;BUENOS AIRES</code></small>
                             </li>
                             <li>
-                                <code>Rol</code> — descripcion textual del rol (ej: <code>TERRITORIAL</code>)
+                                <code>Rol</code> — descripcion textual del rol (ej: <code>TERRITORIAL</code>,
+                                no aplica a usuarios PWA)
+                            </li>
+                            <li>
+                                <code>Organizaciones</code> — IDs de organizaciones separados por <code>;</code>
+                                (solo para usuarios PWA). El usuario opera con todos los comedores de esas organizaciones.
+                                <br />
+                                <small class="text-muted">Ej: <code>3;7</code></small>
+                            </li>
+                            <li>
+                                <code>Comedores</code> — IDs de comedores separados por <code>;</code>
+                                (solo para usuarios PWA). Permite asignar comedores puntuales ademas o en lugar de organizaciones.
+                                <br />
+                                <small class="text-muted">Ej: <code>101;205</code></small>
                             </li>
                         </ul>
                         <p class="mb-0 text-muted small">
-                            Los nombres de grupos y provincias deben coincidir exactamente con los registros del sistema.
+                            Los nombres de grupos y provincias, y los IDs de organizaciones y comedores, deben
+                            coincidir exactamente con los registros del sistema.
                             Una fila invalida detiene el lote y puede reanudarse desde esa fila.
                         </p>
                     </div>

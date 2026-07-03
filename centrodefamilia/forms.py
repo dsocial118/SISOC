@@ -4,6 +4,7 @@ from django.core.exceptions import ValidationError
 from django.db import IntegrityError
 
 from ciudadanos.models import Ciudadano
+from core.constants import UserGroups
 from core.models import Dia, Sexo
 from centrodefamilia.models import (
     Centro,
@@ -69,9 +70,18 @@ class CentroForm(forms.ModelForm):
             self.fields["tipo"].widget = forms.HiddenInput()
             self.fields["faro_asociado"].disabled = True
 
-        self.fields["referente"].queryset = User.objects.filter(
-            groups__name="ReferenteCentro"
-        ).only("id", "username", "first_name", "last_name")
+        # Incluye el grupo legacy "ReferenteCentro" para no romper centros
+        # con referentes asignados antes del renombre del grupo.
+        self.fields["referente"].queryset = (
+            User.objects.filter(
+                groups__name__in=[
+                    UserGroups.CDF_REFERENTE_CENTRO,
+                    "ReferenteCentro",
+                ]
+            )
+            .only("id", "username", "first_name", "last_name")
+            .distinct()
+        )
 
         self.fields["faro_asociado"].queryset = Centro.objects.filter(
             tipo="faro", activo=True

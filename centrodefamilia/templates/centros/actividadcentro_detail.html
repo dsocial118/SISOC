@@ -1,6 +1,13 @@
 {% extends "includes/main.html" %}
 {% load static %}
 {% block title %}Detalle Actividad{% endblock %}
+{% block head %}
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Lora:wght@600;700&display=swap"
+          rel="stylesheet" />
+    <link rel="stylesheet" href="{% static 'custom/css/cdf.css' %}" />
+{% endblock %}
 {% block breadcrumb %}
     <ol class="breadcrumb float-sm-right">
         <li class="breadcrumb-item">
@@ -13,180 +20,249 @@
     </ol>
 {% endblock %}
 {% block content %}
-    <div class="container">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <h2 class="display-4 mb-0">{{ actividad.actividad.nombre }} - {{ actividad.centro.nombre }}</h2>
-            <div>
-                <a href="{% url 'centro_detail' actividad.centro.id %}"
-                   class="btn btn-secondary mr-2">Volver</a>
-                <a href="{% url 'actividadcentro_edit' pk=actividad.id %}"
-                   class="btn btn-warning btn-sm">Editar</a>
-                <a href="{% url 'participanteactividad_create' centro_id=actividad.centro.id actividad_id=actividad.id %}"
-                   class="btn btn-success btn-sm">Agregar Participante</a>
+    <div class="cdf-page">
+        <!-- HERO -->
+        <div class="cdf-hero">
+            <div class="cdf-hero-block">
+                <h1>{{ actividad.actividad.nombre }}</h1>
+                <p class="cdf-hero-sub">
+                    <span><i class="fas fa-house-chimney"></i>{{ actividad.centro.nombre }}</span>
+                    <span><i class="fas fa-layer-group"></i>{{ actividad.actividad.categoria.nombre }}</span>
+                    <span><i class="fas fa-clock"></i>{{ actividad.horariosdesde }} - {{ actividad.horarioshasta }}</span>
+                </p>
+            </div>
+            <span class="cdf-pill cdf-pill--teal">{{ actividad.get_estado_display }}</span>
+        </div>
+        <!-- ACCIONES -->
+        <div class="cdf-actions mb-4">
+            <a href="{% url 'centro_detail' actividad.centro.id %}" class="cdf-btn">
+                <i class="fas fa-arrow-left"></i>Volver
+            </a>
+            <a href="{% url 'actividadcentro_edit' pk=actividad.id %}"
+               class="cdf-btn">
+                <i class="fas fa-pen"></i>Editar
+            </a>
+            <a href="{% url 'participanteactividad_create' centro_id=actividad.centro.id actividad_id=actividad.id %}"
+               class="cdf-btn cdf-btn--primary">
+                <i class="fas fa-user-plus"></i>Agregar Participante
+            </a>
+            {% if puede_tomar_asistencia %}
+                <a href="{% url 'actividadcentro_asistencia' pk=actividad.id %}"
+                   class="cdf-btn cdf-btn--gold">
+                    <i class="fas fa-clipboard-check"></i>Tomar Asistencia
+                </a>
+            {% endif %}
+        </div>
+        <!-- FICHA -->
+        <div class="cdf-card">
+            <div class="cdf-card-head">
+                <i class="fas fa-circle-info"></i>
+                <span>Información de la actividad</span>
+            </div>
+            <div class="cdf-card-body">
+                <div class="cdf-info-grid">
+                    <div class="cdf-info-item">
+                        <i class="fas fa-house-chimney"></i>
+                        <div>
+                            <div class="cdf-info-label">Centro</div>
+                            <div class="cdf-info-value">{{ actividad.centro.nombre }}</div>
+                        </div>
+                    </div>
+                    <div class="cdf-info-item">
+                        <i class="fas fa-layer-group"></i>
+                        <div>
+                            <div class="cdf-info-label">Categoría</div>
+                            <div class="cdf-info-value">{{ actividad.actividad.categoria.nombre }}</div>
+                        </div>
+                    </div>
+                    <div class="cdf-info-item">
+                        <i class="fas fa-users"></i>
+                        <div>
+                            <div class="cdf-info-label">Cupo</div>
+                            <div class="cdf-info-value">{{ actividad.cantidad_personas }}</div>
+                        </div>
+                    </div>
+                    <div class="cdf-info-item">
+                        <i class="fas fa-venus-mars"></i>
+                        <div>
+                            <div class="cdf-info-label">Dirigido a</div>
+                            <div class="cdf-info-value">
+                                {% if actividad.sexoact.exists %}
+                                    {% for s in actividad.sexoact.all %}
+                                        {{ s.sexo }}
+                                        {% if not forloop.last %},{% endif %}
+                                    {% endfor %}
+                                {% else %}
+                                    Todos los sexos
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="cdf-info-item">
+                        <i class="fas fa-calendar-days"></i>
+                        <div>
+                            <div class="cdf-info-label">Días</div>
+                            <div class="cdf-info-value">
+                                {% if actividad.dias.exists %}
+                                    {% for dia in actividad.dias.all %}
+                                        {{ dia.nombre }}
+                                        {% if not forloop.last %},{% endif %}
+                                    {% endfor %}
+                                {% else %}
+                                    No asignado
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="cdf-info-item">
+                        <i class="fas fa-clock"></i>
+                        <div>
+                            <div class="cdf-info-label">Horario</div>
+                            <div class="cdf-info-value">{{ actividad.horariosdesde }} - {{ actividad.horarioshasta }}</div>
+                        </div>
+                    </div>
+                    <div class="cdf-info-item">
+                        <i class="fas fa-dollar-sign"></i>
+                        <div>
+                            <div class="cdf-info-label">Costo total</div>
+                            <div class="cdf-info-value">${{ precio_total }}</div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
-        <div class="card mb-4">
-            <div class="card-body">
-                <p>
-                    <strong>Centro:</strong> {{ actividad.centro.nombre }}
-                </p>
-                <p>
-                    <strong>Categoría:</strong> {{ actividad.actividad.categoria.nombre }}
-                </p>
-                <p>
-                    <strong>Cantidad de personas:</strong> {{ actividad.cantidad_personas }}
-                </p>
-                <p>
-                    <strong>Dirigido a personas:</strong>
-                    {% if actividad.sexoact.exists %}
-                        {% for s in actividad.sexoact.all %}
-                            {{ s.sexo }}
-                            {% if not forloop.last %},{% endif %}
-                        {% endfor %}
-                    {% else %}
-                        Todos los sexos
-                    {% endif %}
-                </p>
-                <p>
-                    <strong>Días:</strong>
-                    {% if actividad.dias.exists %}
-                        {% for dia in actividad.dias.all %}
-                            {{ dia.nombre }}
-                            {% if not forloop.last %},{% endif %}
-                        {% endfor %}
-                    {% else %}
-                        No asignado
-                    {% endif %}
-                </p>
-                <p>
-                    <strong>Horarios:</strong> {{ actividad.horariosdesde }} - {{ actividad.horarioshasta }}
-                </p>
-                <p>
-                    <strong>Costo total de la actividad:</strong> ${{ precio_total }}
-                </p>
+        <!-- INSCRITOS -->
+        <div class="cdf-card">
+            <div class="cdf-card-head">
+                <i class="fas fa-user-check"></i>
+                <span>Nómina de Participantes</span>
             </div>
-        </div>
-        <!-- Inscritos -->
-        <div class="card mb-4">
-            <div class="card-header">
-                <h3 class="card-title font-weight-bold">Nómina de Participantes</h3>
-            </div>
-            <div class="card-body table-responsive">
-                {% comment %} Filtrar participantes inscritos {% endcomment %}
+            <div class="cdf-card-body cdf-card-body--flush">
                 {% with inscritos=participantes %}
                     {% if inscritos %}
-                        <table class="table table-bordered table-hover table-striped">
+                        <div class="cdf-tbl-scroll">
+                            <table class="cdf-table">
+                                <thead>
+                                    <tr>
+                                        <th>Participante</th>
+                                        <th>DNI</th>
+                                        <th>Género</th>
+                                        <th>Fecha de Registro</th>
+                                        <th class="text-end">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for p in inscritos %}
+                                        {% if p.estado == 'inscrito' %}
+                                            <tr>
+                                                <td>
+                                                    <a href="{% url 'ciudadanos_ver' p.ciudadano.id %}">{{ p.ciudadano.apellido }}, {{ p.ciudadano.nombre }}</a>
+                                                </td>
+                                                <td>{{ p.ciudadano.documento }}</td>
+                                                <td>{{ p.ciudadano.sexo.sexo }}</td>
+                                                <td>{{ p.fecha_registro|date:"d/m/Y" }}</td>
+                                                <td class="text-end">
+                                                    <a href="{% url 'participanteactividad_delete' centro_id=actividad.centro.id actividad_id=actividad.id pk=p.id %}"
+                                                       class="cdf-btn cdf-btn--danger">Dar de baja</a>
+                                                </td>
+                                            </tr>
+                                        {% endif %}
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="cdf-empty">
+                            <i class="fas fa-user-plus"></i>
+                            <p class="cdf-empty-t">No hay participantes inscritos aún</p>
+                            <p class="cdf-empty-s">Sumá el primero desde "Agregar Participante".</p>
+                        </div>
+                    {% endif %}
+                {% endwith %}
+            </div>
+        </div>
+        <!-- LISTA DE ESPERA -->
+        <div class="cdf-card">
+            <div class="cdf-card-head">
+                <i class="fas fa-hourglass-half"></i>
+                <span>Lista de Espera</span>
+            </div>
+            <div class="cdf-card-body cdf-card-body--flush">
+                {% if lista_espera %}
+                    <div class="cdf-tbl-scroll">
+                        <table class="cdf-table">
                             <thead>
                                 <tr>
                                     <th>Participante</th>
                                     <th>DNI</th>
                                     <th>Género</th>
                                     <th>Fecha de Registro</th>
-                                    <th>Acciones</th>
+                                    <th class="text-end">Acciones</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {% for p in inscritos %}
-                                    {% if p.estado == 'inscrito' %}
-                                        <tr>
-                                            <td>
-                                                <a href="{% url 'ciudadanos_ver' p.ciudadano.id %}">{{ p.ciudadano.apellido }}, {{ p.ciudadano.nombre }}</a>
-                                            </td>
-                                            <td>{{ p.ciudadano.documento }}</td>
-                                            <td>{{ p.ciudadano.sexo.sexo }}</td>
-                                            <td>{{ p.fecha_registro|date:"d/m/Y" }}</td>
-                                            <td>
-                                                <a href="{% url 'participanteactividad_delete' centro_id=actividad.centro.id actividad_id=actividad.id pk=p.id %}"
-                                                   class="btn btn-danger btn-sm">Dar de baja</a>
-                                            </td>
-                                        </tr>
-                                    {% endif %}
+                                {% for p in lista_espera %}
+                                    <tr>
+                                        <td>
+                                            <a href="{% url 'ciudadanos_ver' p.ciudadano.id %}">{{ p.ciudadano.apellido }}, {{ p.ciudadano.nombre }}</a>
+                                        </td>
+                                        <td>{{ p.ciudadano.documento }}</td>
+                                        <td>{{ p.ciudadano.sexo.sexo }}</td>
+                                        <td>{{ p.fecha_registro|date:"d/m/Y" }}</td>
+                                        <td class="text-end">
+                                            <form method="post"
+                                                  action="{% url 'participanteactividad_promover' centro_id=actividad.centro.id actividad_id=actividad.id pk=p.id %}"
+                                                  style="display:inline">
+                                                {% csrf_token %}
+                                                <button type="submit" class="cdf-btn cdf-btn--primary">Promover</button>
+                                            </form>
+                                        </td>
+                                    </tr>
                                 {% endfor %}
                             </tbody>
                         </table>
-                    {% else %}
-                        <p class="text-center">No hay participantes inscritos aún.</p>
-                    {% endif %}
-                {% endwith %}
-            </div>
-        </div>
-        <!-- Lista de Espera -->
-        <div class="card mb-4">
-            <div class="card-header">
-                <h3 class="card-title font-weight-bold">Lista de Espera</h3>
-            </div>
-            <div class="card-body table-responsive">
-                {% if lista_espera %}
-                    <table class="table table-bordered table-hover table-striped">
-                        <thead>
-                            <tr>
-                                <th>Participante</th>
-                                <th>DNI</th>
-                                <th>Género</th>
-                                <th>Fecha de Registro</th>
-                                <th>Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for p in lista_espera %}
-                                <tr>
-                                    <td>
-                                        <a href="{% url 'ciudadanos_ver' p.ciudadano.id %}">{{ p.ciudadano.apellido }}, {{ p.ciudadano.nombre }}</a>
-                                    </td>
-                                    <td>{{ p.ciudadano.documento }}</td>
-                                    <td>{{ p.ciudadano.sexo.sexo }}</td>
-                                    <td>{{ p.fecha_registro|date:"d/m/Y" }}</td>
-                                    <td>
-                                        <form method="post"
-                                              action="{% url 'participanteactividad_promover' centro_id=actividad.centro.id actividad_id=actividad.id pk=p.id %}"
-                                              style="display:inline">
-                                            {% csrf_token %}
-                                            <button type="submit" class="btn btn-sm btn-primary">Promover</button>
-                                        </form>
-                                    </td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+                    </div>
                 {% else %}
-                    <p class="text-center">No hay participantes en lista de espera.</p>
+                    <div class="cdf-empty">
+                        <i class="fas fa-hourglass-half"></i>
+                        <p class="cdf-empty-t">Sin lista de espera</p>
+                        <p class="cdf-empty-s">Cuando la actividad se quede sin cupo, los nuevos inscriptos van a aparecer acá.</p>
+                    </div>
                 {% endif %}
             </div>
         </div>
     </div>
-</div>
-</div>
-<!-- Modal de error al promover sin cupo -->
-{% if promo_error %}
-    <div class="modal fade"
-         id="promoErrorModal"
-         tabindex="-1"
-         aria-labelledby="promoErrorLabel"
-         aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered modal-sm">
-            <div class="modal-content">
-                <div class="modal-header bg-warning text-white">
-                    <h5 class="modal-title" id="promoErrorLabel">Cupo Máximo Alcanzado</h5>
-                    <button type="button"
-                            class="btn-close btn-close-white"
-                            data-bs-dismiss="modal"
-                            aria-label="Cerrar"></button>
-                </div>
-                <div class="modal-body">No hay cupo disponible para promover a un participante de la lista de espera.</div>
-                <div class="modal-footer">
-                    <button type="button"
-                            class="btn btn-outline-secondary"
-                            data-bs-dismiss="modal">Cerrar</button>
+    <!-- Modal de error al promover sin cupo -->
+    {% if promo_error %}
+        <div class="modal fade"
+             id="promoErrorModal"
+             tabindex="-1"
+             aria-labelledby="promoErrorLabel"
+             aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-sm">
+                <div class="modal-content">
+                    <div class="modal-header bg-warning text-white">
+                        <h5 class="modal-title" id="promoErrorLabel">Cupo Máximo Alcanzado</h5>
+                        <button type="button"
+                                class="btn-close btn-close-white"
+                                data-bs-dismiss="modal"
+                                aria-label="Cerrar"></button>
+                    </div>
+                    <div class="modal-body">No hay cupo disponible para promover a un participante de la lista de espera.</div>
+                    <div class="modal-footer">
+                        <button type="button"
+                                class="btn btn-outline-secondary"
+                                data-bs-dismiss="modal">Cerrar</button>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
-    <script nonce="{{ request.csp_nonce }}">
+        <script nonce="{{ request.csp_nonce }}">
       document.addEventListener('DOMContentLoaded', function() {
         var modalEl = document.getElementById('promoErrorModal');
         var modal = new bootstrap.Modal(modalEl);
         modal.show();
       });
-    </script>
-{% endif %}
+        </script>
+    {% endif %}
 {% endblock %}

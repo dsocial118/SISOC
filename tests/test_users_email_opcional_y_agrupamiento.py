@@ -1,8 +1,10 @@
-"""Tests para issue #1979.
+"""Tests para issues #1979 y #1936.
 
 Cubren:
 - Usuarios sin email y con email repetido en forms.
-- User import sin columna correo.
+- User import username-first con fallback a email.
+- Actualización masiva de grupos con acciones agregar / quitar / reemplazar.
+- Enforcement de alcance via Profile.grupos_asignables.
 - Bulk credentials agrupado por mail destinatario.
 - Nombre y apellido en el cuerpo del email.
 """
@@ -11,6 +13,7 @@ from io import BytesIO
 
 import pytest
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group
 from django.core import mail
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import override_settings
@@ -123,62 +126,294 @@ def test_user_change_form_acepta_email_vacio():
     assert form.is_valid(), form.errors
 
 
-# ---------- A2: user import sin columna correo ----------
+# ---------- A2: user import – stub de job ----------
 
 
 class _StubImportJob:
-    """Job mínimo para process_single_user_import_row."""
+    """Job mínimo para process_single_user_import_row. Actor=None => sin restricción."""
 
     is_pwa_import = False
     send_credentials = False
+    requested_by = None
+
+
+def _row(extra=None, **kwargs):
+    base = {
+        "nombre": "Ana",
+        "apellido": "García",
+        "correo": "",
+        "username": "",
+        "permisos": "",
+        "provincias": "",
+        "rol": "operadora",
+        "accion_grupos": "",
+        "fila": 2,
+    }
+    base.update(kwargs)
+    if extra:
+        base.update(extra)
+    return base
+
+
+# ---------- Caso 1: username existente + grupos nuevos => CREATED ----------
 
 
 @pytest.mark.django_db
-def test_user_import_row_sin_correo_genera_username_desde_nombre():
-    job = _StubImportJob()
+def test_import_username_existente_grupos_nuevos():
+    grupo = Group.objects.create(name="Grupo Test 1")
+    user = User.objects.create_user(username="juan.perez", email="j@e.com")
+
     resultado = process_single_user_import_row(
-        row_data={
-            "nombre": "Ana",
-            "apellido": "García",
-            "correo": "",
-            "permisos": "",
-            "provincias": "",
-            "rol": "operadora",
-            "fila": 2,
-        },
-        job=job,
+        row_data=_row(username="juan.perez", permisos="Grupo Test 1"),
+        job=_StubImportJob(),
     )
-    assert resultado["status"]
-    # Username generado contiene el apellido normalizado
-    user = User.objects.filter(first_name="Ana", last_name="García").first()
+
+    assert resultado["status"].value == "created", resultado
+    user.refresh_from_db()
+    assert grupo in user.groups.all()
+
+
+# ---------- Caso 2: username existente + sin cambios => SKIPPED ----------
+
+
+@pytest.mark.django_db
+def test_import_username_existente_sin_cambios():
+    grupo = Group.objects.create(name="Grupo Test 2")
+    user = User.objects.create_user(username="sin.cambios", email="sc@e.com")
+    user.groups.add(grupo)
+
+    resultado = process_single_user_import_row(
+        row_data=_row(username="sin.cambios", permisos="Grupo Test 2"),
+        job=_StubImportJob(),
+    )
+
+    assert resultado["status"].value == "skipped", resultado
+
+
+# ---------- Caso 3: sin username, con email existente => fallback a email ----------
+
+
+@pytest.mark.django_db
+def test_import_sin_username_con_email_existente():
+    grupo = Group.objects.create(name="Grupo Test 3")
+    User.objects.create_user(username="email.user", email="email@e.com")
+
+    resultado = process_single_user_import_row(
+        row_data=_row(correo="email@e.com", permisos="Grupo Test 3"),
+        job=_StubImportJob(),
+    )
+
+    assert resultado["status"].value == "created", resultado
+    user = User.objects.get(username="email.user")
+    assert grupo in user.groups.all()
+
+
+# ---------- Caso 4: sin username ni email => error ----------
+
+
+@pytest.mark.django_db
+def test_import_sin_username_ni_email():
+    from django.core.exceptions import ValidationError
+
+    with pytest.raises(ValidationError, match="Username o Correo"):
+        process_single_user_import_row(
+            row_data=_row(),
+            job=_StubImportJob(),
+        )
+
+
+# ---------- Caso 5: username y email apuntan a usuarios distintos => gana username, se actualiza email ----------
+
+
+@pytest.mark.django_db
+def test_import_username_y_email_usuarios_distintos():
+    user_a = User.objects.create_user(username="user.a", email="a@e.com")
+    User.objects.create_user(username="user.b", email="b@e.com")
+
+    resultado = process_single_user_import_row(
+        row_data=_row(username="user.a", correo="b@e.com"),
+        job=_StubImportJob(),
+    )
+
+    user_a.refresh_from_db()
+    assert user_a.email == "b@e.com"
+    assert resultado["status"].value == "created", resultado
+    assert User.objects.filter(username="user.b").exists()
+
+
+# ---------- Caso 6: accion agregar ----------
+
+
+@pytest.mark.django_db
+def test_import_accion_agregar():
+    g1 = Group.objects.create(name="Grupo Agregar 1")
+    g2 = Group.objects.create(name="Grupo Agregar 2")
+    user = User.objects.create_user(username="agregar.user")
+    user.groups.add(g1)
+
+    resultado = process_single_user_import_row(
+        row_data=_row(
+            username="agregar.user", permisos="Grupo Agregar 2", accion_grupos="agregar"
+        ),
+        job=_StubImportJob(),
+    )
+
+    assert resultado["status"].value == "created", resultado
+    user.refresh_from_db()
+    group_ids = set(user.groups.values_list("id", flat=True))
+    assert g1.pk in group_ids
+    assert g2.pk in group_ids
+
+
+# ---------- Caso 7: accion quitar ----------
+
+
+@pytest.mark.django_db
+def test_import_accion_quitar():
+    g1 = Group.objects.create(name="Grupo Quitar 1")
+    g2 = Group.objects.create(name="Grupo Quitar 2")
+    user = User.objects.create_user(username="quitar.user")
+    user.groups.add(g1, g2)
+
+    resultado = process_single_user_import_row(
+        row_data=_row(
+            username="quitar.user", permisos="Grupo Quitar 1", accion_grupos="quitar"
+        ),
+        job=_StubImportJob(),
+    )
+
+    assert resultado["status"].value == "created", resultado
+    user.refresh_from_db()
+    group_ids = set(user.groups.values_list("id", flat=True))
+    assert g1.pk not in group_ids
+    assert g2.pk in group_ids
+
+
+# ---------- Caso 8: accion reemplazar ----------
+
+
+@pytest.mark.django_db
+def test_import_accion_reemplazar():
+    g1 = Group.objects.create(name="Grupo Reemplazar 1")
+    g2 = Group.objects.create(name="Grupo Reemplazar 2")
+    user = User.objects.create_user(username="reemplazar.user")
+    user.groups.add(g1)
+
+    resultado = process_single_user_import_row(
+        row_data=_row(
+            username="reemplazar.user",
+            permisos="Grupo Reemplazar 2",
+            accion_grupos="reemplazar",
+        ),
+        job=_StubImportJob(),
+    )
+
+    assert resultado["status"].value == "created", resultado
+    user.refresh_from_db()
+    group_ids = set(user.groups.values_list("id", flat=True))
+    assert g1.pk not in group_ids
+    assert g2.pk in group_ids
+
+
+# ---------- Caso 9: reemplazar preserva grupos fuera de alcance del actor ----------
+
+
+@pytest.mark.django_db
+def test_import_reemplazar_preserva_grupos_fuera_de_alcance():
+    g_dentro = Group.objects.create(name="Grupo Dentro Alcance")
+    g_fuera = Group.objects.create(name="Grupo Fuera Alcance")
+
+    actor = User.objects.create_user(username="actor.restringido")
+    actor.profile.grupos_asignables.set([g_dentro])
+
+    target = User.objects.create_user(username="target.reemplazar")
+    target.groups.add(g_fuera)
+
+    class _RestrictedJob:
+        is_pwa_import = False
+        send_credentials = False
+        requested_by = actor
+
+    resultado = process_single_user_import_row(
+        row_data=_row(
+            username="target.reemplazar",
+            permisos="Grupo Dentro Alcance",
+            accion_grupos="reemplazar",
+        ),
+        job=_RestrictedJob(),
+    )
+
+    assert resultado["status"].value == "created", resultado
+    target.refresh_from_db()
+    group_ids = set(target.groups.values_list("id", flat=True))
+    assert g_fuera.pk in group_ids
+    assert g_dentro.pk in group_ids
+
+
+# ---------- Caso 10: grupo fuera de grupos_asignables => error ----------
+
+
+@pytest.mark.django_db
+def test_import_grupo_fuera_de_asignables_error():
+    from django.core.exceptions import ValidationError
+
+    g_permitido = Group.objects.create(name="Grupo Permitido")
+    g_prohibido = Group.objects.create(name="Grupo Prohibido")
+
+    actor = User.objects.create_user(username="actor.limitado")
+    actor.profile.grupos_asignables.set([g_permitido])
+
+    User.objects.create_user(username="target.limitado")
+
+    class _LimitedJob:
+        is_pwa_import = False
+        send_credentials = False
+        requested_by = actor
+
+    with pytest.raises(ValidationError, match="permiso"):
+        process_single_user_import_row(
+            row_data=_row(
+                username="target.limitado",
+                permisos="Grupo Prohibido",
+                accion_grupos="agregar",
+            ),
+            job=_LimitedJob(),
+        )
+
+
+# ---------- A2 actualizados: creacion requiere username ----------
+
+
+@pytest.mark.django_db
+def test_user_import_row_con_username_crea_usuario():
+    resultado = process_single_user_import_row(
+        row_data=_row(username="nuevo.usuario", nombre="Ana", apellido="García"),
+        job=_StubImportJob(),
+    )
+    assert resultado["status"].value == "created", resultado
+    user = User.objects.filter(username="nuevo.usuario").first()
     assert user is not None
-    assert user.email == ""
-    assert user.username.startswith("garcia"), user.username
+    assert user.first_name == "Ana"
 
 
 @pytest.mark.django_db
-def test_user_import_row_emails_repetidos_no_son_rechazados():
-    User.objects.create_user(
-        username="primer.import", email="shared@example.com", password="Pass!"
-    )
-    job = _StubImportJob()
+def test_user_import_row_email_existente_actualiza_en_lugar_de_crear():
+    """Sin username, si el email pertenece a un usuario existente, se actualiza (no crea uno nuevo)."""
+    Group.objects.create(name="Grupo Nuevo")
+    User.objects.create_user(username="existente.email", email="shared@example.com")
+
     resultado = process_single_user_import_row(
-        row_data={
-            "nombre": "Carla",
-            "apellido": "Ruiz",
-            "correo": "shared@example.com",
-            "permisos": "",
-            "provincias": "",
-            "rol": "",
-            "fila": 2,
-        },
-        job=job,
+        row_data=_row(correo="shared@example.com", permisos="Grupo Nuevo"),
+        job=_StubImportJob(),
     )
-    assert resultado["status"] and resultado.get("mensaje", "").startswith("Usuario ")
-    assert User.objects.filter(email__iexact="shared@example.com").count() == 2
+
+    assert resultado["status"].value == "created", resultado
+    assert User.objects.filter(email__iexact="shared@example.com").count() == 1
 
 
-def test_user_import_template_headers_incluye_correo():
+@pytest.mark.django_db
+def test_user_import_template_headers_incluye_username_y_correo():
+    assert "Username" in USER_IMPORT_TEMPLATE_HEADERS
     assert "Correo" in USER_IMPORT_TEMPLATE_HEADERS
 
 
@@ -246,19 +481,16 @@ def test_bulk_credentials_agrupa_credenciales_por_mismo_destinatario():
 
     result = process_bulk_credentials_file(uploaded_file=upload, send_type="standard")
 
-    # 3 filas procesadas y enviadas, pero solo 2 correos (1 agrupado + 1 solo)
     assert result["summary"]["procesadas"] == 3
     assert result["summary"]["enviadas"] == 3
     assert len(mail.outbox) == 2
 
-    # El correo agrupado contiene ambas credenciales
     agrupado = next(msg for msg in mail.outbox if msg.to == ["compartido@example.com"])
     assert "user_uno" in agrupado.body
     assert "user_dos" in agrupado.body
     assert "Pass1!" in agrupado.body
     assert "Pass2!" in agrupado.body
 
-    # El correo individual sólo trae sus datos
     individual = next(msg for msg in mail.outbox if msg.to == ["solo@example.com"])
     assert "user_solo" in individual.body
     assert "Pass3!" in individual.body
@@ -331,7 +563,6 @@ def test_inet_no_agrupa_cuando_centros_son_distintos():
     result = process_bulk_credentials_file(uploaded_file=upload, send_type="inet")
 
     assert result["summary"]["enviadas"] == 2
-    # Dos correos distintos al mismo destinatario, uno por centro
     assert len(mail.outbox) == 2
     assert all(msg.to == ["compartido@example.com"] for msg in mail.outbox)
     bodies = [msg.body for msg in mail.outbox]
@@ -416,7 +647,6 @@ def test_worker_no_re_agrupa_si_destinatario_ya_recibio_envio_previo(
     job = create_bulk_credentials_job(
         uploaded_file=upload, send_type="standard", requested_by=operator
     )
-    # Simulamos que la fila 2 (reagr_a) ya fue enviada en una corrida anterior
     BulkCredentialsJobRow.objects.create(
         job=job,
         fila=2,
@@ -443,11 +673,9 @@ def test_worker_no_re_agrupa_si_destinatario_ya_recibio_envio_previo(
     process_bulk_credentials_job(job)
     job.refresh_from_db()
 
-    # No re-agrupa: reagr_b y reagr_c se envían en correos separados, no juntos.
     assert job.status == BulkCredentialsJob.Status.COMPLETED
     assert len(mail.outbox) == 2
     assert all(msg.to == ["compartido@example.com"] for msg in mail.outbox)
-    # Cada correo contiene solo a su propio usuario
     body_b = next(m.body for m in mail.outbox if "reagr_b" in m.body)
     assert "reagr_c" not in body_b
     body_c = next(m.body for m in mail.outbox if "reagr_c" in m.body)
@@ -483,7 +711,6 @@ def test_worker_no_agrupa_cuando_primary_tiene_attempts_previos(settings, tmp_pa
     job = create_bulk_credentials_job(
         uploaded_file=upload, send_type="standard", requested_by=operator
     )
-    # Fila 2 (att_a) ya fue intentada y falló: attempts = 1, status = FAILED
     BulkCredentialsJobRow.objects.create(
         job=job,
         fila=2,
@@ -501,7 +728,6 @@ def test_worker_no_agrupa_cuando_primary_tiene_attempts_previos(settings, tmp_pa
     process_bulk_credentials_job(job)
     job.refresh_from_db()
 
-    # Se envían 2 correos (uno por fila), no un grupo único de 2.
     assert job.status == BulkCredentialsJob.Status.COMPLETED
     assert len(mail.outbox) == 2
     bodies = [m.body for m in mail.outbox]

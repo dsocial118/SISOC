@@ -2,11 +2,12 @@ from __future__ import annotations
 
 import logging
 import unicodedata
+from dataclasses import dataclass
 from io import BytesIO
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.contrib.auth.models import Group
+from django.contrib.auth.models import Group, Permission
 from django.core.exceptions import ValidationError
 from django.core.mail import send_mail
 from django.core.validators import validate_email
@@ -15,9 +16,20 @@ from django.template.loader import render_to_string
 from django.urls import reverse
 from openpyxl import Workbook, load_workbook
 
+from comedores.models import Comedor
 from core.models import Provincia
-from users.models import ProfileTerritorialScope, UserImportJob, UserImportJobRow
+from organizaciones.models import Organizacion
+from users.models import (
+    AccesoComedorPWA,
+    ProfileTerritorialScope,
+    UserImportJob,
+    UserImportJobRow,
+)
 from users.services_auth import generate_temporary_password_for_user
+from users.services_pwa import (
+    get_assignable_pwa_permission_codes,
+    sync_representante_accesses,
+)
 
 User = get_user_model()
 logger = logging.getLogger("django")
@@ -33,17 +45,32 @@ USER_IMPORT_REQUIRED_COLUMNS = (
     "provincias",
     "rol",
 )
-USER_IMPORT_OPTIONAL_COLUMNS = ("correo",)
+USER_IMPORT_OPTIONAL_COLUMNS = (
+    "correo",
+    "username",
+    "accion_grupos",
+    "organizaciones",
+    "comedores",
+)
 USER_IMPORT_KNOWN_COLUMNS = USER_IMPORT_REQUIRED_COLUMNS + USER_IMPORT_OPTIONAL_COLUMNS
 USER_IMPORT_TEMPLATE_HEADERS = (
+    "Username",
     "Nombre",
     "Apellido",
     "Correo",
     "Permisos",
+    "Accion grupos",
     "Provincias",
     "Rol",
+    "Organizaciones",
+    "Comedores",
 )
 USERNAME_MAX_LENGTH = 150
+
+GROUP_ACTION_AGREGAR = "agregar"
+GROUP_ACTION_QUITAR = "quitar"
+GROUP_ACTION_REEMPLAZAR = "reemplazar"
+GROUP_ACTIONS = (GROUP_ACTION_AGREGAR, GROUP_ACTION_QUITAR, GROUP_ACTION_REEMPLAZAR)
 
 
 def _build_login_url() -> str:
@@ -139,8 +166,6 @@ def validate_user_import_workbook(uploaded_file) -> None:
             raise ValidationError(
                 f"El archivo debe incluir las columnas obligatorias: {', '.join(missing)}."
             )
-        # Correo es opcional: si no viene la columna, todas las filas se procesan
-        # sin email y la generación de username se hace a partir de nombre+apellido.
 
         for row in rows:
             if any(_clean_cell(v) for v in row):
@@ -286,16 +311,422 @@ def _resolver_provincias(provincias_raw: str) -> list:
     return provincias
 
 
-def process_single_user_import_row(  # pylint: disable=too-many-locals
-    *, row_data: dict, job: UserImportJob
-) -> dict:
+def _resolver_organizaciones(organizaciones_raw: str) -> list:
+    organizaciones = []
+    for token in _parse_semicolon_field(organizaciones_raw):
+        try:
+            organizacion_id = int(token)
+        except ValueError as exc:
+            raise ValidationError(
+                f"El ID de organizacion '{token}' no es valido."
+            ) from exc
+        organizacion = Organizacion.objects.filter(pk=organizacion_id).first()
+        if organizacion is None:
+            raise ValidationError(
+                f"La organizacion con ID '{token}' no existe en el sistema."
+            )
+        organizaciones.append(organizacion)
+    return organizaciones
+
+
+def _resolver_comedores(comedores_raw: str) -> list:
+    comedores = []
+    for token in _parse_semicolon_field(comedores_raw):
+        try:
+            comedor_id = int(token)
+        except ValueError as exc:
+            raise ValidationError(f"El ID de comedor '{token}' no es valido.") from exc
+        comedor = Comedor.objects.filter(pk=comedor_id).first()
+        if comedor is None:
+            raise ValidationError(
+                f"El comedor con ID '{token}' no existe en el sistema."
+            )
+        comedores.append(comedor)
+    return comedores
+
+
+def _build_pwa_access_specs(*, organizaciones: list, comedores: list) -> list[dict]:
+    """Arma los accesos PWA a partir de organizaciones y comedores de la fila.
+
+    Un usuario asociado a una organizacion opera con todos los comedores de
+    esa organizacion; un comedor asignado explicitamente que no pertenezca a
+    ninguna organizacion seleccionada queda asociado como espacio individual.
+    """
+    specs_by_comedor_id: dict[int, dict] = {}
+
+    organizacion_ids = {organizacion.pk for organizacion in organizaciones}
+    if organizacion_ids:
+        for comedor in Comedor.objects.filter(organizacion_id__in=organizacion_ids):
+            specs_by_comedor_id[comedor.pk] = {
+                "comedor_id": comedor.pk,
+                "tipo_asociacion": AccesoComedorPWA.TIPO_ASOCIACION_ORGANIZACION,
+                "organizacion_id": comedor.organizacion_id,
+            }
+
+    for comedor in comedores:
+        specs_by_comedor_id.setdefault(
+            comedor.pk,
+            {
+                "comedor_id": comedor.pk,
+                "tipo_asociacion": AccesoComedorPWA.TIPO_ASOCIACION_ESPACIO,
+                "organizacion_id": None,
+            },
+        )
+
+    return list(specs_by_comedor_id.values())
+
+
+def _get_pwa_permission_ids(codes: set) -> set:
+    permission_ids = set()
+    for code in codes:
+        app_label, codename = code.split(".", 1)
+        permission_id = (
+            Permission.objects.filter(
+                content_type__app_label=app_label, codename=codename
+            )
+            .values_list("id", flat=True)
+            .first()
+        )
+        if permission_id:
+            permission_ids.add(permission_id)
+    return permission_ids
+
+
+def _resolver_permisos_pwa(permisos_raw: str, *, actor) -> list:
+    allowed_codes = set(get_assignable_pwa_permission_codes(actor))
+    allowed_by_codename = {code.split(".", 1)[1]: code for code in allowed_codes}
+
+    permisos = []
+    for token in _parse_semicolon_field(permisos_raw):
+        matched_code = allowed_by_codename.get(token)
+        if matched_code is None:
+            raise ValidationError(
+                f"El permiso PWA '{token}' no existe o no tiene autorizacion "
+                "para asignarlo."
+            )
+        app_label, codename = matched_code.split(".", 1)
+        permission = Permission.objects.filter(
+            content_type__app_label=app_label, codename=codename
+        ).first()
+        if permission is None:
+            raise ValidationError(f"El permiso PWA '{token}' no existe en el sistema.")
+        permisos.append(permission)
+    return permisos
+
+
+@dataclass
+class _PermisosFila:
+    grupos: list
+    allowed_group_ids: set | None
+    permisos_pwa: list
+    allowed_permiso_ids: set | None
+    organizaciones: list
+    comedores: list
+
+
+def _resolver_permisos_fila_pwa(row_data: dict, job: UserImportJob) -> _PermisosFila:
+    permisos_pwa = _resolver_permisos_pwa(
+        row_data.get("permisos", "").strip(), actor=job.requested_by
+    )
+    allowed_permiso_ids = _get_pwa_permission_ids(
+        set(get_assignable_pwa_permission_codes(job.requested_by))
+    )
+    return _PermisosFila(
+        grupos=[],
+        allowed_group_ids=None,
+        permisos_pwa=permisos_pwa,
+        allowed_permiso_ids=allowed_permiso_ids,
+        organizaciones=_resolver_organizaciones(
+            row_data.get("organizaciones", "").strip()
+        ),
+        comedores=_resolver_comedores(row_data.get("comedores", "").strip()),
+    )
+
+
+def _resolver_permisos_fila_grupos(row_data: dict, job: UserImportJob) -> _PermisosFila:
+    grupos = _resolver_grupos(row_data.get("permisos", "").strip())
+    allowed_group_ids = _get_allowed_group_ids(job.requested_by)
+
+    if allowed_group_ids is not None and grupos:
+        out_of_scope = [g for g in grupos if g.pk not in allowed_group_ids]
+        if out_of_scope:
+            names = ", ".join(g.name for g in out_of_scope)
+            raise ValidationError(f"No tiene permiso para operar los grupos: {names}.")
+
+    return _PermisosFila(
+        grupos=grupos,
+        allowed_group_ids=allowed_group_ids,
+        permisos_pwa=[],
+        allowed_permiso_ids=None,
+        organizaciones=[],
+        comedores=[],
+    )
+
+
+def _is_unrestricted_actor(actor) -> bool:
+    if actor is None:
+        return True
+    if getattr(actor, "is_superuser", False):
+        return True
+    profile = getattr(actor, "profile", None)
+    if not profile:
+        return True
+    return not profile.grupos_asignables.exists()
+
+
+def _get_allowed_group_ids(actor) -> set | None:
+    if _is_unrestricted_actor(actor):
+        return None
+    return set(actor.profile.grupos_asignables.values_list("id", flat=True))
+
+
+def _resolver_usuario_objetivo(row_data: dict):
+    username_raw = row_data.get("username", "").strip()
+    email_raw = row_data.get("correo", "").strip()
+    if username_raw:
+        return User.objects.filter(username__iexact=username_raw).first()
+    if email_raw:
+        return User.objects.filter(email__iexact=email_raw).first()
+    return None
+
+
+def _aplicar_accion_m2m(
+    *,
+    manager,
+    requested_ids: set,
+    accion: str,
+    allowed_ids: set | None,
+) -> bool:
+    current_ids = set(manager.values_list("id", flat=True))
+
+    if accion == GROUP_ACTION_AGREGAR:
+        to_add = requested_ids - current_ids
+        if to_add:
+            manager.add(*to_add)
+        return bool(to_add)
+
+    if accion == GROUP_ACTION_QUITAR:
+        to_remove = requested_ids & current_ids
+        if to_remove:
+            manager.remove(*to_remove)
+        return bool(to_remove)
+
+    final_ids = (
+        (current_ids - allowed_ids | requested_ids) if allowed_ids else requested_ids
+    )
+    if final_ids != current_ids:
+        manager.set(list(final_ids))
+        return True
+    return False
+
+
+def _aplicar_accion_grupos(
+    *,
+    user,
+    grupos: list,
+    accion: str,
+    allowed_group_ids: set | None,
+) -> bool:
+    return _aplicar_accion_m2m(
+        manager=user.groups,
+        requested_ids={g.pk for g in grupos},
+        accion=accion,
+        allowed_ids=allowed_group_ids,
+    )
+
+
+def _aplicar_accion_permisos_pwa(
+    *,
+    user,
+    permisos: list,
+    accion: str,
+    allowed_permiso_ids: set | None,
+) -> bool:
+    return _aplicar_accion_m2m(
+        manager=user.user_permissions,
+        requested_ids={p.pk for p in permisos},
+        accion=accion,
+        allowed_ids=allowed_permiso_ids,
+    )
+
+
+@dataclass
+class _ActualizarUsuarioParams:
+    user: object
+    email: str
+    username_raw: str
+    grupos: list
+    accion_grupos: str
+    allowed_group_ids: set | None
+    is_pwa_import: bool
+    permisos_pwa: list
+    allowed_permiso_ids: set | None
+    organizaciones: list
+    comedores: list
+    actor: object
+
+
+def _procesar_usuario_existente(params: _ActualizarUsuarioParams) -> dict:
+    changed = False
+
+    with transaction.atomic():
+        if (
+            params.username_raw
+            and params.email
+            and params.user.email.lower() != params.email.lower()
+        ):
+            params.user.email = params.email
+            params.user.save(update_fields=["email"])
+            changed = True
+
+        if params.is_pwa_import:
+            permisos_changed = _aplicar_accion_permisos_pwa(
+                user=params.user,
+                permisos=params.permisos_pwa,
+                accion=params.accion_grupos,
+                allowed_permiso_ids=params.allowed_permiso_ids,
+            )
+            changed = changed or permisos_changed
+
+            if params.organizaciones or params.comedores:
+                access_specs = _build_pwa_access_specs(
+                    organizaciones=params.organizaciones,
+                    comedores=params.comedores,
+                )
+                sync_representante_accesses(
+                    user=params.user,
+                    access_specs=access_specs,
+                    actor=params.actor,
+                )
+                changed = True
+        else:
+            grupos_changed = _aplicar_accion_grupos(
+                user=params.user,
+                grupos=params.grupos,
+                accion=params.accion_grupos,
+                allowed_group_ids=params.allowed_group_ids,
+            )
+            changed = changed or grupos_changed
+
+    status = (
+        UserImportJobRow.Status.SKIPPED
+        if not changed
+        else UserImportJobRow.Status.CREATED
+    )
+    mensaje = (
+        f"Usuario {params.user.username}: sin cambios."
+        if not changed
+        else f"Usuario {params.user.username} actualizado ({params.accion_grupos} grupos)."
+    )
+    return {
+        "status": status,
+        "mensaje": mensaje,
+        "email": params.user.email,
+    }
+
+
+@dataclass
+class _CrearUsuarioParams:
+    nombre: str
+    apellido: str
+    email: str
+    username_raw: str
+    rol: str
+    grupos: list
+    provincias_objs: list
+    job: object
+    permisos_pwa: list
+    organizaciones: list
+    comedores: list
+
+
+@dataclass
+class _DatosFilaValidados:
+    nombre: str
+    apellido: str
+    email: str
+    username_raw: str
+    rol: str
+    accion_grupos: str
+    grupos: list
+    provincias_objs: list
+    allowed_group_ids: set | None
+    permisos_pwa: list
+    allowed_permiso_ids: set | None
+    organizaciones: list
+    comedores: list
+
+
+def _crear_usuario_nuevo(params: _CrearUsuarioParams) -> tuple[User, str]:
+    user = User(
+        username=params.username_raw,
+        email=params.email,
+        first_name=params.nombre,
+        last_name=params.apellido,
+        is_staff=not params.job.is_pwa_import,
+        is_active=True,
+    )
+    user.set_unusable_password()
+    user.save()
+
+    if params.job.is_pwa_import:
+        if params.permisos_pwa:
+            user.user_permissions.set(params.permisos_pwa)
+        if params.organizaciones or params.comedores:
+            access_specs = _build_pwa_access_specs(
+                organizaciones=params.organizaciones,
+                comedores=params.comedores,
+            )
+            sync_representante_accesses(
+                user=user,
+                access_specs=access_specs,
+                actor=params.job.requested_by,
+            )
+    elif params.grupos:
+        user.groups.set(params.grupos)
+
+    profile = user.profile
+    profile.rol = params.rol
+    if params.provincias_objs:
+        profile.es_usuario_provincial = True
+    profile.save(update_fields=["rol", "es_usuario_provincial"])
+
+    for prov in params.provincias_objs:
+        scope_key = ProfileTerritorialScope.build_scope_key(prov.pk)
+        ProfileTerritorialScope.objects.get_or_create(
+            profile=profile,
+            scope_key=scope_key,
+            defaults={
+                "provincia_id": prov.pk,
+                "municipio": None,
+                "localidad": None,
+            },
+        )
+
+    password = generate_temporary_password_for_user(user=user)
+    return user, password
+
+
+def _validar_y_preparar_fila(row_data: dict, job: UserImportJob) -> _DatosFilaValidados:
     nombre = row_data.get("nombre", "").strip()
     apellido = row_data.get("apellido", "").strip()
     email_raw = row_data.get("correo", "").strip()
+    username_raw = row_data.get("username", "").strip()
     rol = row_data.get("rol", "").strip()
+    accion_grupos = (
+        row_data.get("accion_grupos", "").strip().lower() or GROUP_ACTION_AGREGAR
+    )
 
-    if not nombre or not apellido:
-        raise ValidationError("Los campos Nombre y Apellido son obligatorios.")
+    if accion_grupos not in GROUP_ACTIONS:
+        raise ValidationError(
+            f"Accion de grupos invalida: '{accion_grupos}'. "
+            f"Los valores validos son: {', '.join(GROUP_ACTIONS)}."
+        )
+
+    if not username_raw and not email_raw:
+        raise ValidationError(
+            "Debe indicar Username o Correo para identificar al usuario de la fila."
+        )
 
     email = ""
     if email_raw:
@@ -307,49 +738,90 @@ def process_single_user_import_row(  # pylint: disable=too-many-locals
             ) from exc
         email = email_raw.lower()
 
-    grupos = _resolver_grupos(row_data.get("permisos", "").strip())
+    permisos_fila = (
+        _resolver_permisos_fila_pwa(row_data, job)
+        if job.is_pwa_import
+        else _resolver_permisos_fila_grupos(row_data, job)
+    )
     provincias_objs = _resolver_provincias(row_data.get("provincias", "").strip())
 
-    username_base = (
-        _slug_base_desde_email(email)
-        if email
-        else _slug_base_desde_nombre(nombre=nombre, apellido=apellido)
+    return _DatosFilaValidados(
+        nombre=nombre,
+        apellido=apellido,
+        email=email,
+        username_raw=username_raw,
+        rol=rol,
+        accion_grupos=accion_grupos,
+        grupos=permisos_fila.grupos,
+        provincias_objs=provincias_objs,
+        allowed_group_ids=permisos_fila.allowed_group_ids,
+        permisos_pwa=permisos_fila.permisos_pwa,
+        allowed_permiso_ids=permisos_fila.allowed_permiso_ids,
+        organizaciones=permisos_fila.organizaciones,
+        comedores=permisos_fila.comedores,
     )
 
-    with transaction.atomic():
-        user = User(
-            username=_generar_username_unico(username_base),
-            email=email,
-            first_name=nombre,
-            last_name=apellido,
-            is_staff=not job.is_pwa_import,
-            is_active=True,
+
+def process_single_user_import_row(*, row_data: dict, job: UserImportJob) -> dict:
+    datos = _validar_y_preparar_fila(row_data, job)
+    existing_user = _resolver_usuario_objetivo(row_data)
+
+    if existing_user is not None:
+        params = _ActualizarUsuarioParams(
+            user=existing_user,
+            email=datos.email,
+            username_raw=datos.username_raw,
+            grupos=datos.grupos,
+            accion_grupos=datos.accion_grupos,
+            allowed_group_ids=datos.allowed_group_ids,
+            is_pwa_import=job.is_pwa_import,
+            permisos_pwa=datos.permisos_pwa,
+            allowed_permiso_ids=datos.allowed_permiso_ids,
+            organizaciones=datos.organizaciones,
+            comedores=datos.comedores,
+            actor=job.requested_by,
         )
-        user.set_unusable_password()
-        user.save()
+        return _procesar_usuario_existente(params)
 
-        if grupos:
-            user.groups.set(grupos)
+    if not datos.nombre or not datos.apellido:
+        raise ValidationError("Los campos Nombre y Apellido son obligatorios.")
 
-        profile = user.profile
-        profile.rol = rol
-        if provincias_objs:
-            profile.es_usuario_provincial = True
-        profile.save(update_fields=["rol", "es_usuario_provincial"])
+    if job.is_pwa_import and not (datos.organizaciones or datos.comedores):
+        raise ValidationError(
+            "Los usuarios PWA deben tener al menos una organizacion o comedor "
+            "asignado en las columnas Organizaciones/Comedores del archivo."
+        )
 
-        for prov in provincias_objs:
-            scope_key = ProfileTerritorialScope.build_scope_key(prov.pk)
-            ProfileTerritorialScope.objects.get_or_create(
-                profile=profile,
-                scope_key=scope_key,
-                defaults={
-                    "provincia_id": prov.pk,
-                    "municipio": None,
-                    "localidad": None,
-                },
-            )
+    username_to_create = datos.username_raw
+    if not username_to_create:
+        username_base = _slug_base_desde_nombre(
+            nombre=datos.nombre, apellido=datos.apellido
+        )
+        username_to_create = _generar_username_unico(username_base)
 
-        password = generate_temporary_password_for_user(user=user)
+    if (
+        datos.username_raw
+        and User.objects.filter(username__iexact=username_to_create).exists()
+    ):
+        raise ValidationError(
+            f"Ya existe un usuario con el username '{username_to_create}'."
+        )
+
+    with transaction.atomic():
+        params = _CrearUsuarioParams(
+            nombre=datos.nombre,
+            apellido=datos.apellido,
+            email=datos.email,
+            username_raw=username_to_create,
+            rol=datos.rol,
+            grupos=datos.grupos,
+            provincias_objs=datos.provincias_objs,
+            job=job,
+            permisos_pwa=datos.permisos_pwa,
+            organizaciones=datos.organizaciones,
+            comedores=datos.comedores,
+        )
+        user, password = _crear_usuario_nuevo(params)
 
     if job.send_credentials:
         _enviar_credenciales_import(user=user, password=password)
@@ -357,7 +829,7 @@ def process_single_user_import_row(  # pylint: disable=too-many-locals
     return {
         "status": UserImportJobRow.Status.CREATED,
         "mensaje": f"Usuario {user.username} creado correctamente.",
-        "email": email,
+        "email": datos.email,
     }
 
 
