@@ -71,6 +71,21 @@ def is_vat_provincial(user) -> bool:
     )
 
 
+def es_operador_cfp(user) -> bool:
+    """Operador CFP "puro": referente de centro sin rol administrador.
+
+    Se usa para restringir la visualización de datos administrativos del centro
+    (clase de institución, tipo de gestión, estado ETP) que solo requieren los
+    administradores INET/SSE o provinciales. Un usuario con doble rol (referente
+    + SSE/provincial) conserva la vista completa.
+    """
+    if not user or not getattr(user, "is_authenticated", False):
+        return False
+    if is_vat_sse(user) or is_vat_provincial(user):
+        return False
+    return is_vat_referente(user)
+
+
 def _has_effective_territorial_scopes(user) -> bool:
     return bool(get_effective_scopes(user))
 

@@ -1446,6 +1446,185 @@ def test_centro_alta_form_inet_provincia_restringe_campos_de_configuracion(
 
 
 @pytest.mark.django_db
+def test_centro_alta_form_operador_cfp_elimina_datos_administrativos(vat_geo_data):
+    provincia, municipio, localidad = vat_geo_data
+    operador = User.objects.create_user(
+        username="operador-cfp-form", password="test1234"
+    )
+    operador.groups.add(Group.objects.get_or_create(name="CFP")[0])
+    _grant_vat_referente_access(operador)
+    operador = User.objects.get(pk=operador.pk)
+
+    centro = _create_vat_centro(
+        codigo="OPCFP-FORM-001",
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad,
+        referente=operador,
+    )
+
+    form = CentroAltaForm(instance=centro, actor=operador)
+
+    # Los campos administrativos se eliminan del form: no se renderizan ni se
+    # aceptan en el POST (sin fuga en el HTML).
+    assert "tipo_gestion" not in form.fields
+    assert "clase_institucion" not in form.fields
+    assert "situacion" not in form.fields
+    # Los campos operativos que sí debe ver siguen presentes.
+    assert "nombre" in form.fields
+    assert "codigo" in form.fields
+    assert "referentes" in form.fields
+
+
+@pytest.mark.django_db
+def test_centro_alta_form_admin_inet_conserva_datos_administrativos(vat_geo_data):
+    provincia, municipio, localidad = vat_geo_data
+    admin = User.objects.create_superuser(
+        username="sse-vat-form",
+        email="sse-vat-form@vat.test",
+        password="test1234",
+    )
+
+    centro = _create_vat_centro(
+        codigo="SSE-FORM-001",
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad,
+    )
+
+    form = CentroAltaForm(instance=centro, actor=admin)
+
+    assert "tipo_gestion" in form.fields
+    assert "clase_institucion" in form.fields
+    assert "situacion" in form.fields
+
+
+@pytest.mark.django_db
+def test_centro_update_operador_cfp_no_puede_modificar_datos_administrativos(
+    client, vat_geo_data
+):
+    provincia, municipio, localidad = vat_geo_data
+    operador = User.objects.create_user(
+        username="operador-cfp-update", password="test1234"
+    )
+    operador.groups.add(Group.objects.get_or_create(name="CFP")[0])
+    _grant_vat_referente_access(operador)
+    operador = User.objects.get(pk=operador.pk)
+
+    centro = _create_vat_centro(
+        codigo="500177001",
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad,
+        referente=operador,
+    )
+    centro.referentes.add(operador)
+    contacto = InstitucionContacto.objects.create(
+        centro=centro,
+        nombre_contacto="Ana Perez",
+        documento="30111223",
+        rol_area="Dirección",
+        telefono_contacto="221-3333333",
+        email_contacto="ana@vat.test",
+        es_principal=True,
+    )
+    client.force_login(operador)
+
+    update_payload = _build_centro_payload(
+        operador,
+        provincia,
+        municipio,
+        localidad,
+        nombre=centro.nombre,
+        codigo=centro.codigo,
+        # Intento de tampering sobre datos administrativos ocultos.
+        tipo_gestion="Privado",
+        clase_institucion="Institución modificada",
+        situacion="Estado modificado",
+        **{
+            "contactos-TOTAL_FORMS": "1",
+            "contactos-INITIAL_FORMS": "1",
+            "contactos-MIN_NUM_FORMS": "0",
+            "contactos-MAX_NUM_FORMS": "1000",
+            "contactos-0-id": str(contacto.id),
+            "contactos-0-centro": str(centro.id),
+            "contactos-0-nombre_contacto": "Ana Perez",
+            "contactos-0-rol_area": "Dirección",
+            "contactos-0-documento": "30111223",
+            "contactos-0-telefono_contacto": "221-3333333",
+            "contactos-0-email_contacto": "ana@vat.test",
+            "contactos-0-es_principal": "on",
+        },
+    )
+    update_payload.pop("provincia", None)
+    update_payload.pop("activo", None)
+
+    response = client.post(
+        reverse("vat_centro_update", kwargs={"pk": centro.pk}),
+        data=update_payload,
+    )
+
+    centro.refresh_from_db()
+
+    assert response.status_code == 302
+    # El POST manipulado se ignora: los valores de DB se conservan.
+    assert centro.tipo_gestion == "Estatal"
+    assert centro.clase_institucion == "Formación Profesional"
+    assert centro.situacion == "Institución de ETP"
+
+
+@pytest.mark.django_db
+def test_centro_detail_operador_cfp_oculta_sector_de_gestion(client, vat_geo_data):
+    provincia, municipio, localidad = vat_geo_data
+    operador = User.objects.create_user(
+        username="operador-cfp-detail", password="test1234"
+    )
+    operador.groups.add(Group.objects.get_or_create(name="CFP")[0])
+    _grant_vat_referente_access(operador)
+    operador = User.objects.get(pk=operador.pk)
+
+    centro = _create_vat_centro(
+        codigo="500177002",
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad,
+        referente=operador,
+    )
+    centro.referentes.add(operador)
+    client.force_login(operador)
+
+    response = client.get(reverse("vat_centro_detail", kwargs={"pk": centro.pk}))
+
+    assert response.status_code == 200
+    assert response.context["mostrar_datos_administrativos"] is False
+    assert "Sector de gestión" not in response.content.decode()
+
+
+@pytest.mark.django_db
+def test_centro_detail_admin_inet_muestra_sector_de_gestion(client, vat_geo_data):
+    provincia, municipio, localidad = vat_geo_data
+    admin = User.objects.create_superuser(
+        username="sse-vat-detail",
+        email="sse-vat-detail@vat.test",
+        password="test1234",
+    )
+
+    centro = _create_vat_centro(
+        codigo="500177003",
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad,
+    )
+    client.force_login(admin)
+
+    response = client.get(reverse("vat_centro_detail", kwargs={"pk": centro.pk}))
+
+    assert response.status_code == 200
+    assert response.context["mostrar_datos_administrativos"] is True
+    assert "Sector de gestión" in response.content.decode()
+
+
+@pytest.mark.django_db
 def test_plan_version_curricular_form_inet_provincia_restringe_campos_estrategicos(
     vat_geo_data,
 ):

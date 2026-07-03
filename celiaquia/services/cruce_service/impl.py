@@ -108,6 +108,18 @@ class CruceService:
         return ""
 
     @staticmethod
+    def _es_responsable_puro(rol) -> bool:
+        """Regla de cupo por rol, común a cruce, cupo y padrón.
+
+        Un responsable PURO (``rol=responsable``) NO ocupa cupo: en el cruce solo
+        sirve como ancla para validar a sus hijos. En cambio, un ``beneficiario`` y
+        un doble rol (``beneficiario_y_responsable``) son celíacos: ocupan su
+        propio cupo y deben entrar al padrón, aunque además sean cuidadores de otro
+        beneficiario.
+        """
+        return ExpedienteCiudadano.es_rol_responsable_puro(rol)
+
+    @staticmethod
     def resolver_cuit_ciudadano(ciudadano) -> str:
         # Primero intentar campos específicos de CUIT/CUIL si existen
         for attr in ("cuit", "cuil", "cuil_cuit"):
@@ -663,6 +675,7 @@ class CruceService:
                 "resultado_sintys",
                 "estado_cupo",
                 "es_titular_activo",
+                "rol",
                 "ciudadano__documento",
                 "ciudadano__nombre",
                 "ciudadano__apellido",
@@ -694,6 +707,16 @@ class CruceService:
 
         for leg in legajos_aprobados_qs.iterator():
             ciu = leg.ciudadano
+
+            # Un responsable PURO (rol=responsable) no es beneficiario: no ocupa
+            # cupo ni va al padrón, y no debe quedar marcado MATCH. Solo sirve de
+            # ancla para validar a sus hijos, lo cual se resuelve al procesar el
+            # legajo de cada hijo (vía responsables_por_hijo, precomputado). Por
+            # eso se saltea acá según el rol, sin importar la relación familiar.
+            # Beneficiario y doble rol NO se saltean.
+            if CruceService._es_responsable_puro(leg.rol):
+                continue
+
             es_responsable = ciu.id in responsables_ids
 
             # Si es beneficiario con responsable, validar al responsable
@@ -740,13 +763,9 @@ class CruceService:
                         )
                     continue
 
-            # Si es responsable, NO asignarle cupo a él, solo validar para sus hijos
-            if es_responsable:
-                # NO agregar a matched_ids ni unmatched_ids
-                # El responsable no consume cupo
-                continue
-
-            # Caso: beneficiario sin responsable
+            # Beneficiario sin responsable, o doble rol / beneficiario que además
+            # es cuidador: se valida por su propio documento (los responsables
+            # puros ya fueron salteados al inicio del loop).
             cuit_ciud = CruceService.resolver_cuit_ciudadano(ciu)
             dni_ciud = CruceService.normalize_dni_str(getattr(ciu, "documento", ""))
 

@@ -217,6 +217,11 @@ class ExpedienteCiudadano(SoftDeleteModelMixin, models.Model):
         (ROLE_BENEFICIARIO_Y_RESPONSABLE, "Beneficiario y Responsable"),
     ]
 
+    @staticmethod
+    def es_rol_responsable_puro(rol):
+        """Un responsable puro no ocupa cupo ni padron; solo valida dependientes."""
+        return (rol or "").strip().lower() == ExpedienteCiudadano.ROLE_RESPONSABLE
+
     expediente = models.ForeignKey(
         Expediente, on_delete=models.CASCADE, related_name="expediente_ciudadanos"
     )

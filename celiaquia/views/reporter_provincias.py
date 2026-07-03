@@ -1,16 +1,17 @@
 from collections import Counter
-from datetime import timedelta
+from datetime import datetime, time, timedelta
 from urllib.parse import urlencode
 
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.paginator import Paginator
 from django.db.models import Count
 from django.utils import timezone
+from django.utils.dateparse import parse_date
 from django.views.generic import TemplateView
 
+from ciudadanos.models import GrupoFamiliar  # pylint: disable=import-error
 from celiaquia.models import (  # pylint: disable=import-error
     EstadoCupo,
-    Expediente,
     ExpedienteCiudadano,
     ResultadoSintys,
     RevisionTecnico,
@@ -18,7 +19,7 @@ from celiaquia.models import (  # pylint: disable=import-error
 from core.models import Provincia  # pylint: disable=import-error
 from users.territorial_scope import (  # pylint: disable=import-error
     apply_territorial_scope,
-    get_effective_scopes,
+    get_full_province_scope_ids,
     is_territorial_user,
 )
 
@@ -123,13 +124,13 @@ def _build_metricas_principales(
         {
             "label": "Documentacion incompleta",
             "value": _format_percentage(_percentage(incomplete_cases, total_cases)),
-            "support": f"{incomplete_cases} expedientes con archivos pendientes",
+            "support": f"{incomplete_cases} legajos con archivos pendientes",
             "tone": "warning",
         },
         {
             "label": "Documentacion completa",
             "value": _format_percentage(_percentage(ok_cases, total_cases)),
-            "support": f"{ok_cases} expedientes con archivos completos",
+            "support": f"{ok_cases} legajos con archivos completos",
             "tone": "success",
         },
         {
@@ -174,17 +175,20 @@ def _build_tendencia_mensual(queryset):
 
 
 def _build_expedientes_por_provincia(queryset, total_cases):
+    # Se agrupa directamente sobre el queryset de legajos (mismo universo que
+    # total_casos) en lugar de re-derivar desde Expediente.objects. Así la suma
+    # de "casos" coincide con total_casos y los "share" suman 100%, y no se
+    # pierden legajos vivos cuyo expediente padre esté soft-deleted.
     rows = list(
-        Expediente.objects.filter(expediente_ciudadanos__in=queryset)
-        .values(
-            "expediente_ciudadanos__ciudadano__provincia_id",
-            "expediente_ciudadanos__ciudadano__provincia__nombre",
+        queryset.values(
+            "ciudadano__provincia_id",
+            "ciudadano__provincia__nombre",
         )
         .annotate(
-            expedientes=Count("id", distinct=True),
-            casos=Count("expediente_ciudadanos", distinct=True),
+            casos=Count("id", distinct=True),
+            expedientes=Count("expediente_id", distinct=True),
         )
-        .order_by("-casos", "expediente_ciudadanos__ciudadano__provincia__nombre")
+        .order_by("-casos", "ciudadano__provincia__nombre")
     )
 
     max_cases = max((row["casos"] for row in rows), default=0)
@@ -194,9 +198,8 @@ def _build_expedientes_por_provincia(queryset, total_cases):
         casos = row["casos"]
         provincias.append(
             {
-                "provincia_id": row["expediente_ciudadanos__ciudadano__provincia_id"],
-                "nombre": row["expediente_ciudadanos__ciudadano__provincia__nombre"]
-                or "Sin provincia",
+                "provincia_id": row["ciudadano__provincia_id"],
+                "nombre": row["ciudadano__provincia__nombre"] or "Sin provincia",
                 "expedientes": row["expedientes"],
                 "casos": casos,
                 "share": _percentage(casos, total_cases),
@@ -247,26 +250,46 @@ def _build_filtros_activos(request, provincia_actual):
 
 def _get_provincia_actual(request, es_usuario_provincial):
     provincia_id = request.GET.get("provincia")
+
+    # Un usuario provincial no puede fijar como "alcance" una provincia fuera de
+    # su scope: si el ?provincia= no pertenece a sus scopes, se ignora (evita que
+    # el chip "Alcance"/"Provincia" muestre el nombre de una provincia ajena).
+    if provincia_id and es_usuario_provincial:
+        provincia_ids = set(get_full_province_scope_ids(request.user))
+        try:
+            solicitada = int(provincia_id)
+        except (TypeError, ValueError):
+            solicitada = None
+        if solicitada not in provincia_ids:
+            provincia_id = None
+
     if provincia_id:
         return Provincia.objects.filter(pk=provincia_id).first()
 
     if not es_usuario_provincial:
         return None
 
-    provincia_ids = [scope.provincia_id for scope in get_effective_scopes(request.user)]
+    # Mismo criterio que la validación de arriba y que _get_provincias_disponibles:
+    # el default también debe limitarse a provincias con alcance completo.
+    provincia_ids = get_full_province_scope_ids(request.user)
     return Provincia.objects.filter(pk__in=provincia_ids).order_by("nombre").first()
 
 
 def _get_provincias_disponibles(user, es_usuario_provincial):
     if es_usuario_provincial:
-        provincia_ids = [scope.provincia_id for scope in get_effective_scopes(user)]
+        # Solo provincias con alcance completo: ofrecer una provincia entera a
+        # quien únicamente tiene scope municipal sería incoherente con los datos.
+        provincia_ids = get_full_province_scope_ids(user)
         return Provincia.objects.filter(pk__in=provincia_ids).order_by("nombre")
 
     return Provincia.objects.all().order_by("nombre")
 
 
 def _build_pagination(queryset, request):
-    paginator = Paginator(queryset.order_by("-creado_en"), PAGE_SIZE)
+    # "-pk" como desempate estable: sin él, los muchos legajos con igual creado_en
+    # (importaciones masivas en el mismo instante) se ordenan de forma no
+    # determinista entre páginas y el listado repite/saltea filas.
+    paginator = Paginator(queryset.order_by("-creado_en", "-pk"), PAGE_SIZE)
     page_obj = paginator.get_page(request.GET.get("page"))
     current_querystring = _build_current_querystring(request)
     return paginator, page_obj, current_querystring
@@ -288,10 +311,21 @@ def _extract_filter_values(request):
 def _apply_report_filters(queryset, filter_values):
     if filter_values["provincia"]:
         queryset = queryset.filter(ciudadano__provincia_id=filter_values["provincia"])
-    if filter_values["fecha_desde"]:
-        queryset = queryset.filter(creado_en__gte=filter_values["fecha_desde"])
-    if filter_values["fecha_hasta"]:
-        queryset = queryset.filter(creado_en__lte=filter_values["fecha_hasta"])
+    # Los <input type=date> entregan 'YYYY-MM-DD' sin hora. Construimos límites
+    # aware para incluir el día completo: desde 00:00 del día "desde" hasta el
+    # instante previo a 00:00 del día siguiente al "hasta" (rango inclusivo).
+    # Evita el sesgo de creado_en__lte='YYYY-MM-DD' (que cortaba en medianoche
+    # local y excluía todo el último día) y el RuntimeWarning por naive datetime.
+    fecha_desde = parse_date(filter_values["fecha_desde"] or "")
+    if fecha_desde:
+        inicio = timezone.make_aware(datetime.combine(fecha_desde, time.min))
+        queryset = queryset.filter(creado_en__gte=inicio)
+    fecha_hasta = parse_date(filter_values["fecha_hasta"] or "")
+    if fecha_hasta:
+        fin = timezone.make_aware(
+            datetime.combine(fecha_hasta + timedelta(days=1), time.min)
+        )
+        queryset = queryset.filter(creado_en__lt=fin)
     if filter_values["expediente_numero"]:
         queryset = queryset.filter(
             expediente__numero_expediente__icontains=filter_values["expediente_numero"]
@@ -321,14 +355,19 @@ def _es_menor(fecha_nacimiento, hoy):
     return edad < 18
 
 
-def _clasificar_legajo_aprobado(rol, fecha_nacimiento, hoy):
+def _clasificar_legajo_aprobado(
+    rol, fecha_nacimiento, hoy, es_beneficiario_familia=False
+):
     if _es_menor(fecha_nacimiento, hoy):
         return "menor"
     rol = (rol or "").strip().lower()
     if rol == ExpedienteCiudadano.ROLE_BENEFICIARIO_Y_RESPONSABLE:
         return "doble_rol"
     if rol == ExpedienteCiudadano.ROLE_RESPONSABLE:
-        return "responsable"
+        # Un responsable que además es beneficiario en su grupo familiar (figura
+        # como hijo de otro cuidador principal) es doble rol, igual que en el
+        # detalle del expediente. Sin ese vínculo, es responsable únicamente.
+        return "doble_rol" if es_beneficiario_familia else "responsable"
     return "beneficiario"
 
 
@@ -336,13 +375,26 @@ def _build_clasificacion_aprobados(queryset):
     """Clasifica los legajos APROBADOS por tipo de rol/edad (categorías mutuamente
     excluyentes). Devuelve el total de aprobados y los subtotales por categoría."""
     hoy = timezone.localdate()
-    filas = queryset.filter(revision_tecnico=RevisionTecnico.APROBADO).values_list(
-        "rol", "ciudadano__fecha_nacimiento"
+    filas = list(
+        queryset.filter(revision_tecnico=RevisionTecnico.APROBADO).values_list(
+            "ciudadano_id", "rol", "ciudadano__fecha_nacimiento"
+        )
+    )
+    ciudadano_ids = [ciudadano_id for ciudadano_id, _, _ in filas]
+    # Ciudadanos aprobados que son beneficiarios dentro de una relación familiar
+    # (figuran como hijo con cuidador principal). Una sola consulta batch.
+    beneficiarios_familia = set(
+        GrupoFamiliar.objects.filter(
+            ciudadano_2_id__in=ciudadano_ids,
+            cuidador_principal=True,
+        ).values_list("ciudadano_2_id", flat=True)
     )
 
     counts = Counter(
-        _clasificar_legajo_aprobado(rol, fecha_nacimiento, hoy)
-        for rol, fecha_nacimiento in filas
+        _clasificar_legajo_aprobado(
+            rol, fecha_nacimiento, hoy, ciudadano_id in beneficiarios_familia
+        )
+        for ciudadano_id, rol, fecha_nacimiento in filas
     )
     total = sum(counts.values())
     max_count = max(counts.values(), default=0)
@@ -449,7 +501,10 @@ def _build_report_context(request):
     es_usuario_provincial = is_territorial_user(user)
 
     queryset = ExpedienteCiudadano.objects.select_related(
-        "expediente__usuario_provincia__profile", "ciudadano", "estado"
+        "expediente__usuario_provincia__profile",
+        "ciudadano",
+        "ciudadano__provincia",
+        "estado",
     )
 
     if es_usuario_provincial:

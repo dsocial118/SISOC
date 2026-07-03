@@ -425,7 +425,7 @@
                                 </td>
                                 <td>{{ caso.ciudadano.nombre }} {{ caso.ciudadano.apellido }}</td>
                                 <td>{{ caso.expediente.numero_expediente|default:"-" }}</td>
-                                <td>{{ caso.expediente.provincia.nombre|default:"Sin provincia" }}</td>
+                                <td>{{ caso.ciudadano.provincia.nombre|default:"Sin provincia" }}</td>
                                 <td>
                                     <span class="reporter-badge reporter-badge--{% if caso.revision_tecnico == 'APROBADO' %}success{% elif caso.revision_tecnico == 'RECHAZADO' %}danger{% elif caso.revision_tecnico == 'SUBSANAR' %}warning{% elif caso.revision_tecnico == 'SUBSANADO' %}accent{% else %}neutral{% endif %}">
                                         {{ caso.get_revision_tecnico_display }}
