@@ -576,9 +576,15 @@
                     <div class="row">
                         <div class="col-md-8 vp-field">{{ form.nombre|as_crispy_field }}</div>
                         <div class="col-md-4 vp-field">{{ form.codigo|as_crispy_field }}</div>
-                        <div class="col-md-4 vp-field">{{ form.clase_institucion|as_crispy_field }}</div>
-                        <div class="col-md-4 vp-field">{{ form.tipo_gestion|as_crispy_field }}</div>
-                        <div class="col-md-4 vp-field">{{ form.situacion|as_crispy_field }}</div>
+                        {% if form.clase_institucion %}
+                            <div class="col-md-4 vp-field">{{ form.clase_institucion|as_crispy_field }}</div>
+                        {% endif %}
+                        {% if form.tipo_gestion %}
+                            <div class="col-md-4 vp-field">{{ form.tipo_gestion|as_crispy_field }}</div>
+                        {% endif %}
+                        {% if form.situacion %}
+                            <div class="col-md-4 vp-field">{{ form.situacion|as_crispy_field }}</div>
+                        {% endif %}
                         <div class="col-md-6 vp-field">
                             <div id="div_id_referentes" class="form-group">
                                 <label for="id_referentes_search" class="requiredField">

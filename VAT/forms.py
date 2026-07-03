@@ -14,6 +14,7 @@ from ciudadanos.models import Ciudadano
 from core.models import Dia, Sexo
 from core.models import Localidad, Programa
 from iam.services import user_has_permission_code
+from VAT.services.access_scope import es_operador_cfp
 from VAT.models import (
     Centro,
     ModalidadInstitucional,
@@ -296,6 +297,18 @@ def _hide_and_lock_fields(form, field_names):
         field.required = False
         field.disabled = True
         field.widget = forms.HiddenInput()
+
+
+def _remove_fields(form, field_names):
+    """Elimina campos del form: no se renderizan ni se aceptan en el POST.
+
+    A diferencia de `_hide_and_lock_fields` (que usa `HiddenInput` y deja el
+    valor en el HTML), esto asegura que el valor nunca llega al cliente. En un
+    `ModelForm` de edición, los campos ausentes conservan su valor de DB al
+    guardar.
+    """
+    for field_name in field_names:
+        form.fields.pop(field_name, None)
 
 
 def _clean_non_empty_text(value, field_label):
@@ -776,6 +789,14 @@ class CentroAltaForm(CentroForm):
         if _is_inet_provincia_actor(actor) and self.instance and self.instance.pk:
             _lock_fields_readonly(self, ["codigo", "provincia"])
             _hide_and_lock_fields(
+                self,
+                ["tipo_gestion", "clase_institucion", "situacion"],
+            )
+
+        # Operador CFP: no ve datos administrativos del centro. Se eliminan del
+        # form para evitar fuga en el HTML y bloquear cualquier POST manipulado.
+        if es_operador_cfp(actor):
+            _remove_fields(
                 self,
                 ["tipo_gestion", "clase_institucion", "situacion"],
             )
