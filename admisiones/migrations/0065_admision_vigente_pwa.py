@@ -37,7 +37,9 @@ def marcar_admisiones_vigentes_pwa(apps, schema_editor):
             Admision.objects.filter(
                 comedor_id=comedor_id,
                 vigente_pwa=True,
-            ).exclude(pk=vigente.pk).update(vigente_pwa=False)
+            ).exclude(
+                pk=vigente.pk
+            ).update(vigente_pwa=False)
             if not vigente.vigente_pwa:
                 Admision.objects.filter(pk=vigente.pk).update(vigente_pwa=True)
 
