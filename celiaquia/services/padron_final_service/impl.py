@@ -10,6 +10,7 @@ fuente de verdad.
 
 from datetime import date, datetime
 from io import BytesIO
+import logging
 
 from openpyxl import Workbook
 
@@ -21,6 +22,7 @@ from celiaquia.models import (
 )
 from celiaquia.services.cruce_service import CruceService
 
+logger = logging.getLogger("django")
 
 ESTADO_CUPO_HEADER = "Estado de cupo"
 
@@ -80,24 +82,61 @@ class PadronFinalService:
         )
 
         rows = []
+        sin_documento = []
         for legajo in legajos:
             responsables = responsables_por_hijo.get(legajo.ciudadano_id, [])
+            if len(responsables) > 1:
+                logger.warning(
+                    "padron_final.responsable_ambiguo",
+                    extra={
+                        "data": {
+                            "expediente_id": getattr(expediente, "id", None),
+                            "ciudadano_id": legajo.ciudadano_id,
+                            "candidatos": len(responsables),
+                        }
+                    },
+                )
             responsable = responsables[0] if responsables else None
-            rows.append(PadronFinalService._fila_beneficiario(legajo, responsable))
+            fila = PadronFinalService._fila_beneficiario(legajo, responsable)
+            if not fila[NOMINA_HEADERS.index("documento")]:
+                sin_documento.append(legajo.ciudadano_id)
+            rows.append(fila)
+
+        if sin_documento:
+            logger.warning(
+                "padron_final.documento_vacio",
+                extra={
+                    "data": {
+                        "expediente_id": getattr(expediente, "id", None),
+                        "ciudadanos_sin_documento": sin_documento,
+                    }
+                },
+            )
 
         return PadronFinalService._build_excel(
             [*NOMINA_HEADERS, ESTADO_CUPO_HEADER], rows
         )
 
     @staticmethod
+    def _legajos_aprobados_qs(expediente):
+        """Legajos APROBADO+MATCH del expediente, sin excluir responsables.
+
+        La exclusion de responsables puros se hace en Python con
+        ``ExpedienteCiudadano.es_rol_responsable_puro`` (ver
+        ``_legajos_aprobados``) para usar la misma regla normalizada que
+        cruce y cupo, en vez de un exclude(rol=...) exacto que no tolera
+        variantes de mayusculas/espacios.
+        """
+        return ExpedienteCiudadano.objects.filter(
+            expediente=expediente,
+            revision_tecnico=RevisionTecnico.APROBADO,
+            resultado_sintys=ResultadoSintys.MATCH,
+        )
+
+    @staticmethod
     def _legajos_aprobados(expediente):
-        return (
-            ExpedienteCiudadano.objects.filter(
-                expediente=expediente,
-                revision_tecnico=RevisionTecnico.APROBADO,
-                resultado_sintys=ResultadoSintys.MATCH,
-            )
-            .exclude(rol=ExpedienteCiudadano.ROLE_RESPONSABLE)
+        qs = (
+            PadronFinalService._legajos_aprobados_qs(expediente)
             .select_related(
                 "ciudadano",
                 "ciudadano__sexo",
@@ -107,10 +146,42 @@ class PadronFinalService:
             )
             .order_by("ciudadano__apellido", "ciudadano__nombre")
         )
+        return [
+            legajo
+            for legajo in qs
+            if not ExpedienteCiudadano.es_rol_responsable_puro(legajo.rol)
+        ]
+
+    @staticmethod
+    def hay_aprobados(expediente) -> bool:
+        """True si el expediente tiene al menos un legajo para el padron."""
+        qs = PadronFinalService._legajos_aprobados_qs(expediente)
+        return any(
+            not ExpedienteCiudadano.es_rol_responsable_puro(rol)
+            for rol in qs.values_list("rol", flat=True)
+        )
 
     @staticmethod
     def _texto(value) -> str:
         return "" if value is None else str(value)
+
+    @staticmethod
+    def _documento_o_cuit(ciudadano) -> str:
+        """Documento a exportar, con fallback a CUIL/CUIT.
+
+        SINTYS identifica primero por CUIL/CUIT y recien despues por
+        documento; un ciudadano puede tener ``documento`` vacio y
+        ``cuil_cuit`` cargado. Si no hay documento, se deriva el nucleo DNI
+        del CUIT (misma logica que el cruce) y, si eso tampoco resuelve
+        nada, se exporta el cuil_cuit crudo antes que dejar la celda vacia.
+        """
+        documento = PadronFinalService._texto(ciudadano.documento)
+        if documento:
+            return documento
+        cuil_cuit = PadronFinalService._texto(ciudadano.cuil_cuit)
+        if not cuil_cuit:
+            return ""
+        return CruceService.extraer_dni_de_cuit(cuil_cuit) or cuil_cuit
 
     @staticmethod
     def _estado_cupo_label(estado_cupo) -> str:
@@ -127,7 +198,7 @@ class PadronFinalService:
         fila = [
             ciudadano.apellido or "",
             ciudadano.nombre or "",
-            PadronFinalService._texto(ciudadano.documento),
+            PadronFinalService._documento_o_cuit(ciudadano),
             ciudadano.fecha_nacimiento,
             CruceService.normalizar_sexo_para_exportacion(ciudadano),
             PadronFinalService._texto(ciudadano.nacionalidad),
@@ -151,7 +222,7 @@ class PadronFinalService:
                 [
                     responsable.apellido or "",
                     responsable.nombre or "",
-                    PadronFinalService._texto(responsable.documento),
+                    PadronFinalService._documento_o_cuit(responsable),
                     responsable.fecha_nacimiento,
                     CruceService.normalizar_sexo_para_exportacion(responsable),
                     domicilio,

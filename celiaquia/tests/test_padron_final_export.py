@@ -191,6 +191,52 @@ def test_nomina_aprobados_usa_documento_actual_de_la_base():
 
 
 @pytest.mark.django_db
+def test_nomina_aprobados_usa_cuil_cuit_cuando_no_hay_documento():
+    """SINTYS matchea primero por CUIL/CUIT; si documento esta vacio en la
+    base, la nomina no debe dejar la celda en blanco."""
+    owner = _user("prov-sin-documento")
+    expediente = _expediente(owner)
+    legajo = _crear_legajo(
+        expediente,
+        "20392317989",
+        revision=RevisionTecnico.APROBADO,
+        sintys=ResultadoSintys.MATCH,
+    )
+    legajo.ciudadano.documento = None
+    legajo.ciudadano.cuil_cuit = "27342010844"
+    legajo.ciudadano.save(update_fields=["documento", "cuil_cuit"])
+
+    _, data_rows = _workbook_rows(
+        PadronFinalService.generar_padron_final_excel(expediente)
+    )
+
+    assert len(data_rows) == 1
+    assert _col("documento", data_rows[0]) == "34201084"
+
+
+@pytest.mark.django_db
+def test_nomina_aprobados_excluye_responsable_con_rol_normalizado_distinto():
+    """La exclusion de responsables puros usa la misma regla normalizada
+    (strip/lower) que cruce y cupo, tolerando variantes de mayusculas y
+    espacios en el dato guardado."""
+    owner = _user("prov-rol-normalizado")
+    expediente = _expediente(owner)
+    _crear_legajo(
+        expediente,
+        "20392317989",
+        revision=RevisionTecnico.APROBADO,
+        sintys=ResultadoSintys.MATCH,
+        rol=" Responsable ",
+    )
+
+    _, data_rows = _workbook_rows(
+        PadronFinalService.generar_padron_final_excel(expediente)
+    )
+
+    assert len(data_rows) == 0
+
+
+@pytest.mark.django_db
 def test_nomina_aprobados_incluye_datos_del_responsable():
     owner = _user("prov-familia")
     expediente = _expediente(owner)
@@ -370,6 +416,28 @@ def test_descarga_nomina_aprobados_no_disponible_antes_de_cruce_finalizado(clien
 
 
 @pytest.mark.django_db
+def test_descarga_nomina_aprobados_no_disponible_sin_aprobados(client):
+    """CRUCE_FINALIZADO sin ningun legajo aprobado+match no debe descargar
+    un Excel vacio: la nomina no esta disponible."""
+    owner = _user("prov-sin-aprobados")
+    coord = _user("coord-sin-aprobados", coord=True)
+    expediente = _expediente(owner)
+    _crear_legajo(
+        expediente,
+        "20392317993",
+        revision=RevisionTecnico.RECHAZADO,
+        sintys=ResultadoSintys.MATCH,
+    )
+
+    client.force_login(coord)
+    response = client.get(
+        reverse("expediente_padron_final_export", args=[expediente.pk])
+    )
+
+    assert response.status_code == 404
+
+
+@pytest.mark.django_db
 def test_descarga_nomina_aprobados_finalizada_devuelve_xlsx(client):
     owner = _user("prov-final")
     coord = _user("coord-final", coord=True)
@@ -406,6 +474,12 @@ def test_detalle_muestra_descarga_solo_con_cruce_finalizado(client):
     coord = _user("coord-detalle", coord=True)
     expediente_asignado = _expediente(owner, estado="ASIGNADO")
     expediente_finalizado = _expediente(owner)
+    _crear_legajo(
+        expediente_finalizado,
+        "20392317994",
+        revision=RevisionTecnico.APROBADO,
+        sintys=ResultadoSintys.MATCH,
+    )
 
     client.force_login(coord)
     response_asignado = client.get(
