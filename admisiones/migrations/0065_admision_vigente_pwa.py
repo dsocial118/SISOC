@@ -29,8 +29,17 @@ def marcar_admisiones_vigentes_pwa(apps, schema_editor):
             vigente or admisiones.filter(activa=True).first() or admisiones.first()
         )
         if vigente:
-            Admision.objects.filter(comedor_id=comedor_id).update(vigente_pwa=False)
-            Admision.objects.filter(pk=vigente.pk).update(vigente_pwa=True)
+            vigentes_actuales = list(
+                admisiones.filter(vigente_pwa=True).values_list("pk", flat=True)
+            )
+            if vigentes_actuales == [vigente.pk]:
+                continue
+            Admision.objects.filter(
+                comedor_id=comedor_id,
+                vigente_pwa=True,
+            ).exclude(pk=vigente.pk).update(vigente_pwa=False)
+            if not vigente.vigente_pwa:
+                Admision.objects.filter(pk=vigente.pk).update(vigente_pwa=True)
 
 
 class Migration(migrations.Migration):
