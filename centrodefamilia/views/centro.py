@@ -16,6 +16,7 @@ from django.shortcuts import get_object_or_404
 from django.http import Http404
 
 from centrodefamilia.access import (
+    ROLE_CDF_SSE_PERMISSION,
     ids_centros_referente_cdf,
     puede_gestionar_usuarios_cdf,
     puede_generar_usuario_cdf,
@@ -57,7 +58,6 @@ BOOL_ADVANCED_FILTER = AdvancedFilterEngine(
 )
 
 
-ROLE_CDF_SSE_PERMISSION = "auth.role_cdf_sse"
 ROLE_REFERENTE_CENTRO_PERMISSION = "auth.role_referentecentro"
 CDF_CENTRO_LIST_ONLY_FIELDS = (
     "id",
