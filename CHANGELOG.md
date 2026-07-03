@@ -4,6 +4,7 @@
 ## Actualizaciones
 
 - [sin-area] hotfix. (PR #1997)
+- [sin-area] hotfix. (PR #1998)
 <!-- AUTO-GENERATED RELEASE END: 2026-07-08 -->
 
 <!-- AUTO-GENERATED RELEASE START: 2026-06-24 -->
