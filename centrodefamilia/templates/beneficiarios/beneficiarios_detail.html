@@ -2,95 +2,103 @@
 {% load static %}
 {% block title %}Detalle del Preinscripto{% endblock %}
 {% block titulo-pagina %}Detalle del Preinscripto{% endblock %}
+{% block head %}
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Lora:wght@600;700&display=swap"
+          rel="stylesheet" />
+    <link rel="stylesheet" href="{% static 'custom/css/cdf.css' %}" />
+{% endblock %}
 {% block breadcrumb %}
     {% include 'components/breadcrumb.html' with items=breadcrumb_items %}
 {% endblock %}
 {% block content %}
-    <div class="container mt-4">
-        <div class="row">
-            <div class="col-12">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h2>{{ beneficiario.apellido }}, {{ beneficiario.nombre }}</h2>
-                    <div>
-                        <a href="{% url 'beneficiarios_list' %}" class="btn btn-secondary">
-                            <i class="fas fa-arrow-left"></i> Volver al listado
-                        </a>
-                    </div>
-                </div>
+    <div class="container mt-4 cdf-page">
+        <!-- HERO -->
+        <div class="cdf-hero">
+            <div class="cdf-hero-block">
+                <h1>{{ beneficiario.apellido }}, {{ beneficiario.nombre }}</h1>
+                <p class="cdf-hero-sub">
+                    <span><i class="fas fa-id-card"></i>DNI {{ beneficiario.dni }}</span>
+                    <span><i class="fas fa-fingerprint"></i>CUIL {{ beneficiario.cuil }}</span>
+                </p>
+            </div>
+            <div class="cdf-hero-side">
+                <a href="{% url 'beneficiarios_list' %}" class="cdf-btn">
+                    <i class="fas fa-arrow-left"></i>Volver al listado
+                </a>
             </div>
         </div>
-        <div class="row">
+        <div class="row gx-4">
             <!-- Información Personal -->
-            <div class="col-md-6">
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="card-title mb-0">
-                            <i class="fas fa-user"></i> Información Personal
-                        </h5>
+            <div class="col-md-6 d-flex">
+                <div class="cdf-card w-100">
+                    <div class="cdf-card-head">
+                        <i class="fas fa-user"></i>
+                        <span>Información Personal</span>
                     </div>
-                    <div class="card-body">
-                        <dl class="row">
-                            <dt class="col-sm-4">CUIL:</dt>
+                    <div class="cdf-card-body">
+                        <dl class="row mb-0">
+                            <dt class="col-sm-4">CUIL</dt>
                             <dd class="col-sm-8">
                                 {{ beneficiario.cuil }}
                             </dd>
-                            <dt class="col-sm-4">DNI:</dt>
+                            <dt class="col-sm-4">DNI</dt>
                             <dd class="col-sm-8">
                                 {{ beneficiario.dni }}
                             </dd>
-                            <dt class="col-sm-4">Género:</dt>
+                            <dt class="col-sm-4">Género</dt>
                             <dd class="col-sm-8">
                                 {{ beneficiario.get_genero_display }}
                             </dd>
-                            <dt class="col-sm-4">Fecha de Nacimiento:</dt>
+                            <dt class="col-sm-4">Fecha de Nacimiento</dt>
                             <dd class="col-sm-8">
                                 {{ beneficiario.fecha_nacimiento|date:"d/m/Y" }}
                             </dd>
-                            <dt class="col-sm-4">Email:</dt>
+                            <dt class="col-sm-4">Email</dt>
                             <dd class="col-sm-8">
                                 {{ beneficiario.correo_electronico|default:"No especificado" }}
                             </dd>
-                            <dt class="col-sm-4">Fecha Agregado:</dt>
+                            <dt class="col-sm-4">Fecha Agregado</dt>
                             <dd class="col-sm-8">
-                                <small class="text-muted">{{ beneficiario.fecha_creado|date:"d/m/Y H:i" }}</small>
+                                <span class="cdf-td-muted">{{ beneficiario.fecha_creado|date:"d/m/Y H:i" }}</span>
                             </dd>
                         </dl>
                     </div>
                 </div>
             </div>
             <!-- Información del Responsable -->
-            <div class="col-md-6">
-                <div class="card">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <h5 class="card-title mb-0">
-                            <i class="fas fa-user-friends"></i> Responsable
-                        </h5>
-                        <div class="ms-auto">
+            <div class="col-md-6 d-flex">
+                <div class="cdf-card w-100">
+                    <div class="cdf-card-head">
+                        <i class="fas fa-user-friends"></i>
+                        <span>Responsable</span>
+                        <div class="cdf-head-tools">
                             <a href="{% url 'responsables_detail' beneficiario.responsable.pk %}"
-                               class="btn btn-outline-primary btn-sm">
-                                <i class="fas fa-eye"></i> Ver detalle
+                               class="cdf-btn">
+                                <i class="fas fa-eye"></i>Ver detalle
                             </a>
                         </div>
                     </div>
-                    <div class="card-body">
-                        <dl class="row">
-                            <dt class="col-sm-4">Nombre:</dt>
+                    <div class="cdf-card-body">
+                        <dl class="row mb-0">
+                            <dt class="col-sm-4">Nombre</dt>
                             <dd class="col-sm-8">
                                 {{ beneficiario.responsable.apellido }}, {{ beneficiario.responsable.nombre }}
                             </dd>
-                            <dt class="col-sm-4">DNI:</dt>
+                            <dt class="col-sm-4">DNI</dt>
                             <dd class="col-sm-8">
                                 {{ beneficiario.responsable.dni }}
                             </dd>
-                            <dt class="col-sm-4">CUIL:</dt>
+                            <dt class="col-sm-4">CUIL</dt>
                             <dd class="col-sm-8">
                                 {{ beneficiario.responsable.cuil }}
                             </dd>
-                            <dt class="col-sm-4">Vínculo:</dt>
+                            <dt class="col-sm-4">Vínculo</dt>
                             <dd class="col-sm-8">
                                 {{ beneficiario.responsable.get_vinculo_parental_display }}
                             </dd>
-                            <dt class="col-sm-4">Celular:</dt>
+                            <dt class="col-sm-4">Celular</dt>
                             <dd class="col-sm-8">
                                 {% if beneficiario.responsable.prefijo_celular and beneficiario.responsable.numero_celular %}
                                     {{ beneficiario.responsable.prefijo_celular }}-{{ beneficiario.responsable.numero_celular }}
@@ -103,42 +111,41 @@
                 </div>
             </div>
         </div>
-        <div class="row mt-4">
+        <div class="row gx-4">
             <!-- Domicilio -->
-            <div class="col-md-6">
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="card-title mb-0">
-                            <i class="fas fa-map-marker-alt"></i> Domicilio
-                        </h5>
+            <div class="col-md-6 d-flex">
+                <div class="cdf-card w-100">
+                    <div class="cdf-card-head">
+                        <i class="fas fa-map-marker-alt"></i>
+                        <span>Domicilio</span>
                     </div>
-                    <div class="card-body">
-                        <dl class="row">
-                            <dt class="col-sm-4">Dirección:</dt>
+                    <div class="cdf-card-body">
+                        <dl class="row mb-0">
+                            <dt class="col-sm-4">Dirección</dt>
                             <dd class="col-sm-8">
                                 {{ beneficiario.domicilio }}
                             </dd>
-                            <dt class="col-sm-4">Calle:</dt>
+                            <dt class="col-sm-4">Calle</dt>
                             <dd class="col-sm-8">
                                 {{ beneficiario.calle }} {{ beneficiario.altura|default:"" }}
                             </dd>
-                            <dt class="col-sm-4">Provincia:</dt>
+                            <dt class="col-sm-4">Provincia</dt>
                             <dd class="col-sm-8">
                                 {{ beneficiario.provincia }}
                             </dd>
-                            <dt class="col-sm-4">Municipio:</dt>
+                            <dt class="col-sm-4">Municipio</dt>
                             <dd class="col-sm-8">
                                 {{ beneficiario.municipio }}
                             </dd>
-                            <dt class="col-sm-4">Localidad:</dt>
+                            <dt class="col-sm-4">Localidad</dt>
                             <dd class="col-sm-8">
                                 {{ beneficiario.localidad }}
                             </dd>
-                            <dt class="col-sm-4">Código Postal:</dt>
+                            <dt class="col-sm-4">Código Postal</dt>
                             <dd class="col-sm-8">
                                 {{ beneficiario.codigo_postal|default:"No especificado" }}
                             </dd>
-                            <dt class="col-sm-4">Barrio:</dt>
+                            <dt class="col-sm-4">Barrio</dt>
                             <dd class="col-sm-8">
                                 {{ beneficiario.barrio|default:"No especificado" }}
                             </dd>
@@ -147,34 +154,33 @@
                 </div>
             </div>
             <!-- Información Académica -->
-            <div class="col-md-6">
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="card-title mb-0">
-                            <i class="fas fa-graduation-cap"></i> Información Académica
-                        </h5>
+            <div class="col-md-6 d-flex">
+                <div class="cdf-card w-100">
+                    <div class="cdf-card-head">
+                        <i class="fas fa-graduation-cap"></i>
+                        <span>Información Académica</span>
                     </div>
-                    <div class="card-body">
-                        <dl class="row">
-                            <dt class="col-sm-5">Estudia actualmente:</dt>
+                    <div class="cdf-card-body">
+                        <dl class="row mb-0">
+                            <dt class="col-sm-5">Estudia actualmente</dt>
                             <dd class="col-sm-7">
                                 {% if beneficiario.estado_academico %}
-                                    <span class="badge bg-success">Estudiando</span>
+                                    <span class="cdf-pill cdf-pill--success">Estudiando</span>
                                 {% else %}
-                                    <span class="badge bg-secondary">No estudiando</span>
+                                    <span class="cdf-pill cdf-pill--muted">No estudiando</span>
                                 {% endif %}
                             </dd>
                             {% if beneficiario.nivel_educativo_actual %}
-                                <dt class="col-sm-5">Nivel Actual:</dt>
+                                <dt class="col-sm-5">Nivel Actual</dt>
                                 <dd class="col-sm-7">
                                     {{ beneficiario.get_nivel_educativo_actual_display }}
                                 </dd>
                             {% endif %}
-                            <dt class="col-sm-5">Máximo Nivel:</dt>
+                            <dt class="col-sm-5">Máximo Nivel</dt>
                             <dd class="col-sm-7">
                                 {{ beneficiario.get_maximo_nivel_educativo_display }}
                             </dd>
-                            <dt class="col-sm-5">Institución:</dt>
+                            <dt class="col-sm-5">Institución</dt>
                             <dd class="col-sm-7">
                                 {{ beneficiario.institucion_academica|default:"No especificada" }}
                             </dd>
@@ -183,50 +189,41 @@
                 </div>
             </div>
         </div>
-        <div class="row mt-4">
-            <!-- Actividades -->
-            <div class="col-12">
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="card-title mb-0">
-                            <i class="fas fa-running"></i> Actividades e Intereses
-                        </h5>
+        <!-- Actividades -->
+        <div class="cdf-card">
+            <div class="cdf-card-head">
+                <i class="fas fa-person-running"></i>
+                <span>Actividades e Intereses</span>
+            </div>
+            <div class="cdf-card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="cdf-info-label mb-2">Actividades Preferidas</div>
+                        {% if beneficiario.actividad_preferida %}
+                            <div class="d-flex flex-wrap" style="gap: 0.4rem">
+                                {% for actividad in beneficiario.actividad_preferida %}
+                                    <span class="cdf-pill cdf-pill--teal">{{ actividad }}</span>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <p class="cdf-td-muted mb-0">No especificadas</p>
+                        {% endif %}
                     </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <h6>Actividades Preferidas:</h6>
-                                {% if beneficiario.actividad_preferida %}
-                                    <ul class="list-unstyled">
-                                        {% for actividad in beneficiario.actividad_preferida %}
-                                            <li>
-                                                <span class="badge bg-primary">{{ actividad }}</span>
-                                            </li>
-                                        {% endfor %}
-                                    </ul>
-                                {% else %}
-                                    <p class="text-muted">No especificadas</p>
-                                {% endif %}
-                            </div>
-                            <div class="col-md-6">
-                                <h6>Actividades Extracurriculares:</h6>
-                                {% if beneficiario.actividades_extracurriculares %}
-                                    {% if beneficiario.actividades_detalle.all %}
-                                        <ul class="list-unstyled">
-                                            {% for actividad in beneficiario.actividades_detalle.all %}
-                                                <li>
-                                                    <span class="badge bg-info">{{ actividad.nombre }}</span>
-                                                </li>
-                                            {% endfor %}
-                                        </ul>
-                                    {% else %}
-                                        <p class="text-muted">Sí, pero sin detalles especificados</p>
-                                    {% endif %}
-                                {% else %}
-                                    <p class="text-muted">No participa</p>
-                                {% endif %}
-                            </div>
-                        </div>
+                    <div class="col-md-6">
+                        <div class="cdf-info-label mb-2">Actividades Extracurriculares</div>
+                        {% if beneficiario.actividades_extracurriculares %}
+                            {% if beneficiario.actividades_detalle.all %}
+                                <div class="d-flex flex-wrap" style="gap: 0.4rem">
+                                    {% for actividad in beneficiario.actividades_detalle.all %}
+                                        <span class="cdf-pill cdf-pill--gold">{{ actividad.nombre }}</span>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <p class="cdf-td-muted mb-0">Sí, pero sin detalles especificados</p>
+                            {% endif %}
+                        {% else %}
+                            <p class="cdf-td-muted mb-0">No participa</p>
+                        {% endif %}
                     </div>
                 </div>
             </div>
