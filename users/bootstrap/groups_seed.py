@@ -284,6 +284,13 @@ LISTADO_DEFINED_GROUPS = (
         ),
     ),
     BootstrapGroupSeed(
+        "Coordinador General VPSL",
+        (
+            "ver_para_ser_libre.view_itinerariovpsl",
+            "ver_para_ser_libre.view_all_itinerarios_vpsl",
+        ),
+    ),
+    BootstrapGroupSeed(
         "CFPJuridicccion",
         (
             "auth.role_provincia_vat",

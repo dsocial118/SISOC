@@ -1,0 +1,32 @@
+{% extends "includes/main.html" %}
+{% load static %}
+
+{% block title %}{{ delete_title }}{% endblock %}
+{% block head %}
+    <link rel="stylesheet"
+          href="{% static 'custom/css/ver_para_ser_libre.css' %}" />
+{% endblock %}
+
+{% block content %}
+    <div class="vpsl-page vpsl-confirm-page">
+        <div class="card vpsl-confirm-card">
+            <form method="post">
+                {% csrf_token %}
+                <div class="card-body text-center">
+                    <span class="vpsl-delete-icon" aria-hidden="true">
+                        <i class="bi bi-exclamation-lg"></i>
+                    </span>
+                    <h1 class="vpsl-delete-title">¡Atención!</h1>
+                    <p class="vpsl-delete-message">
+                        ¿Querés eliminar <strong>{{ delete_name }}</strong> definitivamente?
+                        Esta acción no se puede deshacer.
+                    </p>
+                    <div class="vpsl-delete-actions">
+                        <a href="{{ cancel_url }}" class="btn btn-light">No</a>
+                        <button type="submit" class="btn btn-danger">Sí</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+{% endblock %}

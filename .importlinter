@@ -165,5 +165,7 @@ ignore_imports =
     users.forms -> comedores.models
     users.forms -> duplas.models
     users.forms -> organizaciones.models
+    users.services_user_import -> comedores.models
+    users.services_user_import -> organizaciones.models
     users.signals -> duplas.models
     users.tests -> **

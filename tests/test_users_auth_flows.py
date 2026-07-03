@@ -30,20 +30,22 @@ User = get_user_model()
 
 
 @pytest.mark.django_db
-def test_user_creation_form_requires_email():
+def test_user_creation_form_allows_empty_email():
     form = UserCreationForm(
         data={
             "username": "sinemail",
+            "email": "",
             "password": "Secreta123!",
         }
     )
 
-    assert form.is_valid() is False
-    assert "email" in form.errors
+    assert form.is_valid(), form.errors
+    user = form.save()
+    assert user.email == ""
 
 
 @pytest.mark.django_db
-def test_custom_user_change_form_requires_email(user):
+def test_custom_user_change_form_allows_empty_email(user):
     form = CustomUserChangeForm(
         instance=user,
         data={
@@ -53,8 +55,7 @@ def test_custom_user_change_form_requires_email(user):
         },
     )
 
-    assert form.is_valid() is False
-    assert "email" in form.errors
+    assert form.is_valid(), form.errors
 
 
 @pytest.mark.django_db
