@@ -17,6 +17,7 @@ from centrodefamilia.models import (
 )
 from centrodefamilia.services.beneficiarios_filter_config import (
     CHOICE_OPS as BENEFICIARIO_CHOICE_OPS,
+    DATE_OPS as BENEFICIARIO_DATE_OPS,
     FIELD_MAP as BENEFICIARIO_FILTER_MAP,
     FIELD_TYPES as BENEFICIARIO_FIELD_TYPES,
     NUM_OPS as BENEFICIARIO_NUM_OPS,
@@ -25,6 +26,7 @@ from centrodefamilia.services.beneficiarios_filter_config import (
 from centrodefamilia.services.consulta_renaper import consultar_datos_renaper
 from centrodefamilia.services.responsables_filter_config import (
     CHOICE_OPS as RESPONSABLE_CHOICE_OPS,
+    DATE_OPS as RESPONSABLE_DATE_OPS,
     FIELD_MAP as RESPONSABLE_FILTER_MAP,
     FIELD_TYPES as RESPONSABLE_FIELD_TYPES,
     NUM_OPS as RESPONSABLE_NUM_OPS,
@@ -124,6 +126,7 @@ BENEFICIARIO_ADVANCED_FILTER = AdvancedFilterEngine(
         "text": BENEFICIARIO_TEXT_OPS,
         "number": BENEFICIARIO_NUM_OPS,
         "choice": BENEFICIARIO_CHOICE_OPS,
+        "date": BENEFICIARIO_DATE_OPS,
     },
     field_casts={"genero": _normalize_genero},
 )
@@ -136,6 +139,7 @@ RESPONSABLE_ADVANCED_FILTER = AdvancedFilterEngine(
         "text": RESPONSABLE_TEXT_OPS,
         "number": RESPONSABLE_NUM_OPS,
         "choice": RESPONSABLE_CHOICE_OPS,
+        "date": RESPONSABLE_DATE_OPS,
     },
     field_casts={"genero": _normalize_genero},
 )

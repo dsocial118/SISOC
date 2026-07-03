@@ -2,6 +2,9 @@
 {% load static %}
 {% block title %}Listado de Preinscriptos{% endblock %}
 {% block titulo-pagina %}Preinscriptos{% endblock %}
+{% block head %}
+    <link rel="stylesheet" href="{% static 'custom/css/cdf.css' %}" />
+{% endblock %}
 {% block breadcrumb %}
     {% include 'components/breadcrumb.html' with items=breadcrumb_items %}
 {% endblock %}
@@ -9,7 +12,7 @@
     <!-- Estilos modernos reutilizables para listados -->
     <link rel="stylesheet" href="{% static 'custom/css/listModerno.css' %}" />
     {% include 'components/search_bar.html' with titulo="Buscar Beneficiario" reset_url=reset_url add_url=add_url add_text=add_text filters_mode=filters_mode filters_js=filters_js filters_action=filters_action %}
-    <div class="container mt-4">
+    <div class="container mt-4 cdf-page">
         <h2>Listado de Preinscriptos</h2>
         {% load custom_filters %}
         {% include 'components/data_table.html' with headers=table_headers items=beneficiarios show_actions=True actions=table_actions empty_message='No hay beneficiarios disponibles.' fields=table_fields %}

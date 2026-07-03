@@ -50,6 +50,10 @@ def resolve_lookup(
             lookup = f"{mapped_field}__gt"
         elif op == "lt":
             lookup = f"{mapped_field}__lt"
+        elif op == "gte":
+            lookup = f"{mapped_field}__gte"
+        elif op == "lte":
+            lookup = f"{mapped_field}__lte"
     elif field_type == "boolean":
         if op == "eq":
             lookup = f"{mapped_field}__exact"

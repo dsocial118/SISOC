@@ -1,0 +1,230 @@
+{% extends "includes/main.html" %}
+{% load static %}
+{% block title %}Toma de Asistencia{% endblock %}
+{% block head %}
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Lora:wght@600;700&display=swap"
+          rel="stylesheet" />
+    <link rel="stylesheet" href="{% static 'custom/css/cdf.css' %}" />
+{% endblock %}
+{% block breadcrumb %}
+    <ol class="breadcrumb float-sm-right">
+        <li class="breadcrumb-item">
+            <a href="{% url 'centro_list' %}">Centro de Familia</a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{% url 'centro_detail' actividad.centro.id %}">Actividades</a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{{ detalle_url }}">Detalle</a>
+        </li>
+        <li class="breadcrumb-item active">Asistencia</li>
+    </ol>
+{% endblock %}
+{% block content %}
+    <div class="cdf-page">
+        <!-- HERO -->
+        <div class="cdf-hero">
+            <div class="cdf-hero-block">
+                <h1>Asistencia — {{ actividad.actividad.nombre }}</h1>
+                <p class="cdf-hero-sub">
+                    <span><i class="fas fa-house-chimney"></i>{{ actividad.centro.nombre }}</span>
+                    <span><i class="fas fa-layer-group"></i>{{ actividad.actividad.categoria.nombre }}</span>
+                    <span><i class="fas fa-clock"></i>{{ actividad.horariosdesde }} - {{ actividad.horarioshasta }}</span>
+                </p>
+            </div>
+            <span class="cdf-pill cdf-pill--teal">{{ actividad.get_estado_display }}</span>
+        </div>
+        <!-- ACCIONES + FECHA -->
+        <div class="d-flex justify-content-between align-items-center flex-wrap mb-4"
+             style="gap: 0.75rem">
+            <a href="{{ detalle_url }}" class="cdf-btn">
+                <i class="fas fa-arrow-left"></i>Volver
+            </a>
+            <form method="get" class="cdf-actions">
+                <label for="fechaAsistencia" class="mb-0 fw-bold">Fecha de la clase:</label>
+                <input type="date"
+                       id="fechaAsistencia"
+                       name="fecha"
+                       class="cdf-input"
+                       value="{{ fecha|date:'Y-m-d' }}" />
+                <button type="submit" class="cdf-btn cdf-btn--primary">Cambiar fecha</button>
+            </form>
+        </div>
+        {% if fecha_error %}
+            <div class="cdf-alert cdf-alert--warning">{{ fecha_error }} Se muestra la planilla de hoy.</div>
+        {% endif %}
+        {% if ya_tomada %}
+            <div class="cdf-alert cdf-alert--info">
+                Ya existe asistencia registrada para el {{ fecha|date:"d/m/Y" }}. Al guardar se actualizarán los registros.
+            </div>
+        {% endif %}
+        <!-- MÉTRICAS -->
+        <div class="cdf-metric-grid">
+            <article class="cdf-metric cdf-metric--green">
+                <strong class="cdf-metric-value" id="asisMetricPresentes">{{ total_presentes }}</strong>
+                <span class="cdf-metric-label">Presentes</span>
+            </article>
+            <article class="cdf-metric cdf-metric--red">
+                <strong class="cdf-metric-value" id="asisMetricAusentes">{{ total_ausentes }}</strong>
+                <span class="cdf-metric-label">Ausentes</span>
+            </article>
+            <article class="cdf-metric cdf-metric--gold">
+                <strong class="cdf-metric-value" id="asisMetricSinMarcar">{{ total_sin_marcar }}</strong>
+                <span class="cdf-metric-label">Sin marcar</span>
+            </article>
+        </div>
+        {% if filas %}
+            <form method="post" id="asisForm">
+                {% csrf_token %}
+                <input type="hidden" name="fecha" value="{{ fecha|date:'Y-m-d' }}" />
+                <div class="cdf-card">
+                    <div class="cdf-card-head">
+                        <i class="fas fa-clipboard-check"></i>
+                        <span>Planilla del {{ fecha|date:"d/m/Y" }}</span>
+                    </div>
+                    <div class="cdf-card-body cdf-card-body--flush">
+                        <div class="cdf-tbl-scroll">
+                            <table class="cdf-table">
+                                <thead>
+                                    <tr>
+                                        <th>Participante</th>
+                                        <th>DNI</th>
+                                        <th class="text-center">
+                                            <label class="cdf-mark">
+                                                <input type="checkbox"
+                                                       class="cdf-check cdf-check--present"
+                                                       id="asisMarcarPresentes" />
+                                                Presente (todos)
+                                            </label>
+                                        </th>
+                                        <th class="text-center">
+                                            <label class="cdf-mark">
+                                                <input type="checkbox"
+                                                       class="cdf-check cdf-check--absent"
+                                                       id="asisMarcarAusentes" />
+                                                Ausente (todos)
+                                            </label>
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody id="asisTablaBody">
+                                    {% for fila in filas %}
+                                        <tr class="asis-row">
+                                            <td>{{ fila.participante.ciudadano.apellido }}, {{ fila.participante.ciudadano.nombre }}</td>
+                                            <td>{{ fila.participante.ciudadano.documento }}</td>
+                                            <td class="text-center">
+                                                <label class="cdf-mark">
+                                                    <input type="radio"
+                                                           class="cdf-check cdf-check--present asis-present"
+                                                           name="presente_{{ fila.participante.pk }}"
+                                                           value="1"
+                                                           {% if fila.presente %}checked{% endif %} />
+                                                    Presente
+                                                </label>
+                                            </td>
+                                            <td class="text-center">
+                                                <label class="cdf-mark">
+                                                    <input type="radio"
+                                                           class="cdf-check cdf-check--absent asis-absent"
+                                                           name="presente_{{ fila.participante.pk }}"
+                                                           value="0"
+                                                           {% if fila.presente == False %}checked{% endif %} />
+                                                    Ausente
+                                                </label>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div class="d-flex justify-content-end mb-4">
+                    <button type="submit" class="cdf-btn cdf-btn--success">
+                        <i class="fas fa-check"></i>Guardar Asistencia
+                    </button>
+                </div>
+            </form>
+        {% else %}
+            <div class="cdf-card">
+                <div class="cdf-card-head">
+                    <i class="fas fa-clipboard-check"></i>
+                    <span>Planilla del {{ fecha|date:"d/m/Y" }}</span>
+                </div>
+                <div class="cdf-empty">
+                    <i class="fas fa-user-plus"></i>
+                    <p class="cdf-empty-t">No hay participantes inscritos</p>
+                    <p class="cdf-empty-s">Agregá participantes desde el detalle de la actividad para poder tomar asistencia.</p>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+{% endblock %}
+{% block customJS %}
+    <script nonce="{{ request.csp_nonce }}">
+    (function() {
+        var form = document.getElementById('asisForm');
+        if (!form) return;
+
+        var body = document.getElementById('asisTablaBody');
+        var metPres = document.getElementById('asisMetricPresentes');
+        var metAus = document.getElementById('asisMetricAusentes');
+        var metSin = document.getElementById('asisMetricSinMarcar');
+        var allPres = document.getElementById('asisMarcarPresentes');
+        var allAus = document.getElementById('asisMarcarAusentes');
+
+        var rows = Array.prototype.slice.call(body.querySelectorAll('.asis-row'));
+
+        function updateMetrics() {
+            var presentes = 0, ausentes = 0, sinMarcar = 0;
+            rows.forEach(function(row) {
+                var pres = row.querySelector('.asis-present');
+                var aus = row.querySelector('.asis-absent');
+                if (pres && pres.checked) { presentes += 1; }
+                else if (aus && aus.checked) { ausentes += 1; }
+                else { sinMarcar += 1; }
+            });
+            if (metPres) metPres.textContent = presentes;
+            if (metAus) metAus.textContent = ausentes;
+            if (metSin) metSin.textContent = sinMarcar;
+        }
+
+        body.addEventListener('change', function(ev) {
+            if (ev.target && (ev.target.classList.contains('asis-present') ||
+                              ev.target.classList.contains('asis-absent'))) {
+                updateMetrics();
+            }
+        });
+
+        if (allPres) {
+            allPres.addEventListener('change', function() {
+                if (allPres.checked) {
+                    if (allAus) allAus.checked = false;
+                    rows.forEach(function(row) {
+                        var pres = row.querySelector('.asis-present');
+                        if (pres) pres.checked = true;
+                    });
+                }
+                updateMetrics();
+            });
+        }
+
+        if (allAus) {
+            allAus.addEventListener('change', function() {
+                if (allAus.checked) {
+                    if (allPres) allPres.checked = false;
+                    rows.forEach(function(row) {
+                        var aus = row.querySelector('.asis-absent');
+                        if (aus) aus.checked = true;
+                    });
+                }
+                updateMetrics();
+            });
+        }
+
+        updateMetrics();
+    })();
+    </script>
+{% endblock %}
