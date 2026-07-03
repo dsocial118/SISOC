@@ -139,7 +139,7 @@ def _tope_nomina_alimentaria_cubierto(
     *, comedor_id: int, exclude_nomina_id: int | None = None
 ) -> bool:
     tope = _get_tope_nomina_alimentaria(comedor_id)
-    if not tope:
+    if tope is None:
         return False
     return (
         _count_nomina_alimentaria_activa(
@@ -223,10 +223,16 @@ def validar_asistencia_nomina_habilitada():
 def _resolve_admision_para_comedor(*, comedor_id: int):
     from admisiones.models.admisiones import Admision
 
-    admision = ComedorService.get_admision_vigente_pwa(comedor_id)
-    if admision:
-        return admision
-    return Admision.objects.create(comedor_id=comedor_id, activa=True, vigente_pwa=True)
+    with transaction.atomic():
+        Comedor.objects.select_for_update().get(pk=comedor_id)
+        admision = ComedorService.get_admision_vigente_pwa(comedor_id)
+        if admision:
+            return admision
+        return Admision.objects.create(
+            comedor_id=comedor_id,
+            activa=True,
+            vigente_pwa=True,
+        )
 
 
 def _build_nomina_link_fields(*, comedor_id: int) -> dict:

@@ -279,11 +279,6 @@ class Admision(models.Model):
             kwargs["update_fields"] = list(update_fields)
 
         super().save(*args, **kwargs)
-        if self.vigente_pwa and self.comedor_id:
-            Admision.objects.filter(
-                comedor_id=self.comedor_id,
-                vigente_pwa=True,
-            ).exclude(pk=self.pk).update(vigente_pwa=False)
         self._estado_mostrar_inicial = self.estado_mostrar
 
     @property
@@ -295,6 +290,13 @@ class Admision(models.Model):
         return None
 
     class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["comedor"],
+                condition=models.Q(vigente_pwa=True),
+                name="uniq_admision_vigente_pwa_por_comedor",
+            )
+        ]
         indexes = [
             models.Index(fields=["comedor"]),
         ]

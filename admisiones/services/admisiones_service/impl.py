@@ -40,6 +40,9 @@ from admisiones.services.admisiones_filter_config import (
     DATE_OPS as ADMISION_DATE_OPS,
     CHOICE_OPS as ADMISION_CHOICE_OPS,
 )
+from comedores.services.capacitaciones_certificados_service import (
+    is_alimentar_comunidad_program,
+)
 from comedores.utils import comedor_usa_admision_para_nomina
 from organizaciones.models import ArchivoOrganizacion, DocumentacionOrganizacion
 
@@ -863,11 +866,7 @@ class AdmisionService:
 
     @staticmethod
     def _admision_es_alimentar_comunidad(admision):
-        programa = getattr(getattr(admision, "comedor", None), "programa", None)
-        return (
-            AdmisionService._normalizar_nombre_tipo(getattr(programa, "nombre", ""))
-            == "alimentar comunidad"
-        )
+        return is_alimentar_comunidad_program(getattr(admision, "comedor", None))
 
     @staticmethod
     def _build_objetos_update_context(admision):
@@ -2905,12 +2904,25 @@ class AdmisionService:
                     "error": "No tiene permisos para editar esta admision.",
                 }
 
-            if vigente and admision.comedor_id:
-                Admision.objects.filter(comedor_id=admision.comedor_id).update(
-                    vigente_pwa=False
-                )
-            admision.vigente_pwa = vigente
-            admision.save(update_fields=["vigente_pwa"])
+            with transaction.atomic():
+                if admision.comedor_id:
+                    admisiones_comedor = (
+                        Admision.objects.select_for_update()
+                        .filter(comedor_id=admision.comedor_id)
+                        .order_by("id")
+                    )
+                    admisiones_bloqueadas = list(admisiones_comedor)
+                    admision = next(
+                        item for item in admisiones_bloqueadas if item.pk == admision.pk
+                    )
+                    if vigente:
+                        admisiones_comedor.exclude(pk=admision.pk).filter(
+                            vigente_pwa=True
+                        ).update(vigente_pwa=False)
+                else:
+                    admision = Admision.objects.select_for_update().get(pk=admision.pk)
+                admision.vigente_pwa = vigente
+                admision.save(update_fields=["vigente_pwa"])
             return {"success": True, "vigente_pwa": admision.vigente_pwa}
         except Exception as exc:
             logger.exception("Error en actualizar_vigente_pwa_ajax")
