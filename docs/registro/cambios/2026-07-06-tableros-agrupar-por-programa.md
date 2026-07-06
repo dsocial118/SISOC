@@ -25,6 +25,16 @@
 - **Fixture:** `dashboard/fixtures/tableros.json` incluye `grupo_menu` en las entradas
   agrupadas.
 
+## Seguimiento (mismo día): grupo "Espacios Comunitarios"
+- A pedido de negocio se sumó un grupo más, **"Espacios Comunitarios"**, que reúne
+  Perfilamiento de Espacios Comunitarios, Seguimiento Espacios Comunitatios,
+  Coordinadores Alimentar Comunidad y Comedores Interno.
+- `dashboard/0003_tablero_grupo_espacios_comunitarios.py` hace el backfill por `slug`
+  (solo filas con `grupo_menu` vacío) y el fixture agrega `grupo_menu` en esas 4
+  entradas. Queda "Prestación Alimentar" como único enlace suelto.
+- Se recalcularon otra vez los fingerprints de `.gitleaksignore` por el corrimiento de
+  líneas del fixture.
+
 ## Riesgos / seguimiento
 - Al insertar líneas en el fixture se recalcularon los fingerprints de gitleaks en
   `.gitleaksignore` (regla `grafana-api-key`, URLs de Power BI). Si se vuelve a editar
