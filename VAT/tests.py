@@ -2007,9 +2007,7 @@ def test_inet_provincia_no_puede_modificar_campos_bloqueados_en_comision_update(
 
 @pytest.mark.django_db
 @override_settings(ROOT_URLCONF="config.urls")
-def test_inet_provincia_no_puede_acceder_a_oferta_update(
-    client, vat_geo_data
-):
+def test_inet_provincia_no_puede_acceder_a_oferta_update(client, vat_geo_data):
     provincia, municipio, localidad = vat_geo_data
     call_command("create_groups", verbosity=0)
 
@@ -2063,9 +2061,7 @@ def test_inet_provincia_no_puede_acceder_a_oferta_update(
 
 @pytest.mark.django_db
 @override_settings(ROOT_URLCONF="config.urls")
-def test_inet_provincia_no_puede_acceder_a_comision_update(
-    client, vat_geo_data
-):
+def test_inet_provincia_no_puede_acceder_a_comision_update(client, vat_geo_data):
     provincia, municipio, localidad = vat_geo_data
     call_command("create_groups", verbosity=0)
 

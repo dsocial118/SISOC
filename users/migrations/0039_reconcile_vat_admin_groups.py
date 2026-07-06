@@ -96,9 +96,7 @@ def _resolve_permission(apps, code):
     # ContentType de auth.Group; se crean on-demand si aun no existen (p. ej.
     # `role_admin_inet_general`, nuevo).
     if app_label == "auth" and codename.startswith("role_"):
-        group_ct, _ = ContentType.objects.get_or_create(
-            app_label="auth", model="group"
-        )
+        group_ct, _ = ContentType.objects.get_or_create(app_label="auth", model="group")
         name_suffix = codename[len("role_") :].replace("_", " ").strip()
         permission, _ = Permission.objects.get_or_create(
             content_type=group_ct,
