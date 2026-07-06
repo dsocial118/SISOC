@@ -236,6 +236,20 @@ document.addEventListener("DOMContentLoaded", function () {
         window.refreshSelect2Element(targetSelect);
     }
 
+    // Select2 dispara eventos "change" de jQuery, que no ejecutan listeners
+    // nativos (addEventListener). Se bindea via jQuery cuando existe para
+    // cubrir ambos casos; los handlers jQuery tambien reciben el change nativo.
+    function bindSelectChange(selectElement, handler) {
+        if (!selectElement) {
+            return;
+        }
+        if (window.jQuery) {
+            window.jQuery(selectElement).on("change", handler);
+            return;
+        }
+        selectElement.addEventListener("change", handler);
+    }
+
     function loadOptions(url, targetSelect, emptyLabel, mapValue) {
         if (!targetSelect) {
             return;
@@ -263,7 +277,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     if (provinciaSelect && municipioSelect) {
-        provinciaSelect.addEventListener("change", function () {
+        bindSelectChange(provinciaSelect, function () {
             if (!this.value) {
                 municipioSelect.innerHTML = "";
                 municipioSelect.appendChild(buildEmptyOption("Seleccionar municipio..."));
@@ -283,7 +297,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     if (municipioSelect && localidadSelect) {
-        municipioSelect.addEventListener("change", function () {
+        bindSelectChange(municipioSelect, function () {
             if (!this.value) {
                 localidadSelect.innerHTML = "";
                 localidadSelect.appendChild(buildEmptyOption("Seleccionar localidad..."));
