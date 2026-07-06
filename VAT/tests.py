@@ -53,6 +53,7 @@ from VAT.models import (
 )
 from VAT.services.access_scope import (
     can_user_access_centro,
+    can_user_create_centro,
     can_user_edit_centro,
     filter_centros_queryset_for_management,
     filter_centros_queryset_for_user,
@@ -3087,6 +3088,118 @@ def test_cursos_panel_revisor_ve_boton_ver_sin_gestion(client, vat_geo_data):
         reverse("vat_comision_curso_wizard", kwargs={"curso_id": curso.pk})
         not in content
     )
+
+
+def _grant_vat_admin_visualizador_access(user, *permissions):
+    marker_permission, _ = Permission.objects.get_or_create(
+        content_type=ContentType.objects.get_for_model(Group),
+        codename="role_inet_admin_visualizador",
+        defaults={"name": "Inet Admin Visualizador"},
+    )
+    user.user_permissions.add(marker_permission, *permissions)
+
+
+@pytest.mark.django_db
+def test_admin_visualizador_ve_todos_los_centros_en_solo_lectura(
+    client, vat_geo_data
+):
+    """El perfil INET Admin Visualizador tiene lectura global: lista todos los
+    centros, abre el detalle, pero no puede editar (403)."""
+    provincia, municipio, localidad = vat_geo_data
+    user = User.objects.create_user(username="admin-visualizador", password="test1234")
+    _grant_vat_admin_visualizador_access(user, _vat_permission("view_centro"))
+    centro_uno = _create_vat_centro(
+        codigo="VIS-GLOB-001",
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad,
+        nombre="Centro Visualizador Uno",
+    )
+    centro_dos = _create_vat_centro(
+        codigo="VIS-GLOB-002",
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad,
+        nombre="Centro Visualizador Dos",
+    )
+
+    client.force_login(user)
+    list_response = client.get(reverse("vat_centro_list"))
+    detail_response = client.get(
+        reverse("vat_centro_detail", kwargs={"pk": centro_uno.pk})
+    )
+    update_response = client.get(
+        reverse("vat_centro_update", kwargs={"pk": centro_uno.pk})
+    )
+
+    list_content = list_response.content.decode("utf-8")
+    assert list_response.status_code == 200
+    assert centro_uno.nombre in list_content
+    assert centro_dos.nombre in list_content
+    assert detail_response.status_code == 200
+    assert detail_response.context["can_edit_centro"] is False
+    assert update_response.status_code == 403
+
+
+@pytest.mark.django_db
+def test_admin_visualizador_scope_lectura_global_sin_gestion():
+    """El marcador habilita los caminos de lectura pero nunca los de gestion."""
+    user = User.objects.create_user(username="admin-visualizador-scope")
+    _grant_vat_admin_visualizador_access(user)
+    provincia = Provincia.objects.create(nombre="Provincia Visualizador")
+    centro = _create_vat_centro(
+        codigo="VIS-SCOPE-01",
+        provincia=provincia,
+        municipio=None,
+        localidad=None,
+    )
+
+    assert (
+        filter_centros_queryset_for_user(Centro.objects.all(), user).count()
+        == Centro.objects.count()
+    )
+    assert can_user_access_centro(user, centro) is True
+    assert (
+        filter_centros_queryset_for_management(Centro.objects.all(), user).count() == 0
+    )
+    assert can_user_edit_centro(user, centro) is False
+    assert can_user_create_centro(user) is False
+
+
+@pytest.mark.django_db
+def test_admin_visualizador_accede_al_detalle_de_curso_solo_lectura(
+    client, vat_geo_data
+):
+    """Con lectura global + view_curso, el visualizador abre el detalle del
+    curso sin acciones de edicion."""
+    provincia, municipio, localidad = vat_geo_data
+    user = User.objects.create_user(username="admin-visualizador-curso")
+    _grant_vat_admin_visualizador_access(
+        user,
+        _vat_permission("view_centro"),
+        _vat_permission("view_curso"),
+    )
+    centro = _create_vat_centro(
+        codigo="VIS-CUR-001",
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad,
+    )
+    modalidad = ModalidadCursada.objects.create(nombre="Presencial vis", activo=True)
+    curso = Curso.objects.create(
+        centro=centro,
+        nombre="Curso visible global",
+        modalidad=modalidad,
+        estado="activo",
+    )
+
+    client.force_login(user)
+    response = client.get(reverse("vat_curso_detail", kwargs={"pk": curso.pk}))
+    content = response.content.decode("utf-8")
+
+    assert response.status_code == 200
+    assert "Curso visible global" in content
+    assert reverse("vat_curso_update", kwargs={"pk": curso.pk}) not in content
 
 
 @pytest.mark.django_db

@@ -696,10 +696,10 @@
                                 {% for hidden in contacto_form.hidden_fields %}{{ hidden }}{% endfor %}
                                 <div class="row">
                                     <div class="col-md-4 vp-field">{{ contacto_form.nombre_contacto|as_crispy_field }}</div>
-                                    <div class="col-md-3 vp-field">{{ contacto_form.rol_area|as_crispy_field }}</div>
-                                    <div class="col-md-2 vp-field">{{ contacto_form.documento|as_crispy_field }}</div>
-                                    <div class="col-md-2 vp-field">{{ contacto_form.telefono_contacto|as_crispy_field }}</div>
-                                    <div class="col-md-3 vp-field">{{ contacto_form.email_contacto|as_crispy_field }}</div>
+                                    <div class="col-md-4 vp-field">{{ contacto_form.rol_area|as_crispy_field }}</div>
+                                    <div class="col-md-4 vp-field">{{ contacto_form.documento|as_crispy_field }}</div>
+                                    <div class="col-md-6 vp-field">{{ contacto_form.telefono_contacto|as_crispy_field }}</div>
+                                    <div class="col-md-6 vp-field">{{ contacto_form.email_contacto|as_crispy_field }}</div>
                                     <div class="col-md-12 d-flex align-items-center justify-content-end">
                                         <button type="button"
                                                 class="btn btn-outline-danger btn-sm remove-contacto-btn">
@@ -725,7 +725,6 @@
                         </div>
                         <div class="vp-section">
                             <div class="vp-status-card">
-                                <p>Las ediciones conservan el estado actual salvo que lo cambies de forma explícita.</p>
                                 <input type="hidden" name="activo_present" value="1" />
                                 <div class="vp-switch form-check mb-0">
                                     {{ form.activo }}
@@ -785,10 +784,10 @@
                 {% for hidden in contacto_form.hidden_fields %}{{ hidden }}{% endfor %}
                 <div class="row">
                     <div class="col-md-4 vp-field">{{ contacto_form.nombre_contacto|as_crispy_field }}</div>
-                    <div class="col-md-3 vp-field">{{ contacto_form.rol_area|as_crispy_field }}</div>
-                    <div class="col-md-2 vp-field">{{ contacto_form.documento|as_crispy_field }}</div>
-                    <div class="col-md-2 vp-field">{{ contacto_form.telefono_contacto|as_crispy_field }}</div>
-                    <div class="col-md-3 vp-field">{{ contacto_form.email_contacto|as_crispy_field }}</div>
+                    <div class="col-md-4 vp-field">{{ contacto_form.rol_area|as_crispy_field }}</div>
+                    <div class="col-md-4 vp-field">{{ contacto_form.documento|as_crispy_field }}</div>
+                    <div class="col-md-6 vp-field">{{ contacto_form.telefono_contacto|as_crispy_field }}</div>
+                    <div class="col-md-6 vp-field">{{ contacto_form.email_contacto|as_crispy_field }}</div>
                     <div class="col-md-12 d-flex align-items-center justify-content-end">
                         <button type="button" class="btn btn-outline-danger btn-sm remove-contacto-btn">
                             <i class="fas fa-trash mr-1"></i>Quitar

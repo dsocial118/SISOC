@@ -161,7 +161,9 @@ def test_create_groups_creates_inet_admin_visualizador_readonly():
     group_codes = set(grupo.permissions.values_list("codename", flat=True))
 
     assert {
+        "role_inet_admin_visualizador",
         "view_centro",
+        "view_curso",
         "view_comision",
         "view_comisioncurso",
         "view_comisionhorario",
@@ -189,6 +191,7 @@ def test_create_groups_creates_inet_admin_general_with_full_vat_management():
         "view_centro",
         "add_centro",
         "change_centro",
+        "view_curso",
         "add_curso",
         "change_curso",
         "delete_curso",

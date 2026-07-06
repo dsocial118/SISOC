@@ -339,6 +339,7 @@ LISTADO_DEFINED_GROUPS = (
         (
             "auth.role_referentecentrovat",
             "VAT.view_centro",
+            "VAT.view_curso",
             "VAT.add_curso",
             "VAT.change_curso",
             "VAT.delete_curso",
@@ -362,6 +363,7 @@ LISTADO_DEFINED_GROUPS = (
         (
             "auth.role_revisorcentrovat",
             "VAT.view_centro",
+            "VAT.view_curso",
             "VAT.view_comisioncurso",
         ),
     ),
@@ -383,7 +385,11 @@ LISTADO_DEFINED_GROUPS = (
     BootstrapGroupSeed(
         "INET Admin Visualizador",
         (
+            # Marcador reconocido por VAT/services/access_scope.py: habilita
+            # lectura global de centros/comisiones sin permisos de gestión.
+            "auth.role_inet_admin_visualizador",
             "VAT.view_centro",
+            "VAT.view_curso",
             "VAT.view_comision",
             "VAT.view_comisioncurso",
             "VAT.view_comisionhorario",
@@ -400,6 +406,7 @@ LISTADO_DEFINED_GROUPS = (
             "VAT.view_centro",
             "VAT.add_centro",
             "VAT.change_centro",
+            "VAT.view_curso",
             "VAT.add_curso",
             "VAT.change_curso",
             "VAT.delete_curso",

@@ -14,6 +14,7 @@ GROUP_PERMISSION_MAP = {
     "CFP": (
         "auth.role_referentecentrovat",
         "VAT.view_centro",
+        "VAT.view_curso",
         "VAT.add_curso",
         "VAT.change_curso",
         "VAT.delete_curso",
@@ -42,7 +43,10 @@ GROUP_PERMISSION_MAP = {
         "VAT.view_comisioncurso",
     ),
     "INET Admin Visualizador": (
+        # Marcador de lectura global reconocido por access_scope.
+        "auth.role_inet_admin_visualizador",
         "VAT.view_centro",
+        "VAT.view_curso",
         "VAT.view_comision",
         "VAT.view_comisioncurso",
         "VAT.view_comisionhorario",
@@ -56,6 +60,7 @@ GROUP_PERMISSION_MAP = {
         "VAT.view_centro",
         "VAT.add_centro",
         "VAT.change_centro",
+        "VAT.view_curso",
         "VAT.add_curso",
         "VAT.change_curso",
         "VAT.delete_curso",
