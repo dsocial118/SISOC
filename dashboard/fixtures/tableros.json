@@ -5,6 +5,7 @@
     "fields": {
         "nombre": "DataCalle",
         "slug": "datacalle-general",
+        "grupo_menu": "DataCalle",
         "url": "https://app.powerbi.com/view?r=eyJrIjoiOWQ3OGQ3NzUtOTRjOC00MWM3LWFmOWMtMWU3ZDM3MDEyMzkwIiwidCI6IjRmODIyY2Y0LTY4NjctNDNmYS1hZTRhLTAzYTM5ZmU5MzA5YyIsImMiOjR9",
         "mensaje_construccion": "",
         "orden": 1,
@@ -20,6 +21,7 @@
     "fields": {
         "nombre": "DataCalle - Chaco",
         "slug": "datacalle-general-chaco",
+        "grupo_menu": "DataCalle",
         "url": "https://app.powerbi.com/view?r=eyJrIjoiNTdlYmE4ZWQtNzI0OC00MjMzLTkzYzgtNTA2ZDM4ZjZlMDg2IiwidCI6IjRmODIyY2Y0LTY4NjctNDNmYS1hZTRhLTAzYTM5ZmU5MzA5YyIsImMiOjR9",
         "mensaje_construccion": "",
         "orden": 2,
@@ -35,6 +37,7 @@
     "fields": {
         "nombre": "DataCalle - Misiones",
         "slug": "datacalle-general-misiones",
+        "grupo_menu": "DataCalle",
         "url": "https://app.powerbi.com/view?r=eyJrIjoiNTRiOGE0ZmEtMTk2Yi00MjAyLTgyNDktZDI0YmY2ZDU2NzdmIiwidCI6IjRmODIyY2Y0LTY4NjctNDNmYS1hZTRhLTAzYTM5ZmU5MzA5YyIsImMiOjR9",
         "mensaje_construccion": "",
         "orden": 3,
@@ -50,6 +53,7 @@
     "fields": {
         "nombre": "DataCalle - Salta",
         "slug": "datacalle-general-salta",
+        "grupo_menu": "DataCalle",
         "url": "https://app.powerbi.com/view?r=eyJrIjoiZWM5YzZkYjAtMDhmMi00YTk2LTk1NTItODVjYTI0Yzk3YTQ2IiwidCI6IjRmODIyY2Y0LTY4NjctNDNmYS1hZTRhLTAzYTM5ZmU5MzA5YyIsImMiOjR9",
         "mensaje_construccion": "",
         "orden": 4,
@@ -65,6 +69,7 @@
     "fields": {
         "nombre": "DataCalle - Corrientes",
         "slug": "datacalle-general-corrientes",
+        "grupo_menu": "DataCalle",
         "url": "https://app.powerbi.com/view?r=eyJrIjoiNjAxODJlN2EtNDZjNy00YjI4LWE3MzctZDUxNTM1YWUzNjM2IiwidCI6IjRmODIyY2Y0LTY4NjctNDNmYS1hZTRhLTAzYTM5ZmU5MzA5YyIsImMiOjR9",
         "mensaje_construccion": "",
         "orden": 5,
@@ -80,6 +85,7 @@
     "fields": {
         "nombre": "DataCalle - Chubut",
         "slug": "datacalle-general-chubut",
+        "grupo_menu": "DataCalle",
         "url": "https://app.powerbi.com/view?r=eyJrIjoiMzY4ZmYzOWYtYjUxNC00NDEyLWE1MjAtZmZjYWI5NmQ2NGZmIiwidCI6IjRmODIyY2Y0LTY4NjctNDNmYS1hZTRhLTAzYTM5ZmU5MzA5YyIsImMiOjR9",
         "mensaje_construccion": "",
         "orden": 6,
@@ -95,6 +101,7 @@
     "fields": {
         "nombre": "DataCalle - San Luis",
         "slug": "datacalle-general-sanluis",
+        "grupo_menu": "DataCalle",
         "url": "https://app.powerbi.com/view?r=eyJrIjoiOWFlOTVkNTAtY2E4MS00MGQ5LWI5ZjYtZjJkODNlNmExZWExIiwidCI6IjRmODIyY2Y0LTY4NjctNDNmYS1hZTRhLTAzYTM5ZmU5MzA5YyIsImMiOjR9",
         "mensaje_construccion": "",
         "orden": 7,
@@ -110,6 +117,7 @@
     "fields": {
         "nombre": "DataCalle - Entre Ríos",
         "slug": "datacalle-general-entrerios",
+        "grupo_menu": "DataCalle",
         "url": "https://app.powerbi.com/view?r=eyJrIjoiYzViZTQ0YjItN2ExNS00ZmNiLThkYTYtZmU2NmU4YjM4Mzg3IiwidCI6IjRmODIyY2Y0LTY4NjctNDNmYS1hZTRhLTAzYTM5ZmU5MzA5YyIsImMiOjR9",
         "mensaje_construccion": "",
         "orden": 8,
@@ -125,6 +133,7 @@
     "fields": {
         "nombre": "DataCalle - Mendoza",
         "slug": "datacalle-general-mendoza",
+        "grupo_menu": "DataCalle",
         "url": "",
         "mensaje_construccion": "El tablero de DataCalle para Mendoza estará disponible próximamente.",
         "orden": 9,
@@ -140,6 +149,7 @@
     "fields": {
         "nombre": "DataCalle - San Juan",
         "slug": "datacalle-general-sanjuan",
+        "grupo_menu": "DataCalle",
         "url": "https://app.powerbi.com/view?r=eyJrIjoiNTVjZGFmMGQtYjk1Zi00MDU4LThmMWYtY2U2ZmVmMGM2ODI5IiwidCI6IjRmODIyY2Y0LTY4NjctNDNmYS1hZTRhLTAzYTM5ZmU5MzA5YyIsImMiOjR9",
         "mensaje_construccion": "",
         "orden": 10,
@@ -155,6 +165,7 @@
     "fields": {
         "nombre": "DataCalle - Santa Cruz",
         "slug": "datacalle-general-santacruz",
+        "grupo_menu": "DataCalle",
         "url": "https://app.powerbi.com/view?r=eyJrIjoiYWFmNGE4MzEtNjI1Yi00OWRjLWI0M2UtODdkYzJmZGZlZmY4IiwidCI6IjRmODIyY2Y0LTY4NjctNDNmYS1hZTRhLTAzYTM5ZmU5MzA5YyIsImMiOjR9",
         "mensaje_construccion": "El tablero de DataCalle para Santa Cruz estará disponible próximamente.",
         "orden": 11,
@@ -170,6 +181,7 @@
     "fields": {
         "nombre": "DataCalle - Santa Fe",
         "slug": "datacalle-general-santafe",
+        "grupo_menu": "DataCalle",
         "url": "https://app.powerbi.com/view?r=eyJrIjoiZGRjOGI4ZjAtNDNkOC00MzQ5LTgzYTQtYzcxY2Y2NjIxZTgxIiwidCI6IjRmODIyY2Y0LTY4NjctNDNmYS1hZTRhLTAzYTM5ZmU5MzA5YyIsImMiOjR9",
         "mensaje_construccion": "El tablero de DataCalle para Santa Fe estará disponible próximamente.",
         "orden": 12,
@@ -185,6 +197,7 @@
     "fields": {
         "nombre": "DataCalle - La Pampa",
         "slug": "datacalle-general-lapampa",
+        "grupo_menu": "DataCalle",
         "url": "https://app.powerbi.com/view?r=eyJrIjoiNDYxMDRkODgtZDAwOC00MDM3LTliNjEtYmNlODdlNTMzMGEyIiwidCI6IjRmODIyY2Y0LTY4NjctNDNmYS1hZTRhLTAzYTM5ZmU5MzA5YyIsImMiOjR9",
         "mensaje_construccion": "El tablero de DataCalle para La Pampa estará disponible próximamente.",
         "orden": 13,
@@ -200,6 +213,7 @@
     "fields": {
         "nombre": "DataCalle - Catamarca",
         "slug": "datacalle-general-catamarca",
+        "grupo_menu": "DataCalle",
         "url": "https://app.powerbi.com/view?r=eyJrIjoiYTQyY2NjOTYtMzdlYS00ZTk2LTkzZWMtNDNlNDgzZmY5MTc3IiwidCI6IjRmODIyY2Y0LTY4NjctNDNmYS1hZTRhLTAzYTM5ZmU5MzA5YyIsImMiOjR9",
         "mensaje_construccion": "",
         "orden": 14,
@@ -215,6 +229,7 @@
     "fields": {
         "nombre": "DataCalle - Rio Negro",
         "slug": "datacalle-general-rionegro",
+        "grupo_menu": "DataCalle",
         "url": "https://app.powerbi.com/view?r=eyJrIjoiYTE4YTEwNDMtYzZhZC00NjhmLWIyMGUtZTE5OGMzNmQ3YWE4IiwidCI6IjRmODIyY2Y0LTY4NjctNDNmYS1hZTRhLTAzYTM5ZmU5MzA5YyIsImMiOjR9",
         "mensaje_construccion": "",
         "orden": 15,
@@ -230,6 +245,7 @@
     "fields": {
         "nombre": "DataCalle - Cordoba - Capital",
         "slug": "datacalle-general-cordoba-capital",
+        "grupo_menu": "DataCalle",
         "url": "https://app.powerbi.com/view?r=eyJrIjoiOTYzODBhNDctMmU4OC00YWIzLTk4ZDEtMDFhYzc5MDA2NGI0IiwidCI6IjRmODIyY2Y0LTY4NjctNDNmYS1hZTRhLTAzYTM5ZmU5MzA5YyIsImMiOjR9",
         "mensaje_construccion": "",
         "orden": 16,
@@ -245,6 +261,7 @@
     "fields": {
         "nombre": "DataCalle - Cordoba - San Francisco",
         "slug": "datacalle-general-cordoba-san-francisco",
+        "grupo_menu": "DataCalle",
         "url": "https://app.powerbi.com/view?r=eyJrIjoiYzlmMjU4ODgtMWJjYS00MWE3LThmZmMtNjdiNDc3YTY2NmM5IiwidCI6IjRmODIyY2Y0LTY4NjctNDNmYS1hZTRhLTAzYTM5ZmU5MzA5YyIsImMiOjR9",
         "mensaje_construccion": "",
         "orden": 17,
@@ -260,6 +277,7 @@
     "fields": {
         "nombre": "DataCalle - Cordoba - Alta Gracia",
         "slug": "datacalle-general-cordoba-alta-gracia",
+        "grupo_menu": "DataCalle",
         "url": "https://app.powerbi.com/view?r=eyJrIjoiODQxZDVjZmItNDJkZS00MDBmLWEwNjEtN2EzZmE2YjQyYzgyIiwidCI6IjRmODIyY2Y0LTY4NjctNDNmYS1hZTRhLTAzYTM5ZmU5MzA5YyIsImMiOjR9",
         "mensaje_construccion": "",
         "orden": 18,
@@ -275,6 +293,7 @@
     "fields": {
         "nombre": "DataCalle - Tucuman",
         "slug": "datacalle-general-tucuman",
+        "grupo_menu": "DataCalle",
         "url": "https://app.powerbi.com/view?r=eyJrIjoiZjZlMzRiYmItYjhlNy00NzFiLWI5MmYtOGUwNzMzOWExMGRhIiwidCI6IjRmODIyY2Y0LTY4NjctNDNmYS1hZTRhLTAzYTM5ZmU5MzA5YyIsImMiOjR9",
         "mensaje_construccion": "",
         "orden": 19,
@@ -320,6 +339,7 @@
     "fields": {
         "nombre": "Aduana",
         "slug": "aduana",
+        "grupo_menu": "Aduana",
         "url": "https://app.powerbi.com/view?r=eyJrIjoiOTcwNDgxOGItYjgwNi00YjY3LThkOTgtYWUzNGZlNzczMGU5IiwidCI6IjRmODIyY2Y0LTY4NjctNDNmYS1hZTRhLTAzYTM5ZmU5MzA5YyIsImMiOjR9",
         "mensaje_construccion": "",
         "orden": 22,
@@ -335,6 +355,7 @@
     "fields": {
         "nombre": "Aduana Ejecutivo",
         "slug": "aduana-ejecutivo",
+        "grupo_menu": "Aduana",
         "url": "https://app.powerbi.com/view?r=eyJrIjoiMDRjM2MzZjItNDdkMy00MWYyLTg4MzItN2VhNzQ1M2YyNjQ3IiwidCI6IjRmODIyY2Y0LTY4NjctNDNmYS1hZTRhLTAzYTM5ZmU5MzA5YyIsImMiOjR9",
         "mensaje_construccion": "",
         "orden": 23,
@@ -395,6 +416,7 @@
     "fields": {
         "nombre": "DataCalle - Santa Fe Capital",
         "slug": "datacalle-santa-fe-capital",
+        "grupo_menu": "DataCalle",
         "url": "https://app.powerbi.com/view?r=eyJrIjoiY2NkYjYwNjktOWFmMC00NzRkLWEzMzctZGFkNjExZjk1OWE0IiwidCI6IjRmODIyY2Y0LTY4NjctNDNmYS1hZTRhLTAzYTM5ZmU5MzA5YyIsImMiOjR9",
         "mensaje_construccion": "",
         "orden": 27,
@@ -410,6 +432,7 @@
     "fields": {
         "nombre": "DataCalle - Santa Fe Rosario",
         "slug": "datacalle-santa-fe-rosario",
+        "grupo_menu": "DataCalle",
         "url": "https://app.powerbi.com/view?r=eyJrIjoiYWM5MDA5NDUtYjAzMi00OTU4LThiMTUtMmJlMDE3Y2MxNjBjIiwidCI6IjRmODIyY2Y0LTY4NjctNDNmYS1hZTRhLTAzYTM5ZmU5MzA5YyIsImMiOjR9",
         "mensaje_construccion": "",
         "orden": 28,
@@ -425,6 +448,7 @@
     "fields": {
         "nombre": "DataCalle - Santa Fe Rafaela",
         "slug": "datacalle-santa-fe-rafaela",
+        "grupo_menu": "DataCalle",
         "url": "https://app.powerbi.com/view?r=eyJrIjoiODUxYjBlMTgtNDdmOC00ZDUwLWEwMmYtMjczNjRiNTFmOTNkIiwidCI6IjRmODIyY2Y0LTY4NjctNDNmYS1hZTRhLTAzYTM5ZmU5MzA5YyIsImMiOjR9",
         "mensaje_construccion": "",
         "orden": 29,
