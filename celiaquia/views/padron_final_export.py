@@ -2,6 +2,8 @@
 Vista para descargar padrón final del expediente.
 """
 
+import logging
+
 from django.http import Http404, HttpResponse
 from django.views.generic import View
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -12,6 +14,8 @@ from celiaquia.services.padron_final_service import (  # pylint: disable=no-name
     PadronFinalService,
 )
 from iam.services import user_has_any_permission_codes
+
+logger = logging.getLogger("django")
 
 CELIAQUIA_EXPORT_PERMISSION_CODES = (
     "auth.role_coordinadorceliaquia",
@@ -37,7 +41,14 @@ class ExpedientePadronFinalExportView(LoginRequiredMixin, View):
             raise Http404("La nomina de aprobados no esta disponible.")
 
         # Generar Excel
-        contenido = PadronFinalService.generar_padron_final_excel(expediente)
+        try:
+            contenido = PadronFinalService.generar_padron_final_excel(expediente)
+        except Exception:  # pylint: disable=broad-exception-caught
+            logger.exception(
+                "padron_final.export_error",
+                extra={"data": {"expediente_id": expediente.id}},
+            )
+            raise
 
         # Respuesta
         response = HttpResponse(
@@ -53,7 +64,9 @@ class ExpedientePadronFinalExportView(LoginRequiredMixin, View):
     @staticmethod
     def _esta_disponible(expediente):
         estado = getattr(getattr(expediente, "estado", None), "nombre", None)
-        return estado == "CRUCE_FINALIZADO" and bool(expediente.excel_masivo)
+        return estado == "CRUCE_FINALIZADO" and PadronFinalService.hay_aprobados(
+            expediente
+        )
 
     @staticmethod
     def _tiene_permiso(user):
