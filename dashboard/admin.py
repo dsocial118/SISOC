@@ -23,6 +23,7 @@ class TableroAdminForm(forms.ModelForm):
         fields = (
             "nombre",
             "slug",
+            "grupo_menu",
             "url",
             "mensaje_construccion",
             "orden",
@@ -56,8 +57,8 @@ class TableroAdminForm(forms.ModelForm):
 @admin.register(Tablero)
 class TableroAdmin(admin.ModelAdmin):
     form = TableroAdminForm
-    list_display = ("nombre", "slug", "activo", "orden")
-    list_filter = ("activo",)
+    list_display = ("nombre", "grupo_menu", "slug", "activo", "orden")
+    list_filter = ("activo", "grupo_menu")
     ordering = ("orden", "nombre")
-    search_fields = ("nombre", "slug")
+    search_fields = ("nombre", "slug", "grupo_menu")
     prepopulated_fields = {"slug": ("nombre",)}
