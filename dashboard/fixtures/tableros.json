@@ -309,6 +309,7 @@
     "fields": {
         "nombre": "Perfilamiento de Espacios Comunitarios",
         "slug": "perfilamiento-de-espacios-comunitarios",
+        "grupo_menu": "Espacios Comunitarios",
         "url": "https://app.powerbi.com/view?r=eyJrIjoiYmQ0YzdiOWYtYWNhYi00NjNjLWI1NjUtMGVjNjQ1MzcyYjk0IiwidCI6IjRmODIyY2Y0LTY4NjctNDNmYS1hZTRhLTAzYTM5ZmU5MzA5YyIsImMiOjR9",
         "mensaje_construccion": "",
         "orden": 20,
@@ -324,6 +325,7 @@
     "fields": {
         "nombre": "Seguimiento Espacios Comunitatios",
         "slug": "seguimiento-espacios-comunitatios",
+        "grupo_menu": "Espacios Comunitarios",
         "url": "https://app.powerbi.com/view?r=eyJrIjoiYzgxNDUwYzMtOTBlYy00ZDU3LWIxODYtMGYxMjg3ZDk1OWRiIiwidCI6IjRmODIyY2Y0LTY4NjctNDNmYS1hZTRhLTAzYTM5ZmU5MzA5YyIsImMiOjR9",
         "mensaje_construccion": "",
         "orden": 21,
@@ -371,6 +373,7 @@
     "fields": {
         "nombre": "Coordinadores Alimentar Comunidad",
         "slug": "coordinadores-alimentar-comunidad",
+        "grupo_menu": "Espacios Comunitarios",
         "url": "https://app.powerbi.com/view?r=eyJrIjoiOWYyNjQ5YTgtYzMzYy00ZTlmLWE0ZDItNTBjOGY1ZDAzZDI1IiwidCI6IjRmODIyY2Y0LTY4NjctNDNmYS1hZTRhLTAzYTM5ZmU5MzA5YyIsImMiOjR9",
         "mensaje_construccion": "",
         "orden": 24,
@@ -401,6 +404,7 @@
     "fields": {
         "nombre": "Comedores Interno",
         "slug": "comedores-interno",
+        "grupo_menu": "Espacios Comunitarios",
         "url": "https://app.powerbi.com/view?r=eyJrIjoiYmNiMTFjOGYtZWUwZi00NjRjLWJmNjctNTQ2ZTM2MjU0NTE0IiwidCI6IjRmODIyY2Y0LTY4NjctNDNmYS1hZTRhLTAzYTM5ZmU5MzA5YyIsImMiOjR9",
         "mensaje_construccion": "",
         "orden": 26,
