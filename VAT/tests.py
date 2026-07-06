@@ -3100,9 +3100,7 @@ def _grant_vat_admin_visualizador_access(user, *permissions):
 
 
 @pytest.mark.django_db
-def test_admin_visualizador_ve_todos_los_centros_en_solo_lectura(
-    client, vat_geo_data
-):
+def test_admin_visualizador_ve_todos_los_centros_en_solo_lectura(client, vat_geo_data):
     """El perfil INET Admin Visualizador tiene lectura global: lista todos los
     centros, abre el detalle, pero no puede editar (403)."""
     provincia, municipio, localidad = vat_geo_data
@@ -6352,6 +6350,118 @@ def test_comision_curso_create_view_renderiza_formulario(client, vat_curso_base)
     assert response.status_code == 200
     assert "ubicacion" in response.content.decode("utf-8")
     assert "cupo_lista_espera" in response.content.decode("utf-8")
+
+
+@pytest.mark.django_db
+def test_cursos_panel_boton_editar_emite_estado_lista_espera(client, vat_curso_base):
+    """El boton Editar del panel expone el estado de lista de espera via
+    data-* para que el modal muestre el checkbox tildado y el cupo cargado."""
+    centro, ubicacion, modalidad = vat_curso_base
+    user = User.objects.create_superuser(
+        username="admin-panel-lista-espera",
+        email="admin-panel-lista-espera@vat.test",
+        password="test1234",
+    )
+    curso = Curso.objects.create(
+        centro=centro,
+        nombre="Curso panel espera",
+        modalidad=modalidad,
+        estado="planificado",
+    )
+    ComisionCurso.objects.create(
+        curso=curso,
+        ubicacion=ubicacion,
+        codigo_comision="PANEL-LE-ON",
+        nombre="Comision con espera",
+        cupo_total=20,
+        acepta_lista_espera=True,
+        cupo_lista_espera=7,
+        fecha_inicio=date(2026, 4, 1),
+        fecha_fin=date(2026, 4, 30),
+        estado="activa",
+    )
+    ComisionCurso.objects.create(
+        curso=curso,
+        ubicacion=ubicacion,
+        codigo_comision="PANEL-LE-OFF",
+        nombre="Comision sin espera",
+        cupo_total=20,
+        fecha_inicio=date(2026, 5, 1),
+        fecha_fin=date(2026, 5, 31),
+        estado="activa",
+    )
+
+    client.force_login(user)
+    response = client.get(reverse("vat_centro_cursos_panel", kwargs={"pk": centro.pk}))
+    content = response.content.decode("utf-8")
+
+    assert response.status_code == 200
+    assert 'data-acepta-lista-espera="1"' in content
+    assert 'data-cupo-lista-espera="7"' in content
+    assert 'data-acepta-lista-espera="0"' in content
+
+
+@pytest.mark.django_db
+def test_comision_curso_update_persiste_lista_espera(client, vat_curso_base):
+    """Editar una comision con lista de espera habilitada conserva el limite;
+    deshabilitarla lo limpia."""
+    centro, ubicacion, modalidad = vat_curso_base
+    user = User.objects.create_superuser(
+        username="admin-update-lista-espera",
+        email="admin-update-lista-espera@vat.test",
+        password="test1234",
+    )
+    curso = Curso.objects.create(
+        centro=centro,
+        nombre="Curso update espera",
+        modalidad=modalidad,
+        estado="planificado",
+    )
+    comision = ComisionCurso.objects.create(
+        curso=curso,
+        ubicacion=ubicacion,
+        codigo_comision="UPD-LE-01",
+        nombre="Comision update espera",
+        cupo_total=20,
+        acepta_lista_espera=True,
+        cupo_lista_espera=5,
+        fecha_inicio=date(2026, 4, 1),
+        fecha_fin=date(2026, 4, 30),
+        estado="activa",
+    )
+    base_payload = {
+        "curso": str(curso.pk),
+        "ubicacion": str(ubicacion.pk),
+        "cupo_total": "30",
+        "fecha_inicio": "2026-04-01",
+        "fecha_fin": "2026-04-30",
+        "estado": "activa",
+        "observaciones": "",
+    }
+
+    client.force_login(user)
+    response_on = client.post(
+        reverse("vat_comision_curso_update", kwargs={"pk": comision.pk}),
+        data={
+            **base_payload,
+            "acepta_lista_espera": "on",
+            "cupo_lista_espera": "12",
+        },
+    )
+    comision.refresh_from_db()
+    assert response_on.status_code == 302
+    assert comision.acepta_lista_espera is True
+    assert comision.cupo_lista_espera == 12
+    assert comision.cupo_total == 30
+
+    response_off = client.post(
+        reverse("vat_comision_curso_update", kwargs={"pk": comision.pk}),
+        data=base_payload,
+    )
+    comision.refresh_from_db()
+    assert response_off.status_code == 302
+    assert comision.acepta_lista_espera is False
+    assert comision.cupo_lista_espera is None
 
 
 @pytest.mark.django_db

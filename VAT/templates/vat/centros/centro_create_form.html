@@ -101,10 +101,19 @@
         .vp-panel {
             border: 0;
             border-radius: 15px;
-            overflow: hidden;
+            /* overflow visible para que el desplegable de referentes/revisores no quede recortado por el panel */
+            overflow: visible;
             background: var(--vp-panel-bg);
             box-shadow: 4px 4px 4px 0 rgba(0, 0, 0, 0.3);
             margin-bottom: 30px;
+        }
+
+        .vp-panel > :first-child {
+            border-radius: 15px 15px 0 0;
+        }
+
+        .vp-panel > :last-child {
+            border-radius: 0 0 15px 15px;
         }
 
         .vp-panel-header {
@@ -312,6 +321,8 @@
             max-height: 220px;
             overflow-y: auto;
             padding: .35rem 0;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255, 255, 255, 0.35) rgba(24, 34, 61, 0.98);
         }
 
         .vp-field .referente-search-results[hidden] {
