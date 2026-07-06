@@ -1,13 +1,18 @@
 """
-Servicio para generar padrón final del expediente de celiaquía.
+Servicio para generar padron final del expediente de celiaquia.
+
+La nomina de aprobados se construye desde la base de datos (legajos
+aprobados con MATCH de Sintys), no desde el Excel original cargado por la
+provincia. El archivo original queda estatico, mientras que los datos de
+los ciudadanos pueden corregirse despues de la importacion; la base es la
+fuente de verdad.
 """
 
 from datetime import date, datetime
 from io import BytesIO
 import logging
-import re
 
-from openpyxl import Workbook, load_workbook
+from openpyxl import Workbook
 
 from celiaquia.models import (
     EstadoCupo,
@@ -15,26 +20,38 @@ from celiaquia.models import (
     ResultadoSintys,
     RevisionTecnico,
 )
+from celiaquia.services.cruce_service import CruceService
 
 logger = logging.getLogger("django")
 
 ESTADO_CUPO_HEADER = "Estado de cupo"
 
-
-DOCUMENTO_COLUMN_CANDIDATES = {
+NOMINA_HEADERS = [
+    "apellido",
+    "nombre",
     "documento",
-    "numero_documento",
-    "nro_documento",
-    "número_documento",
-    "dni",
-    "cuit",
-    "cuil",
-}
-
-FECHA_NACIMIENTO_COLUMN_CANDIDATES = {
     "fecha_nacimiento",
-    "fecha_de_nacimiento_responsable",
-}
+    "sexo",
+    "nacionalidad",
+    "municipio",
+    "localidad",
+    "calle",
+    "altura",
+    "codigo_postal",
+    "telefono",
+    "email",
+    "APELLIDO_RESPONSABLE",
+    "NOMBRE_RESPONSABLE",
+    "CUIT_RESPONSABLE",
+    "FECHA_DE_NACIMIENTO_RESPONSABLE",
+    "SEXO_RESPONSABLE",
+    "DOMICILIO_RESPONSABLE",
+    "LOCALIDAD_RESPONSABLE",
+    "CELULAR_RESPONSABLE",
+    "CORREO_RESPONSABLE",
+]
+
+FECHA_COLUMNS = {"fecha_nacimiento", "FECHA_DE_NACIMIENTO_RESPONSABLE"}
 
 FECHA_NUMBER_FORMAT = "DD/MM/YYYY"
 
@@ -45,7 +62,11 @@ class PadronFinalService:
     @staticmethod
     def generar_padron_final_excel(expediente) -> bytes:
         """
-        Genera Excel con la nomina original filtrada por aprobados finales.
+        Genera Excel con la nomina de aprobados a partir de la base.
+
+        Incluye los legajos con revision tecnica APROBADO y resultado
+        Sintys MATCH, excluyendo a los responsables puros (sus datos se
+        vuelcan en las columnas *_RESPONSABLE de cada beneficiario).
 
         Args:
             expediente: Expediente object
@@ -53,86 +74,118 @@ class PadronFinalService:
         Returns:
             bytes: Contenido del archivo Excel
         """
-        headers, rows = PadronFinalService._leer_nomina_original(expediente)
-        documento_index = PadronFinalService._documento_column_index(headers)
-        fecha_indices = PadronFinalService._fecha_nacimiento_column_indices(headers)
-        aprobados = PadronFinalService._aprobados_con_estado(expediente)
+        from celiaquia.services.familia_service import FamiliaService
 
-        # Mapa clave-de-documento -> estado de cupo legible, para etiquetar cada
-        # fila del Excel original.
-        estado_por_clave = {}
-        for aprobado in aprobados:
-            for clave in aprobado["claves"]:
-                estado_por_clave[clave] = aprobado["estado"]
+        legajos = list(PadronFinalService._legajos_aprobados(expediente))
+        responsables_por_hijo = FamiliaService.obtener_responsables_por_hijo(
+            [legajo.ciudadano_id for legajo in legajos]
+        )
 
-        ncols = len(headers)
-        filtered_rows = []
-        claves_en_excel = set()
-        if documento_index is not None:
-            for row in rows:
-                clave = PadronFinalService._documento_match_key(
-                    row[documento_index] if documento_index < len(row) else None
+        rows = []
+        sin_documento = []
+        for legajo in legajos:
+            responsables = responsables_por_hijo.get(legajo.ciudadano_id, [])
+            if len(responsables) > 1:
+                logger.warning(
+                    "padron_final.responsable_ambiguo",
+                    extra={
+                        "data": {
+                            "expediente_id": getattr(expediente, "id", None),
+                            "ciudadano_id": legajo.ciudadano_id,
+                            "candidatos": len(responsables),
+                        }
+                    },
                 )
-                if not clave:
-                    continue
-                claves_en_excel.add(clave)
-                estado = estado_por_clave.get(clave)
-                if estado is None:
-                    continue
-                # El padrón incluye a TODOS los aprobados+match; la columna de
-                # estado de cupo distingue titulares con cupo de lista de espera.
-                fila = list(row)
-                if len(fila) < ncols:
-                    fila += [None] * (ncols - len(fila))
-                fila.append(estado)
-                filtered_rows.append(fila)
+            responsable = responsables[0] if responsables else None
+            fila = PadronFinalService._fila_beneficiario(legajo, responsable)
+            if not fila[NOMINA_HEADERS.index("documento")]:
+                sin_documento.append(legajo.ciudadano_id)
+            rows.append(fila)
 
-        # Observabilidad: si algún aprobado no tiene fila en el Excel original
-        # (por ninguna de sus claves), queda registrado para no perderlo en
-        # silencio.
-        faltan = sum(1 for a in aprobados if not (a["claves"] & claves_en_excel))
-        if faltan:
+        if sin_documento:
             logger.warning(
-                "padron_final.aprobados_sin_fila_excel",
+                "padron_final.documento_vacio",
                 extra={
                     "data": {
                         "expediente_id": getattr(expediente, "id", None),
-                        "aprobados": len(aprobados),
-                        "en_nomina": len(aprobados) - faltan,
-                        "faltan": faltan,
+                        "ciudadanos_sin_documento": sin_documento,
                     }
                 },
             )
 
-        headers_out = list(headers) + [ESTADO_CUPO_HEADER] if headers else headers
         return PadronFinalService._build_excel(
-            headers_out, filtered_rows, fecha_indices
+            [*NOMINA_HEADERS, ESTADO_CUPO_HEADER], rows
         )
 
     @staticmethod
-    def _leer_nomina_original(expediente):
-        excel_masivo = getattr(expediente, "excel_masivo", None)
-        if not excel_masivo:
-            return [], []
+    def _legajos_aprobados_qs(expediente):
+        """Legajos APROBADO+MATCH del expediente, sin excluir responsables.
 
-        try:
-            excel_masivo.open()
-        except Exception:  # pragma: no cover - FileField local ya suele estar abierto.
-            pass
-        excel_masivo.seek(0)
-        wb = load_workbook(BytesIO(excel_masivo.read()), data_only=True)
-        ws = wb.worksheets[0]
-        values = list(ws.iter_rows(values_only=True))
-        if not values:
-            return [], []
+        La exclusion de responsables puros se hace en Python con
+        ``ExpedienteCiudadano.es_rol_responsable_puro`` (ver
+        ``_legajos_aprobados``) para usar la misma regla normalizada que
+        cruce y cupo, en vez de un exclude(rol=...) exacto que no tolera
+        variantes de mayusculas/espacios.
+        """
+        return ExpedienteCiudadano.objects.filter(
+            expediente=expediente,
+            revision_tecnico=RevisionTecnico.APROBADO,
+            resultado_sintys=ResultadoSintys.MATCH,
+        )
 
-        headers = list(values[0])
-        rows = [list(row) for row in values[1:]]
-        return headers, rows
+    @staticmethod
+    def _legajos_aprobados(expediente):
+        qs = (
+            PadronFinalService._legajos_aprobados_qs(expediente)
+            .select_related(
+                "ciudadano",
+                "ciudadano__sexo",
+                "ciudadano__nacionalidad",
+                "ciudadano__municipio",
+                "ciudadano__localidad",
+            )
+            .order_by("ciudadano__apellido", "ciudadano__nombre")
+        )
+        return [
+            legajo
+            for legajo in qs
+            if not ExpedienteCiudadano.es_rol_responsable_puro(legajo.rol)
+        ]
+
+    @staticmethod
+    def hay_aprobados(expediente) -> bool:
+        """True si el expediente tiene al menos un legajo para el padron."""
+        qs = PadronFinalService._legajos_aprobados_qs(expediente)
+        return any(
+            not ExpedienteCiudadano.es_rol_responsable_puro(rol)
+            for rol in qs.values_list("rol", flat=True)
+        )
+
+    @staticmethod
+    def _texto(value) -> str:
+        return "" if value is None else str(value)
+
+    @staticmethod
+    def _documento_o_cuit(ciudadano) -> str:
+        """Documento a exportar, con fallback a CUIL/CUIT.
+
+        SINTYS identifica primero por CUIL/CUIT y recien despues por
+        documento; un ciudadano puede tener ``documento`` vacio y
+        ``cuil_cuit`` cargado. Si no hay documento, se deriva el nucleo DNI
+        del CUIT (misma logica que el cruce) y, si eso tampoco resuelve
+        nada, se exporta el cuil_cuit crudo antes que dejar la celda vacia.
+        """
+        documento = PadronFinalService._texto(ciudadano.documento)
+        if documento:
+            return documento
+        cuil_cuit = PadronFinalService._texto(ciudadano.cuil_cuit)
+        if not cuil_cuit:
+            return ""
+        return CruceService.extraer_dni_de_cuit(cuil_cuit) or cuil_cuit
 
     @staticmethod
     def _estado_cupo_label(estado_cupo) -> str:
-        """Etiqueta legible del estado de cupo para la columna del padrón."""
+        """Etiqueta legible del estado de cupo para la columna del padron."""
         if estado_cupo == EstadoCupo.DENTRO:
             return "Con cupo asignado"
         if estado_cupo == EstadoCupo.FUERA:
@@ -140,100 +193,56 @@ class PadronFinalService:
         return "Sin evaluar"
 
     @staticmethod
-    def _aprobados_con_estado(expediente) -> list[dict]:
-        """Aprobados+MATCH (no responsables) con sus claves de emparejamiento y
-        su estado de cupo legible.
-
-        Se consideran documento Y cuil_cuit: el cruce SINTYS identifica a la
-        persona por su CUIL/CUIT (resolver_cuit_ciudadano) y recién después por
-        el documento. Si el export solo mirara documento, un aprobado matcheado
-        por cuil_cuit (con documento vacío o en otro formato) quedaría fuera de
-        la nómina en silencio. Ambas claves usan la misma tolerancia CUIL↔DNI
-        para coincidir con la fila del Excel original.
-        """
-        filas = (
-            ExpedienteCiudadano.objects.filter(
-                expediente=expediente,
-                revision_tecnico=RevisionTecnico.APROBADO,
-                resultado_sintys=ResultadoSintys.MATCH,
+    def _fila_beneficiario(legajo, responsable) -> list:
+        ciudadano = legajo.ciudadano
+        fila = [
+            ciudadano.apellido or "",
+            ciudadano.nombre or "",
+            PadronFinalService._documento_o_cuit(ciudadano),
+            ciudadano.fecha_nacimiento,
+            CruceService.normalizar_sexo_para_exportacion(ciudadano),
+            PadronFinalService._texto(ciudadano.nacionalidad),
+            PadronFinalService._texto(ciudadano.municipio),
+            PadronFinalService._texto(ciudadano.localidad),
+            ciudadano.calle or "",
+            ciudadano.altura or "",
+            ciudadano.codigo_postal or "",
+            ciudadano.telefono or "",
+            ciudadano.email or "",
+        ]
+        if responsable is None:
+            fila.extend([""] * 9)
+        else:
+            domicilio = " ".join(
+                PadronFinalService._texto(parte)
+                for parte in (responsable.calle, responsable.altura)
+                if parte not in (None, "")
             )
-            .exclude(rol=ExpedienteCiudadano.ROLE_RESPONSABLE)
-            .values_list("ciudadano__documento", "ciudadano__cuil_cuit", "estado_cupo")
-        )
-        aprobados = []
-        for documento, cuil_cuit, estado_cupo in filas:
-            claves = {
-                PadronFinalService._documento_match_key(valor)
-                for valor in (documento, cuil_cuit)
-            }
-            claves.discard("")
-            if claves:
-                aprobados.append(
-                    {
-                        "claves": claves,
-                        "estado": PadronFinalService._estado_cupo_label(estado_cupo),
-                    }
-                )
-        return aprobados
+            fila.extend(
+                [
+                    responsable.apellido or "",
+                    responsable.nombre or "",
+                    PadronFinalService._documento_o_cuit(responsable),
+                    responsable.fecha_nacimiento,
+                    CruceService.normalizar_sexo_para_exportacion(responsable),
+                    domicilio,
+                    PadronFinalService._texto(responsable.localidad),
+                    responsable.telefono or "",
+                    responsable.email or "",
+                ]
+            )
+        fila.append(PadronFinalService._estado_cupo_label(legajo.estado_cupo))
+        return fila
 
     @staticmethod
-    def _normalize_header(value) -> str:
-        normalized = str(value or "").strip().lower()
-        normalized = normalized.replace(" ", "_").replace(".", "")
-        return normalized
-
-    @staticmethod
-    def _documento_column_index(headers) -> int | None:
-        for index, header in enumerate(headers):
-            if (
-                PadronFinalService._normalize_header(header)
-                in DOCUMENTO_COLUMN_CANDIDATES
-            ):
-                return index
-        return None
-
-    @staticmethod
-    def _fecha_nacimiento_column_indices(headers) -> set[int]:
-        return {
-            index
-            for index, header in enumerate(headers)
-            if PadronFinalService._normalize_header(header)
-            in FECHA_NACIMIENTO_COLUMN_CANDIDATES
+    def _build_excel(headers, rows) -> bytes:
+        fecha_indices = {
+            index for index, header in enumerate(headers) if header in FECHA_COLUMNS
         }
-
-    @staticmethod
-    def _normalize_documento(value) -> str:
-        if value is None:
-            return ""
-        if isinstance(value, float) and value.is_integer():
-            value = int(value)
-        return re.sub(r"\D", "", str(value)).lstrip("0")
-
-    @staticmethod
-    def _documento_match_key(value) -> str:
-        """Clave para emparejar el documento de la base con el del Excel original,
-        tolerante a que uno esté como CUIL/CUIT (11 díg.) y el otro como DNI.
-
-        Un CUIL/CUIT de persona física es prefijo(2) + DNI(8) + verificador(1); se
-        reduce a su núcleo DNI para que, p. ej., ``20-39231798-9`` (base) y
-        ``39231798`` (Excel) coincidan. Se aplica igual a ambos lados, así el
-        emparejamiento es simétrico sin importar en qué formato venga cada uno.
-        Antes se comparaba el número completo y los titulares con CUIL en la base
-        y DNI en el Excel (o viceversa) quedaban fuera de la nómina.
-        """
-        digits = PadronFinalService._normalize_documento(value)
-        if len(digits) == 11:
-            return digits[2:10].lstrip("0")
-        return digits
-
-    @staticmethod
-    def _build_excel(headers, rows, fecha_indices=None) -> bytes:
-        fecha_indices = fecha_indices or set()
         wb = Workbook()
         ws = wb.active
         ws.title = "nomina_aprobados"
-        if headers:
-            ws.append(headers)
+        ws.append(headers)
         for row in rows:
             ws.append(row)
             if fecha_indices:
