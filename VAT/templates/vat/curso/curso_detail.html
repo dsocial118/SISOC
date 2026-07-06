@@ -1,0 +1,106 @@
+{% extends "includes/main.html" %}
+
+{% block title %}{{ curso.nombre }} - Curso{% endblock %}
+
+{% block content %}
+    <div class="container-fluid py-4">
+        <div class="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-4">
+            <div>
+                <div class="text-muted small mb-1">Curso</div>
+                <h1 class="h3 mb-1">{{ curso.nombre }}</h1>
+                <div class="text-muted">
+                    {{ curso.plan_estudio|default:"Sin plan curricular" }} · {{ curso.centro.nombre }}
+                </div>
+            </div>
+            <div class="d-flex gap-2">
+                <a href="{{ cancel_url }}" class="btn btn-outline-secondary">Volver al centro</a>
+                {% if puede_editar_curso %}
+                    <a href="{% url 'vat_curso_update' curso.pk %}"
+                       class="btn btn-primary">Editar curso</a>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-lg-7">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-header bg-white border-0 pb-0">
+                        <h2 class="h5 mb-0">Datos del curso</h2>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <div class="text-muted small">Plan de estudio</div>
+                                <div class="fw-semibold">{{ curso.plan_estudio|default:"-" }}</div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="text-muted small">Modalidad</div>
+                                <div>{{ curso.modalidad.nombre|default:"-" }}</div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="text-muted small">Estado</div>
+                                <div>{{ curso.get_estado_display }}</div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="text-muted small">Tipo</div>
+                                <div>{{ curso.tipo|join:", "|default:"-" }}</div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="text-muted small">Prioritario</div>
+                                <div>{{ curso.prioritario|yesno:"Sí,No" }}</div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="text-muted small">Inscripción libre</div>
+                                <div>{{ curso.inscripcion_libre|yesno:"Sí,No" }}</div>
+                            </div>
+                            <div class="col-12">
+                                <div class="text-muted small">Observaciones</div>
+                                <div>{{ curso.observaciones|default:"-" }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-5">
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-header bg-white border-0 pb-0">
+                        <h2 class="h5 mb-0">Parametría de voucher</h2>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <div class="text-muted small">Usa voucher</div>
+                            <div class="fw-semibold">{{ curso.usa_voucher|yesno:"Sí,No" }}</div>
+                        </div>
+                        <div class="mb-3">
+                            <div class="text-muted small">Costo en créditos</div>
+                            <div>{{ curso.costo_creditos }}</div>
+                        </div>
+                        <div>
+                            <div class="text-muted small">Vouchers habilitados</div>
+                            {% if curso.voucher_parametrias.all %}
+                                <ul class="mb-0 ps-3">
+                                    {% for parametria in curso.voucher_parametrias.all %}
+                                        <li>{{ parametria.nombre }}</li>
+                                    {% endfor %}
+                                </ul>
+                            {% else %}
+                                <div>-</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white border-0 pb-0">
+                        <h2 class="h5 mb-0">Comisiones</h2>
+                    </div>
+                    <div class="card-body">
+                        <div class="text-muted small">Comisiones vinculadas</div>
+                        <div class="fw-semibold">{{ comisiones_count }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

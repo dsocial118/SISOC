@@ -272,6 +272,42 @@ class CursoDeleteView(SoftDeleteDeleteViewMixin, LoginRequiredMixin, DeleteView)
         return _centro_cursos_tab_url(self.object.centro_id, refresh=True)
 
 
+class CursoDetailView(LoginRequiredMixin, DetailView):
+    """Detalle de curso en modo solo lectura.
+
+    Punto de entrada para perfiles de solo visualizacion (revisor / provincial
+    sin edicion): pueden abrir el curso y ver toda su informacion —incluida la
+    parametria de voucher— sin poder modificarla. El queryset se acota a los
+    centros legibles por el usuario; la vista es GET-only, por lo que no expone
+    ningun vector de escritura.
+    """
+
+    model = Curso
+    template_name = "vat/curso/curso_detail.html"
+    context_object_name = "curso"
+
+    def get_queryset(self):
+        return (
+            Curso.objects.select_related(
+                "centro",
+                "modalidad",
+                "plan_estudio",
+            )
+            .prefetch_related("voucher_parametrias")
+            .filter(centro_id__in=_readable_centros_ids(self.request.user))
+        )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        curso = self.object
+        context["cancel_url"] = _centro_cursos_tab_url(curso.centro_id)
+        context["puede_editar_curso"] = can_user_edit_centro(
+            self.request.user, curso.centro
+        ) and self.request.user.has_perm("VAT.change_curso")
+        context["comisiones_count"] = ComisionCurso.objects.filter(curso=curso).count()
+        return context
+
+
 class ComisionCursoCreateView(LoginRequiredMixin, CreateView):
     model = ComisionCurso
     form_class = ComisionCursoForm

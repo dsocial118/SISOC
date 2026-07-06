@@ -74,6 +74,13 @@
                                         </td>
                                         <td>
                                             <div class="sisoc-table-actions">
+                                                {% if perms.VAT.view_curso %}
+                                                    <a href="{% url 'vat_curso_detail' curso.id %}"
+                                                       class="sisoc-btn sisoc-btn--view">
+                                                        <i class="fas fa-eye"></i>
+                                                        <span>Ver</span>
+                                                    </a>
+                                                {% endif %}
                                                 {% if can_manage_centro and perms.VAT.add_comisioncurso %}
                                                     <a href="{% url 'vat_comision_curso_wizard' curso.id %}"
                                                        class="sisoc-btn sisoc-btn--add">

@@ -131,14 +131,119 @@ def test_create_groups_creates_inet_provincia_with_expected_permissions():
 
     assert {
         "role_inet_provincia",
-        "role_provincia_vat",
         "view_centro",
         "add_centro",
         "change_centro",
         "view_planversioncurricular",
         "add_planversioncurricular",
-        "change_planversioncurricular",
+        "view_comision",
+        "view_comisioncurso",
     }.issubset(group_codes)
+    # Permisos removidos del perfil provincial INET.
+    assert group_codes.isdisjoint(
+        {
+            "role_provincia_vat",
+            "change_planversioncurricular",
+            "view_ofertainstitucional",
+            "change_ofertainstitucional",
+            "change_comision",
+        }
+    )
+
+
+def test_create_groups_creates_inet_admin_visualizador_readonly():
+    """INET Admin Visualizador debe ser solo lectura sobre VAT."""
+    Group.objects.all().delete()
+
+    call_command("create_groups", verbosity=0)
+
+    grupo = Group.objects.get(name="INET Admin Visualizador")
+    group_codes = set(grupo.permissions.values_list("codename", flat=True))
+
+    assert {
+        "view_centro",
+        "view_comision",
+        "view_comisioncurso",
+        "view_comisionhorario",
+        "view_inscripcion",
+        "view_inscripcionoferta",
+        "view_planversioncurricular",
+    }.issubset(group_codes)
+    assert not any(
+        code.startswith(("add_", "change_", "delete_")) for code in group_codes
+    )
+
+
+def test_create_groups_creates_inet_admin_general_with_full_vat_management():
+    """INET Admin General debe tener rol SSE + gestion VAT completa."""
+    Group.objects.all().delete()
+
+    call_command("create_groups", verbosity=0)
+
+    grupo = Group.objects.get(name="INET Admin General")
+    group_codes = set(grupo.permissions.values_list("codename", flat=True))
+
+    assert {
+        "role_vat_sse",
+        "role_admin_inet_general",
+        "view_centro",
+        "add_centro",
+        "change_centro",
+        "add_curso",
+        "change_curso",
+        "delete_curso",
+        "view_comision",
+        "change_comision",
+        "view_comisioncurso",
+        "add_comisioncurso",
+        "change_comisioncurso",
+        "delete_comisioncurso",
+        "view_comisionhorario",
+        "add_comisionhorario",
+        "change_comisionhorario",
+        "delete_comisionhorario",
+        "view_inscripcion",
+        "add_inscripcion",
+        "change_inscripcion",
+        "add_asistenciasesion",
+        "change_asistenciasesion",
+        "view_planversioncurricular",
+        "add_planversioncurricular",
+    }.issubset(group_codes)
+
+
+def test_reconcile_migration_removes_stale_inet_provincia_permissions():
+    """La migración de reconciliación deja INET_PROVINCIA exacto, quitando
+    permisos administrativos que ya no corresponden al perfil."""
+    reconcile_module = importlib.import_module(
+        "users.migrations.0039_reconcile_vat_admin_groups"
+    )
+    Group.objects.filter(name="INET_PROVINCIA").delete()
+    inet_provincia = Group.objects.create(name="INET_PROVINCIA")
+    stale = Permission.objects.get(
+        content_type__app_label="VAT",
+        codename="change_comision",
+    )
+    inet_provincia.permissions.add(stale)
+
+    reconcile_module.reconcile_vat_admin_groups(apps, None)
+
+    group_codes = set(inet_provincia.permissions.values_list("codename", flat=True))
+    assert "change_comision" not in group_codes
+    assert {"role_inet_provincia", "view_comisioncurso"}.issubset(group_codes)
+
+
+def test_reconcile_migration_creates_admin_inet_general_role_permission():
+    """El permiso de rol nuevo `role_admin_inet_general` se crea on-demand."""
+    reconcile_module = importlib.import_module(
+        "users.migrations.0039_reconcile_vat_admin_groups"
+    )
+    Permission.objects.filter(codename="role_admin_inet_general").delete()
+
+    reconcile_module.reconcile_vat_admin_groups(apps, None)
+
+    grupo = Group.objects.get(name="INET Admin General")
+    assert grupo.permissions.filter(codename="role_admin_inet_general").exists()
 
 
 def test_create_groups_creates_cfp_revisor_readonly_group():
