@@ -290,6 +290,70 @@ def test_nomina_aprobados_incluye_datos_del_responsable():
 
 
 @pytest.mark.django_db
+def test_nomina_aprobados_responsable_ambiguo_usa_primero_alfabetico(mocker):
+    owner = _user("prov-familia-ambigua")
+    expediente = _expediente(owner)
+    warning = mocker.patch(
+        "celiaquia.services.padron_final_service.impl.logger.warning"
+    )
+
+    legajo_hijo = _crear_legajo(
+        expediente,
+        "20557246918",
+        revision=RevisionTecnico.APROBADO,
+        sintys=ResultadoSintys.MATCH,
+        apellido="CANIETE",
+        nombre="MISAEL",
+    )
+    legajo_resp_primero = _crear_legajo(
+        expediente,
+        "27342010844",
+        revision=RevisionTecnico.APROBADO,
+        sintys=ResultadoSintys.SIN_CRUCE,
+        rol=ExpedienteCiudadano.ROLE_RESPONSABLE,
+        apellido="ALVAREZ",
+        nombre="MARTA",
+    )
+    legajo_resp_segundo = _crear_legajo(
+        expediente,
+        "27342010845",
+        revision=RevisionTecnico.APROBADO,
+        sintys=ResultadoSintys.SIN_CRUCE,
+        rol=ExpedienteCiudadano.ROLE_RESPONSABLE,
+        apellido="BRAVO",
+        nombre="ANA",
+    )
+    for responsable in (legajo_resp_segundo, legajo_resp_primero):
+        GrupoFamiliar.objects.create(
+            ciudadano_1=responsable.ciudadano,
+            ciudadano_2=legajo_hijo.ciudadano,
+            vinculo=GrupoFamiliar.RELACION_PADRE,
+            conviven=True,
+            cuidador_principal=True,
+        )
+
+    _, data_rows = _workbook_rows(
+        PadronFinalService.generar_padron_final_excel(expediente)
+    )
+
+    assert len(data_rows) == 1
+    fila = data_rows[0]
+    assert _col("documento", fila) == "20557246918"
+    assert _col("APELLIDO_RESPONSABLE", fila) == "ALVAREZ"
+    assert _col("NOMBRE_RESPONSABLE", fila) == "MARTA"
+    warning.assert_called_once_with(
+        "padron_final.responsable_ambiguo",
+        extra={
+            "data": {
+                "expediente_id": expediente.id,
+                "ciudadano_id": legajo_hijo.ciudadano_id,
+                "candidatos": 2,
+            }
+        },
+    )
+
+
+@pytest.mark.django_db
 def test_nomina_aprobados_marca_estado_de_cupo():
     """El padron incluye a todos los aprobados+match y marca el estado de cupo."""
     owner = _user("prov-estado-cupo")
