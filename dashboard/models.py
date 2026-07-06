@@ -51,6 +51,16 @@ class Tablero(models.Model):
         unique=True,
         help_text="Identificador único para la URL del tablero.",
     )
+    grupo_menu = models.CharField(
+        max_length=255,
+        blank=True,
+        default="",
+        help_text=(
+            "Nombre del programa/grupo bajo el que se agrupa en el menú de "
+            "Tableros. Vacío = aparece como enlace directo (sin submenú). "
+            "No confundir con los grupos de permisos."
+        ),
+    )
     url = models.URLField(
         blank=True,
         help_text="URL embebida del tablero (Power BI u otra herramienta).",
