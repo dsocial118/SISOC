@@ -238,7 +238,7 @@ class FamiliaService:
                 ciudadano_2_id__in=ciudadanos_ids,
                 cuidador_principal=True,
             )
-            .select_related("ciudadano_1")
+            .select_related("ciudadano_1__sexo", "ciudadano_1__localidad")
             .order_by("ciudadano_1__apellido", "ciudadano_1__nombre")
         )
 

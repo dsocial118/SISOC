@@ -61,6 +61,9 @@ from celiaquia.services.importacion_service import (
 from celiaquia.permissions import can_delete_legajo
 from celiaquia.services.cruce_service import CruceService
 from celiaquia.services.cupo_service import CupoService, CupoNoConfigurado
+from celiaquia.services.padron_final_service import (  # pylint: disable=no-name-in-module
+    PadronFinalService,
+)
 from django.utils import timezone
 from django.db import transaction
 from core.models import Nacionalidad, Provincia, Localidad
@@ -1064,7 +1067,7 @@ class ExpedienteDetailView(DetailView):
         ctx["can_download_nomina_aprobados"] = bool(
             (is_admin or is_coord or is_tecnico)
             and expediente.estado.nombre == "CRUCE_FINALIZADO"
-            and expediente.excel_masivo
+            and PadronFinalService.hay_aprobados(expediente)
         )
 
         preview = preview_error = None
