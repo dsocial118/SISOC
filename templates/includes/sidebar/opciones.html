@@ -193,42 +193,41 @@
                     </a>
                     <ul class="nav nav-treeview">
                         {% if has_dashboard_cf %}
-                            <li class="nav-item {% if 'centro-de-familia' in pagina_actual %}menu-open{% endif %}">
-                                <a href="#"
+                            <li class="nav-item">
+                                <a href="{% url 'dashboard' %}"
                                    class="nav-link nav-dot ms-2 {% if 'centro-de-familia' in pagina_actual %}active{% endif %}">
                                     <p>Centros de Familia</p>
-                                    <i class="nav-arrow bi bi-chevron-right"></i>
                                 </a>
-                                <ul class="nav nav-treeview">
-                                    <li class="nav-item">
-                                        <a href="{% url 'dashboard' %}"
-                                           class="nav-link ms-4 {% if 'centro-de-familia' in pagina_actual %}active{% endif %}">
-                                            <i class="nav-icon bi bi-arrow-return-right"></i>
-                                            <p>Ver</p>
-                                        </a>
-                                    </li>
-                                </ul>
                             </li>
                         {% endif %}
-                        {% for tablero in tableros %}
-                            {% with tablero_url=tablero.get_absolute_url %}
-                                <li class="nav-item {% if request.get_full_path == tablero_url %}menu-open{% endif %}">
+                        {% for item in tableros %}
+                            {% if item.tipo == 'grupo' %}
+                                <li class="nav-item {% if item.activo %}menu-open{% endif %}">
                                     <a href="#"
-                                       class="nav-link nav-dot ms-2 {% if request.get_full_path == tablero_url %}active{% endif %}">
-                                        <p>{{ tablero.nombre }}</p>
+                                       class="nav-link nav-dot ms-2 {% if item.activo %}active{% endif %}">
+                                        <p>{{ item.nombre }}</p>
                                         <i class="nav-arrow bi bi-chevron-right"></i>
                                     </a>
                                     <ul class="nav nav-treeview">
-                                        <li class="nav-item">
-                                            <a href="{{ tablero_url }}"
-                                               class="nav-link ms-4 {% if request.get_full_path == tablero_url %}active{% endif %}">
-                                                <i class="nav-icon bi bi-arrow-return-right"></i>
-                                                <p>Ver</p>
-                                            </a>
-                                        </li>
+                                        {% for hijo in item.hijos %}
+                                            <li class="nav-item">
+                                                <a href="{{ hijo.url }}"
+                                                   class="nav-link ms-4 {% if hijo.activo %}active{% endif %}">
+                                                    <i class="nav-icon bi bi-arrow-return-right"></i>
+                                                    <p>{{ hijo.nombre }}</p>
+                                                </a>
+                                            </li>
+                                        {% endfor %}
                                     </ul>
                                 </li>
-                            {% endwith %}
+                            {% else %}
+                                <li class="nav-item">
+                                    <a href="{{ item.url }}"
+                                       class="nav-link nav-dot ms-2 {% if item.activo %}active{% endif %}">
+                                        <p>{{ item.nombre }}</p>
+                                    </a>
+                                </li>
+                            {% endif %}
                         {% endfor %}
                     </ul>
                 </li>
