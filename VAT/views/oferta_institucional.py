@@ -48,18 +48,8 @@ from VAT.services.access_scope import (
     filter_sesiones_queryset_for_user,
 )
 from VAT.services.sesion_comision_service.impl import SesionComisionService
-from iam.services import user_has_permission_code
 
 logger = logging.getLogger("django")
-
-
-def _is_inet_provincia_actor(user):
-    if not user or not getattr(user, "is_authenticated", False):
-        return False
-    profile = getattr(user, "profile", None)
-    if not getattr(profile, "es_usuario_provincial", False):
-        return False
-    return user_has_permission_code(user, "auth.role_inet_provincia")
 
 
 # ============================================================================
@@ -184,17 +174,6 @@ class OfertaInstitucionalUpdateView(LoginRequiredMixin, UpdateView):
     def form_valid(self, form):
         messages.success(self.request, "Oferta institucional actualizada exitosamente.")
         return super().form_valid(form)
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        if _is_inet_provincia_actor(self.request.user):
-            context["inet_provincia_restricted_fields"] = [
-                "Centro",
-                "Título de referencia",
-                "Programa",
-                "Ciclo lectivo",
-            ]
-        return context
 
 
 class OfertaInstitucionalDeleteView(
@@ -571,16 +550,6 @@ class ComisionUpdateView(LoginRequiredMixin, UpdateView):
         if fechas_cambiaron:
             SesionComisionService.regenerar_para_comision(self.object)
         return response
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        if _is_inet_provincia_actor(self.request.user):
-            context["inet_provincia_restricted_fields"] = [
-                "Oferta institucional",
-                "Ubicación",
-                "Código de comisión",
-            ]
-        return context
 
 
 class ComisionDeleteView(SoftDeleteDeleteViewMixin, LoginRequiredMixin, DeleteView):

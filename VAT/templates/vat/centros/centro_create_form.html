@@ -101,10 +101,19 @@
         .vp-panel {
             border: 0;
             border-radius: 15px;
-            overflow: hidden;
+            /* overflow visible para que el desplegable de referentes/revisores no quede recortado por el panel */
+            overflow: visible;
             background: var(--vp-panel-bg);
             box-shadow: 4px 4px 4px 0 rgba(0, 0, 0, 0.3);
             margin-bottom: 30px;
+        }
+
+        .vp-panel > :first-child {
+            border-radius: 15px 15px 0 0;
+        }
+
+        .vp-panel > :last-child {
+            border-radius: 0 0 15px 15px;
         }
 
         .vp-panel-header {
@@ -312,6 +321,8 @@
             max-height: 220px;
             overflow-y: auto;
             padding: .35rem 0;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255, 255, 255, 0.35) rgba(24, 34, 61, 0.98);
         }
 
         .vp-field .referente-search-results[hidden] {
@@ -696,10 +707,10 @@
                                 {% for hidden in contacto_form.hidden_fields %}{{ hidden }}{% endfor %}
                                 <div class="row">
                                     <div class="col-md-4 vp-field">{{ contacto_form.nombre_contacto|as_crispy_field }}</div>
-                                    <div class="col-md-3 vp-field">{{ contacto_form.rol_area|as_crispy_field }}</div>
-                                    <div class="col-md-2 vp-field">{{ contacto_form.documento|as_crispy_field }}</div>
-                                    <div class="col-md-2 vp-field">{{ contacto_form.telefono_contacto|as_crispy_field }}</div>
-                                    <div class="col-md-3 vp-field">{{ contacto_form.email_contacto|as_crispy_field }}</div>
+                                    <div class="col-md-4 vp-field">{{ contacto_form.rol_area|as_crispy_field }}</div>
+                                    <div class="col-md-4 vp-field">{{ contacto_form.documento|as_crispy_field }}</div>
+                                    <div class="col-md-6 vp-field">{{ contacto_form.telefono_contacto|as_crispy_field }}</div>
+                                    <div class="col-md-6 vp-field">{{ contacto_form.email_contacto|as_crispy_field }}</div>
                                     <div class="col-md-12 d-flex align-items-center justify-content-end">
                                         <button type="button"
                                                 class="btn btn-outline-danger btn-sm remove-contacto-btn">
@@ -725,7 +736,6 @@
                         </div>
                         <div class="vp-section">
                             <div class="vp-status-card">
-                                <p>Las ediciones conservan el estado actual salvo que lo cambies de forma explícita.</p>
                                 <input type="hidden" name="activo_present" value="1" />
                                 <div class="vp-switch form-check mb-0">
                                     {{ form.activo }}
@@ -785,10 +795,10 @@
                 {% for hidden in contacto_form.hidden_fields %}{{ hidden }}{% endfor %}
                 <div class="row">
                     <div class="col-md-4 vp-field">{{ contacto_form.nombre_contacto|as_crispy_field }}</div>
-                    <div class="col-md-3 vp-field">{{ contacto_form.rol_area|as_crispy_field }}</div>
-                    <div class="col-md-2 vp-field">{{ contacto_form.documento|as_crispy_field }}</div>
-                    <div class="col-md-2 vp-field">{{ contacto_form.telefono_contacto|as_crispy_field }}</div>
-                    <div class="col-md-3 vp-field">{{ contacto_form.email_contacto|as_crispy_field }}</div>
+                    <div class="col-md-4 vp-field">{{ contacto_form.rol_area|as_crispy_field }}</div>
+                    <div class="col-md-4 vp-field">{{ contacto_form.documento|as_crispy_field }}</div>
+                    <div class="col-md-6 vp-field">{{ contacto_form.telefono_contacto|as_crispy_field }}</div>
+                    <div class="col-md-6 vp-field">{{ contacto_form.email_contacto|as_crispy_field }}</div>
                     <div class="col-md-12 d-flex align-items-center justify-content-end">
                         <button type="button" class="btn btn-outline-danger btn-sm remove-contacto-btn">
                             <i class="fas fa-trash mr-1"></i>Quitar

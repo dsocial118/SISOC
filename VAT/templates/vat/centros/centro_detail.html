@@ -2728,6 +2728,26 @@
             var createAction = formEl.getAttribute('action') || '';
             var fechaInicioInput = formEl.querySelector('[name="fecha_inicio"]');
             var fechaFinInput = formEl.querySelector('[name="fecha_fin"]');
+            var waitlistToggle = formEl.querySelector('[name="acepta_lista_espera"]');
+            var waitlistCapacityWrapper = modalEl.querySelector('[data-waitlist-capacity-wrapper]');
+            var waitlistCapacityField = formEl.querySelector('[name="cupo_lista_espera"]');
+
+            function syncWaitlistCapacity() {
+                if (!waitlistToggle || !waitlistCapacityWrapper || !waitlistCapacityField) {
+                    return;
+                }
+                var enabled = !!waitlistToggle.checked;
+                waitlistCapacityWrapper.classList.toggle('d-none', !enabled);
+                waitlistCapacityField.required = enabled;
+                if (!enabled) {
+                    waitlistCapacityField.value = '';
+                }
+            }
+
+            if (waitlistToggle) {
+                waitlistToggle.addEventListener('change', syncWaitlistCapacity);
+                syncWaitlistCapacity();
+            }
 
             function updateComisionCursoDateValidation() {
                 if (!fechaInicioInput || !fechaFinInput) {
@@ -2752,6 +2772,11 @@
             function setFormValue(name, value) {
                 var field = formEl.querySelector('[name="' + name + '"]');
                 if (!field) return;
+                if (field.type === 'checkbox') {
+                    field.checked = value === '1' || value === 'true' || value === true;
+                    syncWaitlistCapacity();
+                    return;
+                }
                 field.value = value || '';
                 if (name === 'fecha_inicio' || name === 'fecha_fin') {
                     updateComisionCursoDateValidation();
@@ -2810,6 +2835,14 @@
                     setFormValue('curso', cursoId);
                     setFormValue('ubicacion', trigger.getAttribute('data-ubicacion-id'));
                     setFormValue('cupo_total', trigger.getAttribute('data-cupo-total'));
+                    setFormValue(
+                        'acepta_lista_espera',
+                        trigger.getAttribute('data-acepta-lista-espera')
+                    );
+                    setFormValue(
+                        'cupo_lista_espera',
+                        trigger.getAttribute('data-cupo-lista-espera')
+                    );
                     setFormValue('fecha_inicio', trigger.getAttribute('data-fecha-inicio'));
                     setFormValue('fecha_fin', trigger.getAttribute('data-fecha-fin'));
                     setFormValue('estado', trigger.getAttribute('data-estado'));
@@ -2822,6 +2855,7 @@
                     formEl.reset();
                     formEl.setAttribute('action', createAction);
                     setFormValue('curso', cursoId);
+                    syncWaitlistCapacity();
                     if (submitEl) {
                         submitEl.textContent = 'Guardar';
                     }
