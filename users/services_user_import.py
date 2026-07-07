@@ -432,6 +432,7 @@ class _PermisosFila:
     allowed_permiso_ids: set | None
     organizaciones: list
     comedores: list
+    access_specs: list
 
 
 def _resolver_permisos_fila(row_data: dict, job: UserImportJob) -> _PermisosFila:
@@ -444,6 +445,15 @@ def _resolver_permisos_fila(row_data: dict, job: UserImportJob) -> _PermisosFila
         organizaciones = []
         comedores = []
     comedor_id = _comedor_id_alimentar_comunidad_en_lista(comedores)
+
+    access_specs = _build_pwa_access_specs(
+        organizaciones=organizaciones, comedores=comedores
+    )
+    if job.is_pwa_import and (organizaciones or comedores) and not access_specs:
+        raise ValidationError(
+            "Las organizaciones o comedores indicados no tienen comedores "
+            "asociados; el usuario quedaria sin ningun acceso PWA activo."
+        )
 
     grupos, permisos_pwa = _resolver_grupos_y_permisos(
         row_data.get("permisos", "").strip(),
@@ -469,6 +479,7 @@ def _resolver_permisos_fila(row_data: dict, job: UserImportJob) -> _PermisosFila
         allowed_permiso_ids=allowed_permiso_ids,
         organizaciones=organizaciones,
         comedores=comedores,
+        access_specs=access_specs,
     )
 
 
@@ -493,7 +504,9 @@ def _resolver_usuario_objetivo(row_data: dict):
     username_raw = row_data.get("username", "").strip()
     email_raw = row_data.get("correo", "").strip()
     if username_raw:
-        return User.objects.filter(username__iexact=username_raw).first()
+        user = User.objects.filter(username__iexact=username_raw).first()
+        if user is not None:
+            return user
     if email_raw:
         return User.objects.filter(email__iexact=email_raw).first()
     return None
@@ -567,11 +580,9 @@ class _ActualizarUsuarioParams:
     grupos: list
     accion_grupos: str
     allowed_group_ids: set | None
-    is_pwa_import: bool
     permisos_pwa: list
     allowed_permiso_ids: set | None
-    organizaciones: list
-    comedores: list
+    access_specs: list
     actor: object
 
 
@@ -579,6 +590,22 @@ def _procesar_usuario_existente(params: _ActualizarUsuarioParams) -> dict:
     changed = False
 
     with transaction.atomic():
+        if (
+            params.username_raw
+            and params.user.username.lower() != params.username_raw.lower()
+        ):
+            if (
+                User.objects.filter(username__iexact=params.username_raw)
+                .exclude(pk=params.user.pk)
+                .exists()
+            ):
+                raise ValidationError(
+                    f"Ya existe un usuario con el username '{params.username_raw}'."
+                )
+            params.user.username = params.username_raw
+            params.user.save(update_fields=["username"])
+            changed = True
+
         if (
             params.username_raw
             and params.email
@@ -604,14 +631,10 @@ def _procesar_usuario_existente(params: _ActualizarUsuarioParams) -> dict:
         )
         changed = changed or grupos_changed
 
-        if params.is_pwa_import and (params.organizaciones or params.comedores):
-            access_specs = _build_pwa_access_specs(
-                organizaciones=params.organizaciones,
-                comedores=params.comedores,
-            )
+        if params.access_specs:
             sync_representante_accesses(
                 user=params.user,
-                access_specs=access_specs,
+                access_specs=params.access_specs,
                 actor=params.actor,
             )
             changed = True
@@ -644,8 +667,7 @@ class _CrearUsuarioParams:
     provincias_objs: list
     job: object
     permisos_pwa: list
-    organizaciones: list
-    comedores: list
+    access_specs: list
 
 
 @dataclass
@@ -663,6 +685,7 @@ class _DatosFilaValidados:
     allowed_permiso_ids: set | None
     organizaciones: list
     comedores: list
+    access_specs: list
 
 
 def _crear_usuario_nuevo(params: _CrearUsuarioParams) -> tuple[User, str]:
@@ -682,14 +705,10 @@ def _crear_usuario_nuevo(params: _CrearUsuarioParams) -> tuple[User, str]:
     if params.grupos:
         user.groups.set(params.grupos)
 
-    if params.job.is_pwa_import and (params.organizaciones or params.comedores):
-        access_specs = _build_pwa_access_specs(
-            organizaciones=params.organizaciones,
-            comedores=params.comedores,
-        )
+    if params.access_specs:
         sync_representante_accesses(
             user=user,
-            access_specs=access_specs,
+            access_specs=params.access_specs,
             actor=params.job.requested_by,
         )
 
@@ -763,6 +782,7 @@ def _validar_y_preparar_fila(row_data: dict, job: UserImportJob) -> _DatosFilaVa
         allowed_permiso_ids=permisos_fila.allowed_permiso_ids,
         organizaciones=permisos_fila.organizaciones,
         comedores=permisos_fila.comedores,
+        access_specs=permisos_fila.access_specs,
     )
 
 
@@ -778,11 +798,9 @@ def process_single_user_import_row(*, row_data: dict, job: UserImportJob) -> dic
             grupos=datos.grupos,
             accion_grupos=datos.accion_grupos,
             allowed_group_ids=datos.allowed_group_ids,
-            is_pwa_import=job.is_pwa_import,
             permisos_pwa=datos.permisos_pwa,
             allowed_permiso_ids=datos.allowed_permiso_ids,
-            organizaciones=datos.organizaciones,
-            comedores=datos.comedores,
+            access_specs=datos.access_specs,
             actor=job.requested_by,
         )
         return _procesar_usuario_existente(params)
@@ -822,8 +840,7 @@ def process_single_user_import_row(*, row_data: dict, job: UserImportJob) -> dic
             provincias_objs=datos.provincias_objs,
             job=job,
             permisos_pwa=datos.permisos_pwa,
-            organizaciones=datos.organizaciones,
-            comedores=datos.comedores,
+            access_specs=datos.access_specs,
         )
         user, password = _crear_usuario_nuevo(params)
 

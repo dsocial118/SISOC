@@ -719,6 +719,35 @@ def test_import_username_vacio_se_autogenera():
 
 
 @pytest.mark.django_db
+def test_import_username_renombra_usuario_existente_matcheado_por_correo():
+    """Si una fila matchea un usuario existente por correo y trae un Username
+    distinto al actual, el importador debe renombrar el usuario."""
+    from users.models import UserImportJob
+    from users.services_user_import import process_single_user_import_row
+
+    admin = User.objects.create_user(username="import_admin_rename", password="x")
+    existente = User.objects.create_user(
+        username="gonzalez.pedro",
+        email="pedro.gonzalez@example.com",
+        password="x",
+    )
+    job = UserImportJob(
+        requested_by=admin,
+        original_filename="usuarios.xlsx",
+        send_credentials=False,
+        is_pwa_import=False,
+    )
+
+    row_data = _import_row_data("pedro.gonzalez@example.com")
+    row_data["username"] = "pedrouser"
+
+    process_single_user_import_row(row_data=row_data, job=job)
+
+    existente.refresh_from_db()
+    assert existente.username == "pedrouser"
+
+
+@pytest.mark.django_db
 def test_import_pwa_asigna_organizaciones_y_comedores():
     """Un usuario PWA importado con Organizaciones y Comedores queda con
     acceso a todos los comedores de esas organizaciones, mas los comedores
@@ -843,6 +872,89 @@ def test_import_pwa_sin_organizaciones_ni_comedores_lanza_error():
         process_single_user_import_row(row_data=row_data, job=job)
 
     assert not User.objects.filter(email="pwa.sin.espacio@example.com").exists()
+
+
+@pytest.mark.django_db
+def test_import_pwa_organizacion_sin_comedores_lanza_error():
+    """Una Organizacion sin comedores asociados no otorga ningun acceso PWA
+    real; la fila debe fallar en vez de crear un usuario inutilizable."""
+    from django.core.exceptions import ValidationError
+    from organizaciones.models import Organizacion, TipoEntidad
+    from users.models import UserImportJob
+    from users.services_user_import import process_single_user_import_row
+
+    admin = User.objects.create_user(username="import_admin_org_vacia", password="x")
+    tipo = TipoEntidad.objects.create(nombre="Personeria Juridica")
+    organizacion_vacia = Organizacion.objects.create(
+        nombre="Org Sin Comedores", tipo_entidad=tipo
+    )
+
+    job = UserImportJob(
+        requested_by=admin,
+        original_filename="usuarios.xlsx",
+        send_credentials=False,
+        is_pwa_import=True,
+    )
+
+    row_data = _import_row_data("pwa.org.vacia@example.com")
+    row_data["organizaciones"] = str(organizacion_vacia.pk)
+
+    with pytest.raises(ValidationError):
+        process_single_user_import_row(row_data=row_data, job=job)
+
+    assert not User.objects.filter(email="pwa.org.vacia@example.com").exists()
+
+
+@pytest.mark.django_db
+def test_import_pwa_organizacion_sin_comedores_no_borra_accesos_existentes():
+    """Actualizar un usuario PWA existente con una Organizacion sin comedores
+    no debe desactivar silenciosamente sus accesos PWA activos previos."""
+    from django.core.exceptions import ValidationError
+    from comedores.models import Comedor
+    from organizaciones.models import Organizacion, TipoEntidad
+    from users.models import AccesoComedorPWA, UserImportJob
+    from users.services_pwa import sync_representante_accesses
+    from users.services_user_import import process_single_user_import_row
+
+    admin = User.objects.create_user(
+        username="import_admin_org_vacia_update", password="x"
+    )
+    tipo = TipoEntidad.objects.create(nombre="Personeria Juridica")
+    organizacion_vacia = Organizacion.objects.create(
+        nombre="Org Sin Comedores Update", tipo_entidad=tipo
+    )
+    comedor_suelto = Comedor.objects.create(nombre="Comedor Suelto Update")
+
+    existente = User.objects.create_user(
+        username="pwa.existente", email="pwa.existente@example.com", password="x"
+    )
+    sync_representante_accesses(
+        user=existente,
+        access_specs=[
+            {
+                "comedor_id": comedor_suelto.pk,
+                "tipo_asociacion": AccesoComedorPWA.TIPO_ASOCIACION_ESPACIO,
+                "organizacion_id": None,
+            }
+        ],
+        actor=admin,
+    )
+
+    job = UserImportJob(
+        requested_by=admin,
+        original_filename="usuarios.xlsx",
+        send_credentials=False,
+        is_pwa_import=True,
+    )
+
+    row_data = _import_row_data("pwa.existente@example.com")
+    row_data["organizaciones"] = str(organizacion_vacia.pk)
+
+    with pytest.raises(ValidationError):
+        process_single_user_import_row(row_data=row_data, job=job)
+
+    acceso = AccesoComedorPWA.objects.get(user=existente, comedor=comedor_suelto)
+    assert acceso.activo is True
 
 
 @pytest.mark.django_db
