@@ -79,6 +79,38 @@ def test_tableros_para_sidebar_agrupa_por_grupo_menu(db, django_user_model):
     assert items[1]["url"] == suelto.get_absolute_url()
 
 
+def test_tableros_para_sidebar_ancla_grupo_en_primer_miembro(db, django_user_model):
+    admin = django_user_model.objects.create_superuser(
+        "admin_tab_intercalado", "admin_tab_intercalado@example.com", "x"
+    )
+    Tablero.objects.create(
+        nombre="G1 Primero",
+        slug="g1-primero",
+        grupo_menu="G1",
+        orden=1,
+        activo=True,
+    )
+    Tablero.objects.create(nombre="S1", slug="s1", orden=2, activo=True)
+    Tablero.objects.create(nombre="S2", slug="s2", orden=3, activo=True)
+    Tablero.objects.create(
+        nombre="G1 Segundo",
+        slug="g1-segundo",
+        grupo_menu="G1",
+        orden=4,
+        activo=True,
+    )
+
+    items = tableros_para_sidebar({"request": _request_para(admin)})
+
+    assert [item["nombre"] for item in items] == ["G1", "S1", "S2"]
+    grupo = items[0]
+    assert grupo["tipo"] == "grupo"
+    assert [hijo["nombre"] for hijo in grupo["hijos"]] == [
+        "G1 Primero",
+        "G1 Segundo",
+    ]
+
+
 def test_tableros_para_sidebar_colapsa_grupo_de_un_solo_tablero(db, django_user_model):
     admin = django_user_model.objects.create_superuser(
         "admin_tab2", "admin_tab2@example.com", "x"

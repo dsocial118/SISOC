@@ -7,10 +7,9 @@ def backfill_grupo_menu(apps, schema_editor):
     Solo toca filas sin ``grupo_menu`` para no pisar ediciones manuales.
     """
     Tablero = apps.get_model("dashboard", "Tablero")
-    datacalle = Tablero.objects.filter(nombre__startswith="DataCalle").exclude(
+    Tablero.objects.filter(nombre__startswith="DataCalle", grupo_menu="").update(
         grupo_menu="DataCalle"
     )
-    datacalle.filter(grupo_menu="").update(grupo_menu="DataCalle")
     Tablero.objects.filter(nombre__in=["Aduana", "Aduana Ejecutivo"]).filter(
         grupo_menu=""
     ).update(grupo_menu="Aduana")

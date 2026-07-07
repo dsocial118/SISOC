@@ -43,6 +43,9 @@ class TableroAdminForm(forms.ModelForm):
                 name__in=self.instance.permisos
             )
 
+    def clean_grupo_menu(self):
+        return (self.cleaned_data.get("grupo_menu") or "").strip()
+
     def save(self, commit=True):
         instance = super().save(commit=False)
         grupos = self.cleaned_data.get("grupos")

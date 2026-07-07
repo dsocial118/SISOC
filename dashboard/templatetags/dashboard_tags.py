@@ -17,6 +17,11 @@ def tableros_para_sidebar(context):
 
     Los tableros sin ``grupo_menu`` (o cuyo grupo tiene un único tablero
     visible) se muestran como enlaces directos, sin el "Ver" intermedio.
+
+    La posición de un grupo queda anclada al primer tablero encontrado de ese
+    grupo (menor ``orden`` según el queryset). Los tableros posteriores del
+    mismo grupo se agregan a sus ``hijos`` y no mueven la posición del grupo,
+    aunque su propio ``orden`` los ubicaría después de otros elementos.
     """
     request = context.get("request")
     if not request:
