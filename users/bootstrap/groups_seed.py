@@ -393,8 +393,6 @@ LISTADO_DEFINED_GROUPS = (
             "VAT.view_comision",
             "VAT.view_comisioncurso",
             "VAT.view_comisionhorario",
-            "VAT.view_inscripcion",
-            "VAT.view_inscripcionoferta",
             "VAT.view_planversioncurricular",
         ),
     ),

@@ -1265,11 +1265,6 @@ class PlanVersionCurricularForm(forms.ModelForm):
             normativa_texto, _ = _split_normativa_value(self.instance.normativa)
             self.normativa_texto_actual = normativa_texto
 
-        # Perfil INET_PROVINCIA: restringe campos de configuración general del plan.
-        if _is_inet_provincia_actor(actor) and self.instance and self.instance.pk:
-            _lock_fields_readonly(self, ["sector"])
-            _hide_and_lock_fields(self, ["subsector", "modalidad_cursada", "activo"])
-
     def clean_nombre(self):
         return _clean_non_empty_text(self.cleaned_data.get("nombre"), "El nombre")
 
@@ -2096,17 +2091,6 @@ class OfertaInstitucionalForm(forms.ModelForm):
             if titulo:
                 self.fields["titulo_referencia"].initial = titulo.pk
 
-        if _is_inet_provincia_actor(actor) and self.instance and self.instance.pk:
-            _lock_fields_readonly(
-                self,
-                [
-                    "centro",
-                    "titulo_referencia",
-                    "programa",
-                    "ciclo_lectivo",
-                ],
-            )
-
     def clean(self):
         cleaned_data = super().clean()
 
@@ -2217,9 +2201,6 @@ class ComisionForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         actor = kwargs.pop("actor", None)
         super().__init__(*args, **kwargs)
-
-        if _is_inet_provincia_actor(actor) and self.instance and self.instance.pk:
-            _lock_fields_readonly(self, ["oferta", "ubicacion", "codigo_comision"])
 
 
 class ComisionHorarioForm(forms.ModelForm):

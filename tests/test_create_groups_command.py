@@ -5,6 +5,7 @@ import importlib
 import pytest
 from django.apps import apps
 from django.contrib.auth.models import Group, Permission
+from django.contrib.contenttypes.models import ContentType
 from django.core.management import call_command
 
 from users.bootstrap.groups_seed import bootstrap_group_names
@@ -167,10 +168,9 @@ def test_create_groups_creates_inet_admin_visualizador_readonly():
         "view_comision",
         "view_comisioncurso",
         "view_comisionhorario",
-        "view_inscripcion",
-        "view_inscripcionoferta",
         "view_planversioncurricular",
     }.issubset(group_codes)
+    assert not {"view_inscripcion", "view_inscripcionoferta"} & group_codes
     assert not any(
         code.startswith(("add_", "change_", "delete_")) for code in group_codes
     )
@@ -234,6 +234,29 @@ def test_reconcile_migration_removes_stale_inet_provincia_permissions():
     group_codes = set(inet_provincia.permissions.values_list("codename", flat=True))
     assert "change_comision" not in group_codes
     assert {"role_inet_provincia", "view_comisioncurso"}.issubset(group_codes)
+
+
+def test_reconcile_migration_preserves_legacy_group_role_permission():
+    """La migración conserva el permiso sintético legado creado por IAM."""
+    reconcile_module = importlib.import_module(
+        "users.migrations.0039_reconcile_vat_admin_groups"
+    )
+    Group.objects.filter(name="CFP").delete()
+    cfp = Group.objects.create(name="CFP")
+    group_ct = ContentType.objects.get(app_label="auth", model="group")
+    legacy_permission, _ = Permission.objects.get_or_create(
+        content_type=group_ct,
+        codename="role_cfp",
+        defaults={"name": "CFP"},
+    )
+    legacy_permission.name = "CFP"
+    legacy_permission.save(update_fields=["name"])
+    cfp.permissions.add(legacy_permission)
+
+    reconcile_module.reconcile_vat_admin_groups(apps, None)
+
+    cfp.refresh_from_db()
+    assert cfp.permissions.filter(pk=legacy_permission.pk).exists()
 
 
 def test_reconcile_migration_creates_admin_inet_general_role_permission():

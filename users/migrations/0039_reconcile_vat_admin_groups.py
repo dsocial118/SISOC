@@ -1,88 +1,18 @@
 from django.db import migrations
 
+from users.bootstrap.groups_seed import permission_codes_for_bootstrap_group
+
 
 # Reconciliacion exacta de los grupos VAT administrativos. A diferencia de
 # `create_groups` (aditivo), esta migracion deja cada grupo con EXACTAMENTE
-# estos permisos, removiendo los sobrantes en entornos ya existentes.
-#
-# Debe mantenerse en sincronia con `users/bootstrap/groups_seed.py`. Se deja el
-# listado hardcodeado (self-contained) para que la migracion sea estable ante
-# futuros cambios del seed.
-GROUP_PERMISSION_MAP = {
-    # operador CFP: se conserva el marcador de rol `role_referentecentrovat`,
-    # necesario para que access_scope reconozca al usuario como referente.
-    "CFP": (
-        "auth.role_referentecentrovat",
-        "VAT.view_centro",
-        "VAT.view_curso",
-        "VAT.add_curso",
-        "VAT.change_curso",
-        "VAT.delete_curso",
-        "VAT.view_comisioncurso",
-        "VAT.add_comisioncurso",
-        "VAT.change_comisioncurso",
-        "VAT.delete_comisioncurso",
-        "VAT.view_comisionhorario",
-        "VAT.add_comisionhorario",
-        "VAT.change_comisionhorario",
-        "VAT.delete_comisionhorario",
-        "VAT.view_inscripcion",
-        "VAT.add_inscripcion",
-        "VAT.change_inscripcion",
-        "VAT.add_asistenciasesion",
-        "VAT.change_asistenciasesion",
-    ),
-    "INET_PROVINCIA": (
-        "auth.role_inet_provincia",
-        "VAT.view_centro",
-        "VAT.add_centro",
-        "VAT.change_centro",
-        "VAT.view_planversioncurricular",
-        "VAT.add_planversioncurricular",
-        "VAT.view_comision",
-        "VAT.view_comisioncurso",
-    ),
-    "INET Admin Visualizador": (
-        # Marcador de lectura global reconocido por access_scope.
-        "auth.role_inet_admin_visualizador",
-        "VAT.view_centro",
-        "VAT.view_curso",
-        "VAT.view_comision",
-        "VAT.view_comisioncurso",
-        "VAT.view_comisionhorario",
-        "VAT.view_inscripcion",
-        "VAT.view_inscripcionoferta",
-        "VAT.view_planversioncurricular",
-    ),
-    "INET Admin General": (
-        "auth.role_vat_sse",
-        "auth.role_admin_inet_general",
-        "VAT.view_centro",
-        "VAT.add_centro",
-        "VAT.change_centro",
-        "VAT.view_curso",
-        "VAT.add_curso",
-        "VAT.change_curso",
-        "VAT.delete_curso",
-        "VAT.view_comision",
-        "VAT.change_comision",
-        "VAT.view_comisioncurso",
-        "VAT.add_comisioncurso",
-        "VAT.change_comisioncurso",
-        "VAT.delete_comisioncurso",
-        "VAT.view_comisionhorario",
-        "VAT.add_comisionhorario",
-        "VAT.change_comisionhorario",
-        "VAT.delete_comisionhorario",
-        "VAT.view_inscripcion",
-        "VAT.add_inscripcion",
-        "VAT.change_inscripcion",
-        "VAT.add_asistenciasesion",
-        "VAT.change_asistenciasesion",
-        "VAT.view_planversioncurricular",
-        "VAT.add_planversioncurricular",
-    ),
-}
+# estos permisos de la semilla declarativa, removiendo los sobrantes en
+# entornos ya existentes, salvo el permiso legado de rol del propio grupo.
+RECONCILED_GROUP_NAMES = (
+    "CFP",
+    "INET_PROVINCIA",
+    "INET Admin Visualizador",
+    "INET Admin General",
+)
 
 
 def _resolve_permission(apps, code):
@@ -115,15 +45,27 @@ def _resolve_permission(apps, code):
 
 def reconcile_vat_admin_groups(apps, schema_editor):
     Group = apps.get_model("auth", "Group")
+    Permission = apps.get_model("auth", "Permission")
+    ContentType = apps.get_model("contenttypes", "ContentType")
+    group_ct, _ = ContentType.objects.get_or_create(app_label="auth", model="group")
 
-    for group_name, permission_codes in GROUP_PERMISSION_MAP.items():
+    for group_name in RECONCILED_GROUP_NAMES:
         group, _ = Group.objects.get_or_create(name=group_name)
         permissions = []
-        for code in permission_codes:
+        for code in permission_codes_for_bootstrap_group(group_name):
             permission = _resolve_permission(apps, code)
             if permission:
                 permissions.append(permission)
-        # `.set()` deja el grupo con exactamente estos permisos (quita sobrantes).
+        # Preserva el permiso de compatibilidad legado creado por
+        # ensure_role_for_group (iam/services.py), cuyo codename puede llevar
+        # sufijo por colision y por eso se busca por name == nombre del grupo.
+        legacy_role_permission = Permission.objects.filter(
+            content_type=group_ct,
+            name=group_name,
+        ).first()
+        if legacy_role_permission and legacy_role_permission not in permissions:
+            permissions.append(legacy_role_permission)
+        # `.set()` deja el grupo con los permisos reconciliados (quita sobrantes).
         group.permissions.set(permissions)
 
 

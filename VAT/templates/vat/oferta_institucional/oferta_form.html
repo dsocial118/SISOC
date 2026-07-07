@@ -41,17 +41,6 @@
                     <div class="card-body p-4">
                         <form method="post" novalidate>
                             {% csrf_token %}
-                            {% if inet_provincia_restricted_fields and form.instance.id %}
-                                <div class="alert alert-warning d-flex align-items-start gap-2"
-                                     role="alert">
-                                    <i class="bi bi-shield-lock mt-1"></i>
-                                    <div>
-                                        <strong>Edición parcial por perfil INET_PROVINCIA.</strong>
-                                        Los siguientes campos están bloqueados para esta edición:
-                                        {{ inet_provincia_restricted_fields|join:", " }}.
-                                    </div>
-                                </div>
-                            {% endif %}
                             {{ form.plan_curricular }}
                             <div class="row mb-4">
                                 <div class="col-md-6">
