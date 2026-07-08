@@ -1,10 +1,31 @@
 <!-- AUTO-GENERATED RELEASE START: 2026-07-08 -->
 # Versión SISOC 08.07.2026
 
+## Nuevas Funcionalidades
+
+- [ocr] Se incorpora el módulo OCR con carga de documentos, jobs de procesamiento, pre/postprocesamiento, métricas de evaluación, opciones de orientación/capa de texto y cobertura de servicios/vistas. (PR #2019)
+- [insumos] Se agrega el submódulo de insumos para comedores, con ABM de categorías e insumos, permisos propios, validaciones y tests de acceso. (PR #1989)
+- [pwa] La PWA suma prestaciones/conformidad por períodos, comunicados segmentados por organizaciones y mejoras de nómina vigente. (PRs #1996, #2004)
+- [usuarios] El importador masivo pasa a resolver usuarios por username, email opcional y agrupamiento de credenciales, con asignación de organizaciones/comedores y permisos PWA. (PRs #1980, #1985, #1994, #1995, #2002, #2012)
+- [dashboard] Los tableros incorporan agrupación por programa y visibilidad de Espacios Comunitarios en el menú lateral. (PRs #2008, #2019)
+
 ## Actualizaciones
 
-- [sin-area] hotfix. (PR #1997)
-- [sin-area] hotfix. (PR #1998)
+- [infraestructura] Se agrega deploy automatizado por entorno con runners self-hosted, runbook operativo y ajustes Docker/entrypoint para ejecución por rol. (PR #2020)
+- [docs] Se incorpora `AGENT_REPO_MAP.md`, documentación OCR, registros spec-as-source y artefactos de continuidad para el corte. (PRs #1963, #2019, #2020)
+- [VAT] Se consolidan permisos/perfiles, restricciones INET_PROVINCIA, detalle de curso solo lectura, panel/modal de lista de espera y ocultamiento de datos administrativos para operadores CFP. (PRs #2007, #2019)
+- [Celiaquía] Se refuerza padrón final, reporter por provincias, soft-delete de cupos, señales y saneamiento operativo de expedientes. (PRs #1988, #2003)
+- [Comedores] Se ajustan prestaciones PNUD, exportación con permisos, serializers/API, convenio, listados y utilidades de RENAPER. (PRs #1964, #2019)
+- [Admisiones] Se agregan personas conveniadas, vigencia PWA, reparaciones de columnas históricas y mejoras de técnicos/rendiciones. (PR #2019)
+- [Ver para Ser Libre] Se actualizan permisos globales de itinerarios, UI de jornadas/sedes/itinerarios y flujos de eliminación. (PRs #1960, #2019)
+
+## Corrección de Errores
+
+- [predeploy] Se normaliza `docker-compose.produccion.yml` para eliminar una línea en blanco final que hacía fallar `git diff --check`.
+- [usuarios] Se evita crear accesos PWA fantasma al actualizar/importar usuarios y se preserva el username existente. (PR #2012)
+- [Celiaquía] La nómina de aprobados se genera desde base y se corrigen conflictos/regresiones detectadas en el flujo de padrón final. (PR #2003)
+- [PWA] Se corrigen hallazgos de review sobre tope cero, carrera de `vigente_pwa`, gating y CI. (PR #2004)
+- [sidebar] Se estabiliza el menú lateral y la limpieza de `grupo_menu` sin cambiar el algoritmo de agrupación. (PR #2008)
 <!-- AUTO-GENERATED RELEASE END: 2026-07-08 -->
 
 <!-- AUTO-GENERATED RELEASE START: 2026-06-24 -->
