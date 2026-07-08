@@ -158,6 +158,11 @@ class MensajeEspacioPWAViewSet(viewsets.ViewSet):
                         for item in serialized_items
                         if item["seccion"] == "general"
                     ],
+                    "organizaciones": [
+                        item
+                        for item in serialized_items
+                        if item["seccion"] == "organizacion"
+                    ],
                     "espacios": [
                         item
                         for item in serialized_items

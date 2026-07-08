@@ -42,6 +42,7 @@ from comedores.models import (
     AuditComedorPrograma,
     CapacitacionComedorCertificado,
     Comedor,
+    ComedorDatosConvenioPnud,
     ImagenComedor,
     Nomina,
     Observacion,
@@ -56,6 +57,7 @@ from comedores.services.capacitaciones_certificados_service import (
     serialize_certificate,
     submit_certificate,
 )
+from comedores.utils import usa_datos_convenio_pnud
 from intervenciones.models.intervenciones import Intervencion
 from relevamientos.models import ClasificacionComedor, Relevamiento
 from rendicioncuentasfinal.models import DocumentoRendicionFinal
@@ -402,30 +404,33 @@ class ComedorDetailViewSet(
 
     def _get_latest_prestacion_alimentaria_informe(self, comedor):
         admision = ComedorService.get_admision_vigente_pwa(comedor.id)
-        if not admision:
-            return None
-        informe = (
-            InformeTecnico.objects.filter(
-                admision=admision,
-                estado_formulario="finalizado",
-            )
-            .select_related("admision")
-            .only(
-                "id",
-                "admision_id",
-                "tipo",
-                "estado_formulario",
-                "creado",
-                "modificado",
-                *APROBADAS_FIELDS,
-            )
-            .order_by("-modificado", "-id")
-            .first()
-        )
-        return ComedorService.aplicar_complementario_validado(informe)
+        return ComedorService.get_informe_tecnico_finalizado_efectivo(admision)
 
-    def _serialize_prestacion_alimentaria_payload(self, comedor, informe):
-        if informe:
+    def _get_pnud_prestacion_alimentaria_datos(self, comedor):
+        if not usa_datos_convenio_pnud(comedor):
+            return None
+        return ComedorDatosConvenioPnud.objects.filter(comedor=comedor).first()
+
+    def _serialize_prestacion_alimentaria_payload(
+        self, comedor, informe, datos_convenio_pnud=None
+    ):
+        if datos_convenio_pnud:
+            payload = {
+                "informe_id": None,
+                "admision_id": None,
+                "tipo": "pnud",
+                "estado_formulario": "finalizado",
+                "creado": None,
+                "modificado": datos_convenio_pnud.actualizado_en,
+                "fecha_finalizacion": datos_convenio_pnud.actualizado_en,
+            }
+            payload.update(
+                {
+                    field: getattr(datos_convenio_pnud, field, 0)
+                    for field in APROBADAS_FIELDS
+                }
+            )
+        elif informe:
             fechas = InformeTecnicoPrestacionSerializer.fechas_finalizacion_para(
                 [informe.admision_id]
             )
@@ -1673,9 +1678,18 @@ class ComedorDetailViewSet(
     @action(detail=True, methods=["get"], url_path="prestacion-alimentaria")
     def prestacion_alimentaria(self, request, pk=None):
         comedor = self.get_object()
-        informe = self._get_latest_prestacion_alimentaria_informe(comedor)
+        datos_convenio_pnud = self._get_pnud_prestacion_alimentaria_datos(comedor)
+        informe = (
+            None
+            if datos_convenio_pnud
+            else self._get_latest_prestacion_alimentaria_informe(comedor)
+        )
         return Response(
-            self._serialize_prestacion_alimentaria_payload(comedor, informe),
+            self._serialize_prestacion_alimentaria_payload(
+                comedor,
+                informe,
+                datos_convenio_pnud=datos_convenio_pnud,
+            ),
             status=status.HTTP_200_OK,
         )
 
@@ -1729,7 +1743,11 @@ class ComedorDetailViewSet(
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        informe = self._get_latest_prestacion_alimentaria_informe(comedor)
+        informe = (
+            None
+            if usa_datos_convenio_pnud(comedor)
+            else self._get_latest_prestacion_alimentaria_informe(comedor)
+        )
         try:
             conformidad = PrestacionAlimentariaConformidad.objects.create(
                 comedor=comedor,

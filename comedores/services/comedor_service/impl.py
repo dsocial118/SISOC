@@ -1020,6 +1020,20 @@ class ComedorService:
     def get_informe_tecnico_finalizado_efectivo(admision):
         if not admision:
             return None
+        informe_complementario = (
+            InformeComplementario.objects.filter(
+                admision=admision,
+                estado="validado",
+                informe_tecnico__estado_formulario="finalizado",
+            )
+            .select_related("informe_tecnico")
+            .order_by("-modificado", "-id")
+            .first()
+        )
+        if informe_complementario:
+            return ComedorService.aplicar_complementario_validado(
+                informe_complementario.informe_tecnico
+            )
         informe_tecnico = (
             InformeTecnico.objects.filter(
                 admision=admision,

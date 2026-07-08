@@ -160,9 +160,9 @@ def test_obtener_datos_admision_with_and_without_admision(mocker):
         "acompanamientos.acompanamiento_service.Admision.objects.filter",
         return_value=admision_qs,
     )
-    mocker.patch(
-        "acompanamientos.acompanamiento_service.InformeTecnico.objects.filter",
-        return_value=_QS(first_value="info"),
+    get_informe_efectivo = mocker.patch(
+        "comedores.services.comedor_service.ComedorService.get_informe_tecnico_finalizado_efectivo",
+        return_value="info",
     )
     mocker.patch(
         "acompanamientos.acompanamiento_service.Comedor.objects.filter",
@@ -179,6 +179,7 @@ def test_obtener_datos_admision_with_and_without_admision(mocker):
         enviado_acompaniamiento=True,
         activa=True,
     )
+    get_informe_efectivo.assert_called_once_with(admision)
 
     mocker.patch(
         "acompanamientos.acompanamiento_service.Admision.objects.filter",
@@ -201,9 +202,9 @@ def test_obtener_datos_admision_con_admision_id_permite_cerradas(mocker):
         "acompanamientos.acompanamiento_service.Admision.objects.filter",
         return_value=_QS(first_value=admision),
     )
-    mocker.patch(
-        "acompanamientos.acompanamiento_service.InformeTecnico.objects.filter",
-        return_value=_QS(first_value="info-cerrada"),
+    get_informe_efectivo = mocker.patch(
+        "comedores.services.comedor_service.ComedorService.get_informe_tecnico_finalizado_efectivo",
+        return_value="info-cerrada",
     )
     mocker.patch(
         "acompanamientos.acompanamiento_service.Comedor.objects.filter",
@@ -214,6 +215,7 @@ def test_obtener_datos_admision_con_admision_id_permite_cerradas(mocker):
 
     assert out["admision"] is admision
     assert out["info_relevante"] == "info-cerrada"
+    get_informe_efectivo.assert_called_once_with(admision)
     admision_filter.assert_called_once_with(
         comedor=comedor,
         enviado_acompaniamiento=True,

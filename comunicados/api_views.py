@@ -8,7 +8,6 @@ from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
 
 from core.api_auth import HasAPIKey
-from comedores.models import Comedor
 from .models import Comunicado, TipoComunicado, SubtipoComunicado, EstadoComunicado
 from .serializers import ComunicadoSerializer
 
@@ -53,27 +52,13 @@ class ComunicadoComedorViewSet(viewsets.ReadOnlyModelViewSet):
 
     def get_queryset(self):
         comedor_id = self.kwargs.get("comedor_id")
-        organizacion_id = (
-            Comedor.objects.filter(pk=comedor_id)
-            .values_list("organizacion_id", flat=True)
-            .first()
-        )
-        destinatarios_filter = Q(
-            subtipo=SubtipoComunicado.COMEDORES,
-            comedores__id=comedor_id,
-        )
-        if organizacion_id:
-            destinatarios_filter |= Q(
-                subtipo=SubtipoComunicado.ORGANIZACIONES,
-                organizaciones__id=organizacion_id,
-            )
-
         return (
             Comunicado.objects.filter(
                 tipo=TipoComunicado.EXTERNO,
+                subtipo=SubtipoComunicado.COMEDORES,
                 estado=EstadoComunicado.PUBLICADO,
             )
-            .filter(destinatarios_filter)
+            .filter(comedores__id=comedor_id)
             .filter(
                 Q(fecha_vencimiento__isnull=True)
                 | Q(fecha_vencimiento__gt=timezone.now())
