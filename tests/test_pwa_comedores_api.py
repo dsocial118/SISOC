@@ -21,6 +21,7 @@ from admisiones.models.admisiones import (
 )
 from comedores.models import (
     Comedor,
+    ComedorDatosConvenioPnud,
     ImagenComedor,
     Nomina,
     PrestacionAlimentariaConformidad,
@@ -1250,3 +1251,47 @@ def test_prestacion_alimentaria_expone_fecha_finalizacion_desde_historial():
 
     assert response.status_code == 200
     assert response.data["fecha_finalizacion"] is not None
+
+
+@pytest.mark.django_db
+def test_prestacion_alimentaria_pnud_expone_datos_convenio():
+    provincia = Provincia.objects.create(nombre="Cordoba")
+    programa = Programas.objects.create(nombre="Abordaje Comunitario")
+    comedor = Comedor.objects.create(
+        nombre="Espacio PNUD",
+        provincia=provincia,
+        programa=programa,
+    )
+    ComedorDatosConvenioPnud.objects.create(
+        comedor=comedor,
+        aprobadas_desayuno_lunes=11,
+        aprobadas_almuerzo_martes=22,
+        aprobadas_merienda_miercoles=33,
+        aprobadas_cena_jueves=44,
+    )
+    representante = _create_pwa_user(
+        comedor=comedor,
+        role=AccesoComedorPWA.ROL_REPRESENTANTE,
+        username="rep_pnud_prestaciones",
+    )
+    client = _token_client(representante)
+
+    response = client.get(f"/api/comedores/{comedor.id}/prestacion-alimentaria/")
+
+    assert response.status_code == 200
+    assert response.data["tipo"] == "pnud"
+    assert response.data["informe_id"] is None
+    assert response.data["aprobadas_desayuno_lunes"] == 11
+    assert response.data["aprobadas_almuerzo_martes"] == 22
+    assert response.data["aprobadas_merienda_miercoles"] == 33
+    assert response.data["aprobadas_cena_jueves"] == 44
+
+    conformidad = client.post(
+        f"/api/comedores/{comedor.id}/prestacion-alimentaria/conformidad/",
+        {"conforme": True, "periodo": "2036-01"},
+        format="json",
+    )
+
+    assert conformidad.status_code == 201
+    registro = PrestacionAlimentariaConformidad.objects.get(comedor=comedor)
+    assert registro.informe_tecnico_id is None

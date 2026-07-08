@@ -69,7 +69,13 @@ def _grant_mobile_rendicion_permission(user):
 
 
 def _create_comunicado(
-    *, creador, titulo, para_todos_comedores=False, comedor=None, **overrides
+    *,
+    creador,
+    titulo,
+    para_todos_comedores=False,
+    comedor=None,
+    organizaciones=None,
+    **overrides,
 ):
     comunicado = Comunicado.objects.create(
         titulo=titulo,
@@ -87,6 +93,8 @@ def _create_comunicado(
     )
     if comedor is not None:
         comunicado.comedores.add(comedor)
+    if organizaciones is not None:
+        comunicado.organizaciones.set(organizaciones)
     return comunicado
 
 
@@ -170,6 +178,98 @@ def test_list_mensajes_por_espacio_incluye_notificaciones_generales(espacios):
     assert len(response.data["secciones"]["espacios"]) == 1
     assert response.data["secciones"]["espacios"][0]["titulo"] == "Para el espacio"
     assert response.data["secciones"]["espacios"][0]["seccion"] == "espacio"
+
+
+@pytest.mark.django_db
+def test_list_mensajes_por_espacio_no_expone_organizacion_a_usuario_de_espacio(
+    espacios,
+):
+    espacio_1, _ = espacios
+    organizacion = Organizacion.objects.create(nombre="Organizacion Mensajes")
+    espacio_1.organizacion = organizacion
+    espacio_1.save(update_fields=["organizacion"])
+    representante = _create_pwa_user(
+        comedor=espacio_1,
+        role=AccesoComedorPWA.ROL_REPRESENTANTE,
+        username="rep_mensajes_solo_espacio",
+    )
+    client = _auth_client_for_user(representante)
+
+    _create_comunicado(
+        creador=representante,
+        titulo="Mensaje a organizacion",
+        subtipo=SubtipoComunicado.ORGANIZACIONES,
+        organizaciones=[organizacion],
+    )
+
+    response = client.get(f"/api/pwa/espacios/{espacio_1.id}/mensajes/")
+
+    assert response.status_code == 200
+    assert response.data["count"] == 0
+    assert response.data["secciones"]["organizaciones"] == []
+
+
+@pytest.mark.django_db
+def test_list_mensajes_por_espacio_expone_organizacion_solo_a_usuario_organizacion(
+    espacios,
+):
+    espacio_1, espacio_2 = espacios
+    organizacion = Organizacion.objects.create(nombre="Organizacion PWA")
+    espacio_1.organizacion = organizacion
+    espacio_2.organizacion = organizacion
+    espacio_1.save(update_fields=["organizacion"])
+    espacio_2.save(update_fields=["organizacion"])
+    user_model = get_user_model()
+    representante = user_model.objects.create_user(
+        username="rep_mensajes_organizacion",
+        email="rep_mensajes_organizacion@example.com",
+        password="testpass123",
+    )
+    for espacio in (espacio_1, espacio_2):
+        AccesoComedorPWA.objects.create(
+            user=representante,
+            comedor=espacio,
+            organizacion=organizacion,
+            rol=AccesoComedorPWA.ROL_REPRESENTANTE,
+            tipo_asociacion=AccesoComedorPWA.TIPO_ASOCIACION_ORGANIZACION,
+            activo=True,
+        )
+    client = _auth_client_for_user(representante)
+    mensaje = _create_comunicado(
+        creador=representante,
+        titulo="Mensaje de organizacion",
+        subtipo=SubtipoComunicado.ORGANIZACIONES,
+        organizaciones=[organizacion],
+    )
+
+    response = client.get(f"/api/pwa/espacios/{espacio_1.id}/mensajes/")
+
+    assert response.status_code == 200
+    assert response.data["count"] == 1
+    assert response.data["unread_organizacion_count"] == 1
+    assert response.data["secciones"]["organizaciones"][0]["titulo"] == (
+        "Mensaje de organizacion"
+    )
+    assert response.data["secciones"]["organizaciones"][0]["seccion"] == "organizacion"
+
+    mark_response = client.patch(
+        f"/api/pwa/espacios/{espacio_1.id}/mensajes/{mensaje.id}/marcar-visto/",
+        {},
+        format="json",
+    )
+    list_response_space_2 = client.get(f"/api/pwa/espacios/{espacio_2.id}/mensajes/")
+
+    assert mark_response.status_code == 200
+    assert list_response_space_2.status_code == 200
+    assert list_response_space_2.data["unread_organizacion_count"] == 0
+    assert list_response_space_2.data["results"][0]["visto"] is True
+    assert (
+        LecturaMensajePWA.objects.filter(
+            comunicado=mensaje,
+            user=representante,
+        ).count()
+        == 2
+    )
 
 
 @pytest.mark.django_db
