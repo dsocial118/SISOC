@@ -54,4 +54,3 @@ services:
       - .:/sisoc/
     user: "${RUN_UID:-0}:${RUN_GID:-0}"
     restart: unless-stopped
-
