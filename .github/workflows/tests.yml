@@ -215,7 +215,9 @@ jobs:
                       const passConclusions = new Set(["success", "neutral", "skipped"]);
 
                       const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-                      const maxAttempts = 40;
+                      // PRs hacia main esperan workflows externos (lint y release_sanity)
+                      // que pueden durar mas que los jobs propios de este workflow.
+                      const maxAttempts = 120;
                       const waitMs = 15000;
 
                       let checkRuns = [];
