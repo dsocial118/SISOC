@@ -56,7 +56,7 @@ jobs:
 
                   cd "$APP_ROOT"
                   echo "Commit previo al deploy para rollback: $(git rev-parse HEAD)"
-                  ./scripts/operacion/deploy_refresh.sh --yes
+                  ./scripts/operacion/deploy_refresh.sh --yes --with-mobile --mobile-dir /sisoc/SISOC-Mobile
 
     deploy-produccion:
         if: github.ref == 'refs/heads/main'
@@ -79,4 +79,4 @@ jobs:
 
                   cd "$APP_ROOT"
                   echo "Commit previo al deploy para rollback: $(git rev-parse HEAD)"
-                  ./scripts/operacion/deploy_refresh.sh --yes
+                  ./scripts/operacion/deploy_refresh.sh --yes --with-mobile --mobile-dir /sisoc/SISOC-Mobile
