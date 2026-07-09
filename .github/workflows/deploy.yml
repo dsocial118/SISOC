@@ -1,0 +1,82 @@
+name: Despliegue automatizado
+
+on:
+    push:
+        branches:
+            - development
+            - homologacion
+            - main
+
+permissions: { contents: read }
+
+concurrency: { group: "deploy-${{ github.ref }}", cancel-in-progress: false }
+
+jobs:
+    deploy-qa:
+        if: github.ref == 'refs/heads/development'
+        environment: qa
+        runs-on: [self-hosted, sisoc-qa]
+
+        steps:
+            - name: Ejecutar deploy local de QA
+              shell: bash
+              env:
+                  GH_APP_ROOT: "${{ vars.APP_ROOT }}"
+              run: |
+                  set -Eeuo pipefail
+
+                  APP_ROOT="${GH_APP_ROOT:-${APP_ROOT:-}}"
+                  if [[ -z "$APP_ROOT" ]]; then
+                      echo "::error::APP_ROOT no esta configurado. Definir vars.APP_ROOT en el Environment qa o APP_ROOT en el servicio del runner."
+                      exit 1
+                  fi
+
+                  cd "$APP_ROOT"
+                  echo "Commit previo al deploy para rollback: $(git rev-parse HEAD)"
+                  ./scripts/operacion/deploy_refresh.sh --yes
+
+    deploy-homologacion:
+        if: github.ref == 'refs/heads/homologacion'
+        environment: homologacion
+        runs-on: [self-hosted, sisoc-homologacion]
+
+        steps:
+            - name: Ejecutar deploy local de homologacion
+              shell: bash
+              env:
+                  GH_APP_ROOT: "${{ vars.APP_ROOT }}"
+              run: |
+                  set -Eeuo pipefail
+
+                  APP_ROOT="${GH_APP_ROOT:-${APP_ROOT:-}}"
+                  if [[ -z "$APP_ROOT" ]]; then
+                      echo "::error::APP_ROOT no esta configurado. Definir vars.APP_ROOT en el Environment homologacion o APP_ROOT en el servicio del runner."
+                      exit 1
+                  fi
+
+                  cd "$APP_ROOT"
+                  echo "Commit previo al deploy para rollback: $(git rev-parse HEAD)"
+                  ./scripts/operacion/deploy_refresh.sh --yes
+
+    deploy-produccion:
+        if: github.ref == 'refs/heads/main'
+        environment: production
+        runs-on: [self-hosted, sisoc-produccion]
+
+        steps:
+            - name: Ejecutar deploy local de produccion
+              shell: bash
+              env:
+                  GH_APP_ROOT: "${{ vars.APP_ROOT }}"
+              run: |
+                  set -Eeuo pipefail
+
+                  APP_ROOT="${GH_APP_ROOT:-${APP_ROOT:-}}"
+                  if [[ -z "$APP_ROOT" ]]; then
+                      echo "::error::APP_ROOT no esta configurado. Definir vars.APP_ROOT en el Environment production o APP_ROOT en el servicio del runner."
+                      exit 1
+                  fi
+
+                  cd "$APP_ROOT"
+                  echo "Commit previo al deploy para rollback: $(git rev-parse HEAD)"
+                  ./scripts/operacion/deploy_refresh.sh --yes
