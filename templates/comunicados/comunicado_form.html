@@ -120,6 +120,33 @@
                 </div>
             </div>
 
+            <!-- Destinatarios (solo para comunicados a organizaciones) -->
+            <div id="organizaciones-options"
+                 class="editor-panel {% if form.instance.subtipo != 'organizaciones' %}d-none{% endif %}">
+                <div class="panel-label">
+                    <i class="fas fa-building"></i> Destinatarios
+                </div>
+                <div class="panel-body">
+                    <div id="organizaciones-selector">
+                        <label>Seleccionar Organizaciones</label>
+                        <div class="d-none">{{ form.organizaciones }}</div>
+                        {% if form.organizaciones.errors %}
+                            <div class="invalid-feedback d-block">{{ form.organizaciones.errors.0 }}</div>
+                        {% endif %}
+                        <div id="organizacionesSeleccionadas" class="comedores-badges mb-2"></div>
+                        <div class="input-group mb-2 comedores-search">
+                            <span class="input-group-text"><i class="fas fa-search"></i></span>
+                            <input type="text"
+                                   id="organizacionSearch"
+                                   class="form-control"
+                                   placeholder="Filtrar organizaciones por nombre..." />
+                        </div>
+                        <div id="organizacionesLista" class="comedores-lista-container"></div>
+                        <small class="form-text">Haga clic en "Agregar" para seleccionar organizaciones.</small>
+                    </div>
+                </div>
+            </div>
+
             <!-- Archivos Adjuntos -->
             <div class="editor-panel">
                 <div class="panel-label">

@@ -1,16 +1,20 @@
-"""Tests de exportacion de nomina aprobada Celiaquia."""
+"""Tests de exportacion de nomina aprobada Celiaquia.
 
-from datetime import datetime
+La nomina de aprobados se genera desde la base (legajos APROBADO + MATCH),
+no desde el Excel original cargado por la provincia.
+"""
+
+from datetime import date
 from io import BytesIO
 
 import pytest
 from django.contrib.auth.models import Permission, User
 from django.contrib.contenttypes.models import ContentType
-from django.core.files.base import ContentFile
 from django.urls import reverse
-from openpyxl import Workbook, load_workbook
+from openpyxl import load_workbook
 
 from celiaquia.models import (
+    EstadoCupo,
     EstadoExpediente,
     EstadoLegajo,
     Expediente,
@@ -18,34 +22,13 @@ from celiaquia.models import (
     ResultadoSintys,
     RevisionTecnico,
 )
-from celiaquia.services.padron_final_service import PadronFinalService
-from ciudadanos.models import Ciudadano
-
-
-NOMINA_HEADERS = [
-    "apellido",
-    "nombre",
-    "documento",
-    "fecha_nacimiento",
-    "sexo",
-    "nacionalidad",
-    "municipio",
-    "localidad",
-    "calle",
-    "altura",
-    "codigo_postal",
-    "telefono",
-    "email",
-    "APELLIDO_RESPONSABLE",
-    "NOMBRE_RESPONSABLE",
-    "Cuit_Responsable",
-    "FECHA_DE_NACIMIENTO_RESPONSABLE",
-    "SEXO_RESPONSABLE",
-    "DOMICILIO_RESPONSABLE",
-    "LOCALIDAD_RESPONSABLE",
-    "CELULAR_RESPONSABLE",
-    "CORREO_RESPONSABLE",
-]
+from celiaquia.services.padron_final_service import (
+    ESTADO_CUPO_HEADER,
+    NOMINA_HEADERS,
+    PadronFinalService,
+)
+from ciudadanos.models import Ciudadano, GrupoFamiliar
+from core.models import Localidad, Municipio, Sexo
 
 
 def _permission(app_label, codename):
@@ -75,37 +58,6 @@ def _user(username, *, coord=False):
     return user
 
 
-def _excel_bytes(rows):
-    wb = Workbook()
-    ws = wb.active
-    ws.title = "Sheet1"
-    ws.append(NOMINA_HEADERS)
-    for row in rows:
-        ws.append([row.get(header) for header in NOMINA_HEADERS])
-
-    output = BytesIO()
-    wb.save(output)
-    return output.getvalue()
-
-
-def _row(documento, apellido, nombre, **extra):
-    data = {
-        "apellido": apellido,
-        "nombre": nombre,
-        "documento": documento,
-        "fecha_nacimiento": "2000-10-10",
-        "sexo": "M",
-        "nacionalidad": "ARGENTINA",
-        "municipio": "1353",
-        "localidad": "8842",
-        "calle": "Calle",
-        "altura": "1",
-        "codigo_postal": "1900",
-    }
-    data.update(extra)
-    return data
-
-
 def _workbook_rows(content):
     wb = load_workbook(BytesIO(content))
     ws = wb.active
@@ -113,30 +65,36 @@ def _workbook_rows(content):
     return rows[0], rows[1:]
 
 
-def _expediente_con_excel(
-    settings, tmp_path, owner, rows, *, estado="CRUCE_FINALIZADO"
-):
-    settings.MEDIA_ROOT = tmp_path
-    expediente = Expediente.objects.create(
+def _expediente(owner, *, estado="CRUCE_FINALIZADO"):
+    return Expediente.objects.create(
         usuario_provincia=owner,
         estado=EstadoExpediente.objects.create(nombre=estado),
     )
-    expediente.excel_masivo.save(
-        "nomina_original.xlsx",
-        ContentFile(_excel_bytes(rows)),
-        save=True,
-    )
-    return expediente
 
 
-def _crear_legajo(expediente, documento, *, revision, sintys, rol=None):
-    estado_legajo, _ = EstadoLegajo.objects.get_or_create(nombre="VALIDO")
-    ciudadano = Ciudadano.objects.create(
-        apellido=f"Apellido {documento}",
-        nombre=f"Nombre {documento}",
-        fecha_nacimiento="2000-01-01",
+def _crear_ciudadano(documento, apellido=None, nombre=None, **extra):
+    return Ciudadano.objects.create(
+        apellido=apellido or f"Apellido {documento}",
+        nombre=nombre or f"Nombre {documento}",
+        fecha_nacimiento=extra.pop("fecha_nacimiento", "2000-01-01"),
         documento=int(documento),
+        **extra,
     )
+
+
+def _crear_legajo(
+    expediente,
+    documento,
+    *,
+    revision,
+    sintys,
+    rol=None,
+    estado_cupo=None,
+    **extra,
+):
+    estado_legajo, _ = EstadoLegajo.objects.get_or_create(nombre="VALIDO")
+    ciudadano = _crear_ciudadano(documento, **extra)
+    legajo_extra = {"estado_cupo": estado_cupo} if estado_cupo is not None else {}
     return ExpedienteCiudadano.objects.create(
         expediente=expediente,
         ciudadano=ciudadano,
@@ -144,34 +102,35 @@ def _crear_legajo(expediente, documento, *, revision, sintys, rol=None):
         revision_tecnico=revision,
         resultado_sintys=sintys,
         rol=rol or ExpedienteCiudadano.ROLE_BENEFICIARIO,
+        **legajo_extra,
     )
 
 
+def _col(header, row):
+    return row[NOMINA_HEADERS.index(header)]
+
+
 @pytest.mark.django_db
-def test_nomina_aprobados_conserva_estructura_original_y_filtra_aprobados(
-    settings, tmp_path
-):
+def test_nomina_aprobados_se_genera_desde_base_y_filtra_aprobados():
     owner = _user("prov-servicio")
-    rows = [
-        _row(
-            "20392317989",
-            "alzueta",
-            "lucas",
-            APELLIDO_RESPONSABLE="adulto",
-            NOMBRE_RESPONSABLE="responsable",
-            Cuit_Responsable="27222222222",
-        ),
-        _row("20392317990", "no", "match"),
-        _row("20392317991", "rechazado", "tecnico"),
-        _row("20392317992", "responsable", "puro"),
-    ]
-    expediente = _expediente_con_excel(settings, tmp_path, owner, rows)
+    expediente = _expediente(owner)
+    municipio = Municipio.objects.create(nombre="San Miguel de Tucumán")
+    localidad = Localidad.objects.create(
+        nombre="Villa Mariano Moreno", municipio=municipio
+    )
 
     _crear_legajo(
         expediente,
         "20392317989",
         revision=RevisionTecnico.APROBADO,
         sintys=ResultadoSintys.MATCH,
+        apellido="ALZUETA",
+        nombre="LUCAS",
+        calle="Calle",
+        altura="1",
+        codigo_postal="1900",
+        municipio=municipio,
+        localidad=localidad,
     )
     _crear_legajo(
         expediente,
@@ -197,40 +156,257 @@ def test_nomina_aprobados_conserva_estructura_original_y_filtra_aprobados(
         PadronFinalService.generar_padron_final_excel(expediente)
     )
 
-    assert list(header) == NOMINA_HEADERS
+    assert list(header) == NOMINA_HEADERS + [ESTADO_CUPO_HEADER]
     assert len(data_rows) == 1
-    assert data_rows[0][NOMINA_HEADERS.index("documento")] == "20392317989"
-    assert data_rows[0][NOMINA_HEADERS.index("APELLIDO_RESPONSABLE")] == "adulto"
-    assert data_rows[0][NOMINA_HEADERS.index("Cuit_Responsable")] == "27222222222"
+    assert _col("documento", data_rows[0]) == "20392317989"
+    assert _col("apellido", data_rows[0]) == "ALZUETA"
+    assert _col("calle", data_rows[0]) == "Calle"
+    assert _col("codigo_postal", data_rows[0]) == "1900"
+    # Municipio y localidad se exportan por nombre, no por codigo.
+    assert _col("municipio", data_rows[0]) == "San Miguel de Tucumán"
+    assert _col("localidad", data_rows[0]) == "Villa Mariano Moreno"
 
 
 @pytest.mark.django_db
-def test_nomina_aprobados_se_recalcula_con_resultado_sintys_actual(settings, tmp_path):
-    owner = _user("prov-reproceso")
-    rows = [
-        _row("20392317001", "primero", "match"),
-        _row("20392317002", "segundo", "reprocesado"),
-    ]
-    expediente = _expediente_con_excel(settings, tmp_path, owner, rows)
-    _crear_legajo(
+def test_nomina_aprobados_usa_documento_actual_de_la_base():
+    """Si el documento se corrige despues de importar, la nomina refleja la base."""
+    owner = _user("prov-correccion")
+    expediente = _expediente(owner)
+    legajo = _crear_legajo(
         expediente,
-        "20392317001",
+        "2055724691",  # CUIT mal tipeado en la importacion original
         revision=RevisionTecnico.APROBADO,
         sintys=ResultadoSintys.MATCH,
     )
-    reprocesado = _crear_legajo(
+
+    legajo.ciudadano.documento = 20557246918
+    legajo.ciudadano.save(update_fields=["documento"])
+
+    _, data_rows = _workbook_rows(
+        PadronFinalService.generar_padron_final_excel(expediente)
+    )
+
+    assert len(data_rows) == 1
+    assert _col("documento", data_rows[0]) == "20557246918"
+
+
+@pytest.mark.django_db
+def test_nomina_aprobados_usa_cuil_cuit_cuando_no_hay_documento():
+    """SINTYS matchea primero por CUIL/CUIT; si documento esta vacio en la
+    base, la nomina no debe dejar la celda en blanco."""
+    owner = _user("prov-sin-documento")
+    expediente = _expediente(owner)
+    legajo = _crear_legajo(
         expediente,
-        "20392317002",
+        "20392317989",
         revision=RevisionTecnico.APROBADO,
-        sintys=ResultadoSintys.NO_MATCH,
+        sintys=ResultadoSintys.MATCH,
+    )
+    legajo.ciudadano.documento = None
+    legajo.ciudadano.cuil_cuit = "27342010844"
+    legajo.ciudadano.save(update_fields=["documento", "cuil_cuit"])
+
+    _, data_rows = _workbook_rows(
+        PadronFinalService.generar_padron_final_excel(expediente)
+    )
+
+    assert len(data_rows) == 1
+    assert _col("documento", data_rows[0]) == "34201084"
+
+
+@pytest.mark.django_db
+def test_nomina_aprobados_excluye_responsable_con_rol_normalizado_distinto():
+    """La exclusion de responsables puros usa la misma regla normalizada
+    (strip/lower) que cruce y cupo, tolerando variantes de mayusculas y
+    espacios en el dato guardado."""
+    owner = _user("prov-rol-normalizado")
+    expediente = _expediente(owner)
+    _crear_legajo(
+        expediente,
+        "20392317989",
+        revision=RevisionTecnico.APROBADO,
+        sintys=ResultadoSintys.MATCH,
+        rol=" Responsable ",
     )
 
     _, data_rows = _workbook_rows(
         PadronFinalService.generar_padron_final_excel(expediente)
     )
-    assert [row[NOMINA_HEADERS.index("documento")] for row in data_rows] == [
-        "20392317001"
-    ]
+
+    assert len(data_rows) == 0
+
+
+@pytest.mark.django_db
+def test_nomina_aprobados_incluye_datos_del_responsable():
+    owner = _user("prov-familia")
+    expediente = _expediente(owner)
+    sexo_f = Sexo.objects.create(sexo="F")
+
+    legajo_hijo = _crear_legajo(
+        expediente,
+        "20557246918",
+        revision=RevisionTecnico.APROBADO,
+        sintys=ResultadoSintys.MATCH,
+        apellido="CANIETE",
+        nombre="MISAEL",
+    )
+    legajo_resp = _crear_legajo(
+        expediente,
+        "27342010844",
+        revision=RevisionTecnico.APROBADO,
+        sintys=ResultadoSintys.SIN_CRUCE,
+        rol=ExpedienteCiudadano.ROLE_RESPONSABLE,
+        apellido="SALAS",
+        nombre="ANA MARIA",
+        fecha_nacimiento="1989-04-29",
+        sexo=sexo_f,
+        calle="GARMENDIA",
+        altura="236",
+        telefono="3810000000",
+        email="resp@example.com",
+    )
+    GrupoFamiliar.objects.create(
+        ciudadano_1=legajo_resp.ciudadano,
+        ciudadano_2=legajo_hijo.ciudadano,
+        vinculo=GrupoFamiliar.RELACION_PADRE,
+        conviven=True,
+        cuidador_principal=True,
+    )
+
+    _, data_rows = _workbook_rows(
+        PadronFinalService.generar_padron_final_excel(expediente)
+    )
+
+    assert len(data_rows) == 1
+    fila = data_rows[0]
+    assert _col("documento", fila) == "20557246918"
+    assert _col("APELLIDO_RESPONSABLE", fila) == "SALAS"
+    assert _col("NOMBRE_RESPONSABLE", fila) == "ANA MARIA"
+    assert _col("CUIT_RESPONSABLE", fila) == "27342010844"
+    assert _col("SEXO_RESPONSABLE", fila) == "Femenino"
+    assert _col("DOMICILIO_RESPONSABLE", fila) == "GARMENDIA 236"
+    assert _col("CELULAR_RESPONSABLE", fila) == "3810000000"
+    assert _col("CORREO_RESPONSABLE", fila) == "resp@example.com"
+
+
+@pytest.mark.django_db
+def test_nomina_aprobados_responsable_ambiguo_usa_primero_alfabetico(mocker):
+    owner = _user("prov-familia-ambigua")
+    expediente = _expediente(owner)
+    warning = mocker.patch(
+        "celiaquia.services.padron_final_service.impl.logger.warning"
+    )
+
+    legajo_hijo = _crear_legajo(
+        expediente,
+        "20557246918",
+        revision=RevisionTecnico.APROBADO,
+        sintys=ResultadoSintys.MATCH,
+        apellido="CANIETE",
+        nombre="MISAEL",
+    )
+    legajo_resp_primero = _crear_legajo(
+        expediente,
+        "27342010844",
+        revision=RevisionTecnico.APROBADO,
+        sintys=ResultadoSintys.SIN_CRUCE,
+        rol=ExpedienteCiudadano.ROLE_RESPONSABLE,
+        apellido="ALVAREZ",
+        nombre="MARTA",
+    )
+    legajo_resp_segundo = _crear_legajo(
+        expediente,
+        "27342010845",
+        revision=RevisionTecnico.APROBADO,
+        sintys=ResultadoSintys.SIN_CRUCE,
+        rol=ExpedienteCiudadano.ROLE_RESPONSABLE,
+        apellido="BRAVO",
+        nombre="ANA",
+    )
+    for responsable in (legajo_resp_segundo, legajo_resp_primero):
+        GrupoFamiliar.objects.create(
+            ciudadano_1=responsable.ciudadano,
+            ciudadano_2=legajo_hijo.ciudadano,
+            vinculo=GrupoFamiliar.RELACION_PADRE,
+            conviven=True,
+            cuidador_principal=True,
+        )
+
+    _, data_rows = _workbook_rows(
+        PadronFinalService.generar_padron_final_excel(expediente)
+    )
+
+    assert len(data_rows) == 1
+    fila = data_rows[0]
+    assert _col("documento", fila) == "20557246918"
+    assert _col("APELLIDO_RESPONSABLE", fila) == "ALVAREZ"
+    assert _col("NOMBRE_RESPONSABLE", fila) == "MARTA"
+    warning.assert_called_once_with(
+        "padron_final.responsable_ambiguo",
+        extra={
+            "data": {
+                "expediente_id": expediente.id,
+                "ciudadano_id": legajo_hijo.ciudadano_id,
+                "candidatos": 2,
+            }
+        },
+    )
+
+
+@pytest.mark.django_db
+def test_nomina_aprobados_marca_estado_de_cupo():
+    """El padron incluye a todos los aprobados+match y marca el estado de cupo."""
+    owner = _user("prov-estado-cupo")
+    expediente = _expediente(owner)
+    _crear_legajo(
+        expediente,
+        "20392317701",
+        revision=RevisionTecnico.APROBADO,
+        sintys=ResultadoSintys.MATCH,
+        estado_cupo=EstadoCupo.DENTRO,
+    )
+    _crear_legajo(
+        expediente,
+        "20455317702",
+        revision=RevisionTecnico.APROBADO,
+        sintys=ResultadoSintys.MATCH,
+        estado_cupo=EstadoCupo.FUERA,
+    )
+
+    header, data_rows = _workbook_rows(
+        PadronFinalService.generar_padron_final_excel(expediente)
+    )
+
+    assert header[-1] == ESTADO_CUPO_HEADER
+    assert len(data_rows) == 2
+    estado_por_doc = {_col("documento", row): row[-1] for row in data_rows}
+    assert estado_por_doc["20392317701"] == "Con cupo asignado"
+    assert estado_por_doc["20455317702"] == "Lista de espera"
+
+
+@pytest.mark.django_db
+def test_nomina_aprobados_se_recalcula_con_resultado_sintys_actual():
+    owner = _user("prov-reproceso")
+    expediente = _expediente(owner)
+    _crear_legajo(
+        expediente,
+        "20392317001",
+        revision=RevisionTecnico.APROBADO,
+        sintys=ResultadoSintys.MATCH,
+        apellido="AAA",
+    )
+    reprocesado = _crear_legajo(
+        expediente,
+        "20455317002",
+        revision=RevisionTecnico.APROBADO,
+        sintys=ResultadoSintys.NO_MATCH,
+        apellido="BBB",
+    )
+
+    _, data_rows = _workbook_rows(
+        PadronFinalService.generar_padron_final_excel(expediente)
+    )
+    assert [_col("documento", row) for row in data_rows] == ["20392317001"]
 
     reprocesado.resultado_sintys = ResultadoSintys.MATCH
     reprocesado.save(update_fields=["resultado_sintys"])
@@ -238,30 +414,40 @@ def test_nomina_aprobados_se_recalcula_con_resultado_sintys_actual(settings, tmp
     _, data_rows = _workbook_rows(
         PadronFinalService.generar_padron_final_excel(expediente)
     )
-    assert [row[NOMINA_HEADERS.index("documento")] for row in data_rows] == [
+    assert [_col("documento", row) for row in data_rows] == [
         "20392317001",
-        "20392317002",
+        "20455317002",
     ]
 
 
 @pytest.mark.django_db
-def test_nomina_aprobados_exporta_fecha_nacimiento_sin_hora(settings, tmp_path):
+def test_nomina_aprobados_exporta_fecha_nacimiento_sin_hora():
     owner = _user("prov-fechas")
-    rows = [
-        _row(
-            "20392317500",
-            "con",
-            "fecha",
-            fecha_nacimiento=datetime(2010, 3, 15, 0, 0, 0),
-            FECHA_DE_NACIMIENTO_RESPONSABLE=datetime(1980, 7, 9, 12, 30, 0),
-        )
-    ]
-    expediente = _expediente_con_excel(settings, tmp_path, owner, rows)
-    _crear_legajo(
+    expediente = _expediente(owner)
+    sexo_f = Sexo.objects.create(sexo="F")
+
+    legajo_hijo = _crear_legajo(
         expediente,
         "20392317500",
         revision=RevisionTecnico.APROBADO,
         sintys=ResultadoSintys.MATCH,
+        fecha_nacimiento="2010-03-15",
+    )
+    legajo_resp = _crear_legajo(
+        expediente,
+        "27342010844",
+        revision=RevisionTecnico.APROBADO,
+        sintys=ResultadoSintys.SIN_CRUCE,
+        rol=ExpedienteCiudadano.ROLE_RESPONSABLE,
+        fecha_nacimiento="1980-07-09",
+        sexo=sexo_f,
+    )
+    GrupoFamiliar.objects.create(
+        ciudadano_1=legajo_resp.ciudadano,
+        ciudadano_2=legajo_hijo.ciudadano,
+        vinculo=GrupoFamiliar.RELACION_PADRE,
+        conviven=True,
+        cuidador_principal=True,
     )
 
     content = PadronFinalService.generar_padron_final_excel(expediente)
@@ -273,27 +459,38 @@ def test_nomina_aprobados_exporta_fecha_nacimiento_sin_hora(settings, tmp_path):
     fecha_nac_cell = ws.cell(row=2, column=fecha_nac_col)
     fecha_resp_cell = ws.cell(row=2, column=fecha_resp_col)
 
-    assert fecha_nac_cell.value.hour == 0
-    assert fecha_nac_cell.value.date().isoformat() == "2010-03-15"
-    assert fecha_resp_cell.value.date().isoformat() == "1980-07-09"
-    assert "H" not in fecha_nac_cell.number_format
-    assert "H" not in fecha_resp_cell.number_format
+    assert fecha_nac_cell.value.date() == date(2010, 3, 15)
+    assert fecha_resp_cell.value.date() == date(1980, 7, 9)
     assert fecha_nac_cell.number_format == "DD/MM/YYYY"
     assert fecha_resp_cell.number_format == "DD/MM/YYYY"
 
 
 @pytest.mark.django_db
-def test_descarga_nomina_aprobados_no_disponible_antes_de_cruce_finalizado(
-    client, settings, tmp_path
-):
+def test_descarga_nomina_aprobados_no_disponible_antes_de_cruce_finalizado(client):
     owner = _user("prov-antes")
     coord = _user("coord-antes", coord=True)
-    expediente = _expediente_con_excel(
-        settings,
-        tmp_path,
-        owner,
-        [_row("20392317101", "pendiente", "cruce")],
-        estado="ASIGNADO",
+    expediente = _expediente(owner, estado="ASIGNADO")
+
+    client.force_login(coord)
+    response = client.get(
+        reverse("expediente_padron_final_export", args=[expediente.pk])
+    )
+
+    assert response.status_code == 404
+
+
+@pytest.mark.django_db
+def test_descarga_nomina_aprobados_no_disponible_sin_aprobados(client):
+    """CRUCE_FINALIZADO sin ningun legajo aprobado+match no debe descargar
+    un Excel vacio: la nomina no esta disponible."""
+    owner = _user("prov-sin-aprobados")
+    coord = _user("coord-sin-aprobados", coord=True)
+    expediente = _expediente(owner)
+    _crear_legajo(
+        expediente,
+        "20392317993",
+        revision=RevisionTecnico.RECHAZADO,
+        sintys=ResultadoSintys.MATCH,
     )
 
     client.force_login(coord)
@@ -305,15 +502,10 @@ def test_descarga_nomina_aprobados_no_disponible_antes_de_cruce_finalizado(
 
 
 @pytest.mark.django_db
-def test_descarga_nomina_aprobados_finalizada_devuelve_xlsx(client, settings, tmp_path):
+def test_descarga_nomina_aprobados_finalizada_devuelve_xlsx(client):
     owner = _user("prov-final")
     coord = _user("coord-final", coord=True)
-    expediente = _expediente_con_excel(
-        settings,
-        tmp_path,
-        owner,
-        [_row("20392317201", "final", "aprobado")],
-    )
+    expediente = _expediente(owner)
     _crear_legajo(
         expediente,
         "20392317201",
@@ -336,26 +528,21 @@ def test_descarga_nomina_aprobados_finalizada_devuelve_xlsx(client, settings, tm
         in response.headers["Content-Disposition"]
     )
     header, data_rows = _workbook_rows(response.content)
-    assert list(header) == NOMINA_HEADERS
-    assert data_rows[0][NOMINA_HEADERS.index("documento")] == "20392317201"
+    assert list(header) == NOMINA_HEADERS + [ESTADO_CUPO_HEADER]
+    assert _col("documento", data_rows[0]) == "20392317201"
 
 
 @pytest.mark.django_db
-def test_detalle_muestra_descarga_solo_con_cruce_finalizado(client, settings, tmp_path):
+def test_detalle_muestra_descarga_solo_con_cruce_finalizado(client):
     owner = _user("prov-detalle")
     coord = _user("coord-detalle", coord=True)
-    expediente_asignado = _expediente_con_excel(
-        settings,
-        tmp_path,
-        owner,
-        [_row("20392317301", "asignado", "sin-cruce")],
-        estado="ASIGNADO",
-    )
-    expediente_finalizado = _expediente_con_excel(
-        settings,
-        tmp_path,
-        owner,
-        [_row("20392317302", "finalizado", "con-cruce")],
+    expediente_asignado = _expediente(owner, estado="ASIGNADO")
+    expediente_finalizado = _expediente(owner)
+    _crear_legajo(
+        expediente_finalizado,
+        "20392317994",
+        revision=RevisionTecnico.APROBADO,
+        sintys=ResultadoSintys.MATCH,
     )
 
     client.force_login(coord)

@@ -74,12 +74,13 @@ class AsistenciaActividadView(LoginRequiredMixin, TemplateView):
             messages.error(request, exc.messages[0])
             return redirect("actividadcentro_asistencia", pk=self.actividad.pk)
 
+        inscritos = AsistenciaActividadService.inscritos(self.actividad)
         marcas = {
             participante.pk: request.POST.get(f"presente_{participante.pk}")
-            for participante in AsistenciaActividadService.inscritos(self.actividad)
+            for participante in inscritos
         }
         guardados = AsistenciaActividadService.registrar(
-            self.actividad, fecha, marcas, request.user
+            self.actividad, fecha, marcas, request.user, participantes=inscritos
         )
         messages.success(
             request,

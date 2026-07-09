@@ -228,7 +228,7 @@ class UsuariosService:
         ) and users_import_url:
             additional_buttons.append(
                 {
-                    "label": "IMPORTAR USUARIOS",
+                    "label": "GESTOR DE USUARIOS",
                     "url": users_import_url,
                     "class": "btn btn-lg btn-primary",
                     "title": "Importar usuarios masivamente desde Excel",

@@ -7,7 +7,7 @@ from django.db.models import Q
 from django.utils import timezone
 
 from ciudadanos.models import Ciudadano
-from comedores.models import Comedor, Nomina
+from comedores.models import Comedor, ComedorDatosConvenioPnud, Nomina
 from comedores.utils import comedor_usa_admision_para_nomina
 from comedores.services.comedor_service.impl import ComedorService
 from core.models import Sexo
@@ -95,6 +95,107 @@ def _active_nomina_queryset(*, comedor_id: int):
     ).exclude(estado=Nomina.ESTADO_BAJA)
 
 
+def _programa_nombre_normalizado(comedor: Comedor | None) -> str:
+    return " ".join(
+        str(getattr(getattr(comedor, "programa", None), "nombre", "") or "")
+        .lower()
+        .split()
+    )
+
+
+def _get_tope_nomina_alimentaria(comedor_id: int) -> int | None:
+    comedor = Comedor.objects.select_related("programa").filter(pk=comedor_id).first()
+    if not comedor:
+        return None
+
+    programa_nombre = _programa_nombre_normalizado(comedor)
+    if "abordaje comunitario" in programa_nombre or "pnud" in programa_nombre:
+        return (
+            ComedorDatosConvenioPnud.objects.filter(comedor_id=comedor_id)
+            .values_list("personas_conveniadas", flat=True)
+            .first()
+        )
+
+    if programa_nombre == "alimentar comunidad":
+        admision = ComedorService.get_admision_vigente_pwa(comedor_id)
+        return getattr(admision, "personas_conveniadas_nomina", None)
+
+    return None
+
+
+def _count_nomina_alimentaria_activa(
+    *, comedor_id: int, exclude_nomina_id: int | None = None
+) -> int:
+    queryset = _active_nomina_queryset(comedor_id=comedor_id).filter(
+        Q(perfil_pwa__asistencia_alimentaria=True, perfil_pwa__activo=True)
+        | Q(perfil_pwa__isnull=True)
+    )
+    if exclude_nomina_id:
+        queryset = queryset.exclude(pk=exclude_nomina_id)
+    return queryset.distinct().count()
+
+
+def _tope_nomina_alimentaria_cubierto(
+    *, comedor_id: int, exclude_nomina_id: int | None = None
+) -> bool:
+    tope = _get_tope_nomina_alimentaria(comedor_id)
+    if tope is None:
+        return False
+    return (
+        _count_nomina_alimentaria_activa(
+            comedor_id=comedor_id,
+            exclude_nomina_id=exclude_nomina_id,
+        )
+        >= tope
+    )
+
+
+def _apply_tope_nomina_alimentaria_on_create(
+    *,
+    comedor_id: int,
+    asistencia_alimentaria: bool,
+    asistencia_actividades: bool,
+) -> tuple[bool, bool]:
+    if not asistencia_alimentaria or not _tope_nomina_alimentaria_cubierto(
+        comedor_id=comedor_id
+    ):
+        return asistencia_alimentaria, asistencia_actividades
+    if asistencia_actividades:
+        return False, True
+    raise ValidationError(
+        {
+            "asistencia_alimentaria": (
+                "El cupo de personas conveniadas para prestacion alimentaria "
+                "ya se encuentra completo."
+            )
+        }
+    )
+
+
+def _validate_tope_nomina_alimentaria_on_update(
+    *,
+    comedor_id: int,
+    nomina_id: int,
+    current_asistencia_alimentaria: bool,
+    next_asistencia_alimentaria: bool,
+):
+    if current_asistencia_alimentaria or not next_asistencia_alimentaria:
+        return
+    if not _tope_nomina_alimentaria_cubierto(
+        comedor_id=comedor_id,
+        exclude_nomina_id=nomina_id,
+    ):
+        return
+    raise ValidationError(
+        {
+            "asistencia_alimentaria": (
+                "El cupo de personas conveniadas para prestacion alimentaria "
+                "ya se encuentra completo."
+            )
+        }
+    )
+
+
 def get_periodo_mensual_actual() -> date:
     return timezone.localdate().replace(day=1)
 
@@ -122,17 +223,16 @@ def validar_asistencia_nomina_habilitada():
 def _resolve_admision_para_comedor(*, comedor_id: int):
     from admisiones.models.admisiones import Admision
 
-    admision = (
-        Admision.objects.filter(comedor_id=comedor_id, activa=True)
-        .order_by("-id")
-        .first()
-    )
-    if admision:
-        return admision
-    admision = Admision.objects.filter(comedor_id=comedor_id).order_by("-id").first()
-    if admision:
-        return admision
-    return Admision.objects.create(comedor_id=comedor_id, activa=True)
+    with transaction.atomic():
+        Comedor.objects.select_for_update().get(pk=comedor_id)
+        admision = ComedorService.get_admision_vigente_pwa(comedor_id)
+        if admision:
+            return admision
+        return Admision.objects.create(
+            comedor_id=comedor_id,
+            activa=True,
+            vigente_pwa=True,
+        )
 
 
 def _build_nomina_link_fields(*, comedor_id: int) -> dict:
@@ -517,6 +617,13 @@ def create_nomina_persona(*, comedor_id: int, actor, data: dict) -> Nomina:
         asistencia_actividades=asistencia_actividades,
         activity_ids=activity_ids,
     )
+    asistencia_alimentaria, asistencia_actividades = (
+        _apply_tope_nomina_alimentaria_on_create(
+            comedor_id=comedor_id,
+            asistencia_alimentaria=asistencia_alimentaria,
+            asistencia_actividades=asistencia_actividades,
+        )
+    )
 
     ciudadano_id = data.get("ciudadano_id")
     if ciudadano_id:
@@ -698,6 +805,12 @@ def update_nomina_persona(*, nomina: Nomina, actor, data: dict) -> Nomina:
             asistencia_alimentaria=asistencia_alimentaria,
             asistencia_actividades=asistencia_actividades,
             activity_ids=activity_ids,
+        )
+        _validate_tope_nomina_alimentaria_on_update(
+            comedor_id=_nomina_comedor_id(nomina),
+            nomina_id=nomina.id,
+            current_asistencia_alimentaria=bool(profile.asistencia_alimentaria),
+            next_asistencia_alimentaria=asistencia_alimentaria,
         )
 
     nomina_fields = []

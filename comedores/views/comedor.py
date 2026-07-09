@@ -51,7 +51,7 @@ from comedores.utils import (
     is_abordaje_comunitario_relevamientos_header_program,
     is_abordaje_comunitario_linea_secos_program,
     is_pnud_comedor,
-    is_prestacion_alimentaria_conformidad_program,
+    usa_datos_convenio_pnud,
 )
 from core.pagination import NoCountPaginator, build_no_count_page_range
 from core.services.column_preferences import build_columns_context_from_fields
@@ -824,15 +824,7 @@ def _resolve_selected_admision(relaciones_data, selected_admision_pk):
 
 
 def _get_informe_tecnico_finalizado_from_admision(selected_admision):
-    if not selected_admision:
-        return None
-    return (
-        InformeTecnico.objects.filter(
-            admision=selected_admision, estado_formulario="finalizado"
-        )
-        .order_by("-id")
-        .first()
-    )
+    return ComedorService.get_informe_tecnico_finalizado_efectivo(selected_admision)
 
 
 def _resolve_selected_convenio_numero(selected_admision):
@@ -1384,8 +1376,6 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
         }
 
     def _build_conformidad_prestacion_context(self):
-        if not is_prestacion_alimentaria_conformidad_program(self.object):
-            return {"pendiente": False, "periodo": None}
         pending_period = get_prestacion_conformidad_pending_period(self.object)
         return {"pendiente": pending_period is not None, "periodo": pending_period}
 
@@ -1402,8 +1392,15 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
         selected_admision_context = _build_selected_admision_context(
             relaciones_data, self.request.GET
         )
+        usa_convenio_pnud = usa_datos_convenio_pnud(self.object)
+        prestaciones_convenio_context = (
+            ComedorService.get_prestaciones_aprobadas_resumen(self.object.id)
+            if usa_convenio_pnud
+            else None
+        )
         selected_admision = selected_admision_context["selected_admision"]
         informe_tecnico = selected_admision_context["informe_tecnico"]
+        datos_convenio_pnud = getattr(self.object, "datos_convenio_pnud", None)
         responsables_context = _build_organizacion_responsables_context(self.object)
         mes_ejecucion_context = _build_mes_ejecucion_context(self.object)
         actividades_pnud_context = _build_actividades_pnud_legajo_context(self.object)
@@ -1465,12 +1462,16 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
                     "selected_convenio_numero"
                 ],
                 "total_admisiones": selected_admision_context["total_admisiones"],
-                "prestaciones_aprobadas_total": selected_admision_context[
-                    "prestaciones_aprobadas_total"
-                ],
-                "monto_prestacion_mensual": selected_admision_context[
-                    "monto_prestacion_mensual_aprobadas"
-                ],
+                "prestaciones_aprobadas_total": (
+                    selected_admision_context["prestaciones_aprobadas_total"]
+                    if prestaciones_convenio_context is None
+                    else prestaciones_convenio_context["prestaciones_mensuales"]
+                ),
+                "monto_prestacion_mensual": (
+                    selected_admision_context["monto_prestacion_mensual_aprobadas"]
+                    if prestaciones_convenio_context is None
+                    else prestaciones_convenio_context["monto_prestacion_mensual"]
+                ),
                 "show_capacitaciones_certificados": is_alimentar_comunidad_program(
                     self.object
                 ),
@@ -1483,10 +1484,12 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
                     else []
                 ),
                 "es_programa_pnud": es_programa_pnud,
+                "usa_convenio_pnud": usa_convenio_pnud,
                 "puede_gestionar_actividades_espacio": puede_gestionar_actividades_espacio,
                 "mostrar_relevamientos_header": mostrar_relevamientos_header,
-                "datos_convenio_pnud": getattr(
-                    self.object, "datos_convenio_pnud", None
+                "datos_convenio_pnud": datos_convenio_pnud,
+                "prestaciones_aprobadas_source": (
+                    datos_convenio_pnud if usa_convenio_pnud else informe_tecnico
                 ),
                 "domicilio_completo_comedor": _build_domicilio_completo(self.object),
                 "conformidad_prestacion_pendiente": self._build_conformidad_prestacion_context(),
@@ -1523,8 +1526,11 @@ class ComedorDatosConvenioPnudUpdateView(LoginRequiredMixin, UpdateView):
         self.comedor = ComedorService.get_comedor_detail_object(
             self.kwargs["pk"], user=request.user
         )
-        if self.comedor.programa_id not in (3, 4):
-            messages.error(request, "Esta opción solo aplica para comedores PNUD.")
+        if not usa_datos_convenio_pnud(self.comedor):
+            messages.error(
+                request,
+                "Esta opcion solo aplica para comedores PNUD o Abordaje Comunitario.",
+            )
             return redirect("comedor_detalle", pk=self.comedor.pk)
         return super().dispatch(request, *args, **kwargs)
 

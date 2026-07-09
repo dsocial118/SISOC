@@ -116,6 +116,7 @@ from VAT.views.curso import (
     CursoCreateView,
     CursoUpdateView,
     CursoDeleteView,
+    CursoDetailView,
     ComisionCursoDetailView,
     ComisionCursoPreinscriptosExportView,
     ComisionCursoInscriptosExportView,
@@ -220,6 +221,11 @@ urlpatterns = [
         "vat/cursos/<int:pk>/eliminar/",
         permissions_any_required(["VAT.delete_curso"])(CursoDeleteView.as_view()),
         name="vat_curso_delete",
+    ),
+    path(
+        "vat/cursos/<int:pk>/",
+        permissions_any_required(["VAT.view_curso"])(CursoDetailView.as_view()),
+        name="vat_curso_detail",
     ),
     path(
         "vat/cursos/comisiones/nueva/",

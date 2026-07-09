@@ -969,7 +969,10 @@ class MensajeEspacioPWASerializer(serializers.ModelSerializer):
         lecturas = getattr(obj, "lecturas_pwa_usuario_espacio", None)
         if lecturas is not None:
             comedor_id = self.context.get("comedor_id")
-            if obj.subtipo == SubtipoComunicado.INSTITUCIONAL:
+            if obj.subtipo in (
+                SubtipoComunicado.INSTITUCIONAL,
+                SubtipoComunicado.ORGANIZACIONES,
+            ):
                 return lecturas[0] if lecturas else None
             for lectura in lecturas:
                 if getattr(lectura, "comedor_id", None) == comedor_id:
@@ -981,7 +984,10 @@ class MensajeEspacioPWASerializer(serializers.ModelSerializer):
         if not comedor_id or not user:
             return None
         lecturas = obj.lecturas_pwa.filter(user=user)
-        if obj.subtipo == SubtipoComunicado.INSTITUCIONAL:
+        if obj.subtipo in (
+            SubtipoComunicado.INSTITUCIONAL,
+            SubtipoComunicado.ORGANIZACIONES,
+        ):
             return lecturas.order_by("-fecha_visto", "-id").first()
         return (
             lecturas.filter(comedor_id=comedor_id)
@@ -1000,6 +1006,8 @@ class MensajeEspacioPWASerializer(serializers.ModelSerializer):
     def get_seccion(self, obj):
         if obj.subtipo == SubtipoComunicado.INSTITUCIONAL:
             return "general"
+        if obj.subtipo == SubtipoComunicado.ORGANIZACIONES:
+            return "organizacion"
         return "espacio"
 
 

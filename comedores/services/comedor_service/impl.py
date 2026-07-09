@@ -36,6 +36,7 @@ from comedores.forms.comedor_form import ImagenComedorForm
 from comedores.models import (
     ColaboradorEspacio,
     Comedor,
+    ComedorDatosConvenioPnud,
     AuditComedorPrograma,
     ImagenComedor,
     Nomina,
@@ -48,10 +49,16 @@ from comedores.utils import (
     get_id_by_nombre,
     normalize_field,
     preload_valores_comida_cache,
+    usa_datos_convenio_pnud,
 )
 from centrodefamilia.services.consulta_renaper import consultar_datos_renaper
 from core.models import Provincia, Municipio, Localidad, Nacionalidad
-from admisiones.models.admisiones import Admision, InformeTecnico
+from admisiones.models.admisiones import (
+    Admision,
+    InformeComplementario,
+    InformeComplementarioCampos,
+    InformeTecnico,
+)
 from rendicioncuentasmensual.models import RendicionCuentaMensual
 from intervenciones.models.intervenciones import Intervencion
 from expedientespagos.models import ExpedientePago
@@ -730,7 +737,10 @@ class ComedorService:
 
     @staticmethod
     def get_admision_timeline_context(admisiones_qs):
-        admision_activa = admisiones_qs.filter(activa=True).order_by("-id").first()
+        admision_activa = (
+            admisiones_qs.filter(vigente_pwa=True).order_by("-id").first()
+            or admisiones_qs.filter(activa=True).order_by("-id").first()
+        )
         admision_enviada = bool(
             admision_activa
             and getattr(admision_activa, "enviado_acompaniamiento", False)
@@ -757,6 +767,15 @@ class ComedorService:
             "timeline_ejecucion_circle": "2",
             "timeline_rendicion_circle": "3",
         }
+
+    @staticmethod
+    def get_admision_vigente_pwa(comedor_id):
+        admisiones_qs = Admision.objects.filter(comedor_id=comedor_id).order_by("-id")
+        return (
+            admisiones_qs.filter(vigente_pwa=True).first()
+            or admisiones_qs.filter(activa=True).first()
+            or admisiones_qs.first()
+        )
 
     @staticmethod
     def get_admision_timeline_context_from_admision(admision):
@@ -957,6 +976,76 @@ class ComedorService:
         return count
 
     @staticmethod
+    def aplicar_complementario_validado(informe_tecnico):
+        if not informe_tecnico:
+            return None
+        informe_complementario = (
+            InformeComplementario.objects.filter(
+                informe_tecnico=informe_tecnico,
+                estado="validado",
+            )
+            .order_by("-modificado", "-id")
+            .first()
+        )
+        if not informe_complementario:
+            return informe_tecnico
+
+        verbose_to_field = {
+            field.verbose_name.lower().strip(): field.name
+            for field in informe_tecnico._meta.fields
+        }
+        field_names = {field.name for field in informe_tecnico._meta.fields}
+        campos = InformeComplementarioCampos.objects.filter(
+            informe_complementario=informe_complementario
+        )
+        for campo in campos:
+            field_name = (
+                campo.campo
+                if campo.campo in field_names
+                else verbose_to_field.get(campo.campo.lower().strip())
+            )
+            if not field_name:
+                continue
+            field = informe_tecnico._meta.get_field(field_name)
+            value = campo.value
+            if field.get_internal_type() in ("IntegerField", "PositiveIntegerField"):
+                try:
+                    value = int(value) if value else 0
+                except (TypeError, ValueError):
+                    continue
+            setattr(informe_tecnico, field_name, value)
+        return informe_tecnico
+
+    @staticmethod
+    def get_informe_tecnico_finalizado_efectivo(admision):
+        if not admision:
+            return None
+        informe_complementario = (
+            InformeComplementario.objects.filter(
+                admision=admision,
+                estado="validado",
+                informe_tecnico__estado_formulario="finalizado",
+            )
+            .select_related("informe_tecnico")
+            .order_by("-modificado", "-id")
+            .first()
+        )
+        if informe_complementario:
+            return ComedorService.aplicar_complementario_validado(
+                informe_complementario.informe_tecnico
+            )
+        informe_tecnico = (
+            InformeTecnico.objects.filter(
+                admision=admision,
+                estado_formulario="finalizado",
+            )
+            .defer("observaciones_subsanacion")
+            .order_by("-id")
+            .first()
+        )
+        return ComedorService.aplicar_complementario_validado(informe_tecnico)
+
+    @staticmethod
     def calcular_monto_prestacion_mensual_por_aprobadas(prestaciones_por_tipo):
         """Calcula el monto mensual usando prestaciones aprobadas."""
         if not prestaciones_por_tipo:
@@ -979,20 +1068,39 @@ class ComedorService:
         Devuelve None en ambos campos si no hay admision/informe tecnico
         finalizado (la web muestra "-" en ese caso).
         """
-        admisiones_qs = Admision.objects.filter(comedor_id=comedor_id).order_by("-id")
-        admision = admisiones_qs.filter(activa=True).first() or admisiones_qs.first()
+        comedor = (
+            Comedor.objects.filter(id=comedor_id).select_related("programa").first()
+        )
+        if comedor and usa_datos_convenio_pnud(comedor):
+            datos_convenio = ComedorDatosConvenioPnud.objects.filter(
+                comedor_id=comedor_id
+            ).first()
+            prestaciones_por_tipo = ComedorService.get_prestaciones_aprobadas_por_tipo(
+                datos_convenio
+            )
+            if prestaciones_por_tipo is None:
+                return {
+                    "prestaciones_mensuales": None,
+                    "monto_prestacion_mensual": None,
+                }
+            return {
+                "prestaciones_mensuales": sum(prestaciones_por_tipo.values()),
+                "monto_prestacion_mensual": (
+                    ComedorService.calcular_monto_prestacion_mensual_por_aprobadas(
+                        prestaciones_por_tipo
+                    )
+                ),
+            }
+
+        admision = ComedorService.get_admision_vigente_pwa(comedor_id)
         if not admision:
             return {
                 "prestaciones_mensuales": None,
                 "monto_prestacion_mensual": None,
             }
 
-        informe_tecnico = (
-            InformeTecnico.objects.filter(
-                admision=admision, estado_formulario="finalizado"
-            )
-            .order_by("-id")
-            .first()
+        informe_tecnico = ComedorService.get_informe_tecnico_finalizado_efectivo(
+            admision
         )
         prestaciones_por_tipo = ComedorService.get_prestaciones_aprobadas_por_tipo(
             informe_tecnico

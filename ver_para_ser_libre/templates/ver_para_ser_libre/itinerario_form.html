@@ -4,7 +4,7 @@
 {% block title %}Itinerario VPSL{% endblock %}
 {% block head %}
     <link rel="stylesheet"
-          href="{% static 'custom/css/ver_para_ser_libre.css' %}" />
+          href="{% static 'custom/css/ver_para_ser_libre.css' %}?v=form-ux-20260624" />
 {% endblock %}
 {% block breadcrumb %}
     {% include "components/breadcrumb.html" with items=breadcrumb_items %}
@@ -13,18 +13,20 @@
 {% block content %}
     <div class="row vpsl-page">
         <div class="col-12 col-xl-10 offset-xl-1">
+            <div class="vpsl-page-toolbar">
+                <a href="{% url 'vpsl_itinerario_list' %}" class="btn btn-light">
+                    <i class="bi bi-arrow-left"></i> Volver
+                </a>
+            </div>
             <div class="card vpsl-title-card vpsl-header">
                 <div class="card-body d-flex flex-wrap justify-content-between align-items-center gap-2">
                     <div>
                         <h2 class="vpsl-title">Itinerario VPSL</h2>
                         <p class="vpsl-subtitle mb-0">Datos de planificacion, documentacion y sedes tentativas</p>
                     </div>
-                    <a href="{% url 'vpsl_itinerario_list' %}" class="btn btn-secondary">
-                        <i class="bi bi-arrow-left"></i> Volver
-                    </a>
                 </div>
             </div>
-            <div class="card">
+            <div class="card vpsl-form-card">
                 <form method="post" enctype="multipart/form-data">
                     {% csrf_token %}
                     <div class="card-body">
@@ -60,7 +62,6 @@
                                             </div>
                                             <div>
                                                 <h3 class="vpsl-section-title">Carta archivo</h3>
-                                                <p class="vpsl-section-subtitle">Adjunte la documentacion corregida solicitada por Nacion</p>
                                             </div>
                                         </div>
                                         <div class="vpsl-section-body">
@@ -87,7 +88,6 @@
                                             </div>
                                             <div>
                                                 <h3 class="vpsl-section-title">Sedes a subsanar</h3>
-                                                <p class="vpsl-section-subtitle">Cambie solamente las sedes marcadas para correccion</p>
                                             </div>
                                         </div>
                                         <div class="vpsl-section-body">
@@ -116,7 +116,6 @@
                                         </div>
                                         <div>
                                             <h3 class="vpsl-section-title">Datos generales</h3>
-                                            <p class="vpsl-section-subtitle">Provincia y rango de fechas del itinerario</p>
                                         </div>
                                     </div>
                                     <div class="vpsl-section-body">
@@ -141,7 +140,6 @@
                                         </div>
                                         <div>
                                             <h3 class="vpsl-section-title">Documentacion</h3>
-                                            <p class="vpsl-section-subtitle">Carta archivo obligatoria para presentar el itinerario</p>
                                         </div>
                                     </div>
                                     <div class="vpsl-section-body">
@@ -166,7 +164,6 @@
                                         </div>
                                         <div>
                                             <h3 class="vpsl-section-title">Sedes tentativas</h3>
-                                            <p class="vpsl-section-subtitle">Filtre por localidad y seleccione sedes del itinerario</p>
                                         </div>
                                     </div>
                                     <div class="vpsl-section-body">
@@ -179,7 +176,7 @@
                                                         {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
                                                     </div>
                                                 {% elif field.name == "sedes" %}
-                                                    <div class="col-12">
+                                                    <div class="col-12 col-md-6">
                                                         <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
                                                         {{ field }}
                                                         <div class="form-text">Las localidades se heredan de las sedes seleccionadas.</div>
@@ -198,7 +195,6 @@
                                         </div>
                                         <div>
                                             <h3 class="vpsl-section-title">Referente y observaciones</h3>
-                                            <p class="vpsl-section-subtitle">Contacto operativo y notas internas</p>
                                         </div>
                                     </div>
                                     <div class="vpsl-section-body">
@@ -235,8 +231,8 @@
                         {% endif %}
                     </div>
                     <div class="card-footer d-flex gap-2 justify-content-end">
-                        <a href="{% url 'vpsl_itinerario_list' %}" class="btn btn-secondary">Volver</a>
-                        <button type="submit" class="btn btn-primary">Guardar</button>
+                        <a href="{% url 'vpsl_itinerario_list' %}" class="btn btn-light">Cancelar</a>
+                        <button type="submit" class="btn btn-success">Guardar</button>
                     </div>
                 </form>
             </div>

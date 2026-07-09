@@ -6,6 +6,7 @@ from .permissions import (
     es_tecnico,
     is_admin,
     get_comedores_del_usuario,
+    get_organizaciones_del_usuario,
     can_create_comunicado_interno,
 )
 
@@ -54,6 +55,7 @@ class ComunicadoForm(forms.ModelForm):
             "destacado",
             "para_todos_comedores",
             "comedores",
+            "organizaciones",
             "fecha_vencimiento",
         ]
         widgets = {
@@ -71,6 +73,9 @@ class ComunicadoForm(forms.ModelForm):
                 attrs={"class": "form-check-input", "role": "switch"}
             ),
             "comedores": forms.SelectMultiple(
+                attrs={"class": "form-select", "size": "6"}
+            ),
+            "organizaciones": forms.SelectMultiple(
                 attrs={"class": "form-select", "size": "6"}
             ),
         }
@@ -94,6 +99,9 @@ class ComunicadoForm(forms.ModelForm):
 
         # Filtrar comedores según permisos del usuario
         self.fields["comedores"].queryset = get_comedores_del_usuario(self.user)
+        self.fields["organizaciones"].queryset = get_organizaciones_del_usuario(
+            self.user
+        ).order_by("nombre")
 
         # Si es técnico (no admin), solo puede crear comunicados externos a comedores
         if es_tecnico(self.user) and not is_admin(self.user):
@@ -102,7 +110,11 @@ class ComunicadoForm(forms.ModelForm):
             ]
             self.fields["tipo"].initial = TipoComunicado.EXTERNO
             self.fields["subtipo"].choices = [
-                (SubtipoComunicado.COMEDORES, "Comunicación a Comedores")
+                (SubtipoComunicado.COMEDORES, "Comunicación a Comedores"),
+                (
+                    SubtipoComunicado.ORGANIZACIONES,
+                    "Comunicación a Organizaciones",
+                ),
             ]
             self.fields["subtipo"].initial = SubtipoComunicado.COMEDORES
             # Ocultar destacado para técnicos (solo aplica a internos)
@@ -145,6 +157,7 @@ class ComunicadoForm(forms.ModelForm):
         subtipo = cleaned_data.get("subtipo")
         para_todos_comedores = cleaned_data.get("para_todos_comedores")
         comedores = cleaned_data.get("comedores")
+        organizaciones = cleaned_data.get("organizaciones")
 
         if (
             tipo == TipoComunicado.EXTERNO
@@ -155,6 +168,16 @@ class ComunicadoForm(forms.ModelForm):
             self.add_error(
                 "comedores",
                 "Debe seleccionar al menos un comedor o marcar 'Enviar a todos los comedores'.",
+            )
+
+        if (
+            tipo == TipoComunicado.EXTERNO
+            and subtipo == SubtipoComunicado.ORGANIZACIONES
+            and (not organizaciones or len(organizaciones) == 0)
+        ):
+            self.add_error(
+                "organizaciones",
+                "Debe seleccionar al menos una organización.",
             )
 
         return cleaned_data

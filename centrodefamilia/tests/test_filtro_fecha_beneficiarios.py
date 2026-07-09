@@ -63,9 +63,7 @@ def escenario(db):
 
 
 @pytest.mark.django_db
-@pytest.mark.parametrize(
-    "url_name", ["beneficiarios_list", "responsables_list"]
-)
+@pytest.mark.parametrize("url_name", ["beneficiarios_list", "responsables_list"])
 def test_filtro_fecha_desde_hasta_inclusivo(client, escenario, url_name):
     """Desde (gte) y Hasta (lte) incluyen los registros cargados ese mismo día."""
     client.force_login(escenario)

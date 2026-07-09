@@ -87,6 +87,7 @@ ignore_imports =
     core.services.favorite_filters.config -> centrodefamilia.services.responsables_filter_config
     core.services.favorite_filters.config -> dispositivos.dispositivos_filter_config
     core.services.favorite_filters.config -> duplas.dupla_filter_config
+    core.services.favorite_filters.config -> rendicioncuentasmensual.filter_config
     core.services.favorite_filters.config -> VAT.services.centro_filter_config
     core.soft_delete.state_sync -> VAT.cache_utils
     core.templatetags.custom_filters -> VAT.services.access_scope
@@ -165,5 +166,8 @@ ignore_imports =
     users.forms -> comedores.models
     users.forms -> duplas.models
     users.forms -> organizaciones.models
+    users.services_pwa -> comedores.models
+    users.services_user_import -> comedores.models
+    users.services_user_import -> organizaciones.models
     users.signals -> duplas.models
     users.tests -> **

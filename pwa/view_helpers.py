@@ -18,6 +18,13 @@ def build_mensaje_espacio_summary(serialized_items):
             and item["accion"].get("rendicion_id")
         }
     )
+    unread_organizacion_ids = sorted(
+        {
+            item["id"]
+            for item in serialized_items
+            if item["seccion"] == "organizacion" and not item["visto"]
+        }
+    )
     unread_espacio_non_rendicion_count = sum(
         1
         for item in serialized_items
@@ -37,12 +44,15 @@ def build_mensaje_espacio_summary(serialized_items):
             for item in serialized_items
             if item["seccion"] == "espacio" and not item["visto"]
         ),
+        "unread_organizacion_count": len(unread_organizacion_ids),
         "unread_grouped_count": (
             len(unread_general_ids)
+            + len(unread_organizacion_ids)
             + unread_espacio_non_rendicion_count
             + len(unread_rendicion_ids)
         ),
         "unread_general_ids": unread_general_ids,
+        "unread_organizacion_ids": unread_organizacion_ids,
         "unread_rendicion_ids": unread_rendicion_ids,
         "unread_espacio_non_rendicion_count": unread_espacio_non_rendicion_count,
     }

@@ -118,6 +118,25 @@
                                 <span class="fw-bold">{{ admision.convenio_numero|default_if_none:"-" }}</span>
                             {% endif %}
                         </dd>
+                        <dt class="col-sm-5">Vigente PWA</dt>
+                        <dd class="col-sm-7">
+                            {% if puede_editar_convenio_numero %}
+                                <div class="form-check form-switch mb-0">
+                                    <input class="form-check-input"
+                                           type="checkbox"
+                                           role="switch"
+                                           id="vigente-pwa-input"
+                                           data-call-change="actualizarVigentePwa"
+                                           data-call-pass-this="true"
+                                           {% if admision.vigente_pwa %}checked{% endif %} />
+                                    <label class="form-check-label" for="vigente-pwa-input">Admisi&oacute;n vigente para PWA</label>
+                                </div>
+                            {% elif admision.vigente_pwa %}
+                                <span class="badge bg-success">Vigente</span>
+                            {% else %}
+                                <span class="badge bg-secondary">No vigente</span>
+                            {% endif %}
+                        </dd>
                         <dt class="col-sm-5">Estado Actual</dt>
                         <dd class="col-sm-7">
                             {{ admision.estado_mostrar|default:"-" }}
@@ -846,6 +865,7 @@
         }
     </style>
     <script nonce="{{ request.csp_nonce }}">window.URL_ACTUALIZAR_CONVENIO_NUMERO = "{% url 'actualizar_convenio_numero' %}";</script>
+    <script nonce="{{ request.csp_nonce }}">window.URL_ACTUALIZAR_VIGENTE_PWA = "{% url 'actualizar_vigente_pwa' %}";</script>
     <script nonce="{{ request.csp_nonce }}">window.ADMISION_ID = {{ admision.id }};</script>
     <script src="{% static 'custom/js/admisionesactualizarestado.js' %}"></script>
     <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1100">

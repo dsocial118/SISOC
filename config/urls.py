@@ -59,6 +59,7 @@ urlpatterns = [
     path("", include("rendicioncuentasfinal.urls")),
     path("", include("relevamientos.urls")),
     path("", include("dispositivos.urls")),
+    path("", include("insumos.urls")),
     path("rendicioncuentasmensual/", include("rendicioncuentasmensual.urls")),
     path(
         "reporter-provincias/",
@@ -79,6 +80,7 @@ urlpatterns = [
     path("api/ticketera/", include("ticketera.api_urls")),
     path("", include("importarexpediente.urls")),
     path("", include("comunicados.urls")),
+    path("ocr/", include("ocr.urls")),
 ]
 
 if settings.DEBUG and not getattr(settings, "RUNNING_TESTS", False):

@@ -6,8 +6,10 @@ import csv
 from datetime import datetime, date
 from io import StringIO
 import pytest
-from django.contrib.auth.models import User, Group
-from django.test import RequestFactory
+from django.contrib.auth.models import User, Group, Permission
+from django.contrib.contenttypes.models import ContentType
+from django.test import RequestFactory, override_settings
+from django.urls import reverse
 from django.views.generic import View
 from core.mixins import CSVExportMixin
 
@@ -23,6 +25,34 @@ class SimpleExportView(CSVExportMixin, View):
             ("Name", "name"),
             ("Date", "created_at"),
         ]
+
+
+def _grant_permission(user, app_label, codename):
+    permission = Permission.objects.get(
+        content_type__app_label=app_label,
+        codename=codename,
+    )
+    user.user_permissions.add(permission)
+    return User.objects.get(pk=user.pk)
+
+
+def _grant_role_permission(user, codename, name):
+    content_type = ContentType.objects.get_for_model(Group)
+    permission, _ = Permission.objects.get_or_create(
+        content_type=content_type,
+        codename=codename,
+        defaults={"name": name},
+    )
+    user.user_permissions.add(permission)
+    return User.objects.get(pk=user.pk)
+
+
+def _grant_export_role(user):
+    return _grant_role_permission(user, "role_exportar_a_csv", "Exportar a csv")
+
+
+def _grant_admin_role(user):
+    return _grant_role_permission(user, "role_admin", "Admin")
 
 
 @pytest.mark.django_db
@@ -143,3 +173,93 @@ class TestCSVExportMixin:
         # Should succeed
         response = view.export_csv([])
         assert response.status_code == 200
+
+
+@pytest.mark.django_db
+@override_settings(ROOT_URLCONF="config.urls")
+def test_comedor_export_rejects_anonymous_user(client):
+    response = client.get(reverse("comedor_export"))
+
+    assert response.status_code == 403
+    assert "Content-Disposition" not in response
+
+
+@pytest.mark.django_db
+@override_settings(ROOT_URLCONF="config.urls")
+def test_comedor_export_rejects_list_permission_without_export_permission(client):
+    user = User.objects.create_user(username="comedor_export_list")
+    user = _grant_permission(user, "admisiones", "view_admision")
+
+    client.force_login(user)
+    response = client.get(reverse("comedor_export"))
+
+    assert response.status_code == 403
+
+
+@pytest.mark.django_db
+@override_settings(ROOT_URLCONF="config.urls")
+def test_comedor_export_rejects_export_role_without_list_permission(client):
+    user = User.objects.create_user(username="comedor_export_only")
+    user = _grant_export_role(user)
+
+    client.force_login(user)
+    response = client.get(reverse("comedor_export"))
+
+    assert response.status_code == 403
+
+
+@pytest.mark.django_db
+@override_settings(ROOT_URLCONF="config.urls")
+def test_comedor_export_allows_user_with_list_and_export_permissions(client):
+    user = User.objects.create_user(username="comedor_export_both")
+    user = _grant_permission(user, "admisiones", "view_admision")
+    user = _grant_export_role(user)
+
+    client.force_login(user)
+    response = client.get(reverse("comedor_export"))
+
+    assert response.status_code == 200
+    assert response["Content-Disposition"].startswith(
+        'attachment; filename="exportacion_comedores_'
+    )
+
+
+@pytest.mark.django_db
+@override_settings(ROOT_URLCONF="config.urls")
+def test_comedor_export_allows_admin_role_without_explicit_export_pair(client):
+    user = User.objects.create_user(username="comedor_export_admin")
+    user = _grant_admin_role(user)
+
+    client.force_login(user)
+    response = client.get(reverse("comedor_export"))
+
+    assert response.status_code == 200
+
+
+@pytest.mark.django_db
+@override_settings(ROOT_URLCONF="config.urls")
+def test_comedor_list_shows_export_button_with_list_and_export_permissions(client):
+    user = User.objects.create_user(username="comedor_list_export_button")
+    user = _grant_permission(user, "admisiones", "view_admision")
+    user = _grant_export_role(user)
+
+    client.force_login(user)
+    response = client.get(reverse("comedores"))
+
+    assert response.status_code == 200
+    content = response.content.decode()
+    assert "btn-export-csv" in content
+    assert reverse("comedor_export") in content
+
+
+@pytest.mark.django_db
+@override_settings(ROOT_URLCONF="config.urls")
+def test_comedor_list_hides_export_button_with_list_permission_only(client):
+    user = User.objects.create_user(username="comedor_list_only_button")
+    user = _grant_permission(user, "admisiones", "view_admision")
+
+    client.force_login(user)
+    response = client.get(reverse("comedores"))
+
+    assert response.status_code == 200
+    assert "btn-export-csv" not in response.content.decode()

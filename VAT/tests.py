@@ -53,6 +53,7 @@ from VAT.models import (
 )
 from VAT.services.access_scope import (
     can_user_access_centro,
+    can_user_create_centro,
     can_user_edit_centro,
     filter_centros_queryset_for_management,
     filter_centros_queryset_for_user,
@@ -1446,6 +1447,185 @@ def test_centro_alta_form_inet_provincia_restringe_campos_de_configuracion(
 
 
 @pytest.mark.django_db
+def test_centro_alta_form_operador_cfp_elimina_datos_administrativos(vat_geo_data):
+    provincia, municipio, localidad = vat_geo_data
+    operador = User.objects.create_user(
+        username="operador-cfp-form", password="test1234"
+    )
+    operador.groups.add(Group.objects.get_or_create(name="CFP")[0])
+    _grant_vat_referente_access(operador)
+    operador = User.objects.get(pk=operador.pk)
+
+    centro = _create_vat_centro(
+        codigo="OPCFP-FORM-001",
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad,
+        referente=operador,
+    )
+
+    form = CentroAltaForm(instance=centro, actor=operador)
+
+    # Los campos administrativos se eliminan del form: no se renderizan ni se
+    # aceptan en el POST (sin fuga en el HTML).
+    assert "tipo_gestion" not in form.fields
+    assert "clase_institucion" not in form.fields
+    assert "situacion" not in form.fields
+    # Los campos operativos que sí debe ver siguen presentes.
+    assert "nombre" in form.fields
+    assert "codigo" in form.fields
+    assert "referentes" in form.fields
+
+
+@pytest.mark.django_db
+def test_centro_alta_form_admin_inet_conserva_datos_administrativos(vat_geo_data):
+    provincia, municipio, localidad = vat_geo_data
+    admin = User.objects.create_superuser(
+        username="sse-vat-form",
+        email="sse-vat-form@vat.test",
+        password="test1234",
+    )
+
+    centro = _create_vat_centro(
+        codigo="SSE-FORM-001",
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad,
+    )
+
+    form = CentroAltaForm(instance=centro, actor=admin)
+
+    assert "tipo_gestion" in form.fields
+    assert "clase_institucion" in form.fields
+    assert "situacion" in form.fields
+
+
+@pytest.mark.django_db
+def test_centro_update_operador_cfp_no_puede_modificar_datos_administrativos(
+    client, vat_geo_data
+):
+    provincia, municipio, localidad = vat_geo_data
+    operador = User.objects.create_user(
+        username="operador-cfp-update", password="test1234"
+    )
+    operador.groups.add(Group.objects.get_or_create(name="CFP")[0])
+    _grant_vat_referente_access(operador)
+    operador = User.objects.get(pk=operador.pk)
+
+    centro = _create_vat_centro(
+        codigo="500177001",
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad,
+        referente=operador,
+    )
+    centro.referentes.add(operador)
+    contacto = InstitucionContacto.objects.create(
+        centro=centro,
+        nombre_contacto="Ana Perez",
+        documento="30111223",
+        rol_area="Dirección",
+        telefono_contacto="221-3333333",
+        email_contacto="ana@vat.test",
+        es_principal=True,
+    )
+    client.force_login(operador)
+
+    update_payload = _build_centro_payload(
+        operador,
+        provincia,
+        municipio,
+        localidad,
+        nombre=centro.nombre,
+        codigo=centro.codigo,
+        # Intento de tampering sobre datos administrativos ocultos.
+        tipo_gestion="Privado",
+        clase_institucion="Institución modificada",
+        situacion="Estado modificado",
+        **{
+            "contactos-TOTAL_FORMS": "1",
+            "contactos-INITIAL_FORMS": "1",
+            "contactos-MIN_NUM_FORMS": "0",
+            "contactos-MAX_NUM_FORMS": "1000",
+            "contactos-0-id": str(contacto.id),
+            "contactos-0-centro": str(centro.id),
+            "contactos-0-nombre_contacto": "Ana Perez",
+            "contactos-0-rol_area": "Dirección",
+            "contactos-0-documento": "30111223",
+            "contactos-0-telefono_contacto": "221-3333333",
+            "contactos-0-email_contacto": "ana@vat.test",
+            "contactos-0-es_principal": "on",
+        },
+    )
+    update_payload.pop("provincia", None)
+    update_payload.pop("activo", None)
+
+    response = client.post(
+        reverse("vat_centro_update", kwargs={"pk": centro.pk}),
+        data=update_payload,
+    )
+
+    centro.refresh_from_db()
+
+    assert response.status_code == 302
+    # El POST manipulado se ignora: los valores de DB se conservan.
+    assert centro.tipo_gestion == "Estatal"
+    assert centro.clase_institucion == "Formación Profesional"
+    assert centro.situacion == "Institución de ETP"
+
+
+@pytest.mark.django_db
+def test_centro_detail_operador_cfp_oculta_sector_de_gestion(client, vat_geo_data):
+    provincia, municipio, localidad = vat_geo_data
+    operador = User.objects.create_user(
+        username="operador-cfp-detail", password="test1234"
+    )
+    operador.groups.add(Group.objects.get_or_create(name="CFP")[0])
+    _grant_vat_referente_access(operador)
+    operador = User.objects.get(pk=operador.pk)
+
+    centro = _create_vat_centro(
+        codigo="500177002",
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad,
+        referente=operador,
+    )
+    centro.referentes.add(operador)
+    client.force_login(operador)
+
+    response = client.get(reverse("vat_centro_detail", kwargs={"pk": centro.pk}))
+
+    assert response.status_code == 200
+    assert response.context["mostrar_datos_administrativos"] is False
+    assert "Sector de gestión" not in response.content.decode()
+
+
+@pytest.mark.django_db
+def test_centro_detail_admin_inet_muestra_sector_de_gestion(client, vat_geo_data):
+    provincia, municipio, localidad = vat_geo_data
+    admin = User.objects.create_superuser(
+        username="sse-vat-detail",
+        email="sse-vat-detail@vat.test",
+        password="test1234",
+    )
+
+    centro = _create_vat_centro(
+        codigo="500177003",
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad,
+    )
+    client.force_login(admin)
+
+    response = client.get(reverse("vat_centro_detail", kwargs={"pk": centro.pk}))
+
+    assert response.status_code == 200
+    assert response.context["mostrar_datos_administrativos"] is True
+    assert "Sector de gestión" in response.content.decode()
+
+
+@pytest.mark.django_db
 def test_plan_version_curricular_form_inet_provincia_restringe_campos_estrategicos(
     vat_geo_data,
 ):
@@ -1617,11 +1797,13 @@ def test_inet_provincia_no_puede_modificar_campos_bloqueados_en_plan_update(clie
 
     plan.refresh_from_db()
 
-    assert response.status_code == 302
-    assert plan.nombre == "Plan INET Provincial Editado"
-    assert plan.horas_reloj == 180
-    assert plan.nivel_requerido == "secundario_completo"
-    assert plan.nivel_certifica == "nivel_2"
+    # INET_PROVINCIA ya no tiene change_planversioncurricular: el endpoint de
+    # edicion queda bloqueado y el plan no se modifica.
+    assert response.status_code == 403
+    assert plan.nombre == "Plan INET Provincial"
+    assert plan.horas_reloj == 120
+    assert plan.nivel_requerido == "sin_requisito"
+    assert plan.nivel_certifica == "nivel_1"
     assert plan.sector_id == sector_original.id
     assert plan.modalidad_cursada_id == modalidad_original.id
     assert plan.activo is True
@@ -1704,11 +1886,12 @@ def test_inet_provincia_no_puede_modificar_campos_bloqueados_en_oferta_update(
 
     oferta.refresh_from_db()
 
-    assert response.status_code == 302
-    assert oferta.nombre_local == "Oferta Editada INET"
-    assert oferta.estado == "publicada"
-    assert oferta.costo == 250
-    assert oferta.observaciones == "Edicion valida de observaciones"
+    # INET_PROVINCIA ya no tiene change_ofertainstitucional: el endpoint de
+    # edicion queda bloqueado y la oferta no se modifica.
+    assert response.status_code == 403
+    assert oferta.nombre_local == "Oferta Original"
+    assert oferta.estado == "planificada"
+    assert oferta.costo == 100
     assert oferta.centro_id == centro_original.id
     assert oferta.programa_id == programa_original.id
     assert oferta.ciclo_lectivo == 2026
@@ -1812,11 +1995,12 @@ def test_inet_provincia_no_puede_modificar_campos_bloqueados_en_comision_update(
 
     comision.refresh_from_db()
 
-    assert response.status_code == 302
-    assert comision.nombre == "Comision Editada"
-    assert comision.cupo == 35
-    assert comision.estado == "activa"
-    assert comision.acepta_lista_espera is True
+    # INET_PROVINCIA ya no tiene change_comision: el endpoint de edicion queda
+    # bloqueado y la comision no se modifica.
+    assert response.status_code == 403
+    assert comision.nombre == "Comision Original"
+    assert comision.cupo == 20
+    assert comision.estado == "planificada"
     assert comision.oferta_id == oferta_original.id
     assert comision.ubicacion_id == ubicacion_original.id
     assert comision.codigo_comision == "INET-COM-LOCK-001"
@@ -1824,9 +2008,7 @@ def test_inet_provincia_no_puede_modificar_campos_bloqueados_en_comision_update(
 
 @pytest.mark.django_db
 @override_settings(ROOT_URLCONF="config.urls")
-def test_inet_provincia_visualiza_aviso_de_campos_bloqueados_en_oferta_update(
-    client, vat_geo_data
-):
+def test_inet_provincia_no_puede_acceder_a_oferta_update(client, vat_geo_data):
     provincia, municipio, localidad = vat_geo_data
     call_command("create_groups", verbosity=0)
 
@@ -1874,17 +2056,13 @@ def test_inet_provincia_visualiza_aviso_de_campos_bloqueados_en_oferta_update(
         reverse("vat_oferta_institucional_update", kwargs={"pk": oferta.pk})
     )
 
-    assert response.status_code == 200
-    content = response.content.decode("utf-8")
-    assert "Edición parcial por perfil INET_PROVINCIA." in content
-    assert "Centro, Título de referencia, Programa, Ciclo lectivo." in content
+    # INET_PROVINCIA ya no tiene change_ofertainstitucional: no accede al form.
+    assert response.status_code == 403
 
 
 @pytest.mark.django_db
 @override_settings(ROOT_URLCONF="config.urls")
-def test_inet_provincia_visualiza_aviso_de_campos_bloqueados_en_comision_update(
-    client, vat_geo_data
-):
+def test_inet_provincia_no_puede_acceder_a_comision_update(client, vat_geo_data):
     provincia, municipio, localidad = vat_geo_data
     call_command("create_groups", verbosity=0)
 
@@ -1934,10 +2112,8 @@ def test_inet_provincia_visualiza_aviso_de_campos_bloqueados_en_comision_update(
     client.force_login(user)
     response = client.get(reverse("vat_comision_update", kwargs={"pk": comision.pk}))
 
-    assert response.status_code == 200
-    content = response.content.decode("utf-8")
-    assert "Edición parcial por perfil INET_PROVINCIA." in content
-    assert "Oferta institucional, Ubicación, Código de comisión." in content
+    # INET_PROVINCIA ya no tiene change_comision: no accede al form.
+    assert response.status_code == 403
 
 
 @pytest.mark.django_db
@@ -2776,6 +2952,252 @@ def test_revisor_asignado_lista_y_ve_centro_sin_acciones_de_gestion(
     )
     assert update_response.status_code == 403
     assert delete_response.status_code == 403
+
+
+def _vat_permission(codename):
+    return Permission.objects.get(
+        content_type__app_label="VAT",
+        codename=codename,
+    )
+
+
+@pytest.mark.django_db
+def test_curso_detail_revisor_ve_datos_en_solo_lectura(client, vat_geo_data):
+    """El revisor (solo visualizacion) puede abrir el detalle del curso y ver
+    toda su informacion, incluida la parametria de voucher, sin acciones de
+    edicion."""
+    provincia, municipio, localidad = vat_geo_data
+    revisor_group, _ = Group.objects.get_or_create(name="CFPRevisor")
+    revisor = User.objects.create_user(
+        username="revisor-curso-ver", password="test1234"
+    )
+    revisor.groups.add(revisor_group)
+    _grant_vat_revisor_access(revisor, _vat_permission("view_curso"))
+    centro = _create_vat_centro(
+        codigo="REV-CUR-VER",
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad,
+    )
+    centro.revisores.add(revisor)
+    modalidad = ModalidadCursada.objects.create(nombre="Presencial ver", activo=True)
+    curso = Curso.objects.create(
+        centro=centro,
+        nombre="Curso visible solo lectura",
+        modalidad=modalidad,
+        estado="activo",
+        usa_voucher=True,
+        costo_creditos=3,
+    )
+
+    client.force_login(revisor)
+    response = client.get(reverse("vat_curso_detail", kwargs={"pk": curso.pk}))
+    content = response.content.decode("utf-8")
+
+    assert response.status_code == 200
+    assert "Curso visible solo lectura" in content
+    assert "Parametría de voucher" in content
+    # No expone el enlace de edicion del curso.
+    assert reverse("vat_curso_update", kwargs={"pk": curso.pk}) not in content
+
+
+@pytest.mark.django_db
+def test_curso_detail_revisor_no_puede_editar_por_backend(client, vat_geo_data):
+    """Aunque tenga el permiso Django change_curso, el revisor no gestiona el
+    centro: el POST de edicion no encuentra el curso en su scope (404) y el
+    curso no se modifica."""
+    provincia, municipio, localidad = vat_geo_data
+    revisor_group, _ = Group.objects.get_or_create(name="CFPRevisor")
+    revisor = User.objects.create_user(
+        username="revisor-curso-noedit", password="test1234"
+    )
+    revisor.groups.add(revisor_group)
+    _grant_vat_revisor_access(
+        revisor,
+        _vat_permission("view_curso"),
+        _vat_permission("change_curso"),
+    )
+    centro = _create_vat_centro(
+        codigo="REV-CUR-NOEDIT",
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad,
+    )
+    centro.revisores.add(revisor)
+    modalidad = ModalidadCursada.objects.create(nombre="Presencial noedit", activo=True)
+    curso = Curso.objects.create(
+        centro=centro,
+        nombre="Curso original",
+        modalidad=modalidad,
+        estado="activo",
+    )
+
+    client.force_login(revisor)
+    response = client.post(
+        reverse("vat_curso_update", kwargs={"pk": curso.pk}),
+        data={
+            "nombre": "Nombre manipulado",
+            "modalidad": modalidad.pk,
+            "estado": "activo",
+            "costo_creditos": 1,
+        },
+    )
+    curso.refresh_from_db()
+
+    assert response.status_code == 404
+    assert curso.nombre == "Curso original"
+
+
+@pytest.mark.django_db
+def test_cursos_panel_revisor_ve_boton_ver_sin_gestion(client, vat_geo_data):
+    """El panel de cursos muestra el boton 'Ver' al revisor pero no las
+    acciones de gestion (crear comision)."""
+    provincia, municipio, localidad = vat_geo_data
+    revisor_group, _ = Group.objects.get_or_create(name="CFPRevisor")
+    revisor = User.objects.create_user(
+        username="revisor-panel-ver", password="test1234"
+    )
+    revisor.groups.add(revisor_group)
+    _grant_vat_revisor_access(
+        revisor,
+        _vat_permission("view_centro"),
+        _vat_permission("view_curso"),
+    )
+    centro = _create_vat_centro(
+        codigo="REV-PANEL-VER",
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad,
+    )
+    centro.revisores.add(revisor)
+    modalidad = ModalidadCursada.objects.create(nombre="Presencial panel", activo=True)
+    curso = Curso.objects.create(
+        centro=centro,
+        nombre="Curso en panel",
+        modalidad=modalidad,
+        estado="activo",
+    )
+
+    client.force_login(revisor)
+    response = client.get(reverse("vat_centro_cursos_panel", kwargs={"pk": centro.pk}))
+    content = response.content.decode("utf-8")
+
+    assert response.status_code == 200
+    assert reverse("vat_curso_detail", kwargs={"pk": curso.pk}) in content
+    assert (
+        reverse("vat_comision_curso_wizard", kwargs={"curso_id": curso.pk})
+        not in content
+    )
+
+
+def _grant_vat_admin_visualizador_access(user, *permissions):
+    marker_permission, _ = Permission.objects.get_or_create(
+        content_type=ContentType.objects.get_for_model(Group),
+        codename="role_inet_admin_visualizador",
+        defaults={"name": "Inet Admin Visualizador"},
+    )
+    user.user_permissions.add(marker_permission, *permissions)
+
+
+@pytest.mark.django_db
+def test_admin_visualizador_ve_todos_los_centros_en_solo_lectura(client, vat_geo_data):
+    """El perfil INET Admin Visualizador tiene lectura global: lista todos los
+    centros, abre el detalle, pero no puede editar (403)."""
+    provincia, municipio, localidad = vat_geo_data
+    user = User.objects.create_user(username="admin-visualizador", password="test1234")
+    _grant_vat_admin_visualizador_access(user, _vat_permission("view_centro"))
+    centro_uno = _create_vat_centro(
+        codigo="VIS-GLOB-001",
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad,
+        nombre="Centro Visualizador Uno",
+    )
+    centro_dos = _create_vat_centro(
+        codigo="VIS-GLOB-002",
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad,
+        nombre="Centro Visualizador Dos",
+    )
+
+    client.force_login(user)
+    list_response = client.get(reverse("vat_centro_list"))
+    detail_response = client.get(
+        reverse("vat_centro_detail", kwargs={"pk": centro_uno.pk})
+    )
+    update_response = client.get(
+        reverse("vat_centro_update", kwargs={"pk": centro_uno.pk})
+    )
+
+    list_content = list_response.content.decode("utf-8")
+    assert list_response.status_code == 200
+    assert centro_uno.nombre in list_content
+    assert centro_dos.nombre in list_content
+    assert detail_response.status_code == 200
+    assert detail_response.context["can_edit_centro"] is False
+    assert update_response.status_code == 403
+
+
+@pytest.mark.django_db
+def test_admin_visualizador_scope_lectura_global_sin_gestion():
+    """El marcador habilita los caminos de lectura pero nunca los de gestion."""
+    user = User.objects.create_user(username="admin-visualizador-scope")
+    _grant_vat_admin_visualizador_access(user)
+    provincia = Provincia.objects.create(nombre="Provincia Visualizador")
+    centro = _create_vat_centro(
+        codigo="VIS-SCOPE-01",
+        provincia=provincia,
+        municipio=None,
+        localidad=None,
+    )
+
+    assert (
+        filter_centros_queryset_for_user(Centro.objects.all(), user).count()
+        == Centro.objects.count()
+    )
+    assert can_user_access_centro(user, centro) is True
+    assert (
+        filter_centros_queryset_for_management(Centro.objects.all(), user).count() == 0
+    )
+    assert can_user_edit_centro(user, centro) is False
+    assert can_user_create_centro(user) is False
+
+
+@pytest.mark.django_db
+def test_admin_visualizador_accede_al_detalle_de_curso_solo_lectura(
+    client, vat_geo_data
+):
+    """Con lectura global + view_curso, el visualizador abre el detalle del
+    curso sin acciones de edicion."""
+    provincia, municipio, localidad = vat_geo_data
+    user = User.objects.create_user(username="admin-visualizador-curso")
+    _grant_vat_admin_visualizador_access(
+        user,
+        _vat_permission("view_centro"),
+        _vat_permission("view_curso"),
+    )
+    centro = _create_vat_centro(
+        codigo="VIS-CUR-001",
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad,
+    )
+    modalidad = ModalidadCursada.objects.create(nombre="Presencial vis", activo=True)
+    curso = Curso.objects.create(
+        centro=centro,
+        nombre="Curso visible global",
+        modalidad=modalidad,
+        estado="activo",
+    )
+
+    client.force_login(user)
+    response = client.get(reverse("vat_curso_detail", kwargs={"pk": curso.pk}))
+    content = response.content.decode("utf-8")
+
+    assert response.status_code == 200
+    assert "Curso visible global" in content
+    assert reverse("vat_curso_update", kwargs={"pk": curso.pk}) not in content
 
 
 @pytest.mark.django_db
@@ -5928,6 +6350,118 @@ def test_comision_curso_create_view_renderiza_formulario(client, vat_curso_base)
     assert response.status_code == 200
     assert "ubicacion" in response.content.decode("utf-8")
     assert "cupo_lista_espera" in response.content.decode("utf-8")
+
+
+@pytest.mark.django_db
+def test_cursos_panel_boton_editar_emite_estado_lista_espera(client, vat_curso_base):
+    """El boton Editar del panel expone el estado de lista de espera via
+    data-* para que el modal muestre el checkbox tildado y el cupo cargado."""
+    centro, ubicacion, modalidad = vat_curso_base
+    user = User.objects.create_superuser(
+        username="admin-panel-lista-espera",
+        email="admin-panel-lista-espera@vat.test",
+        password="test1234",
+    )
+    curso = Curso.objects.create(
+        centro=centro,
+        nombre="Curso panel espera",
+        modalidad=modalidad,
+        estado="planificado",
+    )
+    ComisionCurso.objects.create(
+        curso=curso,
+        ubicacion=ubicacion,
+        codigo_comision="PANEL-LE-ON",
+        nombre="Comision con espera",
+        cupo_total=20,
+        acepta_lista_espera=True,
+        cupo_lista_espera=7,
+        fecha_inicio=date(2026, 4, 1),
+        fecha_fin=date(2026, 4, 30),
+        estado="activa",
+    )
+    ComisionCurso.objects.create(
+        curso=curso,
+        ubicacion=ubicacion,
+        codigo_comision="PANEL-LE-OFF",
+        nombre="Comision sin espera",
+        cupo_total=20,
+        fecha_inicio=date(2026, 5, 1),
+        fecha_fin=date(2026, 5, 31),
+        estado="activa",
+    )
+
+    client.force_login(user)
+    response = client.get(reverse("vat_centro_cursos_panel", kwargs={"pk": centro.pk}))
+    content = response.content.decode("utf-8")
+
+    assert response.status_code == 200
+    assert 'data-acepta-lista-espera="1"' in content
+    assert 'data-cupo-lista-espera="7"' in content
+    assert 'data-acepta-lista-espera="0"' in content
+
+
+@pytest.mark.django_db
+def test_comision_curso_update_persiste_lista_espera(client, vat_curso_base):
+    """Editar una comision con lista de espera habilitada conserva el limite;
+    deshabilitarla lo limpia."""
+    centro, ubicacion, modalidad = vat_curso_base
+    user = User.objects.create_superuser(
+        username="admin-update-lista-espera",
+        email="admin-update-lista-espera@vat.test",
+        password="test1234",
+    )
+    curso = Curso.objects.create(
+        centro=centro,
+        nombre="Curso update espera",
+        modalidad=modalidad,
+        estado="planificado",
+    )
+    comision = ComisionCurso.objects.create(
+        curso=curso,
+        ubicacion=ubicacion,
+        codigo_comision="UPD-LE-01",
+        nombre="Comision update espera",
+        cupo_total=20,
+        acepta_lista_espera=True,
+        cupo_lista_espera=5,
+        fecha_inicio=date(2026, 4, 1),
+        fecha_fin=date(2026, 4, 30),
+        estado="activa",
+    )
+    base_payload = {
+        "curso": str(curso.pk),
+        "ubicacion": str(ubicacion.pk),
+        "cupo_total": "30",
+        "fecha_inicio": "2026-04-01",
+        "fecha_fin": "2026-04-30",
+        "estado": "activa",
+        "observaciones": "",
+    }
+
+    client.force_login(user)
+    response_on = client.post(
+        reverse("vat_comision_curso_update", kwargs={"pk": comision.pk}),
+        data={
+            **base_payload,
+            "acepta_lista_espera": "on",
+            "cupo_lista_espera": "12",
+        },
+    )
+    comision.refresh_from_db()
+    assert response_on.status_code == 302
+    assert comision.acepta_lista_espera is True
+    assert comision.cupo_lista_espera == 12
+    assert comision.cupo_total == 30
+
+    response_off = client.post(
+        reverse("vat_comision_curso_update", kwargs={"pk": comision.pk}),
+        data=base_payload,
+    )
+    comision.refresh_from_db()
+    assert response_off.status_code == 302
+    assert comision.acepta_lista_espera is False
+    assert comision.cupo_lista_espera is None
 
 
 @pytest.mark.django_db

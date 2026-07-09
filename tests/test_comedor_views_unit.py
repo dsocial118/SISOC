@@ -398,6 +398,10 @@ def test_comedor_detail_get_context_data_selected_admision_flow(mocker):
     )
     mocker.patch("comedores.views.comedor.IntervencionForm", return_value="iform")
     mocker.patch("comedores.views.comedor.ObservacionForm", return_value="oform")
+    mocker.patch(
+        "comedores.views.comedor.get_prestacion_conformidad_pending_period",
+        return_value=None,
+    )
 
     ctx = view.get_context_data()
 
@@ -446,6 +450,10 @@ def test_comedor_detail_no_consulta_transacciones_sin_permiso_comedor(mocker):
     obtener_resumen = mocker.patch(
         "comedores.views.comedor.DWTransaccionesService.obtener_resumen_ultimo_periodo"
     )
+    mocker.patch(
+        "comedores.views.comedor.get_prestacion_conformidad_pending_period",
+        return_value=None,
+    )
 
     ctx = view.get_context_data()
 
@@ -490,6 +498,10 @@ def test_comedor_detail_consulta_transacciones_con_permiso_comedor(mocker):
     obtener_resumen = mocker.patch(
         "comedores.views.comedor.DWTransaccionesService.obtener_resumen_ultimo_periodo",
         return_value="resumen",
+    )
+    mocker.patch(
+        "comedores.views.comedor.get_prestacion_conformidad_pending_period",
+        return_value=None,
     )
 
     ctx = view.get_context_data()

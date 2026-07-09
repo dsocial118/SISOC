@@ -1,13 +1,43 @@
 from django.views.generic import View
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.core.exceptions import PermissionDenied
 from django.db.models import Case, When, Value, IntegerField
 from core.mixins import CSVExportMixin
 from core.services.column_preferences import build_columns_context_from_fields
+from iam.services import user_has_any_permission_codes, user_has_permission_code
 from comedores.services.comedor_service import ComedorService
 
 
 class ComedorExportView(LoginRequiredMixin, CSVExportMixin, View):
     export_filename = "listado_comedores.csv"
+    list_permission_codes = (
+        "comedores.view_comedor",
+        "admisiones.view_admision",
+        "acompanamientos.view_informacionrelevante",
+    )
+    export_permission_code = "auth.role_exportar_a_csv"
+    admin_permission_codes = (
+        "auth.role_admin",
+        "auth.role_administrador",
+        "auth.role_superadmin",
+    )
+
+    def check_export_permission(self, request):
+        if not request.user.is_authenticated:
+            raise PermissionDenied
+
+        if request.user.is_superuser or user_has_any_permission_codes(
+            request.user, self.admin_permission_codes
+        ):
+            return True
+
+        if not user_has_any_permission_codes(request.user, self.list_permission_codes):
+            raise PermissionDenied
+
+        if not user_has_permission_code(request.user, self.export_permission_code):
+            raise PermissionDenied
+
+        return True
 
     def get_export_columns(self):
         headers = [
