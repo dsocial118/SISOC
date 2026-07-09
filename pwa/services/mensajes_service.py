@@ -12,10 +12,12 @@ from comunicados.models import (
     SubtipoComunicado,
     TipoComunicado,
 )
+from comedores.models import Comedor
 from pwa.models import LecturaMensajePWA
 from pwa.services.auditoria_operacion_service import registrar_evento_operacion
 from rendicioncuentasmensual.models import RendicionCuentaMensual
-from users.services_pwa import get_accessible_comedor_ids
+from users.models import AccesoComedorPWA
+from users.services_pwa import get_access_rows, get_accessible_comedor_ids
 
 MOBILE_RENDICION_PERMISSION_CODE = "rendicioncuentasmensual.manage_mobile_rendicion"
 RENDICION_MESSAGE_ACTION_MARKER = "[SISOC_ACCION]rendicion_detalle:"
@@ -29,30 +31,55 @@ def _assert_user_has_comedor_access(*, user, comedor_id: int) -> None:
         raise Http404("Espacio no encontrado.")
 
 
-def _visible_messages_queryset(*, comedor_id: int):
+def _get_user_organizacion_access_ids(user) -> set[int]:
+    return set(
+        get_access_rows(user)
+        .filter(
+            tipo_asociacion=AccesoComedorPWA.TIPO_ASOCIACION_ORGANIZACION,
+            organizacion_id__isnull=False,
+        )
+        .values_list("organizacion_id", flat=True)
+        .distinct()
+    )
+
+
+def _visible_messages_queryset(*, comedor_id: int, user):
+    organizacion_id = (
+        Comedor.objects.filter(pk=comedor_id)
+        .values_list("organizacion_id", flat=True)
+        .first()
+    )
+    destinatarios_filter = (
+        Q(subtipo=SubtipoComunicado.INSTITUCIONAL)
+        | Q(
+            subtipo=SubtipoComunicado.COMEDORES,
+            para_todos_comedores=True,
+        )
+        | Q(
+            subtipo=SubtipoComunicado.COMEDORES,
+            comedores__id=comedor_id,
+        )
+    )
+    if organizacion_id and organizacion_id in _get_user_organizacion_access_ids(user):
+        destinatarios_filter |= Q(
+            subtipo=SubtipoComunicado.ORGANIZACIONES,
+            organizaciones__id=organizacion_id,
+        )
+
     return (
         Comunicado.objects.filter(
             tipo=TipoComunicado.EXTERNO,
             subtipo__in=(
                 SubtipoComunicado.INSTITUCIONAL,
                 SubtipoComunicado.COMEDORES,
+                SubtipoComunicado.ORGANIZACIONES,
             ),
             estado=EstadoComunicado.PUBLICADO,
         )
         .filter(
             Q(fecha_vencimiento__isnull=True) | Q(fecha_vencimiento__gt=timezone.now())
         )
-        .filter(
-            Q(subtipo=SubtipoComunicado.INSTITUCIONAL)
-            | Q(
-                subtipo=SubtipoComunicado.COMEDORES,
-                para_todos_comedores=True,
-            )
-            | Q(
-                subtipo=SubtipoComunicado.COMEDORES,
-                comedores__id=comedor_id,
-            )
-        )
+        .filter(destinatarios_filter)
         .distinct()
         .order_by("-fecha_publicacion", "-fecha_creacion", "-id")
     )
@@ -98,7 +125,7 @@ def _filter_out_finalized_rendicion_messages(items):
 def list_mensajes_for_espacio(*, comedor_id: int, user):
     _assert_user_has_comedor_access(user=user, comedor_id=comedor_id)
     accessible_comedor_ids = get_accessible_comedor_ids(user)
-    queryset = _visible_messages_queryset(comedor_id=comedor_id)
+    queryset = _visible_messages_queryset(comedor_id=comedor_id, user=user)
     if not user_has_permission_code(user, MOBILE_RENDICION_PERMISSION_CODE):
         queryset = queryset.exclude(cuerpo__contains=RENDICION_MESSAGE_ACTION_MARKER)
     lecturas_qs = LecturaMensajePWA.objects.filter(
@@ -144,6 +171,19 @@ def _snapshot_lectura(lectura: LecturaMensajePWA) -> dict:
     }
 
 
+def _get_comedor_ids_para_lectura_organizacion(*, comunicado, actor) -> list[int]:
+    organizacion_ids = set(comunicado.organizaciones.values_list("id", flat=True))
+    organizacion_ids &= _get_user_organizacion_access_ids(actor)
+    if not organizacion_ids:
+        return []
+    return list(
+        Comedor.objects.filter(
+            id__in=get_accessible_comedor_ids(actor),
+            organizacion_id__in=organizacion_ids,
+        ).values_list("id", flat=True)
+    )
+
+
 @transaction.atomic
 def marcar_mensaje_como_visto(*, comedor_id: int, comunicado_id: int, actor):
     comunicado = get_mensaje_for_espacio(
@@ -153,10 +193,20 @@ def marcar_mensaje_como_visto(*, comedor_id: int, comunicado_id: int, actor):
     )
     now = timezone.now()
 
-    if comunicado.subtipo == SubtipoComunicado.INSTITUCIONAL:
+    if comunicado.subtipo in (
+        SubtipoComunicado.INSTITUCIONAL,
+        SubtipoComunicado.ORGANIZACIONES,
+    ):
         lecturas = []
         first_lectura = None
-        for accessible_comedor_id in get_accessible_comedor_ids(actor):
+        if comunicado.subtipo == SubtipoComunicado.INSTITUCIONAL:
+            lectura_comedor_ids = get_accessible_comedor_ids(actor)
+        else:
+            lectura_comedor_ids = _get_comedor_ids_para_lectura_organizacion(
+                comunicado=comunicado,
+                actor=actor,
+            )
+        for accessible_comedor_id in lectura_comedor_ids:
             lectura, created = LecturaMensajePWA.objects.get_or_create(
                 comunicado=comunicado,
                 comedor_id=accessible_comedor_id,

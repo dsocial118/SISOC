@@ -664,6 +664,131 @@ _TRABAJADOR_NIVELES_HABILITAN_FORMACION = frozenset(
     }
 )
 
+# ─────────────────────────────────────────────────────────────────────────────
+# Constantes de choices para NominaCentroInfancia (Destinatarios CDI)
+# ─────────────────────────────────────────────────────────────────────────────
+
+NOMINA_TIPO_REGISTRO_CHOICES = [
+    ("alta", "Alta"),
+    ("seguimiento", "Seguimiento"),
+    ("baja", "Baja"),
+]
+
+NOMINA_RELACION_RESPONSABLE_CHOICES = [
+    ("madre", "Madre"),
+    ("padre", "Padre"),
+    ("abuela", "Abuela"),
+    ("abuelo", "Abuelo"),
+    ("tutora", "Tutora"),
+    ("tutor", "Tutor"),
+    ("curadora", "Curadora"),
+    ("curador", "Curador"),
+    ("referente_afectivo", "Referente afectivo/a"),
+    ("acompanante", "Acompañante"),
+    ("otro", "Otro"),
+]
+
+NOMINA_SALA_CHOICES = [
+    ("menos_1_anio", "Menos de un año"),
+    ("1_anio", "1 año"),
+    ("2_anios", "2 años"),
+    ("3_anios", "3 años"),
+    ("4_anios", "4 años"),
+    ("multiedad", "Multiedad"),
+]
+
+NOMINA_EDAD_UNIDAD_CHOICES = [
+    ("meses", "Meses"),
+    ("anios", "Años"),
+]
+
+NOMINA_COBERTURA_SALUD_CHOICES = [
+    ("publica_exclusiva", "Pública exclusiva"),
+    ("obra_social", "Obra social"),
+    ("prepaga", "Prepaga / medicina privada"),
+    ("no_corresponde", "No corresponde"),
+]
+
+NOMINA_CONTROLES_SANITARIOS_CHOICES = [
+    ("0", "0 controles"),
+    ("1", "1 control"),
+    ("2", "2 controles"),
+    ("3", "3 controles"),
+    ("4", "4 controles"),
+    ("5", "5 controles"),
+    ("6", "6 controles"),
+    ("7", "7 controles"),
+]
+
+NOMINA_LACTANCIA_CHOICES = [
+    ("exclusiva", "Exclusiva"),
+    ("complementaria", "Complementaria"),
+    ("continuada", "Continuada"),
+    ("no_lactante", "No es lactante"),
+]
+
+NOMINA_DX_PESO_CHOICES = [
+    ("pn", "PN (Peso normal)"),
+    ("s", "S (Sobrepeso)"),
+    ("o", "O (Obesidad)"),
+    ("dc", "DC (Desnutrición crónica)"),
+    ("dg", "DG (Desnutrición global)"),
+    ("dl", "DL (Desnutrición leve)"),
+    ("dm", "DM (Desnutrición moderada)"),
+]
+
+NOMINA_DX_TALLA_CHOICES = [
+    ("tn", "TN (Talla normal)"),
+    ("bt", "BT (Baja talla)"),
+    ("btg", "BTG (Baja talla grave)"),
+    ("dt", "DT (Desarrollo talla)"),
+    ("e", "E (Elevado)"),
+]
+
+NOMINA_ORIENTACION_MSAL_CHOICES = [
+    ("a", "A"),
+    ("bp_bt", "BP-BT"),
+    ("e_orientacion", "E"),
+    ("o_orientacion", "O"),
+    ("rbp", "RBP"),
+    ("s_orientacion", "S"),
+]
+
+NOMINA_ALERGIA_CHOICES = [
+    ("leche_vaca", "Leche de vaca"),
+    ("tacc", "Trigo-Avena-Cebada-Centeno (TACC)"),
+    ("huevo", "Huevo"),
+    ("soja", "Soja"),
+    ("pescado", "Pescado"),
+    ("frutos_secos", "Frutos secos"),
+]
+
+NOMINA_DOSIS_VACUNA_CHOICES = [
+    ("0_dosis", "0 dosis"),
+    ("1_dosis", "1 dosis"),
+    ("2_dosis", "2 dosis"),
+    ("3_dosis", "3 dosis"),
+    ("sin_dato", "Sin dato"),
+]
+
+
+NOMINA_VACUNAS = [
+    ("bcg", "BCG"),
+    ("neumococo", "Neumococo Conjugada"),
+    ("quintuple", "Quíntuple o Pentavalente"),
+    ("polio", "Polio (IPV o SALK)"),
+    ("rotavirus", "Rotavirus"),
+    ("meningococo", "Meningococo ACYW"),
+    ("antigripal", "Antigripal"),
+    ("hepatitis_a", "Hepatitis A"),
+    ("triple_viral", "Triple Viral"),
+    ("varicela", "Varicela"),
+    ("triple_bacteriana_celular", "Triple Bacteriana Celular"),
+    ("triple_bacteriana_acelular", "Triple Bacteriana Acelular"),
+    ("sincicial_respiratorio", "Virus Sincicial Respiratorio"),
+    ("fiebre_amarilla", "Fiebre Amarilla"),
+]
+
 
 def _trabajador_etiquetas(values, choices):
     """Traduce claves de un multiselect (JSONField) a sus etiquetas legibles."""
@@ -827,6 +952,12 @@ class Trabajador(SoftDeleteModelMixin, models.Model):
         null=True,
         related_name="+",
         verbose_name="Jurisdicción",
+    )
+    departamento_contacto = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        verbose_name="Departamento",
     )
     municipio_contacto = models.ForeignKey(
         "core.Municipio",
@@ -1026,6 +1157,30 @@ class Trabajador(SoftDeleteModelMixin, models.Model):
             raise ValidationError(errors)
 
 
+class NominaPais(models.Model):
+    nombre = models.CharField(max_length=255, unique=True)
+
+    class Meta:
+        ordering = ["nombre"]
+        verbose_name = "País"
+        verbose_name_plural = "Países"
+
+    def __str__(self):
+        return self.nombre
+
+
+class NominaNacionalidad(models.Model):
+    nombre = models.CharField(max_length=255, unique=True)
+
+    class Meta:
+        ordering = ["nombre"]
+        verbose_name = "Nacionalidad"
+        verbose_name_plural = "Nacionalidades"
+
+    def __str__(self):
+        return self.nombre
+
+
 class NominaCentroInfancia(SoftDeleteModelMixin, models.Model):
     class RespuestaSiNoNsNc(models.TextChoices):
         SI = "si", "Si"
@@ -1194,6 +1349,229 @@ class NominaCentroInfancia(SoftDeleteModelMixin, models.Model):
     )
     observaciones = models.TextField(blank=True, null=True)
 
+    # ── Sección 3: Registro ──────────────────────────────────────────────────
+    tipo_registro = models.CharField(
+        max_length=16,
+        choices=NOMINA_TIPO_REGISTRO_CHOICES,
+        blank=True,
+        null=True,
+    )
+    fecha_registro = models.DateField(blank=True, null=True)
+
+    # ── Sección 4: Trabajador que registra ──────────────────────────────────
+    trabajador_registra = models.ForeignKey(
+        "Trabajador",
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name="nominas_registradas",
+    )
+
+    # ── Sección 5: Responsable 1 (campos extendidos) ─────────────────────────
+    responsable_legal_1_relacion = models.CharField(
+        max_length=32,
+        choices=NOMINA_RELACION_RESPONSABLE_CHOICES,
+        blank=True,
+        null=True,
+    )
+    responsable_legal_1_fecha_nacimiento = models.DateField(blank=True, null=True)
+    responsable_legal_1_tipo_documentacion = models.CharField(
+        max_length=64,
+        choices=TRABAJADOR_TIPO_DOCUMENTACION_CHOICES,
+        blank=True,
+        null=True,
+    )
+    responsable_legal_1_cuit = models.CharField(max_length=20, blank=True, null=True)
+    responsable_legal_1_pais_nacimiento = models.CharField(
+        max_length=100, blank=True, null=True
+    )
+    responsable_legal_1_nacionalidad = models.CharField(
+        max_length=100, blank=True, null=True
+    )
+    responsable_legal_1_sexo_registral = models.CharField(
+        max_length=16,
+        choices=TRABAJADOR_SEXO_REGISTRAL_CHOICES,
+        blank=True,
+        null=True,
+    )
+    responsable_legal_1_nivel_educativo = models.CharField(
+        max_length=32,
+        choices=TRABAJADOR_NIVEL_EDUCATIVO_CHOICES,
+        blank=True,
+        null=True,
+    )
+    responsable_legal_1_consentimiento = models.CharField(
+        max_length=4,
+        choices=[("si", "Sí"), ("no", "No")],
+        blank=True,
+        null=True,
+    )
+
+    # ── Sección 6: Responsable 2 (campos extendidos) ─────────────────────────
+    responsable_legal_2_relacion = models.CharField(
+        max_length=32,
+        choices=NOMINA_RELACION_RESPONSABLE_CHOICES,
+        blank=True,
+        null=True,
+    )
+    responsable_legal_2_fecha_nacimiento = models.DateField(blank=True, null=True)
+    responsable_legal_2_tipo_documentacion = models.CharField(
+        max_length=64,
+        choices=TRABAJADOR_TIPO_DOCUMENTACION_CHOICES,
+        blank=True,
+        null=True,
+    )
+    responsable_legal_2_cuit = models.CharField(max_length=20, blank=True, null=True)
+    responsable_legal_2_pais_nacimiento = models.CharField(
+        max_length=100, blank=True, null=True
+    )
+    responsable_legal_2_nacionalidad = models.CharField(
+        max_length=100, blank=True, null=True
+    )
+    responsable_legal_2_sexo_registral = models.CharField(
+        max_length=16,
+        choices=TRABAJADOR_SEXO_REGISTRAL_CHOICES,
+        blank=True,
+        null=True,
+    )
+    responsable_legal_2_nivel_educativo = models.CharField(
+        max_length=32,
+        choices=TRABAJADOR_NIVEL_EDUCATIVO_CHOICES,
+        blank=True,
+        null=True,
+    )
+    responsable_legal_2_consentimiento = models.CharField(
+        max_length=4,
+        choices=[("si", "Sí"), ("no", "No")],
+        blank=True,
+        null=True,
+    )
+
+    # ── Sección 7: Datos del niño/a (campos extendidos) ──────────────────────
+    tipo_documentacion = models.CharField(
+        max_length=64,
+        choices=TRABAJADOR_TIPO_DOCUMENTACION_CHOICES,
+        blank=True,
+        null=True,
+    )
+    cuit_nino = models.CharField(max_length=20, blank=True, null=True)
+    pais_nacimiento = models.CharField(max_length=100, blank=True, null=True)
+    edad_unidad = models.CharField(
+        max_length=8,
+        choices=NOMINA_EDAD_UNIDAD_CHOICES,
+        blank=True,
+        null=True,
+    )
+
+    # ── Sección 8: Domicilio (campos extendidos) ──────────────────────────────
+    tipo_barrio = models.CharField(
+        max_length=32,
+        choices=TRABAJADOR_TIPO_BARRIO_CHOICES,
+        blank=True,
+        null=True,
+    )
+    convivientes = models.PositiveSmallIntegerField(blank=True, null=True)
+
+    # ── Sección 9: Cultura e identidad ────────────────────────────────────────
+    grupo_pertenencia = models.JSONField(default=list, blank=True)
+    lenguajes = models.JSONField(default=list, blank=True)
+    necesito_interprete = models.CharField(
+        max_length=4,
+        choices=[("si", "Sí"), ("no", "No")],
+        blank=True,
+        null=True,
+    )
+
+    # ── Sección 10: Discapacidad (campos extendidos) ──────────────────────────
+    tipo_discapacidad = models.JSONField(default=list, blank=True)
+    numero_cud = models.CharField(max_length=20, blank=True, null=True)
+
+    # ── Sección 11: Salud ─────────────────────────────────────────────────────
+    cobertura_salud = models.CharField(
+        max_length=32,
+        choices=NOMINA_COBERTURA_SALUD_CHOICES,
+        blank=True,
+        null=True,
+    )
+    controles_sanitarios_ultimo_anio = models.CharField(
+        max_length=4,
+        choices=NOMINA_CONTROLES_SANITARIOS_CHOICES,
+        blank=True,
+        null=True,
+    )
+
+    # ── Sección 12: Antropometría ─────────────────────────────────────────────
+    longitud_acostado = models.DecimalField(
+        max_digits=5, decimal_places=1, blank=True, null=True
+    )
+    perimetro_cefalico = models.DecimalField(
+        max_digits=5, decimal_places=1, blank=True, null=True
+    )
+
+    # ── Sección 13: Nutrición ─────────────────────────────────────────────────
+    lactancia = models.CharField(
+        max_length=16,
+        choices=NOMINA_LACTANCIA_CHOICES,
+        blank=True,
+        null=True,
+    )
+    diagnostico_peso = models.CharField(
+        max_length=16,
+        choices=NOMINA_DX_PESO_CHOICES,
+        blank=True,
+        null=True,
+    )
+    diagnostico_talla = models.CharField(
+        max_length=16,
+        choices=NOMINA_DX_TALLA_CHOICES,
+        blank=True,
+        null=True,
+    )
+    orientacion_msal = models.CharField(
+        max_length=16,
+        choices=NOMINA_ORIENTACION_MSAL_CHOICES,
+        blank=True,
+        null=True,
+    )
+    alergias_alimentarias = models.JSONField(default=list, blank=True)
+
+    # ── Sección 14: ANSES ─────────────────────────────────────────────────────
+    anses_auh = models.CharField(
+        max_length=4,
+        choices=[("si", "Sí"), ("no", "No")],
+        blank=True,
+        null=True,
+    )
+    anses_aue = models.CharField(
+        max_length=4,
+        choices=[("si", "Sí"), ("no", "No")],
+        blank=True,
+        null=True,
+    )
+    anses_acsi = models.CharField(
+        max_length=4,
+        choices=[("si", "Sí"), ("no", "No")],
+        blank=True,
+        null=True,
+    )
+    anses_acn = models.CharField(
+        max_length=4,
+        choices=[("si", "Sí"), ("no", "No")],
+        blank=True,
+        null=True,
+    )
+
+    # ── Sección 15: Vacunación NOMIVAC ────────────────────────────────────────
+    vacunacion_nomivac = models.JSONField(default=dict, blank=True)
+
+    # ── Sección 16: Desarrollo Infantil Temprano ──────────────────────────────
+    recibe_apoyo_desarrollo = models.CharField(
+        max_length=4,
+        choices=[("si", "Sí"), ("no", "No")],
+        blank=True,
+        null=True,
+    )
+
     class Meta:
         verbose_name = "Nómina Centro de Desarrollo Infantil"
         verbose_name_plural = "Nóminas Centro de Desarrollo Infantil"
@@ -1216,25 +1594,58 @@ class NominaCentroInfancia(SoftDeleteModelMixin, models.Model):
             )
         )
 
+    @staticmethod
+    def _validar_multiselect(field_name, value, choices):
+        allowed = {item[0] for item in choices}
+        if value in (None, ""):
+            return
+        if not isinstance(value, list):
+            raise ValidationError({field_name: "Seleccione opciones válidas."})
+        invalid = [v for v in value if v not in allowed]
+        if invalid:
+            raise ValidationError({field_name: "Seleccione opciones válidas."})
+
     def clean(self):
         super().clean()
         errors = {}
 
-        if self.pertenece_pueblo_originario != self.RespuestaSiNoNsNc.SI:
+        # ── Pueblo originario ─────────────────────────────────────────────────
+        # El formulario ampliado usa grupo_pertenencia como indicador vigente.
+        if "indigena" not in (self.grupo_pertenencia or []):
+            self.pueblo_originario_cual = None
+        # El campo nuevo (grupo_pertenencia) es el único determinante.
+        # El campo legacy (pertenece_pueblo_originario) ya no controla la lógica.
+        si_pueblo_originario = "indigena" in (self.grupo_pertenencia or [])
+        if not si_pueblo_originario:
             self.pueblo_originario_cual = None
         elif not self.pueblo_originario_cual:
             errors["pueblo_originario_cual"] = (
                 "Este campo es obligatorio cuando pertenece a un pueblo originario."
             )
 
+        # ── Discapacidad ─────────────────────────────────────────────────────
         if self.tiene_discapacidad != self.RespuestaSiNoNsNc.SI:
             self.discapacidad_tipo = None
             self.recibe_apoyo_discapacidad = None
-        elif not self.discapacidad_tipo:
-            errors["discapacidad_tipo"] = (
-                "Este campo es obligatorio cuando indica discapacidad."
-            )
+            self.tipo_discapacidad = []
+            self.numero_cud = None
+        if not self.posee_cud:
+            self.numero_cud = None
 
+        # ── Validar multiselect JSONFields ───────────────────────────────────
+        multiselect_fields = [
+            ("grupo_pertenencia", TRABAJADOR_GRUPO_PERTENENCIA_CHOICES),
+            ("lenguajes", TRABAJADOR_LENGUAJES_CHOICES),
+            ("tipo_discapacidad", TRABAJADOR_TIPO_DISCAPACIDAD_CHOICES),
+            ("alergias_alimentarias", NOMINA_ALERGIA_CHOICES),
+        ]
+        for fname, choices in multiselect_fields:
+            try:
+                self._validar_multiselect(fname, getattr(self, fname), choices)
+            except ValidationError as exc:
+                errors.update(exc.message_dict)
+
+        # ── Validar geografía domicilio ───────────────────────────────────────
         relation_rules = (
             (
                 "municipio_domicilio",
@@ -1261,6 +1672,63 @@ class NominaCentroInfancia(SoftDeleteModelMixin, models.Model):
 
         if errors:
             raise ValidationError(errors)
+
+    @property
+    def grupo_pertenencia_display(self):
+        return _trabajador_etiquetas(
+            self.grupo_pertenencia, TRABAJADOR_GRUPO_PERTENENCIA_CHOICES
+        )
+
+    @property
+    def lenguajes_display(self):
+        return _trabajador_etiquetas(self.lenguajes, TRABAJADOR_LENGUAJES_CHOICES)
+
+    @property
+    def tipo_discapacidad_display(self):
+        return _trabajador_etiquetas(
+            self.tipo_discapacidad, TRABAJADOR_TIPO_DISCAPACIDAD_CHOICES
+        )
+
+    @property
+    def alergias_alimentarias_display(self):
+        return _trabajador_etiquetas(self.alergias_alimentarias, NOMINA_ALERGIA_CHOICES)
+
+
+class NominaCentroInfanciaDerivacion(models.Model):
+    nomina_origen = models.ForeignKey(
+        NominaCentroInfancia,
+        on_delete=models.PROTECT,
+        related_name="derivaciones_origen",
+    )
+    nomina_destino = models.ForeignKey(
+        NominaCentroInfancia,
+        on_delete=models.PROTECT,
+        related_name="derivaciones_destino",
+    )
+    centro_origen = models.ForeignKey(
+        CentroDeInfancia,
+        on_delete=models.PROTECT,
+        related_name="+",
+    )
+    centro_destino = models.ForeignKey(
+        CentroDeInfancia,
+        on_delete=models.PROTECT,
+        related_name="+",
+    )
+    usuario = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+    )
+    fecha = models.DateTimeField(auto_now_add=True)
+    motivo = models.TextField(blank=True)
+
+    class Meta:
+        verbose_name = "Derivación de nómina CDI"
+        verbose_name_plural = "Derivaciones de nómina CDI"
+        ordering = ["-fecha"]
 
 
 class FormularioCDI(SoftDeleteModelMixin, models.Model):

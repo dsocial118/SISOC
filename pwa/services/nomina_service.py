@@ -7,7 +7,7 @@ from django.db.models import Q
 from django.utils import timezone
 
 from ciudadanos.models import Ciudadano
-from comedores.models import Comedor, Nomina
+from comedores.models import Comedor, ComedorDatosConvenioPnud, Nomina
 from comedores.utils import comedor_usa_admision_para_nomina
 from comedores.services.comedor_service.impl import ComedorService
 from core.models import Sexo
@@ -19,6 +19,9 @@ from pwa.models import (
     RegistroAsistenciaNominaPWA,
 )
 from pwa.services.auditoria_operacion_service import registrar_evento_operacion
+from pwa.services.nomina_destinatarios_pdf_service import (
+    generar_nomina_destinatarios_pdf,
+)
 
 DNI_REGEX = re.compile(r"^\d{7,8}$")
 
@@ -52,6 +55,7 @@ def _snapshot_nomina_profile(profile: NominaEspacioPWA | None) -> dict | None:
         "es_indocumentado": profile.es_indocumentado,
         "pertenece_comunidad_indigena": profile.pertenece_comunidad_indigena,
         "situacion_calle": profile.situacion_calle,
+        "persona_con_celiaquia": profile.persona_con_celiaquia,
         "identificador_interno": profile.identificador_interno,
         "activo": profile.activo,
         "fecha_baja": profile.fecha_baja,
@@ -91,6 +95,107 @@ def _active_nomina_queryset(*, comedor_id: int):
     ).exclude(estado=Nomina.ESTADO_BAJA)
 
 
+def _programa_nombre_normalizado(comedor: Comedor | None) -> str:
+    return " ".join(
+        str(getattr(getattr(comedor, "programa", None), "nombre", "") or "")
+        .lower()
+        .split()
+    )
+
+
+def _get_tope_nomina_alimentaria(comedor_id: int) -> int | None:
+    comedor = Comedor.objects.select_related("programa").filter(pk=comedor_id).first()
+    if not comedor:
+        return None
+
+    programa_nombre = _programa_nombre_normalizado(comedor)
+    if "abordaje comunitario" in programa_nombre or "pnud" in programa_nombre:
+        return (
+            ComedorDatosConvenioPnud.objects.filter(comedor_id=comedor_id)
+            .values_list("personas_conveniadas", flat=True)
+            .first()
+        )
+
+    if programa_nombre == "alimentar comunidad":
+        admision = ComedorService.get_admision_vigente_pwa(comedor_id)
+        return getattr(admision, "personas_conveniadas_nomina", None)
+
+    return None
+
+
+def _count_nomina_alimentaria_activa(
+    *, comedor_id: int, exclude_nomina_id: int | None = None
+) -> int:
+    queryset = _active_nomina_queryset(comedor_id=comedor_id).filter(
+        Q(perfil_pwa__asistencia_alimentaria=True, perfil_pwa__activo=True)
+        | Q(perfil_pwa__isnull=True)
+    )
+    if exclude_nomina_id:
+        queryset = queryset.exclude(pk=exclude_nomina_id)
+    return queryset.distinct().count()
+
+
+def _tope_nomina_alimentaria_cubierto(
+    *, comedor_id: int, exclude_nomina_id: int | None = None
+) -> bool:
+    tope = _get_tope_nomina_alimentaria(comedor_id)
+    if tope is None:
+        return False
+    return (
+        _count_nomina_alimentaria_activa(
+            comedor_id=comedor_id,
+            exclude_nomina_id=exclude_nomina_id,
+        )
+        >= tope
+    )
+
+
+def _apply_tope_nomina_alimentaria_on_create(
+    *,
+    comedor_id: int,
+    asistencia_alimentaria: bool,
+    asistencia_actividades: bool,
+) -> tuple[bool, bool]:
+    if not asistencia_alimentaria or not _tope_nomina_alimentaria_cubierto(
+        comedor_id=comedor_id
+    ):
+        return asistencia_alimentaria, asistencia_actividades
+    if asistencia_actividades:
+        return False, True
+    raise ValidationError(
+        {
+            "asistencia_alimentaria": (
+                "El cupo de personas conveniadas para prestacion alimentaria "
+                "ya se encuentra completo."
+            )
+        }
+    )
+
+
+def _validate_tope_nomina_alimentaria_on_update(
+    *,
+    comedor_id: int,
+    nomina_id: int,
+    current_asistencia_alimentaria: bool,
+    next_asistencia_alimentaria: bool,
+):
+    if current_asistencia_alimentaria or not next_asistencia_alimentaria:
+        return
+    if not _tope_nomina_alimentaria_cubierto(
+        comedor_id=comedor_id,
+        exclude_nomina_id=nomina_id,
+    ):
+        return
+    raise ValidationError(
+        {
+            "asistencia_alimentaria": (
+                "El cupo de personas conveniadas para prestacion alimentaria "
+                "ya se encuentra completo."
+            )
+        }
+    )
+
+
 def get_periodo_mensual_actual() -> date:
     return timezone.localdate().replace(day=1)
 
@@ -118,17 +223,16 @@ def validar_asistencia_nomina_habilitada():
 def _resolve_admision_para_comedor(*, comedor_id: int):
     from admisiones.models.admisiones import Admision
 
-    admision = (
-        Admision.objects.filter(comedor_id=comedor_id, activa=True)
-        .order_by("-id")
-        .first()
-    )
-    if admision:
-        return admision
-    admision = Admision.objects.filter(comedor_id=comedor_id).order_by("-id").first()
-    if admision:
-        return admision
-    return Admision.objects.create(comedor_id=comedor_id, activa=True)
+    with transaction.atomic():
+        Comedor.objects.select_for_update().get(pk=comedor_id)
+        admision = ComedorService.get_admision_vigente_pwa(comedor_id)
+        if admision:
+            return admision
+        return Admision.objects.create(
+            comedor_id=comedor_id,
+            activa=True,
+            vigente_pwa=True,
+        )
 
 
 def _build_nomina_link_fields(*, comedor_id: int) -> dict:
@@ -185,8 +289,6 @@ def _create_or_resolve_ciudadano(*, actor, data: dict) -> Ciudadano:
             raise ValidationError({"nombre": "Este campo es obligatorio."})
         if not apellido:
             raise ValidationError({"apellido": "Este campo es obligatorio."})
-        if not fecha_nacimiento:
-            raise ValidationError({"fecha_nacimiento": "Este campo es obligatorio."})
         if not sexo:
             raise ValidationError({"sexo_id": "Este campo es obligatorio."})
 
@@ -440,6 +542,70 @@ def _validate_asistencia(
 
 
 @transaction.atomic
+def sync_nomina_asistencia_actividades_web(
+    *,
+    nomina: Nomina,
+    comedor_id: int,
+    actor,
+    asistencia_alimentaria: bool,
+    asistencia_actividades: bool,
+    activity_ids,
+):
+    normalized_activity_ids = [
+        int(getattr(activity_id, "pk", activity_id))
+        for activity_id in (activity_ids or [])
+    ]
+    asistencia_alimentaria, asistencia_actividades = _validate_asistencia(
+        asistencia_alimentaria=asistencia_alimentaria,
+        asistencia_actividades=asistencia_actividades,
+        activity_ids=normalized_activity_ids,
+    )
+    profile, created = NominaEspacioPWA.objects.get_or_create(
+        nomina=nomina,
+        defaults={
+            "asistencia_alimentaria": asistencia_alimentaria,
+            "asistencia_actividades": asistencia_actividades,
+            "activo": True,
+            "creado_por": actor,
+            "actualizado_por": actor,
+        },
+    )
+    snapshot_antes = None if created else _snapshot_nomina_profile(profile)
+    profile.asistencia_alimentaria = asistencia_alimentaria
+    profile.asistencia_actividades = asistencia_actividades
+    profile.activo = True
+    profile.fecha_baja = None
+    profile.actualizado_por = actor
+    profile.save(
+        update_fields=[
+            "asistencia_alimentaria",
+            "asistencia_actividades",
+            "activo",
+            "fecha_baja",
+            "actualizado_por",
+            "fecha_actualizacion",
+        ]
+    )
+    _sync_inscripciones_actividades(
+        nomina=nomina,
+        comedor_id=comedor_id,
+        activity_ids=normalized_activity_ids if asistencia_actividades else [],
+        actor=actor,
+    )
+    registrar_evento_operacion(
+        actor=actor,
+        comedor_id=comedor_id,
+        entidad="nomina_perfil",
+        entidad_id=profile.id,
+        accion="create" if created else "update",
+        snapshot_antes=snapshot_antes,
+        snapshot_despues=_snapshot_nomina_profile(profile),
+        metadata={"origen": "web_nomina"},
+    )
+    return profile
+
+
+@transaction.atomic
 def create_nomina_persona(*, comedor_id: int, actor, data: dict) -> Nomina:
     asistencia_alimentaria = bool(data.get("asistencia_alimentaria"))
     asistencia_actividades = bool(data.get("asistencia_actividades"))
@@ -450,6 +616,13 @@ def create_nomina_persona(*, comedor_id: int, actor, data: dict) -> Nomina:
         asistencia_alimentaria=asistencia_alimentaria,
         asistencia_actividades=asistencia_actividades,
         activity_ids=activity_ids,
+    )
+    asistencia_alimentaria, asistencia_actividades = (
+        _apply_tope_nomina_alimentaria_on_create(
+            comedor_id=comedor_id,
+            asistencia_alimentaria=asistencia_alimentaria,
+            asistencia_actividades=asistencia_actividades,
+        )
     )
 
     ciudadano_id = data.get("ciudadano_id")
@@ -496,6 +669,7 @@ def create_nomina_persona(*, comedor_id: int, actor, data: dict) -> Nomina:
         data.get("pertenece_comunidad_indigena")
     )
     profile.situacion_calle = bool(data.get("situacion_calle"))
+    profile.persona_con_celiaquia = bool(data.get("persona_con_celiaquia"))
     profile.identificador_interno = (
         data.get("identificador_interno") or ""
     ).strip() or None
@@ -509,6 +683,7 @@ def create_nomina_persona(*, comedor_id: int, actor, data: dict) -> Nomina:
             "es_indocumentado",
             "pertenece_comunidad_indigena",
             "situacion_calle",
+            "persona_con_celiaquia",
             "identificador_interno",
             "activo",
             "fecha_baja",
@@ -593,32 +768,50 @@ def update_nomina_persona(*, nomina: Nomina, actor, data: dict) -> Nomina:
         ciudadano_fields.append("modificado")
         ciudadano.save(update_fields=ciudadano_fields)
 
-    asistencia_alimentaria = (
-        bool(data.get("asistencia_alimentaria"))
-        if "asistencia_alimentaria" in data
-        else bool(profile.asistencia_alimentaria)
-    )
-    asistencia_actividades = (
-        bool(data.get("asistencia_actividades"))
-        if "asistencia_actividades" in data
-        else bool(profile.asistencia_actividades)
-    )
-    activity_ids = (
-        [int(activity_id) for activity_id in (data.get("actividad_ids") or [])]
-        if "actividad_ids" in data
-        else list(
-            InscriptoActividadEspacioPWA.objects.filter(
-                nomina=nomina,
-                actividad_espacio__comedor_id=_nomina_comedor_id(nomina),
-                activo=True,
-            ).values_list("actividad_espacio_id", flat=True)
+    touches_asistencia = any(
+        key in data
+        for key in (
+            "asistencia_alimentaria",
+            "asistencia_actividades",
+            "actividad_ids",
         )
     )
-    asistencia_alimentaria, asistencia_actividades = _validate_asistencia(
-        asistencia_alimentaria=asistencia_alimentaria,
-        asistencia_actividades=asistencia_actividades,
-        activity_ids=activity_ids,
-    )
+    asistencia_alimentaria = bool(profile.asistencia_alimentaria)
+    asistencia_actividades = bool(profile.asistencia_actividades)
+    activity_ids = None
+    if touches_asistencia:
+        asistencia_alimentaria = (
+            bool(data.get("asistencia_alimentaria"))
+            if "asistencia_alimentaria" in data
+            else asistencia_alimentaria
+        )
+        asistencia_actividades = (
+            bool(data.get("asistencia_actividades"))
+            if "asistencia_actividades" in data
+            else asistencia_actividades
+        )
+        activity_ids = (
+            [int(activity_id) for activity_id in (data.get("actividad_ids") or [])]
+            if "actividad_ids" in data
+            else list(
+                InscriptoActividadEspacioPWA.objects.filter(
+                    nomina=nomina,
+                    actividad_espacio__comedor_id=_nomina_comedor_id(nomina),
+                    activo=True,
+                ).values_list("actividad_espacio_id", flat=True)
+            )
+        )
+        asistencia_alimentaria, asistencia_actividades = _validate_asistencia(
+            asistencia_alimentaria=asistencia_alimentaria,
+            asistencia_actividades=asistencia_actividades,
+            activity_ids=activity_ids,
+        )
+        _validate_tope_nomina_alimentaria_on_update(
+            comedor_id=_nomina_comedor_id(nomina),
+            nomina_id=nomina.id,
+            current_asistencia_alimentaria=bool(profile.asistencia_alimentaria),
+            next_asistencia_alimentaria=asistencia_alimentaria,
+        )
 
     nomina_fields = []
     if "observaciones" in data:
@@ -651,6 +844,8 @@ def update_nomina_persona(*, nomina: Nomina, actor, data: dict) -> Nomina:
         )
     if "situacion_calle" in data:
         profile.situacion_calle = bool(data.get("situacion_calle"))
+    if "persona_con_celiaquia" in data:
+        profile.persona_con_celiaquia = bool(data.get("persona_con_celiaquia"))
     profile.actualizado_por = actor
     profile.save(
         update_fields=[
@@ -659,18 +854,20 @@ def update_nomina_persona(*, nomina: Nomina, actor, data: dict) -> Nomina:
             "es_indocumentado",
             "pertenece_comunidad_indigena",
             "situacion_calle",
+            "persona_con_celiaquia",
             "identificador_interno",
             "actualizado_por",
             "fecha_actualizacion",
         ]
     )
 
-    _sync_inscripciones_actividades(
-        nomina=nomina,
-        comedor_id=_nomina_comedor_id(nomina),
-        activity_ids=activity_ids if asistencia_actividades else [],
-        actor=actor,
-    )
+    if touches_asistencia:
+        _sync_inscripciones_actividades(
+            nomina=nomina,
+            comedor_id=_nomina_comedor_id(nomina),
+            activity_ids=activity_ids if asistencia_actividades else [],
+            actor=actor,
+        )
     registrar_evento_operacion(
         actor=actor,
         comedor_id=_nomina_comedor_id(nomina),
@@ -830,6 +1027,7 @@ def sync_asistencia_alimentaria_nomina_mes_actual(
 ):
     validar_asistencia_nomina_habilitada()
     periodo_referencia = get_periodo_mensual_actual()
+    comedor = Comedor.objects.get(pk=comedor_id)
     queryset = (
         _active_nomina_queryset(comedor_id=comedor_id)
         .select_related("perfil_pwa")
@@ -908,10 +1106,18 @@ def sync_asistencia_alimentaria_nomina_mes_actual(
             },
         )
 
+    documento_nomina = generar_nomina_destinatarios_pdf(
+        comedor=comedor,
+        periodo_referencia=periodo_referencia,
+        actor=actor,
+        nomina_ids=sorted(selected_ids),
+    )
+
     return {
         "periodo_referencia": periodo_referencia,
         "periodo_label": periodo_referencia.strftime("%m/%Y"),
         "selected_nomina_ids": sorted(selected_ids),
         "created_count": len(created_records),
         "deleted_count": len(deleted_records),
+        "_nomina_destinatarios_documento": documento_nomina,
     }

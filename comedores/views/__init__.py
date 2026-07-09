@@ -23,6 +23,7 @@ from .nomina import (
     NominaDirectaDetailView,
     NominaImportarView,
     nomina_cambiar_estado,
+    nomina_derivar,
     nomina_editar_ajax,
 )
 from .observacion import (
@@ -46,8 +47,14 @@ from .actividades_pnud import (
     ActividadPnudListView,
     ActividadPnudUpdateView,
 )
+from .actividad_espacio_pwa import (
+    ActividadEspacioPWACreateView,
+    ActividadEspacioPWAUpdateView,
+)
 
 __all__ = [
+    "ActividadEspacioPWACreateView",
+    "ActividadEspacioPWAUpdateView",
     "ActividadPnudCreateView",
     "ActividadPnudDeactivateView",
     "ActividadPnudListView",
@@ -76,6 +83,7 @@ __all__ = [
     "ObservacionDetailView",
     "ObservacionUpdateView",
     "nomina_cambiar_estado",
+    "nomina_derivar",
     "nomina_editar_ajax",
     "relevamiento_crear_editar_ajax",
     "capacitacion_certificado_estado_ajax",

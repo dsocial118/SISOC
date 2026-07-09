@@ -7,6 +7,8 @@ from admisiones.views.web_views import (
     actualizar_numero_gde_archivo,
     actualizar_numero_gde_organizacion_admision,
     actualizar_convenio_numero,
+    actualizar_vigente_pwa,
+    actualizar_personas_conveniadas_nomina,
     actualizar_num_expediente,
     crear_documento_personalizado,
     resync_convenio_admision,
@@ -140,6 +142,16 @@ urlpatterns = [
         "ajax/actualizar-convenio-numero/",
         actualizar_convenio_numero,
         name="actualizar_convenio_numero",
+    ),
+    path(
+        "ajax/actualizar-vigente-pwa/",
+        actualizar_vigente_pwa,
+        name="actualizar_vigente_pwa",
+    ),
+    path(
+        "ajax/actualizar-personas-conveniadas-nomina/",
+        actualizar_personas_conveniadas_nomina,
+        name="actualizar_personas_conveniadas_nomina",
     ),
     path(
         "ajax/actualizar-num-expediente/",

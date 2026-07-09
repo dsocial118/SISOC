@@ -1,5 +1,6 @@
 import pytest
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Permission
 from django.utils import timezone
 from rest_framework.authtoken.models import Token
 from rest_framework.test import APIClient
@@ -51,6 +52,11 @@ def _create_representante(*, comedor, username="rep_act", password="testpass123"
         rol=AccesoComedorPWA.ROL_REPRESENTANTE,
         activo=True,
     )
+    perm = Permission.objects.get(
+        content_type__app_label="pwa",
+        codename="manage_colaboradores_pwa",
+    )
+    user.user_permissions.add(perm)
     return user
 
 
@@ -123,7 +129,7 @@ def test_create_update_delete_actividad_ok(comedor, dia):
         .order_by("id")
         .values_list("accion", flat=True)
     )
-    assert eventos == ["create", "update", "delete"]
+    assert eventos == ["create", "update", "deactivate"]
 
 
 @pytest.mark.django_db

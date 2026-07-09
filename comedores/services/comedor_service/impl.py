@@ -36,6 +36,7 @@ from comedores.forms.comedor_form import ImagenComedorForm
 from comedores.models import (
     ColaboradorEspacio,
     Comedor,
+    ComedorDatosConvenioPnud,
     AuditComedorPrograma,
     ImagenComedor,
     Nomina,
@@ -48,10 +49,16 @@ from comedores.utils import (
     get_id_by_nombre,
     normalize_field,
     preload_valores_comida_cache,
+    usa_datos_convenio_pnud,
 )
 from centrodefamilia.services.consulta_renaper import consultar_datos_renaper
 from core.models import Provincia, Municipio, Localidad, Nacionalidad
-from admisiones.models.admisiones import Admision
+from admisiones.models.admisiones import (
+    Admision,
+    InformeComplementario,
+    InformeComplementarioCampos,
+    InformeTecnico,
+)
 from rendicioncuentasmensual.models import RendicionCuentaMensual
 from intervenciones.models.intervenciones import Intervencion
 from expedientespagos.models import ExpedientePago
@@ -207,6 +214,11 @@ def _with_nomina_pwa_flags(qs_nomina):
         ),
         pwa_situacion_calle=Coalesce(
             "perfil_pwa__situacion_calle",
+            Value(False),
+            output_field=BooleanField(),
+        ),
+        pwa_persona_con_celiaquia=Coalesce(
+            "perfil_pwa__persona_con_celiaquia",
             Value(False),
             output_field=BooleanField(),
         ),
@@ -725,7 +737,10 @@ class ComedorService:
 
     @staticmethod
     def get_admision_timeline_context(admisiones_qs):
-        admision_activa = admisiones_qs.filter(activa=True).order_by("-id").first()
+        admision_activa = (
+            admisiones_qs.filter(vigente_pwa=True).order_by("-id").first()
+            or admisiones_qs.filter(activa=True).order_by("-id").first()
+        )
         admision_enviada = bool(
             admision_activa
             and getattr(admision_activa, "enviado_acompaniamiento", False)
@@ -752,6 +767,15 @@ class ComedorService:
             "timeline_ejecucion_circle": "2",
             "timeline_rendicion_circle": "3",
         }
+
+    @staticmethod
+    def get_admision_vigente_pwa(comedor_id):
+        admisiones_qs = Admision.objects.filter(comedor_id=comedor_id).order_by("-id")
+        return (
+            admisiones_qs.filter(vigente_pwa=True).first()
+            or admisiones_qs.filter(activa=True).first()
+            or admisiones_qs.first()
+        )
 
     @staticmethod
     def get_admision_timeline_context_from_admision(admision):
@@ -952,6 +976,76 @@ class ComedorService:
         return count
 
     @staticmethod
+    def aplicar_complementario_validado(informe_tecnico):
+        if not informe_tecnico:
+            return None
+        informe_complementario = (
+            InformeComplementario.objects.filter(
+                informe_tecnico=informe_tecnico,
+                estado="validado",
+            )
+            .order_by("-modificado", "-id")
+            .first()
+        )
+        if not informe_complementario:
+            return informe_tecnico
+
+        verbose_to_field = {
+            field.verbose_name.lower().strip(): field.name
+            for field in informe_tecnico._meta.fields
+        }
+        field_names = {field.name for field in informe_tecnico._meta.fields}
+        campos = InformeComplementarioCampos.objects.filter(
+            informe_complementario=informe_complementario
+        )
+        for campo in campos:
+            field_name = (
+                campo.campo
+                if campo.campo in field_names
+                else verbose_to_field.get(campo.campo.lower().strip())
+            )
+            if not field_name:
+                continue
+            field = informe_tecnico._meta.get_field(field_name)
+            value = campo.value
+            if field.get_internal_type() in ("IntegerField", "PositiveIntegerField"):
+                try:
+                    value = int(value) if value else 0
+                except (TypeError, ValueError):
+                    continue
+            setattr(informe_tecnico, field_name, value)
+        return informe_tecnico
+
+    @staticmethod
+    def get_informe_tecnico_finalizado_efectivo(admision):
+        if not admision:
+            return None
+        informe_complementario = (
+            InformeComplementario.objects.filter(
+                admision=admision,
+                estado="validado",
+                informe_tecnico__estado_formulario="finalizado",
+            )
+            .select_related("informe_tecnico")
+            .order_by("-modificado", "-id")
+            .first()
+        )
+        if informe_complementario:
+            return ComedorService.aplicar_complementario_validado(
+                informe_complementario.informe_tecnico
+            )
+        informe_tecnico = (
+            InformeTecnico.objects.filter(
+                admision=admision,
+                estado_formulario="finalizado",
+            )
+            .defer("observaciones_subsanacion")
+            .order_by("-id")
+            .first()
+        )
+        return ComedorService.aplicar_complementario_validado(informe_tecnico)
+
+    @staticmethod
     def calcular_monto_prestacion_mensual_por_aprobadas(prestaciones_por_tipo):
         """Calcula el monto mensual usando prestaciones aprobadas."""
         if not prestaciones_por_tipo:
@@ -963,6 +1057,68 @@ class ComedorService:
             "desayuno", 0
         ) + prestaciones_por_tipo.get("merienda", 0)
         return total_almuerzo_cena * 763 + total_desayuno_merienda * 383
+
+    @staticmethod
+    def get_prestaciones_aprobadas_resumen(comedor_id):
+        """Resumen de prestaciones/monto mensual basado en las prestaciones
+        aprobadas del InformeTecnico finalizado de la admision vigente del
+        comedor. Es la misma fuente que muestra el detalle web (acordeon
+        Prestaciones), por lo que web y mobile quedan alineados.
+
+        Devuelve None en ambos campos si no hay admision/informe tecnico
+        finalizado (la web muestra "-" en ese caso).
+        """
+        comedor = (
+            Comedor.objects.filter(id=comedor_id).select_related("programa").first()
+        )
+        if comedor and usa_datos_convenio_pnud(comedor):
+            datos_convenio = ComedorDatosConvenioPnud.objects.filter(
+                comedor_id=comedor_id
+            ).first()
+            prestaciones_por_tipo = ComedorService.get_prestaciones_aprobadas_por_tipo(
+                datos_convenio
+            )
+            if prestaciones_por_tipo is None:
+                return {
+                    "prestaciones_mensuales": None,
+                    "monto_prestacion_mensual": None,
+                }
+            return {
+                "prestaciones_mensuales": sum(prestaciones_por_tipo.values()),
+                "monto_prestacion_mensual": (
+                    ComedorService.calcular_monto_prestacion_mensual_por_aprobadas(
+                        prestaciones_por_tipo
+                    )
+                ),
+            }
+
+        admision = ComedorService.get_admision_vigente_pwa(comedor_id)
+        if not admision:
+            return {
+                "prestaciones_mensuales": None,
+                "monto_prestacion_mensual": None,
+            }
+
+        informe_tecnico = ComedorService.get_informe_tecnico_finalizado_efectivo(
+            admision
+        )
+        prestaciones_por_tipo = ComedorService.get_prestaciones_aprobadas_por_tipo(
+            informe_tecnico
+        )
+        if prestaciones_por_tipo is None:
+            return {
+                "prestaciones_mensuales": None,
+                "monto_prestacion_mensual": None,
+            }
+
+        return {
+            "prestaciones_mensuales": sum(prestaciones_por_tipo.values()),
+            "monto_prestacion_mensual": (
+                ComedorService.calcular_monto_prestacion_mensual_por_aprobadas(
+                    prestaciones_por_tipo
+                )
+            ),
+        }
 
     @staticmethod
     def get_nomina_detail(
@@ -1634,6 +1790,143 @@ class ComedorService:
 
         Nomina.objects.bulk_create(nuevas)
         return True, f"Se importaron {len(nuevas)} personas a la nómina.", len(nuevas)
+
+    @staticmethod
+    def transferir_ciudadano_entre_centros(
+        nomina_pk, comedor_destino_pk, usuario, motivo=""
+    ):
+        from comedores.models import NominaDerivacion
+
+        nomina_origen = Nomina.objects.select_related(
+            "admision__comedor", "comedor"
+        ).get(pk=nomina_pk)
+
+        if nomina_origen.estado != Nomina.ESTADO_ACTIVO:
+            return False, "Solo se pueden derivar personas con estado Activo."
+
+        if nomina_origen.admision:
+            comedor_origen_id = nomina_origen.admision.comedor_id
+        else:
+            comedor_origen_id = nomina_origen.comedor_id
+
+        if comedor_origen_id is None:
+            return False, "El registro no tiene un centro de origen válido."
+
+        comedor_destino = (
+            ComedorService.get_scoped_comedor_queryset(usuario)
+            .filter(pk=comedor_destino_pk)
+            .first()
+        )
+        if comedor_destino is None:
+            return (
+                False,
+                "El centro destino no existe o no está dentro de tu alcance.",
+            )
+
+        if comedor_destino.pk == comedor_origen_id:
+            return False, "El centro destino debe ser diferente al centro de origen."
+
+        admision_destino_id = None
+        comedor_destino_direct_id = None
+
+        if comedor_usa_admision_para_nomina(comedor_destino):
+            admision_destino = (
+                Admision.objects.filter(comedor=comedor_destino, activa=True)
+                .order_by("-id")
+                .first()
+            )
+            if not admision_destino:
+                return (
+                    False,
+                    f"El centro «{comedor_destino.nombre}» no tiene una admisión activa.",
+                )
+            admision_destino_id = admision_destino.pk
+        else:
+            comedor_destino_direct_id = comedor_destino.pk
+
+        if admision_destino_id:
+            ya_existe = Nomina.objects.filter(
+                ciudadano_id=nomina_origen.ciudadano_id,
+                admision_id=admision_destino_id,
+                estado__in=[Nomina.ESTADO_ACTIVO, Nomina.ESTADO_ESPERA],
+            ).exists()
+        else:
+            ya_existe = Nomina.objects.filter(
+                ciudadano_id=nomina_origen.ciudadano_id,
+                comedor_id=comedor_destino_direct_id,
+                admision__isnull=True,
+                estado__in=[Nomina.ESTADO_ACTIVO, Nomina.ESTADO_ESPERA],
+            ).exists()
+
+        if ya_existe:
+            return (
+                False,
+                f"La persona ya tiene un registro activo o en espera en «{comedor_destino.nombre}».",
+            )
+
+        try:
+            with transaction.atomic():
+                nomina_origen = Nomina.objects.select_for_update().get(pk=nomina_pk)
+                if nomina_origen.estado != Nomina.ESTADO_ACTIVO:
+                    return (
+                        False,
+                        "El registro fue modificado antes de completar la derivación.",
+                    )
+
+                if admision_destino_id:
+                    if not Admision.objects.filter(
+                        pk=admision_destino_id, activa=True
+                    ).exists():
+                        return (
+                            False,
+                            f"La admisión del centro «{comedor_destino.nombre}» dejó de estar activa.",
+                        )
+
+                if admision_destino_id:
+                    ya_existe = Nomina.objects.filter(
+                        ciudadano_id=nomina_origen.ciudadano_id,
+                        admision_id=admision_destino_id,
+                        estado__in=[Nomina.ESTADO_ACTIVO, Nomina.ESTADO_ESPERA],
+                    ).exists()
+                else:
+                    ya_existe = Nomina.objects.filter(
+                        ciudadano_id=nomina_origen.ciudadano_id,
+                        comedor_id=comedor_destino_direct_id,
+                        admision__isnull=True,
+                        estado__in=[Nomina.ESTADO_ACTIVO, Nomina.ESTADO_ESPERA],
+                    ).exists()
+                if ya_existe:
+                    return (
+                        False,
+                        f"La persona ya tiene un registro activo o en espera en «{comedor_destino.nombre}».",
+                    )
+
+                nomina_origen.estado = Nomina.ESTADO_BAJA
+                nomina_origen.save(update_fields=["estado"])
+
+                nomina_destino = Nomina.objects.create(
+                    ciudadano_id=nomina_origen.ciudadano_id,
+                    admision_id=admision_destino_id,
+                    comedor_id=comedor_destino_direct_id,
+                    estado=Nomina.ESTADO_ESPERA,
+                )
+
+                NominaDerivacion.objects.create(
+                    nomina_origen=nomina_origen,
+                    nomina_destino=nomina_destino,
+                    usuario=usuario,
+                    motivo=motivo,
+                    comedor_origen_id=comedor_origen_id,
+                    comedor_destino=comedor_destino,
+                )
+
+            return True, "Derivación realizada correctamente."
+        except Exception:
+            logger.exception("Error al transferir ciudadano entre centros.")
+            return (
+                False,
+                "Ocurrió un error al realizar la derivación. Intentá nuevamente.",
+            )
 
     @staticmethod
     def crear_admision_desde_comedor(request, comedor):

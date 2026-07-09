@@ -546,7 +546,7 @@ def test_guardar_formulario_proyecto_convenio_success_y_docx_fallback(mocker):
         return_value="<html>ok</html>",
     )
     mocker.patch(
-        "admisiones.services.legales_service.HTML",
+        "weasyprint.HTML",
         return_value=SimpleNamespace(write_pdf=lambda: b"pdf"),
     )
     mocker.patch(
@@ -656,7 +656,7 @@ def test_guardar_formulario_reso_success_and_invalid(mocker):
         return_value="<html>ok</html>",
     )
     mocker.patch(
-        "admisiones.services.legales_service.HTML",
+        "weasyprint.HTML",
         return_value=SimpleNamespace(write_pdf=lambda: b"pdf"),
     )
     mocker.patch(

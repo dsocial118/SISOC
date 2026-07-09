@@ -429,13 +429,17 @@
                                     <th>Nombre</th>
                                     <th class="asis-col-check">
                                         <label class="asis-mark asis-mark-all">
-                                            <input type="checkbox" class="asis-check asis-check--present" id="asisMarcarPresentes" />
+                                            <input type="checkbox"
+                                                   class="asis-check asis-check--present"
+                                                   id="asisMarcarPresentes" />
                                             Marcar todos
                                         </label>
                                     </th>
                                     <th class="asis-col-check">
                                         <label class="asis-mark asis-mark-all">
-                                            <input type="checkbox" class="asis-check asis-check--absent" id="asisMarcarAusentes" />
+                                            <input type="checkbox"
+                                                   class="asis-check asis-check--absent"
+                                                   id="asisMarcarAusentes" />
                                             Marcar todos
                                         </label>
                                     </th>
@@ -447,7 +451,9 @@
                                         <td>{{ fila.inscripcion.ciudadano.apellido|default:"—" }}</td>
                                         <td>{{ fila.inscripcion.ciudadano.nombre|default:"—" }}</td>
                                         <td>
-                                            <input type="hidden" name="obs_{{ fila.inscripcion.pk }}" value="{{ fila.observaciones|default:'' }}" />
+                                            <input type="hidden"
+                                                   name="obs_{{ fila.inscripcion.pk }}"
+                                                   value="{{ fila.observaciones|default:'' }}" />
                                             <label class="asis-mark">
                                                 <input type="radio"
                                                        class="asis-check asis-check--present asis-present"
@@ -473,9 +479,7 @@
                         </table>
                     </div>
                     <div class="asis-foot">
-                        <span id="asisConteo">
-                            Mostrando {{ filas|length|yesno:"1,0" }}-{{ filas|length }} de {{ filas|length }}
-                        </span>
+                        <span id="asisConteo">Mostrando {{ filas|length|yesno:"1,0" }}-{{ filas|length }} de {{ filas|length }}</span>
                         <div class="asis-pager">
                             <button type="button"
                                     class="asis-pager-prev"

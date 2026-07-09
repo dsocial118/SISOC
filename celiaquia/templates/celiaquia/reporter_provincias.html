@@ -56,9 +56,7 @@
                     </p>
                 {% else %}
                     <strong class="reporter-focus__title">Sin datos para el corte actual</strong>
-                    <p class="reporter-focus__body">
-                        Ajusta los filtros para reconstruir la foto operativa del reporte.
-                    </p>
+                    <p class="reporter-focus__body">Ajusta los filtros para reconstruir la foto operativa del reporte.</p>
                 {% endif %}
             </aside>
         </section>
@@ -177,11 +175,13 @@
                 </div>
 
                 <div class="reporter-filter-actions">
-                    <button type="submit" class="btn btn-success reporter-btn reporter-btn--primary">
+                    <button type="submit"
+                            class="btn btn-success reporter-btn reporter-btn--primary">
                         <i class="fa fa-search"></i>
                         Aplicar lectura
                     </button>
-                    <a href="{% url 'reporter_provincias' %}" class="btn btn-outline-light reporter-btn reporter-btn--ghost">
+                    <a href="{% url 'reporter_provincias' %}"
+                       class="btn btn-outline-light reporter-btn reporter-btn--ghost">
                         <i class="fa fa-redo"></i>
                         Reiniciar
                     </a>
@@ -211,7 +211,8 @@
                 {% if tendencia_mensual %}
                     <div class="trend-chart" aria-label="Tendencia mensual del reporter">
                         {% for item in tendencia_mensual %}
-                            <div class="trend-chart__item" title="{{ item.label }}: {{ item.count }} casos">
+                            <div class="trend-chart__item"
+                                 title="{{ item.label }}: {{ item.count }} casos">
                                 <div class="trend-chart__bar-shell">
                                     <div class="trend-chart__bar" style="--size: {{ item.size }};">
                                         <span class="trend-chart__value">{{ item.count }}</span>
@@ -348,6 +349,36 @@
             </article>
         </section>
 
+        <section class="reporter-layout">
+            <article class="reporter-panel">
+                <div class="reporter-panel__header">
+                    <div>
+                        <p class="reporter-panel__eyebrow">Aprobados</p>
+                        <h3 class="reporter-panel__title">Clasificación por rol</h3>
+                        <p class="reporter-panel__hint">
+                            {{ clasificacion_aprobados.total }} legajo{{ clasificacion_aprobados.total|pluralize }} aprobado{{ clasificacion_aprobados.total|pluralize }} sobre {{ total_casos }} casos de la lectura actual.
+                        </p>
+                    </div>
+                </div>
+                <div class="status-list">
+                    {% for item in clasificacion_aprobados.items %}
+                        <div class="status-chip status-chip--{{ item.tone }}">
+                            <div>
+                                <strong>{{ item.label }}</strong>
+                                <span>{{ item.count }} legajo{{ item.count|pluralize }}</span>
+                            </div>
+                            <div class="status-chip__aside">
+                                <strong>{{ item.percentage }}%</strong>
+                                <span class="status-chip__bar">
+                                    <span style="--size: {{ item.size }};"></span>
+                                </span>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </article>
+        </section>
+
         <section class="reporter-panel reporter-panel--table">
             <div class="reporter-panel__header reporter-panel__header--table">
                 <div>
@@ -358,7 +389,8 @@
                     </p>
                 </div>
                 <div class="reporter-table__tools">
-                    <label class="reporter-field reporter-field--compact" for="reporterQuickSearch">
+                    <label class="reporter-field reporter-field--compact"
+                           for="reporterQuickSearch">
                         <span class="reporter-field__label">Buscar en esta página</span>
                         <input type="search"
                                id="reporterQuickSearch"
@@ -388,11 +420,12 @@
                         {% for caso in ultimos_casos %}
                             <tr data-reporter-row>
                                 <td>
-                                    <a class="reporter-table__link" href="{% url 'expediente_detail' caso.expediente.id %}">{{ caso.ciudadano.documento }}</a>
+                                    <a class="reporter-table__link"
+                                       href="{% url 'expediente_detail' caso.expediente.id %}">{{ caso.ciudadano.documento }}</a>
                                 </td>
                                 <td>{{ caso.ciudadano.nombre }} {{ caso.ciudadano.apellido }}</td>
                                 <td>{{ caso.expediente.numero_expediente|default:"-" }}</td>
-                                <td>{{ caso.expediente.provincia.nombre|default:"Sin provincia" }}</td>
+                                <td>{{ caso.ciudadano.provincia.nombre|default:"Sin provincia" }}</td>
                                 <td>
                                     <span class="reporter-badge reporter-badge--{% if caso.revision_tecnico == 'APROBADO' %}success{% elif caso.revision_tecnico == 'RECHAZADO' %}danger{% elif caso.revision_tecnico == 'SUBSANAR' %}warning{% elif caso.revision_tecnico == 'SUBSANADO' %}accent{% else %}neutral{% endif %}">
                                         {{ caso.get_revision_tecnico_display }}

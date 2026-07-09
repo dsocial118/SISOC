@@ -95,6 +95,54 @@ def can_edit_legajo_files(user, expediente, legajo=None):
     return True
 
 
+# Estados del expediente en los que la provincia trabaja sus legajos antes de
+# enviarlo a evaluación. Una vez confirmado el envío (CONFIRMACION_DE_ENVIO en
+# adelante) la provincia ya no puede eliminar legajos.
+ESTADOS_PROVINCIA_PRE_ENVIO = {"EN_ESPERA"}
+
+
+def can_delete_legajo(user, expediente, legajo=None):
+    """
+    Verifica si el usuario puede eliminar un legajo del expediente.
+
+    - Admin y coordinadores: sin restricción de estado (comportamiento actual).
+    - Provincia: solo dentro de su alcance territorial y mientras el expediente
+      no haya sido enviado a evaluación (estado EN_ESPERA).
+
+    Raises:
+        PermissionDenied: Si no tiene permisos para eliminar el legajo.
+    """
+    if not user.is_authenticated:
+        raise PermissionDenied("Autenticación requerida.")
+
+    is_admin = user.is_superuser
+    is_coord = _has_permission(user, ROLE_COORDINADOR_PERMISSION)
+    # Provincial por rol explícito o por alcance territorial, en línea con la
+    # detección usada en las vistas (_is_provincial).
+    is_prov = _has_permission(user, ROLE_PROVINCIA_PERMISSION) or is_territorial_user(
+        user
+    )
+
+    if is_admin or is_coord:
+        return True
+
+    if is_prov:
+        if not _expediente_fully_in_territorial_scope(user, expediente, legajo):
+            raise PermissionDenied(
+                "No pertenece al alcance territorial del expediente."
+            )
+
+        estado_nombre = getattr(getattr(expediente, "estado", None), "nombre", "")
+        if estado_nombre not in ESTADOS_PROVINCIA_PRE_ENVIO:
+            raise PermissionDenied(
+                "No se pueden eliminar legajos una vez enviado el expediente a "
+                "evaluación."
+            )
+        return True
+
+    raise PermissionDenied("No tenés permiso para eliminar legajos.")
+
+
 def can_review_legajo(user, expediente):
     """
     Verifica si el usuario puede revisar legajos (aprobar/rechazar/subsanar).

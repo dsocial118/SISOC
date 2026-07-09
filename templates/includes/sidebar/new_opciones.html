@@ -1,3 +1,4 @@
+
 {% load static custom_filters %}
 {% with pagina_actual=request.resolver_match.route vat_sidebar_only=request.user|is_vat_sidebar_only %}
     <li class="nav-item" style="order: 3;">
@@ -11,10 +12,8 @@
         <li class="nav-item" style="order: 4;">
             <a href="#" class="nav-link">
                 <i class="nav-icon fas fa-users"></i>
-                <p>
-                    Administración del sistema
-                    <i class="nav-arrow bi bi-chevron-right"></i>
-                </p>
+                <p>Administración del sistema</p>
+                <i class="nav-arrow bi bi-chevron-right"></i>
             </a>
             <ul class="nav nav-treeview">
                 <li class="nav-item">
@@ -62,10 +61,8 @@
             <a href="#"
                class="nav-link {% if 'dupla' in pagina_actual or 'equipo-tecnico' in pagina_actual or 'montoprestacion' in pagina_actual %}active{% endif %}">
                 <i class="nav-icon fa fa-address-card"></i>
-                <p>
-                    Configuración de Comedores
-                    <i class="nav-arrow bi bi-chevron-right"></i>
-                </p>
+                <p>Configuración de Comedores</p>
+                <i class="nav-arrow bi bi-chevron-right"></i>
             </a>
             <ul class="nav nav-treeview">
                 {% if request.user|has_perm_code:"auth.role_admin" %}
@@ -107,14 +104,43 @@
             </ul>
         </li>
     {% endif %}
-    <li class="nav-item {% if 'comedores/' in pagina_actual or 'admisiones' in pagina_actual or 'acompanamiento' in pagina_actual or 'rendicioncuentasmensual' in pagina_actual or 'ver-para-ser-libre' in pagina_actual %}menu-open{% endif %}"
-        style="order: 2">
+    {% if not vat_sidebar_only and request.user|has_perm_code:"organizaciones.view_organizacion" or not vat_sidebar_only and request.user|has_perm_code:"auth.role_tecnico_comedor" or not vat_sidebar_only and request.user|has_perm_code:"auth.role_abogado_dupla" or not vat_sidebar_only and request.user|has_perm_code:"rendicioncuentasmensual.view_rendicioncuentamensual" %}
+        <li class="nav-item {% if 'organizaciones' in pagina_actual or 'rendicioncuentasmensual' in pagina_actual %}menu-open{% endif %}"
+            style="order: 2">
+            <a href="#"
+               class="nav-link {% if 'organizaciones' in pagina_actual or 'rendicioncuentasmensual' in pagina_actual %}active{% endif %}">
+                <i class="nav-icon bi bi-building-fill"></i>
+                <p>Organizaciones</p>
+                <i class="nav-arrow bi bi-chevron-right"></i>
+            </a>
+            <ul class="nav nav-treeview">
+                {% if request.user|has_perm_code:"organizaciones.view_organizacion" or request.user|has_perm_code:"auth.role_tecnico_comedor" or request.user|has_perm_code:"auth.role_abogado_dupla" %}
+                    <li class="nav-item">
+                        <a href="{% url 'organizaciones' %}"
+                           class="nav-link {% if 'organizaciones/listar' in pagina_actual %}active{% endif %}">
+                            <i class="far fa-dot-circle nav-icon"></i>
+                            <p>Ver Organizaciones</p>
+                        </a>
+                    </li>
+                {% endif %}
+                {% if request.user|has_perm_code:"rendicioncuentasmensual.view_rendicioncuentamensual" %}
+                    <li class="nav-item">
+                        <a href="{% url 'rendicioncuentasmensual_global_list' %}"
+                           class="nav-link {% if 'rendicioncuentasmensual' in pagina_actual %}active{% endif %}">
+                            <i class="far fa-dot-circle nav-icon"></i>
+                            <p>Rendiciones</p>
+                        </a>
+                    </li>
+                {% endif %}
+            </ul>
+        </li>
+    {% endif %}
+    <li class="nav-item {% if 'comedores/' in pagina_actual or 'admisiones' in pagina_actual or 'acompanamiento' in pagina_actual or 'ver-para-ser-libre' in pagina_actual %}menu-open{% endif %}"
+        style="order: 3">
         <a href="#" class="nav-link">
             <i class="nav-icon fa fa-address-card"></i>
-            <p>
-                Legajos
-                <i class="nav-arrow bi bi-chevron-right"></i>
-            </p>
+            <p>Legajos</p>
+            <i class="nav-arrow bi bi-chevron-right"></i>
         </a>
         <ul class="nav nav-treeview">
             {% if not vat_sidebar_only and request.user|has_perm_code:"comedores.view_comedor" %}
@@ -128,10 +154,8 @@
                 <li class="nav-item">
                     <a href="#" class="nav-link">
                         <i class="far fa-circle nav-icon"></i>
-                        <p>
-                            Admision - Comedores
-                            <i class="nav-arrow bi bi-chevron-right"></i>
-                        </p>
+                        <p>Admision - Comedores</p>
+                        <i class="nav-arrow bi bi-chevron-right"></i>
                     </a>
                     <ul class="nav nav-treeview" style="display: none;">
                         <li class="nav-item">
@@ -160,30 +184,12 @@
                     </a>
                 </li>
             {% endif %}
-            {% if request.user|has_perm_code:"rendicioncuentasmensual.view_rendicioncuentamensual" %}
-                <li class="nav-item">
-                    <a href="{% url 'rendicioncuentasmensual_global_list' %}"
-                       class="nav-link {% if 'rendicioncuentasmensual' in pagina_actual %}active{% endif %}">
-                        <i class="nav-icon bi bi-receipt"></i>
-                        <p>Rendiciones</p>
-                    </a>
-                </li>
-            {% endif %}
             {% if not vat_sidebar_only and request.user|has_perm_code:"rendicioncuentasfinal.view_rendicioncuentasfinal" %}
                 <li class="nav-item">
                     <a href="{% url 'rendicion_cuentas_final_listar' %}"
                        class="nav-link {% if 'rendicion_cuentas_final/listar' in pagina_actual %}active{% endif %}">
                         <i class="nav-icon bi bi-receipt"></i>
                         <p>Rendicion de Cuentas Final</p>
-                    </a>
-                </li>
-            {% endif %}
-            {% if not vat_sidebar_only and request.user|has_perm_code:"organizaciones.view_organizacion" or not vat_sidebar_only and request.user|has_perm_code:"auth.role_tecnico_comedor" or not vat_sidebar_only and request.user|has_perm_code:"auth.role_abogado_dupla" %}
-                <li class="nav-item">
-                    <a href="{% url 'organizaciones' %}"
-                       class="nav-link {% if 'organizaciones/listar' in pagina_actual %}active{% endif %}">
-                        <i class="nav-icon bi bi-building-fill"></i>
-                        <p>Organizaciones</p>
                     </a>
                 </li>
             {% endif %}

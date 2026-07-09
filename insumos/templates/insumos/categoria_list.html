@@ -1,0 +1,87 @@
+{% extends "includes/main.html" %}
+{% load static %}
+{% block title %}Categorías de insumos{% endblock %}
+{% block content %}
+    <link rel="stylesheet" href="{% static 'custom/css/listModerno.css' %}" />
+
+    <div class="list-container">
+        <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
+            <h2 class="mb-2">Categorías de insumos</h2>
+            <div class="d-flex gap-2">
+                <a href="{% url 'insumos_listar' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left"></i> Volver a insumos
+                </a>
+                {% if perms.insumos.add_insumocategoria %}
+                    <a href="{% url 'insumos_categorias_crear' %}" class="btn btn-success">
+                        <i class="fas fa-plus"></i> Agregar categoría
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card comedor-table-card">
+            <div class="card-body">
+                <div class="table-responsive-lg">
+                    <table class="table table-comedor-moderno">
+                        <thead>
+                            <tr>
+                                <th>Nombre</th>
+                                <th>Programa</th>
+                                <th>Orden</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for categoria in categorias %}
+                                <tr>
+                                    <td>{{ categoria.nombre }}</td>
+                                    <td>{{ categoria.programa }}</td>
+                                    <td>{{ categoria.orden }}</td>
+                                    <td>
+                                        {% if categoria.activo %}
+                                            <span class="badge bg-success">Activa</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">Inactiva</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="comedor-actions">
+                                            {% if perms.insumos.change_insumocategoria %}
+                                                <a href="{% url 'insumos_categorias_editar' categoria.pk %}"
+                                                   class="btn btn-editar"
+                                                   title="Editar">
+                                                    <i class="fas fa-edit"></i>
+                                                    Editar
+                                                </a>
+                                            {% endif %}
+                                            {% if perms.insumos.delete_insumocategoria %}
+                                                <a href="{% url 'insumos_categorias_eliminar' categoria.pk %}"
+                                                   class="btn btn-eliminar"
+                                                   title="Eliminar">
+                                                    <i class="fas fa-trash-alt"></i>
+                                                    Eliminar
+                                                </a>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="5">
+                                        <div class="no-data-message">
+                                            <h3>No hay categorías</h3>
+                                            <p>Todavía no se crearon categorías de insumos.</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        {% include 'components/pagination.html' with is_paginated=is_paginated page_obj=page_obj prev_text='Volver' next_text='Continuar' %}
+    </div>
+{% endblock %}

@@ -306,6 +306,22 @@ class CatalogoActividadPWA(models.Model):
                 "manage_catalogoactividadpwa",
                 "Puede gestionar actividades PNUD PWA",
             ),
+            (
+                "manage_prestaciones_mensuales_pwa",
+                "Puede gestionar conformidad de prestaciones mensuales PWA",
+            ),
+            (
+                "manage_nomina_pwa",
+                "Puede gestionar nomina PWA",
+            ),
+            (
+                "manage_colaboradores_pwa",
+                "Puede gestionar colaboradores PWA",
+            ),
+            (
+                "manage_usuarios_pwa",
+                "Puede gestionar usuarios PWA",
+            ),
         ]
         constraints = [
             models.UniqueConstraint(
@@ -343,6 +359,8 @@ class ActividadEspacioPWA(models.Model):
     horario_actividad = models.CharField(max_length=60)
     hora_inicio = models.TimeField(null=True, blank=True)
     hora_fin = models.TimeField(null=True, blank=True)
+    responsable_actividad = models.CharField(max_length=255, blank=True, default="")
+    vigencia_actividad_meses = models.PositiveSmallIntegerField(null=True, blank=True)
     activo = models.BooleanField(default=True)
     fecha_alta = models.DateTimeField(auto_now_add=True)
     fecha_actualizacion = models.DateTimeField(auto_now=True)
@@ -447,6 +465,7 @@ class NominaEspacioPWA(models.Model):
     es_indocumentado = models.BooleanField(default=False)
     pertenece_comunidad_indigena = models.BooleanField(default=False)
     situacion_calle = models.BooleanField(default=False)
+    persona_con_celiaquia = models.BooleanField(default=False)
     identificador_interno = models.CharField(max_length=40, null=True, blank=True)
     activo = models.BooleanField(default=True)
     fecha_alta = models.DateTimeField(auto_now_add=True)
@@ -538,6 +557,52 @@ class RegistroAsistenciaNominaPWA(models.Model):
         return (
             f"Asistencia nomina {self.nomina_id} {self.periodicidad} "
             f"{self.periodo_referencia:%Y-%m}"
+        )
+
+
+class NominaDestinatariosDocumentoPWA(models.Model):
+    """PDF trazable de nomina mensual alimentaria generada desde PWA."""
+
+    comedor = models.ForeignKey(
+        "comedores.Comedor",
+        on_delete=models.CASCADE,
+        related_name="nomina_destinatarios_documentos_pwa",
+    )
+    periodo_referencia = models.DateField(help_text="Primer dia del mes certificado.")
+    version = models.PositiveIntegerField(default=1)
+    archivo = models.FileField(upload_to="pwa/nomina_destinatarios/")
+    cantidad_destinatarios = models.PositiveIntegerField(default=0)
+    generado_por = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="nomina_destinatarios_pwa_generadas",
+    )
+    fecha_generacion = models.DateTimeField(auto_now_add=True, db_index=True)
+    metadata = models.JSONField(default=dict, blank=True)
+
+    class Meta:
+        verbose_name = "Documento Nomina Destinatarios PWA"
+        verbose_name_plural = "Documentos Nomina Destinatarios PWA"
+        ordering = ("-periodo_referencia", "-version", "-fecha_generacion")
+        constraints = [
+            models.UniqueConstraint(
+                fields=("comedor", "periodo_referencia", "version"),
+                name="uniq_pwa_nomina_dest_doc_version",
+            )
+        ]
+        indexes = [
+            models.Index(
+                fields=["comedor", "periodo_referencia"],
+                name="pwa_nom_dest_doc_period_idx",
+            ),
+        ]
+
+    def __str__(self):
+        return (
+            f"Nomina destinatarios {self.comedor_id} "
+            f"{self.periodo_referencia:%Y-%m} v{self.version}"
         )
 
 

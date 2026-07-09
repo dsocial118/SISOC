@@ -8,6 +8,7 @@ from comedores.models import (
     HistorialValidacion,
     ImagenComedor,
     Nomina,
+    NominaDerivacion,
     Observacion,
     Programas,
     Referente,
@@ -57,6 +58,7 @@ class ComedorDatosConvenioPnudAdmin(admin.ModelAdmin):
         "comedor",
         "nro_convenio",
         "monto_total_conveniado",
+        "prestaciones_financiadas_mensuales",
         "personas_conveniadas",
         "actualizado_en",
     )
@@ -77,6 +79,40 @@ class ColaboradorEspacioAdmin(admin.ModelAdmin):
     )
     raw_id_fields = ("comedor", "ciudadano", "creado_por", "modificado_por")
     readonly_fields = ("fecha_creado", "fecha_modificado")
+
+
+@admin.register(NominaDerivacion)
+class NominaDerivacionAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "nomina_origen",
+        "nomina_destino",
+        "comedor_origen",
+        "comedor_destino",
+        "usuario",
+        "fecha",
+    )
+    list_filter = ("fecha",)
+    search_fields = (
+        "usuario__username",
+        "comedor_origen__nombre",
+        "comedor_destino__nombre",
+    )
+    readonly_fields = (
+        "nomina_origen",
+        "nomina_destino",
+        "comedor_origen",
+        "comedor_destino",
+        "usuario",
+        "fecha",
+        "motivo",
+    )
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
 
 
 @admin.register(CapacitacionComedorCertificado)

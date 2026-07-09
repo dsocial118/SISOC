@@ -57,8 +57,8 @@ class ComunicadoComedorViewSet(viewsets.ReadOnlyModelViewSet):
                 tipo=TipoComunicado.EXTERNO,
                 subtipo=SubtipoComunicado.COMEDORES,
                 estado=EstadoComunicado.PUBLICADO,
-                comedores__id=comedor_id,
             )
+            .filter(comedores__id=comedor_id)
             .filter(
                 Q(fecha_vencimiento__isnull=True)
                 | Q(fecha_vencimiento__gt=timezone.now())

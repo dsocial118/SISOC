@@ -1,27 +1,41 @@
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.core.exceptions import PermissionDenied
+from django.core.exceptions import PermissionDenied, ValidationError
+from django.core.paginator import Paginator
 from django.db import transaction
 from django.db.models import Count, Q
 from django.utils import timezone
-from django.shortcuts import get_object_or_404, redirect
-from django.urls import reverse_lazy
+from django.http import HttpResponse, HttpResponseRedirect
+from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse, reverse_lazy
 from django.views.generic import (
     CreateView,
     DeleteView,
     DetailView,
+    FormView,
     ListView,
     UpdateView,
     View,
 )
 
-from .forms import ComunicadoForm, ComunicadoAdjuntoFormSet
+from .forms import ComunicadoForm, ComunicadoAdjuntoFormSet, MailingUploadForm
 from .models import (
     Comunicado,
     ComunicadoAdjunto,
     EstadoComunicado,
     TipoComunicado,
     SubtipoComunicado,
+)
+from .services_mailing import (
+    generate_mailing_template,
+    build_mailing_error_message,
+)
+from .services_mailing_jobs import (
+    can_resume_mailing_job,
+    create_mailing_job,
+    get_recent_mailing_jobs,
+    get_mailing_job_or_404,
+    request_resume_mailing_job,
 )
 from .permissions import (
     can_create_comunicado,
@@ -39,6 +53,7 @@ from .permissions import (
     es_tecnico,
     is_admin,
     get_comedores_del_usuario,
+    get_organizaciones_del_usuario,
 )
 
 
@@ -93,9 +108,15 @@ class ComunicadoGestionListView(LoginRequiredMixin, ListView):
         # Si es técnico (no admin), solo ve comunicados externos de sus comedores
         if es_tecnico(user) and not is_admin(user):
             comedores_usuario = get_comedores_del_usuario(user)
-            queryset = queryset.filter(
-                tipo=TipoComunicado.EXTERNO, comedores__in=comedores_usuario
-            ).distinct()
+            organizaciones_usuario = get_organizaciones_del_usuario(user)
+            queryset = (
+                queryset.filter(tipo=TipoComunicado.EXTERNO)
+                .filter(
+                    Q(comedores__in=comedores_usuario)
+                    | Q(organizaciones__in=organizaciones_usuario)
+                )
+                .distinct()
+            )
 
         # Filtros
         titulo = self.request.GET.get("titulo")
@@ -123,9 +144,8 @@ class ComunicadoGestionListView(LoginRequiredMixin, ListView):
         ctx["filtro_tipo"] = self.request.GET.get("tipo", "")
         ctx["estados"] = EstadoComunicado.choices
         ctx["tipos"] = TipoComunicado.choices
-        ctx["es_tecnico"] = es_tecnico(self.request.user) and not is_admin(
-            self.request.user
-        )
+        ctx["is_admin"] = is_admin(self.request.user)
+        ctx["es_tecnico"] = es_tecnico(self.request.user) and not ctx["is_admin"]
         return ctx
 
 
@@ -176,15 +196,28 @@ class ComunicadoPersistMixin:
             if self.object.subtipo == SubtipoComunicado.INSTITUCIONAL:
                 # Institucional: broadcast, no necesita comedores
                 self.object.comedores.clear()
+                self.object.organizaciones.clear()
                 self.object.para_todos_comedores = False
                 self.object.save()
-            elif form.cleaned_data.get("para_todos_comedores"):
-                comedores = get_comedores_del_usuario(self.request.user)
-                self.object.comedores.set(comedores)
+            elif self.object.subtipo == SubtipoComunicado.COMEDORES:
+                self.object.organizaciones.clear()
+                if form.cleaned_data.get("para_todos_comedores"):
+                    comedores = get_comedores_del_usuario(self.request.user)
+                    self.object.comedores.set(comedores)
+                else:
+                    self.object.comedores.set(form.cleaned_data.get("comedores", []))
+            elif self.object.subtipo == SubtipoComunicado.ORGANIZACIONES:
+                self.object.comedores.clear()
+                self.object.organizaciones.set(
+                    form.cleaned_data.get("organizaciones", [])
+                )
+                self.object.para_todos_comedores = False
+                self.object.save()
             return
 
         # Interno: limpiar campos externos
         self.object.comedores.clear()
+        self.object.organizaciones.clear()
         self.object.para_todos_comedores = False
         self.object.subtipo = ""
         self.object.save()
@@ -365,3 +398,110 @@ class ComunicadoToggleDestacadoView(LoginRequiredMixin, View):
                 messages.success(request, "Comunicado desmarcado como destacado.")
 
         return redirect("comunicados_gestion")
+
+
+class MailingTemplateView(LoginRequiredMixin, View):
+    def get(self, request, *args, **kwargs):
+        if not is_admin(request.user):
+            raise PermissionDenied
+        content = generate_mailing_template()
+        response = HttpResponse(
+            content,
+            content_type=(
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            ),
+        )
+        response["Content-Disposition"] = (
+            'attachment; filename="plantilla_mailing.xlsx"'
+        )
+        return response
+
+
+class MailingUploadView(LoginRequiredMixin, FormView):
+    template_name = "comunicados/mailing_form.html"
+    form_class = MailingUploadForm
+
+    def dispatch(self, request, *args, **kwargs):
+        if not is_admin(request.user):
+            raise PermissionDenied
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["form_title"] = "Envío de mailing masivo"
+        context["template_download_url"] = reverse("comunicados_mailing_plantilla")
+        context["recent_jobs"] = get_recent_mailing_jobs(
+            requested_by=self.request.user,
+        )
+        return context
+
+    def form_valid(self, form):
+        try:
+            job = create_mailing_job(
+                uploaded_file=form.cleaned_data["archivo"],
+                asunto=form.cleaned_data["asunto"],
+                cuerpo=form.cleaned_data["cuerpo"],
+                requested_by=self.request.user,
+                attachments=self.request.FILES.getlist("archivos_adjuntos"),
+            )
+        except ValidationError as exc:
+            form.add_error("archivo", build_mailing_error_message(exc))
+            return self.form_invalid(form)
+
+        messages.success(
+            self.request,
+            (
+                "Lote de mailing creado. "
+                "El procesamiento continuará en background. "
+                "Puede seguir el estado desde el detalle del lote."
+            ),
+        )
+        return HttpResponseRedirect(
+            reverse(
+                "comunicados_mailing_detalle",
+                kwargs={"pk": job.pk},
+            )
+        )
+
+
+class MailingJobDetailView(LoginRequiredMixin, View):
+    template_name = "comunicados/mailing_job_detail.html"
+    paginate_by = 50
+
+    def dispatch(self, request, *args, **kwargs):
+        if not is_admin(request.user):
+            raise PermissionDenied
+        return super().dispatch(request, *args, **kwargs)
+
+    def get(self, request, *args, **kwargs):
+        job = get_mailing_job_or_404(job_id=kwargs["pk"])
+        rows_qs = job.rows.order_by("fila", "id")
+        paginator = Paginator(rows_qs, self.paginate_by)
+        page_obj = paginator.get_page(request.GET.get("page"))
+        return render(
+            request,
+            self.template_name,
+            {
+                "job": job,
+                "page_obj": page_obj,
+                "is_resume_available": can_resume_mailing_job(job),
+                "upload_url": reverse("comunicados_mailing"),
+            },
+        )
+
+
+class MailingJobResumeView(LoginRequiredMixin, View):
+
+    def post(self, request, *args, **kwargs):
+        if not is_admin(request.user):
+            raise PermissionDenied
+        job = get_mailing_job_or_404(job_id=kwargs["pk"])
+        try:
+            request_resume_mailing_job(job=job)
+            messages.success(request, "El lote ha sido reanudado.")
+        except ValidationError as exc:
+            messages.error(request, build_mailing_error_message(exc))
+
+        return HttpResponseRedirect(
+            reverse("comunicados_mailing_detalle", kwargs={"pk": job.pk})
+        )

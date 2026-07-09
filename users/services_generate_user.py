@@ -108,8 +108,6 @@ def _validar_email(datos: DatosUsuarioDelegado) -> str:
         validate_email(email)
     except ValidationError as exc:
         raise ValidationError("El email del referente no es válido.") from exc
-    if User.objects.filter(email__iexact=email).exists():
-        raise ValidationError("Ya existe un usuario con ese email.")
     return email
 
 
@@ -117,9 +115,23 @@ def _enviar_credenciales(*, user, password: str, request=None) -> bool:
     """Envía las credenciales por mail. Best-effort: loguea y no propaga."""
     if not user.email:
         return False
+    from users.services_bulk_credentials import (  # noqa: PLC0415
+        BulkCredentialEntry,
+    )
+
+    entry = BulkCredentialEntry(
+        username=user.username,
+        plain_password=password,
+        first_name=user.first_name or "",
+        last_name=user.last_name or "",
+    )
     context = {
-        "user": user,
+        "entries": [entry],
+        "is_grouped": False,
+        "user_username": entry.username,
+        "user_full_name": entry.full_name,
         "plain_password": password,
+        "nombre_del_centro": "",
         "login_url": _build_login_url(request=request),
     }
     message = render_to_string(CREDENTIALS_EMAIL_TEMPLATE, context)

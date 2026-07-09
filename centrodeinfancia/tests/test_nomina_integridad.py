@@ -1,4 +1,5 @@
 from datetime import date
+from importlib import import_module
 from pathlib import Path
 
 import pytest
@@ -27,24 +28,42 @@ def test_crear_nomina_con_bloqueo_evitar_duplicados():
         documento=33333333,
     )
 
+    def _cleaned_data(estado, observaciones):
+        return {
+            "estado": estado,
+            "observaciones": observaciones,
+        }
+
+    class _FormStub:
+        def __init__(self, **attrs):
+            self._attrs = attrs
+
+        def save(self, commit=False):
+            assert commit is False
+            return NominaCentroInfancia(**self._attrs)
+
     with transaction.atomic():
         creado_1 = NominaCentroInfanciaCreateView._crear_nomina_con_bloqueo(
             centro=centro,
             ciudadano=ciudadano,
-            cleaned_data={
-                "estado": NominaCentroInfancia.ESTADO_ACTIVO,
-                "observaciones": "Alta inicial",
-            },
+            form=_FormStub(
+                **_cleaned_data(
+                    NominaCentroInfancia.ESTADO_ACTIVO,
+                    "Alta inicial",
+                )
+            ),
         )
 
     with transaction.atomic():
         creado_2 = NominaCentroInfanciaCreateView._crear_nomina_con_bloqueo(
             centro=centro,
             ciudadano=ciudadano,
-            cleaned_data={
-                "estado": NominaCentroInfancia.ESTADO_ACTIVO,
-                "observaciones": "Intento duplicado",
-            },
+            form=_FormStub(
+                **_cleaned_data(
+                    NominaCentroInfancia.ESTADO_ACTIVO,
+                    "Intento duplicado",
+                )
+            ),
         )
 
     assert creado_1 is True
@@ -60,9 +79,23 @@ def test_crear_nomina_con_bloqueo_evitar_duplicados():
 
 
 @pytest.mark.django_db
-def test_nomina_requiere_detalle_pueblo_originario_si_responde_si():
+def test_nomina_legacy_pueblo_originario_no_impone_detalle_sin_indigena():
+    # El mecanismo legacy (pertenece_pueblo_originario) no impone validación
+    # por sí solo. El nuevo mecanismo usa grupo_pertenencia: si "indigena" no
+    # está presente, clean() limpia pueblo_originario_cual sin levantar error.
     nomina = NominaCentroInfancia(
         pertenece_pueblo_originario=NominaCentroInfancia.RespuestaSiNoNsNc.SI,
+        pueblo_originario_cual="Mapuche",
+        tiene_discapacidad=NominaCentroInfancia.RespuestaSiNoNsNc.NO,
+    )
+    nomina.clean()
+    assert nomina.pueblo_originario_cual is None
+
+
+@pytest.mark.django_db
+def test_nomina_indigena_requiere_detalle_pueblo_originario():
+    nomina = NominaCentroInfancia(
+        grupo_pertenencia=["indigena"],
         tiene_discapacidad=NominaCentroInfancia.RespuestaSiNoNsNc.NO,
     )
 
@@ -70,6 +103,55 @@ def test_nomina_requiere_detalle_pueblo_originario_si_responde_si():
         nomina.clean()
 
     assert "pueblo_originario_cual" in exc_info.value.message_dict
+
+
+@pytest.mark.django_db
+def test_nomina_indigena_preserva_detalle_pueblo_originario():
+    nomina = NominaCentroInfancia(
+        grupo_pertenencia=["indigena"],
+        pueblo_originario_cual="Mapuche",
+        tiene_discapacidad=NominaCentroInfancia.RespuestaSiNoNsNc.NO,
+    )
+
+    nomina.clean()
+
+    assert nomina.pueblo_originario_cual == "Mapuche"
+
+
+@pytest.mark.django_db
+def test_migracion_pueblo_originario_legacy_agrega_indigena_y_preserva_detalle():
+    provincia = Provincia.objects.create(nombre="Neuquen")
+    centro = CentroDeInfancia.objects.create(nombre="CDI Legacy", provincia=provincia)
+    ciudadano = Ciudadano.objects.create(
+        apellido="Antipan",
+        nombre="Malen",
+        fecha_nacimiento=date(2020, 2, 1),
+        documento=42111222,
+    )
+    nomina = NominaCentroInfancia.objects.create(
+        centro=centro,
+        ciudadano=ciudadano,
+        pertenece_pueblo_originario=NominaCentroInfancia.RespuestaSiNoNsNc.SI,
+        pueblo_originario_cual="Mapuche",
+        grupo_pertenencia=[],
+        tiene_discapacidad=NominaCentroInfancia.RespuestaSiNoNsNc.NO,
+    )
+    migration = import_module(
+        "centrodeinfancia.migrations.0035_migrar_pueblo_originario_legacy"
+    )
+
+    class Apps:
+        @staticmethod
+        def get_model(app_label, model_name):
+            assert app_label == "centrodeinfancia"
+            assert model_name == "NominaCentroInfancia"
+            return NominaCentroInfancia
+
+    migration.migrar_pueblo_originario_legacy(Apps(), None)
+    nomina.refresh_from_db()
+
+    assert nomina.grupo_pertenencia == ["indigena"]
+    assert nomina.pueblo_originario_cual == "Mapuche"
 
 
 @pytest.mark.django_db

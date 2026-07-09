@@ -179,6 +179,22 @@ def get_comedores_del_usuario(user):
     return Comedor.objects.none()
 
 
+def get_organizaciones_del_usuario(user):
+    """Retorna las organizaciones que puede ver/enviar el usuario."""
+    from organizaciones.models import Organizacion
+
+    if is_admin(user) or _has_permission(user, COMUNICADO_CREATE_CODE):
+        return Organizacion.objects.all()
+    elif es_tecnico(user):
+        organizacion_ids = (
+            get_comedores_del_tecnico(user)
+            .exclude(organizacion__isnull=True)
+            .values_list("organizacion_id", flat=True)
+        )
+        return Organizacion.objects.filter(id__in=organizacion_ids)
+    return Organizacion.objects.none()
+
+
 # Permisos para comunicados internos
 def can_create_comunicado_interno(user) -> bool:
     """Verifica si puede crear comunicados internos."""

@@ -442,7 +442,8 @@
                             <span class="rep-field__label">Nivel</span>
                             <select id="id_nivel" name="nivel">
                                 {% for value, label in nivel_choices %}
-                                    <option value="{{ value }}" {% if value == filtros.nivel %}selected{% endif %}>{{ label }}</option>
+                                    <option value="{{ value }}"
+                                            {% if value == filtros.nivel %}selected{% endif %}>{{ label }}</option>
                                 {% endfor %}
                             </select>
                         </label>
@@ -451,19 +452,26 @@
                             <span class="rep-field__label">Agrupar por</span>
                             <select id="id_group_by" name="group_by">
                                 {% for value, label in group_by_choices %}
-                                    <option value="{{ value }}" {% if value == filtros.group_by %}selected{% endif %}>{{ label }}</option>
+                                    <option value="{{ value }}"
+                                            {% if value == filtros.group_by %}selected{% endif %}>{{ label }}</option>
                                 {% endfor %}
                             </select>
                         </label>
 
                         <label class="rep-field" for="id_fecha_desde">
                             <span class="rep-field__label">Fecha desde</span>
-                            <input id="id_fecha_desde" type="date" name="fecha_desde" value="{{ filtros.fecha_desde }}" />
+                            <input id="id_fecha_desde"
+                                   type="date"
+                                   name="fecha_desde"
+                                   value="{{ filtros.fecha_desde }}" />
                         </label>
 
                         <label class="rep-field" for="id_fecha_hasta">
                             <span class="rep-field__label">Fecha hasta</span>
-                            <input id="id_fecha_hasta" type="date" name="fecha_hasta" value="{{ filtros.fecha_hasta }}" />
+                            <input id="id_fecha_hasta"
+                                   type="date"
+                                   name="fecha_hasta"
+                                   value="{{ filtros.fecha_hasta }}" />
                         </label>
 
                         <label class="rep-field" for="id_provincia_id">
@@ -471,7 +479,10 @@
                             <select id="id_provincia_id" name="provincia_id">
                                 <option value="">Todas</option>
                                 {% for prov in provincias %}
-                                    <option value="{{ prov.provincia_id }}" {% if filtros.provincia_id == prov.provincia_id|stringformat:"s" %}selected{% endif %}>{{ prov.provincia__nombre }}</option>
+                                    <option value="{{ prov.provincia_id }}"
+                                            {% if filtros.provincia_id == prov.provincia_id|stringformat:"s" %}selected{% endif %}>
+                                        {{ prov.provincia__nombre }}
+                                    </option>
                                 {% endfor %}
                             </select>
                         </label>
@@ -482,7 +493,9 @@
                                 <option value="">Todos</option>
                                 {% for municipio in municipios %}
                                     <option value="{{ municipio.municipio_id }}"
-                                            {% if filtros.municipio_id == municipio.municipio_id|stringformat:"s" %}selected{% endif %}>{{ municipio.municipio__nombre }}</option>
+                                            {% if filtros.municipio_id == municipio.municipio_id|stringformat:"s" %}selected{% endif %}>
+                                        {{ municipio.municipio__nombre }}
+                                    </option>
                                 {% endfor %}
                             </select>
                         </label>
@@ -492,7 +505,10 @@
                             <select id="id_centro_id" name="centro_id">
                                 <option value="">Todos</option>
                                 {% for centro in centros %}
-                                    <option value="{{ centro.id }}" {% if filtros.centro_id == centro.id|stringformat:"s" %}selected{% endif %}>{{ centro.nombre }}</option>
+                                    <option value="{{ centro.id }}"
+                                            {% if filtros.centro_id == centro.id|stringformat:"s" %}selected{% endif %}>
+                                        {{ centro.nombre }}
+                                    </option>
                                 {% endfor %}
                             </select>
                         </label>
@@ -503,7 +519,9 @@
                                 <option value="">Todas</option>
                                 {% for comision in comisiones %}
                                     <option value="{{ comision.comision_id_ref }}"
-                                            {% if filtros.comision_id == comision.comision_id_ref|stringformat:"s" %}selected{% endif %}>{{ comision.comision_codigo_ref }} - {{ comision.centro_nombre_ref }}</option>
+                                            {% if filtros.comision_id == comision.comision_id_ref|stringformat:"s" %}selected{% endif %}>
+                                        {{ comision.comision_codigo_ref }} - {{ comision.centro_nombre_ref }}
+                                    </option>
                                 {% endfor %}
                             </select>
                         </label>
@@ -514,7 +532,9 @@
                                 <option value="">Todos</option>
                                 {% for curso in cursos %}
                                     <option value="{{ curso.unidad_formativa_id }}"
-                                            {% if filtros.curso_id == curso.unidad_formativa_id|stringformat:"s" %}selected{% endif %}>{{ curso.unidad_formativa_nombre }}</option>
+                                            {% if filtros.curso_id == curso.unidad_formativa_id|stringformat:"s" %}selected{% endif %}>
+                                        {{ curso.unidad_formativa_nombre }}
+                                    </option>
                                 {% endfor %}
                             </select>
                         </label>
@@ -525,7 +545,9 @@
                                 <option value="">Todos</option>
                                 {% for programa in programas %}
                                     <option value="{{ programa.programa_id_ref }}"
-                                            {% if filtros.programa_id == programa.programa_id_ref|stringformat:"s" %}selected{% endif %}>{{ programa.programa_nombre_ref }}</option>
+                                            {% if filtros.programa_id == programa.programa_id_ref|stringformat:"s" %}selected{% endif %}>
+                                        {{ programa.programa_nombre_ref }}
+                                    </option>
                                 {% endfor %}
                             </select>
                         </label>
@@ -536,7 +558,9 @@
                                 <option value="">Todos</option>
                                 {% for titulo in titulos %}
                                     <option value="{{ titulo.titulo_id_ref }}"
-                                            {% if filtros.titulo_id == titulo.titulo_id_ref|stringformat:"s" %}selected{% endif %}>{{ titulo.titulo_nombre_ref }}</option>
+                                            {% if filtros.titulo_id == titulo.titulo_id_ref|stringformat:"s" %}selected{% endif %}>
+                                        {{ titulo.titulo_nombre_ref }}
+                                    </option>
                                 {% endfor %}
                             </select>
                         </label>
@@ -547,7 +571,9 @@
                                 <option value="">Todas</option>
                                 {% for modalidad in modalidades %}
                                     <option value="{{ modalidad.modalidad_id_ref }}"
-                                            {% if filtros.modalidad_id == modalidad.modalidad_id_ref|stringformat:"s" %}selected{% endif %}>{{ modalidad.modalidad_nombre_ref }}</option>
+                                            {% if filtros.modalidad_id == modalidad.modalidad_id_ref|stringformat:"s" %}selected{% endif %}>
+                                        {{ modalidad.modalidad_nombre_ref }}
+                                    </option>
                                 {% endfor %}
                             </select>
                         </label>
@@ -557,7 +583,8 @@
                             <select id="id_estado" name="estado">
                                 <option value="">Todos</option>
                                 {% for value, label in estado_choices %}
-                                    <option value="{{ value }}" {% if filtros.estado == value %}selected{% endif %}>{{ label }}</option>
+                                    <option value="{{ value }}"
+                                            {% if filtros.estado == value %}selected{% endif %}>{{ label }}</option>
                                 {% endfor %}
                             </select>
                         </label>
@@ -566,7 +593,10 @@
                             <span class="rep-field__label">Usa voucher</span>
                             <select id="id_usa_voucher" name="usa_voucher">
                                 {% for value, label in usa_voucher_choices %}
-                                    <option value="{{ value }}" {% if filtros.usa_voucher == value %}selected{% endif %}>{{ label }}</option>
+                                    <option value="{{ value }}"
+                                            {% if filtros.usa_voucher == value %}selected{% endif %}>
+                                        {{ label }}
+                                    </option>
                                 {% endfor %}
                             </select>
                         </label>
@@ -576,7 +606,10 @@
                             <select id="id_estado_curso" name="estado_curso">
                                 <option value="">Todos</option>
                                 {% for value, label in curso_estado_choices %}
-                                    <option value="{{ value }}" {% if filtros.estado_curso == value %}selected{% endif %}>{{ label }}</option>
+                                    <option value="{{ value }}"
+                                            {% if filtros.estado_curso == value %}selected{% endif %}>
+                                        {{ label }}
+                                    </option>
                                 {% endfor %}
                             </select>
                         </label>
@@ -586,7 +619,10 @@
                             <select id="id_estado_comision" name="estado_comision">
                                 <option value="">Todos</option>
                                 {% for value, label in comision_estado_choices %}
-                                    <option value="{{ value }}" {% if filtros.estado_comision == value %}selected{% endif %}>{{ label }}</option>
+                                    <option value="{{ value }}"
+                                            {% if filtros.estado_comision == value %}selected{% endif %}>
+                                        {{ label }}
+                                    </option>
                                 {% endfor %}
                             </select>
                         </label>
@@ -596,7 +632,8 @@
                         <button type="submit" class="rep-btn rep-btn--primary">
                             <i class="bi bi-search"></i>Aplicar filtros
                         </button>
-                        <a href="{% url 'vat_reporte_inscripciones_asistencias' %}" class="rep-btn rep-btn--ghost">
+                        <a href="{% url 'vat_reporte_inscripciones_asistencias' %}"
+                           class="rep-btn rep-btn--ghost">
                             <i class="bi bi-arrow-clockwise"></i>Limpiar
                         </a>
                         <a href="?{% if querystring %}{{ querystring }}&{% endif %}export=csv"
@@ -744,12 +781,18 @@
         <div class="rep-card">
             <div class="rep-card-head">
                 <i class="bi bi-bar-chart"></i>
-                <span>Resumen por {% for value, label in group_by_choices %}{% if value == group_by %}{{ label|lower }}{% endif %}{% endfor %}</span>
+                <span>Resumen por
+                    {% for value, label in group_by_choices %}
+                        {% if value == group_by %}{{ label|lower }}{% endif %}
+                    {% endfor %}
+                </span>
             </div>
             <div class="rep-tbl-toolbar">
                 <label class="rep-field" for="reporteQuickSearch">
                     <span class="rep-field__label">Buscar en esta página</span>
-                    <input type="search" id="reporteQuickSearch" placeholder="Filtrar filas visibles" />
+                    <input type="search"
+                           id="reporteQuickSearch"
+                           placeholder="Filtrar filas visibles" />
                 </label>
                 <span id="reporteQuickCounter" class="rep-tbl-counter"></span>
             </div>
@@ -757,7 +800,11 @@
                 <table class="rep-tbl" id="reporteResumenTabla">
                     <thead>
                         <tr>
-                            <th>{% for value, label in group_by_choices %}{% if value == group_by %}{{ label }}{% endif %}{% endfor %}</th>
+                            <th>
+                                {% for value, label in group_by_choices %}
+                                    {% if value == group_by %}{{ label }}{% endif %}
+                                {% endfor %}
+                            </th>
                             <th>Inscriptos</th>
                             <th>Preinscriptos</th>
                             <th>En espera</th>
@@ -834,7 +881,7 @@
         <div class="rep-card" id="repDetalleTabla">
             <div class="rep-card-head">
                 <i class="bi bi-person-lines-fill"></i>
-                <span>Personas inscriptas <small style="font-weight:400;opacity:.8">(en pantalla: muestra hasta 250)</small></span>
+                <span>Personas inscriptas <small style="font-weight:400;opacity:.8">({{ detalle_page_info.count|default:0 }} en total)</small></span>
                 <div class="rep-detalle-export">
                     <a href="?{% if querystring %}{{ querystring }}&{% endif %}export=detalle_csv"
                        class="rep-btn rep-btn--ghost"
@@ -866,7 +913,9 @@
                             <tr class="rep-detalle-row">
                                 <td>{{ item.ciudadano__documento|default:"—" }}</td>
                                 <td>{{ item.ciudadano__apellido|default:"" }}, {{ item.ciudadano__nombre|default:"" }}</td>
-                                <td><span class="rep-pill">{{ item.estado }}</span></td>
+                                <td>
+                                    <span class="rep-pill">{{ item.estado }}</span>
+                                </td>
                                 <td>{{ item.centro_nombre_ref }}</td>
                                 <td>{{ item.comision_codigo_ref }}</td>
                                 <td>{{ item.unidad_formativa_nombre }}</td>
@@ -882,17 +931,31 @@
             </div>
             <div class="rep-tbl-foot">
                 <span id="repDetalleConteo">
-                    Mostrando {{ detalle_rows|length|yesno:"1,0" }}-{{ detalle_rows|length }} de {{ detalle_rows|length }}
+                    Mostrando {{ detalle_page_info.start_index }}-{{ detalle_page_info.end_index }} de {{ detalle_page_info.count }}
                 </span>
-                <div class="rep-pager">
-                    <button type="button" class="rep-pager-prev" id="repDetallePrev" aria-label="Página anterior" disabled>
-                        <i class="bi bi-chevron-left"></i>
-                    </button>
-                    <span class="rep-pager-label" id="repDetallePager">1 de 1</span>
-                    <button type="button" class="rep-pager-next" id="repDetalleNext" aria-label="Página siguiente" disabled>
-                        <i class="bi bi-chevron-right"></i>
-                    </button>
-                </div>
+                {% if detalle_page_info.num_pages > 1 %}
+                    <div class="rep-pager">
+                        {% if detalle_page_info.has_previous %}
+                            <a class="rep-pager-prev"
+                               aria-label="Página anterior"
+                               href="?{% if querystring_detalle %}{{ querystring_detalle }}&{% endif %}detalle_page={{ detalle_page_info.previous_page_number }}#repDetalleTabla">
+                                <i class="bi bi-chevron-left"></i>
+                            </a>
+                        {% else %}
+                            <span class="rep-pager-prev is-disabled"><i class="bi bi-chevron-left"></i></span>
+                        {% endif %}
+                        <span class="rep-pager-label">{{ detalle_page_info.number }} de {{ detalle_page_info.num_pages }}</span>
+                        {% if detalle_page_info.has_next %}
+                            <a class="rep-pager-next"
+                               aria-label="Página siguiente"
+                               href="?{% if querystring_detalle %}{{ querystring_detalle }}&{% endif %}detalle_page={{ detalle_page_info.next_page_number }}#repDetalleTabla">
+                                <i class="bi bi-chevron-right"></i>
+                            </a>
+                        {% else %}
+                            <span class="rep-pager-next is-disabled"><i class="bi bi-chevron-right"></i></span>
+                        {% endif %}
+                    </div>
+                {% endif %}
             </div>
         </div>
 
@@ -932,63 +995,6 @@
             quickSearch.addEventListener("input", updateTableFilter);
             updateTableFilter();
         });
-    </script>
-
-    <script nonce="{{ request.csp_nonce }}">
-        (function () {
-            var card = document.getElementById("repDetalleTabla");
-            if (!card) return;
-
-            var PAGE_SIZE = 25;
-            var body = document.getElementById("repDetalleBody");
-            var conteoEl = document.getElementById("repDetalleConteo");
-            var pagerEl = document.getElementById("repDetallePager");
-            var prevBtn = document.getElementById("repDetallePrev");
-            var nextBtn = document.getElementById("repDetalleNext");
-            if (!body) return;
-
-            var allRows = Array.prototype.slice.call(body.querySelectorAll(".rep-detalle-row"));
-            var currentPage = 1;
-
-            function render() {
-                var total = allRows.length;
-                var totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
-                if (currentPage > totalPages) currentPage = totalPages;
-                if (currentPage < 1) currentPage = 1;
-
-                var start = (currentPage - 1) * PAGE_SIZE;
-                var end = start + PAGE_SIZE;
-
-                allRows.forEach(function (row, idx) {
-                    row.style.display = (idx >= start && idx < end) ? "" : "none";
-                });
-
-                if (conteoEl) {
-                    var desde = total === 0 ? 0 : start + 1;
-                    var hasta = Math.min(end, total);
-                    conteoEl.textContent = "Mostrando " + desde + "-" + hasta + " de " + total;
-                }
-                if (pagerEl) {
-                    pagerEl.textContent = currentPage + " de " + totalPages;
-                }
-                if (prevBtn) prevBtn.disabled = currentPage <= 1;
-                if (nextBtn) nextBtn.disabled = currentPage >= totalPages;
-            }
-
-            if (prevBtn) {
-                prevBtn.addEventListener("click", function () {
-                    if (currentPage > 1) { currentPage -= 1; render(); }
-                });
-            }
-            if (nextBtn) {
-                nextBtn.addEventListener("click", function () {
-                    currentPage += 1;
-                    render();
-                });
-            }
-
-            render();
-        })();
     </script>
 
     {% include "vat/partials/tour.html" with vat_tour_section="reporte_inscripciones" %}

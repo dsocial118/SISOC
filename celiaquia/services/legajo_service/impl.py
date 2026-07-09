@@ -5,12 +5,17 @@ from django.db import transaction
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 from celiaquia.models import (  # pylint: disable=import-error
+    EstadoCupo,
     EstadoLegajo,
     ExpedienteCiudadano,
     RevisionTecnico,
     HistorialValidacionTecnica,
     SubsanacionRespuesta,
     ValidacionTecnica,
+)
+from celiaquia.services.cupo_service import (  # pylint: disable=import-error
+    CupoNoConfigurado,
+    CupoService,
 )
 from celiaquia.services.familia_service import (
     FamiliaService,
@@ -104,6 +109,30 @@ def _iter_ciudadano_roles_legajos(qs):
 
 
 class LegajoService:
+    @staticmethod
+    @transaction.atomic
+    def rechazar_por_renaper(legajo: ExpedienteCiudadano, usuario):
+        legajo.revision_tecnico = RevisionTecnico.RECHAZADO
+        legajo.save(
+            update_fields=[
+                "estado_validacion_renaper",
+                "revision_tecnico",
+                "modificado_en",
+            ]
+        )
+        if legajo.estado_cupo == EstadoCupo.DENTRO:
+            try:
+                CupoService.liberar_slot(
+                    legajo=legajo,
+                    usuario=usuario,
+                    motivo="Rechazado en validación RENAPER",
+                )
+            except CupoNoConfigurado:
+                logger.warning(
+                    "renaper.validation.cupo_no_configurado",
+                    extra={"data": {"legajo_id": legajo.pk}},
+                )
+
     @staticmethod
     def obtener_ids_responsables_expediente(expediente, qs=None):
         if qs is None:

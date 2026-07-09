@@ -1,0 +1,173 @@
+# Contratos de arquitectura (import-linter) - Fase 0 monolito modular.
+#
+# Objetivo: ratchet de dependencias. Las violaciones actuales se permiten via
+# baseline (ignore_imports) y CI falla ante NUEVAS dependencias prohibidas.
+# Cada PR posterior que corte una dependencia debe borrar su linea del baseline
+# (import-linter falla si una linea de ignore_imports no matchea ningun import).
+#
+# Alcance Fase 0: imports directos (allow_indirect_imports = True). El tooling de
+# soporte (debug_queries, benchmarks) y los tests se excluyen para enfocarse en
+# runtime; se ampliara cobertura en fases posteriores.
+#
+# Limitacion conocida: import-linter/grimp solo analiza paquetes regulares (con
+# __init__.py). Los namespace packages sin __init__.py (p. ej. historial.services)
+# quedan fuera del grafo y no se chequean por ahora.
+#
+# Como correr localmente:
+#   python -m venv .venv-arch
+#   .venv-arch\Scripts\pip install -r requirements/arch.txt   (Windows)
+#   .venv-arch\Scripts\lint-imports
+# o via Docker:
+#   docker run --rm -v "${PWD}:/sisoc" -w /sisoc python:3.11.15-slim-bookworm \
+#     sh -lc "pip install -q -r requirements/arch.txt && lint-imports"
+
+[importlinter]
+root_packages =
+    core
+    users
+    ciudadanos
+    comedores
+    organizaciones
+    duplas
+    admisiones
+    intervenciones
+    historial
+    acompanamientos
+    expedientespagos
+    relevamientos
+    rendicioncuentasfinal
+    rendicioncuentasmensual
+    centrodefamilia
+    VAT
+    celiaquia
+    importarexpediente
+    comunicados
+    centrodeinfancia
+    ver_para_ser_libre
+    dispositivos
+    pwa
+    ticketera
+
+[importlinter:contract:core-no-domains]
+name = core no debe importar apps de dominio
+type = forbidden
+allow_indirect_imports = True
+source_modules =
+    core
+forbidden_modules =
+    ciudadanos
+    comedores
+    organizaciones
+    duplas
+    admisiones
+    intervenciones
+    historial
+    acompanamientos
+    expedientespagos
+    relevamientos
+    rendicioncuentasfinal
+    rendicioncuentasmensual
+    centrodefamilia
+    VAT
+    celiaquia
+    importarexpediente
+    comunicados
+    centrodeinfancia
+    ver_para_ser_libre
+    dispositivos
+    pwa
+    ticketera
+ignore_imports =
+    core.api_views -> centrodefamilia.services.consulta_renaper.impl
+    core.management.commands.load_fixtures -> intervenciones.services_catalogo
+    core.services.favorite_filters.config -> admisiones.services.admisiones_filter_config
+    core.services.favorite_filters.config -> admisiones.services.legales_filter_config
+    core.services.favorite_filters.config -> centrodefamilia.services.beneficiarios_filter_config
+    core.services.favorite_filters.config -> centrodefamilia.services.centro_filter_config
+    core.services.favorite_filters.config -> centrodefamilia.services.responsables_filter_config
+    core.services.favorite_filters.config -> dispositivos.dispositivos_filter_config
+    core.services.favorite_filters.config -> duplas.dupla_filter_config
+    core.services.favorite_filters.config -> rendicioncuentasmensual.filter_config
+    core.services.favorite_filters.config -> VAT.services.centro_filter_config
+    core.soft_delete.state_sync -> VAT.cache_utils
+    core.templatetags.custom_filters -> VAT.services.access_scope
+    core.views -> organizaciones.models
+    core.debug_queries -> **
+    core.benchmarks.** -> **
+
+[importlinter:contract:ciudadanos-no-domains]
+name = ciudadanos no debe importar otras apps de dominio
+type = forbidden
+allow_indirect_imports = True
+source_modules =
+    ciudadanos
+forbidden_modules =
+    comedores
+    organizaciones
+    duplas
+    admisiones
+    intervenciones
+    historial
+    acompanamientos
+    expedientespagos
+    relevamientos
+    rendicioncuentasfinal
+    rendicioncuentasmensual
+    centrodefamilia
+    VAT
+    celiaquia
+    importarexpediente
+    comunicados
+    centrodeinfancia
+    ver_para_ser_libre
+    dispositivos
+    pwa
+    ticketera
+ignore_imports =
+    ciudadanos.services_importacion_masiva -> centrodefamilia.services.consulta_renaper
+    ciudadanos.views -> celiaquia.models
+    ciudadanos.views -> centrodefamilia.models
+    ciudadanos.views -> comedores.models
+    ciudadanos.views -> pwa.models
+    ciudadanos.views -> VAT.models
+
+[importlinter:contract:users-no-domains]
+name = users no debe importar apps de dominio
+type = forbidden
+allow_indirect_imports = True
+source_modules =
+    users
+forbidden_modules =
+    ciudadanos
+    comedores
+    organizaciones
+    duplas
+    admisiones
+    intervenciones
+    historial
+    acompanamientos
+    expedientespagos
+    relevamientos
+    rendicioncuentasfinal
+    rendicioncuentasmensual
+    centrodefamilia
+    VAT
+    celiaquia
+    importarexpediente
+    comunicados
+    centrodeinfancia
+    ver_para_ser_libre
+    dispositivos
+    pwa
+    ticketera
+ignore_imports =
+    users.api_views -> pwa.models
+    users.api_views -> pwa.services.auditoria_service
+    users.forms -> comedores.models
+    users.forms -> duplas.models
+    users.forms -> organizaciones.models
+    users.services_pwa -> comedores.models
+    users.services_user_import -> comedores.models
+    users.services_user_import -> organizaciones.models
+    users.signals -> duplas.models
+    users.tests -> **

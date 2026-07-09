@@ -18,6 +18,7 @@ ROLE_REFERENTE_CENTRO_PERMISSIONS = (
     "auth.role_centroreferentevat",
 )
 ROLE_REVISOR_CENTRO_PERMISSION = "auth.role_revisorcentrovat"
+ROLE_VAT_ADMIN_VISUALIZADOR_PERMISSION = "auth.role_inet_admin_visualizador"
 VAT_VIEW_CENTRO_PERMISSION = "VAT.view_centro"
 VAT_ADD_CENTRO_PERMISSION = "VAT.add_centro"
 VAT_CHANGE_CENTRO_PERMISSION = "VAT.change_centro"
@@ -55,6 +56,20 @@ def is_vat_revisor(user) -> bool:
     return user_has_permission_code(user, ROLE_REVISOR_CENTRO_PERMISSION)
 
 
+def is_vat_admin_visualizador(user) -> bool:
+    """Perfil INET Admin Visualizador: lectura global de VAT.
+
+    Ve todos los centros/comisiones del país en solo lectura. Este marcador
+    solo habilita los caminos de lectura (`*_for_user`, `can_user_access_*`);
+    las funciones de gestión (`*_for_management`, `can_user_edit_centro`,
+    `can_user_create_centro`) NO lo reconocen, garantizando read-only a nivel
+    backend.
+    """
+    if not user:
+        return False
+    return user_has_permission_code(user, ROLE_VAT_ADMIN_VISUALIZADOR_PERMISSION)
+
+
 def is_vat_provincial(user) -> bool:
     if not user:
         return False
@@ -69,6 +84,21 @@ def is_vat_provincial(user) -> bool:
             VAT_VIEW_CENTRO_PERMISSION,
         ),
     )
+
+
+def es_operador_cfp(user) -> bool:
+    """Operador CFP "puro": referente de centro sin rol administrador.
+
+    Se usa para restringir la visualización de datos administrativos del centro
+    (clase de institución, tipo de gestión, estado ETP) que solo requieren los
+    administradores INET/SSE o provinciales. Un usuario con doble rol (referente
+    + SSE/provincial) conserva la vista completa.
+    """
+    if not user or not getattr(user, "is_authenticated", False):
+        return False
+    if is_vat_sse(user) or is_vat_provincial(user):
+        return False
+    return is_vat_referente(user)
 
 
 def _has_effective_territorial_scopes(user) -> bool:
@@ -156,7 +186,7 @@ def _user_is_revisor_for_centro(user, centro) -> bool:
 
 
 def filter_centros_queryset_for_user(base_qs: QuerySet, user) -> QuerySet:
-    if is_vat_sse(user):
+    if is_vat_sse(user) or is_vat_admin_visualizador(user):
         return base_qs
 
     if is_vat_provincial(user) and _has_effective_territorial_scopes(user):
@@ -180,7 +210,7 @@ def filter_centros_queryset_for_management(base_qs: QuerySet, user) -> QuerySet:
 
 
 def can_user_access_centro(user, centro) -> bool:
-    if is_vat_sse(user):
+    if is_vat_sse(user) or is_vat_admin_visualizador(user):
         return True
 
     if is_vat_provincial(user) and _has_effective_territorial_scopes(user):
@@ -198,7 +228,7 @@ def can_user_access_centro(user, centro) -> bool:
 
 
 def filter_ofertas_queryset_for_user(base_qs: QuerySet, user) -> QuerySet:
-    if is_vat_sse(user):
+    if is_vat_sse(user) or is_vat_admin_visualizador(user):
         return base_qs
 
     if is_vat_provincial(user) and _has_effective_territorial_scopes(user):
@@ -244,7 +274,7 @@ def filter_ofertas_queryset_for_management(base_qs: QuerySet, user) -> QuerySet:
 
 
 def filter_comisiones_queryset_for_user(base_qs: QuerySet, user) -> QuerySet:
-    if is_vat_sse(user):
+    if is_vat_sse(user) or is_vat_admin_visualizador(user):
         return base_qs
 
     if is_vat_provincial(user) and _has_effective_territorial_scopes(user):
@@ -292,7 +322,7 @@ def filter_comisiones_queryset_for_management(base_qs: QuerySet, user) -> QueryS
 
 
 def filter_sesiones_queryset_for_user(base_qs: QuerySet, user) -> QuerySet:
-    if is_vat_sse(user):
+    if is_vat_sse(user) or is_vat_admin_visualizador(user):
         return base_qs
 
     if is_vat_provincial(user) and _has_effective_territorial_scopes(user):

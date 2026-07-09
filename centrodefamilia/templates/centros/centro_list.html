@@ -1,6 +1,9 @@
 {% extends "includes/main.html" %}
 {% load static %}
 {% block title %}Centros de Familia{% endblock %}
+{% block head %}
+    <link rel="stylesheet" href="{% static 'custom/css/cdf.css' %}" />
+{% endblock %}
 {% block breadcrumb %}
     <ol class="breadcrumb float-sm-right">
         <li class="breadcrumb-item">
@@ -28,7 +31,7 @@
         {% endwith %}
     {% endwith %}
     <!-- Centros Table with AJAX -->
-    <div class="row mt-5 max-width-100">
+    <div class="row mt-5 max-width-100 cdf-page">
         <div class="col-12">
             <div class="card">
                 <div class="card-body">

@@ -2,6 +2,8 @@ from django.contrib.auth.decorators import login_required
 from django.urls import path
 from django.views.generic.base import RedirectView
 from comedores.views import (
+    ActividadEspacioPWACreateView,
+    ActividadEspacioPWAUpdateView,
     ActividadPnudCreateView,
     ActividadPnudDeactivateView,
     ActividadPnudListView,
@@ -37,6 +39,7 @@ from comedores.views import (
     capacitacion_certificado_estado_ajax,
     nomina_editar_ajax,
     nomina_cambiar_estado,
+    nomina_derivar,
     validar_comedor,
 )
 from comedores.views.export import ComedorExportView
@@ -57,7 +60,7 @@ from intervenciones.views import (
     IntervencionDetailIndividualView,
     IntervencionDetailView,
 )
-from core.decorators import permissions_any_required
+from core.decorators import permissions_all_required, permissions_any_required
 
 urlpatterns = [
     path(
@@ -74,7 +77,11 @@ urlpatterns = [
     path(
         "comedores/exportar",
         permissions_any_required(
-            ["auth.role_exportar_a_csv", "auth.role_administrador"]
+            (
+                *ComedorExportView.list_permission_codes,
+                ComedorExportView.export_permission_code,
+                *ComedorExportView.admin_permission_codes,
+            )
         )(ComedorExportView.as_view()),
         name="comedor_export",
     ),
@@ -132,6 +139,20 @@ urlpatterns = [
             ColaboradorEspacioCreateView.as_view()
         ),
         name="colaborador_espacio_crear",
+    ),
+    path(
+        "comedores/<int:pk>/actividades/crear/",
+        permissions_any_required(["auth.role_admin", "pwa.manage_colaboradores_pwa"])(
+            ActividadEspacioPWACreateView.as_view()
+        ),
+        name="actividad_espacio_pwa_crear",
+    ),
+    path(
+        "comedores/<int:pk>/actividades/<int:pk2>/editar/",
+        permissions_any_required(["auth.role_admin", "pwa.manage_colaboradores_pwa"])(
+            ActividadEspacioPWAUpdateView.as_view()
+        ),
+        name="actividad_espacio_pwa_editar",
     ),
     path(
         "comedores/<int:pk>/colaboradores/<int:pk2>/editar/",
@@ -318,6 +339,13 @@ urlpatterns = [
         "comedores/nomina/<int:pk>/cambiar-estado/",
         permissions_any_required(["comedores.change_nomina"])(nomina_cambiar_estado),
         name="nomina_cambiar_estado",
+    ),
+    path(
+        "comedores/nomina/<int:pk>/derivar/",
+        permissions_all_required(["comedores.change_nomina", "comedores.add_nomina"])(
+            nomina_derivar
+        ),
+        name="nomina_derivar",
     ),
     path(
         "comedores/<int:pk>/admision/<int:admision_pk>/nomina/crear/",

@@ -7,11 +7,7 @@
 {% block content %}
     <link rel="stylesheet" href="{% static 'custom/css/listModerno.css' %}" />
     <div class="comedor-list-container">
-        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
-            <div>
-                <h1 class="mb-1">{{ titulo_listado }}</h1>
-            </div>
-        </div>
+        {% include 'components/search_bar.html' with titulo="Buscar Rendiciones" reset_url=reset_url filters_mode=filters_mode filters_action=filters_action filters_config=filters_config filters_js=filters_js seccion_filtros_favoritos=seccion_filtros_favoritos %}
         <div class="row mt-5 max-width-100">
             <div class="col-12">
                 <div class="card comedor-table-card">

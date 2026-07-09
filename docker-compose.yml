@@ -35,5 +35,22 @@ services:
     user: "${RUN_UID:-0}:${RUN_GID:-0}"
     restart: "no"
 
+  ocr_worker:
+    build:
+      context: .
+      dockerfile: ./docker/django/Dockerfile
+    environment:
+      TZ: America/Argentina/Buenos_Aires
+      DJANGO_SERVICE_ROLE: ocr_worker
+    env_file:
+      - .env
+    volumes:
+      - .:/sisoc/
+    user: "${RUN_UID:-0}:${RUN_GID:-0}"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    restart: unless-stopped
+
 volumes:
   mysql_data:

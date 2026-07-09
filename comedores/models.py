@@ -481,7 +481,13 @@ class ComedorDatosConvenioPnud(models.Model):
         blank=True,
     )
     nro_convenio = models.CharField(max_length=120, null=True, blank=True)
-    monto_total_convenio_por_espacio = models.DecimalField(
+    monto_convenio_prestaciones_alimentarias = models.DecimalField(
+        max_digits=14,
+        decimal_places=2,
+        null=True,
+        blank=True,
+    )
+    monto_convenio_siph = models.DecimalField(
         max_digits=14,
         decimal_places=2,
         null=True,
@@ -493,6 +499,90 @@ class ComedorDatosConvenioPnud(models.Model):
     )
     personas_conveniadas = models.PositiveIntegerField(null=True, blank=True)
     cantidad_modulos = models.PositiveIntegerField(null=True, blank=True)
+    aprobadas_desayuno_lunes = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_desayuno_martes = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_desayuno_miercoles = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_desayuno_jueves = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_desayuno_viernes = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_desayuno_sabado = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_desayuno_domingo = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_almuerzo_lunes = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_almuerzo_martes = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_almuerzo_miercoles = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_almuerzo_jueves = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_almuerzo_viernes = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_almuerzo_sabado = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_almuerzo_domingo = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_merienda_lunes = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_merienda_martes = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_merienda_miercoles = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_merienda_jueves = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_merienda_viernes = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_merienda_sabado = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_merienda_domingo = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_cena_lunes = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_cena_martes = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_cena_miercoles = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_cena_jueves = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_cena_viernes = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_cena_sabado = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_cena_domingo = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
     actualizado_en = models.DateTimeField(auto_now=True)
 
     class Meta:
@@ -558,6 +648,43 @@ class Nomina(SoftDeleteModelMixin, models.Model):
             comedor_nombre = "Comedor sin nombre"
         ciudadano = str(self.ciudadano) if self.ciudadano else "Ciudadano no asignado"
         return f"{ciudadano} en {comedor_nombre} ({self.get_estado_display()})"
+
+
+class NominaDerivacion(models.Model):
+    nomina_origen = models.ForeignKey(
+        Nomina,
+        on_delete=models.PROTECT,
+        related_name="derivaciones_origen",
+    )
+    nomina_destino = models.ForeignKey(
+        Nomina,
+        on_delete=models.PROTECT,
+        related_name="derivaciones_destino",
+    )
+    comedor_origen = models.ForeignKey(
+        "comedores.Comedor",
+        on_delete=models.PROTECT,
+        related_name="+",
+    )
+    comedor_destino = models.ForeignKey(
+        "comedores.Comedor",
+        on_delete=models.PROTECT,
+        related_name="+",
+    )
+    usuario = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+    )
+    fecha = models.DateTimeField(auto_now_add=True)
+    motivo = models.TextField(blank=True)
+
+    class Meta:
+        verbose_name = "Derivación de nómina"
+        verbose_name_plural = "Derivaciones de nómina"
+        ordering = ["-fecha"]
 
 
 class CapacitacionComedorCertificado(models.Model):

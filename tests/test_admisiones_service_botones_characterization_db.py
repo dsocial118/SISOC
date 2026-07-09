@@ -187,7 +187,7 @@ def test_get_botones_disponibles_preserva_orden_en_combinacion_tecnica():
         num_expediente="EXP-33",
         enviado_legales=False,
     )
-    informe_tecnico = _informe(estado="Validado")
+    informe_tecnico = _informe(estado="Validado", estado_formulario="finalizado")
 
     botones = module.AdmisionService._get_botones_disponibles(
         admision,

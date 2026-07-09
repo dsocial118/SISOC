@@ -11,12 +11,19 @@ from comedores.forms.comedor_form import ColaboradorEspacioForm
 from comedores.models import ColaboradorEspacio
 from comedores.services.colaborador_espacio_service import ColaboradorEspacioService
 from comedores.services.comedor_service import ComedorService
+from comedores.utils import is_abordaje_comunitario_linea_secos_program
 
 
 class ColaboradorEspacioCreateView(LoginRequiredMixin, CreateView):
     model = ColaboradorEspacio
     form_class = ColaboradorEspacioForm
     template_name = "comedor/colaborador_form.html"
+
+    def dispatch(self, request, *args, **kwargs):
+        comedor = self._get_comedor()
+        if is_abordaje_comunitario_linea_secos_program(comedor):
+            raise Http404("Alta de colaboradores no disponible para este programa.")
+        return super().dispatch(request, *args, **kwargs)
 
     def get_success_url(self):
         return reverse_lazy("comedor_detalle", kwargs={"pk": self.kwargs["pk"]})
@@ -164,7 +171,10 @@ class ColaboradorEspacioUpdateView(LoginRequiredMixin, UpdateView):
 
     def get_queryset(self):
         return (
-            ColaboradorEspacio.objects.filter(comedor=self._get_comedor())
+            ColaboradorEspacio.objects.filter(
+                comedor=self._get_comedor(),
+                fecha_baja__isnull=True,
+            )
             .select_related("ciudadano__sexo")
             .prefetch_related("actividades")
         )

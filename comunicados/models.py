@@ -17,6 +17,7 @@ class TipoComunicado(models.TextChoices):
 class SubtipoComunicado(models.TextChoices):
     INSTITUCIONAL = "institucional", "Comunicación Institucional"
     COMEDORES = "comedores", "Comunicación a Comedores"
+    ORGANIZACIONES = "organizaciones", "Comunicación a Organizaciones"
 
 
 class Comunicado(models.Model):
@@ -51,6 +52,12 @@ class Comunicado(models.Model):
         blank=True,
         related_name="comunicados",
         verbose_name="Comedores destinatarios",
+    )
+    organizaciones = models.ManyToManyField(
+        "organizaciones.Organizacion",
+        blank=True,
+        related_name="comunicados",
+        verbose_name="Organizaciones destinatarias",
     )
     fecha_creacion = models.DateTimeField(
         auto_now_add=True, verbose_name="Fecha de creación"
@@ -112,6 +119,123 @@ class Comunicado(models.Model):
     def es_visible(self):
         """Determina si el comunicado debe mostrarse en la vista principal."""
         return self.estado == EstadoComunicado.PUBLICADO and not self.esta_vencido
+
+
+def mailing_job_upload_to(instance, filename):
+    return f"comunicados/mailing/jobs/{timezone.now().strftime('%Y/%m/%d')}/{filename}"
+
+
+class MailingJob(models.Model):
+    class Status(models.TextChoices):
+        PENDING = "pending", "Pendiente"
+        PROCESSING = "processing", "Procesando"
+        COMPLETED = "completed", "Completado"
+        FAILED = "failed", "Fallido"
+
+    requested_by = models.ForeignKey(
+        User,
+        on_delete=models.DO_NOTHING,
+        related_name="mailing_jobs",
+    )
+    archivo = models.FileField(upload_to=mailing_job_upload_to)
+    original_filename = models.CharField(max_length=255)
+    asunto = models.CharField(max_length=255, verbose_name="Asunto")
+    cuerpo = models.TextField(verbose_name="Cuerpo")
+
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.PENDING,
+        db_index=True,
+    )
+    total_rows = models.PositiveIntegerField(default=0)
+    processed_rows = models.PositiveIntegerField(default=0)
+    sent_rows = models.PositiveIntegerField(default=0)
+    rejected_rows = models.PositiveIntegerField(default=0)
+    next_row_index = models.PositiveIntegerField(default=0)
+
+    last_successful_row = models.PositiveIntegerField(null=True, blank=True)
+    last_successful_mail = models.EmailField(max_length=254, blank=True)
+    last_attempted_row = models.PositiveIntegerField(null=True, blank=True)
+    last_attempted_mail = models.EmailField(max_length=254, blank=True)
+
+    last_error_message = models.TextField(blank=True)
+    last_error_at = models.DateTimeField(null=True, blank=True)
+
+    resume_count = models.PositiveIntegerField(default=0)
+    requested_at = models.DateTimeField(auto_now_add=True, db_index=True)
+    started_at = models.DateTimeField(null=True, blank=True)
+    finished_at = models.DateTimeField(null=True, blank=True)
+    last_activity_at = models.DateTimeField(null=True, blank=True, db_index=True)
+
+    class Meta:
+        ordering = ["-requested_at", "-id"]
+        indexes = [
+            models.Index(fields=["status", "requested_at"]),
+            models.Index(fields=["requested_by", "requested_at"]),
+        ]
+        verbose_name = "Lote de mailing"
+        verbose_name_plural = "Lotes de mailing"
+
+    def __str__(self):
+        return f"Lote Mailing {self.id} ({self.get_status_display()})"
+
+
+class MailingJobRow(models.Model):
+    class Status(models.TextChoices):
+        SENT = "sent", "Enviado"
+        FAILED = "failed", "Fallido"
+
+    job = models.ForeignKey(
+        MailingJob,
+        on_delete=models.CASCADE,
+        related_name="rows",
+    )
+    fila = models.PositiveIntegerField()
+    mail_destino = models.EmailField(max_length=254, blank=True)
+    status = models.CharField(max_length=20, choices=Status.choices, db_index=True)
+    mensaje = models.TextField(blank=True)
+    attempts = models.PositiveIntegerField(default=0)
+    processed_at = models.DateTimeField(null=True, blank=True, db_index=True)
+
+    class Meta:
+        ordering = ["fila", "id"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["job", "fila"],
+                name="comunicados_mailing_job_row_unique",
+            )
+        ]
+        indexes = [
+            models.Index(fields=["job", "status"]),
+            models.Index(fields=["job", "processed_at"]),
+        ]
+        verbose_name = "Resultado de fila de mailing"
+        verbose_name_plural = "Resultados de filas de mailing"
+
+    def __str__(self):
+        return (
+            f"Lote Mailing {self.job_id} fila {self.fila} ({self.get_status_display()})"
+        )
+
+
+class MailingJobAttachment(models.Model):
+    job = models.ForeignKey(
+        MailingJob,
+        on_delete=models.CASCADE,
+        related_name="attachments",
+    )
+    archivo = models.FileField(
+        upload_to="comunicados/mailing/attachments/%Y/%m/%d/",
+    )
+    nombre_original = models.CharField(max_length=255)
+
+    class Meta:
+        verbose_name = "Adjunto de lote de mailing"
+        verbose_name_plural = "Adjuntos de lotes de mailing"
+
+    def __str__(self):
+        return self.nombre_original
 
 
 class ComunicadoAdjunto(models.Model):

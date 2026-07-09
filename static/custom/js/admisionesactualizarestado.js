@@ -75,6 +75,35 @@ function displayState(td, estado, observaciones) {
     }
 }
 
+function replaceAdmisionDocumentRow(rowId, html, documentoId, sourceElement) {
+    if (!html) {
+        return false;
+    }
+
+    const sourceRow = sourceElement ? sourceElement.closest('tr') : null;
+    const targetRow = rowId ? document.getElementById(`fila-${rowId}`) : sourceRow;
+    if (!targetRow) {
+        return false;
+    }
+
+    [rowId, documentoId].filter(Boolean).forEach(function (id) {
+        const obsRow = document.getElementById(`fila-obs-${id}`);
+        if (obsRow) {
+            obsRow.remove();
+        }
+    });
+
+    const nextRow = targetRow.nextElementSibling;
+    if (nextRow && nextRow.id && nextRow.id.indexOf('fila-obs-') === 0) {
+        nextRow.remove();
+    }
+
+    const template = document.createElement('template');
+    template.innerHTML = html.trim();
+    targetRow.replaceWith(template.content);
+    return true;
+}
+
 document.addEventListener("DOMContentLoaded", function () {
     const modalElement = document.getElementById("modalObservacionRectificar");
     if (modalElement) {
@@ -236,9 +265,18 @@ function actualizarEstado(selectElement, observacionForzada = null) {
 
             const nuevoEstado = data.nuevo_estado;
             const grupo = data.grupo_usuario;
+            const toastEl = document.getElementById("toastEstadoExito");
 
             if (selectElement.dataset) {
                 selectElement.dataset.currentValue = nuevoEstado;
+            }
+
+            if (toastEl) {
+                new bootstrap.Toast(toastEl).show();
+            }
+
+            if (replaceAdmisionDocumentRow(data.row_id, data.html, documentoId, selectElement)) {
+                return;
             }
 
             // Re-render de la celda "Número de GDE": al cambiar el estado del
@@ -249,11 +287,6 @@ function actualizarEstado(selectElement, observacionForzada = null) {
                 if (gdeCell) {
                     gdeCell.innerHTML = data.gde_html;
                 }
-            }
-
-            const toastEl = document.getElementById("toastEstadoExito");
-            if (toastEl) {
-                new bootstrap.Toast(toastEl).show();
             }
 
             if (!td) {
@@ -801,6 +834,192 @@ function volverAModoVistaConvenioNumero() {
     }
 }
 
+function actualizarVigentePwa(input) {
+    if (!input) {
+        return;
+    }
+
+    const previousValue = !input.checked;
+    const csrfInput = document.querySelector('[name=csrfmiddlewaretoken]');
+    if (!csrfInput) {
+        input.checked = previousValue;
+        alert("No se encontro el token CSRF.");
+        return;
+    }
+
+    const urlActualizarVigentePwa = getAdmisionesTecnicosConfigValue(
+        "urlActualizarVigentePwa",
+        window.URL_ACTUALIZAR_VIGENTE_PWA
+    );
+    const admisionId = getAdmisionesTecnicosConfigValue(
+        "admisionId",
+        window.ADMISION_ID
+    );
+
+    if (!urlActualizarVigentePwa || !admisionId) {
+        input.checked = previousValue;
+        alert("No se pudo actualizar la vigencia PWA.");
+        return;
+    }
+
+    fetch(urlActualizarVigentePwa, {
+        method: "POST",
+        headers: {
+            "X-CSRFToken": csrfInput.value,
+            "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: new URLSearchParams({
+            admision_id: admisionId,
+            vigente_pwa: input.checked ? "1" : "0",
+        }),
+    })
+        .then((response) => response.json())
+        .then((data) => {
+            if (!data.success) {
+                input.checked = previousValue;
+                alert("Error: " + (data.error || "No se pudo actualizar la vigencia PWA."));
+            }
+        })
+        .catch((error) => {
+            console.error("Error al actualizar vigencia PWA:", error);
+            input.checked = previousValue;
+            alert("Ocurrio un error al actualizar la vigencia PWA.");
+        });
+}
+
+function activarEdicionPersonasConveniadasNomina() {
+    const displayDiv = document.getElementById("personas-conveniadas-nomina-display");
+    const editDiv = document.getElementById("personas-conveniadas-nomina-edit");
+    const input = document.getElementById("personas-conveniadas-nomina-input");
+
+    if (displayDiv && editDiv && input) {
+        displayDiv.classList.add("d-none");
+        editDiv.classList.remove("d-none");
+        input.focus();
+        input.select();
+    }
+}
+
+function cancelarEdicionPersonasConveniadasNomina() {
+    const displayDiv = document.getElementById("personas-conveniadas-nomina-display");
+    const editDiv = document.getElementById("personas-conveniadas-nomina-edit");
+    const input = document.getElementById("personas-conveniadas-nomina-input");
+
+    if (displayDiv && editDiv && input) {
+        const valorActualSpan = displayDiv.querySelector("span");
+        const valorActual = valorActualSpan?.textContent || "";
+        input.value = valorActualSpan?.classList.contains("text-muted") ? "" : valorActual;
+        editDiv.classList.add("d-none");
+        displayDiv.classList.remove("d-none");
+    }
+}
+
+function guardarPersonasConveniadasNomina() {
+    const input = document.getElementById("personas-conveniadas-nomina-input");
+    const numero = input ? input.value.trim() : "";
+    actualizarPersonasConveniadasNomina(numero);
+}
+
+function actualizarPersonasConveniadasNomina(numero) {
+    const csrfInput = document.querySelector('[name=csrfmiddlewaretoken]');
+    if (!csrfInput) {
+        alert("No se encontro el token CSRF.");
+        return;
+    }
+
+    const urlActualizar = getAdmisionesTecnicosConfigValue(
+        "urlActualizarPersonasConveniadasNomina",
+        window.URL_ACTUALIZAR_PERSONAS_CONVENIADAS_NOMINA
+    );
+    const admisionId = getAdmisionesTecnicosConfigValue(
+        "admisionId",
+        window.ADMISION_ID
+    );
+
+    if (!urlActualizar || !admisionId) {
+        alert("No se pudo actualizar personas conveniadas nomina.");
+        return;
+    }
+
+    fetch(urlActualizar, {
+        method: "POST",
+        headers: {
+            "X-CSRFToken": csrfInput.value,
+            "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: new URLSearchParams({
+            admision_id: admisionId,
+            personas_conveniadas_nomina: numero,
+        }),
+    })
+        .then((response) => response.json())
+        .then((data) => {
+            if (!data.success) {
+                alert("Error: " + (data.error || "No se pudo actualizar personas conveniadas nomina."));
+                return;
+            }
+            const toastEl = document.getElementById("toastPersonasConveniadasNominaExito");
+            if (toastEl) {
+                new bootstrap.Toast(toastEl).show();
+            }
+            actualizarVistaPersonasConveniadasNomina(data.personas_conveniadas_nomina);
+            volverAModoVistaPersonasConveniadasNomina();
+        })
+        .catch((error) => {
+            console.error("Error al actualizar personas conveniadas nomina:", error);
+            alert("Ocurrio un error al actualizar personas conveniadas nomina.");
+        });
+}
+
+function actualizarVistaPersonasConveniadasNomina(numero) {
+    const displayDiv = document.getElementById("personas-conveniadas-nomina-display");
+    const input = document.getElementById("personas-conveniadas-nomina-input");
+
+    if (input) {
+        input.value = numero === null || numero === undefined ? "" : numero;
+    }
+
+    if (!displayDiv) {
+        return;
+    }
+
+    const hasValue = numero !== null && numero !== undefined && numero !== "";
+    displayDiv.innerHTML = "";
+    if (hasValue) {
+        const span = document.createElement("span");
+        span.className = "text-success fw-bold";
+        span.textContent = String(numero);
+        displayDiv.appendChild(span);
+
+        const icon = document.createElement("i");
+        icon.className = "bi bi-pencil-square ms-2 text-muted";
+        icon.style.cursor = "pointer";
+        icon.title = "Editar personas conveniadas nomina";
+        displayDiv.appendChild(icon);
+    } else {
+        const span = document.createElement("span");
+        span.className = "text-muted";
+        span.textContent = "Sin personas conveniadas nomina";
+        displayDiv.appendChild(span);
+
+        const icon = document.createElement("i");
+        icon.className = "bi bi-plus-circle ms-2 text-primary";
+        icon.style.cursor = "pointer";
+        icon.title = "Agregar personas conveniadas nomina";
+        displayDiv.appendChild(icon);
+    }
+}
+
+function volverAModoVistaPersonasConveniadasNomina() {
+    const displayDiv = document.getElementById("personas-conveniadas-nomina-display");
+    const editDiv = document.getElementById("personas-conveniadas-nomina-edit");
+
+    if (displayDiv && editDiv) {
+        editDiv.classList.add("d-none");
+        displayDiv.classList.remove("d-none");
+    }
+}
+
 function prefillModalNumExpediente() {
     const displaySpan = document.getElementById("num-expediente-display");
     const input = document.getElementById("num-expediente-input");
@@ -929,5 +1148,9 @@ function actualizarNumExpediente(numero) {
 window.activarEdicionConvenioNumero = activarEdicionConvenioNumero;
 window.cancelarEdicionConvenioNumero = cancelarEdicionConvenioNumero;
 window.guardarConvenioNumero = guardarConvenioNumero;
+window.actualizarVigentePwa = actualizarVigentePwa;
+window.activarEdicionPersonasConveniadasNomina = activarEdicionPersonasConveniadasNomina;
+window.cancelarEdicionPersonasConveniadasNomina = cancelarEdicionPersonasConveniadasNomina;
+window.guardarPersonasConveniadasNomina = guardarPersonasConveniadasNomina;
 window.prefillModalNumExpediente = prefillModalNumExpediente;
 window.guardarNumExpedienteDesdeModal = guardarNumExpedienteDesdeModal;

@@ -21,6 +21,12 @@ from users.views import (
     UserActiveView,
 )
 from users.views_export import UserExportView, GroupExportView
+from users.views_user_import import (
+    UserImportJobCreateView,
+    UserImportJobDetailView,
+    UserImportJobResumeView,
+    UserImportTemplateView,
+)
 
 
 urlpatterns = [
@@ -102,6 +108,26 @@ urlpatterns = [
         "usuarios/activar/<int:pk>/",
         permissions_any_required(["auth.delete_user"])(UserActiveView.as_view()),
         name="usuario_activar",
+    ),
+    path(
+        "usuarios/importar/",
+        permissions_any_required(["auth.add_user"])(UserImportJobCreateView.as_view()),
+        name="usuarios_importar",
+    ),
+    path(
+        "usuarios/importar/plantilla/",
+        permissions_any_required(["auth.add_user"])(UserImportTemplateView.as_view()),
+        name="usuarios_importar_plantilla",
+    ),
+    path(
+        "usuarios/importar/lotes/<int:pk>/",
+        permissions_any_required(["auth.add_user"])(UserImportJobDetailView.as_view()),
+        name="usuarios_importar_detalle",
+    ),
+    path(
+        "usuarios/importar/lotes/<int:pk>/reanudar/",
+        permissions_any_required(["auth.add_user"])(UserImportJobResumeView.as_view()),
+        name="usuarios_importar_reanudar",
     ),
     path(
         "grupos/",
