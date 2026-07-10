@@ -6,7 +6,7 @@
 
 .app-wrapper .app-footer,
 footer.app-footer {
-    position: sticky;
+    position: static;
     width: 100%;
     height: 136px !important;
     background-color: #232d4f !important;
@@ -27,7 +27,6 @@ footer.app-footer {
 
 .app-sidebar {
     background-color: #232d4f !important;
-    position: fixed;
     top: 72px !important;
     z-index: 1040; /* Menor que header pero mayor que contenido */
 }
@@ -44,9 +43,11 @@ footer.app-footer {
 }
 
 .app-main {
-    margin-top: 96px;
-    min-height: calc(100vh - 182px); 
-    margin-left: 0;
+    min-height: calc(100vh - 76px - 136px);
+}
+
+.app-wrapper {
+    padding-top: 76px;
 }
 
 .main-header {
@@ -106,27 +107,24 @@ header.main-header {
 
 @media (min-width: 992px) {
     .sidebar-expand-lg.layout-fixed .app-sidebar {
-        position: fixed;
+        position: sticky;
         top: 76px !important;
+        align-self: start;
+        max-height: calc(100vh - 76px);
     }
 
     .nav-item {
         overflow-x: hidden !important;
     }
 
-    .app-main {
-        margin-left: 300px;
+    .sidebar-expand-lg.layout-fixed .app-sidebar .sidebar-wrapper {
+        height: calc(100vh - 76px);
     }
-}
-
-body.sidebar-collapse .app-main {
-    margin-left: 0;
 }
 
 .sidebar-expand-lg.layout-fixed .app-sidebar .sidebar-wrapper {
-        height: calc(100vh - 200px);
-        overflow-x: hidden !important;
-    }
+    overflow-x: hidden !important;
+}
 
 .sidebar-wrapper .sidebar-menu > .nav-item > .nav-link.active:not(:hover) {
     color: #e7ba61;
