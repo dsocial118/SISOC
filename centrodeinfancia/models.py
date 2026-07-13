@@ -1157,6 +1157,47 @@ class Trabajador(SoftDeleteModelMixin, models.Model):
             raise ValidationError(errors)
 
 
+class AsistenciaTrabajador(models.Model):
+    """
+    Registro de asistencia del personal del centro para una fecha concreta.
+    Una fila por (trabajador, fecha); presente=True indica que asistió.
+    """
+
+    trabajador = models.ForeignKey(
+        Trabajador,
+        on_delete=models.CASCADE,
+        related_name="asistencias",
+        verbose_name="Trabajador",
+    )
+    fecha = models.DateField(verbose_name="Fecha")
+    presente = models.BooleanField(default=False, verbose_name="Presente")
+    observaciones = models.TextField(
+        blank=True, null=True, verbose_name="Observaciones"
+    )
+    registrado_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="asistencias_trabajador_cdi_registradas",
+        verbose_name="Registrado por",
+    )
+    fecha_registro = models.DateTimeField(
+        auto_now_add=True, verbose_name="Fecha de registro"
+    )
+
+    class Meta:
+        verbose_name = "Asistencia de trabajador"
+        verbose_name_plural = "Asistencias de trabajadores"
+        ordering = ["-fecha"]
+        unique_together = ("trabajador", "fecha")
+        indexes = [
+            models.Index(fields=["fecha", "presente"], name="cdi_asist_trab_fecha_idx"),
+        ]
+
+    def __str__(self):
+        estado = "Presente" if self.presente else "Ausente"
+        return f"{self.trabajador} — {self.fecha} [{estado}]"
+
+
 class NominaPais(models.Model):
     nombre = models.CharField(max_length=255, unique=True)
 
