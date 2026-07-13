@@ -844,3 +844,7 @@
 .bg-base-darkblue {
     background-color: #232D4F !important;
 }
+
+.app-content-header, .app-content {
+    background-color: #3E5A7E !important;
+}
