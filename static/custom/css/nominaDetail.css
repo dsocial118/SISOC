@@ -354,7 +354,7 @@
 .nomina-table-container {
     background: #2c3e50;
     border-radius: 12px;
-    overflow: hidden;
+    overflow: visible;
 }
 
 .nomina-table {
@@ -392,6 +392,10 @@
     color: #ecf0f1;
     border: none;
     vertical-align: middle;
+}
+
+.nomina-table .dropdown-menu {
+    z-index: 1050;
 }
 
 .nomina-person-badges {
@@ -840,8 +844,3 @@
 .bg-base-darkblue {
     background-color: #232D4F !important;
 }
-
-.app-content-header, .app-content {
-    background-color: #3E5A7E !important;
-}
-

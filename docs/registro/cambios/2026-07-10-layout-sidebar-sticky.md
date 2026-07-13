@@ -7,8 +7,9 @@
 - El contenido principal deja de compensar manualmente el ancho y la altura de
   la barra lateral; sidebar, main y footer vuelven a distribuirse mediante la
   grilla principal de AdminLTE.
-- El footer permanece en el flujo normal y ocupa la columna de contenido sin
-  superponerse con la barra lateral.
+- Sidebar y main comparten la primera fila de la grilla; el footer permanece en
+  el flujo normal, ocupa una segunda fila de ancho completo y no se superpone
+  con la barra lateral.
 - En pantallas menores a `992px` se conserva el comportamiento off-canvas de
   AdminLTE para la navegación lateral.
 
