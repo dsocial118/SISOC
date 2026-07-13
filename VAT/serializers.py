@@ -1515,6 +1515,7 @@ class VatWebInscripcionPrevalidacionVoucherSerializer(VatPlainSerializer):
 class VatWebInscripcionPrevalidacionResponseSerializer(VatPlainSerializer):
     puede_inscribirse = serializers.BooleanField()
     motivos = serializers.ListField(child=serializers.CharField())
+    avisos = serializers.ListField(child=serializers.CharField())
     ciudadano = VatWebInscripcionPrevalidacionCiudadanoSerializer()
     comision = VatWebInscripcionPrevalidacionComisionSerializer()
     voucher = VatWebInscripcionPrevalidacionVoucherSerializer()
