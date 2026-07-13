@@ -22,6 +22,8 @@
   del QA canonico `qa-old` auditado el 2026-07-13.
 - `docs/infra/ENVIRONMENT_DATABASES.md`: matriz canonica de hosts MySQL separados
   para QA, HML y PRD y politica de no alojar DB en servidores de aplicacion.
+- `docs/infra/HML_*`: inventario, riesgos, operaciones, rollback y migracion del
+  HML canonico `hml-old`, comparado con QA.
 - `docs/operacion/comandos_administracion.md`: utilidades de management (`manage.py`) disponibles para el equipo.
 - `docs/operacion/pwa_web_push_deploy.md`: checklist de despliegue y validacion de web push para la PWA.
 
