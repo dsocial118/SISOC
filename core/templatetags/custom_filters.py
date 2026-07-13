@@ -1,6 +1,6 @@
 import builtins as python_builtins
 from datetime import date
-from decimal import Decimal, InvalidOperation
+from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 from urllib.parse import quote_plus
 
 from django import template
@@ -22,6 +22,23 @@ _DAYS = (
     "domingo",
 )
 _MEALS = ("desayuno", "almuerzo", "merienda", "merienda_reforzada", "cena")
+
+
+@register.filter
+def monto_sin_decimales(value):
+    if value in (None, ""):
+        return "-"
+
+    try:
+        amount = Decimal(str(value))
+    except (InvalidOperation, ValueError):
+        return "-"
+
+    if amount.is_nan() or amount.is_infinite():
+        return "-"
+
+    whole_amount = int(amount.quantize(Decimal("1"), rounding=ROUND_HALF_UP))
+    return f"{whole_amount:,}".replace(",", ".")
 
 
 @register.filter
