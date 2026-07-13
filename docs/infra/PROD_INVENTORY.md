@@ -1,8 +1,9 @@
 # Produccion - Inventario inicial de infraestructura
 
-Estado: auditoria cerrada en modo exclusivamente read-only el 2026-07-13. No se
-modificaron archivos, servicios, cron, permisos, Git, Docker, MySQL, NGINX, TLS
-ni datos.
+Estado: auditoria inicial cerrada en modo exclusivamente read-only el
+2026-07-13. Luego, con aprobacion explicita, se creo una copia local de media.
+No se modificaron servicios, cron, permisos existentes, Git, Docker, MySQL,
+NGINX, TLS ni datos de origen.
 
 ## Alcance y fuente canonica
 
@@ -18,7 +19,7 @@ alcance y se conservan solo como referencia de una posible migracion.
 | Frontend | SISOC-Mobile en un segundo stack Docker Compose |
 | Proxy | NGINX con HTTP/HTTPS |
 | DB canonica | MySQL separado en `10.80.5.46:3306`, schema `sisoc_local` |
-| Filesystem raiz | 785 GB, 90 GB usados, 663 GB libres, 12% |
+| Filesystem raiz antes del backup local | 785 GB, 90 GB usados, 663 GB libres, 12% |
 | Inodos | 2% usados |
 | Uptime observado | 25 dias |
 
@@ -103,7 +104,8 @@ No habia conexiones establecidas al listener MySQL local 3306 en las muestras.
 | --- | --- |
 | `/sisoc/SISOC` | checkout backend activo, owner `sisoc-deploy`, modo 2775 |
 | `/sisoc/SISOC/.env` | configuracion real, `sisoc-deploy:sisoc-deploy`, modo 640 |
-| `/sisoc/SISOC/media` | 65 GiB, 68,455 archivos; dato critico no regenerable |
+| `/sisoc/SISOC/media` | 65 GiB; 68,548 archivos al copiar; dato critico no regenerable |
+| `/sisoc/backups/media/20260713_172352/media` | copia local aprobada, privada de root y en el mismo filesystem |
 | `/sisoc/SISOC/static_root` | 27 MiB, 894 archivos; regenerable |
 | `/sisoc/SISOC/logs` | 1.3 GiB, logs por fecha |
 | `/sisoc/SISOC/tmp` | 24 KiB, tres archivos no trackeados; contenido no leido |
@@ -129,6 +131,27 @@ Mobile activo:
 
 No se leyo ni borro contenido de `tmp/`, media, checkouts historicos o `.env`.
 
+## Backup local de media
+
+El 2026-07-13 se creo, con aprobacion explicita, el snapshot local
+`/sisoc/backups/media/20260713_172352/media`:
+
+- fuente `/sisoc/SISOC/media`, sin mover ni borrar el original;
+- fuente medida en 69,226,448,310 bytes mediante `du -sb`;
+- 68,548 archivos regulares en fuente y destino, con igual suma de bytes;
+- dos pasadas `rsync -aH --numeric-ids --one-file-system --partial`;
+- segunda pasada con cero archivos transferidos;
+- dry-run final con `PENDING_CHANGES=0`;
+- prioridad reducida mediante `nice` e `ionice`;
+- estado root-only en
+  `/sisoc/backups/media/20260713_172352/status.txt`;
+- ningun servicio fue detenido o reiniciado.
+
+La copia es util para rollback local y como fuente de migracion, pero no es
+disaster recovery: comparte servidor, disco logico y filesystem con el origen.
+Fue tomada en vivo, por lo que no constituye un snapshot atomico. No se hizo un
+checksum completo ni una copia fuera del host.
+
 ## Base de datos
 
 La identidad canonica fue confirmada desde Django con una consulta de solo
@@ -139,6 +162,10 @@ metadatos:
 - UUID remoto `029056ed-ca22-11ea-a02b-005056a21400`;
 - schema `sisoc_local`;
 - conectividad TCP confirmada.
+
+El responsable informo que existen backups de la DB. No se inspeccionaron su
+ubicacion, retencion, integridad ni evidencia de restore, por lo que esos puntos
+siguen pendientes.
 
 MySQL local:
 
@@ -264,10 +291,17 @@ Solo lectura:
 - conteos sanitizados de cron y logs, sin imprimir su contenido;
 - consulta read-only del `main` actual mediante GitHub.
 
+Escritura aprobada:
+
+- creacion de `/sisoc/backups/media/20260713_172352/media` y `status.txt`;
+- copia local de media en dos pasadas con `rsync`, sin `--delete`;
+- validacion por conteo, bytes y dry-run final sin diferencias pendientes.
+
 ## No verificado
 
-1. Backup, retencion y ultimo restore probado de DB `10.80.5.46`.
-2. Backup, checksum y crecimiento historico de los 65 GiB de media.
+1. Ubicacion, retencion, integridad y ultimo restore probado de los backups DB
+   informados para `10.80.5.46`.
+2. Checksum completo, copia fuera del host y crecimiento historico de media.
 3. Linea exacta del cron root de poda Docker y resultado de sus ejecuciones.
 4. Flujo efectivo de deploy/rollback de SISOC-Mobile.
 5. Owner/proceso exacto del listener local 556.
@@ -275,3 +309,5 @@ Solo lectura:
 7. Firewall/ACL efectivos para 3306, 8001, 10000 y 10050.
 8. Politica de retencion legal/operativa de logs y auditoria.
 9. Backups seguros de configuracion fuera del host.
+10. Uso de disco posterior al backup local: el reintento read-only de `df`
+    encontro un timeout SSH y no se repitio en esta fase.

@@ -1,14 +1,17 @@
 # Produccion - Riesgos de infraestructura
 
-Estado: auditoria read-only del 2026-07-13. Ninguna recomendacion de este
-documento autoriza cambios en produccion.
+Estado: auditoria inicial read-only del 2026-07-13, seguida unicamente por un
+backup local de media aprobado. Ninguna recomendacion restante de este documento
+autoriza cambios en produccion.
 
 ## Riesgos criticos
 
-### 1. Backups y restores de DB/media no demostrados
+### 1. Backups externos y restores no demostrados
 
-La DB canonica vive en `10.80.5.46` y media ocupa 65 GiB/68,455 archivos. No se
-obtuvo evidencia de backup vigente ni restore probado para ninguno.
+El responsable informo que existen backups de la DB canonica `10.80.5.46`, pero
+no se verificaron ubicacion, retencion, integridad ni restore. Media tiene una
+copia local completa de 65 GiB/68,548 archivos, pero vive en el mismo servidor y
+filesystem; tampoco tiene checksum completo ni restore probado.
 
 Impacto: perdida de datos, migracion incompleta o imposibilidad de rollback.
 
@@ -92,7 +95,8 @@ reversible futuro.
 
 ## Migrabilidad
 
-- Media 65 GiB sin copia verificada.
+- Media 65 GiB con copia local reconciliada, pero sin copia externa, checksum
+  completo ni restore probado.
 - DB externa sin restore probado.
 - Secretos backend/mobile deben transferirse por canal seguro.
 - NGINX, runner, cron, monitoreo y DNS/TLS deben recrearse.
@@ -104,8 +108,10 @@ reversible futuro.
 1. Mantener y revisar estos documentos.
 2. Monitorear disco, health, listeners y tamanios en modo read-only.
 3. Obtener evidencia externa de backups/restores sin tocar la DB.
-4. Confirmar linea exacta de cron root mediante un conteo sanitizado.
-5. Clasificar owners de puertos y responsables operativos.
+4. Replicar el snapshot de media fuera del host y verificarlo antes de borrar
+   cualquier copia.
+5. Confirmar linea exacta de cron root mediante un conteo sanitizado.
+6. Clasificar owners de puertos y responsables operativos.
 
 ## Requiere aprobacion explicita
 
@@ -121,7 +127,8 @@ reversible futuro.
 
 ## No conviene tocar todavia
 
-1. DB, media y logs hasta tener backup/retencion/restore acordados.
+1. DB, media original, snapshot local y logs hasta tener
+   backup/retencion/restore acordados.
 2. MySQL local hasta una ventana, backup root-only y observacion aprobados.
 3. Cron root hasta leer la linea exacta y validar ownership funcional.
 4. Deploy mobile hasta probar rollback y compatibilidad con `main`.
