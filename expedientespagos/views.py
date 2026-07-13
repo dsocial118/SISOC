@@ -9,7 +9,7 @@ from django.views.generic import (
 )
 from django.urls import reverse_lazy, reverse
 from django.utils.decorators import method_decorator
-from django.utils.html import format_html
+from django.utils.html import escape, format_html
 from django.views.decorators.csrf import ensure_csrf_cookie
 from core.soft_delete.view_helpers import SoftDeleteDeleteViewMixin
 from core.services.column_preferences import build_columns_context_for_custom_cells
@@ -28,10 +28,10 @@ def _build_expediente_pago_list_item(expediente):
     return {
         "pk": expediente.pk,
         "cells": [
-            {"content": expediente.mes_pago or "-"},
-            {"content": expediente.ano or "-"},
-            {"content": expediente.expediente_pago or "-"},
-            {"content": expediente.expediente_convenio or "-"},
+            {"content": escape(expediente.mes_pago or "-")},
+            {"content": escape(expediente.ano or "-")},
+            {"content": escape(expediente.expediente_pago or "-")},
+            {"content": escape(expediente.expediente_convenio or "-")},
             {"content": format_html("${}", monto_sin_decimales(expediente.total))},
             {
                 "content": (
@@ -69,15 +69,12 @@ class ExpedientesPagosListView(LoginRequiredMixin, ListView):
 
         headers = [
             {"key": "mes_pago", "title": "Mes de Pago"},
-            {"title": "Año"},
+            {"key": "ano", "title": "Año"},
             {"key": "expediente_pago", "title": "Expediente de Pago"},
             {"key": "expediente_convenio", "title": "Expediente del Convenio"},
             {"key": "total", "title": "Total"},
-            {"title": "Fecha de creación"},
+            {"key": "fecha_creacion", "title": "Fecha de creación"},
         ]
-
-        headers[1]["key"] = "ano"
-        headers[5]["key"] = "fecha_creacion"
 
         context.update(
             build_columns_context_for_custom_cells(
