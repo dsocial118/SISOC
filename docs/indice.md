@@ -24,6 +24,8 @@
   para QA, HML y PRD y politica de no alojar DB en servidores de aplicacion.
 - `docs/infra/HML_*`: inventario, riesgos, operaciones, rollback y migracion del
   HML canonico `hml-old`, comparado con QA.
+- `docs/infra/PROD_*`: inventario, riesgos, checklist de migracion y propuestas
+  no ejecutadas para el productivo canonico `prd-old`.
 - `docs/operacion/comandos_administracion.md`: utilidades de management (`manage.py`) disponibles para el equipo.
 - `docs/operacion/pwa_web_push_deploy.md`: checklist de despliegue y validacion de web push para la PWA.
 
