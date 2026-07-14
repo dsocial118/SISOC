@@ -36,7 +36,8 @@ inicia otro workflow basado en `push`. No se agrega PAT ni otra credencial.
 - Un conflicto deja el PR abierto y el job en error; ese entorno no se despliega.
 - Si GitHub rechaza el merge, el workflow conserva el PR y falla con diagnostico.
 - Si la rama ya contiene `main`, no crea commits ni despliega de nuevo.
-- La concurrencia es serial por rama y no cancela ejecuciones en curso.
+- La concurrencia es serial para toda la reconciliacion y no cancela
+  ejecuciones en curso.
 - `main` nunca es base ni destino de una escritura de este workflow.
 - Produccion conserva su Environment protegido y no se aprueba desde este flujo.
 

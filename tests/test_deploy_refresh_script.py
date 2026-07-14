@@ -51,27 +51,50 @@ def _backend_checkout(tmp_path: Path) -> Path:
     )
     _git("add", ".", cwd=checkout)
     _git("commit", "-m", "test fixture", cwd=checkout)
+    remote = tmp_path / "backend-origin.git"
+    _git("init", "--bare", str(remote), cwd=tmp_path)
+    _git("remote", "add", "origin", str(remote), cwd=checkout)
+    _git("push", "--set-upstream", "origin", "development", cwd=checkout)
     return checkout
 
 
-def _dry_run(tmp_path: Path, mobile_checkout: Path) -> subprocess.CompletedProcess[str]:
+def _run_deploy(
+    tmp_path: Path,
+    mobile_checkout: Path,
+    *,
+    dry_run: bool = True,
+) -> subprocess.CompletedProcess[str]:
     backend_checkout = _backend_checkout(tmp_path)
     env_file = tmp_path / ".env"
     env_file.write_text("ENVIRONMENT=qa\n", encoding="utf-8")
+    fake_bin = tmp_path / "bin"
+    fake_bin.mkdir()
+    docker = fake_bin / "docker"
+    docker.write_text("#!/usr/bin/env bash\nexit 0\n", encoding="utf-8")
+    docker.chmod(0o755)
     env = os.environ.copy()
     env["ENV_FILE"] = str(env_file)
+    env["PATH"] = f"{fake_bin}{os.pathsep}{env['PATH']}"
 
-    return subprocess.run(
+    args = [
+        "bash",
+        str(backend_checkout / "scripts" / "operacion" / "deploy_refresh.sh"),
+    ]
+    if dry_run:
+        args.append("--dry-run")
+    args.extend(
         [
-            "bash",
-            str(backend_checkout / "scripts" / "operacion" / "deploy_refresh.sh"),
-            "--dry-run",
+            "--yes",
             "--allow-dirty",
             "--allow-branch-mismatch",
             "--with-mobile",
             "--mobile-dir",
             str(mobile_checkout),
-        ],
+        ]
+    )
+
+    return subprocess.run(
+        args,
         cwd=backend_checkout,
         env=env,
         text=True,
@@ -86,17 +109,19 @@ def test_mobile_ssh_origin_se_normaliza_a_https(tmp_path):
         "git@github.com:dsocial118/SISOC-Mobile.git",
     )
 
-    result = _dry_run(tmp_path, checkout)
+    result = _run_deploy(tmp_path, checkout, dry_run=False)
 
     assert result.returncode == 0, result.stderr
     assert "Normalizando origin de SISOC-Mobile a HTTPS publica." in result.stdout
-    assert f"remote set-url origin {HTTPS_MOBILE_REMOTE}" in result.stdout
+    assert _git("remote", "get-url", "origin", cwd=checkout).stdout.strip() == (
+        HTTPS_MOBILE_REMOTE
+    )
 
 
 def test_mobile_https_origin_no_necesita_cambio(tmp_path):
     checkout = _mobile_checkout(tmp_path, HTTPS_MOBILE_REMOTE)
 
-    result = _dry_run(tmp_path, checkout)
+    result = _run_deploy(tmp_path, checkout)
 
     assert result.returncode == 0, result.stderr
     assert "remote set-url origin" not in result.stdout
@@ -105,7 +130,7 @@ def test_mobile_https_origin_no_necesita_cambio(tmp_path):
 def test_mobile_origin_desconocido_bloquea_antes_de_docker(tmp_path):
     checkout = _mobile_checkout(tmp_path, "https://example.com/otro/mobile.git")
 
-    result = _dry_run(tmp_path, checkout)
+    result = _run_deploy(tmp_path, checkout)
 
     assert result.returncode != 0
     assert "Origin inesperado para SISOC-Mobile" in result.stderr

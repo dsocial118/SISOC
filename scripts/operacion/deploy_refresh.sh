@@ -183,7 +183,7 @@ normalize_mobile_origin() {
       run git -C "$MOBILE_DIR" remote set-url origin "$MOBILE_HTTPS_REMOTE"
       ;;
     *)
-      fail "Origin inesperado para SISOC-Mobile: $current_remote"
+      fail "Origin inesperado para SISOC-Mobile; revisar origin sin copiar credenciales al log."
       ;;
   esac
 }
