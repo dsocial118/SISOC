@@ -9,38 +9,22 @@ DEPLOY_SCRIPT = REPO_ROOT / "scripts" / "operacion" / "deploy_refresh.sh"
 HTTPS_MOBILE_REMOTE = "https://github.com/dsocial118/SISOC-Mobile.git"
 
 
-def _git(*args: str, cwd: Path) -> subprocess.CompletedProcess[str]:
-    return subprocess.run(
-        ["git", *args],
-        cwd=cwd,
-        check=True,
-        text=True,
-        capture_output=True,
-    )
-
-
 def _mobile_checkout(tmp_path: Path, remote: str) -> Path:
     checkout = tmp_path / "SISOC-Mobile"
     checkout.mkdir()
-    _git("init", "--initial-branch=main", cwd=checkout)
-    _git("config", "user.name", "Test", cwd=checkout)
-    _git("config", "user.email", "test@example.com", cwd=checkout)
+    (checkout / ".branch").write_text("main\n", encoding="utf-8")
+    (checkout / ".origin").write_text(f"{remote}\n", encoding="utf-8")
 
     script = checkout / "scripts" / "operacion" / "deploy_refresh.sh"
     script.parent.mkdir(parents=True)
     script.write_text("#!/usr/bin/env bash\nexit 0\n", encoding="utf-8")
-    _git("add", ".", cwd=checkout)
-    _git("commit", "-m", "test fixture", cwd=checkout)
-    _git("remote", "add", "origin", remote, cwd=checkout)
     return checkout
 
 
 def _backend_checkout(tmp_path: Path) -> Path:
     checkout = tmp_path / "SISOC"
     checkout.mkdir()
-    _git("init", "--initial-branch=development", cwd=checkout)
-    _git("config", "user.name", "Test", cwd=checkout)
-    _git("config", "user.email", "test@example.com", cwd=checkout)
+    (checkout / ".branch").write_text("development\n", encoding="utf-8")
 
     script = checkout / "scripts" / "operacion" / "deploy_refresh.sh"
     script.parent.mkdir(parents=True)
@@ -49,13 +33,32 @@ def _backend_checkout(tmp_path: Path) -> Path:
         "services: {}\n",
         encoding="utf-8",
     )
-    _git("add", ".", cwd=checkout)
-    _git("commit", "-m", "test fixture", cwd=checkout)
-    remote = tmp_path / "backend-origin.git"
-    _git("init", "--bare", str(remote), cwd=tmp_path)
-    _git("remote", "add", "origin", str(remote), cwd=checkout)
-    _git("push", "--set-upstream", "origin", "development", cwd=checkout)
     return checkout
+
+
+def _fake_git(fake_bin: Path) -> None:
+    git = fake_bin / "git"
+    git.write_text(
+        """#!/usr/bin/env bash
+set -euo pipefail
+
+[[ "$1" == "-C" ]]
+repo="$2"
+shift 2
+
+case "$1 ${2:-} ${3:-}" in
+  "rev-parse --is-inside-work-tree ") exit 0 ;;
+  "branch --show-current ") cat "$repo/.branch" ;;
+  "remote get-url origin") cat "$repo/.origin" ;;
+  "remote set-url origin") printf '%s\\n' "$4" > "$repo/.origin" ;;
+  "fetch origin --prune") exit 0 ;;
+  "pull --ff-only origin") exit 0 ;;
+  *) printf 'git falso: comando inesperado: %s\\n' "$*" >&2; exit 2 ;;
+esac
+""",
+        encoding="utf-8",
+    )
+    git.chmod(0o755)
 
 
 def _run_deploy(
@@ -69,6 +72,7 @@ def _run_deploy(
     env_file.write_text("ENVIRONMENT=qa\n", encoding="utf-8")
     fake_bin = tmp_path / "bin"
     fake_bin.mkdir()
+    _fake_git(fake_bin)
     docker = fake_bin / "docker"
     docker.write_text("#!/usr/bin/env bash\nexit 0\n", encoding="utf-8")
     docker.chmod(0o755)
@@ -113,7 +117,7 @@ def test_mobile_ssh_origin_se_normaliza_a_https(tmp_path):
 
     assert result.returncode == 0, result.stderr
     assert "Normalizando origin de SISOC-Mobile a HTTPS publica." in result.stdout
-    assert _git("remote", "get-url", "origin", cwd=checkout).stdout.strip() == (
+    assert (checkout / ".origin").read_text(encoding="utf-8").strip() == (
         HTTPS_MOBILE_REMOTE
     )
 
