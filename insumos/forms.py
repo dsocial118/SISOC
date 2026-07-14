@@ -7,6 +7,28 @@ from .models import Insumo, InsumoCategoria
 from .validators import INSUMO_ACCEPT_ATTR
 
 
+class CategoriaSelect(forms.Select):
+    """Select de categoría que expone en cada opción su programa.
+
+    El atributo ``data-programa`` permite filtrar las categorías en el cliente
+    según el programa elegido, para que una categoría solo esté disponible en el
+    programa al que fue asociada.
+    """
+
+    # pylint: disable=too-many-arguments  # firma impuesta por forms.Select
+    def create_option(
+        self, name, value, label, selected, index, subindex=None, attrs=None
+    ):
+        option = super().create_option(
+            name, value, label, selected, index, subindex, attrs
+        )
+        instance = getattr(value, "instance", None)
+        programa_id = getattr(instance, "programa_id", None)
+        if programa_id:
+            option["attrs"]["data-programa"] = str(programa_id)
+        return option
+
+
 class InsumoCategoriaForm(forms.ModelForm):
     class Meta:
         model = InsumoCategoria
@@ -49,6 +71,7 @@ class InsumoForm(forms.ModelForm):
         widgets = {
             "descripcion": forms.Textarea(attrs={"rows": 3}),
             "archivo": forms.ClearableFileInput(attrs={"accept": INSUMO_ACCEPT_ATTR}),
+            "categoria": CategoriaSelect,
         }
 
     def __init__(self, *args, **kwargs):

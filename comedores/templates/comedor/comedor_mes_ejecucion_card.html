@@ -1,3 +1,4 @@
+{% load custom_filters %}
 <div class="card bg-card h-100" id="card-mes-ejecucion">
     <div class="card-header py-1">
         <h6 class="fw-bold my-1 text-center">Mes de ejecuci&oacute;n</h6>
@@ -15,7 +16,7 @@
                     Cantidad de prestaciones: <strong>{{ mes_ejecucion_resumen.cantidad_prestaciones|default:"0" }}</strong>
                 </p>
                 <p class="mb-0 fs-7">
-                    Monto total de prestaciones: <strong>${{ mes_ejecucion_resumen.monto_total|default:"0" }}</strong>
+                    Monto total de prestaciones: <strong>${{ mes_ejecucion_resumen.monto_total|monto_sin_decimales }}</strong>
                 </p>
                 <p class="mb-0 fs-7">
                     Mes de pago: <strong>{{ expediente.mes_pago|default:"Sin informaci&oacute;n" }}</strong>
