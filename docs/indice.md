@@ -18,6 +18,14 @@
 - `docs/operacion/infraestructura.md`: inventario de infraestructura operativo (entornos, arquitectura, networking, deploy, observabilidad, seguridad y roadmap infra).
 - `docs/operacion/deploy_entornos_docker_nginx_mysql.md`: runbook generico parametrizado para replicar entornos SISOC con Docker Compose, MySQL dedicado y NGINX.
 - `docs/operacion/qa_trixie_deploy.md`: runbook para desplegar QA en Debian 13 con SITE-QA, DB-QA, Docker Compose, MySQL 8.0 y NGINX.
+- `docs/infra/`: inventario, riesgos, operaciones, deploy, rollback y migracion
+  del QA canonico `qa-old` auditado el 2026-07-13.
+- `docs/infra/ENVIRONMENT_DATABASES.md`: matriz canonica de hosts MySQL separados
+  para QA, HML y PRD y politica de no alojar DB en servidores de aplicacion.
+- `docs/infra/HML_*`: inventario, riesgos, operaciones, rollback y migracion del
+  HML canonico `hml-old`, comparado con QA.
+- `docs/infra/PROD_*`: inventario, riesgos, checklist de migracion y propuestas
+  no ejecutadas para el productivo canonico `prd-old`.
 - `docs/operacion/comandos_administracion.md`: utilidades de management (`manage.py`) disponibles para el equipo.
 - `docs/operacion/pwa_web_push_deploy.md`: checklist de despliegue y validacion de web push para la PWA.
 

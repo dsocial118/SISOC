@@ -67,6 +67,14 @@ from VAT.services.access_scope import (
     is_vat_sse,
 )
 from VAT.services import nomina_export
+from VAT.services.inscripcion_service import (
+    AVISO_INGRESA_LISTA_ESPERA,
+    MENSAJE_COMISION_VENCIDA,
+    MENSAJE_CUPO_COMPLETO_SIN_ESPERA,
+    MENSAJES_COMISION_NO_INSCRIBIBLE,
+    MENSAJES_UNIDAD_FORMATIVA_NO_INSCRIBIBLE,
+    InscripcionService,
+)
 from ciudadanos.models import Ciudadano
 from core.models import Dia, Localidad, Municipio, Provincia, Programa, Sexo
 from users.models import Profile, ProfileTerritorialScope
@@ -5306,8 +5314,8 @@ def test_api_vat_inscripciones_curso_crea_inscripcion_en_comision_curso(
         codigo_comision="API-INS-CURSO-01",
         nombre="Comisión API Inscripción",
         cupo_total=20,
-        fecha_inicio=date(2026, 5, 1),
-        fecha_fin=date(2026, 6, 1),
+        fecha_inicio=timezone.localdate() - timedelta(days=30),
+        fecha_fin=timezone.localdate() + timedelta(days=30),
         estado="activa",
     )
     ciudadano = Ciudadano.objects.create(
@@ -5338,6 +5346,458 @@ def test_api_vat_inscripciones_curso_crea_inscripcion_en_comision_curso(
         ciudadano=ciudadano,
         comision_curso=comision,
     ).exists()
+
+
+@pytest.mark.django_db
+def test_api_vat_inscripciones_curso_rechaza_comision_con_fecha_vencida(
+    vat_api_client, vat_curso_base
+):
+    centro, ubicacion, modalidad = vat_curso_base
+    sexo = Sexo.objects.create(sexo="No Binario")
+    curso = Curso.objects.create(
+        centro=centro,
+        nombre="Curso Comisión Vencida",
+        modalidad=modalidad,
+        estado="activo",
+        inscripcion_libre=True,
+    )
+    comision = ComisionCurso.objects.create(
+        curso=curso,
+        ubicacion=ubicacion,
+        codigo_comision="API-INS-VENC-01",
+        nombre="Comisión Vencida",
+        cupo_total=20,
+        fecha_inicio=timezone.localdate() - timedelta(days=60),
+        fecha_fin=timezone.localdate() - timedelta(days=1),
+        estado="activa",
+    )
+    ciudadano = Ciudadano.objects.create(
+        apellido="API",
+        nombre="Vencida",
+        fecha_nacimiento=date(2000, 1, 1),
+        tipo_documento=Ciudadano.DOCUMENTO_DNI,
+        documento=40111333,
+        sexo=sexo,
+    )
+
+    response = vat_api_client.post(
+        "/api/vat/inscripciones-curso/",
+        {
+            "ciudadano": ciudadano.id,
+            "comision_curso": comision.id,
+            "estado": "inscripta",
+            "origen_canal": "api",
+        },
+        format="json",
+    )
+
+    assert response.status_code == 400
+    assert response.json() == {"error": [MENSAJE_COMISION_VENCIDA]}
+    assert not Inscripcion.objects.filter(
+        ciudadano=ciudadano,
+        comision_curso=comision,
+    ).exists()
+
+
+@pytest.mark.django_db
+def test_prevalidar_inscripcion_informa_comision_con_fecha_vencida(vat_curso_base):
+    centro, ubicacion, modalidad = vat_curso_base
+    sexo = Sexo.objects.create(sexo="No Binario")
+    curso = Curso.objects.create(
+        centro=centro,
+        nombre="Curso Prevalidar Vencida",
+        modalidad=modalidad,
+        estado="activo",
+        inscripcion_libre=True,
+    )
+    comision = ComisionCurso.objects.create(
+        curso=curso,
+        ubicacion=ubicacion,
+        codigo_comision="PREV-VENC-01",
+        nombre="Comisión Prevalidar Vencida",
+        cupo_total=20,
+        fecha_inicio=timezone.localdate() - timedelta(days=60),
+        fecha_fin=timezone.localdate() - timedelta(days=1),
+        estado="activa",
+    )
+    ciudadano = Ciudadano.objects.create(
+        apellido="Prevalidar",
+        nombre="Vencida",
+        fecha_nacimiento=date(2000, 1, 1),
+        tipo_documento=Ciudadano.DOCUMENTO_DNI,
+        documento=40111444,
+        sexo=sexo,
+    )
+
+    resultado = InscripcionService.prevalidar_inscripcion(
+        ciudadano=ciudadano,
+        comision=comision,
+    )
+
+    assert resultado["puede_inscribirse"] is False
+    assert MENSAJE_COMISION_VENCIDA in resultado["motivos"]
+
+
+@pytest.mark.django_db
+def test_crear_inscripcion_permite_comision_que_finaliza_hoy(vat_curso_base):
+    centro, ubicacion, modalidad = vat_curso_base
+    sexo = Sexo.objects.create(sexo="No Binario")
+    curso = Curso.objects.create(
+        centro=centro,
+        nombre="Curso Finaliza Hoy",
+        modalidad=modalidad,
+        estado="activo",
+        inscripcion_libre=True,
+    )
+    comision = ComisionCurso.objects.create(
+        curso=curso,
+        ubicacion=ubicacion,
+        codigo_comision="FIN-HOY-01",
+        nombre="Comisión Finaliza Hoy",
+        cupo_total=20,
+        fecha_inicio=timezone.localdate() - timedelta(days=60),
+        fecha_fin=timezone.localdate(),
+        estado="activa",
+    )
+    ciudadano = Ciudadano.objects.create(
+        apellido="Finaliza",
+        nombre="Hoy",
+        fecha_nacimiento=date(2000, 1, 1),
+        tipo_documento=Ciudadano.DOCUMENTO_DNI,
+        documento=40111555,
+        sexo=sexo,
+    )
+
+    inscripcion = InscripcionService.crear_inscripcion(
+        ciudadano=ciudadano,
+        comision=comision,
+        estado="inscripta",
+    )
+
+    assert inscripcion.pk is not None
+    assert inscripcion.estado == "inscripta"
+
+
+def _crear_ciudadano_mensajes(documento):
+    sexo = Sexo.objects.create(sexo=f"Sexo Mensajes {documento}")
+    return Ciudadano.objects.create(
+        apellido="Mensajes",
+        nombre="Expeditivos",
+        fecha_nacimiento=date(2000, 1, 1),
+        tipo_documento=Ciudadano.DOCUMENTO_DNI,
+        documento=documento,
+        sexo=sexo,
+    )
+
+
+def _crear_comision_mensajes(
+    curso, ubicacion, codigo, estado="activa", cupo_total=10, **kwargs
+):
+    return ComisionCurso.objects.create(
+        curso=curso,
+        ubicacion=ubicacion,
+        codigo_comision=codigo,
+        nombre=f"Comisión {codigo}",
+        cupo_total=cupo_total,
+        fecha_inicio=timezone.localdate() - timedelta(days=30),
+        fecha_fin=timezone.localdate() + timedelta(days=30),
+        estado=estado,
+        **kwargs,
+    )
+
+
+@pytest.mark.django_db
+def test_prevalidar_inscripcion_mensajes_expeditivos_por_estado(vat_curso_base):
+    centro, ubicacion, modalidad = vat_curso_base
+    curso = Curso.objects.create(
+        centro=centro,
+        nombre="Curso Finalizado Mensajes",
+        modalidad=modalidad,
+        estado="finalizado",
+        inscripcion_libre=True,
+    )
+    comision = _crear_comision_mensajes(
+        curso, ubicacion, "MSJ-EST-01", estado="cerrada"
+    )
+    ciudadano = _crear_ciudadano_mensajes(40222111)
+
+    resultado = InscripcionService.prevalidar_inscripcion(
+        ciudadano=ciudadano,
+        comision=comision,
+    )
+
+    assert resultado["puede_inscribirse"] is False
+    assert (
+        MENSAJES_UNIDAD_FORMATIVA_NO_INSCRIBIBLE["finalizado"] in resultado["motivos"]
+    )
+    assert MENSAJES_COMISION_NO_INSCRIBIBLE["cerrada"] in resultado["motivos"]
+
+
+@pytest.mark.django_db
+def test_prevalidar_inscripcion_avisa_ingreso_a_lista_espera(vat_curso_base):
+    centro, ubicacion, modalidad = vat_curso_base
+    curso = Curso.objects.create(
+        centro=centro,
+        nombre="Curso Aviso Espera",
+        modalidad=modalidad,
+        estado="activo",
+        inscripcion_libre=True,
+    )
+    comision = _crear_comision_mensajes(
+        curso,
+        ubicacion,
+        "MSJ-AVISO-01",
+        cupo_total=1,
+        acepta_lista_espera=True,
+        cupo_lista_espera=5,
+    )
+    programa = Programa.objects.create(nombre="Programa Aviso Espera")
+    titular = _crear_ciudadano_mensajes(40222112)
+    aspirante = _crear_ciudadano_mensajes(40222113)
+    Inscripcion.objects.create(
+        ciudadano=titular,
+        comision_curso=comision,
+        programa=programa,
+        estado="inscripta",
+        origen_canal="backoffice",
+    )
+
+    resultado = InscripcionService.prevalidar_inscripcion(
+        ciudadano=aspirante,
+        comision=comision,
+        programa=programa,
+    )
+
+    assert resultado["puede_inscribirse"] is True
+    assert resultado["motivos"] == []
+    assert resultado["avisos"] == [AVISO_INGRESA_LISTA_ESPERA]
+    assert resultado["comision"]["ingresa_a_lista_espera"] is True
+
+
+@pytest.mark.django_db
+def test_inscripcion_cupo_completo_sin_lista_espera_mensaje_expeditivo(vat_curso_base):
+    centro, ubicacion, modalidad = vat_curso_base
+    curso = Curso.objects.create(
+        centro=centro,
+        nombre="Curso Cupo Completo",
+        modalidad=modalidad,
+        estado="activo",
+        inscripcion_libre=True,
+    )
+    comision = _crear_comision_mensajes(curso, ubicacion, "MSJ-CUPO-01", cupo_total=1)
+    titular = _crear_ciudadano_mensajes(40222114)
+    aspirante = _crear_ciudadano_mensajes(40222115)
+    Inscripcion.objects.create(
+        ciudadano=titular,
+        comision_curso=comision,
+        estado="inscripta",
+        origen_canal="backoffice",
+    )
+
+    resultado = InscripcionService.prevalidar_inscripcion(
+        ciudadano=aspirante,
+        comision=comision,
+    )
+
+    assert resultado["puede_inscribirse"] is False
+    assert MENSAJE_CUPO_COMPLETO_SIN_ESPERA in resultado["motivos"]
+
+    with pytest.raises(ValueError) as exc_info:
+        InscripcionService.crear_inscripcion(
+            ciudadano=aspirante,
+            comision=comision,
+            estado="inscripta",
+        )
+
+    assert str(exc_info.value) == MENSAJE_CUPO_COMPLETO_SIN_ESPERA
+
+
+@pytest.mark.django_db
+def test_crear_inscripcion_rechaza_comision_cerrada_o_suspendida(vat_curso_base):
+    centro, ubicacion, modalidad = vat_curso_base
+    curso = Curso.objects.create(
+        centro=centro,
+        nombre="Curso Estados Cerrados",
+        modalidad=modalidad,
+        estado="activo",
+        inscripcion_libre=True,
+    )
+    cerrada = _crear_comision_mensajes(
+        curso, ubicacion, "MSJ-CERR-01", estado="cerrada"
+    )
+    suspendida = _crear_comision_mensajes(
+        curso, ubicacion, "MSJ-SUSP-01", estado="suspendida"
+    )
+    ciudadano = _crear_ciudadano_mensajes(40222116)
+
+    with pytest.raises(ValueError) as exc_cerrada:
+        InscripcionService.crear_inscripcion(
+            ciudadano=ciudadano,
+            comision=cerrada,
+            estado="inscripta",
+        )
+    assert str(exc_cerrada.value) == MENSAJES_COMISION_NO_INSCRIBIBLE["cerrada"]
+
+    with pytest.raises(ValueError) as exc_suspendida:
+        InscripcionService.crear_inscripcion(
+            ciudadano=ciudadano,
+            comision=suspendida,
+            estado="inscripta",
+        )
+    assert str(exc_suspendida.value) == MENSAJES_COMISION_NO_INSCRIBIBLE["suspendida"]
+
+    assert not Inscripcion.objects.filter(ciudadano=ciudadano).exists()
+
+
+@pytest.mark.django_db
+def test_crear_inscripcion_permite_comision_planificada(vat_curso_base):
+    centro, ubicacion, modalidad = vat_curso_base
+    curso = Curso.objects.create(
+        centro=centro,
+        nombre="Curso Planificado Preinscripcion",
+        modalidad=modalidad,
+        estado="activo",
+        inscripcion_libre=True,
+    )
+    comision = _crear_comision_mensajes(
+        curso, ubicacion, "MSJ-PLAN-01", estado="planificada"
+    )
+    ciudadano = _crear_ciudadano_mensajes(40222117)
+
+    inscripcion = InscripcionService.crear_inscripcion(
+        ciudadano=ciudadano,
+        comision=comision,
+        estado="pre_inscripta",
+    )
+
+    assert inscripcion.pk is not None
+    assert inscripcion.estado == "pre_inscripta"
+
+
+@pytest.mark.django_db
+def test_cerrar_comisiones_vencidas_cierra_solo_las_vencidas(
+    vat_geo_data, vat_curso_base
+):
+    provincia, _, _ = vat_geo_data
+    centro, ubicacion, modalidad = vat_curso_base
+    hoy = timezone.localdate()
+    curso = Curso.objects.create(
+        centro=centro,
+        nombre="Curso Cierre Automático",
+        modalidad=modalidad,
+        estado="activo",
+    )
+
+    def _comision_curso(codigo, estado, fecha_fin):
+        return ComisionCurso.objects.create(
+            curso=curso,
+            ubicacion=ubicacion,
+            codigo_comision=codigo,
+            nombre=f"Comisión {codigo}",
+            cupo_total=10,
+            fecha_inicio=fecha_fin - timedelta(days=30),
+            fecha_fin=fecha_fin,
+            estado=estado,
+        )
+
+    vencida_activa = _comision_curso(
+        "CIERRE-VENC-ACT", "activa", hoy - timedelta(days=1)
+    )
+    vencida_planificada = _comision_curso(
+        "CIERRE-VENC-PLAN", "planificada", hoy - timedelta(days=10)
+    )
+    vencida_suspendida = _comision_curso(
+        "CIERRE-VENC-SUSP", "suspendida", hoy - timedelta(days=1)
+    )
+    termina_hoy = _comision_curso("CIERRE-HOY", "activa", hoy)
+    vigente = _comision_curso("CIERRE-VIGENTE", "activa", hoy + timedelta(days=30))
+
+    sector = Sector.objects.create(nombre="Sector Cierre")
+    plan = PlanVersionCurricular.objects.create(
+        nombre="Plan Cierre",
+        provincia=provincia,
+        sector=sector,
+        modalidad_cursada=modalidad,
+        normativa="Resolución 1/2026",
+        horas_reloj=100,
+        nivel_requerido="sin_requisito",
+        nivel_certifica="nivel_1",
+        activo=True,
+    )
+    programa = Programa.objects.create(nombre="Programa Cierre")
+    oferta = OfertaInstitucional.objects.create(
+        centro=centro,
+        plan_curricular=plan,
+        programa=programa,
+        nombre_local="Oferta Cierre",
+        ciclo_lectivo=2026,
+        estado="publicada",
+    )
+    legacy_vencida = Comision.objects.create(
+        oferta=oferta,
+        ubicacion=ubicacion,
+        codigo_comision="CIERRE-LEG-VENC",
+        nombre="Comisión Legacy Vencida",
+        cupo=10,
+        fecha_inicio=hoy - timedelta(days=40),
+        fecha_fin=hoy - timedelta(days=1),
+        estado="activa",
+    )
+    legacy_vigente = Comision.objects.create(
+        oferta=oferta,
+        ubicacion=ubicacion,
+        codigo_comision="CIERRE-LEG-VIG",
+        nombre="Comisión Legacy Vigente",
+        cupo=10,
+        fecha_inicio=hoy - timedelta(days=10),
+        fecha_fin=hoy + timedelta(days=30),
+        estado="activa",
+    )
+
+    call_command("cerrar_comisiones_vencidas", "--execute")
+
+    vencida_activa.refresh_from_db()
+    vencida_planificada.refresh_from_db()
+    vencida_suspendida.refresh_from_db()
+    termina_hoy.refresh_from_db()
+    vigente.refresh_from_db()
+    legacy_vencida.refresh_from_db()
+    legacy_vigente.refresh_from_db()
+
+    assert vencida_activa.estado == "cerrada"
+    assert vencida_planificada.estado == "cerrada"
+    assert vencida_suspendida.estado == "suspendida"
+    assert termina_hoy.estado == "activa"
+    assert vigente.estado == "activa"
+    assert legacy_vencida.estado == "cerrada"
+    assert legacy_vigente.estado == "activa"
+
+
+@pytest.mark.django_db
+def test_cerrar_comisiones_vencidas_check_no_modifica(vat_curso_base):
+    centro, ubicacion, modalidad = vat_curso_base
+    hoy = timezone.localdate()
+    curso = Curso.objects.create(
+        centro=centro,
+        nombre="Curso Cierre Check",
+        modalidad=modalidad,
+        estado="activo",
+    )
+    comision = ComisionCurso.objects.create(
+        curso=curso,
+        ubicacion=ubicacion,
+        codigo_comision="CIERRE-CHECK-01",
+        nombre="Comisión Cierre Check",
+        cupo_total=10,
+        fecha_inicio=hoy - timedelta(days=40),
+        fecha_fin=hoy - timedelta(days=1),
+        estado="activa",
+    )
+
+    call_command("cerrar_comisiones_vencidas", "--check")
+
+    comision.refresh_from_db()
+    assert comision.estado == "activa"
 
 
 @pytest.mark.django_db
@@ -5564,8 +6024,8 @@ def test_api_vat_web_mi_argentina_flujo_completo_prevalidar_e_inscribir(
         codigo_comision="MIARG-01",
         nombre="Comisión Mi Argentina",
         cupo_total=12,
-        fecha_inicio=date(2026, 6, 1),
-        fecha_fin=date(2026, 7, 1),
+        fecha_inicio=timezone.localdate() - timedelta(days=30),
+        fecha_fin=timezone.localdate() + timedelta(days=30),
         estado="activa",
     )
     ciudadano = Ciudadano.objects.create(
@@ -5851,8 +6311,8 @@ def test_api_vat_web_inscripcion_libre_crea_inscripcion_operativa_sin_ciudadano(
         codigo_comision="LIBRE-01",
         nombre="Comisión Libre",
         cupo_total=20,
-        fecha_inicio=date(2026, 6, 1),
-        fecha_fin=date(2026, 7, 1),
+        fecha_inicio=timezone.localdate() - timedelta(days=30),
+        fecha_fin=timezone.localdate() + timedelta(days=30),
         estado="activa",
     )
 
@@ -5933,8 +6393,8 @@ def test_api_vat_web_inscripcion_libre_usa_cuil_como_documento_si_no_viene_docum
         codigo_comision="LIBRE-CUIL-01",
         nombre="Comisión Libre con CUIL",
         cupo_total=20,
-        fecha_inicio=date(2026, 6, 1),
-        fecha_fin=date(2026, 7, 1),
+        fecha_inicio=timezone.localdate() - timedelta(days=30),
+        fecha_fin=timezone.localdate() + timedelta(days=30),
         estado="activa",
     )
 
@@ -6081,8 +6541,8 @@ def test_api_vat_web_inscripciones_informa_lista_espera_si_no_hay_cupo(
         cupo_total=1,
         acepta_lista_espera=True,
         cupo_lista_espera=5,
-        fecha_inicio=date(2026, 6, 1),
-        fecha_fin=date(2026, 7, 1),
+        fecha_inicio=timezone.localdate() - timedelta(days=30),
+        fecha_fin=timezone.localdate() + timedelta(days=30),
         estado="activa",
     )
     titular = Ciudadano.objects.create(
@@ -6169,8 +6629,8 @@ def test_api_vat_web_inscripciones_crea_sobre_comision_curso(
         codigo_comision="WEB-INSC-01",
         nombre="Comisión Web Inscripción",
         cupo_total=10,
-        fecha_inicio=date(2026, 5, 10),
-        fecha_fin=date(2026, 6, 10),
+        fecha_inicio=timezone.localdate() - timedelta(days=30),
+        fecha_fin=timezone.localdate() + timedelta(days=30),
         estado="activa",
     )
     ciudadano = Ciudadano.objects.create(
@@ -8447,8 +8907,8 @@ def test_api_vat_inscripciones_curso_envia_a_lista_espera_si_no_hay_cupo(
         cupo_total=1,
         acepta_lista_espera=True,
         cupo_lista_espera=2,
-        fecha_inicio=date(2026, 5, 1),
-        fecha_fin=date(2026, 6, 1),
+        fecha_inicio=timezone.localdate() - timedelta(days=30),
+        fecha_fin=timezone.localdate() + timedelta(days=30),
         estado="activa",
     )
     titular = Ciudadano.objects.create(
@@ -8531,8 +8991,8 @@ def test_api_vat_inscripciones_curso_rechaza_lista_espera_sin_cupo_disponible(
         cupo_total=1,
         acepta_lista_espera=True,
         cupo_lista_espera=1,
-        fecha_inicio=date(2026, 5, 1),
-        fecha_fin=date(2026, 6, 1),
+        fecha_inicio=timezone.localdate() - timedelta(days=30),
+        fecha_fin=timezone.localdate() + timedelta(days=30),
         estado="activa",
     )
     titular = Ciudadano.objects.create(
@@ -8629,8 +9089,8 @@ def test_api_vat_web_prevalidar_permite_lista_espera_si_no_hay_cupo(
         cupo_total=1,
         acepta_lista_espera=True,
         cupo_lista_espera=5,
-        fecha_inicio=date(2026, 5, 10),
-        fecha_fin=date(2026, 6, 10),
+        fecha_inicio=timezone.localdate() - timedelta(days=30),
+        fecha_fin=timezone.localdate() + timedelta(days=30),
         estado="activa",
     )
     titular = Ciudadano.objects.create(
@@ -8672,6 +9132,7 @@ def test_api_vat_web_prevalidar_permite_lista_espera_si_no_hay_cupo(
     assert response.status_code == 200
     assert payload["puede_inscribirse"] is True
     assert payload["motivos"] == []
+    assert payload["avisos"] == [AVISO_INGRESA_LISTA_ESPERA]
     assert payload["comision"]["acepta_lista_espera"] is True
     assert payload["comision"]["ingresa_a_lista_espera"] is True
     assert payload["comision"]["cupos_disponibles"] == 0
@@ -8713,8 +9174,8 @@ def test_api_vat_web_prevalidar_permite_lista_espera_sin_voucher_si_no_hay_cupo(
         cupo_total=1,
         acepta_lista_espera=True,
         cupo_lista_espera=5,
-        fecha_inicio=date(2026, 5, 10),
-        fecha_fin=date(2026, 6, 10),
+        fecha_inicio=timezone.localdate() - timedelta(days=30),
+        fecha_fin=timezone.localdate() + timedelta(days=30),
         estado="activa",
     )
     titular = Ciudadano.objects.create(
@@ -8756,6 +9217,7 @@ def test_api_vat_web_prevalidar_permite_lista_espera_sin_voucher_si_no_hay_cupo(
     assert response.status_code == 200
     assert payload["puede_inscribirse"] is True
     assert payload["motivos"] == []
+    assert payload["avisos"] == [AVISO_INGRESA_LISTA_ESPERA]
     assert payload["comision"]["acepta_lista_espera"] is True
     assert payload["comision"]["ingresa_a_lista_espera"] is True
     assert payload["comision"]["cupos_disponibles"] == 0
@@ -8822,8 +9284,8 @@ def test_inscripcion_curso_no_permite_mover_de_inscripta_a_lista_espera(
         nombre="Comisión Bloqueo Espera",
         cupo_total=1,
         acepta_lista_espera=True,
-        fecha_inicio=date(2026, 4, 1),
-        fecha_fin=date(2026, 4, 30),
+        fecha_inicio=timezone.localdate() - timedelta(days=30),
+        fecha_fin=timezone.localdate() + timedelta(days=30),
         estado="activa",
     )
     ciudadano = Ciudadano.objects.create(
@@ -9069,8 +9531,8 @@ def test_inscripcion_rapida_comision_curso_crea_inscripcion(client, vat_geo_data
         codigo_comision="INSC-01",
         nombre="Comisión Inscriptos",
         cupo_total=20,
-        fecha_inicio=date(2026, 4, 1),
-        fecha_fin=date(2026, 4, 30),
+        fecha_inicio=timezone.localdate() - timedelta(days=30),
+        fecha_fin=timezone.localdate() + timedelta(days=30),
         estado="activa",
     )
     ciudadano = Ciudadano.objects.create(
@@ -9166,8 +9628,8 @@ def test_inscripcion_rapida_comision_curso_envia_a_lista_espera(client, vat_geo_
         cupo_total=1,
         acepta_lista_espera=True,
         cupo_lista_espera=5,
-        fecha_inicio=date(2026, 4, 1),
-        fecha_fin=date(2026, 4, 30),
+        fecha_inicio=timezone.localdate() - timedelta(days=30),
+        fecha_fin=timezone.localdate() + timedelta(days=30),
         estado="activa",
     )
     titular = Ciudadano.objects.create(
@@ -9270,8 +9732,8 @@ def test_inscripcion_rapida_comision_curso_libre_sin_programa_crea_inscripcion(
         codigo_comision="LIBRE-FAST-01",
         nombre="Comisión Libre Fast",
         cupo_total=20,
-        fecha_inicio=date(2026, 4, 1),
-        fecha_fin=date(2026, 4, 30),
+        fecha_inicio=timezone.localdate() - timedelta(days=30),
+        fecha_fin=timezone.localdate() + timedelta(days=30),
         estado="activa",
     )
     ciudadano = Ciudadano.objects.create(
@@ -9373,8 +9835,8 @@ def test_inscripcion_rapida_comision_legacy_envia_a_lista_espera(client, vat_geo
         nombre="Comisión Legacy Espera",
         cupo=1,
         acepta_lista_espera=True,
-        fecha_inicio=date(2026, 4, 1),
-        fecha_fin=date(2026, 4, 30),
+        fecha_inicio=timezone.localdate() - timedelta(days=30),
+        fecha_fin=timezone.localdate() + timedelta(days=30),
         estado="activa",
     )
     titular = Ciudadano.objects.create(
@@ -9480,8 +9942,8 @@ def test_comision_curso_detail_administra_lista_espera_desde_el_detalle(
         nombre="Comisión Gestión Espera",
         cupo_total=1,
         acepta_lista_espera=True,
-        fecha_inicio=date(2026, 4, 1),
-        fecha_fin=date(2026, 4, 30),
+        fecha_inicio=timezone.localdate() - timedelta(days=30),
+        fecha_fin=timezone.localdate() + timedelta(days=30),
         estado="activa",
     )
     titular = Ciudadano.objects.create(
