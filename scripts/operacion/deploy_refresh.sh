@@ -160,8 +160,10 @@ ensure_clean_branch() {
   fi
 
   if [[ "$ALLOW_DIRTY" -eq 0 ]]; then
-    git -C "$repo_dir" diff-index --quiet HEAD -- \
-      || fail "$label tiene cambios tracked locales. Commit/stash o usa --allow-dirty."
+    if ! git -C "$repo_dir" diff --quiet -- \
+      || ! git -C "$repo_dir" diff --cached --quiet --; then
+      fail "$label tiene cambios tracked locales. Commit/stash o usa --allow-dirty."
+    fi
   fi
 
   printf -v "$branch_var_name" '%s' "$branch"

@@ -58,6 +58,7 @@ jobs:
                   fi
 
                   cd "$APP_ROOT"
+                  git -C /sisoc/SISOC-Mobile update-index --refresh
                   echo "Commit previo al deploy para rollback: $(git rev-parse HEAD)"
                   ./scripts/operacion/deploy_refresh.sh --yes --with-mobile --mobile-dir /sisoc/SISOC-Mobile
 
