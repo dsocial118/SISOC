@@ -23,6 +23,8 @@ from users.forms import CustomUserChangeForm, UserCreationForm
 from users.models import (
     BulkCredentialsJob,
     BulkCredentialsJobRow,
+    UserImportJob,
+    UserImportJobRow,
 )
 from users.services_bulk_credentials import (
     process_bulk_credentials_file,
@@ -33,8 +35,10 @@ from users.services_bulk_credentials_jobs import (
 )
 from users.services_user_import import (
     USER_IMPORT_TEMPLATE_HEADERS,
+    create_user_import_job,
     process_single_user_import_row,
 )
+from users.services_user_import_jobs import process_user_import_job
 
 User = get_user_model()
 
@@ -55,6 +59,10 @@ def _build_excel_file(rows, headers=("usuario", "mail")):
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         ),
     )
+
+
+def _build_user_import_excel_file(rows):
+    return _build_excel_file(rows, headers=USER_IMPORT_TEMPLATE_HEADERS)
 
 
 def _set_visible_temporary_password(user, plain_password):
@@ -190,13 +198,15 @@ def test_import_username_existente_sin_cambios():
     assert resultado["status"].value == "skipped", resultado
 
 
-# ---------- Caso 3: sin username, con email existente => fallback a email ----------
+# ---------- Caso 3: sin username, con email existente y acción vacía => crea ----------
 
 
 @pytest.mark.django_db
 def test_import_sin_username_con_email_existente():
-    grupo = Group.objects.create(name="Grupo Test 3")
-    User.objects.create_user(username="email.user", email="email@e.com")
+    grupo_existente = Group.objects.create(name="Grupo Existente")
+    grupo_nuevo = Group.objects.create(name="Grupo Test 3")
+    existente = User.objects.create_user(username="email.user", email="email@e.com")
+    existente.groups.add(grupo_existente)
 
     resultado = process_single_user_import_row(
         row_data=_row(correo="email@e.com", permisos="Grupo Test 3"),
@@ -204,8 +214,37 @@ def test_import_sin_username_con_email_existente():
     )
 
     assert resultado["status"].value == "created", resultado
-    user = User.objects.get(username="email.user")
-    assert grupo in user.groups.all()
+    existente.refresh_from_db()
+    assert existente.username == "email.user"
+    assert existente.email == "email@e.com"
+    assert list(existente.groups.all()) == [grupo_existente]
+    creado = User.objects.get(pk=resultado["created_user_id"])
+    assert creado.email == "email@e.com"
+    assert grupo_nuevo in creado.groups.all()
+
+
+@pytest.mark.django_db
+def test_import_sin_username_con_email_existente_y_accion_explicita_actualiza():
+    grupo = Group.objects.create(name="Grupo Explícito")
+    existente = User.objects.create_user(
+        username="email.explicito",
+        email="explicito@example.com",
+    )
+
+    resultado = process_single_user_import_row(
+        row_data=_row(
+            correo="explicito@example.com",
+            permisos="Grupo Explícito",
+            accion_grupos="agregar",
+        ),
+        job=_StubImportJob(),
+    )
+
+    assert resultado["status"].value == "created", resultado
+    assert "created_user_id" not in resultado
+    assert User.objects.filter(email__iexact="explicito@example.com").count() == 1
+    existente.refresh_from_db()
+    assert grupo in existente.groups.all()
 
 
 # ---------- Caso 4: sin username ni email => error ----------
@@ -397,10 +436,14 @@ def test_user_import_row_con_username_crea_usuario():
 
 
 @pytest.mark.django_db
-def test_user_import_row_email_existente_actualiza_en_lugar_de_crear():
-    """Sin username, si el email pertenece a un usuario existente, se actualiza (no crea uno nuevo)."""
-    Group.objects.create(name="Grupo Nuevo")
-    User.objects.create_user(username="existente.email", email="shared@example.com")
+def test_user_import_row_email_existente_crea_usuario_nuevo():
+    grupo_existente = Group.objects.create(name="Grupo Existente Email")
+    grupo_nuevo = Group.objects.create(name="Grupo Nuevo")
+    existente = User.objects.create_user(
+        username="existente.email",
+        email="shared@example.com",
+    )
+    existente.groups.add(grupo_existente)
 
     resultado = process_single_user_import_row(
         row_data=_row(correo="shared@example.com", permisos="Grupo Nuevo"),
@@ -408,7 +451,73 @@ def test_user_import_row_email_existente_actualiza_en_lugar_de_crear():
     )
 
     assert resultado["status"].value == "created", resultado
-    assert User.objects.filter(email__iexact="shared@example.com").count() == 1
+    assert User.objects.filter(email__iexact="shared@example.com").count() == 2
+    existente.refresh_from_db()
+    assert existente.username == "existente.email"
+    assert existente.email == "shared@example.com"
+    assert list(existente.groups.all()) == [grupo_existente]
+    creado = User.objects.get(pk=resultado["created_user_id"])
+    assert grupo_nuevo in creado.groups.all()
+    assert creado.profile.temporary_password_plaintext
+
+
+@pytest.mark.django_db
+@override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
+def test_user_import_job_agrupa_credenciales_para_email_duplicado(settings, tmp_path):
+    settings.MEDIA_ROOT = tmp_path
+    operator = User.objects.create_user(username="import_operator")
+    upload = _build_user_import_excel_file(
+        [
+            ("", "Ana", "García", "duplicado@example.com", "", "", "", "operadora", "", ""),
+            ("", "Beto", "García", "duplicado@example.com", "", "", "", "operadora", "", ""),
+        ]
+    )
+    job = create_user_import_job(
+        uploaded_file=upload,
+        requested_by=operator,
+        send_credentials=True,
+    )
+
+    process_user_import_job(job)
+    job.refresh_from_db()
+
+    assert job.status == UserImportJob.Status.COMPLETED
+    assert User.objects.filter(email="duplicado@example.com").count() == 2
+    assert len(mail.outbox) == 1
+    assert mail.outbox[0].to == ["duplicado@example.com"]
+    assert "garcia.ana" in mail.outbox[0].body
+    assert "garcia.beto" in mail.outbox[0].body
+    rows = list(job.rows.order_by("fila"))
+    assert all(row.created_user_id for row in rows)
+    assert all(row.credentials_sent_at for row in rows)
+    assert all(row.created_user.profile.temporary_password_plaintext for row in rows)
+
+
+@pytest.mark.django_db
+@override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
+def test_user_import_job_reprocesado_no_reenvia_credenciales(settings, tmp_path):
+    settings.MEDIA_ROOT = tmp_path
+    operator = User.objects.create_user(username="import_resume_operator")
+    upload = _build_user_import_excel_file(
+        [
+            ("", "Ana", "López", "resume@example.com", "", "", "", "operadora", "", ""),
+        ]
+    )
+    job = create_user_import_job(
+        uploaded_file=upload,
+        requested_by=operator,
+        send_credentials=True,
+    )
+
+    process_user_import_job(job)
+    sent_at = UserImportJobRow.objects.get(job=job).credentials_sent_at
+    job.status = UserImportJob.Status.PROCESSING
+    job.save(update_fields=["status"])
+    process_user_import_job(job)
+
+    assert len(mail.outbox) == 1
+    row = UserImportJobRow.objects.get(job=job)
+    assert row.credentials_sent_at == sent_at
 
 
 @pytest.mark.django_db
