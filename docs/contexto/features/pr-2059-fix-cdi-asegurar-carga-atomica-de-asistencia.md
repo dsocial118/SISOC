@@ -33,19 +33,26 @@
 - Empezar por `docs/registro/prs/PR-2059.md` para contexto resumido del PR.
 - Revisar primero estos archivos del diff:
 - `AGENT_REPO_MAP.md`
+- `CHANGELOG.md`
 - `centrodeinfancia/services.py`
 - `centrodeinfancia/templates/centrodeinfancia/trabajador_asistencia.html`
 - `centrodeinfancia/tests/test_asistencia_trabajador.py`
 - `centrodeinfancia/views.py`
+- `docs/contexto/features/pr-2059-fix-cdi-asegurar-carga-atomica-de-asistencia.md`
 - `docs/plans/2026-07-14-cdi-asistencia-hardening-design.md`
 - `docs/registro/cambios/2026-07-13-cdi-asistencia-trabajadores.md`
+- `docs/registro/prs/PR-2059.md`
+- `docs/registro/releases/pending/2026-07-15-pr-2059.md`
 - Documentación sugerida para ampliar contexto:
 - `docs/indice.md`
 - `docs/ia/CONTEXT_HYGIENE.md`
 - `docs/ia/ARCHITECTURE.md`
 - `docs/ia/TESTING.md`
+- `docs/contexto/features/pr-2059-fix-cdi-asegurar-carga-atomica-de-asistencia.md`
 - `docs/plans/2026-07-14-cdi-asistencia-hardening-design.md`
 - `docs/registro/cambios/2026-07-13-cdi-asistencia-trabajadores.md`
+- `docs/registro/prs/PR-2059.md`
+- `docs/registro/releases/pending/2026-07-15-pr-2059.md`
 
 ## Trazabilidad
 
