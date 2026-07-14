@@ -12,14 +12,36 @@ El workflow no usa runners cloud ni `actions/checkout`: cada runner ejecuta el s
 | Homologacion | `homologacion` | `homologacion` | `self-hosted`, `sisoc-homologacion` | `APP_ROOT` |
 | Produccion | `main` | `production` | `self-hosted`, `sisoc-produccion` | `APP_ROOT` |
 
-En cada push a la branch del entorno, GitHub agenda el job correspondiente. El runner local:
+En cada push o dispatch a la branch del entorno, GitHub agenda el job
+correspondiente. El runner local:
 
 1. resuelve `APP_ROOT` desde la variable del Environment;
 2. entra al checkout provisionado en el servidor;
 3. registra `git rev-parse HEAD` como referencia previa de rollback;
 4. ejecuta `./scripts/operacion/deploy_refresh.sh --yes`.
 
-El script existente conserva las validaciones operativas: lee `ENVIRONMENT` desde `.env`, valida branch esperada, ejecuta `docker compose config -q`, baja el stack sin volumenes, hace `git pull --ff-only` y levanta con `up -d --build`.
+El script existente conserva las validaciones operativas: lee `ENVIRONMENT`
+desde `.env`, valida branch esperada, ejecuta `docker compose config -q`, baja
+el stack sin volumenes, hace `git pull --ff-only` y levanta con `up -d --build`.
+Cuando incluye SISOC-Mobile, valida que `origin` sea el repositorio publico
+esperado y normaliza las variantes SSH conocidas a HTTPS antes del downtime.
+
+## Plan A: `main` como subconjunto comun
+
+`.github/workflows/sync-main-downstream.yml` mantiene automaticamente este
+invariante:
+
+- `development` contiene todo `main` y puede tener extras de QA;
+- `homologacion` contiene todo `main` y puede tener extras de HML;
+- `main` no recibe los extras de esas ramas por este mecanismo.
+
+Ante cada push a `main`, y tambien como reconciliacion horaria, el workflow abre
+o reutiliza PRs `main -> development` y `main -> homologacion`. Solo los integra
+si GitHub confirma que no hay conflictos. Luego invoca `deploy.yml` de forma
+explicita sobre la rama actualizada.
+
+Un conflicto deja el PR abierto, falla el job y no despliega ese entorno. No se
+usa force push, rebase automatico, PAT ni resolucion automatica de conflictos.
 
 ## Instalar runner por entorno
 
@@ -65,7 +87,9 @@ El usuario del runner debe tener:
 
 - pertenencia al grupo `docker` o permisos equivalentes para ejecutar `docker compose`;
 - permisos de lectura/escritura sobre `APP_ROOT`;
-- acceso Git al remoto con la deploy key `github-sisoc`;
+- acceso Git al remoto de SISOC con la deploy key `github-sisoc`;
+- para SISOC-Mobile no hace falta una clave SSH: el repositorio publico usa
+  `https://github.com/dsocial118/SISOC-Mobile.git`;
 - `.env` real del entorno presente en `APP_ROOT` con permisos `600`;
 - branch correcta para el entorno (`development`, `homologacion` o `main`).
 
@@ -98,6 +122,11 @@ No hardcodear una ruta global: los servidores existentes pueden usar rutas disti
 
 En `production`, configurar Required reviewers. Esa regla materializa la aprobacion manual antes de que el job de produccion corra en el runner self-hosted.
 
+La politica de Actions del repositorio debe permitir que `GITHUB_TOKEN` cree y
+fusione pull requests. El workflow solicita solo `contents: write`,
+`pull-requests: write` y `actions: write`; esta ultima habilita el dispatch
+explicito de `deploy.yml`.
+
 ## Seguridad
 
 - Solo `.github/workflows/deploy.yml` debe usar estos runners self-hosted.
@@ -125,4 +154,6 @@ Cada ejecucion del workflow registra el commit que estaba desplegado antes del r
 | Falla `APP_ROOT no esta configurado` | Falta variable del Environment | Definir `APP_ROOT` en `qa`, `homologacion` o `production` |
 | Falla por branch esperada | Checkout local en branch equivocada | Corregir branch en el servidor o revisar el mapping del entorno |
 | Falla `git pull --ff-only` | Historial local divergio | Resolver manualmente en el servidor; no usar merge automatico en el runner |
+| Falla `Origin inesperado para SISOC-Mobile` | El checkout apunta a otro repositorio | Verificar el remote; no forzar el deploy ni aceptar una URL no documentada |
+| PR descendente queda abierto | Hay conflicto o GitHub rechazo el merge | Resolver por PR en la rama afectada; el deploy queda correctamente bloqueado |
 | Falla Docker | Usuario sin grupo `docker` o daemon detenido | Revisar `id`, `systemctl status docker` y `docker compose version` |
