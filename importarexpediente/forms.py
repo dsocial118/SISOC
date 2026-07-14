@@ -27,3 +27,20 @@ class CSVUploadForm(forms.Form):
         if f.size > max_size:
             raise ValidationError("El archivo supera el tamaño permitido.")
         return f
+
+
+class AcreditacionUploadForm(forms.Form):
+    file = forms.FileField(
+        label="Archivo CSV o XLSX",
+        validators=[FileExtensionValidator(["csv", "xlsx"])],
+        widget=forms.ClearableFileInput(
+            attrs={"accept": ".csv,.xlsx"},
+        ),
+    )
+
+    def clean_file(self):
+        f = self.cleaned_data["file"]
+        max_size = getattr(settings, "FILE_UPLOAD_MAX_MEMORY_SIZE", 10 * 1024 * 1024)
+        if f.size > max_size:
+            raise ValidationError("El archivo supera el tamaño permitido.")
+        return f

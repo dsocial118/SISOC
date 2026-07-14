@@ -2,13 +2,14 @@ import csv
 import io
 import os
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import date, datetime
 from decimal import Decimal
 from typing import List, Optional, Tuple
 
 # pylint: disable=too-many-locals,too-many-branches,too-many-arguments
 
 from django.core.exceptions import ValidationError
+from django.db import transaction
 from django.db.models import Q
 from openpyxl import load_workbook
 
@@ -20,6 +21,7 @@ from comedores.models import (
     EstadoProceso,
 )
 from comedores.services.estado_manager import registrar_cambio_estado
+from expedientespagos.models import ExpedientePago
 from importarexpediente.models import ArchivosImportados, RegistroImportado
 
 # Formatos de fecha aceptados
@@ -42,6 +44,10 @@ HEADER_MAP = {
     # Comedor identificacion: SIEMPRE por ID del CSV/XLSX
     "anexo": "anexo",
     "id": "comedor_id",
+    # Fechas
+    "fecha de pago al banco": "fecha_pago_al_banco",
+    "fecha de acreditacion": "fecha_acreditacion",
+    "fecha de acreditaci\u00f3n": "fecha_acreditacion",
     # Organizacion creadora (variantes con y sin acento)
     "organizaci\u00f3n": "organizacion_creacion",
     "organizacion": "organizacion_creacion",
@@ -79,6 +85,9 @@ FIELD_LABELS = {
     "mes_pago": "Mes de pago",
     "mes_convenio": "Mes de convenio",
     "ano": "A\u00f1o",
+    "comedor_id": "ID",
+    "fecha_pago_al_banco": "Fecha de pago al banco",
+    "fecha_acreditacion": "Fecha de acreditaci\u00f3n",
     "prestaciones_mensuales_desayuno": "Prestaciones mensuales desayuno",
     "prestaciones_mensuales_almuerzo": "Prestaciones mensuales almuerzo",
     "prestaciones_mensuales_merienda": "Prestaciones mensuales merienda",
@@ -105,6 +114,13 @@ class EmptyImportFileError(ValueError):
 
 class HeaderlessImportFileError(ValueError):
     pass
+
+
+@dataclass
+class AcreditacionImportResult:
+    filas_procesadas: int
+    comedores_actualizados: int
+    expedientes_actualizados: int
 
 
 def _cell_text(value):
@@ -187,6 +203,10 @@ def parse_import_file(  # pylint: disable=too-many-locals
 def parse_date(value):
     if not value:
         return None
+    if isinstance(value, datetime):
+        return value.date()
+    if isinstance(value, date):
+        return value
     s = str(value).strip()
     for fmt in DATE_FORMATS:
         try:
@@ -232,6 +252,124 @@ def _column_warning(label, warning):
 
 def _field_warning(field, warning):
     return _column_warning(FIELD_LABELS.get(field, field), warning)
+
+
+def _required_column_indexes(parsed_file, required_fields):
+    indexes = {}
+    for index, field in enumerate(parsed_file.mapped_headers):
+        if field in required_fields and field not in indexes:
+            indexes[field] = index
+
+    missing = [
+        FIELD_LABELS.get(field, field)
+        for field in required_fields
+        if field not in indexes
+    ]
+    if missing:
+        raise ValidationError(
+            "El archivo debe incluir las columnas: " + ", ".join(missing)
+        )
+    return indexes
+
+
+def _parse_acreditacion_updates(parsed_file):
+    indexes = _required_column_indexes(
+        parsed_file,
+        ("comedor_id", "fecha_acreditacion"),
+    )
+    updates_by_comedor = {}
+    errors = []
+
+    for row_number, row in parsed_file.rows:
+        raw_id = row[indexes["comedor_id"]]
+        raw_fecha = row[indexes["fecha_acreditacion"]]
+        id_text = _cell_text(raw_id)
+        fecha_text = _cell_text(raw_fecha)
+
+        if not id_text and not fecha_text:
+            continue
+
+        comedor_id = parse_int(raw_id)
+        if comedor_id is None:
+            errors.append(f"Fila {row_number}: ID debe ser num\u00e9rico.")
+            continue
+
+        fecha_acreditacion = parse_date(raw_fecha)
+        if not fecha_text or fecha_acreditacion is None:
+            errors.append(
+                f"Fila {row_number}: Fecha de acreditaci\u00f3n debe tener formato DD/MM/AAAA."
+            )
+            continue
+
+        previous_date = updates_by_comedor.get(comedor_id)
+        if previous_date and previous_date != fecha_acreditacion:
+            errors.append(
+                f"Fila {row_number}: ID {comedor_id} aparece repetido con fechas distintas."
+            )
+            continue
+
+        updates_by_comedor[comedor_id] = fecha_acreditacion
+
+    if errors:
+        raise ValidationError(errors)
+    if not updates_by_comedor:
+        raise ValidationError(
+            "No se encontraron fechas de acreditaci\u00f3n para procesar."
+        )
+    return updates_by_comedor
+
+
+def actualizar_fechas_acreditacion_por_lote(
+    batch,
+    data,
+    filename,
+    delimiter=",",
+):
+    if not getattr(batch, "importacion_completada", False):
+        raise ValidationError("Primero se debe completar la importaci\u00f3n del lote.")
+
+    parsed_file = parse_import_file(
+        data,
+        filename,
+        delimiter,
+        has_header=True,
+    )
+    updates_by_comedor = _parse_acreditacion_updates(parsed_file)
+
+    expediente_rows = list(
+        ExpedientePago.objects.filter(
+            registros_importados__exito_importacion__archivo_importado=batch,
+            comedor_id__in=updates_by_comedor.keys(),
+        ).values_list("id", "comedor_id")
+    )
+    expediente_ids_by_comedor = {}
+    for expediente_id, comedor_id in expediente_rows:
+        expediente_ids_by_comedor.setdefault(comedor_id, set()).add(expediente_id)
+
+    matched_comedor_ids = set(expediente_ids_by_comedor)
+    missing_ids = sorted(set(updates_by_comedor) - matched_comedor_ids)
+    if missing_ids:
+        missing = ", ".join(str(comedor_id) for comedor_id in missing_ids)
+        raise ValidationError(
+            "Los siguientes ID no corresponden a expedientes importados en este lote: "
+            + missing
+        )
+
+    expedientes_actualizados = 0
+    with transaction.atomic():
+        for comedor_id, fecha_acreditacion in updates_by_comedor.items():
+            updated_count = (
+                ExpedientePago.objects.select_for_update()
+                .filter(id__in=expediente_ids_by_comedor[comedor_id])
+                .update(fecha_acreditacion=fecha_acreditacion)
+            )
+            expedientes_actualizados += updated_count
+
+    return AcreditacionImportResult(
+        filas_procesadas=len(updates_by_comedor),
+        comedores_actualizados=len(updates_by_comedor),
+        expedientes_actualizados=expedientes_actualizados,
+    )
 
 
 def expediente_pago_from_row(parsed_file, row):  # pylint: disable=too-many-branches

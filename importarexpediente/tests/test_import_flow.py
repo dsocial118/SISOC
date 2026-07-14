@@ -1,6 +1,7 @@
 """Tests for test import flow."""
 
 from io import BytesIO
+from datetime import date
 from decimal import Decimal
 
 import pytest
@@ -147,6 +148,18 @@ def _make_xlsx(comedor_pk, mes_convenio=4):
             mes_convenio,
         ]
     )
+    output = BytesIO()
+    workbook.save(output)
+    return output.getvalue()
+
+
+def _make_acreditacion_xlsx(rows):
+    workbook = Workbook()
+    sheet = workbook.active
+    sheet.title = "Acreditaciones"
+    sheet.append(["ID", "Fecha de Acreditaci\u00f3n"])
+    for row in rows:
+        sheet.append(row)
     output = BytesIO()
     workbook.save(output)
     return output.getvalue()
@@ -473,6 +486,195 @@ def test_import_persists_expedientepago_and_marks_completed(
     # Batch marked completed
     batch.refresh_from_db()
     assert batch.importacion_completada is True
+
+
+def test_upload_import_accepts_fecha_acreditacion_column(client_logged, tmp_media, db):
+    comedor = Comedor.objects.create(nombre="Comedor Acreditado")
+    content = (
+        "ID;COMEDOR;EXPEDIENTE del CONVENIO;Expediente de Pago;TOTAL;Mes de Pago;A\u00f1o;Fecha de Acreditaci\u00f3n\n"
+        f"{comedor.pk};Comedor;EX-2024-ACR;EX-2025-ACR;$ 1.000,00;enero;2025;15/02/2025\n"
+    )
+    uploaded = SimpleUploadedFile(
+        "expedientes-acreditacion.csv",
+        content.encode("utf-8"),
+        content_type="text/csv",
+    )
+
+    client_logged.post(
+        reverse("upload"),
+        {"file": uploaded, "delimiter": ";", "has_header": True},
+    )
+    batch = ArchivosImportados.objects.latest("id")
+    client_logged.post(reverse("importar_datos", kwargs={"id_archivo": batch.id}))
+
+    expediente = ExpedientePago.objects.get()
+    assert expediente.fecha_acreditacion == date(2025, 2, 15)
+
+
+def test_update_fecha_acreditacion_for_completed_batch(client, tmp_media, db):
+    user = User.objects.create_superuser(
+        username="admin-acreditacion",
+        email="admin@example.com",
+        password="pass1234",
+    )
+    client.force_login(user)
+    comedor = Comedor.objects.create(nombre="Comedor Fecha Masiva")
+
+    uploaded = SimpleUploadedFile(
+        "expedientes.csv",
+        _make_csv(comedor.pk).encode("utf-8"),
+        content_type="text/csv",
+    )
+    client.post(
+        reverse("upload"),
+        {"file": uploaded, "delimiter": ";", "has_header": True},
+    )
+    batch = ArchivosImportados.objects.latest("id")
+    client.post(reverse("importar_datos", kwargs={"id_archivo": batch.id}))
+    expediente = ExpedientePago.objects.get()
+    assert expediente.fecha_acreditacion is None
+
+    acreditacion = SimpleUploadedFile(
+        "acreditaciones.xlsx",
+        _make_acreditacion_xlsx([[comedor.pk, "20/02/2025"]]),
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    )
+    response = client.post(
+        reverse("importar_fechas_acreditacion", kwargs={"id_archivo": batch.id}),
+        {"file": acreditacion},
+        follow=True,
+    )
+
+    assert response.status_code == 200
+    expediente.refresh_from_db()
+    assert expediente.fecha_acreditacion == date(2025, 2, 20)
+
+
+def test_update_fecha_acreditacion_accepts_csv(client, tmp_media, db):
+    user = User.objects.create_superuser(
+        username="admin-acreditacion-csv",
+        email="admin-csv@example.com",
+        password="pass1234",
+    )
+    client.force_login(user)
+    comedor = Comedor.objects.create(nombre="Comedor Fecha CSV")
+
+    uploaded = SimpleUploadedFile(
+        "expedientes.csv",
+        _make_csv(comedor.pk, expediente_pago="EX-2025-ACR-CSV").encode("utf-8"),
+        content_type="text/csv",
+    )
+    client.post(
+        reverse("upload"),
+        {"file": uploaded, "delimiter": ";", "has_header": True},
+    )
+    batch = ArchivosImportados.objects.latest("id")
+    client.post(reverse("importar_datos", kwargs={"id_archivo": batch.id}))
+    expediente = ExpedientePago.objects.get(
+        registros_importados__exito_importacion__archivo_importado=batch
+    )
+
+    acreditacion = SimpleUploadedFile(
+        "acreditaciones.csv",
+        f"ID;Fecha de Acreditaci\u00f3n\n{comedor.pk};23/02/2025\n".encode("utf-8"),
+        content_type="text/csv",
+    )
+    response = client.post(
+        reverse("importar_fechas_acreditacion", kwargs={"id_archivo": batch.id}),
+        {"file": acreditacion},
+        follow=True,
+    )
+
+    assert response.status_code == 200
+    expediente.refresh_from_db()
+    assert expediente.fecha_acreditacion == date(2025, 2, 23)
+
+
+def test_update_fecha_acreditacion_rejects_ids_outside_batch(client, tmp_media, db):
+    user = User.objects.create_superuser(
+        username="admin-acreditacion-scope",
+        email="admin-scope@example.com",
+        password="pass1234",
+    )
+    client.force_login(user)
+    comedor_lote = Comedor.objects.create(nombre="Comedor Lote")
+    comedor_otro = Comedor.objects.create(nombre="Comedor Otro Lote")
+
+    batch = _upload_csv_and_import(client, comedor_lote, None, "EX-2025-SCOPE-1")
+    other_batch = _upload_csv_and_import(client, comedor_otro, None, "EX-2025-SCOPE-2")
+    other_exp = ExpedientePago.objects.get(
+        registros_importados__exito_importacion__archivo_importado=other_batch
+    )
+
+    acreditacion = SimpleUploadedFile(
+        "acreditaciones.xlsx",
+        _make_acreditacion_xlsx([[comedor_otro.pk, "21/02/2025"]]),
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    )
+    response = client.post(
+        reverse("importar_fechas_acreditacion", kwargs={"id_archivo": batch.id}),
+        {"file": acreditacion},
+        follow=True,
+    )
+
+    assert response.status_code == 200
+    assert (
+        "no corresponden a expedientes importados en este lote"
+        in response.content.decode()
+    )
+    other_exp.refresh_from_db()
+    assert other_exp.fecha_acreditacion is None
+
+
+def test_update_fecha_acreditacion_requires_completed_batch(client, tmp_media, db):
+    user = User.objects.create_superuser(
+        username="admin-acreditacion-pending",
+        email="admin-pending@example.com",
+        password="pass1234",
+    )
+    client.force_login(user)
+    comedor = Comedor.objects.create(nombre="Comedor Pendiente")
+    uploaded = SimpleUploadedFile(
+        "expedientes.csv",
+        _make_csv(comedor.pk).encode("utf-8"),
+        content_type="text/csv",
+    )
+    client.post(
+        reverse("upload"),
+        {"file": uploaded, "delimiter": ";", "has_header": True},
+    )
+    batch = ArchivosImportados.objects.latest("id")
+
+    acreditacion = SimpleUploadedFile(
+        "acreditaciones.xlsx",
+        _make_acreditacion_xlsx([[comedor.pk, "22/02/2025"]]),
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    )
+    response = client.post(
+        reverse("importar_fechas_acreditacion", kwargs={"id_archivo": batch.id}),
+        {"file": acreditacion},
+        follow=True,
+    )
+
+    assert response.status_code == 200
+    assert "Primero se debe completar la importaci" in response.content.decode()
+    assert ExpedientePago.objects.count() == 0
+
+
+def test_update_fecha_acreditacion_requires_permission(client_logged, tmp_media, db):
+    comedor = Comedor.objects.create(nombre="Comedor Sin Permiso")
+    batch = _upload_csv_and_import(
+        client_logged,
+        comedor,
+        None,
+        "EX-2025-NO-PERM",
+    )
+
+    response = client_logged.get(
+        reverse("importar_fechas_acreditacion", kwargs={"id_archivo": batch.id})
+    )
+
+    assert response.status_code == 403
 
 
 def test_import_xlsx_persists_mes_convenio_and_updates_present_state(

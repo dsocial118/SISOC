@@ -1,6 +1,7 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
 from django.db import transaction
 from django.db.models import Q
@@ -11,7 +12,7 @@ from django.urls import reverse_lazy
 from django.views.generic import FormView, ListView
 
 from expedientespagos.models import ExpedientePago
-from importarexpediente.forms import CSVUploadForm
+from importarexpediente.forms import AcreditacionUploadForm, CSVUploadForm
 from importarexpediente.models import (
     ArchivosImportados,
     ErroresImportacion,
@@ -21,6 +22,7 @@ from importarexpediente.models import (
 from importarexpediente.services import (
     EmptyImportFileError,
     HeaderlessImportFileError,
+    actualizar_fechas_acreditacion_por_lote,
     aplicar_estados_por_lote,
     ensure_import_required_defaults,
     expediente_pago_from_row,
@@ -427,11 +429,18 @@ class ImportarExpedienteDetalleListView(LoginRequiredMixin, ListView):
         exitos = ExitoImportacion.objects.filter(archivo_importado=self.batch).order_by(
             "fila"
         )
+        expedientes_qs = ExpedientePago.objects.filter(
+            registros_importados__exito_importacion__archivo_importado=self.batch
+        ).distinct()
         context["query"] = self.request.GET.get("busqueda", "")
         context["batch_id"] = self.batch_id
         context["batch"] = self.batch
         context["error_count"] = errores.count()
         context["exito_count"] = exitos.count()
+        context["expedientes_importados_count"] = expedientes_qs.count()
+        context["expedientes_con_acreditacion_count"] = expedientes_qs.filter(
+            fecha_acreditacion__isnull=False
+        ).count()
         return context
 
 
@@ -489,6 +498,79 @@ def importarexpediente_detail_ajax(request, id_archivo):
             "has_next": page_obj.has_next(),
         }
     )
+
+
+class ImportarFechasAcreditacionView(LoginRequiredMixin, FormView):
+    template_name = "importarexpediente_acreditacion_upload.html"
+    form_class = AcreditacionUploadForm
+
+    def dispatch(self, request, *args, **kwargs):
+        self.batch_id = int(self.kwargs.get("id_archivo"))
+        self.batch = get_object_or_404(
+            ArchivosImportados, pk=self.batch_id, usuario=request.user
+        )
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_success_url(self):
+        return reverse_lazy(
+            "importarexpediente_detail", kwargs={"id_archivo": self.batch_id}
+        )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["batch"] = self.batch
+        context["batch_id"] = self.batch_id
+        return context
+
+    def form_invalid(self, form):
+        for field_errors in form.errors.values():
+            for error in field_errors:
+                messages.error(self.request, error)
+        return super().form_invalid(form)
+
+    def form_valid(self, form):
+        uploaded_file = form.cleaned_data["file"]
+        try:
+            uploaded_file.seek(0)
+            data = uploaded_file.read()
+        except Exception:
+            messages.error(self.request, "No se pudo leer el archivo.")
+            return self.form_invalid(form)
+
+        try:
+            result = actualizar_fechas_acreditacion_por_lote(
+                self.batch,
+                data,
+                uploaded_file.name,
+            )
+        except (EmptyImportFileError, HeaderlessImportFileError) as exc:
+            messages.error(self.request, str(exc))
+            return self.form_invalid(form)
+        except ValidationError as exc:
+            for message in exc.messages[:MAX_ERROR_MESSAGES]:
+                messages.error(self.request, message)
+            if len(exc.messages) > MAX_ERROR_MESSAGES:
+                messages.warning(
+                    self.request,
+                    f"Se omitieron {len(exc.messages) - MAX_ERROR_MESSAGES} errores adicionales.",
+                )
+            return self.form_invalid(form)
+        except Exception as exc:
+            messages.error(
+                self.request,
+                f"No se pudieron actualizar las fechas de acreditaci\u00f3n: {exc}",
+            )
+            return self.form_invalid(form)
+
+        messages.success(
+            self.request,
+            (
+                "Fechas de acreditaci\u00f3n actualizadas: "
+                f"{result.expedientes_actualizados} expedientes de "
+                f"{result.comedores_actualizados} comedores."
+            ),
+        )
+        return super().form_valid(form)
 
 
 class ImportDatosView(LoginRequiredMixin, FormView):

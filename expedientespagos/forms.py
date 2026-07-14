@@ -95,10 +95,10 @@ class ExpedientePagoForm(forms.ModelForm):
         widgets = {
             "usuario": forms.Select(attrs={"class": "form-control"}),
             "fecha_pago_al_banco": forms.DateInput(
-                attrs={"type": "date", "class": "form-control"}
+                format="%Y-%m-%d", attrs={"type": "date", "class": "form-control"}
             ),
             "fecha_acreditacion": forms.DateInput(
-                attrs={"type": "date", "class": "form-control"}
+                format="%Y-%m-%d", attrs={"type": "date", "class": "form-control"}
             ),
         }
         labels = {
