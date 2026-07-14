@@ -116,16 +116,10 @@
 
             <form method="post" id="destinatarioForm">
                 {% csrf_token %}
-                {% if selected_ciudadano %}
-                    <input type="hidden" name="ciudadano_id" value="{{ selected_ciudadano.id }}" />
-                {% endif %}
-                {% if renaper_precarga %}
-                    <input type="hidden" name="origen_dato" value="renaper" />
-                {% endif %}
+                {% if selected_ciudadano %}<input type="hidden" name="ciudadano_id" value="{{ selected_ciudadano.id }}" />{% endif %}
+                {% if renaper_precarga %}<input type="hidden" name="origen_dato" value="renaper" />{% endif %}
 
-                {% if form.non_field_errors %}
-                    <div class="alert alert-danger mb-3">{{ form.non_field_errors }}</div>
-                {% endif %}
+                {% if form.non_field_errors %}<div class="alert alert-danger mb-3">{{ form.non_field_errors }}</div>{% endif %}
 
                 {# ── Barra de progreso ─────────────────────────────────── #}
                 <div class="progress-indicator">

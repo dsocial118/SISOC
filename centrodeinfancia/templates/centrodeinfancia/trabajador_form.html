@@ -130,16 +130,10 @@
         {% if mostrar_formulario or is_edit %}
             <form method="post" id="trabajadorForm" class="w-100">
                 {% csrf_token %}
-                {% if selected_ciudadano %}
-                    <input type="hidden" name="ciudadano_id" value="{{ selected_ciudadano.id }}" />
-                {% endif %}
-                {% if renaper_precarga %}
-                    <input type="hidden" name="origen_dato" value="renaper" />
-                {% endif %}
+                {% if selected_ciudadano %}<input type="hidden" name="ciudadano_id" value="{{ selected_ciudadano.id }}" />{% endif %}
+                {% if renaper_precarga %}<input type="hidden" name="origen_dato" value="renaper" />{% endif %}
 
-                {% if form.non_field_errors %}
-                    <div class="alert alert-danger mb-3">{{ form.non_field_errors }}</div>
-                {% endif %}
+                {% if form.non_field_errors %}<div class="alert alert-danger mb-3">{{ form.non_field_errors }}</div>{% endif %}
 
                 {# ── Barra de progreso ─────────────────────────────────── #}
                 <div class="progress-indicator">
@@ -477,9 +471,7 @@
                                     </div>
                                 {% endfor %}
                             </div>
-                            {% if form.lenguajes.errors %}
-                                <div class="text-danger small mt-1">{{ form.lenguajes.errors }}</div>
-                            {% endif %}
+                            {% if form.lenguajes.errors %}<div class="text-danger small mt-1">{{ form.lenguajes.errors }}</div>{% endif %}
                         </div>
                         <div class="form-group row">
                             <div class="col-md-3">{{ form.es_interprete|as_crispy_field }}</div>
