@@ -36,6 +36,7 @@ Opciones:
   --mobile-dir PATH         Ruta del checkout SISOC-Mobile.
                             Default: ../SISOC-Mobile desde la raiz de SISOC.
                             Ejecuta scripts/operacion/deploy_refresh.sh de ese repo.
+                            SISOC-Mobile debe estar en branch main.
   -h, --help                Muestra esta ayuda.
 
 Mapeo por entorno:
@@ -219,7 +220,7 @@ configure_mobile() {
   [[ "$ALLOW_BRANCH_MISMATCH" -eq 1 ]] && MOBILE_ARGS+=(--allow-branch-mismatch)
   [[ "$SKIP_PULL" -eq 1 ]] && MOBILE_ARGS+=(--skip-pull)
 
-  ensure_clean_branch "$MOBILE_DIR" "" MOBILE_BRANCH "SISOC-Mobile"
+  ensure_clean_branch "$MOBILE_DIR" "${MOBILE_BRANCH:-main}" MOBILE_BRANCH "SISOC-Mobile"
 }
 
 main() {

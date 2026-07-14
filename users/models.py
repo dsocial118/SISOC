@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.contrib.auth.models import Group, Permission, User
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -552,6 +553,13 @@ class UserImportJobRow(models.Model):
         on_delete=models.CASCADE,
         related_name="rows",
     )
+    created_user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="+",
+    )
     fila = models.PositiveIntegerField()
     nombre = models.CharField(max_length=150, blank=True)
     apellido = models.CharField(max_length=150, blank=True)
@@ -566,6 +574,7 @@ class UserImportJobRow(models.Model):
     mensaje = models.TextField(blank=True)
     attempts = models.PositiveIntegerField(default=0)
     processed_at = models.DateTimeField(null=True, blank=True, db_index=True)
+    credentials_sent_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         ordering = ["fila", "id"]

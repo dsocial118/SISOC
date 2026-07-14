@@ -2,6 +2,7 @@ from django.urls import path
 
 from core.decorators import permissions_all_required, permissions_any_required
 from centrodeinfancia.views import (
+    AsistenciaTrabajadorCentroView,
     CentroDeInfanciaCreateView,
     CentroDeInfanciaDeleteView,
     CentroDeInfanciaDetailView,
@@ -138,6 +139,13 @@ urlpatterns = [
             TrabajadorCentroInfanciaCreateView.as_view()
         ),
         name="centrodeinfancia_trabajador_crear",
+    ),
+    path(
+        "centrodeinfancia/<int:pk>/trabajadores/asistencia/",
+        permissions_any_required(["centrodeinfancia.change_centrodeinfancia"])(
+            AsistenciaTrabajadorCentroView.as_view()
+        ),
+        name="centrodeinfancia_trabajadores_asistencia",
     ),
     path(
         "centrodeinfancia/<int:pk>/nomina/<int:nomina_id>/editar/",

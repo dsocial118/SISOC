@@ -4,6 +4,7 @@
 ## Actualizaciones
 
 - [sin-area] ci(deploy): habilitar CD self-hosted en main. (PR #2024)
+- [sin-area] hotfix. (PR #2046)
 <!-- AUTO-GENERATED RELEASE END: 2026-07-15 -->
 
 <!-- AUTO-GENERATED RELEASE START: 2026-07-08 -->
