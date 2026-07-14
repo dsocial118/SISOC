@@ -10,7 +10,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.cache import cache
 from django.core.paginator import Paginator
 from django.db import transaction
-from django.db.models import Count
+from django.db.models import Count, Q
 from django.shortcuts import redirect
 from django.urls import reverse, reverse_lazy
 from django.utils import timezone
@@ -45,7 +45,14 @@ from comedores.services.capacitaciones_certificados_service import (
 )
 from comedores.services.dw_transacciones_service import DWTransaccionesService
 from comedores.services.filter_config import get_filters_ui_config
-from comedores.utils import comedor_usa_admision_para_nomina
+from comedores.utils import (
+    comedor_usa_admision_para_nomina,
+    get_prestacion_conformidad_pending_period,
+    is_abordaje_comunitario_relevamientos_header_program,
+    is_abordaje_comunitario_linea_secos_program,
+    is_pnud_comedor,
+    usa_datos_convenio_pnud,
+)
 from core.pagination import NoCountPaginator, build_no_count_page_range
 from core.services.column_preferences import build_columns_context_from_fields
 from core.services.favorite_filters import SeccionesFiltrosFavoritos
@@ -57,6 +64,7 @@ from intervenciones.models.intervenciones import Intervencion
 from intervenciones.forms import IntervencionForm, build_programa_aliases
 from expedientespagos.models import ExpedientePago
 from expedientespagos.services import ordenar_expedientes_por_periodo_desc
+from pwa.models import ActividadEspacioPWA, NominaDestinatariosDocumentoPWA
 
 MESES_ES_CORTOS = [
     "Ene",
@@ -218,6 +226,40 @@ def _build_nomina_metrics(nomina_total, nomina_rangos):
     }
 
 
+def _build_actividades_pnud_legajo_context(comedor):
+    if not is_pnud_comedor(comedor):
+        return {
+            "actividades_pnud_legajo": [],
+            "actividades_pnud_legajo_count": 0,
+        }
+
+    actividades = list(
+        ActividadEspacioPWA.objects.filter(comedor=comedor)
+        .select_related(
+            "catalogo_actividad",
+            "dia_actividad",
+            "creado_por",
+            "actualizado_por",
+        )
+        .annotate(
+            inscriptos_activos_count=Count(
+                "inscriptos",
+                filter=Q(inscriptos__activo=True),
+            )
+        )
+        .order_by(
+            "-activo",
+            "catalogo_actividad__categoria",
+            "catalogo_actividad__actividad",
+            "id",
+        )
+    )
+    return {
+        "actividades_pnud_legajo": actividades,
+        "actividades_pnud_legajo_count": len(actividades),
+    }
+
+
 def _build_interacciones_chart_data(fechas):
     mes_counter = defaultdict(int)
     for fecha in fechas:
@@ -354,6 +396,54 @@ def _build_intervenciones_table_context(comedor_obj, request, admision_id=None):
                             else None
                         )
                     },
+                    {"content": _safe_cell_content(usuario_creador)},
+                    {"content": actions_html},
+                ]
+            }
+        )
+
+    documentos_nomina_pwa = (
+        NominaDestinatariosDocumentoPWA.objects.filter(
+            comedor=comedor_obj,
+            archivo__isnull=False,
+        )
+        .exclude(archivo="")
+        .select_related("generado_por")
+        .order_by("-periodo_referencia", "-version", "-id")[:10]
+    )
+    for documento in documentos_nomina_pwa:
+        fecha_display = (
+            documento.fecha_generacion.strftime("%d/%m/%Y")
+            if documento.fecha_generacion
+            else None
+        )
+        usuario_creador = "-"
+        if documento.generado_por:
+            full_name = documento.generado_por.get_full_name()
+            usuario_creador = (
+                full_name or getattr(documento.generado_por, "username", None) or "-"
+            )
+        actions_html = format_html(
+            '<a href="{}" class="btn btn-sm btn-primary" target="_blank" rel="noopener">Ver</a>',
+            documento.archivo.url,
+        )
+        intervenciones_items.append(
+            {
+                "cells": [
+                    {"content": _safe_cell_content(fecha_display)},
+                    {"content": _safe_cell_content("Nomina mensual PWA")},
+                    {
+                        "content": _safe_cell_content(
+                            f"Destinatarios {documento.periodo_referencia:%m/%Y} "
+                            f"v{documento.version}"
+                        )
+                    },
+                    {
+                        "content": format_html(
+                            '<span class="badge bg-success">Si</span>'
+                        )
+                    },
+                    {"content": _safe_cell_content("Destinatarios")},
                     {"content": _safe_cell_content(usuario_creador)},
                     {"content": actions_html},
                 ]
@@ -734,15 +824,7 @@ def _resolve_selected_admision(relaciones_data, selected_admision_pk):
 
 
 def _get_informe_tecnico_finalizado_from_admision(selected_admision):
-    if not selected_admision:
-        return None
-    return (
-        InformeTecnico.objects.filter(
-            admision=selected_admision, estado_formulario="finalizado"
-        )
-        .order_by("-id")
-        .first()
-    )
+    return ComedorService.get_informe_tecnico_finalizado_efectivo(selected_admision)
 
 
 def _resolve_selected_convenio_numero(selected_admision):
@@ -1136,6 +1218,9 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
             "actividades_comunitarias_count": actividades_comunitarias_count,
             "comedor_categoria": comedor_categoria,
             "colaboradores_espacio": colaboradores_espacio,
+            "permite_alta_colaboradores": (
+                not is_abordaje_comunitario_linea_secos_program(self.object)
+            ),
         }
 
     def _build_relaciones_table_contexts(self, admisiones_qs):
@@ -1290,6 +1375,10 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
             **table_contexts,
         }
 
+    def _build_conformidad_prestacion_context(self):
+        pending_period = get_prestacion_conformidad_pending_period(self.object)
+        return {"pendiente": pending_period is not None, "periodo": pending_period}
+
     def get_context_data(self, **kwargs) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)
         presupuestos_data = self.get_presupuestos_data()
@@ -1303,10 +1392,27 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
         selected_admision_context = _build_selected_admision_context(
             relaciones_data, self.request.GET
         )
+        usa_convenio_pnud = usa_datos_convenio_pnud(self.object)
+        prestaciones_convenio_context = (
+            ComedorService.get_prestaciones_aprobadas_resumen(self.object.id)
+            if usa_convenio_pnud
+            else None
+        )
         selected_admision = selected_admision_context["selected_admision"]
         informe_tecnico = selected_admision_context["informe_tecnico"]
+        datos_convenio_pnud = getattr(self.object, "datos_convenio_pnud", None)
         responsables_context = _build_organizacion_responsables_context(self.object)
         mes_ejecucion_context = _build_mes_ejecucion_context(self.object)
+        actividades_pnud_context = _build_actividades_pnud_legajo_context(self.object)
+        es_programa_pnud = is_pnud_comedor(self.object)
+        puede_gestionar_actividades_espacio = es_programa_pnud and (
+            self.request.user.has_perm("auth.role_admin")
+            or self.request.user.has_perm("pwa.manage_colaboradores_pwa")
+        )
+        mostrar_relevamientos_header = (
+            not es_programa_pnud
+            or is_abordaje_comunitario_relevamientos_header_program(self.object)
+        )
 
         # Nómina del convenio seleccionado
         selected_admision_pk = getattr(selected_admision, "pk", None)
@@ -1356,12 +1462,16 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
                     "selected_convenio_numero"
                 ],
                 "total_admisiones": selected_admision_context["total_admisiones"],
-                "prestaciones_aprobadas_total": selected_admision_context[
-                    "prestaciones_aprobadas_total"
-                ],
-                "monto_prestacion_mensual": selected_admision_context[
-                    "monto_prestacion_mensual_aprobadas"
-                ],
+                "prestaciones_aprobadas_total": (
+                    selected_admision_context["prestaciones_aprobadas_total"]
+                    if prestaciones_convenio_context is None
+                    else prestaciones_convenio_context["prestaciones_mensuales"]
+                ),
+                "monto_prestacion_mensual": (
+                    selected_admision_context["monto_prestacion_mensual_aprobadas"]
+                    if prestaciones_convenio_context is None
+                    else prestaciones_convenio_context["monto_prestacion_mensual"]
+                ),
                 "show_capacitaciones_certificados": is_alimentar_comunidad_program(
                     self.object
                 ),
@@ -1373,11 +1483,17 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
                     if is_alimentar_comunidad_program(self.object)
                     else []
                 ),
-                "es_programa_pnud": getattr(self.object, "programa_id", None) in (3, 4),
-                "datos_convenio_pnud": getattr(
-                    self.object, "datos_convenio_pnud", None
+                "es_programa_pnud": es_programa_pnud,
+                "usa_convenio_pnud": usa_convenio_pnud,
+                "puede_gestionar_actividades_espacio": puede_gestionar_actividades_espacio,
+                "mostrar_relevamientos_header": mostrar_relevamientos_header,
+                "datos_convenio_pnud": datos_convenio_pnud,
+                "prestaciones_aprobadas_source": (
+                    datos_convenio_pnud if usa_convenio_pnud else informe_tecnico
                 ),
                 "domicilio_completo_comedor": _build_domicilio_completo(self.object),
+                "conformidad_prestacion_pendiente": self._build_conformidad_prestacion_context(),
+                **actividades_pnud_context,
                 **responsables_context,
                 **mes_ejecucion_context,
             }
@@ -1410,8 +1526,11 @@ class ComedorDatosConvenioPnudUpdateView(LoginRequiredMixin, UpdateView):
         self.comedor = ComedorService.get_comedor_detail_object(
             self.kwargs["pk"], user=request.user
         )
-        if self.comedor.programa_id not in (3, 4):
-            messages.error(request, "Esta opción solo aplica para comedores PNUD.")
+        if not usa_datos_convenio_pnud(self.comedor):
+            messages.error(
+                request,
+                "Esta opcion solo aplica para comedores PNUD o Abordaje Comunitario.",
+            )
             return redirect("comedor_detalle", pk=self.comedor.pk)
         return super().dispatch(request, *args, **kwargs)
 

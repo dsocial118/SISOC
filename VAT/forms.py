@@ -13,6 +13,8 @@ from django.utils import timezone
 from ciudadanos.models import Ciudadano
 from core.models import Dia, Sexo
 from core.models import Localidad, Programa
+from iam.services import user_has_permission_code
+from VAT.services.access_scope import es_operador_cfp
 from VAT.models import (
     Centro,
     ModalidadInstitucional,
@@ -119,7 +121,10 @@ def build_curso_tipo_choices(include_values=None, centro_id=None):
         seen_values.add(value)
 
     include_values = _normalize_related_ids(
-        [*_collect_curso_tipo_values_from_existing_courses(centro_id=centro_id), *include_values]
+        [
+            *_collect_curso_tipo_values_from_existing_courses(centro_id=centro_id),
+            *include_values,
+        ]
     )
 
     for value in include_values:
@@ -264,6 +269,46 @@ NORMATIVA_ANIO_CHOICES = [("", "Seleccionar año...")] + [
 NORMATIVA_STORAGE_SEPARATOR = " || "
 REFERENTE_GROUP_NAMES = ("CFP",)
 REVISOR_GROUP_NAMES = ("CFPRevisor",)
+ROLE_INET_PROVINCIA_PERMISSION = "auth.role_inet_provincia"
+
+
+def _is_inet_provincia_actor(actor) -> bool:
+    if not actor or not getattr(actor, "is_authenticated", False):
+        return False
+    profile = getattr(actor, "profile", None)
+    if not getattr(profile, "es_usuario_provincial", False):
+        return False
+    return user_has_permission_code(actor, ROLE_INET_PROVINCIA_PERMISSION)
+
+
+def _lock_fields_readonly(form, field_names):
+    for field_name in field_names:
+        field = form.fields.get(field_name)
+        if not field:
+            continue
+        field.disabled = True
+
+
+def _hide_and_lock_fields(form, field_names):
+    for field_name in field_names:
+        field = form.fields.get(field_name)
+        if not field:
+            continue
+        field.required = False
+        field.disabled = True
+        field.widget = forms.HiddenInput()
+
+
+def _remove_fields(form, field_names):
+    """Elimina campos del form: no se renderizan ni se aceptan en el POST.
+
+    A diferencia de `_hide_and_lock_fields` (que usa `HiddenInput` y deja el
+    valor en el HTML), esto asegura que el valor nunca llega al cliente. En un
+    `ModelForm` de edición, los campos ausentes conservan su valor de DB al
+    guardar.
+    """
+    for field_name in field_names:
+        form.fields.pop(field_name, None)
 
 
 def _clean_non_empty_text(value, field_label):
@@ -677,6 +722,7 @@ class CentroAltaForm(CentroForm):
     def __init__(self, *args, **kwargs):
         hide_provincia = kwargs.pop("hide_provincia", False)
         provincia_inicial = kwargs.pop("provincia_inicial", None)
+        actor = kwargs.pop("actor", None)
         super().__init__(*args, **kwargs)
         self.fields["activo"].required = False
         self.fields["activo"].widget.attrs["class"] = "form-check-input"
@@ -738,6 +784,22 @@ class CentroAltaForm(CentroForm):
             self.fields["localidad"].queryset = self.fields[
                 "localidad"
             ].queryset.filter(municipio__provincia_id=provincia_value)
+
+        # Perfil INET_PROVINCIA: aplica restricciones de edición en legajo existente.
+        if _is_inet_provincia_actor(actor) and self.instance and self.instance.pk:
+            _lock_fields_readonly(self, ["codigo", "provincia"])
+            _hide_and_lock_fields(
+                self,
+                ["tipo_gestion", "clase_institucion", "situacion"],
+            )
+
+        # Operador CFP: no ve datos administrativos del centro. Se eliminan del
+        # form para evitar fuga en el HTML y bloquear cualquier POST manipulado.
+        if es_operador_cfp(actor):
+            _remove_fields(
+                self,
+                ["tipo_gestion", "clase_institucion", "situacion"],
+            )
 
     def clean_nombre(self):
         return _clean_non_empty_text(self.cleaned_data.get("nombre"), "La denominación")
@@ -1166,6 +1228,7 @@ class PlanVersionCurricularForm(forms.ModelForm):
         ]
 
     def __init__(self, *args, **kwargs):
+        actor = kwargs.pop("actor", None)
         super().__init__(*args, **kwargs)
         sector_id = None
         self.normativa_texto_actual = ""
@@ -1201,6 +1264,11 @@ class PlanVersionCurricularForm(forms.ModelForm):
         elif self.instance and self.instance.pk:
             normativa_texto, _ = _split_normativa_value(self.instance.normativa)
             self.normativa_texto_actual = normativa_texto
+
+        # Perfil INET_PROVINCIA: restringe campos de configuración general del plan.
+        if _is_inet_provincia_actor(actor) and self.instance and self.instance.pk:
+            _lock_fields_readonly(self, ["sector"])
+            _hide_and_lock_fields(self, ["subsector", "modalidad_cursada", "activo"])
 
     def clean_nombre(self):
         return _clean_non_empty_text(self.cleaned_data.get("nombre"), "El nombre")
@@ -1371,6 +1439,14 @@ class InstitucionContactoForm(forms.ModelForm):
             "es_principal",
         ]
 
+    def __init__(self, *args, **kwargs):
+        lock_centro = kwargs.pop("lock_centro", False)
+        super().__init__(*args, **kwargs)
+
+        if lock_centro:
+            self.fields["centro"].disabled = True
+            self.fields["centro"].widget.attrs["readonly"] = True
+
     def clean_nombre_contacto(self):
         value = self.cleaned_data.get("nombre_contacto")
         if not value:
@@ -1531,6 +1607,7 @@ class InstitucionUbicacionForm(forms.ModelForm):
     )
 
     def __init__(self, *args, **kwargs):
+        lock_centro = kwargs.pop("lock_centro", False)
         super().__init__(*args, **kwargs)
         modal_dropdown_parent = "#modalUbicacion .modal-body"
         self.fields["centro"].widget.attrs.update(
@@ -1545,6 +1622,10 @@ class InstitucionUbicacionForm(forms.ModelForm):
                 "data-dropdown-parent": modal_dropdown_parent,
             }
         )
+
+        if lock_centro:
+            self.fields["centro"].disabled = True
+            self.fields["centro"].widget.attrs["readonly"] = True
 
     class Meta:
         model = InstitucionUbicacion
@@ -1796,6 +1877,12 @@ class ComisionCursoForm(forms.ModelForm):
         required=False,
         widget=forms.CheckboxInput(attrs={"class": "form-check-input"}),
     )
+    cupo_lista_espera = forms.IntegerField(
+        label="Cupo Lista de Espera",
+        required=False,
+        min_value=1,
+        widget=forms.NumberInput(attrs={"class": "form-control"}),
+    )
     fecha_inicio = forms.DateField(
         label="Fecha de Inicio",
         widget=forms.DateInput(attrs={"class": "form-control", "type": "date"}),
@@ -1822,6 +1909,7 @@ class ComisionCursoForm(forms.ModelForm):
             "ubicacion",
             "cupo_total",
             "acepta_lista_espera",
+            "cupo_lista_espera",
             "fecha_inicio",
             "fecha_fin",
             "estado",
@@ -1862,6 +1950,7 @@ class ComisionCursoForm(forms.ModelForm):
         curso = cleaned_data.get("curso")
         ubicacion = cleaned_data.get("ubicacion")
         cupo_total = cleaned_data.get("cupo_total")
+        acepta_lista_espera = cleaned_data.get("acepta_lista_espera")
         fecha_inicio = cleaned_data.get("fecha_inicio")
         fecha_fin = cleaned_data.get("fecha_fin")
 
@@ -1879,6 +1968,9 @@ class ComisionCursoForm(forms.ModelForm):
 
         if cupo_total is not None and cupo_total <= 0:
             self.add_error("cupo_total", "El cupo total debe ser mayor a 0.")
+
+        if not acepta_lista_espera:
+            cleaned_data["cupo_lista_espera"] = None
 
         return cleaned_data
 
@@ -1990,6 +2082,7 @@ class OfertaInstitucionalForm(forms.ModelForm):
         ]
 
     def __init__(self, *args, **kwargs):
+        actor = kwargs.pop("actor", None)
         super().__init__(*args, **kwargs)
         self.fields["voucher_parametrias"].queryset = (
             VoucherParametria.objects.filter(activa=True)
@@ -2002,6 +2095,17 @@ class OfertaInstitucionalForm(forms.ModelForm):
             titulo = self.instance.plan_curricular.titulos.first()
             if titulo:
                 self.fields["titulo_referencia"].initial = titulo.pk
+
+        if _is_inet_provincia_actor(actor) and self.instance and self.instance.pk:
+            _lock_fields_readonly(
+                self,
+                [
+                    "centro",
+                    "titulo_referencia",
+                    "programa",
+                    "ciclo_lectivo",
+                ],
+            )
 
     def clean(self):
         cleaned_data = super().clean()
@@ -2109,6 +2213,13 @@ class ComisionForm(forms.ModelForm):
             "estado",
             "observaciones",
         ]
+
+    def __init__(self, *args, **kwargs):
+        actor = kwargs.pop("actor", None)
+        super().__init__(*args, **kwargs)
+
+        if _is_inet_provincia_actor(actor) and self.instance and self.instance.pk:
+            _lock_fields_readonly(self, ["oferta", "ubicacion", "codigo_comision"])
 
 
 class ComisionHorarioForm(forms.ModelForm):
@@ -2622,6 +2733,23 @@ class ComisionCursoWizardStep1Form(forms.Form):
             }
         ),
     )
+    acepta_lista_espera = forms.BooleanField(
+        label="Acepta lista de espera",
+        required=False,
+        widget=forms.CheckboxInput(attrs={"class": "form-check-input"}),
+    )
+    cupo_lista_espera = forms.IntegerField(
+        label="Cupo de lista de espera",
+        required=False,
+        min_value=1,
+        widget=forms.NumberInput(
+            attrs={
+                "class": "form-control sisoc-wizard-input",
+                "placeholder": "Cantidad de personas que acepta la lista de espera",
+                "min": "1",
+            }
+        ),
+    )
     estado = forms.ChoiceField(
         label="Estado",
         choices=ComisionCurso.ESTADO_COMISION_CURSO_CHOICES,
@@ -2678,6 +2806,14 @@ class ComisionCursoWizardStep1Form(forms.Form):
                 "fecha_fin",
                 "La fecha de finalización debe ser posterior a la fecha de inicio.",
             )
+        if cleaned.get("acepta_lista_espera"):
+            if not cleaned.get("cupo_lista_espera"):
+                self.add_error(
+                    "cupo_lista_espera",
+                    "Definí un cupo para la lista de espera cuando está habilitada.",
+                )
+        else:
+            cleaned["cupo_lista_espera"] = None
         return cleaned
 
 

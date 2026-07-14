@@ -418,3 +418,6 @@ mobile/
 
 # Claude Code local settings (contienen permisos y config de máquina)
 .claude/settings.local.json
+
+# OCR eval temporales (no versionar: pueden contener datos personales)
+tmp_ocr_eval/

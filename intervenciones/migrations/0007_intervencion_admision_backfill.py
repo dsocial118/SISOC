@@ -35,7 +35,7 @@ def asignar_admision_a_intervenciones(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("acompanamientos", "0008_hitos_backfill"),
+        ("acompanamientos", "0001_squashed_0008"),
         ("intervenciones", "0006_intervencion_admision"),
     ]
 

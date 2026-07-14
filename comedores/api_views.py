@@ -23,7 +23,7 @@ from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from admisiones.models.admisiones import Admision, InformeTecnico
+from admisiones.models.admisiones import InformeTecnico
 from comedores.api_serializers import (
     APROBADAS_FIELDS,
     ComedorDetailSerializer,
@@ -42,6 +42,7 @@ from comedores.models import (
     AuditComedorPrograma,
     CapacitacionComedorCertificado,
     Comedor,
+    ComedorDatosConvenioPnud,
     ImagenComedor,
     Nomina,
     Observacion,
@@ -49,33 +50,43 @@ from comedores.models import (
 )
 from comedores.services.comedor_service import ComedorService
 from comedores.services.capacitaciones_certificados_service import (
+    FORMANDO_CAPITAL_HUMANO_URL,
     delete_certificate,
     is_alimentar_comunidad_program,
     list_capacitaciones_certificados,
     serialize_certificate,
     submit_certificate,
 )
+from comedores.utils import usa_datos_convenio_pnud
 from intervenciones.models.intervenciones import Intervencion
 from relevamientos.models import ClasificacionComedor, Relevamiento
 from rendicioncuentasfinal.models import DocumentoRendicionFinal
 from rendicioncuentasmensual.models import DocumentacionAdjunta, RendicionCuentaMensual
 from rendicioncuentasmensual.services import RendicionCuentaMensualService
+from pwa.models import NominaDestinatariosDocumentoPWA
 from users.api_permissions import (
     HasMobileRendicionPermission,
+    HasPwaPrestacionesMensualesPermission,
+    HasPwaUsuariosPermission,
+    IsPWAUserForComedor,
     IsPWARepresentativeForComedor,
 )
 from users.api_serializers import (
     OperadorCreateResponseSerializer,
     OperadorCreateSerializer,
     OperadorListSerializer,
+    OperadorPermissionsUpdateSerializer,
 )
+from users.models import AccesoComedorPWA
 from users.services_pwa import (
     create_operador_for_comedor,
     deactivate_operador,
+    get_assignable_pwa_permission_codes,
     get_accessible_comedor_ids,
     get_access_rows,
     is_pwa_user,
     list_operadores_for_comedor,
+    update_operador_permissions,
 )
 
 MAX_COMPROBANTE_FILE_SIZE = 10 * 1024 * 1024  # 10 MB
@@ -177,6 +188,18 @@ class ComedorDetailViewSet(
                 }
             )
         return rows
+
+    def _get_assignable_pwa_user_spaces(self, user):
+        return [
+            {
+                "id": row.comedor_id,
+                "nombre": row.comedor.nombre if row.comedor_id else "",
+            }
+            for row in get_access_rows(user)
+            .filter(rol=AccesoComedorPWA.ROL_REPRESENTANTE)
+            .select_related("comedor")
+            .order_by("comedor__nombre", "comedor_id")
+        ]
 
     def list(self, request, *args, **kwargs):
         user = request.user
@@ -364,28 +387,50 @@ class ComedorDetailViewSet(
         today = timezone.localdate()
         return today.replace(day=1)
 
-    def _get_latest_prestacion_alimentaria_informe(self, comedor):
-        return (
-            InformeTecnico.objects.filter(
-                admision__comedor=comedor,
-                estado_formulario="finalizado",
-            )
-            .select_related("admision")
-            .only(
-                "id",
-                "admision_id",
-                "tipo",
-                "estado_formulario",
-                "creado",
-                "modificado",
-                *APROBADAS_FIELDS,
-            )
-            .order_by("-modificado", "-id")
-            .first()
-        )
+    def _previous_month_period(self):
+        current = self._current_month_period()
+        if current.month == 1:
+            return current.replace(year=current.year - 1, month=12)
+        return current.replace(month=current.month - 1)
 
-    def _serialize_prestacion_alimentaria_payload(self, comedor, informe):
-        if informe:
+    def _parse_conformidad_period(self, value):
+        if not value:
+            return self._previous_month_period()
+        value = str(value).strip()
+        parsed = parse_date(f"{value}-01" if len(value) == 7 else value)
+        if not parsed or parsed.day != 1:
+            return None
+        return parsed
+
+    def _get_latest_prestacion_alimentaria_informe(self, comedor):
+        admision = ComedorService.get_admision_vigente_pwa(comedor.id)
+        return ComedorService.get_informe_tecnico_finalizado_efectivo(admision)
+
+    def _get_pnud_prestacion_alimentaria_datos(self, comedor):
+        if not usa_datos_convenio_pnud(comedor):
+            return None
+        return ComedorDatosConvenioPnud.objects.filter(comedor=comedor).first()
+
+    def _serialize_prestacion_alimentaria_payload(
+        self, comedor, informe, datos_convenio_pnud=None
+    ):
+        if datos_convenio_pnud:
+            payload = {
+                "informe_id": None,
+                "admision_id": None,
+                "tipo": "pnud",
+                "estado_formulario": "finalizado",
+                "creado": None,
+                "modificado": datos_convenio_pnud.actualizado_en,
+                "fecha_finalizacion": datos_convenio_pnud.actualizado_en,
+            }
+            payload.update(
+                {
+                    field: getattr(datos_convenio_pnud, field, 0)
+                    for field in APROBADAS_FIELDS
+                }
+            )
+        elif informe:
             fechas = InformeTecnicoPrestacionSerializer.fechas_finalizacion_para(
                 [informe.admision_id]
             )
@@ -404,21 +449,34 @@ class ComedorDetailViewSet(
             }
             payload.update({field: None for field in APROBADAS_FIELDS})
 
-        current_period = self._current_month_period()
         conformidades = (
             PrestacionAlimentariaConformidad.objects.filter(comedor=comedor)
             .select_related("usuario")
             .order_by("-periodo", "-creado")
         )
-        conformidad_actual = conformidades.filter(periodo=current_period).first()
-        payload["periodo_actual"] = current_period
+        conformidades_list = list(conformidades)
+        previous_period = self._previous_month_period()
+        pending_period = (
+            previous_period
+            if not any(item.periodo == previous_period for item in conformidades_list)
+            else None
+        )
+        selected_period = pending_period or previous_period
+        conformidad_actual = next(
+            (item for item in conformidades_list if item.periodo == selected_period),
+            None,
+        )
+        payload["periodo_actual"] = selected_period
+        payload["periodo_pendiente"] = pending_period
+        payload["conformidad_pendiente"] = pending_period is not None
+        payload["periodos_disponibles"] = []
         payload["conformidad_actual"] = (
             PrestacionAlimentariaConformidadSerializer(conformidad_actual).data
             if conformidad_actual
             else None
         )
         payload["historial_conformidad"] = PrestacionAlimentariaConformidadSerializer(
-            conformidades,
+            conformidades_list,
             many=True,
         ).data
         return payload
@@ -518,6 +576,36 @@ class ComedorDetailViewSet(
                         "path": self._file_path_from_field(adjunto.archivo),
                     }
                 )
+
+        documentos_nomina_pwa = (
+            NominaDestinatariosDocumentoPWA.objects.filter(
+                comedor=comedor,
+                archivo__isnull=False,
+            )
+            .exclude(archivo="")
+            .only(
+                "id",
+                "archivo",
+                "periodo_referencia",
+                "version",
+                "fecha_generacion",
+            )
+            .order_by("-periodo_referencia", "-version", "-id")
+        )
+        for documento in documentos_nomina_pwa:
+            documentos.append(
+                {
+                    "id": f"pwa-nomina-destinatarios-{documento.id}",
+                    "origen": "pwa",
+                    "tipo": "nomina_destinatarios_pwa",
+                    "nombre": documento.archivo.name if documento.archivo else None,
+                    "fecha": self._coerce_datetime(documento.fecha_generacion),
+                    "url": self._build_absolute_url(request, documento.archivo),
+                    "path": self._file_path_from_field(documento.archivo),
+                    "periodo_referencia": documento.periodo_referencia,
+                    "version": documento.version,
+                }
+            )
 
         return documentos
 
@@ -795,12 +883,7 @@ class ComedorDetailViewSet(
     @action(detail=True, methods=["get", "post"], url_path="nomina")
     def nomina(self, request, pk=None):
         comedor = self.get_object()
-        admision = (
-            Admision.objects.filter(comedor=comedor, activa=True)
-            .order_by("-id")
-            .first()
-            or Admision.objects.filter(comedor=comedor).order_by("-id").first()
-        )
+        admision = ComedorService.get_admision_vigente_pwa(comedor.id)
         if not admision:
             return Response(
                 {"detail": "No hay admisión para este comedor."},
@@ -843,7 +926,15 @@ class ComedorDetailViewSet(
             )
         records = list_capacitaciones_certificados(comedor)
         return Response(
-            [serialize_certificate(record, request=request) for record in records],
+            {
+                "formando_capital_humano": {
+                    "label": "Ingreso a Formando Capital Humano",
+                    "url": FORMANDO_CAPITAL_HUMANO_URL,
+                },
+                "results": [
+                    serialize_certificate(record, request=request) for record in records
+                ],
+            },
             status=status.HTTP_200_OK,
         )
 
@@ -949,7 +1040,7 @@ class ComedorDetailViewSet(
         detail=True,
         methods=["get", "post"],
         url_path="usuarios",
-        permission_classes=[IsPWARepresentativeForComedor],
+        permission_classes=[IsPWARepresentativeForComedor, HasPwaUsuariosPermission],
     )
     def usuarios(self, request, pk=None):
         comedor = self.get_object()
@@ -963,6 +1054,13 @@ class ComedorDetailViewSet(
                     "count": paginator.count,
                     "num_pages": paginator.num_pages,
                     "current_page": page_obj.number,
+                    "assignable_permission_codes": get_assignable_pwa_permission_codes(
+                        request.user,
+                        comedor.id,
+                    ),
+                    "assignable_comedores": self._get_assignable_pwa_user_spaces(
+                        request.user
+                    ),
                     "results": OperadorListSerializer(
                         page_obj.object_list, many=True
                     ).data,
@@ -977,8 +1075,12 @@ class ComedorDetailViewSet(
                 comedor_id=comedor.id,
                 actor=request.user,
                 username=serializer.validated_data["username"],
-                email=serializer.validated_data["email"],
+                email=serializer.validated_data.get("email", ""),
                 password=serializer.validated_data["password"],
+                comedor_ids=serializer.validated_data.get("comedor_ids")
+                or [comedor.id],
+                permission_codes=serializer.validated_data.get("permission_codes")
+                or [],
             )
         except PermissionDenied as exc:
             return Response(
@@ -997,6 +1099,49 @@ class ComedorDetailViewSet(
         )
 
     @extend_schema(
+        request=OperadorPermissionsUpdateSerializer,
+        tags=["Comedores"],
+    )
+    @action(
+        detail=True,
+        methods=["patch"],
+        url_path=r"usuarios/(?P<user_id>[^/.]+)/permisos",
+        permission_classes=[IsPWARepresentativeForComedor, HasPwaUsuariosPermission],
+    )
+    def editar_usuario_permisos(self, request, pk=None, user_id=None):
+        comedor = self.get_object()
+        serializer = OperadorPermissionsUpdateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        try:
+            acceso = update_operador_permissions(
+                comedor_id=comedor.id,
+                user_id=int(user_id),
+                actor=request.user,
+                permission_codes=serializer.validated_data.get("permission_codes")
+                or [],
+            )
+        except ValueError:
+            return Response(
+                {"detail": "user_id invalido."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except PermissionDenied as exc:
+            return Response(
+                {"detail": str(exc)},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        except ValidationError as exc:
+            return Response(
+                {"detail": self._format_validation_error(exc)},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        return Response(
+            OperadorCreateResponseSerializer(acceso).data,
+            status=status.HTTP_200_OK,
+        )
+
+    @extend_schema(
         request=None,
         tags=["Comedores"],
     )
@@ -1004,7 +1149,7 @@ class ComedorDetailViewSet(
         detail=True,
         methods=["patch"],
         url_path=r"usuarios/(?P<user_id>[^/.]+)/desactivar",
-        permission_classes=[IsPWARepresentativeForComedor],
+        permission_classes=[IsPWARepresentativeForComedor, HasPwaUsuariosPermission],
     )
     def desactivar_usuario(self, request, pk=None, user_id=None):
         comedor = self.get_object()
@@ -1533,14 +1678,18 @@ class ComedorDetailViewSet(
     @action(detail=True, methods=["get"], url_path="prestacion-alimentaria")
     def prestacion_alimentaria(self, request, pk=None):
         comedor = self.get_object()
-        if not is_alimentar_comunidad_program(comedor):
-            return Response(
-                {"detail": "Disponible solo para Alimentar Comunidad."},
-                status=status.HTTP_404_NOT_FOUND,
-            )
-        informe = self._get_latest_prestacion_alimentaria_informe(comedor)
+        datos_convenio_pnud = self._get_pnud_prestacion_alimentaria_datos(comedor)
+        informe = (
+            None
+            if datos_convenio_pnud
+            else self._get_latest_prestacion_alimentaria_informe(comedor)
+        )
         return Response(
-            self._serialize_prestacion_alimentaria_payload(comedor, informe),
+            self._serialize_prestacion_alimentaria_payload(
+                comedor,
+                informe,
+                datos_convenio_pnud=datos_convenio_pnud,
+            ),
             status=status.HTTP_200_OK,
         )
 
@@ -1553,15 +1702,15 @@ class ComedorDetailViewSet(
         detail=True,
         methods=["post"],
         url_path="prestacion-alimentaria/conformidad",
-        permission_classes=[IsPWARepresentativeForComedor],
+        permission_classes=[
+            IsPWAUserForComedor,
+            HasPwaPrestacionesMensualesPermission,
+        ],
     )
-    def prestacion_alimentaria_conformidad(self, request, pk=None):
+    def prestacion_alimentaria_conformidad(
+        self, request, pk=None
+    ):  # pylint: disable=too-many-return-statements
         comedor = self.get_object()
-        if not is_alimentar_comunidad_program(comedor):
-            return Response(
-                {"detail": "Disponible solo para Alimentar Comunidad."},
-                status=status.HTTP_404_NOT_FOUND,
-            )
 
         conforme = request.data.get("conforme")
         if not isinstance(conforme, bool):
@@ -1579,7 +1728,12 @@ class ComedorDetailViewSet(
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        periodo = self._current_month_period()
+        periodo = self._parse_conformidad_period(request.data.get("periodo"))
+        if not periodo:
+            return Response(
+                {"detail": "El periodo debe ser un mes calendario en formato YYYY-MM."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         if PrestacionAlimentariaConformidad.objects.filter(
             comedor=comedor,
             periodo=periodo,
@@ -1589,7 +1743,11 @@ class ComedorDetailViewSet(
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        informe = self._get_latest_prestacion_alimentaria_informe(comedor)
+        informe = (
+            None
+            if usa_datos_convenio_pnud(comedor)
+            else self._get_latest_prestacion_alimentaria_informe(comedor)
+        )
         try:
             conformidad = PrestacionAlimentariaConformidad.objects.create(
                 comedor=comedor,

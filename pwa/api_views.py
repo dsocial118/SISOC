@@ -68,6 +68,9 @@ from pwa.services.nomina_service import (
     split_gender_bucket,
     update_nomina_persona,
 )
+from pwa.services.nomina_destinatarios_pdf_service import (
+    serialize_nomina_destinatarios_documento,
+)
 from pwa.utils import parse_periodo_referencia
 from pwa.view_helpers import (
     build_mensaje_espacio_summary,
@@ -76,8 +79,10 @@ from pwa.view_helpers import (
     serialize_ciudadano_local,
     serialize_renaper_data,
 )
+from users.api_permissions import HasPwaColaboradoresPermission
+from users.api_permissions import HasPwaNominaPermission
 from users.api_permissions import IsPWAAuthenticatedToken
-from users.api_permissions import IsPWARepresentativeForComedor
+from users.api_permissions import IsPWAUserForComedor
 from comedores.models import (
     ActividadColaboradorEspacio,
     ColaboradorEspacio,
@@ -86,7 +91,15 @@ from comedores.models import (
 )
 from comedores.services.colaborador_espacio_service import ColaboradorEspacioService
 from comedores.services.comedor_service.impl import ComedorService
+from comedores.utils import is_pnud_comedor
 from ciudadanos.models import Ciudadano
+
+
+def _get_pnud_scoped_comedor_or_404(comedor_id, user):
+    comedor = ComedorService.get_scoped_comedor_or_404(comedor_id, user)
+    if not is_pnud_comedor(comedor):
+        raise Http404("Modulo de actividades no disponible para este programa.")
+    return comedor
 
 
 class PwaHealthViewSet(viewsets.ViewSet):
@@ -144,6 +157,11 @@ class MensajeEspacioPWAViewSet(viewsets.ViewSet):
                         item
                         for item in serialized_items
                         if item["seccion"] == "general"
+                    ],
+                    "organizaciones": [
+                        item
+                        for item in serialized_items
+                        if item["seccion"] == "organizacion"
                     ],
                     "espacios": [
                         item
@@ -216,7 +234,7 @@ class MensajeEspacioPWAViewSet(viewsets.ViewSet):
 class CursoAppMobilePWAViewSet(viewsets.ViewSet):
     serializer_class = CursoAppMobilePWASerializer
     authentication_classes = [TokenAuthentication]
-    permission_classes = [IsAuthenticated, IsPWARepresentativeForComedor]
+    permission_classes = [IsAuthenticated, IsPWAUserForComedor]
 
     @staticmethod
     def _is_pnud_space(comedor):
@@ -327,7 +345,14 @@ class ColaboradorEspacioPWAViewSet(viewsets.ViewSet):
     """CRUD de colaboradores por espacio para la app PWA."""
 
     authentication_classes = [TokenAuthentication]
-    permission_classes = [IsAuthenticated, IsPWARepresentativeForComedor]
+    permission_classes = [IsAuthenticated, IsPWAUserForComedor]
+    write_actions = {"create", "partial_update", "destroy", "preview_dni"}
+
+    def get_permissions(self):
+        permissions = [IsAuthenticated(), IsPWAUserForComedor()]
+        if getattr(self, "action", None) in self.write_actions:
+            permissions.append(HasPwaColaboradoresPermission())
+        return permissions
 
     def _get_queryset(self):
         comedor_id = self.kwargs["comedor_id"]
@@ -523,9 +548,14 @@ class CatalogoActividadPWAViewSet(viewsets.ViewSet):
     """Listado de catalogo cerrado de actividades para formularios PWA."""
 
     authentication_classes = [TokenAuthentication]
-    permission_classes = [IsAuthenticated, IsPWARepresentativeForComedor]
+    permission_classes = [
+        IsAuthenticated,
+        IsPWAUserForComedor,
+        HasPwaColaboradoresPermission,
+    ]
 
     def list(self, request, comedor_id=None):
+        _get_pnud_scoped_comedor_or_404(comedor_id, request.user)
         queryset = CatalogoActividadPWA.objects.filter(activo=True).order_by(
             "categoria", "actividad", "id"
         )
@@ -533,6 +563,7 @@ class CatalogoActividadPWAViewSet(viewsets.ViewSet):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def dias(self, request, comedor_id=None):
+        _get_pnud_scoped_comedor_or_404(comedor_id, request.user)
         queryset = Dia.objects.order_by("id")
         serializer = DiaSerializer(queryset, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -543,14 +574,18 @@ class ActividadEspacioPWAViewSet(viewsets.ViewSet):
     """CRUD de actividades por espacio para la app PWA."""
 
     authentication_classes = [TokenAuthentication]
-    permission_classes = [IsAuthenticated, IsPWARepresentativeForComedor]
+    permission_classes = [
+        IsAuthenticated,
+        IsPWAUserForComedor,
+        HasPwaColaboradoresPermission,
+    ]
 
     def _get_queryset(self):
         comedor_id = self.kwargs["comedor_id"]
+        _get_pnud_scoped_comedor_or_404(comedor_id, self.request.user)
         return (
             ActividadEspacioPWA.objects.filter(
                 comedor_id=comedor_id,
-                activo=True,
             )
             .select_related("catalogo_actividad", "dia_actividad")
             .annotate(
@@ -586,6 +621,7 @@ class ActividadEspacioPWAViewSet(viewsets.ViewSet):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def create(self, request, comedor_id=None):
+        _get_pnud_scoped_comedor_or_404(comedor_id, request.user)
         serializer = ActividadEspacioPWACreateUpdateSerializer(
             data=request.data,
             context={"comedor_id": comedor_id},
@@ -645,9 +681,14 @@ class ActividadEspacioPWAViewSet(viewsets.ViewSet):
                 status=status.HTTP_404_NOT_FOUND,
             )
         queryset = (
-            actividad.inscriptos.filter(activo=True)
+            actividad.inscriptos.all()
             .select_related("nomina", "nomina__ciudadano", "nomina__ciudadano__sexo")
-            .order_by("nomina__ciudadano__apellido", "nomina__ciudadano__nombre", "id")
+            .order_by(
+                "-activo",
+                "nomina__ciudadano__apellido",
+                "nomina__ciudadano__nombre",
+                "id",
+            )
         )
         serializer = InscriptoActividadPWAListSerializer(queryset, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -658,7 +699,21 @@ class NominaEspacioPWAViewSet(viewsets.ViewSet):
     """Gestión de nómina consolidada para la app PWA."""
 
     authentication_classes = [TokenAuthentication]
-    permission_classes = [IsAuthenticated, IsPWARepresentativeForComedor]
+    permission_classes = [IsAuthenticated, IsPWAUserForComedor]
+    write_actions = {
+        "create",
+        "partial_update",
+        "destroy",
+        "preview_dni",
+        "registrar_asistencia",
+        "registrar_asistencia_alimentaria",
+    }
+
+    def get_permissions(self):
+        permissions = [IsAuthenticated(), IsPWAUserForComedor()]
+        if getattr(self, "action", None) in self.write_actions:
+            permissions.append(HasPwaNominaPermission())
+        return permissions
 
     def _safe_profile(self, row):
         try:
@@ -1048,6 +1103,13 @@ class NominaEspacioPWAViewSet(viewsets.ViewSet):
         except ValidationError as exc:
             detail = exc.message_dict if hasattr(exc, "message_dict") else exc.messages
             return Response({"detail": detail}, status=status.HTTP_400_BAD_REQUEST)
+        documento_nomina = result.pop("_nomina_destinatarios_documento", None)
+        result["nomina_destinatarios_documento"] = (
+            serialize_nomina_destinatarios_documento(
+                documento_nomina,
+                request=request,
+            )
+        )
         return Response(result, status=status.HTTP_200_OK)
 
     def generos(self, request, comedor_id=None):

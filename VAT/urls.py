@@ -1,3 +1,4 @@
+# pylint: disable=too-many-lines
 from django.urls import path
 from core.decorators import permissions_any_required
 
@@ -115,6 +116,7 @@ from VAT.views.curso import (
     CursoCreateView,
     CursoUpdateView,
     CursoDeleteView,
+    CursoDetailView,
     ComisionCursoDetailView,
     ComisionCursoPreinscriptosExportView,
     ComisionCursoInscriptosExportView,
@@ -151,9 +153,17 @@ from VAT.views.evaluacion import (
     ResultadoEvaluacionUpdateView,
     ResultadoEvaluacionDeleteView,
 )
+from VAT.views.reporte import ReporteInscriptosAsistenciasView
 
 
 urlpatterns = [
+    path(
+        "vat/reportes/inscripciones-asistencias/",
+        permissions_any_required(
+            ["VAT.view_inscripcion", "VAT.view_comisioncurso", "VAT.view_centro"]
+        )(ReporteInscriptosAsistenciasView.as_view()),
+        name="vat_reporte_inscripciones_asistencias",
+    ),
     path(
         "vat/centros/",
         permissions_any_required(["VAT.view_centro"])(CentroListView.as_view()),
@@ -211,6 +221,11 @@ urlpatterns = [
         "vat/cursos/<int:pk>/eliminar/",
         permissions_any_required(["VAT.delete_curso"])(CursoDeleteView.as_view()),
         name="vat_curso_delete",
+    ),
+    path(
+        "vat/cursos/<int:pk>/",
+        permissions_any_required(["VAT.view_curso"])(CursoDetailView.as_view()),
+        name="vat_curso_detail",
     ),
     path(
         "vat/cursos/comisiones/nueva/",

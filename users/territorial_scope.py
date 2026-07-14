@@ -102,6 +102,32 @@ def get_effective_scopes(user_or_profile) -> list[TerritorialScope]:
     return []
 
 
+def get_geography_scope_map(user) -> "dict[int, set[int] | None] | None":
+    """Mapa ``provincia_id -> set(municipio_id) | None`` para restricción territorial.
+
+    Devuelve ``None`` si el usuario no tiene restricción (superusuario o no-territorial).
+    Devuelve un dict (vacío o con entradas) para usuarios territoriales:
+    - valor ``None`` en una provincia → provincia completa accesible.
+    - ``set`` de ids → solo esos municipios.
+    - provincia ausente del dict → sin acceso.
+    """
+    if not user or not getattr(user, "is_authenticated", False):
+        return None
+    if getattr(user, "is_superuser", False) or not is_territorial_user(user):
+        return None
+
+    restriccion: dict = {}
+    for scope in get_effective_scopes(user):
+        pid = scope.provincia_id
+        if pid in restriccion and restriccion[pid] is None:
+            continue
+        if scope.municipio_id is None:
+            restriccion[pid] = None
+        else:
+            restriccion.setdefault(pid, set()).add(scope.municipio_id)
+    return restriccion
+
+
 def serialize_profile_scopes(profile: Profile | None) -> list[dict[str, int | None]]:
     return [scope.as_dict() for scope in get_effective_scopes(profile)]
 

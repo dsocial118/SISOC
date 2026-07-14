@@ -11,31 +11,28 @@
 {% endblock %}
 
 {% block content %}
-    <div class="container-fluid py-4">
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="d-flex align-items-center gap-2 mb-4">
-                    <a href="{% url 'vat_institucion_identificador_list' %}"
-                       class="btn btn-light"><i class="bi bi-arrow-left"></i></a>
-                    <div>
-                        <h1 class="h2 mb-0" style="color: #1f3a93;">
-                            {% if form.instance.id %}
-                                <i class="bi bi-pencil-square me-2"></i>Editar Identificador
-                            {% else %}
-                                <i class="bi bi-plus-circle me-2"></i>Nueva Identificador
-                            {% endif %}
-                        </h1>
-                    </div>
-                </div>
-            </div>
+    <link rel="stylesheet" href="{% static 'custom/css/vat_design.css' %}" />
+    <div class="vat-ui container-fluid py-4">
+        <a href="{% url 'vat_institucion_identificador_list' %}"
+           class="vat-back">
+            <i class="bi bi-arrow-left"></i> Volver
+        </a>
+        <div class="vp-hero">
+            <h1>
+                {% if form.instance.id %}
+                    Editar Identificador
+                {% else %}
+                    Nuevo Identificador
+                {% endif %}
+            </h1>
         </div>
 
         <div class="row">
             <div class="col-lg-8">
                 <div class="card border-0 shadow-sm">
-                    <div class="card-header bg-light border-bottom">
+                    <div class="card-header">
                         <h5 class="mb-0">
-                            <i class="bi bi-file-earmark-text me-2" style="color: #1f3a93;"></i>Información General
+                            <i class="bi bi-file-earmark-text me-2"></i>Información General
                         </h5>
                     </div>
                     <div class="card-body p-4">
@@ -145,7 +142,7 @@
             <div class="col-lg-4">
                 <div class="card border-0 shadow-sm bg-light">
                     <div class="card-body">
-                        <h6 class="card-title fw-600" style="color: #1f3a93;">
+                        <h6 class="card-title fw-600">
                             <i class="bi bi-info-circle me-2"></i>Información
                         </h6>
                         <div class="small text-muted">
@@ -156,10 +153,4 @@
             </div>
         </div>
     </div>
-    <style>
-    .form-control, .form-select { border: 1px solid #e0e0e0; border-radius: 0.5rem; padding: 0.75rem 1rem; }
-    .form-control:focus, .form-select:focus { border-color: #1f3a93; box-shadow: 0 0 0 0.2rem rgba(31, 58, 147, 0.15); }
-    .input-group-text { border: 1px solid #e0e0e0 !important; }
-    .fw-600 { font-weight: 600 !important; }
-    </style>
 {% endblock %}

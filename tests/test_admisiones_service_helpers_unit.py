@@ -1108,7 +1108,8 @@ def test_generar_documento_admision_and_update_context(mocker):
     mocker.patch(
         "admisiones.services.admisiones_service.InformeTecnico.objects.filter",
         return_value=SimpleNamespace(
-            order_by=lambda *_: SimpleNamespace(first=lambda: None)
+            order_by=lambda *_: SimpleNamespace(first=lambda: None),
+            exists=lambda: False,
         ),
     )
     mocker.patch(

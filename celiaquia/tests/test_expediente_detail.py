@@ -5,6 +5,7 @@ from datetime import date
 
 import pytest
 from django.contrib.auth.models import Permission, User
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
 
 from celiaquia.models import (
@@ -348,6 +349,119 @@ def test_expediente_detail_no_promueve_beneficiario_por_relacion_de_expediente_e
 
 
 @pytest.mark.django_db
+def test_expediente_detail_muestra_id_del_expediente(client):
+    """El ID único del expediente se visualiza en la pantalla de detalle."""
+    user = User.objects.create_user(username="prov_id_visible", password="pass")
+    permission = Permission.objects.get(
+        content_type__app_label="celiaquia",
+        codename="view_expediente",
+    )
+    user.user_permissions.add(permission)
+
+    estado_expediente = EstadoExpediente.objects.create(nombre="CREADO_ID_VISIBLE")
+    expediente = Expediente.objects.create(
+        usuario_provincia=user,
+        estado=estado_expediente,
+    )
+
+    client.force_login(user)
+    response = client.get(reverse("expediente_detail", args=[expediente.pk]))
+
+    assert response.status_code == 200
+    content = response.content.decode()
+    assert f"ID #{expediente.pk}" in content
+    assert "ID del expediente:" in content
+
+
+@pytest.mark.django_db
+def test_doc_indicadores_beneficiario_estandar_muestra_dos(client):
+    """Un legajo estándar (solo beneficiario) muestra 2 indicadores de documento."""
+    user = User.objects.create_user(username="prov_doc_estandar", password="pass")
+    permission = Permission.objects.get(
+        content_type__app_label="celiaquia",
+        codename="view_expediente",
+    )
+    user.user_permissions.add(permission)
+
+    estado_expediente = EstadoExpediente.objects.create(nombre="CREADO_DOC_ESTANDAR")
+    estado_legajo = EstadoLegajo.objects.create(nombre="DOC_PENDIENTE_ESTANDAR")
+    expediente = Expediente.objects.create(
+        usuario_provincia=user,
+        estado=estado_expediente,
+    )
+    ciudadano = Ciudadano.objects.create(
+        apellido="Solo",
+        nombre="Beneficiario",
+        fecha_nacimiento=date(1990, 1, 1),
+        documento=50111000,
+    )
+    legajo = ExpedienteCiudadano.objects.create(
+        expediente=expediente,
+        ciudadano=ciudadano,
+        estado=estado_legajo,
+        rol=ExpedienteCiudadano.ROLE_BENEFICIARIO,
+        archivo2=SimpleUploadedFile("biopsia.pdf", b"data"),
+    )
+
+    client.force_login(user)
+    response = client.get(reverse("expediente_detail", args=[expediente.pk]))
+
+    assert response.status_code == 200
+    legajo_ctx = response.context["legajos_enriquecidos"][0]
+    assert legajo_ctx.pk == legajo.pk
+    indicadores = legajo_ctx.doc_indicadores
+    assert [d["label"] for d in indicadores] == ["Doc1", "Doc2"]
+    # archivo2 cargado -> Doc1 cargado; archivo3 ausente -> Doc2 pendiente.
+    assert indicadores[0]["cargado"] is True
+    assert indicadores[1]["cargado"] is False
+
+
+@pytest.mark.django_db
+def test_doc_indicadores_doble_rol_muestra_tres(client):
+    """Un legajo de doble rol (beneficiario y responsable) muestra 3 indicadores."""
+    user = User.objects.create_user(username="prov_doc_doble", password="pass")
+    permission = Permission.objects.get(
+        content_type__app_label="celiaquia",
+        codename="view_expediente",
+    )
+    user.user_permissions.add(permission)
+
+    estado_expediente = EstadoExpediente.objects.create(nombre="CREADO_DOC_DOBLE")
+    estado_legajo = EstadoLegajo.objects.create(nombre="DOC_PENDIENTE_DOBLE")
+    expediente = Expediente.objects.create(
+        usuario_provincia=user,
+        estado=estado_expediente,
+    )
+    ciudadano = Ciudadano.objects.create(
+        apellido="Doble",
+        nombre="Rol",
+        fecha_nacimiento=date(1985, 6, 1),
+        documento=50111001,
+    )
+    legajo = ExpedienteCiudadano.objects.create(
+        expediente=expediente,
+        ciudadano=ciudadano,
+        estado=estado_legajo,
+        rol=ExpedienteCiudadano.ROLE_BENEFICIARIO_Y_RESPONSABLE,
+        archivo1=SimpleUploadedFile("biopsia.pdf", b"data"),
+    )
+
+    client.force_login(user)
+    response = client.get(reverse("expediente_detail", args=[expediente.pk]))
+
+    assert response.status_code == 200
+    legajo_ctx = response.context["legajos_enriquecidos"][0]
+    assert legajo_ctx.pk == legajo.pk
+    assert legajo_ctx.es_doble_rol is True
+    indicadores = legajo_ctx.doc_indicadores
+    assert [d["label"] for d in indicadores] == ["Doc1", "Doc2", "Doc3"]
+    # archivo1 cargado -> Doc1 cargado; archivo2/archivo3 ausentes -> pendientes.
+    assert indicadores[0]["cargado"] is True
+    assert indicadores[1]["cargado"] is False
+    assert indicadores[2]["cargado"] is False
+
+
+@pytest.mark.django_db
 def test_expediente_detail_expone_motivo_rechazo_para_provincia(client):
     provincia = Provincia.objects.create(nombre="Buenos Aires")
     user = User.objects.create_user(username="prov_rechazo", password="pass")
@@ -449,3 +563,121 @@ def test_expediente_detail_expone_motivo_rechazo_para_tecnico(client):
     assert "Falta certificado" in row_html
     assert "Motivo del Rechazo" in response.content.decode()
     assert "Falta certificado" in response.content.decode()
+
+
+def test_subsanacion_tipo_display_devuelve_etiqueta_legible():
+    """La property traduce el código de tipo a un texto legible."""
+    assert (
+        ExpedienteCiudadano(subsanacion_tipo="DOCUMENTACION").subsanacion_tipo_display
+        == "Documentación"
+    )
+    assert (
+        ExpedienteCiudadano(
+            subsanacion_tipo="DATOS_PERSONALES"
+        ).subsanacion_tipo_display
+        == "Datos personales"
+    )
+    assert (
+        ExpedienteCiudadano(subsanacion_tipo="RENAPER").subsanacion_tipo_display
+        == "RENAPER"
+    )
+    # Sin tipo registrado (subsanaciones antiguas) no rompe y cae a vacío.
+    assert ExpedienteCiudadano().subsanacion_tipo_display == ""
+
+
+def test_subsanacion_respuesta_label_refleja_el_tipo():
+    """El rótulo de la respuesta lleva el motivo y no el viejo sufijo 'Renaper'."""
+    assert (
+        ExpedienteCiudadano(
+            subsanacion_tipo="DATOS_PERSONALES"
+        ).subsanacion_respuesta_label
+        == "Respuesta a subsanación (Datos personales)"
+    )
+    # Sin tipo: genérico, nunca "Renaper".
+    assert (
+        ExpedienteCiudadano().subsanacion_respuesta_label == "Respuesta a subsanación"
+    )
+
+
+@pytest.mark.django_db
+def test_expediente_detail_muestra_motivo_subsanacion_solicitada(client):
+    """El estado de la subsanación refleja el tipo elegido, no el genérico."""
+    user = User.objects.create_user(username="prov_sub_tipo", password="pass")
+    permission = Permission.objects.get(
+        content_type__app_label="celiaquia",
+        codename="view_expediente",
+    )
+    user.user_permissions.add(permission)
+
+    estado_expediente = EstadoExpediente.objects.create(nombre="EN_ESPERA_SUB_TIPO")
+    estado_legajo = EstadoLegajo.objects.create(nombre="PENDIENTE_SUBSANACION_TIPO")
+    expediente = Expediente.objects.create(
+        usuario_provincia=user,
+        estado=estado_expediente,
+    )
+    ciudadano = Ciudadano.objects.create(
+        apellido="Lopez",
+        nombre="Sofia",
+        fecha_nacimiento=date(2000, 3, 3),
+        documento=34555666,
+    )
+    ExpedienteCiudadano.objects.create(
+        expediente=expediente,
+        ciudadano=ciudadano,
+        estado=estado_legajo,
+        revision_tecnico=RevisionTecnico.SUBSANAR,
+        estado_validacion_renaper=3,
+        subsanacion_tipo="DOCUMENTACION",
+        subsanacion_motivo="Falta el certificado médico",
+    )
+
+    client.force_login(user)
+    response = client.get(reverse("expediente_detail", args=[expediente.pk]))
+
+    assert response.status_code == 200
+    content = response.content.decode()
+    assert "Subsanación por documentación solicitada" in content
+    # No debe quedar el texto genérico cuando hay un tipo seleccionado.
+    assert "Subsanación solicitada" not in content
+
+
+@pytest.mark.django_db
+def test_expediente_detail_respuesta_subsanacion_refleja_tipo(client):
+    """La respuesta a la subsanación conserva el motivo y no se rotula 'Renaper'."""
+    user = User.objects.create_user(username="prov_resp_tipo", password="pass")
+    permission = Permission.objects.get(
+        content_type__app_label="celiaquia",
+        codename="view_expediente",
+    )
+    user.user_permissions.add(permission)
+
+    estado_expediente = EstadoExpediente.objects.create(nombre="EN_ESPERA_RESP_TIPO")
+    estado_legajo = EstadoLegajo.objects.create(nombre="PENDIENTE_SUBSANACION_RESP")
+    expediente = Expediente.objects.create(
+        usuario_provincia=user,
+        estado=estado_expediente,
+    )
+    ciudadano = Ciudadano.objects.create(
+        apellido="Diaz",
+        nombre="Marta",
+        fecha_nacimiento=date(1999, 9, 9),
+        documento=35666777,
+    )
+    ExpedienteCiudadano.objects.create(
+        expediente=expediente,
+        ciudadano=ciudadano,
+        estado=estado_legajo,
+        revision_tecnico=RevisionTecnico.SUBSANAR,
+        estado_validacion_renaper=3,
+        subsanacion_tipo="DATOS_PERSONALES",
+        subsanacion_motivo="Corregir fecha de nacimiento",
+        subsanacion_renaper_comentario="Se adjunta partida corregida",
+    )
+
+    client.force_login(user)
+    response = client.get(reverse("expediente_detail", args=[expediente.pk]))
+
+    assert response.status_code == 200
+    content = response.content.decode()
+    assert "Respuesta a subsanación (Datos personales)" in content
+    assert "Respuesta subsanación Renaper" not in content

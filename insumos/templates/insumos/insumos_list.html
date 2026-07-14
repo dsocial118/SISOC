@@ -1,0 +1,125 @@
+{% extends "includes/main.html" %}
+{% load static %}
+{% block title %}Insumos{% endblock %}
+{% block content %}
+    <link rel="stylesheet" href="{% static 'custom/css/listModerno.css' %}" />
+
+    <div class="list-container">
+        <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
+            <h2 class="mb-2">Insumos</h2>
+            <div class="d-flex gap-2">
+                {% if puede_gestionar_categorias %}
+                    <a href="{% url 'insumos_categorias_listar' %}"
+                       class="btn btn-outline-secondary">
+                        <i class="fas fa-tags"></i> Categorías
+                    </a>
+                {% endif %}
+                {% if puede_gestionar %}
+                    <a href="{% url 'insumos_crear' %}" class="btn btn-success">
+                        <i class="fas fa-plus"></i> Agregar insumo
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+
+        <form method="get" class="row g-2 mb-4">
+            <div class="col-md-5">
+                <input type="text"
+                       name="busqueda"
+                       id="busqueda"
+                       aria-label="Buscar insumos"
+                       value="{{ busqueda }}"
+                       class="form-control"
+                       placeholder="Buscar por título o descripción" />
+            </div>
+            <div class="col-md-4">
+                <select name="categoria"
+                        id="categoria"
+                        aria-label="Filtrar por categoría"
+                        class="form-select">
+                    <option value="">Todas las categorías</option>
+                    <option value="{{ sin_categoria_value }}"
+                            {% if categoria_seleccionada == sin_categoria_value %}selected{% endif %}>
+                        Sin categoría
+                    </option>
+                    {% for cat in categorias %}
+                        <option value="{{ cat.id }}"
+                                {% if categoria_seleccionada == cat.id|stringformat:'s' %}selected{% endif %}>
+                            {{ cat.nombre }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3 d-flex gap-2">
+                <button type="submit" class="btn btn-primary">Filtrar</button>
+                <a href="{% url 'insumos_listar' %}" class="btn btn-outline-secondary">Limpiar</a>
+            </div>
+        </form>
+
+        <div class="card comedor-table-card">
+            <div class="card-body">
+                <div class="table-responsive-lg">
+                    <table class="table table-comedor-moderno">
+                        <thead>
+                            <tr>
+                                <th>Título</th>
+                                <th>Categoría</th>
+                                <th>Fecha de carga</th>
+                                <th>Cargado por</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for insumo in insumos %}
+                                <tr>
+                                    <td>
+                                        {{ insumo.titulo }}
+                                        {% if not insumo.activo %}<span class="badge bg-secondary">Inactivo</span>{% endif %}
+                                    </td>
+                                    <td>{{ insumo.categoria_display }}</td>
+                                    <td>{{ insumo.fecha_creacion|date:"d/m/Y H:i" }}</td>
+                                    <td>{{ insumo.creado_por_display }}</td>
+                                    <td>
+                                        <div class="comedor-actions">
+                                            <a href="{% url 'insumos_descargar' insumo.pk %}"
+                                               class="btn btn-ver"
+                                               title="Descargar">
+                                                <i class="fas fa-download"></i>
+                                                Descargar
+                                            </a>
+                                            {% if puede_gestionar %}
+                                                <a href="{% url 'insumos_editar' insumo.pk %}"
+                                                   class="btn btn-editar"
+                                                   title="Editar">
+                                                    <i class="fas fa-edit"></i>
+                                                    Editar
+                                                </a>
+                                                <a href="{% url 'insumos_eliminar' insumo.pk %}"
+                                                   class="btn btn-eliminar"
+                                                   title="Eliminar">
+                                                    <i class="fas fa-trash-alt"></i>
+                                                    Eliminar
+                                                </a>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="5">
+                                        <div class="no-data-message">
+                                            <h3>No se encontraron insumos</h3>
+                                            <p>No hay insumos que coincidan con los criterios de búsqueda.</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        {% include 'components/pagination.html' with is_paginated=is_paginated page_obj=page_obj prev_text='Volver' next_text='Continuar' %}
+    </div>
+{% endblock %}

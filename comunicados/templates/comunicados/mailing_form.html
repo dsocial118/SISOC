@@ -1,0 +1,106 @@
+{% extends "includes/main.html" %}
+{% load crispy_forms_tags %}
+{% block title %}Mailing masivo{% endblock %}
+{% block titulo-pagina %}Mailing masivo{% endblock %}
+{% block breadcrumb %}
+    <ol class="breadcrumb float-sm-right">
+        <li class="breadcrumb-item">Gestión</li>
+        <li class="breadcrumb-item">
+            <a href="{% url 'comunicados_gestion' %}">Comunicados</a>
+        </li>
+        <li class="breadcrumb-item active">Mailing masivo</li>
+    </ol>
+{% endblock %}
+{% block content %}
+    <div class="row justify-content-center">
+        <div class="col-12 col-lg-8">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h3 class="mb-0">{{ form_title }}</h3>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">
+                        Descargue la plantilla, complete la columna <code>mail</code> con las direcciones de destino
+                        y luego cargue el archivo <code>.xlsx</code>. El sistema validará
+                        el archivo y creará un lote. Los correos se enviarán de forma asíncrona.
+                    </p>
+
+                    <form method="post" enctype="multipart/form-data" novalidate>
+                        {% csrf_token %}
+                        <div class="mb-3">{{ form.asunto|as_crispy_field }}</div>
+                        <div class="mb-3">{{ form.cuerpo|as_crispy_field }}</div>
+                        <div class="mb-3">{{ form.archivo|as_crispy_field }}</div>
+                        <div class="mb-3">{{ form.archivos_adjuntos|as_crispy_field }}</div>
+                        <div class="d-flex flex-wrap gap-2">
+                            <button type="submit"
+                                    class="btn btn-outline-primary"
+                                    formaction="{{ template_download_url }}"
+                                    formmethod="get"
+                                    formnovalidate>Descargar plantilla</button>
+                            <button type="submit" class="btn btn-success">Crear lote de mailing</button>
+                            <a href="{% url 'comunicados_gestion' %}" class="btn btn-secondary">Volver</a>
+                        </div>
+                    </form>
+
+                    {% if recent_jobs %}
+                        <hr class="my-4" />
+                        <h4 class="mb-3">Últimos lotes de mailing</h4>
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-hover align-middle mb-0">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Lote</th>
+                                        <th scope="col">Fecha</th>
+                                        <th scope="col">Estado</th>
+                                        <th scope="col">Asunto</th>
+                                        <th scope="col">Último mail enviado</th>
+                                        <th scope="col">Error</th>
+                                        <th scope="col">Detalle</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for job in recent_jobs %}
+                                        <tr>
+                                            <td>#{{ job.id }}</td>
+                                            <td>{{ job.requested_at|date:"d/m/Y H:i" }}</td>
+                                            <td>
+                                                {% if job.status == "completed" %}
+                                                    <span class="badge badge-success">Completado</span>
+                                                {% elif job.status == "failed" %}
+                                                    <span class="badge badge-danger">Fallido</span>
+                                                {% elif job.status == "processing" %}
+                                                    <span class="badge badge-warning">Procesando</span>
+                                                {% else %}
+                                                    <span class="badge badge-secondary">Pendiente</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>{{ job.asunto|truncatechars:30 }}</td>
+                                            <td>
+                                                {% if job.last_successful_mail %}
+                                                    {{ job.last_successful_mail }}
+                                                    {% if job.last_successful_row %}
+                                                        <small class="text-muted d-block">Fila {{ job.last_successful_row }}</small>
+                                                    {% endif %}
+                                                {% else %}
+                                                    -
+                                                {% endif %}
+                                            </td>
+                                            <td>{{ job.last_error_message|default:"-" }}</td>
+                                            <td>
+                                                <a href="{% url 'comunicados_mailing_detalle' job.id %}"
+                                                   class="btn btn-sm btn-outline-primary">Ver detalle</a>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <hr class="my-4" />
+                        <div class="alert alert-light border mb-0">Todavía no hay lotes creados para mailing masivo.</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

@@ -6,7 +6,7 @@
 {% block head %}
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Lora:wght@700&family=Montserrat:wght@400;600;700&display=swap"
+    <link href="https://fonts.googleapis.com/css2?family=Lora:wght@600;700&family=Montserrat:wght@400;500;600;700&display=swap"
           rel="stylesheet" />
 {% endblock %}
 
@@ -35,7 +35,7 @@
             color: #ffffff;
             max-width: 1620px;
             margin: 0 auto 1rem;
-            background: #3E5A7E;
+            background: transparent;
             border-radius: 20px;
             padding: 1rem;
         }
@@ -469,6 +469,162 @@
 
         .ci-audit { display: flex; flex-wrap: wrap; gap: 1rem; font-size: .73rem; color: var(--cmuted); border-top: 1px solid rgba(255,255,255,.1); padding: .9rem .25rem 0; margin-top: 1rem; }
 
+        /* ── Tabla de inscriptos (diseño "Inscriptos") ──────────── */
+        .ci-tbl-card {
+            background: #232D4F;
+            border-radius: 15px;
+            box-shadow: 4px 4px 4px 0 rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .ci-tbl-head {
+            display: flex;
+            align-items: center;
+            gap: .55rem;
+            background: #3B8681;
+            border-bottom: 2px solid #ffffff;
+            padding: .85rem 1.25rem;
+            color: #ffffff;
+            font-family: 'Montserrat', Inter, Roboto, sans-serif;
+            font-size: 24px;
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+
+        .ci-tbl-head i { font-size: 20px; line-height: 1; }
+
+        .ci-tbl-toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            flex-wrap: wrap;
+            padding: 20px 30px;
+        }
+
+        .ci-tbl-search {
+            position: relative;
+            flex: 1 1 320px;
+            max-width: 540px;
+        }
+
+        .ci-tbl-search i {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--cmuted);
+            font-size: .9rem;
+        }
+
+        .ci-tbl-search input {
+            width: 100%;
+            padding: .6rem .9rem .6rem 2.25rem;
+            border-radius: 999px;
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            background: rgba(255, 255, 255, 0.04);
+            color: #ffffff;
+            font-size: .9rem;
+        }
+
+        .ci-tbl-search input::placeholder { color: var(--cmuted); }
+        .ci-tbl-search input:focus { outline: none; border-color: var(--cgold); }
+
+        .ci-tbl-scroll { overflow-x: auto; }
+
+        .ci-tbl {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 820px;
+        }
+
+        .ci-tbl thead th {
+            background: #232D4F;
+            color: #ffffff;
+            font-size: 16px;
+            font-weight: 700;
+            letter-spacing: .15px;
+            text-align: left;
+            padding: .65rem 1rem;
+            height: 44px;
+            border-top: 1px solid #E5E7EB;
+            border-bottom: 1px solid #E5E7EB;
+            white-space: nowrap;
+        }
+
+        .ci-tbl thead th.ci-tbl-col-actions { text-align: right; }
+
+        .ci-tbl tbody td {
+            color: #ffffff;
+            font-size: 16px;
+            font-weight: 400;
+            letter-spacing: .15px;
+            padding: .75rem 1rem;
+            height: 56px;
+            border-bottom: 1px solid rgba(229, 231, 235, 0.45);
+            white-space: nowrap;
+        }
+
+        .ci-tbl tbody tr:hover td { background: rgba(255, 255, 255, 0.04); }
+        .ci-tbl tbody td a { color: #ffffff; text-decoration: none; }
+        .ci-tbl tbody td a:hover { text-decoration: underline; }
+
+        .ci-tbl-actions {
+            display: flex;
+            gap: .5rem;
+            justify-content: flex-end;
+            white-space: nowrap;
+        }
+
+        .ci-tbl-empty td {
+            text-align: center;
+            color: var(--cmuted);
+            padding: 2.6rem 1rem;
+            font-size: 14px;
+        }
+
+        .ci-tbl-foot {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            flex-wrap: wrap;
+            background: #232D4F;
+            border-top: 1px solid #E5E7EB;
+            padding: .8rem 1.25rem;
+            color: #ffffff;
+            font-size: 14px;
+        }
+
+        .ci-pager { display: inline-flex; align-items: stretch; }
+
+        .ci-pager button {
+            width: 36px;
+            min-height: 32px;
+            border: 1px solid #ffffff;
+            background: transparent;
+            color: #ffffff;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .ci-pager button:disabled { opacity: .4; cursor: default; }
+        .ci-pager-prev { border-radius: 12px 0 0 12px; border-right: 0; }
+        .ci-pager-next { border-radius: 0 12px 12px 0; border-left: 0; }
+
+        .ci-pager-label {
+            border-top: 1px solid #ffffff;
+            border-bottom: 1px solid #ffffff;
+            padding: 0 .95rem;
+            min-height: 32px;
+            display: inline-flex;
+            align-items: center;
+            font-size: 14px;
+            white-space: nowrap;
+        }
+
         .ci-row-name {
             display: block; font-weight: 600; font-size: .9rem; color: #fff;
             text-decoration: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
@@ -476,26 +632,75 @@
         .ci-row-name:hover { color: var(--cblue); }
         .ci-row-sub { display: block; font-size: .76rem; color: var(--cmuted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-        /* ── Modales (mismo estilo navy) ──────────── */
+        /* ── Modales (diseño nuevo navy/teal) ──────────── */
         .ci-modal .modal-content {
-            border-radius: 12px;
-            border: 1px solid #2a3a4a;
-            background: #1e2a40;
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            background: #232D4F !important;
             color: #f2f7ff;
             overflow: hidden;
+            opacity: 1 !important;
         }
         .ci-modal .modal-header {
             padding: .85rem 1rem;
-            background: #1f3b6d;
-            border-bottom: 1px solid #2a3a4a;
+            background: #3B8681 !important;
+            border-bottom: 2px solid #ffffff;
         }
         .ci-modal .modal-title { font-size: .98rem; font-weight: 600; color: #ffffff; }
-        .ci-modal .btn-close { filter: invert(1); }
-        .ci-modal .modal-body { padding: 1rem; }
+        .ci-modal .btn-close { filter: brightness(0) invert(1); opacity: 1; }
+        .ci-modal .modal-body { padding: 1rem; background: #232D4F !important; }
         .ci-modal .modal-footer {
             padding: .75rem 1rem;
-            border-top: 1px solid #2a3a4a;
-            background: #16243a;
+            border-top: 1px solid rgba(255, 255, 255, 0.16);
+            background: #232D4F !important;
+        }
+        /* ── Inputs dentro de los modales (diseño nuevo) ── */
+        .ci-modal .form-label,
+        .ci-modal .modal-body label {
+            color: #e7eefb;
+            font-weight: 600;
+        }
+        .ci-modal .form-control,
+        .ci-modal .form-select,
+        .ci-modal textarea,
+        .ci-modal select,
+        .ci-modal input[type="text"],
+        .ci-modal input[type="email"],
+        .ci-modal input[type="number"],
+        .ci-modal input[type="date"],
+        .ci-modal input[type="time"],
+        .ci-modal input[type="tel"] {
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.55);
+            background: rgba(255, 255, 255, 0.06);
+            color: #ffffff;
+            min-height: 40px;
+            box-shadow: none;
+            color-scheme: dark;
+        }
+        .ci-modal .form-control::placeholder,
+        .ci-modal input::placeholder,
+        .ci-modal textarea::placeholder {
+            color: rgba(255, 255, 255, 0.55);
+        }
+        .ci-modal .form-control:focus,
+        .ci-modal .form-select:focus,
+        .ci-modal textarea:focus,
+        .ci-modal select:focus,
+        .ci-modal input:focus {
+            border-color: #3B8681;
+            background: rgba(59, 134, 129, 0.12);
+            box-shadow: 0 0 0 .18rem rgba(59, 134, 129, 0.25);
+            color: #ffffff;
+            outline: none;
+        }
+        .ci-modal select option {
+            color: #ffffff;
+            background: #1e2e40;
+        }
+        .ci-modal input[type="checkbox"],
+        .ci-modal input[type="radio"] {
+            accent-color: #3B8681;
         }
 
         @media (max-width: 991.98px) {
@@ -517,6 +722,294 @@
             .sisoc-side-tab span { writing-mode: horizontal-tb; transform: none; font-size: 12px; }
             .sisoc-general-grid { grid-template-columns: 1fr; }
         }
+
+        .sisoc-centro-page {
+            --cnav: #232D4F;
+            --cpanel: #273455;
+            --cteal: #3B8681;
+            --cblue: #E7BA61;
+            --cgold: #E7BA61;
+            --ctext: #F2F2F2;
+            --cmuted: rgba(255, 255, 255, 0.76);
+            max-width: 100%;
+            margin: 0 auto 1rem;
+            border-radius: 0;
+            padding: 0 0 1rem;
+        }
+
+        .sisoc-page-top {
+            background: transparent;
+            border: 0;
+            border-radius: 0;
+            padding: .2rem .75rem 0;
+            margin-bottom: .65rem;
+        }
+
+        .sisoc-title-row {
+            align-items: flex-start;
+            gap: 1rem;
+            flex-wrap: wrap;
+            background: var(--cnav);
+            border-radius: 0 0 14px 14px;
+            padding: 1.25rem 1.5rem 1.15rem;
+            box-shadow: 0 14px 20px rgba(18, 28, 46, 0.16);
+        }
+
+        .sisoc-title-block h1 {
+            font-size: 36px;
+            line-height: 40px;
+            letter-spacing: 1px;
+        }
+
+        .sisoc-title-sub {
+            margin-top: .35rem;
+            color: #ffffff;
+            font-family: 'Lora', Georgia, 'Times New Roman', serif;
+            font-size: 24px;
+            font-weight: 700;
+            line-height: 40px;
+            letter-spacing: 1px;
+        }
+
+        .sisoc-title-meta {
+            gap: .75rem;
+            padding: 0;
+        }
+
+        .sisoc-title-meta .sisoc-cue-text {
+            display: none;
+        }
+
+        .sisoc-status-pill {
+            padding: .42rem .75rem;
+            background: #2f9f51;
+            font-size: .72rem;
+            text-transform: none;
+        }
+
+        .sisoc-tabs-rail {
+            display: flex;
+            align-items: center;
+            gap: .85rem;
+            padding: 1rem .75rem .75rem;
+            margin-bottom: 2rem;
+            border-bottom: 2px solid rgba(224, 182, 74, 0.95);
+            overflow-x: auto;
+        }
+
+        .sisoc-tab-chip {
+            border: 0;
+            border-radius: 10px;
+            background: rgba(43, 59, 98, 0.92);
+            color: #f7f8fb;
+            font-size: .88rem;
+            font-weight: 600;
+            padding: .55rem 1rem;
+            min-width: max-content;
+            transition: background-color .2s ease, color .2s ease;
+        }
+
+        .sisoc-tab-chip.is-active {
+            background: var(--cblue);
+            color: #28405f;
+        }
+
+        .sisoc-metric-grid {
+            display: grid;
+            grid-template-columns: repeat(6, minmax(0, 1fr));
+            gap: 30px;
+            padding: .75rem;
+            margin-bottom: 2.5rem;
+        }
+
+        .sisoc-metric-grid--pair {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            padding: 0;
+            margin-bottom: 30px;
+        }
+
+        .sisoc-metric-grid--triple {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            padding: 0;
+            margin-bottom: 30px;
+        }
+
+        .sisoc-metric-card {
+            position: relative;
+            background: var(--cteal);
+            border-radius: 20px;
+            border-left: 8px solid var(--cgold);
+            box-shadow: 4px 4px 4px 0 rgba(0, 0, 0, 0.3);
+            min-height: 120px;
+            padding: 1rem 1rem .85rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .sisoc-metric-value {
+            display: block;
+            font-family: 'Lora', Georgia, 'Times New Roman', serif;
+            font-size: 36px;
+            line-height: 1.1;
+            font-weight: 600;
+            text-align: center;
+            color: #ffffff;
+        }
+
+        .sisoc-metric-label {
+            margin-top: .45rem;
+            font-family: 'Montserrat', Inter, Roboto, sans-serif;
+            font-size: 20px;
+            font-weight: 500;
+            text-align: center;
+            color: #ffffff;
+        }
+
+        .sisoc-info-shell {
+            background: transparent;
+            border: 0;
+            box-shadow: none;
+            border-radius: 0;
+            min-height: 0;
+        }
+
+        .sisoc-side-tabs {
+            display: none;
+        }
+
+        .sisoc-info-panel {
+            padding: 0 .75rem;
+        }
+
+        .sisoc-block-card {
+            background: var(--cnav);
+            border-radius: 15px;
+            box-shadow: 4px 4px 4px 0 rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .sisoc-block-card + .sisoc-block-card {
+            margin-top: 30px;
+        }
+
+        .sisoc-block-title {
+            display: flex;
+            align-items: center;
+            gap: .5rem;
+            background: var(--cteal);
+            border-bottom: 2px solid #ffffff;
+            padding: .85rem 1.25rem;
+            color: #ffffff;
+            font-family: 'Montserrat', Inter, Roboto, sans-serif;
+            font-size: 24px;
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+
+        .sisoc-block-title i {
+            font-size: 20px;
+            line-height: 1;
+        }
+
+        .sisoc-block-body {
+            padding: 30px;
+        }
+
+        .sisoc-general-layout {
+            grid-template-columns: 1fr;
+            gap: 1rem;
+        }
+
+        .sisoc-general-grid {
+            grid-template-columns: repeat(5, minmax(0, 1fr));
+            gap: 1rem;
+        }
+
+        .sisoc-horarios-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 20px 40px;
+        }
+
+        .sisoc-data-label {
+            color: #F2F2F2;
+            font-size: 16px;
+            font-weight: 400;
+            letter-spacing: 1px;
+            line-height: 20px;
+        }
+
+        .sisoc-data-value {
+            color: #F2F2F2;
+            font-size: 16px;
+            font-weight: 600;
+            letter-spacing: 1px;
+            line-height: 25px;
+        }
+
+        .sisoc-section-header {
+            margin-bottom: .75rem;
+        }
+
+        .sisoc-section-header h2 {
+            font-size: 1.15rem;
+            line-height: 1.35;
+            letter-spacing: 0;
+        }
+
+        .sisoc-section-divider {
+            margin-bottom: 1rem;
+            background: rgba(224, 182, 74, 0.95);
+        }
+
+        @media (max-width: 991.98px) {
+            .sisoc-metric-grid {
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+            }
+
+            .sisoc-general-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 767.98px) {
+            .sisoc-centro-page {
+                padding: 0 0 .85rem;
+            }
+
+            .sisoc-page-top,
+            .sisoc-tabs-rail,
+            .sisoc-metric-grid,
+            .sisoc-info-panel {
+                padding-left: .75rem;
+                padding-right: .75rem;
+            }
+
+            .sisoc-title-row {
+                padding: 1.1rem .95rem 1rem;
+            }
+
+            .sisoc-title-block h1 {
+                font-size: 1.75rem;
+                line-height: 1.15;
+            }
+
+            .sisoc-title-sub {
+                font-size: 1.1rem;
+                line-height: 1.3;
+            }
+
+            .sisoc-metric-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 1rem;
+            }
+
+            .sisoc-general-grid,
+            .sisoc-horarios-grid {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
 
     {# ── PÁGINA ──────────────────────────────────────────────────────── #}
@@ -528,39 +1021,6 @@
                 <i class="bi bi-arrow-left"></i> Volver
             </a>
             <div class="sisoc-header-actions">
-                {% if puede_editar_comision %}
-                    <button type="button"
-                            class="sisoc-btn sisoc-btn--edit"
-                            data-bs-toggle="modal"
-                            data-bs-target="#modalEditarComisionCurso"
-                            data-edit-url="{{ comision_edit_url }}"
-                            data-curso-id="{{ comision.curso_id }}"
-                            data-ubicacion-id="{{ comision.ubicacion_id|default:'' }}"
-                            data-cupo-total="{{ comision.cupo_total|default:comision.cupo }}"
-                            data-acepta-lista-espera="{{ comision.acepta_lista_espera|yesno:'1,0' }}"
-                            data-fecha-inicio="{{ comision.fecha_inicio|date:'Y-m-d' }}"
-                            data-fecha-fin="{{ comision.fecha_fin|date:'Y-m-d' }}"
-                            data-estado="{{ comision.estado }}"
-                            data-observaciones="{{ comision.observaciones|default:'' }}">
-                        <i class="bi bi-pencil"></i><span>Editar</span>
-                    </button>
-                {% endif %}
-                {% if puede_agregar_inscripcion %}
-                    <button type="button"
-                            class="sisoc-btn sisoc-btn--add"
-                            data-bs-toggle="modal"
-                            data-bs-target="#modalInscripcionRapida">
-                        <i class="bi bi-person-plus"></i><span>Inscribir</span>
-                    </button>
-                {% endif %}
-                {% if puede_agregar_comision_horario %}
-                    <button type="button"
-                            class="sisoc-btn sisoc-btn--view"
-                            data-bs-toggle="modal"
-                            data-bs-target="#modalComisionHorario">
-                        <i class="bi bi-plus-circle"></i><span>Agregar horario</span>
-                    </button>
-                {% endif %}
                 {% if puede_eliminar_comision %}
                     <button type="button"
                             class="sisoc-btn sisoc-btn--delete"
@@ -586,6 +1046,42 @@
                 <span class="sisoc-cue-text">{{ comision.codigo_comision }}</span>
                 <span class="sisoc-status-pill">{{ comision.get_estado_display }}</span>
             </div>
+        </div>
+
+        <div class="sisoc-tabs-rail"
+             role="tablist"
+             aria-label="Secciones de la comisión">
+            <button type="button"
+                    class="sisoc-tab-chip is-active"
+                    data-sisoc-tab-target="general"
+                    aria-selected="true">Información</button>
+            <button type="button"
+                    class="sisoc-tab-chip"
+                    data-sisoc-tab-target="inscriptos"
+                    aria-selected="false">Inscriptos</button>
+            {% if comision.acepta_lista_espera or lista_espera %}
+                <button type="button"
+                        class="sisoc-tab-chip"
+                        data-sisoc-tab-target="espera"
+                        aria-selected="false">Lista de espera</button>
+            {% endif %}
+            <button type="button"
+                    class="sisoc-tab-chip"
+                    data-sisoc-tab-target="sesiones"
+                    aria-selected="false">Clases</button>
+            <button type="button"
+                    class="sisoc-tab-chip"
+                    data-sisoc-tab-target="horarios"
+                    aria-selected="false">Horarios</button>
+        </div>
+
+        <div class="sisoc-metric-grid" id="sisocMetricGridGlobal">
+            {% for metrica in metricas_comision %}
+                <article class="sisoc-metric-card">
+                    <strong class="sisoc-metric-value">{{ metrica.valor }}{{ metrica.sufijo }}</strong>
+                    <span class="sisoc-metric-label">{{ metrica.label }}</span>
+                </article>
+            {% endfor %}
         </div>
 
         {# ── Shell con side-tabs ── #}
@@ -644,441 +1140,545 @@
                 {# ── INFORMACIÓN ── #}
                 <section class="sisoc-info-panel is-active" data-sisoc-panel="general">
                     <div class="sisoc-panel-section">
-                        <div class="sisoc-section-header">
-                            <h2>Información de la comisión</h2>
-                        </div>
-                        <hr class="sisoc-section-divider" />
-                        <div class="sisoc-general-layout">
-                            <div class="sisoc-general-grid">
-                                <div class="sisoc-data-item">
-                                    <p class="sisoc-data-label">Código</p>
-                                    <p class="sisoc-data-value">{{ comision.codigo_comision }}</p>
-                                </div>
-                                <div class="sisoc-data-item">
-                                    <p class="sisoc-data-label">Nombre</p>
-                                    <p class="sisoc-data-value">{{ comision.nombre|default:"—" }}</p>
-                                </div>
-                                <div class="sisoc-data-item">
-                                    <p class="sisoc-data-label">{{ unidad_label }}</p>
-                                    <p class="sisoc-data-value">{{ unidad_valor }}</p>
-                                </div>
-                                <div class="sisoc-data-item">
-                                    <p class="sisoc-data-label">Ubicación</p>
-                                    <p class="sisoc-data-value">{{ comision.ubicacion|default:"—" }}</p>
-                                </div>
-                                <div class="sisoc-data-item">
-                                    <p class="sisoc-data-label">Fecha de inicio</p>
-                                    <p class="sisoc-data-value">{{ comision.fecha_inicio|date:"d/m/Y"|default:"—" }}</p>
-                                </div>
-                                <div class="sisoc-data-item">
-                                    <p class="sisoc-data-label">Fecha de fin</p>
-                                    <p class="sisoc-data-value">{{ comision.fecha_fin|date:"d/m/Y"|default:"—" }}</p>
-                                </div>
-                                <div class="sisoc-data-item">
-                                    <p class="sisoc-data-label">Cupo</p>
-                                    <p class="sisoc-data-value">{{ comision.cupo }}</p>
-                                </div>
-                                <div class="sisoc-data-item">
-                                    <p class="sisoc-data-label">Lista de espera</p>
-                                    <p class="sisoc-data-value">
-                                        {% if comision.acepta_lista_espera %}
-                                            Habilitada
-                                        {% else %}
-                                            Deshabilitada
-                                        {% endif %}
-                                    </p>
-                                </div>
+                        <div class="sisoc-block-card">
+                            <div class="sisoc-block-title">
+                                <i class="bi bi-info-circle"></i>
+                                <span>Datos generales</span>
                             </div>
-
-                            <div class="sisoc-cupo-card">
-                                <p class="sisoc-cupo-title">Ocupación de cupo</p>
-                                <div class="d-flex align-items-baseline gap-1 mb-2">
-                                    <span class="ci-cupo-num">{{ cupo_ocupado }}</span>
-                                    <span class="ci-cupo-sep">/</span>
-                                    <span class="ci-cupo-tot">{{ comision.cupo }}</span>
-                                    <span class="ci-cupo-lbl">inscriptos</span>
-                                </div>
-                                {% if comision.cupo %}
-                                    {% widthratio cupo_ocupado comision.cupo 100 as pct %}
-                                    <div class="ci-prog">
-                                        <div class="ci-prog-bar"
-                                             style="width:{% widthratio cupo_ocupado comision.cupo 100 %}%;
-                                                    background:{% if pct >= 90 %}#f87171{% elif pct >= 60 %}#facc15{% else %}#4a7fe8{% endif %}">
+                            <div class="sisoc-block-body">
+                                <div class="sisoc-general-layout">
+                                    <div class="sisoc-general-grid">
+                                        <div class="sisoc-data-item">
+                                            <p class="sisoc-data-label">Ubicación</p>
+                                            <p class="sisoc-data-value">{{ comision.ubicacion|default:"—" }}</p>
+                                        </div>
+                                        <div class="sisoc-data-item">
+                                            <p class="sisoc-data-label">Fecha de inicio</p>
+                                            <p class="sisoc-data-value">{{ comision.fecha_inicio|date:"d/m/Y"|default:"—" }}</p>
+                                        </div>
+                                        <div class="sisoc-data-item">
+                                            <p class="sisoc-data-label">Fecha de finalización</p>
+                                            <p class="sisoc-data-value">{{ comision.fecha_fin|date:"d/m/Y"|default:"—" }}</p>
+                                        </div>
+                                        <div class="sisoc-data-item">
+                                            <p class="sisoc-data-label">Cupo</p>
+                                            <p class="sisoc-data-value">{{ comision.cupo }}</p>
+                                        </div>
+                                        <div class="sisoc-data-item">
+                                            <p class="sisoc-data-label">Inscriptos</p>
+                                            <p class="sisoc-data-value">{{ cupo_ocupado }}</p>
                                         </div>
                                     </div>
-                                {% endif %}
-                                {% if comision.acepta_lista_espera %}
-                                    <div class="mt-3 small" style="color:#a9b5c7;">
-                                        <i class="bi bi-hourglass-split me-1"></i>{{ lista_espera|length }} en espera
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="sisoc-block-card">
+                            <div class="sisoc-block-title">
+                                <i class="bi bi-clock-history"></i>
+                                <span>Horarios</span>
+                            </div>
+                            <div class="sisoc-block-body">
+                                {% if horarios %}
+                                    <div class="sisoc-horarios-grid">
+                                        {% for horario in horarios %}
+                                            <div class="sisoc-data-item">
+                                                <p class="sisoc-data-label">{{ horario.dia_semana }}</p>
+                                                <p class="sisoc-data-value">{{ horario.hora_desde|time:"H:i" }} a {{ horario.hora_hasta|time:"H:i" }}</p>
+                                            </div>
+                                            <div class="sisoc-data-item">
+                                                <p class="sisoc-data-label">Duración</p>
+                                                <p class="sisoc-data-value">{{ horario.duracion_label }}</p>
+                                            </div>
+                                        {% endfor %}
                                     </div>
-                                {% endif %}
-                                {% if export_preinscriptos_url or export_inscriptos_url %}
-                                    <div class="d-grid gap-2 mt-3">
-                                        {% if export_preinscriptos_url %}
-                                            <a href="{{ export_preinscriptos_url }}"
-                                               class="sisoc-btn sisoc-btn--edit">
-                                                <i class="bi bi-file-earmark-excel"></i><span>Nómina preinscriptos</span>
-                                            </a>
-                                        {% endif %}
-                                        {% if export_inscriptos_url %}
-                                            <a href="{{ export_inscriptos_url }}" class="sisoc-btn sisoc-btn--edit">
-                                                <i class="bi bi-file-earmark-excel"></i><span>Nómina inscriptos</span>
-                                            </a>
-                                        {% endif %}
+                                {% else %}
+                                    <div class="ci-empty">
+                                        <i class="bi bi-clock-history"></i>
+                                        <p class="ci-empty-t">Sin horarios cargados</p>
+                                        <p class="ci-empty-s">Agregá un horario para esta comisión.</p>
                                     </div>
                                 {% endif %}
                             </div>
                         </div>
 
-                        <hr class="sisoc-section-divider" />
-                        <div class="sisoc-section-header">
-                            <h2>{{ unidad_sidebar_title }}</h2>
-                            {% if unidad_detail_url %}
-                                <a href="{{ unidad_detail_url }}" class="sisoc-btn sisoc-btn--view">
-                                    <i class="bi bi-box-arrow-up-right"></i><span>{{ unidad_detail_text }}</span>
-                                </a>
-                            {% endif %}
-                        </div>
-                        <ul class="sisoc-referente-list">
-                            <li class="sisoc-referente-item">
-                                <span class="sisoc-referente-icon"><i class="bi bi-mortarboard"></i></span>
-                                <div class="sisoc-referente-copy">
-                                    <span>{{ unidad_label }}</span><strong>{{ unidad_valor }}</strong>
-                                </div>
-                            </li>
-                            {% if comision.observaciones %}
-                                <li class="sisoc-referente-item">
-                                    <span class="sisoc-referente-icon"><i class="bi bi-card-text"></i></span>
-                                    <div class="sisoc-referente-copy">
-                                        <span>Observaciones</span><strong>{{ comision.observaciones }}</strong>
-                                    </div>
-                                </li>
-                            {% endif %}
-                        </ul>
-                        <div class="ci-audit">
-                            <span><i class="bi bi-clock me-1"></i>Creado {{ comision.fecha_creacion|date:"d/m/Y H:i" }}</span>
-                            <span><i class="bi bi-pencil me-1"></i>Modificado {{ comision.fecha_modificacion|date:"d/m/Y H:i" }}</span>
-                            <span class="ms-auto">#{{ comision.id }}</span>
-                        </div>
                     </div>
                 </section>
 
                 {# INSCRIPTOS #}
                 <section class="sisoc-info-panel sisoc-info-panel--overflow"
                          data-sisoc-panel="inscriptos">
-                    <div class="sisoc-section-header">
-                        <h2>Inscriptos</h2>
-                        {% if puede_agregar_inscripcion %}
-                            <button type="button"
-                                    class="sisoc-btn sisoc-btn--add"
-                                    data-bs-toggle="modal"
-                                    data-bs-target="#modalInscripcionRapida">
-                                <i class="bi bi-plus-lg"></i><span>Inscribir</span>
-                            </button>
-                        {% endif %}
+                    <div class="sisoc-metric-grid sisoc-metric-grid--pair">
+                        <article class="sisoc-metric-card">
+                            <strong class="sisoc-metric-value">{{ comision.cupo }}</strong>
+                            <span class="sisoc-metric-label">Cupo total</span>
+                        </article>
+                        <article class="sisoc-metric-card">
+                            <strong class="sisoc-metric-value">{{ inscripciones|length }}</strong>
+                            <span class="sisoc-metric-label">Inscriptos</span>
+                        </article>
                     </div>
-                    <hr class="sisoc-section-divider" />
-                    <div>
-                        {% if inscripciones %}
-                            {% for insc in inscripciones %}
-                                <div class="ci-row">
-                                    <div class="ci-av ci-av-{{ forloop.counter|divisibleby:5|yesno:'5,' }}{{ forloop.counter|divisibleby:4|yesno:'4,' }}{{ forloop.counter|divisibleby:3|yesno:'3,' }}{{ forloop.counter|divisibleby:2|yesno:'2,1' }}">
-                                        {{ insc.ciudadano.nombre_completo|slice:":2"|upper }}
-                                    </div>
-                                    <div style="flex:1;min-width:0;">
-                                        <a href="{% url 'vat_inscripcion_detail' insc.pk %}"
-                                           class="d-block fw-semibold text-decoration-none"
-                                           style="font-size:.87rem;
-                                                  color:var(--bs-body-color);
-                                                  white-space:nowrap;
-                                                  overflow:hidden;
-                                                  text-overflow:ellipsis">{{ insc.ciudadano.nombre_completo }}</a>
-                                        <span class="d-block"
-                                              style="font-size:.74rem;
-                                                     color:var(--bs-secondary-color);
-                                                     white-space:nowrap;
-                                                     overflow:hidden;
-                                                     text-overflow:ellipsis">{{ insc.programa }}</span>
-                                    </div>
-                                    <div class="d-flex align-items-center gap-2 flex-shrink-0">
-                                        <span style="font-size:.7rem;
-                                                     color:var(--bs-secondary-color);
-                                                     white-space:nowrap">{{ insc.fecha_inscripcion|date:"d/m/Y" }}</span>
-                                        <span class="ci-pill {% if insc.estado == 'inscripta' %}ci-pill-green{% elif insc.estado == 'pre_inscripta' %}ci-pill-yellow{% elif insc.estado == 'validada_presencial' %}ci-pill-blue{% elif insc.estado == 'completada' %}ci-pill-teal{% elif insc.estado == 'abandonada' %}ci-pill-gray{% elif insc.estado == 'rechazada' %}ci-pill-red{% else %}ci-pill-gray{% endif %}">{{ insc.get_estado_display }}</span>
-                                        {% if puede_cambiar_inscripcion and insc.estado == 'pre_inscripta' %}
-                                            <form method="post"
-                                                  action="{% url inscripcion_estado_url_name insc.pk %}"
-                                                  class="d-inline">
-                                                {% csrf_token %}
-                                                <input type="hidden" name="estado" value="inscripta" />
-                                                <button type="submit"
-                                                        class="ci-pill ci-pill-green border-0 cursor-pointer"
-                                                        style="cursor:pointer;
-                                                               font-size:.69rem"
-                                                        title="Aceptar inscripción">
-                                                    <i class="bi bi-check-lg me-1"></i>Aceptar
-                                                </button>
-                                            </form>
-                                            <form method="post"
-                                                  action="{% url inscripcion_estado_url_name insc.pk %}"
-                                                  class="d-inline">
-                                                {% csrf_token %}
-                                                <input type="hidden" name="estado" value="rechazada" />
-                                                <button type="submit"
-                                                        class="ci-pill ci-pill-red border-0"
-                                                        style="cursor:pointer;
-                                                               font-size:.69rem"
-                                                        title="Rechazar inscripción">
-                                                    <i class="bi bi-x-lg me-1"></i>Rechazar
-                                                </button>
-                                            </form>
-                                        {% endif %}
-                                        {% if puede_cambiar_inscripcion %}
-                                            <div class="dropdown">
-                                                <button class="ci-dots dropdown-toggle"
-                                                        data-bs-toggle="dropdown"
-                                                        data-bs-display="dynamic"
-                                                        data-bs-strategy="fixed">
-                                                    <i class="bi bi-three-dots-vertical"></i>
-                                                </button>
-                                                <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-3"
-                                                    style="font-size:.84rem">
-                                                    {% for val, lbl in estado_choices %}
-                                                        {% if val != insc.estado %}
-                                                            {% if val == 'en_espera' %}
-                                                                {% if insc.estado == 'en_espera' or insc.estado == 'abandonada' or insc.estado == 'rechazada' or insc.estado == 'completada' %}
-                                                                    <li>
-                                                                        <form method="post" action="{% url inscripcion_estado_url_name insc.pk %}">
-                                                                            {% csrf_token %}
-                                                                            <input type="hidden" name="estado" value="{{ val }}" />
-                                                                            <button type="submit" class="dropdown-item rounded-2">{{ lbl }}</button>
-                                                                        </form>
-                                                                    </li>
-                                                                {% endif %}
-                                                            {% else %}
-                                                                <li>
-                                                                    <form method="post" action="{% url inscripcion_estado_url_name insc.pk %}">
-                                                                        {% csrf_token %}
-                                                                        <input type="hidden" name="estado" value="{{ val }}" />
-                                                                        <button type="submit" class="dropdown-item rounded-2">{{ lbl }}</button>
-                                                                    </form>
-                                                                </li>
-                                                            {% endif %}
-                                                        {% endif %}
-                                                    {% endfor %}
-                                                </ul>
-                                            </div>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                            {% endfor %}
-                        {% else %}
-                            <div class="ci-empty">
-                                <i class="bi bi-person-plus"></i>
-                                <p class="ci-empty-t">Sin inscriptos aún</p>
-                                <p class="ci-empty-s">Inscribí ciudadanos a esta comisión para verlos aquí.</p>
+                    <div class="ci-tbl-card" id="inscriptosTabla">
+                        <div class="ci-tbl-head">
+                            <i class="bi bi-people"></i>
+                            <span>Inscriptos</span>
+                        </div>
+                        <div class="ci-tbl-toolbar">
+                            <div class="ci-tbl-search">
+                                <i class="bi bi-search"></i>
+                                <input type="text"
+                                       id="inscriptosBuscador"
+                                       placeholder="Buscar por nombre..."
+                                       autocomplete="off"
+                                       aria-label="Buscar inscriptos por nombre" />
                             </div>
-                        {% endif %}
+                            {% if puede_agregar_inscripcion %}
+                                <button type="button"
+                                        class="sisoc-btn sisoc-btn--add"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#modalInscripcionRapida">
+                                    <i class="bi bi-plus-lg"></i><span>Agregar inscripto</span>
+                                </button>
+                            {% endif %}
+                            {% if export_preinscriptos_url %}
+                                <a href="{{ export_preinscriptos_url }}"
+                                   class="sisoc-btn sisoc-btn--ghost">
+                                    <i class="bi bi-file-earmark-excel"></i><span>Descargar preinscriptos</span>
+                                </a>
+                            {% endif %}
+                            {% if export_inscriptos_url %}
+                                <a href="{{ export_inscriptos_url }}" class="sisoc-btn sisoc-btn--ghost">
+                                    <i class="bi bi-file-earmark-excel"></i><span>Descargar inscriptos</span>
+                                </a>
+                            {% endif %}
+                        </div>
+                        <div class="ci-tbl-scroll">
+                            <table class="ci-tbl">
+                                <thead>
+                                    <tr>
+                                        <th>Apellido</th>
+                                        <th>Nombre</th>
+                                        <th>Documento</th>
+                                        <th>Email</th>
+                                        <th>Teléfono</th>
+                                        <th>Asistencia</th>
+                                        {% if puede_cambiar_inscripcion or puede_eliminar_inscripcion %}<th class="ci-tbl-col-actions">&nbsp;</th>{% endif %}
+                                    </tr>
+                                </thead>
+                                <tbody id="inscriptosTablaBody">
+                                    {% for insc in inscripciones %}
+                                        <tr class="ci-tbl-row"
+                                            data-nombre="{{ insc.ciudadano.apellido|lower }} {{ insc.ciudadano.nombre|lower }}">
+                                            <td>
+                                                <a href="{% url 'vat_inscripcion_detail' insc.pk %}">{{ insc.ciudadano.apellido|default:"—" }}</a>
+                                            </td>
+                                            <td>{{ insc.ciudadano.nombre|default:"—" }}</td>
+                                            <td>{{ insc.ciudadano.documento|default:"—" }}</td>
+                                            <td>{{ insc.ciudadano.email|default:"—" }}</td>
+                                            <td>{{ insc.ciudadano.telefono|default:"—" }}</td>
+                                            <td>
+                                                {% if insc.porcentaje_asistencia is not None %}
+                                                    {{ insc.porcentaje_asistencia }}%
+                                                {% else %}
+                                                    —
+                                                {% endif %}
+                                            </td>
+                                            {% if puede_cambiar_inscripcion or puede_eliminar_inscripcion %}
+                                                <td>
+                                                    <div class="ci-tbl-actions">
+                                                        {% if puede_eliminar_inscripcion %}
+                                                            <a href="{% url 'vat_inscripcion_delete' insc.pk %}"
+                                                               class="sisoc-btn sisoc-btn--delete">
+                                                                <i class="bi bi-trash"></i><span>Borrar</span>
+                                                            </a>
+                                                        {% endif %}
+                                                    </div>
+                                                </td>
+                                            {% endif %}
+                                        </tr>
+                                    {% empty %}
+                                        <tr class="ci-tbl-empty" data-empty-row>
+                                            <td colspan="{% if puede_cambiar_inscripcion or puede_eliminar_inscripcion %}7{% else %}6{% endif %}">
+                                                Sin inscriptos aún. Inscribí ciudadanos a esta comisión para verlos aquí.
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                    <tr class="ci-tbl-empty d-none" data-no-results-row>
+                                        <td colspan="{% if puede_cambiar_inscripcion or puede_eliminar_inscripcion %}7{% else %}6{% endif %}">
+                                            No se encontraron inscriptos para la búsqueda.
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="ci-tbl-foot">
+                            <span id="inscriptosConteo">
+                                Mostrando {{ inscripciones|length|yesno:"1,0" }}-{{ inscripciones|length }} de {{ inscripciones|length }}
+                            </span>
+                            <div class="ci-pager">
+                                <button type="button"
+                                        class="ci-pager-prev"
+                                        id="inscriptosPrev"
+                                        aria-label="Página anterior"
+                                        disabled>
+                                    <i class="bi bi-chevron-left"></i>
+                                </button>
+                                <span class="ci-pager-label" id="inscriptosPager">1 de 1</span>
+                                <button type="button"
+                                        class="ci-pager-next"
+                                        id="inscriptosNext"
+                                        aria-label="Página siguiente"
+                                        disabled>
+                                    <i class="bi bi-chevron-right"></i>
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </section>
 
                 {% if comision.acepta_lista_espera or lista_espera %}
                     <section class="sisoc-info-panel sisoc-info-panel--overflow"
                              data-sisoc-panel="espera">
-                        <div class="sisoc-section-header">
-                            <h2>Lista de espera</h2>
+                        <div class="sisoc-metric-grid sisoc-metric-grid--pair">
+                            <article class="sisoc-metric-card">
+                                <strong class="sisoc-metric-value">{{ comision.cupo_lista_espera|default:"—" }}</strong>
+                                <span class="sisoc-metric-label">Cupo de espera</span>
+                            </article>
+                            <article class="sisoc-metric-card">
+                                <strong class="sisoc-metric-value">{{ lista_espera|length }}</strong>
+                                <span class="sisoc-metric-label">En espera</span>
+                            </article>
                         </div>
-                        <hr class="sisoc-section-divider" />
-                        <div>
-                            {% if lista_espera %}
-                                {% for insc in lista_espera %}
-                                    <div class="ci-row">
-                                        <div class="ci-av ci-av-{{ forloop.counter|divisibleby:5|yesno:'5,' }}{{ forloop.counter|divisibleby:4|yesno:'4,' }}{{ forloop.counter|divisibleby:3|yesno:'3,' }}{{ forloop.counter|divisibleby:2|yesno:'2,1' }}">
-                                            {{ insc.ciudadano.nombre_completo|slice:":2"|upper }}
-                                        </div>
-                                        <div style="flex:1;min-width:0;">
-                                            <a href="{% url 'vat_inscripcion_detail' insc.pk %}"
-                                               class="d-block fw-semibold text-decoration-none"
-                                               style="font-size:.87rem;
-                                                      color:var(--bs-body-color);
-                                                      white-space:nowrap;
-                                                      overflow:hidden;
-                                                      text-overflow:ellipsis">{{ insc.ciudadano.nombre_completo }}</a>
-                                            <span class="d-block"
-                                                  style="font-size:.74rem;
-                                                         color:var(--bs-secondary-color);
-                                                         white-space:nowrap;
-                                                         overflow:hidden;
-                                                         text-overflow:ellipsis">{{ insc.programa }}</span>
-                                        </div>
-                                        <div class="d-flex align-items-center gap-2 flex-shrink-0">
-                                            <span style="font-size:.7rem;
-                                                         color:var(--bs-secondary-color);
-                                                         white-space:nowrap">{{ insc.fecha_inscripcion|date:"d/m/Y" }}</span>
-                                            <span class="ci-pill ci-pill-yellow">{{ insc.get_estado_display }}</span>
-                                            {% if puede_cambiar_inscripcion %}
-                                                <form method="post"
-                                                      action="{% url inscripcion_estado_url_name insc.pk %}"
-                                                      class="d-inline">
-                                                    {% csrf_token %}
-                                                    <input type="hidden" name="estado" value="inscripta" />
-                                                    <button type="submit"
-                                                            class="ci-pill ci-pill-green border-0"
-                                                            style="cursor:pointer;
-                                                                   font-size:.69rem"
-                                                            title="Admitir desde la lista de espera">
-                                                        <i class="bi bi-check-lg me-1"></i>Admitir
-                                                    </button>
-                                                </form>
-                                                <form method="post"
-                                                      action="{% url inscripcion_estado_url_name insc.pk %}"
-                                                      class="d-inline">
-                                                    {% csrf_token %}
-                                                    <input type="hidden" name="estado" value="rechazada" />
-                                                    <button type="submit"
-                                                            class="ci-pill ci-pill-red border-0"
-                                                            style="cursor:pointer;
-                                                                   font-size:.69rem"
-                                                            title="Rechazar inscripción en espera">
-                                                        <i class="bi bi-x-lg me-1"></i>Rechazar
-                                                    </button>
-                                                </form>
-                                            {% endif %}
-                                        </div>
-                                    </div>
-                                {% endfor %}
-                            {% else %}
-                                <div class="ci-empty">
-                                    <i class="bi bi-hourglass"></i>
-                                    <p class="ci-empty-t">Sin personas en espera</p>
-                                    <p class="ci-empty-s">Cuando la comisión esté llena, las nuevas altas quedarán listadas aquí.</p>
+                        <div class="ci-tbl-card" id="esperaTabla">
+                            <div class="ci-tbl-head">
+                                <i class="bi bi-hourglass-split"></i>
+                                <span>Lista de espera</span>
+                            </div>
+                            <div class="ci-tbl-scroll">
+                                <table class="ci-tbl">
+                                    <thead>
+                                        <tr>
+                                            <th>Apellido</th>
+                                            <th>Nombre</th>
+                                            <th>Documento</th>
+                                            <th>Fecha</th>
+                                            <th>Estado</th>
+                                            {% if puede_cambiar_inscripcion %}<th class="ci-tbl-col-actions">Acciones</th>{% endif %}
+                                        </tr>
+                                    </thead>
+                                    <tbody id="esperaTablaBody">
+                                        {% for insc in lista_espera %}
+                                            <tr class="ci-tbl-row">
+                                                <td>
+                                                    <a href="{% url 'vat_inscripcion_detail' insc.pk %}">{{ insc.ciudadano.apellido|default:"—" }}</a>
+                                                </td>
+                                                <td>{{ insc.ciudadano.nombre|default:"—" }}</td>
+                                                <td>{{ insc.ciudadano.documento|default:"—" }}</td>
+                                                <td>{{ insc.fecha_inscripcion|date:"d/m/Y" }}</td>
+                                                <td>
+                                                    <span class="ci-pill ci-pill-yellow">{{ insc.get_estado_display }}</span>
+                                                </td>
+                                                {% if puede_cambiar_inscripcion %}
+                                                    <td>
+                                                        <div class="ci-tbl-actions">
+                                                            <form method="post"
+                                                                  action="{% url inscripcion_estado_url_name insc.pk %}"
+                                                                  class="d-inline">
+                                                                {% csrf_token %}
+                                                                <input type="hidden" name="estado" value="inscripta" />
+                                                                <button type="submit"
+                                                                        class="sisoc-btn sisoc-btn--add"
+                                                                        title="Admitir desde la lista de espera">
+                                                                    <i class="bi bi-check-lg"></i><span>Admitir</span>
+                                                                </button>
+                                                            </form>
+                                                            <form method="post"
+                                                                  action="{% url inscripcion_estado_url_name insc.pk %}"
+                                                                  class="d-inline">
+                                                                {% csrf_token %}
+                                                                <input type="hidden" name="estado" value="rechazada" />
+                                                                <button type="submit"
+                                                                        class="sisoc-btn sisoc-btn--delete"
+                                                                        title="Rechazar inscripción en espera">
+                                                                    <i class="bi bi-x-lg"></i><span>Rechazar</span>
+                                                                </button>
+                                                            </form>
+                                                        </div>
+                                                    </td>
+                                                {% endif %}
+                                            </tr>
+                                        {% empty %}
+                                            <tr class="ci-tbl-empty">
+                                                <td colspan="{% if puede_cambiar_inscripcion %}6{% else %}5{% endif %}">
+                                                    Sin personas en espera. Cuando la comisión esté llena, las nuevas altas quedarán listadas aquí.
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="ci-tbl-foot">
+                                <span id="esperaConteo">
+                                    Mostrando {{ lista_espera|length|yesno:"1,0" }}-{{ lista_espera|length }} de {{ lista_espera|length }}
+                                </span>
+                                <div class="ci-pager">
+                                    <button type="button"
+                                            class="ci-pager-prev"
+                                            id="esperaPrev"
+                                            aria-label="Página anterior"
+                                            disabled>
+                                        <i class="bi bi-chevron-left"></i>
+                                    </button>
+                                    <span class="ci-pager-label" id="esperaPager">1 de 1</span>
+                                    <button type="button"
+                                            class="ci-pager-next"
+                                            id="esperaNext"
+                                            aria-label="Página siguiente"
+                                            disabled>
+                                        <i class="bi bi-chevron-right"></i>
+                                    </button>
                                 </div>
-                            {% endif %}
+                            </div>
                         </div>
                     </section>
                 {% endif %}
 
                 {# SESIONES #}
                 <section class="sisoc-info-panel" data-sisoc-panel="sesiones">
-                    <div class="sisoc-section-header">
-                        <h2>Sesiones</h2>
+                    <div class="sisoc-metric-grid sisoc-metric-grid--triple">
+                        <article class="sisoc-metric-card">
+                            <strong class="sisoc-metric-value">{{ sesiones|length }}</strong>
+                            <span class="sisoc-metric-label">Clases totales</span>
+                        </article>
+                        <article class="sisoc-metric-card">
+                            <strong class="sisoc-metric-value">{{ clases_dictadas }}</strong>
+                            <span class="sisoc-metric-label">Clases completadas</span>
+                        </article>
+                        <article class="sisoc-metric-card">
+                            <strong class="sisoc-metric-value">{{ clases_pendientes }}</strong>
+                            <span class="sisoc-metric-label">Clases pendientes</span>
+                        </article>
                     </div>
-                    <hr class="sisoc-section-divider" />
-                    <div>
-                        {% if sesiones %}
-                            {% for sesion in sesiones %}
-                                <div class="ci-row"
-                                     style="border-left: 3px solid {% if sesion.estado == 'realizada' %}rgba(34,197,94,.5){% elif sesion.estado == 'cancelada' %}rgba(239,68,68,.5){% else %}transparent{% endif %};
-                                            padding-left: calc(1.25rem - 3px)">
-                                    <span class="ci-sesnum">#{{ sesion.numero_sesion }}</span>
-                                    <div class="ci-datetile">
-                                        <span class="d">{{ sesion.fecha|date:"d" }}</span><span class="m">{{ sesion.fecha|date:"M" }}</span>
-                                    </div>
-                                    <div style="flex:1;">
-                                        <div style="font-size:.85rem;font-weight:600;color:var(--bs-body-color);">{{ sesion.horario.dia_semana }}</div>
-                                        <div style="font-size:.77rem;color:var(--bs-secondary-color);">
-                                            <i class="bi bi-clock me-1"></i>{{ sesion.horario.hora_desde|time:"H:i" }} – {{ sesion.horario.hora_hasta|time:"H:i" }}
-                                            {% if sesion.horario.aula_espacio %}
-                                                &nbsp;·&nbsp; <i class="bi bi-geo-alt me-1"></i>{{ sesion.horario.aula_espacio }}
+                    <div class="ci-tbl-card" id="sesionesTabla">
+                        <div class="ci-tbl-head">
+                            <i class="bi bi-calendar3"></i>
+                            <span>Clases</span>
+                        </div>
+                        <div class="ci-tbl-scroll">
+                            <table class="ci-tbl">
+                                <thead>
+                                    <tr>
+                                        <th>Clase N</th>
+                                        <th>Día</th>
+                                        <th>Fecha</th>
+                                        <th>Desde</th>
+                                        <th>Hasta</th>
+                                        <th>Estado</th>
+                                        <th>Presentes</th>
+                                        <th>Ausentes</th>
+                                        {% if puede_gestionar_asistencia %}<th class="ci-tbl-col-actions">Acciones</th>{% endif %}
+                                    </tr>
+                                </thead>
+                                <tbody id="sesionesTablaBody">
+                                    {% for sesion in sesiones %}
+                                        <tr class="ci-tbl-row">
+                                            <td>Clase {{ sesion.numero_sesion }}</td>
+                                            <td>{{ sesion.horario.dia_semana|default:"—" }}</td>
+                                            <td>{{ sesion.fecha|date:"d \d\e F" }}</td>
+                                            <td>{{ sesion.horario.hora_desde|time:"H:i" }} hs</td>
+                                            <td>{{ sesion.horario.hora_hasta|time:"H:i" }} hs</td>
+                                            <td>
+                                                {% if sesion.estado == 'realizada' %}
+                                                    <span class="ci-pill ci-pill-green"><i class="bi bi-check-circle-fill me-1"></i>Completada</span>
+                                                {% elif sesion.estado == 'cancelada' %}
+                                                    <span class="ci-pill ci-pill-red"><i class="bi bi-x-circle-fill me-1"></i>Cancelada</span>
+                                                {% else %}
+                                                    <span class="ci-pill ci-pill-gray"><i class="bi bi-circle me-1"></i>Pendiente</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if sesion.estado == 'realizada' %}
+                                                    {{ sesion.presentes }}
+                                                {% else %}
+                                                    —
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if sesion.estado == 'realizada' %}
+                                                    {{ sesion.ausentes }}
+                                                {% else %}
+                                                    —
+                                                {% endif %}
+                                            </td>
+                                            {% if puede_gestionar_asistencia %}
+                                                <td>
+                                                    <div class="ci-tbl-actions">
+                                                        {% if sesion.estado == 'realizada' %}
+                                                            <a href="{% url asistencia_url_name sesion.pk %}"
+                                                               class="sisoc-btn sisoc-btn--edit">
+                                                                <i class="bi bi-eye"></i><span>Ver</span>
+                                                            </a>
+                                                        {% else %}
+                                                            <a href="{% url asistencia_url_name sesion.pk %}"
+                                                               class="sisoc-btn sisoc-btn--view">
+                                                                <i class="bi bi-pencil-square"></i><span>Asistencia</span>
+                                                            </a>
+                                                        {% endif %}
+                                                    </div>
+                                                </td>
                                             {% endif %}
-                                        </div>
-                                    </div>
-                                    <div class="d-flex align-items-center gap-2 flex-shrink-0">
-                                        <span class="ci-pill {% if sesion.estado == 'realizada' %}ci-pill-green{% elif sesion.estado == 'cancelada' %}ci-pill-red{% else %}ci-pill-blue{% endif %}">{{ sesion.get_estado_display }}</span>
-                                        {% if puede_gestionar_asistencia %}
-                                            <a href="{% url asistencia_url_name sesion.pk %}"
-                                               class="ci-asist {% if sesion.estado == 'realizada' %}ci-asist-done{% endif %}"><i class="bi bi-check2-square"></i>Asistencia</a>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                            {% endfor %}
-                        {% else %}
-                            <div class="ci-empty">
-                                <i class="bi bi-calendar-x"></i>
-                                <p class="ci-empty-t">Sin sesiones generadas</p>
-                                <p class="ci-empty-s">Agregá un horario para generar las sesiones automáticamente.</p>
+                                        </tr>
+                                    {% empty %}
+                                        <tr class="ci-tbl-empty">
+                                            <td colspan="{% if puede_gestionar_asistencia %}9{% else %}8{% endif %}">
+                                                Sin clases generadas. Agregá un horario para generar las clases automáticamente.
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="ci-tbl-foot">
+                            <span id="sesionesConteo">
+                                Mostrando {{ sesiones|length|yesno:"1,0" }}-{{ sesiones|length }} de {{ sesiones|length }}
+                            </span>
+                            <div class="ci-pager">
+                                <button type="button"
+                                        class="ci-pager-prev"
+                                        id="sesionesPrev"
+                                        aria-label="Página anterior"
+                                        disabled>
+                                    <i class="bi bi-chevron-left"></i>
+                                </button>
+                                <span class="ci-pager-label" id="sesionesPager">1 de 1</span>
+                                <button type="button"
+                                        class="ci-pager-next"
+                                        id="sesionesNext"
+                                        aria-label="Página siguiente"
+                                        disabled>
+                                    <i class="bi bi-chevron-right"></i>
+                                </button>
                             </div>
-                        {% endif %}
+                        </div>
                     </div>
                 </section>
 
                 {# HORARIOS #}
                 <section class="sisoc-info-panel" data-sisoc-panel="horarios">
-                    <div class="sisoc-section-header">
-                        <h2>Horarios</h2>
+                    <div class="ci-tbl-card" id="horariosTabla">
+                        <div class="ci-tbl-head">
+                            <i class="bi bi-clock-history"></i>
+                            <span>Horarios</span>
+                        </div>
                         {% if puede_agregar_comision_horario %}
-                            <button type="button"
-                                    class="sisoc-btn sisoc-btn--add"
-                                    data-bs-toggle="modal"
-                                    data-bs-target="#modalComisionHorario">
-                                <i class="bi bi-plus-lg"></i><span>Agregar</span>
-                            </button>
-                        {% endif %}
-                    </div>
-                    <hr class="sisoc-section-divider" />
-                    <div>
-                        {% if horarios %}
-                            {% for horario in horarios %}
-                                <div class="ci-row">
-                                    <span class="ci-dia">{{ horario.dia_semana }}</span>
-                                    <div style="flex:1;
-                                                font-size:.86rem;
-                                                font-weight:500;
-                                                color:var(--bs-body-color)">
-                                        <i class="bi bi-clock me-1" style="color:var(--bs-secondary-color);"></i>{{ horario.hora_desde|time:"H:i" }} – {{ horario.hora_hasta|time:"H:i" }}
-                                        {% if horario.aula_espacio %}
-                                            <span style="font-size:.8rem;
-                                                         color:var(--bs-secondary-color);
-                                                         margin-left:.85rem"><i class="bi bi-geo-alt me-1"></i>{{ horario.aula_espacio }}</span>
-                                        {% endif %}
-                                    </div>
-                                    <div class="d-flex align-items-center gap-2 flex-shrink-0">
-                                        <span class="ci-pill {% if horario.vigente %}ci-pill-green{% else %}ci-pill-gray{% endif %}">
-                                            {% if horario.vigente %}
-                                                Vigente
-                                            {% else %}
-                                                Inactivo
-                                            {% endif %}
-                                        </span>
-                                        {% if puede_editar_comision_horario %}
-                                            <button type="button"
-                                                    class="ci-iconbtn"
-                                                    data-bs-toggle="modal"
-                                                    data-bs-target="#modalComisionHorario"
-                                                    data-horario-mode="edit"
-                                                    data-edit-url="{% url horario_update_url_name horario.pk %}"
-                                                    data-dia-semana-id="{{ horario.dia_semana_id }}"
-                                                    data-hora-desde="{{ horario.hora_desde|time:'H:i' }}"
-                                                    data-hora-hasta="{{ horario.hora_hasta|time:'H:i' }}"
-                                                    data-aula-espacio="{{ horario.aula_espacio|default:'' }}"
-                                                    data-vigente="{{ horario.vigente|yesno:'1,0' }}"
-                                                    title="Editar horario"
-                                                    aria-label="Editar horario {{ horario.dia_semana }} {{ horario.hora_desde|time:'H:i' }} a {{ horario.hora_hasta|time:'H:i' }}">
-                                                <i class="bi bi-pencil"></i>
-                                            </button>
-                                        {% endif %}
-                                        {% if puede_eliminar_comision_horario %}
-                                            <button type="button"
-                                                    class="ci-iconbtn ci-iconbtn-danger"
-                                                    data-bs-toggle="modal"
-                                                    data-bs-target="#modalEliminarComisionHorario"
-                                                    data-delete-url="{% url horario_delete_url_name horario.pk %}"
-                                                    data-horario-resumen="{{ horario.dia_semana }} {{ horario.hora_desde|time:'H:i' }} - {{ horario.hora_hasta|time:'H:i' }}{% if horario.aula_espacio %} · {{ horario.aula_espacio }}{% endif %}"
-                                                    title="Eliminar horario"
-                                                    aria-label="Eliminar horario {{ horario.dia_semana }} {{ horario.hora_desde|time:'H:i' }} a {{ horario.hora_hasta|time:'H:i' }}">
-                                                <i class="bi bi-trash"></i>
-                                            </button>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                            {% endfor %}
-                        {% else %}
-                            <div class="ci-empty">
-                                <i class="bi bi-clock-history"></i>
-                                <p class="ci-empty-t">Sin horarios cargados</p>
-                                <p class="ci-empty-s">Agregá un horario para esta comisión.</p>
+                            <div class="ci-tbl-toolbar">
+                                <span></span>
+                                <button type="button"
+                                        class="sisoc-btn sisoc-btn--add"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#modalComisionHorario">
+                                    <i class="bi bi-plus-lg"></i><span>Agregar</span>
+                                </button>
                             </div>
                         {% endif %}
+                        <div class="ci-tbl-scroll">
+                            <table class="ci-tbl">
+                                <thead>
+                                    <tr>
+                                        <th>Día</th>
+                                        <th>Desde</th>
+                                        <th>Hasta</th>
+                                        <th>Aula / Espacio</th>
+                                        <th>Estado</th>
+                                        {% if puede_editar_comision_horario or puede_eliminar_comision_horario %}
+                                            <th class="ci-tbl-col-actions">Acciones</th>
+                                        {% endif %}
+                                    </tr>
+                                </thead>
+                                <tbody id="horariosTablaBody">
+                                    {% for horario in horarios %}
+                                        <tr class="ci-tbl-row">
+                                            <td>{{ horario.dia_semana }}</td>
+                                            <td>{{ horario.hora_desde|time:"H:i" }} hs</td>
+                                            <td>{{ horario.hora_hasta|time:"H:i" }} hs</td>
+                                            <td>{{ horario.aula_espacio|default:"—" }}</td>
+                                            <td>
+                                                <span class="ci-pill {% if horario.vigente %}ci-pill-green{% else %}ci-pill-gray{% endif %}">
+                                                    {% if horario.vigente %}
+                                                        Vigente
+                                                    {% else %}
+                                                        Inactivo
+                                                    {% endif %}
+                                                </span>
+                                            </td>
+                                            {% if puede_editar_comision_horario or puede_eliminar_comision_horario %}
+                                                <td>
+                                                    <div class="ci-tbl-actions">
+                                                        {% if puede_editar_comision_horario %}
+                                                            <button type="button"
+                                                                    class="sisoc-btn sisoc-btn--edit"
+                                                                    data-bs-toggle="modal"
+                                                                    data-bs-target="#modalComisionHorario"
+                                                                    data-horario-mode="edit"
+                                                                    data-edit-url="{% url horario_update_url_name horario.pk %}"
+                                                                    data-dia-semana-id="{{ horario.dia_semana_id }}"
+                                                                    data-hora-desde="{{ horario.hora_desde|time:'H:i' }}"
+                                                                    data-hora-hasta="{{ horario.hora_hasta|time:'H:i' }}"
+                                                                    data-aula-espacio="{{ horario.aula_espacio|default:'' }}"
+                                                                    data-vigente="{{ horario.vigente|yesno:'1,0' }}"
+                                                                    title="Editar horario"
+                                                                    aria-label="Editar horario {{ horario.dia_semana }} {{ horario.hora_desde|time:'H:i' }} a {{ horario.hora_hasta|time:'H:i' }}">
+                                                                <i class="bi bi-pencil-square"></i><span>Editar</span>
+                                                            </button>
+                                                        {% endif %}
+                                                        {% if puede_eliminar_comision_horario %}
+                                                            <button type="button"
+                                                                    class="sisoc-btn sisoc-btn--delete"
+                                                                    data-bs-toggle="modal"
+                                                                    data-bs-target="#modalEliminarComisionHorario"
+                                                                    data-delete-url="{% url horario_delete_url_name horario.pk %}"
+                                                                    data-horario-resumen="{{ horario.dia_semana }} {{ horario.hora_desde|time:'H:i' }} - {{ horario.hora_hasta|time:'H:i' }}{% if horario.aula_espacio %} · {{ horario.aula_espacio }}{% endif %}"
+                                                                    title="Eliminar horario"
+                                                                    aria-label="Eliminar horario {{ horario.dia_semana }} {{ horario.hora_desde|time:'H:i' }} a {{ horario.hora_hasta|time:'H:i' }}">
+                                                                <i class="bi bi-trash"></i><span>Borrar</span>
+                                                            </button>
+                                                        {% endif %}
+                                                    </div>
+                                                </td>
+                                            {% endif %}
+                                        </tr>
+                                    {% empty %}
+                                        <tr class="ci-tbl-empty">
+                                            <td colspan="{% if puede_editar_comision_horario or puede_eliminar_comision_horario %}6{% else %}5{% endif %}">
+                                                Sin horarios cargados. Agregá un horario para esta comisión.
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="ci-tbl-foot">
+                            <span id="horariosConteo">
+                                Mostrando {{ horarios|length|yesno:"1,0" }}-{{ horarios|length }} de {{ horarios|length }}
+                            </span>
+                            <div class="ci-pager">
+                                <button type="button"
+                                        class="ci-pager-prev"
+                                        id="horariosPrev"
+                                        aria-label="Página anterior"
+                                        disabled>
+                                    <i class="bi bi-chevron-left"></i>
+                                </button>
+                                <span class="ci-pager-label" id="horariosPager">1 de 1</span>
+                                <button type="button"
+                                        class="ci-pager-next"
+                                        id="horariosNext"
+                                        aria-label="Página siguiente"
+                                        disabled>
+                                    <i class="bi bi-chevron-right"></i>
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </section>
 
@@ -1249,7 +1849,43 @@
                           method="post"
                           action="{{ comision_edit_url }}">
                         {% csrf_token %}
-                        <div class="modal-body">{{ comision_form.as_p }}</div>
+                        <div class="modal-body">
+                            <div class="row g-3">
+                                {% for field in comision_form %}
+                                    {% if field.name == "acepta_lista_espera" %}
+                                        <div class="col-md-6">
+                                            <div class="form-check mt-4 pt-2">
+                                                {{ field }}
+                                                <label for="{{ field.id_for_label }}" class="form-check-label fw-bold">{{ field.label }}</label>
+                                            </div>
+                                            {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors.0 }}</div>{% endif %}
+                                            {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+                                        </div>
+                                    {% elif field.name == "cupo_lista_espera" %}
+                                        <div class="col-md-6 {% if not comision_form.acepta_lista_espera.value and not field.value %}d-none{% endif %}"
+                                             data-waitlist-capacity-wrapper>
+                                            <label for="{{ field.id_for_label }}" class="form-label fw-bold">
+                                                {{ field.label }}
+                                                {% if field.field.required %}<span class="text-danger">*</span>{% endif %}
+                                            </label>
+                                            {{ field }}
+                                            {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors.0 }}</div>{% endif %}
+                                            {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+                                        </div>
+                                    {% else %}
+                                        <div class="col-md-6">
+                                            <label for="{{ field.id_for_label }}" class="form-label fw-bold">
+                                                {{ field.label }}
+                                                {% if field.field.required %}<span class="text-danger">*</span>{% endif %}
+                                            </label>
+                                            {{ field }}
+                                            {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors.0 }}</div>{% endif %}
+                                            {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+                                        </div>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                        </div>
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                             <button type="submit" class="btn btn-primary">Actualizar</button>
@@ -1315,7 +1951,32 @@
                         {% csrf_token %}
                         <div class="modal-body">
                             <div id="comisionHorarioAlert" class="alert d-none" role="alert"></div>
-                            {{ horario_form.as_p }}
+                            <div class="row g-3">
+                                {% for field in horario_form %}
+                                    {% if field.name == "comision_curso" or field.name == "comision" %}
+                                        <div class="d-none">{{ field }}</div>
+                                    {% elif field.name == "vigente" %}
+                                        <div class="col-md-6">
+                                            <div class="form-check mt-4 pt-2">
+                                                {{ field }}
+                                                <label for="{{ field.id_for_label }}" class="form-check-label fw-bold">{{ field.label }}</label>
+                                            </div>
+                                            {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors.0 }}</div>{% endif %}
+                                            {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+                                        </div>
+                                    {% else %}
+                                        <div class="col-md-6">
+                                            <label for="{{ field.id_for_label }}" class="form-label fw-bold">
+                                                {{ field.label }}
+                                                {% if field.field.required %}<span class="text-danger">*</span>{% endif %}
+                                            </label>
+                                            {{ field }}
+                                            {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors.0 }}</div>{% endif %}
+                                            {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+                                        </div>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
                         </div>
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
@@ -1609,12 +2270,28 @@
 
         var submitBtn = formEl.querySelector('button[type="submit"]');
         var defaultAction = formEl.getAttribute('action') || '';
+        var waitlistToggle = formEl.querySelector('[name="acepta_lista_espera"]');
+        var waitlistCapacityWrapper = formEl.querySelector('[data-waitlist-capacity-wrapper]');
+        var waitlistCapacityField = formEl.querySelector('[name="cupo_lista_espera"]');
+
+        function syncWaitlistCapacity() {
+            if (!waitlistToggle || !waitlistCapacityWrapper || !waitlistCapacityField) {
+                return;
+            }
+            var enabled = !!waitlistToggle.checked;
+            waitlistCapacityWrapper.classList.toggle('d-none', !enabled);
+            waitlistCapacityField.required = enabled;
+            if (!enabled) {
+                waitlistCapacityField.value = '';
+            }
+        }
 
         function setFormValue(name, value) {
             var field = formEl.querySelector('[name="' + name + '"]');
             if (!field) return;
             if (field.type === 'checkbox') {
                 field.checked = value === '1' || value === 'true' || value === true;
+                syncWaitlistCapacity();
                 return;
             }
             field.value = value || '';
@@ -1631,11 +2308,18 @@
             setFormValue('cupo_total', trigger.getAttribute('data-cupo-total'));
             setFormValue('cupo', trigger.getAttribute('data-cupo-total'));
             setFormValue('acepta_lista_espera', trigger.getAttribute('data-acepta-lista-espera'));
+            setFormValue('cupo_lista_espera', trigger.getAttribute('data-cupo-lista-espera'));
             setFormValue('fecha_inicio', trigger.getAttribute('data-fecha-inicio'));
             setFormValue('fecha_fin', trigger.getAttribute('data-fecha-fin'));
             setFormValue('estado', trigger.getAttribute('data-estado'));
             setFormValue('observaciones', trigger.getAttribute('data-observaciones'));
+            syncWaitlistCapacity();
         });
+
+        if (waitlistToggle) {
+            waitlistToggle.addEventListener('change', syncWaitlistCapacity);
+            syncWaitlistCapacity();
+        }
 
         formEl.addEventListener('submit', function(e) {
             e.preventDefault();
@@ -1893,37 +2577,292 @@
 
     <script nonce="{{ request.csp_nonce }}">
     (function() {
+        var card = document.getElementById('inscriptosTabla');
+        if (!card) return;
+
+        var PAGE_SIZE = 10;
+        var searchInput = document.getElementById('inscriptosBuscador');
+        var body = document.getElementById('inscriptosTablaBody');
+        var conteoEl = document.getElementById('inscriptosConteo');
+        var pagerEl = document.getElementById('inscriptosPager');
+        var prevBtn = document.getElementById('inscriptosPrev');
+        var nextBtn = document.getElementById('inscriptosNext');
+        var noResultsRow = body ? body.querySelector('[data-no-results-row]') : null;
+        var emptyRow = body ? body.querySelector('[data-empty-row]') : null;
+        if (!body) return;
+
+        var allRows = Array.prototype.slice.call(body.querySelectorAll('.ci-tbl-row'));
+        var currentPage = 1;
+
+        function getFilteredRows() {
+            var term = (searchInput ? searchInput.value : '').trim().toLowerCase();
+            if (!term) return allRows.slice();
+            return allRows.filter(function(row) {
+                return (row.getAttribute('data-nombre') || '').indexOf(term) !== -1;
+            });
+        }
+
+        function render() {
+            var filtered = getFilteredRows();
+            var total = filtered.length;
+            var totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+            if (currentPage > totalPages) currentPage = totalPages;
+            if (currentPage < 1) currentPage = 1;
+
+            var start = (currentPage - 1) * PAGE_SIZE;
+            var end = start + PAGE_SIZE;
+
+            allRows.forEach(function(row) { row.classList.add('d-none'); });
+            filtered.forEach(function(row, idx) {
+                if (idx >= start && idx < end) row.classList.remove('d-none');
+            });
+
+            if (noResultsRow) {
+                noResultsRow.classList.toggle('d-none', !(total === 0 && allRows.length > 0));
+            }
+            if (emptyRow && allRows.length > 0) {
+                emptyRow.classList.add('d-none');
+            }
+
+            if (conteoEl) {
+                var desde = total === 0 ? 0 : start + 1;
+                var hasta = Math.min(end, total);
+                conteoEl.textContent = 'Mostrando ' + desde + '-' + hasta + ' de ' + total;
+            }
+            if (pagerEl) {
+                pagerEl.textContent = currentPage + ' de ' + totalPages;
+            }
+            if (prevBtn) prevBtn.disabled = currentPage <= 1;
+            if (nextBtn) nextBtn.disabled = currentPage >= totalPages;
+        }
+
+        if (prevBtn) {
+            prevBtn.addEventListener('click', function() {
+                if (currentPage > 1) { currentPage -= 1; render(); }
+            });
+        }
+        if (nextBtn) {
+            nextBtn.addEventListener('click', function() {
+                currentPage += 1;
+                render();
+            });
+        }
+        if (searchInput) {
+            searchInput.addEventListener('input', function() {
+                currentPage = 1;
+                render();
+            });
+        }
+
+        render();
+    })();
+    </script>
+
+    <script nonce="{{ request.csp_nonce }}">
+    (function() {
+        var card = document.getElementById('sesionesTabla');
+        if (!card) return;
+
+        var PAGE_SIZE = 10;
+        var body = document.getElementById('sesionesTablaBody');
+        var conteoEl = document.getElementById('sesionesConteo');
+        var pagerEl = document.getElementById('sesionesPager');
+        var prevBtn = document.getElementById('sesionesPrev');
+        var nextBtn = document.getElementById('sesionesNext');
+        if (!body) return;
+
+        var allRows = Array.prototype.slice.call(body.querySelectorAll('.ci-tbl-row'));
+        var currentPage = 1;
+
+        function render() {
+            var total = allRows.length;
+            var totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+            if (currentPage > totalPages) currentPage = totalPages;
+            if (currentPage < 1) currentPage = 1;
+
+            var start = (currentPage - 1) * PAGE_SIZE;
+            var end = start + PAGE_SIZE;
+
+            allRows.forEach(function(row, idx) {
+                row.classList.toggle('d-none', !(idx >= start && idx < end));
+            });
+
+            if (conteoEl) {
+                var desde = total === 0 ? 0 : start + 1;
+                var hasta = Math.min(end, total);
+                conteoEl.textContent = 'Mostrando ' + desde + '-' + hasta + ' de ' + total;
+            }
+            if (pagerEl) {
+                pagerEl.textContent = currentPage + ' de ' + totalPages;
+            }
+            if (prevBtn) prevBtn.disabled = currentPage <= 1;
+            if (nextBtn) nextBtn.disabled = currentPage >= totalPages;
+        }
+
+        if (prevBtn) {
+            prevBtn.addEventListener('click', function() {
+                if (currentPage > 1) { currentPage -= 1; render(); }
+            });
+        }
+        if (nextBtn) {
+            nextBtn.addEventListener('click', function() {
+                currentPage += 1;
+                render();
+            });
+        }
+
+        render();
+    })();
+    </script>
+
+    <script nonce="{{ request.csp_nonce }}">
+    (function() {
+        var card = document.getElementById('esperaTabla');
+        if (!card) return;
+
+        var PAGE_SIZE = 10;
+        var body = document.getElementById('esperaTablaBody');
+        var conteoEl = document.getElementById('esperaConteo');
+        var pagerEl = document.getElementById('esperaPager');
+        var prevBtn = document.getElementById('esperaPrev');
+        var nextBtn = document.getElementById('esperaNext');
+        if (!body) return;
+
+        var allRows = Array.prototype.slice.call(body.querySelectorAll('.ci-tbl-row'));
+        var currentPage = 1;
+
+        function render() {
+            var total = allRows.length;
+            var totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+            if (currentPage > totalPages) currentPage = totalPages;
+            if (currentPage < 1) currentPage = 1;
+
+            var start = (currentPage - 1) * PAGE_SIZE;
+            var end = start + PAGE_SIZE;
+
+            allRows.forEach(function(row, idx) {
+                row.classList.toggle('d-none', !(idx >= start && idx < end));
+            });
+
+            if (conteoEl) {
+                var desde = total === 0 ? 0 : start + 1;
+                var hasta = Math.min(end, total);
+                conteoEl.textContent = 'Mostrando ' + desde + '-' + hasta + ' de ' + total;
+            }
+            if (pagerEl) {
+                pagerEl.textContent = currentPage + ' de ' + totalPages;
+            }
+            if (prevBtn) prevBtn.disabled = currentPage <= 1;
+            if (nextBtn) nextBtn.disabled = currentPage >= totalPages;
+        }
+
+        if (prevBtn) {
+            prevBtn.addEventListener('click', function() {
+                if (currentPage > 1) { currentPage -= 1; render(); }
+            });
+        }
+        if (nextBtn) {
+            nextBtn.addEventListener('click', function() {
+                currentPage += 1;
+                render();
+            });
+        }
+
+        render();
+    })();
+    </script>
+
+    <script nonce="{{ request.csp_nonce }}">
+    (function() {
+        var card = document.getElementById('horariosTabla');
+        if (!card) return;
+
+        var PAGE_SIZE = 10;
+        var body = document.getElementById('horariosTablaBody');
+        var conteoEl = document.getElementById('horariosConteo');
+        var pagerEl = document.getElementById('horariosPager');
+        var prevBtn = document.getElementById('horariosPrev');
+        var nextBtn = document.getElementById('horariosNext');
+        if (!body) return;
+
+        var allRows = Array.prototype.slice.call(body.querySelectorAll('.ci-tbl-row'));
+        var currentPage = 1;
+
+        function render() {
+            var total = allRows.length;
+            var totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+            if (currentPage > totalPages) currentPage = totalPages;
+            if (currentPage < 1) currentPage = 1;
+
+            var start = (currentPage - 1) * PAGE_SIZE;
+            var end = start + PAGE_SIZE;
+
+            allRows.forEach(function(row, idx) {
+                row.classList.toggle('d-none', !(idx >= start && idx < end));
+            });
+
+            if (conteoEl) {
+                var desde = total === 0 ? 0 : start + 1;
+                var hasta = Math.min(end, total);
+                conteoEl.textContent = 'Mostrando ' + desde + '-' + hasta + ' de ' + total;
+            }
+            if (pagerEl) {
+                pagerEl.textContent = currentPage + ' de ' + totalPages;
+            }
+            if (prevBtn) prevBtn.disabled = currentPage <= 1;
+            if (nextBtn) nextBtn.disabled = currentPage >= totalPages;
+        }
+
+        if (prevBtn) {
+            prevBtn.addEventListener('click', function() {
+                if (currentPage > 1) { currentPage -= 1; render(); }
+            });
+        }
+        if (nextBtn) {
+            nextBtn.addEventListener('click', function() {
+                currentPage += 1;
+                render();
+            });
+        }
+
+        render();
+    })();
+    </script>
+
+    <script nonce="{{ request.csp_nonce }}">
+    (function() {
         var tabs = Array.prototype.slice.call(
-            document.querySelectorAll('.sisoc-info-shell [data-sisoc-tab-target]')
+            document.querySelectorAll('[data-sisoc-tab-target]')
         );
         var panels = Array.prototype.slice.call(
-            document.querySelectorAll('.sisoc-info-shell [data-sisoc-panel]')
+            document.querySelectorAll('[data-sisoc-panel]')
         );
         if (!tabs.length || !panels.length) return;
 
-        // Orden derivado de las side-tabs de la izquierda (respeta tabs condicionales).
         var tabOrder = [];
-        document
-            .querySelectorAll('.sisoc-side-tabs--left [data-sisoc-tab-target]')
-            .forEach(function(tab) {
-                var target = tab.getAttribute('data-sisoc-tab-target');
-                if (tabOrder.indexOf(target) === -1) tabOrder.push(target);
-            });
+        tabs.forEach(function(tab) {
+            var target = tab.getAttribute('data-sisoc-tab-target');
+            if (tabOrder.indexOf(target) === -1) tabOrder.push(target);
+        });
+
+        var globalMetricGrid = document.getElementById('sisocMetricGridGlobal');
 
         function activatePanel(targetName) {
             var activeIdx = tabOrder.indexOf(targetName);
             if (activeIdx < 0) return;
 
+            if (globalMetricGrid) {
+                var hideGlobalGrid = targetName === 'inscriptos' ||
+                                     targetName === 'sesiones' ||
+                                     targetName === 'espera';
+                globalMetricGrid.style.display = hideGlobalGrid ? 'none' : '';
+            }
+
             tabs.forEach(function(tab) {
                 var idx = tabOrder.indexOf(tab.getAttribute('data-sisoc-tab-target'));
-                var sideEl = tab.closest('.sisoc-side-tabs');
-                var isLeft = sideEl && sideEl.classList.contains('sisoc-side-tabs--left');
                 var isActive = idx === activeIdx;
-                var shouldShow = isLeft ? (idx <= activeIdx) : (idx > activeIdx);
-
-                tab.hidden = !shouldShow;
-                tab.classList.toggle('is-active', isActive && isLeft);
-                tab.setAttribute('aria-selected', isActive && isLeft ? 'true' : 'false');
+                tab.classList.toggle('is-active', isActive);
+                tab.setAttribute('aria-selected', isActive ? 'true' : 'false');
             });
 
             panels.forEach(function(panel) {

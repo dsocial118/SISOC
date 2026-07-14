@@ -6,16 +6,32 @@ from datetime import timedelta
 from typing import Iterable
 
 from django.conf import settings
+from django.contrib.auth import password_validation
+from django.contrib.auth.models import Permission
 from django.contrib.auth import get_user_model
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import IntegrityError, transaction
 from django.db.models import F, Q
 from django.utils import timezone
 
+from comedores.models import Comedor
+from comedores.services.capacitaciones_certificados_service import (
+    is_alimentar_comunidad_program,
+)
 from users.models import AccesoComedorPWA, AuditAccesoComedorPWA, Profile
 from users.profile_utils import get_profile_or_none
+from iam.services import get_effective_permission_codes
 
 User = get_user_model()
+
+PWA_USUARIOS_PERMISSION_CODE = "pwa.manage_usuarios_pwa"
+MOBILE_RENDICION_PERMISSION_CODE = "rendicioncuentasmensual.manage_mobile_rendicion"
+PWA_ASSIGNABLE_PERMISSION_CODES = {
+    MOBILE_RENDICION_PERMISSION_CODE,
+    "pwa.manage_prestaciones_mensuales_pwa",
+    "pwa.manage_nomina_pwa",
+    "pwa.manage_colaboradores_pwa",
+}
 
 
 def _registrar_auditoria_acceso(*, acceso, accion: str, actor=None, metadata=None):
@@ -27,6 +43,15 @@ def _registrar_auditoria_acceso(*, acceso, accion: str, actor=None, metadata=Non
         accion=accion,
         actor=actor if getattr(actor, "is_authenticated", False) else None,
         metadata=metadata or {},
+    )
+
+
+def _get_effective_mobile_permission_codes(user) -> list[str]:
+    return sorted(
+        code
+        for code in get_effective_permission_codes(user)
+        if code in PWA_ASSIGNABLE_PERMISSION_CODES
+        or code == PWA_USUARIOS_PERMISSION_CODE
     )
 
 
@@ -69,6 +94,13 @@ def is_representante(user, comedor_id: int) -> bool:
         )
         .exists()
     )
+
+
+def has_pwa_access_to_comedor(user, comedor_id: int) -> bool:
+    """Indica si el usuario tiene acceso PWA activo al comedor."""
+    if not comedor_id:
+        return False
+    return get_access_rows(user).filter(comedor_id=comedor_id).exists()
 
 
 def get_pwa_context(user) -> dict:
@@ -121,23 +153,114 @@ def _validate_operator_role_invariants(user):
             "Un usuario PWA no puede tener roles activos representante y operador simultáneamente."
         )
 
-    operadores = active_rows.filter(rol=AccesoComedorPWA.ROL_OPERADOR)
-    if operadores.count() != 1:
+    operadores = list(active_rows.filter(rol=AccesoComedorPWA.ROL_OPERADOR))
+    if not operadores:
         raise ValidationError(
-            "Un usuario operador debe tener exactamente un acceso activo."
+            "Un usuario operador debe tener al menos un acceso activo."
         )
 
-    operador = operadores.first()
-    if not operador.creado_por_id:
-        raise ValidationError("Un usuario operador requiere usuario creador.")
+    for operador in operadores:
+        if not operador.creado_por_id:
+            raise ValidationError("Un usuario operador requiere usuario creador.")
 
-    if not is_representante(operador.creado_por, operador.comedor_id):
+        if not is_representante(operador.creado_por, operador.comedor_id):
+            raise ValidationError(
+                "El usuario creador debe ser representante activo del mismo comedor."
+            )
+
+
+def _resolve_permission_codes(permission_codes: Iterable[str]) -> list[Permission]:
+    permissions = []
+    for code in permission_codes:
+        try:
+            app_label, codename = str(code).split(".", 1)
+        except ValueError as exc:
+            raise ValidationError({"permission_codes": "Permiso invalido."}) from exc
+        permission = Permission.objects.filter(
+            content_type__app_label=app_label,
+            codename=codename,
+        ).first()
+        if not permission:
+            raise ValidationError({"permission_codes": f"Permiso inexistente: {code}."})
+        permissions.append(permission)
+    return permissions
+
+
+def _is_alimentar_comunidad_comedor(comedor_id: int | None) -> bool:
+    if not comedor_id:
+        return False
+    comedor = Comedor.objects.select_related("programa").filter(pk=comedor_id).first()
+    return bool(comedor and is_alimentar_comunidad_program(comedor))
+
+
+def _filter_permission_codes_for_comedor_context(
+    permission_codes: Iterable[str],
+    comedor_id: int | None,
+) -> list[str]:
+    codes = {str(code).strip() for code in permission_codes or [] if str(code).strip()}
+    if _is_alimentar_comunidad_comedor(comedor_id):
+        codes.discard(MOBILE_RENDICION_PERMISSION_CODE)
+    return sorted(codes)
+
+
+def get_assignable_pwa_permission_codes(
+    actor, comedor_id: int | None = None
+) -> list[str]:
+    actor_codes = set(get_effective_permission_codes(actor))
+    actor_codes.discard(PWA_USUARIOS_PERMISSION_CODE)
+    return _filter_permission_codes_for_comedor_context(
+        actor_codes & PWA_ASSIGNABLE_PERMISSION_CODES,
+        comedor_id,
+    )
+
+
+def _validate_assignable_permissions(
+    actor, permission_codes: Iterable[str], comedor_id: int | None = None
+) -> list[str]:
+    requested_codes = {
+        str(code).strip() for code in permission_codes or [] if str(code).strip()
+    }
+    allowed_codes = set(get_assignable_pwa_permission_codes(actor, comedor_id))
+    requested_codes = set(
+        _filter_permission_codes_for_comedor_context(requested_codes, comedor_id)
+    )
+    denied_codes = sorted(requested_codes - allowed_codes)
+    if denied_codes:
         raise ValidationError(
-            "El usuario creador debe ser representante activo del mismo comedor."
+            {
+                "permission_codes": (
+                    "No puede asignar permisos que no posee: "
+                    f"{', '.join(denied_codes)}."
+                )
+            }
         )
+    return sorted(requested_codes)
+
+
+def _validate_assignable_comedores(actor, comedor_ids: Iterable[int]) -> list[int]:
+    try:
+        requested_ids = sorted({int(comedor_id) for comedor_id in comedor_ids})
+    except (TypeError, ValueError) as exc:
+        raise ValidationError({"comedor_ids": "Espacio invalido."}) from exc
+    if not requested_ids:
+        raise ValidationError({"comedor_ids": "Debe asignar al menos un espacio."})
+    allowed_ids = set(get_accessible_comedor_ids(actor))
+    denied_ids = sorted(set(requested_ids) - allowed_ids)
+    if denied_ids:
+        raise PermissionDenied(
+            "No puede asignar espacios fuera de su alcance PWA: "
+            f"{', '.join(map(str, denied_ids))}."
+        )
+    for requested_id in requested_ids:
+        if not is_representante(actor, requested_id):
+            raise PermissionDenied(
+                "Solo representantes del comedor pueden crear operadores."
+            )
+    return requested_ids
 
 
 @transaction.atomic
+# pylint: disable-next=too-many-arguments,too-many-locals
 def create_operador_for_comedor(
     *,
     comedor_id: int,
@@ -145,26 +268,34 @@ def create_operador_for_comedor(
     username: str,
     email: str,
     password: str,
+    comedor_ids: Iterable[int] | None = None,
+    permission_codes: Iterable[str] | None = None,
 ):
     """Crea usuario operador PWA en un comedor representado por actor."""
-    if not is_representante(actor, comedor_id):
-        raise PermissionDenied(
-            "Solo representantes del comedor pueden crear operadores."
-        )
+    requested_comedor_ids = _validate_assignable_comedores(
+        actor,
+        comedor_ids or [comedor_id],
+    )
+    requested_permission_codes = _validate_assignable_permissions(
+        actor,
+        permission_codes or [],
+        comedor_id,
+    )
 
     username = (username or "").strip()
     email = (email or "").strip()
     if not username:
         raise ValidationError({"username": "Este campo es obligatorio."})
-    if not email:
-        raise ValidationError({"email": "Este campo es obligatorio."})
     if not password:
         raise ValidationError({"password": "Este campo es obligatorio."})
+    password_user = User(username=username, email=email)
+    try:
+        password_validation.validate_password(password, user=password_user)
+    except ValidationError as exc:
+        raise ValidationError({"password": list(exc.messages)}) from exc
 
     if User.objects.filter(username__iexact=username).exists():
         raise ValidationError({"username": "Ya existe un usuario con ese username."})
-    if User.objects.filter(email__iexact=email).exists():
-        raise ValidationError({"email": "Ya existe un usuario con ese email."})
 
     try:
         operador = User.objects.create_user(
@@ -179,6 +310,7 @@ def create_operador_for_comedor(
             {"username": "Ya existe un usuario con ese username."}
         ) from exc
     operador.groups.clear()
+    operador.user_permissions.set(_resolve_permission_codes(requested_permission_codes))
     profile, _ = Profile.objects.get_or_create(user=operador)
     profile.must_change_password = True
     profile.password_changed_at = None
@@ -193,22 +325,28 @@ def create_operador_for_comedor(
         ]
     )
 
-    acceso = AccesoComedorPWA.objects.create(
-        user=operador,
-        comedor_id=comedor_id,
-        rol=AccesoComedorPWA.ROL_OPERADOR,
-        creado_por=actor,
-        activo=True,
-    )
-    _registrar_auditoria_acceso(
-        acceso=acceso,
-        accion=AuditAccesoComedorPWA.ACCION_CREATE,
-        actor=actor,
-        metadata={"rol": AccesoComedorPWA.ROL_OPERADOR},
-    )
+    created_accesses = []
+    for target_comedor_id in requested_comedor_ids:
+        acceso = AccesoComedorPWA.objects.create(
+            user=operador,
+            comedor_id=target_comedor_id,
+            rol=AccesoComedorPWA.ROL_OPERADOR,
+            creado_por=actor,
+            activo=True,
+        )
+        created_accesses.append(acceso)
+        _registrar_auditoria_acceso(
+            acceso=acceso,
+            accion=AuditAccesoComedorPWA.ACCION_CREATE,
+            actor=actor,
+            metadata={
+                "rol": AccesoComedorPWA.ROL_OPERADOR,
+                "permission_codes": requested_permission_codes,
+            },
+        )
 
     _validate_operator_role_invariants(operador)
-    return acceso
+    return created_accesses[0]
 
 
 def list_operadores_for_comedor(comedor_id: int):
@@ -220,9 +358,62 @@ def list_operadores_for_comedor(comedor_id: int):
             activo=True,
             user__is_active=True,
         )
-        .select_related("user")
+        .select_related("user", "creado_por")
+        .prefetch_related("user__user_permissions__content_type")
         .order_by("-fecha_creacion", "-id")
     )
+
+
+@transaction.atomic
+def update_operador_permissions(
+    *,
+    comedor_id: int,
+    user_id: int,
+    actor,
+    permission_codes: Iterable[str] | None = None,
+):
+    """Actualiza permisos delegados de un operador creado por el representante."""
+    if not is_representante(actor, comedor_id):
+        raise PermissionDenied(
+            "Solo representantes del comedor pueden editar operadores."
+        )
+
+    acceso = (
+        AccesoComedorPWA.objects.select_related("user", "creado_por")
+        .filter(
+            comedor_id=comedor_id,
+            user_id=user_id,
+            rol=AccesoComedorPWA.ROL_OPERADOR,
+            activo=True,
+            user__is_active=True,
+        )
+        .first()
+    )
+    if not acceso:
+        raise PermissionDenied("No tiene acceso para editar este operador.")
+    if acceso.creado_por_id != getattr(actor, "id", None):
+        raise PermissionDenied("Solo puede editar usuarios creados por usted.")
+
+    requested_permission_codes = _validate_assignable_permissions(
+        actor,
+        permission_codes or [],
+        comedor_id,
+    )
+    previous_permission_codes = _get_effective_mobile_permission_codes(acceso.user)
+    acceso.user.user_permissions.set(
+        _resolve_permission_codes(requested_permission_codes)
+    )
+    _registrar_auditoria_acceso(
+        acceso=acceso,
+        accion=AuditAccesoComedorPWA.ACCION_UPDATE_PERMISSIONS,
+        actor=actor,
+        metadata={
+            "rol": AccesoComedorPWA.ROL_OPERADOR,
+            "previous_permission_codes": previous_permission_codes,
+            "new_permission_codes": requested_permission_codes,
+        },
+    )
+    return acceso
 
 
 @transaction.atomic
@@ -250,6 +441,19 @@ def deactivate_operador(*, comedor_id: int, user_id: int, actor):
     accesos_activos = list(
         AccesoComedorPWA.objects.filter(user_id=user_id, activo=True)
     )
+    allowed_comedor_ids = set(get_accessible_comedor_ids(actor))
+    denied_comedor_ids = sorted(
+        {
+            acceso_activo.comedor_id
+            for acceso_activo in accesos_activos
+            if acceso_activo.comedor_id not in allowed_comedor_ids
+        }
+    )
+    if denied_comedor_ids:
+        raise PermissionDenied(
+            "No puede desactivar accesos fuera de su alcance PWA: "
+            f"{', '.join(map(str, denied_comedor_ids))}."
+        )
     AccesoComedorPWA.objects.filter(user_id=user_id, activo=True).update(
         activo=False,
         fecha_baja=now,

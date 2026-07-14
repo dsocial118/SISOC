@@ -3,92 +3,298 @@
  */
 (() => {
     const TerritorialCache = {
-        // Estado del cache
         isLoading: false,
         lastSync: null,
+        territorialOptions: [],
+        selectedTerritorial: null,
 
-        // Elementos DOM
         elements: {
-            newSelect: null,
+            newContainer: null,
+            newInput: null,
+            newHiddenInput: null,
+            newSuggestions: null,
             updateSelects: [],
             loadingIndicator: null,
             statusIndicator: null,
-            syncButton: null
+            syncButton: null,
+            newForm: null
         },
 
-        // Configuración
         config: {
             maxRetries: 3,
             retryDelay: 1000,
             staleDataClass: 'territorial-stale',
-            loadingClass: 'territorial-loading'
+            loadingClass: 'territorial-loading',
+            maxSuggestions: 8
         },
 
         init() {
             this.initElements();
-            this.loadTerritoriales();
             this.setupEventListeners();
+            this.loadTerritoriales();
         },
 
         initElements() {
-            // Selectores principales
-            this.elements.newSelect = document.getElementById('new_territorial_select');
+            this.elements.newContainer = document.getElementById('new_territorial_container');
+            this.elements.newInput = document.getElementById('new_territorial_input');
+            this.elements.newHiddenInput = document.getElementById('new_territorial_value');
+            this.elements.newSuggestions = document.getElementById('new_territorial_suggestions');
             this.elements.updateSelects = Array.from(
                 document.querySelectorAll('select[id*="update_territorial_select"]')
             );
+            this.elements.newForm = this.elements.newInput ? this.elements.newInput.closest('form') : null;
 
-            // Crear indicadores de estado si no existen
             this.createStatusIndicators();
         },
 
         createStatusIndicators() {
-            // Crear indicador de estado
-            if (!this.elements.statusIndicator) {
-                const indicator = document.createElement('div');
-                indicator.id = 'territorial-status';
-                indicator.className = 'territorial-status';
-                indicator.innerHTML = `
-                    <span class="status-text">Cargando territoriales...</span>
-                    <button class="sync-btn" title="Sincronizar con GESTIONAR">
-                        <i class="fas fa-sync-alt"></i>
-                    </button>
-                `;
-
-                // Insertar antes del primer select
-                const firstSelect = this.elements.newSelect || this.elements.updateSelects[0];
-                if (firstSelect) {
-                    firstSelect.parentNode.insertBefore(indicator, firstSelect);
-                }
-
-                this.elements.statusIndicator = indicator.querySelector('.status-text');
-                this.elements.syncButton = indicator.querySelector('.sync-btn');
+            if (this.elements.statusIndicator) {
+                return;
             }
+
+            const indicator = document.createElement('div');
+            indicator.id = 'territorial-status';
+            indicator.className = 'territorial-status';
+            indicator.innerHTML = `
+                <span class="status-text">Cargando territoriales...</span>
+                <button class="sync-btn" title="Sincronizar con GESTIONAR">
+                    <i class="fas fa-sync-alt"></i>
+                </button>
+            `;
+
+            const firstControl = this.elements.newContainer || this.elements.newInput || this.elements.updateSelects[0];
+            if (firstControl) {
+                firstControl.parentNode.insertBefore(indicator, firstControl);
+            }
+
+            this.elements.statusIndicator = indicator.querySelector('.status-text');
+            this.elements.syncButton = indicator.querySelector('.sync-btn');
         },
 
         setupEventListeners() {
-            // Botón de sincronización manual
             if (this.elements.syncButton) {
-                this.elements.syncButton.addEventListener('click', (e) => {
-                    e.preventDefault();
+                this.elements.syncButton.addEventListener('click', (event) => {
+                    event.preventDefault();
                     this.forceSync();
                 });
             }
 
-            // Recargar al hacer focus en los selects si los datos están muy desactualizados
-            [...this.getAllSelects()].forEach(select => {
-                select.addEventListener('focus', () => {
+            this.getAllControls().forEach((control) => {
+                control.addEventListener('focus', () => {
                     if (this.isDataTooOld()) {
                         this.loadTerritoriales();
                     }
                 });
             });
+
+            if (this.elements.newInput) {
+                this.elements.newInput.addEventListener('input', () => {
+                    this.handleTerritorialSearch();
+                });
+
+                this.elements.newInput.addEventListener('focus', () => {
+                    this.handleTerritorialSearch();
+                });
+
+                this.elements.newInput.addEventListener('keydown', (event) => {
+                    if (event.key === 'Escape') {
+                        this.hideTerritorialSuggestions();
+                    }
+
+                    if (event.key === 'Enter') {
+                        const exactTerritorial = this.resolveTerritorialSelection(this.elements.newInput.value);
+                        if (exactTerritorial) {
+                            event.preventDefault();
+                            this.setTerritorialSelection(exactTerritorial);
+                        }
+                    }
+                });
+            }
+
+            if (this.elements.newForm) {
+                this.elements.newForm.addEventListener('submit', (event) => {
+                    const exactTerritorial = this.resolveTerritorialSelection(
+                        this.elements.newInput?.value || ''
+                    );
+
+                    if (exactTerritorial) {
+                        this.setTerritorialSelection(exactTerritorial);
+                        return;
+                    }
+
+                    if (this.elements.newHiddenInput) {
+                        this.elements.newHiddenInput.value = '';
+                    }
+
+                    event.preventDefault();
+                    this.showErrorMessage('Seleccioná un territorial de la lista antes de crear el relevamiento.');
+                    this.elements.newInput?.focus();
+                });
+            }
+
+            document.addEventListener('click', (event) => {
+                if (!this.elements.newSuggestions || !this.elements.newInput) {
+                    return;
+                }
+
+                if (this.elements.newSuggestions.contains(event.target) || event.target === this.elements.newInput) {
+                    return;
+                }
+
+                this.hideTerritorialSuggestions();
+            });
+        },
+
+        getAllControls() {
+            return [
+                this.elements.newInput,
+                ...this.elements.updateSelects
+            ].filter(Boolean);
         },
 
         getAllSelects() {
-            return [
-                this.elements.newSelect,
-                ...this.elements.updateSelects
-            ].filter(Boolean);
+            return [...this.elements.updateSelects].filter(Boolean);
+        },
+
+        normalizeText(value) {
+            return (value || '')
+                .toString()
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .toLowerCase()
+                .trim();
+        },
+
+        buildTerritorialPayload(territorial) {
+            return JSON.stringify({
+                gestionar_uid: territorial.gestionar_uid,
+                nombre: territorial.nombre
+            });
+        },
+
+        normalizeTerritoriales(territoriales) {
+            return (territoriales || []).map((territorial) => ({
+                ...territorial,
+                searchKey: this.normalizeText(territorial.nombre),
+                payload: this.buildTerritorialPayload(territorial)
+            }));
+        },
+
+        resolveTerritorialSelection(query) {
+            const searchKey = this.normalizeText(query);
+            if (!searchKey) {
+                return null;
+            }
+
+            return this.territorialOptions.find((territorial) => territorial.searchKey === searchKey) || null;
+        },
+
+        filterTerritoriales(query) {
+            const searchKey = this.normalizeText(query);
+            const matches = searchKey
+                ? this.territorialOptions.filter((territorial) => territorial.searchKey.includes(searchKey))
+                : this.territorialOptions;
+
+            return matches.slice(0, this.config.maxSuggestions);
+        },
+
+        handleTerritorialSearch() {
+            if (!this.elements.newInput || !this.elements.newHiddenInput || !this.elements.newSuggestions) {
+                return;
+            }
+
+            const exactTerritorial = this.resolveTerritorialSelection(this.elements.newInput.value);
+            if (exactTerritorial) {
+                this.setTerritorialSelection(exactTerritorial);
+                return;
+            }
+
+            this.selectedTerritorial = null;
+            this.elements.newHiddenInput.value = '';
+
+            const matches = this.filterTerritoriales(this.elements.newInput.value);
+            this.renderTerritorialSuggestions(matches);
+        },
+
+        renderTerritorialSuggestions(matches) {
+            if (!this.elements.newSuggestions) {
+                return;
+            }
+
+            this.elements.newSuggestions.innerHTML = '';
+
+            if (!matches.length) {
+                const emptyState = document.createElement('div');
+                emptyState.className = 'territorial-suggestion-empty';
+                emptyState.textContent = 'No hay territoriales que coincidan';
+                this.elements.newSuggestions.appendChild(emptyState);
+                this.showTerritorialSuggestions();
+                return;
+            }
+
+            matches.forEach((territorial) => {
+                const item = document.createElement('button');
+                item.type = 'button';
+                item.className = 'territorial-suggestion-item';
+                item.textContent = territorial.nombre;
+
+                if (territorial.desactualizado) {
+                    item.classList.add('territorial-suggestion-stale');
+                }
+
+                item.addEventListener('mousedown', (event) => {
+                    event.preventDefault();
+                    this.setTerritorialSelection(territorial);
+                });
+
+                this.elements.newSuggestions.appendChild(item);
+            });
+
+            this.showTerritorialSuggestions();
+        },
+
+        refreshTerritorialSuggestions() {
+            if (!this.elements.newInput || !this.elements.newSuggestions) {
+                return;
+            }
+
+            if (this.elements.newSuggestions.classList.contains('d-none')) {
+                return;
+            }
+
+            this.handleTerritorialSearch();
+        },
+
+        showTerritorialSuggestions() {
+            if (this.elements.newSuggestions) {
+                this.elements.newSuggestions.classList.remove('d-none');
+            }
+        },
+
+        hideTerritorialSuggestions() {
+            if (this.elements.newSuggestions) {
+                this.elements.newSuggestions.classList.add('d-none');
+            }
+        },
+
+        setTerritorialSelection(territorial) {
+            this.selectedTerritorial = territorial;
+
+            if (this.elements.newInput) {
+                this.elements.newInput.value = territorial ? territorial.nombre : '';
+            }
+
+            if (this.elements.newHiddenInput) {
+                this.elements.newHiddenInput.value = territorial ? territorial.payload : '';
+            }
+
+            this.hideTerritorialSuggestions();
+        },
+
+        updateTerritorialData(territoriales, meta) {
+            this.territorialOptions = this.normalizeTerritoriales(territoriales);
+            this.updateSelects(territoriales, meta);
+            this.refreshTerritorialSuggestions();
         },
 
         async loadTerritoriales(forceSync = false) {
@@ -115,13 +321,14 @@
                 const data = await response.json();
 
                 if (data.success) {
-                    this.updateSelects(data.territoriales, data.meta);
-                    this.updateStatus(data.meta);
+                    const territoriales = Array.isArray(data.territoriales) ? data.territoriales : [];
+                    const meta = data.meta || { total: territoriales.length };
+                    this.updateTerritorialData(territoriales, meta);
+                    this.updateStatus(meta);
                     this.lastSync = new Date();
                 } else {
                     throw new Error(data.error || 'Error desconocido');
                 }
-
             } catch (error) {
                 console.error('Error cargando territoriales:', error);
                 this.handleError(error);
@@ -149,13 +356,14 @@
                 const data = await response.json();
 
                 if (data.success) {
-                    this.updateSelects(data.territoriales, data.meta);
-                    this.updateStatus(data.meta);
+                    const territoriales = Array.isArray(data.territoriales) ? data.territoriales : [];
+                    const meta = data.meta || { total: territoriales.length };
+                    this.updateTerritorialData(territoriales, meta);
+                    this.updateStatus(meta);
                     this.showSuccessMessage('Territoriales sincronizados correctamente');
                 } else {
                     throw new Error(data.error || 'Error en sincronización');
                 }
-
             } catch (error) {
                 console.error('Error en sincronización forzada:', error);
                 this.handleError(error);
@@ -166,22 +374,20 @@
 
         updateSelects(territoriales, meta) {
             const selects = this.getAllSelects();
+            const currentMeta = meta || { desactualizados: false };
 
-            selects.forEach(select => {
+            selects.forEach((select) => {
                 if (!select) return;
 
-                // Preservar selección actual
                 const currentValue = select.value;
-
-                // Limpiar opciones excepto la primera (vacía)
                 const firstOption = select.options[0];
+
                 select.innerHTML = '';
                 if (firstOption) {
                     select.appendChild(firstOption);
                 }
 
-                // Agregar territoriales
-                territoriales.forEach(territorial => {
+                territoriales.forEach((territorial) => {
                     const option = document.createElement('option');
                     option.value = JSON.stringify({
                         gestionar_uid: territorial.gestionar_uid,
@@ -189,8 +395,7 @@
                     });
                     option.textContent = territorial.nombre;
 
-                    // Marcar como desactualizado si es necesario
-                    if (territorial.desactualizado || meta.desactualizados) {
+                    if (territorial.desactualizado || currentMeta.desactualizados) {
                         option.className = this.config.staleDataClass;
                         option.title = 'Datos posiblemente desactualizados';
                     }
@@ -198,73 +403,61 @@
                     select.appendChild(option);
                 });
 
-                // Restaurar selección si aún existe
                 if (currentValue) {
                     select.value = currentValue;
                 }
 
-                // Marcar el select con clase de estado
-                select.classList.toggle(this.config.staleDataClass, meta.desactualizados);
+                select.classList.toggle(this.config.staleDataClass, Boolean(currentMeta.desactualizados));
             });
         },
 
         updateStatus(meta) {
             if (!this.elements.statusIndicator) return;
 
+            const statusMeta = meta || {};
             let statusText = '';
             let statusClass = '';
 
-            switch (meta.fuente) {
+            switch (statusMeta.fuente) {
                 case 'cache_provincia':
-                    statusText = `${meta.total} territoriales (desde cache rápido)`;
+                    statusText = `${statusMeta.total} territoriales (desde cache rápido)`;
                     statusClass = 'status-success';
                     break;
-
                 case 'db_provincia':
-                    statusText = `${meta.total} territoriales (desde cache local)`;
-                    statusClass = meta.desactualizados ? 'status-warning' : 'status-success';
+                    statusText = `${statusMeta.total} territoriales (desde cache local)`;
+                    statusClass = statusMeta.desactualizados ? 'status-warning' : 'status-success';
                     break;
-
                 case 'gestionar_provincia_sync':
-                    statusText = `${meta.total} territoriales (sincronizado)`;
+                    statusText = `${statusMeta.total} territoriales (sincronizado)`;
                     statusClass = 'status-success';
                     break;
-
                 case 'fallback_provincia':
-                    statusText = `${meta.total} territoriales (datos antiguos)`;
+                    statusText = `${statusMeta.total} territoriales (datos antiguos)`;
                     statusClass = 'status-warning';
                     break;
-
                 case 'sin_datos':
-                    statusText = `${meta.total} territoriales (sin datos)`;
+                    statusText = `${statusMeta.total} territoriales (sin datos)`;
                     statusClass = 'status-warning';
                     break;
-
                 case 'comedor_no_encontrado':
                     statusText = 'Comedor no encontrado';
                     statusClass = 'status-error';
                     break;
-
                 case 'datos_ejemplo':
-                    statusText = `${meta.total} territoriales (datos de desarrollo)`;
+                    statusText = `${statusMeta.total} territoriales (datos de desarrollo)`;
                     statusClass = 'status-info';
                     break;
-
-                case 'vacio': // compat: antiguo nombre para sin_datos
-                    const total = Number(meta.total) || 0;
-                    statusText = `${total} territoriales (sin datos)`;
+                case 'vacio':
+                    statusText = `${Number(statusMeta.total) || 0} territoriales (sin datos)`;
                     statusClass = 'status-warning';
                     break;
-
-                case 'error':
-
                 default:
                     statusText = 'Error cargando territoriales';
                     statusClass = 'status-error';
                     break;
             }
 
-            if (meta.desactualizados && meta.fuente !== 'fallback_provincia') {
+            if (statusMeta.desactualizados && statusMeta.fuente !== 'fallback_provincia') {
                 statusText += ' (algunos desactualizados)';
                 statusClass = 'status-warning';
             }
@@ -274,15 +467,19 @@
         },
 
         setLoadingState(isLoading, customMessage = null) {
-            const selects = this.getAllSelects();
+            const controls = this.getAllControls();
             const message = customMessage || (isLoading ? 'Cargando...' : 'Territoriales cargados');
 
-            selects.forEach(select => {
-                if (select) {
-                    select.disabled = isLoading;
-                    select.classList.toggle(this.config.loadingClass, isLoading);
+            controls.forEach((control) => {
+                if (control) {
+                    control.disabled = isLoading;
+                    control.classList.toggle(this.config.loadingClass, isLoading);
                 }
             });
+
+            if (this.elements.newSuggestions && isLoading) {
+                this.hideTerritorialSuggestions();
+            }
 
             if (this.elements.syncButton) {
                 this.elements.syncButton.disabled = isLoading;
@@ -318,7 +515,6 @@
         },
 
         showToast(message, type = 'info') {
-            // Implementación básica de toast
             const toast = document.createElement('div');
             toast.className = `toast toast-${type}`;
             toast.textContent = message;
@@ -334,7 +530,6 @@
                 transition: opacity 0.3s;
             `;
 
-            // Colores según tipo
             switch (type) {
                 case 'success':
                     toast.style.backgroundColor = '#28a745';
@@ -351,26 +546,24 @@
             }
 
             document.body.appendChild(toast);
+            window.setTimeout(() => {
+                toast.style.opacity = '1';
+            }, 100);
 
-            // Animar entrada
-            setTimeout(() => toast.style.opacity = '1', 100);
-
-            // Auto-remover
-            setTimeout(() => {
+            window.setTimeout(() => {
                 toast.style.opacity = '0';
-                setTimeout(() => document.body.removeChild(toast), 300);
+                window.setTimeout(() => document.body.removeChild(toast), 300);
             }, 5000);
         },
 
         isDataTooOld() {
             if (!this.lastSync) return true;
 
-            const maxAge = 10 * 60 * 1000; // 10 minutos
+            const maxAge = 10 * 60 * 1000;
             return (new Date() - this.lastSync) > maxAge;
         }
     };
 
-    // CSS para los estilos
     const styles = `
         <style>
         .territorial-status {
@@ -384,17 +577,62 @@
             align-items: center;
             font-size: 0.875rem;
         }
-        
+
         .status-text {
             flex: 1;
         }
-        
+
         .status-success { color: #28a745; }
         .status-warning { color: #856404; background-color: #fff3cd; }
         .status-error { color: #721c24; background-color: #f8d7da; }
         .status-info { color: #0c5460; background-color: #d1ecf1; }
         .status-loading { color: #0c5460; }
-        
+
+        .territorial-autocomplete {
+            position: relative;
+        }
+
+        .territorial-suggestions {
+            position: absolute;
+            top: calc(100% + 4px);
+            left: 0;
+            right: 0;
+            z-index: 1060;
+            max-height: 260px;
+            overflow-y: auto;
+            border: 1px solid #ced4da;
+            border-radius: 0.375rem;
+            background: #fff;
+            box-shadow: 0 0.75rem 1.5rem rgba(0, 0, 0, 0.12);
+        }
+
+        .territorial-suggestion-item,
+        .territorial-suggestion-empty {
+            width: 100%;
+            display: block;
+            padding: 0.55rem 0.75rem;
+            border: 0;
+            background: transparent;
+            text-align: left;
+            font-size: 0.875rem;
+            color: #212529;
+        }
+
+        .territorial-suggestion-item:hover,
+        .territorial-suggestion-item:focus {
+            background: #f8f9fa;
+            color: #212529;
+            outline: none;
+        }
+
+        .territorial-suggestion-stale {
+            color: #856404;
+        }
+
+        .territorial-suggestion-empty {
+            color: #6c757d;
+        }
+
         .sync-btn {
             background: #007bff;
             border: none;
@@ -404,44 +642,26 @@
             cursor: pointer;
             font-size: 0.75rem;
         }
-        
+
         .sync-btn:hover {
             background: #0056b3;
         }
-        
+
         .sync-btn:disabled {
             background: #6c757d;
             cursor: not-allowed;
         }
-        
+
         .territorial-loading {
             opacity: 0.6;
             cursor: wait;
         }
-        
-        .territorial-stale option {
-            background-color: #fff3cd;
-            color: #856404;
-        }
-        
-        select.territorial-stale {
-            border-color: #ffc107;
-            background-color: #fff3cd;
-        }
         </style>
     `;
 
-    // Inyectar estilos
     document.head.insertAdjacentHTML('beforeend', styles);
 
-    // Inicializar cuando el DOM esté listo
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', () => TerritorialCache.init());
-    } else {
+    document.addEventListener('DOMContentLoaded', () => {
         TerritorialCache.init();
-    }
-
-    // Exponer globalmente para debugging
-    window.TerritorialCache = TerritorialCache;
-
+    });
 })();

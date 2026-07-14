@@ -65,6 +65,7 @@ from VAT.services.access_scope import (
     can_user_add_vat_entities,
     can_user_create_centro,
     can_user_edit_centro,
+    es_operador_cfp,
     filter_centros_queryset_for_user,
     puede_generar_usuario_centro_vat,
     puede_ver_usuarios_centro_vat,
@@ -655,6 +656,7 @@ class CentroDetailView(CentroAccessMixin, LoginRequiredMixin, DetailView):
             kwargs={"pk": centro.pk},
         )
         ctx["can_edit_centro"] = can_user_edit_centro(self.request.user, centro)
+        ctx["mostrar_datos_administrativos"] = not es_operador_cfp(self.request.user)
         ctx["puede_generar_usuario_centro_vat"] = puede_generar_usuario_centro_vat(
             self.request.user, centro
         )
@@ -691,6 +693,7 @@ class CentroCreateView(LoginRequiredMixin, CreateView):
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
         creator_provincia = self._get_creator_provincia()
+        kwargs["actor"] = self.request.user
         kwargs["hide_provincia"] = self._should_hide_provincia_field()
         kwargs["provincia_inicial"] = creator_provincia
 
@@ -811,6 +814,7 @@ class CentroUpdateView(LoginRequiredMixin, UpdateView):
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
+        kwargs["actor"] = self.request.user
         kwargs["hide_provincia"] = True
         kwargs["provincia_inicial"] = self.object.provincia
 

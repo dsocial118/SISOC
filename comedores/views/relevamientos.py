@@ -76,6 +76,7 @@ def _handle_create_primer_seguimiento(request, comedor, is_ajax):
     seguimiento = PrimerSeguimientoService.create_asignado(
         comedor.id,
         request.POST.get("territorial"),
+        relevamiento_id=request.POST.get("relevamiento_id"),
     )
     return _success_response(
         request,
@@ -170,7 +171,7 @@ def relevamiento_crear_editar_ajax(request, pk):
     try:
         comedor = _resolve_scoped_comedor_from_pk(pk, request.user)
 
-        if "territorial" in request.POST:
+        if "tipo_relevamiento" in request.POST or "territorial" in request.POST:
             response = _handle_create_with_tipo(request, comedor, is_ajax)
         elif "territorial_editar" in request.POST:
             response = _handle_update_territorial(request, comedor, is_ajax)

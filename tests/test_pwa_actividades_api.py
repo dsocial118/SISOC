@@ -1,12 +1,13 @@
 import pytest
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Permission
 from django.utils import timezone
 from rest_framework.authtoken.models import Token
 from rest_framework.test import APIClient
 
 from admisiones.models.admisiones import Admision
 from ciudadanos.models import Ciudadano
-from comedores.models import Comedor, Nomina
+from comedores.models import Comedor, Nomina, Programas
 from core.models import Dia, Provincia, Sexo
 from pwa.models import (
     ActividadEspacioPWA,
@@ -20,7 +21,12 @@ from users.models import AccesoComedorPWA
 @pytest.fixture
 def comedor(db):
     provincia = Provincia.objects.create(nombre="Buenos Aires")
-    return Comedor.objects.create(nombre="Comedor Actividades API", provincia=provincia)
+    programa = Programas.objects.create(nombre="PNUD")
+    return Comedor.objects.create(
+        nombre="Comedor Actividades API",
+        provincia=provincia,
+        programa=programa,
+    )
 
 
 @pytest.fixture
@@ -46,6 +52,11 @@ def _create_representante(*, comedor, username="rep_act", password="testpass123"
         rol=AccesoComedorPWA.ROL_REPRESENTANTE,
         activo=True,
     )
+    perm = Permission.objects.get(
+        content_type__app_label="pwa",
+        codename="manage_colaboradores_pwa",
+    )
+    user.user_permissions.add(perm)
     return user
 
 
@@ -118,7 +129,7 @@ def test_create_update_delete_actividad_ok(comedor, dia):
         .order_by("id")
         .values_list("accion", flat=True)
     )
-    assert eventos == ["create", "update", "delete"]
+    assert eventos == ["create", "update", "deactivate"]
 
 
 @pytest.mark.django_db

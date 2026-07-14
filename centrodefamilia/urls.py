@@ -31,6 +31,8 @@ from centrodefamilia.views.actividad import (
     cargar_actividades_por_categoria,
 )
 
+from centrodefamilia.views.asistencia import AsistenciaActividadView
+
 from centrodefamilia.views.participante import (
     ParticipanteActividadCreateView,
     ParticipanteActividadDeleteView,
@@ -123,6 +125,13 @@ urlpatterns = [
             ActividadCentroDetailView.as_view()
         ),
         name="actividadcentro_detail",
+    ),
+    path(
+        "centros/actividades/<int:pk>/asistencia/",
+        permissions_any_required(["centrodefamilia.view_centro"])(
+            AsistenciaActividadView.as_view()
+        ),
+        name="actividadcentro_asistencia",
     ),
     path(
         "centros/<int:centro_id>/actividades/<int:actividad_id>/participantes/crear/",

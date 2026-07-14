@@ -65,6 +65,31 @@
                 </div>
             </div>
 
+            <div class="sisoc-wizard-row">
+                <div class="sisoc-wizard-field">
+                    <label class="sisoc-wizard-label"
+                           for="{{ form.acepta_lista_espera.id_for_label }}">Lista de espera</label>
+                    <div class="sisoc-wizard-check-row">
+                        {{ form.acepta_lista_espera }}
+                        <label class="sisoc-wizard-check-text"
+                               for="{{ form.acepta_lista_espera.id_for_label }}">Acepta lista de espera</label>
+                    </div>
+                    {% if form.acepta_lista_espera.errors %}
+                        <div class="text-danger">{{ form.acepta_lista_espera.errors.0 }}</div>
+                    {% endif %}
+                </div>
+                <div class="sisoc-wizard-field"
+                     id="wizard-cupo-espera-wrapper"
+                     {% if not form.acepta_lista_espera.value %}hidden{% endif %}>
+                    <label class="sisoc-wizard-label"
+                           for="{{ form.cupo_lista_espera.id_for_label }}">
+                        Cantidad que acepta la lista de espera
+                    </label>
+                    {{ form.cupo_lista_espera }}
+                    {% if form.cupo_lista_espera.errors %}<div class="text-danger">{{ form.cupo_lista_espera.errors.0 }}</div>{% endif %}
+                </div>
+            </div>
+
             <div class="sisoc-wizard-field">
                 <label class="sisoc-wizard-label"
                        for="{{ form.observaciones.id_for_label }}">Observaciones</label>
@@ -75,6 +100,40 @@
             {% if form.non_field_errors %}<div class="text-danger">{{ form.non_field_errors }}</div>{% endif %}
         </div>
     </div>
+
+    <style nonce="{{ request.csp_nonce }}">
+        .sisoc-wizard-check-row {
+            display: flex;
+            align-items: center;
+            gap: .6rem;
+            min-height: 38px;
+        }
+        .sisoc-wizard-check-text {
+            margin: 0;
+            font-weight: 600;
+            font-size: 13px;
+            color: #ffffff;
+            cursor: pointer;
+        }
+    </style>
+    <script nonce="{{ request.csp_nonce }}">
+        (function () {
+            var checkbox = document.getElementById('{{ form.acepta_lista_espera.id_for_label }}');
+            var wrapper = document.getElementById('wizard-cupo-espera-wrapper');
+            var cupoInput = document.getElementById('{{ form.cupo_lista_espera.id_for_label }}');
+            if (!checkbox || !wrapper) return;
+            function sync() {
+                if (checkbox.checked) {
+                    wrapper.hidden = false;
+                } else {
+                    wrapper.hidden = true;
+                    if (cupoInput) cupoInput.value = '';
+                }
+            }
+            checkbox.addEventListener('change', sync);
+            sync();
+        })();
+    </script>
 {% endblock %}
 
 {% block wizard_footer_left %}

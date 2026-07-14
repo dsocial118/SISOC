@@ -110,6 +110,11 @@ class OfertaInstitucionalCreateView(LoginRequiredMixin, CreateView):
             initial["centro"] = centro_id
         return initial
 
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["actor"] = self.request.user
+        return kwargs
+
     def get_form(self, form_class=None):
         form = super().get_form(form_class)
         form.fields["centro"].queryset = filter_centros_queryset_for_management(
@@ -153,6 +158,11 @@ class OfertaInstitucionalUpdateView(LoginRequiredMixin, UpdateView):
             "centro", "plan_curricular", "programa"
         )
         return filter_ofertas_queryset_for_management(queryset, self.request.user)
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["actor"] = self.request.user
+        return kwargs
 
     def get_form(self, form_class=None):
         form = super().get_form(form_class)
@@ -242,6 +252,11 @@ class ComisionCreateView(LoginRequiredMixin, CreateView):
         ):
             initial["oferta"] = oferta_id
         return initial
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["actor"] = self.request.user
+        return kwargs
 
     def get_form(self, form_class=None):
         form = super().get_form(form_class)
@@ -508,6 +523,11 @@ class ComisionUpdateView(LoginRequiredMixin, UpdateView):
     def get_queryset(self):
         queryset = Comision.objects.select_related("oferta__centro")
         return filter_comisiones_queryset_for_management(queryset, self.request.user)
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["actor"] = self.request.user
+        return kwargs
 
     def get_form(self, form_class=None):
         form = super().get_form(form_class)

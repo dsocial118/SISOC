@@ -556,7 +556,7 @@ class Migration(migrations.Migration):
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
         ("organizaciones", "0001_squashed_0010"),
         ("comedores", "0024_squashed_0041"),
-        ("centrodeinfancia", "0010_centrodeinfancia_cdi_code_formulariocdi_and_more"),
+        ("centrodeinfancia", "0001_squashed_0028"),
         ("auth", "0012_alter_user_first_name_max_length"),
     ]
 

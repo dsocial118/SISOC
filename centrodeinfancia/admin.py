@@ -1,6 +1,7 @@
 from django.contrib import admin
 
 from centrodeinfancia.models import (
+    AccesoCDI,
     CentroDeInfancia,
     DepartamentoIpi,
     FormularioCDI,
@@ -9,7 +10,9 @@ from centrodeinfancia.models import (
     FormularioCDIWaitlistByAgeGroup,
     IntervencionCentroInfancia,
     NominaCentroInfancia,
+    NominaCentroInfanciaDerivacion,
     ObservacionCentroInfancia,
+    OfertaServicio,
     Trabajador,
 )
 
@@ -109,3 +112,52 @@ class FormularioCDIWaitlistByAgeGroupAdmin(admin.ModelAdmin):
 class FormularioCDIArticulationFrequencyAdmin(admin.ModelAdmin):
     list_display = ("id", "formulario", "tipo_institucion", "frecuencia")
     list_filter = ("frecuencia",)
+
+
+@admin.register(NominaCentroInfanciaDerivacion)
+class NominaCentroInfanciaDerivacionAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "nomina_origen",
+        "nomina_destino",
+        "centro_origen",
+        "centro_destino",
+        "usuario",
+        "fecha",
+    )
+    list_filter = ("fecha",)
+    search_fields = (
+        "usuario__username",
+        "centro_origen__nombre",
+        "centro_destino__nombre",
+    )
+    readonly_fields = (
+        "nomina_origen",
+        "nomina_destino",
+        "centro_origen",
+        "centro_destino",
+        "usuario",
+        "fecha",
+        "motivo",
+    )
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(AccesoCDI)
+class AccesoCDIAdmin(admin.ModelAdmin):
+    list_display = ("user", "centro", "activo", "fecha_creacion")
+    list_filter = ("activo",)
+    search_fields = ("user__username", "user__email", "centro__nombre")
+    raw_id_fields = ("user", "creado_por")
+    readonly_fields = ("fecha_creacion", "fecha_baja")
+
+
+@admin.register(OfertaServicio)
+class OfertaServicioAdmin(admin.ModelAdmin):
+    list_display = ("codigo", "orden")
+    search_fields = ("codigo",)

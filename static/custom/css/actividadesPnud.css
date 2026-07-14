@@ -1,0 +1,75 @@
+/* ================================================================
+   Actividades PNUD — estilos compartidos entre lista y formulario
+   ================================================================ */
+
+/* Lista */
+.actividades-pnud-actions {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 0.5rem;
+    white-space: nowrap;
+}
+
+.actividades-pnud-filter {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.actividades-pnud-filter .btn {
+    min-width: 96px;
+}
+
+.actividades-pnud-search {
+    display: flex;
+    flex: 1 1 320px;
+    max-width: 520px;
+    gap: 0.5rem;
+}
+
+.actividades-pnud-search .form-control {
+    min-width: 220px;
+}
+
+.actividades-pnud-status {
+    border-radius: 999px;
+    display: inline-flex;
+    font-size: 0.78rem;
+    font-weight: 700;
+    line-height: 1;
+    min-width: 82px;
+    padding: 0.45rem 0.75rem;
+    justify-content: center;
+}
+
+.actividades-pnud-status--active {
+    background: #dff5e7;
+    color: #157347;
+}
+
+.actividades-pnud-status--inactive {
+    background: #fde2e1;
+    color: #b02a37;
+}
+
+/* Formulario */
+.actividades-pnud-form .form-text {
+    color: #6c757d;
+    font-size: 0.875rem;
+}
+
+.actividades-pnud-form .field-errors {
+    color: #dc3545;
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+}
+
+.categoria-mode-buttons {
+    display: inline-flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.categoria-field[hidden] {
+    display: none !important;
+}

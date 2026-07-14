@@ -273,6 +273,26 @@ LISTADO_DEFINED_GROUPS = (
         ),
     ),
     BootstrapGroupSeed(
+        "Comedor Insumos Gestión",
+        (
+            "insumos.view_insumo",
+            "insumos.add_insumo",
+            "insumos.change_insumo",
+            "insumos.delete_insumo",
+            "insumos.view_insumocategoria",
+            "insumos.add_insumocategoria",
+            "insumos.change_insumocategoria",
+            "insumos.delete_insumocategoria",
+        ),
+    ),
+    BootstrapGroupSeed(
+        "Comedor Insumos Consulta",
+        (
+            "insumos.view_insumo",
+            "insumos.view_insumocategoria",
+        ),
+    ),
+    BootstrapGroupSeed(
         "Celiaquia Total",
         (
             "auth.role_ciudadanos",
@@ -281,6 +301,13 @@ LISTADO_DEFINED_GROUPS = (
             "celiaquia.view_expediente",
             "auth.role_tecnicoceliaquia",
             "auth.role_provinciaceliaquia",
+        ),
+    ),
+    BootstrapGroupSeed(
+        "Coordinador General VPSL",
+        (
+            "ver_para_ser_libre.view_itinerariovpsl",
+            "ver_para_ser_libre.view_all_itinerarios_vpsl",
         ),
     ),
     BootstrapGroupSeed(
@@ -295,10 +322,24 @@ LISTADO_DEFINED_GROUPS = (
         ),
     ),
     BootstrapGroupSeed(
+        "INET_PROVINCIA",
+        (
+            "auth.role_inet_provincia",
+            "VAT.view_centro",
+            "VAT.add_centro",
+            "VAT.change_centro",
+            "VAT.view_planversioncurricular",
+            "VAT.add_planversioncurricular",
+            "VAT.view_comision",
+            "VAT.view_comisioncurso",
+        ),
+    ),
+    BootstrapGroupSeed(
         "CFP",
         (
             "auth.role_referentecentrovat",
             "VAT.view_centro",
+            "VAT.view_curso",
             "VAT.add_curso",
             "VAT.change_curso",
             "VAT.delete_curso",
@@ -322,6 +363,7 @@ LISTADO_DEFINED_GROUPS = (
         (
             "auth.role_revisorcentrovat",
             "VAT.view_centro",
+            "VAT.view_curso",
             "VAT.view_comisioncurso",
         ),
     ),
@@ -338,6 +380,51 @@ LISTADO_DEFINED_GROUPS = (
             "VAT.add_planversioncurricular",
             "VAT.change_planversioncurricular",
             "VAT.delete_planversioncurricular",
+        ),
+    ),
+    BootstrapGroupSeed(
+        "INET Admin Visualizador",
+        (
+            # Marcador reconocido por VAT/services/access_scope.py: habilita
+            # lectura global de centros/comisiones sin permisos de gestión.
+            "auth.role_inet_admin_visualizador",
+            "VAT.view_centro",
+            "VAT.view_curso",
+            "VAT.view_comision",
+            "VAT.view_comisioncurso",
+            "VAT.view_comisionhorario",
+            "VAT.view_planversioncurricular",
+        ),
+    ),
+    BootstrapGroupSeed(
+        "INET Admin General",
+        (
+            "auth.role_vat_sse",
+            "auth.role_admin_inet_general",
+            "VAT.view_centro",
+            "VAT.add_centro",
+            "VAT.change_centro",
+            "VAT.view_curso",
+            "VAT.add_curso",
+            "VAT.change_curso",
+            "VAT.delete_curso",
+            "VAT.view_comision",
+            "VAT.change_comision",
+            "VAT.view_comisioncurso",
+            "VAT.add_comisioncurso",
+            "VAT.change_comisioncurso",
+            "VAT.delete_comisioncurso",
+            "VAT.view_comisionhorario",
+            "VAT.add_comisionhorario",
+            "VAT.change_comisionhorario",
+            "VAT.delete_comisionhorario",
+            "VAT.view_inscripcion",
+            "VAT.add_inscripcion",
+            "VAT.change_inscripcion",
+            "VAT.add_asistenciasesion",
+            "VAT.change_asistenciasesion",
+            "VAT.view_planversioncurricular",
+            "VAT.add_planversioncurricular",
         ),
     ),
     BootstrapGroupSeed(
@@ -697,6 +784,17 @@ LISTADO_DEFINED_GROUPS = (
         ("auth.role_comunicado_comedores_archivar",),
     ),
     BootstrapGroupSeed(
+        UserGroups.ACTIVIDADES_PNUD_VER,
+        ("pwa.view_catalogoactividadpwa",),
+    ),
+    BootstrapGroupSeed(
+        UserGroups.ACTIVIDADES_PNUD_GESTIONAR,
+        (
+            "pwa.view_catalogoactividadpwa",
+            "pwa.manage_catalogoactividadpwa",
+        ),
+    ),
+    BootstrapGroupSeed(
         UserGroups.ADMIN,
         (
             "acompanamientos.view_informacionrelevante",
@@ -834,6 +932,14 @@ LISTADO_DEFINED_GROUPS = (
             "dashboard.view_dashboard",
             "duplas.change_dupla",
             "expedientespagos.view_expedientepago",
+            "insumos.view_insumo",
+            "insumos.add_insumo",
+            "insumos.change_insumo",
+            "insumos.delete_insumo",
+            "insumos.view_insumocategoria",
+            "insumos.add_insumocategoria",
+            "insumos.change_insumocategoria",
+            "insumos.delete_insumocategoria",
             "intervenciones.add_intervencion",
             "intervenciones.change_intervencion",
             "intervenciones.view_intervencion",

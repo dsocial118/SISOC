@@ -16,10 +16,11 @@ from comedores.forms.comedor_form import (
     NominaForm,
 )
 from comedores.models import Nomina
-from comedores.services.comedor_service import ComedorService
-from comedores.utils import comedor_usa_admision_para_nomina
+from comedores.services.comedor_service import ComedorService, normalize_nomina_tab
+from comedores.utils import comedor_usa_admision_para_nomina, is_pnud_comedor
 from core.soft_delete.view_helpers import SoftDeleteDeleteViewMixin
-from pwa.models import RegistroAsistenciaNominaPWA
+from pwa.models import ActividadEspacioPWA, RegistroAsistenciaNominaPWA
+from pwa.services.nomina_service import sync_nomina_asistencia_actividades_web
 from pwa.utils import parse_periodo_referencia
 
 
@@ -55,6 +56,79 @@ def _get_admision_del_comedor_or_404(comedor_pk, admision_pk, user):
 
 def _get_cantidad_asistentes_activos(rangos):
     return (rangos or {}).get("cantidad_activos") or 0
+
+
+def _comedores_destino_para_derivar(user, exclude_pk):
+    """Lista de comedores elegibles como destino de derivación.
+
+    Aplica scope territorial del usuario y excluye comedores con admisión
+    obligatoria que no tienen ninguna admisión activa (no podrían recibir).
+    """
+    scoped_qs = ComedorService.get_scoped_comedor_queryset(user)
+    return list(
+        scoped_qs.exclude(pk=exclude_pk)
+        .filter(Q(programa__usa_admision_para_nomina=False) | Q(admision__activa=True))
+        .values("id", "nombre")
+        .distinct()
+        .order_by("nombre")
+    )
+
+
+def _get_nomina_tab_options(active_tab):
+    options = (
+        ("alimentaria", "Alimentaria"),
+        ("actividades", "Actividades"),
+        ("todas", "Todas"),
+    )
+    return [
+        {"key": key, "label": label, "active": key == active_tab}
+        for key, label in options
+    ]
+
+
+def _get_nomina_total_label(tab):
+    if tab == "actividades":
+        return "Con actividades"
+    if tab == "todas":
+        return "Total personas"
+    return "Asistentes"
+
+
+def _get_nomina_creada(*, ciudadano_id, admision_id=None, comedor_id=None):
+    qs = Nomina.objects.filter(ciudadano_id=ciudadano_id, deleted_at__isnull=True)
+    if admision_id:
+        qs = qs.filter(admision_id=admision_id)
+    else:
+        qs = qs.filter(comedor_id=comedor_id, admision__isnull=True)
+    return qs.order_by("-id").first()
+
+
+def _sync_pnud_nomina_web(*, form_nomina_extra, nomina, comedor, user):
+    if not (nomina and is_pnud_comedor(comedor)):
+        return
+    sync_nomina_asistencia_actividades_web(
+        nomina=nomina,
+        comedor_id=comedor.id,
+        actor=user,
+        asistencia_alimentaria=bool(
+            form_nomina_extra.cleaned_data.get("asistencia_alimentaria")
+        ),
+        asistencia_actividades=bool(
+            form_nomina_extra.cleaned_data.get("asistencia_actividades")
+        ),
+        activity_ids=[
+            actividad.id
+            for actividad in form_nomina_extra.cleaned_data.get("actividad_ids") or []
+        ],
+    )
+
+
+def _get_actividades_pnud_for_context(comedor):
+    if not is_pnud_comedor(comedor):
+        return ActividadEspacioPWA.objects.none()
+    return ActividadEspacioPWA.objects.filter(
+        comedor=comedor, activo=True
+    ).select_related("catalogo_actividad", "dia_actividad")
 
 
 def _get_asistencia_nomina_context(request, *, admision_id=None, comedor_id=None):
@@ -127,12 +201,25 @@ class NominaDetailView(LoginRequiredMixin, TemplateView):
         )
         page = int(self.request.GET.get("page", 1))
         dni_query = (self.request.GET.get("dni") or "").strip()
+        is_pnud = is_pnud_comedor(admision.comedor)
+        nomina_tab = (
+            normalize_nomina_tab(self.request.GET.get("tab")) if is_pnud else "todas"
+        )
 
         page_obj, nomina_m, nomina_f, nomina_x, espera, _total, rangos = (
-            ComedorService.get_nomina_detail(admision.pk, page, dni_query=dni_query)
+            ComedorService.get_nomina_detail(
+                admision.pk,
+                page,
+                dni_query=dni_query,
+                nomina_tab=nomina_tab,
+            )
         )
 
         menores = (rangos.get("ninos") or 0) + (rangos.get("adolescentes") or 0)
+
+        comedores_para_derivar = _comedores_destino_para_derivar(
+            self.request.user, admision.comedor_id
+        )
 
         context.update(
             {
@@ -147,7 +234,14 @@ class NominaDetailView(LoginRequiredMixin, TemplateView):
                 "object": admision.comedor,
                 "admision_pk": admision.pk,
                 "dni_query": dni_query,
+                "comedores_para_derivar": comedores_para_derivar,
                 "estados": Nomina.ESTADO_CHOICES,
+                "mostrar_tabs_nomina": is_pnud,
+                "nomina_tab": nomina_tab,
+                "nomina_tab_options": _get_nomina_tab_options(nomina_tab),
+                "nomina_total_label": (
+                    _get_nomina_total_label(nomina_tab) if is_pnud else "Asistentes"
+                ),
             }
         )
         return context
@@ -244,9 +338,11 @@ class NominaCreateView(LoginRequiredMixin, CreateView):
                 "mostrar_form_ciudadano": mostrar_form_ciudadano,
                 "form_ciudadano": form_ciudadano,
                 "form_nomina_extra": kwargs.get("form_nomina_extra")
-                or NominaExtraForm(),
+                or NominaExtraForm(comedor=admision.comedor),
                 "estados": Nomina.ESTADO_CHOICES,
                 "renaper_precarga": renaper_precarga,
+                "mostrar_asistencia_pnud": is_pnud_comedor(admision.comedor),
+                "actividades_pnud": _get_actividades_pnud_for_context(admision.comedor),
             }
         )
         return context
@@ -297,7 +393,7 @@ class NominaCreateView(LoginRequiredMixin, CreateView):
                 pass
 
             # Agregar ciudadano existente
-            form_nomina_extra = NominaExtraForm(request.POST)
+            form_nomina_extra = NominaExtraForm(request.POST, comedor=admision.comedor)
 
             if not form_nomina_extra.is_valid():
                 messages.error(
@@ -321,6 +417,16 @@ class NominaCreateView(LoginRequiredMixin, CreateView):
             )
 
             if ok:
+                nomina = _get_nomina_creada(
+                    ciudadano_id=ciudadano_id,
+                    admision_id=admision_id,
+                )
+                _sync_pnud_nomina_web(
+                    form_nomina_extra=form_nomina_extra,
+                    nomina=nomina,
+                    comedor=admision.comedor,
+                    user=request.user,
+                )
                 messages.success(request, msg)
             else:
                 messages.warning(request, msg)
@@ -329,7 +435,7 @@ class NominaCreateView(LoginRequiredMixin, CreateView):
         else:
             # Crear ciudadano nuevo
             form_ciudadano = CiudadanoFormParaNomina(request.POST)
-            form_nomina_extra = NominaExtraForm(request.POST)
+            form_nomina_extra = NominaExtraForm(request.POST, comedor=admision.comedor)
 
             if form_ciudadano.is_valid() and form_nomina_extra.is_valid():
                 estado = form_nomina_extra.cleaned_data.get("estado")
@@ -347,6 +453,28 @@ class NominaCreateView(LoginRequiredMixin, CreateView):
                 )
 
                 if ok:
+                    ciudadano = (
+                        Ciudadano.objects.filter(
+                            documento=ciudadano_data.get("documento"),
+                            tipo_documento=ciudadano_data.get("tipo_documento"),
+                        )
+                        .order_by("-id")
+                        .first()
+                    )
+                    nomina = (
+                        _get_nomina_creada(
+                            ciudadano_id=ciudadano.id,
+                            admision_id=admision_id,
+                        )
+                        if ciudadano
+                        else None
+                    )
+                    _sync_pnud_nomina_web(
+                        form_nomina_extra=form_nomina_extra,
+                        nomina=nomina,
+                        comedor=admision.comedor,
+                        user=request.user,
+                    )
                     messages.success(request, msg)
                     return redirect(self.get_success_url())
                 else:
@@ -406,6 +534,35 @@ def nomina_cambiar_estado(request, pk):
     return JsonResponse({"success": True, "estado": nuevo_estado})
 
 
+@login_required
+def nomina_derivar(request, pk):
+    """Transfiere una persona de nómina activa a otro centro vía AJAX (POST)."""
+    if request.method != "POST":
+        return JsonResponse(
+            {"success": False, "message": "Método no permitido."}, status=405
+        )
+
+    _get_nomina_scoped_or_404(pk, request.user)
+
+    try:
+        comedor_destino_pk = int(request.POST.get("centro_destino_id", ""))
+    except (ValueError, TypeError):
+        return JsonResponse(
+            {"success": False, "message": "Centro destino inválido."}, status=400
+        )
+
+    motivo = (request.POST.get("motivo") or "").strip()
+
+    ok, msg = ComedorService.transferir_ciudadano_entre_centros(
+        nomina_pk=pk,
+        comedor_destino_pk=comedor_destino_pk,
+        usuario=request.user,
+        motivo=motivo,
+    )
+    status_code = 200 if ok else 400
+    return JsonResponse({"success": ok, "message": msg}, status=status_code)
+
+
 class NominaImportarView(LoginRequiredMixin, View):
     """
     Importa la nómina del convenio anterior al convenio actual.
@@ -445,14 +602,25 @@ class NominaDirectaDetailView(LoginRequiredMixin, TemplateView):
         comedor = _get_comedor_directo_or_404(self.kwargs["pk"], self.request.user)
         page = int(self.request.GET.get("page", 1))
         dni_query = (self.request.GET.get("dni") or "").strip()
+        is_pnud = is_pnud_comedor(comedor)
+        nomina_tab = (
+            normalize_nomina_tab(self.request.GET.get("tab")) if is_pnud else "todas"
+        )
 
         page_obj, nomina_m, nomina_f, nomina_x, espera, _total, rangos = (
             ComedorService.get_nomina_detail_by_comedor(
-                comedor.pk, page, dni_query=dni_query
+                comedor.pk,
+                page,
+                dni_query=dni_query,
+                nomina_tab=nomina_tab,
             )
         )
 
         menores = (rangos.get("ninos") or 0) + (rangos.get("adolescentes") or 0)
+
+        comedores_para_derivar = _comedores_destino_para_derivar(
+            self.request.user, comedor.pk
+        )
 
         context.update(
             {
@@ -468,6 +636,13 @@ class NominaDirectaDetailView(LoginRequiredMixin, TemplateView):
                 "admision_pk": None,
                 "dni_query": dni_query,
                 "estados": Nomina.ESTADO_CHOICES,
+                "mostrar_tabs_nomina": is_pnud,
+                "nomina_tab": nomina_tab,
+                "nomina_tab_options": _get_nomina_tab_options(nomina_tab),
+                "nomina_total_label": (
+                    _get_nomina_total_label(nomina_tab) if is_pnud else "Asistentes"
+                ),
+                "comedores_para_derivar": comedores_para_derivar,
             }
         )
         return context
@@ -536,9 +711,11 @@ class NominaDirectaCreateView(LoginRequiredMixin, CreateView):
                 "mostrar_form_ciudadano": mostrar_form_ciudadano,
                 "form_ciudadano": form_ciudadano,
                 "form_nomina_extra": kwargs.get("form_nomina_extra")
-                or NominaExtraForm(),
+                or NominaExtraForm(comedor=comedor),
                 "estados": Nomina.ESTADO_CHOICES,
                 "renaper_precarga": renaper_precarga,
+                "mostrar_asistencia_pnud": is_pnud_comedor(comedor),
+                "actividades_pnud": _get_actividades_pnud_for_context(comedor),
             }
         )
         return context
@@ -564,7 +741,7 @@ class NominaDirectaCreateView(LoginRequiredMixin, CreateView):
             except Ciudadano.DoesNotExist:
                 pass
 
-            form_nomina_extra = NominaExtraForm(request.POST)
+            form_nomina_extra = NominaExtraForm(request.POST, comedor=comedor)
             if not form_nomina_extra.is_valid():
                 messages.error(
                     request, "Datos inválidos para agregar ciudadano a la nómina."
@@ -583,13 +760,23 @@ class NominaDirectaCreateView(LoginRequiredMixin, CreateView):
                 comedor_id=comedor_id,
             )
             if ok:
+                nomina = _get_nomina_creada(
+                    ciudadano_id=ciudadano_id,
+                    comedor_id=comedor_id,
+                )
+                _sync_pnud_nomina_web(
+                    form_nomina_extra=form_nomina_extra,
+                    nomina=nomina,
+                    comedor=comedor,
+                    user=request.user,
+                )
                 messages.success(request, msg)
             else:
                 messages.warning(request, msg)
             return redirect(self.get_success_url())
         else:
             form_ciudadano = CiudadanoFormParaNomina(request.POST)
-            form_nomina_extra = NominaExtraForm(request.POST)
+            form_nomina_extra = NominaExtraForm(request.POST, comedor=comedor)
 
             if form_ciudadano.is_valid() and form_nomina_extra.is_valid():
                 estado = form_nomina_extra.cleaned_data.get("estado")
@@ -606,6 +793,28 @@ class NominaDirectaCreateView(LoginRequiredMixin, CreateView):
                     comedor_id=comedor_id,
                 )
                 if ok:
+                    ciudadano = (
+                        Ciudadano.objects.filter(
+                            documento=ciudadano_data.get("documento"),
+                            tipo_documento=ciudadano_data.get("tipo_documento"),
+                        )
+                        .order_by("-id")
+                        .first()
+                    )
+                    nomina = (
+                        _get_nomina_creada(
+                            ciudadano_id=ciudadano.id,
+                            comedor_id=comedor_id,
+                        )
+                        if ciudadano
+                        else None
+                    )
+                    _sync_pnud_nomina_web(
+                        form_nomina_extra=form_nomina_extra,
+                        nomina=nomina,
+                        comedor=comedor,
+                        user=request.user,
+                    )
                     messages.success(request, msg)
                     return redirect(self.get_success_url())
                 else:

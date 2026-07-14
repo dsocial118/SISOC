@@ -2,7 +2,6 @@ from django.shortcuts import redirect
 from django.contrib import messages
 from django.db import models
 from django.template.loader import render_to_string, get_template
-from weasyprint import HTML
 import os
 from django.conf import settings
 from django.db.models import Q
@@ -701,6 +700,8 @@ class LegalesService:
     @staticmethod
     def guardar_formulario_reso(request, admision):
         # Guardar el formulario de proyecto de disposición y generar documentos PDF y DOCX
+        from weasyprint import HTML
+
         try:
             with transaction.atomic():
                 formulario_existente = FormularioProyectoDisposicion.objects.filter(
@@ -823,6 +824,8 @@ class LegalesService:
 
     @staticmethod
     def guardar_formulario_proyecto_convenio(request, admision):
+        from weasyprint import HTML
+
         try:
             # Primero validar y guardar el formulario sin transacción
             formulario_existente = FormularioProyectoDeConvenio.objects.filter(

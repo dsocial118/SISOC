@@ -5,8 +5,8 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("core", "0007_montoprestacionprograma"),
-        ("organizaciones", "0009_organizacion_sigla"),
+        ("core", "0001_squashed_0007"),
+        ("organizaciones", "0001_squashed_0010"),
     ]
 
     operations = [

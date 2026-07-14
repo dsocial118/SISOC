@@ -488,14 +488,58 @@ document.addEventListener('DOMContentLoaded', () => {
   /* ===== MODAL SUBSANAR (técnico) ===== */
   const modalSubsanar = document.getElementById('modalSubsanar');
   if (modalSubsanar) {
+    const observacionesBox = modalSubsanar.querySelector('#subsanar-observaciones');
+
+    const buildObservacionRow = () => {
+      const row = document.createElement('div');
+      row.className = 'row g-2 mb-2 subsanar-obs-row';
+      row.innerHTML =
+        '<div class="col-5">' +
+        '  <select class="form-select form-select-sm" name="observacion_tipo">' +
+        '    <option value="DOCUMENTACION">Documentación</option>' +
+        '    <option value="DATOS_PERSONALES">Datos personales</option>' +
+        '    <option value="RENAPER">RENAPER</option>' +
+        '    <option value="OTROS">Otros</option>' +
+        '  </select>' +
+        '</div>' +
+        '<div class="col-6">' +
+        '  <input type="text" class="form-control form-control-sm" name="observacion_detalle" placeholder="Detalle del requerimiento" maxlength="500" />' +
+        '</div>' +
+        '<div class="col-1 d-flex align-items-center">' +
+        '  <button type="button" class="btn btn-sm btn-outline-danger btn-remove-obs" title="Quitar"><i class="fa fa-times"></i></button>' +
+        '</div>';
+      return row;
+    };
+
+    const resetSubsanarForm = () => {
+      const ta = modalSubsanar.querySelector('#subsanar-motivo');
+      if (ta) ta.value = '';
+      modalSubsanar.querySelectorAll('input[name="motivos"]').forEach((cb) => {
+        cb.checked = false;
+      });
+      if (observacionesBox) observacionesBox.innerHTML = '';
+    };
+
     // Pre-cargar el id del legajo en el hidden cuando se abre el modal
     modalSubsanar.addEventListener('show.bs.modal', function (event) {
       const trigger = event.relatedTarget;
       const legajoId = trigger?.getAttribute('data-legajo-id') || '';
       modalSubsanar.querySelector('#subsanar-legajo-id').value = legajoId;
-      const ta = modalSubsanar.querySelector('#subsanar-motivo');
-      if (ta) ta.value = '';
+      resetSubsanarForm();
     });
+
+    const btnAddObs = modalSubsanar.querySelector('#btn-add-observacion');
+    if (btnAddObs && observacionesBox) {
+      btnAddObs.addEventListener('click', () => {
+        observacionesBox.appendChild(buildObservacionRow());
+      });
+      observacionesBox.addEventListener('click', (ev) => {
+        const removeBtn = ev.target.closest('.btn-remove-obs');
+        if (removeBtn) {
+          removeBtn.closest('.subsanar-obs-row')?.remove();
+        }
+      });
+    }
 
     const formSubsanar = document.getElementById('form-subsanar');
     formSubsanar.addEventListener('submit', async (e) => {
@@ -503,6 +547,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const legajoId = modalSubsanar.querySelector('#subsanar-legajo-id').value;
       const motivo = (modalSubsanar.querySelector('#subsanar-motivo').value || '').trim();
+      const motivosSeleccionados = Array.from(
+        modalSubsanar.querySelectorAll('input[name="motivos"]:checked')
+      ).map((cb) => cb.value);
       const btn = document.getElementById('btn-confirm-subsanar');
       const original = btn.innerHTML;
 
@@ -510,8 +557,12 @@ document.addEventListener('DOMContentLoaded', () => {
         showAlert('danger', 'No se pudo identificar el legajo.');
         return;
       }
+      if (motivosSeleccionados.length === 0) {
+        showAlert('warning', 'Seleccioná al menos un motivo de subsanación.');
+        return;
+      }
       if (!motivo) {
-        showAlert('warning', 'Indicá el motivo de la subsanación.');
+        showAlert('warning', 'Indicá el detalle general de la subsanación.');
         return;
       }
 
@@ -529,6 +580,17 @@ document.addEventListener('DOMContentLoaded', () => {
         // Enviar exactamente lo que espera RevisarLegajoView
         const fd = new FormData();
         fd.append('accion', 'SUBSANAR');
+        motivosSeleccionados.forEach((m) => fd.append('motivos', m));
+        // Compatibilidad: primer motivo como tipo_subsanacion legacy.
+        fd.append('tipo_subsanacion', motivosSeleccionados[0]);
+        modalSubsanar.querySelectorAll('.subsanar-obs-row').forEach((row) => {
+          const tipo = row.querySelector('select[name="observacion_tipo"]')?.value || '';
+          const detalle = (row.querySelector('input[name="observacion_detalle"]')?.value || '').trim();
+          if (detalle) {
+            fd.append('observacion_tipo', tipo);
+            fd.append('observacion_detalle', detalle);
+          }
+        });
         fd.append('motivo', motivo);
 
         const resp = await fetch(url, {
@@ -571,6 +633,197 @@ document.addEventListener('DOMContentLoaded', () => {
       } catch (err) {
         console.error('Subsanar legajo:', err);
         showAlert('danger', 'No se pudo solicitar la subsanación. ', err.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = original;
+      }
+    });
+  }
+
+
+  /* ===== MODAL RESPUESTA SUBSANACIÓN (provincia, carga múltiple) ===== */
+  const modalRespSubs = document.getElementById('modalRespuestaSubsanacion');
+  if (modalRespSubs) {
+    let respSubsActionUrl = '';
+
+    modalRespSubs.addEventListener('show.bs.modal', function (event) {
+      const trigger = event.relatedTarget;
+      respSubsActionUrl = trigger?.getAttribute('data-action-url') || '';
+      modalRespSubs.querySelector('#resp-subs-legajo-id').value =
+        trigger?.getAttribute('data-legajo-id') || '';
+      const fileInput = modalRespSubs.querySelector('#resp-subs-archivos');
+      if (fileInput) fileInput.value = '';
+      const desc = modalRespSubs.querySelector('#resp-subs-descripcion');
+      if (desc) desc.value = '';
+
+      // Poblar el selector de observaciones de la subsanación activa.
+      const obsSelect = modalRespSubs.querySelector('#resp-subs-observacion');
+      if (obsSelect) {
+        obsSelect.innerHTML = '<option value="">General (toda la subsanación)</option>';
+        const obsId = trigger?.getAttribute('data-observaciones-id');
+        const obsEl = obsId ? document.getElementById(obsId) : null;
+        if (obsEl) {
+          try {
+            const observaciones = JSON.parse(obsEl.textContent || '[]');
+            observaciones.forEach((obs) => {
+              const opt = document.createElement('option');
+              opt.value = obs.id;
+              opt.textContent = obs.label;
+              obsSelect.appendChild(opt);
+            });
+          } catch (err) {
+            console.warn('No se pudieron cargar las observaciones:', err);
+          }
+        }
+      }
+    });
+
+    const formRespSubs = document.getElementById('form-respuesta-subsanacion');
+    formRespSubs.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const fileInput = modalRespSubs.querySelector('#resp-subs-archivos');
+      const files = fileInput?.files;
+      const btn = document.getElementById('btn-resp-subs');
+      const original = btn.innerHTML;
+
+      if (!respSubsActionUrl) {
+        showAlert('danger', 'No se pudo determinar la URL de subsanación.');
+        return;
+      }
+      if (!files || files.length === 0) {
+        showAlert('warning', 'Seleccioná al menos un archivo.');
+        return;
+      }
+
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Subiendo…';
+
+      try {
+        const fd = new FormData();
+        for (let i = 0; i < files.length; i += 1) {
+          fd.append('archivos', files[i]);
+        }
+        const desc = (modalRespSubs.querySelector('#resp-subs-descripcion')?.value || '').trim();
+        if (desc) fd.append('descripcion', desc);
+        const obsId = modalRespSubs.querySelector('#resp-subs-observacion')?.value || '';
+        if (obsId) fd.append('observacion_id', obsId);
+
+        const resp = await fetch(respSubsActionUrl, {
+          method: 'POST',
+          body: fd,
+          credentials: 'same-origin',
+          headers: {
+            'X-CSRFToken': getCsrfToken(),
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json'
+          }
+        });
+
+        const data = await resp.json();
+        if (!resp.ok || data.success === false) {
+          throw new Error(data.error || data.message || `HTTP ${resp.status}`);
+        }
+
+        showAlert('success', data.message || 'Archivos cargados correctamente.');
+        setTimeout(() => {
+          const modal = bootstrap.Modal.getInstance(modalRespSubs);
+          if (modal) modal.hide();
+          window.location.reload();
+        }, 800);
+      } catch (err) {
+        console.error('Responder subsanación:', err);
+        showAlert('danger', 'No se pudieron subir los archivos. ', err.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = original;
+      }
+    });
+  }
+
+
+  /* ===== MODAL CORREGIR EVALUACIÓN FINAL (Nación autorizada) ===== */
+  const modalCorregir = document.getElementById('modalCorregirEvaluacion');
+  if (modalCorregir) {
+    const ESTADO_LABELS = { APROBADO: 'Aceptado', RECHAZADO: 'Rechazado', SUBSANADO: 'Subsanado' };
+    const expedienteIdCorregir = document.querySelector('meta[name="expediente-id"]')?.content;
+
+    modalCorregir.addEventListener('show.bs.modal', function (event) {
+      const trigger = event.relatedTarget;
+      const legajoId = trigger?.getAttribute('data-legajo-id') || '';
+      const estadoActual = trigger?.getAttribute('data-estado-actual') || '';
+      modalCorregir.querySelector('#corregir-legajo-id').value = legajoId;
+      modalCorregir.querySelector('#corregir-estado-actual').textContent =
+        ESTADO_LABELS[estadoActual] || estadoActual || '—';
+      const sel = modalCorregir.querySelector('#corregir-nuevo-estado');
+      if (sel) {
+        sel.value = '';
+        // Ocultar el estado actual como opción (no tiene sentido "corregir" al mismo).
+        Array.from(sel.options).forEach((opt) => {
+          opt.hidden = opt.value !== '' && opt.value === estadoActual;
+        });
+      }
+      const mot = modalCorregir.querySelector('#corregir-motivo');
+      if (mot) mot.value = '';
+    });
+
+    const formCorregir = document.getElementById('form-corregir-evaluacion');
+    formCorregir.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const legajoId = modalCorregir.querySelector('#corregir-legajo-id').value;
+      const nuevoEstado = modalCorregir.querySelector('#corregir-nuevo-estado').value;
+      const motivo = (modalCorregir.querySelector('#corregir-motivo').value || '').trim();
+      const btn = document.getElementById('btn-confirm-corregir');
+      const original = btn.innerHTML;
+
+      if (!legajoId || !expedienteIdCorregir) {
+        showAlert('danger', 'No se pudo identificar el legajo.');
+        return;
+      }
+      if (!nuevoEstado) {
+        showAlert('warning', 'Seleccioná el nuevo estado.');
+        return;
+      }
+      const etiqueta = ESTADO_LABELS[nuevoEstado] || nuevoEstado;
+      if (!confirm(`¿Confirmás cambiar la evaluación final a "${etiqueta}"? La acción queda registrada en el historial.`)) {
+        return;
+      }
+
+      const url = `/celiaquia/expedientes/${expedienteIdCorregir}/legajos/${legajoId}/corregir-evaluacion/`;
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Guardando…';
+
+      try {
+        const fd = new FormData();
+        fd.append('nuevo_estado', nuevoEstado);
+        if (motivo) fd.append('motivo', motivo);
+
+        const resp = await fetch(url, {
+          method: 'POST',
+          body: fd,
+          credentials: 'same-origin',
+          headers: {
+            'X-CSRFToken': getCsrfToken(),
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json'
+          }
+        });
+
+        const data = await resp.json();
+        if (!resp.ok || data.success === false) {
+          throw new Error(data.error || data.message || `HTTP ${resp.status}`);
+        }
+
+        showAlert('success', 'Evaluación corregida correctamente.');
+        setTimeout(() => {
+          const modal = bootstrap.Modal.getInstance(modalCorregir);
+          if (modal) modal.hide();
+          window.location.reload();
+        }, 800);
+      } catch (err) {
+        console.error('Corregir evaluación:', err);
+        showAlert('danger', 'No se pudo corregir la evaluación. ', err.message);
       } finally {
         btn.disabled = false;
         btn.innerHTML = original;

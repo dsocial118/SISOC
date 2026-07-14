@@ -63,6 +63,12 @@ DOCUMENTO_COL_CANDIDATAS = {
     "número_cuit",
     "cuit_nro",
     "cuit_número",
+    "cuil",
+    "nro_cuil",
+    "numero_cuil",
+    "número_cuil",
+    "cuil_nro",
+    "cuil_número",
     "dni",
     "nro_dni",
     "numero_dni",
@@ -100,6 +106,18 @@ class CruceService:
         if len(cuit) == 11:
             return cuit[2:10]
         return ""
+
+    @staticmethod
+    def _es_responsable_puro(rol) -> bool:
+        """Regla de cupo por rol, común a cruce, cupo y padrón.
+
+        Un responsable PURO (``rol=responsable``) NO ocupa cupo: en el cruce solo
+        sirve como ancla para validar a sus hijos. En cambio, un ``beneficiario`` y
+        un doble rol (``beneficiario_y_responsable``) son celíacos: ocupan su
+        propio cupo y deben entrar al padrón, aunque además sean cuidadores de otro
+        beneficiario.
+        """
+        return ExpedienteCiudadano.es_rol_responsable_puro(rol)
 
     @staticmethod
     def resolver_cuit_ciudadano(ciudadano) -> str:
@@ -151,12 +169,9 @@ class CruceService:
                 # Es responsable, exportar
                 rows.append(
                     {
-                        "Numero_documento": CruceService.normalize_dni_str(
+                        "numero_cuil": CruceService.normalize_dni_str(
                             getattr(ciudadano, "documento", "")
                         ),
-                        "TipoDocumento": getattr(
-                            ciudadano, "get_tipo_documento_display", lambda: ""
-                        )(),
                         "nombre": getattr(ciudadano, "nombre", "") or "",
                         "apellido": getattr(ciudadano, "apellido", "") or "",
                         "sexo": sexo,
@@ -169,12 +184,9 @@ class CruceService:
                     # No tiene responsable, exportar
                     rows.append(
                         {
-                            "Numero_documento": CruceService.normalize_dni_str(
+                            "numero_cuil": CruceService.normalize_dni_str(
                                 getattr(ciudadano, "documento", "")
                             ),
-                            "TipoDocumento": getattr(
-                                ciudadano, "get_tipo_documento_display", lambda: ""
-                            )(),
                             "nombre": getattr(ciudadano, "nombre", "") or "",
                             "apellido": getattr(ciudadano, "apellido", "") or "",
                             "sexo": sexo,
@@ -185,8 +197,7 @@ class CruceService:
         df = pd.DataFrame(
             rows,
             columns=[
-                "Numero_documento",
-                "TipoDocumento",
+                "numero_cuil",
                 "nombre",
                 "apellido",
                 "sexo",
@@ -269,6 +280,12 @@ class CruceService:
             "número_cuit",
             "cuit_nro",
             "cuit_número",
+            "cuil",
+            "nro_cuil",
+            "numero_cuil",
+            "número_cuil",
+            "cuil_nro",
+            "cuil_número",
             "dni",
             "nro_dni",
             "numero_dni",
@@ -302,7 +319,8 @@ class CruceService:
                 "Columnas aceptadas: documento, nro_documento, numero_documento, "
                 "número_documento, doc, nro_doc, num_doc, cuit, c.u.i.t, "
                 "nro_cuit, numero_cuit, número_cuit, cuit_nro, cuit_número (cuit "
-                "número), dni, "
+                "número), cuil, nro_cuil, numero_cuil, número_cuil, cuil_nro, "
+                "cuil_número, dni, "
                 "nro_dni, numero_dni, número_dni."
             )
 
@@ -657,6 +675,7 @@ class CruceService:
                 "resultado_sintys",
                 "estado_cupo",
                 "es_titular_activo",
+                "rol",
                 "ciudadano__documento",
                 "ciudadano__nombre",
                 "ciudadano__apellido",
@@ -688,6 +707,16 @@ class CruceService:
 
         for leg in legajos_aprobados_qs.iterator():
             ciu = leg.ciudadano
+
+            # Un responsable PURO (rol=responsable) no es beneficiario: no ocupa
+            # cupo ni va al padrón, y no debe quedar marcado MATCH. Solo sirve de
+            # ancla para validar a sus hijos, lo cual se resuelve al procesar el
+            # legajo de cada hijo (vía responsables_por_hijo, precomputado). Por
+            # eso se saltea acá según el rol, sin importar la relación familiar.
+            # Beneficiario y doble rol NO se saltean.
+            if CruceService._es_responsable_puro(leg.rol):
+                continue
+
             es_responsable = ciu.id in responsables_ids
 
             # Si es beneficiario con responsable, validar al responsable
@@ -734,13 +763,9 @@ class CruceService:
                         )
                     continue
 
-            # Si es responsable, NO asignarle cupo a él, solo validar para sus hijos
-            if es_responsable:
-                # NO agregar a matched_ids ni unmatched_ids
-                # El responsable no consume cupo
-                continue
-
-            # Caso: beneficiario sin responsable
+            # Beneficiario sin responsable, o doble rol / beneficiario que además
+            # es cuidador: se valida por su propio documento (los responsables
+            # puros ya fueron salteados al inicio del loop).
             cuit_ciud = CruceService.resolver_cuit_ciudadano(ciu)
             dni_ciud = CruceService.normalize_dni_str(getattr(ciu, "documento", ""))
 

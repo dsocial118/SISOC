@@ -455,10 +455,10 @@ class AcompanamientoService:
             info_relevante = None
 
             if admision:
-                info_relevante = (
-                    InformeTecnico.objects.filter(admision=admision)
-                    .order_by("-id")
-                    .first()
+                from comedores.services.comedor_service import ComedorService
+
+                info_relevante = ComedorService.get_informe_tecnico_finalizado_efectivo(
+                    admision
                 )
                 comedor = Comedor.objects.filter(id=admision.comedor_id).first()
 

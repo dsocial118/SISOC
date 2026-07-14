@@ -61,6 +61,14 @@ from dispositivos.dispositivos_filter_config import (
     NUM_OPS as DISPOSITIVOS_OPS_NUMERO,
     TEXT_OPS as DISPOSITIVOS_OPS_TEXTO,
 )
+from rendicioncuentasmensual.filter_config import (
+    BOOL_OPS as RENDICIONES_OPS_BOOLEANO,
+    CHOICE_OPS as RENDICIONES_OPS_ELECCION,
+    DATE_OPS as RENDICIONES_OPS_FECHA,
+    FIELD_TYPES as RENDICIONES_TIPOS_CAMPOS,
+    NUM_OPS as RENDICIONES_OPS_NUMERO,
+    TEXT_OPS as RENDICIONES_OPS_TEXTO,
+)
 from users.users_filter_config import (
     FIELD_TYPES as USUARIOS_TIPOS_CAMPOS,
     NUM_OPS as USUARIOS_OPS_NUMERO,
@@ -83,6 +91,7 @@ class SeccionesFiltrosFavoritos:
     CDF_RESPONSABLES = "centrodefamilia_responsables"
     VAT_CENTROS = "vat_centros"
     DISPOSITIVOS = "dispositivos"
+    RENDICIONES = "rendiciones"
 
 
 @dataclass(frozen=True)
@@ -171,6 +180,16 @@ CONFIGURACIONES_POR_SECCION = {
             "text": DISPOSITIVOS_OPS_TEXTO,
             "number": DISPOSITIVOS_OPS_NUMERO,
             "choice": DISPOSITIVOS_OPS_ELECCION,
+        },
+    ),
+    SeccionesFiltrosFavoritos.RENDICIONES: ConfiguracionFiltrosSeccion(
+        tipos_campos=RENDICIONES_TIPOS_CAMPOS,
+        operadores_permitidos={
+            "text": RENDICIONES_OPS_TEXTO,
+            "number": RENDICIONES_OPS_NUMERO,
+            "date": RENDICIONES_OPS_FECHA,
+            "choice": RENDICIONES_OPS_ELECCION,
+            "boolean": RENDICIONES_OPS_BOOLEANO,
         },
     ),
 }

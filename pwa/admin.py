@@ -161,6 +161,8 @@ class ActividadEspacioPWAAdmin(admin.ModelAdmin):
         "dia_actividad",
         "hora_inicio",
         "hora_fin",
+        "responsable_actividad",
+        "vigencia_actividad_meses",
         "horario_actividad",
         "activo",
         "fecha_alta",
@@ -170,6 +172,7 @@ class ActividadEspacioPWAAdmin(admin.ModelAdmin):
         "comedor__nombre",
         "catalogo_actividad__categoria",
         "catalogo_actividad__actividad",
+        "responsable_actividad",
     )
     readonly_fields = (
         "fecha_alta",
@@ -215,6 +218,7 @@ class NominaEspacioPWAAdmin(admin.ModelAdmin):
         "es_indocumentado",
         "pertenece_comunidad_indigena",
         "situacion_calle",
+        "persona_con_celiaquia",
         "identificador_interno",
         "activo",
         "fecha_alta",
@@ -224,6 +228,7 @@ class NominaEspacioPWAAdmin(admin.ModelAdmin):
         "es_indocumentado",
         "pertenece_comunidad_indigena",
         "situacion_calle",
+        "persona_con_celiaquia",
         "asistencia_alimentaria",
         "asistencia_actividades",
     )

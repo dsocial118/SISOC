@@ -1,5 +1,8 @@
+import pytest
+from django.http import Http404
 from django.test import Client
 from types import SimpleNamespace
+from unittest.mock import patch
 
 from pwa.services import nomina_service
 
@@ -84,3 +87,49 @@ def test_build_nomina_link_fields_uses_admision_for_programs_with_admision(
 
     assert result["admision"] is fake_admision
     assert result["comedor"] is None
+
+
+# ---------------------------------------------------------------------------
+# _get_pnud_scoped_comedor_or_404 — scope PNUD en endpoints de actividades
+# ---------------------------------------------------------------------------
+
+
+def test_pnud_scope_levanta_404_para_comedor_no_pnud():
+    """Si el comedor no es PNUD, la función lanza Http404."""
+    from pwa.api_views import _get_pnud_scoped_comedor_or_404
+
+    fake_comedor = SimpleNamespace(
+        programa_id=1, programa=SimpleNamespace(nombre="Otro programa")
+    )
+    fake_user = SimpleNamespace()
+
+    with (
+        patch(
+            "pwa.api_views.ComedorService.get_scoped_comedor_or_404",
+            return_value=fake_comedor,
+        ),
+        patch("pwa.api_views.is_pnud_comedor", return_value=False),
+    ):
+        with pytest.raises(Http404):
+            _get_pnud_scoped_comedor_or_404(comedor_id=1, user=fake_user)
+
+
+def test_pnud_scope_retorna_comedor_para_comedor_pnud():
+    """Si el comedor es PNUD, la función retorna el objeto comedor."""
+    from pwa.api_views import _get_pnud_scoped_comedor_or_404
+
+    fake_comedor = SimpleNamespace(
+        programa_id=3, programa=SimpleNamespace(nombre="PNUD")
+    )
+    fake_user = SimpleNamespace()
+
+    with (
+        patch(
+            "pwa.api_views.ComedorService.get_scoped_comedor_or_404",
+            return_value=fake_comedor,
+        ),
+        patch("pwa.api_views.is_pnud_comedor", return_value=True),
+    ):
+        result = _get_pnud_scoped_comedor_or_404(comedor_id=3, user=fake_user)
+
+    assert result is fake_comedor

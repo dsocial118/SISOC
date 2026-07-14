@@ -14,6 +14,10 @@ from comedores.models import (
     PrestacionAlimentariaConformidad,
 )
 from comedores.services.comedor_service import ComedorService
+from comedores.utils import (
+    get_prestacion_conformidad_pending_period,
+    usa_datos_convenio_pnud,
+)
 from core.models import Localidad, Municipio, Provincia
 from duplas.models import Dupla
 from organizaciones.models import Organizacion
@@ -27,6 +31,7 @@ from relevamientos.service import RelevamientoService
 from rendicioncuentasmensual.models import DocumentacionAdjunta
 from rendicioncuentasmensual.models import RendicionCuentaMensual
 from rendicioncuentasmensual.services import RendicionCuentaMensualService
+from users.models import AccesoComedorPWA
 
 
 class SimpleUbicacionSerializer(serializers.ModelSerializer):
@@ -116,6 +121,7 @@ class ComedorDetailSerializer(serializers.ModelSerializer):
     programa_changes = serializers.SerializerMethodField()
     relevamiento_actual_mobile = serializers.SerializerMethodField()
     datos_convenio_mobile = serializers.SerializerMethodField()
+    conformidad_prestacion_pendiente = serializers.SerializerMethodField()
 
     class Meta:
         model = Comedor
@@ -160,6 +166,7 @@ class ComedorDetailSerializer(serializers.ModelSerializer):
             "programa_changes",
             "relevamiento_actual_mobile",
             "datos_convenio_mobile",
+            "conformidad_prestacion_pendiente",
         )
 
     def _absolute_url(self, file_field):
@@ -178,6 +185,10 @@ class ComedorDetailSerializer(serializers.ModelSerializer):
         if not obj.programa:
             return None
         return {"id": obj.programa.id, "nombre": obj.programa.nombre}
+
+    def get_conformidad_prestacion_pendiente(self, obj):
+        pending_period = get_prestacion_conformidad_pending_period(obj)
+        return {"pendiente": pending_period is not None, "periodo": pending_period}
 
     def get_tipocomedor(self, obj):
         if not obj.tipocomedor:
@@ -819,6 +830,33 @@ class ComedorDetailSerializer(serializers.ModelSerializer):
 
         return items
 
+    def _normalize_relevamiento_mobile_text(self, value):
+        return (
+            str(value or "")
+            .replace("Comedor/Merendero", "Espacio")
+            .replace("Comedor", "Espacio")
+            .replace("comedor", "espacio")
+        )
+
+    def _filter_relevamiento_mobile_items(
+        self,
+        items,
+        *,
+        hidden_contains=None,
+        hide_espera=False,
+    ):
+        hidden_contains = [item.lower() for item in (hidden_contains or [])]
+        filtered_items = []
+        for item in items:
+            pregunta = self._normalize_relevamiento_mobile_text(item.get("pregunta"))
+            pregunta_normalizada = pregunta.lower()
+            if any(hidden in pregunta_normalizada for hidden in hidden_contains):
+                continue
+            if hide_espera and "espera" in pregunta_normalizada:
+                continue
+            filtered_items.append({**item, "pregunta": pregunta})
+        return filtered_items
+
     def _build_relevamiento_mobile_sections(self, relevamiento, summary_items):
         responsable_relevamiento = getattr(
             relevamiento, "responsable_relevamiento", None
@@ -836,15 +874,16 @@ class ComedorDetailSerializer(serializers.ModelSerializer):
                 "items": summary_items,
             },
             {
-                "titulo": "Datos del referente del Comedor/Merendero",
+                "titulo": "Datos del referente del Espacio",
                 "items": self._collect_model_items(
                     getattr(relevamiento.comedor, "referente", None)
                 ),
             },
             {
-                "titulo": "Domicilio del Comedor/Merendero",
-                "items": self._collect_model_items(
-                    getattr(relevamiento, "comedor", None)
+                "titulo": "Domicilio del Espacio",
+                "items": self._filter_relevamiento_mobile_items(
+                    self._collect_model_items(getattr(relevamiento, "comedor", None)),
+                    hidden_contains=("judicializado", "dupla"),
                 ),
             },
             {
@@ -889,8 +928,11 @@ class ComedorDetailSerializer(serializers.ModelSerializer):
             },
             {
                 "titulo": "Prestación alimentaria",
-                "items": self._collect_model_items(
-                    getattr(relevamiento, "prestacion", None)
+                "items": self._filter_relevamiento_mobile_items(
+                    self._collect_model_items(
+                        getattr(relevamiento, "prestacion", None)
+                    ),
+                    hide_espera=True,
                 ),
             },
             {
@@ -916,14 +958,19 @@ class ComedorDetailSerializer(serializers.ModelSerializer):
                     }
                 ],
             },
-            {
-                "titulo": "Excepción",
-                "items": self._collect_model_items(
-                    getattr(relevamiento, "excepcion", None)
-                ),
-            },
         ]
-        return [section for section in sections if section["items"]]
+        return [
+            {
+                **section,
+                "titulo": self._normalize_relevamiento_mobile_text(section["titulo"]),
+                "items": self._filter_relevamiento_mobile_items(
+                    section["items"],
+                    hidden_contains=("excepci",),
+                ),
+            }
+            for section in sections
+            if section.get("items")
+        ]
 
     def get_relevamiento_actual_mobile(self, obj):
         relevamientos = getattr(obj, "relevamientos_optimized", None)
@@ -1023,23 +1070,28 @@ class ComedorDetailSerializer(serializers.ModelSerializer):
             datos_pnud = ComedorDatosConvenioPnud.objects.filter(comedor=obj).first()
 
         estado_general, subestado = self._build_estado_convenio(obj)
-        return {
+        resumen = ComedorService.get_prestaciones_aprobadas_resumen(obj.id)
+        prestaciones_mensuales = resumen["prestaciones_mensuales"]
+        monto_prestacion_mensual = resumen["monto_prestacion_mensual"]
+        payload = {
             "tipo": "pnud",
             "organizacion_solicitante": (
                 obj.organizacion.nombre if obj.organizacion_id else None
             ),
             "codigo_proyecto": obj.codigo_de_proyecto,
-            "monto_total_conveniado": (
-                datos_pnud.monto_total_conveniado if datos_pnud else None
-            ),
             "nro_convenio": datos_pnud.nro_convenio if datos_pnud else None,
             "estado_general": estado_general,
             "subestado": subestado,
             "nombre_espacio_comunitario": obj.nombre,
             "id_externo": obj.id_externo,
             "domicilio_completo_espacio": self._build_domicilio_convenio(obj),
-            "monto_total_convenio_por_espacio": (
-                datos_pnud.monto_total_convenio_por_espacio if datos_pnud else None
+            "monto_convenio_prestaciones_alimentarias": (
+                datos_pnud.monto_convenio_prestaciones_alimentarias
+                if datos_pnud
+                else None
+            ),
+            "monto_convenio_siph": (
+                datos_pnud.monto_convenio_siph if datos_pnud else None
             ),
             "prestaciones_financiadas_mensuales": (
                 datos_pnud.prestaciones_financiadas_mensuales if datos_pnud else None
@@ -1048,13 +1100,37 @@ class ComedorDetailSerializer(serializers.ModelSerializer):
                 datos_pnud.personas_conveniadas if datos_pnud else None
             ),
             "cantidad_modulos": datos_pnud.cantidad_modulos if datos_pnud else None,
+            "prestaciones_gescom_total_mensual": prestaciones_mensuales,
+            "monto_total_convenio": monto_prestacion_mensual,
+            "prestaciones_mensuales": prestaciones_mensuales,
+            "monto_prestacion_mensual": monto_prestacion_mensual,
         }
+        if self._can_view_monto_total_conveniado(obj):
+            payload["monto_total_conveniado"] = (
+                datos_pnud.monto_total_conveniado if datos_pnud else None
+            )
+        return payload
+
+    def _can_view_monto_total_conveniado(self, obj):
+        request = self.context.get("request")
+        user = getattr(request, "user", None)
+        if not user or not getattr(user, "is_authenticated", False):
+            return False
+        return AccesoComedorPWA.objects.filter(
+            user=user,
+            comedor=obj,
+            activo=True,
+            tipo_asociacion=AccesoComedorPWA.TIPO_ASOCIACION_ORGANIZACION,
+            organizacion_id=obj.organizacion_id,
+        ).exists()
 
     @staticmethod
     def _get_datos_convenio_alimentar(obj):
-        presupuestos = ComedorService.get_presupuestos(obj.id)
-        prestaciones_mensuales = presupuestos[0]
-        monto_prestacion_mensual = presupuestos[5]
+        # Misma fuente que el detalle web: prestaciones aprobadas del
+        # InformeTecnico finalizado de la admisión vigente (no el relevamiento).
+        resumen = ComedorService.get_prestaciones_aprobadas_resumen(obj.id)
+        prestaciones_mensuales = resumen["prestaciones_mensuales"]
+        monto_prestacion_mensual = resumen["monto_prestacion_mensual"]
         return {
             "tipo": "alimentar_comunidad",
             "vigencia_convenio_meses": 6,
@@ -1071,7 +1147,7 @@ class ComedorDetailSerializer(serializers.ModelSerializer):
             getattr(getattr(obj, "programa", None), "nombre", "") or ""
         ).strip()
         programa_nombre_lc = programa_nombre.lower()
-        is_pnud = obj.programa_id in (3, 4) or "pnud" in programa_nombre_lc
+        is_pnud = usa_datos_convenio_pnud(obj)
         is_alimentar = programa_nombre_lc == "alimentar comunidad"
 
         if is_pnud:

@@ -618,6 +618,8 @@ def actualizar_estado_archivo(request):
                 "mostrar_select": resultado.get("mostrar_select", False),
                 "opciones": resultado.get("opciones", []),
                 "gde_html": resultado.get("gde_html"),
+                "html": resultado.get("html"),
+                "row_id": resultado.get("row_id"),
             }
         )
     else:
@@ -721,6 +723,24 @@ def actualizar_convenio_numero(request):
         return JsonResponse(response_data, status=400)
 
     return JsonResponse(response_data)
+
+
+@login_required
+@require_POST
+def actualizar_vigente_pwa(request):
+    resultado = AdmisionService.actualizar_vigente_pwa_ajax(request)
+    if not resultado.get("success"):
+        return JsonResponse(resultado, status=400)
+    return JsonResponse(resultado)
+
+
+@login_required
+@require_POST
+def actualizar_personas_conveniadas_nomina(request):
+    resultado = AdmisionService.actualizar_personas_conveniadas_nomina_ajax(request)
+    if not resultado.get("success"):
+        return JsonResponse(resultado, status=400)
+    return JsonResponse(resultado)
 
 
 @login_required
@@ -1454,6 +1474,7 @@ class InformeTecnicoComplementarioDetailView(LoginRequiredMixin, DetailView):
 
     def post(self, request, *args, **kwargs):
         self.object = self.get_object()
+        tipo = self.kwargs.get("tipo", "base")
 
         campos_modificados = {
             key.replace("campo_", ""): value.strip()

@@ -10,6 +10,7 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_protect
 
 from celiaquia.models import ExpedienteCiudadano
+from celiaquia.services.legajo_service import LegajoService
 from centrodefamilia.services.consulta_renaper import consultar_datos_renaper
 from iam.services import user_has_permission_code
 
@@ -421,15 +422,25 @@ class ValidacionRenaperView(View):
             comentario = request.POST.get("comentario")
             if validacion_estado == "3" and comentario:
                 legajo.subsanacion_motivo = comentario
+                # Subsanación originada en la validación RENAPER: registrar el tipo
+                # para que el detalle muestre el motivo y no el texto genérico.
+                legajo.subsanacion_tipo = "RENAPER"
                 legajo.revision_tecnico = "SUBSANAR"
                 legajo.save(
                     update_fields=[
                         "estado_validacion_renaper",
                         "subsanacion_motivo",
+                        "subsanacion_tipo",
                         "revision_tecnico",
                         "modificado_en",
                     ]
                 )
+            elif validacion_estado == "2":
+                # Rechazado por RENAPER: el legajo deja de estar aprobado. Se degrada
+                # revision_tecnico a RECHAZADO para que el reporte, el padrón final y
+                # el pago dejen de contarlo como aprobado, y se libera el cupo si lo
+                # tenía ocupado (un rechazado no debe retener titularidad).
+                LegajoService.rechazar_por_renaper(legajo, request.user)
             else:
                 legajo.save(
                     update_fields=["estado_validacion_renaper", "modificado_en"]

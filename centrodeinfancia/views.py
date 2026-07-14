@@ -46,11 +46,10 @@ from centrodeinfancia.access import (
 from centrodeinfancia.forms import (
     CentroDeInfanciaForm,
     IntervencionCentroInfanciaForm,
-    NominaCentroInfanciaFormEdit,
-    NominaCentroInfanciaCreateForm,
+    NominaCentroInfanciaDestinatariosForm,
     NominaCentroInfanciaForm,
     ObservacionCentroInfanciaForm,
-    TrabajadorForm,
+    TrabajadorCDIForm,
 )
 from centrodeinfancia.formulario_cdi_schema import CAMPOS_OPCIONES_MULTIPLES
 from centrodeinfancia.models import (
@@ -62,6 +61,7 @@ from centrodeinfancia.models import (
     ObservacionCentroInfancia,
     Trabajador,
 )
+from centrodeinfancia.services import CentroDeInfanciaService
 from centrodeinfancia.views_formulario_cdi import construir_resumenes_formularios
 from intervenciones.constants import PROGRAMA_ALIASES_CENTRO_INFANCIA
 
@@ -189,22 +189,28 @@ def _observaciones_cdi_queryset_scoped(user):
     return _aplicar_scope_provincia_centro_relacion(queryset, user)
 
 
-def _build_trabajadores_context(
-    request,
-    centro,
-    form=None,
-    *,
-    modal=None,
-):
-    form = form or TrabajadorForm()
-    modal = modal or {}
+def _parse_fecha_renaper(fecha_raw):
+    if not fecha_raw:
+        return None
+    if isinstance(fecha_raw, date):
+        return fecha_raw
+    if isinstance(fecha_raw, datetime):
+        return fecha_raw.date()
+    value = str(fecha_raw).strip()
+    for fmt in ("%Y-%m-%d", "%d/%m/%Y", "%Y%m%d"):
+        try:
+            return datetime.strptime(value, fmt).date()
+        except ValueError:
+            continue
+    try:
+        return datetime.fromisoformat(value.replace("Z", "")).date()
+    except ValueError:
+        return None
+
+
+def _build_trabajadores_context(request, centro):
     return {
         "trabajadores": centro.trabajadores.order_by("apellido", "nombre"),
-        "trabajador_form": form,
-        "trabajador_modal_open": modal.get("open", False),
-        "trabajador_modal_mode": modal.get("mode", "create"),
-        "trabajador_form_action": modal.get("action")
-        or reverse("centrodeinfancia_trabajador_crear", kwargs={"pk": centro.pk}),
         "puede_editar_trabajadores": request.user.has_perm(
             "centrodeinfancia.change_centrodeinfancia"
         ),
@@ -711,11 +717,135 @@ class CentroDeInfanciaDeleteView(
 
 class TrabajadorCentroInfanciaCreateView(LoginRequiredMixin, CreateView):
     model = Trabajador
-    form_class = TrabajadorForm
+    form_class = TrabajadorCDIForm
+    template_name = "centrodeinfancia/trabajador_form.html"
+
+    _SEXO_RENAPER_MAP = {
+        "Masculino": "varon",
+        "Femenino": "mujer",
+        "M": "varon",
+        "F": "mujer",
+        "X": "indeterminado",
+    }
 
     def dispatch(self, request, *args, **kwargs):
         self.centro = _get_centro_cdi_scoped_or_404(request.user, pk=kwargs["pk"])
         return super().dispatch(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["centro"] = self.centro
+        context["is_edit"] = False
+
+        query = (self.request.GET.get("query") or "").strip()
+        selected_ciudadano = self._get_selected_ciudadano()
+        ciudadanos, renaper_data = self._buscar_por_query(query, kwargs.get("form"))
+
+        self._set_form_initial(
+            context, selected_ciudadano, renaper_data, ciudadanos, query
+        )
+
+        no_resultados = bool(query) and not ciudadanos
+        context["query"] = query
+        context["ciudadanos"] = ciudadanos
+        context["selected_ciudadano"] = selected_ciudadano
+        context["no_resultados"] = no_resultados
+        context["renaper_precarga"] = bool(renaper_data) or (
+            self.request.POST.get("origen_dato") == "renaper"
+        )
+        context["mostrar_formulario"] = bool(
+            selected_ciudadano
+            or no_resultados
+            or (context.get("form") and context["form"].is_bound)
+        )
+        return context
+
+    def _buscar_por_query(self, query, form_bound):
+        if not query or len(query) < 4:
+            return [], None
+        ciudadanos = Ciudadano.buscar_por_documento(query, max_results=50)
+        if ciudadanos or not query.isdigit() or len(query) < 7 or form_bound:
+            return ciudadanos, None
+        renaper_result = ComedorService.obtener_datos_ciudadano_desde_renaper(query)
+        if renaper_result.get("success"):
+            if renaper_result.get("message"):
+                messages.info(self.request, renaper_result["message"])
+            return [], self._build_initial_from_renaper(renaper_result)
+        if renaper_result.get("message"):
+            messages.warning(self.request, renaper_result["message"])
+        return [], None
+
+    def _set_form_initial(  # pylint: disable=too-many-arguments
+        self, context, selected_ciudadano, renaper_data, ciudadanos, query
+    ):
+        form = context.get("form")
+        if form and form.is_bound:
+            return
+        if selected_ciudadano:
+            context["form"] = self.form_class(
+                initial=self._build_initial_from_ciudadano(selected_ciudadano)
+            )
+        elif renaper_data:
+            context["form"] = self.form_class(initial=renaper_data)
+        elif query and not ciudadanos:
+            context["form"] = self.form_class(
+                initial={"dni": query if query.isdigit() else None}
+            )
+
+    def _get_selected_ciudadano(self):
+        ciudadano_id = self.request.GET.get("ciudadano_id") or self.request.POST.get(
+            "ciudadano_id"
+        )
+        if not str(ciudadano_id or "").isdigit():
+            return None
+        return Ciudadano.objects.filter(pk=ciudadano_id).first()
+
+    def _build_initial_from_ciudadano(self, ciudadano):
+        sexo_str = getattr(ciudadano.sexo, "sexo", None) if ciudadano.sexo_id else None
+        nac_str = (
+            getattr(ciudadano.nacionalidad, "nacionalidad", None)
+            if ciudadano.nacionalidad_id
+            else None
+        )
+        return {
+            "nombre": ciudadano.nombre or "",
+            "apellido": ciudadano.apellido or "",
+            "dni": ciudadano.documento,
+            "fecha_nacimiento": ciudadano.fecha_nacimiento,
+            "cuit": ciudadano.cuil_cuit or "",
+            "sexo_registral": self._SEXO_RENAPER_MAP.get(sexo_str or "", ""),
+            "nacionalidad_trabajador": nac_str or "",
+        }
+
+    def _build_initial_from_renaper(self, renaper_result):
+        data = dict(renaper_result.get("data") or {})
+        datos_api = renaper_result.get("datos_api") or {}
+        if not data:
+            return {}
+
+        fecha_raw = (
+            data.get("fecha_nacimiento")
+            or data.get("fechaNacimiento")
+            or datos_api.get("fechaNacimiento")
+        )
+        fecha_nacimiento = _parse_fecha_renaper(fecha_raw)
+
+        sexo_raw = data.get("sexo") or datos_api.get("sexo") or ""
+        sexo = self._SEXO_RENAPER_MAP.get(sexo_raw, "")
+
+        return {
+            "nombre": data.get("nombre") or data.get("nombres") or "",
+            "apellido": data.get("apellido") or data.get("apellidos") or "",
+            "dni": data.get("dni")
+            or data.get("documento")
+            or datos_api.get("nroDocumento"),
+            "fecha_nacimiento": fecha_nacimiento,
+            "cuit": data.get("cuit") or datos_api.get("cuil") or "",
+            "sexo_registral": sexo,
+            "nacionalidad_trabajador": data.get("nacionalidad")
+            or datos_api.get("pais")
+            or "",
+        }
 
     def form_valid(self, form):
         form.instance.centro = self.centro
@@ -723,37 +853,14 @@ class TrabajadorCentroInfanciaCreateView(LoginRequiredMixin, CreateView):
         messages.success(self.request, "Trabajador agregado correctamente.")
         return response
 
-    def form_invalid(self, form):
-        detail_view = CentroDeInfanciaDetailView()
-        detail_view.setup(self.request, pk=self.centro.pk)
-        detail_view.object = self.centro
-        context = detail_view.get_context_data(object=self.centro)
-        context.update(
-            _build_trabajadores_context(
-                self.request,
-                self.centro,
-                form=form,
-                modal={
-                    "open": True,
-                    "mode": "create",
-                    "action": self.request.path,
-                },
-            )
-        )
-        return render(
-            self.request,
-            "centrodeinfancia/centrodeinfancia_detail.html",
-            context,
-            status=400,
-        )
-
     def get_success_url(self):
         return reverse("centrodeinfancia_detalle", kwargs={"pk": self.centro.pk})
 
 
 class TrabajadorCentroInfanciaUpdateView(LoginRequiredMixin, UpdateView):
     model = Trabajador
-    form_class = TrabajadorForm
+    form_class = TrabajadorCDIForm
+    template_name = "centrodeinfancia/trabajador_form.html"
     pk_url_kwarg = "trabajador_id"
 
     def get_queryset(self):
@@ -761,41 +868,43 @@ class TrabajadorCentroInfanciaUpdateView(LoginRequiredMixin, UpdateView):
             centro_id=self.kwargs["pk"]
         )
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["centro"] = self.object.centro
+        context["is_edit"] = True
+        context["mostrar_formulario"] = True
+        return context
+
     def form_valid(self, form):
         response = super().form_valid(form)
         messages.success(self.request, "Trabajador actualizado correctamente.")
         return response
-
-    def form_invalid(self, form):
-        centro = self.object.centro
-        detail_view = CentroDeInfanciaDetailView()
-        detail_view.setup(self.request, pk=centro.pk)
-        detail_view.object = centro
-        context = detail_view.get_context_data(object=centro)
-        context.update(
-            _build_trabajadores_context(
-                self.request,
-                centro,
-                form=form,
-                modal={
-                    "open": True,
-                    "mode": "edit",
-                    "action": self.request.path,
-                },
-            )
-        )
-        return render(
-            self.request,
-            "centrodeinfancia/centrodeinfancia_detail.html",
-            context,
-            status=400,
-        )
 
     def get_success_url(self):
         return reverse(
             "centrodeinfancia_detalle",
             kwargs={"pk": self.object.centro_id},
         )
+
+
+class TrabajadorCentroInfanciaDetailView(LoginRequiredMixin, DetailView):
+    model = Trabajador
+    template_name = "centrodeinfancia/trabajador_detail.html"
+    pk_url_kwarg = "trabajador_id"
+    context_object_name = "trabajador"
+
+    def get_queryset(self):
+        return _trabajadores_cdi_queryset_scoped(self.request.user).filter(
+            centro_id=self.kwargs["pk"]
+        )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["centro"] = self.object.centro
+        context["puede_editar_trabajadores"] = self.request.user.has_perm(
+            "centrodeinfancia.change_centrodeinfancia"
+        )
+        return context
 
 
 class TrabajadorCentroInfanciaDeleteView(
@@ -1015,6 +1124,15 @@ class NominaCentroInfanciaDetailView(LoginRequiredMixin, ListView):
         stats = self._build_nomina_stats(self.object_list)
         page_obj = context.get("page_obj")
 
+        centros_para_derivar = list(
+            _aplicar_scope_centros_cdi(
+                CentroDeInfancia.objects.all(), self.request.user
+            )
+            .exclude(pk=centro.pk)
+            .values("id", "nombre")
+            .order_by("nombre")
+        )
+
         context["object"] = centro
         context["nomina"] = page_obj
         context["nominaM"] = stats["nomina_m"]
@@ -1027,6 +1145,7 @@ class NominaCentroInfanciaDetailView(LoginRequiredMixin, ListView):
         context["ejecucion_inicio"] = centro.fecha_inicio
         context["ejecucion_fin"] = None
         context["plazo_ejecucion"] = "-"
+        context["centros_para_derivar"] = centros_para_derivar
         return context
 
 
@@ -1043,25 +1162,34 @@ class NominaCentroInfanciaFormularioDetailView(LoginRequiredMixin, DetailView):
 
 class NominaCentroInfanciaEditView(LoginRequiredMixin, UpdateView):
     model = NominaCentroInfancia
-    form_class = NominaCentroInfanciaFormEdit
-    template_name = "centrodeinfancia/nomina_form_edit.html"
+    form_class = NominaCentroInfanciaDestinatariosForm
+    template_name = "centrodeinfancia/destinatario_form.html"
     pk_url_kwarg = "nomina_id"
+
+    def _get_centro(self):
+        if not hasattr(self, "_centro_cache"):
+            self._centro_cache = _get_centro_cdi_scoped_or_404(
+                self.request.user,
+                pk=self.kwargs["pk"],
+            )
+        return self._centro_cache
 
     def get_queryset(self):
         return _nomina_cdi_queryset_scoped(self.request.user).filter(
             centro_id=self.kwargs["pk"]
         )
 
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["centro"] = self._get_centro()
+        return kwargs
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["object"] = (
-            NominaCentroInfancia.objects.select_related("centro")
-            .filter(pk=self.kwargs["nomina_id"], centro_id=self.kwargs["pk"])
-            .first()
-        )
-        context["centro"] = CentroDeInfancia.objects.filter(
-            pk=self.kwargs["pk"]
-        ).first()
+        centro = self._get_centro()
+        context["centro"] = centro
+        context["is_edit"] = True
+        context["selected_ciudadano"] = self.object.ciudadano if self.object else None
         return context
 
     def get_success_url(self):
@@ -1070,8 +1198,8 @@ class NominaCentroInfanciaEditView(LoginRequiredMixin, UpdateView):
 
 class NominaCentroInfanciaCreateView(LoginRequiredMixin, CreateView):
     model = NominaCentroInfancia
-    form_class = NominaCentroInfanciaCreateForm
-    template_name = "centrodeinfancia/nomina_form.html"
+    form_class = NominaCentroInfanciaDestinatariosForm
+    template_name = "centrodeinfancia/destinatario_form.html"
 
     def _get_centro(self):
         if not hasattr(self, "_centro_cache"):
@@ -1082,7 +1210,7 @@ class NominaCentroInfanciaCreateView(LoginRequiredMixin, CreateView):
         return self._centro_cache
 
     @staticmethod
-    def _crear_nomina_con_bloqueo(centro, ciudadano, cleaned_data):
+    def _crear_nomina_con_bloqueo(centro, ciudadano, form):
         CentroDeInfancia.objects.select_for_update().filter(pk=centro.pk).exists()
         existente = NominaCentroInfancia.objects.filter(
             centro=centro,
@@ -1092,16 +1220,9 @@ class NominaCentroInfanciaCreateView(LoginRequiredMixin, CreateView):
         if existente:
             return False
 
-        nomina_data = {
-            field_name: cleaned_data.get(field_name)
-            for field_name in NominaCentroInfanciaCreateForm.Meta.fields
-            if field_name != "edad_calculada"
-        }
-        nomina = NominaCentroInfancia(
-            centro=centro,
-            ciudadano=ciudadano,
-            **nomina_data,
-        )
+        nomina = form.save(commit=False)
+        nomina.centro = centro
+        nomina.ciudadano = ciudadano
         nomina.clean()
         nomina.save()
         return True
@@ -1164,7 +1285,9 @@ class NominaCentroInfanciaCreateView(LoginRequiredMixin, CreateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["object"] = self._get_centro()
+        centro = self._get_centro()
+        context["object"] = centro
+        context["centro"] = centro
         query = (self.request.GET.get("query") or "").strip()
         form = kwargs.get("form")
         ciudadanos = []
@@ -1192,16 +1315,18 @@ class NominaCentroInfanciaCreateView(LoginRequiredMixin, CreateView):
                 form = self.form_class(
                     initial=self._build_nomina_initial_from_ciudadano(
                         selected_ciudadano
-                    )
+                    ),
+                    centro=centro,
                 )
             elif renaper_data:
-                form = self.form_class(initial=renaper_data)
+                form = self.form_class(initial=renaper_data, centro=centro)
             elif query and not ciudadanos:
                 form = self.form_class(
-                    initial={"dni": query if query.isdigit() else None}
+                    initial={"dni": query if query.isdigit() else None},
+                    centro=centro,
                 )
             else:
-                form = self.form_class()
+                form = self.form_class(centro=centro)
 
         context["query"] = query
         context["ciudadanos"] = ciudadanos
@@ -1215,29 +1340,6 @@ class NominaCentroInfanciaCreateView(LoginRequiredMixin, CreateView):
             selected_ciudadano or context["no_resultados"] or form.is_bound
         )
         return context
-
-    @staticmethod
-    def _parse_fecha_renaper(fecha_raw):
-        if not fecha_raw:
-            return None
-        if isinstance(fecha_raw, date):
-            return fecha_raw
-        if isinstance(fecha_raw, datetime):
-            return fecha_raw.date()
-
-        value = str(fecha_raw).strip()
-        formatos = ("%Y-%m-%d", "%d/%m/%Y", "%Y%m%d")
-        for fmt in formatos:
-            try:
-                return datetime.strptime(value, fmt).date()
-            except ValueError:
-                continue
-
-        try:
-            value_iso = value.replace("Z", "")
-            return datetime.fromisoformat(value_iso).date()
-        except ValueError:
-            return None
 
     @staticmethod
     def _build_nomina_initial_from_renaper(renaper_result):
@@ -1255,9 +1357,7 @@ class NominaCentroInfanciaCreateView(LoginRequiredMixin, CreateView):
             or datos_api.get("fechaNacimiento")
             or datos_api.get("fecha_nacimiento")
         )
-        fecha_nacimiento = NominaCentroInfanciaCreateView._parse_fecha_renaper(
-            fecha_raw
-        )
+        fecha_nacimiento = _parse_fecha_renaper(fecha_raw)
 
         return {
             "dni": renaper_data.get("documento") or renaper_data.get("dni"),
@@ -1293,8 +1393,8 @@ class NominaCentroInfanciaCreateView(LoginRequiredMixin, CreateView):
 
     def post(self, request, *args, **kwargs):
         self.object = None
-        form = self.form_class(request.POST)
         centro = self._get_centro()
+        form = self.form_class(request.POST, centro=centro)
         ciudadano_id = request.POST.get("ciudadano_id")
         origen_dato = request.POST.get("origen_dato") or "manual"
 
@@ -1366,7 +1466,7 @@ class NominaCentroInfanciaCreateView(LoginRequiredMixin, CreateView):
                 creado = self._crear_nomina_con_bloqueo(
                     centro=centro,
                     ciudadano=ciudadano,
-                    cleaned_data=form.cleaned_data,
+                    form=form,
                 )
         except Exception:  # noqa: BLE001
             logger.exception(
@@ -1410,6 +1510,28 @@ class NominaCentroInfanciaDeleteView(
         return reverse("centrodeinfancia_nomina_ver", kwargs={"pk": self.kwargs["pk"]})
 
 
+class NominaCentroInfanciaDestinatariosDetailView(LoginRequiredMixin, DetailView):
+    model = NominaCentroInfancia
+    template_name = "centrodeinfancia/destinatario_detail.html"
+    pk_url_kwarg = "nomina_id"
+    context_object_name = "nomina"
+
+    def get_queryset(self):
+        return _nomina_cdi_queryset_scoped(self.request.user).filter(
+            centro_id=self.kwargs["pk"]
+        )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["centro"] = _get_centro_cdi_scoped_or_404(
+            self.request.user, pk=self.kwargs["pk"]
+        )
+        context["puede_editar"] = self.request.user.has_perm(
+            "centrodeinfancia.change_nominacentroinfancia"
+        )
+        return context
+
+
 @login_required
 def nomina_centrodeinfancia_editar_ajax(request, pk):
     nomina = get_object_or_404(_nomina_cdi_queryset_scoped(request.user), pk=pk)
@@ -1428,6 +1550,35 @@ def nomina_centrodeinfancia_editar_ajax(request, pk):
         "centrodeinfancia/nomina_editar_ajax.html",
         {"form": form},
     )
+
+
+@login_required
+def nomina_centrodeinfancia_derivar(request, pk):
+    """Transfiere una persona de nómina activa a otro CDI vía AJAX (POST)."""
+    if request.method != "POST":
+        return JsonResponse(
+            {"success": False, "message": "Método no permitido."}, status=405
+        )
+
+    get_object_or_404(_nomina_cdi_queryset_scoped(request.user), pk=pk)
+
+    try:
+        centro_destino_pk = int(request.POST.get("centro_destino_id", ""))
+    except (ValueError, TypeError):
+        return JsonResponse(
+            {"success": False, "message": "Centro destino inválido."}, status=400
+        )
+
+    motivo = (request.POST.get("motivo") or "").strip()
+
+    ok, msg = CentroDeInfanciaService.transferir_ciudadano_entre_centros(
+        nomina_pk=pk,
+        centro_destino_pk=centro_destino_pk,
+        usuario=request.user,
+        motivo=motivo,
+    )
+    status_code = 200 if ok else 400
+    return JsonResponse({"success": ok, "message": msg}, status=status_code)
 
 
 class IntervencionCentroInfanciaCreateView(LoginRequiredMixin, CreateView):

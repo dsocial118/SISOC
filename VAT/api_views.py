@@ -1,3 +1,4 @@
+# pylint: disable=too-many-lines
 import logging
 
 from django.db.models import Count, Prefetch, Q
@@ -545,6 +546,14 @@ class CursoViewSet(SoftDeleteDestroyMixin, VATModelViewSet):
                 "modalidad",
             )
             .prefetch_related(
+                Prefetch(
+                    "centro__identificadores_hist",
+                    queryset=InstitucionIdentificadorHist.objects.filter(
+                        tipo_identificador="cue",
+                        es_actual=True,
+                    ).order_by("-vigencia_desde", "-id"),
+                    to_attr="cue_actual",
+                ),
                 Prefetch(
                     "voucher_parametrias",
                     queryset=VoucherParametria.objects.select_related(

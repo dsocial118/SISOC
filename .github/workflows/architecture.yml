@@ -1,0 +1,40 @@
+name: Arquitectura (imports)
+
+on:
+    pull_request:
+        branches:
+            - main
+            - development
+    push:
+        branches:
+            - main
+            - development
+
+permissions:
+    contents: read
+
+concurrency:
+    group: architecture-${{ github.event.pull_request.number || github.ref }}
+    cancel-in-progress: true
+
+jobs:
+    architecture_imports:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v6.0.2
+
+            - name: Set up Python
+              uses: actions/setup-python@v6.2.0
+              with:
+                  python-version: '3.11.15'
+                  cache: 'pip'
+                  cache-dependency-path: requirements/arch.txt
+
+            - name: Install architecture tooling
+              run: |
+                  python -m pip install --upgrade pip
+                  pip install -r requirements/arch.txt
+
+            - name: Run import-linter
+              run: lint-imports

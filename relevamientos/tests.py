@@ -32,7 +32,9 @@ def test_list_view(client_logged, comedor):
         f'action="{reverse("relevamiento_create_edit_ajax", kwargs={"pk": comedor.pk})}"'
         in body
     )
-    assert 'id="new_territorial_select"' in body
+    assert 'id="new_territorial_input"' in body
+    assert 'id="new_territorial_value"' in body
+    assert 'id="new_territorial_suggestions"' in body
 
 
 @pytest.mark.django_db

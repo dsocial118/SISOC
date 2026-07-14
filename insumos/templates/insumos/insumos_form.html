@@ -1,0 +1,66 @@
+{% extends "includes/main.html" %}
+{% load crispy_forms_tags static %}
+{% block title %}
+    {% if form.instance.pk %}
+        Editar insumo
+    {% else %}
+        Nuevo insumo
+    {% endif %}
+{% endblock %}
+{% block content %}
+    <div class="container mt-4">
+        <div class="d-flex justify-content-between mb-3">
+            <h2>
+                {% if form.instance.pk %}
+                    Editar insumo
+                {% else %}
+                    Nuevo insumo
+                {% endif %}
+            </h2>
+            <a href="{% url 'insumos_listar' %}" class="btn btn-secondary">Volver</a>
+        </div>
+
+        <div class="card">
+            <div class="card-body">
+                <form method="post" enctype="multipart/form-data" novalidate>
+                    {% csrf_token %}
+                    {% if form.errors %}
+                        <div class="alert alert-danger">No se pudo guardar el formulario. Revisá los campos marcados.</div>
+                    {% endif %}
+
+                    <div class="row">
+                        <div class="col-md-6">{{ form.programa|as_crispy_field }}</div>
+                        <div class="col-md-6">
+                            {{ form.categoria|as_crispy_field }}
+                            <small class="text-muted d-block mb-3">Se muestran solo las categorías del programa seleccionado.</small>
+                        </div>
+                    </div>
+                    {{ form.titulo|as_crispy_field }}
+                    {{ form.descripcion|as_crispy_field }}
+
+                    {% if form.instance.pk and form.instance.archivo %}
+                        <p class="mb-1">
+                            <i class="fas fa-paperclip"></i>
+                            Archivo actual:
+                            <a href="{% url 'insumos_descargar' form.instance.pk %}">{{ form.instance.nombre_archivo }}</a>
+                        </p>
+                    {% endif %}
+                    {{ form.archivo|as_crispy_field }}
+                    <small class="text-muted d-block mb-3">PDF, imágenes, Word, Excel o CSV — máx. 10 MB</small>
+
+                    {{ form.activo|as_crispy_field }}
+
+                    <div class="d-flex justify-content-end gap-2 mt-3">
+                        <a href="{% url 'insumos_listar' %}" class="btn btn-secondary">Cancelar</a>
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-save"></i> Guardar insumo
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+{% block customJS %}
+    <script src="{% static 'custom/js/insumoForm.js' %}"></script>
+{% endblock %}

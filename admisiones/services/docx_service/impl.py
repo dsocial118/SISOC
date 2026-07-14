@@ -5,7 +5,6 @@ from docxtpl import DocxTemplate
 from django.conf import settings
 from django.template.loader import get_template
 from django.utils.html import strip_tags
-from weasyprint import HTML
 from docx import Document
 import os
 import io
@@ -130,6 +129,8 @@ class DocumentTemplateService:
 
     @staticmethod
     def generar_pdf(template_name, context, app_name="admisiones"):
+        from weasyprint import HTML
+
         template_path = f"{app_name}/pdf/{template_name}"
         template = get_template(template_path)
 

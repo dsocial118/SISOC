@@ -222,6 +222,17 @@ class Admision(models.Model):
     estado_mostrar = models.CharField(max_length=255, blank=True, null=True)
     fecha_estado_mostrar = models.DateField(null=True, blank=True)
     convenio_numero = models.IntegerField(null=True, blank=True)
+    personas_conveniadas_nomina = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        verbose_name="Personas conveniadas para nomina",
+        help_text="Tope de personas para nomina alimentaria en PWA.",
+    )
+    vigente_pwa = models.BooleanField(
+        default=False,
+        verbose_name="Vigente para PWA",
+        help_text="Indica que esta admision es la referencia vigente para PWA.",
+    )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -279,6 +290,13 @@ class Admision(models.Model):
         return None
 
     class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["comedor"],
+                condition=models.Q(vigente_pwa=True),
+                name="uniq_admision_vigente_pwa_por_comedor",
+            )
+        ]
         indexes = [
             models.Index(fields=["comedor"]),
         ]

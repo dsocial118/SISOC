@@ -13,16 +13,14 @@ from rendicioncuentasfinal.views import (
     documentos_rendicion_cuentas_final_ajax,
 )
 
+_RENDICION_FINAL_PERM = ["rendicioncuentasfinal.view_rendicioncuentasfinal"]
+
 urlpatterns = [
     path(
         "comedores/<int:pk>/rendicion_cuentas_final/",
-        permissions_any_required(
-            [
-                "comedores.view_comedor",
-                "admisiones.view_admision",
-                "acompanamientos.view_informacionrelevante",
-            ]
-        )(RendicionCuentasFinalDetailView.as_view()),
+        permissions_any_required(_RENDICION_FINAL_PERM)(
+            RendicionCuentasFinalDetailView.as_view()
+        ),
         name="rendicion_cuentas_final",
     ),
     path(
@@ -57,14 +55,9 @@ urlpatterns = [
     ),
     path(
         "rendicion_cuentas_final/listar/",
-        permissions_any_required(
-            [
-                "comedores.view_comedor",
-                "expedientespagos.view_expedientepago",
-                "admisiones.view_admision",
-                "acompanamientos.view_informacionrelevante",
-            ]
-        )(DocumentosRendicionCuentasFinalListView.as_view()),
+        permissions_any_required(_RENDICION_FINAL_PERM)(
+            DocumentosRendicionCuentasFinalListView.as_view()
+        ),
         name="rendicion_cuentas_final_listar",
     ),
     # AJAX endpoint

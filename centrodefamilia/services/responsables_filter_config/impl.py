@@ -23,6 +23,8 @@ FIELD_MAP: Dict[str, str] = {
     "codigo_postal": "codigo_postal",
     "altura": "altura",
     "cantidad_beneficiarios": "cantidad_beneficiarios",
+    # DateTimeField comparado por fecha (inclusive en desde/hasta)
+    "fecha_creado": "fecha_creado__date",
 }
 
 FIELD_TYPES: Dict[str, str] = {
@@ -50,11 +52,14 @@ FIELD_TYPES: Dict[str, str] = {
         key: "number"
         for key in ["dni", "cuil", "codigo_postal", "altura", "cantidad_beneficiarios"]
     },
+    "fecha_creado": "date",
 }
 
 TEXT_OPS = ["contains", "ncontains", "eq", "ne", "empty"]
 NUM_OPS = ["eq", "ne", "gt", "lt", "empty"]
 CHOICE_OPS = ["eq", "ne"]
+DATE_OPS = ["eq", "ne", "gte", "lte"]
+DATE_OPERATOR_LABELS = {"gte": "Desde", "lte": "Hasta"}
 
 FILTER_FIELDS = [
     {"name": "apellido", "label": "Apellido", "type": "text"},
@@ -118,6 +123,7 @@ FILTER_FIELDS = [
         "label": "Cantidad de beneficiarios",
         "type": "number",
     },
+    {"name": "fecha_creado", "label": "Fecha de carga", "type": "date"},
 ]
 
 
@@ -130,7 +136,9 @@ def get_filters_ui_config() -> Dict[str, Any]:
             "text": list(TEXT_OPS),
             "number": list(NUM_OPS),
             "choice": list(CHOICE_OPS),
+            "date": list(DATE_OPS),
         },
+        "operatorLabels": dict(DATE_OPERATOR_LABELS),
     }
 
 
@@ -140,6 +148,7 @@ __all__ = [
     "TEXT_OPS",
     "NUM_OPS",
     "CHOICE_OPS",
+    "DATE_OPS",
     "FILTER_FIELDS",
     "get_filters_ui_config",
 ]

@@ -364,6 +364,8 @@ class ActividadEspacioPWAListSerializer(serializers.ModelSerializer):
             "hora_inicio",
             "hora_fin",
             "horario_actividad",
+            "responsable_actividad",
+            "vigencia_actividad_meses",
             "cantidad_inscriptos",
             "activo",
             "fecha_alta",
@@ -389,6 +391,8 @@ class ActividadEspacioPWACreateUpdateSerializer(serializers.ModelSerializer):
             "hora_inicio",
             "hora_fin",
             "horario_actividad",
+            "responsable_actividad",
+            "vigencia_actividad_meses",
             "activo",
             "fecha_alta",
             "fecha_actualizacion",
@@ -406,6 +410,8 @@ class ActividadEspacioPWACreateUpdateSerializer(serializers.ModelSerializer):
             "horario_actividad": {"required": False, "allow_blank": True},
             "hora_inicio": {"required": False},
             "hora_fin": {"required": False},
+            "responsable_actividad": {"required": False, "allow_blank": True},
+            "vigencia_actividad_meses": {"required": False, "allow_null": True},
         }
 
     def validate_catalogo_actividad(self, value):
@@ -417,6 +423,14 @@ class ActividadEspacioPWACreateUpdateSerializer(serializers.ModelSerializer):
 
     def validate_horario_actividad(self, value):
         value = (value or "").strip()
+        return value
+
+    def validate_responsable_actividad(self, value):
+        return (value or "").strip()
+
+    def validate_vigencia_actividad_meses(self, value):
+        if value is not None and value < 1:
+            raise serializers.ValidationError("La vigencia debe ser mayor a 0 meses.")
         return value
 
     def validate(self, attrs):
@@ -505,6 +519,8 @@ class InscriptoActividadPWAListSerializer(serializers.ModelSerializer):
             "dni",
             "genero",
             "fecha_nacimiento",
+            "activo",
+            "fecha_baja",
         )
 
     def _get_ciudadano(self, obj):
@@ -560,6 +576,7 @@ class NominaEspacioPWAListSerializer(serializers.ModelSerializer):
     es_indocumentado = serializers.SerializerMethodField()
     pertenece_comunidad_indigena = serializers.SerializerMethodField()
     situacion_calle = serializers.SerializerMethodField()
+    persona_con_celiaquia = serializers.SerializerMethodField()
     identificador_interno = serializers.SerializerMethodField()
     asistencia_mes_actual = serializers.SerializerMethodField()
     historial_asistencias = serializers.SerializerMethodField()
@@ -582,6 +599,7 @@ class NominaEspacioPWAListSerializer(serializers.ModelSerializer):
             "es_indocumentado",
             "pertenece_comunidad_indigena",
             "situacion_calle",
+            "persona_con_celiaquia",
             "identificador_interno",
             "asistencia_mes_actual",
             "historial_asistencias",
@@ -695,6 +713,10 @@ class NominaEspacioPWAListSerializer(serializers.ModelSerializer):
         profile = self._get_profile(obj)
         return bool(profile.situacion_calle) if profile else False
 
+    def get_persona_con_celiaquia(self, obj):
+        profile = self._get_profile(obj)
+        return bool(profile.persona_con_celiaquia) if profile else False
+
     def get_identificador_interno(self, obj):
         profile = self._get_profile(obj)
         return profile.identificador_interno if profile else None
@@ -780,11 +802,12 @@ class NominaEspacioPWACreateUpdateSerializer(serializers.Serializer):
         required=False, default=False
     )
     situacion_calle = serializers.BooleanField(required=False, default=False)
+    persona_con_celiaquia = serializers.BooleanField(required=False, default=False)
     identificador_interno = serializers.CharField(
         required=False, allow_blank=True, allow_null=True
     )
-    asistencia_alimentaria = serializers.BooleanField(required=False, default=False)
-    asistencia_actividades = serializers.BooleanField(required=False, default=False)
+    asistencia_alimentaria = serializers.BooleanField(required=False)
+    asistencia_actividades = serializers.BooleanField(required=False)
     actividad_ids = serializers.ListField(
         child=serializers.IntegerField(min_value=1),
         required=False,
@@ -807,7 +830,7 @@ class NominaEspacioPWACreateUpdateSerializer(serializers.Serializer):
         attrs = super().validate(attrs)
         es_indocumentado = bool(attrs.get("es_indocumentado"))
         if es_indocumentado:
-            for field in ("nombre", "apellido", "fecha_nacimiento", "sexo_id"):
+            for field in ("nombre", "apellido", "sexo_id"):
                 if field not in attrs:
                     raise serializers.ValidationError(
                         {field: "Este campo es obligatorio para indocumentados."}
@@ -946,7 +969,10 @@ class MensajeEspacioPWASerializer(serializers.ModelSerializer):
         lecturas = getattr(obj, "lecturas_pwa_usuario_espacio", None)
         if lecturas is not None:
             comedor_id = self.context.get("comedor_id")
-            if obj.subtipo == SubtipoComunicado.INSTITUCIONAL:
+            if obj.subtipo in (
+                SubtipoComunicado.INSTITUCIONAL,
+                SubtipoComunicado.ORGANIZACIONES,
+            ):
                 return lecturas[0] if lecturas else None
             for lectura in lecturas:
                 if getattr(lectura, "comedor_id", None) == comedor_id:
@@ -958,7 +984,10 @@ class MensajeEspacioPWASerializer(serializers.ModelSerializer):
         if not comedor_id or not user:
             return None
         lecturas = obj.lecturas_pwa.filter(user=user)
-        if obj.subtipo == SubtipoComunicado.INSTITUCIONAL:
+        if obj.subtipo in (
+            SubtipoComunicado.INSTITUCIONAL,
+            SubtipoComunicado.ORGANIZACIONES,
+        ):
             return lecturas.order_by("-fecha_visto", "-id").first()
         return (
             lecturas.filter(comedor_id=comedor_id)
@@ -977,6 +1006,8 @@ class MensajeEspacioPWASerializer(serializers.ModelSerializer):
     def get_seccion(self, obj):
         if obj.subtipo == SubtipoComunicado.INSTITUCIONAL:
             return "general"
+        if obj.subtipo == SubtipoComunicado.ORGANIZACIONES:
+            return "organizacion"
         return "espacio"
 
 

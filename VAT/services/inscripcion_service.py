@@ -25,6 +25,52 @@ ESTADOS_INSCRIPCION_OCUPAN_CUPO = (
     "validada_presencial",
 )
 
+MENSAJE_COMISION_VENCIDA = "La comisión ya finalizó y no admite nuevas inscripciones."
+
+# Mensajes expeditivos por estado de la unidad formativa (Curso u Oferta).
+MENSAJES_UNIDAD_FORMATIVA_NO_INSCRIBIBLE = {
+    "planificado": "El curso todavía no abrió la inscripción.",
+    "finalizado": "El curso ya finalizó: la inscripción está cerrada.",
+    "cancelado": "El curso fue cancelado: no admite inscripciones.",
+    "cerrada": "La oferta está cerrada: no admite inscripciones.",
+    "cancelada": "La oferta fue cancelada: no admite inscripciones.",
+}
+MENSAJE_UNIDAD_FORMATIVA_NO_ACTIVA = (
+    "El curso no se encuentra activo para nuevas inscripciones."
+)
+
+MENSAJES_COMISION_NO_INSCRIBIBLE = {
+    "planificada": "La comisión todavía no abrió la inscripción.",
+    "cerrada": "La inscripción a esta comisión está cerrada.",
+    "suspendida": (
+        "La comisión está suspendida: no admite inscripciones por el momento."
+    ),
+}
+MENSAJE_COMISION_NO_ACTIVA = (
+    "La comisión no se encuentra activa para nuevas inscripciones."
+)
+
+# Estados que bloquean el alta también en crear_inscripcion. "planificada"/
+# "planificado" solo bloquea la prevalidación pública: el backoffice permite
+# pre-inscribir en comisiones planificadas.
+ESTADOS_UNIDAD_FORMATIVA_CERRADOS = ("finalizado", "cancelado", "cerrada", "cancelada")
+ESTADOS_COMISION_CERRADOS = ("cerrada", "suspendida")
+
+MENSAJE_CUPO_COMPLETO_SIN_ESPERA = (
+    "No es posible inscribirse: el cupo está completo y la comisión "
+    "no tiene lista de espera."
+)
+MENSAJE_CUPO_Y_ESPERA_COMPLETOS = (
+    "No es posible inscribirse: el cupo está completo y la lista de espera también."
+)
+MENSAJE_LISTA_ESPERA_COMPLETA = (
+    "La lista de espera está completa: no es posible anotarse."
+)
+MENSAJE_CUPO_COMPLETO = "El cupo de la comisión está completo."
+AVISO_INGRESA_LISTA_ESPERA = (
+    "El cupo está completo: la inscripción ingresa en lista de espera."
+)
+
 
 class InscripcionService:
     """Orquesta altas de inscripción con validaciones de voucher."""
@@ -132,6 +178,15 @@ class InscripcionService:
         return bool(getattr(comision, "acepta_lista_espera", False))
 
     @staticmethod
+    def _comision_vencida(comision) -> bool:
+        fecha_fin = getattr(comision, "fecha_fin", None)
+        return bool(fecha_fin) and fecha_fin < timezone.localdate()
+
+    @staticmethod
+    def _resolver_cupo_lista_espera(comision) -> int:
+        return int(getattr(comision, "cupo_lista_espera", 0) or 0)
+
+    @staticmethod
     def _inscripciones_queryset_para_comision(comision):
         return Inscripcion.objects.filter(
             **InscripcionService._resolver_lookup_comision(comision)
@@ -161,6 +216,27 @@ class InscripcionService:
             exclude_inscripcion=exclude_inscripcion,
         )
         return max(cupo_total - total_inscriptos, 0)
+
+    @staticmethod
+    def contar_inscripciones_en_espera(comision, *, exclude_inscripcion=None) -> int:
+        queryset = InscripcionService._inscripciones_queryset_para_comision(
+            comision
+        ).filter(estado="en_espera")
+        exclude_id = InscripcionService._resolve_lookup_id(exclude_inscripcion)
+        if exclude_id:
+            queryset = queryset.exclude(pk=exclude_id)
+        return queryset.count()
+
+    @staticmethod
+    def calcular_cupos_lista_espera_disponibles(
+        comision, *, exclude_inscripcion=None
+    ) -> int:
+        cupo_lista_espera = InscripcionService._resolver_cupo_lista_espera(comision)
+        total_en_espera = InscripcionService.contar_inscripciones_en_espera(
+            comision,
+            exclude_inscripcion=exclude_inscripcion,
+        )
+        return max(cupo_lista_espera - total_en_espera, 0)
 
     @staticmethod
     def _debitar_voucher_para_oferta(  # pylint: disable=too-many-arguments
@@ -316,23 +392,47 @@ class InscripcionService:
         unidad_formativa, _ = InscripcionService._resolver_unidad_formativa(comision)
         programa = programa or unidad_formativa.programa
         cupos_disponibles = InscripcionService.calcular_cupos_disponibles(comision)
+        cupos_lista_espera_disponibles = (
+            InscripcionService.calcular_cupos_lista_espera_disponibles(comision)
+        )
         pasa_a_lista_espera = (
-            cupos_disponibles <= 0 and InscripcionService._acepta_lista_espera(comision)
+            cupos_disponibles <= 0
+            and InscripcionService._acepta_lista_espera(comision)
+            and cupos_lista_espera_disponibles > 0
         )
         motivos: list[str] = []
+        avisos: list[str] = []
 
         if unidad_formativa.estado != "activo":
-            motivos.append("El curso no se encuentra activo para nuevas inscripciones.")
+            motivos.append(
+                MENSAJES_UNIDAD_FORMATIVA_NO_INSCRIBIBLE.get(
+                    unidad_formativa.estado, MENSAJE_UNIDAD_FORMATIVA_NO_ACTIVA
+                )
+            )
 
         if comision.estado != "activa":
             motivos.append(
-                "La comisión no se encuentra activa para nuevas inscripciones."
+                MENSAJES_COMISION_NO_INSCRIBIBLE.get(
+                    comision.estado, MENSAJE_COMISION_NO_ACTIVA
+                )
             )
+
+        if InscripcionService._comision_vencida(comision):
+            motivos.append(MENSAJE_COMISION_VENCIDA)
+
+        if pasa_a_lista_espera:
+            avisos.append(AVISO_INGRESA_LISTA_ESPERA)
 
         if cupos_disponibles <= 0 and not InscripcionService._acepta_lista_espera(
             comision
         ):
-            motivos.append("La comisión no tiene cupos disponibles.")
+            motivos.append(MENSAJE_CUPO_COMPLETO_SIN_ESPERA)
+        elif (
+            cupos_disponibles <= 0
+            and InscripcionService._acepta_lista_espera(comision)
+            and cupos_lista_espera_disponibles <= 0
+        ):
+            motivos.append(MENSAJE_CUPO_Y_ESPERA_COMPLETOS)
 
         if programa is None:
             motivos.append(
@@ -414,6 +514,7 @@ class InscripcionService:
         return {
             "puede_inscribirse": not motivos,
             "motivos": motivos,
+            "avisos": avisos,
             "ciudadano": {
                 "id": ciudadano.id,
                 "documento": ciudadano.documento,
@@ -462,6 +563,19 @@ class InscripcionService:
         )
         programa = programa or unidad_formativa.programa
 
+        if InscripcionService._comision_vencida(comision):
+            raise ValueError(MENSAJE_COMISION_VENCIDA)
+
+        estado_unidad_formativa = getattr(unidad_formativa, "estado", None)
+        if estado_unidad_formativa in ESTADOS_UNIDAD_FORMATIVA_CERRADOS:
+            raise ValueError(
+                MENSAJES_UNIDAD_FORMATIVA_NO_INSCRIBIBLE[estado_unidad_formativa]
+            )
+
+        estado_comision = getattr(comision, "estado", None)
+        if estado_comision in ESTADOS_COMISION_CERRADOS:
+            raise ValueError(MENSAJES_COMISION_NO_INSCRIBIBLE[estado_comision])
+
         if programa is None and not getattr(
             unidad_formativa, "inscripcion_libre", False
         ):
@@ -502,13 +616,28 @@ class InscripcionService:
                 )
                 if cupos_disponibles <= 0:
                     if InscripcionService._acepta_lista_espera(comision_locked):
+                        if (
+                            InscripcionService.calcular_cupos_lista_espera_disponibles(
+                                comision_locked
+                            )
+                            <= 0
+                        ):
+                            raise ValueError(MENSAJE_CUPO_Y_ESPERA_COMPLETOS)
                         estado_final = "en_espera"
                     else:
-                        raise ValueError("La comisión no tiene cupos disponibles.")
+                        raise ValueError(MENSAJE_CUPO_COMPLETO_SIN_ESPERA)
             elif estado == "en_espera" and not InscripcionService._acepta_lista_espera(
                 comision_locked
             ):
                 raise ValueError("La comisión no acepta lista de espera.")
+            elif estado == "en_espera":
+                if (
+                    InscripcionService.calcular_cupos_lista_espera_disponibles(
+                        comision_locked
+                    )
+                    <= 0
+                ):
+                    raise ValueError(MENSAJE_LISTA_ESPERA_COMPLETA)
 
             inscripcion_kwargs = {
                 "ciudadano": ciudadano,
@@ -582,7 +711,7 @@ class InscripcionService:
                     comision_locked
                 )
                 if cupos_disponibles <= 0:
-                    raise ValueError("La comisión no tiene cupos disponibles.")
+                    raise ValueError(MENSAJE_CUPO_COMPLETO)
 
             if unidad_formativa.usa_voucher and pasa_a_ocupar_cupo and not ocupaba_cupo:
                 cantidad_debito = InscripcionService._resolver_cantidad_debito(
@@ -623,6 +752,18 @@ class InscripcionService:
         inscrito_por=None,
     ):
         oferta = comision.oferta
+
+        if InscripcionService._comision_vencida(comision):
+            raise ValueError(MENSAJE_COMISION_VENCIDA)
+
+        estado_oferta = getattr(oferta, "estado", None)
+        if estado_oferta in ESTADOS_UNIDAD_FORMATIVA_CERRADOS:
+            raise ValueError(MENSAJES_UNIDAD_FORMATIVA_NO_INSCRIBIBLE[estado_oferta])
+
+        estado_comision = getattr(comision, "estado", None)
+        if estado_comision in ESTADOS_COMISION_CERRADOS:
+            raise ValueError(MENSAJES_COMISION_NO_INSCRIBIBLE[estado_comision])
+
         usuario_inscribe = InscripcionService._resolver_usuario_auditoria(inscrito_por)
         if usuario_inscribe is None:
             raise ValueError("No hay usuario disponible para registrar la inscripción.")

@@ -1,18 +1,24 @@
 /* Footer personalizado */
+
+:root {
+    --sidebar-border-color: #46505f;
+}
+
 .app-wrapper .app-footer,
 footer.app-footer {
-    position: sticky;
+    position: static;
+    grid-column: 1 / -1;
     width: 100%;
     height: 136px !important;
     background-color: #232d4f !important;
     border-top: 15px solid #e7ba61 !important;
     color: #ffffff !important;
     margin-top: auto;
-    z-index: 3000 !important;
+    z-index: 20;
     display: flex;
 }
 
-/* Modales por encima del footer fijo (z-index: 3000) */
+/* Los modales deben permanecer por encima del layout de la aplicación. */
 .modal-backdrop {
     z-index: 3050 !important;
 }
@@ -22,7 +28,6 @@ footer.app-footer {
 
 .app-sidebar {
     background-color: #232d4f !important;
-    position: fixed;
     top: 72px !important;
     z-index: 1040; /* Menor que header pero mayor que contenido */
 }
@@ -39,9 +44,15 @@ footer.app-footer {
 }
 
 .app-main {
-    margin-top: 96px;
-    min-height: calc(100vh - 182px); 
-    margin-left: 0;
+    min-height: calc(100vh - 76px - 136px);
+}
+
+.app-wrapper {
+    grid-template-areas:
+        "lte-app-sidebar lte-app-main"
+        "lte-app-footer lte-app-footer";
+    grid-template-rows: 1fr min-content;
+    padding-top: 76px;
 }
 
 .main-header {
@@ -101,27 +112,28 @@ header.main-header {
 
 @media (min-width: 992px) {
     .sidebar-expand-lg.layout-fixed .app-sidebar {
-        position: fixed;
+        position: sticky;
         top: 76px !important;
+        align-self: start;
+        max-height: calc(100vh - 76px);
+    }
+
+    .sidebar-expand-lg.layout-fixed .app-main {
+        overflow: visible;
     }
 
     .nav-item {
         overflow-x: hidden !important;
     }
 
-    .app-main {
-        margin-left: 300px;
+    .sidebar-expand-lg.layout-fixed .app-sidebar .sidebar-wrapper {
+        height: calc(100vh - 76px);
     }
-}
-
-body.sidebar-collapse .app-main {
-    margin-left: 0;
 }
 
 .sidebar-expand-lg.layout-fixed .app-sidebar .sidebar-wrapper {
-        height: calc(100vh - 200px);
-        overflow-x: hidden !important;
-    }
+    overflow-x: hidden !important;
+}
 
 .sidebar-wrapper .sidebar-menu > .nav-item > .nav-link.active:not(:hover) {
     color: #e7ba61;
@@ -129,7 +141,7 @@ body.sidebar-collapse .app-main {
 
 
 .nav-main-item>a {
-    border-top: 1px solid var(--lte-sidebar-color);
+    border-top: 1px solid var(--sidebar-border-color);
     padding: 8px 24px;
 }
 
@@ -143,7 +155,7 @@ ul > .nav-main-item:first-child>a {
 }
 
 .nav-main-item:last-child {
-    border-bottom: 1px solid var(--lte-sidebar-color);
+    border-bottom: none;
 }
 
 .nav-main-item.menu-open::before {
@@ -227,4 +239,75 @@ aside .nav-link p {
     border-color: #e7ba61;
 }
 
+
+.sidebar-wrapper .sidebar-menu > .nav-item:hover > .nav-link {
+    color: #e7ba61 !important;
+}
+
+.sidebar-wrapper .sidebar-menu > .nav-item:hover > .nav-link img {
+    filter: invert(67%) sepia(54%) saturate(559%) hue-rotate(340deg) brightness(230%) contrast(50%);
+}
+
+.sidebar-menu>li>.nav-link {
+    font-weight:bold;
+}
+
+ul.nav:not(.sidebar-menu) .nav-link {
+    padding-left: 3rem;
+}
+
+ul.nav:not(.sidebar-menu) .nav-link p {
+    padding-left: 0;
+}
+
+/* Arrow at far right, vertically centered via flex (not position:absolute) */
+.sidebar-menu .nav-link > .nav-arrow {
+    position: static !important;
+    top: auto !important;
+    right: auto !important;
+    align-self: center;
+    flex-shrink: 0;
+    margin-left: auto;
+}
+
+.sidebar-menu .nav-item > .nav-link > .nav-arrow {
+    transform: none !important;
+}
+
+.sidebar-menu .menu-open > .nav-link > .nav-arrow {
+    transform: rotate(90deg) !important;
+}
+
+/* Hover: sin fondo gris, texto amarillo */
+.sidebar-menu .nav-link:hover {
+    background-color: transparent !important;
+    color: #e7ba61 !important;
+}
+
+.sidebar-menu .nav-link:hover img {
+    filter: invert(67%) sepia(54%) saturate(559%) hue-rotate(340deg) brightness(230%) contrast(50%);
+}
+
+/* Active: texto amarillo, sin fondo */
+.sidebar-menu .nav-link.active {
+    color: #e7ba61 !important;
+    background-color: transparent !important;
+}
+
+.sidebar-menu .nav-link.active img {
+    filter: invert(67%) sepia(54%) saturate(559%) hue-rotate(340deg) brightness(230%) contrast(50%);
+}
+
+.sidebar-menu .nav-link.nav-dot::before {
+    font-size: 0.4rem;
+}
+
+.sidebar-menu ul > .nav-item {
+    min-height: 45px !important;
+}
+
+.sidebar-menu ul > .nav-item > .nav-link {
+    min-height: 45px !important;
+    height: 45px !important;
+}
 /* 

@@ -2,6 +2,7 @@ from datetime import date
 
 import pytest
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Permission
 from django.utils import timezone
 from rest_framework.authtoken.models import Token
 from rest_framework.test import APIClient
@@ -15,10 +16,19 @@ from pwa.models import (
     AuditoriaOperacionPWA,
     CatalogoActividadPWA,
     InscriptoActividadEspacioPWA,
+    NominaDestinatariosDocumentoPWA,
     NominaEspacioPWA,
     RegistroAsistenciaNominaPWA,
 )
 from users.models import AccesoComedorPWA
+
+
+def _grant_pwa_permission(user, codename):
+    permission = Permission.objects.get(
+        content_type__app_label="pwa",
+        codename=codename,
+    )
+    user.user_permissions.add(permission)
 
 
 @pytest.fixture
@@ -60,6 +70,7 @@ def _create_representante(*, comedor, username="rep_nomina", password="testpass1
         rol=AccesoComedorPWA.ROL_REPRESENTANTE,
         activo=True,
     )
+    _grant_pwa_permission(user, "manage_nomina_pwa")
     return user
 
 
@@ -582,11 +593,17 @@ def test_nomina_bulk_attendance_alimentaria_syncs_current_period(
         entidad_id=registro_existente.id,
         metadata__origen="bulk_alimentaria",
     ).exists()
+    documento = NominaDestinatariosDocumentoPWA.objects.get()
+    assert documento.cantidad_destinatarios == 1
+    assert documento.metadata["nomina_ids"] == [nomina_1.id]
+    assert (
+        response.data["nomina_destinatarios_documento"]["cantidad_destinatarios"] == 1
+    )
 
 
 @pytest.mark.django_db
 def test_nomina_bulk_attendance_alimentaria_rejects_non_alimentaria_rows(
-    comedor, admision, sexo_f
+    comedor, admision, sexo_f, fecha_fija_en_ventana
 ):
     representante = _create_representante(
         comedor=comedor, username="rep_nomina_bulk_invalid"

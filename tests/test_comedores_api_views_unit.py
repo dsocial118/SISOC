@@ -129,6 +129,14 @@ def test_collect_documentos_aggregates_multiple_sources(mocker):
             )
         ),
     )
+    mocker.patch(
+        "comedores.api_views.NominaDestinatariosDocumentoPWA.objects.filter",
+        return_value=SimpleNamespace(
+            exclude=lambda *_a, **_k: SimpleNamespace(
+                only=lambda *_b: SimpleNamespace(order_by=lambda *_c: [])
+            )
+        ),
+    )
 
     rendiciones_mgr = SimpleNamespace(
         prefetch_related=lambda *_a: SimpleNamespace(

@@ -1,0 +1,208 @@
+{% extends "includes/main.html" %}
+{% load static %}
+
+{% block title %}Sede VPSL{% endblock %}
+{% block head %}
+    <link rel="stylesheet"
+          href="{% static 'custom/css/ver_para_ser_libre.css' %}?v=sede-form-ux-20260624" />
+{% endblock %}
+{% block breadcrumb %}
+    {% include "components/breadcrumb.html" with items=breadcrumb_items %}
+{% endblock %}
+
+{% block content %}
+    <div class="row vpsl-page vpsl-sede-form">
+        <div class="col-12 col-xl-10 offset-xl-1">
+            <div class="card vpsl-title-card vpsl-header">
+                <div class="card-body d-flex flex-wrap justify-content-between align-items-center gap-2">
+                    <div>
+                        <h2 class="vpsl-title">Sede VPSL</h2>
+                        <p class="vpsl-subtitle mb-0">Datos escolares, ubicacion y checklist operativo</p>
+                    </div>
+                    <a href="{% url 'vpsl_sede_list' %}" class="btn btn-secondary">
+                        <i class="bi bi-arrow-left"></i> Volver
+                    </a>
+                </div>
+            </div>
+            <div class="card vpsl-form-card">
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="card-body">
+                        {% include "ver_para_ser_libre/partials/form_errors.html" with form=form %}
+                        <div class="vpsl-form-shell">
+                            <section class="vpsl-section">
+                                <div class="vpsl-section-header">
+                                    <div class="vpsl-section-icon">
+                                        <i class="bi bi-building"></i>
+                                    </div>
+                                    <div>
+                                        <h3 class="vpsl-section-title">Datos de la sede</h3>
+                                    </div>
+                                </div>
+                                <div class="vpsl-section-body">
+                                    <div class="row g-3">
+                                        {% for field in form %}
+                                            {% if field.name != "latitud" and field.name != "longitud" %}
+                                                <div class="col-12 col-md-6 {% if field.name == 'mail' %}col-md-12{% endif %}">
+                                                    <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                                                    {{ field }}
+                                                    {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                                                </div>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </section>
+                            <section class="vpsl-section">
+                                <div class="vpsl-section-header">
+                                    <div class="vpsl-section-icon">
+                                        <i class="bi bi-geo-alt"></i>
+                                    </div>
+                                    <div>
+                                        <h3 class="vpsl-section-title">Ubicacion</h3>
+                                    </div>
+                                </div>
+                                <div class="vpsl-section-body">
+                                    <div class="row g-3 mb-3">
+                                        {% for field in form %}
+                                            {% if field.name == "latitud" or field.name == "longitud" %}
+                                                <div class="col-12 col-md-6">
+                                                    <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                                                    {{ field }}
+                                                    {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                                                </div>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </div>
+                                    <div class="vpsl-sede-map-toolbar">
+                                        <button type="button" id="vpsl-sede-map-search" class="btn btn-secondary">
+                                            <i class="bi bi-search"></i> Buscar ubicación en mapa
+                                        </button>
+                                        <p id="vpsl-sede-map-status" class="vpsl-field-note text-muted mb-0">
+                                            La búsqueda usa nombre, domicilio, localidad, departamento, jurisdicción, código postal y coordenadas si están cargadas.
+                                        </p>
+                                    </div>
+                                    <iframe id="vpsl-sede-map"
+                                            title="Mapa sede"
+                                            class="vpsl-sede-map"
+                                            loading="lazy"
+                                            allowfullscreen
+                                            src="https://www.google.com/maps?q={% if mapa_query %}{{ mapa_query }}{% else %}Argentina{% endif %}&output=embed">
+                                    </iframe>
+                                </div>
+                            </section>
+                            <section class="vpsl-section">
+                                <div class="vpsl-section-header">
+                                    <div class="vpsl-section-icon">
+                                        <i class="bi bi-clipboard-check"></i>
+                                    </div>
+                                    <div>
+                                        <h3 class="vpsl-section-title">Checklist</h3>
+                                    </div>
+                                </div>
+                                <div class="vpsl-section-body">
+                                    {% include "ver_para_ser_libre/partials/form_errors.html" with form=checklist_form %}
+                                    <div class="row g-3">
+                                        {% for group in field_groups %}
+                                            <div class="col-12 col-lg-4">
+                                                <div class="vpsl-check-card">
+                                                    <h5 class="h6">{{ group.title }}</h5>
+                                                    <div class="mb-3">
+                                                        <label class="form-label" for="{{ group.cumple.id_for_label }}">{{ group.cumple.label }}</label>
+                                                        {{ group.cumple }}
+                                                    </div>
+                                                    <div class="mb-3">
+                                                        <label class="form-label" for="{{ group.observacion.id_for_label }}">{{ group.observacion.label }}</label>
+                                                        {{ group.observacion }}
+                                                    </div>
+                                                    <div>
+                                                        <label class="form-label" for="{{ group.evidencia.id_for_label }}">{{ group.evidencia.label }}</label>
+                                                        {{ group.evidencia }}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </section>
+                        </div>
+                    </div>
+                    <div class="card-footer d-flex gap-2 justify-content-end">
+                        <a href="{% url 'vpsl_sede_list' %}" class="btn btn-secondary">Volver</a>
+                        <button type="submit" class="btn btn-primary">Guardar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block customJS %}
+    <script nonce="{{ request.csp_nonce }}">
+      document.addEventListener("DOMContentLoaded", function () {
+        const mapFrame = document.getElementById("vpsl-sede-map");
+        const searchButton = document.getElementById("vpsl-sede-map-search");
+        const statusElement = document.getElementById("vpsl-sede-map-status");
+        const fields = {
+          nombre: document.getElementById("id_nombre"),
+          domicilio: document.getElementById("id_domicilio"),
+          localidad: document.getElementById("id_localidad"),
+          departamento: document.getElementById("id_departamento"),
+          jurisdiccion: document.getElementById("id_jurisdiccion"),
+          codigoPostal: document.getElementById("id_codigo_postal"),
+          latitud: document.getElementById("id_latitud"),
+          longitud: document.getElementById("id_longitud"),
+        };
+
+        function valueOf(field) {
+          return field && field.value ? field.value.trim() : "";
+        }
+
+        function coordinateQuery() {
+          const latitud = valueOf(fields.latitud).replace(",", ".");
+          const longitud = valueOf(fields.longitud).replace(",", ".");
+          if (!latitud || !longitud) return "";
+          const lat = Number(latitud);
+          const lng = Number(longitud);
+          if (!Number.isFinite(lat) || !Number.isFinite(lng)) return "";
+          return `${latitud},${longitud}`;
+        }
+
+        function buildLocationQuery() {
+          const coordinates = coordinateQuery();
+          if (coordinates) return coordinates;
+          return [
+            valueOf(fields.nombre),
+            valueOf(fields.domicilio),
+            valueOf(fields.localidad),
+            valueOf(fields.departamento),
+            valueOf(fields.jurisdiccion),
+            valueOf(fields.codigoPostal),
+            "Argentina",
+          ].filter(Boolean).join(", ");
+        }
+
+        function updateMap() {
+          if (!mapFrame) return;
+          const query = buildLocationQuery();
+          if (!query) {
+            if (statusElement) {
+              statusElement.textContent = "Completá al menos un dato de ubicación para buscar en el mapa.";
+              statusElement.classList.add("text-danger");
+            }
+            return;
+          }
+          mapFrame.src = `https://www.google.com/maps?q=${encodeURIComponent(query)}&output=embed`;
+          if (statusElement) {
+            statusElement.textContent = `Buscando en el mapa: ${query}`;
+            statusElement.classList.remove("text-danger");
+            statusElement.classList.add("text-muted");
+          }
+        }
+
+        if (searchButton) {
+          searchButton.addEventListener("click", updateMap);
+        }
+      });
+    </script>
+{% endblock %}

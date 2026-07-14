@@ -1,0 +1,38 @@
+{% extends "includes/main.html" %}
+{% load static %}
+
+{% block title %}Ver Para Ser Libres{% endblock %}
+{% block head %}
+    <link rel="stylesheet"
+          href="{% static 'custom/css/ver_para_ser_libre.css' %}" />
+{% endblock %}
+{% block content %}
+    <div class="row vpsl-page">
+        <div class="col-12 col-xl-8 offset-xl-2">
+            <div class="card vpsl-info-card">
+                <div class="card-header">
+                    <h3 class="card-title mb-0">Carga VPSL</h3>
+                </div>
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="card-body">
+                        {% include "ver_para_ser_libre/partials/form_errors.html" with form=form %}
+                        <div class="row g-3">
+                            {% for field in form %}
+                                <div class="col-12 col-md-6">
+                                    <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                                    {{ field }}
+                                    {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="card-footer d-flex justify-content-end gap-2">
+                        <button type="button" onclick="history.back()" class="btn btn-secondary">Volver</button>
+                        <button type="submit" class="btn btn-primary">Guardar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock %}

@@ -19,9 +19,9 @@
                         </select>
                     </label>
                     <select id="cursosFilterPageSize" class="sisoc-hidden-control">
-                        <option value="5">5</option>
+                        <option value="5" selected>5</option>
                         <option value="10">10</option>
-                        <option value="25" selected>25</option>
+                        <option value="25">25</option>
                         <option value="50">50</option>
                         <option value="todos">Todos</option>
                     </select>
@@ -74,6 +74,13 @@
                                         </td>
                                         <td>
                                             <div class="sisoc-table-actions">
+                                                {% if perms.VAT.view_curso %}
+                                                    <a href="{% url 'vat_curso_detail' curso.id %}"
+                                                       class="sisoc-btn sisoc-btn--view">
+                                                        <i class="fas fa-eye"></i>
+                                                        <span>Ver</span>
+                                                    </a>
+                                                {% endif %}
                                                 {% if can_manage_centro and perms.VAT.add_comisioncurso %}
                                                     <a href="{% url 'vat_comision_curso_wizard' curso.id %}"
                                                        class="sisoc-btn sisoc-btn--add">
@@ -121,6 +128,9 @@
                 </div>
                 <div class="sisoc-table-footer">
                     <span id="cursosFilterSummary">Mostrando 1-{{ cursos|length }} de {{ cursos|length }}</span>
+                    <div id="cursosPagination"
+                         class="sisoc-page-buttons"
+                         aria-label="Paginación de cursos"></div>
                 </div>
             {% else %}
                 <div class="sisoc-empty-state">Sin cursos registrados para este centro.</div>
@@ -153,9 +163,9 @@
                         <option value="cerrada">Cerrada</option>
                     </select>
                     <select id="comisionesFilterPageSize" class="sisoc-hidden-control">
-                        <option value="5">5</option>
+                        <option value="5" selected>5</option>
                         <option value="10">10</option>
-                        <option value="25" selected>25</option>
+                        <option value="25">25</option>
                         <option value="50">50</option>
                         <option value="todos">Todos</option>
                     </select>
@@ -215,6 +225,8 @@
                                                             data-curso-nombre="{{ comision.curso.nombre }}"
                                                             data-ubicacion-id="{{ comision.ubicacion_id|default:'' }}"
                                                             data-cupo-total="{{ comision.cupo_total }}"
+                                                            data-acepta-lista-espera="{{ comision.acepta_lista_espera|yesno:'1,0' }}"
+                                                            data-cupo-lista-espera="{{ comision.cupo_lista_espera|default_if_none:'' }}"
                                                             data-fecha-inicio="{{ comision.fecha_inicio|date:'Y-m-d' }}"
                                                             data-fecha-fin="{{ comision.fecha_fin|date:'Y-m-d' }}"
                                                             data-estado="{{ comision.estado }}"
@@ -243,6 +255,9 @@
                 </div>
                 <div class="sisoc-table-footer">
                     <span id="comisionesFilterSummary">Mostrando 1-{{ comisiones_curso|length }} de {{ comisiones_curso|length }}</span>
+                    <div id="comisionesPagination"
+                         class="sisoc-page-buttons"
+                         aria-label="Paginación de comisiones"></div>
                 </div>
             {% else %}
                 <div class="sisoc-empty-state">No hay comisiones de curso para este centro.</div>
@@ -400,7 +415,7 @@
             </div>
         </div>
 
-        <div class="modal fade"
+        <div class="modal fade vat-ui-modal"
              id="modalPlanCurricularSelector"
              tabindex="-1"
              aria-labelledby="modalPlanCurricularSelectorLabel"
@@ -498,7 +513,7 @@
             </div>
         </div>
 
-        <div class="modal fade"
+        <div class="modal fade vat-ui-modal"
              id="modalComisionCurso"
              tabindex="-1"
              aria-labelledby="modalComisionCursoLabel"
@@ -521,15 +536,37 @@
                                  id="cursoSeleccionadoInfo"></div>
                             <div class="row">
                                 {% for field in comision_curso_form %}
-                                    <div class="col-md-6 mb-3">
-                                        <label for="{{ field.id_for_label }}" class="form-label fw-bold">
-                                            {{ field.label }}
-                                            {% if field.field.required %}<span class="text-danger">*</span>{% endif %}
-                                        </label>
-                                        {{ field }}
-                                        {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors.0 }}</div>{% endif %}
-                                        {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
-                                    </div>
+                                    {% if field.name == "acepta_lista_espera" %}
+                                        <div class="col-md-6 mb-3">
+                                            <div class="form-check mt-4 pt-2">
+                                                {{ field }}
+                                                <label for="{{ field.id_for_label }}" class="form-check-label fw-bold">{{ field.label }}</label>
+                                            </div>
+                                            {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors.0 }}</div>{% endif %}
+                                            {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+                                        </div>
+                                    {% elif field.name == "cupo_lista_espera" %}
+                                        <div class="col-md-6 mb-3 {% if not comision_curso_form.acepta_lista_espera.value and not field.value %}d-none{% endif %}"
+                                             data-waitlist-capacity-wrapper>
+                                            <label for="{{ field.id_for_label }}" class="form-label fw-bold">
+                                                {{ field.label }}
+                                                {% if field.field.required %}<span class="text-danger">*</span>{% endif %}
+                                            </label>
+                                            {{ field }}
+                                            {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors.0 }}</div>{% endif %}
+                                            {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+                                        </div>
+                                    {% else %}
+                                        <div class="col-md-6 mb-3">
+                                            <label for="{{ field.id_for_label }}" class="form-label fw-bold">
+                                                {{ field.label }}
+                                                {% if field.field.required %}<span class="text-danger">*</span>{% endif %}
+                                            </label>
+                                            {{ field }}
+                                            {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors.0 }}</div>{% endif %}
+                                            {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+                                        </div>
+                                    {% endif %}
                                 {% endfor %}
                             </div>
                         </div>
@@ -541,5 +578,8 @@
                 </div>
             </div>
         </div>
+        {# El sync de visibilidad del cupo de lista de espera vive en centro_detail.html #}
+        {# (setupComisionCursoModal): este partial se inyecta via innerHTML y los scripts #}
+        {# inline no se ejecutan en ese flujo. #}
     {% endif %}
 </div>

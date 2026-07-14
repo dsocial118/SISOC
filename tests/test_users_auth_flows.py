@@ -30,20 +30,22 @@ User = get_user_model()
 
 
 @pytest.mark.django_db
-def test_user_creation_form_requires_email():
+def test_user_creation_form_allows_empty_email():
     form = UserCreationForm(
         data={
             "username": "sinemail",
+            "email": "",
             "password": "Secreta123!",
         }
     )
 
-    assert form.is_valid() is False
-    assert "email" in form.errors
+    assert form.is_valid(), form.errors
+    user = form.save()
+    assert user.email == ""
 
 
 @pytest.mark.django_db
-def test_custom_user_change_form_requires_email(user):
+def test_custom_user_change_form_allows_empty_email(user):
     form = CustomUserChangeForm(
         instance=user,
         data={
@@ -53,8 +55,7 @@ def test_custom_user_change_form_requires_email(user):
         },
     )
 
-    assert form.is_valid() is False
-    assert "email" in form.errors
+    assert form.is_valid(), form.errors
 
 
 @pytest.mark.django_db
@@ -432,7 +433,7 @@ def test_web_password_reset_confirm_clears_flags(client):
 
 @pytest.mark.django_db
 def test_user_update_view_shows_temporary_password(client):
-    admin = User.objects.create_user(
+    admin = User.objects.create_superuser(
         username="users_editor",
         email="users_editor@example.com",
         password="Secreta123!",
@@ -464,7 +465,7 @@ def test_user_update_view_shows_temporary_password(client):
 @pytest.mark.django_db
 @override_settings(ROOT_URLCONF="tests.test_urls_pr1400_fixes")
 def test_user_list_shows_reset_pending_indicator_when_reset_pending():
-    admin = User.objects.create_user(
+    admin = User.objects.create_superuser(
         username="users_admin_list",
         email="users_admin_list@example.com",
         password="Secreta123!",
@@ -544,7 +545,7 @@ def test_user_create_view_redirects_with_temporary_password_visible(
         provincia=provincia,
         organizacion=organizacion,
     )
-    admin = User.objects.create_user(
+    admin = User.objects.create_superuser(
         username="users_creator",
         email="users_creator@example.com",
         password="Secreta123!",
@@ -611,7 +612,7 @@ def test_user_list_hides_reset_column_when_no_pending_requests(client):
 
 @pytest.mark.django_db
 def test_user_update_view_shows_reset_alert_and_button_inside_mobile_card(client):
-    admin = User.objects.create_user(
+    admin = User.objects.create_superuser(
         username="users_admin_edit_reset",
         email="users_admin_edit_reset@example.com",
         password="Secreta123!",
@@ -644,7 +645,7 @@ def test_user_update_view_shows_reset_alert_and_button_inside_mobile_card(client
 
 @pytest.mark.django_db
 def test_user_update_view_handles_user_without_profile(client):
-    admin = User.objects.create_user(
+    admin = User.objects.create_superuser(
         username="users_editor_legacy",
         email="users_editor_legacy@example.com",
         password="Secreta123!",
@@ -670,7 +671,7 @@ def test_user_update_view_handles_user_without_profile(client):
 
 @pytest.mark.django_db
 def test_generate_temporary_password_view_resets_flags_and_redirects_to_edit(client):
-    admin = User.objects.create_user(
+    admin = User.objects.create_superuser(
         username="users_admin_reset",
         email="users_admin_reset@example.com",
         password="Secreta123!",
@@ -833,7 +834,7 @@ def test_user_export_requires_view_and_export_permissions(client):
 
 @pytest.mark.django_db
 def test_user_list_view_shows_actions_according_to_is_active(client):
-    user = User.objects.create_user(
+    user = User.objects.create_superuser(
         username="users_reader_actions",
         email="users_reader_actions@example.com",
         password="Secreta123!",
@@ -900,7 +901,7 @@ def test_usuarios_service_annotates_is_active_display_as_true_false():
 
 @pytest.mark.django_db
 def test_user_activate_view_reactivates_user_with_delete_permission(client):
-    user = User.objects.create_user(
+    user = User.objects.create_superuser(
         username="users_admin_activate",
         email="users_admin_activate@example.com",
         password="Secreta123!",

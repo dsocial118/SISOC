@@ -1,3 +1,125 @@
+<!-- AUTO-GENERATED RELEASE START: 2026-07-15 -->
+# Versión SISOC 15.07.2026
+
+## Actualizaciones
+
+- [sin-area] ci(deploy): habilitar CD self-hosted en main. (PR #2024)
+<!-- AUTO-GENERATED RELEASE END: 2026-07-15 -->
+
+<!-- AUTO-GENERATED RELEASE START: 2026-07-08 -->
+# Versión SISOC 08.07.2026
+
+## Nuevas Funcionalidades
+
+- [ocr] Se incorpora el módulo OCR con carga de documentos, jobs de procesamiento, pre/postprocesamiento, métricas de evaluación, opciones de orientación/capa de texto y cobertura de servicios/vistas. (PR #2019)
+- [insumos] Se agrega el submódulo de insumos para comedores, con ABM de categorías e insumos, permisos propios, validaciones y tests de acceso. (PR #1989)
+- [pwa] La PWA suma prestaciones/conformidad por períodos, comunicados segmentados por organizaciones y mejoras de nómina vigente. (PRs #1996, #2004)
+- [usuarios] El importador masivo pasa a resolver usuarios por username, email opcional y agrupamiento de credenciales, con asignación de organizaciones/comedores y permisos PWA. (PRs #1980, #1985, #1994, #1995, #2002, #2012)
+- [dashboard] Los tableros incorporan agrupación por programa y visibilidad de Espacios Comunitarios en el menú lateral. (PRs #2008, #2019)
+
+## Actualizaciones
+
+- [infraestructura] Se agrega deploy automatizado por entorno con runners self-hosted, runbook operativo y ajustes Docker/entrypoint para ejecución por rol. (PR #2020)
+- [docs] Se incorpora `AGENT_REPO_MAP.md`, documentación OCR, registros spec-as-source y artefactos de continuidad para el corte. (PRs #1963, #2019, #2020)
+- [VAT] Se consolidan permisos/perfiles, restricciones INET_PROVINCIA, detalle de curso solo lectura, panel/modal de lista de espera y ocultamiento de datos administrativos para operadores CFP. (PRs #2007, #2019)
+- [Celiaquía] Se refuerza padrón final, reporter por provincias, soft-delete de cupos, señales y saneamiento operativo de expedientes. (PRs #1988, #2003)
+- [Comedores] Se ajustan prestaciones PNUD, exportación con permisos, serializers/API, convenio, listados y utilidades de RENAPER. (PRs #1964, #2019)
+- [Admisiones] Se agregan personas conveniadas, vigencia PWA, reparaciones de columnas históricas y mejoras de técnicos/rendiciones. (PR #2019)
+- [Ver para Ser Libre] Se actualizan permisos globales de itinerarios, UI de jornadas/sedes/itinerarios y flujos de eliminación. (PRs #1960, #2019)
+
+## Corrección de Errores
+
+- [predeploy] Se normaliza `docker-compose.produccion.yml` para eliminar una línea en blanco final que hacía fallar `git diff --check`.
+- [usuarios] Se evita crear accesos PWA fantasma al actualizar/importar usuarios y se preserva el username existente. (PR #2012)
+- [Celiaquía] La nómina de aprobados se genera desde base y se corrigen conflictos/regresiones detectadas en el flujo de padrón final. (PR #2003)
+- [PWA] Se corrigen hallazgos de review sobre tope cero, carrera de `vigente_pwa`, gating y CI. (PR #2004)
+- [sidebar] Se estabiliza el menú lateral y la limpieza de `grupo_menu` sin cambiar el algoritmo de agrupación. (PR #2008)
+<!-- AUTO-GENERATED RELEASE END: 2026-07-08 -->
+
+<!-- AUTO-GENERATED RELEASE START: 2026-06-24 -->
+# Versión SISOC 24.06.2026
+
+## Nuevas Funcionalidades
+
+- [users] Importacion masiva permite crear usuarios PWA sin acceso staff, preservando el comportamiento staff por defecto. (PR #1927)
+- [celiaquia] Celiaquia incorpora subsanaciones multimotivo, respuesta con evidencia, comentarios internos y mejoras de reporter/exportaciones. (PR #1938)
+- [pwa] PWA suma permisos granulares, gestion de subusuarios, documentos de nomina, flag de celiaquia y ajustes mobile. (PR #1941)
+
+## Actualizaciones
+
+- [sin-area] fix(comedores): alinear monto_prestacion_mensual mobile con la web. (PR #1925)
+- [arquitectura] Se documenta la Fase 0 del monolito modular y el plan de ratchet de dependencias. (PR #1932)
+- [arquitectura] Se agrega import-linter con contratos de arquitectura para impedir que empeore el acoplamiento del kernel. (PR #1940)
+- [comedores] Datos de Convenio PNUD reemplaza el monto unico por Prestaciones Alimentarias y Servicio Integral de Promocion Humana. (PR #1944)
+- [celiaquia] Se completa Celiaquia V3 con hardening de permisos, comentarios internos y alcance de usuarios deny-by-default. (PR #1948)
+
+## Corrección de Errores
+
+- [centrodeinfancia] Se corrigen secciones, condicionales, precarga RENAPER, departamento y validaciones del formulario de Trabajadores CDI. (PR #1929)
+- [comedores] El legajo vuelve a mostrar Relevamientos para Abordaje Comunitario Linea Secos y Linea Tradicional. (PR #1937)
+<!-- AUTO-GENERATED RELEASE END: 2026-06-24 -->
+
+<!-- AUTO-GENERATED RELEASE START: 2026-06-10 -->
+# Versión SISOC 10.06.2026
+
+## Nuevas Funcionalidades
+
+- [comedores] ABM web de Actividades PNUD, rediseño de nómina con tabs Alimentaria/Actividades/Todas, badges de comunidad indígena y situación de calle, y correcciones PWA mobile (overflow, skeleton, selectores, colaboradores, notificaciones). (PR #1862)
+- [centrodeinfancia] Formulario extendido de trabajadores CDI con 35 campos nuevos en 8 secciones colapsables, barra de progreso, búsqueda RENAPER por DNI y pantalla de detalle read-only. (PR #1883)
+- [comunicados] Herramienta de mailing masivo con carga de destinatarios desde Excel, worker de procesamiento asíncrono, seguimiento de estado por fila y soporte de adjuntos por envío. (PR #1888)
+
+## Actualizaciones
+
+- [relevamientos] Depuración de imports duplicados y sin uso en relevamientos/views/web_views.py para limpiar el job pylint de CI. (PR #1856)
+- [sin-area] feat(relevamientos): badges Completo/Sincronizado y mejoras UX en seguimiento. (PR #1861)
+- [sin-area] feat(relevamientos): badges Completado/Sincronizado en detalle y listado. (PR #1864)
+- [rendicioncuentas] Los módulos de Rendición Mensual y Rendición Final usan permisos propios del módulo en lugar de permisos de comedores; se actualizan menús de navegación y se asignan permisos a los grupos correspondientes mediante migraciones. (PR #1866)
+- [sin-area] Inet provincia. (PR #1870)
+- [ticketera] Se agregan endpoint PATCH para editar email/nombre de usuarios Ticketera y endpoint de solicitud de reset de contraseña con anti-enumeración y rate limit propio. (PR #1874)
+- [sin-area] Se agrega buscador de texto en listados de gestión. (PR #1881)
+
+## Corrección de Errores
+
+- [celiaquia] Se corrige error 500 en la vista reporter-provincias de celiaquía causado por CONVERT_TZ cuando el servidor MySQL no tiene tablas de zona horaria cargadas. (PR #1849)
+- [VAT] Se corrige la escala de las barras en el gráfico de tendencia del reporter de provincias que mostraba proporciones incorrectas. (PR #1850)
+- [relevamientos] Se corrige la sincronización del primer seguimiento con GESTIONAR (la tabla Seguimientos1erVisita ahora recibe los registros) y se mejora la UI del listado de relevamientos. (PR #1858)
+- [dispositivos] El dropdown de Municipio en el formulario de dispositivos se filtra por el scope territorial del usuario desde la carga inicial, no solo tras el primer submit. (PR #1863)
+- [celiaquia] La subsanación de expedientes de celiaquía ahora muestra el motivo específico elegido por el usuario en lugar del mensaje genérico. (PR #1880)
+<!-- AUTO-GENERATED RELEASE END: 2026-06-10 -->
+
+<!-- AUTO-GENERATED RELEASE START: 2026-06-03 -->
+# Versión SISOC 03.06.2026
+
+## Nuevas Funcionalidades
+
+- [Ver para Ser Libre] Nueva app de seguimiento del programa: itinerarios, jornadas, sedes, casos de laboratorio y cierres diarios, con rutas y permisos propios. (PR #1832)
+- [Ticketera] Nueva API server-to-server (`/api/ticketera/`) para alta/reconciliación de usuarios y verificación/cambio de contraseña temporal, protegida por API key, rate limiting y kill-switch `TICKETERA_ENABLED`. (PR #1795)
+- [Organizaciones/Admisiones] La documentación de organizaciones se gestiona desde Admisión: número GDE como propiedad del legajo, snapshot por admisión, documentación adicional y advertencias de procedencia (Issue #1799). (PRs #1810, #1812, #1813, #1815, #1818)
+- [Relevamientos] Primer seguimiento de relevamiento con actividades extras, número IF y sincronización con GESTIONAR. (PR #1643)
+- [CentroDeFamilia] Generación de usuarios `CDF - Referente centro` desde el detalle del CDF, con acceso acotado por centro (AccesoCDF). (PR #1798)
+- [Comedores] Registro de conformidad de prestación alimentaria por período.
+- [PWA] La nómina de espacios incorpora flags sociales (pertenencia a comunidad indígena y situación de calle). (PR #1794)
+
+## Actualizaciones
+
+- [VAT] Rediseño de UI de centros, tipo de curso configurable y wizard de comisión de curso. (PRs #1773, #1797, #1809, #1826, #1827)
+- [Celiaquía] La provincia del expediente se deriva del ciudadano (soporta multi-provincia) y se aplica alcance territorial en vistas, listados y servicios. (PRs #1814, #1821)
+- [Usuarios] Alcance territorial de perfiles (ProfileTerritorialScope), origen de perfil (`source`) para integraciones y bootstrap de grupos de referentes CDI/CDF. (PRs #1789, #1798)
+- [Infraestructura] Imagen base Docker actualizada (python:3.11.15-slim-bookworm con librerías de WeasyPrint) y MySQL 8.4; reconciliación de historia de migraciones en el arranque del contenedor.
+- [Migraciones] Squash de migraciones históricas por app para acelerar el bootstrap y estabilizar el grafo. (PRs #1762, #1796)
+- [Dependencias] Bumps de seguridad (certifi, cryptography, pillow, requests, urllib3) y nueva dependencia django-formtools. (PR #1777)
+- [CI/Lint] Consolidación del workflow de formateo/linteo con `requirements/lint.txt`, autofix por PR y paralelización de djlint.
+
+## Corrección de Errores
+
+- [Dispositivos] Se aplica alcance territorial provincial en Data Calle. (PR #1829)
+- [Celiaquía] Se corrige el mensaje de error al remover técnico y ajustes de provincia. (PR #1820)
+- [Sentry] Se corrige un error reportado en Sentry. (PR #1786)
+- [Comedores] Ajustes de UI en listados. (PR #1816)
+- [Tests] Limpieza y estabilización de tests heredados en pytest. (PRs #1791, #1825)
+- [Predeploy] Se sanea el lint para dejar `development` lista para promoción a `main`: formato `black` de `VAT/forms.py` y hallazgos de `pylint` de la app `ver_para_ser_libre` (imports sin uso, orden de imports, trailing newline y disables justificados), sin cambios de comportamiento.
+<!-- AUTO-GENERATED RELEASE END: 2026-06-03 -->
+
 <!-- AUTO-GENERATED RELEASE START: 2026-05-27 -->
 # Versión SISOC 27.05.2026
 

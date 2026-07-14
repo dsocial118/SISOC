@@ -1,3 +1,4 @@
+
 {% load static custom_filters %}
 {% with pagina_actual=request.resolver_match.route vat_sidebar_only=request.user|is_vat_sidebar_only %}
     <li class="nav-item" style="order: 3;">
@@ -11,10 +12,8 @@
         <li class="nav-item" style="order: 4;">
             <a href="#" class="nav-link">
                 <i class="nav-icon fas fa-users"></i>
-                <p>
-                    Administración del sistema
-                    <i class="nav-arrow bi bi-chevron-right"></i>
-                </p>
+                <p>Administración del sistema</p>
+                <i class="nav-arrow bi bi-chevron-right"></i>
             </a>
             <ul class="nav nav-treeview">
                 <li class="nav-item">
@@ -56,16 +55,14 @@
             </ul>
         </li>
     {% endif %}
-    {% if not vat_sidebar_only and request.user|has_any_perm:"auth.role_admin,core.view_montoprestacionprograma" %}
-        <li class="nav-item {% if 'dupla' in pagina_actual or 'equipo-tecnico' in pagina_actual or 'montoprestacion' in pagina_actual or 'cursos-app-mobile' in pagina_actual %}menu-open{% endif %}"
+    {% if not vat_sidebar_only and request.user|has_any_perm:"auth.role_admin,core.view_montoprestacionprograma,pwa.view_catalogoactividadpwa,pwa.manage_catalogoactividadpwa" %}
+        <li class="nav-item {% if 'dupla' in pagina_actual or 'equipo-tecnico' in pagina_actual or 'montoprestacion' in pagina_actual or 'cursos-app-mobile' in pagina_actual or 'actividades-pnud' in pagina_actual %}menu-open{% endif %}"
             style="order: 5">
             <a href="#"
                class="nav-link {% if 'dupla' in pagina_actual or 'equipo-tecnico' in pagina_actual or 'montoprestacion' in pagina_actual %}active{% endif %}">
                 <i class="nav-icon fa fa-address-card"></i>
-                <p>
-                    Configuración de Comedores
-                    <i class="nav-arrow bi bi-chevron-right"></i>
-                </p>
+                <p>Configuración de Comedores</p>
+                <i class="nav-arrow bi bi-chevron-right"></i>
             </a>
             <ul class="nav nav-treeview">
                 {% if request.user|has_perm_code:"auth.role_admin" %}
@@ -95,17 +92,55 @@
                         </a>
                     </li>
                 {% endif %}
+                {% if request.user|has_any_perm:"auth.role_admin,pwa.view_catalogoactividadpwa,pwa.manage_catalogoactividadpwa" %}
+                    <li class="nav-item">
+                        <a href="{% url 'actividades_pnud_list' %}"
+                           class="nav-link {% if 'actividades-pnud' in pagina_actual %}active{% endif %}">
+                            <i class="far fa-dot-circle nav-icon"></i>
+                            <p>Actividades PNUD</p>
+                        </a>
+                    </li>
+                {% endif %}
             </ul>
         </li>
     {% endif %}
-    <li class="nav-item {% if 'comedores/' in pagina_actual or 'admisiones' in pagina_actual or 'acompanamiento' in pagina_actual or 'rendicioncuentasmensual' in pagina_actual %}menu-open{% endif %}"
-        style="order: 2">
+    {% if not vat_sidebar_only and request.user|has_perm_code:"organizaciones.view_organizacion" or not vat_sidebar_only and request.user|has_perm_code:"auth.role_tecnico_comedor" or not vat_sidebar_only and request.user|has_perm_code:"auth.role_abogado_dupla" or not vat_sidebar_only and request.user|has_perm_code:"rendicioncuentasmensual.view_rendicioncuentamensual" %}
+        <li class="nav-item {% if 'organizaciones' in pagina_actual or 'rendicioncuentasmensual' in pagina_actual %}menu-open{% endif %}"
+            style="order: 2">
+            <a href="#"
+               class="nav-link {% if 'organizaciones' in pagina_actual or 'rendicioncuentasmensual' in pagina_actual %}active{% endif %}">
+                <i class="nav-icon bi bi-building-fill"></i>
+                <p>Organizaciones</p>
+                <i class="nav-arrow bi bi-chevron-right"></i>
+            </a>
+            <ul class="nav nav-treeview">
+                {% if request.user|has_perm_code:"organizaciones.view_organizacion" or request.user|has_perm_code:"auth.role_tecnico_comedor" or request.user|has_perm_code:"auth.role_abogado_dupla" %}
+                    <li class="nav-item">
+                        <a href="{% url 'organizaciones' %}"
+                           class="nav-link {% if 'organizaciones/listar' in pagina_actual %}active{% endif %}">
+                            <i class="far fa-dot-circle nav-icon"></i>
+                            <p>Ver Organizaciones</p>
+                        </a>
+                    </li>
+                {% endif %}
+                {% if request.user|has_perm_code:"rendicioncuentasmensual.view_rendicioncuentamensual" %}
+                    <li class="nav-item">
+                        <a href="{% url 'rendicioncuentasmensual_global_list' %}"
+                           class="nav-link {% if 'rendicioncuentasmensual' in pagina_actual %}active{% endif %}">
+                            <i class="far fa-dot-circle nav-icon"></i>
+                            <p>Rendiciones</p>
+                        </a>
+                    </li>
+                {% endif %}
+            </ul>
+        </li>
+    {% endif %}
+    <li class="nav-item {% if 'comedores/' in pagina_actual or 'admisiones' in pagina_actual or 'acompanamiento' in pagina_actual or 'ver-para-ser-libre' in pagina_actual %}menu-open{% endif %}"
+        style="order: 3">
         <a href="#" class="nav-link">
             <i class="nav-icon fa fa-address-card"></i>
-            <p>
-                Legajos
-                <i class="nav-arrow bi bi-chevron-right"></i>
-            </p>
+            <p>Legajos</p>
+            <i class="nav-arrow bi bi-chevron-right"></i>
         </a>
         <ul class="nav nav-treeview">
             {% if not vat_sidebar_only and request.user|has_perm_code:"comedores.view_comedor" %}
@@ -119,10 +154,8 @@
                 <li class="nav-item">
                     <a href="#" class="nav-link">
                         <i class="far fa-circle nav-icon"></i>
-                        <p>
-                            Admision - Comedores
-                            <i class="nav-arrow bi bi-chevron-right"></i>
-                        </p>
+                        <p>Admision - Comedores</p>
+                        <i class="nav-arrow bi bi-chevron-right"></i>
                     </a>
                     <ul class="nav nav-treeview" style="display: none;">
                         <li class="nav-item">
@@ -151,30 +184,12 @@
                     </a>
                 </li>
             {% endif %}
-            {% if request.user|has_any_perm:"comedores.view_comedor,admisiones.view_admision,acompanamientos.view_informacionrelevante" %}
-                <li class="nav-item">
-                    <a href="{% url 'rendicioncuentasmensual_global_list' %}"
-                       class="nav-link {% if 'rendicioncuentasmensual' in pagina_actual %}active{% endif %}">
-                        <i class="nav-icon bi bi-receipt"></i>
-                        <p>Rendiciones</p>
-                    </a>
-                </li>
-            {% endif %}
-            {% if not vat_sidebar_only and request.user|has_any_perm:"comedores.view_comedor,admisiones.view_admision,acompanamientos.view_informacionrelevante,expedientespagos.view_expedientepago" or request.user|has_any_perm:"comedores.view_comedor,expedientespagos.view_expedientepago" or request.user|has_any_perm:"comedores.view_comedor,admisiones.view_admision,acompanamientos.view_informacionrelevante" or request.user|has_any_perm:"comedores.view_comedor,admisiones.view_admision,acompanamientos.view_informacionrelevante" %}
+            {% if not vat_sidebar_only and request.user|has_perm_code:"rendicioncuentasfinal.view_rendicioncuentasfinal" %}
                 <li class="nav-item">
                     <a href="{% url 'rendicion_cuentas_final_listar' %}"
                        class="nav-link {% if 'rendicion_cuentas_final/listar' in pagina_actual %}active{% endif %}">
                         <i class="nav-icon bi bi-receipt"></i>
                         <p>Rendicion de Cuentas Final</p>
-                    </a>
-                </li>
-            {% endif %}
-            {% if not vat_sidebar_only and request.user|has_perm_code:"organizaciones.view_organizacion" or not vat_sidebar_only and request.user|has_perm_code:"auth.role_tecnico_comedor" or not vat_sidebar_only and request.user|has_perm_code:"auth.role_abogado_dupla" %}
-                <li class="nav-item">
-                    <a href="{% url 'organizaciones' %}"
-                       class="nav-link {% if 'organizaciones/listar' in pagina_actual %}active{% endif %}">
-                        <i class="nav-icon bi bi-building-fill"></i>
-                        <p>Organizaciones</p>
                     </a>
                 </li>
             {% endif %}
@@ -184,6 +199,24 @@
                        class="nav-link {% if 'centrodeinfancia/listar' in pagina_actual %}active{% endif %}">
                         <i class="nav-icon bi bi-emoji-smile-fill"></i>
                         <p>Centro de Infancia</p>
+                    </a>
+                </li>
+            {% endif %}
+            {% if not vat_sidebar_only and request.user|has_perm_code:"ver_para_ser_libre.view_itinerariovpsl" %}
+                <li class="nav-item">
+                    <a href="{% url 'vpsl_itinerario_list' %}"
+                       class="nav-link {% if 'ver-para-ser-libre' in pagina_actual %}active{% endif %}">
+                        <i class="nav-icon bi bi-eye-fill"></i>
+                        <p>Itinerarios VPSL</p>
+                    </a>
+                </li>
+            {% endif %}
+            {% if not vat_sidebar_only and request.user|has_perm_code:"ver_para_ser_libre.view_sedevpsl" %}
+                <li class="nav-item">
+                    <a href="{% url 'vpsl_sede_list' %}"
+                       class="nav-link {% if 'ver-para-ser-libre/sedes' in pagina_actual %}active{% endif %}">
+                        <i class="nav-icon bi bi-geo-alt-fill"></i>
+                        <p>Sedes VPSL</p>
                     </a>
                 </li>
             {% endif %}

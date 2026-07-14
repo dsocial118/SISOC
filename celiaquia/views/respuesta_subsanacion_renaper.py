@@ -92,7 +92,7 @@ class RespuestaSubsanacionRenaperView(View):
             return JsonResponse(
                 {
                     "success": True,
-                    "message": "Respuesta a subsanación Renaper enviada correctamente",
+                    "message": "Respuesta a subsanación enviada correctamente",
                 }
             )
 

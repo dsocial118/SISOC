@@ -40,6 +40,9 @@ from admisiones.services.admisiones_filter_config import (
     DATE_OPS as ADMISION_DATE_OPS,
     CHOICE_OPS as ADMISION_CHOICE_OPS,
 )
+from comedores.services.capacitaciones_certificados_service import (
+    is_alimentar_comunidad_program,
+)
 from comedores.utils import comedor_usa_admision_para_nomina
 from organizaciones.models import ArchivoOrganizacion, DocumentacionOrganizacion
 
@@ -805,8 +808,13 @@ class AdmisionService:
             estado__in=["rectificar", "borrador"]
         ).first()
 
+        informe_tecnico_finalizado = InformeTecnico.objects.filter(
+            admision=admision,
+            estado_formulario="finalizado",
+        ).exists()
         mostrar_informe_complementario = (
-            admision.estado_legales == "Informe Complementario Solicitado"
+            informe_tecnico_finalizado
+            or admision.estado_legales == "Informe Complementario Solicitado"
             or (
                 informe_complementario_pendiente
                 and informe_complementario_pendiente.estado == "rectificar"
@@ -844,6 +852,23 @@ class AdmisionService:
         )
 
     @staticmethod
+    def _puede_editar_personas_conveniadas_nomina(user):
+        if not user:
+            return False
+        return user.is_superuser or user_has_any_permission_codes(
+            user,
+            [
+                "comedores.view_comedor",
+                "admisiones.view_admision",
+                "acompanamientos.view_informacionrelevante",
+            ],
+        )
+
+    @staticmethod
+    def _admision_es_alimentar_comunidad(admision):
+        return is_alimentar_comunidad_program(getattr(admision, "comedor", None))
+
+    @staticmethod
     def _build_objetos_update_context(admision):
         tipo_convenio_precargado = (
             AdmisionService.resolver_tipo_convenio_desde_organizacion(
@@ -879,6 +904,7 @@ class AdmisionService:
         botones_disponibles,
         puede_editar_convenio_numero,
         puede_editar_num_expediente,
+        puede_editar_personas_conveniadas_nomina,
     ):
         organizacion = getattr(getattr(admision, "comedor", None), "organizacion", None)
         tipo_entidad_actual = getattr(organizacion, "tipo_entidad", None)
@@ -916,6 +942,10 @@ class AdmisionService:
             "botones_disponibles": botones_disponibles,
             "puede_editar_convenio_numero": puede_editar_convenio_numero,
             "puede_editar_num_expediente": puede_editar_num_expediente,
+            "mostrar_personas_conveniadas_nomina": (
+                AdmisionService._admision_es_alimentar_comunidad(admision)
+            ),
+            "puede_editar_personas_conveniadas_nomina": puede_editar_personas_conveniadas_nomina,
             "admision_desincronizada": admision_desincronizada,
             "tipo_entidad_actual_organizacion": tipo_entidad_actual,
             "tipo_entidad_origen_snapshot": getattr(
@@ -968,6 +998,9 @@ class AdmisionService:
                     user, admision
                 )
             )
+            puede_editar_personas_conveniadas_nomina = (
+                AdmisionService._puede_editar_personas_conveniadas_nomina(user)
+            )
 
             return AdmisionService._build_response_update_context(
                 admision=admision,
@@ -977,6 +1010,7 @@ class AdmisionService:
                 botones_disponibles=botones_disponibles,
                 puede_editar_convenio_numero=puede_editar_convenio_numero,
                 puede_editar_num_expediente=puede_editar_num_expediente,
+                puede_editar_personas_conveniadas_nomina=puede_editar_personas_conveniadas_nomina,
             )
 
         except Exception:
@@ -1208,6 +1242,9 @@ class AdmisionService:
 
         admision.tipo_entidad_origen_id = organizacion.tipo_entidad_id
         admision.save(update_fields=["tipo_entidad_origen"])
+        # Solo actualizar la linea de base del snapshot para silenciar la
+        # advertencia. NO se materializan nuevos ArchivoAdmision: "Continuar
+        # operando con la Admision actual" NO debe clonar docs del legajo.
         AdmisionService.refrescar_snapshot_documentacion_organizacional(admision)
         logger.info(
             "Desincronizacion aceptada en admision",
@@ -1242,12 +1279,29 @@ class AdmisionService:
             if snap is None or snap.token != data["token"]:
                 slots_a_refrescar.add(slot)  # agregado / modificado
         for slot in snapshots:
+            # Ignorar el centinela de inicializacion; no corresponde a ningún doc.
+            if slot == "__init__":
+                continue
             if slot not in actuales:
                 slots_a_refrescar.add(slot)  # quitado del legajo
 
         if not slots_a_refrescar:
             AdmisionService.refrescar_snapshot_documentacion_organizacional(admision)
             return True, "La documentacion ya estaba actualizada con el Legajo."
+
+        # Mapa slot -> nombre del archivo vigente en el legajo. Permite distinguir
+        # un cambio REAL de archivo (la organizacion subio un adjunto nuevo, hay
+        # que refrescar) de un cambio de metadatos como estado/observaciones (no
+        # debe pisar una validacion admision-side).
+        nombres_org_por_slot = {}
+        for archivo in AdmisionService._org_archivos_relevantes(admision):
+            if not archivo.archivo:
+                continue
+            if archivo.es_personalizado:
+                slot_org = f"custom:{archivo.id}"
+            else:
+                slot_org = f"doc:{archivo.documentacion_id}"
+            nombres_org_por_slot[slot_org] = getattr(archivo.archivo, "name", "") or ""
 
         # Borrar SOLO los ArchivoAdmision de origen organizacional de los slots
         # que cambiaron. Nunca se tocan los documentos nativos de la admision
@@ -1262,9 +1316,22 @@ class AdmisionService:
                 slot = f"doc:{origin.documentacion_id}"
             else:
                 slot = f"custom:{origin.id}"
-            if slot in slots_a_refrescar:
-                archivo_adm.delete()
-                borrados += 1
+            if slot not in slots_a_refrescar:
+                continue
+            # Un documento validado ("Aceptado") en la admision se preserva, PERO
+            # solo si el archivo del legajo no cambio: si la organizacion subio un
+            # adjunto nuevo, la validacion quedo obsoleta y debe refrescarse para
+            # no seguir mostrando el adjunto viejo en la admision. Un cambio que
+            # solo toca metadatos (estado/observaciones/vencimiento) preserva la
+            # validacion (fix Bug #1799 - docs validados no deben pisarse por
+            # cambios de metadatos).
+            if archivo_adm.estado == "Aceptado":
+                nombre_legajo = nombres_org_por_slot.get(slot)
+                nombre_copia = getattr(archivo_adm.archivo, "name", "") or ""
+                if nombre_legajo is None or nombre_legajo == nombre_copia:
+                    continue
+            archivo_adm.delete()
+            borrados += 1
 
         # Re-materializar (aditivo): re-crea desde el legajo los slots borrados que
         # siguen vigentes; los quitados no se re-crean; preserva nativos y los no
@@ -1334,7 +1401,11 @@ class AdmisionService:
     def refrescar_snapshot_documentacion_organizacional(admision):
         """Deja el snapshot de la admision igual al estado actual del legajo
         (upsert + limpieza de slots obsoletos). Se invoca al crear la admision,
-        al resincronizar y al aceptar la divergencia."""
+        al resincronizar y al aceptar la divergencia.
+
+        Cuando el legajo no tiene archivos aun se escribe un centinela
+        ``__init__`` para distinguir "inicializado sin docs" de "nunca
+        inicializado" (fix Bug #1799 - primera modificacion no detectada)."""
         if not admision or not admision.pk:
             return
         actuales = AdmisionService._tokens_org_actuales(admision)
@@ -1355,9 +1426,23 @@ class AdmisionService:
                 snap.token = data["token"]
                 snap.etiqueta = data["etiqueta"]
                 snap.save(update_fields=["token", "etiqueta", "synced_at"])
-        if existentes:
+        # Eliminar slots obsoletos; el centinela se maneja por separado.
+        obsoletos = [k for k in existentes if k != "__init__"]
+        if obsoletos:
             AdmisionDocOrgSnapshot.objects.filter(
-                admision=admision, slot_key__in=list(existentes.keys())
+                admision=admision, slot_key__in=obsoletos
+            ).delete()
+        if not actuales:
+            # Legajo sin archivos: escribir/mantener centinela de inicializacion.
+            AdmisionDocOrgSnapshot.objects.get_or_create(
+                admision=admision,
+                slot_key="__init__",
+                defaults={"etiqueta": "", "token": ""},
+            )
+        else:
+            # Ya hay docs reales: el centinela no hace falta.
+            AdmisionDocOrgSnapshot.objects.filter(
+                admision=admision, slot_key="__init__"
             ).delete()
 
     @staticmethod
@@ -1372,14 +1457,21 @@ class AdmisionService:
         if not organizacion:
             return False, []
 
-        existentes = {
-            snap.slot_key: snap
-            for snap in AdmisionDocOrgSnapshot.objects.filter(admision=admision)
-        }
-        actuales = AdmisionService._tokens_org_actuales(admision)
-        if not existentes:
+        todos_los_snaps = list(AdmisionDocOrgSnapshot.objects.filter(admision=admision))
+        if not todos_los_snaps:
+            # Sin ninguna fila de snapshot: admision legacy o recien creada sin
+            # archivos en el legajo. Inicializar en sync (req 1.6).
             AdmisionService.refrescar_snapshot_documentacion_organizacional(admision)
             return False, []
+
+        # Excluir el centinela "__init__" de la comparacion; solo sirve para
+        # marcar que el snapshot fue inicializado.
+        existentes = {
+            snap.slot_key: snap
+            for snap in todos_los_snaps
+            if snap.slot_key != "__init__"
+        }
+        actuales = AdmisionService._tokens_org_actuales(admision)
 
         modificados = []
         for slot, data in actuales.items():
@@ -1484,6 +1576,9 @@ class AdmisionService:
         admision.estado_admision = "convenio_seleccionado"
         admision.save(update_fields=["tipo_convenio", "estado_admision"])
         AdmisionService.congelar_documentacion_organizacional(admision)
+        # Sincronizar snapshot tras materializar docs: sin este paso la primera
+        # modificacion en el legajo no dispararia la advertencia (Bug A #1799).
+        AdmisionService.refrescar_snapshot_documentacion_organizacional(admision)
         return True, "Tipo de convenio precargado desde la organización."
 
     @staticmethod
@@ -1712,16 +1807,47 @@ class AdmisionService:
     def _build_success_actualizar_estado_ajax_response(
         archivo, display_objetivo, grupo_usuario, request=None
     ):
+        fila_html, row_id = AdmisionService._render_fila_documento_html(
+            archivo, request
+        )
         return {
             "success": True,
             "nuevo_estado": display_objetivo,
             "grupo_usuario": grupo_usuario,
             "observaciones": archivo.observaciones,
+            "html": fila_html,
+            "row_id": row_id,
             # Re-render de la celda "Número de GDE": al cambiar el estado del
             # documento (p.ej. -> Aceptado) debe aparecer/ocultarse el campo GDE
             # sin recargar la pagina (issue #1799, feedback punto 4).
             "gde_html": AdmisionService._render_celda_gde_html(archivo, request),
         }
+
+    @staticmethod
+    def _render_fila_documento_html(archivo, request):
+        if request is None or archivo is None:
+            return None, None
+        try:
+            if archivo.documentacion_id:
+                doc = AdmisionService._serialize_documentacion(
+                    archivo.documentacion, archivo
+                )
+            else:
+                doc = AdmisionService.serialize_documento_personalizado(archivo)
+            return (
+                render_to_string(
+                    "admisiones/includes/documento_row.html",
+                    {"doc": doc, "admision": archivo.admision},
+                    request=request,
+                ),
+                doc.get("row_id"),
+            )
+        except Exception:
+            logger.exception(
+                "No se pudo renderizar la fila de documento para el re-render AJAX",
+                extra={"archivo_pk": getattr(archivo, "pk", None)},
+            )
+            return None, None
 
     @staticmethod
     def _render_celda_gde_html(archivo, request):
@@ -1934,18 +2060,15 @@ class AdmisionService:
 
         try:
 
-            if user_has_any_permission_codes(
-                user,
-                [
-                    "comedores.view_comedor",
-                    "admisiones.view_admision",
-                    "acompanamientos.view_informacionrelevante",
-                ],
-            ):
+            if user_has_permission_code(user, "auth.role_abogado_dupla"):
 
                 return "Abogado Dupla"
 
-            elif user_has_any_permission_codes(
+            if user_has_permission_code(user, "auth.role_tecnico_comedor"):
+
+                return "Tecnico Comedor"
+
+            if user_has_any_permission_codes(
                 user,
                 [
                     "comedores.view_comedor",
@@ -2760,6 +2883,100 @@ class AdmisionService:
             return {"success": False, "error": str(exc)}
 
     @staticmethod
+    def actualizar_vigente_pwa_ajax(request):
+        try:
+            admision_id = request.POST.get("admision_id")
+            vigente = str(request.POST.get("vigente_pwa", "")).lower() in (
+                "1",
+                "true",
+                "on",
+                "si",
+            )
+            if not admision_id:
+                return {"success": False, "error": "ID de admision requerido."}
+
+            admision = get_object_or_404(Admision, id=admision_id)
+            if not AdmisionService._puede_editar_convenio_numero(
+                request.user, admision
+            ):
+                return {
+                    "success": False,
+                    "error": "No tiene permisos para editar esta admision.",
+                }
+
+            with transaction.atomic():
+                if admision.comedor_id:
+                    admisiones_comedor = (
+                        Admision.objects.select_for_update()
+                        .filter(comedor_id=admision.comedor_id)
+                        .order_by("id")
+                    )
+                    admisiones_bloqueadas = list(admisiones_comedor)
+                    admision = next(
+                        item for item in admisiones_bloqueadas if item.pk == admision.pk
+                    )
+                    if vigente:
+                        admisiones_comedor.exclude(pk=admision.pk).filter(
+                            vigente_pwa=True
+                        ).update(vigente_pwa=False)
+                else:
+                    admision = Admision.objects.select_for_update().get(pk=admision.pk)
+                admision.vigente_pwa = vigente
+                admision.save(update_fields=["vigente_pwa"])
+            return {"success": True, "vigente_pwa": admision.vigente_pwa}
+        except Exception as exc:
+            logger.exception("Error en actualizar_vigente_pwa_ajax")
+            return {"success": False, "error": str(exc)}
+
+    @staticmethod
+    def actualizar_personas_conveniadas_nomina_ajax(request):
+        try:
+            admision_id = request.POST.get("admision_id")
+            valor_raw = request.POST.get("personas_conveniadas_nomina", "").strip()
+            if not admision_id:
+                return {"success": False, "error": "ID de admision requerido."}
+
+            admision = get_object_or_404(Admision, id=admision_id)
+            if not AdmisionService._puede_editar_personas_conveniadas_nomina(
+                request.user
+            ):
+                return {
+                    "success": False,
+                    "error": "No tiene permisos para editar esta admision.",
+                }
+            if not AdmisionService._admision_es_alimentar_comunidad(admision):
+                return {
+                    "success": False,
+                    "error": "Disponible solo para Alimentar Comunidad.",
+                }
+
+            if valor_raw == "":
+                nuevo_valor = None
+            else:
+                try:
+                    nuevo_valor = int(valor_raw)
+                except ValueError:
+                    return {
+                        "success": False,
+                        "error": "Debe ingresar un numero valido.",
+                    }
+                if nuevo_valor < 0:
+                    return {
+                        "success": False,
+                        "error": "El valor no puede ser negativo.",
+                    }
+
+            admision.personas_conveniadas_nomina = nuevo_valor
+            admision.save(update_fields=["personas_conveniadas_nomina"])
+            return {
+                "success": True,
+                "personas_conveniadas_nomina": admision.personas_conveniadas_nomina,
+            }
+        except Exception as exc:
+            logger.exception("Error en actualizar_personas_conveniadas_nomina_ajax")
+            return {"success": False, "error": str(exc)}
+
+    @staticmethod
     def _build_error_response_actualizar_num_expediente(message):
         return {"success": False, "error": message}
 
@@ -3024,7 +3241,7 @@ class AdmisionService:
 
         if (
             informe_tecnico
-            and informe_tecnico.estado == "Validado"
+            and informe_tecnico.estado_formulario == "finalizado"
             and mostrar_informe_complementario
         ):
             botones.append("informe_tecnico_complementario")

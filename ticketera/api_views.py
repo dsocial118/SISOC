@@ -28,12 +28,19 @@ from ticketera.api_serializers import (
     TicketeraAuthVerificarResponseSerializer,
     TicketeraAuthVerificarSerializer,
     TicketeraErrorSerializer,
+    TicketeraSolicitarResetResponseSerializer,
+    TicketeraSolicitarResetSerializer,
     TicketeraUsuarioCreateSerializer,
+    TicketeraUsuarioDetailSerializer,
+    TicketeraUsuarioPatchSerializer,
     TicketeraUsuarioResponseSerializer,
 )
 from users.models import Profile
 from users.rate_limits import hit_rate_limit
-from users.services_auth import change_password_for_authenticated_user
+from users.services_auth import (
+    change_password_for_authenticated_user,
+    request_password_reset_for_email,
+)
 
 
 AUDIT_SOURCE = "ticketera"
@@ -437,5 +444,238 @@ class TicketeraAuthCambiarPasswordView(APIView):
 
         return Response(
             {"changed": True, "must_change_password": False},
+            status=status.HTTP_200_OK,
+        )
+
+
+def _user_detail_payload(user):
+    """Snapshot canónico devuelto por el PATCH (200) y reutilizable en idempotencia."""
+    return {
+        "id": user.id,
+        "username": user.username,
+        "email": user.email,
+        "first_name": user.first_name,
+        "last_name": user.last_name,
+    }
+
+
+@extend_schema(tags=["Ticketera"])
+class TicketeraUsuarioUpdateView(APIView):
+    """Edita datos básicos de un usuario provisionado por la Ticketera.
+
+    Solo modifica usuarios cuyo ``profile.source`` pasa
+    :func:`_is_ticketera_source` (origen Ticketera o sus variantes por entorno).
+    Campos editables: ``email``, ``first_name``, ``last_name``. ``username`` y
+    ``password`` no son editables por este canal (este último tiene su propio
+    endpoint); ``is_active`` y ``source`` quedan fuera del MVP.
+    """
+
+    permission_classes = [HasAPIKey]
+
+    @extend_schema(
+        summary="Edición parcial de un usuario provisionado por la Ticketera",
+        request=TicketeraUsuarioPatchSerializer,
+        responses={
+            200: OpenApiResponse(
+                response=TicketeraUsuarioDetailSerializer,
+                description=(
+                    "Edición aplicada o idempotente: snapshot canónico del usuario."
+                ),
+            ),
+            400: OpenApiResponse(
+                response=TicketeraErrorSerializer,
+                description="Payload inválido (por ejemplo, email malformado).",
+            ),
+            403: OpenApiResponse(
+                response=TicketeraErrorSerializer,
+                description="El usuario existe pero no fue provisionado por la Ticketera.",
+            ),
+            404: OpenApiResponse(
+                response=TicketeraErrorSerializer,
+                description="No existe un usuario con ese username.",
+            ),
+            503: OpenApiResponse(
+                response=TicketeraErrorSerializer,
+                description="Integración deshabilitada por configuración.",
+            ),
+        },
+    )
+    def patch(self, request, username):
+        if not settings.TICKETERA_ENABLED:
+            return _ticketera_disabled_response()
+
+        serializer = TicketeraUsuarioPatchSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+
+        # Lookup case-insensitive: mismo criterio que el alta para que la
+        # capitalización no esquive ni el 404 ni el 403.
+        existing = (
+            User.objects.select_related("profile")
+            .filter(username__iexact=username)
+            .first()
+        )
+        if existing is None:
+            return Response(
+                {
+                    "error": "user_not_found",
+                    "message": "No existe un usuario con ese username.",
+                },
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        existing_source = getattr(getattr(existing, "profile", None), "source", "")
+        if not _is_ticketera_source(existing_source):
+            return Response(
+                {
+                    "error": "user_not_ticketera",
+                    "message": (
+                        "El usuario existe pero no fue provisionado por la Ticketera."
+                    ),
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        source = data.get("source", "ticketera")
+
+        # Solo persistimos los fields que cambian. Si nada cambia, no llamamos a
+        # save() y auditlog no genera LogEntry espurio.
+        editable_fields = ("email", "first_name", "last_name")
+        update_fields = []
+        for field in editable_fields:
+            if field not in data:
+                continue
+            new_value = data[field]
+            if getattr(existing, field) != new_value:
+                setattr(existing, field, new_value)
+                update_fields.append(field)
+
+        if update_fields:
+            with audit_context(
+                source=AUDIT_SOURCE,
+                extra={"remote_source": source},
+            ):
+                with transaction.atomic():
+                    existing.save(update_fields=update_fields)
+
+        return Response(_user_detail_payload(existing), status=status.HTTP_200_OK)
+
+
+@extend_schema(tags=["Ticketera"])
+class TicketeraSolicitarResetPasswordView(APIView):
+    """Dispara el envío del mail de reset de contraseña para un usuario Ticketera.
+
+    Reutiliza el flujo web de SISOC: el mail incluye el link a
+    ``password_reset_confirm`` que cierra el ciclo (vía
+    :func:`users.services_auth.confirm_password_reset`). La Ticketera solo
+    inicia el reset; el portador completa la nueva clave en SISOC.
+
+    Anti-enumeration: la respuesta es siempre ``200`` con un detalle genérico,
+    sin distinguir si el usuario existe, está inactivo o tiene otro origen.
+    """
+
+    permission_classes = [HasAPIKey]
+
+    @extend_schema(
+        summary="Inicia el reset de contraseña por cuenta de la Ticketera",
+        request=TicketeraSolicitarResetSerializer,
+        responses={
+            200: OpenApiResponse(
+                response=TicketeraSolicitarResetResponseSerializer,
+                description=(
+                    "Solicitud registrada (la respuesta es la misma exista o no "
+                    "el usuario, para evitar enumeración)."
+                ),
+            ),
+            400: OpenApiResponse(
+                description=(
+                    "Payload inválido: faltan ambos identificadores o llegan los dos."
+                ),
+            ),
+            429: OpenApiResponse(
+                response=TicketeraErrorSerializer,
+                description="Demasiados intentos (rate limit).",
+            ),
+            503: OpenApiResponse(
+                response=TicketeraErrorSerializer,
+                description="Integración deshabilitada por configuración.",
+            ),
+        },
+    )
+    def post(self, request):
+        if not settings.TICKETERA_ENABLED:
+            return _ticketera_disabled_response()
+
+        serializer = TicketeraSolicitarResetSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+
+        username = data.get("username", "")
+        email = data.get("email", "")
+        source = data.get("source", "ticketera")
+
+        identity_value = (username or email or "").lower()
+        ip = request.META.get("REMOTE_ADDR", "anon")
+        if hit_rate_limit(
+            scope="ticketera_solicitar_reset",
+            identity=f"{ip}:{identity_value}",
+            limit=5,
+            window_seconds=900,
+        ):
+            return Response(
+                {
+                    "error": "too_many_attempts",
+                    "message": "Demasiados intentos. Esperá unos minutos.",
+                },
+                status=status.HTTP_429_TOO_MANY_REQUESTS,
+            )
+
+        if username:
+            user = (
+                User.objects.select_related("profile")
+                .filter(username__iexact=username, is_active=True)
+                .first()
+            )
+        else:
+            user = (
+                User.objects.select_related("profile")
+                .filter(email__iexact=email, is_active=True)
+                .order_by("id")
+                .first()
+            )
+
+        if user is not None and _is_ticketera_source(
+            getattr(getattr(user, "profile", None), "source", "")
+        ):
+            with audit_context(
+                source=AUDIT_SOURCE,
+                extra={"remote_source": source},
+            ):
+                if user.email:
+                    request_password_reset_for_email(email=user.email, request=request)
+                requested_at = timezone.now()
+                LogEntry.objects.log_create(
+                    user,
+                    action=LogEntry.Action.ACCESS,
+                    changes={
+                        "password_reset_requested": [
+                            None,
+                            requested_at.isoformat(),
+                        ]
+                    },
+                    actor=user,
+                    additional_data={
+                        "audittrail_source": AUDIT_SOURCE,
+                        "audittrail_context": {"remote_source": source},
+                    },
+                )
+
+        return Response(
+            {
+                "detail": (
+                    "Si el usuario existe en el sistema, se registró la solicitud "
+                    "de reseteo."
+                )
+            },
             status=status.HTTP_200_OK,
         )
