@@ -1,0 +1,358 @@
+/* ============================================================
+   CDI — componentes propios del módulo Centro de Desarrollo
+   Infantil (detalle + nómina). Complementa cdf.css (lenguaje
+   visual compartido SISOC: navy/teal/dorado); acá viven solo
+   los componentes que ese stylesheet no tiene: kicker y stats
+   del hero, carpeta con solapas laterales, tarjetas de stats
+   con punto de color y distribución por edad.
+   Todo scopeado bajo .cdi-page para no afectar otros módulos.
+   ============================================================ */
+
+.cdi-page {
+    --cdi-navy: #232d4f;
+    --cdi-navy-deep: #1c2440;
+    --cdi-teal: #3b8681;
+    --cdi-teal-hover: #347a6b;
+    --cdi-gold: #e7ba61;
+    --cdi-line: rgba(255, 255, 255, 0.16);
+    --cdi-dim: rgba(242, 242, 242, 0.62);
+}
+
+/* ── Hero: kicker + stats integradas ────────────────────── */
+.cdi-hero-kicker {
+    margin: 0 0 4px;
+    font-size: 11.5px;
+    font-weight: 700;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--cdi-gold);
+}
+
+.cdi-hero-stats {
+    display: flex;
+    align-items: stretch;
+    gap: 18px;
+    flex-wrap: wrap;
+    width: 100%;
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px solid var(--cdi-line);
+}
+
+.cdi-hero-stat {
+    display: flex;
+    flex-direction: column;
+}
+
+.cdi-hero-stat b {
+    font-size: 17px;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.1;
+    color: #ffffff;
+}
+
+.cdi-hero-stat span {
+    font-size: 10.5px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--cdi-dim);
+}
+
+.cdi-hero-stat-sep {
+    width: 1px;
+    background: var(--cdi-line);
+}
+
+/* ── Carpeta con solapas laterales ──────────────────────── */
+.cdi-shell {
+    display: flex;
+    align-items: stretch;
+    background: var(--cdi-navy);
+    border-radius: 20px;
+    box-shadow: 4px 4px 8px rgba(0, 0, 0, 0.3);
+    overflow: hidden;
+    min-height: 420px;
+    color: #ffffff;
+    margin-bottom: 26px;
+}
+
+.cdi-side-tabs {
+    display: flex;
+    align-items: stretch;
+    flex-shrink: 0;
+}
+
+.cdi-side-tab {
+    width: 52px;
+    border: 0;
+    background: var(--cdi-teal);
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.cdi-side-tab + .cdi-side-tab { border-left: 1px solid var(--cdi-line); }
+.cdi-side-tab:hover,
+.cdi-side-tab:focus { background: var(--cdi-teal-hover); }
+
+.cdi-side-tab:focus-visible {
+    outline: 2px solid var(--cdi-gold);
+    outline-offset: -3px;
+}
+
+.cdi-side-tab span {
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    font-family: 'Lora', Georgia, serif;
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    white-space: nowrap;
+}
+
+.cdi-shell-content {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.cdi-panel {
+    display: none;
+    padding: 26px 30px;
+}
+
+.cdi-panel.is-active { display: block; }
+
+.cdi-section-title {
+    margin: 0;
+    font-family: 'Lora', Georgia, serif;
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    color: #ffffff;
+}
+
+.cdi-section-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+}
+
+.cdi-page hr.cdi-divider {
+    border: 0;
+    border-top: 1px solid var(--cdi-line);
+    margin: 14px 0 18px;
+    opacity: 1;
+}
+
+/* ── Tarjetas de stats con punto de color ───────────────── */
+.cdi-stats-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 14px;
+    margin-bottom: 26px;
+}
+
+.cdi-stat-card {
+    background: var(--cdi-navy);
+    border-radius: 14px;
+    box-shadow: 4px 4px 8px rgba(0, 0, 0, 0.3);
+    padding: 16px 18px;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.cdi-stat-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.cdi-stat-dot--teal { background: var(--cdi-teal); }
+.cdi-stat-dot--blue { background: #5ea8e8; }
+.cdi-stat-dot--pink { background: #e88bb1; }
+.cdi-stat-dot--purple { background: #b79ce8; }
+.cdi-stat-dot--gold { background: var(--cdi-gold); }
+.cdi-stat-dot--red { background: #e88b8b; }
+
+.cdi-stat-num {
+    font-family: 'Lora', Georgia, serif;
+    font-size: 30px;
+    font-weight: 700;
+    line-height: 1;
+    color: #ffffff;
+    font-variant-numeric: tabular-nums;
+}
+
+.cdi-stat-lbl {
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--cdi-dim);
+}
+
+/* ── Distribución por edad (card colapsable) ────────────── */
+.cdi-dist-card {
+    background: var(--cdi-navy);
+    border-radius: 14px;
+    box-shadow: 4px 4px 8px rgba(0, 0, 0, 0.3);
+    color: #ffffff;
+    margin-bottom: 26px;
+    overflow: hidden;
+}
+
+.cdi-page .nomina-toggle-details {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 15px 22px;
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+    font-family: 'Lora', Georgia, serif;
+    font-size: 17px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    color: #ffffff;
+    text-align: left;
+}
+
+.cdi-page .nomina-toggle-details:focus-visible {
+    outline: 2px solid var(--cdi-gold);
+    outline-offset: -3px;
+}
+
+.cdi-page .nomina-toggle-icon {
+    color: var(--cdi-dim);
+    transition: transform 0.2s ease;
+}
+
+.cdi-page .nomina-toggle-icon.rotated { transform: rotate(180deg); }
+
+.cdi-dist-body { padding: 4px 22px 22px; }
+
+.cdi-dist-group-title {
+    margin: 16px 0 10px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--cdi-gold);
+}
+
+.cdi-dist-group-title:first-child { margin-top: 4px; }
+
+.cdi-dist-row {
+    display: grid;
+    grid-template-columns: minmax(150px, 220px) 44px 1fr 48px;
+    align-items: center;
+    gap: 14px;
+    padding: 6px 0;
+    font-size: 13.5px;
+}
+
+.cdi-dist-row .cdi-dist-lbl { color: #ffffff; }
+
+.cdi-dist-row .cdi-dist-num {
+    font-weight: 700;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    color: #ffffff;
+}
+
+.cdi-dist-row .cdi-dist-pct {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    color: var(--cdi-dim);
+    font-size: 12.5px;
+}
+
+.cdi-dist-bar {
+    height: 9px;
+    border-radius: 999px;
+    background: var(--cdi-navy-deep);
+    overflow: hidden;
+}
+
+.cdi-dist-fill {
+    height: 100%;
+    border-radius: 999px;
+    background: var(--cdi-teal);
+}
+
+.cdi-dist-row.is-zero .cdi-dist-lbl,
+.cdi-dist-row.is-zero .cdi-dist-num { color: var(--cdi-dim); }
+
+/* ── data_table.html embebido en pestañas de Seguimiento ──
+   El componente compartido trae su propio wrapper .row.mt-5 + .card +
+   .card-body; dentro de .cdf-page esa .card se re-estiliza a navy con
+   sombra y aparece como una tarjeta flotante anidada con un hueco
+   grande arriba. Acá se aplana para que la tabla quede al ras de la
+   card de Seguimiento, sin tocar el componente ni la vista. */
+.cdi-page .cdf-card .tab-content .row {
+    margin: 0;
+}
+
+.cdi-page .cdf-card .tab-content .col-12 {
+    padding: 0;
+}
+
+.cdi-page .cdf-card .tab-content .card {
+    background: transparent;
+    box-shadow: none;
+    border: 0;
+    border-radius: 0;
+    overflow: visible;
+}
+
+.cdi-page .cdf-card .tab-content .card > .card-body {
+    padding: 0;
+}
+
+/* La paginación del componente queda centrada bajo la tabla. */
+.cdi-page .cdf-card .tab-content .pagination {
+    margin-top: 14px;
+}
+
+/* ── Toolbar de tablas (búsqueda + filtros + acción) ────── */
+.cdi-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+}
+
+.cdi-toolbar-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.cdi-page select.cdf-search {
+    padding: 6px 10px;
+    min-width: 160px;
+}
+
+/* ── Responsive ─────────────────────────────────────────── */
+@media (max-width: 860px) {
+    .cdi-side-tab { width: 40px; }
+    .cdi-side-tab span { font-size: 13px; }
+    .cdi-panel { padding: 18px; }
+
+    .cdi-dist-row { grid-template-columns: 1fr 40px; }
+    .cdi-dist-row .cdi-dist-bar,
+    .cdi-dist-row .cdi-dist-pct { display: none; }
+}

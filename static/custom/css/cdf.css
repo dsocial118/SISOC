@@ -263,6 +263,7 @@
 /* ── Pestañas dentro de una card ────────────────────────── */
 .cdf-tabs {
     display: flex;
+    align-items: center;
     gap: 0.4rem;
     flex-wrap: wrap;
     list-style: none;
@@ -272,18 +273,29 @@
     border-bottom: 1px solid var(--cdf-line);
 }
 
+/* main.css define reglas globales para el sidebar/header
+   (`.nav-item { min-height: 60px }` y `.nav-item .nav-link { height: 60px }`)
+   que se filtran a estos pills y los estiran a 60px (forma de lozenge
+   gigante). Se neutralizan a nivel del componente. */
+.cdf-tabs .nav-item {
+    min-height: 0;
+    display: inline-flex;
+}
+
 .cdf-tabs .nav-link {
     display: inline-flex;
     align-items: center;
     gap: 0.4rem;
+    height: auto;
+    min-height: 0;
     border: 1px solid rgba(255, 255, 255, 0.35);
     border-radius: 999px;
     background: transparent;
     color: #ffffff;
     font-size: 13px;
     font-weight: 700;
-    padding: 6px 16px;
-    line-height: 1;
+    padding: 7px 18px;
+    line-height: 1.2;
     cursor: pointer;
 }
 
