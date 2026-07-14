@@ -1,480 +1,302 @@
-# Produccion: preparacion y mantenimiento nocturno completo
+# Produccion: ejecucion nocturna preparada
 
-## Objetivo
+Estado: paquete preparado; no ejecutado en `prd-old`.
 
-Preparar y ejecutar una ventana controlada sobre el productivo canonico
-`prd-old` (`10.80.5.45`) durante la noche del 2026-07-14, dejando cada cambio
-respaldado, verificable y reversible.
+Host canonico: `10.80.5.45` / `mdsldmz-ssies`. Los hosts AWS quedan fuera. TLS
+queda excluido por decision explicita.
 
-La estrategia aprobada divide el trabajo en dos subventanas:
+## Resultado buscado
 
-1. mantenimiento host-side y observacion;
-2. promocion del deploy automatico de SISOC-Mobile y deploy productivo.
+Al cerrar la ventana:
 
-## Alcance aprobado
+- `main` esta desplegado en backend y SISOC-Mobile;
+- QA y HML contienen todo `main` por el Plan A y sus deploys estan verdes;
+- los siete contenedores productivos, NGINX y runner estan sanos;
+- Django usa exclusivamente MySQL remoto `10.80.5.46`;
+- el MySQL local queda inactivo/deshabilitado, con datadir/paquetes intactos;
+- la poda root con `--volumes` y dos cron legacy rotos ya no existen;
+- `sisoc-deploy` tiene una limpieza diaria por umbral, retencion 14 dias y sin
+  volumenes;
+- los logs NGINX bajo `/sisoc` tienen rotacion;
+- `.env` mobile queda `root:sisoc-deploy` modo 640;
+- `apache2` y `sisoc.service` quedan disabled, sin borrar unidades/paquetes;
+- existe backup root-only y rollback exacto de cada cambio host-side.
 
-- verificar conectividad, health, DB remota, disco, Git, Docker y workers;
-- verificar evidencia de backup de DB y el snapshot local de media;
-- respaldar configuracion critica en una ubicacion root-only;
-- reemplazar la poda Docker agresiva por retencion de 14 dias sin volumenes;
-- retirar dos entradas cron que apuntan a paths inexistentes;
-- agregar rotacion para los logs NGINX bajo `/sisoc/logs/nginx`;
-- restringir `/sisoc/SISOC-Mobile/.env` a `root:sisoc-deploy` modo 640;
-- aplicar Stage 1 reversible al MySQL local del app host;
-- deshabilitar el arranque futuro de `apache2` y `sisoc.service`, hoy fallidos;
-- preparar, revisar, mergear y desplegar el cambio que incorpora
-  SISOC-Mobile al deploy de produccion;
-- desplegar el release pendiente de `main`, incluido PR #2048 y la migracion
-  aditiva `centrodeinfancia.0036_asistenciatrabajador`;
-- documentar evidencia, resultado y rollback disponible.
+## Cambios que deben llegar a `main` antes de la ventana
 
-## Exclusiones
+Integrar en este orden y esperar checks verdes:
 
-- TLS, por decision explicita del responsable;
-- purge de MySQL, paquetes o `/var/lib/mysql`;
-- borrado de media, logs, imagenes, volumenes, checkouts o backups;
-- migraciones manuales o comandos SQL ad hoc que modifiquen datos; la migracion
-  automatica `0036_asistenciatrabajador` esta aprobada como parte del release;
-- cambios de versiones, dependencias, Docker, NGINX, MySQL o sistema operativo;
-- limpieza manual Docker durante la ventana;
-- copia externa de media mientras no exista un destino aprobado.
+1. PR #2058: Plan A y remote HTTPS de SISOC-Mobile.
+2. PR #2059: hardening atomico de asistencia CDI.
+3. PR del paquete nocturno de produccion que contiene este documento.
 
-## Baseline confirmado
+Cada merge a `main` crea un deploy productivo en espera. No aprobar ninguno
+durante la preparacion. El Plan A debe integrar `main` en `development` y
+`homologacion`, y los deploys QA/HML deben terminar verdes antes del GO de PRD.
 
-Preflight read-only del 2026-07-14 10:52 ART:
-
-- host `mdsldmz-ssies`;
-- filesystem raiz: 785 GB, 155 GB usados, 598 GB libres, 21%;
-- inodos: 2%;
-- Docker, containerd, NGINX, cron y runner de produccion activos/habilitados;
-- MySQL local activo/habilitado;
-- `apache2` y `sisoc.service` fallidos/habilitados;
-- siete contenedores activos; SISOC-Mobile healthy;
-- `/`, `/health/` y `/mobile/` respondieron 200;
-- backend en `main`, commit `980c2b05397b3a18bdcd5853763c6942632232ed`,
-  solo `tmp/` no trackeado;
-- mobile en `main`, commit `ec7c163fede8b3877fff0fd7863f0a7812043c2c`,
-  solo `.env` no trackeado;
-- todos los contenedores observados tenian `RestartCount=0`;
-- snapshot local de media existente:
-  `/sisoc/backups/media/20260713_172352/media`.
-
-Despues de este baseline, `main` avanzo a
-`cabcabdaf96ec0ec6723be6695ecc02e460e8615` por el merge de PR #2048. Ese
-release todavia no esta desplegado en PRD y forma parte explicita de la ventana.
-Existe un workflow productivo anterior en espera de aprobacion, run
-`29338795554`, que desplegaria PR #2048 sin mobile. No se debe aprobar: se cancela
-en el Gate 5 antes de mergear el PR mobile, evitando dos deploys consecutivos.
-
-Este baseline se debe repetir antes de cada subventana. No se usa como evidencia
-si tiene mas de 30 minutos.
-
-## Decisiones de ejecucion
-
-### Secuencia elegida
-
-Se ejecutan cambios pequenos y reversibles primero. El deploy queda ultimo para
-no mezclar una falla de configuracion del host con una falla de build/runtime.
-
-El root crontab se transforma una sola vez: se reemplaza la poda Docker y se
-retiran las dos lineas legacy en la misma instalacion, con un unico backup
-original. Esto evita dos escrituras y rollbacks ambiguos.
-
-### Alternativas descartadas
-
-- Una unica pasada sin checkpoints: dificulta identificar la causa de un fallo.
-- Desplegar mobile antes del mantenimiento host-side: mezcla el mayor radio de
-  impacto con cambios todavia no validados.
-- Ejecutar purges o limpiezas para ganar espacio: el disco esta al 21% y no lo
-  justifica.
-
-### Release de aplicacion aprobado
-
-El delta productivo `980c2b053...cabcabdaf` incluye PR #2048:
-
-- funcionalidad de asistencia de trabajadores CDI;
-- migracion nueva `0036_asistenciatrabajador`;
-- cambios de modelos, views, URLs, templates y CSS;
-- tests especificos de asistencia y regresiones CDI;
-- checks de `main` completados correctamente antes de la ventana.
-
-La migracion solo crea una tabla, su indice y constraints; no altera tablas
-existentes. Django puede revertirla eliminando la tabla, pero ese rollback
-borraria cualquier asistencia creada despues del deploy. Por eso el rollback
-operativo revierte codigo sin desmigrar automaticamente. Una desmigracion exige
-aprobacion de datos separada y confirmacion de que la tabla sigue vacia.
-
-La revision previa del release dejo dos riesgos funcionales abiertos:
-
-- la carga POST de asistencias ejecuta multiples `update_or_create` sin una
-  transaccion unica; un error intermedio podria dejar una carga parcial. Ademas,
-  una fecha invalida cae en la fecha actual y cualquier marca distinta de `1`
-  se interpreta como ausencia;
-- `observaciones` existe en modelo y POST, pero la UI la envia oculta y no permite
-  verla ni editarla, aunque el registro funcional la describe como editable.
-
-Los checks verdes no cubren fecha invalida, rollback de una carga interrumpida ni
-edicion real de observaciones desde la UI. Son riesgos conocidos del release, no
-de la migracion. Antes del Gate 5 se requiere una decision explicita entre
-corregirlos mediante un PR separado y revalidar, o aceptar el riesgo para esta
-ventana. No se mezclan correcciones improvisadas con el deploy nocturno.
-
-## Roles minimos
-
-- Operador: ejecuta comandos en `prd-old` y no avanza sin resultado esperado.
-- Validador: controla health, contenedores, DB identity y evidencia de rollback.
-- Aprobador GitHub: reviewer y aprobador del Environment `production`.
-- Responsable DB: confirma backup vigente y restore probado o su evidencia.
-
-Una misma persona puede cumplir mas de un rol, pero no debe ejecutar dos bloques
-en paralelo.
-
-## Ventana recomendada
-
-Horario ART propuesto: 22:00 a 02:00.
-
-| Horario | Bloque |
-| --- | --- |
-| Antes de 21:30 | PR mobile preparado, checks verdes, sin mergear |
-| 21:30-22:00 | Gate 0, evidencia DB y backup de configuracion |
-| 22:00-22:25 | Root cron y servicios legacy |
-| 22:25-22:50 | Logrotate NGINX y permisos `.env` mobile |
-| 22:50-23:15 | Stage 1 del MySQL local |
-| 23:15-23:45 | Observacion de subventana A |
-| 23:45-00:10 | Rebaseline, merge del PR y espera del gate GitHub |
-| 00:10-00:40 | Aprobacion y deploy backend/mobile |
-| 00:40-01:20 | Observacion de subventana B |
-| 01:20-02:00 | Cierre, evidencia y reserva para rollback |
-
-Si el trabajo empieza en otro horario, conservar duraciones y orden.
-
-## Preparacion diurna
-
-### PR mobile
-
-Crear una branch nueva desde el `origin/main` vigente. No reutilizar directamente
-la branch historica `codex/mobile-auto-deploy`.
-
-Aplicar el commit ya revisado `f68aca084f911542e53e9f42435b17bb098b533f`.
-El diff esperado es solamente:
-
-- `.github/workflows/deploy.yml`;
-- `scripts/operacion/deploy_refresh.sh`;
-- cuatro inserciones y tres eliminaciones.
-
-Validaciones minimas:
+Invariantes Git finales:
 
 ```bash
-git diff --check origin/main...HEAD
-bash -n scripts/operacion/deploy_refresh.sh
-git diff --name-only origin/main...HEAD
+git fetch origin --prune
+git merge-base --is-ancestor origin/main origin/development
+git merge-base --is-ancestor origin/main origin/homologacion
 ```
 
-El PR debe apuntar a `main`, no ser draft, tener checks verdes y quedar sin
-mergear hasta aprobar el Gate 5 nocturno.
+## Alcance de los scripts
 
-El script presente hoy en produccion ya reconoce `--with-mobile` y
-`--mobile-dir`; por eso el primer workflow puede invocarlos antes de hacer pull.
-El commit agrega ademas la exigencia de branch `main` para SISOC-Mobile.
+| Script | Comportamiento por defecto | Mutacion autorizable |
+| --- | --- | --- |
+| `prod_night_preflight.sh` | read-only | ninguna |
+| `backup_prod_configs.sh` | crea backup root-only | solo backup |
+| `prepare_prod_mobile_checkout.sh` | audita checkout/remote | `--apply` alinea owner y HTTPS |
+| `install_prod_maintenance.sh` | preflight read-only | `--apply` cambia cron/logrotate/permisos/enablement |
+| `cleanup_prod_disk.sh` | informa | `--apply` poda solo si `/ >= 80%` |
+| `retire_prod_local_mysql_stage1.sh` | preflight read-only | `--apply` stop+disable local |
+| `healthcheck_prod.sh` | read-only | ninguna |
+| `verify_prod_release.sh` | read-only | ninguna |
+| `rollback_prod_maintenance.sh` | informa | `--apply` restaura backup host-side |
+| `rollback_prod_mobile_checkout.sh` | informa | `--apply` restaura owners/ACL y remote |
 
-### Material operativo
+Ningun script ejecuta `docker volume prune`, `docker system prune`,
+`down --volumes`, DROP, purge de paquetes, borrado de media/checkouts/backups o
+cambios TLS.
 
-Antes de la ventana deben estar disponibles:
+## Preparar el paquete en el servidor sin tocar el checkout activo
 
-- `docs/infra/PROD_CHANGE_PROPOSALS.md`;
-- este runbook;
-- acceso SSH y sudo interactivo;
-- acceso GitHub autenticado;
-- reviewer y aprobador del Environment disponibles;
-- ubicacion/timestamp del ultimo backup DB y evidencia de restore;
-- canal de comunicacion durante la ventana.
+Despues de los tres merges, registrar los SHA objetivo:
 
-## Gate 0 - No-go inicial
-
-No iniciar cambios si ocurre cualquiera de estos casos:
-
-- SSH inestable o identidad distinta de `mdsldmz-ssies`;
-- menos de 100 GB libres o mas de 80% de disco;
-- alguno de los siete contenedores ausente/restarting/unhealthy;
-- `/`, `/health/` o `/mobile/` distinto de 200;
-- DB Django distinta de `10.80.5.46`, `ldmzsql-sisoc`, `sisoc_local`;
-- cambios Git tracked en backend o mobile;
-- branch distinta de `main` en cualquiera de los dos checkouts;
-- importacion masiva, mailing u otro worker con tarea no interrumpible;
-- deploy GitHub en progreso;
-- backup DB no confirmado;
-- snapshot local de media sin `status=complete`;
-- operador, validador o aprobador GitHub no disponibles.
-
-Los no trackeados `tmp/` backend y `.env` mobile son baseline conocido. Cualquier
-otro no trackeado se clasifica antes de avanzar.
-
-## Gate 1 - Backup root-only y evidencia
-
-Crear una carpeta unica:
-
-```text
-/var/backups/sisoc/night-maintenance/prod/YYYYMMDD_HHMMSS/
+```bash
+sudo -u sisoc-deploy git -C /sisoc/SISOC fetch origin main --prune
+TARGET_BACKEND_SHA="$(sudo -u sisoc-deploy git -C /sisoc/SISOC rev-parse origin/main)"
+TARGET_MOBILE_SHA="$(git ls-remote https://github.com/dsocial118/SISOC-Mobile.git refs/heads/main | awk '{print $1}')"
+printf 'backend=%s\nmobile=%s\n' "$TARGET_BACKEND_SHA" "$TARGET_MOBILE_SHA"
 ```
 
-Debe quedar `root:root`, directorios 700 y archivos 600. Guardar:
+Extraer solo scripts versionados desde el commit objetivo, sin switch/pull:
 
-- root crontab original y conteos sanitizados;
-- `/etc/nginx` y regla logrotate previa, si existe;
-- `/etc/mysql`, `auto.cnf` y metadata de `mysql.service`;
-- metadata de `apache2`, `sisoc.service`, NGINX, Docker y runner;
-- copia root-only del `.env` mobile solo para rollback de permisos;
-- commits backend/mobile;
-- nombres e IDs de imagenes Docker y restart counts;
-- estado de disco, servicios, listeners y health;
-- resultado `docker compose config -q` y lista de servicios.
+```bash
+PACKAGE_ROOT=/root/sisoc-prod-night-package
+sudo install -d -o root -g root -m 700 "$PACKAGE_ROOT"
+sudo -u sisoc-deploy git -C /sisoc/SISOC archive \
+  "$TARGET_BACKEND_SHA" scripts/infra \
+  | sudo tar -x -C "$PACKAGE_ROOT"
+sudo find "$PACKAGE_ROOT" -type d -exec chmod 700 {} +
+sudo find "$PACKAGE_ROOT/scripts/infra" -type f -name '*.sh' -exec chmod 700 {} +
+sudo bash -n "$PACKAGE_ROOT"/scripts/infra/*prod*.sh
+```
 
-No guardar en salidas o reportes:
+No copiar `.env` al paquete ni imprimirlo.
 
-- contenido de `.env`;
-- variables de `docker inspect`;
-- queries, URLs o payloads de logs;
-- claves TLS o privadas;
-- credenciales DB.
+## Gate 0 - No-go y preflight read-only
 
-No continuar si el backup no puede releerse con sudo o si el crontab original no
-quedo preservado.
+Antes de las 22:00 ART confirmar externamente:
 
-## Subventana A - Mantenimiento host-side
+- backup DB vigente y restore probado o evidencia aceptada;
+- snapshot media `/sisoc/backups/media/20260713_172352` completo;
+- sin importaciones, credenciales masivas ni mailings activos;
+- operador, validador y aprobador del Environment disponibles;
+- ningun deploy en ejecucion;
+- HML verde con el mismo `main`.
 
-### Gate 2 - Root cron y servicios legacy
+En PRD:
 
-Preflight obligatorio:
+```bash
+sudo bash "$PACKAGE_ROOT/scripts/infra/prod_night_preflight.sh"
+```
 
-- exactamente una linea Docker con retencion 24h y `--volumes`;
-- exactamente una referencia al path legacy bajo `/home/admin-ssies`;
-- exactamente una referencia al path legacy bajo `/opt/ssies`;
-- entrada HetrixTools preservada;
-- los dos paths legacy siguen inexistentes.
+Abortar si no termina exactamente con `PROD NIGHT PREFLIGHT: OK`. El script
+exige host correcto, 100 GiB libres, uso menor a 80%, Git tracked limpio,
+branches `main`, Compose valido, siete contenedores, health/DB remota, cero
+restart counts y preflights exactos de cron/MySQL.
 
-Transformacion unica:
+## Gate 1 - Preparar checkout de SISOC-Mobile
 
-- reemplazar Docker por retencion `until=336h`, sin `--volumes`;
-- retirar solo las dos lineas de paths inexistentes;
-- preservar todo el resto del crontab;
-- deshabilitar `apache2` y `sisoc.service`, sin iniciar ni borrar unidades.
+El read-only del 2026-07-14 confirmo que el checkout mobile pertenece al usuario
+historico `admin-ssies`, usa el origin SSH esperado y `sisoc-deploy` no puede
+operarlo. HML ya usa ownership del runner. Sin corregir esto, el primer deploy
+productivo automatico fallaria antes de actualizar mobile.
 
-No ejecutar `docker prune` esta noche.
+Preflight sin cambios:
 
-Validar conteos exactos, `crontab -l`, NGINX/Docker activos y los tres health 200.
-Ante una diferencia, restaurar el crontab original y el enablement previo.
+```bash
+sudo bash "$PACKAGE_ROOT/scripts/infra/prepare_prod_mobile_checkout.sh"
+```
 
-### Gate 3 - Logrotate y permisos mobile
+Con GO explicito para el cambio recursivo de owner **solo en
+`/sisoc/SISOC-Mobile`**:
 
-Instalar la regla NGINX ya definida en
-`docs/infra/PROD_CHANGE_PROPOSALS.md`, con:
+```bash
+sudo bash "$PACKAGE_ROOT/scripts/infra/prepare_prod_mobile_checkout.sh" \
+  --apply --yes
+```
 
-- rotacion diaria o al superar 100 MB;
-- 30 rotaciones;
-- compresion diferida;
-- archivos nuevos `www-data:root` modo 640;
-- `USR1` a NGINX, sin restart completo.
+El script guarda ACL, owners, grupos y modos de las 866 entradas observadas,
+preserva la metadata previa de `.env`, cambia el checkout a
+`sisoc-deploy:sisoc-deploy`, normaliza origin a HTTPS publica y valida un fetch
+sin mover HEAD. Registrar `MOBILE_BACKUP_DIR` con el `BACKUP_DIR` informado.
 
-Ejecutar primero dry-run. La aplicacion real debe apuntar solamente a la regla
-SISOC, no forzar toda la configuracion global. No borrar logs rotados.
+Rollback exacto:
 
-Luego respaldar y cambiar `/sisoc/SISOC-Mobile/.env` de `root:root` 664 a
-`root:sisoc-deploy` 640. Validar lectura como `sisoc-deploy` y
-`docker compose config --services` sin imprimir variables.
+```bash
+sudo bash "$PACKAGE_ROOT/scripts/infra/rollback_prod_mobile_checkout.sh" \
+  --backup-dir "$MOBILE_BACKUP_DIR"
+sudo bash "$PACKAGE_ROOT/scripts/infra/rollback_prod_mobile_checkout.sh" \
+  --backup-dir "$MOBILE_BACKUP_DIR" --apply --yes
+```
 
-Health obligatorio despues de cada cambio. Si falla logging o lectura del
-`.env`, restaurar la configuracion/metadata previa antes de avanzar.
+## Gate 2 - Mantenimiento host-side
 
-### Gate 4 - Stage 1 del MySQL local
+Aplicar con backup y rollback automatico ante un error:
 
-Repetir todos los preflights de `PROD_CHANGE_PROPOSALS.md`:
+```bash
+sudo bash "$PACKAGE_ROOT/scripts/infra/install_prod_maintenance.sh" \
+  --apply --yes --rotate-logs-now
+```
 
-- Django sigue usando DB remota `10.80.5.46`;
-- cero schemas de aplicacion locales;
-- cero conexiones inesperadas;
-- cero eventos habilitados;
-- cero replica channels;
-- cero miembros Group Replication.
+Registrar el `BACKUP_DIR` informado. El bloque:
 
-Solo si todos dan cero:
+1. guarda configuracion, cron, Git/Docker metadata y copia sensible root-only;
+2. retira exactamente tres lineas root conocidas: poda con `--volumes` y dos
+   paths inexistentes;
+3. instala limpieza diaria 03:40 como `sisoc-deploy`, umbral 80% y retencion
+   336h; en el baseline actual no poda porque el disco esta muy por debajo;
+4. instala y aplica solo `/etc/logrotate.d/sisoc-nginx`;
+5. cambia solo owner/grupo/modo de `.env` mobile;
+6. deshabilita servicios legacy solo si no estaban activos;
+7. valida health como root y como `sisoc-deploy`.
 
-1. completar backup root-only de `/etc/mysql`, `auto.cnf`, unidad y metadata;
-2. detener y deshabilitar `mysql.service` local;
-3. verificar que desaparecieron listeners 3306/33060 locales;
-4. confirmar nuevamente identidad DB remota desde Django;
-5. validar siete contenedores y health.
+Verificar de nuevo:
 
-Conservar datadir de 200 MB y paquetes por al menos 14 dias. No ejecutar purge.
+```bash
+sudo bash "$PACKAGE_ROOT/scripts/infra/healthcheck_prod.sh"
+sudo -u sisoc-deploy /home/sisoc-deploy/bin/cleanup_prod_disk.sh
+sudo crontab -l | grep -Fc -- '--volumes'
+sudo crontab -u sisoc-deploy -l
+sudo logrotate -d /etc/logrotate.d/sisoc-nginx
+```
 
-Rollback inmediato:
+Resultado esperado: health OK, cleanup informativo, conteo `--volumes=0` y una
+sola entrada de cleanup productivo. Observar 15 minutos.
+
+Rollback host-side:
+
+```bash
+sudo bash "$PACKAGE_ROOT/scripts/infra/rollback_prod_maintenance.sh" \
+  --backup-dir "$BACKUP_DIR"
+sudo bash "$PACKAGE_ROOT/scripts/infra/rollback_prod_maintenance.sh" \
+  --backup-dir "$BACKUP_DIR" --apply --yes
+```
+
+La primera linea solo muestra el plan. La segunda restaura crons, `.env`,
+logrotate, scripts y enablement; no deshace archivos de log ya rotados.
+
+## Gate 3 - Stage 1 del MySQL local
+
+Repetir preflight inmediatamente antes de detener:
+
+```bash
+sudo bash "$PACKAGE_ROOT/scripts/infra/retire_prod_local_mysql_stage1.sh"
+```
+
+Debe confirmar DB remota correcta y cinco conteos locales en cero. Aplicar:
+
+```bash
+sudo bash "$PACKAGE_ROOT/scripts/infra/retire_prod_local_mysql_stage1.sh" \
+  --apply --yes
+```
+
+Conserva `/var/lib/mysql`, `/etc/mysql` y paquetes por 14 dias. Rollback
+inmediato si falla health, DB identity o aparece un consumidor:
 
 ```bash
 sudo systemctl enable --now mysql
+sudo systemctl show mysql -p ActiveState -p UnitFileState --no-pager
+sudo ss -Hlnpt 'sport = :3306'
 ```
 
-Luego validar servicio, listeners y health. Cualquier consumidor local inesperado
-obliga a rollback y cierre del Gate 4.
+Observar 30 minutos y ejecutar:
 
-## Observacion entre subventanas
+```bash
+sudo bash "$PACKAGE_ROOT/scripts/infra/prod_night_preflight.sh" --skip-mysql
+```
 
-Duracion minima: 30 minutos.
+## Gate 4 - Elegir un unico deploy de produccion
 
-Cada cinco minutos registrar sin contenido sensible:
+Listar los runs de `main`:
 
-- HTTP de `/`, `/health/` y `/mobile/`;
-- estado y restart count de siete contenedores;
-- identidad DB remota;
-- NGINX activo y logs con crecimiento;
-- MySQL local inactive/disabled y sin listener;
-- disco e inodos;
-- journal por conteos de errores, sin copiar mensajes con PII.
+```bash
+gh run list --repo dsocial118/SISOC --workflow deploy.yml --branch main \
+  --limit 20 --json databaseId,headSha,status,conclusion,createdAt,url
+```
 
-No abrir la subventana B ante un solo health fallido, restart count nuevo, error
-NGINX, DB identity distinta o rollback pendiente.
+Cancelar todos los runs productivos anteriores al que tenga
+`headSha=$TARGET_BACKEND_SHA`:
 
-## Subventana B - Deploy backend y SISOC-Mobile
+```bash
+gh run cancel RUN_ID_ANTERIOR --repo dsocial118/SISOC
+```
 
-### Gate 5 - Merge y aprobacion
+No cancelar el run objetivo. Repetir Gate 0/health, confirmar que no aparecieron
+nuevos commits y aprobar **solo ese run** en el Environment `production`.
 
-Antes del merge:
+```bash
+gh run watch RUN_ID_OBJETIVO --repo dsocial118/SISOC --exit-status
+```
 
-- PR mobile con diff exacto y checks verdes;
-- aprobacion de reviewer;
-- `main` contiene el release aprobado de PR #2048 y ningun commit adicional no
-  clasificado;
-- CI no reporta migraciones pendientes;
-- no hay trabajos masivos o mailings en curso;
-- recapturar commits, imagenes y restart counts;
-- repetir health y DB identity;
-- confirmar que el rollback de imagenes puede ejecutarse.
-- registrar la decision sobre los dos riesgos funcionales abiertos de PR #2048:
-  PR correctivo validado o aceptacion explicita del riesgo para esta ventana.
+El deploy baja/levanta backend y mobile sin volumenes, hace pulls `--ff-only` y
+puede ejecutar migraciones del entrypoint. La DB y media ya deben estar
+respaldadas antes de aprobar.
 
-Cancelar el workflow stale `29338795554` y verificar estado `cancelled` antes
-del merge. Como `cancel-in-progress` esta deshabilitado para deploys, dejarlo en
-espera bloquearia o podria ejecutar un deploy backend-only fuera de secuencia.
+## Gate 5 - Verificacion final
 
-Mergear el PR a `main`. El job `deploy-produccion` debe quedar bajo el Environment
-`production`. No aprobar el Environment hasta repetir el baseline una ultima vez.
+```bash
+sudo bash "$PACKAGE_ROOT/scripts/infra/verify_prod_release.sh" \
+  --backend-sha "$TARGET_BACKEND_SHA" \
+  --mobile-sha "$TARGET_MOBILE_SHA"
+```
 
-El deploy esperado:
+Ademas, con un usuario autorizado y sin crear datos ficticios:
 
-1. baja el stack backend sin volumenes;
-2. hace pull `--ff-only` de `main`;
-3. reconstruye y levanta Django y cinco workers;
-4. baja el stack mobile sin volumenes;
-5. hace pull `--ff-only` de mobile `main`;
-6. reconstruye y levanta SISOC-Mobile.
+- login;
+- detalle CDI, nomina y asistencia;
+- confirmar que observaciones es editable;
+- static y un media existente;
+- workers presentes, sin reprocesamiento inesperado;
+- logs NGINX creciendo con owner/modo esperados.
 
-Hay indisponibilidad esperada mientras los stacks estan abajo. El entrypoint
-backend puede ejecutar migraciones; por eso el backup DB y los checks de
-migraciones son gates obligatorios.
+Observar 40 minutos. Cerrar solo con `PROD RELEASE VERIFICATION: OK` y smoke
+funcional aceptado.
 
-### Gate 6 - Verificacion post-deploy
+## Rollback del deploy
 
-Validar:
+Antes de aprobar, registrar commits e imagenes previos desde el backup. Si el
+build falla despues del `down`, recuperar primero servicio con las imagenes
+anteriores; no podar durante la ventana. El rollback definitivo de codigo se
+hace mediante revert PR, nunca con force-push o `git reset --hard`.
 
-- workflow productivo verde;
-- backend en el commit mergeado y mobile en el commit esperado;
-- working trees sin cambios tracked;
-- siete contenedores activos y mobile healthy;
-- restart counts estables;
-- `/`, `/health/` y `/mobile/` en 200;
-- DB remota correcta;
-- `showmigrations centrodeinfancia` marca `0036_asistenciatrabajador` aplicada;
-- tabla nueva accesible mediante una consulta ORM read-only;
-- pagina CDI y acceso a asistencia verificados por un usuario autorizado, sin
-  crear datos ficticios;
-- smoke read-only de detalle CDI, nomina y formularios de destinatario/trabajador,
-  porque PR #2048 tambien modifica ampliamente esas pantallas;
-- static y un media existente accesibles;
-- NGINX escribiendo logs;
-- workers presentes sin reprocesamientos inesperados;
-- runner, cron y monitoreo activos;
-- MySQL local sigue inactive/disabled.
-
-Observar durante al menos 40 minutos antes de cerrar.
-
-## Rollback por bloque
-
-| Bloque | Rollback |
-| --- | --- |
-| Root cron | Restaurar el crontab original root-only y verificar conteos |
-| Servicios legacy | Restaurar enablement previo; no iniciar servicios fallidos |
-| Logrotate | Restaurar regla anterior o mover la nueva al backup; conservar logs rotados; enviar `USR1` |
-| `.env` mobile | Restaurar `root:root` modo 664 desde metadata/copia root-only |
-| MySQL Stage 1 | `systemctl enable --now mysql`, validar listeners y health |
-| Deploy backend/mobile | Recuperar servicio primero con commits/imagenes registrados; luego revertir el PR mediante otro PR |
-
-El rollback del release de aplicacion no revierte la migracion `0036` durante la
-ventana. La tabla puede quedar aplicada y sin uso mientras se revierte el codigo;
-esto preserva cualquier registro creado y evita perdida de datos.
-
-Para rollback de runtime Docker, recapturar antes del deploy el nombre e ID de
-cada imagen. Si un build falla despues de `compose down`, priorizar levantar los
-tags/IDs anteriores con `docker compose up -d --no-build`. No podar imagenes
-durante la ventana.
-
-No usar `git reset --hard`, force-push, `docker system prune`, `down --volumes` ni
-restauraciones parciales sobre la DB productiva.
-
-Si el checkout debe volver temporalmente a un commit anterior para restaurar
-servicio, requiere un GO de emergencia explicito y luego debe normalizarse con
-un revert PR; no dejar produccion detached como cierre.
-
-## Criterios de abortar
-
-Abortar el bloque actual, ejecutar su rollback y no avanzar si:
-
-- un conteo preflight no coincide exactamente;
-- un backup no puede validarse;
-- health deja de responder 200;
-- aparece un restart inesperado;
-- cambia la identidad DB;
-- NGINX deja de escribir;
-- un worker reprocesa o pierde una tarea;
-- el PR contiene archivos extra, checks fallidos o commits inesperados;
-- el deploy excede 20 minutos con un stack abajo;
-- falta el operador, validador o aprobador requerido.
-
-Un bloque abortado no autoriza a improvisar una alternativa durante la misma
-ventana.
+No desmigrar automaticamente `0036_asistenciatrabajador`: eliminar la tabla
+podria perder asistencias ya creadas. Revertir codigo manteniendo la tabla es el
+rollback seguro inicial; cualquier desmigracion requiere aprobacion de datos.
 
 ## Evidencia de cierre
 
-Guardar root-only y luego resumir sin secretos:
+Guardar root-only y resumir sin secretos:
 
-- timestamp de inicio/fin por gate;
-- backup path;
-- cambios aplicados y rollback path;
-- commits antes/despues;
-- imagenes antes/despues;
-- estado de servicios, puertos, contenedores, disco e inodos;
-- health y DB identity;
-- URL del PR y workflow;
-- cambios omitidos y causa;
-- periodo de observacion y riesgos abiertos.
+- SHA backend/mobile y run objetivo;
+- `BACKUP_DIR` de mantenimiento y MySQL;
+- hora/resultado de cada gate;
+- cron y servicios antes/despues;
+- disco, contenedores/restart counts y health;
+- DB identity y migracion aplicada;
+- cambios omitidos, rollback usado y periodo de observacion.
 
-Actualizar al dia siguiente `PROD_INVENTORY.md`, `PROD_RISKS.md`,
-`PROD_CHANGE_PROPOSALS.md` y `PROD_MIGRATION_CHECKLIST.md` mediante PR a
-`development`.
+## Exclusiones y seguimiento
 
-## Seguimiento
-
-- observar 24 horas sin borrar backups ni datadir MySQL;
-- revisar primera ejecucion del nuevo cron Docker;
-- verificar rotacion y permisos de logs NGINX;
-- confirmar proximo deploy backend/mobile coordinado;
-- definir destino externo para media y prueba de restore;
-- mantener TLS fuera hasta una autorizacion separada.
-
-## Datos pendientes antes de ejecutar
-
-1. hora final de inicio si difiere de 22:00 ART;
-2. responsable y evidencia del backup DB/restauracion;
-3. confirmacion de que no habra importaciones/mailings durante la ventana;
-4. reviewer y aprobador GitHub disponibles;
-5. destino externo de media, si se quiere incluir esa copia en otro trabajo.
-
-La aprobacion de este diseño permite preparar scripts/PRs y la ventana. La
-ejecucion productiva comienza solamente con un GO explicito al Gate 0.
+- TLS sigue fuera.
+- No se borra datadir/paquetes MySQL antes de 14 dias y nueva aprobacion.
+- No se borra media, backups, checkouts historicos, `tmp/`, logs de aplicacion
+  ni volumenes Docker.
+- El snapshot media sigue siendo local al mismo host: falta copia externa y
+  prueba de restore para disaster recovery.
+- La retencion de audit trail DB no se automatiza hasta definir politica
+  funcional/legal; se elimina solo el cron roto, no datos.
