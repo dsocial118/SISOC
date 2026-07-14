@@ -1,5 +1,5 @@
 {% extends "includes/main.html" %}
-{% load static %}
+{% load static custom_filters %}
 
 {% block title %}Expediente de Pago{% endblock %}
 
@@ -64,7 +64,7 @@
                     </div>
                     <div class="col-md-4">
                         <small class="text-muted d-block">Total</small>
-                        <span class="fw-semibold">${{ expediente.total|floatformat:2 }}</span>
+                        <span class="fw-semibold">${{ expediente.total|monto_sin_decimales }}</span>
                     </div>
                     <div class="col-md-4">
                         <small class="text-muted d-block">Mes de Pago</small>
@@ -140,22 +140,22 @@
                         <tr>
                             <td>Desayuno</td>
                             <td class="text-end">{{ expediente.prestaciones_mensuales_desayuno|default:"-" }}</td>
-                            <td class="text-end">${{ expediente.monto_mensual_desayuno|floatformat:2 }}</td>
+                            <td class="text-end">${{ expediente.monto_mensual_desayuno|monto_sin_decimales }}</td>
                         </tr>
                         <tr>
                             <td>Almuerzo</td>
                             <td class="text-end">{{ expediente.prestaciones_mensuales_almuerzo|default:"-" }}</td>
-                            <td class="text-end">${{ expediente.monto_mensual_almuerzo|floatformat:2 }}</td>
+                            <td class="text-end">${{ expediente.monto_mensual_almuerzo|monto_sin_decimales }}</td>
                         </tr>
                         <tr>
                             <td>Merienda</td>
                             <td class="text-end">{{ expediente.prestaciones_mensuales_merienda|default:"-" }}</td>
-                            <td class="text-end">${{ expediente.monto_mensual_merienda|floatformat:2 }}</td>
+                            <td class="text-end">${{ expediente.monto_mensual_merienda|monto_sin_decimales }}</td>
                         </tr>
                         <tr>
                             <td>Cena</td>
                             <td class="text-end">{{ expediente.prestaciones_mensuales_cena|default:"-" }}</td>
-                            <td class="text-end">${{ expediente.monto_mensual_cena|floatformat:2 }}</td>
+                            <td class="text-end">${{ expediente.monto_mensual_cena|monto_sin_decimales }}</td>
                         </tr>
                     </tbody>
                     <tfoot>
@@ -171,7 +171,7 @@
                                 class="text-end"
                                 style="background-color: #3d4f63 !important;
                                        border-bottom: 2px solid #e7ba61 !important">
-                                ${{ expediente.total|floatformat:2 }}
+                                ${{ expediente.total|monto_sin_decimales }}
                             </th>
                         </tr>
                     </tfoot>
