@@ -740,6 +740,7 @@ def test_import_username_renombra_usuario_existente_matcheado_por_correo():
 
     row_data = _import_row_data("pedro.gonzalez@example.com")
     row_data["username"] = "pedrouser"
+    row_data["accion_grupos"] = "agregar"
 
     process_single_user_import_row(row_data=row_data, job=job)
 
