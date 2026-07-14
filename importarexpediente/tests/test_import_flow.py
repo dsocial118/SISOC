@@ -59,20 +59,21 @@ def tmp_media(settings, tmp_path):
 
 
 def _make_csv(comedor_pk, mes_convenio=None, expediente_pago="EX-2025-BBB"):
-    # Sample aligned to new HEADER_MAP (semicolon-delimited)
     headers = (
-        "ID;COMEDOR;ORGANIZACIÓN;EXPEDIENTE del CONVENIO;Expediente de Pago;"
+        "ID;COMEDOR;ORGANIZACION;EXPEDIENTE del CONVENIO;Expediente de Pago;"
         "Prestaciones Mensuales Desayuno;Prestaciones Mensuales Almuerzo;"
         "Prestaciones Mensuales Merienda;Prestaciones Mensuales Cena;"
         "Monto Mensuales Desayuno;Monto Mensuales Almuerzo;"
-        "Monto Mensuales Merienda;Monto Mensuales Cena;TOTAL;Mes de Pago;Año"
+        "Monto Mensuales Merienda;Monto Mensuales Cena;Total Prestaciones;"
+        "Gastos Accesorios 6%;TOTAL;Mes de Pago;A\u00f1o"
     )
     if mes_convenio is not None:
         headers += ";Mes de Convenio"
     headers += "\n"
     row = (
         f"{comedor_pk};Comedor Prueba;Org X;EX-2024-AAA;{expediente_pago};150;0;0;750;"
-        "$ 57.450,00;$ 0,00;$ 0,00;$ 572.250,00;$ 629.700,00;septiembre;2025"
+        "$ 57.450,00;$ 0,00;$ 0,00;$ 572.250,00;$ 594.000,00;$ 35.700,00;"
+        "$ 629.700,00;septiembre;2025"
     )
     if mes_convenio is not None:
         row += f";{mes_convenio}"
@@ -99,6 +100,8 @@ def _make_xlsx(comedor_pk, mes_convenio=4):
             "Monto Mensuales Almuerzo",
             "Monto Mensuales Merienda",
             "Monto Mensuales Cena",
+            "Total Prestaciones",
+            "Gastos Accesorios 6%",
             "TOTAL",
             "Mes de Pago",
             "A\u00f1o",
@@ -131,6 +134,8 @@ def _make_xlsx(comedor_pk, mes_convenio=4):
             0,
             0,
             572250,
+            594000,
+            35700,
             629700,
             "septiembre",
             "2025",
@@ -476,6 +481,8 @@ def test_import_persists_expedientepago_and_marks_completed(
     assert exp.prestaciones_mensuales_cena == 750
     assert exp.monto_mensual_desayuno == Decimal("57450")
     assert exp.monto_mensual_cena == Decimal("572250")
+    assert exp.total_prestaciones == Decimal("594000")
+    assert exp.gastos_accesorios == Decimal("35700")
     assert exp.total == Decimal("629700")
     assert str(exp.mes_pago).lower() == "septiembre"
     assert str(exp.ano) == "2025"
@@ -710,7 +717,7 @@ def test_import_xlsx_persists_mes_convenio_and_updates_present_state(
     )
 
 
-def test_import_detail_displays_mes_convenio(client_logged, tmp_media, db):
+def test_import_detail_displays_mes_convenio_and_totales(client_logged, tmp_media, db):
     programa = _programa_alimentar()
     comedor = Comedor.objects.create(nombre="Comedor Detail", programa=programa)
     _estado_catalog()
@@ -724,6 +731,10 @@ def test_import_detail_displays_mes_convenio(client_logged, tmp_media, db):
     assert resp.status_code == 200
     assert b"Mes de Convenio" in resp.content
     assert b"1" in resp.content
+    assert b"Total Prestaciones" in resp.content
+    assert b"Gastos Accesorios 6%" in resp.content
+    assert b"$594.000" in resp.content
+    assert b"$35.700" in resp.content
 
 
 def test_import_updates_present_mes_1_to_active_execution(client_logged, tmp_media, db):

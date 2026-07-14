@@ -52,6 +52,8 @@ HEADER_MAP = {
     "organizaci\u00f3n": "organizacion_creacion",
     "organizacion": "organizacion_creacion",
     # Total
+    "total prestaciones": "total_prestaciones",
+    "gastos accesorios 6%": "gastos_accesorios",
     "total": "total",
     # Mes y anio
     "mes de pago": "mes_pago",
@@ -81,6 +83,8 @@ FIELD_LABELS = {
     "expediente_convenio": "Expediente del convenio",
     "anexo": "Comedor (anexo)",
     "organizacion_creacion": "Organizaci\u00f3n",
+    "total_prestaciones": "Total Prestaciones",
+    "gastos_accesorios": "Gastos Accesorios 6%",
     "total": "Total",
     "mes_pago": "Mes de pago",
     "mes_convenio": "Mes de convenio",
@@ -380,7 +384,7 @@ def expediente_pago_from_row(parsed_file, row):  # pylint: disable=too-many-bran
         if not field:
             continue
         val = _cell_text(cell)
-        if field == "total":
+        if field in ("total", "total_prestaciones", "gastos_accesorios"):
             parsed = parse_decimal(val)
             if val and parsed is None:
                 specific_errors.append(

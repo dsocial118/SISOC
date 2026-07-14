@@ -26,6 +26,8 @@ class ExpedientePagoForm(forms.ModelForm):
         if self._es_tecnico_comedor is False:
             for field in (
                 "total",
+                "total_prestaciones",
+                "gastos_accesorios",
                 "mes_pago",
                 "ano",
                 "organizacion_creacion",

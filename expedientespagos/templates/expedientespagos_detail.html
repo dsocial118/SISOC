@@ -54,18 +54,15 @@
             </div>
             <div class="card-body">
                 <div class="row gy-3">
-                    <div class="col-md-6">
+                    <div class="col-md-4">
                         <small class="text-muted d-block">Expediente de Pago</small>
                         <span class="fw-semibold">{{ expediente.expediente_pago|default:"-" }}</span>
                     </div>
-                    <div class="col-md-6">
+                    <div class="col-md-4">
                         <small class="text-muted d-block">Expediente del Convenio</small>
                         <span class="fw-semibold">{{ expediente.expediente_convenio|default:"-" }}</span>
                     </div>
-                    <div class="col-md-4">
-                        <small class="text-muted d-block">Total</small>
-                        <span class="fw-semibold">${{ expediente.total|monto_sin_decimales }}</span>
-                    </div>
+                    <div class="col-md-4 d-none d-md-block"></div>
                     <div class="col-md-4">
                         <small class="text-muted d-block">Mes de Pago</small>
                         <span class="fw-semibold">{{ expediente.mes_pago|default:"-" }}</span>
@@ -78,33 +75,51 @@
                         <small class="text-muted d-block">Año</small>
                         <span class="fw-semibold">{{ expediente.ano|default:"-" }}</span>
                     </div>
-                    <div class="col-md-6">
+                    <div class="col-md-4">
                         <small class="text-muted d-block">Organización</small>
                         <span class="fw-semibold">{{ expediente.organizacion_creacion|default:"-" }}</span>
                     </div>
-                    <div class="col-md-6">
+                    <div class="col-md-4">
                         <small class="text-muted d-block">Anexo</small>
                         <span class="fw-semibold">{{ expediente.anexo|default:"-" }}</span>
+                    </div>
+                    <div class="col-md-4 d-none d-md-block"></div>
+                    <div class="col-12">
+                        <hr class="my-0" />
+                    </div>
+                    <div class="col-md-4">
+                        <small class="text-muted d-block">Total Prestaciones</small>
+                        <span class="fw-semibold">${{ expediente.total_prestaciones|monto_sin_decimales }}</span>
+                    </div>
+                    <div class="col-md-4">
+                        <small class="text-muted d-block">Gastos Accesorios 6%</small>
+                        <span class="fw-semibold">${{ expediente.gastos_accesorios|monto_sin_decimales }}</span>
+                    </div>
+                    <div class="col-md-4">
+                        <small class="text-muted d-block">Total</small>
+                        <span class="fw-semibold">${{ expediente.total|monto_sin_decimales }}</span>
                     </div>
                     <div class="col-12">
                         <hr class="my-0" />
                     </div>
-                    <div class="col-md-6">
+                    <div class="col-md-4">
                         <small class="text-muted d-block">Número de Orden de Pago</small>
                         <span class="fw-semibold">{{ expediente.numero_orden_pago|default:"-" }}</span>
                     </div>
-                    <div class="col-md-6">
+                    <div class="col-md-4">
                         <small class="text-muted d-block">Fecha de Creación</small>
                         <span class="fw-semibold">{{ expediente.fecha_creacion|date:"d/m/Y" }}</span>
                     </div>
-                    <div class="col-md-6">
+                    <div class="col-md-4 d-none d-md-block"></div>
+                    <div class="col-md-4">
                         <small class="text-muted d-block">Fecha de Pago al Banco</small>
                         <span class="fw-semibold">{{ expediente.fecha_pago_al_banco|date:"d/m/Y"|default:"-" }}</span>
                     </div>
-                    <div class="col-md-6">
+                    <div class="col-md-4">
                         <small class="text-muted d-block">Fecha de Acreditación</small>
                         <span class="fw-semibold">{{ expediente.fecha_acreditacion|date:"d/m/Y"|default:"-" }}</span>
                     </div>
+                    <div class="col-md-4 d-none d-md-block"></div>
                     {% if expediente.observaciones %}
                         <div class="col-12">
                             <small class="text-muted d-block">Observaciones</small>
