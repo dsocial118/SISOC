@@ -385,6 +385,8 @@ Validar:
 - tabla nueva accesible mediante una consulta ORM read-only;
 - pagina CDI y acceso a asistencia verificados por un usuario autorizado, sin
   crear datos ficticios;
+- smoke read-only de detalle CDI, nomina y formularios de destinatario/trabajador,
+  porque PR #2048 tambien modifica ampliamente esas pantallas;
 - static y un media existente accesibles;
 - NGINX escribiendo logs;
 - workers presentes sin reprocesamientos inesperados;
