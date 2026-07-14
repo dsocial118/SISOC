@@ -9,6 +9,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.contenttypes.models import ContentType
+from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
 from django.db import transaction
 from django.db.models import Exists, OuterRef, Q
@@ -63,7 +64,10 @@ from centrodeinfancia.models import (
     ObservacionCentroInfancia,
     Trabajador,
 )
-from centrodeinfancia.services import CentroDeInfanciaService
+from centrodeinfancia.services import (
+    AsistenciaTrabajadorService,
+    CentroDeInfanciaService,
+)
 from centrodeinfancia.views_formulario_cdi import construir_resumenes_formularios
 from intervenciones.constants import PROGRAMA_ALIASES_CENTRO_INFANCIA
 
@@ -1798,9 +1802,12 @@ class AsistenciaTrabajadorCentroView(LoginRequiredMixin, TemplateView):
             )
         return self._centro_cache
 
-    @staticmethod
-    def _parse_fecha(fecha_raw):
-        return _parse_fecha_renaper(fecha_raw) or timezone.localdate()
+    def _parse_fecha(self, fecha_raw):
+        try:
+            return AsistenciaTrabajadorService.parsear_fecha(fecha_raw)
+        except ValidationError as exc:
+            messages.error(self.request, exc.messages[0])
+            return timezone.localdate()
 
     @staticmethod
     def _trabajadores(centro):
@@ -1853,20 +1860,17 @@ class AsistenciaTrabajadorCentroView(LoginRequiredMixin, TemplateView):
 
     def post(self, request, *args, **kwargs):
         centro = self._get_centro()
-        fecha = self._parse_fecha(request.POST.get("fecha"))
-        for trabajador in self._trabajadores(centro):
-            marca = request.POST.get(f"presente_{trabajador.pk}")
-            if marca is None:
-                continue
-            observaciones = (request.POST.get(f"obs_{trabajador.pk}") or "").strip()
-            AsistenciaTrabajador.objects.update_or_create(
-                trabajador=trabajador,
-                fecha=fecha,
-                defaults={
-                    "presente": marca == "1",
-                    "observaciones": observaciones or None,
-                    "registrado_por": request.user,
-                },
+        try:
+            fecha = AsistenciaTrabajadorService.guardar(
+                centro=centro,
+                fecha_raw=request.POST.get("fecha"),
+                datos=request.POST,
+                usuario=request.user,
+            )
+        except ValidationError as exc:
+            messages.error(request, exc.messages[0])
+            return redirect(
+                "centrodeinfancia_trabajadores_asistencia", pk=centro.pk
             )
         messages.success(request, "Asistencia registrada correctamente.")
         url = reverse(
