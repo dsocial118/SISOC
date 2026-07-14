@@ -9,7 +9,7 @@
 
 ## Contexto funcional
 
-- No informado explícitamente; inferir desde el título del PR y el diff.
+- Coordinar el deploy operativo de SISOC y SISOC-Mobile en HML y produccion desde el workflow existente.
 
 ## Arquitectura tocada
 
@@ -17,10 +17,10 @@
 
 ## Decisiones y supuestos detectados
 
-- Tipo de cambio declarado: No informado
-- Área principal declarada: No informada
-- Impacto usuario declarado: No informado
-- Riesgos / rollback: No informado
+- Tipo de cambio declarado: actualizaciones
+- Área principal declarada: infraestructura
+- Impacto usuario declarado: Reduce el drift entre backend y frontend mobile durante los despliegues coordinados.
+- Riesgos / rollback: El deploy combinado amplia el radio de impacto; no mergear fuera de la ventana. Ante fallo, recuperar primero las imagenes y commits registrados en el runbook PR #2049.
 
 ## Design system y UI
 
@@ -31,12 +31,19 @@
 - Empezar por `docs/registro/prs/PR-2051.md` para contexto resumido del PR.
 - Revisar primero estos archivos del diff:
 - `.github/workflows/deploy.yml`
+- `CHANGELOG.md`
+- `docs/contexto/features/pr-2051-ci-deploy-desplegar-sisoc-mobile-con-hml-y-prd.md`
+- `docs/registro/prs/PR-2051.md`
+- `docs/registro/releases/pending/2026-07-15-pr-2051.md`
 - `scripts/operacion/deploy_refresh.sh`
 - Documentación sugerida para ampliar contexto:
 - `docs/indice.md`
 - `docs/ia/CONTEXT_HYGIENE.md`
 - `docs/ia/ARCHITECTURE.md`
 - `docs/ia/TESTING.md`
+- `docs/contexto/features/pr-2051-ci-deploy-desplegar-sisoc-mobile-con-hml-y-prd.md`
+- `docs/registro/prs/PR-2051.md`
+- `docs/registro/releases/pending/2026-07-15-pr-2051.md`
 
 ## Trazabilidad
 
