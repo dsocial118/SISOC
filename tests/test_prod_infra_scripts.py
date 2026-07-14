@@ -53,9 +53,7 @@ def test_stage1_mysql_prod_no_purga_ni_borra_datadir():
 
 
 def test_mantenimiento_prod_reemplaza_poda_root_por_cron_sin_privilegios():
-    content = (INFRA_DIR / "install_prod_maintenance.sh").read_text(
-        encoding="utf-8"
-    )
+    content = (INFRA_DIR / "install_prod_maintenance.sh").read_text(encoding="utf-8")
 
     assert "40 3 * * * $TARGET_BIN/cleanup_prod_disk.sh --apply --yes" in content
     assert 'crontab -u "$TARGET_USER" "$deploy_after"' in content
