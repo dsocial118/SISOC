@@ -34,7 +34,7 @@
 - `CHANGELOG.md`
 - `docs/contexto/features/pr-2051-ci-deploy-desplegar-sisoc-mobile-con-hml-y-prd.md`
 - `docs/registro/prs/PR-2051.md`
-- `docs/registro/releases/pending/2026-07-15-pr-2051.md`
+- `docs/registro/releases/pending/2026-07-14-pr-2051.md`
 - `scripts/operacion/deploy_refresh.sh`
 - Documentación sugerida para ampliar contexto:
 - `docs/indice.md`
@@ -43,7 +43,7 @@
 - `docs/ia/TESTING.md`
 - `docs/contexto/features/pr-2051-ci-deploy-desplegar-sisoc-mobile-con-hml-y-prd.md`
 - `docs/registro/prs/PR-2051.md`
-- `docs/registro/releases/pending/2026-07-15-pr-2051.md`
+- `docs/registro/releases/pending/2026-07-14-pr-2051.md`
 
 ## Trazabilidad
 

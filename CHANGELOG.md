@@ -14,7 +14,6 @@
 - [sin-area] ci(deploy): habilitar CD self-hosted en main. (PR #2024)
 - [sin-area] hotfix. (PR #2046)
 - [sin-area] hotfix: asistencia de trabajadores CDI (backport a main de PR #2046). (PR #2048)
-- [sin-area] ci(deploy): desplegar SISOC-Mobile con HML y PRD. (PR #2051)
 <!-- AUTO-GENERATED RELEASE END: 2026-07-15 -->
 
 <!-- AUTO-GENERATED RELEASE START: 2026-07-08 -->
