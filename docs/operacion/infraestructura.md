@@ -34,7 +34,7 @@
 | Entorno      | URL(s)                                 | Hosting                     | Notas                                                                                                 | Owner     |
 | ------------ | -------------------------------------- | --------------------------- | ----------------------------------------------------------------------------------------------------- | --------- |
 | qa           | http://10.1.131.121/                   | Self-hosted + NGINX interno | Deploy desde branch `development`; usa `docker-compose.deploy.yml` + `.env` del servidor; DB dedicada en `10.1.130.88` | Tech Lead |
-| homologacion | https://homologacion.sisoc.example.gov.ar/ | Self-hosted + NGINX interno | Deploy desde branch `homologacion`; entorno similar a produccion, definido por `.env` del servidor | Tech Lead |
+| homologacion | https://homologacion.sisoc.example.gov.ar/ | Self-hosted + NGINX interno | Deploy desde branch `homologacion`; usa `docker-compose.deploy.yml` + `docker-compose.produccion.yml` y despliega SISOC-Mobile | Tech Lead |
 | prd          | https://sisoc.secretarianaf.gob.ar/    | Self-hosted + NGINX interno | Deploy desde branch `main`; usa `docker-compose.deploy.yml` + `docker-compose.produccion.yml`       | Tech Lead |
 
 ## 3. Architecture (High-level)
@@ -82,8 +82,8 @@
 - Process model:
   - Proceso web Django.
   - `docker-compose.yml` local define `mysql` + `django`.
-  - Los deploys versionados usan `docker-compose.deploy.yml`; hoy solo produccion agrega `docker-compose.produccion.yml`.
-  - QA y homologacion se resuelven con el mismo compose base y el `.env` del servidor.
+  - Los deploys versionados usan `docker-compose.deploy.yml`; homologacion y produccion agregan `docker-compose.produccion.yml` para levantar los workers de background.
+  - QA usa solo el compose base; homologacion tambien refresca SISOC-Mobile.
   - Jobs programados por cron del host (limpieza logs, prune Docker, hetrixtools, purge_auditlog).
 
 - Autoscaling rules (if any):
