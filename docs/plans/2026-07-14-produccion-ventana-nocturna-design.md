@@ -24,6 +24,8 @@ La estrategia aprobada divide el trabajo en dos subventanas:
 - deshabilitar el arranque futuro de `apache2` y `sisoc.service`, hoy fallidos;
 - preparar, revisar, mergear y desplegar el cambio que incorpora
   SISOC-Mobile al deploy de produccion;
+- desplegar el release pendiente de `main`, incluido PR #2048 y la migracion
+  aditiva `centrodeinfancia.0036_asistenciatrabajador`;
 - documentar evidencia, resultado y rollback disponible.
 
 ## Exclusiones
@@ -31,7 +33,8 @@ La estrategia aprobada divide el trabajo en dos subventanas:
 - TLS, por decision explicita del responsable;
 - purge de MySQL, paquetes o `/var/lib/mysql`;
 - borrado de media, logs, imagenes, volumenes, checkouts o backups;
-- migraciones manuales o comandos SQL que modifiquen datos;
+- migraciones manuales o comandos SQL ad hoc que modifiquen datos; la migracion
+  automatica `0036_asistenciatrabajador` esta aprobada como parte del release;
 - cambios de versiones, dependencias, Docker, NGINX, MySQL o sistema operativo;
 - limpieza manual Docker durante la ventana;
 - copia externa de media mientras no exista un destino aprobado.
@@ -56,6 +59,13 @@ Preflight read-only del 2026-07-14 10:52 ART:
 - snapshot local de media existente:
   `/sisoc/backups/media/20260713_172352/media`.
 
+Despues de este baseline, `main` avanzo a
+`cabcabdaf96ec0ec6723be6695ecc02e460e8615` por el merge de PR #2048. Ese
+release todavia no esta desplegado en PRD y forma parte explicita de la ventana.
+Existe un workflow productivo anterior en espera de aprobacion, run
+`29338795554`, que desplegaria PR #2048 sin mobile. No se debe aprobar: se cancela
+en el Gate 5 antes de mergear el PR mobile, evitando dos deploys consecutivos.
+
 Este baseline se debe repetir antes de cada subventana. No se usa como evidencia
 si tiene mas de 30 minutos.
 
@@ -77,6 +87,37 @@ original. Esto evita dos escrituras y rollbacks ambiguos.
   impacto con cambios todavia no validados.
 - Ejecutar purges o limpiezas para ganar espacio: el disco esta al 21% y no lo
   justifica.
+
+### Release de aplicacion aprobado
+
+El delta productivo `980c2b053...cabcabdaf` incluye PR #2048:
+
+- funcionalidad de asistencia de trabajadores CDI;
+- migracion nueva `0036_asistenciatrabajador`;
+- cambios de modelos, views, URLs, templates y CSS;
+- tests especificos de asistencia y regresiones CDI;
+- checks de `main` completados correctamente antes de la ventana.
+
+La migracion solo crea una tabla, su indice y constraints; no altera tablas
+existentes. Django puede revertirla eliminando la tabla, pero ese rollback
+borraria cualquier asistencia creada despues del deploy. Por eso el rollback
+operativo revierte codigo sin desmigrar automaticamente. Una desmigracion exige
+aprobacion de datos separada y confirmacion de que la tabla sigue vacia.
+
+La revision previa del release dejo dos riesgos funcionales abiertos:
+
+- la carga POST de asistencias ejecuta multiples `update_or_create` sin una
+  transaccion unica; un error intermedio podria dejar una carga parcial. Ademas,
+  una fecha invalida cae en la fecha actual y cualquier marca distinta de `1`
+  se interpreta como ausencia;
+- `observaciones` existe en modelo y POST, pero la UI la envia oculta y no permite
+  verla ni editarla, aunque el registro funcional la describe como editable.
+
+Los checks verdes no cubren fecha invalida, rollback de una carga interrumpida ni
+edicion real de observaciones desde la UI. Son riesgos conocidos del release, no
+de la migracion. Antes del Gate 5 se requiere una decision explicita entre
+corregirlos mediante un PR separado y revalidar, o aceptar el riesgo para esta
+ventana. No se mezclan correcciones improvisadas con el deploy nocturno.
 
 ## Roles minimos
 
@@ -299,12 +340,19 @@ Antes del merge:
 
 - PR mobile con diff exacto y checks verdes;
 - aprobacion de reviewer;
-- no existen otros commits inesperados en `main`;
+- `main` contiene el release aprobado de PR #2048 y ningun commit adicional no
+  clasificado;
 - CI no reporta migraciones pendientes;
 - no hay trabajos masivos o mailings en curso;
 - recapturar commits, imagenes y restart counts;
 - repetir health y DB identity;
 - confirmar que el rollback de imagenes puede ejecutarse.
+- registrar la decision sobre los dos riesgos funcionales abiertos de PR #2048:
+  PR correctivo validado o aceptacion explicita del riesgo para esta ventana.
+
+Cancelar el workflow stale `29338795554` y verificar estado `cancelled` antes
+del merge. Como `cancel-in-progress` esta deshabilitado para deploys, dejarlo en
+espera bloquearia o podria ejecutar un deploy backend-only fuera de secuencia.
 
 Mergear el PR a `main`. El job `deploy-produccion` debe quedar bajo el Environment
 `production`. No aprobar el Environment hasta repetir el baseline una ultima vez.
@@ -333,6 +381,10 @@ Validar:
 - restart counts estables;
 - `/`, `/health/` y `/mobile/` en 200;
 - DB remota correcta;
+- `showmigrations centrodeinfancia` marca `0036_asistenciatrabajador` aplicada;
+- tabla nueva accesible mediante una consulta ORM read-only;
+- pagina CDI y acceso a asistencia verificados por un usuario autorizado, sin
+  crear datos ficticios;
 - static y un media existente accesibles;
 - NGINX escribiendo logs;
 - workers presentes sin reprocesamientos inesperados;
@@ -351,6 +403,10 @@ Observar durante al menos 40 minutos antes de cerrar.
 | `.env` mobile | Restaurar `root:root` modo 664 desde metadata/copia root-only |
 | MySQL Stage 1 | `systemctl enable --now mysql`, validar listeners y health |
 | Deploy backend/mobile | Recuperar servicio primero con commits/imagenes registrados; luego revertir el PR mediante otro PR |
+
+El rollback del release de aplicacion no revierte la migracion `0036` durante la
+ventana. La tabla puede quedar aplicada y sin uso mientras se revierte el codigo;
+esto preserva cualquier registro creado y evita perdida de datos.
 
 Para rollback de runtime Docker, recapturar antes del deploy el nombre e ID de
 cada imagen. Si un build falla despues de `compose down`, priorizar levantar los
