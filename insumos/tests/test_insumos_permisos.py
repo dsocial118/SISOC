@@ -1,9 +1,12 @@
+import re
+
 import pytest
 from django.contrib.auth.models import Permission, User
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
 
 from core.models import Programa
+from insumos.forms import InsumoForm
 from insumos.models import Insumo, InsumoCategoria
 
 
@@ -145,6 +148,33 @@ def test_gestion_puede_crear_categoria(client, user_gestion, programa):
     )
     assert response.status_code == 302
     assert InsumoCategoria.objects.filter(nombre="Rendiciones").exists()
+
+
+def _programa_de_la_opcion(html, categoria_pk):
+    """Devuelve el data-programa declarado por la opcion de una categoria."""
+    match = re.search(rf'<option[^>]*value="{categoria_pk}"[^>]*>', html)
+    assert match, f"No se encontro la opcion de la categoria {categoria_pk}"
+    data_programa = re.search(r'data-programa="(\d+)"', match.group(0))
+    return int(data_programa.group(1)) if data_programa else None
+
+
+@pytest.mark.django_db
+def test_cada_categoria_declara_su_programa_en_el_combo(programa):
+    """Regresion: la categoria de un programa no debe ofrecerse en los demas.
+
+    Cada opcion expone su ``data-programa`` para que el combo de categoria se
+    filtre segun el programa elegido.
+    """
+    otro = Programa.objects.create(nombre="Otro programa")
+    categoria_propia = InsumoCategoria.objects.create(
+        programa=programa, nombre="Manuales"
+    )
+    categoria_ajena = InsumoCategoria.objects.create(programa=otro, nombre="Ajena")
+
+    html = InsumoForm()["categoria"].as_widget()
+
+    assert _programa_de_la_opcion(html, categoria_propia.pk) == programa.pk
+    assert _programa_de_la_opcion(html, categoria_ajena.pk) == otro.pk
 
 
 @pytest.mark.django_db
