@@ -3,7 +3,8 @@
 Fuente canonica actual: `prd-old` (`10.80.5.45`). Los hosts AWS son referencias
 de una posible migracion y no forman parte del runtime vigente.
 
-Este checklist no autoriza cutover, deploy, backup, restore ni cambios.
+Este checklist no autoriza nuevos cutovers, deploys, backups, restores ni
+cambios. El backup local de media ya ejecutado tuvo aprobacion separada.
 
 ## Gobierno previo
 
@@ -22,14 +23,18 @@ Este checklist no autoriza cutover, deploy, backup, restore ni cambios.
       `ec7c163fede8b3877fff0fd7863f0a7812043c2c`.
 - [x] DB real: `10.80.5.46:3306`, servidor `ldmzsql-sisoc`, schema
       `sisoc_local`.
-- [x] Media: 65 GiB, 68,455 archivos.
+- [x] Media: 65 GiB, 68,548 archivos al tomar el backup local.
 - [x] Servicios activos: siete contenedores, NGINX, runner, Zabbix y Webmin.
 - [ ] Repetir HEAD/conteos inmediatamente antes del cutover.
 
 ## Respaldar y copiar
 
-- [ ] Crear backup consistente de DB `10.80.5.46` y probar restore aislado.
-- [ ] Copiar `/sisoc/SISOC/media` preservando metadata y verificar checksums.
+- [ ] Verificar ubicacion, retencion e integridad de los backups DB informados y
+      probar restore aislado de `10.80.5.46`.
+- [x] Crear copia local de `/sisoc/SISOC/media` preservando metadata en
+      `/sisoc/backups/media/20260713_172352/media`; dos pasadas y cero
+      diferencias pendientes.
+- [ ] Copiar media fuera de `prd-old` y verificar checksums antes del cutover.
 - [ ] Transferir `.env` backend/mobile por canal seguro, sin imprimir valores.
 - [ ] Exportar configuracion NGINX, metadata TLS, systemd/runner y cron efectivo.
 - [ ] Guardar commits, Compose, Dockerfiles y scripts operativos versionados.

@@ -1,13 +1,15 @@
 # Produccion - Propuestas de cambio
 
-Estado: propuestas solamente. Ningun comando de este documento fue ejecutado en
-produccion. Cada propuesta requiere aprobacion separada, ventana y responsable.
+Estado: propuestas solamente. Ningun comando propuesto en este documento fue
+ejecutado en produccion. El unico cambio aplicado fue el backup local de media
+aprobado y registrado en `PROD_INVENTORY.md`. Cada propuesta restante requiere
+aprobacion separada, ventana y responsable.
 
 No ejecutar bloques completos por copia/pega sin revisar nuevamente el estado.
 
 ## Prioridad sugerida
 
-1. demostrar backups/restores de DB y media antes de cualquier cambio;
+1. verificar backups/restores de DB y copiar media fuera del host;
 2. corregir cron root de forma acotada;
 3. agregar rotacion a logs NGINX;
 4. evaluar Stage 1 del MySQL local;
@@ -443,8 +445,11 @@ coordinado.
 ## Temas deliberadamente sin propuesta ejecutable
 
 - TLS: postergado por el responsable.
-- Backup DB/media: falta definir herramienta, storage, credenciales, RPO/RTO y
-  restore target; inventar comandos seria inseguro.
+- Backup DB: su existencia fue informada, pero falta verificar storage,
+  retencion, integridad, RPO/RTO y restore target.
+- Backup media: existe una copia local completa bajo `/sisoc/backups/media`,
+  pero falta definir destino externo, credenciales, checksum y restore target.
+  No se automatiza retencion ni borrado hasta contar con esa segunda copia.
 - Bind 8001/firewall: requiere conocer ACL y balanceo antes de editar Compose.
 - Retencion de logs Django/auditoria: requiere politica funcional/legal antes de
   eliminar archivos o registros.
