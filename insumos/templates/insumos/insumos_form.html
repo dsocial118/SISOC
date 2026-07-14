@@ -1,5 +1,5 @@
 {% extends "includes/main.html" %}
-{% load crispy_forms_tags %}
+{% load crispy_forms_tags static %}
 {% block title %}
     {% if form.instance.pk %}
         Editar insumo
@@ -30,7 +30,10 @@
 
                     <div class="row">
                         <div class="col-md-6">{{ form.programa|as_crispy_field }}</div>
-                        <div class="col-md-6">{{ form.categoria|as_crispy_field }}</div>
+                        <div class="col-md-6">
+                            {{ form.categoria|as_crispy_field }}
+                            <small class="text-muted d-block mb-3">Se muestran solo las categorías del programa seleccionado.</small>
+                        </div>
                     </div>
                     {{ form.titulo|as_crispy_field }}
                     {{ form.descripcion|as_crispy_field }}
@@ -57,4 +60,7 @@
             </div>
         </div>
     </div>
+{% endblock %}
+{% block customJS %}
+    <script src="{% static 'custom/js/insumoForm.js' %}"></script>
 {% endblock %}
