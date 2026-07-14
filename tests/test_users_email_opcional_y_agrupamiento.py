@@ -468,8 +468,30 @@ def test_user_import_job_agrupa_credenciales_para_email_duplicado(settings, tmp_
     operator = User.objects.create_user(username="import_operator")
     upload = _build_user_import_excel_file(
         [
-            ("", "Ana", "García", "duplicado@example.com", "", "", "", "operadora", "", ""),
-            ("", "Beto", "García", "duplicado@example.com", "", "", "", "operadora", "", ""),
+            (
+                "",
+                "Ana",
+                "García",
+                "duplicado@example.com",
+                "",
+                "",
+                "",
+                "operadora",
+                "",
+                "",
+            ),
+            (
+                "",
+                "Beto",
+                "García",
+                "duplicado@example.com",
+                "",
+                "",
+                "",
+                "operadora",
+                "",
+                "",
+            ),
         ]
     )
     job = create_user_import_job(

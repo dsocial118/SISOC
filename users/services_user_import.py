@@ -323,9 +323,9 @@ def send_user_import_job_credentials(job: UserImportJob) -> None:
             )
             continue
 
-        UserImportJobRow.objects.filter(
-            pk__in=[row.pk for row in rows_to_send]
-        ).update(credentials_sent_at=timezone.now())
+        UserImportJobRow.objects.filter(pk__in=[row.pk for row in rows_to_send]).update(
+            credentials_sent_at=timezone.now()
+        )
 
 
 def _resolver_provincias(provincias_raw: str) -> list:
