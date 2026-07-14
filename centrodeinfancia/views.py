@@ -1869,9 +1869,7 @@ class AsistenciaTrabajadorCentroView(LoginRequiredMixin, TemplateView):
             )
         except ValidationError as exc:
             messages.error(request, exc.messages[0])
-            return redirect(
-                "centrodeinfancia_trabajadores_asistencia", pk=centro.pk
-            )
+            return redirect("centrodeinfancia_trabajadores_asistencia", pk=centro.pk)
         messages.success(request, "Asistencia registrada correctamente.")
         url = reverse(
             "centrodeinfancia_trabajadores_asistencia", kwargs={"pk": centro.pk}

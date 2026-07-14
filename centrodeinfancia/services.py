@@ -92,9 +92,7 @@ class AsistenciaTrabajadorService:
             if marca is None:
                 continue
             if marca not in cls._MARCAS:
-                raise ValidationError(
-                    "El estado de asistencia recibido no es válido."
-                )
+                raise ValidationError("El estado de asistencia recibido no es válido.")
             observaciones = (datos.get(f"obs_{trabajador.pk}") or "").strip()
             cambios.append(
                 (
