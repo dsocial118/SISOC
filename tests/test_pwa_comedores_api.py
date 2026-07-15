@@ -1188,16 +1188,16 @@ def test_prestacion_alimentaria_conformidad_crea_registro():
 
 
 @pytest.mark.django_db
-def test_prestacion_alimentaria_conformidad_rechaza_duplicado_del_mes():
+def test_prestacion_alimentaria_conformidad_permite_repetir_periodo():
     comedor, client = _comedor_alimentar_comunidad(username="rep_conf_dup")
     url = f"/api/comedores/{comedor.id}/prestacion-alimentaria/conformidad/"
     payload = {"conforme": True, "periodo": "2027-08"}
 
     assert client.post(url, payload, format="json").status_code == 201
-    repetido = client.post(url, payload, format="json")
+    segunda = client.post(url, payload, format="json")
 
-    assert repetido.status_code == 400
-    assert PrestacionAlimentariaConformidad.objects.filter(comedor=comedor).count() == 1
+    assert segunda.status_code == 201
+    assert PrestacionAlimentariaConformidad.objects.filter(comedor=comedor).count() == 2
 
 
 @pytest.mark.django_db
@@ -1237,10 +1237,23 @@ def test_prestacion_alimentaria_conformidad_disponible_para_todos_los_programas(
     )
 
     assert response.status_code == 201
-    assert PrestacionAlimentariaConformidad.objects.filter(
-        comedor=comedor_1,
-        periodo=date(2028, 3, 1),
-    ).exists()
+    segunda = client.post(
+        f"/api/comedores/{comedor_1.id}/prestacion-alimentaria/conformidad/",
+        {
+            "conforme": False,
+            "observaciones": "Revisión posterior",
+            "periodo": "2028-03",
+        },
+        format="json",
+    )
+    assert segunda.status_code == 201
+    assert (
+        PrestacionAlimentariaConformidad.objects.filter(
+            comedor=comedor_1,
+            periodo=date(2028, 3, 1),
+        ).count()
+        == 2
+    )
 
 
 @pytest.mark.django_db
