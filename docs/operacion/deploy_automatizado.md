@@ -37,8 +37,10 @@ invariante:
 
 Ante cada push a `main`, y tambien como reconciliacion horaria, el workflow abre
 o reutiliza PRs `main -> development` y `main -> homologacion`. Solo los integra
-si GitHub confirma que no hay conflictos. Luego invoca `deploy.yml` de forma
-explicita sobre la rama actualizada.
+si GitHub confirma que no hay conflictos. En ramas que exigen revision, el
+`GITHUB_TOKEN` aprueba exclusivamente ese PR descendente antes de integrarlo;
+el repositorio debe permitir que Actions cree y apruebe pull requests. Luego
+invoca `deploy.yml` de forma explicita sobre la rama actualizada.
 
 Un conflicto deja el PR abierto, falla el job y no despliega ese entorno. No se
 usa force push, rebase automatico, PAT ni resolucion automatica de conflictos.
