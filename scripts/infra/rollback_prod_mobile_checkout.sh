@@ -35,6 +35,8 @@ parse_args() {
 }
 
 main() {
+  local mobile_owner
+
   parse_args "$@"
   [[ "$EUID" -eq 0 ]] || fail "Ejecutar como root mediante sudo."
   [[ "$(hostname -s)" == "$EXPECTED_HOSTNAME" ]] || fail "Host inesperado."
@@ -58,10 +60,14 @@ main() {
     esac
   fi
 
-  setfacl --restore="$BACKUP_DIR/mobile.acl-ownership.before"
   git -c safe.directory="$MOBILE_ROOT" -C "$MOBILE_ROOT" remote set-url origin \
     "$(cat "$BACKUP_DIR/mobile-origin.before")"
-  git -c safe.directory="$MOBILE_ROOT" -C "$MOBILE_ROOT" diff-index --quiet HEAD -- \
+  setfacl --restore="$BACKUP_DIR/mobile.acl-ownership.before"
+  mobile_owner="$(stat -c '%U' "$MOBILE_ROOT")"
+  id "$mobile_owner" >/dev/null 2>&1 || fail "Owner mobile restaurado inexistente."
+  runuser -u "$mobile_owner" -- git -C "$MOBILE_ROOT" update-index --refresh -q \
+    >/dev/null 2>&1 || true
+  runuser -u "$mobile_owner" -- git -C "$MOBILE_ROOT" diff-index --quiet HEAD -- \
     || fail "El checkout mobile tiene cambios tracked despues del rollback."
   bash "$SCRIPT_DIR/healthcheck_prod.sh"
   printf '[%s] Rollback mobile aplicado; health OK.\n' "$SCRIPT_NAME"
