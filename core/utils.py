@@ -2,6 +2,7 @@
 
 import logging
 import json
+import stat
 from datetime import datetime
 from pathlib import Path
 
@@ -28,8 +29,18 @@ class DailyFileHandler(logging.FileHandler):
         current_date = timezone.localtime().strftime("%Y-%m-%d")
         daily_folder = Path(filename).parent / current_date
         daily_folder.mkdir(parents=True, exist_ok=True)
+        self._ensure_group_writable(daily_folder)
         daily_filename = daily_folder / Path(filename).name
         super().__init__(daily_filename, mode, encoding, delay)
+        if daily_filename.exists():
+            self._ensure_group_writable(daily_filename)
+
+    @staticmethod
+    def _ensure_group_writable(path: Path) -> None:
+        """Permitir que los procesos del grupo compartan el mismo log."""
+        current_mode = stat.S_IMODE(path.stat().st_mode)
+        if not current_mode & stat.S_IWGRP:
+            path.chmod(current_mode | stat.S_IWGRP)
 
 
 class JSONDataFormatter(logging.Formatter):
