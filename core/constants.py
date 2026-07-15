@@ -21,7 +21,13 @@ class UserGroups:
     AREA_LEGALES = "Area Legales"
     AREA_CONTABLE = "Area Contable"
     CDI_REFERENTE_CENTRO = "CDI - Referente centro"
+    CDI_TRABAJADOR = "CDI - Trabajador"
     CDF_REFERENTE_CENTRO = "CDF - Referente centro"
+    SIMEPI_ADMINISTRADOR = "SIMEPI - Administrador"
+    SIMEPI_ANALISTA_DATOS = "SIMEPI - Analista de datos"
+    SIMEPI_EQUIPO_NACIONAL = "SIMEPI - Equipo Nacional"
+    SIMEPI_AUDITORIA = "SIMEPI - Auditoría"
+    SIMEPI_EGP = "SIMEPI - EGP"
 
     # =========================================================================
     # Grupos de permisos específicos
