@@ -32,15 +32,22 @@
 - Revisar primero estos archivos del diff:
 - `.github/workflows/sync-main-downstream.yml`
 - `AGENT_REPO_MAP.md`
+- `CHANGELOG.md`
+- `docs/contexto/features/pr-2070-fix-ci-autoaprobar-sincronizacion-descendente.md`
 - `docs/operacion/deploy_automatizado.md`
 - `docs/registro/cambios/2026-07-15-plan-a-autoaprobacion.md`
+- `docs/registro/prs/PR-2070.md`
+- `docs/registro/releases/pending/2026-07-15-pr-2070.md`
 - Documentación sugerida para ampliar contexto:
 - `docs/indice.md`
 - `docs/ia/CONTEXT_HYGIENE.md`
 - `docs/ia/ARCHITECTURE.md`
 - `docs/ia/TESTING.md`
+- `docs/contexto/features/pr-2070-fix-ci-autoaprobar-sincronizacion-descendente.md`
 - `docs/operacion/deploy_automatizado.md`
 - `docs/registro/cambios/2026-07-15-plan-a-autoaprobacion.md`
+- `docs/registro/prs/PR-2070.md`
+- `docs/registro/releases/pending/2026-07-15-pr-2070.md`
 
 ## Trazabilidad
 
