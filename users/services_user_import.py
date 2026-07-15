@@ -28,6 +28,7 @@ from users.models import (
     UserImportJobRow,
 )
 from users.services_auth import generate_temporary_password_for_user
+from users.services_delegation import effective_delegatable_group_ids
 from users.services_pwa import (
     get_assignable_pwa_permission_codes,
     sync_representante_accesses,
@@ -519,21 +520,10 @@ def _resolver_permisos_fila(row_data: dict, job: UserImportJob) -> _PermisosFila
     )
 
 
-def _is_unrestricted_actor(actor) -> bool:
-    if actor is None:
-        return True
-    if getattr(actor, "is_superuser", False):
-        return True
-    profile = getattr(actor, "profile", None)
-    if not profile:
-        return True
-    return not profile.grupos_asignables.exists()
-
-
 def _get_allowed_group_ids(actor) -> set | None:
-    if _is_unrestricted_actor(actor):
+    if actor is None or getattr(actor, "is_superuser", False):
         return None
-    return set(actor.profile.grupos_asignables.values_list("id", flat=True))
+    return effective_delegatable_group_ids(actor) or None
 
 
 def _resolver_usuario_objetivo(row_data: dict, *, accion_explicita: bool):

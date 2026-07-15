@@ -148,3 +148,15 @@ GROUP_INHERITANCE = {
         UserGroups.COMEDOR_VER,
     ),
 }
+
+
+GROUP_DELEGATION = {
+    UserGroups.SIMEPI_ADMINISTRADOR: (UserGroups.SIMEPI_EQUIPO_NACIONAL,),
+    UserGroups.SIMEPI_EQUIPO_NACIONAL: (
+        UserGroups.SIMEPI_EGP,
+        UserGroups.SIMEPI_ANALISTA_DATOS,
+        UserGroups.SIMEPI_AUDITORIA,
+    ),
+    UserGroups.SIMEPI_EGP: (UserGroups.CDI_REFERENTE_CENTRO,),
+    UserGroups.CDI_REFERENTE_CENTRO: (UserGroups.CDI_TRABAJADOR,),
+}

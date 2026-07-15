@@ -4,6 +4,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from core.constants import UserGroups
 from core.models import Provincia
 from users.models import Profile
+from users.services_delegation import effective_delegatable_groups_qs
 from users.territorial_scope import (
     apply_territorial_scope,
     get_single_full_province_scope_id,
@@ -17,17 +18,19 @@ GRUPO_CDI_REFERENTE_CENTRO = UserGroups.CDI_REFERENTE_CENTRO
 def actor_puede_delegar_grupo_nombre(user, grupo_nombre):
     """Indica si el usuario puede delegar (asignar) un grupo por nombre.
 
-    Reutiliza el mecanismo IAM existente `Profile.grupos_asignables`; el
-    superusuario puede delegar cualquier grupo.
+    Reutiliza el alcance efectivo de delegación; el superusuario puede delegar
+    cualquier grupo.
     """
     if not user or not getattr(user, "is_authenticated", False):
         return False
     if user.is_superuser:
         return True
-    profile = getattr(user, "profile", None)
-    if not profile:
-        return False
-    return profile.grupos_asignables.filter(name=grupo_nombre).exists()
+    return effective_delegatable_groups_qs(user).filter(name=grupo_nombre).exists()
+
+
+def puede_generar_usuario_egp(user):
+    """Indica si el usuario puede generar referentes provinciales SIMEPI."""
+    return actor_puede_delegar_grupo_nombre(user, UserGroups.SIMEPI_EGP)
 
 
 def usuarios_cdi_activos(centro):

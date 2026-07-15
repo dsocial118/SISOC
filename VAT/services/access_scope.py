@@ -3,6 +3,7 @@ from __future__ import annotations
 from django.db.models import Q, QuerySet
 
 from iam.services import user_has_permission_code
+from users.services_delegation import effective_delegatable_groups_qs
 from users.territorial_scope import (
     apply_territorial_scope,
     get_effective_scopes,
@@ -428,15 +429,12 @@ def usuarios_centro_vat_restantes(centro) -> int:
 
 
 def _actor_puede_delegar_grupo_nombre(user, grupo_nombre: str) -> bool:
-    """Reusa el mecanismo IAM existente `Profile.grupos_asignables`."""
+    """Reusa el alcance efectivo de delegación de grupos."""
     if not user or not getattr(user, "is_authenticated", False):
         return False
     if user.is_superuser:
         return True
-    profile = _get_profile(user)
-    if not profile:
-        return False
-    return profile.grupos_asignables.filter(name=grupo_nombre).exists()
+    return effective_delegatable_groups_qs(user).filter(name=grupo_nombre).exists()
 
 
 def puede_generar_usuario_centro_vat(user, centro) -> bool:

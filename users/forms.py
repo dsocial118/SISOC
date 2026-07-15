@@ -18,6 +18,7 @@ from core.models import Provincia
 from duplas.models import Dupla
 from organizaciones.models import Organizacion
 from users.models import AccesoComedorPWA, Profile
+from users.services_delegation import effective_delegatable_groups_qs
 from users.services_pwa import (
     PWA_ASSIGNABLE_PERMISSION_CODES,
     PWA_USUARIOS_PERMISSION_CODE,
@@ -470,10 +471,7 @@ class DelegationScopeMixin:
         if self._is_unrestricted_actor():
             return Group.objects.all().order_by("name")
 
-        profile = getattr(self.actor, "profile", None)
-        if not profile:
-            return Group.objects.none()
-        return profile.grupos_asignables.all().order_by("name")
+        return effective_delegatable_groups_qs(self.actor).order_by("name")
 
     def _allowed_roles_for_actor(self):
         if self._is_unrestricted_actor():
