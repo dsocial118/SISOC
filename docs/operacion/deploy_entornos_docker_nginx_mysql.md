@@ -30,7 +30,7 @@ Convenciones recomendadas:
 | Entorno      | Branch         | `ENVIRONMENT`  | Compose app                                                   |
 | ------------ | -------------- | -------------- | ------------------------------------------------------------- |
 | QA           | `development`  | `qa`           | `docker-compose.deploy.yml`                                   |
-| Homologacion | `homologacion` | `homologacion` | `docker-compose.deploy.yml`                                   |
+| Homologacion | `homologacion` | `homologacion` | `docker-compose.deploy.yml` + `docker-compose.produccion.yml` |
 | Produccion   | `main`         | `prd`          | `docker-compose.deploy.yml` + `docker-compose.produccion.yml` |
 
 No usar para deploy:
@@ -743,7 +743,7 @@ MYSQL_PWD='<DB_APP_PASSWORD>' mysql --ssl=0 \
 
 ## 8. Levantar aplicacion
 
-QA y homologacion:
+QA:
 
 ```bash
 cd "$APP_ROOT"
@@ -758,6 +758,13 @@ sudo -H -u "$APP_USER" docker compose \
   -f docker-compose.deploy.yml \
   -f docker-compose.produccion.yml \
   up -d --build
+```
+
+Homologacion usa el mismo compose de workers que produccion y
+`deploy_refresh.sh` refresca SISOC-Mobile automaticamente:
+
+```bash
+bash scripts/operacion/deploy_refresh.sh
 ```
 
 Revisar logs hasta Gunicorn:

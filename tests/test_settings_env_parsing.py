@@ -73,6 +73,10 @@ def test_settings_homologacion_usa_perfil_similar_a_produccion(monkeypatch):
     monkeypatch.setenv("ENVIRONMENT", "homologacion")
     monkeypatch.delenv("DB_CONN_MAX_AGE", raising=False)
     monkeypatch.delenv("DB_CONN_HEALTH_CHECKS", raising=False)
+    monkeypatch.delenv("DJANGO_SECURE_SSL_REDIRECT", raising=False)
+    monkeypatch.delenv("DJANGO_SESSION_COOKIE_SECURE", raising=False)
+    monkeypatch.delenv("DJANGO_CSRF_COOKIE_SECURE", raising=False)
+    monkeypatch.delenv("DJANGO_SECURE_HSTS_SECONDS", raising=False)
 
     module = _load_settings_module()
 

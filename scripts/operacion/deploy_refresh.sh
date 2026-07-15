@@ -13,6 +13,7 @@ SKIP_PULL=0
 WITH_MOBILE=0
 MOBILE_DIR=""
 MOBILE_SCRIPT=""
+MOBILE_HTTPS_REMOTE="https://github.com/dsocial118/SISOC-Mobile.git"
 
 usage() {
   cat <<'USAGE'
@@ -37,11 +38,15 @@ Opciones:
                             Default: ../SISOC-Mobile desde la raiz de SISOC.
                             Ejecuta scripts/operacion/deploy_refresh.sh de ese repo.
                             SISOC-Mobile debe estar en branch main.
+                            Su origin conocido se normaliza a HTTPS publica.
   -h, --help                Muestra esta ayuda.
 
 Mapeo por entorno:
   ENVIRONMENT=dev|local|development -> docker-compose.yml
-  ENVIRONMENT=qa|homologacion       -> docker-compose.deploy.yml
+  ENVIRONMENT=qa                    -> docker-compose.deploy.yml
+  ENVIRONMENT=homologacion|hml|staging
+                                  -> docker-compose.deploy.yml + docker-compose.produccion.yml
+                                     + SISOC-Mobile
   ENVIRONMENT=prd|prod|production   -> docker-compose.deploy.yml + docker-compose.produccion.yml
 USAGE
 }
@@ -157,11 +162,35 @@ ensure_clean_branch() {
   fi
 
   if [[ "$ALLOW_DIRTY" -eq 0 ]]; then
-    git -C "$repo_dir" diff-index --quiet HEAD -- \
-      || fail "$label tiene cambios tracked locales. Commit/stash o usa --allow-dirty."
+    if ! git -C "$repo_dir" diff --quiet -- \
+      || ! git -C "$repo_dir" diff --cached --quiet --; then
+      fail "$label tiene cambios tracked locales. Commit/stash o usa --allow-dirty."
+    fi
   fi
 
   printf -v "$branch_var_name" '%s' "$branch"
+}
+
+normalize_mobile_origin() {
+  local current_remote
+
+  [[ "$WITH_MOBILE" -eq 1 && "$SKIP_PULL" -eq 0 ]] || return 0
+
+  current_remote="$(git -C "$MOBILE_DIR" remote get-url origin 2>/dev/null)" \
+    || fail "SISOC-Mobile no tiene remote origin configurado."
+
+  case "$current_remote" in
+    "$MOBILE_HTTPS_REMOTE")
+      return 0
+      ;;
+    https://github.com/dsocial118/SISOC-Mobile|git@github.com:dsocial118/SISOC-Mobile.git|ssh://git@github.com/dsocial118/SISOC-Mobile.git)
+      log "Normalizando origin de SISOC-Mobile a HTTPS publica."
+      run git -C "$MOBILE_DIR" remote set-url origin "$MOBILE_HTTPS_REMOTE"
+      ;;
+    *)
+      fail "Origin inesperado para SISOC-Mobile; revisar origin sin copiar credenciales al log."
+      ;;
+  esac
 }
 
 compose_for_environment() {
@@ -180,8 +209,9 @@ compose_for_environment() {
       EXPECTED_BRANCH="${QA_BRANCH:-development}"
       ;;
     homologacion|hml|staging)
-      COMPOSE_FILES=("docker-compose.deploy.yml")
+      COMPOSE_FILES=("docker-compose.deploy.yml" "docker-compose.produccion.yml")
       EXPECTED_BRANCH="${HOMOLOGACION_BRANCH:-homologacion}"
+      WITH_MOBILE=1
       ;;
     prd|prod|production|produccion)
       COMPOSE_FILES=("docker-compose.deploy.yml" "docker-compose.produccion.yml")
@@ -221,6 +251,7 @@ configure_mobile() {
   [[ "$SKIP_PULL" -eq 1 ]] && MOBILE_ARGS+=(--skip-pull)
 
   ensure_clean_branch "$MOBILE_DIR" "${MOBILE_BRANCH:-main}" MOBILE_BRANCH "SISOC-Mobile"
+  normalize_mobile_origin
 }
 
 main() {

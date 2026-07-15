@@ -114,6 +114,7 @@
                                                 Marcar todos
                                             </label>
                                         </th>
+                                        <th>Observaciones</th>
                                     </tr>
                                 </thead>
                                 <tbody id="asisTablaBody">
@@ -130,9 +131,6 @@
                                                 {% endif %}
                                             </td>
                                             <td>
-                                                <input type="hidden"
-                                                       name="obs_{{ fila.trabajador.pk }}"
-                                                       value="{{ fila.observaciones|default:'' }}" />
                                                 <label class="cdf-mark">
                                                     <input type="radio"
                                                            class="cdf-check cdf-check--present asis-present"
@@ -151,6 +149,13 @@
                                                            {% if fila.presente == False %}checked{% endif %} />
                                                     Ausente
                                                 </label>
+                                            </td>
+                                            <td>
+                                                <input type="text"
+                                                       name="obs_{{ fila.trabajador.pk }}"
+                                                       value="{{ fila.observaciones|default:'' }}"
+                                                       class="cdf-input"
+                                                       aria-label="Observaciones para {{ fila.trabajador.apellido }}, {{ fila.trabajador.nombre }}" />
                                             </td>
                                         </tr>
                                     {% endfor %}

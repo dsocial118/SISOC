@@ -40,6 +40,10 @@
   - `qa|homologacion`: `docker-compose.deploy.yml`
   - `prd|prod|production`: `docker-compose.deploy.yml` + `docker-compose.produccion.yml`
 - Con `--with-mobile`, SISOC delega el deploy mobile ejecutando `bash ../SISOC-Mobile/scripts/operacion/deploy_refresh.sh` y le reenvia las opciones compatibles (`--dry-run`, `--yes`, `--volumes`, `--skip-pull`, `--allow-dirty`, `--allow-branch-mismatch`).
+- Antes de actualizar mobile, valida que `origin` sea
+  `dsocial118/SISOC-Mobile` y normaliza las variantes SSH conocidas a
+  `https://github.com/dsocial118/SISOC-Mobile.git`. Un origin distinto bloquea
+  el deploy antes de bajar contenedores.
 - Flujo ejecutado:
   1. valida `.env`, branch esperada y compose;
   2. ejecuta `git fetch origin --prune`;
