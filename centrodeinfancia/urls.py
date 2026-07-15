@@ -134,14 +134,14 @@ urlpatterns = [
     ),
     path(
         "centrodeinfancia/<int:pk>/trabajadores/<int:trabajador_id>/",
-        permissions_any_required(["centrodeinfancia.view_centrodeinfancia"])(
+        permissions_any_required(["centrodeinfancia.view_trabajador"])(
             TrabajadorCentroInfanciaDetailView.as_view()
         ),
         name="centrodeinfancia_trabajador_ver",
     ),
     path(
         "centrodeinfancia/<int:pk>/trabajadores/crear/",
-        permissions_any_required(["centrodeinfancia.change_centrodeinfancia"])(
+        permissions_any_required(["centrodeinfancia.add_trabajador"])(
             TrabajadorCentroInfanciaCreateView.as_view()
         ),
         name="centrodeinfancia_trabajador_crear",
@@ -162,14 +162,14 @@ urlpatterns = [
     ),
     path(
         "centrodeinfancia/<int:pk>/trabajadores/<int:trabajador_id>/editar/",
-        permissions_any_required(["centrodeinfancia.change_centrodeinfancia"])(
+        permissions_any_required(["centrodeinfancia.change_trabajador"])(
             TrabajadorCentroInfanciaUpdateView.as_view()
         ),
         name="centrodeinfancia_trabajador_editar",
     ),
     path(
         "centrodeinfancia/<int:pk>/trabajadores/<int:trabajador_id>/eliminar/",
-        permissions_any_required(["centrodeinfancia.delete_centrodeinfancia"])(
+        permissions_any_required(["centrodeinfancia.delete_trabajador"])(
             TrabajadorCentroInfanciaDeleteView.as_view()
         ),
         name="centrodeinfancia_trabajador_eliminar",

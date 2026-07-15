@@ -43,7 +43,8 @@ def _referente_actor(centro):
         password="test1234",
     )
     user.user_permissions.add(
-        Permission.objects.get(codename="change_centrodeinfancia")
+        Permission.objects.get(codename="add_trabajador"),
+        Permission.objects.get(codename="change_trabajador"),
     )
     referente, _ = Group.objects.get_or_create(name=UserGroups.CDI_REFERENTE_CENTRO)
     Group.objects.get_or_create(name=UserGroups.CDI_TRABAJADOR)

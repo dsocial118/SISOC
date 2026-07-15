@@ -1,20 +1,24 @@
 from datetime import date
 
 import pytest
-from django.contrib.auth.models import User
+from django.contrib.auth.models import Group, User
+from django.core.exceptions import PermissionDenied
 from django.http import Http404
 from django.test import RequestFactory
 
 from ciudadanos.models import Ciudadano
 from centrodeinfancia.models import (
     CentroDeInfancia,
+    AccesoCDI,
     IntervencionCentroInfancia,
     NominaCentroInfancia,
     ObservacionCentroInfancia,
+    Trabajador,
 )
 from centrodeinfancia.access import aplicar_scope_centros_cdi
 from centrodeinfancia.views import (
     CentroDeInfanciaDetailView,
+    CentroDeInfanciaCreateView,
     IntervencionCentroInfanciaUpdateView,
     NominaCentroInfanciaDeleteView,
     NominaCentroInfanciaDetailView,
@@ -23,7 +27,9 @@ from centrodeinfancia.views import (
     nomina_centrodeinfancia_editar_ajax,
     subir_archivo_intervencion_centrodeinfancia,
 )
+from centrodeinfancia.views_formulario_cdi import FormularioCDICreateView
 from core.models import Localidad, Municipio, Provincia
+from core.constants import UserGroups
 from users.models import Profile, ProfileTerritorialScope
 
 
@@ -290,3 +296,114 @@ def test_scope_centros_cdi_provincial_sin_scopes_no_es_global():
     centros = list(aplicar_scope_centros_cdi(CentroDeInfancia.objects.all(), user))
 
     assert centros == []
+
+
+@pytest.mark.django_db
+def test_referente_cdi_no_ve_otro_centro():
+    user = User.objects.create_user(username="referente-scope", password="test1234")
+    centro_propio = CentroDeInfancia.objects.create(nombre="CDI Propio")
+    CentroDeInfancia.objects.create(nombre="CDI Ajeno")
+    AccesoCDI.objects.create(user=user, centro=centro_propio)
+
+    centros = list(aplicar_scope_centros_cdi(CentroDeInfancia.objects.all(), user))
+
+    assert centros == [centro_propio]
+
+
+@pytest.mark.django_db
+def test_trabajador_cdi_no_ve_otro_centro():
+    user = User.objects.create_user(username="trabajador-scope", password="test1234")
+    centro_propio = CentroDeInfancia.objects.create(nombre="CDI Trabajador propio")
+    centro_ajeno = CentroDeInfancia.objects.create(nombre="CDI Trabajador ajeno")
+    Trabajador.objects.create(
+        centro=centro_propio,
+        usuario=user,
+        nombre="Ana",
+        apellido="Lopez",
+    )
+    Trabajador.objects.create(
+        centro=centro_ajeno,
+        nombre="Otra",
+        apellido="Persona",
+    )
+
+    centros = list(aplicar_scope_centros_cdi(CentroDeInfancia.objects.all(), user))
+
+    assert centros == [centro_propio]
+
+
+@pytest.mark.django_db
+def test_egp_no_ve_centros_de_otra_provincia():
+    provincia_propia = Provincia.objects.create(nombre="EGP propia")
+    provincia_ajena = Provincia.objects.create(nombre="EGP ajena")
+    user = User.objects.create_user(username="egp-scope", password="test1234")
+    egp, _ = Group.objects.get_or_create(name=UserGroups.SIMEPI_EGP)
+    user.groups.add(egp)
+    profile = user.profile
+    profile.es_usuario_provincial = True
+    profile.save(update_fields=["es_usuario_provincial"])
+    ProfileTerritorialScope.objects.create(profile=profile, provincia=provincia_propia)
+    centro_propio = CentroDeInfancia.objects.create(
+        nombre="CDI EGP propio", provincia=provincia_propia
+    )
+    CentroDeInfancia.objects.create(nombre="CDI EGP ajeno", provincia=provincia_ajena)
+
+    centros = list(aplicar_scope_centros_cdi(CentroDeInfancia.objects.all(), user))
+
+    assert centros == [centro_propio]
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "group_name",
+    [UserGroups.SIMEPI_ADMINISTRADOR, UserGroups.SIMEPI_ANALISTA_DATOS],
+)
+def test_admin_y_analista_tienen_alcance_amplio(group_name):
+    user = User.objects.create_user(username=f"scope-{group_name}", password="test1234")
+    group, _ = Group.objects.get_or_create(name=group_name)
+    user.groups.add(group)
+    provincia_a = Provincia.objects.create(nombre=f"Amplio A {group_name}")
+    provincia_b = Provincia.objects.create(nombre=f"Amplio B {group_name}")
+    profile = user.profile
+    profile.es_usuario_provincial = True
+    profile.save(update_fields=["es_usuario_provincial"])
+    ProfileTerritorialScope.objects.create(profile=profile, provincia=provincia_a)
+    centro_a = CentroDeInfancia.objects.create(
+        nombre="CDI amplio A", provincia=provincia_a
+    )
+    centro_b = CentroDeInfancia.objects.create(
+        nombre="CDI amplio B", provincia=provincia_b
+    )
+
+    centros = list(aplicar_scope_centros_cdi(CentroDeInfancia.objects.all(), user))
+
+    assert set(centros) == {centro_a, centro_b}
+
+
+@pytest.mark.django_db
+def test_auditoria_no_puede_mutar_centro():
+    user = User.objects.create_user(username="auditoria-solo-lectura", password="test1234")
+    auditoria, _ = Group.objects.get_or_create(name=UserGroups.SIMEPI_AUDITORIA)
+    user.groups.add(auditoria)
+    request = RequestFactory().post("/centrodeinfancia/crear")
+    request.user = user
+    view = _build_view(CentroDeInfanciaCreateView, request)
+
+    with pytest.raises(PermissionDenied):
+        view.dispatch(request)
+
+
+@pytest.mark.django_db
+def test_auditoria_no_puede_mutar_formulario_cdi():
+    user = User.objects.create_user(
+        username="auditoria-formulario-solo-lectura",
+        password="test1234",
+    )
+    auditoria, _ = Group.objects.get_or_create(name=UserGroups.SIMEPI_AUDITORIA)
+    user.groups.add(auditoria)
+    request = RequestFactory().post("/centrodeinfancia/1/formularios/crear/")
+    request.user = user
+    view = _build_view(FormularioCDICreateView, request, pk=1)
+
+    with pytest.raises(PermissionDenied):
+        view.post(request)

@@ -10,7 +10,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.contenttypes.models import ContentType
-from django.core.exceptions import ValidationError
+from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.paginator import Paginator
 from django.db import transaction
 from django.db.models import Exists, OuterRef, Q
@@ -43,6 +43,7 @@ from iam.services import user_has_permission_code
 
 from centrodeinfancia.access import (
     aplicar_scope_centros_cdi as _aplicar_scope_centros_cdi,
+    es_auditor_simepi,
     get_object_scoped_cdi_or_404,
     puede_generar_usuario_cdi,
     puede_ver_usuarios_cdi,
@@ -416,6 +417,15 @@ def _sincronizar_email_trabajador(request, trabajador):
     )
 
 
+class _AuditoriaSoloLecturaMixin:
+    def dispatch(self, request, *args, **kwargs):
+        if request.method not in {"GET", "HEAD", "OPTIONS"} and es_auditor_simepi(
+            request.user
+        ):
+            raise PermissionDenied("El rol Auditoría tiene acceso de solo lectura.")
+        return super().dispatch(request, *args, **kwargs)
+
+
 def _vincular_usuario_trabajador(trabajador, user):
     trabajador.usuario = user
     trabajador.save(update_fields=["usuario"])
@@ -484,6 +494,7 @@ class CentroDeInfanciaListView(LoginRequiredMixin, ListView):
 
 
 class CentroDeInfanciaCreateView(
+    _AuditoriaSoloLecturaMixin,
     _AutomaticReferenteProvisioningMixin,
     LoginRequiredMixin,
     CreateView,
@@ -868,6 +879,7 @@ class CentroDeInfanciaDetailView(LoginRequiredMixin, DetailView):
 
 
 class CentroDeInfanciaUpdateView(
+    _AuditoriaSoloLecturaMixin,
     _AutomaticReferenteProvisioningMixin,
     LoginRequiredMixin,
     UpdateView,
@@ -904,6 +916,7 @@ class CentroDeInfanciaUpdateView(
 
 
 class CentroDeInfanciaDeleteView(
+    _AuditoriaSoloLecturaMixin,
     SoftDeleteDeleteViewMixin,
     LoginRequiredMixin,
     DeleteView,
@@ -918,7 +931,11 @@ class CentroDeInfanciaDeleteView(
         return _centros_cdi_queryset_scoped(self.request.user)
 
 
-class TrabajadorCentroInfanciaCreateView(LoginRequiredMixin, CreateView):
+class TrabajadorCentroInfanciaCreateView(
+    _AuditoriaSoloLecturaMixin,
+    LoginRequiredMixin,
+    CreateView,
+):
     model = Trabajador
     form_class = TrabajadorCDIForm
     template_name = "centrodeinfancia/trabajador_form.html"
@@ -1062,7 +1079,11 @@ class TrabajadorCentroInfanciaCreateView(LoginRequiredMixin, CreateView):
         return reverse("centrodeinfancia_detalle", kwargs={"pk": self.centro.pk})
 
 
-class TrabajadorCentroInfanciaUpdateView(LoginRequiredMixin, UpdateView):
+class TrabajadorCentroInfanciaUpdateView(
+    _AuditoriaSoloLecturaMixin,
+    LoginRequiredMixin,
+    UpdateView,
+):
     model = Trabajador
     form_class = TrabajadorCDIForm
     template_name = "centrodeinfancia/trabajador_form.html"
@@ -1115,6 +1136,7 @@ class TrabajadorCentroInfanciaDetailView(LoginRequiredMixin, DetailView):
 
 
 class TrabajadorCentroInfanciaDeleteView(
+    _AuditoriaSoloLecturaMixin,
     SoftDeleteDeleteViewMixin,
     LoginRequiredMixin,
     DeleteView,
@@ -1367,7 +1389,11 @@ class NominaCentroInfanciaFormularioDetailView(LoginRequiredMixin, DetailView):
         )
 
 
-class NominaCentroInfanciaEditView(LoginRequiredMixin, UpdateView):
+class NominaCentroInfanciaEditView(
+    _AuditoriaSoloLecturaMixin,
+    LoginRequiredMixin,
+    UpdateView,
+):
     model = NominaCentroInfancia
     form_class = NominaCentroInfanciaDestinatariosForm
     template_name = "centrodeinfancia/destinatario_form.html"
@@ -1403,7 +1429,11 @@ class NominaCentroInfanciaEditView(LoginRequiredMixin, UpdateView):
         return reverse("centrodeinfancia_nomina_ver", kwargs={"pk": self.kwargs["pk"]})
 
 
-class NominaCentroInfanciaCreateView(LoginRequiredMixin, CreateView):
+class NominaCentroInfanciaCreateView(
+    _AuditoriaSoloLecturaMixin,
+    LoginRequiredMixin,
+    CreateView,
+):
     model = NominaCentroInfancia
     form_class = NominaCentroInfanciaDestinatariosForm
     template_name = "centrodeinfancia/destinatario_form.html"
@@ -1700,6 +1730,7 @@ class NominaCentroInfanciaCreateView(LoginRequiredMixin, CreateView):
 
 
 class NominaCentroInfanciaDeleteView(
+    _AuditoriaSoloLecturaMixin,
     SoftDeleteDeleteViewMixin,
     LoginRequiredMixin,
     DeleteView,
@@ -1743,6 +1774,8 @@ class NominaCentroInfanciaDestinatariosDetailView(LoginRequiredMixin, DetailView
 def nomina_centrodeinfancia_editar_ajax(request, pk):
     nomina = get_object_or_404(_nomina_cdi_queryset_scoped(request.user), pk=pk)
     if request.method == "POST":
+        if es_auditor_simepi(request.user):
+            raise PermissionDenied("El rol Auditoría tiene acceso de solo lectura.")
         form = NominaCentroInfanciaForm(request.POST, instance=nomina)
         if form.is_valid():
             form.save()

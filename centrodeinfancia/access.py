@@ -129,6 +129,15 @@ def _sibling_territorial_lookup(provincia_lookup, sibling):
 
 
 def aplicar_filtro_provincia_usuario(queryset, user, provincia_lookup="provincia"):
+    if is_territorial_user(user):
+        return apply_territorial_scope(
+            queryset,
+            user,
+            provincia_lookup=provincia_lookup,
+            municipio_lookup=_sibling_territorial_lookup(provincia_lookup, "municipio"),
+            localidad_lookup=_sibling_territorial_lookup(provincia_lookup, "localidad"),
+        )
+
     provincia_usuario = get_provincia_usuario(user)
     if provincia_usuario:
         return queryset.filter(**{provincia_lookup: provincia_usuario})
@@ -182,6 +191,54 @@ def _ids_centros_referente(user):
     )
 
 
+def _ids_centros_trabajador(user):
+    """IDs de CDIs donde el usuario está vinculado como trabajador."""
+    if not user or not getattr(user, "is_authenticated", False):
+        return None
+
+    from centrodeinfancia.models import Trabajador  # noqa: PLC0415
+
+    user_id = getattr(user, "pk", None)
+    if not user_id:
+        return None
+    if not Trabajador.objects.filter(usuario_id=user_id).exists():
+        return None
+    return list(
+        Trabajador.objects.filter(usuario_id=user_id).values_list(
+            "centro_id", flat=True
+        )
+    )
+
+
+def es_auditor_simepi(user):
+    if not user or not getattr(user, "is_authenticated", False):
+        return False
+    if getattr(user, "is_superuser", False):
+        return False
+    group_names = set(user.groups.values_list("name", flat=True))
+    if {
+        UserGroups.SIMEPI_ADMINISTRADOR,
+        UserGroups.SIMEPI_ANALISTA_DATOS,
+    } & group_names:
+        return False
+    return UserGroups.SIMEPI_AUDITORIA in group_names
+
+
+def tiene_alcance_simepi_nacional(user):
+    if not user or not getattr(user, "is_authenticated", False):
+        return False
+    if getattr(user, "is_superuser", False):
+        return True
+    return user.groups.filter(
+        name__in=(
+            UserGroups.SIMEPI_ADMINISTRADOR,
+            UserGroups.SIMEPI_ANALISTA_DATOS,
+            UserGroups.SIMEPI_EQUIPO_NACIONAL,
+            UserGroups.SIMEPI_AUDITORIA,
+        )
+    ).exists()
+
+
 def es_referente_cdi(user):
     """Indica si el usuario está vinculado como referente de algún CDI."""
     return _ids_centros_referente(user) is not None
@@ -198,16 +255,19 @@ def aplicar_scope_centros_cdi(
 
     - Superusuario: sin restricción.
     - Referente CDI: solo sus centros con `AccesoCDI` activo.
+    - Trabajador CDI: solo los centros donde su FK `usuario` está vinculado.
     - Resto: filtro provincial existente (sin cambios de comportamiento).
     """
     if not user or not getattr(user, "is_authenticated", False):
         return queryset
-    if getattr(user, "is_superuser", False):
+    if tiene_alcance_simepi_nacional(user):
         return queryset
 
     referente_ids = _ids_centros_referente(user)
-    if referente_ids is not None:
-        return queryset.filter(**{f"{id_lookup}__in": referente_ids})
+    trabajador_ids = _ids_centros_trabajador(user)
+    if referente_ids is not None or trabajador_ids is not None:
+        centro_ids = set(referente_ids or []) | set(trabajador_ids or [])
+        return queryset.filter(**{f"{id_lookup}__in": centro_ids})
 
     return aplicar_filtro_provincia_usuario(
         queryset,
