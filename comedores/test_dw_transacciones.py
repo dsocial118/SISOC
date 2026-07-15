@@ -4,6 +4,7 @@ Tests para la integración de Transacciones DW en comedores.
 
 import pytest
 from decimal import Decimal
+from pathlib import Path
 
 from django.test import TestCase, Client
 from django.urls import reverse
@@ -14,6 +15,18 @@ from comedores.services.dw_transacciones_service import (
     DWTransaccionesService,
     DWTransaccion,
 )
+
+
+def test_templates_muestran_saldo_cereado():
+    templates_dir = Path(__file__).parent / "templates" / "comedor"
+
+    for template_name in (
+        "comedor_transacciones_card.html",
+        "comedor_transacciones_detail.html",
+    ):
+        contenido = (templates_dir / template_name).read_text(encoding="utf-8")
+        assert "Saldo Cereado" in contenido
+        assert "Saldo Remanente" not in contenido
 
 
 class TestDWTransaccionDataclass(TestCase):
