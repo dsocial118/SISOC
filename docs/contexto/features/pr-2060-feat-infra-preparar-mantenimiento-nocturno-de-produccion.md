@@ -30,12 +30,16 @@
 
 - Empezar por `docs/registro/prs/PR-2060.md` para contexto resumido del PR.
 - Revisar primero estos archivos del diff:
+- `CHANGELOG.md`
+- `docs/contexto/features/pr-2060-feat-infra-preparar-mantenimiento-nocturno-de-produccion.md`
 - `docs/infra/PROD_CHANGE_PROPOSALS.md`
 - `docs/infra/PROD_INVENTORY.md`
 - `docs/infra/PROD_MIGRATION_CHECKLIST.md`
 - `docs/infra/PROD_RISKS.md`
 - `docs/plans/2026-07-14-produccion-ventana-nocturna-design.md`
 - `docs/registro/cambios/2026-07-14-paquete-mantenimiento-produccion.md`
+- `docs/registro/prs/PR-2060.md`
+- `docs/registro/releases/pending/2026-07-15-pr-2060.md`
 - `scripts/infra/backup_prod_configs.sh`
 - `scripts/infra/cleanup_prod_disk.sh`
 - `scripts/infra/healthcheck_prod.sh`
@@ -46,18 +50,21 @@
 - `scripts/infra/rollback_prod_maintenance.sh`
 - `scripts/infra/rollback_prod_mobile_checkout.sh`
 - `scripts/infra/verify_prod_release.sh`
-- `tests/test_prod_infra_scripts.py`
+- ... y 1 archivo(s) adicional(es) relacionados.
 - Documentación sugerida para ampliar contexto:
 - `docs/indice.md`
 - `docs/ia/CONTEXT_HYGIENE.md`
 - `docs/ia/ARCHITECTURE.md`
 - `docs/ia/TESTING.md`
+- `docs/contexto/features/pr-2060-feat-infra-preparar-mantenimiento-nocturno-de-produccion.md`
 - `docs/infra/PROD_CHANGE_PROPOSALS.md`
 - `docs/infra/PROD_INVENTORY.md`
 - `docs/infra/PROD_MIGRATION_CHECKLIST.md`
 - `docs/infra/PROD_RISKS.md`
 - `docs/plans/2026-07-14-produccion-ventana-nocturna-design.md`
 - `docs/registro/cambios/2026-07-14-paquete-mantenimiento-produccion.md`
+- `docs/registro/prs/PR-2060.md`
+- `docs/registro/releases/pending/2026-07-15-pr-2060.md`
 
 ## Trazabilidad
 
