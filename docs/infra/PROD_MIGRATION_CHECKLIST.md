@@ -38,6 +38,8 @@ cambios. El backup local de media ya ejecutado tuvo aprobacion separada.
 - [ ] Transferir `.env` backend/mobile por canal seguro, sin imprimir valores.
 - [ ] Exportar configuracion NGINX, metadata TLS, systemd/runner y cron efectivo.
 - [ ] Guardar commits, Compose, Dockerfiles y scripts operativos versionados.
+- [x] Preparar scripts versionados de preflight, backup, mantenimiento,
+      verificacion y rollback para la ventana productiva.
 - [ ] Definir si logs deben copiarse por requisito legal/forense; no moverlos por
       defecto.
 - [ ] Guardar inventario de owners/permisos sin replicar modos inseguros a ciegas.

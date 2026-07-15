@@ -63,3 +63,17 @@ del CDI no tiene sesiones, así que la unidad de asistencia acá es **por fecha
 - Smoke con test client: botón presente en el detalle; GET default (fecha hoy,
   12 filas), POST crea registro y redirige con `?fecha=`, GET con fecha
   guardada refleja el presente.
+
+## Hardening previo a producción (2026-07-14)
+
+- El POST delega en `AsistenciaTrabajadorService`.
+- La fecha se valida estrictamente como `AAAA-MM-DD`; un valor inválido no cae
+  silenciosamente en la fecha actual ni genera registros.
+- Solo se aceptan las marcas `0` y `1`, y se valida el lote completo antes de
+  escribir.
+- Todos los `update_or_create` del lote corren en una única
+  `transaction.atomic()`, por lo que una falla intermedia revierte lo anterior.
+- `observaciones` ahora es un campo visible y editable en cada fila, en lugar
+  de un input oculto.
+- La cobertura agrega fecha/marca inválidas, rollback de una segunda escritura
+  fallida y render del campo de observaciones existente.
