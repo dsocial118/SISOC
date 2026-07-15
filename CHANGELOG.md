@@ -15,6 +15,7 @@
 - [sin-area] hotfix. (PR #2046)
 - [sin-area] hotfix: asistencia de trabajadores CDI (backport a main de PR #2046). (PR #2048)
 - [sin-area] Main (resuelve conflicto PR #2052). (PR #2054)
+- [sin-area] feat(infra): preparar mantenimiento nocturno de produccion. (PR #2060)
 - [sin-area] fix(cdi): asegurar carga atomica de asistencia. (PR #2059)
 - [sin-area] feat(infra): automatizar sincronizacion descendente. (PR #2058)
 <!-- AUTO-GENERATED RELEASE END: 2026-07-15 -->

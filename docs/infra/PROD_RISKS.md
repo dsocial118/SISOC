@@ -47,8 +47,11 @@ reversible futuro.
   logrotate detectadas; los logs Django agregan 1.3 GB.
 - No hay politica demostrada de backup/retencion para configuracion, cron y
   runner.
-- El workflow de produccion no despliega SISOC-Mobile, a diferencia de HML; un
-  deploy backend puede dejar versiones no coordinadas.
+- GitHub `main` ya coordina backend/mobile, pero el primer deploy sigue
+  pendiente de validacion en PRD.
+- El checkout mobile tiene 866 entradas bajo ownership historico y origin SSH;
+  `sisoc-deploy` no puede operar Git sobre ese arbol. Sin el gate de preparacion
+  versionado, el primer deploy automatico fallaria al actualizar mobile.
 - Gunicorn queda publicado en todas las interfaces por 8001, permitiendo bypass
   de NGINX/TLS si la red lo alcanza.
 - `.env` mobile es `root:root` modo 664: es world-readable y el owner/grupo no
@@ -91,7 +94,8 @@ reversible futuro.
 - Servicios legacy habilitados/fallidos alrededor del runtime real.
 - Logs voluminosos fuera de una politica de rotacion confirmada.
 - Deploy/restart backend puede escribir DB por el entrypoint.
-- No hay runbook productivo versionado que cierre backup, mobile y restore.
+- El runbook y scripts productivos estan preparados, pero todavia no ejecutados
+  ni validados sobre el host con privilegios root.
 
 ## Migrabilidad
 

@@ -35,7 +35,7 @@ alcance y se conservan solo como referencia de una posible migracion.
 | Media | 2.8 GiB | 48 GiB | 65 GiB | Principal dato a migrar |
 | Disco raiz | 77% post-limpieza | 88% post-limpieza | 12% | PRD no tiene presion de disco |
 | MySQL local | Stage 1 inactivo | Stage 1 inactivo | Activo/habilitado, 200 MB | No tocar en esta fase |
-| Deploy mobile | no aplica | incluido en workflow | no incluido en `main` actual | Diferencia real de ramas |
+| Deploy mobile | no aplica | incluido en workflow | incluido en GitHub `main`, pendiente de primer deploy coordinado | Runtime PRD aun no validado |
 
 ## Servicios y agentes
 
@@ -257,10 +257,11 @@ artefacto frontend servido por NGINX.
 5. El script baja el stack, hace pull `--ff-only`, reconstruye y levanta.
 6. El entrypoint puede ejecutar migraciones y otras escrituras DB.
 
-El workflow presente en `main` productivo no incluye `--with-mobile`, mientras
-la rama usada en HML si lo incluye. El checkout productivo coincide con GitHub;
-no es drift local. El deploy/rollback de SISOC-Mobile en produccion queda como
-flujo separado no confirmado.
+El checkout productivo auditado conserva el commit `980c2b053...` y todavia no
+ejecuto el cambio posterior que agrega `--with-mobile`. GitHub `main` ya incluye
+el deploy coordinado backend/mobile; su primer uso queda preparado por el
+runbook `docs/plans/2026-07-14-produccion-ventana-nocturna-design.md` y requiere
+Environment `production`, backup y ventana. No es un cambio local aplicado.
 
 ## Dependencias externas criticas
 
