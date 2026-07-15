@@ -839,10 +839,9 @@ def test_adjuntar_y_presentar_rendicion(comedores, settings, tmp_path):
     )
     assert present_without_docs_response.status_code == 400
 
-    # El commit a4636912 actualizó CATEGORIAS_CONFIG: agregó Formulario I y
-    # dividió Formulario III/V en _ALIMENTARIO/_SIPH como obligatorios mobile.
+    # Formulario I es optativo; Formulario III/V se divide en variantes
+    # _ALIMENTARIO/_SIPH obligatorias para mobile.
     categorias_obligatorias = [
-        DocumentacionAdjunta.CATEGORIA_FORMULARIO_I,
         DocumentacionAdjunta.CATEGORIA_FORMULARIO_II,
         DocumentacionAdjunta.CATEGORIA_FORMULARIO_III_ALIMENTARIO,
         DocumentacionAdjunta.CATEGORIA_FORMULARIO_III_SIPH,
@@ -871,6 +870,13 @@ def test_adjuntar_y_presentar_rendicion(comedores, settings, tmp_path):
     # CATEGORIAS_CONFIG ahora trae 12 items (Form I + III/V divididos +
     # Form IV/VI + Extracto + Comprobantes + Planilla Seguros + Otros).
     assert len(detail_response.data["documentacion"]) == 12
+    formulario_i = next(
+        item
+        for item in detail_response.data["documentacion"]
+        if item["codigo"] == DocumentacionAdjunta.CATEGORIA_FORMULARIO_I
+    )
+    assert formulario_i["required"] is False
+    assert formulario_i["archivos"] == []
     categoria_extra = next(
         item
         for item in detail_response.data["documentacion"]
