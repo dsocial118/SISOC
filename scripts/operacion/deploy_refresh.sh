@@ -41,7 +41,10 @@ Opciones:
 
 Mapeo por entorno:
   ENVIRONMENT=dev|local|development -> docker-compose.yml
-  ENVIRONMENT=qa|homologacion       -> docker-compose.deploy.yml
+  ENVIRONMENT=qa                    -> docker-compose.deploy.yml
+  ENVIRONMENT=homologacion|hml|staging
+                                  -> docker-compose.deploy.yml + docker-compose.produccion.yml
+                                     + SISOC-Mobile
   ENVIRONMENT=prd|prod|production   -> docker-compose.deploy.yml + docker-compose.produccion.yml
 USAGE
 }
@@ -157,8 +160,10 @@ ensure_clean_branch() {
   fi
 
   if [[ "$ALLOW_DIRTY" -eq 0 ]]; then
-    git -C "$repo_dir" diff-index --quiet HEAD -- \
-      || fail "$label tiene cambios tracked locales. Commit/stash o usa --allow-dirty."
+    if ! git -C "$repo_dir" diff --quiet -- \
+      || ! git -C "$repo_dir" diff --cached --quiet --; then
+      fail "$label tiene cambios tracked locales. Commit/stash o usa --allow-dirty."
+    fi
   fi
 
   printf -v "$branch_var_name" '%s' "$branch"
@@ -180,8 +185,9 @@ compose_for_environment() {
       EXPECTED_BRANCH="${QA_BRANCH:-development}"
       ;;
     homologacion|hml|staging)
-      COMPOSE_FILES=("docker-compose.deploy.yml")
+      COMPOSE_FILES=("docker-compose.deploy.yml" "docker-compose.produccion.yml")
       EXPECTED_BRANCH="${HOMOLOGACION_BRANCH:-homologacion}"
+      WITH_MOBILE=1
       ;;
     prd|prod|production|produccion)
       COMPOSE_FILES=("docker-compose.deploy.yml" "docker-compose.produccion.yml")
