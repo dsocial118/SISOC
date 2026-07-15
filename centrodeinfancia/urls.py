@@ -41,9 +41,15 @@ from centrodeinfancia.views_formulario_cdi import (
 )
 from centrodeinfancia.views_export import CentroDeInfanciaExportView
 from centrodeinfancia.views_usuario_cdi import GenerarUsuarioCDIView
+from centrodeinfancia.views_usuario_egp import GenerarUsuarioEGPView
 
 
 urlpatterns = [
+    path(
+        "simepi/egp/generar-usuario/",
+        GenerarUsuarioEGPView.as_view(),
+        name="simepi_egp_generar_usuario",
+    ),
     path(
         "centrodeinfancia/listar",
         permissions_any_required(["centrodeinfancia.view_centrodeinfancia"])(
