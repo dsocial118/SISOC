@@ -76,3 +76,57 @@ def test_preparacion_mobile_acota_chown_y_guarda_rollback_completo():
     assert 'getfacl -R -p "$MOBILE_ROOT"' in prepare
     assert 'setfacl --restore="$BACKUP_DIR/mobile.acl-ownership.before"' in rollback
     assert '"$(cat "$BACKUP_DIR/mobile-origin.before")"' in rollback
+
+
+def test_preparacion_mobile_refresca_indice_antes_de_validar_tracked_changes():
+    prepare = (INFRA_DIR / "prepare_prod_mobile_checkout.sh").read_text(
+        encoding="utf-8"
+    )
+    apply_changes = prepare.split("apply_changes() {", maxsplit=1)[1].split(
+        "\nmain()", maxsplit=1
+    )[0]
+
+    refresh_index = 'git -C "$MOBILE_ROOT" update-index --refresh -q'
+    validate_tracked = 'git -C "$MOBILE_ROOT" diff-index --quiet HEAD --'
+
+    assert refresh_index in apply_changes
+    assert apply_changes.index(refresh_index) < apply_changes.index(validate_tracked)
+
+
+def test_preparacion_mobile_sella_backup_antes_del_primer_cambio():
+    prepare = (INFRA_DIR / "prepare_prod_mobile_checkout.sh").read_text(
+        encoding="utf-8"
+    )
+    apply_changes = prepare.split("apply_changes() {", maxsplit=1)[1].split(
+        "\nmain()", maxsplit=1
+    )[0]
+
+    checksum = ') > "$BACKUP_DIR/SHA256SUMS"'
+    first_mutation = 'chown -R "$TARGET_USER:$TARGET_GROUP" "$MOBILE_ROOT"'
+
+    assert apply_changes.index(checksum) < apply_changes.index(first_mutation)
+
+
+def test_rollback_mobile_refresca_indice_antes_de_validar_tracked_changes():
+    rollback = (INFRA_DIR / "rollback_prod_mobile_checkout.sh").read_text(
+        encoding="utf-8"
+    )
+
+    refresh_index = 'git -C "$MOBILE_ROOT" update-index --refresh -q'
+    validate_tracked = 'git -C "$MOBILE_ROOT" diff-index --quiet HEAD --'
+
+    assert refresh_index in rollback
+    assert rollback.index(refresh_index) < rollback.index(validate_tracked)
+
+
+def test_rollback_mobile_restaura_acl_despues_de_modificar_origin():
+    rollback = (INFRA_DIR / "rollback_prod_mobile_checkout.sh").read_text(
+        encoding="utf-8"
+    )
+
+    restore_origin = (
+        'git -c safe.directory="$MOBILE_ROOT" -C "$MOBILE_ROOT" remote set-url origin'
+    )
+    restore_acl = 'setfacl --restore="$BACKUP_DIR/mobile.acl-ownership.before"'
+
+    assert rollback.index(restore_origin) < rollback.index(restore_acl)
