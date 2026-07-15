@@ -102,6 +102,16 @@ jobs:
                             );
                           }
 
+                          await github.rest.pulls.createReview({
+                            owner,
+                            repo,
+                            pull_number: pull.number,
+                            commit_id: pull.head.sha,
+                            event: "APPROVE",
+                            body: "Aprobacion automatica del Plan A para sincronizar main hacia una rama inferior.",
+                          });
+                          core.info(`PR #${pull.number} aprobado automaticamente.`);
+
                           const merged = await github.rest.pulls.merge({
                             owner,
                             repo,
