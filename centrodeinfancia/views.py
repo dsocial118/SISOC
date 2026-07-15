@@ -314,6 +314,71 @@ def _crear_referente_cdi_automaticamente(request, centro):
         )
 
 
+def _crear_usuario_trabajador_automaticamente(request, trabajador):
+    """Vincula un usuario al trabajador sin afectar el guardado de la nómina."""
+    if trabajador.usuario_id or not (trabajador.email or "").strip():
+        return
+    if User.objects.filter(email__iexact=trabajador.email.strip()).exists():
+        logger.warning(
+            "No se creó usuario de trabajador porque el email ya está en uso trabajador_id=%s email=%s",
+            trabajador.id,
+            trabajador.email,
+        )
+        messages.warning(
+            request,
+            "El trabajador se guardó sin crear usuario: el email ya está asociado a un usuario.",
+        )
+        return
+
+    try:
+        resultado = generar_usuario_delegado(
+            actor=request.user,
+            datos=DatosUsuarioDelegado(
+                first_name=trabajador.nombre,
+                last_name=trabajador.apellido,
+                email=trabajador.email,
+            ),
+            grupo_nombre=UserGroups.CDI_TRABAJADOR,
+            vinculo_callback=lambda nuevo_usuario: _vincular_usuario_trabajador(
+                trabajador,
+                nuevo_usuario,
+            ),
+            request=request,
+        )
+    except ValidationError as exc:
+        logger.warning(
+            "No se creó usuario de trabajador automáticamente trabajador_id=%s actor_id=%s: %s",
+            trabajador.id,
+            request.user.id,
+            "; ".join(exc.messages),
+        )
+        messages.warning(
+            request,
+            "El trabajador se guardó, pero no se pudo crear su usuario automáticamente.",
+        )
+    except Exception:  # noqa: BLE001 - el guardado primario no debe fallar
+        logger.exception(
+            "Error inesperado al crear usuario de trabajador trabajador_id=%s actor_id=%s",
+            trabajador.id,
+            request.user.id,
+        )
+        messages.warning(
+            request,
+            "El trabajador se guardó, pero no se pudo crear su usuario automáticamente.",
+        )
+    else:
+        trabajador.usuario = resultado["user"]
+        messages.success(
+            request,
+            f"Usuario de trabajador «{resultado['user'].username}» creado automáticamente.",
+        )
+
+
+def _vincular_usuario_trabajador(trabajador, user):
+    trabajador.usuario = user
+    trabajador.save(update_fields=["usuario"])
+
+
 class _AutomaticReferenteProvisioningMixin:
     def form_valid(self, form):
         response = super().form_valid(form)
@@ -945,6 +1010,7 @@ class TrabajadorCentroInfanciaCreateView(LoginRequiredMixin, CreateView):
     def form_valid(self, form):
         form.instance.centro = self.centro
         response = super().form_valid(form)
+        _crear_usuario_trabajador_automaticamente(self.request, self.object)
         messages.success(self.request, "Trabajador agregado correctamente.")
         return response
 
@@ -972,6 +1038,7 @@ class TrabajadorCentroInfanciaUpdateView(LoginRequiredMixin, UpdateView):
 
     def form_valid(self, form):
         response = super().form_valid(form)
+        _crear_usuario_trabajador_automaticamente(self.request, self.object)
         messages.success(self.request, "Trabajador actualizado correctamente.")
         return response
 

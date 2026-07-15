@@ -807,6 +807,13 @@ class Trabajador(SoftDeleteModelMixin, models.Model):
         on_delete=models.CASCADE,
         related_name="trabajadores",
     )
+    usuario = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name="+",
+    )
     nombre = models.CharField(max_length=255)
     apellido = models.CharField(max_length=255)
     telefono = models.CharField(max_length=50, blank=True, null=True)

@@ -3,7 +3,7 @@ from django.contrib.auth.models import Group, Permission, User
 from django.contrib.messages import get_messages
 from django.urls import reverse
 
-from centrodeinfancia.models import AccesoCDI, CentroDeInfancia
+from centrodeinfancia.models import AccesoCDI, CentroDeInfancia, Trabajador
 from core.constants import UserGroups
 
 
@@ -33,6 +33,33 @@ def _guardar_centro(client, centro, **referente):
             **referente,
         },
     )
+
+
+def _referente_actor(centro):
+    user = User.objects.create_user(
+        username="referente-cdi-automatico",
+        email="referente@example.com",
+        password="test1234",
+    )
+    user.user_permissions.add(
+        Permission.objects.get(codename="change_centrodeinfancia")
+    )
+    referente, _ = Group.objects.get_or_create(name=UserGroups.CDI_REFERENTE_CENTRO)
+    Group.objects.get_or_create(name=UserGroups.CDI_TRABAJADOR)
+    user.groups.add(referente)
+    AccesoCDI.objects.create(user=user, centro=centro)
+    return user
+
+
+def _guardar_trabajador(client, centro, trabajador=None, **datos):
+    if trabajador is None:
+        url = reverse("centrodeinfancia_trabajador_crear", kwargs={"pk": centro.pk})
+    else:
+        url = reverse(
+            "centrodeinfancia_trabajador_editar",
+            kwargs={"pk": centro.pk, "trabajador_id": trabajador.pk},
+        )
+    return client.post(url, {"nombre": "Ana", "apellido": "Lopez", **datos})
 
 
 @pytest.fixture(autouse=True)
@@ -138,3 +165,52 @@ def test_actor_sin_delegacion_guarda_cdi_sin_crear_referente(client):
         "no se pudo crear el referente" in str(message)
         for message in get_messages(response.wsgi_request)
     )
+
+
+@pytest.mark.django_db
+def test_guardar_trabajador_con_email_crea_usuario_y_vinculo(client):
+    centro = CentroDeInfancia.objects.create(nombre="CDI Trabajadores")
+    actor = _referente_actor(centro)
+    client.force_login(actor)
+
+    response = _guardar_trabajador(client, centro, email="ana.lopez@example.com")
+
+    assert response.status_code == 302
+    trabajador = Trabajador.objects.get(centro=centro)
+    assert trabajador.usuario.email == "ana.lopez@example.com"
+    assert trabajador.usuario.groups.filter(name=UserGroups.CDI_TRABAJADOR).exists()
+    assert not AccesoCDI.objects.filter(user=trabajador.usuario).exists()
+
+
+@pytest.mark.django_db
+def test_guardar_trabajador_sin_email_omite_usuario(client):
+    centro = CentroDeInfancia.objects.create(nombre="CDI Trabajadores sin email")
+    actor = _referente_actor(centro)
+    client.force_login(actor)
+
+    response = _guardar_trabajador(client, centro)
+
+    assert response.status_code == 302
+    assert Trabajador.objects.get(centro=centro).usuario is None
+
+
+@pytest.mark.django_db
+def test_reguardar_trabajador_no_duplica_usuario(client):
+    centro = CentroDeInfancia.objects.create(nombre="CDI Trabajador idempotente")
+    actor = _referente_actor(centro)
+    client.force_login(actor)
+    _guardar_trabajador(client, centro, email="ana.idempotente@example.com")
+    trabajador = Trabajador.objects.get(centro=centro)
+    usuario_id = trabajador.usuario_id
+
+    response = _guardar_trabajador(
+        client,
+        centro,
+        trabajador=trabajador,
+        email="ana.idempotente@example.com",
+    )
+
+    trabajador.refresh_from_db()
+    assert response.status_code == 302
+    assert trabajador.usuario_id == usuario_id
+    assert User.objects.filter(email="ana.idempotente@example.com").count() == 1
