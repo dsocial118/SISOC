@@ -2,7 +2,9 @@
 
 ## Estado
 
-Preparado y validado en el repositorio. No ejecutado en `prd-old`.
+Preparado y validado en el repositorio. La primera ventana en `prd-old` aprobo
+Gate 0 y se detuvo en Gate 1, con rollback automatico, porque el cambio de
+ownership invalido el stat-cache de Git antes de validar el working tree.
 
 ## Alcance
 
@@ -33,3 +35,13 @@ fuera del alcance.
 - `git diff --check`.
 
 La validacion real de host requiere el preflight nocturno y un GO explicito.
+
+## Ajuste posterior a Gate 1
+
+- se refresca el indice de Git despues de alinear ownership y antes de ejecutar
+  `diff-index`, para no interpretar cambios de metadata como cambios tracked;
+- el backup mobile queda sellado con `SHA256SUMS` antes de la primera mutacion,
+  de modo que el rollback independiente sea utilizable tambien ante un fallo
+  durante el apply;
+- una nueva ventana debe reconstruir el paquete desde el nuevo SHA y repetir
+  todos los gates; el run productivo anterior no debe aprobarse.
