@@ -38,9 +38,7 @@ def _datos_validos(provincia, email):
 @pytest.mark.django_db
 def test_equipo_nacional_puede_crear_egp_con_scope_provincial(client):
     provincia = Provincia.objects.create(nombre="Chaco")
-    actor = _usuario_con_grupo(
-        "equipo-nacional", UserGroups.SIMEPI_EQUIPO_NACIONAL
-    )
+    actor = _usuario_con_grupo("equipo-nacional", UserGroups.SIMEPI_EQUIPO_NACIONAL)
     client.force_login(actor)
 
     assert client.get(URL).status_code == 200
@@ -74,9 +72,11 @@ def test_superuser_puede_crear_egp(client):
     response = client.post(URL, _datos_validos(provincia, "egp-su@example.com"))
 
     assert response.status_code == 200
-    assert User.objects.get(email="egp-su@example.com").groups.filter(
-        name=UserGroups.SIMEPI_EGP
-    ).exists()
+    assert (
+        User.objects.get(email="egp-su@example.com")
+        .groups.filter(name=UserGroups.SIMEPI_EGP)
+        .exists()
+    )
 
 
 @pytest.mark.django_db

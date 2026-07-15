@@ -37,9 +37,7 @@ def test_equipo_nacional_delega_solo_sus_grupos_derivados(cascade_groups):
         cascade_groups[UserGroups.SIMEPI_EQUIPO_NACIONAL],
     )
 
-    assert _actor_puede_delegar_grupo(
-        actor, cascade_groups[UserGroups.SIMEPI_EGP]
-    )
+    assert _actor_puede_delegar_grupo(actor, cascade_groups[UserGroups.SIMEPI_EGP])
     assert _actor_puede_delegar_grupo(
         actor, cascade_groups[UserGroups.SIMEPI_ANALISTA_DATOS]
     )
@@ -67,9 +65,7 @@ def test_egp_delega_referente_cdi(cascade_groups):
 def test_referente_cdi_delega_trabajador(cascade_groups):
     actor = _actor("referente-cdi", cascade_groups[UserGroups.CDI_REFERENTE_CENTRO])
 
-    assert _actor_puede_delegar_grupo(
-        actor, cascade_groups[UserGroups.CDI_TRABAJADOR]
-    )
+    assert _actor_puede_delegar_grupo(actor, cascade_groups[UserGroups.CDI_TRABAJADOR])
 
 
 @pytest.mark.django_db
