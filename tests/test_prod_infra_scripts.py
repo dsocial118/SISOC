@@ -124,7 +124,9 @@ def test_rollback_mobile_restaura_acl_despues_de_modificar_origin():
         encoding="utf-8"
     )
 
-    restore_origin = 'git -c safe.directory="$MOBILE_ROOT" -C "$MOBILE_ROOT" remote set-url origin'
+    restore_origin = (
+        'git -c safe.directory="$MOBILE_ROOT" -C "$MOBILE_ROOT" remote set-url origin'
+    )
     restore_acl = 'setfacl --restore="$BACKUP_DIR/mobile.acl-ownership.before"'
 
     assert rollback.index(restore_origin) < rollback.index(restore_acl)
