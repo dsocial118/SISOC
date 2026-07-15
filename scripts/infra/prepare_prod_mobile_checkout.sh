@@ -106,15 +106,20 @@ preflight() {
 }
 
 rollback_on_error() {
-  local rc=$?
+  local rc=$? mobile_owner
   trap - EXIT
   if [[ "$ROLLBACK_NEEDED" -eq 1 && -n "$BACKUP_DIR" ]]; then
     log "Fallo durante preparacion mobile; restaurando ACL/owners y remote."
-    setfacl --restore="$BACKUP_DIR/mobile.acl-ownership.before" || true
     if [[ -r "$BACKUP_DIR/mobile-origin.before" ]]; then
       git -c safe.directory="$MOBILE_ROOT" -C "$MOBILE_ROOT" remote set-url origin \
         "$(cat "$BACKUP_DIR/mobile-origin.before")" || true
     fi
+    setfacl --restore="$BACKUP_DIR/mobile.acl-ownership.before" || true
+    mobile_owner="$(stat -c '%U' "$MOBILE_ROOT")"
+    runuser -u "$mobile_owner" -- git -C "$MOBILE_ROOT" update-index --refresh -q \
+      >/dev/null 2>&1 || true
+    runuser -u "$mobile_owner" -- git -C "$MOBILE_ROOT" diff-index --quiet HEAD -- \
+      || log "ERROR: El rollback mobile dejo cambios tracked."
     bash "$SCRIPT_DIR/healthcheck_prod.sh" || true
   fi
   exit "$rc"
@@ -134,6 +139,11 @@ apply_changes() {
   before_head="$(git -c safe.directory="$MOBILE_ROOT" -C "$MOBILE_ROOT" rev-parse HEAD)"
   printf '%s\n' "$before_head" > "$BACKUP_DIR/mobile-head.before"
   find "$BACKUP_DIR" -type f -exec chmod 600 {} +
+  (
+    cd "$BACKUP_DIR"
+    find . -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum
+  ) > "$BACKUP_DIR/SHA256SUMS"
+  chmod 600 "$BACKUP_DIR/SHA256SUMS"
 
   trap rollback_on_error EXIT
   ROLLBACK_NEEDED=1
@@ -145,6 +155,8 @@ apply_changes() {
   [[ "$after_head" == "$before_head" ]] || fail "El fetch cambio el HEAD local."
   [[ "$(runuser -u "$TARGET_USER" -- git -C "$MOBILE_ROOT" branch --show-current)" == main ]] \
     || fail "Mobile dejo de estar en main."
+  runuser -u "$TARGET_USER" -- git -C "$MOBILE_ROOT" update-index --refresh -q \
+    >/dev/null 2>&1 || true
   runuser -u "$TARGET_USER" -- git -C "$MOBILE_ROOT" diff-index --quiet HEAD -- \
     || fail "Aparecieron cambios tracked en mobile."
   [[ "$(remote_state)" == https ]] || fail "Origin mobile no quedo en HTTPS."
