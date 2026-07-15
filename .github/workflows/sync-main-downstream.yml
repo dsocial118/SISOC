@@ -1,0 +1,159 @@
+name: Sincronizar main hacia QA y HML
+
+on:
+    push:
+        branches:
+            - main
+    schedule:
+        - cron: "17 * * * *"
+    workflow_dispatch:
+
+permissions:
+    actions: write
+    contents: write
+    pull-requests: write
+
+concurrency:
+    group: sync-main-downstream
+    cancel-in-progress: false
+
+jobs:
+    sync:
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Integrar main y desplegar ramas inferiores
+              uses: actions/github-script@v7
+              with:
+                  script: |
+                      const owner = context.repo.owner;
+                      const repo = context.repo.repo;
+                      const targets = ["development", "homologacion"];
+                      const failures = [];
+                      const sleep = (milliseconds) =>
+                        new Promise((resolve) => setTimeout(resolve, milliseconds));
+
+                      for (const target of targets) {
+                        core.startGroup(`Sincronizar main -> ${target}`);
+
+                        try {
+                          const comparison = await github.rest.repos.compareCommits({
+                            owner,
+                            repo,
+                            base: "main",
+                            head: target,
+                          });
+
+                          if (comparison.data.behind_by === 0) {
+                            core.info(`${target} ya contiene todo main; no hay cambios.`);
+                            continue;
+                          }
+
+                          let pulls = await github.rest.pulls.list({
+                            owner,
+                            repo,
+                            state: "open",
+                            base: target,
+                            head: `${owner}:main`,
+                            per_page: 10,
+                          });
+                          let pull = pulls.data[0];
+
+                          if (!pull) {
+                            const created = await github.rest.pulls.create({
+                              owner,
+                              repo,
+                              base: target,
+                              head: "main",
+                              title: `chore(sync): integrar main en ${target}`,
+                              body: [
+                                "Sincronizacion descendente automatica.",
+                                "",
+                                "- Conserva los cambios exclusivos de la rama destino.",
+                                "- No escribe ni promueve cambios hacia `main`.",
+                                "- Si hay conflictos, este PR queda abierto y el deploy se bloquea.",
+                              ].join("\n"),
+                            });
+                            pull = created.data;
+                            core.info(`PR #${pull.number} creado: ${pull.html_url}`);
+                          } else {
+                            core.info(`Reutilizando PR #${pull.number}: ${pull.html_url}`);
+                          }
+
+                          let mergeable = null;
+                          for (let attempt = 1; attempt <= 12; attempt += 1) {
+                            const current = await github.rest.pulls.get({
+                              owner,
+                              repo,
+                              pull_number: pull.number,
+                            });
+                            pull = current.data;
+                            mergeable = pull.mergeable;
+                            if (mergeable !== null) {
+                              break;
+                            }
+                            core.info(`GitHub aun calcula mergeabilidad (${attempt}/12).`);
+                            await sleep(5000);
+                          }
+
+                          if (mergeable !== true) {
+                            throw new Error(
+                              `PR #${pull.number} no es integrable sin intervencion: ${pull.html_url}`,
+                            );
+                          }
+
+                          const merged = await github.rest.pulls.merge({
+                            owner,
+                            repo,
+                            pull_number: pull.number,
+                            sha: pull.head.sha,
+                            merge_method: "merge",
+                            commit_title: `Merge main into ${target}`,
+                            commit_message: "Sincronizacion descendente automatica del Plan A.",
+                          });
+
+                          if (!merged.data.merged) {
+                            throw new Error(
+                              `GitHub rechazo el merge del PR #${pull.number}: ${merged.data.message}`,
+                            );
+                          }
+
+                          core.info(`PR #${pull.number} integrado en ${target}.`);
+                          let dispatched = false;
+                          for (let attempt = 1; attempt <= 3; attempt += 1) {
+                            try {
+                              await github.rest.actions.createWorkflowDispatch({
+                                owner,
+                                repo,
+                                workflow_id: "deploy.yml",
+                                ref: target,
+                              });
+                              dispatched = true;
+                              break;
+                            } catch (error) {
+                              core.warning(
+                                `Dispatch ${target} fallo (${attempt}/3): ${error.message}`,
+                              );
+                              if (attempt < 3) {
+                                await sleep(5000);
+                              }
+                            }
+                          }
+
+                          if (!dispatched) {
+                            throw new Error(
+                              `No se pudo solicitar deploy para ${target} tras integrar el PR.`,
+                            );
+                          }
+                          core.info(`Deploy solicitado explicitamente para ${target}.`);
+                        } catch (error) {
+                          failures.push(`${target}: ${error.message}`);
+                          core.error(`${target}: ${error.stack ?? error.message}`);
+                        } finally {
+                          core.endGroup();
+                        }
+                      }
+
+                      if (failures.length > 0) {
+                        core.setFailed(failures.join("\n"));
+                      }

@@ -4,14 +4,20 @@ Estado: documentado; no se ejecuto deploy ni restart durante la auditoria.
 
 ## Flujo vigente
 
-1. Un push a `homologacion` dispara `.github/workflows/deploy.yml`.
+1. Un push o dispatch a `homologacion` dispara `.github/workflows/deploy.yml`.
 2. El job usa el runner self-hosted `sisoc-homologacion` en `hml-old`.
 3. GitHub Environment `homologacion` aporta `APP_ROOT`.
 4. `scripts/operacion/deploy_refresh.sh` valida entorno, branch y Compose.
 5. Ejecuta fetch, validacion Compose, `down`, pull `--ff-only`, build/up y `ps`.
-6. Despliega tambien `/sisoc/SISOC-Mobile` desde branch `main`.
+6. Despliega tambien `/sisoc/SISOC-Mobile` desde branch `main`; su origin
+   publico conocido se normaliza de SSH a HTTPS antes del fetch.
 7. El entrypoint backend puede ejecutar migraciones y otros comandos con
    escritura en DB antes de iniciar Gunicorn.
+
+Cuando cambia `main`, el Plan A abre/integra un PR descendente hacia
+`homologacion` si no hay conflictos y solicita este deploy explicitamente. Los
+cambios exclusivos de HML se conservan y nunca se copian hacia `main` por ese
+flujo.
 
 ## Checklist previo
 
