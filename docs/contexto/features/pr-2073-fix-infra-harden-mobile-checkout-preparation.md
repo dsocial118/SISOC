@@ -9,7 +9,7 @@
 
 ## Contexto funcional
 
-- No informado explícitamente; inferir desde el título del PR y el diff.
+- Gate 1 de produccion fallo por un falso positivo de Git despues de cambiar ownership del checkout mobile.
 
 ## Arquitectura tocada
 
@@ -17,10 +17,10 @@
 
 ## Decisiones y supuestos detectados
 
-- Tipo de cambio declarado: No informado
-- Área principal declarada: No informada
-- Impacto usuario declarado: No informado
-- Riesgos / rollback: No informado
+- Tipo de cambio declarado: Bugfix operativo de infraestructura.
+- Área principal declarada: Infraestructura y deploy de SISOC-Mobile.
+- Impacto usuario declarado: Reduce el riesgo de abortar o dejar metadata inconsistente durante el deploy productivo.
+- Riesgos / rollback: No cambia runtime ni datos; el rollback restaura origin y ACL desde backup sellado. Requiere repetir todos los gates con un nuevo SHA.
 
 ## Design system y UI
 
@@ -30,7 +30,11 @@
 
 - Empezar por `docs/registro/prs/PR-2073.md` para contexto resumido del PR.
 - Revisar primero estos archivos del diff:
+- `CHANGELOG.md`
+- `docs/contexto/features/pr-2073-fix-infra-harden-mobile-checkout-preparation.md`
 - `docs/registro/cambios/2026-07-14-paquete-mantenimiento-produccion.md`
+- `docs/registro/prs/PR-2073.md`
+- `docs/registro/releases/pending/2026-07-15-pr-2073.md`
 - `scripts/infra/prepare_prod_mobile_checkout.sh`
 - `scripts/infra/rollback_prod_mobile_checkout.sh`
 - `tests/test_prod_infra_scripts.py`
@@ -39,7 +43,10 @@
 - `docs/ia/CONTEXT_HYGIENE.md`
 - `docs/ia/ARCHITECTURE.md`
 - `docs/ia/TESTING.md`
+- `docs/contexto/features/pr-2073-fix-infra-harden-mobile-checkout-preparation.md`
 - `docs/registro/cambios/2026-07-14-paquete-mantenimiento-produccion.md`
+- `docs/registro/prs/PR-2073.md`
+- `docs/registro/releases/pending/2026-07-15-pr-2073.md`
 
 ## Trazabilidad
 

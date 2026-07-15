@@ -11,7 +11,7 @@
 - [sin-area] fix(cdi): asegurar carga atomica de asistencia. (PR #2059)
 - [sin-area] feat(infra): preparar mantenimiento nocturno de produccion. (PR #2060)
 - [sin-area] fix(ci): autoaprobar sincronizacion descendente. (PR #2070)
-- [sin-area] fix(infra): harden mobile checkout preparation. (PR #2073)
+- [Infraestructura y deploy de SISOC-Mobile.] Evita falsos cambios tracked y garantiza rollback verificable al preparar SISOC-Mobile en produccion. (PR #2073)
 <!-- AUTO-GENERATED RELEASE END: 2026-07-15 -->
 
 <!-- AUTO-GENERATED RELEASE START: 2026-07-14 -->
