@@ -374,6 +374,48 @@ def _crear_usuario_trabajador_automaticamente(request, trabajador):
         )
 
 
+def _sincronizar_email_si_cuenta_temporal(request, user, email, tipo_usuario):
+    email = (email or "").strip()
+    if not user or not email or user.email == email:
+        return
+
+    profile = getattr(user, "profile", None)
+    if not getattr(profile, "must_change_password", False):
+        messages.warning(
+            request,
+            f"No se actualizó el email del {tipo_usuario} porque ya modificó su cuenta.",
+        )
+        return
+
+    user.email = email
+    user.save(update_fields=["email"])
+    messages.success(request, f"Email del {tipo_usuario} actualizado.")
+
+
+def _sincronizar_email_referente_cdi(request, centro):
+    acceso = (
+        AccesoCDI.objects.select_related("user", "user__profile")
+        .filter(centro=centro, activo=True)
+        .first()
+    )
+    if acceso:
+        _sincronizar_email_si_cuenta_temporal(
+            request,
+            acceso.user,
+            centro.email_referente,
+            "referente",
+        )
+
+
+def _sincronizar_email_trabajador(request, trabajador):
+    _sincronizar_email_si_cuenta_temporal(
+        request,
+        trabajador.usuario,
+        trabajador.email,
+        "trabajador",
+    )
+
+
 def _vincular_usuario_trabajador(trabajador, user):
     trabajador.usuario = user
     trabajador.save(update_fields=["usuario"])
@@ -383,6 +425,7 @@ class _AutomaticReferenteProvisioningMixin:
     def form_valid(self, form):
         response = super().form_valid(form)
         _crear_referente_cdi_automaticamente(self.request, self.object)
+        _sincronizar_email_referente_cdi(self.request, self.object)
         return response
 
 
@@ -1011,6 +1054,7 @@ class TrabajadorCentroInfanciaCreateView(LoginRequiredMixin, CreateView):
         form.instance.centro = self.centro
         response = super().form_valid(form)
         _crear_usuario_trabajador_automaticamente(self.request, self.object)
+        _sincronizar_email_trabajador(self.request, self.object)
         messages.success(self.request, "Trabajador agregado correctamente.")
         return response
 
@@ -1039,6 +1083,7 @@ class TrabajadorCentroInfanciaUpdateView(LoginRequiredMixin, UpdateView):
     def form_valid(self, form):
         response = super().form_valid(form)
         _crear_usuario_trabajador_automaticamente(self.request, self.object)
+        _sincronizar_email_trabajador(self.request, self.object)
         messages.success(self.request, "Trabajador actualizado correctamente.")
         return response
 

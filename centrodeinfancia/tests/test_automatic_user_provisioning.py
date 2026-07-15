@@ -5,6 +5,7 @@ from django.urls import reverse
 
 from centrodeinfancia.models import AccesoCDI, CentroDeInfancia, Trabajador
 from core.constants import UserGroups
+from users.models import Profile
 
 
 def _actor(*, can_delegate=True):
@@ -60,6 +61,14 @@ def _guardar_trabajador(client, centro, trabajador=None, **datos):
             kwargs={"pk": centro.pk, "trabajador_id": trabajador.pk},
         )
     return client.post(url, {"nombre": "Ana", "apellido": "Lopez", **datos})
+
+
+def _usuario_temporal(username, email, *, must_change_password):
+    user = User.objects.create_user(username=username, email=email, password="test1234")
+    profile, _ = Profile.objects.get_or_create(user=user)
+    profile.must_change_password = must_change_password
+    profile.save(update_fields=["must_change_password"])
+    return user
 
 
 @pytest.fixture(autouse=True)
@@ -214,3 +223,131 @@ def test_reguardar_trabajador_no_duplica_usuario(client):
     assert response.status_code == 302
     assert trabajador.usuario_id == usuario_id
     assert User.objects.filter(email="ana.idempotente@example.com").count() == 1
+
+
+@pytest.mark.django_db
+def test_email_referente_se_sincroniza_si_aun_debe_cambiar_password(client):
+    actor = _actor()
+    client.force_login(actor)
+    centro = CentroDeInfancia.objects.create(
+        nombre="CDI Sync referente",
+        telefono="1122334455",
+        telefono_referente="1199887766",
+        nombre_referente="Lia",
+        apellido_referente="Paz",
+        email_referente="anterior.referente@example.com",
+    )
+    referente = _usuario_temporal(
+        "referente-estable",
+        "anterior.referente@example.com",
+        must_change_password=True,
+    )
+    AccesoCDI.objects.create(user=referente, centro=centro)
+
+    response = _guardar_centro(
+        client,
+        centro,
+        nombre_referente="Lia",
+        apellido_referente="Paz",
+        email_referente="nuevo.referente@example.com",
+    )
+
+    referente.refresh_from_db()
+    assert response.status_code == 302
+    assert referente.email == "nuevo.referente@example.com"
+    assert referente.username == "referente-estable"
+
+
+@pytest.mark.django_db
+def test_email_referente_no_se_sincroniza_si_ya_modifico_cuenta(client):
+    actor = _actor()
+    client.force_login(actor)
+    centro = CentroDeInfancia.objects.create(
+        nombre="CDI Sync referente protegido",
+        telefono="1122334455",
+        telefono_referente="1199887766",
+        nombre_referente="Lia",
+        apellido_referente="Paz",
+        email_referente="anterior.protegido@example.com",
+    )
+    referente = _usuario_temporal(
+        "referente-protegido",
+        "anterior.protegido@example.com",
+        must_change_password=False,
+    )
+    AccesoCDI.objects.create(user=referente, centro=centro)
+
+    response = _guardar_centro(
+        client,
+        centro,
+        nombre_referente="Lia",
+        apellido_referente="Paz",
+        email_referente="nuevo.protegido@example.com",
+    )
+
+    referente.refresh_from_db()
+    assert referente.email == "anterior.protegido@example.com"
+    assert referente.username == "referente-protegido"
+    assert any("ya modificó su cuenta" in str(message) for message in get_messages(response.wsgi_request))
+
+
+@pytest.mark.django_db
+def test_email_trabajador_se_sincroniza_si_aun_debe_cambiar_password(client):
+    centro = CentroDeInfancia.objects.create(nombre="CDI Sync trabajador")
+    actor = _referente_actor(centro)
+    client.force_login(actor)
+    usuario = _usuario_temporal(
+        "trabajador-estable",
+        "anterior.trabajador@example.com",
+        must_change_password=True,
+    )
+    trabajador = Trabajador.objects.create(
+        centro=centro,
+        usuario=usuario,
+        nombre="Ana",
+        apellido="Lopez",
+        email="anterior.trabajador@example.com",
+    )
+
+    response = _guardar_trabajador(
+        client,
+        centro,
+        trabajador=trabajador,
+        email="nuevo.trabajador@example.com",
+    )
+
+    usuario.refresh_from_db()
+    assert response.status_code == 302
+    assert usuario.email == "nuevo.trabajador@example.com"
+    assert usuario.username == "trabajador-estable"
+
+
+@pytest.mark.django_db
+def test_email_trabajador_no_se_sincroniza_si_ya_modifico_cuenta(client):
+    centro = CentroDeInfancia.objects.create(nombre="CDI Sync trabajador protegido")
+    actor = _referente_actor(centro)
+    client.force_login(actor)
+    usuario = _usuario_temporal(
+        "trabajador-protegido",
+        "anterior.trabajador.protegido@example.com",
+        must_change_password=False,
+    )
+    trabajador = Trabajador.objects.create(
+        centro=centro,
+        usuario=usuario,
+        nombre="Ana",
+        apellido="Lopez",
+        email="anterior.trabajador.protegido@example.com",
+    )
+
+    response = _guardar_trabajador(
+        client,
+        centro,
+        trabajador=trabajador,
+        email="nuevo.trabajador.protegido@example.com",
+    )
+
+    usuario.refresh_from_db()
+    assert usuario.email == "anterior.trabajador.protegido@example.com"
+    assert usuario.username == "trabajador-protegido"
+    assert any("ya modificó su cuenta" in str(message) for message in get_messages(response.wsgi_request))
