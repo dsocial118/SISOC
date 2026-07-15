@@ -6,9 +6,11 @@ from datetime import date, datetime
 import json
 
 from django.contrib import messages
+from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.contenttypes.models import ContentType
+from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
 from django.db import transaction
 from django.db.models import Exists, OuterRef, Q
@@ -32,6 +34,7 @@ from auditlog.models import LogEntry
 from ciudadanos.models import Ciudadano
 from comedores.services.comedor_service import ComedorService
 from core.decorators import permissions_any_required
+from core.constants import UserGroups
 from core.models import Nacionalidad, Sexo
 from core.security import safe_redirect
 from core.services.column_preferences import build_columns_context_from_fields
@@ -66,6 +69,7 @@ from centrodeinfancia.models import (
 from centrodeinfancia.services import CentroDeInfanciaService
 from centrodeinfancia.views_formulario_cdi import construir_resumenes_formularios
 from intervenciones.constants import PROGRAMA_ALIASES_CENTRO_INFANCIA
+from users.services_generate_user import DatosUsuarioDelegado, generar_usuario_delegado
 
 
 CDI_LIST_HEADERS = [
@@ -95,6 +99,7 @@ CDI_LIST_FIELDS = [
 ]
 
 logger = logging.getLogger(__name__)
+User = get_user_model()
 
 DOCUMENTACION_INTERVENCION_MAX_SIZE_BYTES = 5 * 1024 * 1024
 DOCUMENTACION_INTERVENCION_EXTS_PERMITIDAS = {".pdf", ".jpg", ".jpeg", ".png"}
@@ -236,6 +241,86 @@ def _validar_archivo_documentacion_intervencion(file_obj):
     return None
 
 
+def _crear_referente_cdi_automaticamente(request, centro):
+    """Crea el referente inicial sin comprometer el guardado del CDI."""
+    datos_referente = {
+        "first_name": (centro.nombre_referente or "").strip(),
+        "last_name": (centro.apellido_referente or "").strip(),
+        "email": (centro.email_referente or "").strip(),
+    }
+    if not datos_referente["email"]:
+        messages.warning(
+            request,
+            "El CDI se guardó sin crear referente: falta el email del referente.",
+        )
+        return
+    if not all(datos_referente.values()):
+        messages.warning(
+            request,
+            "El CDI se guardó sin crear referente: complete nombre, apellido y email.",
+        )
+        return
+    if AccesoCDI.objects.filter(centro=centro).exists():
+        return
+    if User.objects.filter(email__iexact=datos_referente["email"]).exists():
+        logger.warning(
+            "No se creó referente CDI porque el email ya está en uso centro_id=%s email=%s",
+            centro.id,
+            datos_referente["email"],
+        )
+        messages.warning(
+            request,
+            "El CDI se guardó sin crear referente: el email ya está asociado a un usuario.",
+        )
+        return
+
+    try:
+        resultado = generar_usuario_delegado(
+            actor=request.user,
+            datos=DatosUsuarioDelegado(**datos_referente),
+            grupo_nombre=UserGroups.CDI_REFERENTE_CENTRO,
+            vinculo_callback=lambda nuevo_usuario: AccesoCDI.objects.create(
+                user=nuevo_usuario,
+                centro=centro,
+                creado_por=request.user,
+            ),
+            request=request,
+        )
+    except ValidationError as exc:
+        logger.warning(
+            "No se creó referente CDI automáticamente centro_id=%s actor_id=%s: %s",
+            centro.id,
+            request.user.id,
+            "; ".join(exc.messages),
+        )
+        messages.warning(
+            request,
+            "El CDI se guardó, pero no se pudo crear el referente automáticamente.",
+        )
+    except Exception:  # noqa: BLE001 - el guardado primario no debe fallar
+        logger.exception(
+            "Error inesperado al crear referente CDI automáticamente centro_id=%s actor_id=%s",
+            centro.id,
+            request.user.id,
+        )
+        messages.warning(
+            request,
+            "El CDI se guardó, pero no se pudo crear el referente automáticamente.",
+        )
+    else:
+        messages.success(
+            request,
+            f"Referente «{resultado['user'].username}» creado automáticamente.",
+        )
+
+
+class _AutomaticReferenteProvisioningMixin:
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        _crear_referente_cdi_automaticamente(self.request, self.object)
+        return response
+
+
 class CentroDeInfanciaListView(LoginRequiredMixin, ListView):
     model = CentroDeInfancia
     template_name = "centrodeinfancia/centrodeinfancia_list.html"
@@ -290,7 +375,11 @@ class CentroDeInfanciaListView(LoginRequiredMixin, ListView):
         return context
 
 
-class CentroDeInfanciaCreateView(LoginRequiredMixin, CreateView):
+class CentroDeInfanciaCreateView(
+    _AutomaticReferenteProvisioningMixin,
+    LoginRequiredMixin,
+    CreateView,
+):
     model = CentroDeInfancia
     form_class = CentroDeInfanciaForm
     template_name = "centrodeinfancia/centrodeinfancia_form.html"
@@ -670,7 +759,11 @@ class CentroDeInfanciaDetailView(LoginRequiredMixin, DetailView):
         return context
 
 
-class CentroDeInfanciaUpdateView(LoginRequiredMixin, UpdateView):
+class CentroDeInfanciaUpdateView(
+    _AutomaticReferenteProvisioningMixin,
+    LoginRequiredMixin,
+    UpdateView,
+):
     model = CentroDeInfancia
     form_class = CentroDeInfanciaForm
     template_name = "centrodeinfancia/centrodeinfancia_form.html"
