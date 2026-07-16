@@ -47,6 +47,8 @@ class ExpedientesPagosService:
                 if_cantidad_de_prestaciones=data.get("if_cantidad_de_prestaciones"),
                 if_pagado=data.get("if_pagado"),
                 total=data.get("total"),
+                total_prestaciones=data.get("total_prestaciones"),
+                gastos_accesorios=data.get("gastos_accesorios"),
                 mes_pago=data.get("mes_pago"),
                 ano=data.get("ano"),
                 organizacion_creacion=data.get("organizacion_creacion"),
@@ -89,6 +91,8 @@ class ExpedientesPagosService:
             )
             expediente_pago.if_pagado = data.get("if_pagado")
             expediente_pago.total = data.get("total")
+            expediente_pago.total_prestaciones = data.get("total_prestaciones")
+            expediente_pago.gastos_accesorios = data.get("gastos_accesorios")
             expediente_pago.mes_pago = data.get("mes_pago")
             expediente_pago.ano = data.get("ano")
             expediente_pago.organizacion_creacion = data.get("organizacion_creacion")

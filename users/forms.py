@@ -14,10 +14,12 @@ from django.utils.crypto import get_random_string
 from django.utils import timezone
 
 from comedores.models import Comedor
+from core.constants import UserGroups
 from core.models import Provincia
 from duplas.models import Dupla
 from organizaciones.models import Organizacion
 from users.models import AccesoComedorPWA, Profile
+from users.services_delegation import effective_delegatable_groups_qs
 from users.services_pwa import (
     PWA_ASSIGNABLE_PERMISSION_CODES,
     PWA_USUARIOS_PERMISSION_CODE,
@@ -114,6 +116,25 @@ class TerritorialScopeFormMixin:
             for message in _validation_error_messages(error):
                 self.add_error("territorial_scopes", message)
             cleaned["territorial_scopes_data"] = []
+        return cleaned
+
+    def _validate_simepi_egp_scope(self, cleaned):
+        groups = cleaned.get("groups")
+        if not groups or not groups.filter(name=UserGroups.SIMEPI_EGP).exists():
+            return cleaned
+
+        scopes = cleaned.get("territorial_scopes_data", [])
+        has_single_full_province = (
+            cleaned.get("es_usuario_provincial")
+            and len(scopes) == 1
+            and scopes[0].get("municipio_id") is None
+            and scopes[0].get("localidad_id") is None
+        )
+        if not has_single_full_province:
+            self.add_error(
+                "territorial_scopes",
+                "El grupo SIMEPI - EGP requiere exactamente una provincia completa.",
+            )
         return cleaned
 
 
@@ -470,10 +491,7 @@ class DelegationScopeMixin:
         if self._is_unrestricted_actor():
             return Group.objects.all().order_by("name")
 
-        profile = getattr(self.actor, "profile", None)
-        if not profile:
-            return Group.objects.none()
-        return profile.grupos_asignables.all().order_by("name")
+        return effective_delegatable_groups_qs(self.actor).order_by("name")
 
     def _allowed_roles_for_actor(self):
         if self._is_unrestricted_actor():
@@ -712,6 +730,7 @@ class UserCreationForm(
         ):
             self.add_error("password", "Este campo es obligatorio.")
         cleaned = self._clean_territorial_scope_fields(cleaned)
+        cleaned = self._validate_simepi_egp_scope(cleaned)
         if cleaned.get("es_coordinador") and not cleaned.get("duplas_asignadas"):
             self.add_error("duplas_asignadas", "Seleccione al menos una dupla.")
         self._validate_selected_within_allowed(cleaned)
@@ -908,6 +927,7 @@ class CustomUserChangeForm(
         cleaned = super().clean()
         cleaned = self._clean_optional_email(cleaned)
         cleaned = self._clean_territorial_scope_fields(cleaned)
+        cleaned = self._validate_simepi_egp_scope(cleaned)
         if cleaned.get("es_coordinador") and not cleaned.get("duplas_asignadas"):
             self.add_error("duplas_asignadas", "Seleccione al menos una dupla.")
         self._validate_selected_within_allowed(cleaned)
