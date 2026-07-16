@@ -82,6 +82,12 @@ class OrganizacionForm(forms.ModelForm):
         if localidad:
             self.fields["localidad"].initial = localidad
 
+    def clean_cuit(self):
+        cuit = self.cleaned_data.get("cuit")
+        if not cuit:
+            return None
+        return int(cuit)
+
     def clean(self):
         cleaned_data = super().clean()
         cuit = cleaned_data.get("cuit")
