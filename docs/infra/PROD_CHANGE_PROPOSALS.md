@@ -5,6 +5,17 @@ ejecutado en produccion. El unico cambio aplicado fue el backup local de media
 aprobado y registrado en `PROD_INVENTORY.md`. Cada propuesta restante requiere
 aprobacion separada, ventana y responsable.
 
+El paquete versionado de ejecucion y rollback se prepara en:
+
+- `scripts/infra/prod_night_preflight.sh`;
+- `scripts/infra/install_prod_maintenance.sh`;
+- `scripts/infra/retire_prod_local_mysql_stage1.sh`;
+- `scripts/infra/verify_prod_release.sh`;
+- `docs/plans/2026-07-14-produccion-ventana-nocturna-design.md`.
+
+Preparar estos archivos no cambia PRD. Los flags `--apply` siguen requiriendo
+el GO de la ventana.
+
 No ejecutar bloques completos por copia/pega sin revisar nuevamente el estado.
 
 ## Prioridad sugerida
@@ -385,6 +396,9 @@ quedan disabled/inactive y app sigue 200. Fallo: desaparece otra entrada o se
 afecta health/monitoreo; restaurar crontab y enablement.
 
 ## Propuesta 6 - Promover deploy de SISOC-Mobile a produccion
+
+Estado actualizado: el cambio ya esta versionado en GitHub `main`; queda
+pendiente ejecutar y validar el primer deploy coordinado en la ventana.
 
 ### Que cambiaria
 

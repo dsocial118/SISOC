@@ -1,9 +1,14 @@
+import datetime
 import logging
+import re
 
+from django.core.exceptions import ValidationError
 from django.db import transaction
+from django.utils import timezone
 
 from centrodeinfancia.access import aplicar_scope_centros_cdi
 from centrodeinfancia.models import (
+    AsistenciaTrabajador,
     CentroDeInfancia,
     NominaCentroInfancia,
     NominaCentroInfanciaDerivacion,
@@ -56,6 +61,60 @@ _CAMPOS_COPIABLES = [
     "adulto_responsable_parentesco",
     "observaciones",
 ]
+
+
+class AsistenciaTrabajadorService:
+    _MARCAS = {"0": False, "1": True}
+    _FORMATO_FECHA = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+
+    @classmethod
+    def parsear_fecha(cls, fecha_raw):
+        if not fecha_raw:
+            return timezone.localdate()
+        if not cls._FORMATO_FECHA.fullmatch(fecha_raw):
+            raise ValidationError(
+                "La fecha debe tener formato AAAA-MM-DD y ser válida."
+            )
+        try:
+            return datetime.date.fromisoformat(fecha_raw)
+        except ValueError as exc:
+            raise ValidationError(
+                "La fecha debe tener formato AAAA-MM-DD y ser válida."
+            ) from exc
+
+    @classmethod
+    def guardar(cls, *, centro, fecha_raw, datos, usuario):
+        fecha = cls.parsear_fecha(fecha_raw)
+        cambios = []
+
+        for trabajador in centro.trabajadores.order_by("apellido", "nombre"):
+            marca = datos.get(f"presente_{trabajador.pk}")
+            if marca is None:
+                continue
+            if marca not in cls._MARCAS:
+                raise ValidationError("El estado de asistencia recibido no es válido.")
+            observaciones = (datos.get(f"obs_{trabajador.pk}") or "").strip()
+            cambios.append(
+                (
+                    trabajador,
+                    cls._MARCAS[marca],
+                    observaciones or None,
+                )
+            )
+
+        with transaction.atomic():
+            for trabajador, presente, observaciones in cambios:
+                AsistenciaTrabajador.objects.update_or_create(
+                    trabajador=trabajador,
+                    fecha=fecha,
+                    defaults={
+                        "presente": presente,
+                        "observaciones": observaciones,
+                        "registrado_por": usuario,
+                    },
+                )
+
+        return fecha
 
 
 class CentroDeInfanciaService:

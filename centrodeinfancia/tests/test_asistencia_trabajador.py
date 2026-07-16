@@ -68,6 +68,7 @@ def test_asistencia_get_carga_estado_guardado(client):
         trabajador=trabajador,
         fecha=fecha,
         presente=True,
+        observaciones="Llegó temprano",
         registrado_por=user,
     )
 
@@ -77,6 +78,10 @@ def test_asistencia_get_carga_estado_guardado(client):
     assert response.context["fecha"] == fecha
     assert response.context["total_presentes"] == 1
     assert response.context["filas"][0]["presente"] is True
+    content = response.content.decode("utf-8")
+    assert f'name="obs_{trabajador.pk}"' in content
+    assert 'type="text"' in content
+    assert 'value="Llegó temprano"' in content
 
 
 @pytest.mark.django_db
@@ -174,6 +179,98 @@ def test_asistencia_trabajador_sin_marcar_no_genera_registro(client):
     assert response.status_code == 302
     assert AsistenciaTrabajador.objects.filter(trabajador=marcado).exists()
     assert not AsistenciaTrabajador.objects.filter(trabajador=sin_marcar).exists()
+
+
+@pytest.mark.django_db
+def test_asistencia_post_rechaza_fecha_invalida_sin_guardar(client):
+    user = _crear_usuario("super-asis-invalid-date", superuser=True)
+    client.force_login(user)
+    centro = CentroDeInfancia.objects.create(nombre="CDI Fecha inválida")
+    trabajador = Trabajador.objects.create(
+        centro=centro,
+        nombre="Ana",
+        apellido="Lopez",
+    )
+
+    response = client.post(
+        _url(centro),
+        {
+            "fecha": "fecha-invalida",
+            f"presente_{trabajador.pk}": "1",
+        },
+    )
+
+    assert response.status_code == 302
+    assert not AsistenciaTrabajador.objects.exists()
+
+
+@pytest.mark.django_db
+def test_asistencia_post_valida_todas_las_marcas_antes_de_guardar(client):
+    user = _crear_usuario("super-asis-invalid-mark", superuser=True)
+    client.force_login(user)
+    centro = CentroDeInfancia.objects.create(nombre="CDI Marca inválida")
+    primero = Trabajador.objects.create(
+        centro=centro,
+        nombre="Ana",
+        apellido="Arias",
+    )
+    segundo = Trabajador.objects.create(
+        centro=centro,
+        nombre="Beto",
+        apellido="Benitez",
+    )
+
+    response = client.post(
+        _url(centro),
+        {
+            "fecha": "2026-06-21",
+            f"presente_{primero.pk}": "1",
+            f"presente_{segundo.pk}": "desconocido",
+        },
+    )
+
+    assert response.status_code == 302
+    assert not AsistenciaTrabajador.objects.exists()
+
+
+@pytest.mark.django_db
+def test_asistencia_post_revierte_el_lote_si_falla_una_escritura(
+    client,
+    monkeypatch,
+):
+    user = _crear_usuario("super-asis-atomic", superuser=True)
+    client.force_login(user)
+    centro = CentroDeInfancia.objects.create(nombre="CDI Lote atómico")
+    primero = Trabajador.objects.create(
+        centro=centro,
+        nombre="Ana",
+        apellido="Arias",
+    )
+    segundo = Trabajador.objects.create(
+        centro=centro,
+        nombre="Beto",
+        apellido="Benitez",
+    )
+    guardar_original = AsistenciaTrabajador.save
+
+    def guardar_con_falla(instancia, *args, **kwargs):
+        if instancia.trabajador_id == segundo.pk:
+            raise RuntimeError("falla simulada en segunda escritura")
+        return guardar_original(instancia, *args, **kwargs)
+
+    monkeypatch.setattr(AsistenciaTrabajador, "save", guardar_con_falla)
+
+    with pytest.raises(RuntimeError, match="falla simulada"):
+        client.post(
+            _url(centro),
+            {
+                "fecha": "2026-06-22",
+                f"presente_{primero.pk}": "1",
+                f"presente_{segundo.pk}": "0",
+            },
+        )
+
+    assert not AsistenciaTrabajador.objects.exists()
 
 
 @pytest.mark.django_db

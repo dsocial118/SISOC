@@ -4,7 +4,7 @@ Estado: documentado; no se ejecuto deploy ni restart durante la auditoria.
 
 ## Flujo vigente
 
-1. Un push a `development` dispara `.github/workflows/deploy.yml`.
+1. Un push o dispatch a `development` dispara `.github/workflows/deploy.yml`.
 2. El job usa el runner self-hosted `sisoc-qa` en `qa-old`.
 3. GitHub Environment `qa` aporta `APP_ROOT`.
 4. `scripts/operacion/deploy_refresh.sh` valida entorno, branch y Compose.
@@ -12,6 +12,11 @@ Estado: documentado; no se ejecuto deploy ni restart durante la auditoria.
    y `ps`.
 6. El entrypoint ejecuta migraciones y comandos con escritura en DB antes de
    iniciar Gunicorn.
+
+Cuando cambia `main`, el Plan A abre/integra un PR descendente hacia
+`development` si no hay conflictos y solicita este deploy explicitamente. Los
+cambios exclusivos de QA se conservan y nunca se copian hacia `main` por ese
+flujo.
 
 ## Checklist previo
 
