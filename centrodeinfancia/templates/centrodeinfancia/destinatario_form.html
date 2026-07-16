@@ -20,687 +20,690 @@
     <link rel="stylesheet"
           href="{% static 'custom/css/comedorFormModerno.css' %}" />
 
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <nav aria-label="breadcrumb">
-            <ol class="breadcrumb mb-0">
-                <li class="breadcrumb-item">
-                    <a href="{% url 'centrodeinfancia_nomina_ver' centro.id %}">{{ centro.nombre }} — Nómina</a>
-                </li>
-                <li class="breadcrumb-item active">
-                    {% if is_edit %}
-                        Editar destinatario
-                    {% else %}
-                        Agregar destinatario
-                    {% endif %}
-                </li>
-            </ol>
-        </nav>
-        <a href="{% url 'centrodeinfancia_nomina_ver' centro.id %}"
-           class="btn btn-secondary btn-sm">Volver a la nómina</a>
-    </div>
-
-    {# ── Barra de progreso ──────────────────────────────────── #}
-    <div class="progress-container mb-4">
-        <div class="progress-header">
-            <h4 class="progress-title">
-                <i class="fas fa-child me-2" style="color:#f39c12;"></i>Destinatario CDI
-            </h4>
-            <div class="progress-stats">
-                <span id="completedSections">0</span> / 10 secciones completadas
-            </div>
-        </div>
-        <div class="progress-bar-container">
-            <div class="progress-bar-fill" id="progressBarFill" style="width:0%"></div>
-        </div>
-    </div>
-
-    {% if not is_edit %}
-        {# ── Búsqueda por DNI del niño/a ──────────────────────────── #}
-        <div class="card mb-4" style="background:#2c3e50;border:1px solid #374151">
-            <div class="card-body">
-                <h5 class="mb-3" style="color:#e5e7eb;">
-                    <i class="fas fa-search me-2" style="color:#f39c12;"></i>Buscar niño/a por DNI
-                </h5>
-                <form method="get" class="row g-2 align-items-end">
-                    <div class="col-md-4">
-                        <label for="busqueda-dni" class="form-label">DNI</label>
-                        <input type="text"
-                               class="form-control"
-                               name="query"
-                               id="busqueda-dni"
-                               placeholder="Ingrese DNI (mín. 4 dígitos)"
-                               value="{{ query }}" />
-                    </div>
-                    <div class="col-md-auto">
-                        <button class="btn btn-warning" type="submit">
-                            <i class="fas fa-search me-1"></i>Buscar
-                        </button>
-                    </div>
-                </form>
-
-                {% if ciudadanos and not selected_ciudadano %}
-                    <div class="mt-3 table-responsive">
-                        <table class="table table-dark table-hover table-sm mb-0">
-                            <thead>
-                                <tr>
-                                    <th>Apellido</th>
-                                    <th>Nombre</th>
-                                    <th>DNI</th>
-                                    <th></th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for ciudadano in ciudadanos %}
-                                    <tr>
-                                        <td>{{ ciudadano.apellido }}</td>
-                                        <td>{{ ciudadano.nombre }}</td>
-                                        <td>{{ ciudadano.documento }}</td>
-                                        <td>
-                                            <a href="?query={{ query }}&ciudadano_id={{ ciudadano.id }}"
-                                               class="btn btn-sm btn-success">Completar ficha</a>
-                                        </td>
-                                    </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                {% endif %}
-
-                {% if query and no_resultados %}
-                    <div class="alert alert-info mt-2 mb-0">
-                        {% if renaper_precarga %}
-                            No se encontraron coincidencias en el sistema. Se precargaron datos desde RENAPER; complete la ficha para agregar a la nómina.
+    <div class="container-fluid">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-0">
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'centrodeinfancia_nomina_ver' centro.id %}">{{ centro.nombre }} — Nómina</a>
+                    </li>
+                    <li class="breadcrumb-item active">
+                        {% if is_edit %}
+                            Editar destinatario
                         {% else %}
-                            No se encontraron coincidencias para el DNI buscado. Puede completar la ficha manualmente.
+                            Agregar destinatario
                         {% endif %}
-                    </div>
-                {% endif %}
-            </div>
+                    </li>
+                </ol>
+            </nav>
+            <a href="{% url 'centrodeinfancia_nomina_ver' centro.id %}"
+               class="btn btn-secondary btn-sm">Volver a la nómina</a>
         </div>
-    {% endif %}
 
-    {% if is_edit or mostrar_formulario %}
-        {% if selected_ciudadano %}
-            <div class="alert alert-light border mb-3">
-                Completando ficha para:
-                <strong>{{ selected_ciudadano.apellido }}, {{ selected_ciudadano.nombre }}</strong>
-                (DNI {{ selected_ciudadano.documento|default:"-" }}).
+        {% if not is_edit %}
+            {# ── Búsqueda por DNI del niño/a ──────────────────────────── #}
+            <div class="card mb-4" style="background:#2c3e50;border:1px solid #374151">
+                <div class="card-body">
+                    <h5 class="mb-3" style="color:#e5e7eb;">
+                        <i class="fas fa-search me-2" style="color:#f39c12;"></i>Buscar niño/a por DNI
+                    </h5>
+                    <form method="get" class="row g-2 align-items-end">
+                        <div class="col-md-4">
+                            <label for="busqueda-dni" class="form-label">DNI</label>
+                            <input type="text"
+                                   class="form-control"
+                                   name="query"
+                                   id="busqueda-dni"
+                                   placeholder="Ingrese DNI (mín. 4 dígitos)"
+                                   value="{{ query }}" />
+                        </div>
+                        <div class="col-md-auto">
+                            <button class="btn btn-warning" type="submit">
+                                <i class="fas fa-search me-1"></i>Buscar
+                            </button>
+                        </div>
+                    </form>
+
+                    {% if ciudadanos and not selected_ciudadano %}
+                        <div class="mt-3 table-responsive">
+                            <table class="table table-dark table-hover table-sm mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Apellido</th>
+                                        <th>Nombre</th>
+                                        <th>DNI</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for ciudadano in ciudadanos %}
+                                        <tr>
+                                            <td>{{ ciudadano.apellido }}</td>
+                                            <td>{{ ciudadano.nombre }}</td>
+                                            <td>{{ ciudadano.documento }}</td>
+                                            <td>
+                                                <a href="?query={{ query }}&ciudadano_id={{ ciudadano.id }}"
+                                                   class="btn btn-sm btn-success">Completar ficha</a>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% endif %}
+
+                    {% if query and no_resultados %}
+                        <div class="alert alert-info mt-2 mb-0">
+                            {% if renaper_precarga %}
+                                No se encontraron coincidencias en el sistema. Se precargaron datos desde RENAPER; complete la ficha para agregar a la nómina.
+                            {% else %}
+                                No se encontraron coincidencias para el DNI buscado. Puede completar la ficha manualmente.
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                </div>
             </div>
         {% endif %}
 
-        <form method="post" id="destinatarioForm">
-            {% csrf_token %}
-            {% if selected_ciudadano %}<input type="hidden" name="ciudadano_id" value="{{ selected_ciudadano.id }}" />{% endif %}
-            {% if renaper_precarga %}<input type="hidden" name="origen_dato" value="renaper" />{% endif %}
+        {% if is_edit or mostrar_formulario %}
+            {% if selected_ciudadano %}
+                <div class="alert alert-light border mb-3">
+                    Completando ficha para:
+                    <strong>{{ selected_ciudadano.apellido }}, {{ selected_ciudadano.nombre }}</strong>
+                    (DNI {{ selected_ciudadano.documento|default:"-" }}).
+                </div>
+            {% endif %}
 
-            {# ── 0. Institución y Espacio Temporal (read-only) ─────── #}
-            <div class="section-card" data-section="institucion">
-                <div class="section-header" data-toggle-section="institucion">
-                    <div class="section-header-left">
-                        <div class="section-icon">
-                            <i class="fas fa-building"></i>
-                        </div>
-                        <div class="section-title-group">
-                            <h3 class="section-title">Institución y Espacio Temporal</h3>
-                            <p class="section-subtitle">Datos del CDI donde se registra la ficha</p>
-                        </div>
-                    </div>
-                    <div class="section-status">
-                        <div class="collapse-indicator">
-                            <i class="fas fa-chevron-down"></i>
-                        </div>
-                    </div>
-                </div>
-                <div class="section-body collapse show" id="section-institucion">
-                    <div class="form-group row">
-                        <div class="col-md-4">
-                            <p class="small mb-1" style="color:#9ca3af;">Nombre de institución</p>
-                            <p class="mb-2" style="color:#e5e7eb;">{{ centro.nombre|default:"—" }}</p>
-                        </div>
-                        <div class="col-md-2">
-                            <p class="small mb-1" style="color:#9ca3af;">Código CDI</p>
-                            <p class="mb-2" style="color:#e5e7eb;">{{ centro.codigo_cdi|default:"—" }}</p>
-                        </div>
-                        <div class="col-md-3">
-                            <p class="small mb-1" style="color:#9ca3af;">Jurisdicción</p>
-                            <p class="mb-2" style="color:#e5e7eb;">{{ centro.provincia|default:"—" }}</p>
-                        </div>
-                        <div class="col-md-3">
-                            <p class="small mb-1" style="color:#9ca3af;">Departamento</p>
-                            <p class="mb-2" style="color:#e5e7eb;">
-                                {% if centro.departamento %}
-                                    {{ centro.departamento.nombre }} ({{ centro.departamento.codigo_departamento }})
-                                {% else %}
-                                    —
-                                {% endif %}
-                            </p>
-                        </div>
-                    </div>
-                    <div class="form-group row">
-                        <div class="col-md-3">
-                            <p class="small mb-1" style="color:#9ca3af;">Municipio</p>
-                            <p class="mb-2" style="color:#e5e7eb;">{{ centro.municipio|default:"—" }}</p>
-                        </div>
-                        <div class="col-md-3">
-                            <p class="small mb-1" style="color:#9ca3af;">Localidad</p>
-                            <p class="mb-2" style="color:#e5e7eb;">{{ centro.localidad|default:"—" }}</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            <form method="post" id="destinatarioForm">
+                {% csrf_token %}
+                {% if selected_ciudadano %}<input type="hidden" name="ciudadano_id" value="{{ selected_ciudadano.id }}" />{% endif %}
+                {% if renaper_precarga %}<input type="hidden" name="origen_dato" value="renaper" />{% endif %}
 
-            {# ── 1. Registro ───────────────────────────────────────── #}
-            <div class="section-card" data-section="registro">
-                <div class="section-header" data-toggle-section="registro">
-                    <div class="section-header-left">
-                        <div class="section-icon">
-                            <i class="fas fa-clipboard-list"></i>
-                        </div>
-                        <div class="section-title-group">
-                            <h3 class="section-title">Registro</h3>
-                            <p class="section-subtitle">Tipo de registro, fecha y referente del CDI</p>
-                        </div>
-                    </div>
-                    <div class="section-status">
-                        <span class="status-badge empty" id="status-registro">
-                            <i class="fas fa-circle"></i> Sin completar
-                        </span>
-                        <div class="collapse-indicator">
-                            <i class="fas fa-chevron-down"></i>
-                        </div>
-                    </div>
-                </div>
-                <div class="section-body collapse show" id="section-registro">
-                    <div class="form-group row">
-                        <div class="col-md-3">{{ form.estado|as_crispy_field }}</div>
-                        <div class="col-md-3">{{ form.tipo_registro|as_crispy_field }}</div>
-                        <div class="col-md-3">{{ form.fecha_registro|as_crispy_field }}</div>
-                        <div class="col-md-5">{{ form.trabajador_registra|as_crispy_field }}</div>
-                    </div>
-                </div>
-            </div>
+                {% if form.non_field_errors %}<div class="alert alert-danger mb-3">{{ form.non_field_errors }}</div>{% endif %}
 
-            {# ── 2. Datos del niño/a ───────────────────────────────── #}
-            <div class="section-card" data-section="nino">
-                <div class="section-header" data-toggle-section="nino">
-                    <div class="section-header-left">
-                        <div class="section-icon">
-                            <i class="fas fa-baby"></i>
-                        </div>
-                        <div class="section-title-group">
-                            <h3 class="section-title">Datos del niño/a</h3>
-                            <p class="section-subtitle">Identidad, documentación y sala</p>
+                {# ── Barra de progreso ─────────────────────────────────── #}
+                <div class="progress-indicator">
+                    <div class="progress-header">
+                        <h4 class="progress-title">
+                            <i class="fas fa-child me-2"></i>Destinatario CDI
+                        </h4>
+                        <div class="progress-stats">
+                            <span id="completedSections">0</span> / 10 secciones completadas
                         </div>
                     </div>
-                    <div class="section-status">
-                        <span class="status-badge empty" id="status-nino">
-                            <i class="fas fa-circle"></i> Sin completar
-                        </span>
-                        <div class="collapse-indicator">
-                            <i class="fas fa-chevron-down"></i>
-                        </div>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar-fill" id="progressBarFill" style="width:0%"></div>
                     </div>
                 </div>
-                <div class="section-body collapse show" id="section-nino">
-                    <div class="form-group row">
-                        <div class="col-md-3">{{ form.apellido|as_crispy_field }}</div>
-                        <div class="col-md-3">{{ form.nombre|as_crispy_field }}</div>
-                        <div class="col-md-3">{{ form.fecha_nacimiento|as_crispy_field }}</div>
-                        <div class="col-md-2">{{ form.edad_calculada|as_crispy_field }}</div>
-                        <div class="col-md-2">{{ form.edad_unidad|as_crispy_field }}</div>
-                    </div>
-                    <div class="form-group row">
-                        <div class="col-md-3">{{ form.sexo|as_crispy_field }}</div>
-                        <div class="col-md-3">{{ form.tipo_documentacion|as_crispy_field }}</div>
-                        <div class="col-md-3">{{ form.dni|as_crispy_field }}</div>
-                        <div class="col-md-3">{{ form.cuit_nino|as_crispy_field }}</div>
-                    </div>
-                    <div class="form-group row">
-                        <div class="col-md-3">{{ form.pais_nacimiento|as_crispy_field }}</div>
-                        <div class="col-md-3">{{ form.nacionalidad|as_crispy_field }}</div>
-                        <div class="col-md-3">{{ form.sala|as_crispy_field }}</div>
-                    </div>
-                </div>
-            </div>
 
-            {# ── 3. Responsable 1 ──────────────────────────────────── #}
-            <div class="section-card" data-section="responsable1">
-                <div class="section-header" data-toggle-section="responsable1">
-                    <div class="section-header-left">
-                        <div class="section-icon">
-                            <i class="fas fa-user-shield"></i>
+                {# ── 0. Institución y Espacio Temporal (read-only) ─────── #}
+                <div class="section-card" data-section="institucion">
+                    <div class="section-header" data-toggle-section="institucion">
+                        <div class="section-header-left">
+                            <div class="section-icon">
+                                <i class="fas fa-building"></i>
+                            </div>
+                            <div class="section-title-group">
+                                <h3 class="section-title">Institución y Espacio Temporal</h3>
+                                <p class="section-subtitle">Datos del CDI donde se registra la ficha</p>
+                            </div>
                         </div>
-                        <div class="section-title-group">
-                            <h3 class="section-title">Responsable 1</h3>
-                            <p class="section-subtitle">Progenitor/a, tutor/a, curador/a o referente afectivo</p>
-                        </div>
-                    </div>
-                    <div class="section-status">
-                        <span class="status-badge empty" id="status-responsable1">
-                            <i class="fas fa-circle"></i> Sin completar
-                        </span>
-                        <div class="collapse-indicator">
-                            <i class="fas fa-chevron-down"></i>
+                        <div class="section-status">
+                            <div class="collapse-indicator">
+                                <i class="fas fa-chevron-down"></i>
+                            </div>
                         </div>
                     </div>
-                </div>
-                <div class="section-body collapse show" id="section-responsable1">
-                    <div class="form-group row">
-                        <div class="col-md-3">{{ form.responsable_legal_1_relacion|as_crispy_field }}</div>
-                        <div class="col-md-3">{{ form.responsable_legal_1_apellido|as_crispy_field }}</div>
-                        <div class="col-md-3">{{ form.responsable_legal_1_nombre|as_crispy_field }}</div>
-                        <div class="col-md-3">{{ form.responsable_legal_1_fecha_nacimiento|as_crispy_field }}</div>
-                    </div>
-                    <div class="form-group row">
-                        <div class="col-md-3">{{ form.responsable_legal_1_tipo_documentacion|as_crispy_field }}</div>
-                        <div class="col-md-3">{{ form.responsable_legal_1_dni|as_crispy_field }}</div>
-                        <div class="col-md-3">{{ form.responsable_legal_1_cuit|as_crispy_field }}</div>
-                        <div class="col-md-3">{{ form.responsable_legal_1_telefono|as_crispy_field }}</div>
-                    </div>
-                    <div class="form-group row">
-                        <div class="col-md-3">{{ form.responsable_legal_1_pais_nacimiento|as_crispy_field }}</div>
-                        <div class="col-md-3">{{ form.responsable_legal_1_nacionalidad|as_crispy_field }}</div>
-                        <div class="col-md-3">{{ form.responsable_legal_1_sexo_registral|as_crispy_field }}</div>
-                        <div class="col-md-3">{{ form.responsable_legal_1_nivel_educativo|as_crispy_field }}</div>
-                    </div>
-                    <div class="form-group row">
-                        <div class="col-md-3">{{ form.responsable_legal_1_consentimiento|as_crispy_field }}</div>
-                    </div>
-                </div>
-            </div>
-
-            {# ── 4. Responsable 2 (opcional) ───────────────────────── #}
-            <div class="section-card" data-section="responsable2">
-                <div class="section-header" data-toggle-section="responsable2">
-                    <div class="section-header-left">
-                        <div class="section-icon">
-                            <i class="fas fa-user-friends"></i>
-                        </div>
-                        <div class="section-title-group">
-                            <h3 class="section-title">Responsable 2</h3>
-                            <p class="section-subtitle">Opcional — obligatorio solo si se completa algún dato del bloque</p>
-                        </div>
-                    </div>
-                    <div class="section-status">
-                        <span class="status-badge empty" id="status-responsable2">
-                            <i class="fas fa-circle"></i> Sin completar
-                        </span>
-                        <div class="collapse-indicator">
-                            <i class="fas fa-chevron-down"></i>
-                        </div>
-                    </div>
-                </div>
-                <div class="section-body collapse show" id="section-responsable2">
-                    <div class="form-group row">
-                        <div class="col-md-3">{{ form.responsable_legal_2_relacion|as_crispy_field }}</div>
-                        <div class="col-md-3">{{ form.responsable_legal_2_apellido|as_crispy_field }}</div>
-                        <div class="col-md-3">{{ form.responsable_legal_2_nombre|as_crispy_field }}</div>
-                        <div class="col-md-3">{{ form.responsable_legal_2_fecha_nacimiento|as_crispy_field }}</div>
-                    </div>
-                    <div class="form-group row">
-                        <div class="col-md-3">{{ form.responsable_legal_2_tipo_documentacion|as_crispy_field }}</div>
-                        <div class="col-md-3">{{ form.responsable_legal_2_dni|as_crispy_field }}</div>
-                        <div class="col-md-3">{{ form.responsable_legal_2_cuit|as_crispy_field }}</div>
-                        <div class="col-md-3">{{ form.responsable_legal_2_telefono|as_crispy_field }}</div>
-                    </div>
-                    <div class="form-group row">
-                        <div class="col-md-3">{{ form.responsable_legal_2_pais_nacimiento|as_crispy_field }}</div>
-                        <div class="col-md-3">{{ form.responsable_legal_2_nacionalidad|as_crispy_field }}</div>
-                        <div class="col-md-3">{{ form.responsable_legal_2_sexo_registral|as_crispy_field }}</div>
-                        <div class="col-md-3">{{ form.responsable_legal_2_nivel_educativo|as_crispy_field }}</div>
-                    </div>
-                    <div class="form-group row">
-                        <div class="col-md-3">{{ form.responsable_legal_2_consentimiento|as_crispy_field }}</div>
-                    </div>
-                </div>
-            </div>
-
-            {# ── 5. Domicilio del niño/a ───────────────────────────── #}
-            <div class="section-card" data-section="domicilio">
-                <div class="section-header" data-toggle-section="domicilio">
-                    <div class="section-header-left">
-                        <div class="section-icon">
-                            <i class="fas fa-home"></i>
-                        </div>
-                        <div class="section-title-group">
-                            <h3 class="section-title">Domicilio principal</h3>
-                            <p class="section-subtitle">Donde vive la mayor parte del tiempo</p>
-                        </div>
-                    </div>
-                    <div class="section-status">
-                        <span class="status-badge empty" id="status-domicilio">
-                            <i class="fas fa-circle"></i> Sin completar
-                        </span>
-                        <div class="collapse-indicator">
-                            <i class="fas fa-chevron-down"></i>
-                        </div>
-                    </div>
-                </div>
-                <div class="section-body collapse show" id="section-domicilio">
-                    <div class="form-group row">
-                        <div class="col-md-4">{{ form.calle_domicilio|as_crispy_field }}</div>
-                        <div class="col-md-2">{{ form.altura_domicilio|as_crispy_field }}</div>
-                        <div class="col-md-2">{{ form.piso_domicilio|as_crispy_field }}</div>
-                        <div class="col-md-2">{{ form.departamento_domicilio|as_crispy_field }}</div>
-                        <div class="col-md-3">{{ form.tipo_barrio|as_crispy_field }}</div>
-                    </div>
-                    <div class="form-group row">
-                        <div class="col-md-3">{{ form.provincia_domicilio|as_crispy_field }}</div>
-                        <div class="col-md-3">{{ form.municipio_domicilio|as_crispy_field }}</div>
-                        <div class="col-md-3">{{ form.localidad_domicilio|as_crispy_field }}</div>
-                        <div class="col-md-3">{{ form.convivientes|as_crispy_field }}</div>
-                    </div>
-                </div>
-            </div>
-
-            {# ── 6. Cultura e Identidad ────────────────────────────── #}
-            <div class="section-card" data-section="cultura">
-                <div class="section-header" data-toggle-section="cultura">
-                    <div class="section-header-left">
-                        <div class="section-icon">
-                            <i class="fas fa-globe-americas"></i>
-                        </div>
-                        <div class="section-title-group">
-                            <h3 class="section-title">Cultura e Identidad</h3>
-                            <p class="section-subtitle">Grupos de pertenencia y lenguajes del niño/a</p>
-                        </div>
-                    </div>
-                    <div class="section-status">
-                        <span class="status-badge empty" id="status-cultura">
-                            <i class="fas fa-circle"></i> Sin completar
-                        </span>
-                        <div class="collapse-indicator">
-                            <i class="fas fa-chevron-down"></i>
-                        </div>
-                    </div>
-                </div>
-                <div class="section-body collapse show" id="section-cultura">
-                    <div class="form-group row">
-                        <div class="col-md-6">{{ form.grupo_pertenencia|as_crispy_field }}</div>
-                        <div class="col-md-6" id="row-pueblo-originario">{{ form.pueblo_originario_cual|as_crispy_field }}</div>
-                    </div>
-                    <div class="form-group row">
-                        <div class="col-md-6">{{ form.lenguajes|as_crispy_field }}</div>
-                        <div class="col-md-3">{{ form.necesito_interprete|as_crispy_field }}</div>
-                    </div>
-                </div>
-            </div>
-
-            {# ── 7. Discapacidad ───────────────────────────────────── #}
-            <div class="section-card" data-section="discapacidad">
-                <div class="section-header" data-toggle-section="discapacidad">
-                    <div class="section-header-left">
-                        <div class="section-icon">
-                            <i class="fas fa-wheelchair"></i>
-                        </div>
-                        <div class="section-title-group">
-                            <h3 class="section-title">Discapacidad</h3>
-                            <p class="section-subtitle">Tipo de discapacidad, apoyos y CUD</p>
-                        </div>
-                    </div>
-                    <div class="section-status">
-                        <span class="status-badge empty" id="status-discapacidad">
-                            <i class="fas fa-circle"></i> Sin completar
-                        </span>
-                        <div class="collapse-indicator">
-                            <i class="fas fa-chevron-down"></i>
-                        </div>
-                    </div>
-                </div>
-                <div class="section-body collapse show" id="section-discapacidad">
-                    <div class="form-group row">
-                        <div class="col-md-4">{{ form.tiene_discapacidad|as_crispy_field }}</div>
-                    </div>
-                    <div id="bloque-discapacidad">
+                    <div class="section-body collapse show" id="section-institucion">
                         <div class="form-group row">
-                            <div class="col-md-6">{{ form.tipo_discapacidad|as_crispy_field }}</div>
-                            <div class="col-md-4">{{ form.recibe_apoyo_discapacidad|as_crispy_field }}</div>
+                            <div class="col-md-4">
+                                <p class="small mb-1" style="color:#9ca3af;">Nombre de institución</p>
+                                <p class="mb-2" style="color:#e5e7eb;">{{ centro.nombre|default:"—" }}</p>
+                            </div>
+                            <div class="col-md-2">
+                                <p class="small mb-1" style="color:#9ca3af;">Código CDI</p>
+                                <p class="mb-2" style="color:#e5e7eb;">{{ centro.codigo_cdi|default:"—" }}</p>
+                            </div>
+                            <div class="col-md-3">
+                                <p class="small mb-1" style="color:#9ca3af;">Jurisdicción</p>
+                                <p class="mb-2" style="color:#e5e7eb;">{{ centro.provincia|default:"—" }}</p>
+                            </div>
+                            <div class="col-md-3">
+                                <p class="small mb-1" style="color:#9ca3af;">Departamento</p>
+                                <p class="mb-2" style="color:#e5e7eb;">
+                                    {% if centro.departamento %}
+                                        {{ centro.departamento.nombre }} ({{ centro.departamento.codigo_departamento }})
+                                    {% else %}
+                                        —
+                                    {% endif %}
+                                </p>
+                            </div>
                         </div>
                         <div class="form-group row">
-                            <div class="col-md-3">{{ form.posee_cud|as_crispy_field }}</div>
-                            <div class="col-md-3" id="row-numero-cud">{{ form.numero_cud|as_crispy_field }}</div>
+                            <div class="col-md-3">
+                                <p class="small mb-1" style="color:#9ca3af;">Municipio</p>
+                                <p class="mb-2" style="color:#e5e7eb;">{{ centro.municipio|default:"—" }}</p>
+                            </div>
+                            <div class="col-md-3">
+                                <p class="small mb-1" style="color:#9ca3af;">Localidad</p>
+                                <p class="mb-2" style="color:#e5e7eb;">{{ centro.localidad|default:"—" }}</p>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            {# ── 8. Salud y Antropometría ──────────────────────────── #}
-            <div class="section-card" data-section="salud">
-                <div class="section-header" data-toggle-section="salud">
-                    <div class="section-header-left">
-                        <div class="section-icon">
-                            <i class="fas fa-heartbeat"></i>
+                {# ── 1. Registro ───────────────────────────────────────── #}
+                <div class="section-card" data-section="registro">
+                    <div class="section-header" data-toggle-section="registro">
+                        <div class="section-header-left">
+                            <div class="section-icon">
+                                <i class="fas fa-clipboard-list"></i>
+                            </div>
+                            <div class="section-title-group">
+                                <h3 class="section-title">Registro</h3>
+                                <p class="section-subtitle">Tipo de registro, fecha y referente del CDI</p>
+                            </div>
                         </div>
-                        <div class="section-title-group">
-                            <h3 class="section-title">Salud y Antropometría</h3>
-                            <p class="section-subtitle">Cobertura, controles y medidas</p>
+                        <div class="section-status">
+                            <span class="status-badge empty" id="status-registro">
+                                <i class="fas fa-circle"></i> Sin completar
+                            </span>
+                            <div class="collapse-indicator">
+                                <i class="fas fa-chevron-down"></i>
+                            </div>
                         </div>
                     </div>
-                    <div class="section-status">
-                        <span class="status-badge empty" id="status-salud">
-                            <i class="fas fa-circle"></i> Sin completar
-                        </span>
-                        <div class="collapse-indicator">
-                            <i class="fas fa-chevron-down"></i>
+                    <div class="section-body collapse show" id="section-registro">
+                        <div class="form-group row">
+                            <div class="col-md-3">{{ form.estado|as_crispy_field }}</div>
+                            <div class="col-md-3">{{ form.tipo_registro|as_crispy_field }}</div>
+                            <div class="col-md-3">{{ form.fecha_registro|as_crispy_field }}</div>
+                            <div class="col-md-5">{{ form.trabajador_registra|as_crispy_field }}</div>
                         </div>
                     </div>
                 </div>
-                <div class="section-body collapse show" id="section-salud">
-                    <div class="form-group row">
-                        <div class="col-md-3">{{ form.cobertura_salud|as_crispy_field }}</div>
-                        <div class="col-md-3">{{ form.controles_sanitarios_ultimo_anio|as_crispy_field }}</div>
-                        <div class="col-md-3">{{ form.calendario_vacunacion_al_dia|as_crispy_field }}</div>
-                        <div class="col-md-3">{{ form.posee_obra_social|as_crispy_field }}</div>
-                    </div>
-                    <div class="form-group row">
-                        <div class="col-md-3">{{ form.talla|as_crispy_field }}</div>
-                        <div class="col-md-3">{{ form.peso|as_crispy_field }}</div>
-                        <div class="col-md-3">{{ form.longitud_acostado|as_crispy_field }}</div>
-                        <div class="col-md-3">{{ form.perimetro_cefalico|as_crispy_field }}</div>
-                    </div>
-                </div>
-            </div>
 
-            {# ── 9. Nutrición y ANSES ──────────────────────────────── #}
-            <div class="section-card" data-section="nutricion">
-                <div class="section-header" data-toggle-section="nutricion">
-                    <div class="section-header-left">
-                        <div class="section-icon">
-                            <i class="fas fa-apple-alt"></i>
+                {# ── 2. Datos del niño/a ───────────────────────────────── #}
+                <div class="section-card" data-section="nino">
+                    <div class="section-header" data-toggle-section="nino">
+                        <div class="section-header-left">
+                            <div class="section-icon">
+                                <i class="fas fa-baby"></i>
+                            </div>
+                            <div class="section-title-group">
+                                <h3 class="section-title">Datos del niño/a</h3>
+                                <p class="section-subtitle">Identidad, documentación y sala</p>
+                            </div>
                         </div>
-                        <div class="section-title-group">
-                            <h3 class="section-title">Nutrición y Asistencia ANSES</h3>
-                            <p class="section-subtitle">Lactancia, diagnósticos, alergias y asignaciones</p>
+                        <div class="section-status">
+                            <span class="status-badge empty" id="status-nino">
+                                <i class="fas fa-circle"></i> Sin completar
+                            </span>
+                            <div class="collapse-indicator">
+                                <i class="fas fa-chevron-down"></i>
+                            </div>
                         </div>
                     </div>
-                    <div class="section-status">
-                        <span class="status-badge empty" id="status-nutricion">
-                            <i class="fas fa-circle"></i> Sin completar
-                        </span>
-                        <div class="collapse-indicator">
-                            <i class="fas fa-chevron-down"></i>
+                    <div class="section-body collapse show" id="section-nino">
+                        <div class="form-group row">
+                            <div class="col-md-3">{{ form.apellido|as_crispy_field }}</div>
+                            <div class="col-md-3">{{ form.nombre|as_crispy_field }}</div>
+                            <div class="col-md-3">{{ form.fecha_nacimiento|as_crispy_field }}</div>
+                            <div class="col-md-2">{{ form.edad_calculada|as_crispy_field }}</div>
+                            <div class="col-md-2">{{ form.edad_unidad|as_crispy_field }}</div>
+                        </div>
+                        <div class="form-group row">
+                            <div class="col-md-3">{{ form.sexo|as_crispy_field }}</div>
+                            <div class="col-md-3">{{ form.tipo_documentacion|as_crispy_field }}</div>
+                            <div class="col-md-3">{{ form.dni|as_crispy_field }}</div>
+                            <div class="col-md-3">{{ form.cuit_nino|as_crispy_field }}</div>
+                        </div>
+                        <div class="form-group row">
+                            <div class="col-md-3">{{ form.pais_nacimiento|as_crispy_field }}</div>
+                            <div class="col-md-3">{{ form.nacionalidad|as_crispy_field }}</div>
+                            <div class="col-md-3">{{ form.sala|as_crispy_field }}</div>
                         </div>
                     </div>
                 </div>
-                <div class="section-body collapse show" id="section-nutricion">
-                    <div class="form-group row">
-                        <div class="col-md-3">{{ form.lactancia|as_crispy_field }}</div>
-                        <div class="col-md-3">{{ form.diagnostico_peso|as_crispy_field }}</div>
-                        <div class="col-md-3">{{ form.diagnostico_talla|as_crispy_field }}</div>
-                        <div class="col-md-3">{{ form.orientacion_msal|as_crispy_field }}</div>
-                    </div>
-                    <div class="form-group row">
-                        <div class="col-md-6">{{ form.alergias_alimentarias|as_crispy_field }}</div>
-                    </div>
-                    <hr style="border-color:#374151" />
-                    <p class="small mb-2" style="color:#9ca3af;">Asistencia ANSES (hogares con embarazadas y niños hasta 48 meses)</p>
-                    <div class="form-group row">
-                        <div class="col-md-3">{{ form.anses_auh|as_crispy_field }}</div>
-                        <div class="col-md-3">{{ form.anses_aue|as_crispy_field }}</div>
-                        <div class="col-md-3">{{ form.anses_acsi|as_crispy_field }}</div>
-                        <div class="col-md-3">{{ form.anses_acn|as_crispy_field }}</div>
-                    </div>
-                </div>
-            </div>
 
-            {# ── 10. Vacunación NOMIVAC + Desarrollo Infantil ──────── #}
-            <div class="section-card" data-section="vacunacion">
-                <div class="section-header" data-toggle-section="vacunacion">
-                    <div class="section-header-left">
-                        <div class="section-icon">
-                            <i class="fas fa-syringe"></i>
+                {# ── 3. Responsable 1 ──────────────────────────────────── #}
+                <div class="section-card" data-section="responsable1">
+                    <div class="section-header" data-toggle-section="responsable1">
+                        <div class="section-header-left">
+                            <div class="section-icon">
+                                <i class="fas fa-user-shield"></i>
+                            </div>
+                            <div class="section-title-group">
+                                <h3 class="section-title">Responsable 1</h3>
+                                <p class="section-subtitle">Progenitor/a, tutor/a, curador/a o referente afectivo</p>
+                            </div>
                         </div>
-                        <div class="section-title-group">
-                            <h3 class="section-title">Vacunación NOMIVAC y Desarrollo Infantil</h3>
-                            <p class="section-subtitle">Plan de vacunación obligatorio y apoyo al desarrollo</p>
+                        <div class="section-status">
+                            <span class="status-badge empty" id="status-responsable1">
+                                <i class="fas fa-circle"></i> Sin completar
+                            </span>
+                            <div class="collapse-indicator">
+                                <i class="fas fa-chevron-down"></i>
+                            </div>
                         </div>
                     </div>
-                    <div class="section-status">
-                        <span class="status-badge empty" id="status-vacunacion">
-                            <i class="fas fa-circle"></i> Sin completar
-                        </span>
-                        <div class="collapse-indicator">
-                            <i class="fas fa-chevron-down"></i>
+                    <div class="section-body collapse show" id="section-responsable1">
+                        <div class="form-group row">
+                            <div class="col-md-3">{{ form.responsable_legal_1_relacion|as_crispy_field }}</div>
+                            <div class="col-md-3">{{ form.responsable_legal_1_apellido|as_crispy_field }}</div>
+                            <div class="col-md-3">{{ form.responsable_legal_1_nombre|as_crispy_field }}</div>
+                            <div class="col-md-3">{{ form.responsable_legal_1_fecha_nacimiento|as_crispy_field }}</div>
+                        </div>
+                        <div class="form-group row">
+                            <div class="col-md-3">{{ form.responsable_legal_1_tipo_documentacion|as_crispy_field }}</div>
+                            <div class="col-md-3">{{ form.responsable_legal_1_dni|as_crispy_field }}</div>
+                            <div class="col-md-3">{{ form.responsable_legal_1_cuit|as_crispy_field }}</div>
+                            <div class="col-md-3">{{ form.responsable_legal_1_telefono|as_crispy_field }}</div>
+                        </div>
+                        <div class="form-group row">
+                            <div class="col-md-3">{{ form.responsable_legal_1_pais_nacimiento|as_crispy_field }}</div>
+                            <div class="col-md-3">{{ form.responsable_legal_1_nacionalidad|as_crispy_field }}</div>
+                            <div class="col-md-3">{{ form.responsable_legal_1_sexo_registral|as_crispy_field }}</div>
+                            <div class="col-md-3">{{ form.responsable_legal_1_nivel_educativo|as_crispy_field }}</div>
+                        </div>
+                        <div class="form-group row">
+                            <div class="col-md-3">{{ form.responsable_legal_1_consentimiento|as_crispy_field }}</div>
                         </div>
                     </div>
                 </div>
-                <div class="section-body collapse show" id="section-vacunacion">
-                    <div class="table-responsive">
-                        <table class="table table-sm table-dark" style="font-size:0.875rem">
-                            <thead>
-                                <tr>
-                                    <th style="width:35%">Vacuna</th>
-                                    <th>Dosis recibidas</th>
-                                    <th>Fecha de última dosis</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td>BCG</td>
-                                    <td>{{ form.vacuna_bcg_dosis }}</td>
-                                    <td>{{ form.vacuna_bcg_fecha }}</td>
-                                </tr>
-                                <tr>
-                                    <td>Neumococo Conjugada</td>
-                                    <td>{{ form.vacuna_neumococo_dosis }}</td>
-                                    <td>{{ form.vacuna_neumococo_fecha }}</td>
-                                </tr>
-                                <tr>
-                                    <td>Quíntuple o Pentavalente</td>
-                                    <td>{{ form.vacuna_quintuple_dosis }}</td>
-                                    <td>{{ form.vacuna_quintuple_fecha }}</td>
-                                </tr>
-                                <tr>
-                                    <td>Polio (IPV o SALK)</td>
-                                    <td>{{ form.vacuna_polio_dosis }}</td>
-                                    <td>{{ form.vacuna_polio_fecha }}</td>
-                                </tr>
-                                <tr>
-                                    <td>Rotavirus</td>
-                                    <td>{{ form.vacuna_rotavirus_dosis }}</td>
-                                    <td>{{ form.vacuna_rotavirus_fecha }}</td>
-                                </tr>
-                                <tr>
-                                    <td>Meningococo ACYW</td>
-                                    <td>{{ form.vacuna_meningococo_dosis }}</td>
-                                    <td>{{ form.vacuna_meningococo_fecha }}</td>
-                                </tr>
-                                <tr>
-                                    <td>Antigripal</td>
-                                    <td>{{ form.vacuna_antigripal_dosis }}</td>
-                                    <td>{{ form.vacuna_antigripal_fecha }}</td>
-                                </tr>
-                                <tr>
-                                    <td>Hepatitis A</td>
-                                    <td>{{ form.vacuna_hepatitis_a_dosis }}</td>
-                                    <td>{{ form.vacuna_hepatitis_a_fecha }}</td>
-                                </tr>
-                                <tr>
-                                    <td>Triple Viral</td>
-                                    <td>{{ form.vacuna_triple_viral_dosis }}</td>
-                                    <td>{{ form.vacuna_triple_viral_fecha }}</td>
-                                </tr>
-                                <tr>
-                                    <td>Varicela</td>
-                                    <td>{{ form.vacuna_varicela_dosis }}</td>
-                                    <td>{{ form.vacuna_varicela_fecha }}</td>
-                                </tr>
-                                <tr>
-                                    <td>Triple Bacteriana Celular</td>
-                                    <td>{{ form.vacuna_triple_bacteriana_celular_dosis }}</td>
-                                    <td>{{ form.vacuna_triple_bacteriana_celular_fecha }}</td>
-                                </tr>
-                                <tr>
-                                    <td>Triple Bacteriana Acelular</td>
-                                    <td>{{ form.vacuna_triple_bacteriana_acelular_dosis }}</td>
-                                    <td>{{ form.vacuna_triple_bacteriana_acelular_fecha }}</td>
-                                </tr>
-                                <tr>
-                                    <td>Virus Sincicial Respiratorio</td>
-                                    <td>{{ form.vacuna_sincicial_respiratorio_dosis }}</td>
-                                    <td>{{ form.vacuna_sincicial_respiratorio_fecha }}</td>
-                                </tr>
-                                <tr>
-                                    <td>Fiebre Amarilla</td>
-                                    <td>{{ form.vacuna_fiebre_amarilla_dosis }}</td>
-                                    <td>{{ form.vacuna_fiebre_amarilla_fecha }}</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                    <hr style="border-color:#374151" />
-                    <div class="form-group row">
-                        <div class="col-md-4">{{ form.recibe_apoyo_desarrollo|as_crispy_field }}</div>
-                    </div>
-                </div>
-            </div>
 
-            {# ── Observaciones ─────────────────────────────────────── #}
-            <div class="section-card" data-section="observaciones">
-                <div class="section-header" data-toggle-section="observaciones">
-                    <div class="section-header-left">
-                        <div class="section-icon">
-                            <i class="fas fa-comment-alt"></i>
+                {# ── 4. Responsable 2 (opcional) ───────────────────────── #}
+                <div class="section-card" data-section="responsable2">
+                    <div class="section-header" data-toggle-section="responsable2">
+                        <div class="section-header-left">
+                            <div class="section-icon">
+                                <i class="fas fa-user-friends"></i>
+                            </div>
+                            <div class="section-title-group">
+                                <h3 class="section-title">Responsable 2</h3>
+                                <p class="section-subtitle">Opcional — obligatorio solo si se completa algún dato del bloque</p>
+                            </div>
                         </div>
-                        <div class="section-title-group">
-                            <h3 class="section-title">Observaciones</h3>
-                            <p class="section-subtitle">Información adicional relevante</p>
+                        <div class="section-status">
+                            <span class="status-badge empty" id="status-responsable2">
+                                <i class="fas fa-circle"></i> Sin completar
+                            </span>
+                            <div class="collapse-indicator">
+                                <i class="fas fa-chevron-down"></i>
+                            </div>
                         </div>
                     </div>
-                    <div class="section-status">
-                        <div class="collapse-indicator">
-                            <i class="fas fa-chevron-down"></i>
+                    <div class="section-body collapse show" id="section-responsable2">
+                        <div class="form-group row">
+                            <div class="col-md-3">{{ form.responsable_legal_2_relacion|as_crispy_field }}</div>
+                            <div class="col-md-3">{{ form.responsable_legal_2_apellido|as_crispy_field }}</div>
+                            <div class="col-md-3">{{ form.responsable_legal_2_nombre|as_crispy_field }}</div>
+                            <div class="col-md-3">{{ form.responsable_legal_2_fecha_nacimiento|as_crispy_field }}</div>
+                        </div>
+                        <div class="form-group row">
+                            <div class="col-md-3">{{ form.responsable_legal_2_tipo_documentacion|as_crispy_field }}</div>
+                            <div class="col-md-3">{{ form.responsable_legal_2_dni|as_crispy_field }}</div>
+                            <div class="col-md-3">{{ form.responsable_legal_2_cuit|as_crispy_field }}</div>
+                            <div class="col-md-3">{{ form.responsable_legal_2_telefono|as_crispy_field }}</div>
+                        </div>
+                        <div class="form-group row">
+                            <div class="col-md-3">{{ form.responsable_legal_2_pais_nacimiento|as_crispy_field }}</div>
+                            <div class="col-md-3">{{ form.responsable_legal_2_nacionalidad|as_crispy_field }}</div>
+                            <div class="col-md-3">{{ form.responsable_legal_2_sexo_registral|as_crispy_field }}</div>
+                            <div class="col-md-3">{{ form.responsable_legal_2_nivel_educativo|as_crispy_field }}</div>
+                        </div>
+                        <div class="form-group row">
+                            <div class="col-md-3">{{ form.responsable_legal_2_consentimiento|as_crispy_field }}</div>
                         </div>
                     </div>
                 </div>
-                <div class="section-body collapse show" id="section-observaciones">
-                    <div class="form-group row">
-                        <div class="col-md-12">{{ form.observaciones|as_crispy_field }}</div>
-                    </div>
-                </div>
-            </div>
 
-            <div class="d-flex justify-content-between mt-4 mb-5">
+                {# ── 5. Domicilio del niño/a ───────────────────────────── #}
+                <div class="section-card" data-section="domicilio">
+                    <div class="section-header" data-toggle-section="domicilio">
+                        <div class="section-header-left">
+                            <div class="section-icon">
+                                <i class="fas fa-home"></i>
+                            </div>
+                            <div class="section-title-group">
+                                <h3 class="section-title">Domicilio principal</h3>
+                                <p class="section-subtitle">Donde vive la mayor parte del tiempo</p>
+                            </div>
+                        </div>
+                        <div class="section-status">
+                            <span class="status-badge empty" id="status-domicilio">
+                                <i class="fas fa-circle"></i> Sin completar
+                            </span>
+                            <div class="collapse-indicator">
+                                <i class="fas fa-chevron-down"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="section-body collapse show" id="section-domicilio">
+                        <div class="form-group row">
+                            <div class="col-md-4">{{ form.calle_domicilio|as_crispy_field }}</div>
+                            <div class="col-md-2">{{ form.altura_domicilio|as_crispy_field }}</div>
+                            <div class="col-md-2">{{ form.piso_domicilio|as_crispy_field }}</div>
+                            <div class="col-md-2">{{ form.departamento_domicilio|as_crispy_field }}</div>
+                            <div class="col-md-3">{{ form.tipo_barrio|as_crispy_field }}</div>
+                        </div>
+                        <div class="form-group row">
+                            <div class="col-md-3">{{ form.provincia_domicilio|as_crispy_field }}</div>
+                            <div class="col-md-3">{{ form.municipio_domicilio|as_crispy_field }}</div>
+                            <div class="col-md-3">{{ form.localidad_domicilio|as_crispy_field }}</div>
+                            <div class="col-md-3">{{ form.convivientes|as_crispy_field }}</div>
+                        </div>
+                    </div>
+                </div>
+
+                {# ── 6. Cultura e Identidad ────────────────────────────── #}
+                <div class="section-card" data-section="cultura">
+                    <div class="section-header" data-toggle-section="cultura">
+                        <div class="section-header-left">
+                            <div class="section-icon">
+                                <i class="fas fa-globe-americas"></i>
+                            </div>
+                            <div class="section-title-group">
+                                <h3 class="section-title">Cultura e Identidad</h3>
+                                <p class="section-subtitle">Grupos de pertenencia y lenguajes del niño/a</p>
+                            </div>
+                        </div>
+                        <div class="section-status">
+                            <span class="status-badge empty" id="status-cultura">
+                                <i class="fas fa-circle"></i> Sin completar
+                            </span>
+                            <div class="collapse-indicator">
+                                <i class="fas fa-chevron-down"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="section-body collapse show" id="section-cultura">
+                        <div class="form-group row">
+                            <div class="col-md-6">{{ form.grupo_pertenencia|as_crispy_field }}</div>
+                            <div class="col-md-6" id="row-pueblo-originario">{{ form.pueblo_originario_cual|as_crispy_field }}</div>
+                        </div>
+                        <div class="form-group row">
+                            <div class="col-md-6">{{ form.lenguajes|as_crispy_field }}</div>
+                            <div class="col-md-3">{{ form.necesito_interprete|as_crispy_field }}</div>
+                        </div>
+                    </div>
+                </div>
+
+                {# ── 7. Discapacidad ───────────────────────────────────── #}
+                <div class="section-card" data-section="discapacidad">
+                    <div class="section-header" data-toggle-section="discapacidad">
+                        <div class="section-header-left">
+                            <div class="section-icon">
+                                <i class="fas fa-wheelchair"></i>
+                            </div>
+                            <div class="section-title-group">
+                                <h3 class="section-title">Discapacidad</h3>
+                                <p class="section-subtitle">Tipo de discapacidad, apoyos y CUD</p>
+                            </div>
+                        </div>
+                        <div class="section-status">
+                            <span class="status-badge empty" id="status-discapacidad">
+                                <i class="fas fa-circle"></i> Sin completar
+                            </span>
+                            <div class="collapse-indicator">
+                                <i class="fas fa-chevron-down"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="section-body collapse show" id="section-discapacidad">
+                        <div class="form-group row">
+                            <div class="col-md-4">{{ form.tiene_discapacidad|as_crispy_field }}</div>
+                        </div>
+                        <div id="bloque-discapacidad">
+                            <div class="form-group row">
+                                <div class="col-md-6">{{ form.tipo_discapacidad|as_crispy_field }}</div>
+                                <div class="col-md-4">{{ form.recibe_apoyo_discapacidad|as_crispy_field }}</div>
+                            </div>
+                            <div class="form-group row">
+                                <div class="col-md-3">{{ form.posee_cud|as_crispy_field }}</div>
+                                <div class="col-md-3" id="row-numero-cud">{{ form.numero_cud|as_crispy_field }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {# ── 8. Salud y Antropometría ──────────────────────────── #}
+                <div class="section-card" data-section="salud">
+                    <div class="section-header" data-toggle-section="salud">
+                        <div class="section-header-left">
+                            <div class="section-icon">
+                                <i class="fas fa-heartbeat"></i>
+                            </div>
+                            <div class="section-title-group">
+                                <h3 class="section-title">Salud y Antropometría</h3>
+                                <p class="section-subtitle">Cobertura, controles y medidas</p>
+                            </div>
+                        </div>
+                        <div class="section-status">
+                            <span class="status-badge empty" id="status-salud">
+                                <i class="fas fa-circle"></i> Sin completar
+                            </span>
+                            <div class="collapse-indicator">
+                                <i class="fas fa-chevron-down"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="section-body collapse show" id="section-salud">
+                        <div class="form-group row">
+                            <div class="col-md-3">{{ form.cobertura_salud|as_crispy_field }}</div>
+                            <div class="col-md-3">{{ form.controles_sanitarios_ultimo_anio|as_crispy_field }}</div>
+                            <div class="col-md-3">{{ form.calendario_vacunacion_al_dia|as_crispy_field }}</div>
+                            <div class="col-md-3">{{ form.posee_obra_social|as_crispy_field }}</div>
+                        </div>
+                        <div class="form-group row">
+                            <div class="col-md-3">{{ form.talla|as_crispy_field }}</div>
+                            <div class="col-md-3">{{ form.peso|as_crispy_field }}</div>
+                            <div class="col-md-3">{{ form.longitud_acostado|as_crispy_field }}</div>
+                            <div class="col-md-3">{{ form.perimetro_cefalico|as_crispy_field }}</div>
+                        </div>
+                    </div>
+                </div>
+
+                {# ── 9. Nutrición y ANSES ──────────────────────────────── #}
+                <div class="section-card" data-section="nutricion">
+                    <div class="section-header" data-toggle-section="nutricion">
+                        <div class="section-header-left">
+                            <div class="section-icon">
+                                <i class="fas fa-apple-alt"></i>
+                            </div>
+                            <div class="section-title-group">
+                                <h3 class="section-title">Nutrición y Asistencia ANSES</h3>
+                                <p class="section-subtitle">Lactancia, diagnósticos, alergias y asignaciones</p>
+                            </div>
+                        </div>
+                        <div class="section-status">
+                            <span class="status-badge empty" id="status-nutricion">
+                                <i class="fas fa-circle"></i> Sin completar
+                            </span>
+                            <div class="collapse-indicator">
+                                <i class="fas fa-chevron-down"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="section-body collapse show" id="section-nutricion">
+                        <div class="form-group row">
+                            <div class="col-md-3">{{ form.lactancia|as_crispy_field }}</div>
+                            <div class="col-md-3">{{ form.diagnostico_peso|as_crispy_field }}</div>
+                            <div class="col-md-3">{{ form.diagnostico_talla|as_crispy_field }}</div>
+                            <div class="col-md-3">{{ form.orientacion_msal|as_crispy_field }}</div>
+                        </div>
+                        <div class="form-group row">
+                            <div class="col-md-6">{{ form.alergias_alimentarias|as_crispy_field }}</div>
+                        </div>
+                        <hr style="border-color:#374151" />
+                        <p class="small mb-2" style="color:#9ca3af;">Asistencia ANSES (hogares con embarazadas y niños hasta 48 meses)</p>
+                        <div class="form-group row">
+                            <div class="col-md-3">{{ form.anses_auh|as_crispy_field }}</div>
+                            <div class="col-md-3">{{ form.anses_aue|as_crispy_field }}</div>
+                            <div class="col-md-3">{{ form.anses_acsi|as_crispy_field }}</div>
+                            <div class="col-md-3">{{ form.anses_acn|as_crispy_field }}</div>
+                        </div>
+                    </div>
+                </div>
+
+                {# ── 10. Vacunación NOMIVAC + Desarrollo Infantil ──────── #}
+                <div class="section-card" data-section="vacunacion">
+                    <div class="section-header" data-toggle-section="vacunacion">
+                        <div class="section-header-left">
+                            <div class="section-icon">
+                                <i class="fas fa-syringe"></i>
+                            </div>
+                            <div class="section-title-group">
+                                <h3 class="section-title">Vacunación NOMIVAC y Desarrollo Infantil</h3>
+                                <p class="section-subtitle">Plan de vacunación obligatorio y apoyo al desarrollo</p>
+                            </div>
+                        </div>
+                        <div class="section-status">
+                            <span class="status-badge empty" id="status-vacunacion">
+                                <i class="fas fa-circle"></i> Sin completar
+                            </span>
+                            <div class="collapse-indicator">
+                                <i class="fas fa-chevron-down"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="section-body collapse show" id="section-vacunacion">
+                        <div class="table-responsive">
+                            <table class="table table-sm table-dark" style="font-size:0.875rem">
+                                <thead>
+                                    <tr>
+                                        <th style="width:35%">Vacuna</th>
+                                        <th>Dosis recibidas</th>
+                                        <th>Fecha de última dosis</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>BCG</td>
+                                        <td>{{ form.vacuna_bcg_dosis }}</td>
+                                        <td>{{ form.vacuna_bcg_fecha }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Neumococo Conjugada</td>
+                                        <td>{{ form.vacuna_neumococo_dosis }}</td>
+                                        <td>{{ form.vacuna_neumococo_fecha }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Quíntuple o Pentavalente</td>
+                                        <td>{{ form.vacuna_quintuple_dosis }}</td>
+                                        <td>{{ form.vacuna_quintuple_fecha }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Polio (IPV o SALK)</td>
+                                        <td>{{ form.vacuna_polio_dosis }}</td>
+                                        <td>{{ form.vacuna_polio_fecha }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Rotavirus</td>
+                                        <td>{{ form.vacuna_rotavirus_dosis }}</td>
+                                        <td>{{ form.vacuna_rotavirus_fecha }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Meningococo ACYW</td>
+                                        <td>{{ form.vacuna_meningococo_dosis }}</td>
+                                        <td>{{ form.vacuna_meningococo_fecha }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Antigripal</td>
+                                        <td>{{ form.vacuna_antigripal_dosis }}</td>
+                                        <td>{{ form.vacuna_antigripal_fecha }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Hepatitis A</td>
+                                        <td>{{ form.vacuna_hepatitis_a_dosis }}</td>
+                                        <td>{{ form.vacuna_hepatitis_a_fecha }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Triple Viral</td>
+                                        <td>{{ form.vacuna_triple_viral_dosis }}</td>
+                                        <td>{{ form.vacuna_triple_viral_fecha }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Varicela</td>
+                                        <td>{{ form.vacuna_varicela_dosis }}</td>
+                                        <td>{{ form.vacuna_varicela_fecha }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Triple Bacteriana Celular</td>
+                                        <td>{{ form.vacuna_triple_bacteriana_celular_dosis }}</td>
+                                        <td>{{ form.vacuna_triple_bacteriana_celular_fecha }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Triple Bacteriana Acelular</td>
+                                        <td>{{ form.vacuna_triple_bacteriana_acelular_dosis }}</td>
+                                        <td>{{ form.vacuna_triple_bacteriana_acelular_fecha }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Virus Sincicial Respiratorio</td>
+                                        <td>{{ form.vacuna_sincicial_respiratorio_dosis }}</td>
+                                        <td>{{ form.vacuna_sincicial_respiratorio_fecha }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Fiebre Amarilla</td>
+                                        <td>{{ form.vacuna_fiebre_amarilla_dosis }}</td>
+                                        <td>{{ form.vacuna_fiebre_amarilla_fecha }}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <hr style="border-color:#374151" />
+                        <div class="form-group row">
+                            <div class="col-md-4">{{ form.recibe_apoyo_desarrollo|as_crispy_field }}</div>
+                        </div>
+                    </div>
+                </div>
+
+                {# ── Observaciones ─────────────────────────────────────── #}
+                <div class="section-card" data-section="observaciones">
+                    <div class="section-header" data-toggle-section="observaciones">
+                        <div class="section-header-left">
+                            <div class="section-icon">
+                                <i class="fas fa-comment-alt"></i>
+                            </div>
+                            <div class="section-title-group">
+                                <h3 class="section-title">Observaciones</h3>
+                                <p class="section-subtitle">Información adicional relevante</p>
+                            </div>
+                        </div>
+                        <div class="section-status">
+                            <div class="collapse-indicator">
+                                <i class="fas fa-chevron-down"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="section-body collapse show" id="section-observaciones">
+                        <div class="form-group row">
+                            <div class="col-md-12">{{ form.observaciones|as_crispy_field }}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-between mt-4 mb-5">
+                    <a href="{% url 'centrodeinfancia_nomina_ver' centro.id %}"
+                       class="btn btn-secondary">Cancelar</a>
+                    <button type="submit" class="btn btn-success btn-lg">
+                        <i class="fas fa-save me-2"></i>
+                        {% if is_edit %}
+                            Guardar cambios
+                        {% else %}
+                            Agregar a nómina
+                        {% endif %}
+                    </button>
+                </div>
+            </form>
+
+        {% else %}
+            <div class="mt-3">
                 <a href="{% url 'centrodeinfancia_nomina_ver' centro.id %}"
-                   class="btn btn-secondary">Cancelar</a>
-                <button type="submit" class="btn btn-success btn-lg">
-                    <i class="fas fa-save me-2"></i>
-                    {% if is_edit %}
-                        Guardar cambios
-                    {% else %}
-                        Agregar a nómina
-                    {% endif %}
-                </button>
+                   class="btn btn-secondary">Volver a la nómina</a>
             </div>
-        </form>
-
-    {% else %}
-        <div class="mt-3">
-            <a href="{% url 'centrodeinfancia_nomina_ver' centro.id %}"
-               class="btn btn-secondary">Volver a la nómina</a>
-        </div>
-    {% endif %}
-
+        {% endif %}
+    </div>
 {% endblock %}
 
 {% block customJS %}

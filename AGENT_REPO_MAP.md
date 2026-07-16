@@ -60,6 +60,7 @@ Mapa practico del repositorio `SISOC` para futuros agentes de IA y desarrollador
 | Docker Compose para local | Hecho observado | `docker-compose.yml` |
 | Compose separado para deploy | Hecho observado | `docker-compose.deploy.yml`, `docker-compose.produccion.yml` |
 | GitHub Actions para lint/tests/arquitectura/release sanity | Hecho observado | `.github/workflows/` |
+| Plan A descendente con autoaprobacion acotada | Hecho observado | `.github/workflows/sync-main-downstream.yml`, `docs/operacion/deploy_automatizado.md` |
 | Helpers de Codex/worktrees | Hecho observado | `scripts/ai/`, `.codex/environments/environment.toml` |
 
 ## Que tipo de proyecto es
@@ -281,7 +282,7 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 | `ticketera/` | API server-to-server con kill-switch | `api_urls.py`, `api_views.py`, `api_serializers.py` | Medio |
 | `comunicados/` | mensajes/comunicados y API asociada | `models.py`, `views.py`, `api_views.py`, forms | Medio |
 | `organizaciones/` | entidades/organizaciones vinculadas | `models.py`, `views.py`, forms | Medio |
-| `centrodeinfancia/` | dominio de centros de infancia | `models.py`, `views.py`, urls | Medio |
+| `centrodeinfancia/` | dominio de centros de infancia, personal y asistencia | `models.py`, `services.py`, `views.py`, `tests/`, urls | Alto |
 | `acompanamientos/` | seguimiento/acompanamientos | `views.py`, service, templates | Medio |
 | `expedientespagos/` | expedientes de pagos | `models.py`, `views.py`, urls | Bajo |
 | `rendicioncuentasfinal/` | rendicion final | `models.py`, `views.py`, urls | Bajo |

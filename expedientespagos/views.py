@@ -9,9 +9,11 @@ from django.views.generic import (
 )
 from django.urls import reverse_lazy, reverse
 from django.utils.decorators import method_decorator
+from django.utils.html import escape, format_html
 from django.views.decorators.csrf import ensure_csrf_cookie
 from core.soft_delete.view_helpers import SoftDeleteDeleteViewMixin
-from core.services.column_preferences import build_columns_context_from_fields
+from core.services.column_preferences import build_columns_context_for_custom_cells
+from core.templatetags.custom_filters import monto_sin_decimales
 from expedientespagos.models import ExpedientePago
 from expedientespagos.forms import ExpedientePagoForm
 from expedientespagos.services import (
@@ -20,6 +22,26 @@ from expedientespagos.services import (
 )
 from comedores.models import Comedor
 from iam.services import user_has_any_permission_codes
+
+
+def _build_expediente_pago_list_item(expediente):
+    return {
+        "pk": expediente.pk,
+        "cells": [
+            {"content": escape(expediente.mes_pago or "-")},
+            {"content": escape(expediente.ano or "-")},
+            {"content": escape(expediente.expediente_pago or "-")},
+            {"content": escape(expediente.expediente_convenio or "-")},
+            {"content": format_html("${}", monto_sin_decimales(expediente.total))},
+            {
+                "content": (
+                    expediente.fecha_creacion.strftime("%d/%m/%Y")
+                    if expediente.fecha_creacion
+                    else "-"
+                )
+            },
+        ],
+    }
 
 
 @method_decorator(ensure_csrf_cookie, name="dispatch")
@@ -36,37 +58,34 @@ class ExpedientesPagosListView(LoginRequiredMixin, ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         comedor_id = self.kwargs.get("pk")
-        context["expedientes_pagos"] = (
-            ExpedientesPagosService.obtener_expedientes_pagos(comedor_id)
+        expedientes_pagos = ExpedientesPagosService.obtener_expedientes_pagos(
+            comedor_id
         )
+        context["expedientes_pagos"] = [
+            _build_expediente_pago_list_item(expediente)
+            for expediente in expedientes_pagos
+        ]
         context["comedorid"] = comedor_id
 
         headers = [
-            {"title": "Mes de Pago"},
-            {"title": "Año"},
-            {"title": "Expediente de Pago"},
-            {"title": "Expediente del Convenio"},
-            {"title": "Total"},
-            {"title": "Fecha de creación"},
-        ]
-
-        fields = [
-            {"name": "mes_pago"},
-            {"name": "ano"},
-            {"name": "expediente_pago"},
-            {"name": "expediente_convenio"},
-            {"name": "total"},
-            {"name": "fecha_creacion"},
+            {"key": "mes_pago", "title": "Mes de Pago"},
+            {"key": "ano", "title": "Año"},
+            {"key": "expediente_pago", "title": "Expediente de Pago"},
+            {"key": "expediente_convenio", "title": "Expediente del Convenio"},
+            {"key": "total", "title": "Total"},
+            {"key": "fecha_creacion", "title": "Fecha de creación"},
         ]
 
         context.update(
-            build_columns_context_from_fields(
+            build_columns_context_for_custom_cells(
                 self.request,
                 "expedientes_pagos_list",
                 headers,
-                fields,
+                context["expedientes_pagos"],
+                items_key="expedientes_pagos",
             )
         )
+        context["custom_cells"] = True
 
         context["table_actions"] = [
             {"label": "Ver", "url_name": "expedientespagos_detail", "type": "info"}

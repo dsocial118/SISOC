@@ -15,6 +15,7 @@ from users.services_user_import import (
     build_user_import_error_message,
     load_user_import_rows,
     process_single_user_import_row,
+    send_user_import_job_credentials,
 )
 
 logger = logging.getLogger("django")
@@ -287,9 +288,15 @@ def _record_row_created(  # pylint: disable=too-many-arguments
     row_log.status = UserImportJobRow.Status.CREATED
     row_log.mensaje = result["mensaje"]
     row_log.email = result.get("email", row_log.email)
+    created_user_id = result.get("created_user_id")
+    if created_user_id:
+        row_log.created_user_id = created_user_id
     row_log.attempts += 1
     row_log.processed_at = timezone.now()
-    row_log.save()
+    update_fields = ["status", "mensaje", "email", "attempts", "processed_at"]
+    if created_user_id:
+        update_fields.append("created_user")
+    row_log.save(update_fields=update_fields)
 
     next_row_index = row_index + 1
     job.next_row_index = next_row_index
@@ -385,6 +392,18 @@ def _record_job_level_failure(*, job: UserImportJob, message: str) -> UserImport
     return job
 
 
+def _send_credentials_if_needed(job: UserImportJob) -> UserImportJob:
+    if not job.send_credentials:
+        return job
+    try:
+        send_user_import_job_credentials(job)
+    except Exception:
+        logger.exception(
+            "Fallo inesperado enviando credenciales de importacion job_id=%s", job.id
+        )
+    return job
+
+
 def process_user_import_job(job: UserImportJob) -> UserImportJob:
     rows = _load_job_rows(job)
     if rows is None:
@@ -397,11 +416,15 @@ def process_user_import_job(job: UserImportJob) -> UserImportJob:
 
     if job.next_row_index >= total_rows:
         now = timezone.now()
-        job.status = UserImportJob.Status.COMPLETED
+        job.status = (
+            UserImportJob.Status.COMPLETED_WITH_ERRORS
+            if job.failed_rows > 0
+            else UserImportJob.Status.COMPLETED
+        )
         job.finished_at = now
         job.last_activity_at = now
         job.save(update_fields=["status", "finished_at", "last_activity_at"])
-        return job
+        return _send_credentials_if_needed(job)
 
     for row_index in range(job.next_row_index, total_rows):
         row_data = rows[row_index]
@@ -455,7 +478,7 @@ def process_user_import_job(job: UserImportJob) -> UserImportJob:
             UserImportJob.Status.COMPLETED,
             UserImportJob.Status.COMPLETED_WITH_ERRORS,
         ):
-            return job
+            return _send_credentials_if_needed(job)
 
     return job
 

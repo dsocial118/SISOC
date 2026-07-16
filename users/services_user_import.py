@@ -9,11 +9,10 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group, Permission
 from django.core.exceptions import ValidationError
-from django.core.mail import send_mail
 from django.core.validators import validate_email
 from django.db import transaction
-from django.template.loader import render_to_string
 from django.urls import reverse
+from django.utils import timezone
 from openpyxl import Workbook, load_workbook
 
 from comedores.models import Comedor
@@ -37,8 +36,6 @@ from users.services_pwa import (
 User = get_user_model()
 logger = logging.getLogger("django")
 
-USER_IMPORT_CREDENTIALS_EMAIL_TEMPLATE = "user/bulk_credentials_email.txt"
-USER_IMPORT_CREDENTIALS_EMAIL_SUBJECT = "SISOC - Credenciales de acceso"
 USER_IMPORT_TEMPLATE_FILENAME = "plantilla_importacion_usuarios.xlsx"
 USER_IMPORT_SHEET_NAME = "usuarios"
 USER_IMPORT_REQUIRED_COLUMNS = (
@@ -253,43 +250,82 @@ def create_user_import_job(
     return job
 
 
-def _enviar_credenciales_import(*, user, password: str) -> bool:
-    if not user.email:
-        return False
-    try:
-        from users.services_bulk_credentials import (  # noqa: PLC0415
-            BulkCredentialEntry,
-        )
+def _anotar_mensaje_credenciales(rows, message: str) -> None:
+    for row in rows:
+        if message in row.mensaje:
+            continue
+        row.mensaje = f"{row.mensaje} {message}".strip()
+        row.save(update_fields=["mensaje"])
 
-        entry = BulkCredentialEntry(
-            username=user.username,
-            plain_password=password,
-            first_name=user.first_name or "",
-            last_name=user.last_name or "",
+
+def send_user_import_job_credentials(job: UserImportJob) -> None:
+    from users.services_bulk_credentials import (  # noqa: PLC0415
+        BulkCredentialEntry,
+        send_bulk_credentials_email,
+    )
+
+    rows_by_email = {}
+    rows = (
+        UserImportJobRow.objects.filter(
+            job=job,
+            created_user__isnull=False,
+            credentials_sent_at__isnull=True,
+            created_user__email__gt="",
         )
-        context = {
-            "entries": [entry],
-            "is_grouped": False,
-            "user_username": entry.username,
-            "user_full_name": entry.full_name,
-            "plain_password": password,
-            "nombre_del_centro": "",
-            "login_url": _build_login_url(),
-        }
-        message = render_to_string(USER_IMPORT_CREDENTIALS_EMAIL_TEMPLATE, context)
-        send_mail(
-            subject=USER_IMPORT_CREDENTIALS_EMAIL_SUBJECT,
-            message=message,
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[user.email],
-            fail_silently=False,
+        .select_related("created_user__profile")
+        .order_by("fila", "id")
+    )
+    for row in rows:
+        rows_by_email.setdefault(row.created_user.email.lower(), []).append(row)
+
+    for recipient_email, grouped_rows in rows_by_email.items():
+        entries = []
+        rows_to_send = []
+        for row in grouped_rows:
+            plain_password = (
+                row.created_user.profile.temporary_password_plaintext or ""
+            ).strip()
+            if not plain_password:
+                _anotar_mensaje_credenciales(
+                    [row],
+                    "No se enviaron credenciales: falta la contraseña temporal.",
+                )
+                continue
+            entries.append(
+                BulkCredentialEntry(
+                    username=row.created_user.username,
+                    plain_password=plain_password,
+                    first_name=row.created_user.first_name or "",
+                    last_name=row.created_user.last_name or "",
+                )
+            )
+            rows_to_send.append(row)
+
+        if not entries:
+            continue
+
+        try:
+            send_bulk_credentials_email(
+                recipient_email=recipient_email,
+                entries=entries,
+                login_url=_build_login_url(),
+                send_type="standard",
+            )
+        except Exception:
+            logger.exception(
+                "Fallo enviando credenciales agrupadas de importacion job_id=%s email=%s",
+                job.id,
+                recipient_email,
+            )
+            _anotar_mensaje_credenciales(
+                grouped_rows,
+                "No se pudieron enviar las credenciales por correo.",
+            )
+            continue
+
+        UserImportJobRow.objects.filter(pk__in=[row.pk for row in rows_to_send]).update(
+            credentials_sent_at=timezone.now()
         )
-        return True
-    except Exception:
-        logger.exception(
-            "Fallo enviando credenciales de importacion user_id=%s", user.id
-        )
-        return False
 
 
 def _resolver_provincias(provincias_raw: str) -> list:
@@ -500,14 +536,14 @@ def _get_allowed_group_ids(actor) -> set | None:
     return set(actor.profile.grupos_asignables.values_list("id", flat=True))
 
 
-def _resolver_usuario_objetivo(row_data: dict):
+def _resolver_usuario_objetivo(row_data: dict, *, accion_explicita: bool):
     username_raw = row_data.get("username", "").strip()
     email_raw = row_data.get("correo", "").strip()
     if username_raw:
         user = User.objects.filter(username__iexact=username_raw).first()
         if user is not None:
             return user
-    if email_raw:
+    if email_raw and accion_explicita:
         return User.objects.filter(email__iexact=email_raw).first()
     return None
 
@@ -678,6 +714,7 @@ class _DatosFilaValidados:
     username_raw: str
     rol: str
     accion_grupos: str
+    accion_explicita: bool
     grupos: list
     provincias_objs: list
     allowed_group_ids: set | None
@@ -740,9 +777,9 @@ def _validar_y_preparar_fila(row_data: dict, job: UserImportJob) -> _DatosFilaVa
     email_raw = row_data.get("correo", "").strip()
     username_raw = row_data.get("username", "").strip()
     rol = row_data.get("rol", "").strip()
-    accion_grupos = (
-        row_data.get("accion_grupos", "").strip().lower() or GROUP_ACTION_AGREGAR
-    )
+    accion_grupos_raw = row_data.get("accion_grupos", "").strip()
+    accion_explicita = bool(accion_grupos_raw)
+    accion_grupos = accion_grupos_raw.lower() or GROUP_ACTION_AGREGAR
 
     if accion_grupos not in GROUP_ACTIONS:
         raise ValidationError(
@@ -775,6 +812,7 @@ def _validar_y_preparar_fila(row_data: dict, job: UserImportJob) -> _DatosFilaVa
         username_raw=username_raw,
         rol=rol,
         accion_grupos=accion_grupos,
+        accion_explicita=accion_explicita,
         grupos=permisos_fila.grupos,
         provincias_objs=provincias_objs,
         allowed_group_ids=permisos_fila.allowed_group_ids,
@@ -788,7 +826,10 @@ def _validar_y_preparar_fila(row_data: dict, job: UserImportJob) -> _DatosFilaVa
 
 def process_single_user_import_row(*, row_data: dict, job: UserImportJob) -> dict:
     datos = _validar_y_preparar_fila(row_data, job)
-    existing_user = _resolver_usuario_objetivo(row_data)
+    existing_user = _resolver_usuario_objetivo(
+        row_data,
+        accion_explicita=datos.accion_explicita,
+    )
 
     if existing_user is not None:
         params = _ActualizarUsuarioParams(
@@ -842,15 +883,13 @@ def process_single_user_import_row(*, row_data: dict, job: UserImportJob) -> dic
             permisos_pwa=datos.permisos_pwa,
             access_specs=datos.access_specs,
         )
-        user, password = _crear_usuario_nuevo(params)
-
-    if job.send_credentials:
-        _enviar_credenciales_import(user=user, password=password)
+        user, _password = _crear_usuario_nuevo(params)
 
     return {
         "status": UserImportJobRow.Status.CREATED,
         "mensaje": f"Usuario {user.username} creado correctamente.",
         "email": datos.email,
+        "created_user_id": user.id,
     }
 
 

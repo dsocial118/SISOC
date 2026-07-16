@@ -1,23 +1,18 @@
 {% extends "includes/main.html" %}
 {% load static l10n %}
-{% block title %}Nómina – {{ object.nombre }}{% endblock %}
-{% block titulo-pagina %}
-    Nómina de {{ object.nombre }}
-    <span class="ml-2 h5">
-        |
-        {% if object.provincia %}
-            {{ object.provincia.nombre }}
-        {% else %}
-            -
-        {% endif %}
-        ,
-        {% if object.municipio %}
-            {{ object.municipio.nombre }}
-        {% else %}
-            -
-        {% endif %}
-    </span>
+
+{% block head %}
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Lora:wght@600;700&display=swap"
+          rel="stylesheet" />
+    <link rel="stylesheet" href="{% static 'custom/css/cdf.css' %}" />
+    <link rel="stylesheet"
+          href="{% static 'custom/css/centrodeinfancia.css' %}" />
 {% endblock %}
+
+{% block title %}Nómina – {{ object.nombre }}{% endblock %}
+
 {% block breadcrumb %}
     <ol class="breadcrumb float-sm-right">
         <li class="breadcrumb-item">
@@ -29,410 +24,394 @@
         <li class="breadcrumb-item active">Nómina</li>
     </ol>
 {% endblock %}
+
+{% block app-header %}
+    <div class="row g-2 align-items-center">
+        <div class="col-12 col-lg-auto d-flex justify-content-start">
+            <a href="{% url 'centrodeinfancia_detalle' object.id %}"
+               class="btn btn-sm btn-primary w-100 w-sm-auto">Volver al detalle</a>
+        </div>
+    </div>
+{% endblock %}
+
 {% block content %}
-    <link rel="stylesheet" href="{% static 'custom/css/nominaDetail.css' %}" />
-
-    <!-- Botón Volver -->
-    <div class="mb-4 d-print-none">
-        <a href="{% url 'centrodeinfancia_detalle' object.id %}"
-           class="btn btn-outline-secondary btn-back">
-            <i class="fas fa-arrow-left"></i> Volver
-        </a>
-    </div>
-
-    <!-- Header del Centro -->
-    <div class="nomina-header-card bg-base-darkblue">
-        <div class="row align-items-center">
-            <div class="col-md-12">
-                <h1 class="nomina-header-title">
-                    {{ object.nombre }}
-                    <span class="nomina-header-divider">|</span>
-                </h1>
+    <div class="cdf-page cdi-page">
+        <!-- 1) HERO -->
+        <div class="cdf-hero">
+            <div class="cdf-hero-block">
+                <p class="cdi-hero-kicker">Centro de Desarrollo Infantil &middot; Nómina</p>
+                <h1>{{ object.nombre }}</h1>
+                <p class="cdf-hero-sub">
+                    <span><i class="bi bi-geo-alt"></i>{{ object.localidad|default:"-" }}, {{ object.provincia|default:"-" }}</span>
+                </p>
             </div>
-        </div>
-    </div>
-
-    <!-- Tarjetas de Estadísticas Principales -->
-    <div class="nomina-stats-row">
-        <div class="nomina-stat-card asistentes bg-yellow">
-            <i class="fas fa-users nomina-stat-icon sisoclabel bg-lightyellow"></i>
-            <div class="nomina-stat-content">
-                <p class="nomina-stat-number">{{ cantidad_nomina }}</p>
-                <p class="nomina-stat-label">Asistentes</p>
+            <div class="cdf-hero-side">
+                {% if object.codigo_cdi %}<span class="cdf-pill cdf-pill--gold">N° {{ object.codigo_cdi }}</span>{% endif %}
+                <span class="cdf-pill cdf-pill--success">Activo</span>
             </div>
         </div>
 
-        <div class="nomina-stat-card hombres bg-blue">
-            <i class="fas fa-male nomina-stat-icon sisoclabel bg-lightblue"></i>
-            <div class="nomina-stat-content">
-                <p class="nomina-stat-number">{{ nominaM }}</p>
-                <p class="nomina-stat-label">Hombres</p>
-            </div>
-        </div>
-
-        <div class="nomina-stat-card mujeres bg-pink">
-            <i class="fas fa-female nomina-stat-icon sisoclabel bg-lightpink"></i>
-            <div class="nomina-stat-content">
-                <p class="nomina-stat-number">{{ nominaF }}</p>
-                <p class="nomina-stat-label">Mujeres</p>
-            </div>
-        </div>
-
-        <div class="nomina-stat-card genero-x bg-purple">
-            <i class="fas fa-transgender nomina-stat-icon sisoclabel bg-lightpurple"></i>
-            <div class="nomina-stat-content">
-                <p class="nomina-stat-number">{{ nominaX|default:0 }}</p>
-                <p class="nomina-stat-label">Género X</p>
-            </div>
-        </div>
-
-        <div class="nomina-stat-card menores bg-green">
-            <i class="fas fa-child nomina-stat-icon sisoclabel bg-lightgreen"></i>
-            <div class="nomina-stat-content">
-                <p class="nomina-stat-number">{{ menores|default:0 }}</p>
-                <p class="nomina-stat-label">Menores de edad</p>
-            </div>
-        </div>
-
-        <div class="nomina-stat-card espera bg-red">
-            <i class="fas fa-list-ul nomina-stat-icon sisoclabel bg-lightred"></i>
-            <div class="nomina-stat-content">
-                <p class="nomina-stat-number">{{ espera }}</p>
-                <p class="nomina-stat-label">Lista de espera</p>
-            </div>
-        </div>
-    </div>
-
-    <!-- Sección de Estadísticas Detalladas Colapsable -->
-    <div class="nomina-detailed-stats-wrapper">
-        <button class="nomina-toggle-details" type="button">
-            <span>Ver estadísticas detalladas</span>
-            <i class="fas fa-chevron-down nomina-toggle-icon"></i>
-        </button>
-
-        <div id="detailedStatsContent"
-             class="nomina-detailed-content"
-             style="display: none">
-
-            <!-- Sección: Distribución por Edad -->
-            <h3 class="nomina-subsection-title">
-                <i class="fas fa-chart-bar me-2"></i>Distribución por Edad
-            </h3>
-
-            <!-- Menores de edad -->
-            <h4 class="nomina-subgroup-title">Menores de edad (0-17 años)</h4>
-            <div class="nomina-stats-row">
-                <!-- Niños 0-13 -->
-                <div class="nomina-stat-card-detailed bg-cyan">
-                    <div class="nomina-stat-header">
-                        <i class="fas fa-child"></i>
-                        <div class="nomina-stat-info">
-                            <p class="nomina-stat-number-small">{{ nomina_rangos.ninos|default:0 }}</p>
-                            <p class="nomina-stat-label-small">Niños (0-13 años)</p>
-                        </div>
-                    </div>
-                    <div class="nomina-progress-bar">
-                        <div class="nomina-progress-fill"
-                             style="width: {{ nomina_rangos.pct_ninos|default:0 }}%"></div>
-                    </div>
-                    <p class="nomina-progress-label">{{ nomina_rangos.pct_ninos|default:0 }}%</p>
-                </div>
-
-                <!-- Adolescentes 14-17 -->
-                <div class="nomina-stat-card-detailed bg-orange">
-                    <div class="nomina-stat-header">
-                        <i class="fas fa-user-graduate"></i>
-                        <div class="nomina-stat-info">
-                            <p class="nomina-stat-number-small">{{ nomina_rangos.adolescentes|default:0 }}</p>
-                            <p class="nomina-stat-label-small">Adolescentes (14-17 años)</p>
-                        </div>
-                    </div>
-                    <div class="nomina-progress-bar">
-                        <div class="nomina-progress-fill"
-                             style="width: {{ nomina_rangos.pct_adolescentes|default:0 }}%"></div>
-                    </div>
-                    <p class="nomina-progress-label">{{ nomina_rangos.pct_adolescentes|default:0 }}%</p>
+        <!-- 2) MÉTRICAS -->
+        <div class="cdi-stats-row">
+            <div class="cdi-stat-card">
+                <span class="cdi-stat-dot cdi-stat-dot--teal"></span>
+                <div>
+                    <div class="cdi-stat-num">{{ cantidad_nomina }}</div>
+                    <div class="cdi-stat-lbl">Asistentes</div>
                 </div>
             </div>
-
-            <!-- Adultos -->
-            <h4 class="nomina-subgroup-title">Adultos (18+ años)</h4>
-            <div class="nomina-stats-row">
-                <!-- Adultos 18-49 -->
-                <div class="nomina-stat-card-detailed bg-teal">
-                    <div class="nomina-stat-header">
-                        <i class="fas fa-user-tie"></i>
-                        <div class="nomina-stat-info">
-                            <p class="nomina-stat-number-small">{{ nomina_rangos.adultos|default:0 }}</p>
-                            <p class="nomina-stat-label-small">Adultos (18-49 años)</p>
-                        </div>
-                    </div>
-                    <div class="nomina-progress-bar">
-                        <div class="nomina-progress-fill"
-                             style="width: {{ nomina_rangos.pct_adultos|default:0 }}%"></div>
-                    </div>
-                    <p class="nomina-progress-label">{{ nomina_rangos.pct_adultos|default:0 }}%</p>
+            <div class="cdi-stat-card">
+                <span class="cdi-stat-dot cdi-stat-dot--blue"></span>
+                <div>
+                    <div class="cdi-stat-num">{{ nominaM }}</div>
+                    <div class="cdi-stat-lbl">Hombres</div>
                 </div>
-
-                <!-- Adultos Mayores 50-65 -->
-                <div class="nomina-stat-card-detailed bg-gray">
-                    <div class="nomina-stat-header">
-                        <i class="fas fa-user"></i>
-                        <div class="nomina-stat-info">
-                            <p class="nomina-stat-number-small">{{ nomina_rangos.adultos_mayores|default:0 }}</p>
-                            <p class="nomina-stat-label-small">Adultos Mayores (50-65 años)</p>
-                        </div>
-                    </div>
-                    <div class="nomina-progress-bar">
-                        <div class="nomina-progress-fill"
-                             style="width: {{ nomina_rangos.pct_adultos_mayores|default:0 }}%"></div>
-                    </div>
-                    <p class="nomina-progress-label">{{ nomina_rangos.pct_adultos_mayores|default:0 }}%</p>
+            </div>
+            <div class="cdi-stat-card">
+                <span class="cdi-stat-dot cdi-stat-dot--pink"></span>
+                <div>
+                    <div class="cdi-stat-num">{{ nominaF }}</div>
+                    <div class="cdi-stat-lbl">Mujeres</div>
                 </div>
-
-                <!-- Adulto Mayor Avanzado 66+ -->
-                <div class="nomina-stat-card-detailed bg-brown">
-                    <div class="nomina-stat-header">
-                        <i class="fas fa-user-clock"></i>
-                        <div class="nomina-stat-info">
-                            <p class="nomina-stat-number-small">{{ nomina_rangos.adulto_mayor_avanzado|default:0 }}</p>
-                            <p class="nomina-stat-label-small">Adulto Mayor Avanzado (66+ años)</p>
-                        </div>
-                    </div>
-                    <div class="nomina-progress-bar">
-                        <div class="nomina-progress-fill"
-                             style="width: {{ nomina_rangos.pct_adulto_mayor_avanzado|default:0 }}%"></div>
-                    </div>
-                    <p class="nomina-progress-label">{{ nomina_rangos.pct_adulto_mayor_avanzado|default:0 }}%</p>
+            </div>
+            <div class="cdi-stat-card">
+                <span class="cdi-stat-dot cdi-stat-dot--purple"></span>
+                <div>
+                    <div class="cdi-stat-num">{{ nominaX|default:0 }}</div>
+                    <div class="cdi-stat-lbl">Género X</div>
+                </div>
+            </div>
+            <div class="cdi-stat-card">
+                <span class="cdi-stat-dot cdi-stat-dot--gold"></span>
+                <div>
+                    <div class="cdi-stat-num">{{ menores|default:0 }}</div>
+                    <div class="cdi-stat-lbl">Menores de edad</div>
+                </div>
+            </div>
+            <div class="cdi-stat-card">
+                <span class="cdi-stat-dot cdi-stat-dot--red"></span>
+                <div>
+                    <div class="cdi-stat-num">{{ espera }}</div>
+                    <div class="cdi-stat-lbl">Lista de espera</div>
                 </div>
             </div>
         </div>
-    </div>
 
-    <!-- Sección Nómina -->
-    <div class="nomina-section bg-base-darkblue">
-        <h2 class="nomina-section-title">Nómina</h2>
-
-        <!-- Barra de búsqueda y acciones -->
-        <div class="nomina-actions-bar">
-            <div class="nomina-search-box">
-                <i class="fas fa-search nomina-search-icon"></i>
-                <input type="text"
-                       class="nomina-search-input"
-                       id="nominaSearch"
-                       placeholder="Buscar en nómina" />
-            </div>
-            <a href="{% url 'centrodeinfancia_nomina_crear' object.id %}"
-               class="nomina-add-btn">
-                <i class="fas fa-plus"></i>
-                <span>Agregar persona</span>
-            </a>
-        </div>
-
-        <!-- Tabla -->
-        <div class="nomina-table-container">
-            <table class="nomina-table">
-                <thead>
-                    <tr>
-                        <th>Fecha</th>
-                        <th>Nombre</th>
-                        <th>Apellido</th>
-                        <th>DNI</th>
-                        <th>Sexo</th>
-                        <th>Edad</th>
-                        <th>Sala</th>
-                        <th>Estado</th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for e in nomina %}
-                        <tr class="nomina-table-row">
-                            <td>
-                                <i class="far fa-calendar-alt" style="margin-right: 5px; color: #7f8c8d"></i>
-                                {{ e.fecha|date:"d/m/Y" }}
-                            </td>
-                            <td>{{ e.nombre|default:e.ciudadano.nombre }}</td>
-                            <td>
-                                <a href="{% url 'ciudadanos_ver' e.ciudadano.id %}"
-                                   style="color: #3498db;
-                                          text-decoration: none">{{ e.apellido|default:e.ciudadano.apellido }}</a>
-                            </td>
-                            <td>{{ e.dni|default:e.ciudadano.documento|default:"-" }}</td>
-                            <td>{{ e.sexo|default:e.ciudadano.sexo.sexo|default:"-" }}</td>
-                            <td>{{ e.edad|default:e.ciudadano.edad|default:"-" }}</td>
-                            <td>{{ e.sala|default:"-" }}</td>
-                            <td>
-                                {% if e.estado == "activo" %}
-                                    <span class="nomina-badge activo">Activo</span>
-                                {% elif e.estado == "pendiente" %}
-                                    <span class="nomina-badge espera">Pendiente</span>
-                                {% else %}
-                                    <span class="nomina-badge inactivo">Baja</span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                <div class="nomina-action-buttons">
-                                    <button class="nomina-btn nomina-btn-actions dropdown-toggle"
-                                            type="button"
-                                            data-bs-toggle="dropdown"
-                                            aria-expanded="false">Acciones</button>
-                                    <ul class="dropdown-menu dropdown-menu-dark">
-                                        <li>
-                                            <a class="dropdown-item editar-nomina"
-                                               href="{% url 'centrodeinfancia_nomina_editar' object.id e.id %}">
-                                                <i class="fas fa-edit"></i> Editar
-                                            </a>
-                                        </li>
-                                        <li>
-                                            <a class="dropdown-item"
-                                               href="{% url 'centrodeinfancia_nomina_destinatario_ver' object.id e.id %}">
-                                                <i class="fas fa-eye"></i> Ver detalles
-                                            </a>
-                                        </li>
-                                        {% if e.estado == "activo" %}
-                                            <li>
-                                                <a class="dropdown-item nomina-derivar-btn"
-                                                   href="#"
-                                                   data-nomina-id="{{ e.id }}"
-                                                   data-url="{% url 'centrodeinfancia_nomina_derivar' e.id %}"
-                                                   data-ciudadano="{{ e.nombre }} {{ e.apellido }}"
-                                                   data-bs-toggle="modal"
-                                                   data-bs-target="#derivarNominaModal">
-                                                    <i class="fas fa-share-square"></i> Derivar
-                                                </a>
-                                            </li>
-                                        {% endif %}
-                                    </ul>
-                                    <a href="{% url 'centrodeinfancia_nomina_borrar' object.id e.id %}"
-                                       class="nomina-btn nomina-btn-delete"
-                                       data-confirm-click="¿Está seguro de eliminar este registro?">
-                                        <i class="fas fa-trash-alt"></i> Borrar
-                                    </a>
-                                </div>
-                            </td>
-                        </tr>
-                    {% empty %}
-                        <tr>
-                            <td colspan="9" class="nomina-empty-message">No hay registros en la nómina.</td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-
-        <!-- Paginación -->
-        {% if nomina.has_other_pages %}
-            <div class="nomina-pagination">
-                <span class="nomina-pagination-info">
-                    Mostrando {{ nomina.start_index }}-{{ nomina.end_index }} de {{ nomina.paginator.count }}
-                </span>
-                <div class="nomina-pagination-buttons">
-                    {% if nomina.has_previous %}
-                        <a href="?page={{ nomina.previous_page_number }}"
-                           class="nomina-page-btn"
-                           aria-label="Página anterior">
-                            <i class="fas fa-chevron-left"></i>
-                        </a>
-                    {% else %}
-                        <button class="nomina-page-btn" disabled aria-label="Página anterior">
-                            <i class="fas fa-chevron-left"></i>
-                        </button>
-                    {% endif %}
-
-                    <span class="nomina-page-number">{{ nomina.number }} de {{ nomina.paginator.num_pages }}</span>
-
-                    {% if nomina.has_next %}
-                        <a href="?page={{ nomina.next_page_number }}"
-                           class="nomina-page-btn"
-                           aria-label="Página siguiente">
-                            <i class="fas fa-chevron-right"></i>
-                        </a>
-                    {% else %}
-                        <button class="nomina-page-btn" disabled aria-label="Página siguiente">
-                            <i class="fas fa-chevron-right"></i>
-                        </button>
-                    {% endif %}
+        <!-- 3) DISTRIBUCIÓN POR EDAD (colapsable) -->
+        <div class="cdi-dist-card">
+            <button class="nomina-toggle-details" type="button">
+                <span>Ver estadísticas detalladas</span>
+                <i class="fas fa-chevron-down nomina-toggle-icon"></i>
+            </button>
+            <div id="detailedStatsContent" class="cdi-dist-body" style="display: none">
+                <p class="cdi-dist-group-title">Menores de edad (0–17 años)</p>
+                <div class="cdi-dist-row {% if not nomina_rangos.ninos %}is-zero{% endif %}">
+                    <span class="cdi-dist-lbl">Niños (0–13)</span>
+                    <span class="cdi-dist-num">{{ nomina_rangos.ninos|default:0 }}</span>
+                    <div class="cdi-dist-bar">
+                        <div class="cdi-dist-fill"
+                             style="width: {{ nomina_rangos.pct_ninos|default:0|unlocalize }}%"></div>
+                    </div>
+                    <span class="cdi-dist-pct">{{ nomina_rangos.pct_ninos|default:0 }}%</span>
+                </div>
+                <div class="cdi-dist-row {% if not nomina_rangos.adolescentes %}is-zero{% endif %}">
+                    <span class="cdi-dist-lbl">Adolescentes (14–17)</span>
+                    <span class="cdi-dist-num">{{ nomina_rangos.adolescentes|default:0 }}</span>
+                    <div class="cdi-dist-bar">
+                        <div class="cdi-dist-fill"
+                             style="width: {{ nomina_rangos.pct_adolescentes|default:0|unlocalize }}%"></div>
+                    </div>
+                    <span class="cdi-dist-pct">{{ nomina_rangos.pct_adolescentes|default:0 }}%</span>
+                </div>
+                <p class="cdi-dist-group-title">Adultos (18+ años)</p>
+                <div class="cdi-dist-row {% if not nomina_rangos.adultos %}is-zero{% endif %}">
+                    <span class="cdi-dist-lbl">Adultos (18–49)</span>
+                    <span class="cdi-dist-num">{{ nomina_rangos.adultos|default:0 }}</span>
+                    <div class="cdi-dist-bar">
+                        <div class="cdi-dist-fill"
+                             style="width: {{ nomina_rangos.pct_adultos|default:0|unlocalize }}%"></div>
+                    </div>
+                    <span class="cdi-dist-pct">{{ nomina_rangos.pct_adultos|default:0 }}%</span>
+                </div>
+                <div class="cdi-dist-row {% if not nomina_rangos.adultos_mayores %}is-zero{% endif %}">
+                    <span class="cdi-dist-lbl">Adultos mayores (50–65)</span>
+                    <span class="cdi-dist-num">{{ nomina_rangos.adultos_mayores|default:0 }}</span>
+                    <div class="cdi-dist-bar">
+                        <div class="cdi-dist-fill"
+                             style="width: {{ nomina_rangos.pct_adultos_mayores|default:0|unlocalize }}%"></div>
+                    </div>
+                    <span class="cdi-dist-pct">{{ nomina_rangos.pct_adultos_mayores|default:0 }}%</span>
+                </div>
+                <div class="cdi-dist-row {% if not nomina_rangos.adulto_mayor_avanzado %}is-zero{% endif %}">
+                    <span class="cdi-dist-lbl">Adulto mayor avanzado (66+)</span>
+                    <span class="cdi-dist-num">{{ nomina_rangos.adulto_mayor_avanzado|default:0 }}</span>
+                    <div class="cdi-dist-bar">
+                        <div class="cdi-dist-fill"
+                             style="width: {{ nomina_rangos.pct_adulto_mayor_avanzado|default:0|unlocalize }}%"></div>
+                    </div>
+                    <span class="cdi-dist-pct">{{ nomina_rangos.pct_adulto_mayor_avanzado|default:0 }}%</span>
                 </div>
             </div>
-        {% endif %}
-    </div>
-    <!-- Modal Derivar -->
-    <div class="modal fade"
-         id="derivarNominaModal"
-         tabindex="-1"
-         aria-labelledby="derivarNominaLabel"
-         aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="derivarNominaLabel">Derivar persona</h5>
-                    <button type="button"
-                            class="btn-close"
-                            data-bs-dismiss="modal"
-                            aria-label="Cerrar"></button>
-                </div>
-                <div class="modal-body">
-                    <p class="mb-3">
-                        Persona: <strong id="derivarNombreCiudadano"></strong>
-                    </p>
-                    <div class="mb-3">
-                        <label for="derivarCentroSelect" class="form-label">Centro destino</label>
-                        <select id="derivarCentroSelect" class="form-select">
-                            <option value="">-- Seleccionar centro --</option>
-                            {% for c in centros_para_derivar %}<option value="{{ c.id }}">{{ c.nombre }}</option>{% endfor %}
+        </div>
+
+        <!-- 4) NÓMINA -->
+        <div class="cdf-card">
+            <div class="cdf-card-head">
+                <i class="bi bi-people"></i>
+                <span>Nómina</span>
+            </div>
+            <div class="cdf-card-body">
+                <div class="cdi-toolbar">
+                    <div class="cdi-toolbar-left">
+                        <input type="search"
+                               class="cdf-search"
+                               id="nominaSearch"
+                               placeholder="Buscar en nómina…" />
+                        <select class="cdf-search"
+                                id="nominaFiltroEstado"
+                                aria-label="Filtrar por estado">
+                            <option value="">Todos los estados</option>
+                            <option value="activo">Activo</option>
+                            <option value="pendiente">Pendiente</option>
+                            <option value="baja">Baja</option>
+                        </select>
+                        <select class="cdf-search"
+                                id="nominaFiltroSala"
+                                aria-label="Filtrar por sala">
+                            <option value="">Todas las salas</option>
                         </select>
                     </div>
-                    <div class="mb-3">
-                        <label for="derivarMotivo" class="form-label">
-                            Motivo / observaciones <span class="text-muted">(opcional)</span>
-                        </label>
-                        <textarea id="derivarMotivo" class="form-control" rows="3"></textarea>
-                    </div>
-                    <div id="derivarMensaje" class="alert d-none"></div>
+                    <a href="{% url 'centrodeinfancia_nomina_crear' object.id %}"
+                       class="cdf-btn cdf-btn--primary">
+                        <i class="bi bi-plus-lg"></i>Agregar persona
+                    </a>
                 </div>
-                <div class="modal-footer">
-                    <button type="button"
-                            class="btn btn-sm btn-secondary"
-                            data-bs-dismiss="modal">Cancelar</button>
-                    <button type="button" id="derivarConfirmarBtn" class="btn btn-sm btn-primary">Confirmar derivación</button>
+                <div class="cdf-tbl-scroll">
+                    <table class="cdf-table" id="tablaNomina">
+                        <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Apellido y nombre</th>
+                                <th>DNI</th>
+                                <th>Sexo</th>
+                                <th>Edad</th>
+                                <th>Sala</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for e in nomina %}
+                                <tr data-estado="{% if e.estado == 'activo' %}activo{% elif e.estado == 'pendiente' %}pendiente{% else %}baja{% endif %}"
+                                    data-sala="{{ e.sala|default:'' }}">
+                                    <td>{{ e.fecha|date:"d/m/Y" }}</td>
+                                    <td>
+                                        <a href="{% url 'ciudadanos_ver' e.ciudadano.id %}">{{ e.apellido|default:e.ciudadano.apellido }}, {{ e.nombre|default:e.ciudadano.nombre }}</a>
+                                    </td>
+                                    <td>{{ e.dni|default:e.ciudadano.documento|default:"-" }}</td>
+                                    <td>{{ e.sexo|default:e.ciudadano.sexo.sexo|default:"-" }}</td>
+                                    <td>{{ e.edad|default:e.ciudadano.edad|default:"-" }}</td>
+                                    <td>{{ e.sala|default:"-" }}</td>
+                                    <td>
+                                        {% if e.estado == "activo" %}
+                                            <span class="cdf-pill cdf-pill--success">Activo</span>
+                                        {% elif e.estado == "pendiente" %}
+                                            <span class="cdf-pill cdf-pill--gold">Pendiente</span>
+                                        {% else %}
+                                            <span class="cdf-pill cdf-pill--muted">Baja</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="cdf-actions">
+                                            <a href="{% url 'centrodeinfancia_nomina_destinatario_ver' object.id e.id %}"
+                                               class="cdf-btn cdf-btn--primary">Ver</a>
+                                            <a href="{% url 'centrodeinfancia_nomina_editar' object.id e.id %}"
+                                               class="cdf-btn cdf-btn--gold">Editar</a>
+                                            {% if e.estado == "activo" %}
+                                                <button type="button"
+                                                        class="cdf-btn nomina-derivar-btn"
+                                                        data-nomina-id="{{ e.id }}"
+                                                        data-url="{% url 'centrodeinfancia_nomina_derivar' e.id %}"
+                                                        data-ciudadano="{{ e.nombre }} {{ e.apellido }}"
+                                                        data-bs-toggle="modal"
+                                                        data-bs-target="#derivarNominaModal">Derivar</button>
+                                            {% endif %}
+                                            <a href="{% url 'centrodeinfancia_nomina_borrar' object.id e.id %}"
+                                               class="cdf-btn cdf-btn--danger"
+                                               data-confirm-click="¿Está seguro de eliminar este registro?">Borrar</a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="8" class="text-center cdf-td-muted py-3">No hay registros en la nómina.</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
                 </div>
             </div>
+            {% if nomina.has_other_pages %}
+                <div class="cdf-card-foot justify-content-between">
+                    <span class="cdf-td-muted">
+                        Mostrando {{ nomina.start_index }}-{{ nomina.end_index }} de {{ nomina.paginator.count }}
+                    </span>
+                    <ul class="pagination mb-0">
+                        <li class="page-item {% if not nomina.has_previous %}disabled{% endif %}">
+                            {% if nomina.has_previous %}
+                                <a class="page-link"
+                                   href="?page={{ nomina.previous_page_number }}"
+                                   aria-label="Página anterior">Anterior</a>
+                            {% else %}
+                                <a class="page-link disabled"
+                                   href="#"
+                                   tabindex="-1"
+                                   aria-disabled="true">Anterior</a>
+                            {% endif %}
+                        </li>
+                        <li class="page-item disabled">
+                            <span class="page-link">{{ nomina.number }} de {{ nomina.paginator.num_pages }}</span>
+                        </li>
+                        <li class="page-item {% if not nomina.has_next %}disabled{% endif %}">
+                            {% if nomina.has_next %}
+                                <a class="page-link"
+                                   href="?page={{ nomina.next_page_number }}"
+                                   aria-label="Página siguiente">Siguiente</a>
+                            {% else %}
+                                <a class="page-link disabled"
+                                   href="#"
+                                   tabindex="-1"
+                                   aria-disabled="true">Siguiente</a>
+                            {% endif %}
+                        </li>
+                    </ul>
+                </div>
+            {% endif %}
         </div>
-    </div>
 
-    <!-- Modal Editar -->
-    <div class="modal fade"
-         id="editarNominaModal"
-         tabindex="-1"
-         aria-labelledby="editarNominaLabel"
-         aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <form id="editarNominaForm" method="post">
+        <!-- Modal Derivar -->
+        <div class="modal fade"
+             id="derivarNominaModal"
+             tabindex="-1"
+             aria-labelledby="derivarNominaLabel"
+             aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
                     <div class="modal-header">
-                        <h5 class="modal-title" id="editarNominaLabel">Editar Nómina</h5>
+                        <h5 class="modal-title" id="derivarNominaLabel">Derivar persona</h5>
                         <button type="button"
-                                class="btn-close"
+                                class="btn-close btn-close-white"
                                 data-bs-dismiss="modal"
                                 aria-label="Cerrar"></button>
                     </div>
-                    <div class="modal-body" aria-live="polite">
-                        <!-- Aquí se va a cargar el form con AJAX -->
+                    <div class="modal-body">
+                        <p class="mb-3">
+                            Persona: <strong id="derivarNombreCiudadano"></strong>
+                        </p>
+                        <div class="mb-3">
+                            <label for="derivarCentroSelect" class="form-label">Centro destino</label>
+                            <select id="derivarCentroSelect" class="form-select">
+                                <option value="">-- Seleccionar centro --</option>
+                                {% for c in centros_para_derivar %}<option value="{{ c.id }}">{{ c.nombre }}</option>{% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="derivarMotivo" class="form-label">
+                                Motivo / observaciones <span class="text-muted">(opcional)</span>
+                            </label>
+                            <textarea id="derivarMotivo" class="form-control" rows="3"></textarea>
+                        </div>
+                        <div id="derivarMensaje" class="alert d-none"></div>
                     </div>
                     <div class="modal-footer">
-                        <button type="submit" class="btn btn-sm btn-primary">Guardar</button>
                         <button type="button"
                                 class="btn btn-sm btn-secondary"
                                 data-bs-dismiss="modal">Cancelar</button>
+                        <button type="button" id="derivarConfirmarBtn" class="btn btn-sm btn-primary">Confirmar derivación</button>
                     </div>
-                </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal Editar -->
+        <div class="modal fade"
+             id="editarNominaModal"
+             tabindex="-1"
+             aria-labelledby="editarNominaLabel"
+             aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <form id="editarNominaForm" method="post">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="editarNominaLabel">Editar Nómina</h5>
+                            <button type="button"
+                                    class="btn-close btn-close-white"
+                                    data-bs-dismiss="modal"
+                                    aria-label="Cerrar"></button>
+                        </div>
+                        <div class="modal-body" aria-live="polite">
+                            <!-- Aquí se va a cargar el form con AJAX -->
+                        </div>
+                        <div class="modal-footer">
+                            <button type="submit" class="btn btn-sm btn-primary">Guardar</button>
+                            <button type="button"
+                                    class="btn btn-sm btn-secondary"
+                                    data-bs-dismiss="modal">Cancelar</button>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
     </div>
 {% endblock %}
+
 {% block customJS %}
     {% csrf_token %}
     <script src="{% static 'custom/js/nomina_detail.js' %}"></script>
     <script src="{% static 'custom/js/nomina_derivar.js' %}"></script>
+    <script nonce="{{ request.csp_nonce }}">
+        // Búsqueda y filtros client-side sobre la página actual de la nómina.
+        document.addEventListener("DOMContentLoaded", function() {
+            const tabla = document.getElementById("tablaNomina");
+            const search = document.getElementById("nominaSearch");
+            const filtroEstado = document.getElementById("nominaFiltroEstado");
+            const filtroSala = document.getElementById("nominaFiltroSala");
+            if (!tabla || !search || !filtroEstado || !filtroSala) {
+                return;
+            }
+
+            const filas = Array.from(tabla.querySelectorAll("tbody tr")).filter(function(row) {
+                return row.dataset.estado !== undefined;
+            });
+
+            const salas = new Set();
+            filas.forEach(function(row) {
+                if (row.dataset.sala) {
+                    salas.add(row.dataset.sala);
+                }
+            });
+            Array.from(salas).sort().forEach(function(sala) {
+                const option = document.createElement("option");
+                option.value = sala;
+                option.textContent = sala;
+                filtroSala.appendChild(option);
+            });
+
+            function aplicarFiltros() {
+                const term = search.value.trim().toLowerCase();
+                const estado = filtroEstado.value;
+                const sala = filtroSala.value;
+                filas.forEach(function(row) {
+                    const coincideTexto = term === "" || row.textContent.toLowerCase().includes(term);
+                    const coincideEstado = estado === "" || row.dataset.estado === estado;
+                    const coincideSala = sala === "" || row.dataset.sala === sala;
+                    row.hidden = !(coincideTexto && coincideEstado && coincideSala);
+                });
+            }
+
+            search.addEventListener("input", aplicarFiltros);
+            filtroEstado.addEventListener("change", aplicarFiltros);
+            filtroSala.addEventListener("change", aplicarFiltros);
+        });
+    </script>
 {% endblock %}

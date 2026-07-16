@@ -9,6 +9,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.contenttypes.models import ContentType
+from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
 from django.db import transaction
 from django.db.models import Exists, OuterRef, Q
@@ -25,6 +26,7 @@ from django.views.generic import (
     DeleteView,
     DetailView,
     ListView,
+    TemplateView,
     UpdateView,
 )
 from auditlog.models import LogEntry
@@ -54,6 +56,7 @@ from centrodeinfancia.forms import (
 from centrodeinfancia.formulario_cdi_schema import CAMPOS_OPCIONES_MULTIPLES
 from centrodeinfancia.models import (
     AccesoCDI,
+    AsistenciaTrabajador,
     CentroDeInfancia,
     DepartamentoIpi,
     IntervencionCentroInfancia,
@@ -61,7 +64,10 @@ from centrodeinfancia.models import (
     ObservacionCentroInfancia,
     Trabajador,
 )
-from centrodeinfancia.services import CentroDeInfanciaService
+from centrodeinfancia.services import (
+    AsistenciaTrabajadorService,
+    CentroDeInfanciaService,
+)
 from centrodeinfancia.views_formulario_cdi import construir_resumenes_formularios
 from intervenciones.constants import PROGRAMA_ALIASES_CENTRO_INFANCIA
 
@@ -1777,3 +1783,95 @@ def eliminar_archivo_intervencion_centrodeinfancia(request, intervencion_id):
     else:
         messages.error(request, "No hay archivo para eliminar.")
     return redirect("centrodeinfancia_detalle", pk=intervencion.centro_id)
+
+
+class AsistenciaTrabajadorCentroView(LoginRequiredMixin, TemplateView):
+    """
+    GET: tabla del personal del centro para tomar asistencia en una fecha.
+    POST: guarda/actualiza los registros de AsistenciaTrabajador por
+    (trabajador, fecha). Un trabajador sin marcar no genera registro.
+    """
+
+    template_name = "centrodeinfancia/trabajador_asistencia.html"
+
+    def _get_centro(self):
+        if not hasattr(self, "_centro_cache"):
+            self._centro_cache = _get_centro_cdi_scoped_or_404(
+                self.request.user,
+                pk=self.kwargs["pk"],
+            )
+        return self._centro_cache
+
+    def _parse_fecha(self, fecha_raw):
+        try:
+            return AsistenciaTrabajadorService.parsear_fecha(fecha_raw)
+        except ValidationError as exc:
+            messages.error(self.request, exc.messages[0])
+            return timezone.localdate()
+
+    @staticmethod
+    def _trabajadores(centro):
+        return list(centro.trabajadores.order_by("apellido", "nombre"))
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        centro = self._get_centro()
+        fecha = self._parse_fecha(self.request.GET.get("fecha"))
+        trabajadores = self._trabajadores(centro)
+        asistencias = {
+            asistencia.trabajador_id: asistencia
+            for asistencia in AsistenciaTrabajador.objects.filter(
+                fecha=fecha,
+                trabajador__in=trabajadores,
+            )
+        }
+        filas = []
+        presentes = ausentes = sin_marcar = 0
+        for trabajador in trabajadores:
+            asistencia = asistencias.get(trabajador.pk)
+            presente = asistencia.presente if asistencia else None
+            if presente is True:
+                presentes += 1
+            elif presente is False:
+                ausentes += 1
+            else:
+                sin_marcar += 1
+            filas.append(
+                {
+                    "trabajador": trabajador,
+                    "presente": presente,
+                    "observaciones": asistencia.observaciones if asistencia else "",
+                }
+            )
+        context["centro"] = centro
+        context["object"] = centro
+        context["fecha"] = fecha
+        context["filas"] = filas
+        context["total_presentes"] = presentes
+        context["total_ausentes"] = ausentes
+        context["total_sin_marcar"] = sin_marcar
+        context["back_url"] = reverse(
+            "centrodeinfancia_detalle", kwargs={"pk": centro.pk}
+        )
+        return context
+
+    def get(self, request, *args, **kwargs):
+        return self.render_to_response(self.get_context_data())
+
+    def post(self, request, *args, **kwargs):
+        centro = self._get_centro()
+        try:
+            fecha = AsistenciaTrabajadorService.guardar(
+                centro=centro,
+                fecha_raw=request.POST.get("fecha"),
+                datos=request.POST,
+                usuario=request.user,
+            )
+        except ValidationError as exc:
+            messages.error(request, exc.messages[0])
+            return redirect("centrodeinfancia_trabajadores_asistencia", pk=centro.pk)
+        messages.success(request, "Asistencia registrada correctamente.")
+        url = reverse(
+            "centrodeinfancia_trabajadores_asistencia", kwargs={"pk": centro.pk}
+        )
+        return redirect(f"{url}?fecha={fecha.isoformat()}")

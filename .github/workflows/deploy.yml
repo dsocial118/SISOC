@@ -6,6 +6,7 @@ on:
             - development
             - homologacion
             - main
+    workflow_dispatch:
 
 permissions: { contents: read }
 
@@ -45,6 +46,9 @@ jobs:
               shell: bash
               env:
                   GH_APP_ROOT: "${{ vars.APP_ROOT }}"
+                  GIT_CONFIG_COUNT: "1"
+                  GIT_CONFIG_KEY_0: safe.directory
+                  GIT_CONFIG_VALUE_0: /sisoc/SISOC-Mobile
               run: |
                   set -Eeuo pipefail
 
@@ -55,6 +59,7 @@ jobs:
                   fi
 
                   cd "$APP_ROOT"
+                  git -C /sisoc/SISOC-Mobile update-index --refresh
                   echo "Commit previo al deploy para rollback: $(git rev-parse HEAD)"
                   ./scripts/operacion/deploy_refresh.sh --yes --with-mobile --mobile-dir /sisoc/SISOC-Mobile
 
