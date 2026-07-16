@@ -1211,7 +1211,9 @@ def test_prestacion_alimentaria_conformidad_repetida_mantiene_periodo_disponible
     assert primera.status_code == 201
     assert detalle.status_code == 200
     assert detalle.data["conformidad_pendiente"] is True
-    assert detalle.data["periodo_pendiente"] == date.fromisoformat(primera.data["periodo"])
+    assert detalle.data["periodo_pendiente"] == date.fromisoformat(
+        primera.data["periodo"]
+    )
 
 
 @pytest.mark.django_db
