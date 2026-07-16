@@ -839,10 +839,9 @@ def test_adjuntar_y_presentar_rendicion(comedores, settings, tmp_path):
     )
     assert present_without_docs_response.status_code == 400
 
-    # El commit a4636912 actualizó CATEGORIAS_CONFIG: agregó Formulario I y
-    # dividió Formulario III/V en _ALIMENTARIO/_SIPH como obligatorios mobile.
+    # Formulario I es optativo; Formulario III/V se divide en variantes
+    # _ALIMENTARIO/_SIPH obligatorias para mobile.
     categorias_obligatorias = [
-        DocumentacionAdjunta.CATEGORIA_FORMULARIO_I,
         DocumentacionAdjunta.CATEGORIA_FORMULARIO_II,
         DocumentacionAdjunta.CATEGORIA_FORMULARIO_III_ALIMENTARIO,
         DocumentacionAdjunta.CATEGORIA_FORMULARIO_III_SIPH,
@@ -871,6 +870,13 @@ def test_adjuntar_y_presentar_rendicion(comedores, settings, tmp_path):
     # CATEGORIAS_CONFIG ahora trae 12 items (Form I + III/V divididos +
     # Form IV/VI + Extracto + Comprobantes + Planilla Seguros + Otros).
     assert len(detail_response.data["documentacion"]) == 12
+    formulario_i = next(
+        item
+        for item in detail_response.data["documentacion"]
+        if item["codigo"] == DocumentacionAdjunta.CATEGORIA_FORMULARIO_I
+    )
+    assert formulario_i["required"] is False
+    assert formulario_i["archivos"] == []
     categoria_extra = next(
         item
         for item in detail_response.data["documentacion"]
@@ -1182,16 +1188,32 @@ def test_prestacion_alimentaria_conformidad_crea_registro():
 
 
 @pytest.mark.django_db
-def test_prestacion_alimentaria_conformidad_rechaza_duplicado_del_mes():
+def test_prestacion_alimentaria_conformidad_permite_repetir_periodo():
     comedor, client = _comedor_alimentar_comunidad(username="rep_conf_dup")
     url = f"/api/comedores/{comedor.id}/prestacion-alimentaria/conformidad/"
     payload = {"conforme": True, "periodo": "2027-08"}
 
     assert client.post(url, payload, format="json").status_code == 201
-    repetido = client.post(url, payload, format="json")
+    segunda = client.post(url, payload, format="json")
 
-    assert repetido.status_code == 400
-    assert PrestacionAlimentariaConformidad.objects.filter(comedor=comedor).count() == 1
+    assert segunda.status_code == 201
+    assert PrestacionAlimentariaConformidad.objects.filter(comedor=comedor).count() == 2
+
+
+@pytest.mark.django_db
+def test_prestacion_alimentaria_conformidad_repetida_mantiene_periodo_disponible():
+    comedor, client = _comedor_alimentar_comunidad(username="rep_conf_repetida")
+    url = f"/api/comedores/{comedor.id}/prestacion-alimentaria/conformidad/"
+
+    primera = client.post(url, {"conforme": True}, format="json")
+    detalle = client.get(f"/api/comedores/{comedor.id}/prestacion-alimentaria/")
+
+    assert primera.status_code == 201
+    assert detalle.status_code == 200
+    assert detalle.data["conformidad_pendiente"] is True
+    assert detalle.data["periodo_pendiente"] == date.fromisoformat(
+        primera.data["periodo"]
+    )
 
 
 @pytest.mark.django_db
@@ -1231,10 +1253,23 @@ def test_prestacion_alimentaria_conformidad_disponible_para_todos_los_programas(
     )
 
     assert response.status_code == 201
-    assert PrestacionAlimentariaConformidad.objects.filter(
-        comedor=comedor_1,
-        periodo=date(2028, 3, 1),
-    ).exists()
+    segunda = client.post(
+        f"/api/comedores/{comedor_1.id}/prestacion-alimentaria/conformidad/",
+        {
+            "conforme": False,
+            "observaciones": "Revisión posterior",
+            "periodo": "2028-03",
+        },
+        format="json",
+    )
+    assert segunda.status_code == 201
+    assert (
+        PrestacionAlimentariaConformidad.objects.filter(
+            comedor=comedor_1,
+            periodo=date(2028, 3, 1),
+        ).count()
+        == 2
+    )
 
 
 @pytest.mark.django_db

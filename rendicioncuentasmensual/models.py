@@ -71,7 +71,7 @@ class DocumentacionAdjunta(SoftDeleteModelMixin, models.Model):
         {
             "codigo": CATEGORIA_FORMULARIO_I,
             "label": "Formulario I - Certificación de Cuenta Bancaria",
-            "required": True,
+            "required": False,
             "multiple": False,
             "order": 1,
         },
