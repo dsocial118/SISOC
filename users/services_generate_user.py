@@ -3,7 +3,7 @@
 Reutilizable por cualquier app (CDI hoy; Organización/Comedor a futuro): la app
 provee el grupo fijo a asignar, un callback que vincula el usuario creado a su
 entidad y, opcionalmente, un chequeo de límite. La validación de delegación
-reutiliza el mecanismo IAM existente (`Profile.grupos_asignables`).
+reutiliza el alcance efectivo de delegación de grupos.
 """
 
 from __future__ import annotations
@@ -24,6 +24,7 @@ from django.template.loader import render_to_string
 from django.urls import reverse
 
 from users.services_auth import generate_temporary_password_for_user
+from users.services_delegation import effective_delegatable_group_ids
 
 User = get_user_model()
 logger = logging.getLogger("django")
@@ -73,10 +74,7 @@ def _actor_puede_delegar_grupo(actor, grupo: Group) -> bool:
         return False
     if actor.is_superuser:
         return True
-    profile = getattr(actor, "profile", None)
-    if not profile:
-        return False
-    return profile.grupos_asignables.filter(pk=grupo.pk).exists()
+    return grupo.pk in effective_delegatable_group_ids(actor)
 
 
 def _build_login_url(request=None) -> str:

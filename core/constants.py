@@ -21,7 +21,13 @@ class UserGroups:
     AREA_LEGALES = "Area Legales"
     AREA_CONTABLE = "Area Contable"
     CDI_REFERENTE_CENTRO = "CDI - Referente centro"
+    CDI_TRABAJADOR = "CDI - Trabajador"
     CDF_REFERENTE_CENTRO = "CDF - Referente centro"
+    SIMEPI_ADMINISTRADOR = "SIMEPI - Administrador"
+    SIMEPI_ANALISTA_DATOS = "SIMEPI - Analista de datos"
+    SIMEPI_EQUIPO_NACIONAL = "SIMEPI - Equipo Nacional"
+    SIMEPI_AUDITORIA = "SIMEPI - Auditoría"
+    SIMEPI_EGP = "SIMEPI - EGP"
 
     # =========================================================================
     # Grupos de permisos específicos
@@ -141,4 +147,16 @@ GROUP_INHERITANCE = {
         UserGroups.COMEDORES_LISTAR,
         UserGroups.COMEDOR_VER,
     ),
+}
+
+
+GROUP_DELEGATION = {
+    UserGroups.SIMEPI_ADMINISTRADOR: (UserGroups.SIMEPI_EQUIPO_NACIONAL,),
+    UserGroups.SIMEPI_EQUIPO_NACIONAL: (
+        UserGroups.SIMEPI_EGP,
+        UserGroups.SIMEPI_ANALISTA_DATOS,
+        UserGroups.SIMEPI_AUDITORIA,
+    ),
+    UserGroups.SIMEPI_EGP: (UserGroups.CDI_REFERENTE_CENTRO,),
+    UserGroups.CDI_REFERENTE_CENTRO: (UserGroups.CDI_TRABAJADOR,),
 }

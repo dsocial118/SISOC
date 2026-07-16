@@ -26,6 +26,8 @@ class ExpedientePagoForm(forms.ModelForm):
         if self._es_tecnico_comedor is False:
             for field in (
                 "total",
+                "total_prestaciones",
+                "gastos_accesorios",
                 "mes_pago",
                 "ano",
                 "organizacion_creacion",
@@ -95,10 +97,10 @@ class ExpedientePagoForm(forms.ModelForm):
         widgets = {
             "usuario": forms.Select(attrs={"class": "form-control"}),
             "fecha_pago_al_banco": forms.DateInput(
-                attrs={"type": "date", "class": "form-control"}
+                format="%Y-%m-%d", attrs={"type": "date", "class": "form-control"}
             ),
             "fecha_acreditacion": forms.DateInput(
-                attrs={"type": "date", "class": "form-control"}
+                format="%Y-%m-%d", attrs={"type": "date", "class": "form-control"}
             ),
         }
         labels = {
