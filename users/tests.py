@@ -835,6 +835,7 @@ def test_import_egp_existente_sincroniza_scope_provincial():
     from users.services_user_import import process_single_user_import_row
 
     provincia = Provincia.objects.create(nombre="Provincia EGP import")
+    provincia_legacy = Provincia.objects.create(nombre="Provincia EGP legacy")
     actor = User.objects.create_user(username="import_equipo_scope", password="x")
     equipo = Group.objects.create(name=UserGroups.SIMEPI_EQUIPO_NACIONAL)
     egp = Group.objects.create(name=UserGroups.SIMEPI_EGP)
@@ -844,6 +845,8 @@ def test_import_egp_existente_sincroniza_scope_provincial():
         email="egp.existente@example.com",
         password="x",
     )
+    existente.profile.provincia = provincia_legacy
+    existente.profile.save(update_fields=["provincia"])
     job = UserImportJob(
         requested_by=actor,
         original_filename="usuarios.xlsx",
@@ -858,8 +861,10 @@ def test_import_egp_existente_sincroniza_scope_provincial():
     process_single_user_import_row(row_data=row_data, job=job)
 
     existente.refresh_from_db()
+    existente.profile.refresh_from_db()
     assert existente.groups.filter(pk=egp.pk).exists()
     assert existente.profile.es_usuario_provincial is True
+    assert existente.profile.provincia_id == provincia.pk
     assert list(
         existente.profile.territorial_scopes.values_list("provincia_id", flat=True)
     ) == [provincia.pk]

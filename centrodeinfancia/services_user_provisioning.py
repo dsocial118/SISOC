@@ -99,17 +99,6 @@ def crear_usuario_trabajador_automaticamente(request, trabajador):
     """Vincula un usuario al trabajador sin afectar el guardado de la nómina."""
     if trabajador.usuario_id or not (trabajador.email or "").strip():
         return
-    if User.objects.filter(email__iexact=trabajador.email.strip()).exists():
-        logger.warning(
-            "No se creó usuario de trabajador porque el email ya está en uso trabajador_id=%s email=%s",
-            trabajador.id,
-            trabajador.email,
-        )
-        messages.warning(
-            request,
-            "El trabajador se guardó sin crear usuario: el email ya está asociado a un usuario.",
-        )
-        return
 
     try:
         resultado = generar_usuario_delegado(
@@ -157,7 +146,7 @@ def crear_usuario_trabajador_automaticamente(request, trabajador):
 
 def _sincronizar_email_si_cuenta_temporal(request, user, email, tipo_usuario):
     email = (email or "").strip()
-    if not user or not email or user.email == email:
+    if not user or user.email == email:
         return
 
     profile = getattr(user, "profile", None)

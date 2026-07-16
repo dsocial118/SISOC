@@ -95,6 +95,11 @@ class CentroDeInfanciaForm(forms.ModelForm):
     def _obtener_provincia_usuario(user):
         if not user or not getattr(user, "is_authenticated", False):
             return None
+
+        provincia_id = get_single_full_province_scope_id(user)
+        if provincia_id:
+            return Provincia.objects.filter(pk=provincia_id).first()
+
         profile = Profile.objects.select_related("provincia").filter(user=user).first()
         provincia_usuario = getattr(profile, "provincia", None) if profile else None
         if (
@@ -102,11 +107,7 @@ class CentroDeInfanciaForm(forms.ModelForm):
             and Provincia.objects.filter(pk=provincia_usuario.pk).exists()
         ):
             return provincia_usuario
-
-        provincia_id = get_single_full_province_scope_id(user)
-        if not provincia_id:
-            return None
-        return Provincia.objects.filter(pk=provincia_id).first()
+        return None
 
     def __init__(self, *args, **kwargs):
         self.current_user = kwargs.pop("user", None)

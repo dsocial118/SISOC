@@ -217,6 +217,26 @@ def test_guardar_trabajador_con_email_crea_usuario_y_vinculo(client):
 
 
 @pytest.mark.django_db
+def test_trabajadores_con_email_repetido_reciben_usuarios_distintos(client):
+    centro = CentroDeInfancia.objects.create(nombre="CDI Trabajadores email repetido")
+    actor = _referente_actor(centro)
+    client.force_login(actor)
+
+    _guardar_trabajador(client, centro, email="compartido@example.com")
+    _guardar_trabajador(client, centro, email="compartido@example.com")
+
+    trabajadores = list(Trabajador.objects.filter(centro=centro))
+    assert len(trabajadores) == 2
+    assert all(trabajador.usuario_id for trabajador in trabajadores)
+    assert trabajadores[0].usuario_id != trabajadores[1].usuario_id
+    assert User.objects.filter(email="compartido@example.com").count() == 2
+    assert len({trabajador.usuario.username for trabajador in trabajadores}) == 2
+    assert not AccesoCDI.objects.filter(
+        user_id__in=[trabajador.usuario_id for trabajador in trabajadores]
+    ).exists()
+
+
+@pytest.mark.django_db
 def test_guardar_trabajador_sin_email_omite_usuario(client):
     centro = CentroDeInfancia.objects.create(nombre="CDI Trabajadores sin email")
     actor = _referente_actor(centro)
@@ -281,6 +301,71 @@ def test_email_referente_se_sincroniza_si_aun_debe_cambiar_password(client):
     assert response.status_code == 302
     assert referente.email == "nuevo.referente@example.com"
     assert referente.username == "referente-estable"
+
+
+@pytest.mark.django_db
+def test_email_referente_no_se_sincroniza_si_el_campo_no_cambio(client):
+    actor = _actor()
+    client.force_login(actor)
+    centro = CentroDeInfancia.objects.create(
+        nombre="CDI Sync referente sin cambio",
+        telefono="1122334455",
+        telefono_referente="1199887766",
+        nombre_referente="Lia",
+        apellido_referente="Paz",
+        email_referente="email.cdi@example.com",
+    )
+    referente = _usuario_temporal(
+        "referente-sin-cambio",
+        "email.cuenta@example.com",
+        must_change_password=True,
+    )
+    AccesoCDI.objects.create(user=referente, centro=centro)
+
+    response = _guardar_centro(
+        client,
+        centro,
+        nombre_referente="Lia",
+        apellido_referente="Paz",
+        email_referente="email.cdi@example.com",
+    )
+
+    referente.refresh_from_db()
+    assert response.status_code == 302
+    assert referente.email == "email.cuenta@example.com"
+
+
+@pytest.mark.django_db
+def test_email_referente_se_limpia_si_el_campo_cambio_a_vacio(client):
+    actor = _actor()
+    client.force_login(actor)
+    centro = CentroDeInfancia.objects.create(
+        nombre="CDI Sync referente vacío",
+        telefono="1122334455",
+        telefono_referente="1199887766",
+        nombre_referente="Lia",
+        apellido_referente="Paz",
+        email_referente="referente.a.limpiar@example.com",
+    )
+    referente = _usuario_temporal(
+        "referente-limpiar-email",
+        "referente.a.limpiar@example.com",
+        must_change_password=True,
+    )
+    AccesoCDI.objects.create(user=referente, centro=centro)
+
+    response = _guardar_centro(
+        client,
+        centro,
+        nombre_referente="Lia",
+        apellido_referente="Paz",
+        email_referente="",
+    )
+
+    referente.refresh_from_db()
+    assert response.status_code == 302
+    assert referente.email == ""
+    assert referente.username == "referente-limpiar-email"
 
 
 @pytest.mark.django_db
@@ -389,6 +474,67 @@ def test_email_trabajador_se_sincroniza_si_aun_debe_cambiar_password(client):
     assert response.status_code == 302
     assert usuario.email == "nuevo.trabajador@example.com"
     assert usuario.username == "trabajador-estable"
+
+
+@pytest.mark.django_db
+def test_email_trabajador_no_se_sincroniza_si_el_campo_no_cambio(client):
+    centro = CentroDeInfancia.objects.create(nombre="CDI Sync trabajador sin cambio")
+    actor = _referente_actor(centro)
+    client.force_login(actor)
+    usuario = _usuario_temporal(
+        "trabajador-sin-cambio",
+        "email.cuenta.trabajador@example.com",
+        must_change_password=True,
+    )
+    trabajador = Trabajador.objects.create(
+        centro=centro,
+        usuario=usuario,
+        nombre="Ana",
+        apellido="Lopez",
+        email="email.ficha.trabajador@example.com",
+    )
+
+    response = _guardar_trabajador(
+        client,
+        centro,
+        trabajador=trabajador,
+        email="email.ficha.trabajador@example.com",
+    )
+
+    usuario.refresh_from_db()
+    assert response.status_code == 302
+    assert usuario.email == "email.cuenta.trabajador@example.com"
+
+
+@pytest.mark.django_db
+def test_email_trabajador_se_limpia_si_el_campo_cambio_a_vacio(client):
+    centro = CentroDeInfancia.objects.create(nombre="CDI Sync trabajador vacío")
+    actor = _referente_actor(centro)
+    client.force_login(actor)
+    usuario = _usuario_temporal(
+        "trabajador-limpiar-email",
+        "trabajador.a.limpiar@example.com",
+        must_change_password=True,
+    )
+    trabajador = Trabajador.objects.create(
+        centro=centro,
+        usuario=usuario,
+        nombre="Ana",
+        apellido="Lopez",
+        email="trabajador.a.limpiar@example.com",
+    )
+
+    response = _guardar_trabajador(
+        client,
+        centro,
+        trabajador=trabajador,
+        email="",
+    )
+
+    usuario.refresh_from_db()
+    assert response.status_code == 302
+    assert usuario.email == ""
+    assert usuario.username == "trabajador-limpiar-email"
 
 
 @pytest.mark.django_db

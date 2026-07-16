@@ -259,6 +259,7 @@ class _AuditoriaSoloLecturaMixin:
 
 class _AutomaticReferenteProvisioningMixin:
     def form_valid(self, form):
+        email_referente_cambio = "email_referente" in form.changed_data
         object_pk = getattr(self.object, "pk", None)
         email_anterior = None
         if object_pk:
@@ -269,11 +270,12 @@ class _AutomaticReferenteProvisioningMixin:
             )
         response = super().form_valid(form)
         crear_referente_cdi_automaticamente(self.request, self.object)
-        sincronizar_email_referente_cdi(
-            self.request,
-            self.object,
-            email_anterior,
-        )
+        if email_referente_cambio:
+            sincronizar_email_referente_cdi(
+                self.request,
+                self.object,
+                email_anterior,
+            )
         return response
 
 
@@ -910,10 +912,12 @@ class TrabajadorCentroInfanciaCreateView(
         }
 
     def form_valid(self, form):
+        email_cambio = "email" in form.changed_data
         form.instance.centro = self.centro
         response = super().form_valid(form)
         crear_usuario_trabajador_automaticamente(self.request, self.object)
-        sincronizar_email_trabajador(self.request, self.object)
+        if email_cambio:
+            sincronizar_email_trabajador(self.request, self.object)
         messages.success(self.request, "Trabajador agregado correctamente.")
         return response
 
@@ -944,9 +948,11 @@ class TrabajadorCentroInfanciaUpdateView(
         return context
 
     def form_valid(self, form):
+        email_cambio = "email" in form.changed_data
         response = super().form_valid(form)
         crear_usuario_trabajador_automaticamente(self.request, self.object)
-        sincronizar_email_trabajador(self.request, self.object)
+        if email_cambio:
+            sincronizar_email_trabajador(self.request, self.object)
         messages.success(self.request, "Trabajador actualizado correctamente.")
         return response
 

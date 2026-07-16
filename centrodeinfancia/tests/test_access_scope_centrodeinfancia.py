@@ -690,6 +690,36 @@ def test_egp_no_puede_crear_cdi_fuera_de_su_scope(client):
 
 
 @pytest.mark.django_db
+def test_egp_prioriza_scope_explicito_sobre_provincia_legacy(client):
+    provincia_legacy = Provincia.objects.create(nombre="EGP scope legacy")
+    provincia_scope = Provincia.objects.create(nombre="EGP scope explícito")
+    user = _crear_usuario("egp-scope-explicito", provincia=provincia_legacy)
+    user.profile.es_usuario_provincial = True
+    user.profile.save(update_fields=["es_usuario_provincial"])
+    user.profile.territorial_scopes.all().delete()
+    ProfileTerritorialScope.objects.create(
+        profile=user.profile,
+        provincia=provincia_scope,
+    )
+    _asignar_grupo_con_permisos(user, UserGroups.SIMEPI_EGP)
+    client.force_login(user)
+
+    response = client.post(
+        reverse("centrodeinfancia_crear"),
+        {
+            "nombre": "CDI EGP scope explícito",
+            "provincia": provincia_legacy.pk,
+            "telefono": "1122334455",
+            "telefono_referente": "1199887766",
+        },
+    )
+
+    assert response.status_code == 302
+    centro = CentroDeInfancia.objects.get(nombre="CDI EGP scope explícito")
+    assert centro.provincia_id == provincia_scope.pk
+
+
+@pytest.mark.django_db
 def test_egp_sin_scope_no_puede_crear_cdi(client):
     provincia = Provincia.objects.create(nombre="EGP sin scope")
     user = _crear_usuario("egp-sin-scope")
