@@ -9,9 +9,6 @@
         <li class="breadcrumb-item">
             <a href="{% url 'importarexpedientes_list' %}">Importar Expedientes</a>
         </li>
-        <li class="breadcrumb-item">
-            <a href="{% url 'importarexpediente_detail' batch_id %}">Detalle</a>
-        </li>
         <li class="breadcrumb-item active">Fechas de acreditaci&oacute;n</li>
     </ol>
 {% endblock %}
@@ -19,7 +16,7 @@
 {% block app-header %}
     <div class="row g-2 align-items-center">
         <div class="col-12 col-lg-auto d-flex justify-content-start">
-            <a href="{% url 'importarexpediente_detail' batch_id %}"
+            <a href="{% url 'importarexpedientes_list' %}"
                class="btn btn-sm btn-primary w-100 w-sm-auto">Volver</a>
         </div>
     </div>
@@ -49,8 +46,9 @@
                 <div class="alert alert-info">
                     El archivo debe ser CSV o XLSX y contener las columnas <strong>ID</strong> y
                     <strong>Fecha de Acreditaci&oacute;n</strong>. La fecha debe cargarse con
-                    formato <strong>DD/MM/AAAA</strong>.
-                    Solo se actualizar&aacute;n expedientes importados en este lote.
+                    formato <strong>DD/MM/AAAA</strong>. Todas las filas deben informar la
+                    misma fecha; se actualizar&aacute;n todos los expedientes importados en este
+                    lote.
                 </div>
                 <form method="post" enctype="multipart/form-data">
                     {% csrf_token %}

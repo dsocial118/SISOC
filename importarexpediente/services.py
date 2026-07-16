@@ -226,11 +226,31 @@ def parse_date(value):
 def parse_decimal(value):
     if value is None or value == "":
         return None
-    s = str(value)
-    s = s.replace("$", "").replace(" ", "")
-    s = s.replace(".", "")
-    s = s.replace(",", ".")
-    s = s.strip()
+    if isinstance(value, Decimal):
+        return value
+    if isinstance(value, (int, float)):
+        return Decimal(str(value))
+
+    s = (
+        str(value)
+        .replace("$", "")
+        .replace(" ", "")
+        .replace("\u00a0", "")
+        .strip()
+    )
+    if "." in s and "," in s:
+        if s.rfind(".") > s.rfind(","):
+            s = s.replace(",", "")
+        else:
+            s = s.replace(".", "").replace(",", ".")
+    elif "," in s:
+        s = s.replace(".", "").replace(",", ".")
+    elif "." in s:
+        integer_part, decimal_part = s.rsplit(".", 1)
+        if decimal_part.isdigit() and len(decimal_part) in (1, 2):
+            s = integer_part.replace(".", "") + "." + decimal_part
+        else:
+            s = s.replace(".", "")
     try:
         return Decimal(s)
     except Exception:
@@ -320,6 +340,11 @@ def _parse_acreditacion_updates(parsed_file):
         raise ValidationError(
             "No se encontraron fechas de acreditaci\u00f3n para procesar."
         )
+    if len(set(updates_by_comedor.values())) != 1:
+        raise ValidationError(
+            "El archivo debe informar una \u00fanica fecha de acreditaci\u00f3n "
+            "para el lote."
+        )
     return updates_by_comedor
 
 
@@ -343,7 +368,6 @@ def actualizar_fechas_acreditacion_por_lote(
     expediente_rows = list(
         ExpedientePago.objects.filter(
             registros_importados__exito_importacion__archivo_importado=batch,
-            comedor_id__in=updates_by_comedor.keys(),
         ).values_list("id", "comedor_id")
     )
     expediente_ids_by_comedor = {}
@@ -359,19 +383,17 @@ def actualizar_fechas_acreditacion_por_lote(
             + missing
         )
 
-    expedientes_actualizados = 0
+    fecha_acreditacion = next(iter(set(updates_by_comedor.values())))
     with transaction.atomic():
-        for comedor_id, fecha_acreditacion in updates_by_comedor.items():
-            updated_count = (
-                ExpedientePago.objects.select_for_update()
-                .filter(id__in=expediente_ids_by_comedor[comedor_id])
-                .update(fecha_acreditacion=fecha_acreditacion)
-            )
-            expedientes_actualizados += updated_count
+        expedientes_actualizados = (
+            ExpedientePago.objects.select_for_update()
+            .filter(id__in={expediente_id for expediente_id, _ in expediente_rows})
+            .update(fecha_acreditacion=fecha_acreditacion)
+        )
 
     return AcreditacionImportResult(
         filas_procesadas=len(updates_by_comedor),
-        comedores_actualizados=len(updates_by_comedor),
+        comedores_actualizados=len(expediente_ids_by_comedor),
         expedientes_actualizados=expedientes_actualizados,
     )
 
@@ -385,14 +407,14 @@ def expediente_pago_from_row(parsed_file, row):  # pylint: disable=too-many-bran
             continue
         val = _cell_text(cell)
         if field in ("total", "total_prestaciones", "gastos_accesorios"):
-            parsed = parse_decimal(val)
+            parsed = parse_decimal(cell)
             if val and parsed is None:
                 specific_errors.append(
                     _field_warning(field, "El campo debe ser num\u00e9rico")
                 )
             kwargs[field] = parsed
         elif field.startswith("monto_mensual_"):
-            parsed = parse_decimal(val)
+            parsed = parse_decimal(cell)
             if val and parsed is None:
                 specific_errors.append(
                     _field_warning(field, "El campo debe ser num\u00e9rico")

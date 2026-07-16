@@ -1,3 +1,5 @@
+import logging
+
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -34,6 +36,7 @@ from importarexpediente.services import (
 
 
 MAX_ERROR_MESSAGES = 20
+logger = logging.getLogger(__name__)
 
 
 def _first_import_value(parsed_file, extractor):
@@ -506,15 +509,11 @@ class ImportarFechasAcreditacionView(LoginRequiredMixin, FormView):
 
     def dispatch(self, request, *args, **kwargs):
         self.batch_id = int(self.kwargs.get("id_archivo"))
-        self.batch = get_object_or_404(
-            ArchivosImportados, pk=self.batch_id, usuario=request.user
-        )
+        self.batch = get_object_or_404(ArchivosImportados, pk=self.batch_id)
         return super().dispatch(request, *args, **kwargs)
 
     def get_success_url(self):
-        return reverse_lazy(
-            "importarexpediente_detail", kwargs={"id_archivo": self.batch_id}
-        )
+        return reverse_lazy("importarexpedientes_list")
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -555,10 +554,14 @@ class ImportarFechasAcreditacionView(LoginRequiredMixin, FormView):
                     f"Se omitieron {len(exc.messages) - MAX_ERROR_MESSAGES} errores adicionales.",
                 )
             return self.form_invalid(form)
-        except Exception as exc:
+        except Exception:
+            logger.exception(
+                "Error al actualizar fechas de acreditaci\u00f3n por lote",
+                extra={"batch_id": self.batch.pk, "user_id": self.request.user.pk},
+            )
             messages.error(
                 self.request,
-                f"No se pudieron actualizar las fechas de acreditaci\u00f3n: {exc}",
+                "No se pudieron actualizar las fechas de acreditaci\u00f3n.",
             )
             return self.form_invalid(form)
 
