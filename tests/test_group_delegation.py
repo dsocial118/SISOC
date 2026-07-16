@@ -1,7 +1,10 @@
+from importlib import import_module
+
 import pytest
 from django.contrib.auth.models import Group, User
 
 from core.constants import UserGroups
+from users.bootstrap.groups_seed import permission_codes_for_bootstrap_group
 from users.services_delegation import effective_delegatable_group_ids
 from users.services_generate_user import _actor_puede_delegar_grupo
 
@@ -92,3 +95,15 @@ def test_alcance_efectivo_une_grupos_manuales_y_derivados(cascade_groups):
         cascade_groups[UserGroups.SIMEPI_ANALISTA_DATOS].id,
         cascade_groups[UserGroups.SIMEPI_AUDITORIA].id,
     }
+
+
+def test_referente_cdi_bootstrap_puede_crear_trabajadores():
+    assert "centrodeinfancia.add_trabajador" in permission_codes_for_bootstrap_group(
+        UserGroups.CDI_REFERENTE_CENTRO
+    )
+
+    migration = import_module("users.migrations.0041_bootstrap_simepi_cdi_groups")
+    assert (
+        "centrodeinfancia.add_trabajador"
+        in migration.GROUP_PERMISSION_MAP[UserGroups.CDI_REFERENTE_CENTRO]
+    )

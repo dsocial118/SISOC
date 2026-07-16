@@ -87,6 +87,7 @@ GROUP_PERMISSION_MAP = {
     "CDI - Referente centro": (
         "auth.add_user",
         "auth.view_user",
+        "centrodeinfancia.add_trabajador",
         "centrodeinfancia.change_trabajador",
         "centrodeinfancia.view_trabajador",
     ),

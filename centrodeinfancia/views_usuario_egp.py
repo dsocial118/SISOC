@@ -7,13 +7,12 @@ from django.views.generic import FormView
 
 from centrodeinfancia.access import puede_generar_usuario_egp
 from centrodeinfancia.forms_usuario_egp import GenerarUsuarioEGPForm
+from centrodeinfancia.services_user_provisioning import vincular_scope_provincial_egp
 from core.constants import UserGroups
-from users.models import Profile
 from users.services_generate_user import (
     DatosUsuarioDelegado,
     generar_usuario_delegado,
 )
-from users.territorial_scope import sync_profile_territorial_scopes
 
 
 class GenerarUsuarioEGPView(LoginRequiredMixin, UserPassesTestMixin, FormView):
@@ -38,19 +37,7 @@ class GenerarUsuarioEGPView(LoginRequiredMixin, UserPassesTestMixin, FormView):
         )
 
         def vincular_scope_provincial(nuevo_usuario):
-            profile, _ = Profile.objects.get_or_create(user=nuevo_usuario)
-            profile.es_usuario_provincial = True
-            profile.save(update_fields=["es_usuario_provincial"])
-            sync_profile_territorial_scopes(
-                profile,
-                [
-                    {
-                        "provincia_id": provincia.id,
-                        "municipio_id": None,
-                        "localidad_id": None,
-                    }
-                ],
-            )
+            vincular_scope_provincial_egp(nuevo_usuario, provincia)
 
         try:
             resultado = generar_usuario_delegado(

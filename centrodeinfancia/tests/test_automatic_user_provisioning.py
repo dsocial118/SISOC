@@ -6,6 +6,7 @@ from django.urls import reverse
 from centrodeinfancia.models import AccesoCDI, CentroDeInfancia, Trabajador
 from core.constants import UserGroups
 from users.models import Profile
+from users.services_group_permissions import sync_permissions_for_group
 
 
 def _actor(*, can_delegate=True):
@@ -15,7 +16,8 @@ def _actor(*, can_delegate=True):
         password="test1234",
     )
     user.user_permissions.add(
-        Permission.objects.get(codename="change_centrodeinfancia")
+        Permission.objects.get(codename="add_centrodeinfancia"),
+        Permission.objects.get(codename="change_centrodeinfancia"),
     )
     if can_delegate:
         egp, _ = Group.objects.get_or_create(name=UserGroups.SIMEPI_EGP)
@@ -42,11 +44,8 @@ def _referente_actor(centro):
         email="referente@example.com",
         password="test1234",
     )
-    user.user_permissions.add(
-        Permission.objects.get(codename="add_trabajador"),
-        Permission.objects.get(codename="change_trabajador"),
-    )
     referente, _ = Group.objects.get_or_create(name=UserGroups.CDI_REFERENTE_CENTRO)
+    sync_permissions_for_group(referente)
     Group.objects.get_or_create(name=UserGroups.CDI_TRABAJADOR)
     user.groups.add(referente)
     AccesoCDI.objects.create(user=user, centro=centro)
@@ -105,6 +104,28 @@ def test_guardar_cdi_crea_referente_automaticamente(client):
 
 
 @pytest.mark.django_db
+def test_crear_cdi_con_referente_crea_usuario_automaticamente(client):
+    actor = _actor()
+    client.force_login(actor)
+
+    response = client.post(
+        reverse("centrodeinfancia_crear"),
+        {
+            "nombre": "CDI Alta completa",
+            "telefono": "1122334455",
+            "telefono_referente": "1199887766",
+            "nombre_referente": "Lia",
+            "apellido_referente": "Paz",
+            "email_referente": "lia.alta@example.com",
+        },
+    )
+
+    assert response.status_code == 302
+    centro = CentroDeInfancia.objects.get(nombre="CDI Alta completa")
+    assert AccesoCDI.objects.get(centro=centro).user.email == "lia.alta@example.com"
+
+
+@pytest.mark.django_db
 def test_reguardar_cdi_no_duplica_referente(client):
     actor = _actor()
     client.force_login(actor)
@@ -146,7 +167,10 @@ def test_guardar_cdi_sin_email_no_crea_referente_y_avisa(client):
 
     assert response.status_code == 302
     assert not AccesoCDI.objects.filter(centro=centro).exists()
-    assert any("falta el email" in str(message) for message in get_messages(response.wsgi_request))
+    assert any(
+        "falta el email" in str(message)
+        for message in get_messages(response.wsgi_request)
+    )
 
 
 @pytest.mark.django_db
@@ -289,7 +313,51 @@ def test_email_referente_no_se_sincroniza_si_ya_modifico_cuenta(client):
     referente.refresh_from_db()
     assert referente.email == "anterior.protegido@example.com"
     assert referente.username == "referente-protegido"
-    assert any("ya modificó su cuenta" in str(message) for message in get_messages(response.wsgi_request))
+    assert any(
+        "ya modificó su cuenta" in str(message)
+        for message in get_messages(response.wsgi_request)
+    )
+
+
+@pytest.mark.django_db
+def test_email_referente_se_sincroniza_con_el_acceso_del_email_anterior(client):
+    actor = _actor()
+    client.force_login(actor)
+    centro = CentroDeInfancia.objects.create(
+        nombre="CDI Sync referente multiple",
+        telefono="1122334455",
+        telefono_referente="1199887766",
+        nombre_referente="Lia",
+        apellido_referente="Paz",
+        email_referente="referente.original@example.com",
+    )
+    acceso_ajeno = _usuario_temporal(
+        "acceso-ajeno-estable",
+        "acceso.ajeno@example.com",
+        must_change_password=True,
+    )
+    referente = _usuario_temporal(
+        "referente-correcto-estable",
+        "referente.original@example.com",
+        must_change_password=True,
+    )
+    AccesoCDI.objects.create(user=acceso_ajeno, centro=centro)
+    AccesoCDI.objects.create(user=referente, centro=centro)
+
+    response = _guardar_centro(
+        client,
+        centro,
+        nombre_referente="Lia",
+        apellido_referente="Paz",
+        email_referente="referente.nuevo@example.com",
+    )
+
+    referente.refresh_from_db()
+    acceso_ajeno.refresh_from_db()
+    assert response.status_code == 302
+    assert referente.email == "referente.nuevo@example.com"
+    assert referente.username == "referente-correcto-estable"
+    assert acceso_ajeno.email == "acceso.ajeno@example.com"
 
 
 @pytest.mark.django_db
@@ -351,4 +419,7 @@ def test_email_trabajador_no_se_sincroniza_si_ya_modifico_cuenta(client):
     usuario.refresh_from_db()
     assert usuario.email == "anterior.trabajador.protegido@example.com"
     assert usuario.username == "trabajador-protegido"
-    assert any("ya modificó su cuenta" in str(message) for message in get_messages(response.wsgi_request))
+    assert any(
+        "ya modificó su cuenta" in str(message)
+        for message in get_messages(response.wsgi_request)
+    )

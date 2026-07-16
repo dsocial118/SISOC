@@ -19,6 +19,7 @@ from comedores.models import Comedor
 from comedores.services.capacitaciones_certificados_service import (
     is_alimentar_comunidad_program,
 )
+from core.constants import UserGroups
 from core.models import Provincia
 from organizaciones.models import Organizacion
 from users.models import (
@@ -33,6 +34,7 @@ from users.services_pwa import (
     get_assignable_pwa_permission_codes,
     sync_representante_accesses,
 )
+from users.territorial_scope import sync_profile_territorial_scopes
 
 User = get_user_model()
 logger = logging.getLogger("django")
@@ -523,7 +525,7 @@ def _resolver_permisos_fila(row_data: dict, job: UserImportJob) -> _PermisosFila
 def _get_allowed_group_ids(actor) -> set | None:
     if actor is None or getattr(actor, "is_superuser", False):
         return None
-    return effective_delegatable_group_ids(actor) or None
+    return effective_delegatable_group_ids(actor)
 
 
 def _resolver_usuario_objetivo(row_data: dict, *, accion_explicita: bool):
@@ -560,7 +562,9 @@ def _aplicar_accion_m2m(
         return bool(to_remove)
 
     final_ids = (
-        (current_ids - allowed_ids | requested_ids) if allowed_ids else requested_ids
+        (current_ids - allowed_ids | requested_ids)
+        if allowed_ids is not None
+        else requested_ids
     )
     if final_ids != current_ids:
         manager.set(list(final_ids))
@@ -604,6 +608,7 @@ class _ActualizarUsuarioParams:
     email: str
     username_raw: str
     grupos: list
+    provincias_objs: list
     accion_grupos: str
     allowed_group_ids: set | None
     permisos_pwa: list
@@ -656,6 +661,25 @@ def _procesar_usuario_existente(params: _ActualizarUsuarioParams) -> dict:
             allowed_group_ids=params.allowed_group_ids,
         )
         changed = changed or grupos_changed
+
+        asigna_egp = params.accion_grupos != GROUP_ACTION_QUITAR and any(
+            grupo.name == UserGroups.SIMEPI_EGP for grupo in params.grupos
+        )
+        if asigna_egp:
+            profile = params.user.profile
+            profile.es_usuario_provincial = True
+            profile.save(update_fields=["es_usuario_provincial"])
+            sync_profile_territorial_scopes(
+                profile,
+                [
+                    {
+                        "provincia_id": params.provincias_objs[0].pk,
+                        "municipio_id": None,
+                        "localidad_id": None,
+                    }
+                ],
+            )
+            changed = True
 
         if params.access_specs:
             sync_representante_accesses(
@@ -795,6 +819,14 @@ def _validar_y_preparar_fila(row_data: dict, job: UserImportJob) -> _DatosFilaVa
     permisos_fila = _resolver_permisos_fila(row_data, job)
     provincias_objs = _resolver_provincias(row_data.get("provincias", "").strip())
 
+    asigna_egp = accion_grupos != GROUP_ACTION_QUITAR and any(
+        grupo.name == UserGroups.SIMEPI_EGP for grupo in permisos_fila.grupos
+    )
+    if asigna_egp and len(provincias_objs) != 1:
+        raise ValidationError(
+            "El grupo SIMEPI - EGP requiere exactamente una provincia."
+        )
+
     return _DatosFilaValidados(
         nombre=nombre,
         apellido=apellido,
@@ -827,6 +859,7 @@ def process_single_user_import_row(*, row_data: dict, job: UserImportJob) -> dic
             email=datos.email,
             username_raw=datos.username_raw,
             grupos=datos.grupos,
+            provincias_objs=datos.provincias_objs,
             accion_grupos=datos.accion_grupos,
             allowed_group_ids=datos.allowed_group_ids,
             permisos_pwa=datos.permisos_pwa,

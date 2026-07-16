@@ -192,6 +192,7 @@ LISTADO_DEFINED_GROUPS = (
             "auth.role_centro_de_infancia_nomina_ver",
             "centrodeinfancia.view_nominacentroinfancia",
             "auth.role_centro_de_infancia_ver",
+            "centrodeinfancia.add_trabajador",
             "centrodeinfancia.change_trabajador",
             "centrodeinfancia.view_trabajador",
         ),
