@@ -231,13 +231,7 @@ def parse_decimal(value):
     if isinstance(value, (int, float)):
         return Decimal(str(value))
 
-    s = (
-        str(value)
-        .replace("$", "")
-        .replace(" ", "")
-        .replace("\u00a0", "")
-        .strip()
-    )
+    s = str(value).replace("$", "").replace(" ", "").replace("\u00a0", "").strip()
     if "." in s and "," in s:
         if s.rfind(".") > s.rfind(","):
             s = s.replace(",", "")

@@ -12,6 +12,7 @@ class ImportFileForm(forms.Form):
             attrs={"accept": ".csv,.xlsx"},
         ),
     )
+
     def clean_file(self):
         f = self.cleaned_data["file"]
         max_size = getattr(settings, "FILE_UPLOAD_MAX_MEMORY_SIZE", 10 * 1024 * 1024)
