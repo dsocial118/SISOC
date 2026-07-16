@@ -42,7 +42,8 @@ había 4 registros así (sobre 29 totales).
   (guardar con errores) dejan de reproducirse.
 - Los mensajes de error inline aparecen sin trabajo de UI adicional: crispy ya los
   renderizaba, el JS los estaba tapando.
-- Los CDIs históricos incompletos siguen siendo editables.
+- Los CDIs históricos incompletos **dejan de ser editables** hasta que se les completen los
+  campos obligatorios (ver "Riesgos y rollback").
 
 ## Decisiones de producto (PM, 2026-07-14)
 
@@ -63,8 +64,8 @@ había 4 registros así (sobre 29 totales).
 
 ## Validación
 
-- `pytest centrodeinfancia/ tests/` → 2277 passed, 2 skipped.
-- `centrodeinfancia/tests/test_centrodeinfancia_form.py` reescrito: 81 tests, cubre cada
+- `pytest centrodeinfancia/` → 266 passed. `pytest tests/` → 2016 passed, 2 skipped.
+- `centrodeinfancia/tests/test_centrodeinfancia_form.py` reescrito: 86 tests, cubre cada
   bug de la planilla y los casos que QA aprobó, como no-regresión.
 - `black`, `pylint`, `djlint` OK.
 
