@@ -583,10 +583,9 @@ def test_mensaje_de_rendicion_se_archiva_cuando_la_subsanacion_se_reenvia(
         periodo_fin=timezone.now().date(),
         estado=RendicionCuentaMensual.ESTADO_SUBSANAR,
     )
-    # El commit a4636912 dividió Formulario III y V en _ALIMENTARIO/_SIPH y
-    # agregó Formulario I (Cuenta Bancaria) como obligatorios mobile.
+    # Formulario I es optativo; Formulario III/V se divide en variantes
+    # _ALIMENTARIO/_SIPH obligatorias para mobile.
     for categoria in (
-        DocumentacionAdjunta.CATEGORIA_FORMULARIO_I,
         DocumentacionAdjunta.CATEGORIA_FORMULARIO_II,
         DocumentacionAdjunta.CATEGORIA_FORMULARIO_III_ALIMENTARIO,
         DocumentacionAdjunta.CATEGORIA_FORMULARIO_III_SIPH,
