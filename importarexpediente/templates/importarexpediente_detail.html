@@ -1,5 +1,6 @@
 {% extends "includes/main.html" %}
 {% load static %}
+{% load custom_filters %}
 {% block title %}Importar Expedientes - Detalle{% endblock %}
 
 {% block head %}
@@ -34,6 +35,13 @@
                     <i class="fas fa-upload me-1"></i>Completar Importación
                 </button>
             </form>
+            {% if batch.importacion_completada and request.user|has_any_perm:"importarexpediente.change_archivosimportados,expedientespagos.change_expedientepago" %}
+                <a href="{% url 'importar_fechas_acreditacion' batch_id %}"
+                   class="btn btn-md btn-primary"
+                   title="Actualizar fechas de acreditaci&oacute;n">
+                    <i class="fas fa-calendar-check me-1"></i>Actualizar fechas de acreditaci&oacute;n
+                </a>
+            {% endif %}
             <form method="post"
                   action="{% url 'borrar_datos_importados' batch_id %}"
                   class="d-inline">
@@ -61,6 +69,12 @@
             <div class="card-body py-2 px-3">
                 <small class="text-muted d-block">Registros con Errores</small>
                 <span class="fw-semibold fs-4 text-danger">{{ error_count }}</span>
+            </div>
+        </div>
+        <div class="card mb-0" style="border-left: 4px solid #6f42c1;">
+            <div class="card-body py-2 px-3">
+                <small class="text-muted d-block">Con Acreditaci&oacute;n</small>
+                <span class="fw-semibold fs-4">{{ expedientes_con_acreditacion_count }}</span>
             </div>
         </div>
     </div>

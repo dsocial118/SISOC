@@ -387,6 +387,14 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - `tests/test_relevamientos*`
 - docs: `docs/flujos/relevamiento_sync.md`
 
+### Si necesitas cambiar importacion de expedientes de pago
+
+- `importarexpediente/views.py` coordina upload, validacion, importacion y acciones posteriores por lote.
+- `importarexpediente/services.py` concentra parsing y reglas de negocio del Excel/CSV.
+- `importarexpediente/tests/` cubre el flujo de carga, detalle, descarga, duplicados, estados y fechas de acreditacion.
+- Las fechas de acreditacion masivas se actualizan por lote mediante `RegistroImportado`; no buscar `ExpedientePago` globalmente por `comedor_id`.
+- El endpoint de fechas de acreditacion requiere `importarexpediente.change_archivosimportados` o `expedientespagos.change_expedientepago`.
+
 ### Si necesitas cambiar Celiaquia
 
 - `celiaquia/views/`
