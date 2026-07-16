@@ -4,10 +4,12 @@ from datetime import date
 import pytest
 from django.contrib.auth.models import Group, Permission, User
 from django.contrib.contenttypes.models import ContentType
+from django.core.exceptions import ValidationError
 from django.test import RequestFactory
 from django.urls import reverse
 
 from ciudadanos.models import Ciudadano
+from core.constants import UserGroups
 from core.models import Localidad, Municipio, Provincia
 from users.forms import CustomUserChangeForm, UserCreationForm
 from users.models import ProfileTerritorialScope
@@ -350,6 +352,90 @@ def test_user_creation_form_limits_groups_and_roles_by_actor_scope():
 
 
 @pytest.mark.django_db
+def test_user_creation_form_rejects_egp_without_province_scope():
+    actor = User.objects.create_user(username="equipo-nacional-form", password="secret")
+    equipo = Group.objects.create(name=UserGroups.SIMEPI_EQUIPO_NACIONAL)
+    egp = Group.objects.create(name=UserGroups.SIMEPI_EGP)
+    actor.groups.add(equipo)
+
+    form = UserCreationForm(
+        actor=actor,
+        data={
+            "username": "egp-sin-scope",
+            "email": "egp-sin-scope@example.com",
+            "password": "pass12345",
+            "groups": [egp.pk],
+        },
+    )
+
+    assert not form.is_valid()
+    assert "territorial_scopes" in form.errors
+
+
+@pytest.mark.django_db
+def test_user_creation_form_accepts_egp_with_single_province_scope():
+    provincia = Provincia.objects.create(nombre="Provincia EGP formulario")
+    actor = User.objects.create_user(
+        username="equipo-nacional-scope", password="secret"
+    )
+    equipo = Group.objects.create(name=UserGroups.SIMEPI_EQUIPO_NACIONAL)
+    egp = Group.objects.create(name=UserGroups.SIMEPI_EGP)
+    actor.groups.add(equipo)
+    data = _user_form_data(
+        "egp-con-scope",
+        [
+            {
+                "provincia_id": provincia.pk,
+                "municipio_id": None,
+                "localidad_id": None,
+            }
+        ],
+    )
+    data["groups"] = [egp.pk]
+
+    form = UserCreationForm(actor=actor, data=data)
+
+    assert form.is_valid(), form.errors
+    user = form.save()
+    assert user.profile.es_usuario_provincial is True
+    assert user.profile.territorial_scopes.get().provincia_id == provincia.pk
+
+
+@pytest.mark.django_db
+def test_user_change_form_no_permite_quitar_scope_a_egp():
+    provincia = Provincia.objects.create(nombre="Provincia EGP edición")
+    actor = User.objects.create_user(
+        username="equipo-nacional-edita", password="secret"
+    )
+    equipo = Group.objects.create(name=UserGroups.SIMEPI_EQUIPO_NACIONAL)
+    egp = Group.objects.create(name=UserGroups.SIMEPI_EGP)
+    actor.groups.add(equipo)
+    target = User.objects.create_user(
+        username="egp-editado",
+        email="egp-editado@example.com",
+        password="secret",
+    )
+    target.groups.add(egp)
+    target.profile.es_usuario_provincial = True
+    target.profile.save(update_fields=["es_usuario_provincial"])
+    ProfileTerritorialScope.objects.create(profile=target.profile, provincia=provincia)
+
+    form = CustomUserChangeForm(
+        actor=actor,
+        instance=target,
+        data={
+            "username": target.username,
+            "email": target.email,
+            "groups": [egp.pk],
+            "territorial_scopes": "[]",
+        },
+    )
+
+    assert not form.is_valid()
+    assert "territorial_scopes" in form.errors
+
+
+@pytest.mark.django_db
 def test_user_creation_form_persists_assignable_scope_in_profile():
     actor = User.objects.create_superuser(
         username="superadmin",
@@ -671,6 +757,117 @@ def test_import_no_pwa_crea_usuario_staff():
     creado = User.objects.get(email="staff.user@example.com")
     assert creado.is_staff is True
     assert creado.is_active is True
+
+
+@pytest.mark.django_db
+def test_import_actor_sin_delegacion_no_puede_asignar_grupos():
+    from users.models import UserImportJob
+    from users.services_user_import import process_single_user_import_row
+
+    actor = User.objects.create_user(username="import_sin_delegacion", password="x")
+    grupo = Group.objects.create(name="Grupo fuera de alcance import")
+    job = UserImportJob(
+        requested_by=actor,
+        original_filename="usuarios.xlsx",
+        send_credentials=False,
+        is_pwa_import=False,
+    )
+    row_data = _import_row_data("sin.alcance@example.com")
+    row_data["permisos"] = grupo.name
+
+    with pytest.raises(ValidationError, match="No tiene permiso"):
+        process_single_user_import_row(row_data=row_data, job=job)
+
+
+@pytest.mark.django_db
+def test_import_actor_sin_delegacion_preserva_grupos_existentes():
+    from users.models import UserImportJob
+    from users.services_user_import import process_single_user_import_row
+
+    actor = User.objects.create_user(username="import_sin_scope_replace", password="x")
+    grupo = Group.objects.create(name="Grupo existente fuera de alcance")
+    existente = User.objects.create_user(
+        username="usuario-grupo-preservado",
+        email="grupo.preservado@example.com",
+        password="x",
+    )
+    existente.groups.add(grupo)
+    job = UserImportJob(
+        requested_by=actor,
+        original_filename="usuarios.xlsx",
+        send_credentials=False,
+        is_pwa_import=False,
+    )
+    row_data = _import_row_data(existente.email)
+    row_data["username"] = existente.username
+    row_data["accion_grupos"] = "reemplazar"
+
+    process_single_user_import_row(row_data=row_data, job=job)
+
+    assert existente.groups.filter(pk=grupo.pk).exists()
+
+
+@pytest.mark.django_db
+def test_import_egp_sin_provincia_es_rechazado():
+    from users.models import UserImportJob
+    from users.services_user_import import process_single_user_import_row
+
+    actor = User.objects.create_user(username="import_equipo_nacional", password="x")
+    equipo = Group.objects.create(name=UserGroups.SIMEPI_EQUIPO_NACIONAL)
+    egp = Group.objects.create(name=UserGroups.SIMEPI_EGP)
+    actor.groups.add(equipo)
+    job = UserImportJob(
+        requested_by=actor,
+        original_filename="usuarios.xlsx",
+        send_credentials=False,
+        is_pwa_import=False,
+    )
+    row_data = _import_row_data("egp.import@example.com")
+    row_data["permisos"] = egp.name
+
+    with pytest.raises(ValidationError, match="provincia"):
+        process_single_user_import_row(row_data=row_data, job=job)
+
+
+@pytest.mark.django_db
+def test_import_egp_existente_sincroniza_scope_provincial():
+    from users.models import UserImportJob
+    from users.services_user_import import process_single_user_import_row
+
+    provincia = Provincia.objects.create(nombre="Provincia EGP import")
+    provincia_legacy = Provincia.objects.create(nombre="Provincia EGP legacy")
+    actor = User.objects.create_user(username="import_equipo_scope", password="x")
+    equipo = Group.objects.create(name=UserGroups.SIMEPI_EQUIPO_NACIONAL)
+    egp = Group.objects.create(name=UserGroups.SIMEPI_EGP)
+    actor.groups.add(equipo)
+    existente = User.objects.create_user(
+        username="egp-existente-import",
+        email="egp.existente@example.com",
+        password="x",
+    )
+    existente.profile.provincia = provincia_legacy
+    existente.profile.save(update_fields=["provincia"])
+    job = UserImportJob(
+        requested_by=actor,
+        original_filename="usuarios.xlsx",
+        send_credentials=False,
+        is_pwa_import=False,
+    )
+    row_data = _import_row_data(existente.email)
+    row_data["accion_grupos"] = "agregar"
+    row_data["permisos"] = egp.name
+    row_data["provincias"] = provincia.nombre
+
+    process_single_user_import_row(row_data=row_data, job=job)
+
+    existente.refresh_from_db()
+    existente.profile.refresh_from_db()
+    assert existente.groups.filter(pk=egp.pk).exists()
+    assert existente.profile.es_usuario_provincial is True
+    assert existente.profile.provincia_id == provincia.pk
+    assert list(
+        existente.profile.territorial_scopes.values_list("provincia_id", flat=True)
+    ) == [provincia.pk]
 
 
 @pytest.mark.django_db
