@@ -658,3 +658,117 @@ def test_admin_y_analista_editan_fuera_de_scope_por_url(client, group_name):
     )
 
     assert response.status_code == 200
+
+
+@pytest.mark.django_db
+def test_egp_no_puede_crear_cdi_fuera_de_su_scope(client):
+    provincia_propia = Provincia.objects.create(nombre="EGP alta propia")
+    provincia_ajena = Provincia.objects.create(nombre="EGP alta ajena")
+    user = _crear_usuario("egp-alta-scope")
+    user.profile.es_usuario_provincial = True
+    user.profile.save(update_fields=["es_usuario_provincial"])
+    ProfileTerritorialScope.objects.create(
+        profile=user.profile,
+        provincia=provincia_propia,
+    )
+    _asignar_grupo_con_permisos(user, UserGroups.SIMEPI_EGP)
+    client.force_login(user)
+
+    response = client.post(
+        reverse("centrodeinfancia_crear"),
+        {
+            "nombre": "CDI EGP alta acotada",
+            "provincia": provincia_ajena.pk,
+            "telefono": "1122334455",
+            "telefono_referente": "1199887766",
+        },
+    )
+
+    assert response.status_code == 302
+    centro = CentroDeInfancia.objects.get(nombre="CDI EGP alta acotada")
+    assert centro.provincia_id == provincia_propia.pk
+
+
+@pytest.mark.django_db
+def test_egp_sin_scope_no_puede_crear_cdi(client):
+    provincia = Provincia.objects.create(nombre="EGP sin scope")
+    user = _crear_usuario("egp-sin-scope")
+    user.profile.es_usuario_provincial = True
+    user.profile.save(update_fields=["es_usuario_provincial"])
+    _asignar_grupo_con_permisos(user, UserGroups.SIMEPI_EGP)
+    client.force_login(user)
+
+    response = client.post(
+        reverse("centrodeinfancia_crear"),
+        {
+            "nombre": "CDI EGP sin scope",
+            "provincia": provincia.pk,
+            "telefono": "1122334455",
+            "telefono_referente": "1199887766",
+        },
+    )
+
+    assert response.status_code == 200
+    assert not CentroDeInfancia.objects.filter(nombre="CDI EGP sin scope").exists()
+
+
+@pytest.mark.django_db
+def test_egp_no_puede_mover_cdi_fuera_de_su_scope(client):
+    provincia_propia = Provincia.objects.create(nombre="EGP mover propia")
+    provincia_ajena = Provincia.objects.create(nombre="EGP mover ajena")
+    centro = CentroDeInfancia.objects.create(
+        nombre="CDI EGP no mover",
+        provincia=provincia_propia,
+        telefono="1122334455",
+        telefono_referente="1199887766",
+    )
+    user = _crear_usuario("egp-mover-scope")
+    user.profile.es_usuario_provincial = True
+    user.profile.save(update_fields=["es_usuario_provincial"])
+    ProfileTerritorialScope.objects.create(
+        profile=user.profile,
+        provincia=provincia_propia,
+    )
+    _asignar_grupo_con_permisos(user, UserGroups.SIMEPI_EGP)
+    client.force_login(user)
+
+    response = client.post(
+        reverse("centrodeinfancia_editar", kwargs={"pk": centro.pk}),
+        {
+            "nombre": centro.nombre,
+            "provincia": provincia_ajena.pk,
+            "telefono": centro.telefono,
+            "telefono_referente": centro.telefono_referente,
+        },
+    )
+
+    assert response.status_code == 302
+    centro.refresh_from_db()
+    assert centro.provincia_id == provincia_propia.pk
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "group_name",
+    [UserGroups.SIMEPI_ADMINISTRADOR, UserGroups.SIMEPI_ANALISTA_DATOS],
+)
+def test_admin_y_analista_crean_cdi_fuera_de_scope_legacy(client, group_name):
+    provincia_scope = Provincia.objects.create(nombre=f"Alta scope {group_name}")
+    provincia_ajena = Provincia.objects.create(nombre=f"Alta ajena {group_name}")
+    user = _crear_usuario(f"nacional-alta-{group_name}", provincia=provincia_scope)
+    _asignar_grupo_con_permisos(user, group_name)
+    client.force_login(user)
+
+    response = client.post(
+        reverse("centrodeinfancia_crear"),
+        {
+            "nombre": f"CDI alta amplia {group_name}",
+            "provincia": provincia_ajena.pk,
+            "telefono": "1122334455",
+            "telefono_referente": "1199887766",
+        },
+    )
+
+    assert response.status_code == 302
+    centro = CentroDeInfancia.objects.get(nombre=f"CDI alta amplia {group_name}")
+    assert centro.provincia_id == provincia_ajena.pk

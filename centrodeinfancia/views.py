@@ -45,6 +45,7 @@ from centrodeinfancia.access import (
     get_object_scoped_cdi_or_404,
     puede_generar_usuario_cdi,
     puede_ver_usuarios_cdi,
+    tiene_alcance_simepi_nacional,
 )
 from centrodeinfancia.forms import (
     CentroDeInfanciaForm,
@@ -343,7 +344,9 @@ class CentroDeInfanciaCreateView(
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
         kwargs["user"] = self.request.user
-        kwargs["lock_provincia_from_user"] = True
+        kwargs["lock_provincia_from_user"] = not tiene_alcance_simepi_nacional(
+            self.request.user
+        )
         return kwargs
 
     def get_success_url(self):
@@ -728,7 +731,9 @@ class CentroDeInfanciaUpdateView(
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
         kwargs["user"] = self.request.user
-        kwargs["lock_provincia_from_user"] = False
+        kwargs["lock_provincia_from_user"] = not tiene_alcance_simepi_nacional(
+            self.request.user
+        )
         return kwargs
 
     def get_success_url(self):
