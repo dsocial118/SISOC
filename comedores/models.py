@@ -823,12 +823,6 @@ class PrestacionAlimentariaConformidad(models.Model):
         ordering = ["-periodo", "-creado"]
         verbose_name = "Conformidad de prestacion alimentaria"
         verbose_name_plural = "Conformidades de prestaciones alimentarias"
-        constraints = [
-            models.UniqueConstraint(
-                fields=["comedor", "periodo"],
-                name="uniq_conformidad_prestacion_alimentaria_mes",
-            )
-        ]
 
     def __str__(self):
         estado = "conforme" if self.conforme else "no conforme"

@@ -1,8 +1,10 @@
 from django.urls import path
+from core.decorators import permissions_any_required
 from .views import (
     ImportExpedientesView,
     ImportarExpedienteListView,
     ImportarExpedienteDetalleListView,
+    ImportarFechasAcreditacionView,
     importarexpedientes_ajax,
     importarexpediente_detail_ajax,
     ImportDatosView,
@@ -36,6 +38,16 @@ urlpatterns = [
         "importarexpedientes/<int:id_archivo>/ajax/",
         importarexpediente_detail_ajax,
         name="importarexpediente_detail_ajax",
+    ),
+    path(
+        "importarexpedientes/<int:id_archivo>/fechas-acreditacion/",
+        permissions_any_required(
+            [
+                "importarexpediente.change_archivosimportados",
+                "expedientespagos.change_expedientepago",
+            ]
+        )(ImportarFechasAcreditacionView.as_view()),
+        name="importar_fechas_acreditacion",
     ),
     path(
         "importarexpedientes/<int:id_archivo>/importar_datos/",
