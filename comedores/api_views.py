@@ -455,11 +455,7 @@ class ComedorDetailViewSet(
         )
         conformidades_list = list(conformidades)
         previous_period = self._previous_month_period()
-        pending_period = (
-            previous_period
-            if not any(item.periodo == previous_period for item in conformidades_list)
-            else None
-        )
+        pending_period = previous_period
         selected_period = pending_period or previous_period
         conformidad_actual = next(
             (item for item in conformidades_list if item.periodo == selected_period),

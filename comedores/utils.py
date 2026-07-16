@@ -7,7 +7,7 @@ from django.core.cache import cache
 from django.db.models import Model
 from django.utils import timezone
 
-from comedores.models import PrestacionAlimentariaConformidad, ValorComida
+from comedores.models import ValorComida
 from rendicioncuentasmensual.models import RendicionCuentaMensual
 
 # IDs de programa PNUD en la tabla core_programa (prog 3 = PNUD Prog1, prog 4 = PNUD Prog2).
@@ -131,12 +131,7 @@ def is_prestacion_conformidad_period_enabled(comedor, period: date) -> bool:
 
 
 def get_prestacion_conformidad_pending_period(comedor):
-    period = previous_month_period()
-    exists = PrestacionAlimentariaConformidad.objects.filter(
-        comedor=comedor,
-        periodo=period,
-    ).exists()
-    return None if exists else period
+    return previous_month_period()
 
 
 def get_object_by_filter(model: Type[Model], **kwargs):

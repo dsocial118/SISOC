@@ -1201,6 +1201,20 @@ def test_prestacion_alimentaria_conformidad_permite_repetir_periodo():
 
 
 @pytest.mark.django_db
+def test_prestacion_alimentaria_conformidad_repetida_mantiene_periodo_disponible():
+    comedor, client = _comedor_alimentar_comunidad(username="rep_conf_repetida")
+    url = f"/api/comedores/{comedor.id}/prestacion-alimentaria/conformidad/"
+
+    primera = client.post(url, {"conforme": True}, format="json")
+    detalle = client.get(f"/api/comedores/{comedor.id}/prestacion-alimentaria/")
+
+    assert primera.status_code == 201
+    assert detalle.status_code == 200
+    assert detalle.data["conformidad_pendiente"] is True
+    assert detalle.data["periodo_pendiente"] == primera.data["periodo"]
+
+
+@pytest.mark.django_db
 def test_prestacion_alimentaria_no_conforme_requiere_observaciones():
     comedor, client = _comedor_alimentar_comunidad(username="rep_conf_obs")
     url = f"/api/comedores/{comedor.id}/prestacion-alimentaria/conformidad/"
