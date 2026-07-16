@@ -141,6 +141,43 @@ class CuilDuplicadoFormTests(TestCase):
         Organizacion.objects.create(nombre="Org Duplicada", cuit=self.CUIL)
         self.assertEqual(Organizacion.objects.filter(cuit=self.CUIL).count(), 2)
 
+    def test_cuit_valido_para_los_tres_tipos_de_entidad(self):
+        tipos = [
+            TipoEntidad.objects.create(nombre="Personería jurídica"),
+            TipoEntidad.objects.create(nombre="Personería jurídica eclesiástica"),
+            TipoEntidad.objects.create(nombre="Asociación de hecho"),
+        ]
+
+        for tipo_entidad in tipos:
+            with self.subTest(tipo_entidad=tipo_entidad.nombre):
+                form = OrganizacionForm(
+                    data=self._form_data(
+                        {"cuit": "20999999990", "tipo_entidad": tipo_entidad.pk}
+                    )
+                )
+                self.assertTrue(form.is_valid(), form.errors)
+
+    def test_cuit_rechaza_simbolos_espacios_y_longitud_invalida(self):
+        casos_invalidos = (
+            "20-99999999-0",
+            "20 99999999 0",
+            "2099999999",
+            "209999999900",
+        )
+
+        for cuit in casos_invalidos:
+            with self.subTest(cuit=cuit):
+                form = OrganizacionForm(data=self._form_data({"cuit": cuit}))
+                self.assertFalse(form.is_valid())
+                self.assertIn("cuit", form.errors)
+
+    def test_cuit_expone_restricciones_en_el_input(self):
+        campo = OrganizacionForm().fields["cuit"]
+
+        self.assertEqual(campo.widget.attrs["inputmode"], "numeric")
+        self.assertEqual(campo.widget.attrs["maxlength"], "11")
+        self.assertEqual(campo.widget.attrs["pattern"], "[0-9]{11}")
+
 
 class OrganizacionModelTests(TestCase):
     """Tests del contrato de persistencia de Organizacion."""

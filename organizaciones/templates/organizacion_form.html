@@ -439,9 +439,10 @@
             cuitInput.addEventListener("input", function () {
                 clearTimeout(debounceTimer);
                 requestSeq += 1;
-                var val = cuitInput.value.trim();
+                cuitInput.value = cuitInput.value.replace(/[^0-9]/g, "").slice(0, 11);
+                var val = cuitInput.value;
                 clearConfirmation(!warningBox.classList.contains("d-none"));
-                if (!val || isNaN(val)) {
+                if (val.length !== 11) {
                     resetWarning();
                     return;
                 }
@@ -452,8 +453,8 @@
             });
 
             // En edición, el CUIL ya viene pre-cargado: verificar duplicados al cargar la página
-            var initialVal = cuitInput.value.trim();
-            if (initialVal && !isNaN(initialVal)) {
+            var initialVal = cuitInput.value;
+            if (/^[0-9]{11}$/.test(initialVal)) {
                 var initialSeq = requestSeq;
                 fetchCuilCheck(initialVal, initialSeq);
             }
