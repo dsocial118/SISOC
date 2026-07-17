@@ -611,6 +611,13 @@ def _registrar_estado(  # pylint: disable=too-many-arguments
     )
 
 
+def _actualizar_mes_ejecucion(comedor, mes_ejecucion):
+    if comedor.mes_ejecucion == mes_ejecucion:
+        return
+    Comedor.objects.filter(pk=comedor.pk).update(mes_ejecucion=mes_ejecucion)
+    comedor.mes_ejecucion = mes_ejecucion
+
+
 def aplicar_estados_por_lote(batch, usuario=None):  # pylint: disable=too-many-locals
     registros_actuales = list(
         RegistroImportado.objects.filter(
@@ -658,6 +665,7 @@ def aplicar_estados_por_lote(batch, usuario=None):  # pylint: disable=too-many-l
                 "en_plazo_renovacion",
                 usuario,
             )
+        _actualizar_mes_ejecucion(comedor, mes_convenio)
         updated_count += 1
 
     previous_batches = _new_imported_batches_before(batch)
@@ -699,6 +707,7 @@ def aplicar_estados_por_lote(batch, usuario=None):  # pylint: disable=too-many-l
                 "no_renovacion_comedor",
                 usuario,
             )
+            _actualizar_mes_ejecucion(comedor, None)
         else:
             _registrar_estado(
                 comedor,
@@ -708,6 +717,7 @@ def aplicar_estados_por_lote(batch, usuario=None):  # pylint: disable=too-many-l
                 None,
                 usuario,
             )
+            _actualizar_mes_ejecucion(comedor, -ausencias)
         updated_count += 1
 
     return updated_count
