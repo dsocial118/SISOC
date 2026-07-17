@@ -1890,14 +1890,8 @@ class AsistenciaNominaCentroView(LoginRequiredMixin, TemplateView):
             messages.error(self.request, exc.messages[0])
             return timezone.localdate()
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        centro = self._get_centro()
-        fecha = self._parse_fecha(self.request.GET.get("fecha"))
-        nominas = AsistenciaNominaCentroInfanciaService.nominas_editables(
-            centro,
-            fecha,
-        )
+    @staticmethod
+    def _construir_filas_asistencia(nominas, fecha):
         asistencias = {
             asistencia.nomina_id: asistencia
             for asistencia in AsistenciaNominaCentroInfancia.objects.filter(
@@ -1928,6 +1922,20 @@ class AsistenciaNominaCentroView(LoginRequiredMixin, TemplateView):
                     "observaciones": asistencia.observaciones if asistencia else "",
                 }
             )
+        return filas, presentes, ausentes, sin_marcar
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        centro = self._get_centro()
+        fecha = self._parse_fecha(self.request.GET.get("fecha"))
+        nominas = AsistenciaNominaCentroInfanciaService.nominas_editables(
+            centro,
+            fecha,
+        )
+        filas, presentes, ausentes, sin_marcar = self._construir_filas_asistencia(
+            nominas,
+            fecha,
+        )
         context.update(
             {
                 "centro": centro,
