@@ -1,0 +1,355 @@
+{% extends "includes/main.html" %}
+{% load static %}
+
+{% block head %}
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Lora:wght@600;700&display=swap"
+          rel="stylesheet" />
+    <link rel="stylesheet" href="{% static 'custom/css/cdf.css' %}" />
+    <link rel="stylesheet"
+          href="{% static 'custom/css/centrodeinfancia.css' %}" />
+{% endblock %}
+
+{% block title %}Asistencia de nómina — {{ centro.nombre }}{% endblock %}
+
+{% block app-header %}
+    <div class="row g-2 align-items-center">
+        <div class="col-12 col-lg-auto d-flex justify-content-start">
+            <a href="{{ back_url }}" class="btn btn-sm btn-primary w-100 w-sm-auto">Volver al CDI</a>
+        </div>
+    </div>
+{% endblock %}
+
+{% block content %}
+    <div class="cdf-page cdi-page">
+        <div class="container-fluid">
+            <div class="cdf-hero">
+                <div class="cdf-hero-block">
+                    <p class="cdi-hero-kicker">Nómina del centro · Asistencia</p>
+                    <h1>{{ centro.nombre }}</h1>
+                </div>
+                <div class="cdf-hero-side">
+                    <span class="cdf-pill cdf-pill--gold">{{ fecha|date:"d/m/Y" }}</span>
+                </div>
+            </div>
+
+            <div class="cdf-card">
+                <div class="cdf-card-head">
+                    <i class="bi bi-calendar3"></i>
+                    <span>Fecha de asistencia</span>
+                </div>
+                <div class="cdf-card-body">
+                    <button type="button"
+                            class="cdf-btn cdf-btn--primary"
+                            id="asisCalendarOpen"
+                            aria-haspopup="dialog"
+                            aria-controls="asisCalendarDialog">
+                        <i class="bi bi-calendar3"></i>
+                        <span id="asisCalendarLabel">{{ fecha|date:"d/m/Y" }}</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="cdi-stats-row">
+                <div class="cdi-stat-card">
+                    <span class="cdi-stat-dot" style="background: var(--cdf-green);"></span>
+                    <div>
+                        <div class="cdi-stat-num" id="asisMetricPresentes">{{ total_presentes }}</div>
+                        <div class="cdi-stat-lbl">Presentes</div>
+                    </div>
+                </div>
+                <div class="cdi-stat-card">
+                    <span class="cdi-stat-dot" style="background: var(--cdf-red);"></span>
+                    <div>
+                        <div class="cdi-stat-num" id="asisMetricAusentes">{{ total_ausentes }}</div>
+                        <div class="cdi-stat-lbl">Ausentes</div>
+                    </div>
+                </div>
+                <div class="cdi-stat-card">
+                    <span class="cdi-stat-dot cdi-stat-dot--gold"></span>
+                    <div>
+                        <div class="cdi-stat-num" id="asisMetricSinMarcar">{{ total_sin_marcar }}</div>
+                        <div class="cdi-stat-lbl">Sin marcar</div>
+                    </div>
+                </div>
+            </div>
+
+            {% if filas %}
+                <form method="post" id="asisForm">
+                    {% csrf_token %}
+                    <input type="hidden" name="fecha" value="{{ fecha|date:'Y-m-d' }}" />
+                    <div class="cdf-card" id="asisTabla">
+                        <div class="cdf-card-head">
+                            <i class="bi bi-people"></i>
+                            <span>Registro de asistencia — {{ fecha|date:"d/m/Y" }}</span>
+                        </div>
+                        <div class="cdf-tbl-scroll">
+                            <table class="cdf-table">
+                                <thead>
+                                    <tr>
+                                        <th>Apellido y nombre</th>
+                                        <th>DNI</th>
+                                        <th>Sala</th>
+                                        <th>
+                                            <label class="cdf-mark">
+                                                <input type="checkbox"
+                                                       class="cdf-check cdf-check--present"
+                                                       id="asisMarcarPresentes" />
+                                                Marcar todos
+                                            </label>
+                                        </th>
+                                        <th>
+                                            <label class="cdf-mark">
+                                                <input type="checkbox"
+                                                       class="cdf-check cdf-check--absent"
+                                                       id="asisMarcarAusentes" />
+                                                Marcar todos
+                                            </label>
+                                        </th>
+                                        <th>Observaciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="asisTablaBody">
+                                    {% for fila in filas %}
+                                        <tr class="asis-row">
+                                            <td>{{ fila.nombre_completo }}</td>
+                                            <td>{{ fila.dni|default:"-" }}</td>
+                                            <td>{{ fila.nomina.sala|default:"-" }}</td>
+                                            <td>
+                                                <label class="cdf-mark">
+                                                    <input type="radio"
+                                                           class="cdf-check cdf-check--present asis-present"
+                                                           name="presente_{{ fila.nomina.pk }}"
+                                                           value="1"
+                                                           {% if fila.presente %}checked{% endif %} />
+                                                    Presente
+                                                </label>
+                                            </td>
+                                            <td>
+                                                <label class="cdf-mark">
+                                                    <input type="radio"
+                                                           class="cdf-check cdf-check--absent asis-absent"
+                                                           name="presente_{{ fila.nomina.pk }}"
+                                                           value="0"
+                                                           {% if fila.presente == False %}checked{% endif %} />
+                                                    Ausente
+                                                </label>
+                                            </td>
+                                            <td>
+                                                <input type="text"
+                                                       name="obs_{{ fila.nomina.pk }}"
+                                                       value="{{ fila.observaciones|default:'' }}"
+                                                       class="cdf-input"
+                                                       aria-label="Observaciones para {{ fila.nombre_completo }}" />
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="cdf-card-foot justify-content-between">
+                            <span class="cdf-td-muted" id="asisConteo"></span>
+                            <div class="pager">
+                                <button type="button"
+                                        class="cdf-btn"
+                                        id="asisPrev"
+                                        aria-label="Página anterior"
+                                        disabled>
+                                    <i class="bi bi-chevron-left"></i>
+                                </button>
+                                <span class="cdf-td-muted" id="asisPager">1 de 1</span>
+                                <button type="button"
+                                        class="cdf-btn"
+                                        id="asisNext"
+                                        aria-label="Página siguiente"
+                                        disabled>
+                                    <i class="bi bi-chevron-right"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-end mt-3">
+                        <button type="submit" class="cdf-btn cdf-btn--success">
+                            <i class="bi bi-check-lg"></i>Guardar asistencia
+                        </button>
+                    </div>
+                </form>
+            {% else %}
+                <div class="cdf-card">
+                    <div class="cdf-card-head">
+                        <i class="bi bi-people"></i><span>Registro de asistencia</span>
+                    </div>
+                    <div class="cdf-empty">
+                        <i class="bi bi-person-plus"></i>
+                        <p class="cdf-empty-t">Sin nómina activa</p>
+                        <p class="cdf-empty-s">Agregá personas activas a la nómina para poder tomar asistencia.</p>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div id="asisCalendarDialog"
+         class="asis-calendar-backdrop"
+         hidden
+         role="dialog"
+         aria-modal="true"
+         aria-labelledby="asisCalendarMonth">
+        <div class="asis-calendar-panel">
+            <div class="asis-calendar-header">
+                <button type="button"
+                        class="cdf-btn"
+                        id="asisCalendarPrev"
+                        aria-label="Mes anterior">
+                    <i class="bi bi-chevron-left"></i>
+                </button>
+                <strong id="asisCalendarMonth"></strong>
+                <button type="button"
+                        class="cdf-btn"
+                        id="asisCalendarNext"
+                        aria-label="Mes siguiente">
+                    <i class="bi bi-chevron-right"></i>
+                </button>
+            </div>
+            <div class="asis-calendar-week" aria-hidden="true">
+                <span>Lun</span><span>Mar</span><span>Mié</span><span>Jue</span><span>Vie</span><span>Sáb</span><span>Dom</span>
+            </div>
+            <div id="asisCalendarDays" class="asis-calendar-days" role="grid"></div>
+            <div class="asis-calendar-actions">
+                <button type="button" class="cdf-btn" id="asisCalendarCancel">Cancelar</button>
+                <button type="button" class="cdf-btn cdf-btn--primary" id="asisCalendarApply">Aplicar</button>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block customJS %}
+    <script nonce="{{ request.csp_nonce }}">
+        (function() {
+            var body = document.getElementById("asisTablaBody");
+            if (!body) return;
+            var rows = Array.prototype.slice.call(body.querySelectorAll(".asis-row"));
+            var allPres = document.getElementById("asisMarcarPresentes");
+            var allAus = document.getElementById("asisMarcarAusentes");
+            var previousPage = document.getElementById("asisPrev");
+            var nextPage = document.getElementById("asisNext");
+            var pageLabel = document.getElementById("asisPager");
+            var countLabel = document.getElementById("asisConteo");
+            var currentPage = 1;
+            var pageSize = 10;
+            var metrics = {
+                presentes: document.getElementById("asisMetricPresentes"),
+                ausentes: document.getElementById("asisMetricAusentes"),
+                sinMarcar: document.getElementById("asisMetricSinMarcar")
+            };
+
+            function updateMetrics() {
+                var presentes = 0, ausentes = 0, sinMarcar = 0;
+                rows.forEach(function(row) {
+                    if (row.querySelector(".asis-present").checked) presentes += 1;
+                    else if (row.querySelector(".asis-absent").checked) ausentes += 1;
+                    else sinMarcar += 1;
+                });
+                metrics.presentes.textContent = presentes;
+                metrics.ausentes.textContent = ausentes;
+                metrics.sinMarcar.textContent = sinMarcar;
+            }
+
+            function setAll(selector, checked) {
+                rows.forEach(function(row) {
+                    var input = row.querySelector(selector);
+                    if (checked) input.checked = true;
+                    else if (input.checked) input.checked = false;
+                });
+                updateMetrics();
+            }
+
+            function renderPage() {
+                var totalPages = Math.max(1, Math.ceil(rows.length / pageSize));
+                currentPage = Math.min(Math.max(currentPage, 1), totalPages);
+                var start = (currentPage - 1) * pageSize;
+                rows.forEach(function(row, index) {
+                    row.classList.toggle("d-none", index < start || index >= start + pageSize);
+                });
+                countLabel.textContent = "Mostrando " + (rows.length ? start + 1 : 0) + "-" + Math.min(start + pageSize, rows.length) + " de " + rows.length;
+                pageLabel.textContent = currentPage + " de " + totalPages;
+                previousPage.disabled = currentPage === 1;
+                nextPage.disabled = currentPage === totalPages;
+            }
+
+            body.addEventListener("change", updateMetrics);
+            allPres.addEventListener("change", function() {
+                if (allPres.checked) allAus.checked = false;
+                setAll(".asis-present", allPres.checked);
+            });
+            allAus.addEventListener("change", function() {
+                if (allAus.checked) allPres.checked = false;
+                setAll(".asis-absent", allAus.checked);
+            });
+            previousPage.addEventListener("click", function() { currentPage -= 1; renderPage(); });
+            nextPage.addEventListener("click", function() { currentPage += 1; renderPage(); });
+            renderPage();
+        })();
+    </script>
+    <script nonce="{{ request.csp_nonce }}">
+        (function() {
+            var dialog = document.getElementById("asisCalendarDialog");
+            var open = document.getElementById("asisCalendarOpen");
+            var cancel = document.getElementById("asisCalendarCancel");
+            var apply = document.getElementById("asisCalendarApply");
+            var prev = document.getElementById("asisCalendarPrev");
+            var next = document.getElementById("asisCalendarNext");
+            var title = document.getElementById("asisCalendarMonth");
+            var days = document.getElementById("asisCalendarDays");
+            var endpoint = "{% url 'centrodeinfancia_nomina_asistencia_calendario' centro.pk %}";
+            var selected = "{{ fecha|date:'Y-m-d' }}";
+            var visible = new Date(selected + "T00:00:00");
+            var marked = {};
+
+            function iso(year, month, day) {
+                return year + "-" + String(month + 1).padStart(2, "0") + "-" + String(day).padStart(2, "0");
+            }
+            function loadMonth() {
+                var year = visible.getFullYear();
+                var month = visible.getMonth();
+                fetch(endpoint + "?mes=" + year + "-" + String(month + 1).padStart(2, "0"), {credentials: "same-origin"})
+                    .then(function(response) { return response.ok ? response.json() : {dias: []}; })
+                    .then(function(data) {
+                        marked = {};
+                        data.dias.forEach(function(day) { marked[day] = true; });
+                        render();
+                    })
+                    .catch(function() { marked = {}; render(); });
+            }
+            function render() {
+                var year = visible.getFullYear();
+                var month = visible.getMonth();
+                title.textContent = visible.toLocaleDateString("es-AR", {month: "long", year: "numeric"});
+                days.innerHTML = "";
+                var firstWeekday = (new Date(year, month, 1).getDay() + 6) % 7;
+                var totalDays = new Date(year, month + 1, 0).getDate();
+                for (var blank = 0; blank < firstWeekday; blank += 1) days.appendChild(document.createElement("span"));
+                for (var day = 1; day <= totalDays; day += 1) {
+                    var value = iso(year, month, day);
+                    var button = document.createElement("button");
+                    button.type = "button";
+                    button.className = "asis-calendar-day" + (value === selected ? " is-selected" : "") + (marked[value] ? " has-attendance" : "");
+                    button.textContent = day;
+                    button.setAttribute("aria-label", value + (marked[value] ? ", con asistencia registrada" : ""));
+                    button.addEventListener("click", (function(selectedValue) {
+                        return function() { selected = selectedValue; render(); };
+                    })(value));
+                    days.appendChild(button);
+                }
+            }
+            function close() { dialog.hidden = true; open.focus(); }
+            open.addEventListener("click", function() { dialog.hidden = false; visible = new Date(selected + "T00:00:00"); loadMonth(); });
+            cancel.addEventListener("click", close);
+            prev.addEventListener("click", function() { visible.setMonth(visible.getMonth() - 1); loadMonth(); });
+            next.addEventListener("click", function() { visible.setMonth(visible.getMonth() + 1); loadMonth(); });
+            apply.addEventListener("click", function() { window.location.href = "?fecha=" + encodeURIComponent(selected); });
+            dialog.addEventListener("keydown", function(event) { if (event.key === "Escape") close(); });
+        })();
+    </script>
+{% endblock %}
