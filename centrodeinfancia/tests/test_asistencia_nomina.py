@@ -44,14 +44,14 @@ def test_asistencia_get_muestra_solo_nomina_activa(client):
     )
     client.force_login(user)
     centro = CentroDeInfancia.objects.create(nombre="CDI Asistencia Nómina")
-    pendiente = _crear_nomina(
+    _crear_nomina(
         centro,
         apellido="Activa",
         nombre="Ana",
         documento=40111222,
         estado=NominaCentroInfancia.ESTADO_ACTIVO,
     )
-    _crear_nomina(
+    pendiente = _crear_nomina(
         centro,
         apellido="Pendiente",
         nombre="Paz",
