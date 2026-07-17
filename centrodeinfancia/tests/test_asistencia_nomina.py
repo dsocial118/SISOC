@@ -347,9 +347,7 @@ def test_asistencia_requiere_permiso_de_edicion(client):
         username="asistencia-sin-edicion",
         password="test1234",
     )
-    user.user_permissions.add(
-        Permission.objects.get(codename="view_centrodeinfancia")
-    )
+    user.user_permissions.add(Permission.objects.get(codename="view_centrodeinfancia"))
     Profile.objects.get_or_create(user=user)
     client.force_login(user)
     centro = CentroDeInfancia.objects.create(nombre="CDI Sin edición")

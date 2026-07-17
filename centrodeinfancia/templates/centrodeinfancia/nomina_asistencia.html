@@ -7,7 +7,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Lora:wght@600;700&display=swap"
           rel="stylesheet" />
     <link rel="stylesheet" href="{% static 'custom/css/cdf.css' %}" />
-    <link rel="stylesheet" href="{% static 'custom/css/centrodeinfancia.css' %}" />
+    <link rel="stylesheet"
+          href="{% static 'custom/css/centrodeinfancia.css' %}" />
 {% endblock %}
 
 {% block title %}Asistencia de nómina — {{ centro.nombre }}{% endblock %}
@@ -150,11 +151,19 @@
                         <div class="cdf-card-foot justify-content-between">
                             <span class="cdf-td-muted" id="asisConteo"></span>
                             <div class="pager">
-                                <button type="button" class="cdf-btn" id="asisPrev" aria-label="Página anterior" disabled>
+                                <button type="button"
+                                        class="cdf-btn"
+                                        id="asisPrev"
+                                        aria-label="Página anterior"
+                                        disabled>
                                     <i class="bi bi-chevron-left"></i>
                                 </button>
                                 <span class="cdf-td-muted" id="asisPager">1 de 1</span>
-                                <button type="button" class="cdf-btn" id="asisNext" aria-label="Página siguiente" disabled>
+                                <button type="button"
+                                        class="cdf-btn"
+                                        id="asisNext"
+                                        aria-label="Página siguiente"
+                                        disabled>
                                     <i class="bi bi-chevron-right"></i>
                                 </button>
                             </div>
@@ -168,7 +177,9 @@
                 </form>
             {% else %}
                 <div class="cdf-card">
-                    <div class="cdf-card-head"><i class="bi bi-people"></i><span>Registro de asistencia</span></div>
+                    <div class="cdf-card-head">
+                        <i class="bi bi-people"></i><span>Registro de asistencia</span>
+                    </div>
                     <div class="cdf-empty">
                         <i class="bi bi-person-plus"></i>
                         <p class="cdf-empty-t">Sin nómina activa</p>
@@ -187,11 +198,23 @@
          aria-labelledby="asisCalendarMonth">
         <div class="asis-calendar-panel">
             <div class="asis-calendar-header">
-                <button type="button" class="cdf-btn" id="asisCalendarPrev" aria-label="Mes anterior"><i class="bi bi-chevron-left"></i></button>
+                <button type="button"
+                        class="cdf-btn"
+                        id="asisCalendarPrev"
+                        aria-label="Mes anterior">
+                    <i class="bi bi-chevron-left"></i>
+                </button>
                 <strong id="asisCalendarMonth"></strong>
-                <button type="button" class="cdf-btn" id="asisCalendarNext" aria-label="Mes siguiente"><i class="bi bi-chevron-right"></i></button>
+                <button type="button"
+                        class="cdf-btn"
+                        id="asisCalendarNext"
+                        aria-label="Mes siguiente">
+                    <i class="bi bi-chevron-right"></i>
+                </button>
             </div>
-            <div class="asis-calendar-week" aria-hidden="true"><span>Lun</span><span>Mar</span><span>Mié</span><span>Jue</span><span>Vie</span><span>Sáb</span><span>Dom</span></div>
+            <div class="asis-calendar-week" aria-hidden="true">
+                <span>Lun</span><span>Mar</span><span>Mié</span><span>Jue</span><span>Vie</span><span>Sáb</span><span>Dom</span>
+            </div>
             <div id="asisCalendarDays" class="asis-calendar-days" role="grid"></div>
             <div class="asis-calendar-actions">
                 <button type="button" class="cdf-btn" id="asisCalendarCancel">Cancelar</button>
