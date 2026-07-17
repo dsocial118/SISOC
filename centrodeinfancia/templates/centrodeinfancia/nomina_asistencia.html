@@ -238,11 +238,18 @@
             var countLabel = document.getElementById("asisConteo");
             var currentPage = 1;
             var pageSize = 10;
+            var seleccionPrevia = null;
             var metrics = {
                 presentes: document.getElementById("asisMetricPresentes"),
                 ausentes: document.getElementById("asisMetricAusentes"),
                 sinMarcar: document.getElementById("asisMetricSinMarcar")
             };
+
+            function inputAsistencia(target) {
+                if (target.matches(".asis-present, .asis-absent")) return target;
+                var label = target.closest("label.cdf-mark");
+                return label && label.querySelector(".asis-present, .asis-absent");
+            }
 
             function updateMetrics() {
                 var presentes = 0, ausentes = 0, sinMarcar = 0;
@@ -278,6 +285,27 @@
                 nextPage.disabled = currentPage === totalPages;
             }
 
+            body.addEventListener("pointerdown", function(event) {
+                var input = inputAsistencia(event.target);
+                seleccionPrevia = input && input.checked ? input : null;
+            });
+            body.addEventListener("click", function(event) {
+                var input = inputAsistencia(event.target);
+                if (input && input === seleccionPrevia) {
+                    event.preventDefault();
+                    input.checked = false;
+                    updateMetrics();
+                }
+                seleccionPrevia = null;
+            });
+            body.addEventListener("keydown", function(event) {
+                var input = inputAsistencia(event.target);
+                if (input && input.checked && event.key === " ") {
+                    event.preventDefault();
+                    input.checked = false;
+                    updateMetrics();
+                }
+            });
             body.addEventListener("change", updateMetrics);
             allPres.addEventListener("change", function() {
                 if (allPres.checked) allAus.checked = false;
