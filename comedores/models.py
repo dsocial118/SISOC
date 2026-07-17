@@ -1144,10 +1144,11 @@ class ImagenComedor(models.Model):
     )
 
     class Meta:
+        # Unique plano (sin condición) para que MySQL lo cree de verdad: los NULL
+        # se tratan como distintos, así que solo enforcea cuando hay client_uuid.
         constraints = [
             models.UniqueConstraint(
                 fields=["comedor", "client_uuid"],
-                condition=models.Q(client_uuid__isnull=False),
                 name="uniq_imagencomedor_comedor_client_uuid",
             ),
         ]
