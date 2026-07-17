@@ -122,6 +122,21 @@ def get_territorial_comedor_provincias(user) -> list[dict]:
     ]
 
 
+def get_territorial_comedor_users_for_provincia(provincia_id):
+    """Usuarios territoriales de comedores con alcance en una provincia."""
+    if not provincia_id:
+        return User.objects.none()
+    return (
+        User.objects.filter(
+            is_active=True,
+            profile__es_territorial_comedor=True,
+            profile__territorial_comedor_provincias__provincia_id=provincia_id,
+        )
+        .distinct()
+        .order_by("first_name", "last_name", "username")
+    )
+
+
 def get_accessible_comedor_ids(user) -> list[int]:
     """IDs de comedores activos accesibles por el usuario."""
     return list(get_access_rows(user).values_list("comedor_id", flat=True))

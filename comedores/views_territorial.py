@@ -9,47 +9,53 @@ from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 
 from comedores.services.comedor_service import ComedorService
-from comedores.services.territorial_service import TerritorialService
+from users.services_pwa import get_territorial_comedor_users_for_provincia
 
 logger = logging.getLogger("django")
+
+
+def _territoriales_sisoc_para_comedor(comedor):
+    """Lista de territoriales (usuarios SISOC) con alcance en la provincia del comedor.
+
+    Reemplaza el pull viejo desde GESTIONAR/AppSheet: ahora los territoriales son
+    usuarios de SISOC (`Profile.es_territorial_comedor`) filtrados por provincia.
+    Se mantiene la forma `{gestionar_uid, nombre, desactualizado}` para no romper
+    el front del modal de relevamiento; `gestionar_uid` viaja con el id del user.
+    """
+    provincia_id = getattr(comedor, "provincia_id", None)
+    territoriales = []
+    for user in get_territorial_comedor_users_for_provincia(provincia_id):
+        nombre = (user.get_full_name() or "").strip() or user.username
+        territoriales.append(
+            {
+                "gestionar_uid": str(user.id),
+                "nombre": nombre,
+                "desactualizado": False,
+            }
+        )
+    return territoriales
 
 
 @login_required
 @require_http_methods(["GET"])
 def obtener_territoriales_api(request, comedor_id):
-    """
-    API endpoint para obtener territoriales con cache híbrido.
-
-    Query params opcionales:
-    - force_sync: 'true' para forzar sincronización con GESTIONAR
-    """
+    """Territoriales asignables al comedor (usuarios SISOC por provincia)."""
     try:
         comedor = ComedorService.get_scoped_comedor_or_404(comedor_id, request.user)
-        forzar_sync = request.GET.get("force_sync", "false").lower() == "true"
+        territoriales = _territoriales_sisoc_para_comedor(comedor)
 
-        resultado = TerritorialService.obtener_territoriales_para_comedor(
-            comedor_id=comedor.id, forzar_sync=forzar_sync
+        response = JsonResponse(
+            {
+                "success": True,
+                "territoriales": territoriales,
+                "meta": {
+                    "desactualizados": False,
+                    "fuente": "db_provincia",
+                    "total": len(territoriales),
+                },
+            }
         )
-
-        response_data = {
-            "success": True,
-            "territoriales": resultado["territoriales"],
-            "meta": {
-                "desactualizados": resultado["desactualizados"],
-                "fuente": resultado["fuente"],
-                "total": len(resultado["territoriales"]),
-            },
-        }
-
-        response = JsonResponse(response_data)
-
-        if not resultado["desactualizados"]:
-            # Cache en navegador por 10 minutos si los datos están actualizados
-            response["Cache-Control"] = "public, max-age=600"
-        else:
-            # No cachear en navegador si los datos están desactualizados
-            response["Cache-Control"] = "no-cache"
-
+        response["Cache-Control"] = "no-cache"
         return response
 
     except Exception as e:
@@ -72,24 +78,20 @@ def obtener_territoriales_api(request, comedor_id):
 @login_required
 @require_http_methods(["POST"])
 def sincronizar_territoriales_api(request, comedor_id):
-    """
-    Endpoint para forzar sincronización con GESTIONAR.
-    """
+    """Refresca la lista de territoriales (usuarios SISOC por provincia)."""
     try:
         comedor = ComedorService.get_scoped_comedor_or_404(comedor_id, request.user)
-        resultado = TerritorialService.obtener_territoriales_para_comedor(
-            comedor_id=comedor.id, forzar_sync=True
-        )
+        territoriales = _territoriales_sisoc_para_comedor(comedor)
 
         return JsonResponse(
             {
                 "success": True,
-                "mensaje": "Sincronización completada",
-                "territoriales": resultado["territoriales"],
+                "mensaje": "Lista actualizada",
+                "territoriales": territoriales,
                 "meta": {
-                    "desactualizados": resultado["desactualizados"],
-                    "fuente": resultado["fuente"],
-                    "total": len(resultado["territoriales"]),
+                    "desactualizados": False,
+                    "fuente": "db_provincia",
+                    "total": len(territoriales),
                 },
             }
         )

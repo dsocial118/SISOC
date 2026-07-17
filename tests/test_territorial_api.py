@@ -116,6 +116,19 @@ def test_territorial_detail_includes_relevamiento_actual_mobile():
     assert actual is not None
     assert actual["id"] == relevamiento.id
     assert "sections" in actual
+    # Las secciones basadas en el modelo traen la clave del campo (snake_case) y el
+    # valor crudo, para que la PWA prellene el formulario 1:1. La sección
+    # "Información" es un resumen legible (display) y no lleva `campo`.
+    model_section_items = [
+        it
+        for sec in actual["sections"]
+        if sec["titulo"] != "Información"
+        for it in sec["items"]
+    ]
+    assert model_section_items, "se esperaban items en las secciones del modelo"
+    for it in model_section_items:
+        assert "campo" in it and "valor" in it
+        assert "pregunta" in it and "respuesta" in it
 
 
 @pytest.mark.django_db

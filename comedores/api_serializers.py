@@ -783,6 +783,25 @@ class ComedorDetailSerializer(serializers.ModelSerializer):
                 return str(value)
         return str(value)
 
+    def _raw_mobile_value(self, value):
+        """Valor crudo, JSON-safe, tal como lo guarda el modelo (para prefill).
+
+        Booleanos -> true/false/null; números -> número; fechas -> ISO; texto tal
+        cual. (Las FK se resuelven por nombre en el llamador.)
+        """
+        if value is None or value == "":
+            return None
+        if isinstance(value, bool):
+            return value
+        if isinstance(value, (int, float, str)):
+            return value
+        if hasattr(value, "isoformat"):
+            try:
+                return value.isoformat()
+            except TypeError:
+                return str(value)
+        return str(value)
+
     def _collect_model_items(self, instance):
         if not instance:
             return []
@@ -796,16 +815,23 @@ class ComedorDetailSerializer(serializers.ModelSerializer):
                 related_obj = value
                 if related_obj is None:
                     normalized_value = "Sin dato"
+                    raw_value = None
                 else:
-                    normalized_value = (
+                    raw_value = (
                         getattr(related_obj, "nombre", None)
                         or getattr(related_obj, "estado", None)
                         or str(related_obj)
                     )
+                    normalized_value = raw_value
             else:
                 normalized_value = self._normalize_mobile_value(value)
+                raw_value = self._raw_mobile_value(value)
             items.append(
                 {
+                    # `campo` = clave del campo del modelo (snake_case) y `valor` =
+                    # valor crudo, para que la PWA prellene el formulario 1:1.
+                    "campo": field.name,
+                    "valor": raw_value,
                     "pregunta": str(
                         getattr(field, "verbose_name", field.name)
                     ).capitalize(),
@@ -821,6 +847,8 @@ class ComedorDetailSerializer(serializers.ModelSerializer):
                 values = [str(item) for item in manager.all()]
             items.append(
                 {
+                    "campo": field.name,
+                    "valor": values,
                     "pregunta": str(
                         getattr(field, "verbose_name", field.name)
                     ).capitalize(),
@@ -951,6 +979,10 @@ class ComedorDetailSerializer(serializers.ModelSerializer):
                 "titulo": "Observación",
                 "items": [
                     {
+                        "campo": "observacion",
+                        "valor": self._raw_mobile_value(
+                            getattr(relevamiento, "observacion", None)
+                        ),
                         "pregunta": "Observación",
                         "respuesta": self._normalize_mobile_value(
                             getattr(relevamiento, "observacion", None)

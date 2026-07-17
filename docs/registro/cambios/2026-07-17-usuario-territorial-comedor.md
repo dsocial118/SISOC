@@ -75,6 +75,28 @@ consumo desde la app mobile se resolverán en pasos posteriores.
   día/mes sin cero a la izquierda), y el doble `prestacion` (raíz=cupos/`Prestacion`
   vs `espacio.prestacion`=seguridad/higiene/`EspacioPrestacion`) está bien separado.
 
+### Dropdown "Territorial asignado" del backoffice → usuarios SISOC (opción A)
+
+- El desplegable "Territorial asignado" del modal "Nuevo relevamiento" (backoffice)
+  dejaba de mostrar territoriales porque leía del **pull viejo de AppSheet**
+  (`TerritorialService`), apagado fuera de prod (`GESTIONAR_INTEGRATION_ENABLED`).
+- Ahora las vistas `obtener_territoriales_api` / `sincronizar_territoriales_api`
+  (`comedores/views_territorial.py`) toman de **usuarios SISOC territoriales
+  filtrados por la provincia del comedor** (`get_territorial_comedor_users_for_provincia`
+  en `users/services_pwa.py`). Se conserva la forma `{gestionar_uid, nombre}` del
+  front; `gestionar_uid` viaja con el **id del usuario** → al crear el relevamiento
+  queda en `Relevamiento.territorial_uid` (opción A). Ya no depende de AppSheet.
+
+### Precarga N4: `campo` + `valor` en los items de sections
+
+- Para que la PWA prellene el formulario 1:1, los items de las `sections` basadas
+  en el modelo de `relevamiento_actual_mobile` (`GET /api/territorial/comedores/{id}/`
+  y `GET /api/comedores/{id}/`) ahora incluyen `campo` (clave snake_case del campo
+  del modelo) y `valor` (crudo: bool/número/nombre-de-FK/lista), además de
+  `pregunta`/`respuesta`. Cambio en `_collect_model_items` + item de "Observación"
+  (`comedores/api_serializers.py`). El `items` resumen y la sección "Información"
+  siguen siendo solo display (sin `campo`).
+
 ## Reglas validadas
 
 - **Mutuamente excluyente** con el representante PWA (`es_representante_pwa`): el
