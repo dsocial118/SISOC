@@ -6,7 +6,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
 
 from comedores.models import Comedor
-from importarexpediente.models import ArchivosImportados
+from importarexpediente.models import ArchivosImportados, ErroresImportacion
 
 User = get_user_model()
 
@@ -155,3 +155,56 @@ def test_detail_view_and_ajax(client_logged, seed_imports):
     assert {"html", "pagination_html", "count", "current_page", "total_pages"} <= set(
         data.keys()
     )
+
+
+def test_user_can_list_and_interact_with_another_users_import(client_logged, tmp_media):
+    owner = User.objects.create_user(username="owner", password="pass1234")
+    uploaded = SimpleUploadedFile(
+        "importacion_ajena.csv",
+        b"contenido invalido",
+        content_type="text/csv",
+    )
+    batch = ArchivosImportados.objects.create(archivo=uploaded, usuario=owner)
+    ErroresImportacion.objects.create(
+        archivo_importado=batch,
+        fila=2,
+        mensaje="Error de prueba",
+    )
+
+    list_response = client_logged.get(reverse("importarexpedientes_list"))
+    assert list_response.status_code == 200
+    assert "importacion_ajena.csv" in list_response.content.decode()
+    assert "owner" in list_response.content.decode()
+
+    ajax_response = client_logged.get(
+        reverse("importarexpedientes_ajax"), {"busqueda": "owner"}
+    )
+    assert ajax_response.status_code == 200
+    assert ajax_response.json()["count"] == 1
+    assert "importacion_ajena.csv" in ajax_response.json()["html"]
+
+    detail_response = client_logged.get(
+        reverse("importarexpediente_detail", kwargs={"id_archivo": batch.id})
+    )
+    assert detail_response.status_code == 200
+
+    detail_ajax_response = client_logged.get(
+        reverse("importarexpediente_detail_ajax", kwargs={"id_archivo": batch.id})
+    )
+    assert detail_ajax_response.status_code == 200
+    assert "Error de prueba" in detail_ajax_response.json()["html"]
+
+    download_response = client_logged.get(
+        reverse("descargar_archivo_importado", kwargs={"id_archivo": batch.id})
+    )
+    assert download_response.status_code == 200
+
+    import_response = client_logged.post(
+        reverse("importar_datos", kwargs={"id_archivo": batch.id})
+    )
+    assert import_response.status_code == 302
+
+    delete_response = client_logged.post(
+        reverse("borrar_datos_importados", kwargs={"id_archivo": batch.id})
+    )
+    assert delete_response.status_code == 302
