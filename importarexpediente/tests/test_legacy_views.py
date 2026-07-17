@@ -42,20 +42,20 @@ class ImportarExpedienteViewsTests(TestCase):
 
     @patch.object(ExpedientePago, "full_clean")
     def test_upload_view_logs_success_and_errors(self, mock_full_clean):
-        # Simular validaciÃ³n: raise para segunda fila
+        # Simular validación: raise para segunda fila
         def side_effect():
-            # Usar un contador externo vÃ­a attribute
+            # Usar un contador externo vía attribute
             if not hasattr(mock_full_clean, "_calls"):
                 mock_full_clean._calls = 0  # pylint: disable=protected-access
             mock_full_clean._calls += 1
             if mock_full_clean._calls == 2:  # pylint: disable=protected-access
-                raise ValidationError("Fila invÃ¡lida en prueba")
+                raise ValidationError("Fila inválida en prueba")
 
         mock_full_clean.side_effect = side_effect
 
         csv_text = (
-            "ID;COMEDOR;ORGANIZACIÃƒÆ’Ã¢â‚¬Å“N;EXPEDIENTE del CONVENIO;Expediente de Pago;TOTAL;Mes de Pago;AÃ±o\n"
-            # Dos filas vÃ¡lidas a nivel de datos; el mock fuerza error en la segunda
+            "ID;COMEDOR;ORGANIZACIÃƒÆ’Ã¢â‚¬Å“N;EXPEDIENTE del CONVENIO;Expediente de Pago;TOTAL;Mes de Pago;Año\n"
+            # Dos filas válidas a nivel de datos; el mock fuerza error en la segunda
             f'{self.comedor.id};{self.comedor.nombre};Org;EX-2024-X;EX-2025-AAA;"$ 1.000,00";enero;2025\n'
             f'{self.comedor.id};{self.comedor.nombre};Org;EX-2024-Y;EX-2025-BBB;"$ 2.000,00";enero;2025\n'
         )
@@ -68,12 +68,12 @@ class ImportarExpedienteViewsTests(TestCase):
         )
         self.assertEqual(resp.status_code, 200)
 
-        # Se crea un maestro y se registran filas procesadas (Ã©xito/error)
+        # Se crea un maestro y se registran filas procesadas (éxito/error)
         self.assertEqual(ArchivosImportados.objects.count(), 1)
         master = ArchivosImportados.objects.first()
         successes = ExitoImportacion.objects.filter(archivo_importado=master).count()
         errors = ErroresImportacion.objects.filter(archivo_importado=master).count()
-        # Deben haberse procesado exactamente 2 filas (1ra vÃ¡lida, 2da mockeada)
+        # Deben haberse procesado exactamente 2 filas (1ra válida, 2da mockeada)
         self.assertEqual(successes + errors, 2)
         # Contadores persistidos reflejan lo mismo
         master.refresh_from_db()
@@ -93,7 +93,7 @@ class ImportarExpedienteViewsTests(TestCase):
             archivo="importados/dummy.csv", usuario=self.user
         )
         ExitoImportacion.objects.create(
-            archivo_importado=master, fila=2, mensaje="Fila vÃ¡lida"
+            archivo_importado=master, fila=2, mensaje="Fila válida"
         )
         ErroresImportacion.objects.create(
             archivo_importado=master, fila=3, mensaje="Error de prueba"
@@ -101,7 +101,7 @@ class ImportarExpedienteViewsTests(TestCase):
 
         resp = self.client.get(reverse("importarexpediente_detail", args=[master.id]))
         self.assertEqual(resp.status_code, 200)
-        # El template deberÃ­a poder acceder a los registros listados (errores) y exponer contadores
+        # El template debería poder acceder a los registros listados (errores) y exponer contadores
         self.assertContains(resp, "Error")
         self.assertIn("exito_count", resp.context)
         self.assertIn("error_count", resp.context)
@@ -113,7 +113,7 @@ class ImportarExpedienteViewsTests(TestCase):
         mock_full_clean.return_value = None
         # CSV almacenado en el FileField del maestro
         csv_text = (
-            "ID;COMEDOR;ORGANIZACIÃƒÆ’Ã¢â‚¬Å“N;EXPEDIENTE del CONVENIO;Expediente de Pago;TOTAL;Mes de Pago;AÃ±o\n"
+            "ID;COMEDOR;ORGANIZACIÃƒÆ’Ã¢â‚¬Å“N;EXPEDIENTE del CONVENIO;Expediente de Pago;TOTAL;Mes de Pago;Año\n"
             f'{self.comedor.id};{self.comedor.nombre};Org;EX-2024-Z;EX-2025-CCC;"$ 3.000,00";enero;2025\n'
         )
         uploaded = self._make_csv_file(csv_text, name="stored.csv")
@@ -129,7 +129,7 @@ class ImportarExpedienteViewsTests(TestCase):
         self.assertGreater(ExpedientePago.objects.count(), 0)
         exp = ExpedientePago.objects.first()
 
-        # Debe existir un RegistroImportado enlazado a la fila y al Ã©xito creado/ubicado
+        # Debe existir un RegistroImportado enlazado a la fila y al éxito creado/ubicado
         self.assertGreater(RegistroImportado.objects.count(), 0)
         reg = RegistroImportado.objects.first()
         self.assertEqual(reg.expediente_pago_id, exp.id)
