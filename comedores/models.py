@@ -1133,6 +1133,24 @@ class ImagenComedor(models.Model):
         choices=ORIGEN_CHOICES,
         default=ORIGEN_WEB,
     )
+    client_uuid = models.CharField(
+        max_length=64,
+        null=True,
+        blank=True,
+        help_text=(
+            "Identificador estable generado por el cliente (PWA) para deduplicar "
+            "reintentos offline de subida."
+        ),
+    )
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["comedor", "client_uuid"],
+                condition=models.Q(client_uuid__isnull=False),
+                name="uniq_imagencomedor_comedor_client_uuid",
+            ),
+        ]
 
     def __str__(self):
         return f"Imagen de {self.comedor.nombre}"

@@ -20,10 +20,16 @@ class RelevamientoApiView(APIView):
     permission_classes = [HasAPIKeyOrToken]
 
     def patch(self, request):
+        sisoc_id = request.data.get("sisoc_id")
+        if sisoc_id in (None, ""):
+            return Response(
+                "Falta 'sisoc_id' en el cuerpo de la solicitud.",
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         relevamiento_serializer = None
         try:
             relevamiento = Relevamiento.objects.get(
-                id=request.data["sisoc_id"],
+                id=sisoc_id,
             )
             try:
                 relevamiento_serializer = RelevamientoSerializer(
@@ -61,19 +67,19 @@ class RelevamientoApiView(APIView):
             )
         except Relevamiento.DoesNotExist:
             return Response(
-                f"Relevamiento {request.data['sisoc_id']} no encontrado",
+                f"Relevamiento {sisoc_id} no encontrado",
                 status=status.HTTP_404_NOT_FOUND,
             )
         except Exception:
             logger.exception(
                 "Error en PATCH al relevamiento",
                 extra={
-                    "sisoc_id": request.data.get("sisoc_id"),
+                    "sisoc_id": sisoc_id,
                     "data": request.data,
                 },
             )
             return Response(
-                f"Error al actualizar el relevamiento {request.data['sisoc_id']}",
+                f"Error al actualizar el relevamiento {sisoc_id}",
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 

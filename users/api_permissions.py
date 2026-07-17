@@ -1,7 +1,12 @@
 from rest_framework.permissions import BasePermission
 
 from iam.services import user_has_permission_code
-from users.services_pwa import has_pwa_access_to_comedor, is_pwa_user, is_representante
+from users.services_pwa import (
+    has_pwa_access_to_comedor,
+    is_pwa_user,
+    is_representante,
+    is_territorial_comedor_user,
+)
 
 MOBILE_RENDICION_PERMISSION_CODE = "rendicioncuentasmensual.manage_mobile_rendicion"
 PWA_PRESTACIONES_MENSUALES_PERMISSION_CODE = "pwa.manage_prestaciones_mensuales_pwa"
@@ -20,6 +25,18 @@ class IsPWAAuthenticatedToken(BasePermission):
         if not user or not user.is_authenticated:
             return False
         return is_pwa_user(user)
+
+
+class IsTerritorialComedorUser(BasePermission):
+    """Permite solo usuarios marcados como territorial de comedores (mobile)."""
+
+    message = "El usuario autenticado no es territorial de comedores."
+
+    def has_permission(self, request, view):
+        user = request.user
+        if not user or not user.is_authenticated:
+            return False
+        return is_territorial_comedor_user(user)
 
 
 class IsPWARepresentativeForComedor(BasePermission):

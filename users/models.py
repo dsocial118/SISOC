@@ -135,6 +135,15 @@ class Profile(models.Model):
         verbose_name="Es Coordinador de Gestión",
         help_text="Marca si este usuario es coordinador de gestión",
     )
+    es_territorial_comedor = models.BooleanField(
+        default=False,
+        verbose_name="Acceso SISOC - Mobile Territorial comedor",
+        help_text=(
+            "Marca al usuario como territorial (relevador) de comedores en "
+            "SISOC - Mobile. El alcance se define por provincia en "
+            "TerritorialComedorProvincia."
+        ),
+    )
     duplas_asignadas = models.ManyToManyField(
         "duplas.Dupla",
         blank=True,
@@ -251,6 +260,43 @@ class ProfileTerritorialScope(models.Model):
         if self.localidad_id:
             parts.append(str(self.localidad))
         return " / ".join(parts)
+
+
+class TerritorialComedorProvincia(models.Model):
+    """Provincia de alcance de un usuario territorial de comedores (SISOC - Mobile).
+
+    Estructura dedicada al rol territorial: mantiene el alcance desacoplado de
+    ``ProfileTerritorialScope`` (usuarios provinciales) y de ``AccesoComedorPWA``
+    (representantes PWA). Solo modela provincia, que es el eje con el que el pull
+    de territoriales desde GESTIONAR/AppSheet cachea los relevadores.
+    """
+
+    profile = models.ForeignKey(
+        Profile,
+        on_delete=models.CASCADE,
+        related_name="territorial_comedor_provincias",
+    )
+    provincia = models.ForeignKey(
+        Provincia,
+        on_delete=models.PROTECT,
+        related_name="+",
+    )
+
+    class Meta:
+        verbose_name = "Provincia de territorial de comedor"
+        verbose_name_plural = "Provincias de territorial de comedor"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["profile", "provincia"],
+                name="uniq_territorial_comedor_provincia",
+            ),
+        ]
+        indexes = [
+            models.Index(fields=["provincia"]),
+        ]
+
+    def __str__(self):
+        return f"{self.profile.user.username} / {self.provincia}"
 
 
 class AccesoComedorPWA(models.Model):

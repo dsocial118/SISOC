@@ -274,6 +274,21 @@
                     </div>
                 </div>
 
+                <!-- Acceso SISOC - Mobile Territorial comedor -->
+                <div class="card card-custom mb-3 shadow-sm" id="territorial-comedor-card">
+                    <div class="card-header card-header-custom">
+                        <h5 class="mb-0">
+                            <i class="fas fa-map-marked-alt mr-3"></i>Acceso SISOC - Mobile Territorial comedor
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="territorial-comedor-toggle-wrapper">{{ form.es_territorial_comedor|as_crispy_field }}</div>
+                        <div id="territorial-comedor-provincias-wrapper" style="display: none">
+                            {{ form.provincias_territorial|as_crispy_field }}
+                        </div>
+                    </div>
+                </div>
+
                 {% if pwa_created_users %}
                     <div class="card card-custom mb-3 shadow-sm"
                          id="mobile-created-users-card">
@@ -779,6 +794,42 @@
     }
     toggleBackofficeFields();
     toggleAssociationFields();
+  })();
+    </script>
+    <script nonce="{{ request.csp_nonce }}">
+  (() => {
+    const terrCheckbox = document.getElementById('id_es_territorial_comedor');
+    if (!terrCheckbox) {
+      return;
+    }
+    const terrProvinciasWrapper = document.getElementById('territorial-comedor-provincias-wrapper');
+    const repCheckbox = document.getElementById('id_es_representante_pwa');
+
+    const syncTerritorialVisibility = () => {
+      if (terrProvinciasWrapper) {
+        terrProvinciasWrapper.style.display = terrCheckbox.checked ? '' : 'none';
+      }
+    };
+
+    terrCheckbox.addEventListener('change', () => {
+      // Territorial y representante mobile son mutuamente excluyentes.
+      if (terrCheckbox.checked && repCheckbox && repCheckbox.checked) {
+        repCheckbox.checked = false;
+        repCheckbox.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+      syncTerritorialVisibility();
+    });
+
+    if (repCheckbox) {
+      repCheckbox.addEventListener('change', () => {
+        if (repCheckbox.checked && terrCheckbox.checked) {
+          terrCheckbox.checked = false;
+          syncTerritorialVisibility();
+        }
+      });
+    }
+
+    syncTerritorialVisibility();
   })();
     </script>
     <script src="{% static 'custom/js/usuarioprovincial.js' %}?v=territorial-scopes-1737-2"></script>

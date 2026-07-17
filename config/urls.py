@@ -72,6 +72,7 @@ urlpatterns = [
     # API URLs
     path("api/users/", include("users.api_urls")),
     path("api/comedores/", include("comedores.api_urls")),
+    path("api/territorial/", include("comedores.api_urls_territorial")),
     path("api/centrodefamilia/", include("centrodefamilia.api_urls")),
     path("api/vat/", include("VAT.api_urls")),
     path("api/comunicados/", include("comunicados.api_urls")),
