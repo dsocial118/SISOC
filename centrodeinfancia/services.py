@@ -128,6 +128,9 @@ class AsistenciaNominaCentroInfanciaService:
             )
 
         with transaction.atomic():
+            NominaCentroInfancia.objects.select_for_update().filter(
+                pk__in=[nomina.pk for nomina in nominas]
+            ).exists()
             existentes = {
                 asistencia.nomina_id: asistencia
                 for asistencia in (
