@@ -418,6 +418,12 @@
         <!-- 3) RESUMEN DE NÓMINA -->
         <div class="cdi-section-head">
             <h2 class="cdi-section-title">Nómina</h2>
+            {% if puede_tomar_asistencia_nomina %}
+                <a href="{% url 'centrodeinfancia_nomina_asistencia' centro.id %}"
+                   class="cdf-btn cdf-btn--gold">
+                    <i class="bi bi-calendar-check"></i>Tomar asistencia
+                </a>
+            {% endif %}
             <a href="{% url 'centrodeinfancia_nomina_ver' pk=centro.id %}"
                class="cdf-btn cdf-btn--primary">
                 <i class="bi bi-people"></i>Ver nómina completa
@@ -465,10 +471,6 @@
                            class="cdf-search"
                            placeholder="Buscar trabajador…" />
                     {% if puede_editar_trabajadores %}
-                        <a href="{% url 'centrodeinfancia_trabajadores_asistencia' centro.id %}"
-                           class="cdf-btn cdf-btn--primary">
-                            <i class="bi bi-calendar-check"></i>Tomar asistencia
-                        </a>
                         <a href="{% url 'centrodeinfancia_trabajador_crear' centro.id %}"
                            class="cdf-btn cdf-btn--gold">Agregar trabajador</a>
                     {% endif %}
