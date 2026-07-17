@@ -24,6 +24,7 @@ from users.views_export import UserExportView, GroupExportView
 from users.views_user_import import (
     UserImportJobCreateView,
     UserImportJobDetailView,
+    UserImportJobDownloadCSVView,
     UserImportJobResumeView,
     UserImportTemplateView,
 )
@@ -128,6 +129,13 @@ urlpatterns = [
         "usuarios/importar/lotes/<int:pk>/reanudar/",
         permissions_any_required(["auth.add_user"])(UserImportJobResumeView.as_view()),
         name="usuarios_importar_reanudar",
+    ),
+    path(
+        "usuarios/importar/lotes/<int:pk>/descargar-csv/",
+        permissions_any_required(["auth.add_user"])(
+            UserImportJobDownloadCSVView.as_view()
+        ),
+        name="usuarios_importar_descargar_csv",
     ),
     path(
         "grupos/",

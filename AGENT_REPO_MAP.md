@@ -340,6 +340,17 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - `users/management/commands/create_groups.py`
 - templates en `users/templates/`
 
+### Si necesitas cambiar la importacion masiva de usuarios
+
+- `users/services_user_import.py`: parsing, alta/actualizacion, mail de
+  credenciales y exportacion CSV.
+- `users/services_user_import_jobs.py`: procesamiento y reanudacion del lote.
+- `users/views_user_import.py`, `users/urls.py` y
+  `users/templates/user/user_import_job_detail.html`: detalle y descargas.
+- Las credenciales se agrupan al finalizar el lote; los lotes PWA deben usar
+  `/mobile/login` y las descargas sensibles se limitan al solicitante o a un
+  superusuario.
+
 ### Si necesitas cambiar permisos o IAM
 
 - `users/bootstrap/groups_seed.py`

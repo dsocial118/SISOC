@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+import csv
 import logging
 import unicodedata
 from dataclasses import dataclass
-from io import BytesIO
+from io import BytesIO, StringIO
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -68,6 +69,14 @@ USER_IMPORT_TEMPLATE_HEADERS = (
     "Organizaciones",
     "Comedores",
 )
+USER_IMPORT_CSV_HEADERS = (
+    "Usuario",
+    "Nombre",
+    "Apellido",
+    "Correo",
+    "Rol",
+    "Contraseña temporal",
+)
 USERNAME_MAX_LENGTH = 150
 
 GROUP_ACTION_AGREGAR = "agregar"
@@ -76,11 +85,14 @@ GROUP_ACTION_REEMPLAZAR = "reemplazar"
 GROUP_ACTIONS = (GROUP_ACTION_AGREGAR, GROUP_ACTION_QUITAR, GROUP_ACTION_REEMPLAZAR)
 
 
-def _build_login_url() -> str:
-    try:
-        path = reverse("login")
-    except Exception:
-        path = "/"
+def _build_login_url(*, is_pwa_import: bool = False) -> str:
+    if is_pwa_import:
+        path = "/mobile/login"
+    else:
+        try:
+            path = reverse("login")
+        except Exception:
+            path = "/"
     domain = (
         str(settings.DOMINIO).replace("http://", "").replace("https://", "").rstrip("/")
     )
@@ -311,7 +323,7 @@ def send_user_import_job_credentials(job: UserImportJob) -> None:
             send_bulk_credentials_email(
                 recipient_email=recipient_email,
                 entries=entries,
-                login_url=_build_login_url(),
+                login_url=_build_login_url(is_pwa_import=job.is_pwa_import),
                 send_type="standard",
             )
         except Exception:
@@ -329,6 +341,42 @@ def send_user_import_job_credentials(job: UserImportJob) -> None:
         UserImportJobRow.objects.filter(pk__in=[row.pk for row in rows_to_send]).update(
             credentials_sent_at=timezone.now()
         )
+
+
+def _sanitize_csv_cell(value: object) -> str:
+    text = str(value or "")
+    return f"'{text}" if text.startswith(("=", "+", "-", "@")) else text
+
+
+def generate_user_import_job_csv(job: UserImportJob) -> str:
+    output = StringIO()
+    writer = csv.writer(output)
+    writer.writerow(USER_IMPORT_CSV_HEADERS)
+    rows = (
+        job.rows.filter(
+            status=UserImportJobRow.Status.CREATED,
+            created_user__isnull=False,
+        )
+        .select_related("created_user__profile")
+        .order_by("fila", "id")
+    )
+    for row in rows:
+        user = row.created_user
+        profile = user.profile
+        temporary_password = (
+            profile.temporary_password_plaintext if profile.must_change_password else ""
+        )
+        writer.writerow(
+            [
+                _sanitize_csv_cell(user.username),
+                _sanitize_csv_cell(row.nombre or user.first_name),
+                _sanitize_csv_cell(row.apellido or user.last_name),
+                _sanitize_csv_cell(user.email or row.email),
+                _sanitize_csv_cell(row.rol),
+                temporary_password or "",
+            ]
+        )
+    return output.getvalue()
 
 
 def _resolver_provincias(provincias_raw: str) -> list:
