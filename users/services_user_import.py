@@ -364,9 +364,7 @@ def generate_user_import_job_csv(job: UserImportJob) -> str:
         user = row.created_user
         profile = user.profile
         temporary_password = (
-            profile.temporary_password_plaintext
-            if profile.must_change_password
-            else ""
+            profile.temporary_password_plaintext if profile.must_change_password else ""
         )
         writer.writerow(
             [

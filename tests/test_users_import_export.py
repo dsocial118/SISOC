@@ -144,9 +144,10 @@ def test_user_import_job_download_exports_only_created_users_with_temp_password(
         reverse("usuarios_importar_detalle", kwargs={"pk": job.pk})
     )
     assert detail_response.status_code == 200
-    assert reverse(
-        "usuarios_importar_descargar_csv", kwargs={"pk": job.pk}
-    ) in detail_response.content.decode()
+    assert (
+        reverse("usuarios_importar_descargar_csv", kwargs={"pk": job.pk})
+        in detail_response.content.decode()
+    )
 
 
 @pytest.mark.django_db
