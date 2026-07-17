@@ -114,6 +114,7 @@ header.main-header {
     .sidebar-expand-lg.layout-fixed .app-sidebar {
         position: sticky;
         top: 76px !important;
+        bottom: auto;
         align-self: start;
         max-height: calc(100vh - 76px);
     }
