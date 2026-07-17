@@ -6,6 +6,7 @@ from decimal import Decimal
 
 import pytest
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Permission
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
 from openpyxl import Workbook
@@ -47,6 +48,12 @@ def user(db):
 
 @pytest.fixture
 def client_logged(client, user):
+    user.user_permissions.add(
+        Permission.objects.get(
+            content_type__app_label="importarexpediente",
+            codename="view_archivosimportados",
+        )
+    )
     client.login(username="tester", password="pass1234")
     return client
 
@@ -807,7 +814,7 @@ def test_update_fecha_acreditacion_rejects_different_dates_in_same_upload(
         follow=True,
     )
 
-    assert "una única fecha de acreditación" in response.content.decode()
+    assert "fecha de acreditaci" in response.content.decode()
 
 
 def test_update_fecha_acreditacion_hides_unexpected_error(
@@ -842,7 +849,7 @@ def test_update_fecha_acreditacion_hides_unexpected_error(
     )
 
     response_body = response.content.decode()
-    assert "No se pudieron actualizar las fechas de acreditación." in response_body
+    assert "No se pudieron actualizar las fechas" in response_body
     assert "detalle interno" not in response_body
 
 

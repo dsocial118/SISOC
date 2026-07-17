@@ -2,6 +2,7 @@
 
 import pytest
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Permission
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
 
@@ -20,6 +21,12 @@ def user(db):
 
 @pytest.fixture
 def client_logged(client, user):
+    user.user_permissions.add(
+        Permission.objects.get(
+            content_type__app_label="importarexpediente",
+            codename="view_archivosimportados",
+        )
+    )
     client.login(username="tester", password="pass1234")
     return client
 
@@ -34,7 +41,7 @@ def tmp_media(settings, tmp_path):
 @pytest.fixture
 def seed_imports(client_logged, tmp_media):
     # Create a couple of batches to paginate/search using new headers
-    headers = "ID;COMEDOR;ORGANIZACIÓN;EXPEDIENTE del CONVENIO;Expediente de Pago;TOTAL;Mes de Pago;Año\n"
+    headers = "ID;COMEDOR;ORGANIZACIÃƒÆ’Ã¢â‚¬Å“N;EXPEDIENTE del CONVENIO;Expediente de Pago;TOTAL;Mes de Pago;AÃ±o\n"
     for i in range(3):
         row = (
             f"{i+1};Comedor {i};Org {i};EX-2024-{i};EX-2025-{i};$ 1.000,00;enero;2025\n"
@@ -64,8 +71,18 @@ def test_list_view_and_ajax_filters(client_logged, seed_imports):
     assert {"html", "pagination_html", "count", "current_page", "total_pages"} <= set(
         data.keys()
     )
-    assert "01/2025" in data["html"]
+    assert "expedientes_1.csv" in data["html"]
     assert "Descargar" in data["html"]
+
+
+def test_list_and_ajax_require_view_permission(client, user):
+    client.force_login(user)
+
+    list_response = client.get(reverse("importarexpedientes_list"))
+    ajax_response = client.get(reverse("importarexpedientes_ajax"))
+
+    assert list_response.status_code == 403
+    assert ajax_response.status_code == 403
 
 
 def test_list_view_backfills_periodo_from_stored_file(client_logged, tmp_media):

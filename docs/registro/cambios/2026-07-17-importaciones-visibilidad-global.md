@@ -12,6 +12,10 @@ importacion y borrar los datos importados de lotes creados por otros usuarios.
 Los permisos especificos existentes para actualizar fechas de acreditacion no
 se modifican.
 
+El acceso al listado, sus consultas AJAX, detalle y descarga exige el permiso
+`importarexpediente.view_archivosimportados`, tanto desde el menu como por URL
+directa.
+
 La actualizacion de fechas de acreditacion queda limitada a los comedores
 incluidos en el archivo de acreditaciones. Los expedientes de otros comedores
 del mismo lote conservan su fecha previa, incluso si fue cargada manualmente, o
