@@ -76,9 +76,9 @@ def _parse_csv(csv_path, logger):
                     "codigo_telefono": codigo_telefono,
                     "numero_telefono": numero_telefono,
                     "fecha_alta": fecha_alta,
-                    "actividad": (raw_row.get("Actividades") or "").strip().replace(
-                        ";", "/"
-                    ),
+                    "actividad": (raw_row.get("Actividades") or "")
+                    .strip()
+                    .replace(";", "/"),
                 }
             )
 
@@ -92,7 +92,9 @@ def _write_audit_best_effort(audit_model, entries, database, logger):
     try:
         with transaction.atomic(using=database):
             for batch in _chunks(entries):
-                audit_model.objects.using(database).bulk_create(batch, batch_size=BATCH_SIZE)
+                audit_model.objects.using(database).bulk_create(
+                    batch, batch_size=BATCH_SIZE
+                )
     except Exception:  # pragma: no cover - depends on historical audit schema
         logger.exception("No se pudo registrar la auditoría PNUD de colaboradores.")
 
@@ -103,7 +105,9 @@ def replace_pnud_colaboradores(
     """Replace active PNUD collaborators from ``csv_path`` using historical models."""
     logger = logger or logging.getLogger(__name__)
     database = (
-        schema_editor.connection.alias if schema_editor is not None else DEFAULT_DB_ALIAS
+        schema_editor.connection.alias
+        if schema_editor is not None
+        else DEFAULT_DB_ALIAS
     )
     run_date = run_date or timezone.now().date()
 
@@ -114,9 +118,7 @@ def replace_pnud_colaboradores(
     )
     Comedor = apps.get_model("comedores", "Comedor")
     try:
-        AuditColaboradorEspacio = apps.get_model(
-            "comedores", "AuditColaboradorEspacio"
-        )
+        AuditColaboradorEspacio = apps.get_model("comedores", "AuditColaboradorEspacio")
     except LookupError:
         AuditColaboradorEspacio = None
 
@@ -142,9 +144,7 @@ def replace_pnud_colaboradores(
         for comedor_id, comedor in comedores.items()
         if comedor.programa_id in PNUD_PROGRAMA_IDS
     }
-    stats["comedores_saltados_programa"] = len(
-        set(comedores) - allowed_comedor_ids
-    )
+    stats["comedores_saltados_programa"] = len(set(comedores) - allowed_comedor_ids)
     rows = [row for row in rows if row["comedor_id"] in allowed_comedor_ids]
     stats["comedores_procesados"] = len(allowed_comedor_ids)
 
@@ -223,29 +223,31 @@ def replace_pnud_colaboradores(
 
         _write_audit_best_effort(
             AuditColaboradorEspacio,
-            [
-                AuditColaboradorEspacio(
-                    colaborador_id=old["id"],
-                    comedor_id=old["comedor_id"],
-                    ciudadano_id=old["ciudadano_id"],
-                    changed_by_id=None,
-                    accion="delete",
-                    snapshot_antes={
-                        "id": old["id"],
-                        "genero": old["genero"],
-                        "fecha_alta": old["fecha_alta"].isoformat(),
-                        "fecha_baja": None,
-                    },
-                    snapshot_despues={
-                        "id": old["id"],
-                        "fecha_baja": run_date.isoformat(),
-                    },
-                    metadata={"source": "pnud_csv_2099"},
-                )
-                for old in old_collaborators
-            ]
-            if AuditColaboradorEspacio
-            else [],
+            (
+                [
+                    AuditColaboradorEspacio(
+                        colaborador_id=old["id"],
+                        comedor_id=old["comedor_id"],
+                        ciudadano_id=old["ciudadano_id"],
+                        changed_by_id=None,
+                        accion="delete",
+                        snapshot_antes={
+                            "id": old["id"],
+                            "genero": old["genero"],
+                            "fecha_alta": old["fecha_alta"].isoformat(),
+                            "fecha_baja": None,
+                        },
+                        snapshot_despues={
+                            "id": old["id"],
+                            "fecha_baja": run_date.isoformat(),
+                        },
+                        metadata={"source": "pnud_csv_2099"},
+                    )
+                    for old in old_collaborators
+                ]
+                if AuditColaboradorEspacio
+                else []
+            ),
             database,
             logger,
         )
@@ -307,26 +309,28 @@ def replace_pnud_colaboradores(
 
         _write_audit_best_effort(
             AuditColaboradorEspacio,
-            [
-                AuditColaboradorEspacio(
-                    colaborador_id=created_by_key[
-                        (row["comedor_id"], ciudadano_by_dni[row["dni"]].id)
-                    ].id,
-                    comedor_id=row["comedor_id"],
-                    ciudadano_id=ciudadano_by_dni[row["dni"]].id,
-                    changed_by_id=None,
-                    accion="create",
-                    snapshot_despues={
-                        "genero": row["genero"],
-                        "fecha_alta": row["fecha_alta"].isoformat(),
-                        "fecha_baja": None,
-                    },
-                    metadata={"source": "pnud_csv_2099"},
-                )
-                for row in rows
-            ]
-            if AuditColaboradorEspacio
-            else [],
+            (
+                [
+                    AuditColaboradorEspacio(
+                        colaborador_id=created_by_key[
+                            (row["comedor_id"], ciudadano_by_dni[row["dni"]].id)
+                        ].id,
+                        comedor_id=row["comedor_id"],
+                        ciudadano_id=ciudadano_by_dni[row["dni"]].id,
+                        changed_by_id=None,
+                        accion="create",
+                        snapshot_despues={
+                            "genero": row["genero"],
+                            "fecha_alta": row["fecha_alta"].isoformat(),
+                            "fecha_baja": None,
+                        },
+                        metadata={"source": "pnud_csv_2099"},
+                    )
+                    for row in rows
+                ]
+                if AuditColaboradorEspacio
+                else []
+            ),
             database,
             logger,
         )

@@ -5,9 +5,7 @@ from django.db import migrations
 from comedores.services.pnud_colaboradores_migration import replace_pnud_colaboradores
 
 
-CSV_PATH = os.path.join(
-    os.path.dirname(__file__), "data", "colaboradores_pnud.csv"
-)
+CSV_PATH = os.path.join(os.path.dirname(__file__), "data", "colaboradores_pnud.csv")
 
 
 def forwards(apps, schema_editor):

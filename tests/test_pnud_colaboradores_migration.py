@@ -178,9 +178,12 @@ def test_replace_pnud_colaboradores_replaces_only_pnud_comedores(tmp_path):
     assert AuditColaboradorEspacio.objects.filter(
         colaborador=previo_pnud, accion="delete"
     ).exists()
-    assert AuditColaboradorEspacio.objects.filter(
-        comedor=comedor_pnud, accion="create"
-    ).count() == 2
+    assert (
+        AuditColaboradorEspacio.objects.filter(
+            comedor=comedor_pnud, accion="create"
+        ).count()
+        == 2
+    )
     assert stats == {
         "comedores_procesados": 1,
         "comedores_saltados_inexistentes": 1,
