@@ -94,3 +94,75 @@ def test_migracion_materializa_arca_en_documento_del_tipo_convenio():
         ).count()
         == 2
     )
+
+
+def test_migracion_elige_documento_arca_determinista_si_esta_duplicado():
+    convenio = TipoConvenio.objects.create(nombre="Personeria Juridica")
+    documento_esperado = Documentacion.objects.create(
+        nombre="Constancia de ARCA", obligatorio=True, orden=5
+    )
+    documento_esperado.convenios.add(convenio)
+    documento_duplicado = Documentacion.objects.create(
+        nombre="Constancia de ARCA", obligatorio=True, orden=10
+    )
+    documento_duplicado.convenios.add(convenio)
+    admision, archivo = _crear_archivo_arca(
+        convenio,
+        DocumentacionOrganizacion.CATEGORIA_PERSONERIA,
+        "duplicado",
+    )
+
+    _migracion.actualizar_documentacion(global_apps, None)
+
+    archivo_admision = ArchivoAdmision.objects.get(
+        admision_id=admision.id,
+        archivo_organizacion_origen_id=archivo.id,
+    )
+    assert archivo_admision.documentacion_id == documento_esperado.id
+
+
+def test_migracion_crea_documento_arca_para_el_convenio_si_no_existe():
+    convenio = TipoConvenio.objects.create(nombre="Personeria Juridica")
+    otro_convenio = TipoConvenio.objects.create(
+        nombre="Personeria Juridica Eclesiastica"
+    )
+    documento_de_otro_convenio = Documentacion.objects.create(
+        nombre="Constancia de ARCA", obligatorio=True, orden=5
+    )
+    documento_de_otro_convenio.convenios.add(otro_convenio)
+    admision, archivo = _crear_archivo_arca(
+        convenio,
+        DocumentacionOrganizacion.CATEGORIA_PERSONERIA,
+        "sin-catalogo",
+    )
+
+    _migracion.actualizar_documentacion(global_apps, None)
+
+    documento = Documentacion.objects.get(
+        nombre="Constancia de ARCA", convenios=convenio
+    )
+    archivo_admision = ArchivoAdmision.objects.get(
+        admision_id=admision.id,
+        archivo_organizacion_origen_id=archivo.id,
+    )
+    assert documento.id != documento_de_otro_convenio.id
+    assert list(documento.convenios.values_list("id", flat=True)) == [convenio.id]
+    assert archivo_admision.documentacion_id == documento.id
+
+
+def test_migracion_crea_documento_arca_sin_convenio_si_la_admision_no_tiene_tipo():
+    admision, archivo = _crear_archivo_arca(
+        None,
+        DocumentacionOrganizacion.CATEGORIA_PERSONERIA,
+        "sin-tipo-convenio",
+    )
+
+    _migracion.actualizar_documentacion(global_apps, None)
+
+    documento = Documentacion.objects.get(nombre="Constancia de ARCA")
+    archivo_admision = ArchivoAdmision.objects.get(
+        admision_id=admision.id,
+        archivo_organizacion_origen_id=archivo.id,
+    )
+    assert not documento.convenios.exists()
+    assert archivo_admision.documentacion_id == documento.id
