@@ -83,14 +83,27 @@ condicional).
   para corregir un dato de RENAPER que esté mal. Si en algún momento hace falta permitir la
   corrección (con justificación), es una feature aparte.
 
+## Campos nuevos de la spec (agregados 2026-07-20, post-merge de development)
+
+La spec funcional pedía cuatro campos que no existían. Se agregaron (migración 0041,
+opciones tomadas de la planilla de requerimientos):
+
+- **`funcion_pfpi`** (TC12) y **`funcion_uaf`** (no reportado por QA): condicionales, se
+  muestran/limpian según el subcomponente, igual que `funcion_egp`/`funcion_cdi`. No son
+  obligatorios (el modelo los limpia si no aplican).
+- **`registro_tipo`** (TC17, "Tipo de registro": Alta/Baja/Edición): **obligatorio**.
+- **`fecha_actualizacion`** ("Fecha de actualización del personal", no reportado por QA):
+  **optativo** — ni QA ni la spec lo marcan como requerido. Si producto lo quiere
+  obligatorio, va a `CAMPOS_OBLIGATORIOS`.
+
+De paso, el `clean()` del modelo ahora también limpia `sala_cdi` cuando el subcomponente
+no es CDI (antes solo lo hacía el JS).
+
 ## Fuera de alcance de este cambio
 
 - **BAHRA** (TC08, TC09, TC10 y la codificación de TC39/40/41): descartado por PM.
   Nota: TC39 pide además "agregar campo Departamento", que **ya existe**
   (`departamento_contacto`, migración 0034).
-- **Campos que no existen y la spec pide**: `funcion_pfpi` (TC12), `registro_tipo` (TC17),
-  y dos que QA no reportó: **`funcion_uaf`** y **`fecha_actualizacion`**. `Subcomponente`
-  ofrece PFPI y UAF pero no hay campo de función para ninguno de los dos.
 ## Validación
 
 - `pytest centrodeinfancia/` → 333 passed.

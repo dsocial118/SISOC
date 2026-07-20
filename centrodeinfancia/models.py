@@ -396,6 +396,16 @@ TRABAJADOR_SUBCOMPONENTE_CHOICES = [
     ("uaf", "UAF"),
 ]
 
+TRABAJADOR_FUNCION_PFPI_CHOICES = [
+    ("direccion", "Dirección"),
+    ("simepi", "SIMEPI"),
+    ("auditoria", "Auditoría"),
+    ("administracion", "Administración"),
+    ("control", "Control"),
+    ("finanzas", "Finanzas"),
+    ("tecnico_primera_infancia", "Técnico de primera infancia"),
+]
+
 TRABAJADOR_FUNCION_EGP_CHOICES = [
     ("coordinacion_general", "Coordinación General"),
     ("ref_calidad_cdi", "Referente de Calidad de los CDI"),
@@ -403,6 +413,21 @@ TRABAJADOR_FUNCION_EGP_CHOICES = [
     ("ref_monitoreo", "Referente de Monitoreo"),
     ("ref_capacitacion", "Referente de capacitación"),
     ("apoyo_administrativo", "Apoyo administrativo"),
+]
+
+TRABAJADOR_FUNCION_UAF_CHOICES = [
+    ("coordinador_uaf", "Coordinador UAF"),
+    ("supervisor", "Supervisor/a"),
+    ("tutor", "Tutor/a"),
+    ("facilitador", "Facilitador/a"),
+    ("orientador", "Orientador/a"),
+    ("otro", "Otro"),
+]
+
+TRABAJADOR_REGISTRO_TIPO_CHOICES = [
+    ("alta", "Alta"),
+    ("baja", "Baja"),
+    ("edicion", "Edición"),
 ]
 
 TRABAJADOR_FUNCION_CDI_CHOICES = [
@@ -829,6 +854,13 @@ class Trabajador(SoftDeleteModelMixin, models.Model):
         null=True,
         verbose_name="Subcomponente",
     )
+    funcion_pfpi = models.CharField(
+        max_length=32,
+        choices=TRABAJADOR_FUNCION_PFPI_CHOICES,
+        blank=True,
+        null=True,
+        verbose_name="Función (PFPI)",
+    )
     funcion_egp = models.CharField(
         max_length=32,
         choices=TRABAJADOR_FUNCION_EGP_CHOICES,
@@ -849,6 +881,25 @@ class Trabajador(SoftDeleteModelMixin, models.Model):
         blank=True,
         null=True,
         verbose_name="Sala (CDI)",
+    )
+    funcion_uaf = models.CharField(
+        max_length=32,
+        choices=TRABAJADOR_FUNCION_UAF_CHOICES,
+        blank=True,
+        null=True,
+        verbose_name="Función (UAF)",
+    )
+    registro_tipo = models.CharField(
+        max_length=16,
+        choices=TRABAJADOR_REGISTRO_TIPO_CHOICES,
+        blank=True,
+        null=True,
+        verbose_name="Tipo de registro",
+    )
+    fecha_actualizacion = models.DateField(
+        blank=True,
+        null=True,
+        verbose_name="Fecha de actualización del personal",
     )
     fecha_nacimiento = models.DateField(
         blank=True, null=True, verbose_name="Fecha de nacimiento"
@@ -1105,10 +1156,15 @@ class Trabajador(SoftDeleteModelMixin, models.Model):
         errors = {}
 
         # Limpiar función condicional por subcomponente
+        if self.subcomponente != "pfpi":
+            self.funcion_pfpi = None
         if self.subcomponente != "egp":
             self.funcion_egp = None
         if self.subcomponente != "cdi":
             self.funcion_cdi = None
+            self.sala_cdi = None
+        if self.subcomponente != "uaf":
+            self.funcion_uaf = None
 
         # Limpiar formacion_academica si nivel no la habilita
         if self.nivel_educativo not in _TRABAJADOR_NIVELES_HABILITAN_FORMACION:

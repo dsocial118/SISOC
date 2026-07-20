@@ -35,6 +35,7 @@ def datos_validos(**overrides):
         "subcomponente": "cdi",
         "funcion_cdi": "educador_docente_sala",
         "sala_cdi": "2_anios",
+        "registro_tipo": "alta",
         "nombre": "Julia",
         "apellido": "Méndez",
         "fecha_nacimiento": "1990-05-04",
@@ -372,6 +373,77 @@ def test_carga_horaria_no_supera_60(catalogos):
 
     assert not form.is_valid()
     assert "carga_horaria_semanal" in form.errors
+
+
+# --- TC12 / TC17: campos nuevos de la spec (PFPI, UAF, tipo de registro) ------
+
+
+@pytest.mark.django_db
+def test_tipo_de_registro_es_obligatorio(catalogos):
+    form = TrabajadorCDIForm(data=datos_validos(registro_tipo=""))
+
+    assert not form.is_valid()
+    assert "registro_tipo" in form.errors
+
+
+@pytest.mark.django_db
+def test_subcomponente_pfpi_guarda_funcion_pfpi(catalogos, centro):
+    form = TrabajadorCDIForm(
+        data=datos_validos(
+            subcomponente="pfpi",
+            funcion_pfpi="direccion",
+            funcion_cdi="",
+            sala_cdi="",
+        )
+    )
+
+    assert form.is_valid(), form.errors
+    trabajador = form.save(commit=False)
+    trabajador.centro = centro
+    trabajador.full_clean(exclude=["centro"])
+
+    assert trabajador.funcion_pfpi == "direccion"
+
+
+@pytest.mark.django_db
+def test_subcomponente_uaf_guarda_funcion_uaf(catalogos, centro):
+    form = TrabajadorCDIForm(
+        data=datos_validos(
+            subcomponente="uaf",
+            funcion_uaf="coordinador_uaf",
+            funcion_cdi="",
+            sala_cdi="",
+        )
+    )
+
+    assert form.is_valid(), form.errors
+    trabajador = form.save(commit=False)
+    trabajador.centro = centro
+    trabajador.full_clean(exclude=["centro"])
+
+    assert trabajador.funcion_uaf == "coordinador_uaf"
+
+
+@pytest.mark.django_db
+def test_funcion_pfpi_se_limpia_si_subcomponente_no_es_pfpi(catalogos, centro):
+    # El modelo limpia la función que no corresponde al subcomponente elegido.
+    form = TrabajadorCDIForm(
+        data=datos_validos(subcomponente="cdi", funcion_pfpi="direccion")
+    )
+
+    assert form.is_valid(), form.errors
+    trabajador = form.save(commit=False)
+    trabajador.centro = centro
+    trabajador.full_clean(exclude=["centro"])
+
+    assert trabajador.funcion_pfpi is None
+
+
+@pytest.mark.django_db
+def test_fecha_actualizacion_es_optativa(catalogos):
+    form = TrabajadorCDIForm(data=datos_validos(fecha_actualizacion=""))
+
+    assert form.is_valid(), form.errors
 
 
 # --- RENAPER: datos verificados se bloquean en la edición --------------------

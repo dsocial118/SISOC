@@ -277,9 +277,15 @@
                     <div class="section-body collapse show" id="section-fuerza_trabajo">
                         <div class="form-group row">
                             <div class="col-md-3">{{ form.subcomponente|as_crispy_field }}</div>
+                            <div class="col-md-4" id="row-funcion-pfpi">{{ form.funcion_pfpi|as_crispy_field }}</div>
                             <div class="col-md-4" id="row-funcion-egp">{{ form.funcion_egp|as_crispy_field }}</div>
                             <div class="col-md-4" id="row-funcion-cdi">{{ form.funcion_cdi|as_crispy_field }}</div>
                             <div class="col-md-3" id="row-sala-cdi">{{ form.sala_cdi|as_crispy_field }}</div>
+                            <div class="col-md-4" id="row-funcion-uaf">{{ form.funcion_uaf|as_crispy_field }}</div>
+                        </div>
+                        <div class="form-group row">
+                            <div class="col-md-3">{{ form.registro_tipo|as_crispy_field }}</div>
+                            <div class="col-md-3">{{ form.fecha_actualizacion|as_crispy_field }}</div>
                         </div>
                         <hr style="border-color:#374151;" />
                         <div class="form-group row">

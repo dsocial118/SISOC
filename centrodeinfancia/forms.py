@@ -1330,12 +1330,14 @@ class TrabajadorCDIForm(forms.ModelForm):
     DNI_MINIMO = 1_000_000
     DNI_MAXIMO = 99_999_999
     # Obligatorios según los casos que QA marcó como "campo requerido" (TC18-TC44).
-    # Quedan fuera los condicionales (funcion_egp, funcion_cdi, sala_cdi,
-    # formacion_academica, pueblo_originario y el bloque de discapacidad): el modelo
-    # los limpia cuando no aplican, así que exigirlos siempre rompería el guardado.
+    # Quedan fuera los condicionales (funcion_pfpi, funcion_egp, funcion_cdi, sala_cdi,
+    # funcion_uaf, formacion_academica, pueblo_originario y el bloque de discapacidad):
+    # el modelo los limpia cuando no aplican, así que exigirlos siempre rompería el
+    # guardado. fecha_actualizacion es optativa (no la reporta QA ni la marca la spec).
     CAMPOS_OBLIGATORIOS = [
         "fecha_carga",
         "subcomponente",
+        "registro_tipo",
         "nombre",
         "apellido",
         "fecha_nacimiento",
@@ -1397,9 +1399,13 @@ class TrabajadorCDIForm(forms.ModelForm):
         fields = [
             "fecha_carga",
             "subcomponente",
+            "funcion_pfpi",
             "funcion_egp",
             "funcion_cdi",
             "sala_cdi",
+            "funcion_uaf",
+            "registro_tipo",
+            "fecha_actualizacion",
             "nombre",
             "apellido",
             "fecha_nacimiento",
@@ -1436,6 +1442,10 @@ class TrabajadorCDIForm(forms.ModelForm):
         ]
         widgets = {
             "fecha_carga": forms.DateInput(
+                attrs={"type": "date", "class": "form-control"},
+                format="%Y-%m-%d",
+            ),
+            "fecha_actualizacion": forms.DateInput(
                 attrs={"type": "date", "class": "form-control"},
                 format="%Y-%m-%d",
             ),
