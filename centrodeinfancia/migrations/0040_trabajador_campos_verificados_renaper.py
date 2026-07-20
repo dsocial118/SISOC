@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("centrodeinfancia", "0037_alter_trabajador_es_interprete_and_more"),
+        ("centrodeinfancia", "0039_alter_trabajador_es_interprete_and_more"),
     ]
 
     operations = [
