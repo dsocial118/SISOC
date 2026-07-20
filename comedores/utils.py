@@ -55,6 +55,11 @@ def is_abordaje_comunitario_linea_secos_program(comedor) -> bool:
     return "abordaje comunitario" in normalized and "linea secos" in normalized
 
 
+def is_abordaje_comunitario_linea_tradicional_program(comedor) -> bool:
+    normalized = _get_programa_nombre_normalizado(comedor)
+    return "abordaje comunitario" in normalized and "linea tradicional" in normalized
+
+
 def is_abordaje_comunitario_relevamientos_header_program(comedor) -> bool:
     normalized = _get_programa_nombre_normalizado(comedor)
     return "abordaje comunitario" in normalized and (

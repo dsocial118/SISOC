@@ -1099,6 +1099,7 @@ class NominaEspacioPWAViewSet(viewsets.ViewSet):
                 comedor_id=comedor_id,
                 actor=request.user,
                 selected_nomina_ids=serializer.validated_data["nomina_ids"],
+                periodo_referencia=serializer.validated_data["periodo"],
             )
         except ValidationError as exc:
             detail = exc.message_dict if hasattr(exc, "message_dict") else exc.messages

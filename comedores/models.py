@@ -503,6 +503,21 @@ class ComedorDatosConvenioPnud(models.Model):
         null=True,
         blank=True,
     )
+    prestaciones_financiadas_diarias_desayuno = models.PositiveIntegerField(
+        null=True, blank=True
+    )
+    prestaciones_financiadas_diarias_almuerzo = models.PositiveIntegerField(
+        null=True, blank=True
+    )
+    prestaciones_financiadas_diarias_merienda = models.PositiveIntegerField(
+        null=True, blank=True
+    )
+    prestaciones_financiadas_diarias_merienda_reforzada = models.PositiveIntegerField(
+        null=True, blank=True
+    )
+    prestaciones_financiadas_diarias_cena = models.PositiveIntegerField(
+        null=True, blank=True
+    )
     personas_conveniadas = models.PositiveIntegerField(null=True, blank=True)
     cantidad_modulos = models.PositiveIntegerField(null=True, blank=True)
     aprobadas_desayuno_lunes = models.IntegerField(
@@ -566,6 +581,27 @@ class ComedorDatosConvenioPnud(models.Model):
         default=0, validators=[MinValueValidator(0)]
     )
     aprobadas_merienda_domingo = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_merienda_reforzada_lunes = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_merienda_reforzada_martes = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_merienda_reforzada_miercoles = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_merienda_reforzada_jueves = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_merienda_reforzada_viernes = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_merienda_reforzada_sabado = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_merienda_reforzada_domingo = models.IntegerField(
         default=0, validators=[MinValueValidator(0)]
     )
     aprobadas_cena_lunes = models.IntegerField(
@@ -824,6 +860,11 @@ class PrestacionAlimentariaConformidad(models.Model):
         related_name="conformidades_prestacion_alimentaria",
     )
     creado = models.DateTimeField(auto_now_add=True)
+    certificacion_pdf = models.FileField(
+        upload_to="comedores/certificaciones_prestaciones/",
+        null=True,
+        blank=True,
+    )
 
     class Meta:
         ordering = ["-periodo", "-creado"]
