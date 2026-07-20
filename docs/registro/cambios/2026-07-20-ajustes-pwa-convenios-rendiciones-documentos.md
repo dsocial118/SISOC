@@ -62,7 +62,8 @@ Implementar los requerimientos de los issues #2085, #2084, #2083, #2081, #2063, 
 - ESLint sobre los diez archivos PWA modificados: sin errores y con dos advertencias de dependencias de hooks.
 - ESLint completo de `mobile/`: no pasa por cuatro errores preexistentes fuera del alcance y advertencias de hooks.
 - `git diff --check` en backend y PWA: correcto.
-- `djlint --check` sobre los dos templates modificados: inconcluso; el proceso no finalizó y se cortó con timeout sin emitir errores concretos.
+- `djlint --check` sobre los dos templates modificados: correcto; 0 archivos por actualizar.
+- `pylint rendicioncuentasmensual/services.py --rcfile=.pylintrc`: correcto, 10/10.
 
 ## Pendientes / riesgos
 
@@ -71,4 +72,3 @@ Implementar los requerimientos de los issues #2085, #2084, #2083, #2081, #2063, 
 - Los datos ficticios creados durante la prueba deben eliminarse manualmente si no se desean conservar en la base local.
 - Quedan pendientes del baseline PWA cuatro errores del lint global en `SpaceActivitiesPage.tsx`, `ThemeContext.tsx` y `buttons.tsx`; no fueron introducidos por este lote.
 - Conviene revisar por separado las dos advertencias de hooks presentes en archivos PWA modificados.
-- El chequeo de templates con `djlint` debe repetirse cuando se resuelva su bloqueo sobre estos templates.

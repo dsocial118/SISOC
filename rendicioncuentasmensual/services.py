@@ -32,6 +32,26 @@ from rendicioncuentasmensual.service_helpers import (
 logger = logging.getLogger("django")
 
 
+def _crear_lector_pdf_documento(documento, extension):
+    if extension == ".pdf":
+        return leer_pdf_documento(documento.archivo)
+    if extension in {".png", ".jpg", ".jpeg", ".bmp", ".gif", ".webp"}:
+        pdf_bytes = generar_pdf_desde_imagen(documento.archivo, documento.nombre)
+    elif extension in {".doc", ".docx", ".xls", ".xlsx"}:
+        try:
+            pdf_bytes = convertir_documento_office_a_pdf(documento.archivo, extension)
+        except (OSError, RuntimeError, subprocess.SubprocessError) as exc:
+            logger.exception(
+                "No se pudo convertir el documento %s a PDF: %s",
+                documento.id,
+                exc,
+            )
+            pdf_bytes = generar_pdf_placeholder(documento.nombre)
+    else:
+        pdf_bytes = generar_pdf_placeholder(documento.nombre)
+    return PdfReader(BytesIO(pdf_bytes))
+
+
 def inferir_linea_programatica(comedor):
     programa_id = getattr(comedor, "programa_id", None)
     # IDs de programa: 3 = Abordaje Comunitario SECOS, 4 = Abordaje Comunitario Tradicional
@@ -532,46 +552,9 @@ class RendicionCuentaMensualService:
         for documento in documentos:
             extension = os.path.splitext(documento.archivo.name or "")[1].lower()
             try:
-                if extension == ".pdf":
-                    reader = leer_pdf_documento(documento.archivo)
-                    for page in reader.pages:
-                        writer.add_page(page)
-                elif extension in {".png", ".jpg", ".jpeg", ".bmp", ".gif", ".webp"}:
-                    pdf_bytes = RendicionCuentaMensualService._generar_pdf_desde_imagen(
-                        documento.archivo, documento.nombre
-                    )
-                    reader = PdfReader(BytesIO(pdf_bytes))
-                    for page in reader.pages:
-                        writer.add_page(page)
-                elif extension in {".doc", ".docx", ".xls", ".xlsx"}:
-                    try:
-                        pdf_bytes = convertir_documento_office_a_pdf(
-                            documento.archivo, extension
-                        )
-                    except (OSError, RuntimeError, subprocess.SubprocessError) as exc:
-                        logger.exception(
-                            "No se pudo convertir el documento %s a PDF: %s",
-                            documento.id,
-                            exc,
-                        )
-                        pdf_bytes = (
-                            RendicionCuentaMensualService._generar_pdf_placeholder(
-                                documento.nombre
-                            )
-                        )
-                    reader = PdfReader(BytesIO(pdf_bytes))
-                    for page in reader.pages:
-                        writer.add_page(page)
-                else:
-                    reader = PdfReader(
-                        BytesIO(
-                            RendicionCuentaMensualService._generar_pdf_placeholder(
-                                documento.nombre
-                            )
-                        )
-                    )
-                    for page in reader.pages:
-                        writer.add_page(page)
+                reader = _crear_lector_pdf_documento(documento, extension)
+                for page in reader.pages:
+                    writer.add_page(page)
             finally:
                 cerrar_archivo_seguro(documento.archivo)
 
