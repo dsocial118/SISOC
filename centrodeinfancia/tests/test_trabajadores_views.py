@@ -2,9 +2,23 @@ import pytest
 from django.contrib.auth.models import Permission, User
 from django.urls import reverse
 
-from centrodeinfancia.models import CentroDeInfancia, Trabajador
+from centrodeinfancia.models import (
+    CentroDeInfancia,
+    NominaNacionalidad,
+    NominaPais,
+    Trabajador,
+)
+from centrodeinfancia.tests.test_trabajador_form import datos_validos
 from core.models import Provincia
 from users.models import Profile
+
+
+def datos_validos_trabajador(**overrides):
+    """Payload completo del legajo; los catálogos no vienen de fixtures en tests."""
+
+    NominaPais.objects.get_or_create(nombre="Argentina")
+    NominaNacionalidad.objects.get_or_create(nombre="Argentino")
+    return datos_validos(**overrides)
 
 
 def _crear_usuario(username, provincia=None, *, superuser=False, permisos=None):
@@ -59,12 +73,12 @@ def test_trabajador_create_post_crea_y_redirige(client):
 
     response = client.post(
         reverse("centrodeinfancia_trabajador_crear", kwargs={"pk": centro.pk}),
-        data={
-            "nombre": "Julia",
-            "apellido": "Mendez",
-            "telefono": "11-2345-6789",
-            "subcomponente": "cdi",
-        },
+        data=datos_validos_trabajador(
+            nombre="Julia",
+            apellido="Mendez",
+            telefono="11-2345-6789",
+            subcomponente="cdi",
+        ),
     )
 
     assert response.status_code == 302
@@ -74,6 +88,48 @@ def test_trabajador_create_post_crea_y_redirige(client):
     assert trabajador.apellido == "Mendez"
     assert trabajador.telefono == "11-2345-6789"
     assert trabajador.subcomponente == "cdi"
+    assert trabajador.campos_verificados_renaper == []
+
+
+@pytest.mark.django_db
+def test_trabajador_create_con_renaper_persiste_campos_verificados(client):
+    user = _crear_usuario("super-trabajador-renaper", superuser=True)
+    client.force_login(user)
+    centro = CentroDeInfancia.objects.create(nombre="CDI RENAPER")
+
+    data = datos_validos_trabajador(nombre="Julia", apellido="Mendez")
+    data["origen_dato"] = "renaper"
+    data["campos_renaper"] = "nombre,apellido,dni"
+
+    response = client.post(
+        reverse("centrodeinfancia_trabajador_crear", kwargs={"pk": centro.pk}),
+        data=data,
+    )
+
+    assert response.status_code == 302
+    trabajador = Trabajador.objects.get(centro=centro)
+    assert trabajador.campos_verificados_renaper == ["nombre", "apellido", "dni"]
+
+
+@pytest.mark.django_db
+def test_trabajador_create_ignora_campos_renaper_fuera_de_la_lista(client):
+    """Blindaje: solo se persisten nombres de campo válidos, no lo que venga por POST."""
+
+    user = _crear_usuario("super-trabajador-renaper-2", superuser=True)
+    client.force_login(user)
+    centro = CentroDeInfancia.objects.create(nombre="CDI RENAPER 2")
+
+    data = datos_validos_trabajador()
+    data["origen_dato"] = "renaper"
+    data["campos_renaper"] = "nombre,carga_horaria_semanal,inexistente"
+
+    client.post(
+        reverse("centrodeinfancia_trabajador_crear", kwargs={"pk": centro.pk}),
+        data=data,
+    )
+
+    trabajador = Trabajador.objects.get(centro=centro)
+    assert trabajador.campos_verificados_renaper == ["nombre"]
 
 
 @pytest.mark.django_db
@@ -94,13 +150,15 @@ def test_trabajador_edit_post_actualiza_y_redirige(client):
             "centrodeinfancia_trabajador_editar",
             kwargs={"pk": centro.pk, "trabajador_id": trabajador.pk},
         ),
-        data={
-            "nombre": "Maria",
-            "apellido": "Suarez",
-            "telefono": "011-4444-5555",
-            "subcomponente": "egp",
-            "funcion_egp": "coordinacion_general",
-        },
+        data=datos_validos_trabajador(
+            nombre="Maria",
+            apellido="Suarez",
+            telefono="011-4444-5555",
+            subcomponente="egp",
+            funcion_egp="coordinacion_general",
+            funcion_cdi="",
+            sala_cdi="",
+        ),
     )
 
     assert response.status_code == 302
