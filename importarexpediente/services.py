@@ -378,16 +378,21 @@ def actualizar_fechas_acreditacion_por_lote(
         )
 
     fecha_acreditacion = next(iter(set(updates_by_comedor.values())))
+    expediente_ids_a_actualizar = {
+        expediente_id
+        for comedor_id in updates_by_comedor
+        for expediente_id in expediente_ids_by_comedor[comedor_id]
+    }
     with transaction.atomic():
         expedientes_actualizados = (
             ExpedientePago.objects.select_for_update()
-            .filter(id__in={expediente_id for expediente_id, _ in expediente_rows})
+            .filter(id__in=expediente_ids_a_actualizar)
             .update(fecha_acreditacion=fecha_acreditacion)
         )
 
     return AcreditacionImportResult(
         filas_procesadas=len(updates_by_comedor),
-        comedores_actualizados=len(expediente_ids_by_comedor),
+        comedores_actualizados=len(updates_by_comedor),
         expedientes_actualizados=expedientes_actualizados,
     )
 

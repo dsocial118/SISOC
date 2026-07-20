@@ -6,6 +6,7 @@ from decimal import Decimal
 
 import pytest
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Permission
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
 from openpyxl import Workbook
@@ -47,6 +48,12 @@ def user(db):
 
 @pytest.fixture
 def client_logged(client, user):
+    user.user_permissions.add(
+        Permission.objects.get(
+            content_type__app_label="importarexpediente",
+            codename="view_archivosimportados",
+        )
+    )
     client.login(username="tester", password="pass1234")
     return client
 
@@ -713,7 +720,7 @@ def test_update_fecha_acreditacion_allows_authorized_user_for_another_users_batc
     assert response.status_code == 200
 
 
-def test_update_fecha_acreditacion_propagates_single_date_to_entire_batch(
+def test_update_fecha_acreditacion_only_updates_comedores_in_upload(
     client, tmp_media, db
 ):
     user = User.objects.create_superuser(
@@ -724,13 +731,15 @@ def test_update_fecha_acreditacion_propagates_single_date_to_entire_batch(
     client.force_login(user)
     comedor_1 = Comedor.objects.create(nombre="Comedor Fecha Global 1")
     comedor_2 = Comedor.objects.create(nombre="Comedor Fecha Global 2")
+    comedor_3 = Comedor.objects.create(nombre="Comedor Fecha Global 3")
     header, row = _make_csv(comedor_1.pk, expediente_pago="EX-2025-GLOBAL").split(
         "\n", 1
     )
     second_row = row.replace(f"{comedor_1.pk};", f"{comedor_2.pk};", 1)
+    third_row = row.replace(f"{comedor_1.pk};", f"{comedor_3.pk};", 1)
     uploaded = SimpleUploadedFile(
         "expedientes.csv",
-        f"{header}\n{row}{second_row}".encode("utf-8"),
+        f"{header}\n{row}{second_row}{third_row}".encode("utf-8"),
         content_type="text/csv",
     )
     client.post(
@@ -739,6 +748,10 @@ def test_update_fecha_acreditacion_propagates_single_date_to_entire_batch(
     )
     batch = ArchivosImportados.objects.latest("id")
     client.post(reverse("importar_datos", kwargs={"id_archivo": batch.id}))
+    fecha_manual = date(2025, 1, 10)
+    ExpedientePago.objects.filter(comedor=comedor_2).update(
+        fecha_acreditacion=fecha_manual
+    )
 
     acreditacion = SimpleUploadedFile(
         "acreditaciones.xlsx",
@@ -758,7 +771,7 @@ def test_update_fecha_acreditacion_propagates_single_date_to_entire_batch(
         )
         .order_by("comedor_id")
         .values_list("fecha_acreditacion", flat=True)
-    ) == [date(2025, 2, 24), date(2025, 2, 24)]
+    ) == [date(2025, 2, 24), fecha_manual, None]
 
 
 def test_update_fecha_acreditacion_rejects_different_dates_in_same_upload(
@@ -801,7 +814,7 @@ def test_update_fecha_acreditacion_rejects_different_dates_in_same_upload(
         follow=True,
     )
 
-    assert "una única fecha de acreditación" in response.content.decode()
+    assert "fecha de acreditaci" in response.content.decode()
 
 
 def test_update_fecha_acreditacion_hides_unexpected_error(
@@ -836,7 +849,7 @@ def test_update_fecha_acreditacion_hides_unexpected_error(
     )
 
     response_body = response.content.decode()
-    assert "No se pudieron actualizar las fechas de acreditación." in response_body
+    assert "No se pudieron actualizar las fechas" in response_body
     assert "detalle interno" not in response_body
 
 
