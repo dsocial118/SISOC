@@ -246,6 +246,12 @@ class Comedor(SoftDeleteModelMixin, models.Model):
     programa = models.ForeignKey(
         to=Programas, blank=True, null=True, on_delete=models.PROTECT
     )
+    mes_ejecucion = models.IntegerField(
+        verbose_name="Mes de ejecución",
+        blank=True,
+        null=True,
+        validators=[MinValueValidator(-2), MaxValueValidator(6)],
+    )
     id_externo = models.IntegerField(
         verbose_name="Id Externo",
         blank=True,

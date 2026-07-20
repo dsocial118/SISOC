@@ -939,7 +939,10 @@ def _build_mes_ejecucion_context(comedor_obj):
     expediente = ordenar_expedientes_por_periodo_desc(
         ExpedientePago.objects.filter(comedor_id=comedor_obj.id)
     ).first()
-    resumen = {"expediente": expediente}
+    resumen = {
+        "expediente": expediente,
+        "mes_ejecucion": comedor_obj.mes_ejecucion,
+    }
 
     if expediente:
         prestaciones = [
