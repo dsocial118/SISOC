@@ -403,7 +403,6 @@ TRABAJADOR_FUNCION_EGP_CHOICES = [
     ("ref_monitoreo", "Referente de Monitoreo"),
     ("ref_capacitacion", "Referente de capacitación"),
     ("apoyo_administrativo", "Apoyo administrativo"),
-    ("no_corresponde", "No corresponde"),
 ]
 
 TRABAJADOR_FUNCION_CDI_CHOICES = [
@@ -996,7 +995,7 @@ class Trabajador(SoftDeleteModelMixin, models.Model):
     )
     es_interprete = models.CharField(
         max_length=16,
-        choices=[("si", "Sí"), ("no", "No"), ("no_corresponde", "No corresponde")],
+        choices=[("si", "Sí"), ("no", "No")],
         blank=True,
         null=True,
         verbose_name="¿Es intérprete?",
@@ -1035,6 +1034,9 @@ class Trabajador(SoftDeleteModelMixin, models.Model):
         null=True,
         verbose_name="Número de CUD (ANSES)",
     )
+    # Campos que se precargaron desde RENAPER en el alta. En la edición esos campos
+    # se muestran bloqueados: no se corrigen datos verificados por el organismo.
+    campos_verificados_renaper = models.JSONField(default=list, blank=True)
 
     class Meta:
         verbose_name = "Trabajador"
@@ -1109,10 +1111,12 @@ class Trabajador(SoftDeleteModelMixin, models.Model):
         if "indigena" not in (self.grupo_pertenencia or []):
             self.pueblo_originario = None
 
-        # Limpiar campos condicionales de discapacidad
+        # Limpiar campos condicionales de discapacidad. El bloque completo (incluido
+        # "¿Tiene CUD?") solo se muestra si tiene_discapacidad == "si".
         if self.tiene_discapacidad != "si":
             self.tipo_discapacidad = []
             self.recibe_apoyo_discapacidad = None
+            self.tiene_cud = None
         if self.tiene_cud != "si":
             self.numero_cud = None
 
