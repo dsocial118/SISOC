@@ -31,11 +31,18 @@
 - Empezar por `docs/registro/prs/PR-2112.md` para contexto resumido del PR.
 - Revisar primero estos archivos del diff:
 - `.github/workflows/sync-main-downstream.yml`
+- `CHANGELOG.md`
+- `docs/contexto/features/pr-2112-fix-ci-evitar-la-autoaprobacion-en-sincronizacion-descendente.md`
+- `docs/registro/prs/PR-2112.md`
+- `docs/registro/releases/pending/2026-07-22-pr-2112.md`
 - Documentación sugerida para ampliar contexto:
 - `docs/indice.md`
 - `docs/ia/CONTEXT_HYGIENE.md`
 - `docs/ia/ARCHITECTURE.md`
 - `docs/ia/TESTING.md`
+- `docs/contexto/features/pr-2112-fix-ci-evitar-la-autoaprobacion-en-sincronizacion-descendente.md`
+- `docs/registro/prs/PR-2112.md`
+- `docs/registro/releases/pending/2026-07-22-pr-2112.md`
 
 ## Trazabilidad
 
