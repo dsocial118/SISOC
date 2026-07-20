@@ -56,10 +56,6 @@ def actualizar_documentacion(apps, schema_editor):
             nombre=ARCA_NOMBRE, categoria__in=ARCA_CATEGORIAS
         ).values_list("id", flat=True)
     )
-    documento_admision, _ = DocumentacionAdmision.objects.get_or_create(
-        nombre="Constancia de ARCA",
-        defaults={"obligatorio": False, "orden": 0},
-    )
     archivos_arca = Archivo.objects.filter(
         documentacion_id__in=arca_ids, deleted_at__isnull=True
     )
@@ -68,6 +64,19 @@ def actualizar_documentacion(apps, schema_editor):
             comedor__organizacion_id=archivo.organizacion_id
         )
         for admision in admisiones.iterator():
+            documento_admision = (
+                DocumentacionAdmision.objects.filter(
+                    nombre="Constancia de ARCA", convenios=admision.tipo_convenio
+                )
+                .order_by("orden", "id")
+                .first()
+            )
+            if documento_admision is None:
+                documento_admision = DocumentacionAdmision.objects.create(
+                    nombre="Constancia de ARCA", obligatorio=False, orden=0
+                )
+                if admision.tipo_convenio_id is not None:
+                    documento_admision.convenios.add(admision.tipo_convenio)
             ArchivoAdmision.objects.get_or_create(
                 admision_id=admision.id,
                 archivo_organizacion_origen_id=archivo.id,
