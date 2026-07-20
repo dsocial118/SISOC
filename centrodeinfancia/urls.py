@@ -2,7 +2,7 @@ from django.urls import path
 
 from core.decorators import permissions_all_required, permissions_any_required
 from centrodeinfancia.views import (
-    AsistenciaTrabajadorCentroView,
+    AsistenciaNominaCentroView,
     CentroDeInfanciaCreateView,
     CentroDeInfanciaDeleteView,
     CentroDeInfanciaDetailView,
@@ -27,10 +27,12 @@ from centrodeinfancia.views import (
     TrabajadorCentroInfanciaDetailView,
     TrabajadorCentroInfanciaUpdateView,
     centrodeinfancia_ajax,
+    asistencia_nomina_calendario,
     load_departamentos_ipi,
     eliminar_archivo_intervencion_centrodeinfancia,
     nomina_centrodeinfancia_editar_ajax,
     nomina_centrodeinfancia_derivar,
+    redirigir_asistencia_trabajadores_a_nomina,
     subir_archivo_intervencion_centrodeinfancia,
 )
 from centrodeinfancia.views_formulario_cdi import (
@@ -147,9 +149,23 @@ urlpatterns = [
         name="centrodeinfancia_trabajador_crear",
     ),
     path(
+        "centrodeinfancia/<int:pk>/nomina/asistencia/",
+        permissions_any_required(["centrodeinfancia.change_centrodeinfancia"])(
+            AsistenciaNominaCentroView.as_view()
+        ),
+        name="centrodeinfancia_nomina_asistencia",
+    ),
+    path(
+        "centrodeinfancia/<int:pk>/nomina/asistencia/calendario/",
+        permissions_any_required(["centrodeinfancia.change_centrodeinfancia"])(
+            asistencia_nomina_calendario
+        ),
+        name="centrodeinfancia_nomina_asistencia_calendario",
+    ),
+    path(
         "centrodeinfancia/<int:pk>/trabajadores/asistencia/",
         permissions_any_required(["centrodeinfancia.change_centrodeinfancia"])(
-            AsistenciaTrabajadorCentroView.as_view()
+            redirigir_asistencia_trabajadores_a_nomina
         ),
         name="centrodeinfancia_trabajadores_asistencia",
     ),

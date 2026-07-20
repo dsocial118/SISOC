@@ -58,7 +58,7 @@ from centrodeinfancia.forms import (
 from centrodeinfancia.formulario_cdi_schema import CAMPOS_OPCIONES_MULTIPLES
 from centrodeinfancia.models import (
     AccesoCDI,
-    AsistenciaTrabajador,
+    AsistenciaNominaCentroInfancia,
     CentroDeInfancia,
     DepartamentoIpi,
     IntervencionCentroInfancia,
@@ -67,7 +67,7 @@ from centrodeinfancia.models import (
     Trabajador,
 )
 from centrodeinfancia.services import (
-    AsistenciaTrabajadorService,
+    AsistenciaNominaCentroInfanciaService,
     CentroDeInfanciaService,
 )
 from centrodeinfancia.services_user_provisioning import (
@@ -701,6 +701,9 @@ class CentroDeInfanciaDetailView(LoginRequiredMixin, DetailView):
         context["tipo_intervencion_programas_json"] = json.dumps(tipo_programas_map)
         context["tipo_intervencion_programa_aliases_json"] = json.dumps(alias_list)
         context.update(_build_trabajadores_context(self.request, self.object))
+        context["puede_tomar_asistencia_nomina"] = self.request.user.has_perm(
+            "centrodeinfancia.change_centrodeinfancia"
+        )
         context["puede_generar_usuario_cdi"] = puede_generar_usuario_cdi(
             self.request.user, self.object
         )
@@ -1867,14 +1870,10 @@ def eliminar_archivo_intervencion_centrodeinfancia(request, intervencion_id):
     return redirect("centrodeinfancia_detalle", pk=intervencion.centro_id)
 
 
-class AsistenciaTrabajadorCentroView(LoginRequiredMixin, TemplateView):
-    """
-    GET: tabla del personal del centro para tomar asistencia en una fecha.
-    POST: guarda/actualiza los registros de AsistenciaTrabajador por
-    (trabajador, fecha). Un trabajador sin marcar no genera registro.
-    """
+class AsistenciaNominaCentroView(LoginRequiredMixin, TemplateView):
+    """Toma asistencia diaria sobre la nómina activa del CDI."""
 
-    template_name = "centrodeinfancia/trabajador_asistencia.html"
+    template_name = "centrodeinfancia/nomina_asistencia.html"
 
     def _get_centro(self):
         if not hasattr(self, "_centro_cache"):
@@ -1886,32 +1885,28 @@ class AsistenciaTrabajadorCentroView(LoginRequiredMixin, TemplateView):
 
     def _parse_fecha(self, fecha_raw):
         try:
-            return AsistenciaTrabajadorService.parsear_fecha(fecha_raw)
+            return AsistenciaNominaCentroInfanciaService.parsear_fecha(fecha_raw)
         except ValidationError as exc:
             messages.error(self.request, exc.messages[0])
             return timezone.localdate()
 
     @staticmethod
-    def _trabajadores(centro):
-        return list(centro.trabajadores.order_by("apellido", "nombre"))
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        centro = self._get_centro()
-        fecha = self._parse_fecha(self.request.GET.get("fecha"))
-        trabajadores = self._trabajadores(centro)
+    def _construir_filas_asistencia(nominas, fecha):
         asistencias = {
-            asistencia.trabajador_id: asistencia
-            for asistencia in AsistenciaTrabajador.objects.filter(
+            asistencia.nomina_id: asistencia
+            for asistencia in AsistenciaNominaCentroInfancia.objects.filter(
                 fecha=fecha,
-                trabajador__in=trabajadores,
+                nomina__in=nominas,
             )
         }
         filas = []
         presentes = ausentes = sin_marcar = 0
-        for trabajador in trabajadores:
-            asistencia = asistencias.get(trabajador.pk)
+        for nomina in nominas:
+            asistencia = asistencias.get(nomina.pk)
             presente = asistencia.presente if asistencia else None
+            ciudadano = nomina.ciudadano
+            apellido = nomina.apellido or ciudadano.apellido or ""
+            nombre = nomina.nombre or ciudadano.nombre or ""
             if presente is True:
                 presentes += 1
             elif presente is False:
@@ -1920,20 +1915,41 @@ class AsistenciaTrabajadorCentroView(LoginRequiredMixin, TemplateView):
                 sin_marcar += 1
             filas.append(
                 {
-                    "trabajador": trabajador,
+                    "nomina": nomina,
+                    "nombre_completo": f"{apellido}, {nombre}".strip(", "),
+                    "dni": nomina.dni or ciudadano.documento,
                     "presente": presente,
                     "observaciones": asistencia.observaciones if asistencia else "",
                 }
             )
-        context["centro"] = centro
-        context["object"] = centro
-        context["fecha"] = fecha
-        context["filas"] = filas
-        context["total_presentes"] = presentes
-        context["total_ausentes"] = ausentes
-        context["total_sin_marcar"] = sin_marcar
-        context["back_url"] = reverse(
-            "centrodeinfancia_detalle", kwargs={"pk": centro.pk}
+        return filas, presentes, ausentes, sin_marcar
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        centro = self._get_centro()
+        fecha = self._parse_fecha(self.request.GET.get("fecha"))
+        nominas = AsistenciaNominaCentroInfanciaService.nominas_editables(
+            centro,
+            fecha,
+        )
+        filas, presentes, ausentes, sin_marcar = self._construir_filas_asistencia(
+            nominas,
+            fecha,
+        )
+        context.update(
+            {
+                "centro": centro,
+                "object": centro,
+                "fecha": fecha,
+                "filas": filas,
+                "total_presentes": presentes,
+                "total_ausentes": ausentes,
+                "total_sin_marcar": sin_marcar,
+                "back_url": reverse(
+                    "centrodeinfancia_detalle",
+                    kwargs={"pk": centro.pk},
+                ),
+            }
         )
         return context
 
@@ -1943,7 +1959,7 @@ class AsistenciaTrabajadorCentroView(LoginRequiredMixin, TemplateView):
     def post(self, request, *args, **kwargs):
         centro = self._get_centro()
         try:
-            fecha = AsistenciaTrabajadorService.guardar(
+            fecha = AsistenciaNominaCentroInfanciaService.guardar(
                 centro=centro,
                 fecha_raw=request.POST.get("fecha"),
                 datos=request.POST,
@@ -1951,9 +1967,29 @@ class AsistenciaTrabajadorCentroView(LoginRequiredMixin, TemplateView):
             )
         except ValidationError as exc:
             messages.error(request, exc.messages[0])
-            return redirect("centrodeinfancia_trabajadores_asistencia", pk=centro.pk)
+            return redirect("centrodeinfancia_nomina_asistencia", pk=centro.pk)
         messages.success(request, "Asistencia registrada correctamente.")
-        url = reverse(
-            "centrodeinfancia_trabajadores_asistencia", kwargs={"pk": centro.pk}
-        )
+        url = reverse("centrodeinfancia_nomina_asistencia", kwargs={"pk": centro.pk})
         return redirect(f"{url}?fecha={fecha.isoformat()}")
+
+
+@login_required
+@require_GET
+def asistencia_nomina_calendario(request, pk):
+    centro = _get_centro_cdi_scoped_or_404(request.user, pk=pk)
+    try:
+        mes = AsistenciaNominaCentroInfanciaService.parsear_mes(request.GET.get("mes"))
+    except ValidationError as exc:
+        return JsonResponse({"detail": exc.messages[0]}, status=400)
+    dias = AsistenciaNominaCentroInfanciaService.dias_con_asistencia(
+        centro=centro,
+        mes=mes,
+    )
+    return JsonResponse({"dias": [dia.isoformat() for dia in dias]})
+
+
+@login_required
+def redirigir_asistencia_trabajadores_a_nomina(request, pk):
+    url = reverse("centrodeinfancia_nomina_asistencia", kwargs={"pk": pk})
+    query_string = request.GET.urlencode()
+    return redirect(f"{url}?{query_string}" if query_string else url)

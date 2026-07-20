@@ -32,7 +32,7 @@ class ComedorAdmin(admin.ModelAdmin):
         "ultimo_estado__estado_general__estado_actividad",
     ]
     search_fields = ["nombre", "codigo_de_proyecto"]
-    readonly_fields = ["fecha_validado"]
+    readonly_fields = ["fecha_validado", "mes_ejecucion"]
 
 
 @admin.register(HistorialValidacion)

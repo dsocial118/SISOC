@@ -378,16 +378,21 @@ def actualizar_fechas_acreditacion_por_lote(
         )
 
     fecha_acreditacion = next(iter(set(updates_by_comedor.values())))
+    expediente_ids_a_actualizar = {
+        expediente_id
+        for comedor_id in updates_by_comedor
+        for expediente_id in expediente_ids_by_comedor[comedor_id]
+    }
     with transaction.atomic():
         expedientes_actualizados = (
             ExpedientePago.objects.select_for_update()
-            .filter(id__in={expediente_id for expediente_id, _ in expediente_rows})
+            .filter(id__in=expediente_ids_a_actualizar)
             .update(fecha_acreditacion=fecha_acreditacion)
         )
 
     return AcreditacionImportResult(
         filas_procesadas=len(updates_by_comedor),
-        comedores_actualizados=len(expediente_ids_by_comedor),
+        comedores_actualizados=len(updates_by_comedor),
         expedientes_actualizados=expedientes_actualizados,
     )
 
@@ -611,6 +616,13 @@ def _registrar_estado(  # pylint: disable=too-many-arguments
     )
 
 
+def _actualizar_mes_ejecucion(comedor, mes_ejecucion):
+    if comedor.mes_ejecucion == mes_ejecucion:
+        return
+    Comedor.objects.filter(pk=comedor.pk).update(mes_ejecucion=mes_ejecucion)
+    comedor.mes_ejecucion = mes_ejecucion
+
+
 def aplicar_estados_por_lote(batch, usuario=None):  # pylint: disable=too-many-locals
     registros_actuales = list(
         RegistroImportado.objects.filter(
@@ -658,6 +670,7 @@ def aplicar_estados_por_lote(batch, usuario=None):  # pylint: disable=too-many-l
                 "en_plazo_renovacion",
                 usuario,
             )
+        _actualizar_mes_ejecucion(comedor, mes_convenio)
         updated_count += 1
 
     previous_batches = _new_imported_batches_before(batch)
@@ -699,6 +712,7 @@ def aplicar_estados_por_lote(batch, usuario=None):  # pylint: disable=too-many-l
                 "no_renovacion_comedor",
                 usuario,
             )
+            _actualizar_mes_ejecucion(comedor, None)
         else:
             _registrar_estado(
                 comedor,
@@ -708,6 +722,7 @@ def aplicar_estados_por_lote(batch, usuario=None):  # pylint: disable=too-many-l
                 None,
                 usuario,
             )
+            _actualizar_mes_ejecucion(comedor, -ausencias)
         updated_count += 1
 
     return updated_count
