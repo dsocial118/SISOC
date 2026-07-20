@@ -1,5 +1,6 @@
 import logging
 import os
+import subprocess
 from io import BytesIO
 
 from django.core.exceptions import ValidationError
@@ -21,6 +22,7 @@ from pwa.services.push_service import notify_rendicion_revision_push
 from rendicioncuentasmensual.models import DocumentacionAdjunta, RendicionCuentaMensual
 from rendicioncuentasmensual.service_helpers import (
     cerrar_archivo_seguro,
+    convertir_documento_office_a_pdf,
     construir_documentacion_para_detalle,
     generar_pdf_desde_imagen,
     generar_pdf_placeholder,
@@ -538,6 +540,25 @@ class RendicionCuentaMensualService:
                     pdf_bytes = RendicionCuentaMensualService._generar_pdf_desde_imagen(
                         documento.archivo, documento.nombre
                     )
+                    reader = PdfReader(BytesIO(pdf_bytes))
+                    for page in reader.pages:
+                        writer.add_page(page)
+                elif extension in {".doc", ".docx", ".xls", ".xlsx"}:
+                    try:
+                        pdf_bytes = convertir_documento_office_a_pdf(
+                            documento.archivo, extension
+                        )
+                    except (OSError, RuntimeError, subprocess.SubprocessError) as exc:
+                        logger.exception(
+                            "No se pudo convertir el documento %s a PDF: %s",
+                            documento.id,
+                            exc,
+                        )
+                        pdf_bytes = (
+                            RendicionCuentaMensualService._generar_pdf_placeholder(
+                                documento.nombre
+                            )
+                        )
                     reader = PdfReader(BytesIO(pdf_bytes))
                     for page in reader.pages:
                         writer.add_page(page)

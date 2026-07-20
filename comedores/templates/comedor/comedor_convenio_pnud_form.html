@@ -40,9 +40,17 @@
                     <div class="col-md-6">{{ form.nro_convenio|as_crispy_field }}</div>
                     <div class="col-md-6">{{ form.monto_convenio_prestaciones_alimentarias|as_crispy_field }}</div>
                     <div class="col-md-6">{{ form.monto_convenio_siph|as_crispy_field }}</div>
-                    <div class="col-md-6">{{ form.prestaciones_financiadas_mensuales|as_crispy_field }}</div>
+                    {% if not es_linea_secos and not es_linea_tradicional %}<div class="col-md-6">{{ form.prestaciones_financiadas_mensuales|as_crispy_field }}</div>{% endif %}
+                    {% if es_linea_tradicional %}
+                        <div class="col-md-6">{{ form.prestaciones_financiadas_diarias_desayuno|as_crispy_field }}</div>
+                        <div class="col-md-6">{{ form.prestaciones_financiadas_diarias_almuerzo|as_crispy_field }}</div>
+                        <div class="col-md-6">{{ form.prestaciones_financiadas_diarias_merienda|as_crispy_field }}</div>
+                        <div class="col-md-6">{{ form.prestaciones_financiadas_diarias_merienda_reforzada|as_crispy_field }}</div>
+                        <div class="col-md-6">{{ form.prestaciones_financiadas_diarias_cena|as_crispy_field }}</div>
+                    {% endif %}
                     <div class="col-md-6">{{ form.personas_conveniadas|as_crispy_field }}</div>
-                    <div class="col-md-6">{{ form.cantidad_modulos|as_crispy_field }}</div>
+                    {% if not es_linea_tradicional %}<div class="col-md-6">{{ form.cantidad_modulos|as_crispy_field }}</div>{% endif %}
+                    {% if not es_linea_secos %}
                     <div class="col-12 mt-3">
                         <h6 class="fw-bold">Prestaciones por convenio</h6>
                         <div class="table-responsive">
@@ -53,6 +61,7 @@
                                         <th>Desayuno</th>
                                         <th>Almuerzo</th>
                                         <th>Merienda</th>
+                                        {% if es_linea_tradicional %}<th>Merienda Reforzada</th>{% endif %}
                                         <th>Cena</th>
                                     </tr>
                                 </thead>
@@ -62,6 +71,7 @@
                                         <td>{{ form.aprobadas_desayuno_lunes }}{{ form.aprobadas_desayuno_lunes.errors }}</td>
                                         <td>{{ form.aprobadas_almuerzo_lunes }}{{ form.aprobadas_almuerzo_lunes.errors }}</td>
                                         <td>{{ form.aprobadas_merienda_lunes }}{{ form.aprobadas_merienda_lunes.errors }}</td>
+                                        {% if es_linea_tradicional %}<td>{{ form.aprobadas_merienda_reforzada_lunes }}{{ form.aprobadas_merienda_reforzada_lunes.errors }}</td>{% endif %}
                                         <td>{{ form.aprobadas_cena_lunes }}{{ form.aprobadas_cena_lunes.errors }}</td>
                                     </tr>
                                     <tr>
@@ -69,6 +79,7 @@
                                         <td>{{ form.aprobadas_desayuno_martes }}{{ form.aprobadas_desayuno_martes.errors }}</td>
                                         <td>{{ form.aprobadas_almuerzo_martes }}{{ form.aprobadas_almuerzo_martes.errors }}</td>
                                         <td>{{ form.aprobadas_merienda_martes }}{{ form.aprobadas_merienda_martes.errors }}</td>
+                                        {% if es_linea_tradicional %}<td>{{ form.aprobadas_merienda_reforzada_martes }}{{ form.aprobadas_merienda_reforzada_martes.errors }}</td>{% endif %}
                                         <td>{{ form.aprobadas_cena_martes }}{{ form.aprobadas_cena_martes.errors }}</td>
                                     </tr>
                                     <tr>
@@ -76,6 +87,7 @@
                                         <td>{{ form.aprobadas_desayuno_miercoles }}{{ form.aprobadas_desayuno_miercoles.errors }}</td>
                                         <td>{{ form.aprobadas_almuerzo_miercoles }}{{ form.aprobadas_almuerzo_miercoles.errors }}</td>
                                         <td>{{ form.aprobadas_merienda_miercoles }}{{ form.aprobadas_merienda_miercoles.errors }}</td>
+                                        {% if es_linea_tradicional %}<td>{{ form.aprobadas_merienda_reforzada_miercoles }}{{ form.aprobadas_merienda_reforzada_miercoles.errors }}</td>{% endif %}
                                         <td>{{ form.aprobadas_cena_miercoles }}{{ form.aprobadas_cena_miercoles.errors }}</td>
                                     </tr>
                                     <tr>
@@ -83,6 +95,7 @@
                                         <td>{{ form.aprobadas_desayuno_jueves }}{{ form.aprobadas_desayuno_jueves.errors }}</td>
                                         <td>{{ form.aprobadas_almuerzo_jueves }}{{ form.aprobadas_almuerzo_jueves.errors }}</td>
                                         <td>{{ form.aprobadas_merienda_jueves }}{{ form.aprobadas_merienda_jueves.errors }}</td>
+                                        {% if es_linea_tradicional %}<td>{{ form.aprobadas_merienda_reforzada_jueves }}{{ form.aprobadas_merienda_reforzada_jueves.errors }}</td>{% endif %}
                                         <td>{{ form.aprobadas_cena_jueves }}{{ form.aprobadas_cena_jueves.errors }}</td>
                                     </tr>
                                     <tr>
@@ -90,6 +103,7 @@
                                         <td>{{ form.aprobadas_desayuno_viernes }}{{ form.aprobadas_desayuno_viernes.errors }}</td>
                                         <td>{{ form.aprobadas_almuerzo_viernes }}{{ form.aprobadas_almuerzo_viernes.errors }}</td>
                                         <td>{{ form.aprobadas_merienda_viernes }}{{ form.aprobadas_merienda_viernes.errors }}</td>
+                                        {% if es_linea_tradicional %}<td>{{ form.aprobadas_merienda_reforzada_viernes }}{{ form.aprobadas_merienda_reforzada_viernes.errors }}</td>{% endif %}
                                         <td>{{ form.aprobadas_cena_viernes }}{{ form.aprobadas_cena_viernes.errors }}</td>
                                     </tr>
                                     <tr>
@@ -97,6 +111,7 @@
                                         <td>{{ form.aprobadas_desayuno_sabado }}{{ form.aprobadas_desayuno_sabado.errors }}</td>
                                         <td>{{ form.aprobadas_almuerzo_sabado }}{{ form.aprobadas_almuerzo_sabado.errors }}</td>
                                         <td>{{ form.aprobadas_merienda_sabado }}{{ form.aprobadas_merienda_sabado.errors }}</td>
+                                        {% if es_linea_tradicional %}<td>{{ form.aprobadas_merienda_reforzada_sabado }}{{ form.aprobadas_merienda_reforzada_sabado.errors }}</td>{% endif %}
                                         <td>{{ form.aprobadas_cena_sabado }}{{ form.aprobadas_cena_sabado.errors }}</td>
                                     </tr>
                                     <tr>
@@ -104,12 +119,14 @@
                                         <td>{{ form.aprobadas_desayuno_domingo }}{{ form.aprobadas_desayuno_domingo.errors }}</td>
                                         <td>{{ form.aprobadas_almuerzo_domingo }}{{ form.aprobadas_almuerzo_domingo.errors }}</td>
                                         <td>{{ form.aprobadas_merienda_domingo }}{{ form.aprobadas_merienda_domingo.errors }}</td>
+                                        {% if es_linea_tradicional %}<td>{{ form.aprobadas_merienda_reforzada_domingo }}{{ form.aprobadas_merienda_reforzada_domingo.errors }}</td>{% endif %}
                                         <td>{{ form.aprobadas_cena_domingo }}{{ form.aprobadas_cena_domingo.errors }}</td>
                                     </tr>
                                 </tbody>
                             </table>
                         </div>
                     </div>
+                    {% endif %}
                 </div>
                 <button type="submit" class="btn btn-primary">Guardar</button>
             </form>

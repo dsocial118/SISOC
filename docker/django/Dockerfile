@@ -26,6 +26,9 @@ RUN apt-get update && \
       tesseract-ocr \
       tesseract-ocr-spa \
       poppler-utils \
+      libreoffice-writer \
+      libreoffice-calc \
+      fonts-liberation \
       wget \
       ca-certificates && \
     apt-get clean && \

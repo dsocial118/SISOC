@@ -36,6 +36,7 @@ from comedores.models import (
     HistorialValidacion,
     ImagenComedor,
     Observacion,
+    PrestacionAlimentariaConformidad,
 )
 from comedores.services.comedor_service import ComedorService
 from comedores.services.capacitaciones_certificados_service import (
@@ -50,6 +51,7 @@ from comedores.utils import (
     get_prestacion_conformidad_pending_period,
     is_abordaje_comunitario_relevamientos_header_program,
     is_abordaje_comunitario_linea_secos_program,
+    is_abordaje_comunitario_linea_tradicional_program,
     is_pnud_comedor,
     usa_datos_convenio_pnud,
 )
@@ -1487,12 +1489,25 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
                 "usa_convenio_pnud": usa_convenio_pnud,
                 "puede_gestionar_actividades_espacio": puede_gestionar_actividades_espacio,
                 "mostrar_relevamientos_header": mostrar_relevamientos_header,
+                "es_linea_secos": is_abordaje_comunitario_linea_secos_program(
+                    self.object
+                ),
+                "es_linea_tradicional": is_abordaje_comunitario_linea_tradicional_program(
+                    self.object
+                ),
                 "datos_convenio_pnud": datos_convenio_pnud,
                 "prestaciones_aprobadas_source": (
                     datos_convenio_pnud if usa_convenio_pnud else informe_tecnico
                 ),
                 "domicilio_completo_comedor": _build_domicilio_completo(self.object),
                 "conformidad_prestacion_pendiente": self._build_conformidad_prestacion_context(),
+                "certificaciones_prestaciones": PrestacionAlimentariaConformidad.objects.filter(
+                    comedor=self.object,
+                    certificacion_pdf__isnull=False,
+                )
+                .exclude(certificacion_pdf="")
+                .select_related("usuario")
+                .order_by("-periodo", "-creado"),
                 **actividades_pnud_context,
                 **responsables_context,
                 **mes_ejecucion_context,
@@ -1538,12 +1553,23 @@ class ComedorDatosConvenioPnudUpdateView(LoginRequiredMixin, UpdateView):
         obj, _ = ComedorDatosConvenioPnud.objects.get_or_create(comedor=self.comedor)
         return obj
 
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["comedor"] = self.comedor
+        return kwargs
+
     def get_success_url(self):
         return reverse("comedor_detalle", kwargs={"pk": self.comedor.pk})
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["comedor"] = self.comedor
+        context["es_linea_secos"] = is_abordaje_comunitario_linea_secos_program(
+            self.comedor
+        )
+        context["es_linea_tradicional"] = (
+            is_abordaje_comunitario_linea_tradicional_program(self.comedor)
+        )
         context["prefill_data"] = {
             "organizacion_solicitante": getattr(
                 getattr(self.comedor, "organizacion", None), "nombre", None

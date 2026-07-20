@@ -5,8 +5,10 @@ from datetime import date, time
 
 from django.conf import settings
 from django.core.exceptions import PermissionDenied, ValidationError
+from django.core.files.base import ContentFile
 from django.core.paginator import Paginator
 from django.db.models import Prefetch, Q
+from django.db import transaction
 from django.db.models.fields.files import FieldFile
 from django.http import FileResponse, Http404
 from django.shortcuts import get_object_or_404
@@ -48,6 +50,9 @@ from comedores.models import (
     PrestacionAlimentariaConformidad,
 )
 from comedores.services.comedor_service import ComedorService
+from comedores.services.certificacion_prestaciones_service import (
+    generar_certificacion_prestaciones_pdf,
+)
 from comedores.services.capacitaciones_certificados_service import (
     FORMANDO_CAPITAL_HUMANO_URL,
     delete_certificate,
@@ -57,6 +62,7 @@ from comedores.services.capacitaciones_certificados_service import (
     submit_certificate,
 )
 from comedores.utils import usa_datos_convenio_pnud
+from comedores.utils import is_abordaje_comunitario_linea_tradicional_program
 from intervenciones.models.intervenciones import Intervencion
 from relevamientos.models import ClasificacionComedor, Relevamiento
 from rendicioncuentasfinal.models import DocumentoRendicionFinal
@@ -88,17 +94,18 @@ from users.services_pwa import (
     update_operador_permissions,
 )
 
-MAX_COMPROBANTE_FILE_SIZE = 10 * 1024 * 1024  # 10 MB
+MAX_COMPROBANTE_FILE_SIZE = 20 * 1024 * 1024  # 20 MB
 ALLOWED_COMPROBANTE_CONTENT_TYPES = {
     "application/pdf",
     "application/msword",
     "application/vnd.ms-excel",
-    "application/vnd.ms-powerpoint",
-    "application/vnd.openxmlformats-officedocument.presentationml.presentation",
     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "image/bmp",
+    "image/gif",
     "image/jpeg",
     "image/png",
+    "image/webp",
 }
 
 
@@ -110,6 +117,15 @@ class ComedorDetailViewSet(
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
     http_method_names = ["get", "post", "patch", "head", "options"]
+
+    @staticmethod
+    def _filter_pwa_visible_spaces(queryset):
+        alimentar_comunidad = Q(programa__nombre__iexact="Alimentar Comunidad")
+        activo_en_ejecucion = Q(
+            ultimo_estado__estado_general__estado_actividad__estado__iexact="Activo",
+            ultimo_estado__estado_general__estado_proceso__estado__iexact="En ejecución",
+        )
+        return queryset.filter(~alimentar_comunidad | activo_en_ejecucion)
 
     def _get_scoped_comedor_ids(self):
         user = self.request.user
@@ -144,6 +160,7 @@ class ComedorDetailViewSet(
             )
             .order_by("nombre", "id")
         )
+        queryset = self._filter_pwa_visible_spaces(queryset)
 
         rows = []
         for comedor in queryset:
@@ -219,7 +236,7 @@ class ComedorDetailViewSet(
 
     def get_queryset(self):
         scoped_ids = self._get_scoped_comedor_ids()
-        return (
+        queryset = (
             Comedor.objects.select_related(
                 "provincia",
                 "municipio",
@@ -341,6 +358,9 @@ class ComedorDetailViewSet(
             .filter(id__in=scoped_ids)
             .order_by("-id")
         )
+        if is_pwa_user(self.request.user):
+            queryset = self._filter_pwa_visible_spaces(queryset)
+        return queryset
 
     def _coerce_datetime(self, value):
         if not value:
@@ -429,6 +449,22 @@ class ComedorDetailViewSet(
                     for field in APROBADAS_FIELDS
                 }
             )
+            incluye_merienda_reforzada = (
+                is_abordaje_comunitario_linea_tradicional_program(comedor)
+            )
+            payload["incluye_merienda_reforzada"] = incluye_merienda_reforzada
+            if incluye_merienda_reforzada:
+                for dia in (
+                    "lunes",
+                    "martes",
+                    "miercoles",
+                    "jueves",
+                    "viernes",
+                    "sabado",
+                    "domingo",
+                ):
+                    field = f"aprobadas_merienda_reforzada_{dia}"
+                    payload[field] = getattr(datos_convenio_pnud, field, 0)
         elif informe:
             fechas = InformeTecnicoPrestacionSerializer.fechas_finalizacion_para(
                 [informe.admision_id]
@@ -899,9 +935,9 @@ class ComedorDetailViewSet(
         if not archivo:
             return "Debe adjuntar un archivo."
         if archivo.content_type not in ALLOWED_COMPROBANTE_CONTENT_TYPES:
-            return "Tipo de archivo no permitido. Formatos válidos: PDF, JPG, PNG."
+            return "Tipo de archivo no permitido. Formatos válidos: PDF, Excel, Word o imagen."
         if archivo.size > MAX_COMPROBANTE_FILE_SIZE:
-            return "El archivo excede el tamaño máximo permitido de 10 MB."
+            return "El archivo excede el tamaño máximo permitido de 20 MB."
         return None
 
     @action(
@@ -1729,22 +1765,74 @@ class ComedorDetailViewSet(
                 {"detail": "El periodo debe ser un mes calendario en formato YYYY-MM."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+        usa_convenio_pnud = usa_datos_convenio_pnud(comedor)
         informe = (
             None
-            if usa_datos_convenio_pnud(comedor)
+            if usa_convenio_pnud
             else self._get_latest_prestacion_alimentaria_informe(comedor)
         )
-        conformidad = PrestacionAlimentariaConformidad.objects.create(
-            comedor=comedor,
-            informe_tecnico=informe,
-            periodo=periodo,
-            conforme=conforme,
-            observaciones=observaciones,
-            usuario=request.user,
+        source = (
+            ComedorDatosConvenioPnud.objects.filter(comedor=comedor).first()
+            if usa_convenio_pnud
+            else informe
         )
+        if source is None:
+            return Response(
+                {
+                    "detail": "No hay prestaciones conveniadas para generar la certificación."
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        with transaction.atomic():
+            conformidad = PrestacionAlimentariaConformidad.objects.create(
+                comedor=comedor,
+                informe_tecnico=informe,
+                periodo=periodo,
+                conforme=conforme,
+                observaciones=observaciones,
+                usuario=request.user,
+            )
+            pdf_bytes = generar_certificacion_prestaciones_pdf(
+                comedor=comedor,
+                periodo=periodo,
+                usuario=request.user,
+                source=source,
+            )
+            conformidad.certificacion_pdf.save(
+                f"certificacion-prestaciones-{comedor.id}-{periodo:%Y-%m}-{conformidad.id}.pdf",
+                ContentFile(pdf_bytes),
+                save=True,
+            )
         return Response(
             PrestacionAlimentariaConformidadSerializer(conformidad).data,
             status=status.HTTP_201_CREATED,
+        )
+
+    @action(
+        detail=True,
+        methods=["get"],
+        url_path=r"prestacion-alimentaria/conformidades/(?P<conformidad_id>[^/.]+)/certificacion",
+        permission_classes=[IsPWAUserForComedor],
+    )
+    def descargar_certificacion_prestaciones(
+        self, request, pk=None, conformidad_id=None
+    ):
+        comedor = self.get_object()
+        certificacion = get_object_or_404(
+            PrestacionAlimentariaConformidad,
+            id=conformidad_id,
+            comedor=comedor,
+        )
+        if not certificacion.certificacion_pdf:
+            raise Http404("Certificación no encontrada.")
+        return FileResponse(
+            certificacion.certificacion_pdf.open("rb"),
+            as_attachment=True,
+            filename=(
+                f"certificacion-prestaciones-{comedor.id}-"
+                f"{certificacion.periodo:%Y-%m}.pdf"
+            ),
+            content_type="application/pdf",
         )
 
     @extend_schema(
