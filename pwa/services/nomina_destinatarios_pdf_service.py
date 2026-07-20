@@ -4,11 +4,11 @@ import subprocess
 import tempfile
 import zipfile
 from pathlib import Path
-from typing import Iterable
 
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.core.files.base import ContentFile
-from django.db.models import Max, Q
+from django.db.models import Q
 from django.utils import timezone
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
@@ -373,11 +373,8 @@ def generar_nomina_destinatarios_pdf(
     comedor,
     periodo_referencia,
     actor=None,
-    nomina_ids: Iterable[int] | None = None,
 ):
     nominas_queryset = _nomina_alimentaria_activa_queryset(comedor.id)
-    if nomina_ids is not None:
-        nominas_queryset = nominas_queryset.filter(id__in=list(nomina_ids))
     programa_nombre = str(
         getattr(getattr(comedor, "programa", None), "nombre", "") or ""
     )
@@ -386,27 +383,22 @@ def generar_nomina_destinatarios_pdf(
             Q(perfil_pwa__asistencia_alimentaria=True) | Q(perfil_pwa__isnull=True)
         )
     nominas = list(nominas_queryset)
-    next_version = (
-        NominaDestinatariosDocumentoPWA.objects.filter(
-            comedor=comedor,
-            periodo_referencia=periodo_referencia,
-        ).aggregate(max_version=Max("version"))["max_version"]
-        or 0
-    ) + 1
+    if NominaDestinatariosDocumentoPWA.objects.filter(
+        comedor=comedor,
+        periodo_referencia=periodo_referencia,
+    ).exists():
+        raise ValidationError("Ya existe una nómina PDF para este período.")
     pdf_bytes = _build_pdf_from_template(
         comedor=comedor,
         periodo_referencia=periodo_referencia,
         nominas=nominas,
         actor=actor,
     )
-    filename = (
-        f"nomina-destinatarios-{comedor.id}-"
-        f"{periodo_referencia:%Y-%m}-v{next_version}.pdf"
-    )
+    filename = f"nomina-destinatarios-{comedor.id}-" f"{periodo_referencia:%Y-%m}.pdf"
     documento = NominaDestinatariosDocumentoPWA.objects.create(
         comedor=comedor,
         periodo_referencia=periodo_referencia,
-        version=next_version,
+        version=1,
         cantidad_destinatarios=len(nominas),
         generado_por=actor if getattr(actor, "is_authenticated", False) else None,
         metadata={

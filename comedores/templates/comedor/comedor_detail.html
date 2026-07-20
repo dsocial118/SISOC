@@ -136,7 +136,7 @@
                     <div class="d-flex flex-wrap gap-2">
                         {% for certificacion in certificaciones_prestaciones %}
                             <a class="btn btn-sm btn-outline-primary"
-                               href="{{ certificacion.certificacion_pdf.url }}"
+                               href="{% url 'descargar_certificacion_prestaciones_web' comedor.id certificacion.id %}"
                                target="_blank">{{ certificacion.periodo|date:"m/Y" }} - Ver PDF</a>
                         {% endfor %}
                     </div>

@@ -47,12 +47,40 @@ AVALES = (
 def actualizar_documentacion(apps, schema_editor):
     Documentacion = apps.get_model("organizaciones", "DocumentacionOrganizacion")
     Archivo = apps.get_model("organizaciones", "ArchivoOrganizacion")
+    Admision = apps.get_model("admisiones", "Admision")
+    ArchivoAdmision = apps.get_model("admisiones", "ArchivoAdmision")
+    DocumentacionAdmision = apps.get_model("admisiones", "Documentacion")
 
     arca_ids = list(
         Documentacion.objects.filter(
             nombre=ARCA_NOMBRE, categoria__in=ARCA_CATEGORIAS
         ).values_list("id", flat=True)
     )
+    documento_admision, _ = DocumentacionAdmision.objects.get_or_create(
+        nombre="Constancia de ARCA",
+        defaults={"obligatorio": False, "orden": 0},
+    )
+    archivos_arca = Archivo.objects.filter(
+        documentacion_id__in=arca_ids, deleted_at__isnull=True
+    )
+    for archivo in archivos_arca.iterator():
+        admisiones = Admision.objects.filter(
+            comedor__organizacion_id=archivo.organizacion_id
+        )
+        for admision in admisiones.iterator():
+            ArchivoAdmision.objects.get_or_create(
+                admision_id=admision.id,
+                archivo_organizacion_origen_id=archivo.id,
+                defaults={
+                    "documentacion_id": documento_admision.id,
+                    "archivo": archivo.archivo,
+                    "estado": archivo.estado,
+                    "observaciones": archivo.observaciones,
+                    "numero_gde": archivo.numero_gde,
+                    "creado_por_id": archivo.creado_por_id,
+                    "modificado_por_id": archivo.modificado_por_id,
+                },
+            )
     Archivo.objects.filter(
         documentacion_id__in=arca_ids, deleted_at__isnull=True
     ).update(deleted_at=timezone.now())
@@ -82,10 +110,27 @@ def actualizar_documentacion(apps, schema_editor):
         Documentacion.objects.filter(id__in=origen_ids).delete()
 
 
+def revertir_documentacion(apps, schema_editor):
+    Archivo = apps.get_model("organizaciones", "ArchivoOrganizacion")
+    ArchivoAdmision = apps.get_model("admisiones", "ArchivoAdmision")
+    origen_ids = ArchivoAdmision.objects.filter(
+        archivo_organizacion_origen__isnull=False,
+        documentacion__nombre="Constancia de ARCA",
+    ).values_list("archivo_organizacion_origen_id", flat=True)
+    Archivo.objects.filter(id__in=origen_ids).update(deleted_at=None)
+    ArchivoAdmision.objects.filter(
+        archivo_organizacion_origen_id__in=origen_ids,
+        documentacion__nombre="Constancia de ARCA",
+    ).delete()
+
+
 class Migration(migrations.Migration):
 
-    dependencies = [("organizaciones", "0015_quitar_acta_solicitud_subsidio")]
+    dependencies = [
+        ("organizaciones", "0015_quitar_acta_solicitud_subsidio"),
+        ("admisiones", "0068_admision_vigente_pwa_unique_constraint"),
+    ]
 
     operations = [
-        migrations.RunPython(actualizar_documentacion, migrations.RunPython.noop),
+        migrations.RunPython(actualizar_documentacion, revertir_documentacion),
     ]

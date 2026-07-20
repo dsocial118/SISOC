@@ -1,6 +1,8 @@
 # pylint: disable=too-many-lines
 
 import calendar
+import logging
+import subprocess
 from datetime import date, time
 
 from django.conf import settings
@@ -82,6 +84,7 @@ from users.api_serializers import (
     OperadorListSerializer,
     OperadorPermissionsUpdateSerializer,
 )
+
 from users.models import AccesoComedorPWA
 from users.services_pwa import (
     create_operador_for_comedor,
@@ -93,6 +96,8 @@ from users.services_pwa import (
     list_operadores_for_comedor,
     update_operador_permissions,
 )
+
+logger = logging.getLogger("django")
 
 MAX_COMPROBANTE_FILE_SIZE = 20 * 1024 * 1024  # 20 MB
 ALLOWED_COMPROBANTE_CONTENT_TYPES = {
@@ -1776,33 +1781,40 @@ class ComedorDetailViewSet(
             if usa_convenio_pnud
             else informe
         )
-        if source is None:
-            return Response(
-                {
-                    "detail": "No hay prestaciones conveniadas para generar la certificación."
-                },
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        with transaction.atomic():
-            conformidad = PrestacionAlimentariaConformidad.objects.create(
-                comedor=comedor,
-                informe_tecnico=informe,
-                periodo=periodo,
-                conforme=conforme,
-                observaciones=observaciones,
-                usuario=request.user,
-            )
-            pdf_bytes = generar_certificacion_prestaciones_pdf(
-                comedor=comedor,
-                periodo=periodo,
-                usuario=request.user,
-                source=source,
-            )
-            conformidad.certificacion_pdf.save(
-                f"certificacion-prestaciones-{comedor.id}-{periodo:%Y-%m}-{conformidad.id}.pdf",
-                ContentFile(pdf_bytes),
-                save=True,
-            )
+        conformidad = PrestacionAlimentariaConformidad.objects.create(
+            comedor=comedor,
+            informe_tecnico=informe,
+            periodo=periodo,
+            conforme=conforme,
+            observaciones=observaciones,
+            usuario=request.user,
+        )
+        if source is not None:
+            try:
+                pdf_bytes = generar_certificacion_prestaciones_pdf(
+                    comedor=comedor,
+                    periodo=periodo,
+                    usuario=request.user,
+                    source=source,
+                )
+                conformidad.certificacion_pdf.save(
+                    f"certificacion-prestaciones-{comedor.id}-{periodo:%Y-%m}-{conformidad.id}.pdf",
+                    ContentFile(pdf_bytes),
+                    save=True,
+                )
+            except (OSError, RuntimeError, subprocess.SubprocessError) as exc:
+                logger.exception(
+                    "No se pudo generar la certificación PDF del comedor %s para %s",
+                    comedor.id,
+                    periodo,
+                )
+                conformidad.delete()
+                return Response(
+                    {
+                        "detail": "No se pudo generar la certificación PDF. Intente nuevamente."
+                    },
+                    status=status.HTTP_503_SERVICE_UNAVAILABLE,
+                )
         return Response(
             PrestacionAlimentariaConformidadSerializer(conformidad).data,
             status=status.HTTP_201_CREATED,

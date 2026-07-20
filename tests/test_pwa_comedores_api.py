@@ -1224,6 +1224,48 @@ def test_prestacion_alimentaria_conformidad_crea_registro():
 
 
 @pytest.mark.django_db
+def test_prestacion_alimentaria_conformidad_sin_fuente_crea_registro():
+    provincia = Provincia.objects.create(nombre="Cordoba sin informe")
+    programa = Programas.objects.create(nombre="Programa sin informe")
+    comedor = Comedor.objects.create(
+        nombre="Espacio sin informe", provincia=provincia, programa=programa
+    )
+    representante = _create_pwa_user(
+        comedor=comedor,
+        role=AccesoComedorPWA.ROL_REPRESENTANTE,
+        username="rep_conf_sin_informe",
+    )
+
+    response = _token_client(representante).post(
+        f"/api/comedores/{comedor.id}/prestacion-alimentaria/conformidad/",
+        {"conforme": True, "periodo": "2035-11"},
+        format="json",
+    )
+
+    assert response.status_code == 201
+    registro = PrestacionAlimentariaConformidad.objects.get(comedor=comedor)
+    assert not registro.certificacion_pdf
+
+
+@pytest.mark.django_db
+def test_prestacion_alimentaria_error_pdf_devuelve_503(mocker):
+    comedor, client = _comedor_alimentar_comunidad(username="rep_conf_pdf_error")
+    mocker.patch(
+        "comedores.api_views.generar_certificacion_prestaciones_pdf",
+        side_effect=RuntimeError("LibreOffice no disponible"),
+    )
+
+    response = client.post(
+        f"/api/comedores/{comedor.id}/prestacion-alimentaria/conformidad/",
+        {"conforme": True, "periodo": "2035-10"},
+        format="json",
+    )
+
+    assert response.status_code == 503
+    assert not PrestacionAlimentariaConformidad.objects.filter(comedor=comedor).exists()
+
+
+@pytest.mark.django_db
 def test_prestacion_alimentaria_conformidad_permite_repetir_periodo():
     comedor, client = _comedor_alimentar_comunidad(username="rep_conf_dup")
     url = f"/api/comedores/{comedor.id}/prestacion-alimentaria/conformidad/"

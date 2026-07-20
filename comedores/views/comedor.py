@@ -11,7 +11,8 @@ from django.core.cache import cache
 from django.core.paginator import Paginator
 from django.db import transaction
 from django.db.models import Count, Q
-from django.shortcuts import redirect
+from django.http import FileResponse, Http404
+from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse, reverse_lazy
 from django.utils import timezone
 from django.utils.html import escape, format_html, format_html_join
@@ -82,6 +83,23 @@ MESES_ES_CORTOS = [
     "Nov",
     "Dic",
 ]
+
+
+def descargar_certificacion_prestaciones_web(request, pk, certificacion_id):
+    certificacion = get_object_or_404(
+        PrestacionAlimentariaConformidad,
+        id=certificacion_id,
+        comedor_id=pk,
+        certificacion_pdf__isnull=False,
+    )
+    if not certificacion.certificacion_pdf:
+        raise Http404("Certificación no encontrada.")
+    return FileResponse(
+        certificacion.certificacion_pdf.open("rb"),
+        as_attachment=True,
+        filename=f"certificacion-prestaciones-{pk}-{certificacion.periodo:%Y-%m}.pdf",
+        content_type="application/pdf",
+    )
 
 
 def _safe_cell_content(value):

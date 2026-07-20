@@ -1,3 +1,4 @@
+import copy
 import subprocess
 import tempfile
 import zipfile
@@ -5,6 +6,8 @@ from pathlib import Path
 
 from django.conf import settings
 from lxml import etree
+
+from comedores.utils import is_abordaje_comunitario_linea_tradicional_program
 
 
 W_NS = "http://schemas.openxmlformats.org/wordprocessingml/2006/main"
@@ -20,6 +23,16 @@ def _agregar_texto(paragraph, value):
         return
     run = etree.SubElement(paragraph, f"{{{W_NS}}}r")
     etree.SubElement(run, f"{{{W_NS}}}t").text = str(value)
+
+
+def _reemplazar_texto(paragraph, value):
+    texts = paragraph.xpath(".//w:t", namespaces=NS)
+    if texts:
+        texts[0].text = str(value)
+        for extra in texts[1:]:
+            extra.text = ""
+        return
+    _agregar_texto(paragraph, value)
 
 
 def _completar_plantilla(
@@ -52,8 +65,18 @@ def _completar_plantilla(
 
         table = body.find(".//w:tbl", NS)
         rows = table.findall("w:tr", NS)
+        tipos = list(TIPOS)
+        if is_abordaje_comunitario_linea_tradicional_program(comedor):
+            merienda_reforzada_row = copy.deepcopy(rows[4])
+            table.insert(5, merienda_reforzada_row)
+            _reemplazar_texto(
+                merienda_reforzada_row.findall("w:tc", NS)[0].find("w:p", NS),
+                "Merienda Reforzada",
+            )
+            tipos.insert(3, "merienda_reforzada")
+            rows = table.findall("w:tr", NS)
         total_general = 0
-        for row_index, tipo in enumerate(TIPOS, start=2):
+        for row_index, tipo in enumerate(tipos, start=2):
             cells = rows[row_index].findall("w:tc", NS)
             total_tipo = 0
             for column_index, dia in enumerate(DIAS, start=1):
@@ -63,8 +86,9 @@ def _completar_plantilla(
                 _agregar_texto(paragraph, str(value))
             total_general += total_tipo
             _agregar_texto(cells[8].find("w:p", NS), str(total_tipo))
+        total_row = rows[2 + len(tipos)]
         _agregar_texto(
-            rows[6].findall("w:tc", NS)[1].find("w:p", NS), str(total_general)
+            total_row.findall("w:tc", NS)[1].find("w:p", NS), str(total_general)
         )
 
         rendered_xml = etree.tostring(

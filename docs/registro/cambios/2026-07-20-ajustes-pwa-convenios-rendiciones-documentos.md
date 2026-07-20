@@ -50,6 +50,8 @@ Implementar los requerimientos de los issues #2085, #2084, #2083, #2081, #2063, 
 - Las plantillas DOCX ubicadas en `pwa/files/varios/` son las oficiales y deben desplegarse junto con el código.
 - El contenedor Django es el entorno de generación; LibreOffice debe estar disponible en runtime.
 - La PWA se versiona y entrega desde su repositorio Git anidado `mobile/`.
+- La entrega mobile asociada queda identificada por el commit de SISOC-Mobile
+  que acompaña este cambio: https://github.com/dsocial118/SISOC-Mobile/commit/c8825d9
 - Las organizaciones, espacios y beneficiarios creados para prueba permanecen únicamente en la base local.
 
 ## Validaciones ejecutadas
