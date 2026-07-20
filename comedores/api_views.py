@@ -10,7 +10,6 @@ from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.files.base import ContentFile
 from django.core.paginator import Paginator
 from django.db.models import Prefetch, Q
-from django.db import transaction
 from django.db.models.fields.files import FieldFile
 from django.http import FileResponse, Http404
 from django.shortcuts import get_object_or_404
@@ -1802,7 +1801,7 @@ class ComedorDetailViewSet(
                     ContentFile(pdf_bytes),
                     save=True,
                 )
-            except (OSError, RuntimeError, subprocess.SubprocessError) as exc:
+            except (OSError, RuntimeError, subprocess.SubprocessError):
                 logger.exception(
                     "No se pudo generar la certificación PDF del comedor %s para %s",
                     comedor.id,
