@@ -11,7 +11,8 @@ from django.core.cache import cache
 from django.core.paginator import Paginator
 from django.db import transaction
 from django.db.models import Count, Q
-from django.shortcuts import redirect
+from django.http import FileResponse, Http404
+from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse, reverse_lazy
 from django.utils import timezone
 from django.utils.html import escape, format_html, format_html_join
@@ -36,6 +37,7 @@ from comedores.models import (
     HistorialValidacion,
     ImagenComedor,
     Observacion,
+    PrestacionAlimentariaConformidad,
 )
 from comedores.services.comedor_service import ComedorService
 from comedores.services.capacitaciones_certificados_service import (
@@ -50,6 +52,7 @@ from comedores.utils import (
     get_prestacion_conformidad_pending_period,
     is_abordaje_comunitario_relevamientos_header_program,
     is_abordaje_comunitario_linea_secos_program,
+    is_abordaje_comunitario_linea_tradicional_program,
     is_pnud_comedor,
     usa_datos_convenio_pnud,
 )
@@ -80,6 +83,23 @@ MESES_ES_CORTOS = [
     "Nov",
     "Dic",
 ]
+
+
+def descargar_certificacion_prestaciones_web(request, pk, certificacion_id):
+    certificacion = get_object_or_404(
+        PrestacionAlimentariaConformidad,
+        id=certificacion_id,
+        comedor_id=pk,
+        certificacion_pdf__isnull=False,
+    )
+    if not certificacion.certificacion_pdf:
+        raise Http404("Certificación no encontrada.")
+    return FileResponse(
+        certificacion.certificacion_pdf.open("rb"),
+        as_attachment=True,
+        filename=f"certificacion-prestaciones-{pk}-{certificacion.periodo:%Y-%m}.pdf",
+        content_type="application/pdf",
+    )
 
 
 def _safe_cell_content(value):
@@ -1490,12 +1510,25 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
                 "usa_convenio_pnud": usa_convenio_pnud,
                 "puede_gestionar_actividades_espacio": puede_gestionar_actividades_espacio,
                 "mostrar_relevamientos_header": mostrar_relevamientos_header,
+                "es_linea_secos": is_abordaje_comunitario_linea_secos_program(
+                    self.object
+                ),
+                "es_linea_tradicional": is_abordaje_comunitario_linea_tradicional_program(
+                    self.object
+                ),
                 "datos_convenio_pnud": datos_convenio_pnud,
                 "prestaciones_aprobadas_source": (
                     datos_convenio_pnud if usa_convenio_pnud else informe_tecnico
                 ),
                 "domicilio_completo_comedor": _build_domicilio_completo(self.object),
                 "conformidad_prestacion_pendiente": self._build_conformidad_prestacion_context(),
+                "certificaciones_prestaciones": PrestacionAlimentariaConformidad.objects.filter(
+                    comedor_id=self.object.id,
+                    certificacion_pdf__isnull=False,
+                )
+                .exclude(certificacion_pdf="")
+                .select_related("usuario")
+                .order_by("-periodo", "-creado"),
                 **actividades_pnud_context,
                 **responsables_context,
                 **mes_ejecucion_context,
@@ -1541,12 +1574,23 @@ class ComedorDatosConvenioPnudUpdateView(LoginRequiredMixin, UpdateView):
         obj, _ = ComedorDatosConvenioPnud.objects.get_or_create(comedor=self.comedor)
         return obj
 
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["comedor"] = self.comedor
+        return kwargs
+
     def get_success_url(self):
         return reverse("comedor_detalle", kwargs={"pk": self.comedor.pk})
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["comedor"] = self.comedor
+        context["es_linea_secos"] = is_abordaje_comunitario_linea_secos_program(
+            self.comedor
+        )
+        context["es_linea_tradicional"] = (
+            is_abordaje_comunitario_linea_tradicional_program(self.comedor)
+        )
         context["prefill_data"] = {
             "organizacion_solicitante": getattr(
                 getattr(self.comedor, "organizacion", None), "nombre", None

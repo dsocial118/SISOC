@@ -130,6 +130,18 @@
                     </span>
                 </div>
             {% endif %}
+            {% if certificaciones_prestaciones %}
+                <div class="mb-3">
+                    <h6 class="fw-bold mb-2">Certificaciones mensuales de prestaciones</h6>
+                    <div class="d-flex flex-wrap gap-2">
+                        {% for certificacion in certificaciones_prestaciones %}
+                            <a class="btn btn-sm btn-outline-primary"
+                               href="{% url 'descargar_certificacion_prestaciones_web' comedor.id certificacion.id %}"
+                               target="_blank">{{ certificacion.periodo|date:"m/Y" }} - Ver PDF</a>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endif %}
             <div class="row gy-3 align-items-center">
                 <div class="col-12 col-lg-9 d-flex align-items-center flex-wrap">
                     <ul class="list-inline mb-0 align-middle">
@@ -391,7 +403,9 @@
                                             <i class="bi bi-cup-hot"></i>
                                         </div>
                                         <div class="fw-bold fs-3 mb-0">
-                                            {% if informe_tecnico %}
+                                            {% if es_linea_secos or es_linea_tradicional %}
+                                                -
+                                            {% elif informe_tecnico %}
                                                 {{ prestaciones_aprobadas_total|default_if_none:"-" }}
                                             {% else %}
                                                 -
@@ -408,7 +422,9 @@
                                             <i class="bi bi-currency-dollar"></i>
                                         </div>
                                         <div class="fw-bold fs-3 mb-0">
-                                            {% if informe_tecnico %}
+                                            {% if es_linea_secos or es_linea_tradicional %}
+                                                -
+                                            {% elif informe_tecnico %}
                                                 {{ monto_prestacion_mensual|default_if_none:"-" }}
                                             {% else %}
                                                 -
@@ -1058,7 +1074,13 @@
                             <h3 class="mb-1 mt-2">
                                 <i class="bi bi-cup-hot mb-1"></i>
                             </h3>
-                            <h4 class="fw-bold my-1">{{ prestaciones_aprobadas_total|default_if_none:"0" }}</h4>
+                            <h4 class="fw-bold my-1">
+                                {% if es_linea_secos or es_linea_tradicional %}
+                                    -
+                                {% else %}
+                                    {{ prestaciones_aprobadas_total|default_if_none:"0" }}
+                                {% endif %}
+                            </h4>
                             <p class="fw-bold fs-7">Prestaciones mensuales</p>
                         </div>
                     </div>
@@ -1181,15 +1203,36 @@
                             <p class="mb-0 fs-7">
                                 Monto total de convenio por Espacio - Servicio Integral de Promoci&oacute;n Humana: <strong>{{ datos_convenio_pnud.monto_convenio_siph|default_if_none:"Sin informaci&oacute;n" }}</strong>
                             </p>
-                            <p class="mb-0 fs-7">
-                                Prestaciones financiadas mensuales: <strong>{{ datos_convenio_pnud.prestaciones_financiadas_mensuales|default_if_none:"Sin informaci&oacute;n" }}</strong>
-                            </p>
+                            {% if not es_linea_secos and not es_linea_tradicional %}
+                                <p class="mb-0 fs-7">
+                                    Prestaciones financiadas mensuales: <strong>{{ datos_convenio_pnud.prestaciones_financiadas_mensuales|default_if_none:"Sin informaci&oacute;n" }}</strong>
+                                </p>
+                            {% endif %}
+                            {% if es_linea_tradicional %}
+                                <p class="mb-0 fs-7">
+                                    Prestaciones Financiadas Diarias - Desayuno: <strong>{{ datos_convenio_pnud.prestaciones_financiadas_diarias_desayuno|default_if_none:"Sin informaci&oacute;n" }}</strong>
+                                </p>
+                                <p class="mb-0 fs-7">
+                                    Prestaciones Financiadas Diarias - Almuerzo: <strong>{{ datos_convenio_pnud.prestaciones_financiadas_diarias_almuerzo|default_if_none:"Sin informaci&oacute;n" }}</strong>
+                                </p>
+                                <p class="mb-0 fs-7">
+                                    Prestaciones Financiadas Diarias - Merienda: <strong>{{ datos_convenio_pnud.prestaciones_financiadas_diarias_merienda|default_if_none:"Sin informaci&oacute;n" }}</strong>
+                                </p>
+                                <p class="mb-0 fs-7">
+                                    Prestaciones Financiadas Diarias - Merienda Reforzada: <strong>{{ datos_convenio_pnud.prestaciones_financiadas_diarias_merienda_reforzada|default_if_none:"Sin informaci&oacute;n" }}</strong>
+                                </p>
+                                <p class="mb-0 fs-7">
+                                    Prestaciones Financiadas Diarias - Cena: <strong>{{ datos_convenio_pnud.prestaciones_financiadas_diarias_cena|default_if_none:"Sin informaci&oacute;n" }}</strong>
+                                </p>
+                            {% endif %}
                             <p class="mb-0 fs-7">
                                 Personas conveniadas: <strong>{{ datos_convenio_pnud.personas_conveniadas|default_if_none:"Sin informaci&oacute;n" }}</strong>
                             </p>
-                            <p class="mb-0 fs-7">
-                                Cantidad m&oacute;dulos mensuales: <strong>{{ datos_convenio_pnud.cantidad_modulos|default_if_none:"Sin informaci&oacute;n" }}</strong>
-                            </p>
+                            {% if not es_linea_tradicional %}
+                                <p class="mb-0 fs-7">
+                                    Cantidad M&oacute;dulos Mensuales: <strong>{{ datos_convenio_pnud.cantidad_modulos|default_if_none:"Sin informaci&oacute;n" }}</strong>
+                                </p>
+                            {% endif %}
                             <div class="mt-3 d-flex justify-content-center">
                                 <a href="{% url 'comedor_convenio_pnud' comedor.id %}"
                                    class="btn btn-primary px-2 py-1 fs-7 w-100 w-sm-auto">Editar datos del Convenio</a>

@@ -562,7 +562,7 @@ def test_nomina_bulk_attendance_alimentaria_syncs_current_period(
 
     response = client.post(
         f"/api/pwa/espacios/{comedor.id}/nomina/asistencia-alimentaria/",
-        {"nomina_ids": [nomina_1.id]},
+        {"nomina_ids": [nomina_1.id], "periodo": periodo_actual.strftime("%Y-%m")},
         format="json",
     )
 
@@ -594,11 +594,19 @@ def test_nomina_bulk_attendance_alimentaria_syncs_current_period(
         metadata__origen="bulk_alimentaria",
     ).exists()
     documento = NominaDestinatariosDocumentoPWA.objects.get()
-    assert documento.cantidad_destinatarios == 1
-    assert documento.metadata["nomina_ids"] == [nomina_1.id]
+    assert documento.cantidad_destinatarios == 2
+    assert documento.metadata["nomina_ids"] == [nomina_1.id, nomina_2.id]
     assert (
-        response.data["nomina_destinatarios_documento"]["cantidad_destinatarios"] == 1
+        response.data["nomina_destinatarios_documento"]["cantidad_destinatarios"] == 2
     )
+
+    repetida = client.post(
+        f"/api/pwa/espacios/{comedor.id}/nomina/asistencia-alimentaria/",
+        {"nomina_ids": [nomina_1.id], "periodo": periodo_actual.strftime("%Y-%m")},
+        format="json",
+    )
+    assert repetida.status_code == 400
+    assert "periodo" in repetida.data["detail"]
 
 
 @pytest.mark.django_db
@@ -631,7 +639,10 @@ def test_nomina_bulk_attendance_alimentaria_rejects_non_alimentaria_rows(
 
     response = client.post(
         f"/api/pwa/espacios/{comedor.id}/nomina/asistencia-alimentaria/",
-        {"nomina_ids": [nomina.id]},
+        {
+            "nomina_ids": [nomina.id],
+            "periodo": timezone.localdate().strftime("%Y-%m"),
+        },
         format="json",
     )
 

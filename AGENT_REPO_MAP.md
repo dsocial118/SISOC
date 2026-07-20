@@ -426,12 +426,23 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 
 ### Si necesitas cambiar PWA
 
+- La interfaz vive en el repositorio Git anidado `mobile/`; revisar su estado y
+  validaciones por separado del repositorio Django.
 - `pwa/models.py`
 - `pwa/api_urls.py`
 - `pwa/api_views.py`
 - `pwa/services/`
+- frontend: `mobile/src/api/` y `mobile/src/features/home/`
 - tests `tests/test_pwa_*`
 - docs: `docs/implementaciones/pwa_backend.md`, `docs/seguridad/security_baseline_pwa.md`
+
+### Si necesitas cambiar documentos DOCX/PDF de prestaciones o nóminas
+
+- plantillas versionadas: `pwa/files/varios/PROGRAMA.ALIMENTAR.COMUNIDAD.docx` y `pwa/files/varios/NOMINA.DE.DESTINATARIOS.docx`
+- certificación de prestaciones: `comedores/services/certificacion_prestaciones_service.py`
+- nómina de destinatarios: `pwa/services/nomina_destinatarios_pdf_service.py`
+- conversión e incrustación de Office en rendiciones: `rendicioncuentasmensual/service_helpers.py`
+- el runtime Django requiere LibreOffice Writer/Calc para convertir DOCX/XLSX a PDF
 
 ### Si necesitas cambiar OCR / procesamiento documental
 
@@ -617,7 +628,7 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 | relevamientos | `relevamientos/models.py`, `tasks.py`, `views.py` |
 | RENAPER | `centrodefamilia/services/consulta_renaper.py`, `VAT/services/consulta_renaper/impl.py` |
 | GESTIONAR | `comedores/tasks.py`, `relevamientos/tasks.py`, commands relacionados |
-| docx/pdf | `admisiones/services/`, templates `docx/` y `pdf/` |
+| docx/pdf | `admisiones/services/`, `comedores/services/certificacion_prestaciones_service.py`, `pwa/services/nomina_destinatarios_pdf_service.py`, `pwa/files/varios/` |
 | PWA | `pwa/api_views.py`, `pwa/services/`, tests `test_pwa_*` |
 | OCR | `ocr/`, `docker/django/entrypoint.py` |
 | auditoria | `audittrail/`, docs `audittrail_*` |
