@@ -1502,7 +1502,7 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
                 "domicilio_completo_comedor": _build_domicilio_completo(self.object),
                 "conformidad_prestacion_pendiente": self._build_conformidad_prestacion_context(),
                 "certificaciones_prestaciones": PrestacionAlimentariaConformidad.objects.filter(
-                    comedor=self.object,
+                    comedor_id=self.object.id,
                     certificacion_pdf__isnull=False,
                 )
                 .exclude(certificacion_pdf="")

@@ -22,6 +22,10 @@ from admisiones.models.admisiones import (
 from comedores.models import (
     Comedor,
     ComedorDatosConvenioPnud,
+    EstadoActividad,
+    EstadoGeneral,
+    EstadoHistorial,
+    EstadoProceso,
     ImagenComedor,
     Nomina,
     PrestacionAlimentariaConformidad,
@@ -101,6 +105,32 @@ def _token_client(user):
     client = APIClient()
     client.credentials(HTTP_AUTHORIZATION=f"Token {token.key}")
     return client
+
+
+def _marcar_activo_en_ejecucion(comedor):
+    estado_actividad, _ = EstadoActividad.objects.get_or_create(estado="Activo")
+    estado_proceso, _ = EstadoProceso.objects.get_or_create(
+        estado="En ejecución",
+        estado_actividad=estado_actividad,
+    )
+    estado_general, _ = EstadoGeneral.objects.get_or_create(
+        estado_actividad=estado_actividad,
+        estado_proceso=estado_proceso,
+    )
+    historial = EstadoHistorial.objects.create(
+        comedor=comedor,
+        estado_general=estado_general,
+    )
+    comedor.ultimo_estado = historial
+    comedor.save(update_fields=["ultimo_estado"])
+
+
+@pytest.fixture(autouse=True)
+def _mock_certificacion_prestaciones_pdf(mocker):
+    mocker.patch(
+        "comedores.api_views.generar_certificacion_prestaciones_pdf",
+        return_value=b"%PDF-1.4\n%%EOF",
+    )
 
 
 def _grant_mobile_rendicion_permission(user):
@@ -236,6 +266,8 @@ def test_pwa_spaces_selector_list_returns_metadata_and_sorted_names():
         programa=programa,
         codigo_de_proyecto="PROY-01",
     )
+    _marcar_activo_en_ejecucion(comedor_a)
+    _marcar_activo_en_ejecucion(comedor_b)
 
     representante = _create_pwa_user(
         comedor=comedor_b,
@@ -287,6 +319,7 @@ def test_comedor_detail_includes_mobile_relevamiento_summary():
         organizacion=organizacion,
         programa=programa,
     )
+    _marcar_activo_en_ejecucion(comedor)
 
     modalidad = TipoModalidadPrestacion.objects.create(nombre="Viandas")
     tipo_agua = TipoAgua.objects.create(nombre="Red")
@@ -1162,6 +1195,9 @@ def _comedor_alimentar_comunidad(*, username):
         provincia=provincia,
         programa=programa,
     )
+    _marcar_activo_en_ejecucion(comedor)
+    admision = Admision.objects.create(comedor=comedor)
+    _create_informe_tecnico(admision)
     representante = _create_pwa_user(
         comedor=comedor,
         role=AccesoComedorPWA.ROL_REPRESENTANTE,
@@ -1180,7 +1216,7 @@ def test_prestacion_alimentaria_conformidad_crea_registro():
         format="json",
     )
 
-    assert response.status_code == 201
+    assert response.status_code == 201, response.data
     assert response.data["conforme"] is True
     conformidad = PrestacionAlimentariaConformidad.objects.get(comedor=comedor)
     assert conformidad.conforme is True
@@ -1239,6 +1275,8 @@ def test_prestacion_alimentaria_conformidad_disponible_para_todos_los_programas(
     comedores,
 ):
     comedor_1, _ = comedores
+    admision = Admision.objects.create(comedor=comedor_1)
+    _create_informe_tecnico(admision)
     representante = _create_pwa_user(
         comedor=comedor_1,
         role=AccesoComedorPWA.ROL_REPRESENTANTE,
