@@ -759,6 +759,8 @@ class TrabajadorCentroInfanciaCreateView(LoginRequiredMixin, CreateView):
         context["renaper_precarga"] = bool(renaper_data) or (
             self.request.POST.get("origen_dato") == "renaper"
         )
+        if self.request.method == "POST" and "campos_renaper" not in context:
+            context["campos_renaper"] = ",".join(self._campos_renaper_desde_post())
         context["mostrar_formulario"] = bool(
             selected_ciudadano
             or no_resultados
@@ -792,11 +794,41 @@ class TrabajadorCentroInfanciaCreateView(LoginRequiredMixin, CreateView):
                 initial=self._build_initial_from_ciudadano(selected_ciudadano)
             )
         elif renaper_data:
-            context["form"] = self.form_class(initial=renaper_data)
+            campos = self._campos_renaper_con_valor(renaper_data)
+            context["form"] = self.form_class(
+                initial=renaper_data, campos_renaper=campos
+            )
+            context["campos_renaper"] = ",".join(campos)
         elif query and not ciudadanos:
             context["form"] = self.form_class(
                 initial={"dni": query if query.isdigit() else None}
             )
+
+    def _campos_renaper_con_valor(self, renaper_data):
+        return [
+            field
+            for field in TrabajadorCDIForm.RENAPER_FIELDS
+            if renaper_data.get(field)
+        ]
+
+    def _campos_renaper_desde_post(self):
+        if self.request.POST.get("origen_dato") != "renaper":
+            return []
+        crudos = (self.request.POST.get("campos_renaper") or "").split(",")
+        return [c for c in crudos if c in TrabajadorCDIForm.RENAPER_FIELDS]
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        if self.request.method == "POST":
+            kwargs["campos_renaper"] = self._campos_renaper_desde_post()
+        return kwargs
+
+    def form_valid(self, form):
+        form.instance.centro = self.centro
+        form.instance.campos_verificados_renaper = self._campos_renaper_desde_post()
+        response = super().form_valid(form)
+        messages.success(self.request, "Trabajador agregado correctamente.")
+        return response
 
     def _get_selected_ciudadano(self):
         ciudadano_id = self.request.GET.get("ciudadano_id") or self.request.POST.get(
@@ -852,12 +884,6 @@ class TrabajadorCentroInfanciaCreateView(LoginRequiredMixin, CreateView):
             or datos_api.get("pais")
             or "",
         }
-
-    def form_valid(self, form):
-        form.instance.centro = self.centro
-        response = super().form_valid(form)
-        messages.success(self.request, "Trabajador agregado correctamente.")
-        return response
 
     def get_success_url(self):
         return reverse("centrodeinfancia_detalle", kwargs={"pk": self.centro.pk})
