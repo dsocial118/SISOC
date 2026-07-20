@@ -541,6 +541,7 @@ class ComedorForm(forms.ModelForm):
         exclude = [
             "ultimo_estado",
             "fecha_validado",
+            "mes_ejecucion",
         ]  # IMPORTANTE: Excluir para que no se sobrescriba
         labels = {
             "tipocomedor": "Tipo comedor",

@@ -894,6 +894,8 @@ def test_import_xlsx_persists_mes_convenio_and_updates_present_state(
         EN_EJECUCION,
         estados["en_plazo"].estado,
     )
+    comedor.refresh_from_db()
+    assert comedor.mes_ejecucion == 4
 
 
 def test_import_detail_displays_mes_convenio_and_totales(client_logged, tmp_media, db):
@@ -924,6 +926,8 @@ def test_import_updates_present_mes_1_to_active_execution(client_logged, tmp_med
     _upload_csv_and_import(client_logged, comedor, 1, "EX-2025-MES1")
 
     assert _estado_tuple(comedor) == (ACTIVO, EN_EJECUCION, None)
+    comedor.refresh_from_db()
+    assert comedor.mes_ejecucion == 1
     assert comedor.historial_estados.count() == 1
     assert estados["en_ejecucion"].estado == EN_EJECUCION
 
@@ -983,12 +987,18 @@ def test_import_updates_absent_active_program2_by_consecutive_batches(
 
     _upload_csv_and_import(client_logged, present, 1, "EX-2025-AUS-1")
     assert _estado_tuple(absent) == (ACTIVO, EN_PROCESO_RENOVACION, None)
+    absent.refresh_from_db()
+    assert absent.mes_ejecucion == -1
 
     _upload_csv_and_import(client_logged, present, 1, "EX-2025-AUS-2")
     assert _estado_tuple(absent) == (ACTIVO, EN_PROCESO_RENOVACION, None)
+    absent.refresh_from_db()
+    assert absent.mes_ejecucion == -2
 
     _upload_csv_and_import(client_logged, present, 1, "EX-2025-AUS-3")
     assert _estado_tuple(absent) == (INACTIVO, BAJA, NO_RENOVACION_COMEDOR)
+    absent.refresh_from_db()
+    assert absent.mes_ejecucion is None
 
 
 def test_import_absent_reactivated_active_starts_first_absence(
