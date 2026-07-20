@@ -9,7 +9,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.contenttypes.models import ContentType
-from django.core.exceptions import ValidationError
+from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.paginator import Paginator
 from django.db import transaction
 from django.db.models import Exists, OuterRef, Q
@@ -41,9 +41,11 @@ from iam.services import user_has_permission_code
 
 from centrodeinfancia.access import (
     aplicar_scope_centros_cdi as _aplicar_scope_centros_cdi,
+    es_auditor_simepi,
     get_object_scoped_cdi_or_404,
     puede_generar_usuario_cdi,
     puede_ver_usuarios_cdi,
+    tiene_alcance_simepi_nacional,
 )
 from centrodeinfancia.forms import (
     CentroDeInfanciaForm,
@@ -56,7 +58,7 @@ from centrodeinfancia.forms import (
 from centrodeinfancia.formulario_cdi_schema import CAMPOS_OPCIONES_MULTIPLES
 from centrodeinfancia.models import (
     AccesoCDI,
-    AsistenciaTrabajador,
+    AsistenciaNominaCentroInfancia,
     CentroDeInfancia,
     DepartamentoIpi,
     IntervencionCentroInfancia,
@@ -65,8 +67,14 @@ from centrodeinfancia.models import (
     Trabajador,
 )
 from centrodeinfancia.services import (
-    AsistenciaTrabajadorService,
+    AsistenciaNominaCentroInfanciaService,
     CentroDeInfanciaService,
+)
+from centrodeinfancia.services_user_provisioning import (
+    crear_referente_cdi_automaticamente,
+    crear_usuario_trabajador_automaticamente,
+    sincronizar_email_referente_cdi,
+    sincronizar_email_trabajador,
 )
 from centrodeinfancia.views_formulario_cdi import construir_resumenes_formularios
 from intervenciones.constants import PROGRAMA_ALIASES_CENTRO_INFANCIA
@@ -240,6 +248,37 @@ def _validar_archivo_documentacion_intervencion(file_obj):
     return None
 
 
+class _AuditoriaSoloLecturaMixin:
+    def dispatch(self, request, *args, **kwargs):
+        if request.method not in {"GET", "HEAD", "OPTIONS"} and es_auditor_simepi(
+            request.user
+        ):
+            raise PermissionDenied("El rol Auditoría tiene acceso de solo lectura.")
+        return super().dispatch(request, *args, **kwargs)
+
+
+class _AutomaticReferenteProvisioningMixin:
+    def form_valid(self, form):
+        email_referente_cambio = "email_referente" in form.changed_data
+        object_pk = getattr(self.object, "pk", None)
+        email_anterior = None
+        if object_pk:
+            email_anterior = (
+                CentroDeInfancia.objects.filter(pk=object_pk)
+                .values_list("email_referente", flat=True)
+                .first()
+            )
+        response = super().form_valid(form)
+        crear_referente_cdi_automaticamente(self.request, self.object)
+        if email_referente_cambio:
+            sincronizar_email_referente_cdi(
+                self.request,
+                self.object,
+                email_anterior,
+            )
+        return response
+
+
 class CentroDeInfanciaListView(LoginRequiredMixin, ListView):
     model = CentroDeInfancia
     template_name = "centrodeinfancia/centrodeinfancia_list.html"
@@ -294,7 +333,12 @@ class CentroDeInfanciaListView(LoginRequiredMixin, ListView):
         return context
 
 
-class CentroDeInfanciaCreateView(LoginRequiredMixin, CreateView):
+class CentroDeInfanciaCreateView(
+    _AuditoriaSoloLecturaMixin,
+    _AutomaticReferenteProvisioningMixin,
+    LoginRequiredMixin,
+    CreateView,
+):
     model = CentroDeInfancia
     form_class = CentroDeInfanciaForm
     template_name = "centrodeinfancia/centrodeinfancia_form.html"
@@ -302,7 +346,9 @@ class CentroDeInfanciaCreateView(LoginRequiredMixin, CreateView):
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
         kwargs["user"] = self.request.user
-        kwargs["lock_provincia_from_user"] = True
+        kwargs["lock_provincia_from_user"] = not tiene_alcance_simepi_nacional(
+            self.request.user
+        )
         return kwargs
 
     def get_success_url(self):
@@ -655,6 +701,9 @@ class CentroDeInfanciaDetailView(LoginRequiredMixin, DetailView):
         context["tipo_intervencion_programas_json"] = json.dumps(tipo_programas_map)
         context["tipo_intervencion_programa_aliases_json"] = json.dumps(alias_list)
         context.update(_build_trabajadores_context(self.request, self.object))
+        context["puede_tomar_asistencia_nomina"] = self.request.user.has_perm(
+            "centrodeinfancia.change_centrodeinfancia"
+        )
         context["puede_generar_usuario_cdi"] = puede_generar_usuario_cdi(
             self.request.user, self.object
         )
@@ -674,7 +723,12 @@ class CentroDeInfanciaDetailView(LoginRequiredMixin, DetailView):
         return context
 
 
-class CentroDeInfanciaUpdateView(LoginRequiredMixin, UpdateView):
+class CentroDeInfanciaUpdateView(
+    _AuditoriaSoloLecturaMixin,
+    _AutomaticReferenteProvisioningMixin,
+    LoginRequiredMixin,
+    UpdateView,
+):
     model = CentroDeInfancia
     form_class = CentroDeInfanciaForm
     template_name = "centrodeinfancia/centrodeinfancia_form.html"
@@ -682,7 +736,9 @@ class CentroDeInfanciaUpdateView(LoginRequiredMixin, UpdateView):
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
         kwargs["user"] = self.request.user
-        kwargs["lock_provincia_from_user"] = False
+        kwargs["lock_provincia_from_user"] = not tiene_alcance_simepi_nacional(
+            self.request.user
+        )
         return kwargs
 
     def get_success_url(self):
@@ -707,6 +763,7 @@ class CentroDeInfanciaUpdateView(LoginRequiredMixin, UpdateView):
 
 
 class CentroDeInfanciaDeleteView(
+    _AuditoriaSoloLecturaMixin,
     SoftDeleteDeleteViewMixin,
     LoginRequiredMixin,
     DeleteView,
@@ -721,7 +778,11 @@ class CentroDeInfanciaDeleteView(
         return _centros_cdi_queryset_scoped(self.request.user)
 
 
-class TrabajadorCentroInfanciaCreateView(LoginRequiredMixin, CreateView):
+class TrabajadorCentroInfanciaCreateView(
+    _AuditoriaSoloLecturaMixin,
+    LoginRequiredMixin,
+    CreateView,
+):
     model = Trabajador
     form_class = TrabajadorCDIForm
     template_name = "centrodeinfancia/trabajador_form.html"
@@ -854,8 +915,12 @@ class TrabajadorCentroInfanciaCreateView(LoginRequiredMixin, CreateView):
         }
 
     def form_valid(self, form):
+        email_cambio = "email" in form.changed_data
         form.instance.centro = self.centro
         response = super().form_valid(form)
+        crear_usuario_trabajador_automaticamente(self.request, self.object)
+        if email_cambio:
+            sincronizar_email_trabajador(self.request, self.object)
         messages.success(self.request, "Trabajador agregado correctamente.")
         return response
 
@@ -863,7 +928,11 @@ class TrabajadorCentroInfanciaCreateView(LoginRequiredMixin, CreateView):
         return reverse("centrodeinfancia_detalle", kwargs={"pk": self.centro.pk})
 
 
-class TrabajadorCentroInfanciaUpdateView(LoginRequiredMixin, UpdateView):
+class TrabajadorCentroInfanciaUpdateView(
+    _AuditoriaSoloLecturaMixin,
+    LoginRequiredMixin,
+    UpdateView,
+):
     model = Trabajador
     form_class = TrabajadorCDIForm
     template_name = "centrodeinfancia/trabajador_form.html"
@@ -882,7 +951,11 @@ class TrabajadorCentroInfanciaUpdateView(LoginRequiredMixin, UpdateView):
         return context
 
     def form_valid(self, form):
+        email_cambio = "email" in form.changed_data
         response = super().form_valid(form)
+        crear_usuario_trabajador_automaticamente(self.request, self.object)
+        if email_cambio:
+            sincronizar_email_trabajador(self.request, self.object)
         messages.success(self.request, "Trabajador actualizado correctamente.")
         return response
 
@@ -914,6 +987,7 @@ class TrabajadorCentroInfanciaDetailView(LoginRequiredMixin, DetailView):
 
 
 class TrabajadorCentroInfanciaDeleteView(
+    _AuditoriaSoloLecturaMixin,
     SoftDeleteDeleteViewMixin,
     LoginRequiredMixin,
     DeleteView,
@@ -1166,7 +1240,11 @@ class NominaCentroInfanciaFormularioDetailView(LoginRequiredMixin, DetailView):
         )
 
 
-class NominaCentroInfanciaEditView(LoginRequiredMixin, UpdateView):
+class NominaCentroInfanciaEditView(
+    _AuditoriaSoloLecturaMixin,
+    LoginRequiredMixin,
+    UpdateView,
+):
     model = NominaCentroInfancia
     form_class = NominaCentroInfanciaDestinatariosForm
     template_name = "centrodeinfancia/destinatario_form.html"
@@ -1202,7 +1280,11 @@ class NominaCentroInfanciaEditView(LoginRequiredMixin, UpdateView):
         return reverse("centrodeinfancia_nomina_ver", kwargs={"pk": self.kwargs["pk"]})
 
 
-class NominaCentroInfanciaCreateView(LoginRequiredMixin, CreateView):
+class NominaCentroInfanciaCreateView(
+    _AuditoriaSoloLecturaMixin,
+    LoginRequiredMixin,
+    CreateView,
+):
     model = NominaCentroInfancia
     form_class = NominaCentroInfanciaDestinatariosForm
     template_name = "centrodeinfancia/destinatario_form.html"
@@ -1499,6 +1581,7 @@ class NominaCentroInfanciaCreateView(LoginRequiredMixin, CreateView):
 
 
 class NominaCentroInfanciaDeleteView(
+    _AuditoriaSoloLecturaMixin,
     SoftDeleteDeleteViewMixin,
     LoginRequiredMixin,
     DeleteView,
@@ -1542,6 +1625,8 @@ class NominaCentroInfanciaDestinatariosDetailView(LoginRequiredMixin, DetailView
 def nomina_centrodeinfancia_editar_ajax(request, pk):
     nomina = get_object_or_404(_nomina_cdi_queryset_scoped(request.user), pk=pk)
     if request.method == "POST":
+        if es_auditor_simepi(request.user):
+            raise PermissionDenied("El rol Auditoría tiene acceso de solo lectura.")
         form = NominaCentroInfanciaForm(request.POST, instance=nomina)
         if form.is_valid():
             form.save()
@@ -1785,14 +1870,10 @@ def eliminar_archivo_intervencion_centrodeinfancia(request, intervencion_id):
     return redirect("centrodeinfancia_detalle", pk=intervencion.centro_id)
 
 
-class AsistenciaTrabajadorCentroView(LoginRequiredMixin, TemplateView):
-    """
-    GET: tabla del personal del centro para tomar asistencia en una fecha.
-    POST: guarda/actualiza los registros de AsistenciaTrabajador por
-    (trabajador, fecha). Un trabajador sin marcar no genera registro.
-    """
+class AsistenciaNominaCentroView(LoginRequiredMixin, TemplateView):
+    """Toma asistencia diaria sobre la nómina activa del CDI."""
 
-    template_name = "centrodeinfancia/trabajador_asistencia.html"
+    template_name = "centrodeinfancia/nomina_asistencia.html"
 
     def _get_centro(self):
         if not hasattr(self, "_centro_cache"):
@@ -1804,32 +1885,28 @@ class AsistenciaTrabajadorCentroView(LoginRequiredMixin, TemplateView):
 
     def _parse_fecha(self, fecha_raw):
         try:
-            return AsistenciaTrabajadorService.parsear_fecha(fecha_raw)
+            return AsistenciaNominaCentroInfanciaService.parsear_fecha(fecha_raw)
         except ValidationError as exc:
             messages.error(self.request, exc.messages[0])
             return timezone.localdate()
 
     @staticmethod
-    def _trabajadores(centro):
-        return list(centro.trabajadores.order_by("apellido", "nombre"))
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        centro = self._get_centro()
-        fecha = self._parse_fecha(self.request.GET.get("fecha"))
-        trabajadores = self._trabajadores(centro)
+    def _construir_filas_asistencia(nominas, fecha):
         asistencias = {
-            asistencia.trabajador_id: asistencia
-            for asistencia in AsistenciaTrabajador.objects.filter(
+            asistencia.nomina_id: asistencia
+            for asistencia in AsistenciaNominaCentroInfancia.objects.filter(
                 fecha=fecha,
-                trabajador__in=trabajadores,
+                nomina__in=nominas,
             )
         }
         filas = []
         presentes = ausentes = sin_marcar = 0
-        for trabajador in trabajadores:
-            asistencia = asistencias.get(trabajador.pk)
+        for nomina in nominas:
+            asistencia = asistencias.get(nomina.pk)
             presente = asistencia.presente if asistencia else None
+            ciudadano = nomina.ciudadano
+            apellido = nomina.apellido or ciudadano.apellido or ""
+            nombre = nomina.nombre or ciudadano.nombre or ""
             if presente is True:
                 presentes += 1
             elif presente is False:
@@ -1838,20 +1915,41 @@ class AsistenciaTrabajadorCentroView(LoginRequiredMixin, TemplateView):
                 sin_marcar += 1
             filas.append(
                 {
-                    "trabajador": trabajador,
+                    "nomina": nomina,
+                    "nombre_completo": f"{apellido}, {nombre}".strip(", "),
+                    "dni": nomina.dni or ciudadano.documento,
                     "presente": presente,
                     "observaciones": asistencia.observaciones if asistencia else "",
                 }
             )
-        context["centro"] = centro
-        context["object"] = centro
-        context["fecha"] = fecha
-        context["filas"] = filas
-        context["total_presentes"] = presentes
-        context["total_ausentes"] = ausentes
-        context["total_sin_marcar"] = sin_marcar
-        context["back_url"] = reverse(
-            "centrodeinfancia_detalle", kwargs={"pk": centro.pk}
+        return filas, presentes, ausentes, sin_marcar
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        centro = self._get_centro()
+        fecha = self._parse_fecha(self.request.GET.get("fecha"))
+        nominas = AsistenciaNominaCentroInfanciaService.nominas_editables(
+            centro,
+            fecha,
+        )
+        filas, presentes, ausentes, sin_marcar = self._construir_filas_asistencia(
+            nominas,
+            fecha,
+        )
+        context.update(
+            {
+                "centro": centro,
+                "object": centro,
+                "fecha": fecha,
+                "filas": filas,
+                "total_presentes": presentes,
+                "total_ausentes": ausentes,
+                "total_sin_marcar": sin_marcar,
+                "back_url": reverse(
+                    "centrodeinfancia_detalle",
+                    kwargs={"pk": centro.pk},
+                ),
+            }
         )
         return context
 
@@ -1861,7 +1959,7 @@ class AsistenciaTrabajadorCentroView(LoginRequiredMixin, TemplateView):
     def post(self, request, *args, **kwargs):
         centro = self._get_centro()
         try:
-            fecha = AsistenciaTrabajadorService.guardar(
+            fecha = AsistenciaNominaCentroInfanciaService.guardar(
                 centro=centro,
                 fecha_raw=request.POST.get("fecha"),
                 datos=request.POST,
@@ -1869,9 +1967,29 @@ class AsistenciaTrabajadorCentroView(LoginRequiredMixin, TemplateView):
             )
         except ValidationError as exc:
             messages.error(request, exc.messages[0])
-            return redirect("centrodeinfancia_trabajadores_asistencia", pk=centro.pk)
+            return redirect("centrodeinfancia_nomina_asistencia", pk=centro.pk)
         messages.success(request, "Asistencia registrada correctamente.")
-        url = reverse(
-            "centrodeinfancia_trabajadores_asistencia", kwargs={"pk": centro.pk}
-        )
+        url = reverse("centrodeinfancia_nomina_asistencia", kwargs={"pk": centro.pk})
         return redirect(f"{url}?fecha={fecha.isoformat()}")
+
+
+@login_required
+@require_GET
+def asistencia_nomina_calendario(request, pk):
+    centro = _get_centro_cdi_scoped_or_404(request.user, pk=pk)
+    try:
+        mes = AsistenciaNominaCentroInfanciaService.parsear_mes(request.GET.get("mes"))
+    except ValidationError as exc:
+        return JsonResponse({"detail": exc.messages[0]}, status=400)
+    dias = AsistenciaNominaCentroInfanciaService.dias_con_asistencia(
+        centro=centro,
+        mes=mes,
+    )
+    return JsonResponse({"dias": [dia.isoformat() for dia in dias]})
+
+
+@login_required
+def redirigir_asistencia_trabajadores_a_nomina(request, pk):
+    url = reverse("centrodeinfancia_nomina_asistencia", kwargs={"pk": pk})
+    query_string = request.GET.urlencode()
+    return redirect(f"{url}?{query_string}" if query_string else url)

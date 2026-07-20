@@ -340,6 +340,17 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - `users/management/commands/create_groups.py`
 - templates en `users/templates/`
 
+### Si necesitas cambiar la importacion masiva de usuarios
+
+- `users/services_user_import.py`: parsing, alta/actualizacion, mail de
+  credenciales y exportacion CSV.
+- `users/services_user_import_jobs.py`: procesamiento y reanudacion del lote.
+- `users/views_user_import.py`, `users/urls.py` y
+  `users/templates/user/user_import_job_detail.html`: detalle y descargas.
+- Las credenciales se agrupan al finalizar el lote; los lotes PWA deben usar
+  `/mobile/login` y las descargas sensibles se limitan al solicitante o a un
+  superusuario.
+
 ### Si necesitas cambiar permisos o IAM
 
 - `users/bootstrap/groups_seed.py`
@@ -386,6 +397,14 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - `relevamientos/views.py`
 - `tests/test_relevamientos*`
 - docs: `docs/flujos/relevamiento_sync.md`
+
+### Si necesitas cambiar importacion de expedientes de pago
+
+- `importarexpediente/views.py` coordina upload, validacion, importacion y acciones posteriores por lote.
+- `importarexpediente/services.py` concentra parsing y reglas de negocio del Excel/CSV.
+- `importarexpediente/tests/` cubre el flujo de carga, detalle, descarga, duplicados, estados y fechas de acreditacion.
+- Las fechas de acreditacion masivas se actualizan por lote mediante `RegistroImportado`; no buscar `ExpedientePago` globalmente por `comedor_id`.
+- El endpoint de fechas de acreditacion requiere `importarexpediente.change_archivosimportados` o `expedientespagos.change_expedientepago`.
 
 ### Si necesitas cambiar Celiaquia
 

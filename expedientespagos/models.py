@@ -51,6 +51,20 @@ class ExpedientePago(SoftDeleteModelMixin, models.Model):
     total = models.DecimalField(
         max_digits=10, decimal_places=2, verbose_name="Total", blank=True, null=True
     )
+    total_prestaciones = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        verbose_name="Total Prestaciones",
+        blank=True,
+        null=True,
+    )
+    gastos_accesorios = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        verbose_name="Gastos Accesorios 6%",
+        blank=True,
+        null=True,
+    )
     mes_pago = models.CharField(
         max_length=20, verbose_name="Mes de Pago", blank=True, null=True
     )

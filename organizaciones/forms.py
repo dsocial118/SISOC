@@ -9,6 +9,22 @@ from core.models import Municipio, Provincia, Localidad
 
 
 class OrganizacionForm(forms.ModelForm):
+    cuit = forms.RegexField(
+        regex=r"^[0-9]{11}$",
+        required=False,
+        strip=False,
+        error_messages={
+            "invalid": "Ingresá un CUIT de 11 dígitos, solo con números y sin espacios.",
+        },
+        widget=forms.TextInput(
+            attrs={
+                "inputmode": "numeric",
+                "maxlength": "11",
+                "pattern": "[0-9]{11}",
+                "title": "Ingresá 11 dígitos, solo con números y sin espacios.",
+            }
+        ),
+    )
     cuil_duplicado_confirmado = forms.BooleanField(
         required=False,
         widget=forms.HiddenInput,
@@ -65,6 +81,12 @@ class OrganizacionForm(forms.ModelForm):
 
         if localidad:
             self.fields["localidad"].initial = localidad
+
+    def clean_cuit(self):
+        cuit = self.cleaned_data.get("cuit")
+        if not cuit:
+            return None
+        return int(cuit)
 
     def clean(self):
         cleaned_data = super().clean()

@@ -25,6 +25,10 @@
                     <div class="d-flex flex-wrap gap-2">
                         <a href="{% url 'usuarios_importar_detalle' job.id %}"
                            class="btn btn-outline-primary">Actualizar estado</a>
+                        {% if has_csv_download %}
+                            <a href="{% url 'usuarios_importar_descargar_csv' job.id %}"
+                               class="btn btn-outline-success">Descargar CSV</a>
+                        {% endif %}
                         {% if is_resume_available %}
                             <form method="post" action="{% url 'usuarios_importar_reanudar' job.id %}">
                                 {% csrf_token %}

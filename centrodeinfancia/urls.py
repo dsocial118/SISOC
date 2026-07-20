@@ -2,7 +2,7 @@ from django.urls import path
 
 from core.decorators import permissions_all_required, permissions_any_required
 from centrodeinfancia.views import (
-    AsistenciaTrabajadorCentroView,
+    AsistenciaNominaCentroView,
     CentroDeInfanciaCreateView,
     CentroDeInfanciaDeleteView,
     CentroDeInfanciaDetailView,
@@ -27,10 +27,12 @@ from centrodeinfancia.views import (
     TrabajadorCentroInfanciaDetailView,
     TrabajadorCentroInfanciaUpdateView,
     centrodeinfancia_ajax,
+    asistencia_nomina_calendario,
     load_departamentos_ipi,
     eliminar_archivo_intervencion_centrodeinfancia,
     nomina_centrodeinfancia_editar_ajax,
     nomina_centrodeinfancia_derivar,
+    redirigir_asistencia_trabajadores_a_nomina,
     subir_archivo_intervencion_centrodeinfancia,
 )
 from centrodeinfancia.views_formulario_cdi import (
@@ -41,9 +43,15 @@ from centrodeinfancia.views_formulario_cdi import (
 )
 from centrodeinfancia.views_export import CentroDeInfanciaExportView
 from centrodeinfancia.views_usuario_cdi import GenerarUsuarioCDIView
+from centrodeinfancia.views_usuario_egp import GenerarUsuarioEGPView
 
 
 urlpatterns = [
+    path(
+        "simepi/egp/generar-usuario/",
+        GenerarUsuarioEGPView.as_view(),
+        name="simepi_egp_generar_usuario",
+    ),
     path(
         "centrodeinfancia/listar",
         permissions_any_required(["centrodeinfancia.view_centrodeinfancia"])(
@@ -128,22 +136,36 @@ urlpatterns = [
     ),
     path(
         "centrodeinfancia/<int:pk>/trabajadores/<int:trabajador_id>/",
-        permissions_any_required(["centrodeinfancia.view_centrodeinfancia"])(
+        permissions_any_required(["centrodeinfancia.view_trabajador"])(
             TrabajadorCentroInfanciaDetailView.as_view()
         ),
         name="centrodeinfancia_trabajador_ver",
     ),
     path(
         "centrodeinfancia/<int:pk>/trabajadores/crear/",
-        permissions_any_required(["centrodeinfancia.change_centrodeinfancia"])(
+        permissions_any_required(["centrodeinfancia.add_trabajador"])(
             TrabajadorCentroInfanciaCreateView.as_view()
         ),
         name="centrodeinfancia_trabajador_crear",
     ),
     path(
+        "centrodeinfancia/<int:pk>/nomina/asistencia/",
+        permissions_any_required(["centrodeinfancia.change_centrodeinfancia"])(
+            AsistenciaNominaCentroView.as_view()
+        ),
+        name="centrodeinfancia_nomina_asistencia",
+    ),
+    path(
+        "centrodeinfancia/<int:pk>/nomina/asistencia/calendario/",
+        permissions_any_required(["centrodeinfancia.change_centrodeinfancia"])(
+            asistencia_nomina_calendario
+        ),
+        name="centrodeinfancia_nomina_asistencia_calendario",
+    ),
+    path(
         "centrodeinfancia/<int:pk>/trabajadores/asistencia/",
         permissions_any_required(["centrodeinfancia.change_centrodeinfancia"])(
-            AsistenciaTrabajadorCentroView.as_view()
+            redirigir_asistencia_trabajadores_a_nomina
         ),
         name="centrodeinfancia_trabajadores_asistencia",
     ),
@@ -156,14 +178,14 @@ urlpatterns = [
     ),
     path(
         "centrodeinfancia/<int:pk>/trabajadores/<int:trabajador_id>/editar/",
-        permissions_any_required(["centrodeinfancia.change_centrodeinfancia"])(
+        permissions_any_required(["centrodeinfancia.change_trabajador"])(
             TrabajadorCentroInfanciaUpdateView.as_view()
         ),
         name="centrodeinfancia_trabajador_editar",
     ),
     path(
         "centrodeinfancia/<int:pk>/trabajadores/<int:trabajador_id>/eliminar/",
-        permissions_any_required(["centrodeinfancia.delete_centrodeinfancia"])(
+        permissions_any_required(["centrodeinfancia.delete_trabajador"])(
             TrabajadorCentroInfanciaDeleteView.as_view()
         ),
         name="centrodeinfancia_trabajador_eliminar",

@@ -419,6 +419,15 @@
                                     <p>Ver Centros de Infancia</p>
                                 </a>
                             </li>
+                            {% if request.user.is_superuser or request.user|has_any_group:"SIMEPI - Equipo Nacional" %}
+                                <li class="nav-item">
+                                    <a href="{% url 'simepi_egp_generar_usuario' %}"
+                                       class="nav-link ms-4 {% if 'simepi/egp/' in pagina_actual %}active{% endif %}">
+                                        <i class="nav-icon bi bi-arrow-return-right"></i>
+                                        <p>Alta de referente EGP</p>
+                                    </a>
+                                </li>
+                            {% endif %}
                         </ul>
                     </li>
                 {% endif %}

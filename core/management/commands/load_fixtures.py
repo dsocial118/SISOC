@@ -6,6 +6,7 @@ from django.core import serializers
 from django.db import transaction
 
 from intervenciones.services_catalogo import sync_catalogo_intervenciones
+from core.services.territorio_sync import sync_territorio_desde_fixture
 
 
 class Command(BaseCommand):
@@ -58,6 +59,7 @@ class Command(BaseCommand):
         return any(self.model_is_empty(m) for m in models)
 
     def upsert_fixture(self, fixture_path):
+        # pylint: disable=too-many-locals
         """Deserializa y guarda: si PK existe actualiza, si no inserta.
 
         Este es el mecanismo oficial para "pisar" fixtures sin borrar datos:
@@ -155,4 +157,12 @@ class Command(BaseCommand):
             f"tipos={resumen['tipos_sincronizados']}, "
             f"subtipos={resumen['subtipos_sincronizados']}, "
             f"subtipos_vacios_eliminados={resumen['subtipos_vacios_eliminados']}"
+        )
+        territorio = sync_territorio_desde_fixture()
+        self.stdout.write(
+            "✅ Territorio sincronizado: "
+            f"provincias={territorio['provincias_creadas']}, "
+            f"municipios={territorio['municipios_creadas']}, "
+            f"localidades={territorio['localidades_creadas']}, "
+            f"saltadas_por_integridad={territorio['saltadas_por_integridad']}"
         )

@@ -6,7 +6,6 @@ from datetime import date, time
 from django.conf import settings
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.paginator import Paginator
-from django.db import IntegrityError
 from django.db.models import Prefetch, Q
 from django.db.models.fields.files import FieldFile
 from django.http import FileResponse, Http404
@@ -456,11 +455,7 @@ class ComedorDetailViewSet(
         )
         conformidades_list = list(conformidades)
         previous_period = self._previous_month_period()
-        pending_period = (
-            previous_period
-            if not any(item.periodo == previous_period for item in conformidades_list)
-            else None
-        )
+        pending_period = previous_period
         selected_period = pending_period or previous_period
         conformidad_actual = next(
             (item for item in conformidades_list if item.periodo == selected_period),
@@ -1734,34 +1729,19 @@ class ComedorDetailViewSet(
                 {"detail": "El periodo debe ser un mes calendario en formato YYYY-MM."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        if PrestacionAlimentariaConformidad.objects.filter(
-            comedor=comedor,
-            periodo=periodo,
-        ).exists():
-            return Response(
-                {"detail": "Ya se registró la conformidad del mes."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
         informe = (
             None
             if usa_datos_convenio_pnud(comedor)
             else self._get_latest_prestacion_alimentaria_informe(comedor)
         )
-        try:
-            conformidad = PrestacionAlimentariaConformidad.objects.create(
-                comedor=comedor,
-                informe_tecnico=informe,
-                periodo=periodo,
-                conforme=conforme,
-                observaciones=observaciones,
-                usuario=request.user,
-            )
-        except IntegrityError:
-            return Response(
-                {"detail": "Ya se registró la conformidad del mes."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        conformidad = PrestacionAlimentariaConformidad.objects.create(
+            comedor=comedor,
+            informe_tecnico=informe,
+            periodo=periodo,
+            conforme=conforme,
+            observaciones=observaciones,
+            usuario=request.user,
+        )
         return Response(
             PrestacionAlimentariaConformidadSerializer(conformidad).data,
             status=status.HTTP_201_CREATED,

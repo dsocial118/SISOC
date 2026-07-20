@@ -4,11 +4,12 @@ import re
 
 from django.core.exceptions import ValidationError
 from django.db import transaction
+from django.db.models import Q
 from django.utils import timezone
 
 from centrodeinfancia.access import aplicar_scope_centros_cdi
 from centrodeinfancia.models import (
-    AsistenciaTrabajador,
+    AsistenciaNominaCentroInfancia,
     CentroDeInfancia,
     NominaCentroInfancia,
     NominaCentroInfanciaDerivacion,
@@ -63,9 +64,10 @@ _CAMPOS_COPIABLES = [
 ]
 
 
-class AsistenciaTrabajadorService:
+class AsistenciaNominaCentroInfanciaService:
     _MARCAS = {"0": False, "1": True}
     _FORMATO_FECHA = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+    _FORMATO_MES = re.compile(r"^\d{4}-\d{2}$")
 
     @classmethod
     def parsear_fecha(cls, fecha_raw):
@@ -83,38 +85,102 @@ class AsistenciaTrabajadorService:
             ) from exc
 
     @classmethod
+    def parsear_mes(cls, mes_raw):
+        if not cls._FORMATO_MES.fullmatch(mes_raw or ""):
+            raise ValidationError("El mes debe tener formato AAAA-MM.")
+        try:
+            return datetime.date.fromisoformat(f"{mes_raw}-01")
+        except ValueError as exc:
+            raise ValidationError("El mes debe tener formato AAAA-MM.") from exc
+
+    @staticmethod
+    def nominas_editables(centro, fecha):
+        return list(
+            NominaCentroInfancia.objects.select_related("ciudadano")
+            .filter(centro=centro, deleted_at__isnull=True)
+            .filter(
+                Q(estado=NominaCentroInfancia.ESTADO_ACTIVO)
+                | Q(
+                    estado=NominaCentroInfancia.ESTADO_BAJA,
+                    asistencias_nomina__fecha=fecha,
+                )
+            )
+            .distinct()
+            .order_by("apellido", "nombre", "pk")
+        )
+
+    @classmethod
     def guardar(cls, *, centro, fecha_raw, datos, usuario):
         fecha = cls.parsear_fecha(fecha_raw)
+        nominas = cls.nominas_editables(centro, fecha)
         cambios = []
 
-        for trabajador in centro.trabajadores.order_by("apellido", "nombre"):
-            marca = datos.get(f"presente_{trabajador.pk}")
-            if marca is None:
-                continue
-            if marca not in cls._MARCAS:
+        for nomina in nominas:
+            marca = datos.get(f"presente_{nomina.pk}")
+            if marca is not None and marca not in cls._MARCAS:
                 raise ValidationError("El estado de asistencia recibido no es válido.")
-            observaciones = (datos.get(f"obs_{trabajador.pk}") or "").strip()
             cambios.append(
                 (
-                    trabajador,
-                    cls._MARCAS[marca],
-                    observaciones or None,
+                    nomina,
+                    cls._MARCAS.get(marca),
+                    (datos.get(f"obs_{nomina.pk}") or "").strip() or None,
                 )
             )
 
         with transaction.atomic():
-            for trabajador, presente, observaciones in cambios:
-                AsistenciaTrabajador.objects.update_or_create(
-                    trabajador=trabajador,
-                    fecha=fecha,
-                    defaults={
-                        "presente": presente,
-                        "observaciones": observaciones,
-                        "registrado_por": usuario,
-                    },
+            NominaCentroInfancia.objects.select_for_update().filter(
+                pk__in=[nomina.pk for nomina in nominas]
+            ).exists()
+            existentes = {
+                asistencia.nomina_id: asistencia
+                for asistencia in (
+                    AsistenciaNominaCentroInfancia.objects.select_for_update().filter(
+                        nomina__in=nominas,
+                        fecha=fecha,
+                    )
                 )
+            }
+            for nomina, presente, observaciones in cambios:
+                asistencia = existentes.get(nomina.pk)
+                if presente is None:
+                    if asistencia:
+                        asistencia.delete()
+                    continue
+                if asistencia:
+                    asistencia.presente = presente
+                    asistencia.observaciones = observaciones
+                    asistencia.registrado_por = usuario
+                    asistencia.save(
+                        update_fields=["presente", "observaciones", "registrado_por"]
+                    )
+                else:
+                    AsistenciaNominaCentroInfancia.objects.create(
+                        nomina=nomina,
+                        fecha=fecha,
+                        presente=presente,
+                        observaciones=observaciones,
+                        registrado_por=usuario,
+                    )
 
         return fecha
+
+    @classmethod
+    def dias_con_asistencia(cls, *, centro, mes):
+        siguiente_mes = (
+            mes.replace(year=mes.year + 1, month=1)
+            if mes.month == 12
+            else mes.replace(month=mes.month + 1)
+        )
+        return list(
+            AsistenciaNominaCentroInfancia.objects.filter(
+                nomina__centro=centro,
+                fecha__gte=mes,
+                fecha__lt=siguiente_mes,
+            )
+            .order_by("fecha")
+            .values_list("fecha", flat=True)
+            .distinct()
+        )
 
 
 class CentroDeInfanciaService:

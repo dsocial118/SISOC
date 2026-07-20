@@ -246,6 +246,12 @@ class Comedor(SoftDeleteModelMixin, models.Model):
     programa = models.ForeignKey(
         to=Programas, blank=True, null=True, on_delete=models.PROTECT
     )
+    mes_ejecucion = models.IntegerField(
+        verbose_name="Mes de ejecución",
+        blank=True,
+        null=True,
+        validators=[MinValueValidator(-2), MaxValueValidator(6)],
+    )
     id_externo = models.IntegerField(
         verbose_name="Id Externo",
         blank=True,
@@ -823,12 +829,6 @@ class PrestacionAlimentariaConformidad(models.Model):
         ordering = ["-periodo", "-creado"]
         verbose_name = "Conformidad de prestacion alimentaria"
         verbose_name_plural = "Conformidades de prestaciones alimentarias"
-        constraints = [
-            models.UniqueConstraint(
-                fields=["comedor", "periodo"],
-                name="uniq_conformidad_prestacion_alimentaria_mes",
-            )
-        ]
 
     def __str__(self):
         estado = "conforme" if self.conforme else "no conforme"
