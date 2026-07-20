@@ -176,6 +176,61 @@ class InformeService:
             return []
 
     @staticmethod
+    def get_campos_agrupados_informe(informe):
+        grupos = {
+            "Datos de la Organización": [],
+            "Datos del Representante": [],
+            "Datos del Comedor/Merendero": [],
+            "Responsable de la Tarjeta": [],
+            "Prestaciones aprobadas en el último convenio": [],
+            "Solicitudes": [],
+            "Prestaciones Aprobadas": [],
+            "Información Adicional": [],
+            "Campos Específicos": [],
+            "Resolución de pago": [],
+        }
+        valores = dict(InformeService.get_campos_visibles_informe(informe))
+        for field in informe._meta.fields:
+            nombre = str(field.verbose_name)
+            if nombre not in valores:
+                continue
+            if field.name == "expediente_nro" or "organizacion" in field.name:
+                grupo = "Datos de la Organización"
+            elif field.name.startswith("representante_"):
+                grupo = "Datos del Representante"
+            elif field.name.startswith("responsable_tarjeta_"):
+                grupo = "Responsable de la Tarjeta"
+            elif field.name.startswith("aprobadas_ultimo_convenio_"):
+                grupo = "Prestaciones aprobadas en el último convenio"
+            elif field.name.startswith("solicitudes_"):
+                grupo = "Solicitudes"
+            elif field.name.startswith("aprobadas_"):
+                grupo = "Prestaciones Aprobadas"
+            elif field.name.startswith(("resolucion_de_pago_", "monto_")):
+                grupo = "Resolución de pago"
+            elif field.name.endswith("_espacio") or field.name in {
+                "tipo_espacio",
+                "nombre_espacio",
+                "barrio_espacio",
+            }:
+                grupo = "Datos del Comedor/Merendero"
+            elif field.name in {
+                "declaracion_jurada_recepcion_subsidios",
+                "constancia_inexistencia_percepcion_otros_subsidios",
+                "organizacion_avalista_1",
+                "organizacion_avalista_2",
+                "material_difusion_vinculado",
+                "if_relevamiento",
+                "validacion_registro_nacional",
+                "IF_relevamiento_territorial",
+            }:
+                grupo = "Campos Específicos"
+            else:
+                grupo = "Información Adicional"
+            grupos[grupo].append((nombre, valores[nombre]))
+        return [(titulo, campos) for titulo, campos in grupos.items() if campos]
+
+    @staticmethod
     def _formatear_valor_campo(informe, field):
         value = getattr(informe, field.name)
 

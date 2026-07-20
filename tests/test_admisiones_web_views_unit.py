@@ -1174,6 +1174,7 @@ def test_informe_complementario_detail_contexto_y_post_success(mocker):
     view.kwargs = {"tipo": "base", "pk": 88}
     req = _Req(
         POST={"campo_estado": " valor "},
+        GET={},
         user=_user(),
         get_full_path=lambda: "/x",
     )
@@ -1189,11 +1190,16 @@ def test_informe_complementario_detail_contexto_y_post_success(mocker):
         return_value={"base": True},
     )
     mocker.patch(
+        "admisiones.views.web_views.InformeService.get_campos_agrupados_informe",
+        return_value=[("Datos", [("Estado", "Actual")])],
+    )
+    mocker.patch(
         "admisiones.models.admisiones.InformeComplementario.objects.filter",
         return_value=SimpleNamespace(first=lambda: None),
     )
     context = view.get_context_data()
     assert context["base"] is True
+    assert context["campos_agrupados"][0][0] == "Datos"
 
     informe_complementario = SimpleNamespace(estado=None, save=mocker.Mock())
     mocker.patch(

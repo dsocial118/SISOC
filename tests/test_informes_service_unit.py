@@ -129,6 +129,32 @@ def test_formateo_campos_and_visibles(mocker):
     assert len(visibles) >= 4
 
 
+def test_campos_complementarios_se_agrupan_como_informe_original(mocker):
+    fields = [
+        SimpleNamespace(name="nombre_organizacion", verbose_name="Organización"),
+        SimpleNamespace(name="representante_nombre", verbose_name="Representante"),
+        SimpleNamespace(name="nombre_espacio", verbose_name="Espacio"),
+        SimpleNamespace(
+            name="responsable_tarjeta_nombre", verbose_name="Responsable tarjeta"
+        ),
+        SimpleNamespace(name="observaciones", verbose_name="Observaciones"),
+    ]
+    informe = SimpleNamespace(_meta=SimpleNamespace(fields=fields))
+    mocker.patch.object(
+        module.InformeService,
+        "get_campos_visibles_informe",
+        return_value=[(field.verbose_name, f"valor-{field.name}") for field in fields],
+    )
+
+    grupos = dict(module.InformeService.get_campos_agrupados_informe(informe))
+
+    assert grupos["Datos de la Organización"][0][0] == "Organización"
+    assert grupos["Datos del Representante"][0][0] == "Representante"
+    assert grupos["Datos del Comedor/Merendero"][0][0] == "Espacio"
+    assert grupos["Responsable de la Tarjeta"][0][0] == "Responsable tarjeta"
+    assert grupos["Información Adicional"][0][0] == "Observaciones"
+
+
 def test_generate_docx_content_primary_and_fallback(mocker):
     """DOCX generation should return content in normal and fallback branches."""
     file_obj = module.InformeService._generate_docx_content("<p>Hola</p>", informe_pk=1)
