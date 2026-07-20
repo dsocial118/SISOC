@@ -60,11 +60,21 @@ def test_handle_sincroniza_catalogo_cdi_despues_de_cargar():
                 "subtipos_vacios_eliminados": 3,
             },
         ) as sync_mock,
+        patch(
+            "core.management.commands.load_fixtures.sync_territorio_desde_fixture",
+            return_value={
+                "provincias_creadas": 0,
+                "municipios_creadas": 0,
+                "localidades_creadas": 0,
+                "saltadas_por_integridad": 0,
+            },
+        ) as territorio_mock,
     ):
         command.handle(force=False)
 
     load_mock.assert_called_once_with()
     sync_mock.assert_called_once_with()
+    territorio_mock.assert_called_once_with()
 
 
 def test_add_arguments_reconoce_overwrite():

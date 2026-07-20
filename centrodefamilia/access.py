@@ -11,6 +11,7 @@ from django.shortcuts import get_object_or_404
 from core.constants import UserGroups
 from core.models import Provincia
 from users.models import Profile
+from users.services_delegation import effective_delegatable_groups_qs
 from users.territorial_scope import (
     apply_territorial_scope,
     get_single_full_province_scope_id,
@@ -25,17 +26,14 @@ ROLE_CDF_SSE_PERMISSION = "auth.role_cdf_sse"
 def actor_puede_delegar_grupo_nombre(user, grupo_nombre):
     """Indica si el usuario puede delegar (asignar) un grupo por nombre.
 
-    Reutiliza el mecanismo IAM existente ``Profile.grupos_asignables``; el
-    superusuario puede delegar cualquier grupo.
+    Reutiliza el alcance efectivo de delegación; el superusuario puede delegar
+    cualquier grupo.
     """
     if not user or not getattr(user, "is_authenticated", False):
         return False
     if user.is_superuser:
         return True
-    profile = getattr(user, "profile", None)
-    if not profile:
-        return False
-    return profile.grupos_asignables.filter(name=grupo_nombre).exists()
+    return effective_delegatable_groups_qs(user).filter(name=grupo_nombre).exists()
 
 
 def usuarios_cdf_activos(centro):

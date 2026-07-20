@@ -203,7 +203,7 @@ def test_trabajador_editar_no_permite_centro_fuera_de_scope(client):
     user = _crear_usuario(
         "user-trabajador-scope",
         provincia=provincia_a,
-        permisos=["change_centrodeinfancia"],
+        permisos=["change_trabajador"],
     )
     client.force_login(user)
     centro = CentroDeInfancia.objects.create(nombre="CDI Scope", provincia=provincia_b)
@@ -232,7 +232,7 @@ def test_trabajador_editar_no_permite_centro_fuera_de_scope(client):
 
 @pytest.mark.django_db
 def test_trabajador_ver_devuelve_200(client):
-    user = _crear_usuario("user-trabajador-ver", permisos=["view_centrodeinfancia"])
+    user = _crear_usuario("user-trabajador-ver", permisos=["view_trabajador"])
     client.force_login(user)
     centro = CentroDeInfancia.objects.create(nombre="CDI Ver")
     trabajador = Trabajador.objects.create(
@@ -261,7 +261,7 @@ def test_trabajador_ver_fuera_de_scope_devuelve_404(client):
     provincia_a = Provincia.objects.create(nombre="Mendoza")
     provincia_b = Provincia.objects.create(nombre="Jujuy")
     user = _crear_usuario(
-        "user-ver-scope", provincia=provincia_a, permisos=["view_centrodeinfancia"]
+        "user-ver-scope", provincia=provincia_a, permisos=["view_trabajador"]
     )
     client.force_login(user)
     centro = CentroDeInfancia.objects.create(nombre="CDI Jujuy", provincia=provincia_b)

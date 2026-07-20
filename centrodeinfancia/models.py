@@ -806,6 +806,13 @@ class Trabajador(SoftDeleteModelMixin, models.Model):
         on_delete=models.CASCADE,
         related_name="trabajadores",
     )
+    usuario = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name="+",
+    )
     nombre = models.CharField(max_length=255)
     apellido = models.CharField(max_length=255)
     telefono = models.CharField(max_length=50, blank=True, null=True)
@@ -1737,6 +1744,52 @@ class NominaCentroInfancia(SoftDeleteModelMixin, models.Model):
     @property
     def alergias_alimentarias_display(self):
         return _trabajador_etiquetas(self.alergias_alimentarias, NOMINA_ALERGIA_CHOICES)
+
+
+class AsistenciaNominaCentroInfancia(models.Model):
+    """Registro de asistencia de una persona de nómina en una fecha."""
+
+    nomina = models.ForeignKey(
+        NominaCentroInfancia,
+        on_delete=models.CASCADE,
+        related_name="asistencias_nomina",
+        verbose_name="Nómina",
+    )
+    fecha = models.DateField(verbose_name="Fecha")
+    presente = models.BooleanField(default=False, verbose_name="Presente")
+    observaciones = models.TextField(
+        blank=True, null=True, verbose_name="Observaciones"
+    )
+    registrado_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="asistencias_nomina_cdi_registradas",
+        verbose_name="Registrado por",
+    )
+    fecha_registro = models.DateTimeField(
+        auto_now_add=True, verbose_name="Fecha de registro"
+    )
+
+    class Meta:
+        verbose_name = "Asistencia de nómina CDI"
+        verbose_name_plural = "Asistencias de nómina CDI"
+        ordering = ["-fecha"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["nomina", "fecha"],
+                name="uniq_cdi_asist_nomina_fecha",
+            )
+        ]
+        indexes = [
+            models.Index(
+                fields=["fecha", "presente"],
+                name="cdi_asist_nom_fecha_idx",
+            )
+        ]
+
+    def __str__(self):
+        estado = "Presente" if self.presente else "Ausente"
+        return f"{self.nomina} — {self.fecha} [{estado}]"
 
 
 class NominaCentroInfanciaDerivacion(models.Model):

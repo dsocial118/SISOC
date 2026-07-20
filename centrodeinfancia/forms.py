@@ -23,6 +23,10 @@ from intervenciones.models.intervenciones import (
     TipoIntervencion,
 )
 from users.models import Profile
+from users.territorial_scope import (
+    get_single_full_province_scope_id,
+    is_territorial_user,
+)
 from centrodeinfancia.formulario_cdi_schema import (
     CAMPOS_OPCIONES,
     CAMPOS_OPCIONES_MULTIPLES,
@@ -128,18 +132,19 @@ class CentroDeInfanciaForm(forms.ModelForm):
     def _obtener_provincia_usuario(user):
         if not user or not getattr(user, "is_authenticated", False):
             return None
+
+        provincia_id = get_single_full_province_scope_id(user)
+        if provincia_id:
+            return Provincia.objects.filter(pk=provincia_id).first()
+
         profile = Profile.objects.select_related("provincia").filter(user=user).first()
-        if not profile:
-            return None
-
-        provincia_usuario = getattr(profile, "provincia", None)
-        if not provincia_usuario:
-            return None
-
-        if not Provincia.objects.filter(pk=provincia_usuario.pk).exists():
-            return None
-
-        return provincia_usuario
+        provincia_usuario = getattr(profile, "provincia", None) if profile else None
+        if (
+            provincia_usuario
+            and Provincia.objects.filter(pk=provincia_usuario.pk).exists()
+        ):
+            return provincia_usuario
+        return None
 
     def __init__(self, *args, **kwargs):
         self.current_user = kwargs.pop("user", None)
@@ -340,13 +345,17 @@ class CentroDeInfanciaForm(forms.ModelForm):
     def _aplicar_provincia_usuario(self):
         provincia_usuario = self._obtener_provincia_usuario(self.current_user)
         if not provincia_usuario:
+            if self.lock_provincia_from_user and is_territorial_user(self.current_user):
+                self.fields["provincia"].queryset = Provincia.objects.none()
+                self.fields["provincia"].disabled = True
+                return
             self.fields["provincia"].queryset = Provincia.objects.all().order_by(
                 "nombre"
             )
             self.fields["provincia"].disabled = False
             return
 
-        if self.lock_provincia_from_user and not self.instance.pk:
+        if self.lock_provincia_from_user:
             self.fields["provincia"].queryset = Provincia.objects.filter(
                 pk=provincia_usuario.pk
             )

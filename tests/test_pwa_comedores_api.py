@@ -22,6 +22,10 @@ from admisiones.models.admisiones import (
 from comedores.models import (
     Comedor,
     ComedorDatosConvenioPnud,
+    EstadoActividad,
+    EstadoGeneral,
+    EstadoHistorial,
+    EstadoProceso,
     ImagenComedor,
     Nomina,
     PrestacionAlimentariaConformidad,
@@ -101,6 +105,32 @@ def _token_client(user):
     client = APIClient()
     client.credentials(HTTP_AUTHORIZATION=f"Token {token.key}")
     return client
+
+
+def _marcar_activo_en_ejecucion(comedor):
+    estado_actividad, _ = EstadoActividad.objects.get_or_create(estado="Activo")
+    estado_proceso, _ = EstadoProceso.objects.get_or_create(
+        estado="En ejecución",
+        estado_actividad=estado_actividad,
+    )
+    estado_general, _ = EstadoGeneral.objects.get_or_create(
+        estado_actividad=estado_actividad,
+        estado_proceso=estado_proceso,
+    )
+    historial = EstadoHistorial.objects.create(
+        comedor=comedor,
+        estado_general=estado_general,
+    )
+    comedor.ultimo_estado = historial
+    comedor.save(update_fields=["ultimo_estado"])
+
+
+@pytest.fixture(autouse=True)
+def _mock_certificacion_prestaciones_pdf(mocker):
+    mocker.patch(
+        "comedores.api_views.generar_certificacion_prestaciones_pdf",
+        return_value=b"%PDF-1.4\n%%EOF",
+    )
 
 
 def _grant_mobile_rendicion_permission(user):
@@ -236,6 +266,8 @@ def test_pwa_spaces_selector_list_returns_metadata_and_sorted_names():
         programa=programa,
         codigo_de_proyecto="PROY-01",
     )
+    _marcar_activo_en_ejecucion(comedor_a)
+    _marcar_activo_en_ejecucion(comedor_b)
 
     representante = _create_pwa_user(
         comedor=comedor_b,
@@ -287,6 +319,7 @@ def test_comedor_detail_includes_mobile_relevamiento_summary():
         organizacion=organizacion,
         programa=programa,
     )
+    _marcar_activo_en_ejecucion(comedor)
 
     modalidad = TipoModalidadPrestacion.objects.create(nombre="Viandas")
     tipo_agua = TipoAgua.objects.create(nombre="Red")
@@ -839,10 +872,9 @@ def test_adjuntar_y_presentar_rendicion(comedores, settings, tmp_path):
     )
     assert present_without_docs_response.status_code == 400
 
-    # El commit a4636912 actualizó CATEGORIAS_CONFIG: agregó Formulario I y
-    # dividió Formulario III/V en _ALIMENTARIO/_SIPH como obligatorios mobile.
+    # Formulario I es optativo; Formulario III/V se divide en variantes
+    # _ALIMENTARIO/_SIPH obligatorias para mobile.
     categorias_obligatorias = [
-        DocumentacionAdjunta.CATEGORIA_FORMULARIO_I,
         DocumentacionAdjunta.CATEGORIA_FORMULARIO_II,
         DocumentacionAdjunta.CATEGORIA_FORMULARIO_III_ALIMENTARIO,
         DocumentacionAdjunta.CATEGORIA_FORMULARIO_III_SIPH,
@@ -871,6 +903,13 @@ def test_adjuntar_y_presentar_rendicion(comedores, settings, tmp_path):
     # CATEGORIAS_CONFIG ahora trae 12 items (Form I + III/V divididos +
     # Form IV/VI + Extracto + Comprobantes + Planilla Seguros + Otros).
     assert len(detail_response.data["documentacion"]) == 12
+    formulario_i = next(
+        item
+        for item in detail_response.data["documentacion"]
+        if item["codigo"] == DocumentacionAdjunta.CATEGORIA_FORMULARIO_I
+    )
+    assert formulario_i["required"] is False
+    assert formulario_i["archivos"] == []
     categoria_extra = next(
         item
         for item in detail_response.data["documentacion"]
@@ -1156,6 +1195,9 @@ def _comedor_alimentar_comunidad(*, username):
         provincia=provincia,
         programa=programa,
     )
+    _marcar_activo_en_ejecucion(comedor)
+    admision = Admision.objects.create(comedor=comedor)
+    _create_informe_tecnico(admision)
     representante = _create_pwa_user(
         comedor=comedor,
         role=AccesoComedorPWA.ROL_REPRESENTANTE,
@@ -1174,7 +1216,7 @@ def test_prestacion_alimentaria_conformidad_crea_registro():
         format="json",
     )
 
-    assert response.status_code == 201
+    assert response.status_code == 201, response.data
     assert response.data["conforme"] is True
     conformidad = PrestacionAlimentariaConformidad.objects.get(comedor=comedor)
     assert conformidad.conforme is True
@@ -1182,16 +1224,74 @@ def test_prestacion_alimentaria_conformidad_crea_registro():
 
 
 @pytest.mark.django_db
-def test_prestacion_alimentaria_conformidad_rechaza_duplicado_del_mes():
+def test_prestacion_alimentaria_conformidad_sin_fuente_crea_registro():
+    provincia = Provincia.objects.create(nombre="Cordoba sin informe")
+    programa = Programas.objects.create(nombre="Programa sin informe")
+    comedor = Comedor.objects.create(
+        nombre="Espacio sin informe", provincia=provincia, programa=programa
+    )
+    representante = _create_pwa_user(
+        comedor=comedor,
+        role=AccesoComedorPWA.ROL_REPRESENTANTE,
+        username="rep_conf_sin_informe",
+    )
+
+    response = _token_client(representante).post(
+        f"/api/comedores/{comedor.id}/prestacion-alimentaria/conformidad/",
+        {"conforme": True, "periodo": "2035-11"},
+        format="json",
+    )
+
+    assert response.status_code == 201
+    registro = PrestacionAlimentariaConformidad.objects.get(comedor=comedor)
+    assert not registro.certificacion_pdf
+
+
+@pytest.mark.django_db
+def test_prestacion_alimentaria_error_pdf_devuelve_503(mocker):
+    comedor, client = _comedor_alimentar_comunidad(username="rep_conf_pdf_error")
+    mocker.patch(
+        "comedores.api_views.generar_certificacion_prestaciones_pdf",
+        side_effect=RuntimeError("LibreOffice no disponible"),
+    )
+
+    response = client.post(
+        f"/api/comedores/{comedor.id}/prestacion-alimentaria/conformidad/",
+        {"conforme": True, "periodo": "2035-10"},
+        format="json",
+    )
+
+    assert response.status_code == 503
+    assert not PrestacionAlimentariaConformidad.objects.filter(comedor=comedor).exists()
+
+
+@pytest.mark.django_db
+def test_prestacion_alimentaria_conformidad_permite_repetir_periodo():
     comedor, client = _comedor_alimentar_comunidad(username="rep_conf_dup")
     url = f"/api/comedores/{comedor.id}/prestacion-alimentaria/conformidad/"
     payload = {"conforme": True, "periodo": "2027-08"}
 
     assert client.post(url, payload, format="json").status_code == 201
-    repetido = client.post(url, payload, format="json")
+    segunda = client.post(url, payload, format="json")
 
-    assert repetido.status_code == 400
-    assert PrestacionAlimentariaConformidad.objects.filter(comedor=comedor).count() == 1
+    assert segunda.status_code == 201
+    assert PrestacionAlimentariaConformidad.objects.filter(comedor=comedor).count() == 2
+
+
+@pytest.mark.django_db
+def test_prestacion_alimentaria_conformidad_repetida_mantiene_periodo_disponible():
+    comedor, client = _comedor_alimentar_comunidad(username="rep_conf_repetida")
+    url = f"/api/comedores/{comedor.id}/prestacion-alimentaria/conformidad/"
+
+    primera = client.post(url, {"conforme": True}, format="json")
+    detalle = client.get(f"/api/comedores/{comedor.id}/prestacion-alimentaria/")
+
+    assert primera.status_code == 201
+    assert detalle.status_code == 200
+    assert detalle.data["conformidad_pendiente"] is True
+    assert detalle.data["periodo_pendiente"] == date.fromisoformat(
+        primera.data["periodo"]
+    )
 
 
 @pytest.mark.django_db
@@ -1217,6 +1317,8 @@ def test_prestacion_alimentaria_conformidad_disponible_para_todos_los_programas(
     comedores,
 ):
     comedor_1, _ = comedores
+    admision = Admision.objects.create(comedor=comedor_1)
+    _create_informe_tecnico(admision)
     representante = _create_pwa_user(
         comedor=comedor_1,
         role=AccesoComedorPWA.ROL_REPRESENTANTE,
@@ -1231,10 +1333,23 @@ def test_prestacion_alimentaria_conformidad_disponible_para_todos_los_programas(
     )
 
     assert response.status_code == 201
-    assert PrestacionAlimentariaConformidad.objects.filter(
-        comedor=comedor_1,
-        periodo=date(2028, 3, 1),
-    ).exists()
+    segunda = client.post(
+        f"/api/comedores/{comedor_1.id}/prestacion-alimentaria/conformidad/",
+        {
+            "conforme": False,
+            "observaciones": "Revisión posterior",
+            "periodo": "2028-03",
+        },
+        format="json",
+    )
+    assert segunda.status_code == 201
+    assert (
+        PrestacionAlimentariaConformidad.objects.filter(
+            comedor=comedor_1,
+            periodo=date(2028, 3, 1),
+        ).count()
+        == 2
+    )
 
 
 @pytest.mark.django_db

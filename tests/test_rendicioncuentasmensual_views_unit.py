@@ -46,7 +46,7 @@ def test_global_list_view_contexto_expone_titulo(mocker):
 
     assert contexto["titulo_listado"] == "Rendiciones"
     assert contexto["rendiciones_cuentas_mensuales"] == []
-    assert contexto["breadcrumb_items"][0]["text"] == "Comedores"
+    assert contexto["breadcrumb_items"][0]["text"] == "Organizaciones"
 
 
 def test_detail_view_contexto_expone_documentacion_agrupada(mocker):

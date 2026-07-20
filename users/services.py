@@ -1,7 +1,7 @@
 import logging
 from typing import List, Tuple
 
-from django.contrib.auth.models import User
+from django.contrib.auth.models import Permission, User
 from django.db.models import Case, CharField, Count, F, Q, Value, When
 from django.urls import NoReverseMatch, reverse
 
@@ -10,6 +10,7 @@ from core.services.column_preferences import build_columns_context
 from core.services.favorite_filters import SeccionesFiltrosFavoritos
 from iam.services import user_has_any_permission_codes, user_has_permission_code
 from users.models import Profile
+from users.services_delegation import effective_delegatable_groups_qs
 from users.users_filter_config import (
     FIELD_MAP as BENEFICIARIO_FILTER_MAP,
     FIELD_TYPES as BENEFICIARIO_FIELD_TYPES,
@@ -111,13 +112,14 @@ class UsuariosService:
         # configurarse su `grupos_asignables`/`roles_asignables` para que pueda
         # administrar a otros usuarios.
         profile = getattr(actor, "profile", None)
-        if not profile:
-            return base_qs.filter(pk=actor.pk)
-
-        allowed_groups = profile.grupos_asignables.all()
-        allowed_roles = profile.roles_asignables.filter(
-            content_type__app_label="auth",
-            codename__startswith="role_",
+        allowed_groups = effective_delegatable_groups_qs(actor)
+        allowed_roles = (
+            profile.roles_asignables.filter(
+                content_type__app_label="auth",
+                codename__startswith="role_",
+            )
+            if profile
+            else Permission.objects.none()
         )
 
         has_group_scope = allowed_groups.exists()

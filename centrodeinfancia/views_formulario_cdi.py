@@ -8,13 +8,14 @@ from functools import lru_cache
 
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.core.exceptions import PermissionDenied
 from django.db import transaction
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views import View
 from django.views.generic import DetailView, ListView
 
-from centrodeinfancia.access import aplicar_scope_centros_cdi
+from centrodeinfancia.access import aplicar_scope_centros_cdi, es_auditor_simepi
 from centrodeinfancia.forms import (
     FormularioCDIForm,
     construir_filas_iniciales_fijas,
@@ -514,6 +515,8 @@ class FormularioCDIEditBaseView(LoginRequiredMixin, View):
         )
 
     def post(self, request, *args, **kwargs):
+        if es_auditor_simepi(request.user):
+            raise PermissionDenied("El rol Auditoría tiene acceso de solo lectura.")
         instance = self.get_form_instance()
         form = self.construir_formulario(data=request.POST, instance=instance)
         formsets = self.construir_formsets(data=request.POST, instance=instance)

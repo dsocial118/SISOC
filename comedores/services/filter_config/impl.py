@@ -155,7 +155,9 @@ FILTER_FIELDS = [
         "name": "mes_ejecucion",
         "label": "Mes de ejecucion",
         "type": "choice",
-        "choices": [{"value": str(i), "label": str(i)} for i in range(1, 7)],
+        "choices": [
+            {"value": str(i), "label": str(i)} for i in (-2, -1, 1, 2, 3, 4, 5, 6)
+        ],
     },
     {"name": "numero", "label": "Numero", "type": "number"},
     {"name": "codigo_postal", "label": "Codigo Postal", "type": "number"},

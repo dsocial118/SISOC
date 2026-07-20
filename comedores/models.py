@@ -246,6 +246,12 @@ class Comedor(SoftDeleteModelMixin, models.Model):
     programa = models.ForeignKey(
         to=Programas, blank=True, null=True, on_delete=models.PROTECT
     )
+    mes_ejecucion = models.IntegerField(
+        verbose_name="Mes de ejecución",
+        blank=True,
+        null=True,
+        validators=[MinValueValidator(-2), MaxValueValidator(6)],
+    )
     id_externo = models.IntegerField(
         verbose_name="Id Externo",
         blank=True,
@@ -497,6 +503,21 @@ class ComedorDatosConvenioPnud(models.Model):
         null=True,
         blank=True,
     )
+    prestaciones_financiadas_diarias_desayuno = models.PositiveIntegerField(
+        null=True, blank=True
+    )
+    prestaciones_financiadas_diarias_almuerzo = models.PositiveIntegerField(
+        null=True, blank=True
+    )
+    prestaciones_financiadas_diarias_merienda = models.PositiveIntegerField(
+        null=True, blank=True
+    )
+    prestaciones_financiadas_diarias_merienda_reforzada = models.PositiveIntegerField(
+        null=True, blank=True
+    )
+    prestaciones_financiadas_diarias_cena = models.PositiveIntegerField(
+        null=True, blank=True
+    )
     personas_conveniadas = models.PositiveIntegerField(null=True, blank=True)
     cantidad_modulos = models.PositiveIntegerField(null=True, blank=True)
     aprobadas_desayuno_lunes = models.IntegerField(
@@ -560,6 +581,27 @@ class ComedorDatosConvenioPnud(models.Model):
         default=0, validators=[MinValueValidator(0)]
     )
     aprobadas_merienda_domingo = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_merienda_reforzada_lunes = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_merienda_reforzada_martes = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_merienda_reforzada_miercoles = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_merienda_reforzada_jueves = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_merienda_reforzada_viernes = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_merienda_reforzada_sabado = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_merienda_reforzada_domingo = models.IntegerField(
         default=0, validators=[MinValueValidator(0)]
     )
     aprobadas_cena_lunes = models.IntegerField(
@@ -818,17 +860,16 @@ class PrestacionAlimentariaConformidad(models.Model):
         related_name="conformidades_prestacion_alimentaria",
     )
     creado = models.DateTimeField(auto_now_add=True)
+    certificacion_pdf = models.FileField(
+        upload_to="comedores/certificaciones_prestaciones/",
+        null=True,
+        blank=True,
+    )
 
     class Meta:
         ordering = ["-periodo", "-creado"]
         verbose_name = "Conformidad de prestacion alimentaria"
         verbose_name_plural = "Conformidades de prestaciones alimentarias"
-        constraints = [
-            models.UniqueConstraint(
-                fields=["comedor", "periodo"],
-                name="uniq_conformidad_prestacion_alimentaria_mes",
-            )
-        ]
 
     def __str__(self):
         estado = "conforme" if self.conforme else "no conforme"

@@ -226,36 +226,11 @@ def test_get_prestacion_conformidad_periods_limit(mocker):
 # ---------------------------------------------------------------------------
 
 
-def test_get_prestacion_conformidad_pending_period_todos_pendientes(mocker):
+def test_get_prestacion_conformidad_pending_period_devuelve_periodo_anterior(mocker):
     _mock_sin_rendicion(mocker)
     _mock_today(mocker, date(2026, 6, 17))
-
-    mocker.patch(
-        "comedores.utils.PrestacionAlimentariaConformidad.objects.filter",
-        return_value=SimpleNamespace(
-            exists=lambda: False,
-        ),
-    )
 
     comedor = _comedor("Alimentar Comunidad")
     result = module.get_prestacion_conformidad_pending_period(comedor)
 
     assert result == date(2026, 5, 1)
-
-
-def test_get_prestacion_conformidad_pending_period_sin_pendientes(mocker):
-    _mock_sin_rendicion(mocker)
-    _mock_today(mocker, date(2026, 6, 17))
-
-    # Todos los períodos ya registrados
-    mocker.patch(
-        "comedores.utils.PrestacionAlimentariaConformidad.objects.filter",
-        return_value=SimpleNamespace(
-            exists=lambda: True,
-        ),
-    )
-
-    comedor = _comedor("Alimentar Comunidad")
-    result = module.get_prestacion_conformidad_pending_period(comedor)
-
-    assert result is None

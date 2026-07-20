@@ -340,6 +340,17 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - `users/management/commands/create_groups.py`
 - templates en `users/templates/`
 
+### Si necesitas cambiar la importacion masiva de usuarios
+
+- `users/services_user_import.py`: parsing, alta/actualizacion, mail de
+  credenciales y exportacion CSV.
+- `users/services_user_import_jobs.py`: procesamiento y reanudacion del lote.
+- `users/views_user_import.py`, `users/urls.py` y
+  `users/templates/user/user_import_job_detail.html`: detalle y descargas.
+- Las credenciales se agrupan al finalizar el lote; los lotes PWA deben usar
+  `/mobile/login` y las descargas sensibles se limitan al solicitante o a un
+  superusuario.
+
 ### Si necesitas cambiar permisos o IAM
 
 - `users/bootstrap/groups_seed.py`
@@ -387,6 +398,14 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - `tests/test_relevamientos*`
 - docs: `docs/flujos/relevamiento_sync.md`
 
+### Si necesitas cambiar importacion de expedientes de pago
+
+- `importarexpediente/views.py` coordina upload, validacion, importacion y acciones posteriores por lote.
+- `importarexpediente/services.py` concentra parsing y reglas de negocio del Excel/CSV.
+- `importarexpediente/tests/` cubre el flujo de carga, detalle, descarga, duplicados, estados y fechas de acreditacion.
+- Las fechas de acreditacion masivas se actualizan por lote mediante `RegistroImportado`; no buscar `ExpedientePago` globalmente por `comedor_id`.
+- El endpoint de fechas de acreditacion requiere `importarexpediente.change_archivosimportados` o `expedientespagos.change_expedientepago`.
+
 ### Si necesitas cambiar Celiaquia
 
 - `celiaquia/views/`
@@ -407,12 +426,23 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 
 ### Si necesitas cambiar PWA
 
+- La interfaz vive en el repositorio Git anidado `mobile/`; revisar su estado y
+  validaciones por separado del repositorio Django.
 - `pwa/models.py`
 - `pwa/api_urls.py`
 - `pwa/api_views.py`
 - `pwa/services/`
+- frontend: `mobile/src/api/` y `mobile/src/features/home/`
 - tests `tests/test_pwa_*`
 - docs: `docs/implementaciones/pwa_backend.md`, `docs/seguridad/security_baseline_pwa.md`
+
+### Si necesitas cambiar documentos DOCX/PDF de prestaciones o nóminas
+
+- plantillas versionadas: `pwa/files/varios/PROGRAMA.ALIMENTAR.COMUNIDAD.docx` y `pwa/files/varios/NOMINA.DE.DESTINATARIOS.docx`
+- certificación de prestaciones: `comedores/services/certificacion_prestaciones_service.py`
+- nómina de destinatarios: `pwa/services/nomina_destinatarios_pdf_service.py`
+- conversión e incrustación de Office en rendiciones: `rendicioncuentasmensual/service_helpers.py`
+- el runtime Django requiere LibreOffice Writer/Calc para convertir DOCX/XLSX a PDF
 
 ### Si necesitas cambiar OCR / procesamiento documental
 
@@ -598,7 +628,7 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 | relevamientos | `relevamientos/models.py`, `tasks.py`, `views.py` |
 | RENAPER | `centrodefamilia/services/consulta_renaper.py`, `VAT/services/consulta_renaper/impl.py` |
 | GESTIONAR | `comedores/tasks.py`, `relevamientos/tasks.py`, commands relacionados |
-| docx/pdf | `admisiones/services/`, templates `docx/` y `pdf/` |
+| docx/pdf | `admisiones/services/`, `comedores/services/certificacion_prestaciones_service.py`, `pwa/services/nomina_destinatarios_pdf_service.py`, `pwa/files/varios/` |
 | PWA | `pwa/api_views.py`, `pwa/services/`, tests `test_pwa_*` |
 | OCR | `ocr/`, `docker/django/entrypoint.py` |
 | auditoria | `audittrail/`, docs `audittrail_*` |

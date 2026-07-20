@@ -1,14 +1,21 @@
 from io import BytesIO
-from typing import Iterable
+import copy
+import subprocess
+import tempfile
+import zipfile
+from pathlib import Path
 
+from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.core.files.base import ContentFile
-from django.db.models import Max, Q
+from django.db.models import Q
 from django.utils import timezone
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import cm
 from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+from lxml import etree
 
 from comedores.models import Nomina
 from pwa.models import NominaDestinatariosDocumentoPWA
@@ -197,6 +204,154 @@ def _build_pdf(*, comedor, periodo_referencia, nominas, actor):
     return buffer.getvalue()
 
 
+W_NS = "http://schemas.openxmlformats.org/wordprocessingml/2006/main"
+W_XML_SPACE = "{http://www.w3.org/XML/1998/namespace}space"
+DOCX_NS = {"w": W_NS}
+
+
+def _set_paragraph_text(paragraph, value):
+    texts = paragraph.xpath(".//w:t", namespaces=DOCX_NS)
+    if texts:
+        texts[0].text = str(value)
+        texts[0].set(W_XML_SPACE, "preserve")
+        for extra in texts[1:]:
+            extra.text = ""
+        return
+    run = etree.SubElement(paragraph, f"{{{W_NS}}}r")
+    text = etree.SubElement(run, f"{{{W_NS}}}t")
+    text.text = str(value)
+
+
+def _set_cell_text(cell, value):
+    paragraph = cell.find("w:p", DOCX_NS)
+    _set_paragraph_text(paragraph, value)
+
+
+def _gender_columns(ciudadano):
+    label = _gender_label(ciudadano).lower()
+    return (
+        "X" if "fem" in label else "",
+        "X" if "mas" in label else "",
+        "X" if "fem" not in label and "mas" not in label else "",
+    )
+
+
+def _render_nomina_docx(
+    template_path, output_path, *, comedor, periodo, nominas, actor
+):
+    with zipfile.ZipFile(template_path, "r") as source_zip:
+        root = etree.fromstring(source_zip.read("word/document.xml"))
+        body = root.find("w:body", DOCX_NS)
+        paragraphs = body.findall("w:p", DOCX_NS)
+        direccion = _format_address(comedor)
+        localidad = _display_value(
+            getattr(getattr(comedor, "localidad", None), "nombre", None)
+        )
+        provincia = _display_value(
+            getattr(getattr(comedor, "provincia", None), "nombre", None)
+        )
+        _set_paragraph_text(
+            paragraphs[4], f"NOMBRE DEL ESPACIO: {_display_value(comedor.nombre)}"
+        )
+        _set_paragraph_text(
+            paragraphs[5],
+            f"DIRECCIÓN: {direccion}     LOCALIDAD: {localidad}     PROVINCIA: {provincia}",
+        )
+        _set_paragraph_text(
+            paragraphs[6],
+            f"MES: {periodo.month:02d}                         AÑO: {periodo.year}",
+        )
+        _set_paragraph_text(
+            paragraphs[14], f"Usuario: {getattr(actor, 'username', '-')}"
+        )
+        _set_paragraph_text(paragraphs[15], f"Apellido y nombre: {_full_name(actor)}")
+        _set_paragraph_text(paragraphs[16], f"DNI: {getattr(actor, 'username', '-')}")
+
+        table = body.find(".//w:tbl", DOCX_NS)
+        rows = table.findall("w:tr", DOCX_NS)
+        template_row = rows[2]
+        while len(rows) < max(3, len(nominas)) + 2:
+            new_row = copy.deepcopy(template_row)
+            table.append(new_row)
+            rows.append(new_row)
+        for index, row in enumerate(rows[2:], start=1):
+            cells = row.findall("w:tc", DOCX_NS)
+            if index <= len(nominas):
+                ciudadano = nominas[index - 1].ciudadano
+                femenino, masculino, otro = _gender_columns(ciudadano)
+                values = (
+                    index,
+                    _display_value(getattr(ciudadano, "apellido", None)),
+                    _display_value(getattr(ciudadano, "nombre", None)),
+                    _display_value(getattr(ciudadano, "documento", None)),
+                    _format_date(getattr(ciudadano, "fecha_nacimiento", None)),
+                    femenino,
+                    masculino,
+                    otro,
+                )
+            else:
+                values = (index, "", "", "", "", "", "", "")
+            for cell, value in zip(cells, values):
+                _set_cell_text(cell, value)
+
+        rendered_xml = etree.tostring(
+            root, xml_declaration=True, encoding="UTF-8", standalone=True
+        )
+        with zipfile.ZipFile(output_path, "w") as output_zip:
+            for item in source_zip.infolist():
+                content = (
+                    rendered_xml
+                    if item.filename == "word/document.xml"
+                    else source_zip.read(item.filename)
+                )
+                output_zip.writestr(item, content)
+
+
+def _build_pdf_from_template(*, comedor, periodo_referencia, nominas, actor):
+    template_path = (
+        Path(settings.BASE_DIR)
+        / "pwa"
+        / "files"
+        / "varios"
+        / "NOMINA.DE.DESTINATARIOS.docx"
+    )
+    with tempfile.TemporaryDirectory(prefix="nomina-destinatarios-") as temp_dir:
+        temp_path = Path(temp_dir)
+        docx_path = temp_path / "nomina-destinatarios.docx"
+        pdf_path = temp_path / "nomina-destinatarios.pdf"
+        profile_uri = (temp_path / "libreoffice-profile").resolve().as_uri()
+        _render_nomina_docx(
+            template_path,
+            docx_path,
+            comedor=comedor,
+            periodo=periodo_referencia,
+            nominas=nominas,
+            actor=actor,
+        )
+        result = subprocess.run(
+            [
+                "libreoffice",
+                "--headless",
+                "--nologo",
+                "--nodefault",
+                "--nofirststartwizard",
+                f"-env:UserInstallation={profile_uri}",
+                "--convert-to",
+                "pdf",
+                "--outdir",
+                str(temp_path),
+                str(docx_path),
+            ],
+            capture_output=True,
+            check=False,
+            timeout=120,
+        )
+        if result.returncode != 0 or not pdf_path.exists():
+            detail = result.stderr.decode("utf-8", errors="replace").strip()
+            raise RuntimeError(detail or "No se pudo generar el PDF de nómina.")
+        return pdf_path.read_bytes()
+
+
 def serialize_nomina_destinatarios_documento(documento, request=None):
     if not documento or not documento.archivo:
         return None
@@ -218,11 +373,8 @@ def generar_nomina_destinatarios_pdf(
     comedor,
     periodo_referencia,
     actor=None,
-    nomina_ids: Iterable[int] | None = None,
 ):
     nominas_queryset = _nomina_alimentaria_activa_queryset(comedor.id)
-    if nomina_ids is not None:
-        nominas_queryset = nominas_queryset.filter(id__in=list(nomina_ids))
     programa_nombre = str(
         getattr(getattr(comedor, "programa", None), "nombre", "") or ""
     )
@@ -231,27 +383,22 @@ def generar_nomina_destinatarios_pdf(
             Q(perfil_pwa__asistencia_alimentaria=True) | Q(perfil_pwa__isnull=True)
         )
     nominas = list(nominas_queryset)
-    next_version = (
-        NominaDestinatariosDocumentoPWA.objects.filter(
-            comedor=comedor,
-            periodo_referencia=periodo_referencia,
-        ).aggregate(max_version=Max("version"))["max_version"]
-        or 0
-    ) + 1
-    pdf_bytes = _build_pdf(
+    if NominaDestinatariosDocumentoPWA.objects.filter(
+        comedor=comedor,
+        periodo_referencia=periodo_referencia,
+    ).exists():
+        raise ValidationError("Ya existe una nómina PDF para este período.")
+    pdf_bytes = _build_pdf_from_template(
         comedor=comedor,
         periodo_referencia=periodo_referencia,
         nominas=nominas,
         actor=actor,
     )
-    filename = (
-        f"nomina-destinatarios-{comedor.id}-"
-        f"{periodo_referencia:%Y-%m}-v{next_version}.pdf"
-    )
+    filename = f"nomina-destinatarios-{comedor.id}-" f"{periodo_referencia:%Y-%m}.pdf"
     documento = NominaDestinatariosDocumentoPWA.objects.create(
         comedor=comedor,
         periodo_referencia=periodo_referencia,
-        version=next_version,
+        version=1,
         cantidad_destinatarios=len(nominas),
         generado_por=actor if getattr(actor, "is_authenticated", False) else None,
         metadata={

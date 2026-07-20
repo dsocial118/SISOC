@@ -1,3 +1,11 @@
+<!-- AUTO-GENERATED RELEASE START: 2026-07-22 -->
+# Versión SISOC 22.07.2026
+
+## Actualizaciones
+
+- [sin-area] fix(ci): evitar la autoaprobacion en sincronizacion descendente. (PR #2112)
+<!-- AUTO-GENERATED RELEASE END: 2026-07-22 -->
+
 <!-- AUTO-GENERATED RELEASE START: 2026-07-15 -->
 # Versión SISOC 15.07.2026
 
