@@ -1316,6 +1316,48 @@ _MULTISELECT_FIELDS_TRABAJADOR = (
 
 
 class TrabajadorCDIForm(forms.ModelForm):
+    EDAD_MINIMA = 0
+    EDAD_MAXIMA = 100
+    DNI_MINIMO = 1_000_000
+    DNI_MAXIMO = 99_999_999
+    # Obligatorios según los casos que QA marcó como "campo requerido" (TC18-TC44).
+    # Quedan fuera los condicionales (funcion_egp, funcion_cdi, sala_cdi,
+    # formacion_academica, pueblo_originario y el bloque de discapacidad): el modelo
+    # los limpia cuando no aplican, así que exigirlos siempre rompería el guardado.
+    CAMPOS_OBLIGATORIOS = [
+        "fecha_carga",
+        "subcomponente",
+        "nombre",
+        "apellido",
+        "fecha_nacimiento",
+        "tipo_documentacion",
+        "dni",
+        "sexo_registral",
+        "cuit",
+        "pais_nacimiento",
+        "nacionalidad_trabajador",
+        "nivel_educativo",
+        "anos_trabajo_primera_infancia",
+        "tipo_contratacion",
+        "carga_horaria_semanal",
+        "telefono",
+        "calle_contacto",
+        "grupo_pertenencia",
+        "lenguajes",
+        "es_interprete",
+        "tiene_discapacidad",
+    ]
+    # Campos que RENAPER puede completar en el alta (ver _build_initial_from_renaper
+    # en la vista). Son los candidatos a quedar bloqueados en la edición.
+    RENAPER_FIELDS = (
+        "nombre",
+        "apellido",
+        "dni",
+        "fecha_nacimiento",
+        "cuit",
+        "sexo_registral",
+        "nacionalidad_trabajador",
+    )
     capacitaciones_certificadas = forms.MultipleChoiceField(
         choices=TRABAJADOR_CAPACITACIONES_CHOICES,
         widget=forms.CheckboxSelectMultiple,
@@ -1394,7 +1436,7 @@ class TrabajadorCDIForm(forms.ModelForm):
             ),
         }
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, campos_renaper=None, **kwargs):
         super().__init__(*args, **kwargs)
 
         # Precarga de valores para campos multiselect desde JSONField
@@ -1403,6 +1445,14 @@ class TrabajadorCDIForm(forms.ModelForm):
                 value = getattr(self.instance, fname, None) or []
                 if value:
                     self.initial[fname] = value
+
+        # El orden importa: _configurar_pais_nacionalidad reemplaza los campos, así que
+        # los requeridos se aplican después.
+        self._configurar_pais_nacionalidad()
+        self._aplicar_requeridos()
+        self._aplicar_campo_cuit()
+        self._aplicar_limites_fecha_nacimiento()
+        self._bloquear_campos_renaper(campos_renaper)
 
         # CSS classes
         for fname, field in self.fields.items():
@@ -1421,6 +1471,148 @@ class TrabajadorCDIForm(forms.ModelForm):
             {"min": "1", "max": "60"}
         )
 
+    def _aplicar_campo_cuit(self):
+        # El modelo guarda 11 dígitos, pero se ingresa con guiones ("20-44535030-4").
+        # Sin esto, MaxLengthValidator rechaza el CUIT antes de que clean_cuit lo
+        # normalice. Mismo tratamiento que en CentroDeInfanciaForm.
+        campo = self.fields["cuit"]
+        campo.max_length = 13
+        campo.validators = [
+            validator
+            for validator in campo.validators
+            if not isinstance(validator, MaxLengthValidator)
+        ]
+        campo.widget.attrs.update(
+            {"maxlength": "13", "inputmode": "numeric", "placeholder": "20-44535030-4"}
+        )
+
+    def _aplicar_requeridos(self):
+        for field_name in self.CAMPOS_OBLIGATORIOS:
+            self.fields[field_name].required = True
+            self.fields[field_name].error_messages[
+                "required"
+            ] = "Este campo es obligatorio."
+
+    def _bloquear_campos_renaper(self, campos_renaper):
+        # En la edición, los campos que RENAPER verificó en el alta no se editan.
+        # `disabled` es robusto en un ModelForm: Django ignora lo que venga por POST y
+        # toma el valor de la instancia, así que no se puede pisar ni con devtools.
+        # En el alta se recibe `campos_renaper` explícito (bloqueo blando: readonly),
+        # porque el dato recién se trajo y todavía no hay instancia que respalde el valor.
+        if campos_renaper is None:
+            campos_renaper = (
+                self.instance.campos_verificados_renaper if self.instance.pk else []
+            )
+        es_edicion = bool(self.instance.pk)
+        for field_name in campos_renaper:
+            field = self.fields.get(field_name)
+            if not field:
+                continue
+            field.required = False
+            field.help_text = "Dato verificado por RENAPER."
+            if es_edicion:
+                field.disabled = True
+            else:
+                field.widget.attrs["readonly"] = True
+            field.widget.attrs["data-renaper"] = "1"
+
+    def _configurar_pais_nacionalidad(self):
+        # Mismas listas que ya usa el legajo de Nómina, en vez de texto libre.
+        empty = ("", "---------")
+        self.fields["pais_nacimiento"] = forms.ChoiceField(
+            label=self.fields["pais_nacimiento"].label,
+            choices=[empty]
+            + [(p.nombre, p.nombre) for p in NominaPais.objects.order_by("nombre")],
+        )
+        self.fields["nacionalidad_trabajador"] = forms.ChoiceField(
+            label=self.fields["nacionalidad_trabajador"].label,
+            choices=[empty]
+            + [
+                (n.nombre, n.nombre)
+                for n in NominaNacionalidad.objects.order_by("nombre")
+            ],
+        )
+
+    def _aplicar_limites_fecha_nacimiento(self):
+        hoy = date.today()
+        self.fields["fecha_nacimiento"].widget.attrs.update(
+            {
+                "min": hoy.replace(year=hoy.year - self.EDAD_MAXIMA).isoformat(),
+                "max": hoy.replace(year=hoy.year - self.EDAD_MINIMA).isoformat(),
+            }
+        )
+
+    def clean_nombre(self):
+        return self._clean_solo_letras("nombre")
+
+    def clean_apellido(self):
+        return self._clean_solo_letras("apellido")
+
+    def _clean_solo_letras(self, field_name):
+        value = (self.cleaned_data.get(field_name) or "").strip()
+        if not value:
+            return value
+        try:
+            return validate_solo_letras(value)
+        except ValidationError as exc:
+            raise forms.ValidationError(exc.messages) from exc
+
+    def clean_telefono(self):
+        value = (self.cleaned_data.get("telefono") or "").strip()
+        if not value:
+            return value
+        try:
+            return validate_telefono_ar(value)
+        except ValidationError as exc:
+            raise forms.ValidationError(exc.messages) from exc
+
+    def clean_cuit(self):
+        raw = (self.cleaned_data.get("cuit") or "").strip()
+        if not raw:
+            return None
+        try:
+            return validate_cuit(normalizar_cuit(raw))
+        except ValidationError as exc:
+            raise forms.ValidationError(exc.messages) from exc
+
+    def clean_fecha_nacimiento(self):
+        fecha = self.cleaned_data.get("fecha_nacimiento")
+        if not fecha:
+            return fecha
+        hoy = date.today()
+        if fecha > hoy:
+            raise forms.ValidationError("La fecha de nacimiento no puede ser futura.")
+        edad = hoy.year - fecha.year - ((hoy.month, hoy.day) < (fecha.month, fecha.day))
+        if edad > self.EDAD_MAXIMA:
+            raise forms.ValidationError(
+                f"Revise la fecha: la edad resultante es de {edad} años."
+            )
+        if self.EDAD_MINIMA > 0 and edad < self.EDAD_MINIMA:
+            raise forms.ValidationError(
+                f"La persona debe tener al menos {self.EDAD_MINIMA} años."
+            )
+        return fecha
+
+    def clean_dni(self):
+        value = self.cleaned_data.get("dni")
+        if value in (None, ""):
+            return value
+        if not self.DNI_MINIMO <= value <= self.DNI_MAXIMO:
+            raise forms.ValidationError(
+                "Ingrese un número de documento válido de 7 u 8 dígitos."
+            )
+        return value
+
+    def clean_numero_cud(self):
+        value = (self.cleaned_data.get("numero_cud") or "").strip()
+        if not value:
+            return value
+        if not value.isdigit():
+            raise forms.ValidationError(
+                "Ingrese solo números, sin espacios ni otros caracteres."
+            )
+        return value
+
     def clean_carga_horaria_semanal(self):
         value = self.cleaned_data.get("carga_horaria_semanal")
         if value is not None and value > 60:
@@ -1433,7 +1625,12 @@ class TrabajadorCDIForm(forms.ModelForm):
         return self.cleaned_data.get("capacitaciones_certificadas") or []
 
     def clean_grupo_pertenencia(self):
-        return self.cleaned_data.get("grupo_pertenencia") or []
+        valores = self.cleaned_data.get("grupo_pertenencia") or []
+        if "ninguno" in valores and len(valores) > 1:
+            raise forms.ValidationError(
+                'No combine "Ninguno de los anteriores" con otras opciones.'
+            )
+        return valores
 
     def clean_lenguajes(self):
         return self.cleaned_data.get("lenguajes") or []
