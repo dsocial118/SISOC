@@ -18,6 +18,7 @@ from comedores.views import (
     ComedorTransaccionesDetailView,
     ComedorListView,
     ComedorUpdateView,
+    CertificacionesPrestacionesHistorialView,
     CursoAppMobileCreateView,
     CursoAppMobileDeleteView,
     CursoAppMobileListView,
@@ -110,6 +111,13 @@ urlpatterns = [
             ["comedores.view_comedor", "admisiones.view_admision"]
         )(descargar_certificacion_prestaciones_web),
         name="descargar_certificacion_prestaciones_web",
+    ),
+    path(
+        "comedores/<int:pk>/certificaciones-prestaciones/",
+        permissions_any_required(
+            ["comedores.view_comedor", "admisiones.view_admision"]
+        )(CertificacionesPrestacionesHistorialView.as_view()),
+        name="certificaciones_prestaciones_historial",
     ),
     path(
         "comedores/<int:pk>/editar",

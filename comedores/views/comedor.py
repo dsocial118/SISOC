@@ -102,6 +102,34 @@ def descargar_certificacion_prestaciones_web(request, pk, certificacion_id):
     )
 
 
+class CertificacionesPrestacionesHistorialView(LoginRequiredMixin, ListView):
+    template_name = "comedor/certificaciones_prestaciones_historial.html"
+    context_object_name = "certificaciones_prestaciones"
+    paginate_by = 20
+
+    def dispatch(self, request, *args, **kwargs):
+        self.comedor = ComedorService.get_comedor_detail_object(
+            self.kwargs["pk"], user=request.user
+        )
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_queryset(self):
+        return (
+            PrestacionAlimentariaConformidad.objects.filter(
+                comedor_id=self.comedor.id,
+                certificacion_pdf__isnull=False,
+            )
+            .exclude(certificacion_pdf="")
+            .select_related("usuario")
+            .order_by("-periodo", "-creado")
+        )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["comedor"] = self.comedor
+        return context
+
+
 def _safe_cell_content(value):
     if value is None or value == "":
         return "-"
@@ -1528,7 +1556,7 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
                 )
                 .exclude(certificacion_pdf="")
                 .select_related("usuario")
-                .order_by("-periodo", "-creado"),
+                .order_by("-periodo", "-creado")[:6],
                 **actividades_pnud_context,
                 **responsables_context,
                 **mes_ejecucion_context,
