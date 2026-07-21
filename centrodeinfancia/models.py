@@ -1151,37 +1151,41 @@ class Trabajador(SoftDeleteModelMixin, models.Model):
         if invalid:
             raise ValidationError({field_name: "Seleccione opciones válidas."})
 
-    def clean(self):
-        super().clean()
-        errors = {}
+    def _limpiar_campos_condicionales(self):
+        """Vacía los campos que no aplican según lo elegido en el formulario."""
 
-        # Limpiar función condicional por subcomponente
-        if self.subcomponente != "pfpi":
-            self.funcion_pfpi = None
-        if self.subcomponente != "egp":
-            self.funcion_egp = None
-        if self.subcomponente != "cdi":
-            self.funcion_cdi = None
-            self.sala_cdi = None
-        if self.subcomponente != "uaf":
-            self.funcion_uaf = None
+        # Cada subcomponente habilita su propia función; el resto se descarta.
+        funciones_por_subcomponente = {
+            "pfpi": ["funcion_pfpi"],
+            "egp": ["funcion_egp"],
+            "cdi": ["funcion_cdi", "sala_cdi"],
+            "uaf": ["funcion_uaf"],
+        }
+        for subcomponente, campos in funciones_por_subcomponente.items():
+            if self.subcomponente != subcomponente:
+                for campo in campos:
+                    setattr(self, campo, None)
 
-        # Limpiar formacion_academica si nivel no la habilita
         if self.nivel_educativo not in _TRABAJADOR_NIVELES_HABILITAN_FORMACION:
             self.formacion_academica = None
 
-        # Limpiar pueblo_originario si no aplica
         if "indigena" not in (self.grupo_pertenencia or []):
             self.pueblo_originario = None
 
-        # Limpiar campos condicionales de discapacidad. El bloque completo (incluido
-        # "¿Tiene CUD?") solo se muestra si tiene_discapacidad == "si".
+        # El bloque de discapacidad (incluido "¿Tiene CUD?") solo aplica si hay
+        # discapacidad; el número de CUD, solo si además tiene CUD.
         if self.tiene_discapacidad != "si":
             self.tipo_discapacidad = []
             self.recibe_apoyo_discapacidad = None
             self.tiene_cud = None
         if self.tiene_cud != "si":
             self.numero_cud = None
+
+    def clean(self):
+        super().clean()
+        errors = {}
+
+        self._limpiar_campos_condicionales()
 
         # Normalizar CUIT
         self.cuit = normalizar_cuit(self.cuit) or None
