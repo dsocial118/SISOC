@@ -593,7 +593,7 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 | logging/errores/fallbacks | `docs/ia/ERRORS_LOGGING.md` |
 | estilo/template | `docs/ia/STYLE_GUIDE.md` |
 | PWA | `docs/implementaciones/pwa_backend.md`, `docs/seguridad/security_baseline_pwa.md` |
-| deploy/infra | `docs/operacion/infraestructura.md`, `docs/operacion/instalacion.md` |
+| deploy/infra | `docs/operacion/infraestructura.md`, `docs/operacion/instalacion.md`, `docs/infra/QA_OPERATIONS.md`, `docs/infra/ENVIRONMENT_DATABASES.md` |
 
 ## Notas utiles sobre calidad y arquitectura
 
