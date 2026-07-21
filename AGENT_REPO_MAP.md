@@ -18,6 +18,7 @@ Mapa practico del repositorio `SISOC` para futuros agentes de IA y desarrollador
 - El repo mezcla backoffice web tradicional, APIs internas/server-to-server, flujos asincronos simples sin Celery, y una capa PWA/API para ciertos casos de uso.
 - La logica de negocio suele vivir en `services/` cuando la app la tiene, pero coexisten apps mas legacy con mas logica en `views.py`, `models.py` o `tasks.py`.
 - Hay un esfuerzo explicito de control arquitectonico incremental con `import-linter` (`.importlinter`) para evitar que el monolito siga acoplandose.
+- Los modulos nuevos deben nacer como verticales extraibles dentro del monolito; la regla aplicable y sus limites actuales viven en `docs/ia/MODULAR_BOUNDARIES.md`.
 
 ### Inferencias utiles
 
@@ -589,7 +590,8 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 | bugfix view/template | `docs/ia/TESTING.md`, template, view, JS asociado |
 | API/serializer | `docs/ia/TESTING.md`, `api_views.py`, serializer, tests API |
 | permisos/auth | `docs/ia/SECURITY_AI.md`, `users/`, docs IAM |
-| boundaries/refactor | `docs/ia/ARCHITECTURE.md`, `.importlinter` |
+| nuevo modulo o preparacion de extraccion | `docs/ia/MODULAR_BOUNDARIES.md`, `.importlinter`, `config/settings.py`, `config/urls.py` |
+| boundaries/refactor existente | `docs/ia/ARCHITECTURE.md`, `.importlinter` |
 | logging/errores/fallbacks | `docs/ia/ERRORS_LOGGING.md` |
 | estilo/template | `docs/ia/STYLE_GUIDE.md` |
 | PWA | `docs/implementaciones/pwa_backend.md`, `docs/seguridad/security_baseline_pwa.md` |
@@ -602,6 +604,12 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - Hay una iniciativa explicita de "monolito modular fase 0".
 - El baseline actual permite imports legacy, pero CI debe fallar ante nuevas dependencias prohibidas.
 - Si un import nuevo entre apps te parece inocente, igual puede ser una regresion arquitectonica.
+
+### Modulos nuevos extraibles
+
+- Esta regla aplica a codigo nuevo; no declara que las apps existentes ya puedan moverse a otro repositorio.
+- Antes de crear una app, clasificar si es vertical extraible, parte de un bounded context o cambio de kernel.
+- `api_views.py`/DRF no reemplazan el `api.py` de contrato entre dominios. Ver `docs/ia/MODULAR_BOUNDARIES.md`.
 
 ### Tests
 
