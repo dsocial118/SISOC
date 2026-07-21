@@ -136,7 +136,7 @@ def test_acompanamiento_detail_view_normaliza_admision_id_y_reusa_el_mismo_scope
         },
     )
     informe = SimpleNamespace(id=70, tipo="base")
-    mocker.patch(
+    informe_filter = mocker.patch(
         "acompanamientos.views.InformeTecnico.objects.filter",
         return_value=SimpleNamespace(
             order_by=lambda *_args: SimpleNamespace(first=lambda: informe)
@@ -154,6 +154,10 @@ def test_acompanamiento_detail_view_normaliza_admision_id_y_reusa_el_mismo_scope
     assert ctx["admision_id_activa"] == 7
     assert ctx["nro_convenio"] == "CONV-7"
     assert ctx["informe_tecnico_complementario"] == informe
+    informe_filter.assert_called_once_with(
+        admision=admision,
+        estado_formulario="finalizado",
+    )
 
 
 def test_acompanamiento_detail_view_toma_ultima_cerrada_si_no_hay_activa(mocker):

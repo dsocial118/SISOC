@@ -65,18 +65,19 @@
                                                            type="checkbox"
                                                            name="campos_subsanar"
                                                            value="{{ nombre }}"
-                                                           id="check_{{ forloop.counter }}"
+                                                           id="check_{{ forloop.parentloop.counter }}_{{ forloop.counter }}"
                                                            {% if campos_modificados_existentes and nombre in campos_modificados_existentes %}checked{% endif %} />
-                                                    <label class="form-check-label" for="check_{{ forloop.counter }}">Modificar campo</label>
+                                                    <label class="form-check-label"
+                                                           for="check_{{ forloop.parentloop.counter }}_{{ forloop.counter }}">Modificar campo</label>
                                                 </div>
                                             </div>
                                             <div class="input-wrapper mt-2"
-                                                 id="input_{{ forloop.counter }}"
+                                                 id="input_{{ forloop.parentloop.counter }}_{{ forloop.counter }}"
                                                  style="{% if campos_modificados_existentes and nombre in campos_modificados_existentes %}display: block{% else %}display: none{% endif %}">
                                                 <input type="text"
                                                        class="form-control"
                                                        name="campo_{{ nombre }}"
-                                                       id="campo_{{ forloop.counter }}"
+                                                       id="campo_{{ forloop.parentloop.counter }}_{{ forloop.counter }}"
                                                        value="{% if campos_modificados_existentes and nombre in campos_modificados_existentes %}{{ campos_modificados_existentes|get_item:nombre }}{% endif %}"
                                                        placeholder="Escriba el nuevo valor"
                                                        data-field-name="{{ nombre }}" />

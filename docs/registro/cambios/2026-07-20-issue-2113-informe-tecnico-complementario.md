@@ -39,6 +39,13 @@ alinear su presentación y advertencias con el flujo real de Admisiones.
   reserva para solicitudes de Legales o informes a rectificar.
 - Se agregaron pruebas para selección de admisión, permisos, agrupación,
   contexto de la vista y condición de la advertencia.
+- Los controles de edición manual usan identificadores únicos por grupo y
+  campo, evitando asociaciones cruzadas entre checkbox, label e input.
+- Las secciones de prestaciones del convenio anterior y resoluciones de pago
+  sólo se incluyen para admisiones de renovación; los campos de avalistas se
+  mantienen en Campos Específicos.
+- En Acompañamiento, el acceso al informe se presenta en una columna derecha
+  separada y conserva la admisión seleccionada.
 
 ## Supuestos
 

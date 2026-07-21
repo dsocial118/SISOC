@@ -190,11 +190,31 @@ class InformeService:
             "Resolución de pago": [],
         }
         valores = dict(InformeService.get_campos_visibles_informe(informe))
+        es_renovacion = getattr(getattr(informe, "admision", None), "tipo", None) == (
+            "renovacion"
+        )
+        campos_especificos = {
+            "declaracion_jurada_recepcion_subsidios",
+            "constancia_inexistencia_percepcion_otros_subsidios",
+            "organizacion_avalista_1",
+            "organizacion_avalista_2",
+            "material_difusion_vinculado",
+            "if_relevamiento",
+            "validacion_registro_nacional",
+            "IF_relevamiento_territorial",
+        }
         for field in informe._meta.fields:
             nombre = str(field.verbose_name)
             if nombre not in valores:
                 continue
-            if field.name == "expediente_nro" or "organizacion" in field.name:
+            es_campo_renovacion = field.name.startswith(
+                ("aprobadas_ultimo_convenio_", "resolucion_de_pago_", "monto_")
+            )
+            if es_campo_renovacion and not es_renovacion:
+                continue
+            if field.name in campos_especificos:
+                grupo = "Campos Específicos"
+            elif field.name == "expediente_nro" or "organizacion" in field.name:
                 grupo = "Datos de la Organización"
             elif field.name.startswith("representante_"):
                 grupo = "Datos del Representante"
@@ -214,17 +234,6 @@ class InformeService:
                 "barrio_espacio",
             }:
                 grupo = "Datos del Comedor/Merendero"
-            elif field.name in {
-                "declaracion_jurada_recepcion_subsidios",
-                "constancia_inexistencia_percepcion_otros_subsidios",
-                "organizacion_avalista_1",
-                "organizacion_avalista_2",
-                "material_difusion_vinculado",
-                "if_relevamiento",
-                "validacion_registro_nacional",
-                "IF_relevamiento_territorial",
-            }:
-                grupo = "Campos Específicos"
             else:
                 grupo = "Información Adicional"
             grupos[grupo].append((nombre, valores[nombre]))
