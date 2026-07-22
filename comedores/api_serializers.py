@@ -1523,6 +1523,7 @@ class RendicionMensualDetailSerializer(RendicionMensualListSerializer):
                 {
                     "codigo": categoria["codigo"],
                     "label": categoria["label"],
+                    "description": categoria.get("description"),
                     "required": categoria["required"],
                     "multiple": categoria["multiple"],
                     "order": categoria["order"],
