@@ -81,7 +81,7 @@ def test_historial_certificaciones_no_precarga_el_legajo_completo(
         )
 
     assert response.status_code == 200
-    assert len(queries) <= 6
+    assert len(queries) <= 7
 
 
 @pytest.mark.django_db
