@@ -423,6 +423,9 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - templates `admisiones/templates/admisiones/docx/`
 - templates `admisiones/templates/admisiones/pdf/`
 - `admisiones/tests/`
+- El Informe Tecnico Complementario se abre tanto desde Admision como desde el
+  convenio seleccionado en `acompanamientos/views.py` y
+  `acompanamientos/templates/acompañamiento_detail.html`.
 
 ### Si necesitas cambiar PWA
 
