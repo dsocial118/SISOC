@@ -389,6 +389,9 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - `comedores/api_views.py`
 - tests del root `tests/test_comedor*`, `tests/test_comedores*`
 - docs de flujo: `docs/flujos/comedor_sync.md`
+- certificaciones mensuales de prestaciones: regla de pendiente en
+  `comedores/utils.py`, API en `comedores/api_views.py`, card e historial web en
+  `comedores/views/comedor.py` y `comedores/templates/comedor/`
 
 ### Si necesitas cambiar Relevamientos
 
