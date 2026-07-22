@@ -147,7 +147,7 @@ def test_informe_complementario_renderiza_matrices_de_prestaciones():
     ):
         assert f'id="matriz-{identificador}"' in html
     for encabezado in ("Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"):
-        assert html.count(f"<th scope=\"col\">{encabezado}</th>") == 3
+        assert html.count(f'<th scope="col">{encabezado}</th>') == 3
 
     tabla_solicitudes = re.search(
         r'<table id="matriz-solicitudes".*?</table>', html, flags=re.DOTALL

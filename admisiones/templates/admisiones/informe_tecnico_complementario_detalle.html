@@ -69,18 +69,12 @@
                                         <tbody>
                                             {% for fila in grupo.filas %}
                                                 <tr>
-                                                    <th scope="row" class="text-nowrap fw-semibold">
-                                                        {{ fila.titulo }}
-                                                    </th>
+                                                    <th scope="row" class="text-nowrap fw-semibold">{{ fila.titulo }}</th>
                                                     {% for campo in fila.campos %}
                                                         <td class="p-1">
-                                                            <p class="mb-1 small text-muted">
-                                                                {{ campo.valor }}
-                                                            </p>
+                                                            <p class="mb-1 small text-muted">{{ campo.valor }}</p>
                                                             {% if campos_modificados_existentes and campo.nombre in campos_modificados_existentes %}
-                                                                <p class="mb-1 small text-info">
-                                                                    {{ campos_modificados_existentes|get_item:campo.nombre }}
-                                                                </p>
+                                                                <p class="mb-1 small text-info">{{ campos_modificados_existentes|get_item:campo.nombre }}</p>
                                                             {% endif %}
                                                             <div class="form-check d-flex justify-content-center">
                                                                 <input class="form-check-input campo-subsanar"
@@ -89,25 +83,16 @@
                                                                        value="{{ campo.nombre }}"
                                                                        id="check_{{ campo.identificador }}"
                                                                        {% if campos_modificados_existentes and campo.nombre in campos_modificados_existentes %}checked{% endif %} />
-                                                                <label class="visually-hidden"
-                                                                       for="check_{{ campo.identificador }}">
-                                                                    Modificar {{ campo.nombre }}
-                                                                </label>
+                                                                <label class="visually-hidden" for="check_{{ campo.identificador }}">Modificar {{ campo.nombre }}</label>
                                                             </div>
                                                             <div class="input-wrapper mt-2"
                                                                  id="input_{{ campo.identificador }}"
-                                                                 {% if campos_modificados_existentes and campo.nombre in campos_modificados_existentes %}
-                                                                     style="display: block"
-                                                                 {% else %}
-                                                                     style="display: none"
-                                                                 {% endif %}>
+                                                                 {% if campos_modificados_existentes and campo.nombre in campos_modificados_existentes %} style="display: block" {% else %} style="display: none" {% endif %}>
                                                                 <input type="text"
                                                                        class="form-control form-control-sm"
                                                                        name="campo_{{ campo.nombre }}"
                                                                        id="campo_{{ campo.identificador }}"
-                                                                       {% if campos_modificados_existentes and campo.nombre in campos_modificados_existentes %}
-                                                                           value="{{ campos_modificados_existentes|get_item:campo.nombre }}"
-                                                                       {% endif %}
+                                                                       {% if campos_modificados_existentes and campo.nombre in campos_modificados_existentes %} value="{{ campos_modificados_existentes|get_item:campo.nombre }}" {% endif %}
                                                                        placeholder="Nuevo valor"
                                                                        aria-label="Nuevo valor para {{ campo.nombre }}"
                                                                        data-field-name="{{ campo.nombre }}" />
@@ -143,26 +128,17 @@
                                                                value="{{ campo.nombre }}"
                                                                id="check_{{ campo.identificador }}"
                                                                {% if campos_modificados_existentes and campo.nombre in campos_modificados_existentes %}checked{% endif %} />
-                                                        <label class="form-check-label"
-                                                               for="check_{{ campo.identificador }}">
-                                                            Modificar campo
-                                                        </label>
+                                                        <label class="form-check-label" for="check_{{ campo.identificador }}">Modificar campo</label>
                                                     </div>
                                                 </div>
                                                 <div class="input-wrapper mt-2"
                                                      id="input_{{ campo.identificador }}"
-                                                     {% if campos_modificados_existentes and campo.nombre in campos_modificados_existentes %}
-                                                         style="display: block"
-                                                     {% else %}
-                                                         style="display: none"
-                                                     {% endif %}>
+                                                     {% if campos_modificados_existentes and campo.nombre in campos_modificados_existentes %} style="display: block" {% else %} style="display: none" {% endif %}>
                                                     <input type="text"
                                                            class="form-control"
                                                            name="campo_{{ campo.nombre }}"
                                                            id="campo_{{ campo.identificador }}"
-                                                           {% if campos_modificados_existentes and campo.nombre in campos_modificados_existentes %}
-                                                               value="{{ campos_modificados_existentes|get_item:campo.nombre }}"
-                                                           {% endif %}
+                                                           {% if campos_modificados_existentes and campo.nombre in campos_modificados_existentes %} value="{{ campos_modificados_existentes|get_item:campo.nombre }}" {% endif %}
                                                            placeholder="Escriba el nuevo valor"
                                                            data-field-name="{{ campo.nombre }}" />
                                                 </div>
