@@ -77,9 +77,7 @@ def test_historial_certificaciones_no_precarga_el_legajo_completo(
 
     with CaptureQueriesContext(connection) as queries:
         response = client.get(
-            reverse(
-                "certificaciones_prestaciones_historial", kwargs={"pk": comedor.id}
-            )
+            reverse("certificaciones_prestaciones_historial", kwargs={"pk": comedor.id})
         )
 
     assert response.status_code == 200
