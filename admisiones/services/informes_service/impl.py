@@ -1,39 +1,58 @@
-from django.shortcuts import get_object_or_404
-from django.template.loader import render_to_string, get_template
+import logging
+import os
+import traceback
 from datetime import date, datetime
-
-from django.utils import timezone
-from django.utils.text import slugify
-from django.utils.html import strip_tags
-from django.conf import settings
-from django.core.files.base import ContentFile
 from io import BytesIO
+from typing import Any
+
+from django.conf import settings
+from django.contrib import messages
+from django.core.files.base import ContentFile
+from django.db import transaction
+from django.shortcuts import get_object_or_404
+from django.template.loader import get_template, render_to_string
+from django.utils import timezone
+from django.utils.html import strip_tags
+from django.utils.text import slugify
 from docx import Document
 from htmldocx import HtmlToDocx
-from ..docx_service import DocumentTemplateService, AdmisionesContextService
-from django.db import transaction
-from django.contrib import messages
-import logging
-import traceback
-import os
 
 from ...utils import generar_texto_comidas
+from ..docx_service import AdmisionesContextService, DocumentTemplateService
+from admisiones.forms.admisiones_forms import (
+    InformeTecnicoBaseForm,
+    InformeTecnicoJuridicoForm,
+)
+from admisiones.models.admisiones import (
+    Admision,
+    CampoASubsanar,
+    InformeComplementario,
+    InformeComplementarioCampos,
+    InformeTecnico,
+    InformeTecnicoComplementarioPDF,
+    InformeTecnicoPDF,
+    ObservacionGeneralInforme,
+)
 
 logger = logging.getLogger("admisiones.services.informes")
 
-from admisiones.models.admisiones import (
-    InformeTecnico,
-    CampoASubsanar,
-    ObservacionGeneralInforme,
-    InformeTecnicoPDF,
-    Admision,
-    InformeComplementario,
-    InformeComplementarioCampos,
-    InformeTecnicoComplementarioPDF,
-)
-from admisiones.forms.admisiones_forms import (
-    InformeTecnicoJuridicoForm,
-    InformeTecnicoBaseForm,
+MATRICES_DE_PRESTACIONES = {
+    "Prestaciones aprobadas en el último convenio": (
+        "prestaciones_ultimo_convenio",
+        "aprobadas_ultimo_convenio",
+    ),
+    "Solicitudes": ("solicitudes", "solicitudes"),
+    "Prestaciones Aprobadas": ("prestaciones_aprobadas", "aprobadas"),
+}
+COMIDAS = ("desayuno", "almuerzo", "merienda", "cena")
+DIAS_SEMANA = (
+    "lunes",
+    "martes",
+    "miercoles",
+    "jueves",
+    "viernes",
+    "sabado",
+    "domingo",
 )
 
 
@@ -176,7 +195,12 @@ class InformeService:
             return []
 
     @staticmethod
-    def get_campos_agrupados_informe(informe):
+    def get_campos_agrupados_informe(informe) -> list[dict[str, Any]]:
+        """Agrupa campos visibles y conserva matrices de prestaciones por día."""
+        titulo_campos_especificos = {
+            "base": "Campos Específicos - Organización de Base",
+            "juridico": "Campos Específicos - Organización Jurídica",
+        }.get(getattr(informe, "tipo", None), "Campos Específicos")
         grupos = {
             "Datos de la Organización": [],
             "Datos del Representante": [],
@@ -186,7 +210,7 @@ class InformeService:
             "Solicitudes": [],
             "Prestaciones Aprobadas": [],
             "Información Adicional": [],
-            "Campos Específicos": [],
+            titulo_campos_especificos: [],
             "Resolución de pago": [],
         }
         valores = dict(InformeService.get_campos_visibles_informe(informe))
@@ -213,7 +237,7 @@ class InformeService:
             if es_campo_renovacion and not es_renovacion:
                 continue
             if field.name in campos_especificos:
-                grupo = "Campos Específicos"
+                grupo = titulo_campos_especificos
             elif field.name == "expediente_nro" or "organizacion" in field.name:
                 grupo = "Datos de la Organización"
             elif field.name.startswith("representante_"):
@@ -236,8 +260,56 @@ class InformeService:
                 grupo = "Datos del Comedor/Merendero"
             else:
                 grupo = "Información Adicional"
-            grupos[grupo].append((nombre, valores[nombre]))
-        return [(titulo, campos) for titulo, campos in grupos.items() if campos]
+            grupos[grupo].append(
+                {
+                    "identificador": field.name,
+                    "nombre": nombre,
+                    "valor": valores[nombre],
+                }
+            )
+
+        secciones = []
+        for titulo, campos in grupos.items():
+            if not campos:
+                continue
+            matriz = MATRICES_DE_PRESTACIONES.get(titulo)
+            if not matriz:
+                secciones.append(
+                    {
+                        "titulo": titulo,
+                        "tipo": "campos",
+                        "campos": campos,
+                    }
+                )
+                continue
+
+            identificador, prefijo = matriz
+            campos_por_identificador = {
+                campo["identificador"]: campo for campo in campos
+            }
+            filas = []
+            for comida in COMIDAS:
+                campos_fila = [
+                    campos_por_identificador[f"{prefijo}_{comida}_{dia}"]
+                    for dia in DIAS_SEMANA
+                    if f"{prefijo}_{comida}_{dia}" in campos_por_identificador
+                ]
+                if campos_fila:
+                    filas.append(
+                        {
+                            "titulo": comida.capitalize(),
+                            "campos": campos_fila,
+                        }
+                    )
+            secciones.append(
+                {
+                    "titulo": titulo,
+                    "tipo": "matriz",
+                    "identificador": identificador,
+                    "filas": filas,
+                }
+            )
+        return secciones
 
     @staticmethod
     def _formatear_valor_campo(informe, field):

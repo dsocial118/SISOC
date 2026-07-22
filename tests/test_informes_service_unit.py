@@ -149,13 +149,19 @@ def test_campos_complementarios_se_agrupan_como_informe_original(mocker):
         return_value=[(field.verbose_name, f"valor-{field.name}") for field in fields],
     )
 
-    grupos = dict(module.InformeService.get_campos_agrupados_informe(informe))
+    grupos = {
+        grupo["titulo"]: grupo
+        for grupo in module.InformeService.get_campos_agrupados_informe(informe)
+    }
 
-    assert grupos["Datos de la Organización"][0][0] == "Organización"
-    assert grupos["Datos del Representante"][0][0] == "Representante"
-    assert grupos["Datos del Comedor/Merendero"][0][0] == "Espacio"
-    assert grupos["Responsable de la Tarjeta"][0][0] == "Responsable tarjeta"
-    assert grupos["Información Adicional"][0][0] == "Observaciones"
+    assert grupos["Datos de la Organización"]["campos"][0]["nombre"] == "Organización"
+    assert grupos["Datos del Representante"]["campos"][0]["nombre"] == "Representante"
+    assert grupos["Datos del Comedor/Merendero"]["campos"][0]["nombre"] == "Espacio"
+    assert (
+        grupos["Responsable de la Tarjeta"]["campos"][0]["nombre"]
+        == "Responsable tarjeta"
+    )
+    assert grupos["Información Adicional"]["campos"][0]["nombre"] == "Observaciones"
 
 
 @pytest.mark.parametrize("tipo_informe", ["base", "juridico"])
@@ -181,7 +187,10 @@ def test_campos_complementarios_no_muestran_secciones_de_renovacion(
         return_value=[(field.verbose_name, "valor") for field in fields],
     )
 
-    grupos = dict(module.InformeService.get_campos_agrupados_informe(informe))
+    grupos = {
+        grupo["titulo"]: grupo
+        for grupo in module.InformeService.get_campos_agrupados_informe(informe)
+    }
 
     assert "Prestaciones aprobadas en el último convenio" not in grupos
     assert "Resolución de pago" not in grupos
@@ -192,7 +201,8 @@ def test_campos_complementarios_renovacion_incluye_sus_secciones_y_avalistas(
 ):
     fields = [
         SimpleNamespace(
-            name="aprobadas_ultimo_convenio_lunes", verbose_name="Prestación anterior"
+            name="aprobadas_ultimo_convenio_desayuno_lunes",
+            verbose_name="Prestación anterior",
         ),
         SimpleNamespace(name="resolucion_de_pago_1", verbose_name="Resolución"),
         SimpleNamespace(name="organizacion_avalista_1", verbose_name="Avalista 1"),
@@ -209,14 +219,101 @@ def test_campos_complementarios_renovacion_incluye_sus_secciones_y_avalistas(
         return_value=[(field.verbose_name, "valor") for field in fields],
     )
 
-    grupos = dict(module.InformeService.get_campos_agrupados_informe(informe))
+    grupos = {
+        grupo["titulo"]: grupo
+        for grupo in module.InformeService.get_campos_agrupados_informe(informe)
+    }
 
     assert "Prestaciones aprobadas en el último convenio" in grupos
     assert "Resolución de pago" in grupos
-    assert [nombre for nombre, _valor in grupos["Campos Específicos"]] == [
+    assert grupos["Prestaciones aprobadas en el último convenio"]["tipo"] == "matriz"
+    assert (
+        grupos["Prestaciones aprobadas en el último convenio"]["filas"][0]["titulo"]
+        == "Desayuno"
+    )
+    assert [
+        campo["nombre"]
+        for campo in grupos["Campos Específicos - Organización de Base"]["campos"]
+    ] == [
         "Avalista 1",
         "Avalista 2",
     ]
+
+
+def test_campos_complementarios_arma_matrices_por_comida_y_dia(mocker):
+    fields = [
+        SimpleNamespace(
+            name="solicitudes_desayuno_lunes", verbose_name="Solicitud desayuno lunes"
+        ),
+        SimpleNamespace(
+            name="solicitudes_desayuno_martes", verbose_name="Solicitud desayuno martes"
+        ),
+        SimpleNamespace(
+            name="aprobadas_almuerzo_lunes", verbose_name="Aprobada almuerzo lunes"
+        ),
+    ]
+    informe = SimpleNamespace(
+        tipo="base",
+        admision=SimpleNamespace(tipo="incorporacion"),
+        _meta=SimpleNamespace(fields=fields),
+    )
+    mocker.patch.object(
+        module.InformeService,
+        "get_campos_visibles_informe",
+        return_value=[(field.verbose_name, 1) for field in fields],
+    )
+
+    grupos = {
+        grupo["titulo"]: grupo
+        for grupo in module.InformeService.get_campos_agrupados_informe(informe)
+    }
+
+    solicitudes = grupos["Solicitudes"]
+    assert solicitudes["tipo"] == "matriz"
+    assert solicitudes["filas"][0]["titulo"] == "Desayuno"
+    assert [campo["identificador"] for campo in solicitudes["filas"][0]["campos"]] == [
+        "solicitudes_desayuno_lunes",
+        "solicitudes_desayuno_martes",
+    ]
+    assert grupos["Prestaciones Aprobadas"]["tipo"] == "matriz"
+
+
+@pytest.mark.parametrize(
+    ("tipo_informe", "field_name", "titulo_esperado"),
+    [
+        (
+            "base",
+            "declaracion_jurada_recepcion_subsidios",
+            "Campos Específicos - Organización de Base",
+        ),
+        (
+            "juridico",
+            "validacion_registro_nacional",
+            "Campos Específicos - Organización Jurídica",
+        ),
+    ],
+)
+def test_campos_complementarios_conservan_el_titulo_especifico_por_tipo(
+    mocker, tipo_informe, field_name, titulo_esperado
+):
+    field = SimpleNamespace(name=field_name, verbose_name="Campo específico")
+    informe = SimpleNamespace(
+        tipo=tipo_informe,
+        admision=SimpleNamespace(tipo="incorporacion"),
+        _meta=SimpleNamespace(fields=[field]),
+    )
+    mocker.patch.object(
+        module.InformeService,
+        "get_campos_visibles_informe",
+        return_value=[(field.verbose_name, "valor")],
+    )
+
+    grupos = {
+        grupo["titulo"]: grupo
+        for grupo in module.InformeService.get_campos_agrupados_informe(informe)
+    }
+
+    assert titulo_esperado in grupos
 
 
 def test_generate_docx_content_primary_and_fallback(mocker):

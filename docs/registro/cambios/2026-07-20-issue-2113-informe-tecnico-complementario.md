@@ -35,6 +35,8 @@ alinear su presentación y advertencias con el flujo real de Admisiones.
   regresar o enviar el informe.
 - Los campos se muestran en bloques equivalentes al Informe Técnico original,
   manteniendo la selección manual de cada modificación.
+- Las secciones de solicitudes y prestaciones conservan la matriz Comida × Día
+  del formulario original, incluida la variante de renovación.
 - La alerta deja de mostrarse por la mera finalización del Informe Técnico y se
   reserva para solicitudes de Legales o informes a rectificar.
 - Se agregaron pruebas para selección de admisión, permisos, agrupación,
@@ -46,6 +48,8 @@ alinear su presentación y advertencias con el flujo real de Admisiones.
   mantienen en Campos Específicos.
 - En Acompañamiento, el acceso al informe se presenta en una columna derecha
   separada y conserva la admisión seleccionada.
+- El breadcrumb también vuelve al convenio seleccionado cuando el informe se
+  abrió desde Acompañamiento.
 
 ## Supuestos
 
