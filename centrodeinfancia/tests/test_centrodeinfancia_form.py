@@ -213,6 +213,7 @@ def test_acepta_nombres_con_tildes_apostrofes_y_guiones(
     [
         "00-00000000-0",  # TC03/TS03: CUIT nulo, antes se guardaba como válido
         "ABCDEF",  # TC03/TS04
+        "20a44535030b4",  # no se admiten letras entre los dígitos
         "1234",  # TC03/TS02
         "30-12345678-9",  # dígito verificador incorrecto (el real es 1)
     ],
@@ -506,6 +507,7 @@ def test_edicion_muestra_errores_en_la_vista(client, ubicacion):
 
     assert response.status_code == 200
     assert response.context["form"].errors["telefono"] == ["Este campo es obligatorio."]
+    assert "Este campo es obligatorio." in response.content.decode("utf-8")
 
 
 # --- Provincia bloqueada por perfil del usuario (no-regresión) ---------------

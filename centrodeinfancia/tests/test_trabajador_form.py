@@ -194,7 +194,9 @@ def test_rechaza_dni_fuera_de_rango(catalogos, valor):
 
 
 @pytest.mark.django_db
-@pytest.mark.parametrize("valor", ["00-00000000-0", "ABCDEF", "1234"])
+@pytest.mark.parametrize(
+    "valor", ["00-00000000-0", "ABCDEF", "20a44535030b4", "1234"]
+)
 def test_rechaza_cuit_invalido(catalogos, valor):
     form = TrabajadorCDIForm(data=datos_validos(cuit=valor))
 
@@ -458,17 +460,18 @@ def test_alta_no_bloquea_campos_sin_renaper(catalogos):
 
 
 @pytest.mark.django_db
-def test_alta_con_renaper_marca_campos_readonly(catalogos):
+def test_alta_con_renaper_bloquea_campos_verificados(catalogos):
     form = TrabajadorCDIForm(
         data=datos_validos(),
+        initial={"nombre": "Julia", "apellido": "Méndez", "dni": 30123456},
         campos_renaper=["nombre", "apellido", "dni"],
     )
 
-    # En el alta el bloqueo es blando (readonly): el dato recién se trajo.
     for campo in ("nombre", "apellido", "dni"):
-        assert form.fields[campo].widget.attrs.get("readonly") is True
+        assert form.fields[campo].disabled is True
+        assert form.fields[campo].required is True
         assert form.fields[campo].widget.attrs.get("data-renaper") == "1"
-    assert form.fields["telefono"].widget.attrs.get("readonly") is None
+    assert form.fields["telefono"].disabled is False
 
 
 @pytest.mark.django_db

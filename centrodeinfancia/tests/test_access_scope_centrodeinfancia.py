@@ -766,12 +766,7 @@ def test_egp_sin_scope_no_puede_crear_cdi(client):
 
     response = client.post(
         reverse("centrodeinfancia_crear"),
-        {
-            "nombre": "CDI EGP sin scope",
-            "provincia": provincia.pk,
-            "telefono": "1122334455",
-            "telefono_referente": "1199887766",
-        },
+        _payload_cdi_scope(provincia, nombre="CDI EGP sin scope"),
     )
 
     assert response.status_code == 200

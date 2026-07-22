@@ -99,6 +99,7 @@ def validate_unicode_email(value):
 
 
 CUIT_WEIGHTS = (5, 4, 3, 2, 7, 6, 5, 4, 3, 2)
+CUIT_RE = re.compile(r"^\d{2}-?\d{8}-?\d$")
 
 SOLO_LETRAS_RE = re.compile(r"^[^\W\d_]+(?:[\s'’\-][^\W\d_]+)*$", re.UNICODE)
 
@@ -120,11 +121,12 @@ def _digito_verificador_cuit(base_digits):
 
 
 def validate_cuit(value):
-    """Validar CUIT/CUIL: 11 dígitos y dígito verificador correcto."""
+    """Validar CUIT/CUIL con formato permitido y dígito verificador correcto."""
 
-    digits = solo_digitos(value)
-    if len(digits) != 11:
+    raw_value = str(value or "").strip()
+    if not CUIT_RE.fullmatch(raw_value):
         raise ValidationError("Ingrese un CUIT válido de 11 dígitos (XX-XXXXXXXX-X).")
+    digits = solo_digitos(raw_value)
     if int(digits) == 0:
         raise ValidationError("El CUIT ingresado no es válido.")
     if _digito_verificador_cuit(digits[:10]) != int(digits[-1]):

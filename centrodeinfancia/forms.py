@@ -39,7 +39,6 @@ from centrodeinfancia.models import (
     IntervencionCentroInfancia,
     NominaCentroInfancia,
     Trabajador,
-    normalizar_cuit,
     TRABAJADOR_CAPACITACIONES_CHOICES,
     TRABAJADOR_GRUPO_PERTENENCIA_CHOICES,
     TRABAJADOR_LENGUAJES_CHOICES,
@@ -414,13 +413,11 @@ class CentroDeInfanciaForm(forms.ModelForm):
             raise forms.ValidationError(exc.messages) from exc
 
     def clean_cuit_organizacion_gestiona(self):
-        # Se valida el valor crudo, no el normalizado: "ABCDEF" normaliza a cadena
-        # vacía y se colaría como CUIT nulo (TC03/TS04).
         raw = (self.cleaned_data.get("cuit_organizacion_gestiona") or "").strip()
         if not raw:
             return None
         try:
-            return validate_cuit(normalizar_cuit(raw))
+            return validate_cuit(raw)
         except ValidationError as exc:
             raise forms.ValidationError(exc.messages) from exc
 
@@ -1513,26 +1510,19 @@ class TrabajadorCDIForm(forms.ModelForm):
             ] = "Este campo es obligatorio."
 
     def _bloquear_campos_renaper(self, campos_renaper):
-        # En la edición, los campos que RENAPER verificó en el alta no se editan.
-        # `disabled` es robusto en un ModelForm: Django ignora lo que venga por POST y
-        # toma el valor de la instancia, así que no se puede pisar ni con devtools.
-        # En el alta se recibe `campos_renaper` explícito (bloqueo blando: readonly),
-        # porque el dato recién se trajo y todavía no hay instancia que respalde el valor.
+        # Los campos provenientes de RENAPER se reciben con initial confiable y quedan
+        # disabled tanto en alta como en edición. Django ignora el POST y toma initial
+        # o la instancia, por lo que no se pueden alterar con devtools.
         if campos_renaper is None:
             campos_renaper = (
                 self.instance.campos_verificados_renaper if self.instance.pk else []
             )
-        es_edicion = bool(self.instance.pk)
         for field_name in campos_renaper:
             field = self.fields.get(field_name)
             if not field:
                 continue
-            field.required = False
             field.help_text = "Dato verificado por RENAPER."
-            if es_edicion:
-                field.disabled = True
-            else:
-                field.widget.attrs["readonly"] = True
+            field.disabled = True
             field.widget.attrs["data-renaper"] = "1"
 
     def _configurar_pais_nacionalidad(self):
@@ -1590,7 +1580,7 @@ class TrabajadorCDIForm(forms.ModelForm):
         if not raw:
             return None
         try:
-            return validate_cuit(normalizar_cuit(raw))
+            return validate_cuit(raw)
         except ValidationError as exc:
             raise forms.ValidationError(exc.messages) from exc
 

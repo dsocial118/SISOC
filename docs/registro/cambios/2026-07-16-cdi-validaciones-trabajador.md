@@ -13,11 +13,12 @@ validadores de `core/validators.py` que se crearon ahí.
 ## Cambios aplicados
 
 - `centrodeinfancia/forms.py` (`TrabajadorCDIForm`):
-  - `CAMPOS_OBLIGATORIOS`: 21 campos requeridos, según los casos que QA marcó como
-    "campo requerido". Quedan fuera los condicionales (`funcion_egp`, `funcion_cdi`,
-    `sala_cdi`, `formacion_academica`, `pueblo_originario` y el bloque de discapacidad):
-    el `clean()` del modelo los limpia cuando no aplican, así que exigirlos siempre
-    rompería el guardado.
+  - `CAMPOS_OBLIGATORIOS`: 22 campos requeridos, según los casos que QA marcó como
+    "campo requerido". Quedan fuera los condicionales (`funcion_pfpi`, `funcion_egp`,
+    `funcion_cdi`, `sala_cdi`, `funcion_uaf`, `formacion_academica`,
+    `pueblo_originario` y el bloque de discapacidad), además de
+    `fecha_actualizacion`: el `clean()` del modelo los limpia cuando no aplican, así
+    que exigirlos siempre rompería el guardado.
   - Validación de nombre y apellido (solo letras), teléfono, CUIT (con dígito
     verificador), DNI (7-8 dígitos), fecha de nacimiento y número de CUD (solo dígitos).
   - `_configurar_pais_nacionalidad()`: país de nacimiento y nacionalidad pasan de texto
@@ -39,19 +40,20 @@ validadores de `core/validators.py` que se crearon ahí.
 - **RENAPER (TC22, TC20):** los datos que RENAPER precarga en el alta quedan bloqueados en
   la edición (decisión de PM: no se corrigen datos verificados por el organismo). Detalle:
   - Campo nuevo `Trabajador.campos_verificados_renaper` (JSON, lista de nombres de campo).
-    Se guarda en el alta solo cuando el submit trae `origen_dato=renaper`; contiene los
-    campos que RENAPER completó **con valor** (por-campo, para cubrir datos parciales:
-    un campo que RENAPER no trajo nunca se bloquea).
-  - `TrabajadorCDIForm._bloquear_campos_renaper`: en **edición** esos campos van `disabled`
-    (robusto: en un ModelForm Django ignora el POST y toma el valor de la instancia, no se
-    puede pisar). En el **alta** van `readonly` (bloqueo blando: el dato recién se trajo y
-    todavía no hay instancia que respalde el valor). Ambos muestran el texto de ayuda
+    Se guarda en el alta solo desde un token firmado, de vida corta y ligado al usuario y
+    al CDI que contiene la respuesta RENAPER. Incluye únicamente los campos que RENAPER
+    completó **con valor** (por-campo, para cubrir datos parciales: un campo que RENAPER
+    no trajo nunca no se bloquea).
+  - `TrabajadorCDIForm._bloquear_campos_renaper`: en alta y edición esos campos van
+    `disabled` (Django ignora el POST y toma el valor inicial firmado o el de la instancia,
+    por lo que no se pueden pisar). Ambos muestran el texto de ayuda
     "Dato verificado por RENAPER".
-  - `TrabajadorCentroInfanciaCreateView`: computa la lista desde la respuesta de RENAPER,
-    la transporta en un hidden `campos_renaper` y la persiste en `form_valid`, filtrando
-    contra `RENAPER_FIELDS` (no se persiste lo que venga arbitrariamente por POST).
-- `centrodeinfancia/migrations/0037_...`: `AlterField` por el cambio de `choices`.
-  `0038_...`: agrega `campos_verificados_renaper`. Ninguna toca datos.
+  - `TrabajadorCentroInfanciaCreateView`: crea el token desde la respuesta RENAPER y lo
+    verifica antes de construir el form y de persistir `campos_verificados_renaper`; no se
+    acepta la procedencia desde campos hidden manipulables.
+  - `centrodeinfancia/migrations/0039_...`: `AlterField` por el cambio de `choices`;
+    `0040_...`: agrega `campos_verificados_renaper`; `0041_...`: agrega los campos
+    funcionales nuevos. Ninguna hace una migración de datos.
 
 ## Criterios adoptados (PM, 2026-07-16)
 
@@ -122,5 +124,7 @@ no es CDI (antes solo lo hacía el JS).
   criterio del PM: son datos de prueba y se van a borrar.
 - Quitar "No corresponde" de `funcion_egp` y `es_interprete` deja inválidos los registros
   que hoy tengan ese valor. Mismo criterio.
-- **Rollback:** revertir el commit y la migración 0037 (`AlterField` de choices, sin
-  cambio de esquema).
+- **Rollback:** las migraciones del cambio son `0039`, `0040` y `0041`; no revertir
+  `0037` ni `0038`, que son ajenas. Revertir `0040` o `0041` después de usar el flujo
+  elimina sus columnas y los datos cargados en ellas. En un entorno con datos, respaldar
+  antes y preferir un fix hacia adelante salvo que Operaciones apruebe el rollback.
