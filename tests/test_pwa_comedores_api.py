@@ -1224,7 +1224,7 @@ def test_prestacion_alimentaria_conformidad_crea_registro():
 
 
 @pytest.mark.django_db
-def test_prestacion_alimentaria_conformidad_sin_fuente_crea_registro():
+def test_prestacion_alimentaria_conformidad_sin_pdf_mantiene_advertencia():
     provincia = Provincia.objects.create(nombre="Cordoba sin informe")
     programa = Programas.objects.create(nombre="Programa sin informe")
     comedor = Comedor.objects.create(
@@ -1236,15 +1236,22 @@ def test_prestacion_alimentaria_conformidad_sin_fuente_crea_registro():
         username="rep_conf_sin_informe",
     )
 
-    response = _token_client(representante).post(
+    client = _token_client(representante)
+    response = client.post(
         f"/api/comedores/{comedor.id}/prestacion-alimentaria/conformidad/",
-        {"conforme": True, "periodo": "2035-11"},
+        {"conforme": True},
         format="json",
     )
+    detalle = client.get(f"/api/comedores/{comedor.id}/prestacion-alimentaria/")
 
     assert response.status_code == 201
     registro = PrestacionAlimentariaConformidad.objects.get(comedor=comedor)
     assert not registro.certificacion_pdf
+    assert detalle.status_code == 200
+    assert detalle.data["conformidad_pendiente"] is True
+    assert detalle.data["periodo_pendiente"] == date.fromisoformat(
+        response.data["periodo"]
+    )
 
 
 @pytest.mark.django_db
@@ -1279,7 +1286,7 @@ def test_prestacion_alimentaria_conformidad_permite_repetir_periodo():
 
 
 @pytest.mark.django_db
-def test_prestacion_alimentaria_conformidad_repetida_mantiene_periodo_disponible():
+def test_prestacion_alimentaria_conformidad_realizada_elimina_advertencia():
     comedor, client = _comedor_alimentar_comunidad(username="rep_conf_repetida")
     url = f"/api/comedores/{comedor.id}/prestacion-alimentaria/conformidad/"
 
@@ -1288,10 +1295,9 @@ def test_prestacion_alimentaria_conformidad_repetida_mantiene_periodo_disponible
 
     assert primera.status_code == 201
     assert detalle.status_code == 200
-    assert detalle.data["conformidad_pendiente"] is True
-    assert detalle.data["periodo_pendiente"] == date.fromisoformat(
-        primera.data["periodo"]
-    )
+    assert detalle.data["conformidad_pendiente"] is False
+    assert detalle.data["periodo_pendiente"] is None
+    assert detalle.data["periodo_actual"] == date.fromisoformat(primera.data["periodo"])
 
 
 @pytest.mark.django_db

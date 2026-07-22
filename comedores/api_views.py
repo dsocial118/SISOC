@@ -62,6 +62,7 @@ from comedores.services.capacitaciones_certificados_service import (
     serialize_certificate,
     submit_certificate,
 )
+from comedores.utils import get_prestacion_conformidad_pending_period
 from comedores.utils import usa_datos_convenio_pnud
 from comedores.utils import is_abordaje_comunitario_linea_tradicional_program
 from intervenciones.models.intervenciones import Intervencion
@@ -495,8 +496,8 @@ class ComedorDetailViewSet(
         )
         conformidades_list = list(conformidades)
         previous_period = self._previous_month_period()
-        pending_period = previous_period
-        selected_period = pending_period or previous_period
+        pending_period = get_prestacion_conformidad_pending_period(comedor)
+        selected_period = previous_period
         conformidad_actual = next(
             (item for item in conformidades_list if item.periodo == selected_period),
             None,
