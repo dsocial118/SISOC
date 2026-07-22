@@ -96,3 +96,82 @@ def validate_unicode_email(value):
     """Validar email permitiendo tildes en la parte local."""
 
     return UnicodeEmailValidator()(value)
+
+
+CUIT_WEIGHTS = (5, 4, 3, 2, 7, 6, 5, 4, 3, 2)
+CUIT_RE = re.compile(r"^\d{2}-?\d{8}-?\d$")
+
+SOLO_LETRAS_RE = re.compile(r"^[^\W\d_]+(?:[\s'’\-][^\W\d_]+)*$", re.UNICODE)
+
+
+def solo_digitos(value):
+    """Devuelve únicamente los dígitos de ``value``."""
+
+    return re.sub(r"\D", "", str(value or ""))
+
+
+def _digito_verificador_cuit(base_digits):
+    total = sum(int(digit) * weight for digit, weight in zip(base_digits, CUIT_WEIGHTS))
+    verificador = 11 - (total % 11)
+    if verificador == 11:
+        return 0
+    if verificador == 10:
+        return 9
+    return verificador
+
+
+def validate_cuit(value):
+    """Validar CUIT/CUIL con formato permitido y dígito verificador correcto."""
+
+    raw_value = str(value or "").strip()
+    if not CUIT_RE.fullmatch(raw_value):
+        raise ValidationError("Ingrese un CUIT válido de 11 dígitos (XX-XXXXXXXX-X).")
+    digits = solo_digitos(raw_value)
+    if int(digits) == 0:
+        raise ValidationError("El CUIT ingresado no es válido.")
+    if _digito_verificador_cuit(digits[:10]) != int(digits[-1]):
+        raise ValidationError("El CUIT ingresado tiene un dígito verificador inválido.")
+    return digits
+
+
+def validate_solo_letras(value):
+    """Validar que el texto contenga solo letras, espacios, apóstrofes y guiones."""
+
+    texto = str(value or "").strip()
+    if not texto:
+        return texto
+    if not SOLO_LETRAS_RE.match(texto):
+        raise ValidationError(
+            "Ingrese solo letras (no se permiten números ni caracteres especiales)."
+        )
+    return texto
+
+
+def validate_telefono_ar(value):
+    """Validar un teléfono argentino: solo dígitos y guiones, entre 6 y 11 dígitos."""
+
+    texto = str(value or "").strip()
+    if not texto:
+        return texto
+    if not re.fullmatch(r"\d+(?:-\d+)*", texto):
+        raise ValidationError(
+            "Ingrese un teléfono válido: solo números, opcionalmente separados por guiones."
+        )
+    digits = solo_digitos(texto)
+    if not 6 <= len(digits) <= 11:
+        raise ValidationError(
+            "Ingrese un teléfono válido de entre 6 y 11 dígitos "
+            "(por ejemplo 4774-2015 o 011-4774-2015)."
+        )
+    return texto
+
+
+def validate_codigo_postal_ar(value):
+    """Validar un código postal argentino: 4 dígitos, entre 1000 y 9999."""
+
+    if value in (None, ""):
+        return value
+    digits = solo_digitos(value)
+    if len(digits) != 4 or not 1000 <= int(digits) <= 9999:
+        raise ValidationError("Ingrese un código postal válido de 4 dígitos.")
+    return int(digits)

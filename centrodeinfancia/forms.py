@@ -1,14 +1,21 @@
 # pylint: disable=too-many-lines
 
-from datetime import datetime, date
+from datetime import date
+from decimal import Decimal
 
 from django import forms
 from django.utils.text import slugify
 from django.core.exceptions import ValidationError
-from django.core.validators import MaxLengthValidator, RegexValidator
+from django.core.validators import MaxLengthValidator
 
 from core.models import Localidad, Municipio, Provincia
-from core.validators import validate_unicode_email
+from core.validators import (
+    validate_codigo_postal_ar,
+    validate_cuit,
+    validate_solo_letras,
+    validate_telefono_ar,
+    validate_unicode_email,
+)
 from intervenciones.constants import PROGRAMA_ALIASES_CENTRO_INFANCIA
 from intervenciones.models.intervenciones import (
     SubIntervencion,
@@ -21,6 +28,7 @@ from users.territorial_scope import (
     is_territorial_user,
 )
 from centrodeinfancia.formulario_cdi_schema import (
+    CAMPOS_OPCIONES,
     CAMPOS_OPCIONES_MULTIPLES,
     OPCIONES_DIAS_SEMANA,
 )
@@ -31,7 +39,6 @@ from centrodeinfancia.models import (
     IntervencionCentroInfancia,
     NominaCentroInfancia,
     Trabajador,
-    normalizar_cuit,
     TRABAJADOR_CAPACITACIONES_CHOICES,
     TRABAJADOR_GRUPO_PERTENENCIA_CHOICES,
     TRABAJADOR_LENGUAJES_CHOICES,
@@ -69,12 +76,41 @@ __all__ = [
 
 class CentroDeInfanciaForm(forms.ModelForm):
     SOLO_DIGITOS_ERROR = "Ingrese solo números (sin espacios ni signos)."
-    TELEFONO_FORMATO_ERROR = "Ingrese un teléfono válido: solo números o grupos numéricos separados por guiones."
-    TELEFONO_REGEX = RegexValidator(
-        regex=r"^\d+(?:-\d+)*$",
-        message=TELEFONO_FORMATO_ERROR,
-    )
     DIAS_SEMANA = list(OPCIONES_DIAS_SEMANA)
+    ANIO_INICIO_MINIMO = 1900
+    AMBITO_SIN_INFORMACION = "sin_informacion"
+    # Bounding box de Argentina continental: coordenadas fuera de este rango son
+    # siempre un error de carga (QA pide rechazar valores positivos).
+    LATITUD_MINIMA = Decimal("-55")
+    LATITUD_MAXIMA = Decimal("-21")
+    LONGITUD_MINIMA = Decimal("-74")
+    LONGITUD_MAXIMA = Decimal("-53")
+    # `dias_funcionamiento`, los horarios y latitud/longitud siguen siendo optativos.
+    # (Latitud/longitud pasarían a obligatorias si se implementa la toma por GPS.)
+    CAMPOS_OBLIGATORIOS = [
+        "nombre",
+        "organizacion",
+        "cuit_organizacion_gestiona",
+        "ambito",
+        "telefono",
+        "mail",
+        "fecha_inicio",
+        "provincia",
+        "departamento",
+        "municipio",
+        "localidad",
+        "codigo_postal",
+        "calle",
+        "numero",
+        "meses_funcionamiento",
+        "tipo_jornada",
+        "oferta_servicios",
+        "modalidad_gestion",
+        "nombre_referente",
+        "apellido_referente",
+        "email_referente",
+        "telefono_referente",
+    ]
     meses_funcionamiento = forms.MultipleChoiceField(
         required=False,
         choices=CAMPOS_OPCIONES_MULTIPLES["meses_funcionamiento"],
@@ -116,6 +152,8 @@ class CentroDeInfanciaForm(forms.ModelForm):
         self._configurar_campos_dinamicos_horarios()
         self._popular_campos_ubicacion()
         self._aplicar_provincia_usuario()
+        self._aplicar_anio_inicio()
+        self._aplicar_campo_ambito()
         self._aplicar_requeridos()
         self._aplicar_atributos_numericos()
         self._aplicar_campo_decil_ipi()
@@ -137,13 +175,22 @@ class CentroDeInfanciaForm(forms.ModelForm):
         ),
     )
 
+    def _aplicar_anio_inicio(self):
+        # El campo es un CharField sobre un DateField del modelo: sin esto, en edición
+        # el widget numérico recibiría "1995-01-01" y se mostraría vacío.
+        fecha = getattr(self.instance, "fecha_inicio", None)
+        if fecha and not self.data:
+            self.initial["fecha_inicio"] = fecha.year
+        self.fields["fecha_inicio"].widget.attrs["max"] = str(date.today().year)
+        self.fields["fecha_inicio"].widget.attrs["min"] = str(self.ANIO_INICIO_MINIMO)
+
     def _aplicar_requeridos(self):
-        self.fields["telefono"].required = True
-        self.fields["telefono"].error_messages[
-            "required"
-        ] = "Este campo es obligatorio."
-        self.fields["telefono_referente"].required = False
-        self.fields["ambito"].required = False
+        # Obligatorios tanto en el alta como en la edición posterior.
+        for field_name in self.CAMPOS_OBLIGATORIOS:
+            self.fields[field_name].required = True
+            self.fields[field_name].error_messages[
+                "required"
+            ] = "Este campo es obligatorio."
 
     def _configurar_campos_dinamicos_horarios(self):
         horarios_instancia = {}
@@ -187,10 +234,10 @@ class CentroDeInfanciaForm(forms.ModelForm):
                 continue
             attrs = self.fields[field_name].widget.attrs
             attrs["inputmode"] = "tel"
-            # Patrón alineado con TELEFONO_REGEX/validación backend: dígitos con grupos separados por guiones
+            # Patrón alineado con validate_telefono_ar: dígitos con grupos separados por guiones
             attrs["pattern"] = r"\d+(?:-\d+)*"
 
-        self.fields["codigo_postal"].widget.attrs["maxlength"] = "10"
+        self.fields["codigo_postal"].widget.attrs["maxlength"] = "4"
         self.fields["cuit_organizacion_gestiona"].widget.attrs["maxlength"] = "13"
 
     def _aplicar_campo_decil_ipi(self):
@@ -216,8 +263,17 @@ class CentroDeInfanciaForm(forms.ModelForm):
             for validator in self.fields["cuit_organizacion_gestiona"].validators
             if not isinstance(validator, MaxLengthValidator)
         ]
-        if not self.instance.pk and not self.initial.get("ambito"):
-            self.initial["ambito"] = "sin_informacion"
+
+    def _aplicar_campo_ambito(self):
+        # Ámbito es obligatorio: se saca "Sin información" de las opciones elegibles y
+        # se fuerza un placeholder vacío para que el usuario tenga que elegir.
+        self.fields["ambito"].choices = [("", "Seleccione un ámbito")] + [
+            (valor, etiqueta)
+            for valor, etiqueta in CAMPOS_OPCIONES["ambito"]
+            if valor != self.AMBITO_SIN_INFORMACION
+        ]
+        if self.initial.get("ambito") == self.AMBITO_SIN_INFORMACION:
+            self.initial["ambito"] = ""
 
     def _clean_solo_digitos(self, field_name):
         value = (self.cleaned_data.get(field_name) or "").strip()
@@ -326,13 +382,44 @@ class CentroDeInfanciaForm(forms.ModelForm):
     def clean_numero(self):
         return self._clean_solo_digitos("numero")
 
-    def clean_cuit_organizacion_gestiona(self):
-        value = normalizar_cuit(self.cleaned_data.get("cuit_organizacion_gestiona"))
+    def _clean_solo_letras(self, field_name):
+        value = (self.cleaned_data.get(field_name) or "").strip()
         if not value:
+            return value
+        try:
+            return validate_solo_letras(value)
+        except ValidationError as exc:
+            raise forms.ValidationError(exc.messages) from exc
+
+    def clean_nombre(self):
+        return self._clean_solo_letras("nombre")
+
+    def clean_organizacion(self):
+        return self._clean_solo_letras("organizacion")
+
+    def clean_nombre_referente(self):
+        return self._clean_solo_letras("nombre_referente")
+
+    def clean_apellido_referente(self):
+        return self._clean_solo_letras("apellido_referente")
+
+    def clean_codigo_postal(self):
+        value = self.cleaned_data.get("codigo_postal")
+        if value in (None, ""):
             return None
-        if len(value) != 11:
-            raise forms.ValidationError("Ingrese un CUIT válido de 11 dígitos.")
-        return value
+        try:
+            return validate_codigo_postal_ar(value)
+        except ValidationError as exc:
+            raise forms.ValidationError(exc.messages) from exc
+
+    def clean_cuit_organizacion_gestiona(self):
+        raw = (self.cleaned_data.get("cuit_organizacion_gestiona") or "").strip()
+        if not raw:
+            return None
+        try:
+            return validate_cuit(raw)
+        except ValidationError as exc:
+            raise forms.ValidationError(exc.messages) from exc
 
     def clean_mail(self):
         mail = self.cleaned_data.get("mail")
@@ -353,45 +440,61 @@ class CentroDeInfanciaForm(forms.ModelForm):
         raw = self.cleaned_data.get("fecha_inicio")
         if raw in (None, ""):
             return None
-        # If it's already a date, normalize to Jan 1 of that year
         if isinstance(raw, date):
-            return date(raw.year, 1, 1)
-        if isinstance(raw, str):
-            raw = raw.strip()
-            # Accept plain year "AAAA"
-            if raw.isdigit() and len(raw) == 4:
-                year = int(raw)
-                return date(year, 1, 1)
-            # Fallback: accept dd/mm/YYYY or YYYY-mm-dd for compatibility
-            try:
-                return datetime.strptime(raw, "%d/%m/%Y").date()
-            except ValueError:
-                try:
-                    return datetime.strptime(raw, "%Y-%m-%d").date()
-                except ValueError as exc2:
-                    raise forms.ValidationError(
-                        "Formato inválido para Año de inicio. Use AAAA."
-                    ) from exc2
-        raise forms.ValidationError("Formato inválido para Año de inicio.")
+            year = raw.year
+        else:
+            raw = str(raw).strip()
+            if not (raw.isdigit() and len(raw) == 4):
+                raise forms.ValidationError(
+                    "Ingrese solo el año, con 4 dígitos (por ejemplo 1995)."
+                )
+            year = int(raw)
+
+        anio_actual = date.today().year
+        if not self.ANIO_INICIO_MINIMO <= year <= anio_actual:
+            raise forms.ValidationError(
+                f"Ingrese un año entre {self.ANIO_INICIO_MINIMO} y {anio_actual}."
+            )
+        return date(year, 1, 1)
+
+    def _clean_telefono(self, field_name):
+        value = (self.cleaned_data.get(field_name) or "").strip()
+        if not value:
+            return value
+        try:
+            return validate_telefono_ar(value)
+        except ValidationError as exc:
+            raise forms.ValidationError(exc.messages) from exc
 
     def clean_telefono(self):
-        value = (self.cleaned_data.get("telefono") or "").strip()
-        if not value:
-            return value
-        self.TELEFONO_REGEX(value)
-        return value
+        return self._clean_telefono("telefono")
 
     def clean_telefono_referente(self):
-        value = (self.cleaned_data.get("telefono_referente") or "").strip()
-        if not value:
-            return value
-        self.TELEFONO_REGEX(value)
+        return self._clean_telefono("telefono_referente")
+
+    def _clean_coordenada(self, field_name, minimo, maximo, etiqueta):
+        value = self.cleaned_data.get(field_name)
+        if value in (None, ""):
+            return None
+        if not minimo <= value <= maximo:
+            raise forms.ValidationError(
+                f"La {etiqueta} debe estar entre {minimo} y {maximo} "
+                "(coordenadas dentro de Argentina)."
+            )
         return value
+
+    def clean_latitud(self):
+        return self._clean_coordenada(
+            "latitud", self.LATITUD_MINIMA, self.LATITUD_MAXIMA, "latitud"
+        )
+
+    def clean_longitud(self):
+        return self._clean_coordenada(
+            "longitud", self.LONGITUD_MINIMA, self.LONGITUD_MAXIMA, "longitud"
+        )
 
     def clean(self):
         cleaned_data = super().clean()
-        if not cleaned_data.get("ambito"):
-            cleaned_data["ambito"] = "sin_informacion"
         if cleaned_data.get("tipo_jornada") != "other":
             cleaned_data["tipo_jornada_otra"] = ""
 
@@ -1219,6 +1322,50 @@ _MULTISELECT_FIELDS_TRABAJADOR = (
 
 
 class TrabajadorCDIForm(forms.ModelForm):
+    EDAD_MINIMA = 0
+    EDAD_MAXIMA = 100
+    DNI_MINIMO = 1_000_000
+    DNI_MAXIMO = 99_999_999
+    # Obligatorios según los casos que QA marcó como "campo requerido" (TC18-TC44).
+    # Quedan fuera los condicionales (funcion_pfpi, funcion_egp, funcion_cdi, sala_cdi,
+    # funcion_uaf, formacion_academica, pueblo_originario y el bloque de discapacidad):
+    # el modelo los limpia cuando no aplican, así que exigirlos siempre rompería el
+    # guardado. fecha_actualizacion es optativa (no la reporta QA ni la marca la spec).
+    CAMPOS_OBLIGATORIOS = [
+        "fecha_carga",
+        "subcomponente",
+        "registro_tipo",
+        "nombre",
+        "apellido",
+        "fecha_nacimiento",
+        "tipo_documentacion",
+        "dni",
+        "sexo_registral",
+        "cuit",
+        "pais_nacimiento",
+        "nacionalidad_trabajador",
+        "nivel_educativo",
+        "anos_trabajo_primera_infancia",
+        "tipo_contratacion",
+        "carga_horaria_semanal",
+        "telefono",
+        "calle_contacto",
+        "grupo_pertenencia",
+        "lenguajes",
+        "es_interprete",
+        "tiene_discapacidad",
+    ]
+    # Campos que RENAPER puede completar en el alta (ver _build_initial_from_renaper
+    # en la vista). Son los candidatos a quedar bloqueados en la edición.
+    RENAPER_FIELDS = (
+        "nombre",
+        "apellido",
+        "dni",
+        "fecha_nacimiento",
+        "cuit",
+        "sexo_registral",
+        "nacionalidad_trabajador",
+    )
     capacitaciones_certificadas = forms.MultipleChoiceField(
         choices=TRABAJADOR_CAPACITACIONES_CHOICES,
         widget=forms.CheckboxSelectMultiple,
@@ -1249,9 +1396,13 @@ class TrabajadorCDIForm(forms.ModelForm):
         fields = [
             "fecha_carga",
             "subcomponente",
+            "funcion_pfpi",
             "funcion_egp",
             "funcion_cdi",
             "sala_cdi",
+            "funcion_uaf",
+            "registro_tipo",
+            "fecha_actualizacion",
             "nombre",
             "apellido",
             "fecha_nacimiento",
@@ -1291,13 +1442,17 @@ class TrabajadorCDIForm(forms.ModelForm):
                 attrs={"type": "date", "class": "form-control"},
                 format="%Y-%m-%d",
             ),
+            "fecha_actualizacion": forms.DateInput(
+                attrs={"type": "date", "class": "form-control"},
+                format="%Y-%m-%d",
+            ),
             "fecha_nacimiento": forms.DateInput(
                 attrs={"type": "date", "class": "form-control"},
                 format="%Y-%m-%d",
             ),
         }
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, campos_renaper=None, **kwargs):
         super().__init__(*args, **kwargs)
 
         # Precarga de valores para campos multiselect desde JSONField
@@ -1306,6 +1461,14 @@ class TrabajadorCDIForm(forms.ModelForm):
                 value = getattr(self.instance, fname, None) or []
                 if value:
                     self.initial[fname] = value
+
+        # El orden importa: _configurar_pais_nacionalidad reemplaza los campos, así que
+        # los requeridos se aplican después.
+        self._configurar_pais_nacionalidad()
+        self._aplicar_requeridos()
+        self._aplicar_campo_cuit()
+        self._aplicar_limites_fecha_nacimiento()
+        self._bloquear_campos_renaper(campos_renaper)
 
         # CSS classes
         for fname, field in self.fields.items():
@@ -1324,6 +1487,141 @@ class TrabajadorCDIForm(forms.ModelForm):
             {"min": "1", "max": "60"}
         )
 
+    def _aplicar_campo_cuit(self):
+        # El modelo guarda 11 dígitos, pero se ingresa con guiones ("20-44535030-4").
+        # Sin esto, MaxLengthValidator rechaza el CUIT antes de que clean_cuit lo
+        # normalice. Mismo tratamiento que en CentroDeInfanciaForm.
+        campo = self.fields["cuit"]
+        campo.max_length = 13
+        campo.validators = [
+            validator
+            for validator in campo.validators
+            if not isinstance(validator, MaxLengthValidator)
+        ]
+        campo.widget.attrs.update(
+            {"maxlength": "13", "inputmode": "numeric", "placeholder": "20-44535030-4"}
+        )
+
+    def _aplicar_requeridos(self):
+        for field_name in self.CAMPOS_OBLIGATORIOS:
+            self.fields[field_name].required = True
+            self.fields[field_name].error_messages[
+                "required"
+            ] = "Este campo es obligatorio."
+
+    def _bloquear_campos_renaper(self, campos_renaper):
+        # Los campos provenientes de RENAPER se reciben con initial confiable y quedan
+        # disabled tanto en alta como en edición. Django ignora el POST y toma initial
+        # o la instancia, por lo que no se pueden alterar con devtools.
+        if campos_renaper is None:
+            campos_renaper = (
+                self.instance.campos_verificados_renaper if self.instance.pk else []
+            )
+        for field_name in campos_renaper:
+            field = self.fields.get(field_name)
+            if not field:
+                continue
+            field.help_text = "Dato verificado por RENAPER."
+            field.disabled = True
+            field.widget.attrs["data-renaper"] = "1"
+
+    def _configurar_pais_nacionalidad(self):
+        # Mismas listas que ya usa el legajo de Nómina, en vez de texto libre.
+        empty = ("", "---------")
+        self.fields["pais_nacimiento"] = forms.ChoiceField(
+            label=self.fields["pais_nacimiento"].label,
+            choices=[empty]
+            + [(p.nombre, p.nombre) for p in NominaPais.objects.order_by("nombre")],
+        )
+        self.fields["nacionalidad_trabajador"] = forms.ChoiceField(
+            label=self.fields["nacionalidad_trabajador"].label,
+            choices=[empty]
+            + [
+                (n.nombre, n.nombre)
+                for n in NominaNacionalidad.objects.order_by("nombre")
+            ],
+        )
+
+    def _aplicar_limites_fecha_nacimiento(self):
+        hoy = date.today()
+        self.fields["fecha_nacimiento"].widget.attrs.update(
+            {
+                "min": hoy.replace(year=hoy.year - self.EDAD_MAXIMA).isoformat(),
+                "max": hoy.replace(year=hoy.year - self.EDAD_MINIMA).isoformat(),
+            }
+        )
+
+    def clean_nombre(self):
+        return self._clean_solo_letras("nombre")
+
+    def clean_apellido(self):
+        return self._clean_solo_letras("apellido")
+
+    def _clean_solo_letras(self, field_name):
+        value = (self.cleaned_data.get(field_name) or "").strip()
+        if not value:
+            return value
+        try:
+            return validate_solo_letras(value)
+        except ValidationError as exc:
+            raise forms.ValidationError(exc.messages) from exc
+
+    def clean_telefono(self):
+        value = (self.cleaned_data.get("telefono") or "").strip()
+        if not value:
+            return value
+        try:
+            return validate_telefono_ar(value)
+        except ValidationError as exc:
+            raise forms.ValidationError(exc.messages) from exc
+
+    def clean_cuit(self):
+        raw = (self.cleaned_data.get("cuit") or "").strip()
+        if not raw:
+            return None
+        try:
+            return validate_cuit(raw)
+        except ValidationError as exc:
+            raise forms.ValidationError(exc.messages) from exc
+
+    def clean_fecha_nacimiento(self):
+        fecha = self.cleaned_data.get("fecha_nacimiento")
+        if not fecha:
+            return fecha
+        hoy = date.today()
+        if fecha > hoy:
+            raise forms.ValidationError("La fecha de nacimiento no puede ser futura.")
+        edad = hoy.year - fecha.year - ((hoy.month, hoy.day) < (fecha.month, fecha.day))
+        if edad > self.EDAD_MAXIMA:
+            raise forms.ValidationError(
+                f"Revise la fecha: la edad resultante es de {edad} años."
+            )
+        if self.EDAD_MINIMA > 0 and edad < self.EDAD_MINIMA:
+            raise forms.ValidationError(
+                f"La persona debe tener al menos {self.EDAD_MINIMA} años."
+            )
+        return fecha
+
+    def clean_dni(self):
+        value = self.cleaned_data.get("dni")
+        if value in (None, ""):
+            return value
+        if not self.DNI_MINIMO <= value <= self.DNI_MAXIMO:
+            raise forms.ValidationError(
+                "Ingrese un número de documento válido de 7 u 8 dígitos."
+            )
+        return value
+
+    def clean_numero_cud(self):
+        value = (self.cleaned_data.get("numero_cud") or "").strip()
+        if not value:
+            return value
+        if not value.isdigit():
+            raise forms.ValidationError(
+                "Ingrese solo números, sin espacios ni otros caracteres."
+            )
+        return value
+
     def clean_carga_horaria_semanal(self):
         value = self.cleaned_data.get("carga_horaria_semanal")
         if value is not None and value > 60:
@@ -1336,7 +1634,12 @@ class TrabajadorCDIForm(forms.ModelForm):
         return self.cleaned_data.get("capacitaciones_certificadas") or []
 
     def clean_grupo_pertenencia(self):
-        return self.cleaned_data.get("grupo_pertenencia") or []
+        valores = self.cleaned_data.get("grupo_pertenencia") or []
+        if "ninguno" in valores and len(valores) > 1:
+            raise forms.ValidationError(
+                'No combine "Ninguno de los anteriores" con otras opciones.'
+            )
+        return valores
 
     def clean_lenguajes(self):
         return self.cleaned_data.get("lenguajes") or []
