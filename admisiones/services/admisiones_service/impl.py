@@ -140,18 +140,18 @@ class AdmisionService:
             "acta de asamblea": "acta de asamblea constitutiva",
             "dni responsable 1": "dni del responsable 1",
             "dni responsable 2": "dni del responsable 2",
-            "acta designacion aval 1 designacion de cargo aval 1 persona fisica": "acta designacion aval 1 designacion de cargo aval 1 persona fisica o juridica",
-            "dni autoridad maxima aval 1 dni aval 1 persona fisica": "dni de la autoridad maxima del aval 1 dni del aval 1 segun corresponda",
-            "acta designacion aval 2 designacion de cargo aval 2 persona fisica": "acta designacion aval 2 designacion de cargo aval 2 persona fisica o juridica",
-            "dni autoridad maxima aval 2 dni aval 2 persona fisica": "dni de la autoridad maxima del aval 2 dni del aval 2 segun corresponda",
-            "nota aval 1": "nota de aval emitida por el aval 1",
-            "nota aval 2": "nota de aval emitida por el aval 2",
-            "acta constitutiva aval 1": "acta constitutiva del aval 1",
-            "estatuto aval 1": "estatuto del aval 1",
-            "reso personeria juridica aval 1": "resolucion de personeria juridica del aval 1",
-            "acta constitutiva aval 2": "acta constitutiva del aval 2",
-            "estatuto aval 2": "estatuto del aval 2",
-            "reso personeria juridica aval 2": "resolucion de personeria juridica del aval 2",
+            "acta designacion aval 1 designacion de cargo aval 1 persona fisica": "acta de designacion de avales designacion de cargo avales persona fisica o juridica",
+            "dni autoridad maxima aval 1 dni aval 1 persona fisica": "dni de la autoridad maxima avales dni avales segun corresponda",
+            "acta designacion aval 2 designacion de cargo aval 2 persona fisica": "acta de designacion de avales designacion de cargo avales persona fisica o juridica",
+            "dni autoridad maxima aval 2 dni aval 2 persona fisica": "dni de la autoridad maxima avales dni avales segun corresponda",
+            "nota aval 1": "nota avales",
+            "nota aval 2": "nota avales",
+            "acta constitutiva aval 1": "acta constitutiva avales",
+            "estatuto aval 1": "estatuto de avales",
+            "reso personeria juridica aval 1": "resolucion de personeria juridica avales",
+            "acta constitutiva aval 2": "acta constitutiva avales",
+            "estatuto aval 2": "estatuto de avales",
+            "reso personeria juridica aval 2": "resolucion de personeria juridica avales",
             "preinscripcion renacom": "constancia de preinscripcion en renacom",
             "validacion renacom": "constancia de validacion en renacom",
             "inscripcion renacom": "constancia de inscripcion definitiva en renacom",
@@ -820,6 +820,13 @@ class AdmisionService:
                 and informe_complementario_pendiente.estado == "rectificar"
             )
         )
+        informe_complementario_requerido = bool(
+            admision.estado_legales == "Informe Complementario Solicitado"
+            or (
+                informe_complementario_pendiente
+                and informe_complementario_pendiente.estado == "rectificar"
+            )
+        )
 
         observaciones_complementario = None
         if (
@@ -832,6 +839,7 @@ class AdmisionService:
 
         return {
             "mostrar_informe_complementario": mostrar_informe_complementario,
+            "informe_complementario_requerido": informe_complementario_requerido,
             "observaciones_complementario": observaciones_complementario,
         }
 
@@ -934,6 +942,9 @@ class AdmisionService:
             "stats": documentos_context["stats"],
             "mostrar_informe_complementario": informe_complementario_context[
                 "mostrar_informe_complementario"
+            ],
+            "informe_complementario_requerido": informe_complementario_context[
+                "informe_complementario_requerido"
             ],
             "observaciones_complementario": informe_complementario_context[
                 "observaciones_complementario"

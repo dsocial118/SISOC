@@ -58,6 +58,10 @@
                         <div class="col-md-4">{{ form.mail|as_crispy_field }}</div>
                         <div class="col-md-4">{{ form.fecha_inicio|as_crispy_field }}</div>
                     </div>
+                    <div class="form-group row">
+                        <div class="col-md-6">{{ form.modalidad_gestion|as_crispy_field }}</div>
+                        <div class="col-md-6 modalidad-gestion-otra-wrapper">{{ form.modalidad_gestion_otra|as_crispy_field }}</div>
+                    </div>
                 </div>
             </div>
 
@@ -146,10 +150,6 @@
                     </div>
                     <div class="form-group row">
                         <div class="col-md-6">{{ form.oferta_servicios|as_crispy_field }}</div>
-                        <div class="col-md-6">{{ form.modalidad_gestion|as_crispy_field }}</div>
-                    </div>
-                    <div class="form-group row modalidad-gestion-otra-wrapper">
-                        <div class="col-md-6">{{ form.modalidad_gestion_otra|as_crispy_field }}</div>
                     </div>
                 </div>
             </div>
@@ -476,39 +476,12 @@
             ensurePlaceholder(municipioSelect, "Seleccione un municipio");
             ensurePlaceholder(localidadSelect, "Seleccione una localidad");
 
-            function validateRequiredField(field) {
-                if (!field || !field.required || field.disabled) {
-                    return true;
-                }
-                const value = (field.value || "").trim();
-                const isValid = value !== "";
-                field.classList.toggle("is-invalid", !isValid);
-                return isValid;
-            }
-
-            const formEl = document.getElementById("centrodesarrolloinfantil-form");
-            const requiredFields = formEl ? Array.from(formEl.querySelectorAll("[required]")) : [];
-
-            requiredFields.forEach(function(field) {
-                const eventName = field.tagName === "SELECT" ? "change" : "input";
-                field.addEventListener(eventName, function() {
-                    validateRequiredField(field);
-                });
-            });
-
-            if (formEl) {
-                formEl.addEventListener("submit", function(event) {
-                    const hasErrors = requiredFields
-                        .map(validateRequiredField)
-                        .some(function(isValid) {
-                            return !isValid;
-                        });
-
-                    if (hasErrors) {
-                        event.preventDefault();
-                        event.stopPropagation();
-                    }
-                });
+            // La validación la resuelve el form de Django y crispy renderiza el mensaje
+            // inline de cada campo. Acá solo llevamos al usuario al primer error.
+            const primerError = document.querySelector(".is-invalid");
+            if (primerError) {
+                primerError.scrollIntoView({ behavior: "smooth", block: "center" });
+                primerError.focus({ preventScroll: true });
             }
 
             if (cuitInput) {

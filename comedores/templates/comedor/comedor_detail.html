@@ -391,7 +391,9 @@
                                             <i class="bi bi-cup-hot"></i>
                                         </div>
                                         <div class="fw-bold fs-3 mb-0">
-                                            {% if informe_tecnico %}
+                                            {% if es_linea_secos or es_linea_tradicional %}
+                                                -
+                                            {% elif informe_tecnico %}
                                                 {{ prestaciones_aprobadas_total|default_if_none:"-" }}
                                             {% else %}
                                                 -
@@ -408,7 +410,9 @@
                                             <i class="bi bi-currency-dollar"></i>
                                         </div>
                                         <div class="fw-bold fs-3 mb-0">
-                                            {% if informe_tecnico %}
+                                            {% if es_linea_secos or es_linea_tradicional %}
+                                                -
+                                            {% elif informe_tecnico %}
                                                 {{ monto_prestacion_mensual|default_if_none:"-" }}
                                             {% else %}
                                                 -
@@ -1058,7 +1062,13 @@
                             <h3 class="mb-1 mt-2">
                                 <i class="bi bi-cup-hot mb-1"></i>
                             </h3>
-                            <h4 class="fw-bold my-1">{{ prestaciones_aprobadas_total|default_if_none:"0" }}</h4>
+                            <h4 class="fw-bold my-1">
+                                {% if es_linea_secos or es_linea_tradicional %}
+                                    -
+                                {% else %}
+                                    {{ prestaciones_aprobadas_total|default_if_none:"0" }}
+                                {% endif %}
+                            </h4>
                             <p class="fw-bold fs-7">Prestaciones mensuales</p>
                         </div>
                     </div>
@@ -1181,15 +1191,36 @@
                             <p class="mb-0 fs-7">
                                 Monto total de convenio por Espacio - Servicio Integral de Promoci&oacute;n Humana: <strong>{{ datos_convenio_pnud.monto_convenio_siph|default_if_none:"Sin informaci&oacute;n" }}</strong>
                             </p>
-                            <p class="mb-0 fs-7">
-                                Prestaciones financiadas mensuales: <strong>{{ datos_convenio_pnud.prestaciones_financiadas_mensuales|default_if_none:"Sin informaci&oacute;n" }}</strong>
-                            </p>
+                            {% if not es_linea_secos and not es_linea_tradicional %}
+                                <p class="mb-0 fs-7">
+                                    Prestaciones financiadas mensuales: <strong>{{ datos_convenio_pnud.prestaciones_financiadas_mensuales|default_if_none:"Sin informaci&oacute;n" }}</strong>
+                                </p>
+                            {% endif %}
+                            {% if es_linea_tradicional %}
+                                <p class="mb-0 fs-7">
+                                    Prestaciones Financiadas Diarias - Desayuno: <strong>{{ datos_convenio_pnud.prestaciones_financiadas_diarias_desayuno|default_if_none:"Sin informaci&oacute;n" }}</strong>
+                                </p>
+                                <p class="mb-0 fs-7">
+                                    Prestaciones Financiadas Diarias - Almuerzo: <strong>{{ datos_convenio_pnud.prestaciones_financiadas_diarias_almuerzo|default_if_none:"Sin informaci&oacute;n" }}</strong>
+                                </p>
+                                <p class="mb-0 fs-7">
+                                    Prestaciones Financiadas Diarias - Merienda: <strong>{{ datos_convenio_pnud.prestaciones_financiadas_diarias_merienda|default_if_none:"Sin informaci&oacute;n" }}</strong>
+                                </p>
+                                <p class="mb-0 fs-7">
+                                    Prestaciones Financiadas Diarias - Merienda Reforzada: <strong>{{ datos_convenio_pnud.prestaciones_financiadas_diarias_merienda_reforzada|default_if_none:"Sin informaci&oacute;n" }}</strong>
+                                </p>
+                                <p class="mb-0 fs-7">
+                                    Prestaciones Financiadas Diarias - Cena: <strong>{{ datos_convenio_pnud.prestaciones_financiadas_diarias_cena|default_if_none:"Sin informaci&oacute;n" }}</strong>
+                                </p>
+                            {% endif %}
                             <p class="mb-0 fs-7">
                                 Personas conveniadas: <strong>{{ datos_convenio_pnud.personas_conveniadas|default_if_none:"Sin informaci&oacute;n" }}</strong>
                             </p>
-                            <p class="mb-0 fs-7">
-                                Cantidad m&oacute;dulos mensuales: <strong>{{ datos_convenio_pnud.cantidad_modulos|default_if_none:"Sin informaci&oacute;n" }}</strong>
-                            </p>
+                            {% if not es_linea_tradicional %}
+                                <p class="mb-0 fs-7">
+                                    Cantidad M&oacute;dulos Mensuales: <strong>{{ datos_convenio_pnud.cantidad_modulos|default_if_none:"Sin informaci&oacute;n" }}</strong>
+                                </p>
+                            {% endif %}
                             <div class="mt-3 d-flex justify-content-center">
                                 <a href="{% url 'comedor_convenio_pnud' comedor.id %}"
                                    class="btn btn-primary px-2 py-1 fs-7 w-100 w-sm-auto">Editar datos del Convenio</a>
@@ -1428,6 +1459,61 @@
 <!-- /Nomina-->
 </div>
 <!-- /Bloque central-->
+<div class="row relevamiento-container mb-3">
+    <div class="col-12">
+        <div class="card bg-card">
+            <div class="card-header">
+                <h3 class="card-title font-weight-bold me-3 pt-1">Certificaciones Mensuales de Prestaciones</h3>
+                <div class="card-tools">
+                    <a href="{% url 'certificaciones_prestaciones_historial' comedor.id %}"
+                       class="btn btn-primary me-2 btn-sm">Ver historial completo</a>
+                    <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                        <i class="fas fa-minus"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm table-bordered table-striped mb-0">
+                        <thead>
+                            <tr>
+                                <th>Período</th>
+                                <th>Usuario generador</th>
+                                <th>Fecha de certificación</th>
+                                <th>Ver PDF</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for certificacion in certificaciones_prestaciones %}
+                                <tr>
+                                    <td>{{ certificacion.periodo|date:"m/Y" }}</td>
+                                    <td>
+                                        {% if certificacion.usuario %}
+                                            {{ certificacion.usuario.get_full_name|default:certificacion.usuario.username }}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ certificacion.creado|date:"d/m/Y H:i" }}</td>
+                                    <td>
+                                        <a href="{% url 'descargar_certificacion_prestaciones_web' comedor.id certificacion.id %}"
+                                           class="btn btn-sm btn-primary"
+                                           target="_blank"
+                                           rel="noopener">Ver PDF</a>
+                                    </td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="4" class="text-center text-muted py-3">No hay certificaciones mensuales registradas.</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 <div class="row relevamiento-container mb-3">
     <div class="col-12">
         <div class="card bg-card">

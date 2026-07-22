@@ -179,9 +179,11 @@ function getCheckedValues(containerId) {
 
 function initializeConditionalFields() {
     const subcomponenteSelect  = document.getElementById("id_subcomponente");
+    const rowFuncionPfpi       = document.getElementById("row-funcion-pfpi");
     const rowFuncionEgp        = document.getElementById("row-funcion-egp");
     const rowFuncionCdi        = document.getElementById("row-funcion-cdi");
     const rowSalaCdi           = document.getElementById("row-sala-cdi");
+    const rowFuncionUaf        = document.getElementById("row-funcion-uaf");
     const nivelEducativoSelect = document.getElementById("id_nivel_educativo");
     const rowFormacionAcad     = document.getElementById("row-formacion-academica");
     const tieneDiscapSelect    = document.getElementById("id_tiene_discapacidad");
@@ -192,12 +194,20 @@ function initializeConditionalFields() {
 
     function applyFunciones() {
         if (!subcomponenteSelect) return;
+        const esPfpi = subcomponenteSelect.value === "pfpi";
         const esCdi = subcomponenteSelect.value === "cdi";
         const esEgp = subcomponenteSelect.value === "egp";
+        const esUaf = subcomponenteSelect.value === "uaf";
+        toggleVisible(rowFuncionPfpi, esPfpi);
         toggleVisible(rowFuncionEgp, esEgp);
         toggleVisible(rowFuncionCdi, esCdi);
         toggleVisible(rowSalaCdi,    esCdi);
+        toggleVisible(rowFuncionUaf, esUaf);
+        setContainerControlsEnabled(rowFuncionPfpi, esPfpi, true);
+        setContainerControlsEnabled(rowFuncionEgp, esEgp, true);
+        setContainerControlsEnabled(rowFuncionCdi, esCdi, true);
         setContainerControlsEnabled(rowSalaCdi, esCdi, true);
+        setContainerControlsEnabled(rowFuncionUaf, esUaf, true);
     }
 
     function applyFormacion() {

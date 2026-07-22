@@ -1,6 +1,6 @@
 # QA - Rollback operativo
 
-Estado: validado para el mantenimiento de disco del 2026-07-13.
+Estado: actualizado el 2026-07-21 tras el retiro Stage 2 del MySQL local.
 
 ## Backup de referencia
 
@@ -60,20 +60,18 @@ journalctl -t sisoc-qa-disk-cleanup --since today --no-pager
 Si falla health pero los contenedores siguen activos, preservar evidencia y no
 reiniciar: el mantenimiento no toca runtime y el problema puede ser independiente.
 
-## Retiro Stage 1 del MySQL local
+## MySQL local retirado en Stage 2
 
-Stage 1 no borra `/var/lib/mysql` ni paquetes. Si se necesita restaurar el
-servicio local:
+Stage 2 purgo los paquetes server y elimino `/var/lib/mysql` el 2026-07-21.
+Por lo tanto, ya no existe rollback local mediante
+`systemctl enable --now mysql`.
 
-Backup de referencia:
-`/var/backups/sisoc/mysql-local-retirement/20260713_115645`.
+El backup de referencia
+`/var/backups/sisoc/mysql-local-retirement/20260713_115645` se conserva solo
+como evidencia de la configuracion, identidad y metadatos de Stage 1; no
+contiene los datos ni habilita recuperar la instancia eliminada.
 
-```bash
-sudo systemctl enable --now mysql
-sudo systemctl is-active mysql
-sudo ss -lntp 'sport = :3306'
-```
-
-Luego verificar que Django siga conectado a `10.80.9.18`; no cambiar `.env` ni
-reiniciar contenedores como parte de este rollback. El script de Stage 1 ejecuta
-este rollback automaticamente si falla una validacion posterior al stop.
+Ante un incidente, no reinstalar MySQL local ni modificar `.env` como supuesto
+rollback. Verificar primero que Django mantenga su conexion con la DB canonica
+`10.80.9.18`; cualquier nueva instancia local requiere aprobacion y un plan de
+datos independiente.

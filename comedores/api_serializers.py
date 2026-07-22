@@ -16,6 +16,8 @@ from comedores.models import (
 from comedores.services.comedor_service import ComedorService
 from comedores.utils import (
     get_prestacion_conformidad_pending_period,
+    is_abordaje_comunitario_linea_secos_program,
+    is_abordaje_comunitario_linea_tradicional_program,
     usa_datos_convenio_pnud,
 )
 from core.models import Localidad, Municipio, Provincia
@@ -959,6 +961,16 @@ class ComedorDetailSerializer(serializers.ModelSerializer):
                 ],
             },
         ]
+        if is_abordaje_comunitario_linea_secos_program(relevamiento.comedor):
+            sections = [
+                section
+                for section in sections
+                if section["titulo"] != "Prestación alimentaria"
+            ]
+        elif is_abordaje_comunitario_linea_tradicional_program(relevamiento.comedor):
+            sections = [
+                section for section in sections if section["titulo"] != "Punto Entrega"
+            ]
         return [
             {
                 **section,
@@ -1096,6 +1108,29 @@ class ComedorDetailSerializer(serializers.ModelSerializer):
             "prestaciones_financiadas_mensuales": (
                 datos_pnud.prestaciones_financiadas_mensuales if datos_pnud else None
             ),
+            "prestaciones_financiadas_diarias_desayuno": (
+                datos_pnud.prestaciones_financiadas_diarias_desayuno
+                if datos_pnud
+                else None
+            ),
+            "prestaciones_financiadas_diarias_almuerzo": (
+                datos_pnud.prestaciones_financiadas_diarias_almuerzo
+                if datos_pnud
+                else None
+            ),
+            "prestaciones_financiadas_diarias_merienda": (
+                datos_pnud.prestaciones_financiadas_diarias_merienda
+                if datos_pnud
+                else None
+            ),
+            "prestaciones_financiadas_diarias_merienda_reforzada": (
+                datos_pnud.prestaciones_financiadas_diarias_merienda_reforzada
+                if datos_pnud
+                else None
+            ),
+            "prestaciones_financiadas_diarias_cena": (
+                datos_pnud.prestaciones_financiadas_diarias_cena if datos_pnud else None
+            ),
             "personas_conveniadas": (
                 datos_pnud.personas_conveniadas if datos_pnud else None
             ),
@@ -1225,6 +1260,7 @@ class PrestacionAlimentariaConformidadSerializer(serializers.ModelSerializer):
     usuario_id = serializers.IntegerField(read_only=True)
     usuario_nombre = serializers.SerializerMethodField()
     informe_id = serializers.IntegerField(source="informe_tecnico_id", read_only=True)
+    certificacion_pdf_url = serializers.SerializerMethodField()
 
     class Meta:
         model = PrestacionAlimentariaConformidad
@@ -1237,6 +1273,15 @@ class PrestacionAlimentariaConformidadSerializer(serializers.ModelSerializer):
             "usuario_id",
             "usuario_nombre",
             "informe_id",
+            "certificacion_pdf_url",
+        )
+
+    def get_certificacion_pdf_url(self, obj):
+        if not obj.certificacion_pdf:
+            return None
+        return (
+            f"/api/comedores/{obj.comedor_id}/prestacion-alimentaria/"
+            f"conformidades/{obj.id}/certificacion/"
         )
 
     def get_usuario_nombre(self, obj):
@@ -1478,6 +1523,7 @@ class RendicionMensualDetailSerializer(RendicionMensualListSerializer):
                 {
                     "codigo": categoria["codigo"],
                     "label": categoria["label"],
+                    "description": categoria.get("description"),
                     "required": categoria["required"],
                     "multiple": categoria["multiple"],
                     "order": categoria["order"],

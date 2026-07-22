@@ -18,6 +18,7 @@ Mapa practico del repositorio `SISOC` para futuros agentes de IA y desarrollador
 - El repo mezcla backoffice web tradicional, APIs internas/server-to-server, flujos asincronos simples sin Celery, y una capa PWA/API para ciertos casos de uso.
 - La logica de negocio suele vivir en `services/` cuando la app la tiene, pero coexisten apps mas legacy con mas logica en `views.py`, `models.py` o `tasks.py`.
 - Hay un esfuerzo explicito de control arquitectonico incremental con `import-linter` (`.importlinter`) para evitar que el monolito siga acoplandose.
+- Los modulos nuevos deben nacer como verticales extraibles dentro del monolito; la regla aplicable y sus limites actuales viven en `docs/ia/MODULAR_BOUNDARIES.md`.
 
 ### Inferencias utiles
 
@@ -389,6 +390,9 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - `comedores/api_views.py`
 - tests del root `tests/test_comedor*`, `tests/test_comedores*`
 - docs de flujo: `docs/flujos/comedor_sync.md`
+- certificaciones mensuales de prestaciones: regla de pendiente en
+  `comedores/utils.py`, API en `comedores/api_views.py`, card e historial web en
+  `comedores/views/comedor.py` y `comedores/templates/comedor/`
 
 ### Si necesitas cambiar Relevamientos
 
@@ -423,15 +427,29 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - templates `admisiones/templates/admisiones/docx/`
 - templates `admisiones/templates/admisiones/pdf/`
 - `admisiones/tests/`
+- El Informe Tecnico Complementario se abre tanto desde Admision como desde el
+  convenio seleccionado en `acompanamientos/views.py` y
+  `acompanamientos/templates/acompañamiento_detail.html`.
 
 ### Si necesitas cambiar PWA
 
+- La interfaz vive en el repositorio Git anidado `mobile/`; revisar su estado y
+  validaciones por separado del repositorio Django.
 - `pwa/models.py`
 - `pwa/api_urls.py`
 - `pwa/api_views.py`
 - `pwa/services/`
+- frontend: `mobile/src/api/` y `mobile/src/features/home/`
 - tests `tests/test_pwa_*`
 - docs: `docs/implementaciones/pwa_backend.md`, `docs/seguridad/security_baseline_pwa.md`
+
+### Si necesitas cambiar documentos DOCX/PDF de prestaciones o nóminas
+
+- plantillas versionadas: `pwa/files/varios/PROGRAMA.ALIMENTAR.COMUNIDAD.docx` y `pwa/files/varios/NOMINA.DE.DESTINATARIOS.docx`
+- certificación de prestaciones: `comedores/services/certificacion_prestaciones_service.py`
+- nómina de destinatarios: `pwa/services/nomina_destinatarios_pdf_service.py`
+- conversión e incrustación de Office en rendiciones: `rendicioncuentasmensual/service_helpers.py`
+- el runtime Django requiere LibreOffice Writer/Calc para convertir DOCX/XLSX a PDF
 
 ### Si necesitas cambiar OCR / procesamiento documental
 
@@ -578,11 +596,12 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 | bugfix view/template | `docs/ia/TESTING.md`, template, view, JS asociado |
 | API/serializer | `docs/ia/TESTING.md`, `api_views.py`, serializer, tests API |
 | permisos/auth | `docs/ia/SECURITY_AI.md`, `users/`, docs IAM |
-| boundaries/refactor | `docs/ia/ARCHITECTURE.md`, `.importlinter` |
+| nuevo modulo o preparacion de extraccion | `docs/ia/MODULAR_BOUNDARIES.md`, `.importlinter`, `config/settings.py`, `config/urls.py` |
+| boundaries/refactor existente | `docs/ia/ARCHITECTURE.md`, `.importlinter` |
 | logging/errores/fallbacks | `docs/ia/ERRORS_LOGGING.md` |
 | estilo/template | `docs/ia/STYLE_GUIDE.md` |
 | PWA | `docs/implementaciones/pwa_backend.md`, `docs/seguridad/security_baseline_pwa.md` |
-| deploy/infra | `docs/operacion/infraestructura.md`, `docs/operacion/instalacion.md` |
+| deploy/infra | `docs/operacion/infraestructura.md`, `docs/operacion/instalacion.md`, `docs/infra/QA_OPERATIONS.md`, `docs/infra/ENVIRONMENT_DATABASES.md` |
 
 ## Notas utiles sobre calidad y arquitectura
 
@@ -591,6 +610,12 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - Hay una iniciativa explicita de "monolito modular fase 0".
 - El baseline actual permite imports legacy, pero CI debe fallar ante nuevas dependencias prohibidas.
 - Si un import nuevo entre apps te parece inocente, igual puede ser una regresion arquitectonica.
+
+### Modulos nuevos extraibles
+
+- Esta regla aplica a codigo nuevo; no declara que las apps existentes ya puedan moverse a otro repositorio.
+- Antes de crear una app, clasificar si es vertical extraible, parte de un bounded context o cambio de kernel.
+- `api_views.py`/DRF no reemplazan el `api.py` de contrato entre dominios. Ver `docs/ia/MODULAR_BOUNDARIES.md`.
 
 ### Tests
 
@@ -617,7 +642,7 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 | relevamientos | `relevamientos/models.py`, `tasks.py`, `views.py` |
 | RENAPER | `centrodefamilia/services/consulta_renaper.py`, `VAT/services/consulta_renaper/impl.py` |
 | GESTIONAR | `comedores/tasks.py`, `relevamientos/tasks.py`, commands relacionados |
-| docx/pdf | `admisiones/services/`, templates `docx/` y `pdf/` |
+| docx/pdf | `admisiones/services/`, `comedores/services/certificacion_prestaciones_service.py`, `pwa/services/nomina_destinatarios_pdf_service.py`, `pwa/files/varios/` |
 | PWA | `pwa/api_views.py`, `pwa/services/`, tests `test_pwa_*` |
 | OCR | `ocr/`, `docker/django/entrypoint.py` |
 | auditoria | `audittrail/`, docs `audittrail_*` |
