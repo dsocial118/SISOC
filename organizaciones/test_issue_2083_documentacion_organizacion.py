@@ -2,6 +2,7 @@ import importlib
 
 import pytest
 from django.apps import apps as global_apps
+from django.db import migrations
 
 from admisiones.models.admisiones import (
     Admision,
@@ -166,3 +167,9 @@ def test_migracion_crea_documento_arca_sin_convenio_si_la_admision_no_tiene_tipo
     )
     assert not documento.convenios.exists()
     assert archivo_admision.documentacion_id == documento.id
+
+
+def test_migracion_declara_reversa_noop_para_no_perder_datos_irreversibles():
+    reverse_code = _migracion.Migration.operations[0].reverse_code
+
+    assert reverse_code is migrations.RunPython.noop

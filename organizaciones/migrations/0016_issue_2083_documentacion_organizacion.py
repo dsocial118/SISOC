@@ -119,20 +119,6 @@ def actualizar_documentacion(apps, schema_editor):
         Documentacion.objects.filter(id__in=origen_ids).delete()
 
 
-def revertir_documentacion(apps, schema_editor):
-    Archivo = apps.get_model("organizaciones", "ArchivoOrganizacion")
-    ArchivoAdmision = apps.get_model("admisiones", "ArchivoAdmision")
-    origen_ids = ArchivoAdmision.objects.filter(
-        archivo_organizacion_origen__isnull=False,
-        documentacion__nombre="Constancia de ARCA",
-    ).values_list("archivo_organizacion_origen_id", flat=True)
-    Archivo.objects.filter(id__in=origen_ids).update(deleted_at=None)
-    ArchivoAdmision.objects.filter(
-        archivo_organizacion_origen_id__in=origen_ids,
-        documentacion__nombre="Constancia de ARCA",
-    ).delete()
-
-
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -141,5 +127,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(actualizar_documentacion, revertir_documentacion),
+        migrations.RunPython(actualizar_documentacion, migrations.RunPython.noop),
     ]
