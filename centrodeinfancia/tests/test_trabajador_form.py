@@ -194,9 +194,7 @@ def test_rechaza_dni_fuera_de_rango(catalogos, valor):
 
 
 @pytest.mark.django_db
-@pytest.mark.parametrize(
-    "valor", ["00-00000000-0", "ABCDEF", "20a44535030b4", "1234"]
-)
+@pytest.mark.parametrize("valor", ["00-00000000-0", "ABCDEF", "20a44535030b4", "1234"])
 def test_rechaza_cuit_invalido(catalogos, valor):
     form = TrabajadorCDIForm(data=datos_validos(cuit=valor))
 

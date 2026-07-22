@@ -112,7 +112,9 @@ def test_trabajador_create_ignora_procedencia_renaper_falsificada(client):
 
 
 @pytest.mark.django_db
-def test_trabajador_create_no_relaja_obligatorios_por_campos_renaper_falsificados(client):
+def test_trabajador_create_no_relaja_obligatorios_por_campos_renaper_falsificados(
+    client,
+):
     user = _crear_usuario("super-trabajador-renaper-obligatorios", superuser=True)
     client.force_login(user)
     centro = CentroDeInfancia.objects.create(nombre="CDI RENAPER obligatorios")

@@ -131,7 +131,11 @@
             <form method="post" id="trabajadorForm" class="w-100">
                 {% csrf_token %}
                 {% if selected_ciudadano %}<input type="hidden" name="ciudadano_id" value="{{ selected_ciudadano.id }}" />{% endif %}
-                {% if renaper_prefill_token %}<input type="hidden" name="renaper_prefill_token" value="{{ renaper_prefill_token }}" />{% endif %}
+                {% if renaper_prefill_token %}
+                    <input type="hidden"
+                           name="renaper_prefill_token"
+                           value="{{ renaper_prefill_token }}" />
+                {% endif %}
 
                 {% if form.non_field_errors %}<div class="alert alert-danger mb-3">{{ form.non_field_errors }}</div>{% endif %}
 
