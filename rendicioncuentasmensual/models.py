@@ -92,7 +92,8 @@ class DocumentacionAdjunta(SoftDeleteModelMixin, models.Model):
         {
             "codigo": CATEGORIA_FORMULARIO_III_SIPH,
             "label": "Formulario III - Desagregado por Facturas SIPH",
-            "required": True,
+            "description": "Este documento es obligatorio si presentó actividades para este Convenio",
+            "required": False,
             "multiple": False,
             "order": 4,
         },
@@ -113,7 +114,8 @@ class DocumentacionAdjunta(SoftDeleteModelMixin, models.Model):
         {
             "codigo": CATEGORIA_FORMULARIO_V_SIPH,
             "label": "Formulario V - Certificación de SIPH",
-            "required": True,
+            "description": "Este documento es obligatorio si presentó actividades para este Convenio",
+            "required": False,
             "multiple": False,
             "order": 7,
         },
@@ -253,6 +255,12 @@ class DocumentacionAdjunta(SoftDeleteModelMixin, models.Model):
                 "label": "Formulario VI - Planilla de Pagos",
                 "filename": "FORM.VI.RMC.AF.1.xlsx",
                 "order": 8,
+            },
+            {
+                "codigo": CATEGORIA_PLANILLA_SEGUROS,
+                "label": "Planilla de Seguros",
+                "filename": "Planilla.II.Seguros.Actualizacion.-.Tradicional.docx",
+                "order": 9,
             },
         ),
     }

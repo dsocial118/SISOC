@@ -872,14 +872,12 @@ def test_adjuntar_y_presentar_rendicion(comedores, settings, tmp_path):
     )
     assert present_without_docs_response.status_code == 400
 
-    # Formulario I es optativo; Formulario III/V se divide en variantes
-    # _ALIMENTARIO/_SIPH obligatorias para mobile.
+    # Formulario I es optativo; las variantes SIPH de Formulario III/V
+    # también lo son porque dependen de que se hayan presentado actividades.
     categorias_obligatorias = [
         DocumentacionAdjunta.CATEGORIA_FORMULARIO_II,
         DocumentacionAdjunta.CATEGORIA_FORMULARIO_III_ALIMENTARIO,
-        DocumentacionAdjunta.CATEGORIA_FORMULARIO_III_SIPH,
         DocumentacionAdjunta.CATEGORIA_FORMULARIO_V_ALIMENTARIO,
-        DocumentacionAdjunta.CATEGORIA_FORMULARIO_V_SIPH,
         DocumentacionAdjunta.CATEGORIA_EXTRACTO_BANCARIO,
         DocumentacionAdjunta.CATEGORIA_COMPROBANTES,
     ]
@@ -910,6 +908,33 @@ def test_adjuntar_y_presentar_rendicion(comedores, settings, tmp_path):
     )
     assert formulario_i["required"] is False
     assert formulario_i["archivos"] == []
+    for codigo_siph in (
+        DocumentacionAdjunta.CATEGORIA_FORMULARIO_III_SIPH,
+        DocumentacionAdjunta.CATEGORIA_FORMULARIO_V_SIPH,
+    ):
+        categoria_siph = next(
+            item
+            for item in detail_response.data["documentacion"]
+            if item["codigo"] == codigo_siph
+        )
+        assert categoria_siph["required"] is False
+        assert categoria_siph["description"] == (
+            "Este documento es obligatorio si presentó actividades para este Convenio"
+        )
+    planilla_seguros = next(
+        item
+        for item in detail_response.data["documentacion"]
+        if item["codigo"] == DocumentacionAdjunta.CATEGORIA_PLANILLA_SEGUROS
+    )
+    assert planilla_seguros["modelo"]["filename"] == (
+        "Planilla.II.Seguros.Actualizacion.-.Tradicional.docx"
+    )
+    modelo_response = client.get(planilla_seguros["modelo"]["url"])
+    assert modelo_response.status_code == 200
+    assert "Planilla.II.Seguros.Actualizacion.-.Tradicional.docx" in (
+        modelo_response["Content-Disposition"]
+    )
+    modelo_response.close()
     categoria_extra = next(
         item
         for item in detail_response.data["documentacion"]
