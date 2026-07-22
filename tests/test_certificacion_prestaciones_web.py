@@ -1,12 +1,12 @@
 from datetime import date
-from types import SimpleNamespace
 
 import pytest
 from django.core.files.base import ContentFile
+from django.db import connection
+from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 
 from comedores.models import Comedor, PrestacionAlimentariaConformidad
-from comedores.views.comedor import CertificacionesPrestacionesHistorialView
 
 
 @pytest.mark.django_db
@@ -30,7 +30,13 @@ def test_descarga_certificacion_web_requiere_autenticacion(client):
 
 
 @pytest.mark.django_db
-def test_historial_certificaciones_lista_todos_los_pdf(mocker, rf):
+def test_historial_certificaciones_lista_todos_los_pdf(client, django_user_model):
+    user = django_user_model.objects.create_superuser(
+        username="historial_certificaciones_admin",
+        password="testpass",
+        email="historial-certificaciones@example.com",
+    )
+    client.force_login(user)
     comedor = Comedor.objects.create(nombre="Espacio con historial")
     for mes in range(1, 8):
         certificacion = PrestacionAlimentariaConformidad.objects.create(
@@ -46,22 +52,38 @@ def test_historial_certificaciones_lista_todos_los_pdf(mocker, rf):
         periodo=date(2034, 12, 1),
         conforme=True,
     )
-    request = rf.get("/certificaciones/")
-    request.user = SimpleNamespace()
-    mocker.patch(
-        "comedores.views.comedor.ComedorService.get_comedor_detail_object",
-        return_value=comedor,
+    response = client.get(
+        reverse("certificaciones_prestaciones_historial", kwargs={"pk": comedor.id})
     )
-    view = CertificacionesPrestacionesHistorialView()
-    view.request = request
-    view.kwargs = {"pk": comedor.id}
-    view.comedor = comedor
 
-    certificaciones = list(view.get_queryset())
+    assert response.status_code == 200
+    content = response.content.decode()
+    assert "07/2035" in content
+    assert "01/2035" in content
+    assert "12/2034" not in content
 
-    assert len(certificaciones) == 7
-    assert certificaciones[0].periodo == date(2035, 7, 1)
-    assert all(certificacion.certificacion_pdf for certificacion in certificaciones)
+
+@pytest.mark.django_db
+def test_historial_certificaciones_no_precarga_el_legajo_completo(
+    client, django_user_model
+):
+    user = django_user_model.objects.create_superuser(
+        username="historial_liviano_admin",
+        password="testpass",
+        email="historial-liviano@example.com",
+    )
+    client.force_login(user)
+    comedor = Comedor.objects.create(nombre="Espacio con historial liviano")
+
+    with CaptureQueriesContext(connection) as queries:
+        response = client.get(
+            reverse(
+                "certificaciones_prestaciones_historial", kwargs={"pk": comedor.id}
+            )
+        )
+
+    assert response.status_code == 200
+    assert len(queries) <= 6
 
 
 @pytest.mark.django_db

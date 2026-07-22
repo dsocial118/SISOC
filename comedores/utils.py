@@ -137,10 +137,15 @@ def is_prestacion_conformidad_period_enabled(comedor, period: date) -> bool:
 
 def get_prestacion_conformidad_pending_period(comedor):
     period = previous_month_period()
-    certificacion_realizada = PrestacionAlimentariaConformidad.objects.filter(
-        comedor=comedor,
-        periodo=period,
-    ).exists()
+    certificacion_realizada = (
+        PrestacionAlimentariaConformidad.objects.filter(
+            comedor=comedor,
+            periodo=period,
+            certificacion_pdf__isnull=False,
+        )
+        .exclude(certificacion_pdf="")
+        .exists()
+    )
     return None if certificacion_realizada else period
 
 

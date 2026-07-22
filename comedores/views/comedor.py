@@ -107,13 +107,10 @@ class CertificacionesPrestacionesHistorialView(LoginRequiredMixin, ListView):
     context_object_name = "certificaciones_prestaciones"
     paginate_by = 20
 
-    def dispatch(self, request, *args, **kwargs):
-        self.comedor = ComedorService.get_comedor_detail_object(
-            self.kwargs["pk"], user=request.user
-        )
-        return super().dispatch(request, *args, **kwargs)
-
     def get_queryset(self):
+        self.comedor = ComedorService.get_scoped_comedor_or_404(
+            self.kwargs["pk"], self.request.user
+        )
         return (
             PrestacionAlimentariaConformidad.objects.filter(
                 comedor_id=self.comedor.id,
