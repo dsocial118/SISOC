@@ -11,10 +11,15 @@ from ciudadanos.models import Ciudadano
 from centrodeinfancia.models import (
     CentroDeInfancia,
     AccesoCDI,
+    DepartamentoIpi,
     IntervencionCentroInfancia,
     NominaCentroInfancia,
     ObservacionCentroInfancia,
+    OfertaServicio,
     Trabajador,
+)
+from centrodeinfancia.tests.test_centrodeinfancia_form import (
+    datos_validos as _datos_validos_cdi,
 )
 from centrodeinfancia.access import aplicar_scope_centros_cdi
 from centrodeinfancia.views import (
@@ -50,6 +55,39 @@ def _crear_usuario(username, provincia=None):
     if provincia:
         ProfileTerritorialScope.objects.create(profile=profile, provincia=provincia)
     return user
+
+
+def _payload_cdi_scope(provincia_ubicacion, **overrides):
+    """Payload completo de CDI con ubicación bajo `provincia_ubicacion`.
+
+    Los campos de ubicación son obligatorios y el form valida el departamento contra
+    el queryset de la provincia efectiva (la del scope, no la posteada), así que la
+    ubicación debe pertenecer a esa provincia. `provincia` se puede sobrescribir para
+    simular el intento de cargar en otra jurisdicción.
+    """
+
+    departamento = DepartamentoIpi.objects.create(
+        codigo_departamento=f"D{provincia_ubicacion.pk:04d}",
+        provincia=provincia_ubicacion,
+        nombre=f"Depto {provincia_ubicacion.pk}",
+        decil_ipi=3,
+    )
+    municipio = Municipio.objects.create(
+        nombre=f"Muni {provincia_ubicacion.pk}", provincia=provincia_ubicacion
+    )
+    localidad = Localidad.objects.create(
+        nombre=f"Loc {provincia_ubicacion.pk}", municipio=municipio
+    )
+    servicio, _ = OfertaServicio.objects.get_or_create(
+        codigo="multiedad", defaults={"orden": 5}
+    )
+    ubicacion = {
+        "provincia": provincia_ubicacion,
+        "departamento": departamento,
+        "municipio": municipio,
+        "localidad": localidad,
+    }
+    return _datos_validos_cdi(ubicacion, servicio, **overrides)
 
 
 def _crear_ciudadano(documento):
@@ -676,12 +714,11 @@ def test_egp_no_puede_crear_cdi_fuera_de_su_scope(client):
 
     response = client.post(
         reverse("centrodeinfancia_crear"),
-        {
-            "nombre": "CDI EGP alta acotada",
-            "provincia": provincia_ajena.pk,
-            "telefono": "1122334455",
-            "telefono_referente": "1199887766",
-        },
+        _payload_cdi_scope(
+            provincia_propia,
+            nombre="CDI EGP alta acotada",
+            provincia=provincia_ajena.pk,
+        ),
     )
 
     assert response.status_code == 302
@@ -706,12 +743,11 @@ def test_egp_prioriza_scope_explicito_sobre_provincia_legacy(client):
 
     response = client.post(
         reverse("centrodeinfancia_crear"),
-        {
-            "nombre": "CDI EGP scope explícito",
-            "provincia": provincia_legacy.pk,
-            "telefono": "1122334455",
-            "telefono_referente": "1199887766",
-        },
+        _payload_cdi_scope(
+            provincia_scope,
+            nombre="CDI EGP scope explícito",
+            provincia=provincia_legacy.pk,
+        ),
     )
 
     assert response.status_code == 302
@@ -730,12 +766,7 @@ def test_egp_sin_scope_no_puede_crear_cdi(client):
 
     response = client.post(
         reverse("centrodeinfancia_crear"),
-        {
-            "nombre": "CDI EGP sin scope",
-            "provincia": provincia.pk,
-            "telefono": "1122334455",
-            "telefono_referente": "1199887766",
-        },
+        _payload_cdi_scope(provincia, nombre="CDI EGP sin scope"),
     )
 
     assert response.status_code == 200
@@ -764,12 +795,11 @@ def test_egp_no_puede_mover_cdi_fuera_de_su_scope(client):
 
     response = client.post(
         reverse("centrodeinfancia_editar", kwargs={"pk": centro.pk}),
-        {
-            "nombre": centro.nombre,
-            "provincia": provincia_ajena.pk,
-            "telefono": centro.telefono,
-            "telefono_referente": centro.telefono_referente,
-        },
+        _payload_cdi_scope(
+            provincia_propia,
+            nombre=centro.nombre,
+            provincia=provincia_ajena.pk,
+        ),
     )
 
     assert response.status_code == 302
@@ -791,14 +821,13 @@ def test_admin_y_analista_crean_cdi_fuera_de_scope_legacy(client, group_name):
 
     response = client.post(
         reverse("centrodeinfancia_crear"),
-        {
-            "nombre": f"CDI alta amplia {group_name}",
-            "provincia": provincia_ajena.pk,
-            "telefono": "1122334455",
-            "telefono_referente": "1199887766",
-        },
+        _payload_cdi_scope(
+            provincia_ajena,
+            nombre="CDI alta amplia nacional",
+            provincia=provincia_ajena.pk,
+        ),
     )
 
     assert response.status_code == 302
-    centro = CentroDeInfancia.objects.get(nombre=f"CDI alta amplia {group_name}")
+    centro = CentroDeInfancia.objects.get(nombre="CDI alta amplia nacional")
     assert centro.provincia_id == provincia_ajena.pk
