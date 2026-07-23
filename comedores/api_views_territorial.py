@@ -65,12 +65,17 @@ class TerritorialComedorSerializer(serializers.Serializer):
             relevamientos = list(
                 obj.relevamiento_set.all().order_by("-fecha_visita", "-id")
             )
+        # `items` expone TODOS los relevamientos del comedor (no solo `ultimo`),
+        # para que la PWA liste el pendiente aunque exista uno finalizado más
+        # reciente. `ultimo` se mantiene por compatibilidad.
+        items = TerritorialUltimoRelevamientoSerializer(relevamientos, many=True).data
         ultimo = relevamientos[0] if relevamientos else None
         return {
             "total": len(relevamientos),
             "ultimo": (
                 TerritorialUltimoRelevamientoSerializer(ultimo).data if ultimo else None
             ),
+            "items": items,
         }
 
 

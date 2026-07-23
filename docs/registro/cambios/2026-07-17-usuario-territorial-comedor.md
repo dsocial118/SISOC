@@ -97,6 +97,18 @@ consumo desde la app mobile se resolverán en pasos posteriores.
   (`comedores/api_serializers.py`). El `items` resumen y la sección "Información"
   siguen siendo solo display (sin `campo`).
 
+### N3: `relevamientos.items` con todos los relevamientos del comedor
+
+- `GET /api/territorial/comedores/` (lista y detalle) exponía solo
+  `relevamientos.ultimo`, elegido por `-fecha_visita, -id`. En MySQL los `NULL`
+  van al final en `DESC`, así que un Finalizado con fecha tapaba al pendiente sin
+  fecha → el relevamiento pendiente quedaba invisible para la PWA.
+- Ahora `relevamientos` incluye `items: [{id, estado, fecha_visita}]` con **todos**
+  los relevamientos del comedor (se mantienen `total` y `ultimo` por compat). La
+  PWA filtra por estado pendiente para el trabajo por hacer (el modelo garantiza
+  ≤1 activo por comedor). Cambio en `TerritorialComedorSerializer.get_relevamientos`
+  (`comedores/api_views_territorial.py`).
+
 ## Reglas validadas
 
 - **Mutuamente excluyente** con el representante PWA (`es_representante_pwa`): el

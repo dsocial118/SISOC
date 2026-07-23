@@ -81,6 +81,37 @@ def test_territorial_comedores_includes_relevamiento_summary():
 
 
 @pytest.mark.django_db
+def test_territorial_comedores_items_lista_todos_los_relevamientos():
+    from django.utils import timezone
+
+    prov = Provincia.objects.create(nombre="Prov Items")
+    comedor = Comedor.objects.create(nombre="Comedor Items", provincia=prov)
+    # Finalizado con fecha reciente + pendiente sin fecha (el caso del bug).
+    finalizado = Relevamiento.objects.create(
+        comedor=comedor, estado="Finalizado", fecha_visita=timezone.now()
+    )
+    pendiente = Relevamiento.objects.create(
+        comedor=comedor, estado="Visita pendiente"
+    )
+
+    user = _make_territorial("terr_items", [prov])
+    client = _auth_client(user)
+
+    response = client.get("/api/territorial/comedores/")
+
+    assert response.status_code == 200
+    row = next(r for r in response.data["results"] if r["id"] == comedor.id)
+    relevamientos = row["relevamientos"]
+    assert relevamientos["total"] == 2
+    ids = {item["id"] for item in relevamientos["items"]}
+    assert ids == {finalizado.id, pendiente.id}
+    # El pendiente debe estar presente aunque `ultimo` sea el finalizado.
+    estados = {item["id"]: item["estado"] for item in relevamientos["items"]}
+    assert estados[pendiente.id] == "Visita pendiente"
+    assert estados[finalizado.id] == "Finalizado"
+
+
+@pytest.mark.django_db
 def test_territorial_detail_scoped_by_provincia():
     prov_a = Provincia.objects.create(nombre="Prov Det A")
     prov_b = Provincia.objects.create(nombre="Prov Det B")
