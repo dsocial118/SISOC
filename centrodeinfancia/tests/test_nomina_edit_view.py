@@ -1,6 +1,8 @@
 from datetime import date
 
 import pytest
+
+from centrodeinfancia.tests.test_destinatario_form import datos_validos
 from django.contrib.auth.models import User, Permission
 from django.test import Client
 from django.urls import reverse
@@ -144,14 +146,15 @@ class TestNominaCentroInfanciaEditView:
             kwargs={"pk": centro.pk, "nomina_id": nomina.pk},
         )
 
-        data = {
-            "estado": NominaCentroInfancia.ESTADO_BAJA,
-            "dni": nomina.dni,
-            "apellido": "Lopez-Updated",
-            "nombre": "Ana Maria",
-            "fecha_nacimiento": "2012-05-10",
-            "sexo": "Femenino",
-        }
+        data = datos_validos(
+            centro,
+            estado=NominaCentroInfancia.ESTADO_BAJA,
+            dni=nomina.dni,
+            apellido="Lopez-Updated",
+            nombre="Ana Maria",
+            fecha_nacimiento="2012-05-10",
+            sexo="Femenino",
+        )
 
         response = client.post(url, data)
 
@@ -174,13 +177,14 @@ class TestNominaCentroInfanciaEditView:
             kwargs={"pk": centro.pk, "nomina_id": nomina.pk},
         )
 
-        data = {
-            "estado": NominaCentroInfancia.ESTADO_ACTIVO,
-            "dni": nomina.dni,
-            "apellido": nomina.apellido,
-            "nombre": nomina.nombre,
-            "fecha_nacimiento": nomina.fecha_nacimiento.isoformat(),
-        }
+        data = datos_validos(
+            centro,
+            estado=NominaCentroInfancia.ESTADO_ACTIVO,
+            dni=nomina.dni,
+            apellido=nomina.apellido,
+            nombre=nomina.nombre,
+            fecha_nacimiento=nomina.fecha_nacimiento.isoformat(),
+        )
 
         response = client.post(url, data)
         expected_url = reverse("centrodeinfancia_nomina_ver", kwargs={"pk": centro.pk})
@@ -297,14 +301,15 @@ class TestNominaCentroInfanciaEditView:
             kwargs={"pk": centro.pk, "nomina_id": nomina.pk},
         )
 
-        data = {
-            "estado": NominaCentroInfancia.ESTADO_ACTIVO,
-            "dni": nomina.dni,
-            "apellido": nomina.apellido,
-            "nombre": nomina.nombre,
-            "fecha_nacimiento": nomina.fecha_nacimiento.isoformat(),
-            "sexo": sexo.sexo,
-        }
+        data = datos_validos(
+            centro,
+            estado=NominaCentroInfancia.ESTADO_ACTIVO,
+            dni=nomina.dni,
+            apellido=nomina.apellido,
+            nombre=nomina.nombre,
+            fecha_nacimiento=nomina.fecha_nacimiento.isoformat(),
+            sexo=sexo.sexo,
+        )
 
         response = client.post(url, data)
         assert response.status_code == 302
@@ -334,14 +339,15 @@ class TestNominaCentroInfanciaEditView:
         )
 
         # Cambiar estado, nombre y agregar nacionalidad
-        data = {
-            "estado": NominaCentroInfancia.ESTADO_BAJA,
-            "dni": nomina.dni,
-            "apellido": nomina.apellido,
-            "nombre": "Ana Updated",
-            "fecha_nacimiento": nomina.fecha_nacimiento.isoformat(),
-            "nacionalidad": "Argentina",
-        }
+        data = datos_validos(
+            centro,
+            estado=NominaCentroInfancia.ESTADO_BAJA,
+            dni=nomina.dni,
+            apellido=nomina.apellido,
+            nombre="Ana Updated",
+            fecha_nacimiento=nomina.fecha_nacimiento.isoformat(),
+            nacionalidad="Argentino",
+        )
 
         response = client.post(url, data)
         assert response.status_code == 302
@@ -350,7 +356,7 @@ class TestNominaCentroInfanciaEditView:
         # Verificar que los cambios fueron guardados
         assert nomina.estado == NominaCentroInfancia.ESTADO_BAJA
         assert nomina.nombre == "Ana Updated"
-        assert nomina.nacionalidad == "Argentina"
+        assert nomina.nacionalidad == "Argentino"
         # El apellido se mantiene igual
         assert nomina.apellido == ciudadano.apellido
 

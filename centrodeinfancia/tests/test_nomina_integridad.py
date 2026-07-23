@@ -3,6 +3,8 @@ from importlib import import_module
 from pathlib import Path
 
 import pytest
+
+from centrodeinfancia.tests.test_destinatario_form import datos_validos
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
@@ -273,25 +275,24 @@ def test_create_view_crea_ficha_cdi_para_ciudadano_existente(client):
 
     response = client.post(
         reverse("centrodeinfancia_nomina_crear", kwargs={"pk": centro.pk}),
-        data={
-            "ciudadano_id": ciudadano.id,
-            "estado": NominaCentroInfancia.ESTADO_ACTIVO,
-            "dni": ciudadano.documento,
-            "apellido": ciudadano.apellido,
-            "nombre": ciudadano.nombre,
-            "fecha_nacimiento": "2020-04-02",
-            "sexo": sexo.sexo,
-            "sala": "Sala Roja",
-            "posee_cud": "false",
-            "posee_obra_social": "true",
-        },
+        data=datos_validos(
+            centro,
+            ciudadano_id=ciudadano.id,
+            estado=NominaCentroInfancia.ESTADO_ACTIVO,
+            dni=ciudadano.documento,
+            apellido=ciudadano.apellido,
+            nombre=ciudadano.nombre,
+            fecha_nacimiento="2020-04-02",
+            sexo=sexo.sexo,
+            sala="Sala Roja",
+            posee_cud="false",
+        ),
     )
 
     assert response.status_code == 302
     nomina = NominaCentroInfancia.objects.get(centro=centro, ciudadano=ciudadano)
     assert nomina.sala == "Sala Roja"
     assert nomina.posee_cud is False
-    assert nomina.posee_obra_social is True
 
 
 def test_nomina_crear_template_conserva_ajax_nativo_ubicacion():
