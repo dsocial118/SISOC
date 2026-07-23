@@ -8,7 +8,12 @@ from django.core.exceptions import ValidationError
 from django.core.validators import MaxLengthValidator, RegexValidator
 
 from core.models import Localidad, Municipio, Provincia
-from core.validators import validate_unicode_email
+from core.validators import (
+    validate_cuit,
+    validate_solo_letras,
+    validate_telefono_ar,
+    validate_unicode_email,
+)
 from intervenciones.constants import PROGRAMA_ALIASES_CENTRO_INFANCIA
 from intervenciones.models.intervenciones import (
     SubIntervencion,
@@ -911,6 +916,95 @@ class NominaCentroInfanciaCreateForm(NominaCentroInfanciaBaseForm):
 class NominaCentroInfanciaDestinatariosForm(NominaCentroInfanciaBaseForm):
     """Formulario de página completa para el legajo 201 (Destinatarios CDI)."""
 
+    EDAD_MAXIMA_RESPONSABLE = 120
+    ALTURA_DOMICILIO_MAXIMA = 99999
+    DNI_MINIMO = 1_000_000
+    DNI_MAXIMO = 99_999_999
+
+    # Obligatorios según los casos que QA marcó como "campo requerido".
+    # Quedan fuera los condicionales (numero_cud, recibe_apoyo_discapacidad) y los
+    # campos pendientes de definición de producto: teléfonos, antropometría
+    # (talla/peso/longitud/perímetro) y los campos que QA pidió eliminar.
+    CAMPOS_OBLIGATORIOS = [
+        # Registro
+        "tipo_registro",
+        "fecha_registro",
+        "trabajador_registra",
+        # Datos del niño/a
+        "apellido",
+        "nombre",
+        "fecha_nacimiento",
+        "sexo",
+        "tipo_documentacion",
+        "dni",
+        "pais_nacimiento",
+        "nacionalidad",
+        "sala",
+        # Responsable 1
+        "responsable_legal_1_relacion",
+        "responsable_legal_1_apellido",
+        "responsable_legal_1_nombre",
+        "responsable_legal_1_fecha_nacimiento",
+        "responsable_legal_1_tipo_documentacion",
+        "responsable_legal_1_dni",
+        "responsable_legal_1_pais_nacimiento",
+        "responsable_legal_1_nacionalidad",
+        "responsable_legal_1_sexo_registral",
+        "responsable_legal_1_nivel_educativo",
+        "responsable_legal_1_consentimiento",
+        # Domicilio
+        "calle_domicilio",
+        "altura_domicilio",
+        "tipo_barrio",
+        "provincia_domicilio",
+        "municipio_domicilio",
+        "localidad_domicilio",
+        # Cultura e identidad
+        "grupo_pertenencia",
+        "lenguajes",
+        "necesito_interprete",
+        # Discapacidad
+        "tiene_discapacidad",
+        # Salud
+        "cobertura_salud",
+        "controles_sanitarios_ultimo_anio",
+        "calendario_vacunacion_al_dia",
+        # Nutrición
+        "lactancia",
+        "alergias_alimentarias",
+    ]
+    # Campos de texto que solo admiten letras (nombres y apellidos).
+    CAMPOS_SOLO_LETRAS = [
+        "apellido",
+        "nombre",
+        "responsable_legal_1_apellido",
+        "responsable_legal_1_nombre",
+        "responsable_legal_2_apellido",
+        "responsable_legal_2_nombre",
+    ]
+    CAMPOS_DNI = [
+        "dni",
+        "responsable_legal_1_dni",
+        "responsable_legal_2_dni",
+    ]
+    CAMPOS_CUIT = [
+        "cuit_nino",
+        "responsable_legal_1_cuit",
+        "responsable_legal_2_cuit",
+    ]
+    CAMPOS_TELEFONO = [
+        "responsable_legal_1_telefono",
+        "responsable_legal_2_telefono",
+        "adulto_responsable_telefono",
+    ]
+    # Fechas que no pueden ser futuras.
+    CAMPOS_FECHA_NO_FUTURA = [
+        "fecha_nacimiento",
+        "fecha_registro",
+        "responsable_legal_1_fecha_nacimiento",
+        "responsable_legal_2_fecha_nacimiento",
+    ]
+
     # ── JSONField multiselects ────────────────────────────────────────────────
     grupo_pertenencia = forms.MultipleChoiceField(
         choices=TRABAJADOR_GRUPO_PERTENENCIA_CHOICES,
@@ -969,8 +1063,27 @@ class NominaCentroInfanciaDestinatariosForm(NominaCentroInfanciaBaseForm):
         label="¿Cuál es su nacionalidad?",
     )
 
+    # Campos que se ocultan del formulario por pedido de producto (QA 3ra tanda).
+    # Se sacan del form pero NO del modelo: los datos ya cargados se conservan.
+    CAMPOS_OCULTOS = (
+        "posee_obra_social",
+        "diagnostico_peso",
+        "diagnostico_talla",
+        "orientacion_msal",
+    )
+
     class Meta(NominaCentroInfanciaBaseForm.Meta):
-        fields = list(NominaCentroInfanciaBaseForm.Meta.fields) + [
+        fields = [
+            campo
+            for campo in NominaCentroInfanciaBaseForm.Meta.fields
+            if campo
+            not in (
+                "posee_obra_social",
+                "diagnostico_peso",
+                "diagnostico_talla",
+                "orientacion_msal",
+            )
+        ] + [
             # Sección 3: Registro
             "tipo_registro",
             "fecha_registro",
@@ -1018,10 +1131,9 @@ class NominaCentroInfanciaDestinatariosForm(NominaCentroInfanciaBaseForm):
             "longitud_acostado",
             "perimetro_cefalico",
             # Sección 13: Nutrición
+            # (diagnostico_peso, diagnostico_talla y orientacion_msal se ocultan:
+            #  ver CAMPOS_OCULTOS)
             "lactancia",
-            "diagnostico_peso",
-            "diagnostico_talla",
-            "orientacion_msal",
             "alergias_alimentarias",
             # Sección 14: ANSES
             "anses_auh",
@@ -1113,8 +1225,29 @@ class NominaCentroInfanciaDestinatariosForm(NominaCentroInfanciaBaseForm):
         ):
             self.fields[fname].choices = nacionalidades
 
+    def _apply_required_flags(self):
+        # Reemplaza la lista mínima del form base por la que pidió QA.
+        for field_name in self.CAMPOS_OBLIGATORIOS:
+            if field_name not in self.fields:
+                continue
+            self.fields[field_name].required = True
+            self.fields[field_name].error_messages[
+                "required"
+            ] = "Este campo es obligatorio."
+
+    def _ocultar_campos(self):
+        """Quita del formulario los campos que producto pidió ocultar.
+
+        El form base recrea algunos en `_configure_boolean_fields` ignorando
+        `Meta.fields`, así que hay que sacarlos una vez construido el formulario.
+        """
+
+        for field_name in self.CAMPOS_OCULTOS:
+            self.fields.pop(field_name, None)
+
     def __init__(self, *args, centro=None, **kwargs):
         super().__init__(*args, **kwargs)
+        self._ocultar_campos()
         self._configure_pais_nacionalidad_fields()
 
         # Scope trabajador_registra al CDI recibido
@@ -1176,19 +1309,131 @@ class NominaCentroInfanciaDestinatariosForm(NominaCentroInfanciaBaseForm):
             self.fields[f"vacuna_{code}_fecha"] = fecha_field
 
     def clean_grupo_pertenencia(self):
-        return self.cleaned_data.get("grupo_pertenencia") or []
+        valores = self.cleaned_data.get("grupo_pertenencia") or []
+        if "ninguno" in valores and len(valores) > 1:
+            raise forms.ValidationError(
+                'No combine "Ninguno de los anteriores" con otras opciones.'
+            )
+        return valores
 
     def clean_lenguajes(self):
         return self.cleaned_data.get("lenguajes") or []
 
     def clean_tipo_discapacidad(self):
-        return self.cleaned_data.get("tipo_discapacidad") or []
+        valores = self.cleaned_data.get("tipo_discapacidad") or []
+        if "no_sabe" in valores and len(valores) > 1:
+            raise forms.ValidationError(
+                'No combine "No sabe" con otros tipos de discapacidad.'
+            )
+        return valores
 
     def clean_alergias_alimentarias(self):
         return self.cleaned_data.get("alergias_alimentarias") or []
 
+    def clean_piso_domicilio(self):
+        value = (self.cleaned_data.get("piso_domicilio") or "").strip()
+        if value and not value.isdigit():
+            raise forms.ValidationError("Ingrese solo números.")
+        return value
+
+    def clean_altura_domicilio(self):
+        value = self.cleaned_data.get("altura_domicilio")
+        if value is not None and value > self.ALTURA_DOMICILIO_MAXIMA:
+            raise forms.ValidationError(
+                f"Ingrese una altura de hasta {len(str(self.ALTURA_DOMICILIO_MAXIMA))} dígitos."
+            )
+        return value
+
+    def clean_numero_cud(self):
+        value = (self.cleaned_data.get("numero_cud") or "").strip()
+        if value and not value.isdigit():
+            raise forms.ValidationError(
+                "Ingrese solo números, sin espacios ni otros caracteres."
+            )
+        return value
+
+    def _validar_campos_de_texto(self, cleaned_data):
+        for field_name in self.CAMPOS_SOLO_LETRAS:
+            valor = (cleaned_data.get(field_name) or "").strip()
+            if not valor:
+                continue
+            try:
+                cleaned_data[field_name] = validate_solo_letras(valor)
+            except ValidationError as exc:
+                self.add_error(field_name, exc.messages)
+
+    def _validar_documentos(self, cleaned_data):
+        for field_name in self.CAMPOS_DNI:
+            valor = cleaned_data.get(field_name)
+            if valor in (None, ""):
+                continue
+            if not self.DNI_MINIMO <= valor <= self.DNI_MAXIMO:
+                self.add_error(
+                    field_name,
+                    "Ingrese un número de documento válido de 7 u 8 dígitos.",
+                )
+
+        for field_name in self.CAMPOS_CUIT:
+            crudo = (cleaned_data.get(field_name) or "").strip()
+            if not crudo:
+                continue
+            try:
+                cleaned_data[field_name] = validate_cuit(normalizar_cuit(crudo))
+            except ValidationError as exc:
+                self.add_error(field_name, exc.messages)
+
+    def _validar_telefonos(self, cleaned_data):
+        # Ojo: los teléfonos de los responsables son enteros en el modelo, así que
+        # no admiten guiones (ni conservan un 0 inicial de código de área). Solo
+        # `adulto_responsable_telefono` es texto.
+        for field_name in self.CAMPOS_TELEFONO:
+            valor = cleaned_data.get(field_name)
+            if valor in (None, ""):
+                continue
+            try:
+                validate_telefono_ar(str(valor).strip())
+            except ValidationError as exc:
+                self.add_error(field_name, exc.messages)
+
+    def _validar_fechas(self, cleaned_data):
+        hoy = date.today()
+        for field_name in self.CAMPOS_FECHA_NO_FUTURA:
+            fecha = cleaned_data.get(field_name)
+            if not fecha:
+                continue
+            if fecha > hoy:
+                self.add_error(field_name, "La fecha no puede ser futura.")
+            elif hoy.year - fecha.year > self.EDAD_MAXIMA_RESPONSABLE:
+                self.add_error(
+                    field_name,
+                    f"Revise la fecha: supera los {self.EDAD_MAXIMA_RESPONSABLE} años.",
+                )
+
+        # Las fechas de vacunación tampoco pueden ser futuras.
+        for code, _label in NOMINA_VACUNAS:
+            field_name = f"vacuna_{code}_fecha"
+            fecha = cleaned_data.get(field_name)
+            if fecha and fecha > hoy:
+                self.add_error(field_name, "La fecha no puede ser futura.")
+
+    def _validar_condicionales_discapacidad(self, cleaned_data):
+        if cleaned_data.get("tiene_discapacidad") == "si":
+            if not cleaned_data.get("recibe_apoyo_discapacidad"):
+                self.add_error(
+                    "recibe_apoyo_discapacidad", "Debe seleccionar una opción."
+                )
+        if cleaned_data.get("posee_cud") is True and not cleaned_data.get("numero_cud"):
+            self.add_error("numero_cud", "Debe ingresar el número de CUD.")
+
     def clean(self):
         cleaned_data = super().clean()
+
+        self._validar_campos_de_texto(cleaned_data)
+        self._validar_documentos(cleaned_data)
+        self._validar_telefonos(cleaned_data)
+        self._validar_fechas(cleaned_data)
+        self._validar_condicionales_discapacidad(cleaned_data)
+
         # Construir vacunacion_nomivac desde los campos dinámicos
         nomivac = {}
         for code, _label in NOMINA_VACUNAS:
