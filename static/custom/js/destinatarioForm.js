@@ -247,8 +247,30 @@ function initializeGeography() {
         sel.appendChild(buildEmptyOption(label));
     }
 
+    // El backend filtra los municipios por la jurisdicción asignada al usuario, así que
+    // una provincia fuera de su alcance devuelve lista vacía. Sin este aviso el
+    // desplegable queda vacío sin explicar por qué.
+    const SIN_ALCANCE_MSG = "No hay municipios disponibles para su jurisdicción.";
+
+    function setHint(sel, mensaje) {
+        if (!sel) return;
+        const id = sel.id + "-hint";
+        let hint = document.getElementById(id);
+        if (!mensaje) {
+            if (hint) hint.remove();
+            return;
+        }
+        if (!hint) {
+            hint = document.createElement("div");
+            hint.id = id;
+            hint.className = "form-text text-warning small mt-1";
+            sel.insertAdjacentElement("afterend", hint);
+        }
+        hint.textContent = mensaje;
+    }
+
     async function loadOptions(url, sel, emptyLabel) {
-        if (!sel || !url) return;
+        if (!sel || !url) return 0;
         const resp = await fetch(url, {
             headers: { "X-Requested-With": "XMLHttpRequest" },
             credentials: "same-origin",
@@ -262,6 +284,7 @@ function initializeGeography() {
             opt.textContent = item.nombre || item.nombre_region || "";
             sel.appendChild(opt);
         });
+        return data.length;
     }
 
     if (provinciaSelect && municipioSelect) {
@@ -269,11 +292,13 @@ function initializeGeography() {
             try {
                 resetSelect(municipioSelect, "Seleccionar municipio...");
                 resetSelect(localidadSelect, "Seleccionar localidad...");
+                setHint(municipioSelect, "");
                 if (!this.value) return;
-                await loadOptions(
+                const total = await loadOptions(
                     window.ajaxLoadMunicipiosUrl + "?provincia_id=" + this.value,
                     municipioSelect, "Seleccionar municipio..."
                 );
+                setHint(municipioSelect, total === 0 ? SIN_ALCANCE_MSG : "");
             } catch (e) { console.error("Error al cargar municipios:", e); }
         });
     }
@@ -295,7 +320,8 @@ function initializeGeography() {
         loadOptions(
             window.ajaxLoadMunicipiosUrl + "?provincia_id=" + provinciaSelect.value,
             municipioSelect, "Seleccionar municipio..."
-        ).then(function () {
+        ).then(function (total) {
+            setHint(municipioSelect, total === 0 ? SIN_ALCANCE_MSG : "");
             if (initialMunicipio) municipioSelect.value = initialMunicipio;
             if (municipioSelect && municipioSelect.value && localidadSelect) {
                 return loadOptions(
