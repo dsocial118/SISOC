@@ -1127,6 +1127,17 @@ class ImagenComedor(models.Model):
     comedor = models.ForeignKey(
         Comedor, on_delete=models.CASCADE, related_name="imagenes"
     )
+    relevamiento = models.ForeignKey(
+        "relevamientos.Relevamiento",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+        help_text=(
+            "Relevamiento (visita) al que pertenece la foto. Opcional: si es null "
+            "la foto es a nivel comedor (compatibilidad)."
+        ),
+    )
     imagen = models.ImageField(upload_to="comedor/")
     origen = models.CharField(
         max_length=10,

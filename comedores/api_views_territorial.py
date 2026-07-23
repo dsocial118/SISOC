@@ -5,6 +5,7 @@ sus comedores asignados con scope por las provincias que tiene cargadas en
 ``TerritorialComedorProvincia``. Auth por DRF Token.
 """
 
+from django.core.exceptions import ObjectDoesNotExist
 from django.core.files.storage import default_storage
 from django.db import IntegrityError
 from django.db.models import Prefetch
@@ -49,6 +50,7 @@ class TerritorialComedorSerializer(serializers.Serializer):
     longitud = serializers.FloatField(allow_null=True)
     estado = serializers.CharField(allow_null=True)
     relevamientos = serializers.SerializerMethodField()
+    seguimientos = serializers.SerializerMethodField()
 
     def get_provincia(self, obj):
         return obj.provincia.nombre if obj.provincia_id else None
@@ -78,6 +80,34 @@ class TerritorialComedorSerializer(serializers.Serializer):
             "items": items,
         }
 
+    def get_seguimientos(self, obj):
+        # Primer seguimiento por comedor = el `primer_seguimiento` (OneToOne) de
+        # cada relevamiento del comedor. `id` = PK del PrimerSeguimiento (sirve como
+        # `sisoc_id` en PATCH /api/relevamiento/primer-seguimiento).
+        relevamientos = getattr(obj, "relevamientos_territorial", None)
+        if relevamientos is None:
+            relevamientos = list(
+                obj.relevamiento_set.all().select_related("primer_seguimiento")
+            )
+        items = []
+        for relevamiento in relevamientos:
+            try:
+                seguimiento = relevamiento.primer_seguimiento
+            except ObjectDoesNotExist:
+                seguimiento = None
+            if seguimiento is None:
+                continue
+            items.append(
+                {
+                    "id": seguimiento.id,
+                    "estado": seguimiento.estado,
+                    "id_relevamiento": relevamiento.id,
+                    "gestionar_id": seguimiento.gestionar_id,
+                    "fecha": seguimiento.fecha_hora,
+                }
+            )
+        return {"total": len(items), "items": items}
+
 
 @extend_schema(tags=["Territorial"])
 class TerritorialComedorViewSet(
@@ -106,8 +136,8 @@ class TerritorialComedorViewSet(
             .prefetch_related(
                 Prefetch(
                     "relevamiento_set",
-                    queryset=Relevamiento.objects.only(
-                        "id", "estado", "fecha_visita", "comedor_id"
+                    queryset=Relevamiento.objects.select_related(
+                        "primer_seguimiento"
                     ).order_by("-fecha_visita", "-id"),
                     to_attr="relevamientos_territorial",
                 )
@@ -136,17 +166,18 @@ class TerritorialComedorViewSet(
         )
         return Response(data)
 
-    def _serialize_imagenes(self, comedor, request):
+    def _serialize_imagenes(self, imagenes, request):
         return [
             {
                 "id": imagen.id,
+                "relevamiento": imagen.relevamiento_id,
                 "url": (
                     request.build_absolute_uri(imagen.imagen.url)
                     if imagen.imagen
                     else None
                 ),
             }
-            for imagen in comedor.imagenes.all()
+            for imagen in imagenes
         ]
 
     @action(
@@ -165,19 +196,38 @@ class TerritorialComedorViewSet(
                 {"detail": "Debe adjuntar una imagen en el campo 'imagen'."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+
+        # `sisoc_id` (opcional) = id del relevamiento (visita) al que se asocia la
+        # foto. Si viene, el límite de 15 se cuenta por relevamiento; si no, es
+        # comedor-level (compatibilidad).
+        relevamiento_id = (request.data.get("sisoc_id") or "").strip() or None
+        if relevamiento_id is not None:
+            if not Relevamiento.objects.filter(
+                id=relevamiento_id, comedor=comedor
+            ).exists():
+                return Response(
+                    {"detail": "El sisoc_id no corresponde a un relevamiento de este comedor."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+        scope = comedor.imagenes.all()
+        if relevamiento_id is not None:
+            scope = scope.filter(relevamiento_id=relevamiento_id)
+
         # Idempotencia offline: si la PWA reintenta con el mismo client_uuid, no se
-        # duplica; se devuelve el estado actual.
+        # duplica; se devuelve el estado actual del scope.
         client_uuid = (request.data.get("client_uuid") or "").strip() or None
         if client_uuid and comedor.imagenes.filter(client_uuid=client_uuid).exists():
             return Response(
-                {"imagenes": self._serialize_imagenes(comedor, request)},
+                {"imagenes": self._serialize_imagenes(scope, request)},
                 status=status.HTTP_200_OK,
             )
-        if comedor.imagenes.count() >= MAX_IMAGENES_COMEDOR:
+        if scope.count() >= MAX_IMAGENES_COMEDOR:
+            destino = "este relevamiento" if relevamiento_id else "el espacio"
             return Response(
                 {
                     "detail": (
-                        f"El espacio ya tiene el máximo de {MAX_IMAGENES_COMEDOR} "
+                        f"{destino} ya tiene el máximo de {MAX_IMAGENES_COMEDOR} "
                         "fotos."
                     )
                 },
@@ -186,16 +236,25 @@ class TerritorialComedorViewSet(
         creado = ComedorService.create_imagenes(imagen, comedor.pk, origen="mobile")
         if isinstance(creado, dict):
             return Response(creado, status=status.HTTP_400_BAD_REQUEST)
+        update_fields = []
+        if relevamiento_id is not None:
+            creado.relevamiento_id = relevamiento_id
+            update_fields.append("relevamiento")
         if client_uuid:
             creado.client_uuid = client_uuid
+            update_fields.append("client_uuid")
+        if update_fields:
             try:
-                creado.save(update_fields=["client_uuid"])
+                creado.save(update_fields=update_fields)
             except IntegrityError:
                 # Carrera con otro reintento del mismo client_uuid: descarto el
                 # duplicado recién creado y devuelvo lo que ya existe.
                 creado.delete()
+        scope = comedor.imagenes.all()
+        if relevamiento_id is not None:
+            scope = scope.filter(relevamiento_id=relevamiento_id)
         return Response(
-            {"imagenes": self._serialize_imagenes(comedor, request)},
+            {"imagenes": self._serialize_imagenes(scope, request)},
             status=status.HTTP_201_CREATED,
         )
 

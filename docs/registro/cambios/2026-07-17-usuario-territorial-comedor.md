@@ -109,6 +109,15 @@ consumo desde la app mobile se resolverán en pasos posteriores.
   ≤1 activo por comedor). Cambio en `TerritorialComedorSerializer.get_relevamientos`
   (`comedores/api_views_territorial.py`).
 
+### N12: seguimientos por comedor en la API territorial
+
+- `GET /api/territorial/comedores/` (lista y detalle) ahora exponen
+  `seguimientos: {total, items:[{id, estado, id_relevamiento, gestionar_id, fecha}]}`
+  por comedor (el `PrimerSeguimiento` cuelga OneToOne de cada relevamiento). El `id`
+  del item = PK del `PrimerSeguimiento` (sirve como `sisoc_id` en el PATCH del
+  seguimiento). El prefetch de relevamientos usa `select_related("primer_seguimiento")`.
+  Cambio en `TerritorialComedorSerializer` (`comedores/api_views_territorial.py`).
+
 ## Reglas validadas
 
 - **Mutuamente excluyente** con el representante PWA (`es_representante_pwa`): el
