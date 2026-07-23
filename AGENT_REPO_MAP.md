@@ -472,6 +472,9 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - `.github/workflows/release-orchestrator.yml`
 - `.github/workflows/sync-main-downstream.yml`
 - `.github/workflows/deploy.yml`
+- La automatización de promociones usa una GitHub App privada: variable
+  `RELEASE_AUTOMATION_APP_CLIENT_ID` y secret
+  `RELEASE_AUTOMATION_APP_PRIVATE_KEY`; no sustituirla por un PAT.
 - `.importlinter`
 - `scripts/ci/pr_lint_tools.py`, `scripts/ci/pr_doc_automation.py`
 

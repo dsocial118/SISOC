@@ -9,8 +9,7 @@ on:
     workflow_dispatch:
 
 permissions:
-    contents: write
-    pull-requests: write
+    contents: read
 
 concurrency:
     group: sync-main-downstream
@@ -19,18 +18,36 @@ concurrency:
 jobs:
     sync:
         runs-on: ubuntu-latest
+        env:
+            RELEASE_AUTOMATION_APP_CLIENT_ID: ${{ vars.RELEASE_AUTOMATION_APP_CLIENT_ID }}
+            RELEASE_AUTOMATION_APP_PRIVATE_KEY_PRESENT: ${{ secrets.RELEASE_AUTOMATION_APP_PRIVATE_KEY != '' }}
 
         steps:
+            - name: Validar GitHub App de automatizacion
+              if: ${{ env.RELEASE_AUTOMATION_APP_CLIENT_ID == '' || env.RELEASE_AUTOMATION_APP_PRIVATE_KEY_PRESENT != 'true' }}
+              run: |
+                  echo "SETUP_BLOCKED: faltan RELEASE_AUTOMATION_APP_CLIENT_ID (variable) o RELEASE_AUTOMATION_APP_PRIVATE_KEY (secret)."
+                  exit 1
+
+            - name: Generar token temporal de GitHub App
+              id: app-token
+              uses: actions/create-github-app-token@v3
+              with:
+                  client-id: ${{ vars.RELEASE_AUTOMATION_APP_CLIENT_ID }}
+                  private-key: ${{ secrets.RELEASE_AUTOMATION_APP_PRIVATE_KEY }}
+                  permission-contents: write
+                  permission-pull-requests: write
+
             - name: Armar sincronización descendente con auto-merge nativo
               uses: actions/github-script@v8
               env:
-                  RELEASE_AUTOMATION_TOKEN_PRESENT: ${{ secrets.RELEASE_AUTOMATION_TOKEN != '' }}
+                  RELEASE_AUTOMATION_APP_TOKEN_PRESENT: ${{ steps.app-token.outputs.token != '' }}
               with:
-                  github-token: ${{ secrets.RELEASE_AUTOMATION_TOKEN || github.token }}
+                  github-token: ${{ steps.app-token.outputs.token }}
                   script: |
-                      if (process.env.RELEASE_AUTOMATION_TOKEN_PRESENT !== "true") {
+                      if (process.env.RELEASE_AUTOMATION_APP_TOKEN_PRESENT !== "true") {
                         core.setFailed(
-                          "SETUP_BLOCKED: falta el secret RELEASE_AUTOMATION_TOKEN para crear PRs que disparen CI sin aprobación manual.",
+                          "SETUP_BLOCKED: no se pudo generar el token temporal de la GitHub App de automatizacion.",
                         );
                         return;
                       }

@@ -159,21 +159,30 @@ En `production`, configurar Required reviewers. Esa regla materializa la
 aprobación manual antes de que el job de producción corra en el runner
 self-hosted.
 
-Crear rulesets separadas: una para `development` y `homologacion` con
+Mantener una ruleset base para `development`, `homologacion` y `main` con
 `deploy_guard`, `architecture_imports`, `gitleaks` y `sync_pr_artifacts`; y
-otra exclusiva para `main` con esos cuatro checks más `release_baseline`.
-En ambas, exigir que la rama esté al día y dejar el conteo de aprobaciones en
-cero para estos flujos. Habilitar Auto-merge en el repositorio. Estas opciones
-requieren rol de administrador y complementan, no sustituyen, los gates
-versionados.
+una ruleset exclusiva para `main` que suma `release_baseline`, cuya fuente debe
+ser la GitHub App `SISOC Release Automation`. En ambas,
+exigir que la rama esté al día y dejar el conteo de aprobaciones en cero para
+estos flujos. Habilitar Auto-merge en el repositorio. Estas opciones requieren
+rol de administrador y complementan, no sustituyen, los gates versionados.
 
-Crear también el secret de Actions `RELEASE_AUTOMATION_TOKEN` con un GitHub App
-de servicio o PAT fine-grained de un usuario técnico. Debe tener, como mínimo,
-`Contents`, `Pull requests`, `Checks` e `Issues` en escritura para este
-repositorio (y `Metadata` en lectura); no necesita permisos de `Actions`. No
-usar el `GITHUB_TOKEN` para crear/actualizar los PRs que deben
-disparar otros workflows: GitHub suprime esos eventos o puede pedir aprobación
-manual. El workflow falla con `SETUP_BLOCKED` hasta que el secret exista.
+Crear una GitHub App privada de servicio, instalada solamente en
+`dsocial118/SISOC`, sin webhooks. Debe recibir permisos de repositorio en
+escritura para `Contents`, `Pull requests`, `Checks` e `Issues` (`Metadata` es
+lectura implícita); no necesita permisos de `Actions`. En **Settings → Secrets
+and variables → Actions**, crear:
+
+```text
+Variable: RELEASE_AUTOMATION_APP_CLIENT_ID=<Client ID de la GitHub App>
+Secret:   RELEASE_AUTOMATION_APP_PRIVATE_KEY=<PEM de una private key vigente>
+```
+
+Los workflows generan un installation token temporal, restringido al repositorio
+actual, con `actions/create-github-app-token@v3`. No usar un PAT personal ni el
+`GITHUB_TOKEN`: este último no dispara los workflows posteriores y un PAT no
+puede emitir los check-runs requeridos por `release_baseline`. El workflow falla
+con `SETUP_BLOCKED` hasta que existan la variable y el secreto.
 
 Los workflows habilitan el auto-merge nativo; no hacen merge directo ni
 despachan el deploy de forma explícita.

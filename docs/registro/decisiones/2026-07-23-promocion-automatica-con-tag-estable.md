@@ -44,11 +44,14 @@ CI. La promoción a producción conserva una aprobación humana en el Environmen
 - Las rulesets deben exigir los checks definidos en los workflows y permitir
   auto-merge sin aprobación manual. Configurarlas requiere permisos de
   administrador del repositorio.
-- Los workflows usan `RELEASE_AUTOMATION_TOKEN` (GitHub App o PAT técnico) en
-  vez de depender del `GITHUB_TOKEN` para las mutaciones que deben disparar
-  otros workflows. Se limita a `Contents`, `Pull requests`, `Checks` e
-  `Issues` en escritura, más `Metadata` en lectura; el token y su secreto
-  también requieren configuración de administrador.
+- Los workflows usan una GitHub App privada, no un PAT, para las mutaciones que
+  deben disparar otros workflows. Cada job genera un installation token efímero
+  limitado al repositorio actual con `Contents`, `Pull requests`, `Checks` e
+  `Issues` en escritura, más `Metadata` en lectura. La App se configura con la
+  variable `RELEASE_AUTOMATION_APP_CLIENT_ID` y el secret
+  `RELEASE_AUTOMATION_APP_PRIVATE_KEY`; ambos requieren configuración de
+  administrador. La ruleset de `main` fija `release_baseline` a esa misma App
+  como fuente, para no aceptar checks homónimos de otra integración.
 
 ## Referencias
 
