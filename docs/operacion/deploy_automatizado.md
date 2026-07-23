@@ -17,12 +17,17 @@ correspondiente. El runner local:
 
 1. resuelve `APP_ROOT` desde la variable del Environment;
 2. entra al checkout provisionado en el servidor;
-3. registra `git rev-parse HEAD` como referencia previa de rollback;
-4. ejecuta `./scripts/operacion/deploy_refresh.sh --yes`.
+3. verifica que `origin/<branch>` siga siendo el SHA exacto que disparó el
+   workflow, antes de bajar Docker;
+4. registra `git rev-parse HEAD` como referencia previa de rollback y ejecuta
+   `deploy_refresh.sh --expected-revision <SHA>`;
+5. prueba `migrate --check`, el healthcheck específico del entorno y registra
+   el SHA realmente desplegado en el summary del job.
 
 El script existente conserva las validaciones operativas: lee `ENVIRONMENT`
 desde `.env`, valida branch esperada, ejecuta `docker compose config -q`, baja
-el stack sin volumenes, hace `git pull --ff-only` y levanta con `up -d --build`.
+el stack sin volumenes, hace `git fetch` y un `merge --ff-only` de la referencia
+ya verificada, y levanta con `up -d --build`.
 Cuando incluye SISOC-Mobile, valida que `origin` sea el repositorio publico
 esperado y normaliza las variantes SSH conocidas a HTTPS antes del downtime.
 
@@ -35,15 +40,43 @@ invariante:
 - `homologacion` contiene todo `main` y puede tener extras de HML;
 - `main` no recibe los extras de esas ramas por este mecanismo.
 
-Ante cada push a `main`, y tambien como reconciliacion horaria, el workflow abre
-o reutiliza PRs `main -> development` y `main -> homologacion`. Solo los integra
-si GitHub confirma que no hay conflictos. En ramas que exigen revision, el
-`GITHUB_TOKEN` aprueba exclusivamente ese PR descendente antes de integrarlo;
-el repositorio debe permitir que Actions cree y apruebe pull requests. Luego
-invoca `deploy.yml` de forma explicita sobre la rama actualizada.
+Ante cada push a `main`, y también como reconciliación horaria, el workflow abre
+o reutiliza PRs `main -> development` y `main -> homologacion`, y habilita
+auto-merge nativo. GitHub los integra únicamente cuando los checks requeridos
+por la ruleset están verdes y no hay conflictos. El push resultante activa un
+único deploy de la rama actualizada; no se hace un dispatch adicional.
 
 Un conflicto deja el PR abierto, falla el job y no despliega ese entorno. No se
-usa force push, rebase automatico, PAT ni resolucion automatica de conflictos.
+usan force push, rebase automático ni resolución automática de conflictos. Las
+mutaciones de PR se autentican con el token técnico acotado que se documenta
+más abajo, nunca con un PAT personal ni con un merge directo.
+
+## Promoción semanal `development -> main`
+
+La tarea de Codex se ejecuta los miércoles a las 16:30 y no espera a que CI
+termine. Crea o reutiliza un PR final exacto `development -> main` en draft, y
+un PR temporal `codex/predeploy-dev-main-AAAAMMDD -> development` solo si hay
+saneamiento versionable. Ambos PRs incluyen metadata y evidencia para generar
+los artefactos spec-as-source desde el diff real.
+
+El PR temporal se arma con auto-merge nativo y GitHub lo integra cuando sus
+checks requeridos terminan. `.github/workflows/release-orchestrator.yml`
+continúa por eventos: deja listo el PR final, crea el check pendiente
+`release_baseline` y habilita su auto-merge. Cuando los otros checks están
+verdes y `development` contiene el `main` más reciente, crea el tag anotado
+`AAAA.MM.DD-stable` apuntando al `main` que se reemplaza, publica su release de
+baseline y recién entonces completa `release_baseline`. El tag no se
+sobreescribe: si el nombre ya apunta a otro SHA, el workflow se bloquea para
+conservar un rollback inequívoco.
+
+El body del PR final también fija el SHA de `development` analizado. Un push
+posterior no se promueve por accidente: deja el PR bloqueado hasta que la tarea
+programada vuelva a analizar y actualizar el snapshot.
+
+El PR final no produce un deploy automático sin intervención: el job de
+`production` queda sujeto a Required reviewers del Environment. Si `main`
+avanzó antes de esa aprobación, el job obsoleto se omite y se debe aprobar el
+job del SHA actual.
 
 ## Instalar runner por entorno
 
@@ -122,12 +155,28 @@ APP_ROOT=<ruta-real-del-checkout>
 
 No hardcodear una ruta global: los servidores existentes pueden usar rutas distintas, por ejemplo `/opt/sisoc/SISOC` o `/opt/ssies/SISOC-Backoffice`.
 
-En `production`, configurar Required reviewers. Esa regla materializa la aprobacion manual antes de que el job de produccion corra en el runner self-hosted.
+En `production`, configurar Required reviewers. Esa regla materializa la
+aprobación manual antes de que el job de producción corra en el runner
+self-hosted.
 
-La politica de Actions del repositorio debe permitir que `GITHUB_TOKEN` cree y
-fusione pull requests. El workflow solicita solo `contents: write`,
-`pull-requests: write` y `actions: write`; esta ultima habilita el dispatch
-explicito de `deploy.yml`.
+Crear rulesets separadas: una para `development` y `homologacion` con
+`deploy_guard`, `architecture_imports`, `gitleaks` y `sync_pr_artifacts`; y
+otra exclusiva para `main` con esos cuatro checks más `release_baseline`.
+En ambas, exigir que la rama esté al día y dejar el conteo de aprobaciones en
+cero para estos flujos. Habilitar Auto-merge en el repositorio. Estas opciones
+requieren rol de administrador y complementan, no sustituyen, los gates
+versionados.
+
+Crear también el secret de Actions `RELEASE_AUTOMATION_TOKEN` con un GitHub App
+de servicio o PAT fine-grained de un usuario técnico. Debe tener, como mínimo,
+`Contents`, `Pull requests`, `Checks` e `Issues` en escritura para este
+repositorio (y `Metadata` en lectura); no necesita permisos de `Actions`. No
+usar el `GITHUB_TOKEN` para crear/actualizar los PRs que deben
+disparar otros workflows: GitHub suprime esos eventos o puede pedir aprobación
+manual. El workflow falla con `SETUP_BLOCKED` hasta que el secret exista.
+
+Los workflows habilitan el auto-merge nativo; no hacen merge directo ni
+despachan el deploy de forma explícita.
 
 ## Seguridad
 
@@ -155,7 +204,8 @@ Cada ejecucion del workflow registra el commit que estaba desplegado antes del r
 | El job queda en cola | Runner offline o label incorrecto | Revisar `svc.sh status`, conectividad VPN/local y labels del runner |
 | Falla `APP_ROOT no esta configurado` | Falta variable del Environment | Definir `APP_ROOT` en `qa`, `homologacion` o `production` |
 | Falla por branch esperada | Checkout local en branch equivocada | Corregir branch en el servidor o revisar el mapping del entorno |
-| Falla `git pull --ff-only` | Historial local divergio | Resolver manualmente en el servidor; no usar merge automatico en el runner |
+| Falla `merge --ff-only` o SHA esperado | El checkout o la rama avanzaron fuera del evento | No se bajó Docker; revisar el SHA vigente y reintentar desde el job actual |
 | Falla `Origin inesperado para SISOC-Mobile` | El checkout apunta a otro repositorio | Verificar el remote; no forzar el deploy ni aceptar una URL no documentada |
 | PR descendente queda abierto | Hay conflicto o GitHub rechazo el merge | Resolver por PR en la rama afectada; el deploy queda correctamente bloqueado |
+| Tag estable bloqueado | Ya existe `AAAA.MM.DD-stable` con otro SHA | No sobrescribirlo; decidir explícitamente el tag/baseline antes de promover |
 | Falla Docker | Usuario sin grupo `docker` o daemon detenido | Revisar `id`, `systemctl status docker` y `docker compose version` |

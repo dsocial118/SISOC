@@ -1,0 +1,63 @@
+name: Orquestar promocion automatica de release
+
+on:
+    schedule:
+        - cron: "47 * * * *"
+    workflow_dispatch:
+        inputs:
+            release_pr:
+                description: Numero del PR final development -> main que debe pasar a ready
+                required: true
+                type: string
+    pull_request:
+        types:
+            - closed
+        branches:
+            - development
+    workflow_run:
+        workflows:
+            - Tests automatizados
+            - Formateo y linteo
+            - Arquitectura (imports)
+            - Escaneo de secretos
+            - Documentacion automatica de PR
+            - Sanity de release
+        types:
+            - completed
+
+permissions:
+    checks: write
+    contents: write
+    issues: write
+    pull-requests: write
+
+concurrency:
+    group: release-orchestrator
+    cancel-in-progress: false
+
+jobs:
+    orchestrate:
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout de la automatizacion versionada
+              uses: actions/checkout@v6.0.2
+              with:
+                  ref: development
+                  persist-credentials: false
+
+            - name: Evaluar preparaciones y promociones pendientes
+              uses: actions/github-script@v8
+              env:
+                  RELEASE_AUTOMATION_TOKEN_PRESENT: ${{ secrets.RELEASE_AUTOMATION_TOKEN != '' }}
+              with:
+                  github-token: ${{ secrets.RELEASE_AUTOMATION_TOKEN || github.token }}
+                  script: |
+                      if (process.env.RELEASE_AUTOMATION_TOKEN_PRESENT !== "true") {
+                        core.setFailed(
+                          "SETUP_BLOCKED: falta el secret RELEASE_AUTOMATION_TOKEN para disparar eventos posteriores a los merges.",
+                        );
+                        return;
+                      }
+                      const { run } = require(`${process.env.GITHUB_WORKSPACE}/.github/scripts/release_orchestrator.js`);
+                      await run({ github, context, core });

@@ -28,5 +28,6 @@ Vincular el #ISSUE
 - Resumen para changelog:
 - Impacto usuario:
 - Riesgos / rollback:
+- Fecha objetivo de release:
 
 # Capturas de Pantalla
