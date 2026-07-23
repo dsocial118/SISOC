@@ -271,7 +271,9 @@ def test_manifest_de_diff_reemplaza_la_consulta_remota_de_archivos(
     monkeypatch.setattr(
         pr_doc_automation,
         "fetch_changed_files",
-        lambda pr, token: (_ for _ in ()).throw(AssertionError("no debe consultar API")),
+        lambda pr, token: (_ for _ in ()).throw(
+            AssertionError("no debe consultar API")
+        ),
     )
 
     manifest = tmp_path / "changed-files.txt"
