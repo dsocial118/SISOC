@@ -145,8 +145,16 @@ def validate_solo_letras(value):
     return texto
 
 
+TELEFONO_DIGITOS_MINIMO = 6
+TELEFONO_DIGITOS_MAXIMO = 15
+
+
 def validate_telefono_ar(value):
-    """Validar un teléfono argentino: solo dígitos y guiones, entre 6 y 11 dígitos."""
+    """Validar un teléfono: solo dígitos y guiones, entre 6 y 15 dígitos.
+
+    El rango es único para todo el sistema (definición de PM): se toma amplio a
+    propósito para que no quede afuera ningún número, con o sin código de área.
+    """
 
     texto = str(value or "").strip()
     if not texto:
@@ -156,10 +164,10 @@ def validate_telefono_ar(value):
             "Ingrese un teléfono válido: solo números, opcionalmente separados por guiones."
         )
     digits = solo_digitos(texto)
-    if not 6 <= len(digits) <= 11:
+    if not TELEFONO_DIGITOS_MINIMO <= len(digits) <= TELEFONO_DIGITOS_MAXIMO:
         raise ValidationError(
-            "Ingrese un teléfono válido de entre 6 y 11 dígitos "
-            "(por ejemplo 4774-2015 o 011-4774-2015)."
+            f"Ingrese un teléfono válido de entre {TELEFONO_DIGITOS_MINIMO} y "
+            f"{TELEFONO_DIGITOS_MAXIMO} dígitos (por ejemplo 4774-2015 o 011-4774-2015)."
         )
     return texto
 
