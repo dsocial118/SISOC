@@ -14,6 +14,7 @@ WITH_MOBILE=0
 MOBILE_DIR=""
 MOBILE_SCRIPT=""
 MOBILE_HTTPS_REMOTE="https://github.com/dsocial118/SISOC-Mobile.git"
+EXPECTED_REVISION=""
 
 usage() {
   cat <<'USAGE'
@@ -33,6 +34,8 @@ Opciones:
   --allow-branch-mismatch   No bloquea si la branch actual no coincide
                             con la esperada para ENVIRONMENT.
   --skip-pull               No ejecuta git fetch/pull; solo reinicia Docker.
+  --expected-revision SHA   Exige que la revision a desplegar sea exactamente SHA.
+                            Si origin o HEAD ya avanzaron, bloquea antes de bajar Docker.
   --with-mobile             Tambien despliega SISOC-Mobile.
   --mobile-dir PATH         Ruta del checkout SISOC-Mobile.
                             Default: ../SISOC-Mobile desde la raiz de SISOC.
@@ -125,6 +128,11 @@ parse_args() {
       --allow-dirty) ALLOW_DIRTY=1 ;;
       --allow-branch-mismatch) ALLOW_BRANCH_MISMATCH=1 ;;
       --skip-pull) SKIP_PULL=1 ;;
+      --expected-revision)
+        shift
+        [[ $# -gt 0 ]] || fail "--expected-revision requiere un SHA."
+        EXPECTED_REVISION="$1"
+        ;;
       --with-mobile) WITH_MOBILE=1 ;;
       --mobile-dir)
         shift
@@ -191,6 +199,26 @@ normalize_mobile_origin() {
       fail "Origin inesperado para SISOC-Mobile; revisar origin sin copiar credenciales al log."
       ;;
   esac
+}
+
+validate_expected_revision() {
+  local actual_revision source
+
+  [[ -z "$EXPECTED_REVISION" ]] && return 0
+  [[ "$EXPECTED_REVISION" =~ ^[0-9a-f]{40}$ ]] \
+    || fail "--expected-revision debe ser un SHA completo de 40 caracteres hexadecimales."
+
+  if [[ "$SKIP_PULL" -eq 0 ]]; then
+    source="origin/$CURRENT_BRANCH"
+  else
+    source="HEAD"
+  fi
+
+  actual_revision="$(git -C "$ROOT_DIR" rev-parse "$source")" \
+    || fail "No pude resolver la revision $source para validar el deploy."
+  [[ "$actual_revision" == "$EXPECTED_REVISION" ]] \
+    || fail "La revision esperada $EXPECTED_REVISION ya no coincide con $source ($actual_revision); no se baja Docker."
+  log "revision_verificada=$actual_revision"
 }
 
 compose_for_environment() {
@@ -270,6 +298,7 @@ main() {
   log "root=$ROOT_DIR"
   log "environment=$ENVIRONMENT"
   log "branch=$CURRENT_BRANCH"
+  [[ -n "$EXPECTED_REVISION" ]] && log "expected_revision=$EXPECTED_REVISION"
   log "compose_files=${COMPOSE_FILES[*]}"
   if [[ "$WITH_MOBILE" -eq 1 ]]; then
     log "mobile_root=$MOBILE_DIR"
@@ -288,12 +317,21 @@ main() {
     run git -C "$ROOT_DIR" fetch origin --prune
   fi
 
+  validate_expected_revision
+
   run "${COMPOSE_CMD[@]}" --project-directory "$ROOT_DIR" config -q
 
   run "${COMPOSE_CMD[@]}" --project-directory "$ROOT_DIR" "${DOWN_ARGS[@]}"
 
   if [[ "$SKIP_PULL" -eq 0 ]]; then
-    run git -C "$ROOT_DIR" pull --ff-only origin "$CURRENT_BRANCH"
+    run git -C "$ROOT_DIR" merge --ff-only "origin/$CURRENT_BRANCH"
+  fi
+
+  if [[ -n "$EXPECTED_REVISION" ]]; then
+    deployed_revision="$(git -C "$ROOT_DIR" rev-parse HEAD)" \
+      || fail "No pude resolver la revision desplegada."
+    [[ "$deployed_revision" == "$EXPECTED_REVISION" ]] \
+      || fail "La revision desplegada $deployed_revision no coincide con $EXPECTED_REVISION."
   fi
 
   run "${COMPOSE_CMD[@]}" --project-directory "$ROOT_DIR" up -d --build
@@ -304,6 +342,7 @@ main() {
     run bash "$MOBILE_SCRIPT" "${MOBILE_ARGS[@]}"
   fi
 
+  log "deployed_revision=$(git -C "$ROOT_DIR" rev-parse HEAD)"
   log "Deploy refresh finalizado."
 }
 

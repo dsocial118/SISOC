@@ -1,0 +1,80 @@
+name: Orquestar promocion automatica de release
+
+on:
+    schedule:
+        - cron: "47 * * * *"
+    workflow_dispatch:
+        inputs:
+            release_pr:
+                description: Numero del PR final development -> main que debe pasar a ready
+                required: true
+                type: string
+    pull_request:
+        types:
+            - closed
+        branches:
+            - development
+    workflow_run:
+        workflows:
+            - Tests automatizados
+            - Formateo y linteo
+            - Arquitectura (imports)
+            - Escaneo de secretos
+            - Documentacion automatica de PR
+            - Sanity de release
+        types:
+            - completed
+
+permissions:
+    contents: read
+
+concurrency:
+    group: release-orchestrator
+    cancel-in-progress: false
+
+jobs:
+    orchestrate:
+        runs-on: ubuntu-latest
+        env:
+            RELEASE_AUTOMATION_APP_CLIENT_ID: ${{ vars.RELEASE_AUTOMATION_APP_CLIENT_ID }}
+            RELEASE_AUTOMATION_APP_PRIVATE_KEY_PRESENT: ${{ secrets.RELEASE_AUTOMATION_APP_PRIVATE_KEY != '' }}
+
+        steps:
+            - name: Checkout de la automatizacion versionada
+              uses: actions/checkout@v6.0.2
+              with:
+                  ref: development
+                  persist-credentials: false
+
+            - name: Validar GitHub App de automatizacion
+              if: ${{ env.RELEASE_AUTOMATION_APP_CLIENT_ID == '' || env.RELEASE_AUTOMATION_APP_PRIVATE_KEY_PRESENT != 'true' }}
+              run: |
+                  echo "SETUP_BLOCKED: faltan RELEASE_AUTOMATION_APP_CLIENT_ID (variable) o RELEASE_AUTOMATION_APP_PRIVATE_KEY (secret)."
+                  exit 1
+
+            - name: Generar token temporal de GitHub App
+              id: app-token
+              uses: actions/create-github-app-token@v3
+              with:
+                  client-id: ${{ vars.RELEASE_AUTOMATION_APP_CLIENT_ID }}
+                  private-key: ${{ secrets.RELEASE_AUTOMATION_APP_PRIVATE_KEY }}
+                  permission-checks: write
+                  permission-contents: write
+                  permission-issues: write
+                  permission-pull-requests: write
+
+            - name: Evaluar preparaciones y promociones pendientes
+              uses: actions/github-script@v8
+              env:
+                  RELEASE_AUTOMATION_APP_TOKEN_PRESENT: ${{ steps.app-token.outputs.token != '' }}
+              with:
+                  github-token: ${{ steps.app-token.outputs.token }}
+                  script: |
+                      if (process.env.RELEASE_AUTOMATION_APP_TOKEN_PRESENT !== "true") {
+                        core.setFailed(
+                          "SETUP_BLOCKED: no se pudo generar el token temporal de la GitHub App de automatizacion.",
+                        );
+                        return;
+                      }
+                      const { run } = require(`${process.env.GITHUB_WORKSPACE}/.github/scripts/release_orchestrator.js`);
+                      await run({ github, context, core });

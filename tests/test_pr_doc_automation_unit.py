@@ -243,3 +243,61 @@ def test_sync_pr_artifacts_genera_docs_y_changelog_para_pr_a_main(
     )
     assert "# Versión SISOC 18.03.2026" in changelog
     assert "Genera documentación de PR y changelog" in changelog
+
+
+def test_manifest_de_diff_reemplaza_la_consulta_remota_de_archivos(
+    tmp_path, monkeypatch
+):
+    """El pre-deploy documenta exactamente el diff que va a promover."""
+
+    monkeypatch.setattr(
+        pr_doc_automation, "DOCS_PR_DIR", tmp_path / "docs/registro/prs"
+    )
+    monkeypatch.setattr(
+        pr_doc_automation,
+        "DOCS_FEATURE_DIR",
+        tmp_path / "docs/contexto/features",
+    )
+    monkeypatch.setattr(
+        pr_doc_automation,
+        "DOCS_RELEASE_PENDING_DIR",
+        tmp_path / "docs/registro/releases/pending",
+    )
+    monkeypatch.setattr(
+        pr_doc_automation,
+        "CHANGELOG_PATH",
+        tmp_path / "CHANGELOG.md",
+    )
+    monkeypatch.setattr(
+        pr_doc_automation,
+        "fetch_changed_files",
+        lambda pr, token: (_ for _ in ()).throw(
+            AssertionError("no debe consultar API")
+        ),
+    )
+
+    manifest = tmp_path / "changed-files.txt"
+    manifest.write_text("core/views.py\n\ntemplates/core/home.html\n", encoding="utf-8")
+    changed_files = pr_doc_automation.read_changed_files_file(manifest)
+    pr = pr_doc_automation.PullRequestData(
+        number=16,
+        title="Preparar promocion con diff real",
+        body="- Fecha objetivo de release: 2026-03-18",
+        html_url="https://example.test/pr/16",
+        base_ref="main",
+        head_ref="development",
+        author="tester",
+        updated_at="2026-03-13T12:00:00Z",
+        repo_full_name="org/repo",
+    )
+
+    pr_doc_automation.sync_pr_artifacts(
+        pr,
+        token="fake-token",
+        today=date(2026, 3, 13),
+        changed_files=changed_files,
+    )
+
+    generated = (tmp_path / "docs/registro/prs/PR-16.md").read_text(encoding="utf-8")
+    assert "`core/views.py`" in generated
+    assert "`templates/core/home.html`" in generated

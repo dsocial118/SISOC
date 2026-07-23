@@ -61,7 +61,7 @@ Mapa practico del repositorio `SISOC` para futuros agentes de IA y desarrollador
 | Docker Compose para local | Hecho observado | `docker-compose.yml` |
 | Compose separado para deploy | Hecho observado | `docker-compose.deploy.yml`, `docker-compose.produccion.yml` |
 | GitHub Actions para lint/tests/arquitectura/release sanity | Hecho observado | `.github/workflows/` |
-| Plan A descendente con autoaprobacion acotada | Hecho observado | `.github/workflows/sync-main-downstream.yml`, `docs/operacion/deploy_automatizado.md` |
+| Promoción event-driven y sincronización descendente con gates | Hecho observado | `.github/workflows/release-orchestrator.yml`, `.github/workflows/sync-main-downstream.yml`, `docs/operacion/deploy_automatizado.md` |
 | Helpers de Codex/worktrees | Hecho observado | `scripts/ai/`, `.codex/environments/environment.toml` |
 
 ## Que tipo de proyecto es
@@ -100,7 +100,7 @@ Mapa practico del repositorio `SISOC` para futuros agentes de IA y desarrollador
 - `scripts/ai/codex_task.ps1 <slug>`: crea branch `codex/<slug>`, worktree en `../worktrees/<slug>` y bootstrap.
 - `scripts/ai/codex_run.ps1 up`: bootstrap + levantar entorno.
 - `scripts/ai/codex_run.ps1 validate`: corre `black`, `djlint`, smoke tests y `makemigrations --check`.
-- `scripts/operacion/deploy_refresh.sh`: refresh operativo de deploy.
+- `scripts/operacion/deploy_refresh.sh`: refresh operativo de deploy; acepta un SHA esperado para bloquear una revisión obsoleta antes del downtime.
 
 ## Estructura general del proyecto
 
@@ -469,8 +469,14 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - `.github/workflows/lint.yml`
 - `.github/workflows/architecture.yml`
 - `.github/workflows/release-sanity.yml`
+- `.github/workflows/release-orchestrator.yml`
+- `.github/workflows/sync-main-downstream.yml`
+- `.github/workflows/deploy.yml`
+- La automatización de promociones usa una GitHub App privada: variable
+  `RELEASE_AUTOMATION_APP_CLIENT_ID` y secret
+  `RELEASE_AUTOMATION_APP_PRIVATE_KEY`; no sustituirla por un PAT.
 - `.importlinter`
-- `scripts/ci/pr_lint_tools.py`
+- `scripts/ci/pr_lint_tools.py`, `scripts/ci/pr_doc_automation.py`
 
 ## Testing, linting, build y deploy
 
@@ -502,7 +508,7 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 | migraciones/modelos | `makemigrations --check --dry-run` + tests del flujo |
 | config global | smoke + `manage.py check` |
 | import boundaries | `lint-imports` si metiste imports nuevos entre apps |
-| release/main | agregar `check --deploy`, `spectacular --validate`, `collectstatic` |
+| release/main | agregar `check --deploy`, `spectacular --validate`, `collectstatic`, gates del PR y baseline `AAAA.MM.DD-stable` |
 
 ### Build/deploy
 
@@ -699,6 +705,9 @@ Marcar esas zonas como `A inferir` hasta relevarlas cuando una tarea real las to
 - `.github/workflows/lint.yml`
 - `.github/workflows/architecture.yml`
 - `.github/workflows/release-sanity.yml`
+- `.github/workflows/release-orchestrator.yml`
+- `.github/workflows/sync-main-downstream.yml`
+- `.github/workflows/deploy.yml`
 - `scripts/ai/codex_run.ps1`
 - `scripts/ai/codex_task.ps1`
 - `.codex/environments/environment.toml`

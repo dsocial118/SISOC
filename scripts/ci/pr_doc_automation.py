@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import argparse
 import json
 import os
 import re
@@ -617,6 +618,15 @@ def extract_pull_request_data(payload: dict[str, Any]) -> PullRequestData:
 
     pull_request = payload["pull_request"]
     repository = payload["repository"]
+    return pull_request_data_from_api(pull_request, repository["full_name"])
+
+
+def pull_request_data_from_api(
+    pull_request: dict[str, Any],
+    repo_full_name: str,
+) -> PullRequestData:
+    """Construye el contexto comun desde la respuesta de la API de GitHub."""
+
     return PullRequestData(
         number=int(pull_request["number"]),
         title=pull_request["title"],
@@ -626,7 +636,7 @@ def extract_pull_request_data(payload: dict[str, Any]) -> PullRequestData:
         head_ref=pull_request["head"]["ref"],
         author=pull_request["user"]["login"],
         updated_at=pull_request["updated_at"],
-        repo_full_name=repository["full_name"],
+        repo_full_name=repo_full_name,
     )
 
 
@@ -666,6 +676,31 @@ def fetch_changed_files(pr: PullRequestData, token: str) -> list[str]:
     return files
 
 
+def fetch_pull_request_data(
+    repo_full_name: str,
+    pull_number: int,
+    token: str,
+) -> PullRequestData:
+    """Obtiene el PR para una ejecucion fuera de un evento de GitHub Actions."""
+
+    encoded_repo = urllib.parse.quote(repo_full_name, safe="/")
+    response_data = github_api_get_json(
+        f"https://api.github.com/repos/{encoded_repo}/pulls/{pull_number}",
+        token,
+    )
+    return pull_request_data_from_api(response_data, repo_full_name)
+
+
+def read_changed_files_file(path: Path) -> list[str]:
+    """Lee un manifiesto de paths, uno por linea, generado desde el diff real."""
+
+    return [
+        line.strip()
+        for line in path.read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    ]
+
+
 def ensure_parent_dirs() -> None:
     """Crea carpetas necesarias para artefactos generados."""
 
@@ -685,11 +720,13 @@ def sync_pr_artifacts(
     pr: PullRequestData,
     token: str,
     today: date | None = None,
+    changed_files: list[str] | None = None,
 ) -> None:
     """Genera todos los artefactos requeridos para un PR."""
 
     ensure_parent_dirs()
-    changed_files = fetch_changed_files(pr, token)
+    if changed_files is None:
+        changed_files = fetch_changed_files(pr, token)
     metadata = parse_pr_body_metadata(pr.body)
 
     pr_document_path = DOCS_PR_DIR / f"PR-{pr.number}.md"
@@ -735,20 +772,60 @@ def sync_pr_artifacts(
     write_text_file(CHANGELOG_PATH, updated_changelog)
 
 
-def main() -> int:
+def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
+    """Parsea tanto el evento de Actions como una ejecucion controlada de pre-deploy."""
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--event-path",
+        type=Path,
+        help="Payload de pull_request; por defecto usa GITHUB_EVENT_PATH.",
+    )
+    parser.add_argument(
+        "--pr",
+        type=int,
+        help="Numero de PR para consultar por API fuera de GitHub Actions.",
+    )
+    parser.add_argument(
+        "--repository",
+        help="Repositorio owner/name requerido junto con --pr.",
+    )
+    parser.add_argument(
+        "--changed-files-file",
+        type=Path,
+        help="Manifiesto de archivos del diff real que reemplaza la consulta de files del PR.",
+    )
+    args = parser.parse_args(argv)
+    if args.pr is not None and not args.repository:
+        parser.error("--repository es requerido junto con --pr.")
+    if args.pr is None and args.repository:
+        parser.error("--repository solo se admite junto con --pr.")
+    return args
+
+
+def main(argv: list[str] | None = None) -> int:
     """Punto de entrada del script."""
 
-    event_path_value = os.environ.get("GITHUB_EVENT_PATH")
+    args = parse_args(argv)
+    event_path_value = args.event_path or os.environ.get("GITHUB_EVENT_PATH")
     token = os.environ.get("GITHUB_TOKEN")
-    if not event_path_value:
-        raise RuntimeError("GITHUB_EVENT_PATH no está definido.")
     if not token:
         raise RuntimeError("GITHUB_TOKEN no está definido.")
 
-    payload = read_event_payload(Path(event_path_value))
-    pr = extract_pull_request_data(payload)
     try:
-        sync_pr_artifacts(pr, token)
+        if args.pr is not None:
+            pr = fetch_pull_request_data(args.repository, args.pr, token)
+        else:
+            if not event_path_value:
+                raise RuntimeError("GITHUB_EVENT_PATH no está definido.")
+            payload = read_event_payload(Path(event_path_value))
+            pr = extract_pull_request_data(payload)
+        changed_files = (
+            read_changed_files_file(args.changed_files_file)
+            if args.changed_files_file
+            else None
+        )
+        sync_pr_artifacts(pr, token, changed_files=changed_files)
     except urllib.error.HTTPError as exc:
         raise RuntimeError(f"No se pudo consultar la API de GitHub: {exc}") from exc
     return 0
