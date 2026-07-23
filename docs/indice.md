@@ -56,6 +56,7 @@
 ### 6. IA, planes y registro spec-as-source
 - `docs/agentes/guia.md`: guía rápida para asistentes automáticos y flujo de documentación.
 - `docs/ia/`: guías especializadas para asistentes (arquitectura, testing, seguridad, etc.).
+- `docs/ia/MODULAR_BOUNDARIES.md`: regla para que módulos nuevos queden extraíbles sin crear todavía repositorios, deployables ni bases separadas.
 - `docs/plans/`: diseños y planes previos de trabajo.
 - `docs/registro/README.md`: reglas para registrar cambios y decisiones importantes en `docs/`.
 - `docs/registro/cambios/`: historial de cambios importantes.

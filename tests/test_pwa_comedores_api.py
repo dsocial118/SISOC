@@ -872,14 +872,12 @@ def test_adjuntar_y_presentar_rendicion(comedores, settings, tmp_path):
     )
     assert present_without_docs_response.status_code == 400
 
-    # Formulario I es optativo; Formulario III/V se divide en variantes
-    # _ALIMENTARIO/_SIPH obligatorias para mobile.
+    # Formulario I es optativo; las variantes SIPH de Formulario III/V
+    # también lo son porque dependen de que se hayan presentado actividades.
     categorias_obligatorias = [
         DocumentacionAdjunta.CATEGORIA_FORMULARIO_II,
         DocumentacionAdjunta.CATEGORIA_FORMULARIO_III_ALIMENTARIO,
-        DocumentacionAdjunta.CATEGORIA_FORMULARIO_III_SIPH,
         DocumentacionAdjunta.CATEGORIA_FORMULARIO_V_ALIMENTARIO,
-        DocumentacionAdjunta.CATEGORIA_FORMULARIO_V_SIPH,
         DocumentacionAdjunta.CATEGORIA_EXTRACTO_BANCARIO,
         DocumentacionAdjunta.CATEGORIA_COMPROBANTES,
     ]
@@ -910,6 +908,33 @@ def test_adjuntar_y_presentar_rendicion(comedores, settings, tmp_path):
     )
     assert formulario_i["required"] is False
     assert formulario_i["archivos"] == []
+    for codigo_siph in (
+        DocumentacionAdjunta.CATEGORIA_FORMULARIO_III_SIPH,
+        DocumentacionAdjunta.CATEGORIA_FORMULARIO_V_SIPH,
+    ):
+        categoria_siph = next(
+            item
+            for item in detail_response.data["documentacion"]
+            if item["codigo"] == codigo_siph
+        )
+        assert categoria_siph["required"] is False
+        assert categoria_siph["description"] == (
+            "Este documento es obligatorio si presentó actividades para este Convenio"
+        )
+    planilla_seguros = next(
+        item
+        for item in detail_response.data["documentacion"]
+        if item["codigo"] == DocumentacionAdjunta.CATEGORIA_PLANILLA_SEGUROS
+    )
+    assert planilla_seguros["modelo"]["filename"] == (
+        "Planilla.II.Seguros.Actualizacion.-.Tradicional.docx"
+    )
+    modelo_response = client.get(planilla_seguros["modelo"]["url"])
+    assert modelo_response.status_code == 200
+    assert "Planilla.II.Seguros.Actualizacion.-.Tradicional.docx" in (
+        modelo_response["Content-Disposition"]
+    )
+    modelo_response.close()
     categoria_extra = next(
         item
         for item in detail_response.data["documentacion"]
@@ -1224,7 +1249,7 @@ def test_prestacion_alimentaria_conformidad_crea_registro():
 
 
 @pytest.mark.django_db
-def test_prestacion_alimentaria_conformidad_sin_fuente_crea_registro():
+def test_prestacion_alimentaria_conformidad_sin_pdf_mantiene_advertencia():
     provincia = Provincia.objects.create(nombre="Cordoba sin informe")
     programa = Programas.objects.create(nombre="Programa sin informe")
     comedor = Comedor.objects.create(
@@ -1236,15 +1261,22 @@ def test_prestacion_alimentaria_conformidad_sin_fuente_crea_registro():
         username="rep_conf_sin_informe",
     )
 
-    response = _token_client(representante).post(
+    client = _token_client(representante)
+    response = client.post(
         f"/api/comedores/{comedor.id}/prestacion-alimentaria/conformidad/",
-        {"conforme": True, "periodo": "2035-11"},
+        {"conforme": True},
         format="json",
     )
+    detalle = client.get(f"/api/comedores/{comedor.id}/prestacion-alimentaria/")
 
     assert response.status_code == 201
     registro = PrestacionAlimentariaConformidad.objects.get(comedor=comedor)
     assert not registro.certificacion_pdf
+    assert detalle.status_code == 200
+    assert detalle.data["conformidad_pendiente"] is True
+    assert detalle.data["periodo_pendiente"] == date.fromisoformat(
+        response.data["periodo"]
+    )
 
 
 @pytest.mark.django_db
@@ -1279,7 +1311,7 @@ def test_prestacion_alimentaria_conformidad_permite_repetir_periodo():
 
 
 @pytest.mark.django_db
-def test_prestacion_alimentaria_conformidad_repetida_mantiene_periodo_disponible():
+def test_prestacion_alimentaria_conformidad_realizada_elimina_advertencia():
     comedor, client = _comedor_alimentar_comunidad(username="rep_conf_repetida")
     url = f"/api/comedores/{comedor.id}/prestacion-alimentaria/conformidad/"
 
@@ -1288,10 +1320,9 @@ def test_prestacion_alimentaria_conformidad_repetida_mantiene_periodo_disponible
 
     assert primera.status_code == 201
     assert detalle.status_code == 200
-    assert detalle.data["conformidad_pendiente"] is True
-    assert detalle.data["periodo_pendiente"] == date.fromisoformat(
-        primera.data["periodo"]
-    )
+    assert detalle.data["conformidad_pendiente"] is False
+    assert detalle.data["periodo_pendiente"] is None
+    assert detalle.data["periodo_actual"] == date.fromisoformat(primera.data["periodo"])
 
 
 @pytest.mark.django_db

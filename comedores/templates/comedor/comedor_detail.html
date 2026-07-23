@@ -130,18 +130,6 @@
                     </span>
                 </div>
             {% endif %}
-            {% if certificaciones_prestaciones %}
-                <div class="mb-3">
-                    <h6 class="fw-bold mb-2">Certificaciones mensuales de prestaciones</h6>
-                    <div class="d-flex flex-wrap gap-2">
-                        {% for certificacion in certificaciones_prestaciones %}
-                            <a class="btn btn-sm btn-outline-primary"
-                               href="{% url 'descargar_certificacion_prestaciones_web' comedor.id certificacion.id %}"
-                               target="_blank">{{ certificacion.periodo|date:"m/Y" }} - Ver PDF</a>
-                        {% endfor %}
-                    </div>
-                </div>
-            {% endif %}
             <div class="row gy-3 align-items-center">
                 <div class="col-12 col-lg-9 d-flex align-items-center flex-wrap">
                     <ul class="list-inline mb-0 align-middle">
@@ -1471,6 +1459,61 @@
 <!-- /Nomina-->
 </div>
 <!-- /Bloque central-->
+<div class="row relevamiento-container mb-3">
+    <div class="col-12">
+        <div class="card bg-card">
+            <div class="card-header">
+                <h3 class="card-title font-weight-bold me-3 pt-1">Certificaciones Mensuales de Prestaciones</h3>
+                <div class="card-tools">
+                    <a href="{% url 'certificaciones_prestaciones_historial' comedor.id %}"
+                       class="btn btn-primary me-2 btn-sm">Ver historial completo</a>
+                    <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                        <i class="fas fa-minus"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm table-bordered table-striped mb-0">
+                        <thead>
+                            <tr>
+                                <th>Período</th>
+                                <th>Usuario generador</th>
+                                <th>Fecha de certificación</th>
+                                <th>Ver PDF</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for certificacion in certificaciones_prestaciones %}
+                                <tr>
+                                    <td>{{ certificacion.periodo|date:"m/Y" }}</td>
+                                    <td>
+                                        {% if certificacion.usuario %}
+                                            {{ certificacion.usuario.get_full_name|default:certificacion.usuario.username }}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ certificacion.creado|date:"d/m/Y H:i" }}</td>
+                                    <td>
+                                        <a href="{% url 'descargar_certificacion_prestaciones_web' comedor.id certificacion.id %}"
+                                           class="btn btn-sm btn-primary"
+                                           target="_blank"
+                                           rel="noopener">Ver PDF</a>
+                                    </td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="4" class="text-center text-muted py-3">No hay certificaciones mensuales registradas.</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 <div class="row relevamiento-container mb-3">
     <div class="col-12">
         <div class="card bg-card">

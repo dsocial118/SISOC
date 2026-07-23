@@ -820,6 +820,13 @@ class AdmisionService:
                 and informe_complementario_pendiente.estado == "rectificar"
             )
         )
+        informe_complementario_requerido = bool(
+            admision.estado_legales == "Informe Complementario Solicitado"
+            or (
+                informe_complementario_pendiente
+                and informe_complementario_pendiente.estado == "rectificar"
+            )
+        )
 
         observaciones_complementario = None
         if (
@@ -832,6 +839,7 @@ class AdmisionService:
 
         return {
             "mostrar_informe_complementario": mostrar_informe_complementario,
+            "informe_complementario_requerido": informe_complementario_requerido,
             "observaciones_complementario": observaciones_complementario,
         }
 
@@ -934,6 +942,9 @@ class AdmisionService:
             "stats": documentos_context["stats"],
             "mostrar_informe_complementario": informe_complementario_context[
                 "mostrar_informe_complementario"
+            ],
+            "informe_complementario_requerido": informe_complementario_context[
+                "informe_complementario_requerido"
             ],
             "observaciones_complementario": informe_complementario_context[
                 "observaciones_complementario"
