@@ -92,6 +92,7 @@ def datos_validos(centro, **overrides):
         # Domicilio
         "calle_domicilio": "San Martín",
         "altura_domicilio": "1234",
+        "departamento_domicilio": "3",
         "tipo_barrio": "urbano",
         "provincia_domicilio": str(provincia.pk),
         "municipio_domicilio": str(municipio.pk),
@@ -106,6 +107,11 @@ def datos_validos(centro, **overrides):
         "cobertura_salud": "publica_exclusiva",
         "controles_sanitarios_ultimo_anio": "1",
         "calendario_vacunacion_al_dia": "true",
+        # Antropometría (valores dentro de rango OMS)
+        "peso": "14.2",
+        "longitud_acostado": "80.0",
+        "talla": "95.0",
+        "perimetro_cefalico": "48.0",
         # Nutrición
         "lactancia": "no_lactante",
         "alergias_alimentarias": ["leche_vaca"],
@@ -466,3 +472,41 @@ class TestValidacionesQA:
         nombres = {f.name for f in NominaCentroInfancia._meta.get_fields()}
         for campo in NominaCentroInfanciaDestinatariosForm.CAMPOS_OCULTOS:
             assert campo in nombres
+
+    # TC_113 a TC_116: antropometría con rango OMS 2007 (±3 SD)
+    @pytest.mark.parametrize(
+        ("campo", "valor"),
+        [
+            ("peso", "0.5"),  # < 1.6
+            ("peso", "40"),  # > 29.5
+            ("longitud_acostado", "20"),  # < 34.9
+            ("longitud_acostado", "200"),  # > 115.0
+            ("talla", "50"),  # < 60.6
+            ("talla", "200"),  # > 146.4
+            ("perimetro_cefalico", "10"),  # < 25.2
+            ("perimetro_cefalico", "90"),  # > 64.7
+        ],
+    )
+    def test_rechaza_antropometria_fuera_de_rango(self, centro, campo, valor):
+        form = self._form(centro, **{campo: valor})
+        assert not form.is_valid()
+        assert campo in form.errors
+
+    @pytest.mark.parametrize(
+        ("campo", "valor"),
+        [
+            ("peso", "1.6"),
+            ("peso", "29.5"),
+            ("talla", "146.4"),
+            ("perimetro_cefalico", "25.2"),
+        ],
+    )
+    def test_acepta_antropometria_en_los_limites(self, centro, campo, valor):
+        form = self._form(centro, **{campo: valor})
+        assert form.is_valid(), form.errors
+
+    def test_talla_rechaza_texto(self, centro):
+        # talla dejó de ser texto libre: ahora es numérico.
+        form = self._form(centro, talla="alto")
+        assert not form.is_valid()
+        assert "talla" in form.errors

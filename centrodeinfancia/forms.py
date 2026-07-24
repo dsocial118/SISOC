@@ -1018,11 +1018,19 @@ class NominaCentroInfanciaDestinatariosForm(NominaCentroInfanciaBaseForm):
     ALTURA_DOMICILIO_MAXIMA = 99999
     DNI_MINIMO = 1_000_000
     DNI_MAXIMO = 99_999_999
+    # Rangos antropométricos de referencia OMS 2007 (±3 SD), tabla SIMEPI.
+    # (campo, mínimo, máximo, unidad para el mensaje).
+    RANGOS_ANTROPOMETRIA = [
+        ("peso", Decimal("1.6"), Decimal("29.5"), "kg"),
+        ("longitud_acostado", Decimal("34.9"), Decimal("115.0"), "cm"),
+        ("talla", Decimal("60.6"), Decimal("146.4"), "cm"),
+        ("perimetro_cefalico", Decimal("25.2"), Decimal("64.7"), "cm"),
+    ]
 
     # Obligatorios según los casos que QA marcó como "campo requerido".
     # Quedan fuera los condicionales (numero_cud, recibe_apoyo_discapacidad) y los
-    # campos pendientes de definición de producto: teléfonos, antropometría
-    # (talla/peso/longitud/perímetro) y los campos que QA pidió eliminar.
+    # campos pendientes de definición de producto: teléfonos de responsables (enteros)
+    # y los campos que QA pidió eliminar.
     CAMPOS_OBLIGATORIOS = [
         # Registro
         "tipo_registro",
@@ -1053,6 +1061,7 @@ class NominaCentroInfanciaDestinatariosForm(NominaCentroInfanciaBaseForm):
         # Domicilio
         "calle_domicilio",
         "altura_domicilio",
+        "departamento_domicilio",
         "tipo_barrio",
         "provincia_domicilio",
         "municipio_domicilio",
@@ -1067,6 +1076,11 @@ class NominaCentroInfanciaDestinatariosForm(NominaCentroInfanciaBaseForm):
         "cobertura_salud",
         "controles_sanitarios_ultimo_anio",
         "calendario_vacunacion_al_dia",
+        # Antropometría (TC_113 a TC_116)
+        "peso",
+        "longitud_acostado",
+        "talla",
+        "perimetro_cefalico",
         # Nutrición
         "lactancia",
         "alergias_alimentarias",
@@ -1343,10 +1357,22 @@ class NominaCentroInfanciaDestinatariosForm(NominaCentroInfanciaBaseForm):
         for field_name in self.CAMPOS_OCULTOS:
             self.fields.pop(field_name, None)
 
+    def _aplicar_rangos_antropometria(self):
+        # Atributos HTML para que el navegador acote la entrada (la validación real
+        # es server-side en _validar_antropometria).
+        for field_name, minimo, maximo, _unidad in self.RANGOS_ANTROPOMETRIA:
+            campo = self.fields.get(field_name)
+            if not campo:
+                continue
+            campo.widget.attrs.update(
+                {"min": str(minimo), "max": str(maximo), "step": "0.1"}
+            )
+
     def __init__(self, *args, centro=None, **kwargs):
         super().__init__(*args, **kwargs)
         self._ocultar_campos()
         self._configure_pais_nacionalidad_fields()
+        self._aplicar_rangos_antropometria()
 
         # Scope trabajador_registra al CDI recibido
         if centro:
@@ -1494,6 +1520,17 @@ class NominaCentroInfanciaDestinatariosForm(NominaCentroInfanciaBaseForm):
             except ValidationError as exc:
                 self.add_error(field_name, exc.messages)
 
+    def _validar_antropometria(self, cleaned_data):
+        for field_name, minimo, maximo, unidad in self.RANGOS_ANTROPOMETRIA:
+            valor = cleaned_data.get(field_name)
+            if valor in (None, ""):
+                continue
+            if not minimo <= valor <= maximo:
+                self.add_error(
+                    field_name,
+                    f"Ingrese un valor entre {minimo} y {maximo} {unidad}.",
+                )
+
     def _validar_fechas(self, cleaned_data):
         hoy = date.today()
         for field_name in self.CAMPOS_FECHA_NO_FUTURA:
@@ -1530,6 +1567,7 @@ class NominaCentroInfanciaDestinatariosForm(NominaCentroInfanciaBaseForm):
         self._validar_campos_de_texto(cleaned_data)
         self._validar_documentos(cleaned_data)
         self._validar_telefonos(cleaned_data)
+        self._validar_antropometria(cleaned_data)
         self._validar_fechas(cleaned_data)
         self._validar_condicionales_discapacidad(cleaned_data)
 

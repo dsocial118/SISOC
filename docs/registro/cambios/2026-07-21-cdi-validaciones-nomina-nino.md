@@ -84,23 +84,28 @@ alcance nacional.
 - **CUIT vinculado al DNI** (TC_022, TC_033, TC_047): descartado ("no le demos bola"). Se
   valida solo formato y dígito verificador.
 - **Mensaje de municipios** (TC_061): se agrega el aviso.
+- **Departamento del domicilio** (TC_058): **obligatorio** (PM resolvió la contradicción de
+  la planilla a favor del criterio de la observación).
+- **Asignaciones ANSES** (TC_129 a TC_132): **optativas** (PM). La interoperabilidad con el
+  servidor de ANSES para recuperarlas por CUIL/CUIT queda para una etapa posterior.
+- **Antropometría** (TC_113 a TC_116): ingreso manual con rango, mín/máx de referencia
+  OMS 2007 (±3 SD), tabla SIMEPI:
+  - peso: 1.6–29.5 kg · longitud (acostado): 34.9–115.0 cm · talla (de pie): 60.6–146.4 cm ·
+    perímetro cefálico: 25.2–64.7 cm.
+  - `talla` era `CharField` (texto libre) → pasa a `DecimalField(5,1)` como los otros tres
+    (migración 0042, solo esquema — la tabla estaba vacía). Los otros tres ya eran numéricos.
+  - Los cuatro pasan a **obligatorios** (QA los marca requeridos en TS_005). Validación de
+    rango server-side + atributos `min`/`max`/`step` en el input.
+  - El cálculo antropométrico (IMC, z-score) queda para una etapa posterior.
 
 ## Pendiente de definición de producto
 
-- **Antropometría** (TC_113 a TC_116): QA pide que talla, peso, longitud y perímetro
-  cefálico pasen de desplegable a ingreso manual, con validación de rango. Es cambio de
-  tipo de campo + migración de datos, y faltan los rangos válidos. El PM lo está averiguando
-  (junto con el teléfono numérico de los responsables, ver "Hallazgo").
+- **Teléfono numérico de los responsables** (ver "Hallazgo"): `responsable_legal_*_telefono`
+  son enteros y pierden el 0 del código de área. Requiere cambio de tipo de campo +
+  migración. Pendiente.
 - **Dosis de vacunación obligatorias** (TC_133 y siguientes): QA las marca como requeridas
   (severidad media). Hacer obligatorias las 14 vacunas es una decisión de UX que conviene
   confirmar; por ahora solo se valida que la fecha no sea futura.
-
-## Contradicciones de la planilla (a corregir por QA)
-
-- **TC_058 (Departamento del domicilio):** el resultado esperado dice "debe permitir vacío"
-  pero la observación dice "campo obligatorio".
-- **TC_129 a TC_132 (asignaciones ANSES):** el esperado dice "debe permitir vacío" pero los
-  casos figuran como rechazados.
 
 ## Validación
 
