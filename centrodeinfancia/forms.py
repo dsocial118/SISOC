@@ -1476,7 +1476,8 @@ class NominaCentroInfanciaDestinatariosForm(NominaCentroInfanciaBaseForm):
             if not crudo:
                 continue
             try:
-                cleaned_data[field_name] = validate_cuit(normalizar_cuit(crudo))
+                # validate_cuit acepta el CUIT con o sin guiones y devuelve los dígitos.
+                cleaned_data[field_name] = validate_cuit(crudo)
             except ValidationError as exc:
                 self.add_error(field_name, exc.messages)
 
