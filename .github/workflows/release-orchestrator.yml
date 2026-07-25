@@ -1,8 +1,6 @@
 name: Orquestar promocion automatica de release
 
 on:
-    schedule:
-        - cron: "47 * * * *"
     workflow_dispatch:
         inputs:
             release_pr:

@@ -40,11 +40,12 @@ invariante:
 - `homologacion` contiene todo `main` y puede tener extras de HML;
 - `main` no recibe los extras de esas ramas por este mecanismo.
 
-Ante cada push a `main`, y también como reconciliación horaria, el workflow abre
-o reutiliza PRs `main -> development` y `main -> homologacion`, y habilita
-auto-merge nativo. GitHub los integra únicamente cuando los checks requeridos
-por la ruleset están verdes y no hay conflictos. El push resultante activa un
-único deploy de la rama actualizada; no se hace un dispatch adicional.
+Ante cada push a `main`, el workflow abre o reutiliza PRs `main -> development`
+y `main -> homologacion`, y habilita auto-merge nativo. GitHub los integra
+únicamente cuando los checks requeridos por la ruleset están verdes y no hay
+conflictos. El push resultante activa un único deploy de la rama actualizada;
+no se hace un dispatch adicional. `workflow_dispatch` queda como recuperación
+explícita ante una ejecución perdida; no hay reconciliación por cron.
 
 Un conflicto deja el PR abierto, falla el job y no despliega ese entorno. No se
 usan force push, rebase automático ni resolución automática de conflictos. Las
@@ -61,13 +62,14 @@ los artefactos spec-as-source desde el diff real.
 
 El PR temporal se arma con auto-merge nativo y GitHub lo integra cuando sus
 checks requeridos terminan. `.github/workflows/release-orchestrator.yml`
-continúa por eventos: deja listo el PR final, crea el check pendiente
-`release_baseline` y habilita su auto-merge. Cuando los otros checks están
-verdes y `development` contiene el `main` más reciente, crea el tag anotado
-`AAAA.MM.DD-stable` apuntando al `main` que se reemplaza, publica su release de
-baseline y recién entonces completa `release_baseline`. El tag no se
-sobreescribe: si el nombre ya apunta a otro SHA, el workflow se bloquea para
-conservar un rollback inequívoco.
+continúa por el dispatch de la tarea, el cierre del PR temporal y la
+finalización de los checks: deja listo el PR final, crea el check pendiente
+`release_baseline` y habilita su auto-merge. No necesita un cron de
+reconciliación. Cuando los otros checks están verdes y `development` contiene
+el `main` más reciente, crea el tag anotado `AAAA.MM.DD-stable` apuntando al
+`main` que se reemplaza, publica su release de baseline y recién entonces
+completa `release_baseline`. El tag no se sobreescribe: si el nombre ya apunta
+a otro SHA, el workflow se bloquea para conservar un rollback inequívoco.
 
 El body del PR final también fija el SHA de `development` analizado. Un push
 posterior no se promueve por accidente: deja el PR bloqueado hasta que la tarea
@@ -159,13 +161,15 @@ En `production`, configurar Required reviewers. Esa regla materializa la
 aprobación manual antes de que el job de producción corra en el runner
 self-hosted.
 
-Mantener una ruleset base para `development`, `homologacion` y `main` con
-`deploy_guard`, `architecture_imports`, `gitleaks` y `sync_pr_artifacts`; y
-una ruleset exclusiva para `main` que suma `release_baseline`, cuya fuente debe
-ser la GitHub App `SISOC Release Automation`. En ambas,
-exigir que la rama esté al día y dejar el conteo de aprobaciones en cero para
-estos flujos. Habilitar Auto-merge en el repositorio. Estas opciones requieren
-rol de administrador y complementan, no sustituyen, los gates versionados.
+Mantener una ruleset de protección para `development` y `homologacion` con
+`deploy_guard`, `architecture_imports`, `gitleaks` y `sync_pr_artifacts`, sin
+exigir que la rama esté al día: esas ramas deben poder recibir el `main` más
+nuevo mediante un PR descendente. Mantener otra ruleset exclusiva para `main`
+con esos cuatro checks más `release_baseline`, cuya fuente debe ser la GitHub
+App `SISOC Release Automation`; allí sí exigir que la rama esté al día. Dejar
+el conteo de aprobaciones en cero y no agregar bypasses a ninguno de estos
+flujos. Habilitar Auto-merge en el repositorio. Estas opciones requieren rol de
+administrador y complementan, no sustituyen, los gates versionados.
 
 Crear una GitHub App privada de servicio, instalada solamente en
 `dsocial118/SISOC`, sin webhooks. Debe recibir permisos de repositorio en
