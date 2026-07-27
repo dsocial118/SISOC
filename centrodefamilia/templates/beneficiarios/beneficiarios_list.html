@@ -12,7 +12,9 @@
     <!-- Estilos modernos reutilizables para listados -->
     <link rel="stylesheet" href="{% static 'custom/css/listModerno.css' %}" />
     {% url 'beneficiarios_export' as export_url %}
-    {% include 'components/search_bar.html' with titulo="Buscar Beneficiario" reset_url=reset_url add_url=add_url add_text=add_text filters_mode=filters_mode filters_js=filters_js filters_action=filters_action export_url=export_url export_text="Descargar CSV" search_actions_justify="justify-content-end" %}
+    <div class="cdf-beneficiarios-search">
+        {% include 'components/search_bar.html' with titulo="Buscar Beneficiario" reset_url=reset_url add_url=add_url add_text=add_text filters_mode=filters_mode filters_js=filters_js filters_action=filters_action export_url=export_url %}
+    </div>
     <div class="container mt-4 cdf-page">
         <h2>Listado de Preinscriptos</h2>
         {% load custom_filters %}

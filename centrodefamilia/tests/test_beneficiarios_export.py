@@ -284,7 +284,7 @@ def test_beneficiarios_list_muestra_boton_exportar_con_permiso(
     assert "btn-export-csv" in content
     assert reverse("beneficiarios_export") in content
     assert "Descargar CSV" in content
-    assert "justify-content-end" in content
+    assert "cdf-beneficiarios-search" in content
 
 
 @pytest.mark.django_db

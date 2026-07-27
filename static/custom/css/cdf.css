@@ -21,6 +21,10 @@
     font-family: 'Source Sans Pro', 'Montserrat', -apple-system, sans-serif;
 }
 
+.cdf-beneficiarios-search .search-actions {
+    justify-content: flex-end !important;
+}
+
 /* ── Hero / banda de título ─────────────────────────────── */
 .cdf-hero {
     display: flex;
