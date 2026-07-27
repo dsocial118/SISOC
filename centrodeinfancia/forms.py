@@ -1554,7 +1554,7 @@ class NominaCentroInfanciaDestinatariosForm(NominaCentroInfanciaBaseForm):
 
     def _validar_condicionales_discapacidad(self, cleaned_data):
         if cleaned_data.get("tiene_discapacidad") == "si":
-            if not cleaned_data.get("recibe_apoyo_discapacidad"):
+            if cleaned_data.get("recibe_apoyo_discapacidad") is None:
                 self.add_error(
                     "recibe_apoyo_discapacidad", "Debe seleccionar una opción."
                 )

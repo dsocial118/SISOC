@@ -418,6 +418,14 @@ class TestValidacionesQA:
         assert not form.is_valid()
         assert "recibe_apoyo_discapacidad" in form.errors
 
+    def test_acepta_sin_apoyo_si_tiene_discapacidad(self, centro):
+        form = self._form(
+            centro,
+            tiene_discapacidad="si",
+            recibe_apoyo_discapacidad="false",
+        )
+        assert form.is_valid(), form.errors
+
     # TC_101/TS003: "No sabe" no se combina con otros tipos de discapacidad
     def test_tipo_discapacidad_no_sabe_es_excluyente(self, centro):
         form = self._form(

@@ -92,8 +92,10 @@ alcance nacional.
   OMS 2007 (±3 SD), tabla SIMEPI:
   - peso: 1.6–29.5 kg · longitud (acostado): 34.9–115.0 cm · talla (de pie): 60.6–146.4 cm ·
     perímetro cefálico: 25.2–64.7 cm.
-  - `talla` era `CharField` (texto libre) → pasa a `DecimalField(5,1)` como los otros tres
-    (migración 0042, solo esquema — la tabla estaba vacía). Los otros tres ya eran numéricos.
+- `talla` era `CharField` (texto libre) → pasa a `DecimalField(5,1)` como los otros tres.
+  La migración 0042 normaliza sólo valores inequívocos (espacios, coma decimal y escala
+  de un decimal) y se detiene antes del cambio de schema si encuentra datos ambiguos,
+  para evitar conversiones o truncamientos silenciosos. Los otros tres ya eran numéricos.
   - Los cuatro pasan a **obligatorios** (QA los marca requeridos en TS_005). Validación de
     rango server-side + atributos `min`/`max`/`step` en el input.
   - El cálculo antropométrico (IMC, z-score) queda para una etapa posterior.
@@ -125,4 +127,6 @@ alcance nacional.
   campos obligatorios **quedan ineditables** hasta completarlos. Aplica el criterio del PM
   (los datos actuales son de prueba y se borran antes de producción).
 - El cambio está acotado al form de destinatarios; los otros forms de nómina no se tocaron.
-- **Rollback:** revertir el commit. No hay migraciones ni cambios de datos.
+- **Rollback:** revertir el commit y la migración 0042. El rollback del schema vuelve
+  `talla` a texto; las normalizaciones seguras de valores históricos se conservan, por lo
+  que debe existir backup habitual antes de desplegar cualquier migración de datos.
