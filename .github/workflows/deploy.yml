@@ -23,6 +23,7 @@ jobs:
               shell: bash
               env:
                   GH_APP_ROOT: "${{ vars.APP_ROOT }}"
+                  EXPECTED_SHA: "${{ github.sha }}"
               run: |
                   set -Eeuo pipefail
 
@@ -33,8 +34,28 @@ jobs:
                   fi
 
                   cd "$APP_ROOT"
+                  git -C "$APP_ROOT" fetch origin --prune
+                  remote_sha="$(git -C "$APP_ROOT" rev-parse origin/development)"
+                  if [[ "$remote_sha" != "$EXPECTED_SHA" ]]; then
+                      {
+                          echo "### Deploy QA omitido por revision obsoleta"
+                          echo "- Evento: \`$EXPECTED_SHA\`"
+                          echo "- origin/development actual: \`$remote_sha\`"
+                      } >> "$GITHUB_STEP_SUMMARY"
+                      exit 0
+                  fi
                   echo "Commit previo al deploy para rollback: $(git rev-parse HEAD)"
-                  ./scripts/operacion/deploy_refresh.sh --yes
+                  ./scripts/operacion/deploy_refresh.sh --yes --expected-revision "$EXPECTED_SHA"
+                  docker compose -f "$APP_ROOT/docker-compose.deploy.yml" --project-directory "$APP_ROOT" exec -T django python manage.py migrate --check
+                  bash "$APP_ROOT/scripts/infra/healthcheck_qa.sh"
+                  deployed_sha="$(git -C "$APP_ROOT" rev-parse HEAD)"
+                  [[ "$deployed_sha" == "$EXPECTED_SHA" ]]
+                  {
+                      echo "### Deploy QA verificado"
+                      echo "- Revision desplegada: \`$deployed_sha\`"
+                      echo "- Migraciones: \`migrate --check\` OK"
+                      echo "- Health: \`healthcheck_qa.sh\` OK"
+                  } >> "$GITHUB_STEP_SUMMARY"
 
     deploy-homologacion:
         if: github.ref == 'refs/heads/homologacion'
@@ -46,6 +67,7 @@ jobs:
               shell: bash
               env:
                   GH_APP_ROOT: "${{ vars.APP_ROOT }}"
+                  EXPECTED_SHA: "${{ github.sha }}"
                   GIT_CONFIG_COUNT: "1"
                   GIT_CONFIG_KEY_0: safe.directory
                   GIT_CONFIG_VALUE_0: /sisoc/SISOC-Mobile
@@ -59,9 +81,29 @@ jobs:
                   fi
 
                   cd "$APP_ROOT"
+                  git -C "$APP_ROOT" fetch origin --prune
+                  remote_sha="$(git -C "$APP_ROOT" rev-parse origin/homologacion)"
+                  if [[ "$remote_sha" != "$EXPECTED_SHA" ]]; then
+                      {
+                          echo "### Deploy HML omitido por revision obsoleta"
+                          echo "- Evento: \`$EXPECTED_SHA\`"
+                          echo "- origin/homologacion actual: \`$remote_sha\`"
+                      } >> "$GITHUB_STEP_SUMMARY"
+                      exit 0
+                  fi
                   git -C /sisoc/SISOC-Mobile update-index --refresh
                   echo "Commit previo al deploy para rollback: $(git rev-parse HEAD)"
-                  ./scripts/operacion/deploy_refresh.sh --yes --with-mobile --mobile-dir /sisoc/SISOC-Mobile
+                  ./scripts/operacion/deploy_refresh.sh --yes --expected-revision "$EXPECTED_SHA" --with-mobile --mobile-dir /sisoc/SISOC-Mobile
+                  docker compose -f "$APP_ROOT/docker-compose.deploy.yml" -f "$APP_ROOT/docker-compose.produccion.yml" --project-directory "$APP_ROOT" exec -T django python manage.py migrate --check
+                  bash "$APP_ROOT/scripts/infra/healthcheck_hml.sh"
+                  deployed_sha="$(git -C "$APP_ROOT" rev-parse HEAD)"
+                  [[ "$deployed_sha" == "$EXPECTED_SHA" ]]
+                  {
+                      echo "### Deploy HML verificado"
+                      echo "- Revision desplegada: \`$deployed_sha\`"
+                      echo "- Migraciones: \`migrate --check\` OK"
+                      echo "- Health: \`healthcheck_hml.sh\` OK"
+                  } >> "$GITHUB_STEP_SUMMARY"
 
     deploy-produccion:
         if: github.ref == 'refs/heads/main'
@@ -73,6 +115,7 @@ jobs:
               shell: bash
               env:
                   GH_APP_ROOT: "${{ vars.APP_ROOT }}"
+                  EXPECTED_SHA: "${{ github.sha }}"
               run: |
                   set -Eeuo pipefail
 
@@ -83,5 +126,26 @@ jobs:
                   fi
 
                   cd "$APP_ROOT"
+                  git -C "$APP_ROOT" fetch origin --prune
+                  remote_sha="$(git -C "$APP_ROOT" rev-parse origin/main)"
+                  if [[ "$remote_sha" != "$EXPECTED_SHA" ]]; then
+                      {
+                          echo "### Deploy produccion omitido por revision obsoleta"
+                          echo "- Evento aprobado: \`$EXPECTED_SHA\`"
+                          echo "- origin/main actual: \`$remote_sha\`"
+                          echo "- Accion requerida: aprobar el job del commit actual."
+                      } >> "$GITHUB_STEP_SUMMARY"
+                      exit 0
+                  fi
                   echo "Commit previo al deploy para rollback: $(git rev-parse HEAD)"
-                  ./scripts/operacion/deploy_refresh.sh --yes --with-mobile --mobile-dir /sisoc/SISOC-Mobile
+                  ./scripts/operacion/deploy_refresh.sh --yes --expected-revision "$EXPECTED_SHA" --with-mobile --mobile-dir /sisoc/SISOC-Mobile
+                  docker compose -f "$APP_ROOT/docker-compose.deploy.yml" -f "$APP_ROOT/docker-compose.produccion.yml" --project-directory "$APP_ROOT" exec -T django python manage.py migrate --check
+                  bash "$APP_ROOT/scripts/infra/healthcheck_prod.sh"
+                  deployed_sha="$(git -C "$APP_ROOT" rev-parse HEAD)"
+                  [[ "$deployed_sha" == "$EXPECTED_SHA" ]]
+                  {
+                      echo "### Deploy produccion verificado"
+                      echo "- Revision desplegada: \`$deployed_sha\`"
+                      echo "- Migraciones: \`migrate --check\` OK"
+                      echo "- Health: \`healthcheck_prod.sh\` OK"
+                  } >> "$GITHUB_STEP_SUMMARY"

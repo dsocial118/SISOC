@@ -59,17 +59,21 @@
                         {{ form.username | as_crispy_field }}
                         {{ form.email | as_crispy_field }}
                         <div id="password-field-wrapper">{{ form.password | as_crispy_field }}</div>
-                        <div id="mobile-password-help"
-                             class="alert alert-info mt-2 mb-0"
-                             style="display: none">
-                            Para usuarios con acceso a SISOC - Mobile la contraseña se genera automáticamente
-                            y deberá cambiarse en el primer ingreso.
-                        </div>
+                        {% if form.can_manage_mobile_access %}
+                            <div id="mobile-password-help"
+                                 class="alert alert-info mt-2 mb-0"
+                                 style="display: none">
+                                Para usuarios con acceso a SISOC - Mobile la contraseña se genera automáticamente
+                                y deberá cambiarse en el primer ingreso.
+                            </div>
+                        {% endif %}
                     </div>
                 </div>
 
                 <!-- Permisos y Roles -->
-                <div class="card card-custom mb-3 shadow-sm">
+                <div id="mobile-access-card"
+                     class="card card-custom mb-3 shadow-sm"
+                     {% if not form.can_manage_mobile_access %}hidden{% endif %}>
                     <div class="card-header card-header-custom">
                         <h5 class="mb-0">
                             <i class="fas fa-mobile-alt mr-3"></i>Acceso SISOC - Mobile
@@ -338,7 +342,7 @@
                     </div>
                     <div class="card-body">
                         {{ form.groups | as_crispy_field }}
-                        {{ form.user_permissions | as_crispy_field }}
+                        {% if form.can_manage_direct_permissions %}{{ form.user_permissions | as_crispy_field }}{% endif %}
                         {{ form.rol|as_crispy_field }}
                     </div>
                 </div>
@@ -383,10 +387,14 @@
                                 <i class="fas fa-plus mr-1"></i>Agregar alcance
                             </button>
                         </div>
-                        {{ form.es_coordinador|as_crispy_field }}
-                        {{ form.duplas_asignadas|as_crispy_field }}
-                        {{ form.grupos_asignables|as_crispy_field }}
-                        {{ form.roles_asignables|as_crispy_field }}
+                        {% if form.can_manage_technical_teams %}
+                            {{ form.es_coordinador|as_crispy_field }}
+                            {{ form.duplas_asignadas|as_crispy_field }}
+                        {% endif %}
+                        {% if form.can_manage_delegation %}
+                            {{ form.grupos_asignables|as_crispy_field }}
+                            {{ form.roles_asignables|as_crispy_field }}
+                        {% endif %}
                     </div>
                 </div>
 

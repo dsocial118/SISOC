@@ -7,6 +7,7 @@ from django.urls import reverse
 
 from ciudadanos.models import Ciudadano
 from centrodeinfancia.models import CentroDeInfancia, NominaCentroInfancia
+from centrodeinfancia.tests.test_destinatario_form import datos_validos
 from core.models import Provincia
 from users.models import Profile
 
@@ -77,13 +78,17 @@ def usuario_change():
     return _make_user("change_nominacentroinfancia", "view_centrodeinfancia")
 
 
-_VALID_POST = {
-    "estado": NominaCentroInfancia.ESTADO_ACTIVO,
-    "apellido": "Ramirez",
-    "nombre": "Sofia",
-    "fecha_nacimiento": "2020-03-15",
-    "dni": "44555666",
-}
+def _valid_post(centro, **overrides):
+    """Payload completo del legajo (todos los campos obligatorios)."""
+
+    defaults = {
+        "apellido": "Ramirez",
+        "nombre": "Sofia",
+        "fecha_nacimiento": "2020-03-15",
+        "dni": "44555666",
+    }
+    defaults.update(overrides)
+    return datos_validos(centro, **defaults)
 
 
 # ─────────────────────────────────────────────────────────
@@ -142,7 +147,7 @@ class TestNominaCentroInfanciaCreateView:
     ):
         client = Client()
         client.force_login(usuario_add)
-        data = {**_VALID_POST, "ciudadano_id": ciudadano.pk}
+        data = _valid_post(centro, ciudadano_id=ciudadano.pk)
         resp = client.post(self._url(centro), data)
         assert resp.status_code == 302
         assert NominaCentroInfancia.objects.filter(
@@ -152,7 +157,7 @@ class TestNominaCentroInfanciaCreateView:
     def test_post_crea_ciudadano_si_no_existe(self, usuario_add, centro):
         client = Client()
         client.force_login(usuario_add)
-        data = {**_VALID_POST, "dni": "55666777", "apellido": "Nuevo", "nombre": "Niño"}
+        data = _valid_post(centro, dni="55666777", apellido="Nuevo", nombre="Niño")
         assert not Ciudadano.objects.filter(documento="55666777").exists()
         resp = client.post(self._url(centro), data)
         assert resp.status_code == 302
@@ -163,7 +168,7 @@ class TestNominaCentroInfanciaCreateView:
     ):
         client = Client()
         client.force_login(usuario_add)
-        data = {**_VALID_POST, "ciudadano_id": ciudadano.pk}
+        data = _valid_post(centro, ciudadano_id=ciudadano.pk)
         resp = client.post(self._url(centro), data)
         assert resp.status_code == 302
         assert (
@@ -224,12 +229,12 @@ class TestNominaCentroInfanciaEditView:
     def test_post_actualiza_campos(self, usuario_change, centro, nomina):
         client = Client()
         client.force_login(usuario_change)
-        data = {
-            **_VALID_POST,
-            "apellido": "Ramirez-Editado",
-            "nombre": "Sofia M.",
-            "estado": NominaCentroInfancia.ESTADO_BAJA,
-        }
+        data = _valid_post(
+            centro,
+            apellido="Ramirez-Editado",
+            nombre="Sofia",
+            estado=NominaCentroInfancia.ESTADO_BAJA,
+        )
         resp = client.post(self._url(centro, nomina), data)
         assert resp.status_code == 302
         nomina.refresh_from_db()
@@ -239,7 +244,7 @@ class TestNominaCentroInfanciaEditView:
     def test_post_redirige_a_nomina(self, usuario_change, centro, nomina):
         client = Client()
         client.force_login(usuario_change)
-        resp = client.post(self._url(centro, nomina), _VALID_POST)
+        resp = client.post(self._url(centro, nomina), _valid_post(centro))
         expected = reverse("centrodeinfancia_nomina_ver", kwargs={"pk": centro.pk})
         assert resp.status_code == 302
         assert expected in resp.url

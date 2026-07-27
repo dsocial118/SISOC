@@ -284,10 +284,10 @@
                     </li>
                 {% endif %}
                 <!-- COMEDORES -->
-                {% if request.user|has_perm_code:"comedores.view_comedor" %}
-                    <li class="nav-item {% if 'comedores' in pagina_actual or 'admisiones' in pagina_actual or 'acompanamiento' in pagina_actual or 'rendicion_cuentas' in pagina_actual %}menu-open{% endif %}">
+                {% if request.user|has_perm_code:"comedores.view_comedor" or request.user|has_perm_code:"importarexpediente.view_archivosimportados" %}
+                    <li class="nav-item {% if 'comedores' in pagina_actual or 'admisiones' in pagina_actual or 'acompanamiento' in pagina_actual or 'rendicion_cuentas' in pagina_actual or 'importarexpediente' in pagina_actual %}menu-open{% endif %}">
                         <a href="#"
-                           class="nav-link nav-dot ms-2 {% if 'comedores' in pagina_actual %}active{% endif %}">
+                           class="nav-link nav-dot ms-2 {% if 'comedores' in pagina_actual or 'importarexpediente' in pagina_actual %}active{% endif %}">
                             <p>Comedores</p>
                             <i class="nav-arrow bi bi-chevron-right"></i>
                         </a>
@@ -339,6 +339,15 @@
                                     </a>
                                 </li>
                             {% endif %}
+                            {% if request.user|has_perm_code:"importarexpediente.view_archivosimportados" %}
+                                <li class="nav-item">
+                                    <a href="{% url 'importarexpedientes_list' %}"
+                                       class="nav-link ms-4 {% if 'importarexpediente/listar' in pagina_actual %}active{% endif %}">
+                                        <i class="nav-icon bi bi-arrow-return-right"></i>
+                                        <p>Expedientes de Pago</p>
+                                    </a>
+                                </li>
+                            {% endif %}
                             {% comment %}
                         <!-- RENDICIÓN DE CUENTAS FINAL -->
                         {% if not vat_sidebar_only and request.user|has_perm_code:"rendicioncuentasfinal.view_rendicioncuentasfinal" %}
@@ -380,25 +389,6 @@
                                     </a>
                                 </li>
                             {% endif %}
-                        </ul>
-                    </li>
-                {% endif %}
-
-                {% if request.user|has_perm_code:"importarexpediente.view_archivosimportados" %}
-                    <li class="nav-item {% if 'importarexpediente' in pagina_actual %}menu-open{% endif %}">
-                        <a href="#"
-                           class="nav-link nav-dot ms-2 {% if 'importarexpediente' in pagina_actual %}active{% endif %}">
-                            <p>Importar Expediente de Pago</p>
-                            <i class="nav-arrow bi bi-chevron-right"></i>
-                        </a>
-                        <ul class="nav nav-treeview">
-                            <li class="nav-item">
-                                <a href="{% url 'importarexpedientes_list' %}"
-                                   class="nav-link ms-4 {% if 'importarexpediente/listar' in pagina_actual %}active{% endif %}">
-                                    <i class="nav-icon bi bi-arrow-return-right"></i>
-                                    <p>Ver Importar Expediente de Pago</p>
-                                </a>
-                            </li>
                         </ul>
                     </li>
                 {% endif %}

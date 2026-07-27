@@ -241,7 +241,7 @@ def test_acepta_cuit_valido_y_lo_normaliza(user, ubicacion, servicio):
 
 @pytest.mark.django_db
 @pytest.mark.parametrize("campo", ["telefono", "telefono_referente"])
-@pytest.mark.parametrize("valor", ["1-02132-555555", "%%%%", "11-ABCD-1234", "123"])
+@pytest.mark.parametrize("valor", ["1234567890123456", "%%%%", "11-ABCD-1234", "123"])
 def test_rechaza_telefono_invalido(user, ubicacion, servicio, campo, valor):
     form = construir_form(
         datos_validos(ubicacion, servicio, **{campo: valor}),

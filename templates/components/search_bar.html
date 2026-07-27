@@ -151,19 +151,19 @@ Modo búsqueda AJAX dinámica: {% include 'components/search_bar.html' with titu
                     <button type="button"
                             class="btn btn-lg btn-export-csv"
                             data-url="{{ export_url }}"
-                            title="Exportar listado actual a CSV">Exportar</button>
+                            title="Descargar listado actual en CSV">Descargar CSV</button>
                 {% elif export_required_permission %}
                     {% if request.user|has_any_perm:export_permissions_value and request.user|has_perm_code:export_required_permission %}
                         <button type="button"
                                 class="btn btn-lg btn-export-csv"
                                 data-url="{{ export_url }}"
-                                title="Exportar listado actual a CSV">Exportar</button>
+                                title="Descargar listado actual en CSV">Descargar CSV</button>
                     {% endif %}
                 {% elif request.user|has_any_perm:export_permissions_value %}
                     <button type="button"
                             class="btn btn-lg btn-export-csv"
                             data-url="{{ export_url }}"
-                            title="Exportar listado actual a CSV">Exportar</button>
+                            title="Descargar listado actual en CSV">Descargar CSV</button>
                 {% endif %}
             {% endif %}
             <!-- Botones adicionales personalizados -->
