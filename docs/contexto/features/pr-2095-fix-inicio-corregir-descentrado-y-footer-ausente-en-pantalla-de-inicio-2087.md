@@ -1,0 +1,44 @@
+# Contexto de feature PR #2095 - fix(inicio): corregir descentrado y footer ausente en pantalla de inicio (#2087)
+
+## Resumen
+
+- PR: https://github.com/dsocial118/SISOC/pull/2095
+- Base: `development`
+- Rama origen: `claude/bug-2087-analysis-507618`
+- Autor: `juanikitro`
+
+## Contexto funcional
+
+- No informado explícitamente; inferir desde el título del PR y el diff.
+
+## Arquitectura tocada
+
+- No se detectó un patrón arquitectónico dominante más allá del diff observado.
+
+## Decisiones y supuestos detectados
+
+- Tipo de cambio declarado: No informado
+- Área principal declarada: No informada
+- Impacto usuario declarado: No informado
+- Riesgos / rollback: No informado
+
+## Design system y UI
+
+- El PR toca piezas de UI y conviene revisar consistencia visual con el patrón existente.
+- Archivos visuales relevantes: static/custom/css/inicio.css
+
+## Memoria operativa para agentes
+
+- Empezar por `docs/registro/prs/PR-2095.md` para contexto resumido del PR.
+- Revisar primero estos archivos del diff:
+- `static/custom/css/inicio.css`
+- Documentación sugerida para ampliar contexto:
+- `docs/indice.md`
+- `docs/ia/CONTEXT_HYGIENE.md`
+- `docs/ia/ARCHITECTURE.md`
+- `docs/ia/TESTING.md`
+
+## Trazabilidad
+
+- Documento generado automáticamente desde el evento de `pull_request`.
+- Si este PR cambia de título, el archivo se renombrará para mantener el slug alineado.
