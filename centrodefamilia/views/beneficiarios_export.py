@@ -14,12 +14,27 @@ from core.services.advanced_filters.payload import extract_raw_filters, load_pay
 
 FILTERS_PARAM_NAME = "filters"
 FILENAME_FIELDS_PRIORITY = ("provincia", "municipio", "localidad")
+CSV_FORMULA_PREFIXES = ("=", "+", "-", "@")
+SORT_FIELDS = {
+    "cuil": ("cuil",),
+    "apellido_nombre": ("apellido", "nombre"),
+    "dni": ("dni",),
+    "genero_display": ("genero",),
+    "responsable_nombre": ("responsable__apellido", "responsable__nombre"),
+    "provincia": ("provincia__nombre",),
+    "municipio": ("municipio__nombre",),
+}
 
 
 def _slugify_for_filename(value):
     normalized = unicodedata.normalize("NFKD", str(value))
     ascii_only = normalized.encode("ascii", "ignore").decode("ascii")
     return re.sub(r"[^a-z0-9]", "", ascii_only.lower())
+
+
+def _neutralize_csv_formula(value):
+    value = str(value or "")
+    return f"'{value}" if value.startswith(CSV_FORMULA_PREFIXES) else value
 
 
 class BeneficiariosExportView(LoginRequiredMixin, CSVExportMixin, View):
@@ -38,12 +53,27 @@ class BeneficiariosExportView(LoginRequiredMixin, CSVExportMixin, View):
 
     def resolve_field(self, obj, field_path):
         if field_path == "custom_apellido_nombre":
-            return f"{obj.apellido}, {obj.nombre}"
-        if field_path == "custom_genero":
-            return obj.get_genero_display()
-        if field_path == "custom_responsable":
-            return f"{obj.responsable.apellido}, {obj.responsable.nombre}"
-        return super().resolve_field(obj, field_path)
+            value = f"{obj.apellido}, {obj.nombre}"
+        elif field_path == "custom_genero":
+            value = obj.get_genero_display()
+        elif field_path == "custom_responsable":
+            value = f"{obj.responsable.apellido}, {obj.responsable.nombre}"
+        else:
+            value = super().resolve_field(obj, field_path)
+        return _neutralize_csv_formula(value)
+
+    def get_ordering(self):
+        fields = SORT_FIELDS.get(self.request.GET.get("sort"))
+        direction = self.request.GET.get("direction")
+        if not fields or direction not in {"asc", "desc"}:
+            return ()
+
+        prefix = "-" if direction == "desc" else ""
+        return tuple(f"{prefix}{field}" for field in fields) + (
+            "-id",
+            "apellido",
+            "nombre",
+        )
 
     def get_export_filename(self):
         payload = (
@@ -67,6 +97,9 @@ class BeneficiariosExportView(LoginRequiredMixin, CSVExportMixin, View):
         self.check_export_permission(request)
 
         queryset = get_filtered_beneficiarios(request)
+        ordering = self.get_ordering()
+        if ordering:
+            queryset = queryset.order_by(*ordering)
 
         if not queryset.exists():
             messages.warning(

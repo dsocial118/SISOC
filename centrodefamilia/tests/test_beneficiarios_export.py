@@ -9,7 +9,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.urls import reverse
 
 from centrodefamilia.models import Beneficiario, Responsable
-from core.models import Provincia
+from core.models import Localidad, Municipio, Provincia
 
 
 def _payload(field, value, op="eq"):
@@ -142,6 +142,65 @@ def test_export_respeta_filtro_de_provincia_y_nombra_archivo_con_provincia(
 
 
 @pytest.mark.django_db
+def test_export_respeta_filtros_territoriales_y_nombra_archivo(
+    client, usuario_con_permisos, beneficiarios
+):
+    beneficiario, _ = beneficiarios
+    municipio = Municipio.objects.create(
+        nombre="La Plata", provincia=beneficiario.provincia
+    )
+    localidad = Localidad.objects.create(nombre="Tolosa", municipio=municipio)
+    beneficiario.municipio = municipio
+    beneficiario.localidad = localidad
+    beneficiario.save()
+
+    client.force_login(usuario_con_permisos)
+    response_municipio = client.get(
+        reverse("beneficiarios_export"),
+        {"filters": _payload("municipio", "La Plata")},
+    )
+    response_localidad = client.get(
+        reverse("beneficiarios_export"),
+        {"filters": _payload("localidad", "Tolosa")},
+    )
+
+    assert response_municipio["Content-Disposition"] == (
+        'attachment; filename="beneficiarios_municipio_laplata.csv"'
+    )
+    assert response_localidad["Content-Disposition"] == (
+        'attachment; filename="beneficiarios_localidad_tolosa.csv"'
+    )
+
+    municipio_content = b"".join(response_municipio.streaming_content).decode(
+        "utf-8-sig"
+    )
+    localidad_content = b"".join(response_localidad.streaming_content).decode(
+        "utf-8-sig"
+    )
+    municipio_rows = list(csv.DictReader(StringIO(municipio_content), delimiter=";"))
+    localidad_rows = list(csv.DictReader(StringIO(localidad_content), delimiter=";"))
+
+    assert [row["CUIL"] for row in municipio_rows] == ["20451112223"]
+    assert [row["CUIL"] for row in localidad_rows] == ["20451112223"]
+
+
+@pytest.mark.django_db
+def test_export_respeta_orden_visible_por_cuil(
+    client, usuario_con_permisos, beneficiarios
+):
+    client.force_login(usuario_con_permisos)
+    response = client.get(
+        reverse("beneficiarios_export"),
+        {"sort": "cuil", "direction": "asc"},
+    )
+
+    content = b"".join(response.streaming_content).decode("utf-8-sig")
+    rows = list(csv.DictReader(StringIO(content), delimiter=";"))
+
+    assert [row["CUIL"] for row in rows] == ["20451112223", "20451112224"]
+
+
+@pytest.mark.django_db
 def test_export_incluye_bom_utf8_para_excel(
     client, usuario_con_permisos, beneficiarios
 ):
@@ -150,6 +209,27 @@ def test_export_incluye_bom_utf8_para_excel(
 
     content = b"".join(response.streaming_content)
     assert content.startswith(b"\xef\xbb\xbf")
+
+
+@pytest.mark.django_db
+def test_export_neutraliza_formulas_en_campos_textuales(
+    client, usuario_con_permisos, beneficiarios
+):
+    beneficiario, _ = beneficiarios
+    beneficiario.apellido = "=HIPERVINCULO()"
+    beneficiario.responsable.apellido = "@referencia"
+    beneficiario.save()
+    beneficiario.responsable.save()
+
+    client.force_login(usuario_con_permisos)
+    response = client.get(reverse("beneficiarios_export"))
+
+    content = b"".join(response.streaming_content).decode("utf-8-sig")
+    rows = list(csv.DictReader(StringIO(content), delimiter=";"))
+    row = next(row for row in rows if row["CUIL"] == "20451112223")
+
+    assert row["Apellido y Nombre"] == "'=HIPERVINCULO(), Sofia"
+    assert row["Responsable"] == "'@referencia, Marta"
 
 
 @pytest.mark.django_db
@@ -203,6 +283,8 @@ def test_beneficiarios_list_muestra_boton_exportar_con_permiso(
     content = response.content.decode()
     assert "btn-export-csv" in content
     assert reverse("beneficiarios_export") in content
+    assert "Descargar CSV" in content
+    assert "justify-content-end" in content
 
 
 @pytest.mark.django_db

@@ -115,8 +115,9 @@ Modo búsqueda AJAX dinámica: {% include 'components/search_bar.html' with titu
             </div>
         </form>
     {% endif %}
+    {% firstof search_actions_justify "justify-content-center" as search_actions_justify_value %}
     <div class="row mt-3">
-        <div class="col-12 d-flex flex-wrap justify-content-center gap-2 search-actions">
+        <div class="col-12 d-flex flex-wrap {{ search_actions_justify_value }} gap-2 search-actions">
             {% if add_url and show_add_button|default:True %}
                 {% if add_url_full %}
                     <a href="{{ add_url_full }}" class="btn btn-primary btn-lg">{{ add_text|default:"Agregar" }}</a>
@@ -151,19 +152,19 @@ Modo búsqueda AJAX dinámica: {% include 'components/search_bar.html' with titu
                     <button type="button"
                             class="btn btn-lg btn-export-csv"
                             data-url="{{ export_url }}"
-                            title="Exportar listado actual a CSV">Exportar</button>
+                            title="Exportar listado actual a CSV">{{ export_text|default:"Exportar" }}</button>
                 {% elif export_required_permission %}
                     {% if request.user|has_any_perm:export_permissions_value and request.user|has_perm_code:export_required_permission %}
                         <button type="button"
                                 class="btn btn-lg btn-export-csv"
                                 data-url="{{ export_url }}"
-                                title="Exportar listado actual a CSV">Exportar</button>
+                                title="Exportar listado actual a CSV">{{ export_text|default:"Exportar" }}</button>
                     {% endif %}
                 {% elif request.user|has_any_perm:export_permissions_value %}
                     <button type="button"
                             class="btn btn-lg btn-export-csv"
                             data-url="{{ export_url }}"
-                            title="Exportar listado actual a CSV">Exportar</button>
+                            title="Exportar listado actual a CSV">{{ export_text|default:"Exportar" }}</button>
                 {% endif %}
             {% endif %}
             <!-- Botones adicionales personalizados -->
