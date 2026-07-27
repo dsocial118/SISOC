@@ -230,7 +230,7 @@ def test_rechaza_pais_fuera_del_catalogo(catalogos):
 
 
 @pytest.mark.django_db
-@pytest.mark.parametrize("valor", ["1-02132-555555", "%%%%", "123"])
+@pytest.mark.parametrize("valor", ["1234567890123456", "%%%%", "123"])
 def test_rechaza_telefono_invalido(catalogos, valor):
     form = TrabajadorCDIForm(data=datos_validos(telefono=valor))
 
