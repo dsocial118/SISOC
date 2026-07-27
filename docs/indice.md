@@ -16,6 +16,7 @@
 - `docs/operacion/integraciones.md`: conexiones con servicios externos, caches y manejo de estáticos/media.
 - `docs/operacion/operaciones.md`: tareas recurrentes, cron jobs y endpoints de health de producción.
 - `docs/operacion/infraestructura.md`: inventario de infraestructura operativo (entornos, arquitectura, networking, deploy, observabilidad, seguridad y roadmap infra).
+- `docs/operacion/deploy_automatizado.md`: runbook de deploy por GitHub Actions, runners self-hosted, promoción y rollback por tag estable.
 - `docs/operacion/deploy_entornos_docker_nginx_mysql.md`: runbook generico parametrizado para replicar entornos SISOC con Docker Compose, MySQL dedicado y NGINX.
 - `docs/operacion/qa_trixie_deploy.md`: runbook para desplegar QA en Debian 13 con SITE-QA, DB-QA, Docker Compose, MySQL 8.0 y NGINX.
 - `docs/infra/`: inventario, riesgos, operaciones, deploy, rollback y migracion
@@ -44,6 +45,7 @@
 - `docs/implementaciones/preferencias_columnas.md`: preferencias de columnas en listados.
 - `docs/implementaciones/pwa_backend.md`: implementación backend de funcionalidades PWA.
 - `docs/implementaciones/usuarios_perfil_iam.md`: implementación de Usuarios/Perfil + IAM por permisos Django y guía para extender nuevas features.
+- `docs/implementaciones/centrodeinfancia_nomina_renaper.md`: contrato de asistencia de nómina CDI, alcance y precarga RENAPER de trabajadores.
 
 ### 5. Flujos y sincronizaciones
 - `docs/flujos/comedor_sync.md`: cómo funciona la sincronización de comedores con servicios externos.
