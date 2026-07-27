@@ -40,11 +40,18 @@ invariante:
 - `homologacion` contiene todo `main` y puede tener extras de HML;
 - `main` no recibe los extras de esas ramas por este mecanismo.
 
-Ante cada push a `main`, y también como reconciliación horaria, el workflow abre
-o reutiliza PRs `main -> development` y `main -> homologacion`, y habilita
-auto-merge nativo. GitHub los integra únicamente cuando los checks requeridos
-por la ruleset están verdes y no hay conflictos. El push resultante activa un
-único deploy de la rama actualizada; no se hace un dispatch adicional.
+Ante cada push a `main`, y también como reconciliación horaria, el workflow
+abre o reutiliza un PR por destino desde `automation/sync-main-to-<destino>`.
+Esa rama técnica parte de la rama destino y recibe un merge de `main`, por lo
+que conserva los extras de QA/HML sin incorporarlos a `main` y también queda
+actualizada ante rulesets con checks estrictos. GitHub integra el PR únicamente
+cuando los checks requeridos están verdes y no hay conflictos. El push
+resultante activa un único deploy de la rama actualizada; no se hace un dispatch
+adicional.
+
+Si hubiera un PR directo histórico abierto desde `main`, el workflow solo lo
+cierra cuando fue creado por `github-actions[bot]` y coincide con el título de
+sincronización; evita que dos auto-merges compitan por el mismo destino.
 
 Un conflicto deja el PR abierto, falla el job y no despliega ese entorno. No se
 usan force push, rebase automático ni resolución automática de conflictos. Las

@@ -471,6 +471,9 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - `.github/workflows/release-sanity.yml`
 - `.github/workflows/release-orchestrator.yml`
 - `.github/workflows/sync-main-downstream.yml`
+- `.github/scripts/sync_main_downstream.js`: crea y actualiza ramas técnicas
+  `automation/sync-main-to-<destino>` para que los PRs descendentes cumplan
+  checks estrictos sin mezclar QA/HML en `main`.
 - `.github/workflows/deploy.yml`
 - La automatización de promociones usa una GitHub App privada: variable
   `RELEASE_AUTOMATION_APP_CLIENT_ID` y secret
