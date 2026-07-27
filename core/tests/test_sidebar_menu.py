@@ -1,8 +1,8 @@
 import re
 
 import pytest
-from django.contrib.auth.models import Group
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group, Permission
 from django.urls import reverse
 
 
@@ -70,3 +70,68 @@ def test_sidebar_oculta_modalidades_para_cfpinet(client):
     content = response.content.decode()
     assert "Planes Curriculares" in content
     assert "Modalidades de Cursado" not in content
+
+
+def test_sidebar_mantiene_expedientes_de_pago_visible_para_importador(client):
+    user_model = get_user_model()
+    user = user_model.objects.create_user(
+        username="sidebar_importador",
+        password="testpass123",
+    )
+    user.user_permissions.add(
+        Permission.objects.get(
+            content_type__app_label="importarexpediente",
+            codename="view_archivosimportados",
+        )
+    )
+    client.force_login(user)
+
+    response = client.get(reverse("inicio"))
+
+    assert response.status_code == 200
+
+    content = response.content.decode()
+    assert "Comedores" in content
+    assert reverse("importarexpedientes_list") in content
+    assert "Expedientes de Pago" in content
+    assert "Ver Importar Expediente de Pago" not in content
+
+
+def test_sidebar_ubica_expedientes_de_pago_cuarto_en_comedores(client):
+    user_model = get_user_model()
+    user = user_model.objects.create_user(
+        username="sidebar_comedores_importador",
+        password="testpass123",
+    )
+    for app_label, codename in (
+        ("comedores", "view_comedor"),
+        ("admisiones", "view_admision"),
+        ("acompanamientos", "view_informacionrelevante"),
+        ("importarexpediente", "view_archivosimportados"),
+    ):
+        user.user_permissions.add(
+            Permission.objects.get(
+                content_type__app_label=app_label,
+                codename=codename,
+            )
+        )
+    client.force_login(user)
+
+    response = client.get(reverse("inicio"))
+
+    assert response.status_code == 200
+
+    content = response.content.decode()
+    comedores_start = content.index("<p>Comedores</p>")
+    organizaciones_start = content.index("<!-- ORGANIZACIONES -->")
+    comedores_block = content[comedores_start:organizaciones_start]
+
+    assert comedores_block.index("Ver Comedores") < comedores_block.index(
+        "Admisión - Comedores"
+    )
+    assert comedores_block.index("Admisión - Comedores") < comedores_block.index(
+        "Acompañamiento"
+    )
+    assert comedores_block.index("Acompañamiento") < comedores_block.index(
+        "Expedientes de Pago"
+    )
