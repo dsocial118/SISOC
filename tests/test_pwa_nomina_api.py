@@ -653,6 +653,18 @@ def test_historial_asistencia_expone_pdf_en_api_y_contexto_web(
         cantidad_destinatarios=1,
         generado_por=representante,
     )
+    documento_actualizado = NominaDestinatariosDocumentoPWA.objects.create(
+        comedor=comedor,
+        periodo_referencia=periodo,
+        version=2,
+        archivo=SimpleUploadedFile(
+            "nomina-mayo-v2.pdf",
+            b"%PDF-1.4 historial actualizado",
+            content_type="application/pdf",
+        ),
+        cantidad_destinatarios=1,
+        generado_por=representante,
+    )
 
     list_response = client.get(
         f"/api/pwa/espacios/{comedor.id}/nomina/asistencias-periodos/",
@@ -660,9 +672,9 @@ def test_historial_asistencia_expone_pdf_en_api_y_contexto_web(
     )
     assert list_response.status_code == 200
     item = list_response.data["results"][0]
-    assert item["nomina_destinatarios_documento"]["id"] == documento.id
+    assert item["nomina_destinatarios_documento"]["id"] == documento_actualizado.id
     assert item["nomina_destinatarios_documento"]["archivo_url"].endswith(
-        "/nomina-mayo.pdf"
+        "/nomina-mayo-v2.pdf"
     )
 
     detail_response = client.get(
@@ -670,7 +682,10 @@ def test_historial_asistencia_expone_pdf_en_api_y_contexto_web(
         {"tab": "alimentaria", "periodo": "2026-05"},
     )
     assert detail_response.status_code == 200
-    assert detail_response.data["nomina_destinatarios_documento"]["id"] == documento.id
+    assert (
+        detail_response.data["nomina_destinatarios_documento"]["id"]
+        == documento_actualizado.id
+    )
 
     formacion_response = client.get(
         f"/api/pwa/espacios/{comedor.id}/nomina/asistencias-periodos/",
@@ -686,7 +701,10 @@ def test_historial_asistencia_expone_pdf_en_api_y_contexto_web(
         admision_id=admision.id,
         comedor_id=comedor.id,
     )
-    assert web_context["asistencia_periodos"][0]["documento_nomina"] == documento
+    assert (
+        web_context["asistencia_periodos"][0]["documento_nomina"]
+        == documento_actualizado
+    )
 
 
 @pytest.mark.django_db

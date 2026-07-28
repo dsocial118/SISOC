@@ -40,7 +40,6 @@ from pwa.models import (
     ActividadEspacioPWA,
     CatalogoActividadPWA,
     InscriptoActividadEspacioPWA,
-    NominaDestinatariosDocumentoPWA,
     NominaObservacionPWA,
     RegistroAsistenciaNominaPWA,
 )
@@ -70,6 +69,7 @@ from pwa.services.nomina_service import (
     update_nomina_persona,
 )
 from pwa.services.nomina_destinatarios_pdf_service import (
+    get_latest_nomina_destinatarios_documents_by_period,
     serialize_nomina_destinatarios_documento,
 )
 from pwa.utils import parse_periodo_referencia
@@ -851,14 +851,10 @@ class NominaEspacioPWAViewSet(viewsets.ViewSet):
         }
 
     def _attendance_documents_by_period(self, periodos):
-        documentos = NominaDestinatariosDocumentoPWA.objects.filter(
+        return get_latest_nomina_destinatarios_documents_by_period(
             comedor_id=self.kwargs["comedor_id"],
-            periodo_referencia__in=periodos,
-        ).order_by("periodo_referencia", "-version", "-fecha_generacion", "-id")
-        latest_by_period = {}
-        for documento in documentos:
-            latest_by_period.setdefault(documento.periodo_referencia, documento)
-        return latest_by_period
+            periodos=periodos,
+        )
 
     _parse_periodo_referencia = staticmethod(parse_periodo_referencia)
 

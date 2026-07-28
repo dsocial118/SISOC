@@ -21,8 +21,10 @@ from comedores.utils import comedor_usa_admision_para_nomina, is_pnud_comedor
 from core.soft_delete.view_helpers import SoftDeleteDeleteViewMixin
 from pwa.models import (
     ActividadEspacioPWA,
-    NominaDestinatariosDocumentoPWA,
     RegistroAsistenciaNominaPWA,
+)
+from pwa.services.nomina_destinatarios_pdf_service import (
+    get_latest_nomina_destinatarios_documents_by_period,
 )
 from pwa.services.nomina_service import sync_nomina_asistencia_actividades_web
 from pwa.utils import parse_periodo_referencia
@@ -152,13 +154,10 @@ def _get_asistencia_nomina_context(request, *, admision_id=None, comedor_id=None
         .annotate(total_asistentes=Count("id"))
         .order_by("-periodo_referencia")
     )
-    documentos = NominaDestinatariosDocumentoPWA.objects.filter(
+    documentos_por_periodo = get_latest_nomina_destinatarios_documents_by_period(
         comedor_id=comedor_id,
-        periodo_referencia__in=[item["periodo_referencia"] for item in periodos],
-    ).order_by("periodo_referencia", "-version", "-fecha_generacion", "-id")
-    documentos_por_periodo = {}
-    for documento in documentos:
-        documentos_por_periodo.setdefault(documento.periodo_referencia, documento)
+        periodos=[item["periodo_referencia"] for item in periodos],
+    )
     for item in periodos:
         item["documento_nomina"] = documentos_por_periodo.get(
             item["periodo_referencia"]
