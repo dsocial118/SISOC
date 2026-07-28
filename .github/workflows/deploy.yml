@@ -40,21 +40,47 @@ jobs:
                       {
                           echo "### Deploy QA omitido por revision obsoleta"
                           echo "- Evento: \`$EXPECTED_SHA\`"
-                          echo "- origin/development actual: \`$remote_sha\`"
+                          echo "- origin/development actual: \`$remote_sha\`";
                       } >> "$GITHUB_STEP_SUMMARY"
                       exit 0
                   fi
                   echo "Commit previo al deploy para rollback: $(git rev-parse HEAD)"
                   ./scripts/operacion/deploy_refresh.sh --yes --expected-revision "$EXPECTED_SHA"
-                  docker compose -f "$APP_ROOT/docker-compose.deploy.yml" --project-directory "$APP_ROOT" exec -T django python manage.py migrate --check
-                  bash "$APP_ROOT/scripts/infra/healthcheck_qa.sh"
+                  wait_for() {
+                      local description="$1"
+                      local attempts="$2"
+                      local output
+                      local attempt
+                      shift 2
+                      output="$(mktemp)"
+
+                      for ((attempt = 1; attempt <= attempts; attempt++)); do
+                          if "$@" >"$output" 2>&1; then
+                              cat "$output"
+                              rm -f "$output"
+                              return 0
+                          fi
+                          if ((attempt < attempts)); then
+                              echo "[deploy] Esperando $description ($attempt/$attempts)..."
+                              sleep 2
+                          fi
+                      done
+
+                      cat "$output"
+                      rm -f "$output"
+                      echo "::error::$description no estuvo listo luego de $attempts intentos."
+                      return 1
+                  }
+
+                  wait_for "migraciones de QA" 30 docker compose -f "$APP_ROOT/docker-compose.deploy.yml" --project-directory "$APP_ROOT" exec -T django python manage.py migrate --check
+                  wait_for "healthcheck de QA" 30 bash "$APP_ROOT/scripts/infra/healthcheck_qa.sh"
                   deployed_sha="$(git -C "$APP_ROOT" rev-parse HEAD)"
                   [[ "$deployed_sha" == "$EXPECTED_SHA" ]]
                   {
                       echo "### Deploy QA verificado"
                       echo "- Revision desplegada: \`$deployed_sha\`"
                       echo "- Migraciones: \`migrate --check\` OK"
-                      echo "- Health: \`healthcheck_qa.sh\` OK"
+                      echo "- Health: \`healthcheck_qa.sh\` OK";
                   } >> "$GITHUB_STEP_SUMMARY"
 
     deploy-homologacion:
@@ -87,22 +113,57 @@ jobs:
                       {
                           echo "### Deploy HML omitido por revision obsoleta"
                           echo "- Evento: \`$EXPECTED_SHA\`"
-                          echo "- origin/homologacion actual: \`$remote_sha\`"
+                          echo "- origin/homologacion actual: \`$remote_sha\`";
                       } >> "$GITHUB_STEP_SUMMARY"
                       exit 0
+                  fi
+
+                  if ! grep -q -- "--expected-revision" "$APP_ROOT/scripts/operacion/deploy_refresh.sh"; then
+                      [[ "$(git -C "$APP_ROOT" branch --show-current)" == "homologacion" ]] || {
+                          echo "::error::El checkout de HML no esta en la branch homologacion."
+                          exit 1;
+                      }
+                      echo "[deploy] Actualizando el helper local de HML antes del deploy versionado."
+                      git -C "$APP_ROOT" merge --ff-only origin/homologacion
                   fi
                   git -C /sisoc/SISOC-Mobile update-index --refresh
                   echo "Commit previo al deploy para rollback: $(git rev-parse HEAD)"
                   ./scripts/operacion/deploy_refresh.sh --yes --expected-revision "$EXPECTED_SHA" --with-mobile --mobile-dir /sisoc/SISOC-Mobile
-                  docker compose -f "$APP_ROOT/docker-compose.deploy.yml" -f "$APP_ROOT/docker-compose.produccion.yml" --project-directory "$APP_ROOT" exec -T django python manage.py migrate --check
-                  bash "$APP_ROOT/scripts/infra/healthcheck_hml.sh"
+                  wait_for() {
+                      local description="$1"
+                      local attempts="$2"
+                      local output
+                      local attempt
+                      shift 2
+                      output="$(mktemp)"
+
+                      for ((attempt = 1; attempt <= attempts; attempt++)); do
+                          if "$@" >"$output" 2>&1; then
+                              cat "$output"
+                              rm -f "$output"
+                              return 0
+                          fi
+                          if ((attempt < attempts)); then
+                              echo "[deploy] Esperando $description ($attempt/$attempts)..."
+                              sleep 2
+                          fi
+                      done
+
+                      cat "$output"
+                      rm -f "$output"
+                      echo "::error::$description no estuvo listo luego de $attempts intentos."
+                      return 1
+                  }
+
+                  wait_for "migraciones de HML" 30 docker compose -f "$APP_ROOT/docker-compose.deploy.yml" -f "$APP_ROOT/docker-compose.produccion.yml" --project-directory "$APP_ROOT" exec -T django python manage.py migrate --check
+                  wait_for "healthcheck de HML" 30 bash "$APP_ROOT/scripts/infra/healthcheck_hml.sh"
                   deployed_sha="$(git -C "$APP_ROOT" rev-parse HEAD)"
                   [[ "$deployed_sha" == "$EXPECTED_SHA" ]]
                   {
                       echo "### Deploy HML verificado"
                       echo "- Revision desplegada: \`$deployed_sha\`"
                       echo "- Migraciones: \`migrate --check\` OK"
-                      echo "- Health: \`healthcheck_hml.sh\` OK"
+                      echo "- Health: \`healthcheck_hml.sh\` OK";
                   } >> "$GITHUB_STEP_SUMMARY"
 
     deploy-produccion:
@@ -133,7 +194,7 @@ jobs:
                           echo "### Deploy produccion omitido por revision obsoleta"
                           echo "- Evento aprobado: \`$EXPECTED_SHA\`"
                           echo "- origin/main actual: \`$remote_sha\`"
-                          echo "- Accion requerida: aprobar el job del commit actual."
+                          echo "- Accion requerida: aprobar el job del commit actual.";
                       } >> "$GITHUB_STEP_SUMMARY"
                       exit 0
                   fi
@@ -147,5 +208,5 @@ jobs:
                       echo "### Deploy produccion verificado"
                       echo "- Revision desplegada: \`$deployed_sha\`"
                       echo "- Migraciones: \`migrate --check\` OK"
-                      echo "- Health: \`healthcheck_prod.sh\` OK"
+                      echo "- Health: \`healthcheck_prod.sh\` OK";
                   } >> "$GITHUB_STEP_SUMMARY"
