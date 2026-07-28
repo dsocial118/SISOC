@@ -28,6 +28,7 @@ Resolver el issue #2149 evitando que la PWA muestre o permita gestionar comedore
 ## Validaciones
 
 - Pruebas dirigidas del selector y detalle PWA.
+- Suite completa de API de comedores PWA.
 - `black` y verificación de whitespace.
 
 ## Pendientes / riesgos

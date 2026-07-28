@@ -68,8 +68,17 @@ def _grant_pwa_permission(user, codename):
 @pytest.fixture
 def comedores(db):
     provincia = Provincia.objects.create(nombre="Cordoba")
-    comedor_1 = Comedor.objects.create(nombre="Comedor Uno", provincia=provincia)
-    comedor_2 = Comedor.objects.create(nombre="Comedor Dos", provincia=provincia)
+    programa = Programas.objects.create(nombre="Abordaje Comunitario")
+    comedor_1 = Comedor.objects.create(
+        nombre="Comedor Uno",
+        provincia=provincia,
+        programa=programa,
+    )
+    comedor_2 = Comedor.objects.create(
+        nombre="Comedor Dos",
+        provincia=provincia,
+        programa=programa,
+    )
     return comedor_1, comedor_2
 
 
@@ -773,24 +782,28 @@ def test_crear_rendicion_mobile_rechaza_numero_repetido_y_periodo_solapado(comed
 @pytest.mark.django_db
 def test_rendiciones_mobile_scope_por_organizacion_y_proyecto():
     provincia = Provincia.objects.create(nombre="Santa Fe")
+    programa = Programas.objects.create(nombre="Abordaje Comunitario")
     organizacion_a = Organizacion.objects.create(nombre="Organización A")
     organizacion_b = Organizacion.objects.create(nombre="Organización B")
     comedor_a_1 = Comedor.objects.create(
         nombre="Espacio A1",
         provincia=provincia,
         organizacion=organizacion_a,
+        programa=programa,
         codigo_de_proyecto="PROY-COMPARTIDO",
     )
     comedor_a_2 = Comedor.objects.create(
         nombre="Espacio A2",
         provincia=provincia,
         organizacion=organizacion_a,
+        programa=programa,
         codigo_de_proyecto="PROY-COMPARTIDO",
     )
     comedor_b_1 = Comedor.objects.create(
         nombre="Espacio B1",
         provincia=provincia,
         organizacion=organizacion_b,
+        programa=programa,
         codigo_de_proyecto="PROY-COMPARTIDO",
     )
 
@@ -831,18 +844,21 @@ def test_rendiciones_mobile_scope_por_organizacion_y_proyecto():
 @pytest.mark.django_db
 def test_crear_rendicion_mobile_permite_mismo_proyecto_en_otra_organizacion():
     provincia = Provincia.objects.create(nombre="Entre Ríos")
+    programa = Programas.objects.create(nombre="Abordaje Comunitario")
     organizacion_a = Organizacion.objects.create(nombre="Organización Rendición A")
     organizacion_b = Organizacion.objects.create(nombre="Organización Rendición B")
     comedor_a = Comedor.objects.create(
         nombre="Espacio Rendición A",
         provincia=provincia,
         organizacion=organizacion_a,
+        programa=programa,
         codigo_de_proyecto="PROY-ORG-01",
     )
     comedor_b = Comedor.objects.create(
         nombre="Espacio Rendición B",
         provincia=provincia,
         organizacion=organizacion_b,
+        programa=programa,
         codigo_de_proyecto="PROY-ORG-01",
     )
 
