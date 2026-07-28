@@ -1,0 +1,44 @@
+name: Inspeccion controlada de talla legacy QA
+
+on:
+    workflow_dispatch:
+        inputs:
+            confirmation:
+                description: "Confirmar inspeccion no mutante del registro legacy bloqueante"
+                required: true
+                type: choice
+                default: no
+                options:
+                    - no
+                    - inspect-id-7
+
+permissions: { contents: read }
+
+jobs:
+    inspect-legacy-talla:
+        if: inputs.confirmation == 'inspect-id-7'
+        environment: qa
+        runs-on: [self-hosted, sisoc-qa]
+
+        steps:
+            - name: Clasificar talla legacy bloqueante sin exponer datos
+              shell: bash
+              env:
+                  GH_APP_ROOT: "${{ vars.APP_ROOT }}"
+              run: |
+                  set -Eeuo pipefail
+
+                  APP_ROOT="${GH_APP_ROOT:-${APP_ROOT:-}}"
+                  [[ -n "$APP_ROOT" ]] || {
+                      echo "::error::APP_ROOT no esta configurado en el Environment qa."
+                      exit 1
+                  }
+
+                  git -C "$APP_ROOT" fetch origin --prune
+                  [[ "$(git -C "$APP_ROOT" rev-parse HEAD)" == "$(git -C "$APP_ROOT" rev-parse origin/development)" ]] || {
+                      echo "::error::El checkout de QA no coincide con origin/development; no se inspecciona la base."
+                      exit 1
+                  }
+
+                  inspection=$'from decimal import Decimal, InvalidOperation\nfrom django.db import connection\n\nwith connection.cursor() as cursor:\n    cursor.execute("SELECT talla FROM centrodeinfancia_nominacentroinfancia WHERE id = %s", [7])\n    row = cursor.fetchone()\n\nif row is None:\n    category = "record_missing"\nelif row[0] is None:\n    category = "null"\nelse:\n    value = str(row[0]).strip()\n    if not value:\n        category = "blank"\n    else:\n        try:\n            Decimal(value.replace(",", "."))\n        except InvalidOperation:\n            category = "non_numeric"\n        else:\n            category = "numeric"\n\nprint(f"legacy_talla_id=7 category={category}")'
+                  docker compose -f "$APP_ROOT/docker-compose.deploy.yml" --project-directory "$APP_ROOT" run --rm --no-deps --entrypoint python django manage.py shell -c "$inspection"
