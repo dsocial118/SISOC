@@ -38,7 +38,7 @@
     {% if not vat_sidebar_only %}
         <!-- COMUNICADOS -->
         <li class="nav-item nav-main-item {% if 'comunicados' in pagina_actual %}menu-open{% endif %}"
-            style="order: 6;
+            style="order: 7;
                    border-bottom: 1px solid var(--sidebar-border-color)">
             <a href="#"
                class="nav-link {% if 'comunicados' in pagina_actual %}active{% endif %}">
@@ -115,15 +115,6 @@
                         <p>Parametrías de Voucher</p>
                     </a>
                 </li>
-                {% if perms.ocr.use_ocr or request.user.is_superuser %}
-                    <li class="nav-item">
-                        <a href="{% url 'ocr_upload' %}"
-                           class="nav-link nav-dot ms-2 {% if 'ocr/' in pagina_actual %}active{% endif %}">
-                            <i class="nav-icon bi bi-file-text"></i>
-                            <p>OCR</p>
-                        </a>
-                    </li>
-                {% endif %}
             </ul>
         </li>
     {% endif %}
@@ -178,6 +169,17 @@
                 {% endif %}
             </ul>
         </li>
+    {% endif %}
+    {% if not vat_sidebar_only %}
+        {% if perms.ocr.use_ocr or request.user.is_superuser %}
+            <li class="nav-item nav-main-item" style="order: 6">
+                <a href="{% url 'ocr_upload' %}"
+                   class="nav-link {% if 'ocr/' in pagina_actual %}active{% endif %}">
+                    <i class="nav-icon bi bi-file-text"></i>
+                    <p>OCR</p>
+                </a>
+            </li>
+        {% endif %}
     {% endif %}
     {% if not vat_sidebar_only %}
         {% tableros_para_sidebar as tableros %}
