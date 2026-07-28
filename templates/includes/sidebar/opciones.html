@@ -194,14 +194,6 @@
                         <i class="nav-arrow bi bi-chevron-right"></i>
                     </a>
                     <ul class="nav nav-treeview">
-                        {% if has_dashboard_cf %}
-                            <li class="nav-item">
-                                <a href="{% url 'dashboard' %}"
-                                   class="nav-link nav-dot ms-2 {% if 'centro-de-familia' in pagina_actual %}active{% endif %}">
-                                    <p>Centros de Familia</p>
-                                </a>
-                            </li>
-                        {% endif %}
                         {% for item in tableros %}
                             {% if item.tipo == 'grupo' %}
                                 <li class="nav-item {% if item.activo %}menu-open{% endif %}">
