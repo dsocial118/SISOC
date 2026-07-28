@@ -345,6 +345,12 @@ def test_pwa_oculta_comedor_sin_programa_y_lo_actualiza_al_asignarlo():
     assert [item["id"] for item in listado_con_programa.data["results"]] == [comedor.id]
     assert detalle_con_programa.status_code == 200
 
+    comedor.programa = None
+    comedor.save(update_fields=["programa"])
+
+    assert client.get("/api/comedores/").data["results"] == []
+    assert client.get(f"/api/comedores/{comedor.id}/").status_code == 404
+
 
 @pytest.mark.django_db
 def test_comedor_detail_includes_mobile_relevamiento_summary():
@@ -530,6 +536,32 @@ def test_representante_can_list_and_create_operadores(comedores):
     assert create_response.status_code == 201
     assert create_response.data["username"] == "op_nuevo"
     assert create_response.data["rol"] == AccesoComedorPWA.ROL_OPERADOR
+
+
+@pytest.mark.django_db
+def test_usuarios_no_expone_comedores_sin_programa_en_asignables(comedores):
+    comedor_visible, comedor_sin_programa = comedores
+    representante = _create_pwa_user(
+        comedor=comedor_visible,
+        role=AccesoComedorPWA.ROL_REPRESENTANTE,
+        username="rep_asignables_programa",
+    )
+    AccesoComedorPWA.objects.create(
+        user=representante,
+        comedor=comedor_sin_programa,
+        rol=AccesoComedorPWA.ROL_REPRESENTANTE,
+        activo=True,
+    )
+    comedor_sin_programa.programa = None
+    comedor_sin_programa.save(update_fields=["programa"])
+    client = _token_client(representante)
+
+    response = client.get(f"/api/comedores/{comedor_visible.id}/usuarios/")
+
+    assert response.status_code == 200
+    assert [item["id"] for item in response.data["assignable_comedores"]] == [
+        comedor_visible.id
+    ]
 
 
 @pytest.mark.django_db

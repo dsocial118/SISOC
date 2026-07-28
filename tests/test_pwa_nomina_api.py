@@ -9,7 +9,7 @@ from rest_framework.test import APIClient
 
 from admisiones.models.admisiones import Admision
 from ciudadanos.models import Ciudadano
-from comedores.models import Comedor, Nomina
+from comedores.models import Comedor, Nomina, Programas
 from core.models import Dia, Provincia, Sexo
 from pwa.models import (
     ActividadEspacioPWA,
@@ -34,7 +34,12 @@ def _grant_pwa_permission(user, codename):
 @pytest.fixture
 def comedor(db):
     provincia = Provincia.objects.create(nombre="Buenos Aires")
-    return Comedor.objects.create(nombre="Comedor Nómina API", provincia=provincia)
+    programa = Programas.objects.create(nombre="Abordaje Comunitario")
+    return Comedor.objects.create(
+        nombre="Comedor Nómina API",
+        provincia=provincia,
+        programa=programa,
+    )
 
 
 @pytest.fixture
@@ -181,6 +186,22 @@ def test_nomina_list_stats_and_tabs(comedor, admision, sexo_f, sexo_m, dia):
     assert response_formacion.status_code == 200
     assert len(response_formacion.data["results"]) == 1
     assert response_formacion.data["results"][0]["apellido"] == "Lopez"
+
+
+@pytest.mark.django_db
+def test_nomina_rechaza_comedor_cuando_se_quita_el_programa(comedor, admision):
+    representante = _create_representante(
+        comedor=comedor,
+        username="rep_nomina_sin_programa",
+    )
+    client = _auth_client_for_user(representante)
+
+    comedor.programa = None
+    comedor.save(update_fields=["programa"])
+
+    response = client.get(f"/api/pwa/espacios/{comedor.id}/nomina/")
+
+    assert response.status_code == 403
 
 
 @pytest.mark.django_db
