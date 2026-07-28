@@ -36,6 +36,7 @@ from VAT.models import (
     Inscripcion,
     Evaluacion,
     ResultadoEvaluacion,
+    ProfesorCentro,
 )
 
 
@@ -318,6 +319,90 @@ def _clean_non_empty_text(value, field_label):
     return cleaned_value
 
 
+# Prefijo jurisdiccional (2 primeros dígitos) del CUE por provincia. Son los
+# códigos INDEC de jurisdicción, que es lo que usa el CUE/DiNIECE.
+#
+# Las claves son los nombres canónicos de `core/fixtures/localidad_municipio_provincia.json`.
+# `Provincia` no tiene campo de código, así que el mapeo es por nombre; la
+# solución durable sería un `codigo_indec` en `core.Provincia`, pero eso es un
+# cambio de `core/` que impacta otros módulos.
+CUE_PREFIJOS_POR_PROVINCIA = {
+    "Ciudad Autónoma de Buenos Aires": "02",
+    "Buenos Aires": "06",
+    "Catamarca": "10",
+    "Córdoba": "14",
+    "Corrientes": "18",
+    "Chaco": "22",
+    "Chubut": "26",
+    "Entre Ríos": "30",
+    "Formosa": "34",
+    "Jujuy": "38",
+    # La Pampa no figuraba en la tabla del requerimiento #2146 (salta de 38 a
+    # 46). Se incluye con su código INDEC porque la provincia existe en el
+    # sistema y omitirla dejaría sus centros imposibles de guardar.
+    "La Pampa": "42",
+    "La Rioja": "46",
+    "Mendoza": "50",
+    "Misiones": "54",
+    "Neuquén": "58",
+    "Río Negro": "62",
+    "Salta": "66",
+    "San Juan": "70",
+    "San Luis": "74",
+    "Santa Cruz": "78",
+    "Santa Fe": "82",
+    "Santiago del Estero": "86",
+    "Tucumán": "90",
+    "Tierra del Fuego, Antártida e Islas del Atlántico Sur": "94",
+}
+
+MENSAJE_CUE_DUPLICADO = "El CUE ingresado ya se encuentra registrado en otro centro."
+MENSAJE_CUE_DUPLICADO_BAJA = (
+    "El CUE ingresado ya se encuentra registrado en otro centro dado de baja."
+)
+MENSAJE_CUE_PREFIJO_INVALIDO = (
+    "Los primeros 2 dígitos del CUE no corresponden a la provincia seleccionada."
+)
+
+
+def _validar_cue_duplicado(codigo, instance=None):
+    """
+    Devuelve el mensaje de error si el CUE ya existe en otro centro, o None.
+
+    Usa `all_objects` a propósito: `Centro.codigo` es `unique=True` en la DB,
+    pero el `_default_manager` de soft delete excluye los borrados, así que la
+    validación de unicidad de Django no los ve y el alta terminaba en
+    IntegrityError (500) en vez de un error de formulario.
+    """
+    if not codigo:
+        return None
+    queryset = Centro.all_objects.filter(codigo=codigo)
+    if instance is not None and instance.pk:
+        queryset = queryset.exclude(pk=instance.pk)
+    duplicado = queryset.only("deleted_at").first()
+    if duplicado is None:
+        return None
+    return MENSAJE_CUE_DUPLICADO_BAJA if duplicado.is_deleted else MENSAJE_CUE_DUPLICADO
+
+
+def _validar_prefijo_cue(codigo, provincia):
+    """
+    Devuelve el mensaje de error si el prefijo del CUE no coincide con la
+    provincia, o None.
+
+    Si la provincia no está en el mapeo (nombre no canónico) no se valida: es
+    preferible no bloquear un alta legítima por un desajuste de nomenclatura.
+    """
+    if not codigo or provincia is None:
+        return None
+    prefijo_esperado = CUE_PREFIJOS_POR_PROVINCIA.get(str(provincia.nombre).strip())
+    if prefijo_esperado is None:
+        return None
+    if codigo[:2] != prefijo_esperado:
+        return MENSAJE_CUE_PREFIJO_INVALIDO
+    return None
+
+
 def _clean_numeric_text(value, field_label, min_length=None, max_length=None):
     cleaned_value = (value or "").strip()
     if cleaned_value and not cleaned_value.isdigit():
@@ -564,6 +649,16 @@ class CentroForm(forms.ModelForm):
             )
         return revisores
 
+    def clean_codigo(self):
+        # La unicidad se valida acá (y no en `clean`) para que el error quede
+        # sobre el campo y para que Django excluya `codigo` de su propio
+        # `validate_unique`: así no se muestran dos mensajes por lo mismo.
+        codigo = (self.cleaned_data.get("codigo") or "").strip()
+        error = _validar_cue_duplicado(codigo, self.instance)
+        if error:
+            raise ValidationError(error)
+        return codigo
+
     def clean(self):
         cleaned_data = super().clean()
         referentes = cleaned_data.get("referentes")
@@ -572,6 +667,16 @@ class CentroForm(forms.ModelForm):
             cleaned_data["referentes"] = User.objects.filter(pk=legacy_referente.pk)
         if not cleaned_data.get("referentes"):
             self.add_error("referentes", "Debe seleccionar al menos un referente.")
+
+        # El prefijo se valida acá porque es cross-field: necesita `provincia`,
+        # que se limpia después de `codigo`. Si `codigo` ya falló, no está en
+        # cleaned_data y no se re-reporta.
+        error_prefijo = _validar_prefijo_cue(
+            cleaned_data.get("codigo"),
+            cleaned_data.get("provincia"),
+        )
+        if error_prefijo:
+            self.add_error("codigo", error_prefijo)
         return cleaned_data
 
     def save(self, commit=True):
@@ -805,12 +910,18 @@ class CentroAltaForm(CentroForm):
         return _clean_non_empty_text(self.cleaned_data.get("nombre"), "La denominación")
 
     def clean_codigo(self):
-        return _clean_numeric_text(
+        # Se mantiene la validación numérica existente; si pasa, se agrega la
+        # de unicidad. El prefijo provincial se valida en `clean` (cross-field).
+        codigo = _clean_numeric_text(
             self.cleaned_data.get("codigo"),
             "El CUE",
             min_length=9,
             max_length=9,
         )
+        error = _validar_cue_duplicado(codigo, self.instance)
+        if error:
+            raise ValidationError(error)
+        return codigo
 
     def clean_domicilio_actividad(self):
         return _clean_non_empty_text(
@@ -2941,3 +3052,47 @@ ComisionCursoWizardStep2FormSet = forms.formset_factory(
 
 class ComisionCursoWizardStep3Form(forms.Form):
     """Paso 3 - confirmación. Sin campos: sólo se renderiza el resumen."""
+
+
+class ProfesorCentroForm(forms.ModelForm):
+    """
+    Alta rápida de profesor desde la pestaña de resultados. Sin validación de
+    identidad externa: el centro carga los datos que declara el acta.
+    """
+
+    def __init__(self, *args, centro=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._centro = centro
+
+    class Meta:
+        model = ProfesorCentro
+        fields = ["apellido", "nombre", "documento", "email"]
+        widgets = {
+            "apellido": forms.TextInput(attrs={"class": "form-control"}),
+            "nombre": forms.TextInput(attrs={"class": "form-control"}),
+            "documento": forms.NumberInput(
+                attrs={"class": "form-control", "inputmode": "numeric"}
+            ),
+            "email": forms.EmailInput(attrs={"class": "form-control"}),
+        }
+
+    def clean_documento(self):
+        documento = self.cleaned_data["documento"]
+        if self._centro is None:
+            return documento
+        duplicado = ProfesorCentro.objects.filter(
+            centro=self._centro, documento=documento
+        ).exclude(pk=self.instance.pk)
+        if duplicado.exists():
+            raise ValidationError(
+                "Ya existe un profesor con ese documento en el centro."
+            )
+        return documento
+
+    def save(self, commit=True):
+        profesor = super().save(commit=False)
+        if self._centro is not None:
+            profesor.centro = self._centro
+        if commit:
+            profesor.save()
+        return profesor

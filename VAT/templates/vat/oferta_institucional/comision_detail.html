@@ -834,6 +834,164 @@
             margin-bottom: 30px;
         }
 
+        .sisoc-metric-grid--quad {
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            padding: 0;
+            margin-bottom: 30px;
+        }
+
+        .sisoc-btn--gold { background: var(--cgold); color: #28405f; }
+        .sisoc-btn--gold:hover, .sisoc-btn--gold:focus { color: #28405f; }
+        .sisoc-btn--light { background: #ffffff; color: #37465b; }
+        .sisoc-btn--light:hover, .sisoc-btn--light:focus { color: #243244; }
+
+        /* ── Pestaña Resultados ──────────── */
+        .ci-acta-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 20px 30px;
+        }
+
+        .ci-field-label {
+            display: block;
+            margin-bottom: .4rem;
+            color: var(--ctext);
+            font-size: 15px;
+            font-weight: 400;
+            letter-spacing: 1px;
+        }
+
+        .ci-field-input {
+            width: 100%;
+            min-height: 44px;
+            padding: .5rem .85rem;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.35);
+            background: rgba(255, 255, 255, 0.06);
+            color: #ffffff;
+            font-size: .95rem;
+            color-scheme: dark;
+        }
+
+        .ci-field-input::placeholder { color: rgba(255, 255, 255, 0.5); }
+
+        .ci-field-input:focus {
+            outline: none;
+            border-color: var(--cteal);
+            box-shadow: 0 0 0 .18rem rgba(59, 134, 129, 0.25);
+        }
+
+        .ci-prof-search { position: relative; }
+
+        .ci-prof-results {
+            position: absolute;
+            z-index: 20;
+            top: calc(100% + 4px);
+            left: 0;
+            right: 0;
+            max-height: 240px;
+            overflow-y: auto;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            background: #1e2e40;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.45);
+        }
+
+        .ci-prof-results button {
+            display: block;
+            width: 100%;
+            padding: .6rem .85rem;
+            border: 0;
+            background: transparent;
+            color: #ffffff;
+            text-align: left;
+            font-size: .88rem;
+            cursor: pointer;
+        }
+
+        .ci-prof-results button:hover { background: rgba(255, 255, 255, 0.09); }
+        .ci-prof-results .ci-prof-results-empty {
+            padding: .6rem .85rem;
+            color: var(--cmuted);
+            font-size: .85rem;
+        }
+
+        .ci-prof-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: .6rem;
+            margin-top: .6rem;
+            padding: .4rem .5rem .4rem .85rem;
+            border-radius: 999px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.08);
+            color: #ffffff;
+            font-size: .85rem;
+        }
+
+        .ci-prof-chip button {
+            border: 0;
+            background: transparent;
+            color: #ffffff;
+            padding: 0 .2rem;
+            font-size: .9rem;
+            line-height: 1;
+            cursor: pointer;
+        }
+
+        .ci-filtro-group { display: inline-flex; gap: .4rem; flex-wrap: wrap; }
+
+        .ci-filtro-btn {
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 999px;
+            background: transparent;
+            color: #ffffff;
+            font-size: .8rem;
+            font-weight: 600;
+            padding: .35rem .85rem;
+            cursor: pointer;
+        }
+
+        .ci-filtro-btn.is-active { background: var(--cgold); border-color: var(--cgold); color: #28405f; }
+
+        .ci-resultado-acciones { display: flex; gap: .5rem; justify-content: flex-end; }
+
+        /* ── Selección múltiple de inscriptos ──────────── */
+        .ci-lote-acciones {
+            display: inline-flex;
+            align-items: center;
+            gap: .55rem;
+            flex-wrap: wrap;
+        }
+
+        .ci-lote-conteo {
+            color: var(--cmuted);
+            font-size: .82rem;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .sisoc-btn:disabled {
+            opacity: .45;
+            cursor: not-allowed;
+            filter: none;
+        }
+
+        .ci-tbl .ci-tbl-col-check { width: 44px; text-align: center; }
+
+        .ci-lote-check,
+        #inscriptosLoteTodos {
+            width: 17px;
+            height: 17px;
+            accent-color: var(--cteal);
+            cursor: pointer;
+            vertical-align: middle;
+        }
+
+        @media (max-width: 767.98px) {
+            .ci-acta-grid { grid-template-columns: 1fr; }
+        }
+
         .sisoc-metric-card {
             position: relative;
             background: var(--cteal);
@@ -1073,6 +1231,12 @@
                     class="sisoc-tab-chip"
                     data-sisoc-tab-target="horarios"
                     aria-selected="false">Horarios</button>
+            {% if puede_gestionar_resultados %}
+                <button type="button"
+                        class="sisoc-tab-chip"
+                        data-sisoc-tab-target="resultados"
+                        aria-selected="false">Resultados</button>
+            {% endif %}
         </div>
 
         <div class="sisoc-metric-grid" id="sisocMetricGridGlobal">
@@ -1133,6 +1297,17 @@
                         {% if horarios %}({{ horarios|length }}){% endif %}
                     </span>
                 </button>
+                {% if puede_gestionar_resultados %}
+                    <button type="button"
+                            class="sisoc-side-tab"
+                            data-sisoc-tab-target="resultados"
+                            aria-selected="false"
+                            hidden>
+                        <span>Resultados
+                            {% if alumnos_resultados %}({{ alumnos_resultados|length }}){% endif %}
+                        </span>
+                    </button>
+                {% endif %}
             </div>
 
             <div class="sisoc-info-content">
@@ -1223,6 +1398,14 @@
                             <i class="bi bi-people"></i>
                             <span>Inscriptos</span>
                         </div>
+                        {% if puede_gestionar_lote_inscriptos %}
+                            <form id="formInscriptosLote"
+                                  method="post"
+                                  action="{{ inscripcion_estado_lote_url }}">
+                                {% csrf_token %}
+                                <input type="hidden" name="estado" id="inscriptosLoteEstado" />
+                            </form>
+                        {% endif %}
                         <div class="ci-tbl-toolbar">
                             <div class="ci-tbl-search">
                                 <i class="bi bi-search"></i>
@@ -1232,6 +1415,25 @@
                                        autocomplete="off"
                                        aria-label="Buscar inscriptos por nombre" />
                             </div>
+                            {% if puede_gestionar_lote_inscriptos %}
+                                <div class="ci-lote-acciones">
+                                    <span class="ci-lote-conteo" id="inscriptosLoteConteo">0 seleccionados</span>
+                                    <button type="button"
+                                            class="sisoc-btn sisoc-btn--add"
+                                            id="inscriptosLoteAceptar"
+                                            data-lote-estado="inscripta"
+                                            disabled>
+                                        <i class="bi bi-check-lg"></i><span>Aceptar</span>
+                                    </button>
+                                    <button type="button"
+                                            class="sisoc-btn sisoc-btn--delete"
+                                            id="inscriptosLoteRechazar"
+                                            data-lote-estado="rechazada"
+                                            disabled>
+                                        <i class="bi bi-x-lg"></i><span>Rechazar</span>
+                                    </button>
+                                </div>
+                            {% endif %}
                             {% if puede_agregar_inscripcion %}
                                 <button type="button"
                                         class="sisoc-btn sisoc-btn--add"
@@ -1256,9 +1458,17 @@
                             <table class="ci-tbl">
                                 <thead>
                                     <tr>
+                                        {% if puede_gestionar_lote_inscriptos %}
+                                            <th class="ci-tbl-col-check">
+                                                <input type="checkbox"
+                                                       id="inscriptosLoteTodos"
+                                                       aria-label="Seleccionar todos los inscriptos" />
+                                            </th>
+                                        {% endif %}
                                         <th>Apellido</th>
                                         <th>Nombre</th>
                                         <th>Documento</th>
+                                        <th>Estado</th>
                                         <th>Email</th>
                                         <th>Teléfono</th>
                                         <th>Asistencia</th>
@@ -1268,12 +1478,34 @@
                                 <tbody id="inscriptosTablaBody">
                                     {% for insc in inscripciones %}
                                         <tr class="ci-tbl-row"
-                                            data-nombre="{{ insc.ciudadano.apellido|lower }} {{ insc.ciudadano.nombre|lower }}">
+                                            data-nombre="{{ insc.ciudadano.apellido|lower }} {{ insc.ciudadano.nombre|lower }}"
+                                            data-estado="{{ insc.estado }}">
+                                            {% if puede_gestionar_lote_inscriptos %}
+                                                <td class="ci-tbl-col-check">
+                                                    <input type="checkbox"
+                                                           class="ci-lote-check"
+                                                           value="{{ insc.pk }}"
+                                                           aria-label="Seleccionar a {{ insc.ciudadano.apellido }} {{ insc.ciudadano.nombre }}" />
+                                                </td>
+                                            {% endif %}
                                             <td>
                                                 <a href="{% url 'vat_inscripcion_detail' insc.pk %}">{{ insc.ciudadano.apellido|default:"—" }}</a>
                                             </td>
                                             <td>{{ insc.ciudadano.nombre|default:"—" }}</td>
                                             <td>{{ insc.ciudadano.documento|default:"—" }}</td>
+                                            <td>
+                                                {% if insc.estado == "inscripta" or insc.estado == "validada_presencial" %}
+                                                    <span class="ci-pill ci-pill-green">{{ insc.get_estado_display }}</span>
+                                                {% elif insc.estado == "pre_inscripta" %}
+                                                    <span class="ci-pill ci-pill-yellow">{{ insc.get_estado_display }}</span>
+                                                {% elif insc.estado == "completada" %}
+                                                    <span class="ci-pill ci-pill-blue">{{ insc.get_estado_display }}</span>
+                                                {% elif insc.estado == "rechazada" %}
+                                                    <span class="ci-pill ci-pill-red">{{ insc.get_estado_display }}</span>
+                                                {% else %}
+                                                    <span class="ci-pill ci-pill-gray">{{ insc.get_estado_display }}</span>
+                                                {% endif %}
+                                            </td>
                                             <td>{{ insc.ciudadano.email|default:"—" }}</td>
                                             <td>{{ insc.ciudadano.telefono|default:"—" }}</td>
                                             <td>
@@ -1298,13 +1530,13 @@
                                         </tr>
                                     {% empty %}
                                         <tr class="ci-tbl-empty" data-empty-row>
-                                            <td colspan="{% if puede_cambiar_inscripcion or puede_eliminar_inscripcion %}7{% else %}6{% endif %}">
+                                            <td colspan="{% if puede_gestionar_lote_inscriptos %}9{% elif puede_cambiar_inscripcion or puede_eliminar_inscripcion %}8{% else %}7{% endif %}">
                                                 Sin inscriptos aún. Inscribí ciudadanos a esta comisión para verlos aquí.
                                             </td>
                                         </tr>
                                     {% endfor %}
                                     <tr class="ci-tbl-empty d-none" data-no-results-row>
-                                        <td colspan="{% if puede_cambiar_inscripcion or puede_eliminar_inscripcion %}7{% else %}6{% endif %}">
+                                        <td colspan="{% if puede_gestionar_lote_inscriptos %}9{% elif puede_cambiar_inscripcion or puede_eliminar_inscripcion %}8{% else %}7{% endif %}">
                                             No se encontraron inscriptos para la búsqueda.
                                         </td>
                                     </tr>
@@ -1682,6 +1914,185 @@
                     </div>
                 </section>
 
+                {# RESULTADOS #}
+                {% if puede_gestionar_resultados %}
+                    <section class="sisoc-info-panel sisoc-info-panel--overflow"
+                             data-sisoc-panel="resultados">
+                        <form id="formResultados"
+                              method="post"
+                              action="{{ resultados_save_url }}"
+                              novalidate>
+                            {% csrf_token %}
+                            <div class="sisoc-metric-grid sisoc-metric-grid--quad">
+                                <article class="sisoc-metric-card">
+                                    <strong class="sisoc-metric-value" data-resumen="aprobados">{{ resumen_resultados.aprobados }}</strong>
+                                    <span class="sisoc-metric-label">Aprobados</span>
+                                </article>
+                                <article class="sisoc-metric-card">
+                                    <strong class="sisoc-metric-value" data-resumen="desaprobados">{{ resumen_resultados.desaprobados }}</strong>
+                                    <span class="sisoc-metric-label">Desaprobados</span>
+                                </article>
+                                <article class="sisoc-metric-card">
+                                    <strong class="sisoc-metric-value" data-resumen="sin_calificar">{{ resumen_resultados.sin_calificar }}</strong>
+                                    <span class="sisoc-metric-label">Sin calificar</span>
+                                </article>
+                                <article class="sisoc-metric-card">
+                                    <strong class="sisoc-metric-value" data-resumen="inscriptos">{{ resumen_resultados.inscriptos }}</strong>
+                                    <span class="sisoc-metric-label">Inscriptos</span>
+                                </article>
+                            </div>
+
+                            <div class="sisoc-block-card">
+                                <div class="sisoc-block-title">
+                                    <i class="bi bi-file-earmark-text"></i>
+                                    <span>Datos del acta</span>
+                                </div>
+                                <div class="sisoc-block-body">
+                                    <div id="resultadosAlert" class="alert d-none" role="alert"></div>
+                                    <div class="ci-acta-grid">
+                                        <div class="ci-prof-search">
+                                            <label class="ci-field-label" for="profesorBuscador">
+                                                Profesor a cargo<span class="text-danger">*</span>
+                                            </label>
+                                            <input type="text"
+                                                   class="ci-field-input"
+                                                   id="profesorBuscador"
+                                                   placeholder="Buscar por nombre o DNI"
+                                                   autocomplete="off" />
+                                            <input type="hidden"
+                                                   name="profesor"
+                                                   id="profesorId"
+                                                   value="{{ acta_cierre.profesor_id|default_if_none:'' }}" />
+                                            <div class="ci-prof-results d-none" id="profesorResultados"></div>
+                                            <div class="ci-prof-chip {% if not acta_cierre %}d-none{% endif %}"
+                                                 id="profesorChip">
+                                                <span id="profesorChipTexto">
+                                                    {% if acta_cierre %}
+                                                        {{ acta_cierre.profesor.apellido }}, {{ acta_cierre.profesor.nombre }} — DNI {{ acta_cierre.profesor.documento }} — {{ acta_cierre.profesor.email }}
+                                                    {% endif %}
+                                                </span>
+                                                <button type="button"
+                                                        id="profesorChipQuitar"
+                                                        aria-label="Quitar profesor seleccionado">
+                                                    <i class="bi bi-x-lg"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label class="ci-field-label" for="actaFechaFin">
+                                                Fecha de fin<span class="text-danger">*</span>
+                                            </label>
+                                            <input type="date"
+                                                   class="ci-field-input"
+                                                   id="actaFechaFin"
+                                                   name="fecha_fin"
+                                                   value="{{ acta_fecha_fin_inicial|date:'Y-m-d' }}" />
+                                        </div>
+                                        <div>
+                                            <label class="ci-field-label" for="actaNumero">N° de acta (opcional)</label>
+                                            <input type="text"
+                                                   class="ci-field-input"
+                                                   id="actaNumero"
+                                                   name="numero_acta"
+                                                   placeholder="Ej: 0245/2026"
+                                                   value="{{ acta_cierre.numero_acta|default_if_none:'' }}" />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="ci-tbl-card mt-4" id="resultadosTabla">
+                                <div class="ci-tbl-head">
+                                    <i class="bi bi-list-check"></i>
+                                    <span>Calificación de alumnos</span>
+                                </div>
+                                <div class="ci-tbl-toolbar">
+                                    <div class="ci-filtro-group" role="group" aria-label="Filtrar alumnos">
+                                        <button type="button" class="ci-filtro-btn is-active" data-filtro="todos">Todos</button>
+                                        <button type="button" class="ci-filtro-btn" data-filtro="pendientes">A calificar</button>
+                                        <button type="button" class="ci-filtro-btn" data-filtro="finalizados">Finalizados</button>
+                                    </div>
+                                    <button type="button"
+                                            class="sisoc-btn sisoc-btn--add"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#modalProfesorNuevo">
+                                        <i class="bi bi-person-plus"></i><span>Agregar profesor</span>
+                                    </button>
+                                </div>
+                                <div class="ci-tbl-scroll">
+                                    <table class="ci-tbl">
+                                        <thead>
+                                            <tr>
+                                                <th>Apellido</th>
+                                                <th>Nombre</th>
+                                                <th>Documento</th>
+                                                <th>Resultado</th>
+                                                <th class="ci-tbl-col-actions">Acciones</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="resultadosTablaBody">
+                                            {% for alumno in alumnos_resultados %}
+                                                <tr class="ci-tbl-row"
+                                                    data-inscripcion="{{ alumno.pk }}"
+                                                    data-resultado="{{ alumno.resultado_final|default_if_none:'' }}">
+                                                    <td class="text-uppercase">{{ alumno.ciudadano.apellido|default:"—" }}</td>
+                                                    <td>{{ alumno.ciudadano.nombre|default:"—" }}</td>
+                                                    <td>{{ alumno.ciudadano.documento|default:"—" }}</td>
+                                                    <td>
+                                                        {% if alumno.resultado_final == resultado_aprobado %}
+                                                            <span class="ci-pill ci-pill-green" data-resultado-pill>Aprobado</span>
+                                                        {% elif alumno.resultado_final == resultado_desaprobado %}
+                                                            <span class="ci-pill ci-pill-red" data-resultado-pill>Desaprobado</span>
+                                                        {% else %}
+                                                            <span class="ci-pill ci-pill-gray" data-resultado-pill>Sin calificar</span>
+                                                        {% endif %}
+                                                    </td>
+                                                    <td>
+                                                        <div class="ci-resultado-acciones">
+                                                            <button type="button"
+                                                                    class="sisoc-btn sisoc-btn--add"
+                                                                    data-marcar="{{ resultado_aprobado }}">
+                                                                <i class="bi bi-check-lg"></i><span>Aprobar</span>
+                                                            </button>
+                                                            <button type="button"
+                                                                    class="sisoc-btn sisoc-btn--delete"
+                                                                    data-marcar="{{ resultado_desaprobado }}">
+                                                                <i class="bi bi-x-lg"></i><span>Desaprobar</span>
+                                                            </button>
+                                                            <input type="hidden"
+                                                                   name="resultado_{{ alumno.pk }}"
+                                                                   value="{{ alumno.resultado_final|default_if_none:'' }}"
+                                                                   data-resultado-input />
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            {% empty %}
+                                                <tr class="ci-tbl-empty">
+                                                    <td colspan="5">Sin alumnos para calificar. Sólo se listan las inscripciones confirmadas de la comisión.</td>
+                                                </tr>
+                                            {% endfor %}
+                                            <tr class="ci-tbl-empty d-none" data-sin-resultados-row>
+                                                <td colspan="5">No hay alumnos para el filtro seleccionado.</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div class="ci-tbl-foot">
+                                    <span id="resultadosConteo"></span>
+                                    <div class="d-flex gap-2">
+                                        <button type="button"
+                                                class="sisoc-btn sisoc-btn--light"
+                                                id="resultadosCancelar">Cancelar</button>
+                                        <button type="submit" class="sisoc-btn sisoc-btn--gold">
+                                            <i class="bi bi-save"></i><span>Guardar resultados</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </section>
+                {% endif %}
+
             </div>
 
             <div class="sisoc-side-tabs sisoc-side-tabs--right"
@@ -1728,6 +2139,16 @@
                         {% if horarios %}({{ horarios|length }}){% endif %}
                     </span>
                 </button>
+                {% if puede_gestionar_resultados %}
+                    <button type="button"
+                            class="sisoc-side-tab"
+                            data-sisoc-tab-target="resultados"
+                            aria-selected="false">
+                        <span>Resultados
+                            {% if alumnos_resultados %}({{ alumnos_resultados|length }}){% endif %}
+                        </span>
+                    </button>
+                {% endif %}
             </div>
         </div>
     </div>
@@ -1923,6 +2344,78 @@
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                             <button type="submit" class="btn btn-danger">Eliminar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
+    {% if puede_gestionar_lote_inscriptos %}
+        <div class="modal fade ci-modal"
+             id="modalInscriptosLote"
+             tabindex="-1"
+             aria-labelledby="modalInscriptosLoteLabel"
+             aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="modalInscriptosLoteLabel">Confirmar acción</h5>
+                        <button type="button"
+                                class="btn-close"
+                                data-bs-dismiss="modal"
+                                aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="mb-2" id="inscriptosLoteResumen"></p>
+                        <p class="text-muted small mb-0" id="inscriptosLoteDetalle"></p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="button" class="btn btn-primary" id="inscriptosLoteConfirmar">Confirmar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
+    {% if puede_gestionar_resultados %}
+        <div class="modal fade ci-modal"
+             id="modalProfesorNuevo"
+             tabindex="-1"
+             aria-labelledby="modalProfesorNuevoLabel"
+             aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="modalProfesorNuevoLabel">Agregar profesor</h5>
+                        <button type="button"
+                                class="btn-close"
+                                data-bs-dismiss="modal"
+                                aria-label="Close"></button>
+                    </div>
+                    <form id="formProfesorNuevo"
+                          method="post"
+                          action="{{ profesor_crear_url }}">
+                        {% csrf_token %}
+                        <div class="modal-body">
+                            <div id="profesorNuevoAlert" class="alert d-none" role="alert"></div>
+                            <p class="text-muted small">El alta es directa: no se valida la identidad contra RENAPER.</p>
+                            <div class="row g-3">
+                                {% for field in profesor_form %}
+                                    <div class="col-md-6">
+                                        <label for="{{ field.id_for_label }}" class="form-label fw-bold">
+                                            {{ field.label }}
+                                            {% if field.field.required %}<span class="text-danger">*</span>{% endif %}
+                                        </label>
+                                        {{ field }}
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-primary">Guardar profesor</button>
                         </div>
                     </form>
                 </div>
@@ -2829,6 +3322,438 @@
     })();
     </script>
 
+    {% if puede_gestionar_lote_inscriptos %}
+        <script nonce="{{ request.csp_nonce }}">
+    (function() {
+        var form = document.getElementById('formInscriptosLote');
+        var body = document.getElementById('inscriptosTablaBody');
+        var estadoInput = document.getElementById('inscriptosLoteEstado');
+        var checkTodos = document.getElementById('inscriptosLoteTodos');
+        var conteoEl = document.getElementById('inscriptosLoteConteo');
+        var btnAceptar = document.getElementById('inscriptosLoteAceptar');
+        var btnRechazar = document.getElementById('inscriptosLoteRechazar');
+        var modalEl = document.getElementById('modalInscriptosLote');
+        var resumenEl = document.getElementById('inscriptosLoteResumen');
+        var detalleEl = document.getElementById('inscriptosLoteDetalle');
+        var confirmarBtn = document.getElementById('inscriptosLoteConfirmar');
+        var buscador = document.getElementById('inscriptosBuscador');
+        if (!form || !body || !estadoInput || !modalEl) return;
+
+        var ETIQUETAS = { inscripta: 'aceptar', rechazada: 'rechazar' };
+        var checks = Array.prototype.slice.call(body.querySelectorAll('.ci-lote-check'));
+        var estadoPendiente = null;
+
+        function seleccionados() {
+            return checks.filter(function(check) { return check.checked; });
+        }
+
+        // Mismo criterio que el buscador de la tabla: seleccionar todos aplica
+        // a las filas que pasan el filtro actual, no a las 55 de la comisión.
+        function pasaFiltro(check) {
+            var term = (buscador ? buscador.value : '').trim().toLowerCase();
+            if (!term) return true;
+            var row = check.closest('.ci-tbl-row');
+            return row && (row.getAttribute('data-nombre') || '').indexOf(term) !== -1;
+        }
+
+        function sincronizar() {
+            var total = seleccionados().length;
+            if (conteoEl) {
+                conteoEl.textContent = total + (total === 1 ? ' seleccionado' : ' seleccionados');
+            }
+            if (btnAceptar) btnAceptar.disabled = total === 0;
+            if (btnRechazar) btnRechazar.disabled = total === 0;
+            if (checkTodos) {
+                var visibles = checks.filter(pasaFiltro);
+                var marcados = visibles.filter(function(c) { return c.checked; }).length;
+                checkTodos.checked = visibles.length > 0 && marcados === visibles.length;
+                checkTodos.indeterminate = marcados > 0 && marcados < visibles.length;
+            }
+        }
+
+        body.addEventListener('change', function(event) {
+            if (event.target.classList.contains('ci-lote-check')) sincronizar();
+        });
+
+        if (checkTodos) {
+            checkTodos.addEventListener('change', function() {
+                var marcar = checkTodos.checked;
+                checks.forEach(function(check) {
+                    if (pasaFiltro(check)) check.checked = marcar;
+                });
+                sincronizar();
+            });
+        }
+
+        // Al cambiar el filtro se limpia la selección: evita aplicar una acción
+        // en lote sobre filas que el operador dejó de ver.
+        if (buscador) {
+            buscador.addEventListener('input', function() {
+                checks.forEach(function(check) { check.checked = false; });
+                sincronizar();
+            });
+        }
+
+        function abrirConfirmacion(estado) {
+            var elegidos = seleccionados();
+            if (!elegidos.length) return;
+            estadoPendiente = estado;
+
+            var cambian = elegidos.filter(function(check) {
+                var row = check.closest('.ci-tbl-row');
+                return !row || row.getAttribute('data-estado') !== estado;
+            }).length;
+            var sinCambios = elegidos.length - cambian;
+
+            if (resumenEl) {
+                resumenEl.textContent = '¿Confirmás ' + ETIQUETAS[estado] + ' ' +
+                    elegidos.length +
+                    (elegidos.length === 1 ? ' inscripción' : ' inscripciones') + '?';
+            }
+            if (detalleEl) {
+                detalleEl.textContent = sinCambios
+                    ? cambian + ' cambian de estado; ' + sinCambios +
+                      ' ya estaban en ese estado y no se modifican.'
+                    : '';
+            }
+            new bootstrap.Modal(modalEl).show();
+        }
+
+        if (btnAceptar) {
+            btnAceptar.addEventListener('click', function() {
+                abrirConfirmacion(btnAceptar.getAttribute('data-lote-estado'));
+            });
+        }
+        if (btnRechazar) {
+            btnRechazar.addEventListener('click', function() {
+                abrirConfirmacion(btnRechazar.getAttribute('data-lote-estado'));
+            });
+        }
+
+        if (confirmarBtn) {
+            confirmarBtn.addEventListener('click', function() {
+                if (!estadoPendiente) return;
+                confirmarBtn.disabled = true;
+                confirmarBtn.textContent = 'Procesando...';
+                estadoInput.value = estadoPendiente;
+                // Los checkbox viven en la tabla, fuera del form: se copian los
+                // seleccionados como hidden para que viajen en el POST.
+                form.querySelectorAll('[data-lote-item]').forEach(function(previo) {
+                    previo.remove();
+                });
+                seleccionados().forEach(function(check) {
+                    var hidden = document.createElement('input');
+                    hidden.type = 'hidden';
+                    hidden.name = 'inscripciones';
+                    hidden.value = check.value;
+                    hidden.setAttribute('data-lote-item', '1');
+                    form.appendChild(hidden);
+                });
+                form.submit();
+            });
+        }
+
+        sincronizar();
+    })();
+        </script>
+    {% endif %}
+
+    {% if puede_gestionar_resultados %}
+        <script nonce="{{ request.csp_nonce }}">
+    (function() {
+        var form = document.getElementById('formResultados');
+        var body = document.getElementById('resultadosTablaBody');
+        if (!form || !body) return;
+
+        var APROBADO = '{{ resultado_aprobado }}';
+        var DESAPROBADO = '{{ resultado_desaprobado }}';
+        var ETIQUETAS = {};
+        ETIQUETAS[APROBADO] = { texto: 'Aprobado', clase: 'ci-pill-green' };
+        ETIQUETAS[DESAPROBADO] = { texto: 'Desaprobado', clase: 'ci-pill-red' };
+
+        var rows = Array.prototype.slice.call(body.querySelectorAll('.ci-tbl-row'));
+        var sinResultadosRow = body.querySelector('[data-sin-resultados-row]');
+        var conteoEl = document.getElementById('resultadosConteo');
+        var alertBox = document.getElementById('resultadosAlert');
+        var filtroBtns = Array.prototype.slice.call(
+            document.querySelectorAll('.ci-filtro-btn')
+        );
+        var filtroActivo = 'todos';
+
+        function mostrarAlerta(mensaje) {
+            if (!alertBox) return;
+            alertBox.className = 'alert alert-danger';
+            alertBox.textContent = mensaje;
+        }
+
+        function limpiarAlerta() {
+            if (!alertBox) return;
+            alertBox.className = 'alert d-none';
+            alertBox.textContent = '';
+        }
+
+        function pintarFila(row) {
+            var valor = row.getAttribute('data-resultado') || '';
+            var pill = row.querySelector('[data-resultado-pill]');
+            var input = row.querySelector('[data-resultado-input]');
+            if (input) input.value = valor;
+            if (!pill) return;
+            var meta = ETIQUETAS[valor] || { texto: 'Sin calificar', clase: 'ci-pill-gray' };
+            pill.className = 'ci-pill ' + meta.clase;
+            pill.textContent = meta.texto;
+        }
+
+        function actualizarResumen() {
+            var aprobados = 0;
+            var desaprobados = 0;
+            rows.forEach(function(row) {
+                var valor = row.getAttribute('data-resultado') || '';
+                if (valor === APROBADO) aprobados += 1;
+                else if (valor === DESAPROBADO) desaprobados += 1;
+            });
+            var valores = {
+                aprobados: aprobados,
+                desaprobados: desaprobados,
+                sin_calificar: rows.length - aprobados - desaprobados,
+                inscriptos: rows.length
+            };
+            Object.keys(valores).forEach(function(clave) {
+                var el = document.querySelector('[data-resumen="' + clave + '"]');
+                if (el) el.textContent = valores[clave];
+            });
+        }
+
+        function coincideFiltro(row) {
+            var valor = row.getAttribute('data-resultado') || '';
+            if (filtroActivo === 'pendientes') return valor === '';
+            if (filtroActivo === 'finalizados') return valor !== '';
+            return true;
+        }
+
+        function aplicarFiltro() {
+            var visibles = 0;
+            rows.forEach(function(row) {
+                var visible = coincideFiltro(row);
+                row.classList.toggle('d-none', !visible);
+                if (visible) visibles += 1;
+            });
+            if (sinResultadosRow) {
+                sinResultadosRow.classList.toggle(
+                    'd-none', !(visibles === 0 && rows.length > 0)
+                );
+            }
+            if (conteoEl) {
+                conteoEl.textContent = 'Mostrando ' + visibles + ' de ' + rows.length;
+            }
+        }
+
+        body.addEventListener('click', function(event) {
+            var boton = event.target.closest('[data-marcar]');
+            if (!boton) return;
+            var row = boton.closest('.ci-tbl-row');
+            if (!row) return;
+            row.setAttribute('data-resultado', boton.getAttribute('data-marcar'));
+            pintarFila(row);
+            actualizarResumen();
+            aplicarFiltro();
+            limpiarAlerta();
+        });
+
+        filtroBtns.forEach(function(boton) {
+            boton.addEventListener('click', function() {
+                filtroActivo = boton.getAttribute('data-filtro') || 'todos';
+                filtroBtns.forEach(function(otro) {
+                    otro.classList.toggle('is-active', otro === boton);
+                });
+                aplicarFiltro();
+            });
+        });
+
+        var cancelarBtn = document.getElementById('resultadosCancelar');
+        if (cancelarBtn) {
+            cancelarBtn.addEventListener('click', function() {
+                window.location.hash = 'resultados';
+                window.location.reload();
+            });
+        }
+
+        form.addEventListener('submit', function(event) {
+            limpiarAlerta();
+            var profesorId = document.getElementById('profesorId');
+            var fechaFin = document.getElementById('actaFechaFin');
+            if (!profesorId || !profesorId.value) {
+                event.preventDefault();
+                mostrarAlerta('Seleccioná el profesor a cargo para guardar el acta.');
+                return;
+            }
+            if (!fechaFin || !fechaFin.value) {
+                event.preventDefault();
+                mostrarAlerta('Indicá la fecha de fin para guardar el acta.');
+            }
+        });
+
+        rows.forEach(pintarFila);
+        actualizarResumen();
+        aplicarFiltro();
+    })();
+        </script>
+        <script nonce="{{ request.csp_nonce }}">
+    (function() {
+        var input = document.getElementById('profesorBuscador');
+        var resultados = document.getElementById('profesorResultados');
+        var hidden = document.getElementById('profesorId');
+        var chip = document.getElementById('profesorChip');
+        var chipTexto = document.getElementById('profesorChipTexto');
+        var chipQuitar = document.getElementById('profesorChipQuitar');
+        if (!input || !resultados || !hidden) return;
+
+        var BUSCAR_URL = '{{ profesor_buscar_url }}';
+        var timer = null;
+
+        function ocultarResultados() {
+            resultados.classList.add('d-none');
+            resultados.innerHTML = '';
+        }
+
+        function seleccionar(profesor) {
+            hidden.value = profesor.id;
+            if (chipTexto) chipTexto.textContent = profesor.text;
+            if (chip) chip.classList.remove('d-none');
+            input.value = '';
+            ocultarResultados();
+        }
+
+        window.vatSeleccionarProfesor = seleccionar;
+
+        function render(items) {
+            resultados.innerHTML = '';
+            if (!items.length) {
+                var vacio = document.createElement('div');
+                vacio.className = 'ci-prof-results-empty';
+                vacio.textContent = 'Sin coincidencias. Usá "Agregar profesor".';
+                resultados.appendChild(vacio);
+            } else {
+                items.forEach(function(profesor) {
+                    var boton = document.createElement('button');
+                    boton.type = 'button';
+                    boton.textContent = profesor.text;
+                    boton.addEventListener('click', function() {
+                        seleccionar(profesor);
+                    });
+                    resultados.appendChild(boton);
+                });
+            }
+            resultados.classList.remove('d-none');
+        }
+
+        function buscar() {
+            var query = input.value.trim();
+            if (query.length < 2) {
+                ocultarResultados();
+                return;
+            }
+            fetch(BUSCAR_URL + '?q=' + encodeURIComponent(query), {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            })
+                .then(function(response) { return response.json(); })
+                .then(function(data) { render(data.results || []); })
+                .catch(function() { ocultarResultados(); });
+        }
+
+        input.addEventListener('input', function() {
+            window.clearTimeout(timer);
+            timer = window.setTimeout(buscar, 250);
+        });
+
+        input.addEventListener('keydown', function(event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                window.clearTimeout(timer);
+                buscar();
+            }
+        });
+
+        if (chipQuitar) {
+            chipQuitar.addEventListener('click', function() {
+                hidden.value = '';
+                if (chipTexto) chipTexto.textContent = '';
+                if (chip) chip.classList.add('d-none');
+            });
+        }
+
+        document.addEventListener('click', function(event) {
+            if (!resultados.contains(event.target) && event.target !== input) {
+                ocultarResultados();
+            }
+        });
+    })();
+        </script>
+        <script nonce="{{ request.csp_nonce }}">
+    (function() {
+        var form = document.getElementById('formProfesorNuevo');
+        var modalEl = document.getElementById('modalProfesorNuevo');
+        var alertBox = document.getElementById('profesorNuevoAlert');
+        if (!form || !modalEl) return;
+
+        var submitBtn = form.querySelector('button[type="submit"]');
+
+        form.addEventListener('submit', function(event) {
+            event.preventDefault();
+            if (alertBox) {
+                alertBox.className = 'alert d-none';
+                alertBox.textContent = '';
+            }
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = 'Guardando...';
+            }
+            fetch(form.action, {
+                method: 'POST',
+                body: new FormData(form),
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            })
+                .then(function(response) {
+                    return response.json().catch(function() { return {}; })
+                        .then(function(data) {
+                            if (!response.ok) throw data;
+                            return data;
+                        });
+                })
+                .then(function(data) {
+                    if (data.profesor && window.vatSeleccionarProfesor) {
+                        window.vatSeleccionarProfesor(data.profesor);
+                    }
+                    form.reset();
+                    var modal = bootstrap.Modal.getInstance(modalEl);
+                    if (modal) modal.hide();
+                })
+                .catch(function(error) {
+                    var mensaje = error.message || 'No se pudo dar de alta al profesor.';
+                    if (error.errors) {
+                        var partes = [];
+                        Object.keys(error.errors).forEach(function(campo) {
+                            partes.push(error.errors[campo].join(' '));
+                        });
+                        if (partes.length) mensaje = partes.join(' ');
+                    }
+                    if (alertBox) {
+                        alertBox.className = 'alert alert-danger';
+                        alertBox.textContent = mensaje;
+                    } else {
+                        alert(mensaje);
+                    }
+                })
+                .finally(function() {
+                    if (submitBtn) {
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = 'Guardar profesor';
+                    }
+                });
+        });
+    })();
+        </script>
+    {% endif %}
+
     <script nonce="{{ request.csp_nonce }}">
     (function() {
         var tabs = Array.prototype.slice.call(
@@ -2854,7 +3779,8 @@
             if (globalMetricGrid) {
                 var hideGlobalGrid = targetName === 'inscriptos' ||
                                      targetName === 'sesiones' ||
-                                     targetName === 'espera';
+                                     targetName === 'espera' ||
+                                     targetName === 'resultados';
                 globalMetricGrid.style.display = hideGlobalGrid ? 'none' : '';
             }
 
@@ -2879,7 +3805,18 @@
             });
         });
 
-        activatePanel('general');
+        // El hash permite volver a la solapa tras un POST con redirect
+        // (p. ej. guardar resultados) en lugar de caer siempre en Información.
+        function panelDesdeHash() {
+            var hash = (window.location.hash || '').replace('#', '');
+            return tabOrder.indexOf(hash) !== -1 ? hash : 'general';
+        }
+
+        window.addEventListener('hashchange', function() {
+            activatePanel(panelDesdeHash());
+        });
+
+        activatePanel(panelDesdeHash());
     })();
     </script>
 {% endblock %}
