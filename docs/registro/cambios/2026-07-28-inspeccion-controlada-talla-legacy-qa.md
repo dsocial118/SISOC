@@ -20,3 +20,11 @@ Se agrega un workflow manual, limitado al runner y Environment de QA, que:
 
 El resultado permite seleccionar la corrección mínima y auditable sin exponer
 PII ni ejecutar las migraciones desde el contenedor temporal.
+
+Después de confirmar la categoría `non_numeric`, se habilita una segunda acción
+manual, también limitada a QA y a la confirmación exacta `repair-id-7-as-null`.
+La acción bloquea el registro dentro de una transacción, vuelve a comprobar que
+el valor sea no numérico y no vacío, y cambia únicamente ese campo a `NULL`.
+Si la precondición, el checkout o el conteo de filas no coinciden, falla sin
+persistir cambios. El valor original no se imprime por tratarse de un dato de
+salud histórico no válido.
