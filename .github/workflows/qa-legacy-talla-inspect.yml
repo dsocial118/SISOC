@@ -1,16 +1,17 @@
-name: Inspeccion controlada de talla legacy QA
+name: Inspeccion y reparacion controlada de talla legacy QA
 
 on:
     workflow_dispatch:
         inputs:
             confirmation:
-                description: "Confirmar inspeccion no mutante del registro legacy bloqueante"
+                description: "Confirmar la accion controlada sobre el registro legacy bloqueante"
                 required: true
                 type: choice
                 default: no
                 options:
                     - no
                     - inspect-id-7
+                    - repair-id-7-as-null
 
 permissions: { contents: read }
 
@@ -42,3 +43,31 @@ jobs:
 
                   inspection=$'from decimal import Decimal, InvalidOperation\nfrom django.db import connection\n\nwith connection.cursor() as cursor:\n    cursor.execute("SELECT talla FROM centrodeinfancia_nominacentroinfancia WHERE id = %s", [7])\n    row = cursor.fetchone()\n\nif row is None:\n    category = "record_missing"\nelif row[0] is None:\n    category = "null"\nelse:\n    value = str(row[0]).strip()\n    if not value:\n        category = "blank"\n    else:\n        try:\n            Decimal(value.replace(",", "."))\n        except InvalidOperation:\n            category = "non_numeric"\n        else:\n            category = "numeric"\n\nprint(f"legacy_talla_id=7 category={category}")'
                   docker compose -f "$APP_ROOT/docker-compose.deploy.yml" --project-directory "$APP_ROOT" run --rm --no-deps --entrypoint python django manage.py shell -c "$inspection"
+
+    repair-legacy-talla:
+        if: inputs.confirmation == 'repair-id-7-as-null'
+        environment: qa
+        runs-on: [self-hosted, sisoc-qa]
+
+        steps:
+            - name: Limpiar talla legacy no numerica confirmada
+              shell: bash
+              env:
+                  GH_APP_ROOT: "${{ vars.APP_ROOT }}"
+              run: |
+                  set -Eeuo pipefail
+
+                  APP_ROOT="${GH_APP_ROOT:-${APP_ROOT:-}}"
+                  [[ -n "$APP_ROOT" ]] || {
+                      echo "::error::APP_ROOT no esta configurado en el Environment qa."
+                      exit 1
+                  }
+
+                  git -C "$APP_ROOT" fetch origin --prune
+                  [[ "$(git -C "$APP_ROOT" rev-parse HEAD)" == "$(git -C "$APP_ROOT" rev-parse origin/development)" ]] || {
+                      echo "::error::El checkout de QA no coincide con origin/development; no se modifica la base."
+                      exit 1
+                  }
+
+                  repair=$'from decimal import Decimal, InvalidOperation\nfrom django.db import connection, transaction\n\nwith transaction.atomic():\n    with connection.cursor() as cursor:\n        cursor.execute("SELECT talla FROM centrodeinfancia_nominacentroinfancia WHERE id = %s FOR UPDATE", [7])\n        row = cursor.fetchone()\n        if row is None:\n            raise RuntimeError("El registro legacy id=7 no existe; no se modifica la base.")\n        if row[0] is None or not str(row[0]).strip():\n            raise RuntimeError("La talla legacy id=7 ya es nula o vacia; no se modifica la base.")\n        try:\n            Decimal(str(row[0]).strip().replace(",", "."))\n        except InvalidOperation:\n            pass\n        else:\n            raise RuntimeError("La talla legacy id=7 ya es numerica; no se modifica la base.")\n        cursor.execute("UPDATE centrodeinfancia_nominacentroinfancia SET talla = NULL WHERE id = %s", [7])\n        if cursor.rowcount != 1:\n            raise RuntimeError("No se actualizo exactamente un registro; se revierte la transaccion.")\n\nprint("legacy_talla_id=7 repaired=cleared_non_numeric")'
+                  docker compose -f "$APP_ROOT/docker-compose.deploy.yml" --project-directory "$APP_ROOT" run --rm --no-deps --entrypoint python django manage.py shell -c "$repair"
