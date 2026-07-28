@@ -40,6 +40,7 @@ from pwa.models import (
     ActividadEspacioPWA,
     CatalogoActividadPWA,
     InscriptoActividadEspacioPWA,
+    NominaDestinatariosDocumentoPWA,
     NominaObservacionPWA,
     RegistroAsistenciaNominaPWA,
 )
@@ -836,12 +837,28 @@ class NominaEspacioPWAViewSet(viewsets.ViewSet):
         return queryset
 
     @staticmethod
-    def _serialize_attendance_period(periodo_referencia, total):
+    def _serialize_attendance_period(
+        periodo_referencia, total, documento_nomina=None, request=None
+    ):
         return {
             "periodo_referencia": periodo_referencia,
             "periodo_label": periodo_referencia.strftime("%m/%Y"),
             "total_asistentes": total,
+            "nomina_destinatarios_documento": serialize_nomina_destinatarios_documento(
+                documento_nomina,
+                request=request,
+            ),
         }
+
+    def _attendance_documents_by_period(self, periodos):
+        documentos = NominaDestinatariosDocumentoPWA.objects.filter(
+            comedor_id=self.kwargs["comedor_id"],
+            periodo_referencia__in=periodos,
+        ).order_by("periodo_referencia", "-version", "-fecha_generacion", "-id")
+        latest_by_period = {}
+        for documento in documentos:
+            latest_by_period.setdefault(documento.periodo_referencia, documento)
+        return latest_by_period
 
     _parse_periodo_referencia = staticmethod(parse_periodo_referencia)
 
@@ -1044,11 +1061,18 @@ class NominaEspacioPWAViewSet(viewsets.ViewSet):
 
     def periodos_asistencia(self, request, comedor_id=None):
         tab = request.query_params.get("tab", "consolidada")
-        periodos = (
+        periodos = list(
             self._attendance_queryset(tab)
             .values("periodo_referencia")
             .annotate(total_asistentes=Count("id"))
             .order_by("-periodo_referencia")
+        )
+        documentos_by_period = (
+            self._attendance_documents_by_period(
+                [row["periodo_referencia"] for row in periodos]
+            )
+            if tab == "alimentaria"
+            else {}
         )
         return Response(
             {
@@ -1057,6 +1081,8 @@ class NominaEspacioPWAViewSet(viewsets.ViewSet):
                     self._serialize_attendance_period(
                         row["periodo_referencia"],
                         row["total_asistentes"],
+                        documentos_by_period.get(row["periodo_referencia"]),
+                        request,
                     )
                     for row in periodos
                 ],
@@ -1077,11 +1103,21 @@ class NominaEspacioPWAViewSet(viewsets.ViewSet):
         asistentes = list(
             self._attendance_queryset(tab).filter(periodo_referencia=periodo_referencia)
         )
+        documento_nomina = (
+            self._attendance_documents_by_period([periodo_referencia]).get(
+                periodo_referencia
+            )
+            if tab == "alimentaria"
+            else None
+        )
         return Response(
             {
                 "tab": tab,
                 **self._serialize_attendance_period(
-                    periodo_referencia, len(asistentes)
+                    periodo_referencia,
+                    len(asistentes),
+                    documento_nomina,
+                    request,
                 ),
                 "asistentes": [
                     self._serialize_attendance_attendee(registro)
