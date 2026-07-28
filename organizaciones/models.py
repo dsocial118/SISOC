@@ -33,6 +33,7 @@ class TipoEntidad(models.Model):
 
 class SubtipoEntidad(models.Model):
     nombre = models.CharField(max_length=255, unique=True)
+    activo = models.BooleanField(default=True)
     tipo_entidad = models.ForeignKey(
         TipoEntidad,
         on_delete=models.CASCADE,

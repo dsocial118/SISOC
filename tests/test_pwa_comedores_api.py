@@ -960,7 +960,6 @@ def test_adjuntar_y_presentar_rendicion(comedores, settings, tmp_path):
         DocumentacionAdjunta.CATEGORIA_FORMULARIO_III_ALIMENTARIO,
         DocumentacionAdjunta.CATEGORIA_FORMULARIO_V_ALIMENTARIO,
         DocumentacionAdjunta.CATEGORIA_EXTRACTO_BANCARIO,
-        DocumentacionAdjunta.CATEGORIA_COMPROBANTES,
     ]
     for categoria in categorias_obligatorias:
         archivo = SimpleUploadedFile(
@@ -974,6 +973,23 @@ def test_adjuntar_y_presentar_rendicion(comedores, settings, tmp_path):
             format="multipart",
         )
         assert upload_response.status_code == 201
+
+    for categoria in (
+        DocumentacionAdjunta.CATEGORIA_FORMULARIO_III_ALIMENTARIO,
+        DocumentacionAdjunta.CATEGORIA_FORMULARIO_III_SIPH,
+    ):
+        for indice in range(2):
+            archivo = SimpleUploadedFile(
+                f"{categoria}-{indice}.pdf",
+                b"%PDF-1.4 test content",
+                content_type="application/pdf",
+            )
+            upload_response = client.post(
+                f"/api/comedores/{comedor_1.id}/rendiciones/{rendicion.id}/documentacion/",
+                {"archivo": archivo, "categoria": categoria},
+                format="multipart",
+            )
+            assert upload_response.status_code == 201
 
     detail_response = client.get(
         f"/api/comedores/{comedor_1.id}/rendiciones/{rendicion.id}/",
@@ -989,6 +1005,24 @@ def test_adjuntar_y_presentar_rendicion(comedores, settings, tmp_path):
     )
     assert formulario_i["required"] is False
     assert formulario_i["archivos"] == []
+    comprobantes = next(
+        item
+        for item in detail_response.data["documentacion"]
+        if item["codigo"] == DocumentacionAdjunta.CATEGORIA_COMPROBANTES
+    )
+    assert comprobantes["required"] is False
+    assert comprobantes["archivos"] == []
+    for codigo_multiple in (
+        DocumentacionAdjunta.CATEGORIA_FORMULARIO_III_ALIMENTARIO,
+        DocumentacionAdjunta.CATEGORIA_FORMULARIO_III_SIPH,
+    ):
+        categoria_multiple = next(
+            item
+            for item in detail_response.data["documentacion"]
+            if item["codigo"] == codigo_multiple
+        )
+        assert categoria_multiple["multiple"] is True
+        assert len(categoria_multiple["archivos"]) >= 2
     for codigo_siph in (
         DocumentacionAdjunta.CATEGORIA_FORMULARIO_III_SIPH,
         DocumentacionAdjunta.CATEGORIA_FORMULARIO_V_SIPH,

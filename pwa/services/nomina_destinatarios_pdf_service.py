@@ -368,6 +368,17 @@ def serialize_nomina_destinatarios_documento(documento, request=None):
     }
 
 
+def get_latest_nomina_destinatarios_documents_by_period(*, comedor_id, periodos):
+    documentos = NominaDestinatariosDocumentoPWA.objects.filter(
+        comedor_id=comedor_id,
+        periodo_referencia__in=periodos,
+    ).order_by("periodo_referencia", "-version", "-fecha_generacion", "-id")
+    latest_by_period = {}
+    for documento in documentos:
+        latest_by_period.setdefault(documento.periodo_referencia, documento)
+    return latest_by_period
+
+
 def generar_nomina_destinatarios_pdf(
     *,
     comedor,

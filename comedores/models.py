@@ -237,8 +237,60 @@ class Comedor(SoftDeleteModelMixin, models.Model):
         dupla (ForeignKey): Dúpla del Comedor/Merendero.
     """
 
-    nombre = models.CharField(
+    CATEGORIA_ESPACIO_ASOCIACION_CIVIL = "asociacion_civil"
+    CATEGORIA_ESPACIO_ASOCIACION_VECINAL = "asociacion_vecinal"
+    CATEGORIA_ESPACIO_COOPERATIVA_TRABAJO = "cooperativa_trabajo"
+    CATEGORIA_ESPACIO_FUNDACION = "fundacion"
+    CATEGORIA_ESPACIO_GRUPO_COMUNITARIO_BASE = "grupo_comunitario_base"
+    CATEGORIA_ESPACIO_CDI = "centro_desarrollo_infantil"
+    CATEGORIA_ESPACIO_CENTRO_JUBILADOS = "centro_jubilados"
+    CATEGORIA_ESPACIO_CLUB_SOCIAL_DEPORTIVO = "club_social_deportivo"
+    CATEGORIA_ESPACIO_HOGAR = "hogar"
+    CATEGORIA_ESPACIO_INSTITUCION_EDUCATIVA = "institucion_educativa"
+    CATEGORIA_ESPACIO_INSTITUCION_RELIGIOSA = "institucion_religiosa"
+    CATEGORIA_ESPACIO_MTD = "movimiento_trabajadores_desocupados"
+    CATEGORIA_ESPACIO_TECNICOS_PROFESIONALES = "tecnicos_profesionales"
+    CATEGORIA_ESPACIO_OTRA = "otra"
+
+    CATEGORIAS_ESPACIO_COMUNITARIO = [
+        (CATEGORIA_ESPACIO_ASOCIACION_CIVIL, "Asociación Civil"),
+        (
+            CATEGORIA_ESPACIO_ASOCIACION_VECINAL,
+            "Asociación Vecinal / Sociedad de Fomento",
+        ),
+        (CATEGORIA_ESPACIO_COOPERATIVA_TRABAJO, "Cooperativa de Trabajo"),
+        (CATEGORIA_ESPACIO_FUNDACION, "Fundación"),
+        (CATEGORIA_ESPACIO_GRUPO_COMUNITARIO_BASE, "Grupo Comunitario de Base"),
+        (CATEGORIA_ESPACIO_CDI, "Centro de Desarrollo Infantil"),
+        (CATEGORIA_ESPACIO_CENTRO_JUBILADOS, "Centro de Jubilados"),
+        (CATEGORIA_ESPACIO_CLUB_SOCIAL_DEPORTIVO, "Club Social y/o Deportivo"),
+        (CATEGORIA_ESPACIO_HOGAR, "Hogar"),
+        (CATEGORIA_ESPACIO_INSTITUCION_EDUCATIVA, "Institución Educativa"),
+        (CATEGORIA_ESPACIO_INSTITUCION_RELIGIOSA, "Institución Religiosa"),
+        (
+            CATEGORIA_ESPACIO_MTD,
+            "Movimiento de Trabajadores Desocupados",
+        ),
+        (
+            CATEGORIA_ESPACIO_TECNICOS_PROFESIONALES,
+            "Organización de Técnicos y Profesionales",
+        ),
+        (CATEGORIA_ESPACIO_OTRA, "Otra (especificar)"),
+    ]
+
+    nombre = models.CharField(max_length=255)
+    categoria_espacio_comunitario = models.CharField(
+        max_length=50,
+        choices=CATEGORIAS_ESPACIO_COMUNITARIO,
+        blank=True,
+        null=True,
+        verbose_name="Categorización de espacio comunitario",
+    )
+    categoria_espacio_comunitario_otra = models.CharField(
         max_length=255,
+        blank=True,
+        null=True,
+        verbose_name="Otra categorización de espacio comunitario",
     )
     organizacion = models.ForeignKey(
         to=Organizacion, blank=True, null=True, on_delete=models.PROTECT
@@ -392,6 +444,20 @@ class Comedor(SoftDeleteModelMixin, models.Model):
 
     def __str__(self) -> str:
         return str(self.nombre)
+
+    def clean(self):
+        super().clean()
+        if (
+            self.categoria_espacio_comunitario == self.CATEGORIA_ESPACIO_OTRA
+            and not (self.categoria_espacio_comunitario_otra or "").strip()
+        ):
+            raise ValidationError(
+                {
+                    "categoria_espacio_comunitario_otra": (
+                        "Especifique la otra categoría de espacio comunitario."
+                    )
+                }
+            )
 
     def get_estado_general_display(self) -> str:
         """
