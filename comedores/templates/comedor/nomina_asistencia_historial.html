@@ -83,8 +83,7 @@
             {% if asistencia_periodos %}
                 <div class="nomina-period-list">
                     {% for item in asistencia_periodos %}
-                        <a href="?periodo={{ item.periodo_referencia|date:'Y-m-d' }}"
-                           class="nomina-period-card">
+                        <div class="nomina-period-card">
                             <div>
                                 <p class="nomina-period-title">Periodo {{ item.periodo_referencia|date:"m/Y" }}</p>
                                 <p class="nomina-period-meta">Asistencia mensual</p>
@@ -93,8 +92,22 @@
                                 <strong>{{ item.total_asistentes }}</strong>
                                 <span>asistentes</span>
                             </div>
-                            <i class="fas fa-chevron-right nomina-period-icon"></i>
-                        </a>
+                            <div class="d-flex align-items-center gap-2">
+                                {% if item.documento_nomina %}
+                                    <a href="{{ item.documento_nomina.archivo.url }}"
+                                       class="btn btn-outline-light btn-sm"
+                                       target="_blank"
+                                       rel="noopener"
+                                       download>
+                                        <i class="fas fa-file-pdf"></i> Descargar PDF
+                                    </a>
+                                {% endif %}
+                                <a href="?periodo={{ item.periodo_referencia|date:'Y-m-d' }}"
+                                   class="btn btn-outline-light btn-sm">
+                                    Ver detalle <i class="fas fa-chevron-right"></i>
+                                </a>
+                            </div>
+                        </div>
                     {% endfor %}
                 </div>
             {% else %}

@@ -1,4 +1,5 @@
 import json
+import re
 from datetime import date
 
 import pytest
@@ -690,6 +691,100 @@ def test_user_update_view_blocks_user_out_of_actor_scope(client):
 
     resp_dentro = client.get(reverse("usuario_editar", kwargs={"pk": dentro.pk}))
     assert resp_dentro.status_code == 200
+
+
+@pytest.mark.django_db
+def test_actor_cdi_no_ve_ni_puede_enviar_campos_administrativos_en_alta(client):
+    actor = User.objects.create_user(username="referente-cdi-abm", password="secret")
+    referente = Group.objects.create(name=UserGroups.CDI_REFERENTE_CENTRO)
+    trabajador = Group.objects.create(name=UserGroups.CDI_TRABAJADOR)
+    referente.permissions.add(
+        Permission.objects.get(content_type__app_label="auth", codename="add_user")
+    )
+    actor.groups.add(referente)
+    permission = Permission.objects.get(
+        content_type__app_label="auth",
+        codename="change_user",
+    )
+
+    client.force_login(actor)
+
+    response = client.get(reverse("usuario_crear"))
+
+    assert response.status_code == 200
+    assert b'id="mobile-access-card"' in response.content
+    assert re.search(
+        rb'<div\s+id="mobile-access-card"[^>]*\bhidden\b', response.content
+    )
+    assert b"Permisos directos" not in response.content
+    assert b"Es Coordinador de Equipo" not in response.content
+    assert b"Grupos que puede asignar" not in response.content
+    assert b"Roles que puede asignar" not in response.content
+
+    response = client.post(
+        reverse("usuario_crear"),
+        data={
+            "username": "trabajador-cdi-restringido",
+            "email": "trabajador-cdi@example.com",
+            "password": "pass12345",
+            "groups": [trabajador.pk],
+            "user_permissions": [permission.pk],
+            "es_representante_pwa": "on",
+            "es_coordinador": "on",
+            "grupos_asignables": [trabajador.pk],
+        },
+    )
+
+    assert response.status_code == 302
+    created = User.objects.get(username="trabajador-cdi-restringido")
+    assert not created.user_permissions.filter(pk=permission.pk).exists()
+    assert created.profile.es_coordinador is False
+    assert not created.profile.grupos_asignables.exists()
+    assert not created.accesos_pwa.filter(activo=True).exists()
+
+
+@pytest.mark.django_db
+def test_actor_cdi_preserva_configuracion_administrativa_oculta_en_edicion(client):
+    actor = User.objects.create_user(username="egp-cdi-abm", password="secret")
+    egp = Group.objects.create(name=UserGroups.SIMEPI_EGP)
+    referente = Group.objects.create(name=UserGroups.CDI_REFERENTE_CENTRO)
+    egp.permissions.add(
+        Permission.objects.get(content_type__app_label="auth", codename="change_user")
+    )
+    actor.groups.add(egp)
+
+    target = User.objects.create_user(username="referente-editado", password="secret")
+    target.groups.add(referente)
+    direct_permission = Permission.objects.get(
+        content_type__app_label="auth",
+        codename="change_user",
+    )
+    forbidden_permission = Permission.objects.get(
+        content_type__app_label="auth",
+        codename="delete_user",
+    )
+    target.user_permissions.add(direct_permission)
+    target.profile.grupos_asignables.add(referente)
+
+    client.force_login(actor)
+    response = client.post(
+        reverse("usuario_editar", kwargs={"pk": target.pk}),
+        data={
+            "username": target.username,
+            "email": target.email,
+            "groups": [referente.pk],
+            "user_permissions": [forbidden_permission.pk],
+            "grupos_asignables": [],
+        },
+    )
+
+    assert response.status_code == 302
+    target.refresh_from_db()
+    assert target.user_permissions.filter(pk=direct_permission.pk).exists()
+    assert not target.user_permissions.filter(pk=forbidden_permission.pk).exists()
+    assert list(target.profile.grupos_asignables.values_list("id", flat=True)) == [
+        referente.pk
+    ]
 
 
 def _import_row_data(correo):

@@ -23,6 +23,12 @@ jobs:
             RELEASE_AUTOMATION_APP_PRIVATE_KEY_PRESENT: ${{ secrets.RELEASE_AUTOMATION_APP_PRIVATE_KEY != '' }}
 
         steps:
+            - name: Checkout de la automatizacion versionada
+              uses: actions/checkout@v6.0.2
+              with:
+                  ref: main
+                  persist-credentials: false
+
             - name: Validar GitHub App de automatizacion
               if: ${{ env.RELEASE_AUTOMATION_APP_CLIENT_ID == '' || env.RELEASE_AUTOMATION_APP_PRIVATE_KEY_PRESENT != 'true' }}
               run: |
@@ -51,92 +57,7 @@ jobs:
                         );
                         return;
                       }
-                      const owner = context.repo.owner;
-                      const repo = context.repo.repo;
-                      const targets = ["development", "homologacion"];
-                      const failures = [];
-
-                      const enableAutoMerge = async (pull) => {
-                        if (pull.auto_merge) {
-                          core.info(`PR #${pull.number} ya tiene auto-merge habilitado.`);
-                          return;
-                        }
-                        await github.graphql(
-                          `mutation EnableAutoMerge($pullRequestId: ID!) {
-                            enablePullRequestAutoMerge(
-                              input: { pullRequestId: $pullRequestId, mergeMethod: MERGE }
-                            ) {
-                              pullRequest { autoMergeRequest { enabledAt mergeMethod } }
-                            }
-                          }`,
-                          { pullRequestId: pull.node_id },
-                        );
-                        core.info(`PR #${pull.number} armado para auto-merge nativo.`);
-                      };
-
-                      for (const target of targets) {
-                        core.startGroup(`Sincronizar main -> ${target}`);
-                        try {
-                          const comparison = await github.rest.repos.compareCommits({
-                            owner,
-                            repo,
-                            base: "main",
-                            head: target,
-                          });
-                          if (comparison.data.behind_by === 0) {
-                            core.info(`${target} ya contiene todo main; no hay cambios.`);
-                            continue;
-                          }
-
-                          const pulls = await github.rest.pulls.list({
-                            owner,
-                            repo,
-                            state: "open",
-                            base: target,
-                            head: `${owner}:main`,
-                            per_page: 10,
-                          });
-                          let pull = pulls.data[0];
-                          if (!pull) {
-                            const created = await github.rest.pulls.create({
-                              owner,
-                              repo,
-                              base: target,
-                              head: "main",
-                              title: `chore(sync): integrar main en ${target}`,
-                              body: [
-                                "Sincronización descendente automática.",
-                                "",
-                                "- Conserva los cambios exclusivos de la rama destino.",
-                                "- No escribe ni promueve cambios hacia `main`.",
-                                "- GitHub hará el merge solo cuando los requisitos de la ruleset estén verdes.",
-                              ].join("\n"),
-                            });
-                            pull = created.data;
-                            core.info(`PR #${pull.number} creado: ${pull.html_url}`);
-                          } else {
-                            core.info(`Reutilizando PR #${pull.number}: ${pull.html_url}`);
-                          }
-
-                          pull = (
-                            await github.rest.pulls.get({
-                              owner,
-                              repo,
-                              pull_number: pull.number,
-                            })
-                          ).data;
-                          await enableAutoMerge(pull);
-                          core.info(
-                            `GitHub esperará CI y fusionará #${pull.number}; el push resultante activa el deploy del destino.`,
-                          );
-                        } catch (error) {
-                          failures.push(`${target}: ${error.message}`);
-                          core.error(`${target}: ${error.stack ?? error.message}`);
-                        } finally {
-                          core.endGroup();
-                        }
-                      }
-
-                      if (failures.length > 0) {
-                        core.setFailed(failures.join("\n"));
-                      }
+                      const { run } = require(
+                        `${process.env.GITHUB_WORKSPACE}/.github/scripts/sync_main_downstream.js`,
+                      );
+                      await run({ github, context, core });
