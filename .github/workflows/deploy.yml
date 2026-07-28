@@ -72,7 +72,17 @@ jobs:
                       return 1
                   }
 
-                  wait_for "migraciones de QA" 30 docker compose -f "$APP_ROOT/docker-compose.deploy.yml" --project-directory "$APP_ROOT" exec -T django python manage.py migrate --check
+                  show_django_diagnostics() {
+                      echo "::group::Diagnostico del servicio django de QA"
+                      docker compose -f "$APP_ROOT/docker-compose.deploy.yml" --project-directory "$APP_ROOT" ps || true
+                      docker compose -f "$APP_ROOT/docker-compose.deploy.yml" --project-directory "$APP_ROOT" logs --tail 200 django || true
+                      echo "::endgroup::"
+                  }
+
+                  if ! wait_for "migraciones de QA" 30 docker compose -f "$APP_ROOT/docker-compose.deploy.yml" --project-directory "$APP_ROOT" exec -T django python manage.py migrate --check; then
+                      show_django_diagnostics
+                      exit 1
+                  fi
                   wait_for "healthcheck de QA" 30 bash "$APP_ROOT/scripts/infra/healthcheck_qa.sh"
                   deployed_sha="$(git -C "$APP_ROOT" rev-parse HEAD)"
                   [[ "$deployed_sha" == "$EXPECTED_SHA" ]]
@@ -155,7 +165,17 @@ jobs:
                       return 1
                   }
 
-                  wait_for "migraciones de HML" 30 docker compose -f "$APP_ROOT/docker-compose.deploy.yml" -f "$APP_ROOT/docker-compose.produccion.yml" --project-directory "$APP_ROOT" exec -T django python manage.py migrate --check
+                  show_django_diagnostics() {
+                      echo "::group::Diagnostico del servicio django de HML"
+                      docker compose -f "$APP_ROOT/docker-compose.deploy.yml" -f "$APP_ROOT/docker-compose.produccion.yml" --project-directory "$APP_ROOT" ps || true
+                      docker compose -f "$APP_ROOT/docker-compose.deploy.yml" -f "$APP_ROOT/docker-compose.produccion.yml" --project-directory "$APP_ROOT" logs --tail 200 django || true
+                      echo "::endgroup::"
+                  }
+
+                  if ! wait_for "migraciones de HML" 30 docker compose -f "$APP_ROOT/docker-compose.deploy.yml" -f "$APP_ROOT/docker-compose.produccion.yml" --project-directory "$APP_ROOT" exec -T django python manage.py migrate --check; then
+                      show_django_diagnostics
+                      exit 1
+                  fi
                   wait_for "healthcheck de HML" 30 bash "$APP_ROOT/scripts/infra/healthcheck_hml.sh"
                   deployed_sha="$(git -C "$APP_ROOT" rev-parse HEAD)"
                   [[ "$deployed_sha" == "$EXPECTED_SHA" ]]

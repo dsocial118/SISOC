@@ -5,7 +5,7 @@ from django.contrib.auth import get_user_model
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import IntegrityError
 
-from comedores.models import Comedor
+from comedores.models import Comedor, Programas
 from core.models import Provincia
 from organizaciones.models import Organizacion
 from users.models import AccesoComedorPWA
@@ -23,17 +23,20 @@ from users.services_pwa import (
 @pytest.fixture
 def comedores(db):
     provincia = Provincia.objects.create(nombre="Santa Fe")
+    programa = Programas.objects.create(nombre="Abordaje Comunitario")
     organizacion_1 = Organizacion.objects.create(nombre="Organización 1")
     organizacion_2 = Organizacion.objects.create(nombre="Organización 2")
     comedor_1 = Comedor.objects.create(
         nombre="Comedor 1",
         provincia=provincia,
         organizacion=organizacion_1,
+        programa=programa,
     )
     comedor_2 = Comedor.objects.create(
         nombre="Comedor 2",
         provincia=provincia,
         organizacion=organizacion_2,
+        programa=programa,
     )
     return comedor_1, comedor_2
 
