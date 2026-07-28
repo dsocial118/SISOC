@@ -68,8 +68,17 @@ def _grant_pwa_permission(user, codename):
 @pytest.fixture
 def comedores(db):
     provincia = Provincia.objects.create(nombre="Cordoba")
-    comedor_1 = Comedor.objects.create(nombre="Comedor Uno", provincia=provincia)
-    comedor_2 = Comedor.objects.create(nombre="Comedor Dos", provincia=provincia)
+    programa = Programas.objects.create(nombre="Abordaje Comunitario")
+    comedor_1 = Comedor.objects.create(
+        nombre="Comedor Uno",
+        provincia=provincia,
+        programa=programa,
+    )
+    comedor_2 = Comedor.objects.create(
+        nombre="Comedor Dos",
+        provincia=provincia,
+        programa=programa,
+    )
     return comedor_1, comedor_2
 
 
@@ -305,6 +314,45 @@ def test_pwa_spaces_selector_list_returns_metadata_and_sorted_names():
 
 
 @pytest.mark.django_db
+def test_pwa_oculta_comedor_sin_programa_y_lo_actualiza_al_asignarlo():
+    provincia = Provincia.objects.create(nombre="Buenos Aires")
+    comedor = Comedor.objects.create(
+        nombre="Espacio sin programa",
+        provincia=provincia,
+        programa=None,
+    )
+    representante = _create_pwa_user(
+        comedor=comedor,
+        role=AccesoComedorPWA.ROL_REPRESENTANTE,
+        username="rep_sin_programa",
+    )
+    client = _token_client(representante)
+
+    listado_sin_programa = client.get("/api/comedores/")
+    detalle_sin_programa = client.get(f"/api/comedores/{comedor.id}/")
+
+    assert listado_sin_programa.status_code == 200
+    assert listado_sin_programa.data["results"] == []
+    assert detalle_sin_programa.status_code == 404
+
+    comedor.programa = Programas.objects.create(nombre="Abordaje Comunitario")
+    comedor.save(update_fields=["programa"])
+
+    listado_con_programa = client.get("/api/comedores/")
+    detalle_con_programa = client.get(f"/api/comedores/{comedor.id}/")
+
+    assert listado_con_programa.status_code == 200
+    assert [item["id"] for item in listado_con_programa.data["results"]] == [comedor.id]
+    assert detalle_con_programa.status_code == 200
+
+    comedor.programa = None
+    comedor.save(update_fields=["programa"])
+
+    assert client.get("/api/comedores/").data["results"] == []
+    assert client.get(f"/api/comedores/{comedor.id}/").status_code == 404
+
+
+@pytest.mark.django_db
 def test_comedor_detail_includes_mobile_relevamiento_summary():
     provincia = Provincia.objects.create(nombre="Buenos Aires")
     municipio = Municipio.objects.create(nombre="La Plata", provincia=provincia)
@@ -488,6 +536,32 @@ def test_representante_can_list_and_create_operadores(comedores):
     assert create_response.status_code == 201
     assert create_response.data["username"] == "op_nuevo"
     assert create_response.data["rol"] == AccesoComedorPWA.ROL_OPERADOR
+
+
+@pytest.mark.django_db
+def test_usuarios_no_expone_comedores_sin_programa_en_asignables(comedores):
+    comedor_visible, comedor_sin_programa = comedores
+    representante = _create_pwa_user(
+        comedor=comedor_visible,
+        role=AccesoComedorPWA.ROL_REPRESENTANTE,
+        username="rep_asignables_programa",
+    )
+    AccesoComedorPWA.objects.create(
+        user=representante,
+        comedor=comedor_sin_programa,
+        rol=AccesoComedorPWA.ROL_REPRESENTANTE,
+        activo=True,
+    )
+    comedor_sin_programa.programa = None
+    comedor_sin_programa.save(update_fields=["programa"])
+    client = _token_client(representante)
+
+    response = client.get(f"/api/comedores/{comedor_visible.id}/usuarios/")
+
+    assert response.status_code == 200
+    assert [item["id"] for item in response.data["assignable_comedores"]] == [
+        comedor_visible.id
+    ]
 
 
 @pytest.mark.django_db
@@ -740,24 +814,28 @@ def test_crear_rendicion_mobile_rechaza_numero_repetido_y_periodo_solapado(comed
 @pytest.mark.django_db
 def test_rendiciones_mobile_scope_por_organizacion_y_proyecto():
     provincia = Provincia.objects.create(nombre="Santa Fe")
+    programa = Programas.objects.create(nombre="Abordaje Comunitario")
     organizacion_a = Organizacion.objects.create(nombre="Organización A")
     organizacion_b = Organizacion.objects.create(nombre="Organización B")
     comedor_a_1 = Comedor.objects.create(
         nombre="Espacio A1",
         provincia=provincia,
         organizacion=organizacion_a,
+        programa=programa,
         codigo_de_proyecto="PROY-COMPARTIDO",
     )
     comedor_a_2 = Comedor.objects.create(
         nombre="Espacio A2",
         provincia=provincia,
         organizacion=organizacion_a,
+        programa=programa,
         codigo_de_proyecto="PROY-COMPARTIDO",
     )
     comedor_b_1 = Comedor.objects.create(
         nombre="Espacio B1",
         provincia=provincia,
         organizacion=organizacion_b,
+        programa=programa,
         codigo_de_proyecto="PROY-COMPARTIDO",
     )
 
@@ -798,18 +876,21 @@ def test_rendiciones_mobile_scope_por_organizacion_y_proyecto():
 @pytest.mark.django_db
 def test_crear_rendicion_mobile_permite_mismo_proyecto_en_otra_organizacion():
     provincia = Provincia.objects.create(nombre="Entre Ríos")
+    programa = Programas.objects.create(nombre="Abordaje Comunitario")
     organizacion_a = Organizacion.objects.create(nombre="Organización Rendición A")
     organizacion_b = Organizacion.objects.create(nombre="Organización Rendición B")
     comedor_a = Comedor.objects.create(
         nombre="Espacio Rendición A",
         provincia=provincia,
         organizacion=organizacion_a,
+        programa=programa,
         codigo_de_proyecto="PROY-ORG-01",
     )
     comedor_b = Comedor.objects.create(
         nombre="Espacio Rendición B",
         provincia=provincia,
         organizacion=organizacion_b,
+        programa=programa,
         codigo_de_proyecto="PROY-ORG-01",
     )
 
@@ -879,7 +960,6 @@ def test_adjuntar_y_presentar_rendicion(comedores, settings, tmp_path):
         DocumentacionAdjunta.CATEGORIA_FORMULARIO_III_ALIMENTARIO,
         DocumentacionAdjunta.CATEGORIA_FORMULARIO_V_ALIMENTARIO,
         DocumentacionAdjunta.CATEGORIA_EXTRACTO_BANCARIO,
-        DocumentacionAdjunta.CATEGORIA_COMPROBANTES,
     ]
     for categoria in categorias_obligatorias:
         archivo = SimpleUploadedFile(
@@ -893,6 +973,23 @@ def test_adjuntar_y_presentar_rendicion(comedores, settings, tmp_path):
             format="multipart",
         )
         assert upload_response.status_code == 201
+
+    for categoria in (
+        DocumentacionAdjunta.CATEGORIA_FORMULARIO_III_ALIMENTARIO,
+        DocumentacionAdjunta.CATEGORIA_FORMULARIO_III_SIPH,
+    ):
+        for indice in range(2):
+            archivo = SimpleUploadedFile(
+                f"{categoria}-{indice}.pdf",
+                b"%PDF-1.4 test content",
+                content_type="application/pdf",
+            )
+            upload_response = client.post(
+                f"/api/comedores/{comedor_1.id}/rendiciones/{rendicion.id}/documentacion/",
+                {"archivo": archivo, "categoria": categoria},
+                format="multipart",
+            )
+            assert upload_response.status_code == 201
 
     detail_response = client.get(
         f"/api/comedores/{comedor_1.id}/rendiciones/{rendicion.id}/",
@@ -908,6 +1005,24 @@ def test_adjuntar_y_presentar_rendicion(comedores, settings, tmp_path):
     )
     assert formulario_i["required"] is False
     assert formulario_i["archivos"] == []
+    comprobantes = next(
+        item
+        for item in detail_response.data["documentacion"]
+        if item["codigo"] == DocumentacionAdjunta.CATEGORIA_COMPROBANTES
+    )
+    assert comprobantes["required"] is False
+    assert comprobantes["archivos"] == []
+    for codigo_multiple in (
+        DocumentacionAdjunta.CATEGORIA_FORMULARIO_III_ALIMENTARIO,
+        DocumentacionAdjunta.CATEGORIA_FORMULARIO_III_SIPH,
+    ):
+        categoria_multiple = next(
+            item
+            for item in detail_response.data["documentacion"]
+            if item["codigo"] == codigo_multiple
+        )
+        assert categoria_multiple["multiple"] is True
+        assert len(categoria_multiple["archivos"]) >= 2
     for codigo_siph in (
         DocumentacionAdjunta.CATEGORIA_FORMULARIO_III_SIPH,
         DocumentacionAdjunta.CATEGORIA_FORMULARIO_V_SIPH,

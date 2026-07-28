@@ -465,6 +465,12 @@ class ComedorForm(forms.ModelForm):
     def clean(self):
         cleaned_data = super().clean()
 
+        if (
+            cleaned_data.get("categoria_espacio_comunitario")
+            != Comedor.CATEGORIA_ESPACIO_OTRA
+        ):
+            cleaned_data["categoria_espacio_comunitario_otra"] = ""
+
         estado_actividad = cleaned_data.get("estado_general")
         estado_proceso = cleaned_data.get("subestado")
         estado_detalle = cleaned_data.get("motivo")
