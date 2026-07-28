@@ -135,3 +135,49 @@ def test_sidebar_ubica_expedientes_de_pago_cuarto_en_comedores(client):
     assert comedores_block.index("Acompañamiento") < comedores_block.index(
         "Expedientes de Pago"
     )
+
+
+def test_sidebar_muestra_ocr_a_usuario_con_solo_permiso_ocr(client):
+    user_model = get_user_model()
+    user = user_model.objects.create_user(
+        username="sidebar_ocr",
+        password="testpass123",
+    )
+    user.user_permissions.add(
+        Permission.objects.get(content_type__app_label="ocr", codename="use_ocr")
+    )
+    client.force_login(user)
+
+    response = client.get(reverse("inicio"))
+
+    assert response.status_code == 200
+
+    content = response.content.decode()
+    assert reverse("ocr_upload") in content
+    assert "<p>OCR</p>" in content
+    assert "Administración del sistema" not in content
+
+
+def test_sidebar_ubica_ocr_entre_configuracion_y_comunicados(client):
+    user_model = get_user_model()
+    user = user_model.objects.create_superuser(
+        username="sidebar_ocr_admin",
+        password="testpass123",
+    )
+    client.force_login(user)
+
+    response = client.get(reverse("inicio"))
+
+    assert response.status_code == 200
+
+    content = response.content.decode()
+    admin_start = content.index("Administración del sistema")
+    config_start = content.index("Configuración de Comedores")
+    admin_block = content[admin_start:config_start]
+
+    assert reverse("ocr_upload") not in admin_block
+    assert re.search(
+        r'style="order: 5">.*?<p>Configuración de Comedores</p>', content, re.S
+    )
+    assert re.search(r'style="order: 6">.*?<p>OCR</p>', content, re.S)
+    assert re.search(r'style="order: 7;.*?<p>Comunicados</p>', content, re.S)
