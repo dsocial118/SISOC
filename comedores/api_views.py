@@ -130,7 +130,9 @@ class ComedorDetailViewSet(
             ultimo_estado__estado_general__estado_actividad__estado__iexact="Activo",
             ultimo_estado__estado_general__estado_proceso__estado__iexact="En ejecución",
         )
-        return queryset.filter(~alimentar_comunidad | activo_en_ejecucion)
+        return queryset.filter(programa__isnull=False).filter(
+            ~alimentar_comunidad | activo_en_ejecucion
+        )
 
     def _get_scoped_comedor_ids(self):
         user = self.request.user

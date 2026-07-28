@@ -305,6 +305,39 @@ def test_pwa_spaces_selector_list_returns_metadata_and_sorted_names():
 
 
 @pytest.mark.django_db
+def test_pwa_oculta_comedor_sin_programa_y_lo_actualiza_al_asignarlo():
+    provincia = Provincia.objects.create(nombre="Buenos Aires")
+    comedor = Comedor.objects.create(
+        nombre="Espacio sin programa",
+        provincia=provincia,
+        programa=None,
+    )
+    representante = _create_pwa_user(
+        comedor=comedor,
+        role=AccesoComedorPWA.ROL_REPRESENTANTE,
+        username="rep_sin_programa",
+    )
+    client = _token_client(representante)
+
+    listado_sin_programa = client.get("/api/comedores/")
+    detalle_sin_programa = client.get(f"/api/comedores/{comedor.id}/")
+
+    assert listado_sin_programa.status_code == 200
+    assert listado_sin_programa.data["results"] == []
+    assert detalle_sin_programa.status_code == 404
+
+    comedor.programa = Programas.objects.create(nombre="Abordaje Comunitario")
+    comedor.save(update_fields=["programa"])
+
+    listado_con_programa = client.get("/api/comedores/")
+    detalle_con_programa = client.get(f"/api/comedores/{comedor.id}/")
+
+    assert listado_con_programa.status_code == 200
+    assert [item["id"] for item in listado_con_programa.data["results"]] == [comedor.id]
+    assert detalle_con_programa.status_code == 200
+
+
+@pytest.mark.django_db
 def test_comedor_detail_includes_mobile_relevamiento_summary():
     provincia = Provincia.objects.create(nombre="Buenos Aires")
     municipio = Municipio.objects.create(nombre="La Plata", provincia=provincia)
