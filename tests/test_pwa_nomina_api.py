@@ -10,7 +10,7 @@ from rest_framework.test import APIClient
 
 from admisiones.models.admisiones import Admision
 from ciudadanos.models import Ciudadano
-from comedores.models import Comedor, Nomina
+from comedores.models import Comedor, Nomina, Programas
 from comedores.views.nomina import _get_asistencia_nomina_context
 from core.models import Dia, Provincia, Sexo
 from pwa.models import (
