@@ -92,6 +92,8 @@ from users.services_pwa import (
     get_assignable_pwa_permission_codes,
     get_accessible_comedor_ids,
     get_access_rows,
+    get_visible_access_rows,
+    filter_pwa_visible_spaces,
     is_pwa_user,
     list_operadores_for_comedor,
     update_operador_permissions,
@@ -125,12 +127,7 @@ class ComedorDetailViewSet(
 
     @staticmethod
     def _filter_pwa_visible_spaces(queryset):
-        alimentar_comunidad = Q(programa__nombre__iexact="Alimentar Comunidad")
-        activo_en_ejecucion = Q(
-            ultimo_estado__estado_general__estado_actividad__estado__iexact="Activo",
-            ultimo_estado__estado_general__estado_proceso__estado__iexact="En ejecución",
-        )
-        return queryset.filter(~alimentar_comunidad | activo_en_ejecucion)
+        return filter_pwa_visible_spaces(queryset)
 
     def _get_scoped_comedor_ids(self):
         user = self.request.user
@@ -216,7 +213,7 @@ class ComedorDetailViewSet(
                 "id": row.comedor_id,
                 "nombre": row.comedor.nombre if row.comedor_id else "",
             }
-            for row in get_access_rows(user)
+            for row in get_visible_access_rows(user)
             .filter(rol=AccesoComedorPWA.ROL_REPRESENTANTE)
             .select_related("comedor")
             .order_by("comedor__nombre", "comedor_id")
