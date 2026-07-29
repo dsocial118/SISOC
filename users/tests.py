@@ -44,6 +44,7 @@ def _user_form_data(username, scopes, provincia=""):
         "username": username,
         "email": f"{username}@example.com",
         "password": "pass12345",
+        "tipo_usuario": "interno",
         "es_usuario_provincial": "on",
         "provincia": provincia,
         "territorial_scopes": json.dumps(scopes),
@@ -75,6 +76,112 @@ def test_usuario_provincial_sin_alcances_es_valido_y_no_crea_scope():
     assert user.profile.es_usuario_provincial is True
     assert user.profile.provincia_id is None
     assert user.profile.territorial_scopes.count() == 0
+
+
+@pytest.mark.django_db
+def test_alta_usuario_persiste_datos_identificatorios_y_tipo():
+    data = _user_form_data("usuario-identificado", [])
+    data.pop("es_usuario_provincial")
+    data.update(
+        {
+            "dni": "12345678",
+            "cuil": "20-12345678-3",
+            "tipo_usuario": "provincial",
+        }
+    )
+
+    form = UserCreationForm(data=data)
+
+    assert form.is_valid(), form.errors
+    user = form.save()
+
+    user.profile.refresh_from_db()
+    assert user.profile.dni == "12345678"
+    assert user.profile.cuil == "20-12345678-3"
+    assert user.profile.tipo_usuario == "provincial"
+    assert user.profile.es_usuario_provincial is False
+
+
+@pytest.mark.django_db
+def test_alta_usuario_requiere_tipo_usuario():
+    data = _user_form_data("usuario-sin-tipo", [])
+    data.pop("tipo_usuario")
+
+    form = UserCreationForm(data=data)
+
+    assert not form.is_valid()
+    assert "tipo_usuario" in form.errors
+
+
+@pytest.mark.django_db
+def test_alta_usuario_muestra_campos_identificatorios(client):
+    actor = User.objects.create_user(username="admin-usuarios", password="secret")
+    actor.user_permissions.add(
+        Permission.objects.get(content_type__app_label="auth", codename="add_user")
+    )
+    client.force_login(actor)
+
+    response = client.get(reverse("usuario_crear"))
+
+    assert response.status_code == 200
+    assert b"DNI" in response.content
+    assert b"CUIL" in response.content
+    assert b"Tipo de usuario" in response.content
+    assert b"Interno" in response.content
+    assert b"Provincial" in response.content
+    assert b"Externo" in response.content
+
+
+@pytest.mark.django_db
+def test_edicion_usuario_precarga_y_actualiza_datos_identificatorios_y_tipo():
+    user = User.objects.create_user(username="usuario-edicion", password="pass12345")
+    user.profile.dni = "11111111"
+    user.profile.cuil = "20-11111111-1"
+    user.profile.tipo_usuario = "interno"
+    user.profile.save(update_fields=["dni", "cuil", "tipo_usuario"])
+
+    form = CustomUserChangeForm(instance=user)
+
+    assert form.fields["dni"].initial == "11111111"
+    assert form.fields["cuil"].initial == "20-11111111-1"
+    assert form.fields["tipo_usuario"].initial == "interno"
+
+    form = CustomUserChangeForm(
+        instance=user,
+        data={
+            "username": user.username,
+            "email": "",
+            "dni": "22222222",
+            "cuil": "27-22222222-2",
+            "tipo_usuario": "externo",
+            "territorial_scopes": "[]",
+        },
+    )
+
+    assert form.is_valid(), form.errors
+    form.save()
+
+    user.profile.refresh_from_db()
+    assert user.profile.dni == "22222222"
+    assert user.profile.cuil == "27-22222222-2"
+    assert user.profile.tipo_usuario == "externo"
+
+
+@pytest.mark.django_db
+def test_edicion_usuario_requiere_tipo_usuario():
+    user = User.objects.create_user(username="usuario-edicion-sin-tipo", password="x")
+
+    form = CustomUserChangeForm(
+        instance=user,
+        data={
+            "username": user.username,
+            "email": "",
+            "territorial_scopes": "[]",
+        },
+    )
+
+    assert not form.is_valid()
+    assert "tipo_usuario" in form.errors
 
 
 @pytest.mark.django_db
@@ -338,6 +445,7 @@ def test_user_creation_form_limits_groups_and_roles_by_actor_scope():
             "username": "nuevo_usuario",
             "email": "nuevo@example.com",
             "password": "pass12345",
+            "tipo_usuario": "interno",
             "groups": [allowed_group.pk, forbidden_group.pk],
             "user_permissions": [allowed_role.pk, forbidden_role.pk],
             "grupos_asignables": [allowed_group.pk, forbidden_group.pk],
@@ -365,6 +473,7 @@ def test_user_creation_form_rejects_egp_without_province_scope():
             "username": "egp-sin-scope",
             "email": "egp-sin-scope@example.com",
             "password": "pass12345",
+            "tipo_usuario": "interno",
             "groups": [egp.pk],
         },
     )
@@ -428,6 +537,7 @@ def test_user_change_form_no_permite_quitar_scope_a_egp():
             "username": target.username,
             "email": target.email,
             "groups": [egp.pk],
+            "tipo_usuario": "interno",
             "territorial_scopes": "[]",
         },
     )
@@ -454,6 +564,7 @@ def test_user_creation_form_persists_assignable_scope_in_profile():
             "username": "delegador",
             "email": "delegador@example.com",
             "password": "pass12345",
+            "tipo_usuario": "interno",
             "groups": [assignable_group.pk],
             "user_permissions": [assignable_role.pk],
             "grupos_asignables": [assignable_group.pk],
@@ -727,6 +838,7 @@ def test_actor_cdi_no_ve_ni_puede_enviar_campos_administrativos_en_alta(client):
             "username": "trabajador-cdi-restringido",
             "email": "trabajador-cdi@example.com",
             "password": "pass12345",
+            "tipo_usuario": "interno",
             "groups": [trabajador.pk],
             "user_permissions": [permission.pk],
             "es_representante_pwa": "on",
@@ -772,6 +884,7 @@ def test_actor_cdi_preserva_configuracion_administrativa_oculta_en_edicion(clien
         data={
             "username": target.username,
             "email": target.email,
+            "tipo_usuario": "interno",
             "groups": [referente.pk],
             "user_permissions": [forbidden_permission.pk],
             "grupos_asignables": [],
