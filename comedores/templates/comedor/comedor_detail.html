@@ -1948,85 +1948,85 @@
 {% if puede_validar_comedor %}
     <!-- Modal Validaci&oacute;n -->
     <div class="modal fade"
-     id="modalValidacion"
-     tabindex="-1"
-     aria-labelledby="modalValidacionLabel"
-     aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="modalValidacionLabel">Validaci&oacute;n del Comedor</h5>
-                <button type="button"
-                        class="btn-close"
-                        data-bs-dismiss="modal"
-                        aria-label="Close"></button>
-            </div>
-            <div class="modal-body text-center">
-                <p class="mb-4">Seleccione una opci&oacute;n para validar el comedor:</p>
-                <div class="d-grid gap-2">
-                    <button type="button"
-                            class="btn btn-success btn-lg"
-                            data-call-click="validarComedor">Validar</button>
-                    <button type="button"
-                            class="btn btn-danger btn-lg"
-                            data-call-click="mostrarOpcionesNoValidar">No Validar</button>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-            </div>
-        </div>
-    </div>
-</div>
-<!-- Modal No Validar -->
-<div class="modal fade"
-     id="modalNoValidar"
-     tabindex="-1"
-     aria-labelledby="modalNoValidarLabel"
-     aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <form method="POST"
-                  action="{% url 'validar_comedor' comedor.pk %}"
-                  id="formNoValidar">
-                {% csrf_token %}
-                <input type="hidden" name="accion" value="no_validar" />
-                <input type="hidden"
-                       name="next"
-                       value="{% url 'comedor_detalle' pk=comedor.id %}" />
+         id="modalValidacion"
+         tabindex="-1"
+         aria-labelledby="modalValidacionLabel"
+         aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="modalNoValidarLabel">Motivos de No Validaci&oacute;n</h5>
+                    <h5 class="modal-title" id="modalValidacionLabel">Validaci&oacute;n del Comedor</h5>
                     <button type="button"
                             class="btn-close"
                             data-bs-dismiss="modal"
                             aria-label="Close"></button>
                 </div>
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label for="opcionesSelect" class="form-label">Seleccione uno o m&aacute;s motivos: *</label>
-                        <select class="form-control" id="opcionesSelect" name="opciones" multiple>
-                            {% for value, label in opciones_no_validar %}<option value="{{ value }}">{{ label }}</option>{% endfor %}
-                        </select>
-                    </div>
-                    <div class="mb-3 d-none" id="comentarioDiv">
-                        <label for="comentario" class="form-label">Comentario: *</label>
-                        <textarea class="form-control"
-                                  id="comentario"
-                                  name="comentario"
-                                  rows="3"
-                                  placeholder="Especifique el motivo..."></textarea>
+                <div class="modal-body text-center">
+                    <p class="mb-4">Seleccione una opci&oacute;n para validar el comedor:</p>
+                    <div class="d-grid gap-2">
+                        <button type="button"
+                                class="btn btn-success btn-lg"
+                                data-call-click="validarComedor">Validar</button>
+                        <button type="button"
+                                class="btn btn-danger btn-lg"
+                                data-call-click="mostrarOpcionesNoValidar">No Validar</button>
                     </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit"
-                            class="btn btn-danger"
-                            data-call-click="validarFormNoValidar">No Validar</button>
                 </div>
-            </form>
+            </div>
         </div>
     </div>
-</div>
+    <!-- Modal No Validar -->
+    <div class="modal fade"
+         id="modalNoValidar"
+         tabindex="-1"
+         aria-labelledby="modalNoValidarLabel"
+         aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <form method="POST"
+                      action="{% url 'validar_comedor' comedor.pk %}"
+                      id="formNoValidar">
+                    {% csrf_token %}
+                    <input type="hidden" name="accion" value="no_validar" />
+                    <input type="hidden"
+                           name="next"
+                           value="{% url 'comedor_detalle' pk=comedor.id %}" />
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="modalNoValidarLabel">Motivos de No Validaci&oacute;n</h5>
+                        <button type="button"
+                                class="btn-close"
+                                data-bs-dismiss="modal"
+                                aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="opcionesSelect" class="form-label">Seleccione uno o m&aacute;s motivos: *</label>
+                            <select class="form-control" id="opcionesSelect" name="opciones" multiple>
+                                {% for value, label in opciones_no_validar %}<option value="{{ value }}">{{ label }}</option>{% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3 d-none" id="comentarioDiv">
+                            <label for="comentario" class="form-label">Comentario: *</label>
+                            <textarea class="form-control"
+                                      id="comentario"
+                                      name="comentario"
+                                      rows="3"
+                                      placeholder="Especifique el motivo..."></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit"
+                                class="btn btn-danger"
+                                data-call-click="validarFormNoValidar">No Validar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 {% endif %}
 {% endblock %}
 {% block customJS %}
@@ -2217,7 +2217,7 @@
         });
     </script>
     {% if puede_validar_comedor %}
-    <script nonce="{{ request.csp_nonce }}">
+        <script nonce="{{ request.csp_nonce }}">
     function validarComedor() {
       const form = document.createElement('form');
       form.method = 'POST';
@@ -2304,7 +2304,7 @@
 
       return true;
     }
-    </script>
+        </script>
     {% endif %}
     <script nonce="{{ request.csp_nonce }}">
     document.addEventListener("DOMContentLoaded", function () {
