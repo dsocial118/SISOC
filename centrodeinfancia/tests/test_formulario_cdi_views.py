@@ -3,7 +3,7 @@ from datetime import date, timedelta
 import pytest
 from django.contrib.auth.models import Permission, User
 from django.http import Http404
-from django.test import RequestFactory
+from django.test import RequestFactory, override_settings
 from django.urls import reverse
 
 from centrodeinfancia.models import (
@@ -205,6 +205,7 @@ def test_formulario_cdi_detalle_respeta_scope_por_provincia():
 
 
 @pytest.mark.django_db
+@override_settings(CDI_FORMULARIOS_VISIBLE=True)
 def test_detalle_cdi_muestra_solo_ultimos_tres_formularios(client):
     user = _crear_usuario("super-form-card", superuser=True)
     client.force_login(user)

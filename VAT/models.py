@@ -1671,6 +1671,15 @@ class Inscripcion(SoftDeleteModelMixin, models.Model):
         ("importacion", "Importación"),
     ]
 
+    # Resultado final del curso. NULL = "Sin calificar": es el estado inicial y
+    # el que distingue a un alumno pendiente de carga de uno ya calificado.
+    RESULTADO_APROBADO = "aprobado"
+    RESULTADO_DESAPROBADO = "desaprobado"
+    RESULTADO_FINAL_CHOICES = [
+        (RESULTADO_APROBADO, "Aprobado"),
+        (RESULTADO_DESAPROBADO, "Desaprobado"),
+    ]
+
     ciudadano = models.ForeignKey(
         Ciudadano,
         on_delete=models.PROTECT,
@@ -1725,6 +1734,28 @@ class Inscripcion(SoftDeleteModelMixin, models.Model):
     )
     observaciones = models.TextField(
         blank=True, null=True, verbose_name="Observaciones"
+    )
+
+    resultado_final = models.CharField(
+        max_length=20,
+        choices=RESULTADO_FINAL_CHOICES,
+        blank=True,
+        null=True,
+        verbose_name="Resultado Final",
+        help_text="Vacío = sin calificar.",
+    )
+    resultado_registrado_por = models.ForeignKey(
+        User,
+        on_delete=models.PROTECT,
+        related_name="vat_resultados_curso_registrados",
+        blank=True,
+        null=True,
+        verbose_name="Resultado registrado por",
+    )
+    resultado_fecha = models.DateTimeField(
+        blank=True,
+        null=True,
+        verbose_name="Fecha de Carga del Resultado",
     )
 
     fecha_creacion = models.DateTimeField(auto_now_add=True)
@@ -2038,3 +2069,114 @@ class ResultadoEvaluacion(SoftDeleteModelMixin, models.Model):
                 name="vat_reseval_eval_apr_idx",
             ),
         ]
+
+
+# ============================================================================
+# CIERRE DE CURSO: PROFESORES Y ACTA DE RESULTADOS
+# ============================================================================
+
+
+class ProfesorCentro(SoftDeleteModelMixin, models.Model):
+    """
+    Profesor a cargo del dictado, propio de un centro.
+
+    Es deliberadamente independiente de `ciudadanos.Ciudadano`: un profesor no
+    es beneficiario del programa y no debe entrar al padrón que alimenta
+    validación RENAPER, cola de revisión de duplicados ni vouchers. El alta es
+    directa, sin validación de identidad externa.
+    """
+
+    centro = models.ForeignKey(
+        Centro,
+        on_delete=models.CASCADE,
+        related_name="vat_profesores",
+        verbose_name="Centro",
+    )
+    apellido = models.CharField(max_length=255, verbose_name="Apellido")
+    nombre = models.CharField(max_length=255, verbose_name="Nombre")
+    documento = models.PositiveBigIntegerField(verbose_name="Documento")
+    email = models.EmailField(verbose_name="Email")
+
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    fecha_modificacion = models.DateTimeField(auto_now=True)
+
+    @property
+    def nombre_completo(self):
+        return f"{self.apellido}, {self.nombre}"
+
+    def __str__(self):
+        return f"{self.nombre_completo} (DNI {self.documento})"
+
+    class Meta:
+        verbose_name = "Profesor de Centro"
+        verbose_name_plural = "Profesores de Centro"
+        ordering = ["apellido", "nombre"]
+        unique_together = ("centro", "documento")
+        indexes = [
+            models.Index(
+                fields=["centro", "apellido"],
+                name="vat_prof_centro_ape_idx",
+            ),
+        ]
+
+
+class ActaCierreComision(SoftDeleteModelMixin, models.Model):
+    """
+    Acta de cierre de una comisión de curso: profesor a cargo, fecha de fin y
+    número de acta. Los resultados por alumno viven en
+    `Inscripcion.resultado_final`.
+
+    `fecha_fin` es propia del acta: se precarga con la de la comisión pero
+    editarla no modifica `ComisionCurso.fecha_fin` (eso alteraría el cierre
+    automático de `CierreComisionService` y el bloqueo de altas de
+    `InscripcionService._comision_vencida`).
+    """
+
+    comision_curso = models.OneToOneField(
+        ComisionCurso,
+        on_delete=models.CASCADE,
+        related_name="acta_cierre",
+        verbose_name="Comisión de Curso",
+    )
+    profesor = models.ForeignKey(
+        ProfesorCentro,
+        on_delete=models.PROTECT,
+        related_name="vat_actas_cierre",
+        verbose_name="Profesor a Cargo",
+    )
+    fecha_fin = models.DateField(verbose_name="Fecha de Fin")
+    numero_acta = models.CharField(
+        max_length=50,
+        blank=True,
+        null=True,
+        verbose_name="N° de Acta",
+    )
+    registrado_por = models.ForeignKey(
+        User,
+        on_delete=models.PROTECT,
+        related_name="vat_actas_cierre_registradas",
+        verbose_name="Registrado por",
+    )
+
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    fecha_modificacion = models.DateTimeField(auto_now=True)
+
+    def clean(self):
+        from django.core.exceptions import ValidationError
+
+        if (
+            self.profesor_id
+            and self.comision_curso_id
+            and self.profesor.centro_id != self.comision_curso.curso.centro_id
+        ):
+            raise ValidationError(
+                {"profesor": "El profesor no pertenece al centro de la comisión."}
+            )
+
+    def __str__(self):
+        return f"Acta {self.numero_acta or '(sin número)'} - {self.comision_curso}"
+
+    class Meta:
+        verbose_name = "Acta de Cierre de Comisión"
+        verbose_name_plural = "Actas de Cierre de Comisión"
+        ordering = ["-fecha_fin"]

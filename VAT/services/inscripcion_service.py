@@ -744,6 +744,47 @@ class InscripcionService:
         return inscripcion
 
     @staticmethod
+    def actualizar_estado_en_lote(*, inscripciones, nuevo_estado, usuario=None):
+        """
+        Aplica un cambio de estado a varias inscripciones y devuelve un resumen.
+
+        Cada inscripción se procesa en su propia transacción (la de
+        `actualizar_estado_inscripcion`): un fallo puntual — cupo completo,
+        voucher sin saldo — no descarta los cambios ya aplicados. Es lo que se
+        quiere en una acción en lote sobre un listado: se informa qué filas
+        quedaron afuera y por qué, en vez de perder todo el trabajo.
+
+        Devuelve {"actualizadas": [...], "sin_cambios": [...], "errores": [(insc, msg)]}.
+        """
+        if nuevo_estado not in dict(Inscripcion.ESTADO_INSCRIPCION_CHOICES):
+            raise ValueError("Estado no válido.")
+
+        actualizadas = []
+        sin_cambios = []
+        errores = []
+
+        for inscripcion in inscripciones:
+            if inscripcion.estado == nuevo_estado:
+                sin_cambios.append(inscripcion)
+                continue
+            try:
+                InscripcionService.actualizar_estado_inscripcion(
+                    inscripcion=inscripcion,
+                    nuevo_estado=nuevo_estado,
+                    usuario=usuario,
+                )
+            except ValueError as exc:
+                errores.append((inscripcion, str(exc)))
+            else:
+                actualizadas.append(inscripcion)
+
+        return {
+            "actualizadas": actualizadas,
+            "sin_cambios": sin_cambios,
+            "errores": errores,
+        }
+
+    @staticmethod
     def crear_inscripcion_oferta(
         *,
         ciudadano,
