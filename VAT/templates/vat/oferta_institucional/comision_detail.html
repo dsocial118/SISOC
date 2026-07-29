@@ -2305,9 +2305,7 @@
                                                 <label for="{{ field.id_for_label }}" class="form-check-label fw-bold">{{ field.label }}</label>
                                             </div>
                                             {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors.0 }}</div>{% endif %}
-                                            {% if field.help_text %}
-                                                <div class="form-text">{{ field.help_text }}</div>
-                                            {% endif %}
+                                            {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
                                         </div>
                                     {% elif field.name == "cupo_lista_espera" %}
                                         <div class="col-md-6 {% if not comision_form.acepta_lista_espera.value and not field.value %}d-none{% endif %}"
@@ -2317,12 +2315,8 @@
                                                 {% if field.field.required %}<span class="text-danger">*</span>{% endif %}
                                             </label>
                                             {{ field }}
-                                            {% if field.errors %}
-                                                <div class="text-danger small mt-1">{{ field.errors.0 }}</div>
-                                            {% endif %}
-                                            {% if field.help_text %}
-                                                <div class="form-text">{{ field.help_text }}</div>
-                                            {% endif %}
+                                            {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors.0 }}</div>{% endif %}
+                                            {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
                                         </div>
                                     {% else %}
                                         <div class="col-md-6">
@@ -2332,9 +2326,7 @@
                                             </label>
                                             {{ field }}
                                             {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors.0 }}</div>{% endif %}
-                                            {% if field.help_text %}
-                                                <div class="form-text">{{ field.help_text }}</div>
-                                            {% endif %}
+                                            {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
                                         </div>
                                     {% endif %}
                                 {% endfor %}
