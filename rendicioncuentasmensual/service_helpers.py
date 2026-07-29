@@ -1,4 +1,7 @@
+import subprocess
+import tempfile
 from io import BytesIO
+from pathlib import Path
 
 from pypdf import PdfReader
 from reportlab.lib.pagesizes import A4
@@ -146,6 +149,43 @@ def generar_pdf_placeholder(nombre):
     pdf.showPage()
     pdf.save()
     return pdf_buffer.getvalue()
+
+
+def convertir_documento_office_a_pdf(archivo, extension):
+    with tempfile.TemporaryDirectory(prefix="rendicion-office-") as temp_dir:
+        temp_path = Path(temp_dir)
+        input_path = temp_path / f"documento{extension}"
+        output_path = temp_path / "documento.pdf"
+        profile_uri = (temp_path / "libreoffice-profile").resolve().as_uri()
+
+        try:
+            archivo.open("rb")
+            input_path.write_bytes(archivo.read())
+        finally:
+            cerrar_archivo_seguro(archivo)
+
+        result = subprocess.run(
+            [
+                "libreoffice",
+                "--headless",
+                "--nologo",
+                "--nodefault",
+                "--nofirststartwizard",
+                f"-env:UserInstallation={profile_uri}",
+                "--convert-to",
+                "pdf",
+                "--outdir",
+                str(temp_path),
+                str(input_path),
+            ],
+            capture_output=True,
+            check=False,
+            timeout=120,
+        )
+        if result.returncode != 0 or not output_path.exists():
+            detalle = result.stderr.decode("utf-8", errors="replace").strip()
+            raise RuntimeError(detalle or "LibreOffice no generó el archivo PDF.")
+        return output_path.read_bytes()
 
 
 def iterar_documentos_para_pdf(categorias):

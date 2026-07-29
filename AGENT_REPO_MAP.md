@@ -18,6 +18,7 @@ Mapa practico del repositorio `SISOC` para futuros agentes de IA y desarrollador
 - El repo mezcla backoffice web tradicional, APIs internas/server-to-server, flujos asincronos simples sin Celery, y una capa PWA/API para ciertos casos de uso.
 - La logica de negocio suele vivir en `services/` cuando la app la tiene, pero coexisten apps mas legacy con mas logica en `views.py`, `models.py` o `tasks.py`.
 - Hay un esfuerzo explicito de control arquitectonico incremental con `import-linter` (`.importlinter`) para evitar que el monolito siga acoplandose.
+- Los modulos nuevos deben nacer como verticales extraibles dentro del monolito; la regla aplicable y sus limites actuales viven en `docs/ia/MODULAR_BOUNDARIES.md`.
 
 ### Inferencias utiles
 
@@ -60,7 +61,7 @@ Mapa practico del repositorio `SISOC` para futuros agentes de IA y desarrollador
 | Docker Compose para local | Hecho observado | `docker-compose.yml` |
 | Compose separado para deploy | Hecho observado | `docker-compose.deploy.yml`, `docker-compose.produccion.yml` |
 | GitHub Actions para lint/tests/arquitectura/release sanity | Hecho observado | `.github/workflows/` |
-| Plan A descendente con autoaprobacion acotada | Hecho observado | `.github/workflows/sync-main-downstream.yml`, `docs/operacion/deploy_automatizado.md` |
+| Promoción event-driven y sincronización descendente con gates | Hecho observado | `.github/workflows/release-orchestrator.yml`, `.github/workflows/sync-main-downstream.yml`, `docs/operacion/deploy_automatizado.md` |
 | Helpers de Codex/worktrees | Hecho observado | `scripts/ai/`, `.codex/environments/environment.toml` |
 
 ## Que tipo de proyecto es
@@ -99,7 +100,7 @@ Mapa practico del repositorio `SISOC` para futuros agentes de IA y desarrollador
 - `scripts/ai/codex_task.ps1 <slug>`: crea branch `codex/<slug>`, worktree en `../worktrees/<slug>` y bootstrap.
 - `scripts/ai/codex_run.ps1 up`: bootstrap + levantar entorno.
 - `scripts/ai/codex_run.ps1 validate`: corre `black`, `djlint`, smoke tests y `makemigrations --check`.
-- `scripts/operacion/deploy_refresh.sh`: refresh operativo de deploy.
+- `scripts/operacion/deploy_refresh.sh`: refresh operativo de deploy; acepta un SHA esperado para bloquear una revisión obsoleta antes del downtime.
 
 ## Estructura general del proyecto
 
@@ -351,6 +352,18 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
   `/mobile/login` y las descargas sensibles se limitan al solicitante o a un
   superusuario.
 
+### Si necesitas cambiar el import/export Excel-CSV del Django admin
+
+- `core/admin_import_export.py`: bases `BaseImportExportAdmin` (import +
+  export) y `BaseExportAdmin` (solo export), con formatos limitados a XLSX/CSV.
+- `<app>/resources.py`: resources explicitos cuando hay que acotar campos o
+  resolver relaciones por nombre (`core`, `intervenciones`).
+- `config/settings.py`: bloque `IMPORT_EXPORT_*` (transacciones, preview
+  obligatorio, permisos requeridos, escape de formulas).
+- `tests/test_admin_import_export.py`.
+- docs: `docs/registro/cambios/2026-07-27-import-export-admin.md` lista que
+  modelo quedo habilitado y cual no, con motivo.
+
 ### Si necesitas cambiar permisos o IAM
 
 - `users/bootstrap/groups_seed.py`
@@ -389,6 +402,9 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - `comedores/api_views.py`
 - tests del root `tests/test_comedor*`, `tests/test_comedores*`
 - docs de flujo: `docs/flujos/comedor_sync.md`
+- certificaciones mensuales de prestaciones: regla de pendiente en
+  `comedores/utils.py`, API en `comedores/api_views.py`, card e historial web en
+  `comedores/views/comedor.py` y `comedores/templates/comedor/`
 
 ### Si necesitas cambiar Relevamientos
 
@@ -423,15 +439,29 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - templates `admisiones/templates/admisiones/docx/`
 - templates `admisiones/templates/admisiones/pdf/`
 - `admisiones/tests/`
+- El Informe Tecnico Complementario se abre tanto desde Admision como desde el
+  convenio seleccionado en `acompanamientos/views.py` y
+  `acompanamientos/templates/acompañamiento_detail.html`.
 
 ### Si necesitas cambiar PWA
 
+- La interfaz vive en el repositorio Git anidado `mobile/`; revisar su estado y
+  validaciones por separado del repositorio Django.
 - `pwa/models.py`
 - `pwa/api_urls.py`
 - `pwa/api_views.py`
 - `pwa/services/`
+- frontend: `mobile/src/api/` y `mobile/src/features/home/`
 - tests `tests/test_pwa_*`
 - docs: `docs/implementaciones/pwa_backend.md`, `docs/seguridad/security_baseline_pwa.md`
+
+### Si necesitas cambiar documentos DOCX/PDF de prestaciones o nóminas
+
+- plantillas versionadas: `pwa/files/varios/PROGRAMA.ALIMENTAR.COMUNIDAD.docx` y `pwa/files/varios/NOMINA.DE.DESTINATARIOS.docx`
+- certificación de prestaciones: `comedores/services/certificacion_prestaciones_service.py`
+- nómina de destinatarios: `pwa/services/nomina_destinatarios_pdf_service.py`
+- conversión e incrustación de Office en rendiciones: `rendicioncuentasmensual/service_helpers.py`
+- el runtime Django requiere LibreOffice Writer/Calc para convertir DOCX/XLSX a PDF
 
 ### Si necesitas cambiar OCR / procesamiento documental
 
@@ -451,8 +481,17 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - `.github/workflows/lint.yml`
 - `.github/workflows/architecture.yml`
 - `.github/workflows/release-sanity.yml`
+- `.github/workflows/release-orchestrator.yml`
+- `.github/workflows/sync-main-downstream.yml`
+- `.github/scripts/sync_main_downstream.js`: crea y actualiza ramas técnicas
+  `automation/sync-main-to-<destino>` para que los PRs descendentes cumplan
+  checks estrictos sin mezclar QA/HML en `main`.
+- `.github/workflows/deploy.yml`
+- La automatización de promociones usa una GitHub App privada: variable
+  `RELEASE_AUTOMATION_APP_CLIENT_ID` y secret
+  `RELEASE_AUTOMATION_APP_PRIVATE_KEY`; no sustituirla por un PAT.
 - `.importlinter`
-- `scripts/ci/pr_lint_tools.py`
+- `scripts/ci/pr_lint_tools.py`, `scripts/ci/pr_doc_automation.py`
 
 ## Testing, linting, build y deploy
 
@@ -484,7 +523,7 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 | migraciones/modelos | `makemigrations --check --dry-run` + tests del flujo |
 | config global | smoke + `manage.py check` |
 | import boundaries | `lint-imports` si metiste imports nuevos entre apps |
-| release/main | agregar `check --deploy`, `spectacular --validate`, `collectstatic` |
+| release/main | agregar `check --deploy`, `spectacular --validate`, `collectstatic`, gates del PR y baseline `AAAA.MM.DD-stable` |
 
 ### Build/deploy
 
@@ -578,11 +617,12 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 | bugfix view/template | `docs/ia/TESTING.md`, template, view, JS asociado |
 | API/serializer | `docs/ia/TESTING.md`, `api_views.py`, serializer, tests API |
 | permisos/auth | `docs/ia/SECURITY_AI.md`, `users/`, docs IAM |
-| boundaries/refactor | `docs/ia/ARCHITECTURE.md`, `.importlinter` |
+| nuevo modulo o preparacion de extraccion | `docs/ia/MODULAR_BOUNDARIES.md`, `.importlinter`, `config/settings.py`, `config/urls.py` |
+| boundaries/refactor existente | `docs/ia/ARCHITECTURE.md`, `.importlinter` |
 | logging/errores/fallbacks | `docs/ia/ERRORS_LOGGING.md` |
 | estilo/template | `docs/ia/STYLE_GUIDE.md` |
 | PWA | `docs/implementaciones/pwa_backend.md`, `docs/seguridad/security_baseline_pwa.md` |
-| deploy/infra | `docs/operacion/infraestructura.md`, `docs/operacion/instalacion.md` |
+| deploy/infra | `docs/operacion/infraestructura.md`, `docs/operacion/instalacion.md`, `docs/infra/QA_OPERATIONS.md`, `docs/infra/ENVIRONMENT_DATABASES.md` |
 
 ## Notas utiles sobre calidad y arquitectura
 
@@ -591,6 +631,12 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - Hay una iniciativa explicita de "monolito modular fase 0".
 - El baseline actual permite imports legacy, pero CI debe fallar ante nuevas dependencias prohibidas.
 - Si un import nuevo entre apps te parece inocente, igual puede ser una regresion arquitectonica.
+
+### Modulos nuevos extraibles
+
+- Esta regla aplica a codigo nuevo; no declara que las apps existentes ya puedan moverse a otro repositorio.
+- Antes de crear una app, clasificar si es vertical extraible, parte de un bounded context o cambio de kernel.
+- `api_views.py`/DRF no reemplazan el `api.py` de contrato entre dominios. Ver `docs/ia/MODULAR_BOUNDARIES.md`.
 
 ### Tests
 
@@ -617,7 +663,7 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 | relevamientos | `relevamientos/models.py`, `tasks.py`, `views.py` |
 | RENAPER | `centrodefamilia/services/consulta_renaper.py`, `VAT/services/consulta_renaper/impl.py` |
 | GESTIONAR | `comedores/tasks.py`, `relevamientos/tasks.py`, commands relacionados |
-| docx/pdf | `admisiones/services/`, templates `docx/` y `pdf/` |
+| docx/pdf | `admisiones/services/`, `comedores/services/certificacion_prestaciones_service.py`, `pwa/services/nomina_destinatarios_pdf_service.py`, `pwa/files/varios/` |
 | PWA | `pwa/api_views.py`, `pwa/services/`, tests `test_pwa_*` |
 | OCR | `ocr/`, `docker/django/entrypoint.py` |
 | auditoria | `audittrail/`, docs `audittrail_*` |
@@ -674,6 +720,9 @@ Marcar esas zonas como `A inferir` hasta relevarlas cuando una tarea real las to
 - `.github/workflows/lint.yml`
 - `.github/workflows/architecture.yml`
 - `.github/workflows/release-sanity.yml`
+- `.github/workflows/release-orchestrator.yml`
+- `.github/workflows/sync-main-downstream.yml`
+- `.github/workflows/deploy.yml`
 - `scripts/ai/codex_run.ps1`
 - `scripts/ai/codex_task.ps1`
 - `.codex/environments/environment.toml`

@@ -15,6 +15,7 @@ from django.urls import reverse
 
 from acompanamientos.acompanamiento_service import AcompanamientoService
 from comedores.models import Comedor
+from admisiones.models.admisiones import InformeTecnico
 from core.services.column_preferences import build_columns_context_for_custom_cells
 from core.security import safe_redirect
 from iam.services import user_has_permission_code
@@ -206,6 +207,16 @@ class AcompanamientoDetailView(LoginRequiredMixin, DetailView):
         )
 
         context["admision"] = admision
+        context["informe_tecnico_complementario"] = (
+            InformeTecnico.objects.filter(
+                admision=admision,
+                estado_formulario="finalizado",
+            )
+            .order_by("-id")
+            .first()
+            if admision and context["es_tecnico_comedor"]
+            else None
+        )
         context["info_relevante"] = info_relevante
         context["numero_if"] = datos_admision.get("numero_if")
         context["numero_disposicion"] = datos_admision.get("numero_disposicion")

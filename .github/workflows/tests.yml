@@ -8,10 +8,12 @@ on:
     pull_request:
         branches:
             - development
+            - homologacion
             - main
     push:
         branches:
             - development
+            - homologacion
             - main
 
 jobs:
@@ -181,6 +183,87 @@ jobs:
               if: always()
               run: docker compose down -v
 
+    release_quality:
+        if: github.event_name == 'pull_request'
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Validar evidencia de calidad del pre-deploy
+              uses: actions/github-script@v8
+              with:
+                  script: |
+                      const body = context.payload.pull_request?.body || "";
+                      const missing = [];
+                      const hasTextInSection = (heading) => {
+                        const escaped = heading.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+                        const section = new RegExp(
+                          `^## ${escaped}\\s*\\n([\\s\\S]*?)(?=^## |(?![\\s\\S]))`,
+                          "m",
+                        ).exec(body);
+                        return Boolean(section && section[1].trim());
+                      };
+                      const finalRelease = /<!--\s*release-automation:\s*scheduled\s*-->/i.test(body);
+                      const preparation = /<!--\s*release-final-pr:\s*\d+\s*-->/i.test(body);
+
+                      if (!finalRelease && !preparation) {
+                        core.info("PR fuera del flujo de release automatizado.");
+                        return;
+                      }
+
+                      if (finalRelease) {
+                        if (!/<!--\s*release-date:\s*\d{4}-\d{2}-\d{2}\s*-->/i.test(body)) {
+                          missing.push("marker release-date");
+                        }
+                        if (!/<!--\s*release-head:\s*[0-9a-f]{40}\s*-->/i.test(body)) {
+                          missing.push("marker release-head");
+                        }
+                        if (!/<!--\s*release-preparation:\s*(pending|none|\d+)\s*-->/i.test(body)) {
+                          missing.push("marker release-preparation");
+                        }
+                        for (const heading of [
+                          "Resumen ejecutivo",
+                          "Riesgos bloqueantes",
+                          "Riesgos no bloqueantes",
+                          "Pruebas ejecutadas y resultado",
+                          "Compatibilidad hacia atrás",
+                          "Recomendación final GO/NO-GO con justificación",
+                          "Impacto por módulos",
+                          "Supuestos explícitos",
+                          "Rollback / consideraciones operativas",
+                        ]) {
+                          if (!hasTextInSection(heading)) {
+                            missing.push(`seccion ${heading}`);
+                          }
+                        }
+                      }
+
+                      if (preparation) {
+                        const functionalFix = /<!--\s*release-functional-fix:\s*(true|false)\s*-->/i.exec(body);
+                        if (!functionalFix) {
+                          missing.push("marker release-functional-fix");
+                        } else if (functionalFix[1].toLowerCase() === "true") {
+                          for (const heading of [
+                            "Causa raíz confirmada",
+                            "Prueba de regresión",
+                            "Revisión de calidad",
+                          ]) {
+                            if (!hasTextInSection(heading)) {
+                              missing.push(`seccion ${heading}`);
+                            }
+                          }
+                        } else if (!hasTextInSection("Validación del saneamiento")) {
+                          missing.push("seccion Validación del saneamiento");
+                        }
+                      }
+
+                      if (missing.length > 0) {
+                        core.setFailed(
+                          `El pre-deploy no aporta evidencia suficiente: ${missing.join(", ")}`,
+                        );
+                        return;
+                      }
+                      core.info("Evidencia de calidad de release verificada.");
+
     deploy_guard:
         if: github.event_name == 'pull_request'
         runs-on: ubuntu-latest
@@ -189,9 +272,10 @@ jobs:
             - migrations_check
             - pytest
             - mysql_compat
+            - release_quality
         steps:
             - name: Validate required CI checks
-              uses: actions/github-script@v7
+              uses: actions/github-script@v8
               with:
                   script: |
                       const baseRef = context.payload.pull_request?.base?.ref ?? "";
@@ -205,6 +289,7 @@ jobs:
                         "pytest",
                         "migrations_check",
                         "mysql_compat",
+                        "release_quality",
                       ];
                       if (baseRef === "main") {
                         required.push("release_sanity");

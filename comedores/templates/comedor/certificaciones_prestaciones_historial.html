@@ -1,0 +1,60 @@
+{% extends "includes/main.html" %}
+{% block title %}Certificaciones mensuales: {{ comedor.nombre }}{% endblock %}
+{% block titulo-pagina %}Certificaciones Mensuales de Prestaciones{% endblock %}
+{% block breadcrumb %}
+    <ol class="breadcrumb float-sm-right">
+        <li class="breadcrumb-item">
+            <a href="{% url 'comedor_detalle' comedor.id %}">{{ comedor.nombre }}</a>
+        </li>
+        <li class="breadcrumb-item active">Certificaciones mensuales</li>
+    </ol>
+{% endblock %}
+{% block content %}
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h3 class="card-title mb-0">Historial completo</h3>
+            <a href="{% url 'comedor_detalle' comedor.id %}"
+               class="btn btn-secondary btn-sm backbutton-handler">Volver al legajo</a>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped">
+                    <thead>
+                        <tr>
+                            <th>Período</th>
+                            <th>Usuario generador</th>
+                            <th>Fecha de certificación</th>
+                            <th>Ver PDF</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for certificacion in certificaciones_prestaciones %}
+                            <tr>
+                                <td>{{ certificacion.periodo|date:"m/Y" }}</td>
+                                <td>
+                                    {% if certificacion.usuario %}
+                                        {{ certificacion.usuario.get_full_name|default:certificacion.usuario.username }}
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>
+                                <td>{{ certificacion.creado|date:"d/m/Y H:i" }}</td>
+                                <td>
+                                    <a href="{% url 'descargar_certificacion_prestaciones_web' comedor.id certificacion.id %}"
+                                       class="btn btn-sm btn-primary"
+                                       target="_blank"
+                                       rel="noopener">Ver PDF</a>
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="4" class="text-center text-muted">No hay certificaciones mensuales registradas.</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% include "components/pagination.html" %}
+        </div>
+    </div>
+{% endblock %}

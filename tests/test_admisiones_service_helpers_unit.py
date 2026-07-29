@@ -1246,3 +1246,29 @@ def test_generar_documento_admision_devuelve_none_en_paths_no_exitosos(mocker):
         side_effect=RuntimeError("x"),
     )
     assert module.AdmisionService.generar_documento_admision(adm) is None
+
+
+def test_alerta_complementario_solo_si_fue_requerido(mocker):
+    mocker.patch(
+        "admisiones.services.admisiones_service.InformeTecnico.objects.filter",
+        return_value=SimpleNamespace(exists=lambda: True),
+    )
+    sin_complementario = SimpleNamespace(
+        filter=lambda **_kwargs: SimpleNamespace(first=lambda: None)
+    )
+    admision = SimpleNamespace(estado_legales="")
+
+    contexto = module.AdmisionService._build_informe_complementario_update_context(
+        admision, sin_complementario
+    )
+
+    assert contexto["mostrar_informe_complementario"] is True
+    assert contexto["informe_complementario_requerido"] is False
+
+    admision.estado_legales = "Informe Complementario Solicitado"
+    contexto_requerido = (
+        module.AdmisionService._build_informe_complementario_update_context(
+            admision, sin_complementario
+        )
+    )
+    assert contexto_requerido["informe_complementario_requerido"] is True

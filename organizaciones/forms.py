@@ -4,6 +4,7 @@ from organizaciones.models import (
     Organizacion,
     Firmante,
     Aval,
+    SubtipoEntidad,
 )
 from core.models import Municipio, Provincia, Localidad
 
@@ -44,6 +45,15 @@ class OrganizacionForm(forms.ModelForm):
         self.fields["fecha_vencimiento"].input_formats = ["%Y-%m-%d"]
 
         self.popular_campos_ubicacion()
+        subtipo_actual_id = (
+            self.data.get(self.add_prefix("subtipo_entidad"))
+            if self.is_bound
+            else getattr(self.instance, "subtipo_entidad_id", None)
+        )
+        subtipos = SubtipoEntidad.objects.filter(activo=True)
+        if subtipo_actual_id:
+            subtipos = subtipos | SubtipoEntidad.objects.filter(pk=subtipo_actual_id)
+        self.fields["subtipo_entidad"].queryset = subtipos.order_by("nombre")
 
     def popular_campos_ubicacion(self):
 

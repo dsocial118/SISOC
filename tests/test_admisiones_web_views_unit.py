@@ -1174,6 +1174,7 @@ def test_informe_complementario_detail_contexto_y_post_success(mocker):
     view.kwargs = {"tipo": "base", "pk": 88}
     req = _Req(
         POST={"campo_estado": " valor "},
+        GET={},
         user=_user(),
         get_full_path=lambda: "/x",
     )
@@ -1189,11 +1190,22 @@ def test_informe_complementario_detail_contexto_y_post_success(mocker):
         return_value={"base": True},
     )
     mocker.patch(
+        "admisiones.views.web_views.InformeService.get_campos_agrupados_informe",
+        return_value=[
+            {
+                "titulo": "Datos",
+                "tipo": "campos",
+                "campos": [],
+            }
+        ],
+    )
+    mocker.patch(
         "admisiones.models.admisiones.InformeComplementario.objects.filter",
         return_value=SimpleNamespace(first=lambda: None),
     )
     context = view.get_context_data()
     assert context["base"] is True
+    assert context["campos_agrupados"][0]["titulo"] == "Datos"
 
     informe_complementario = SimpleNamespace(estado=None, save=mocker.Mock())
     mocker.patch(
@@ -1211,3 +1223,36 @@ def test_informe_complementario_detail_contexto_y_post_success(mocker):
     assert response.status_code == 302
     assert informe_complementario.estado == "enviado_validacion"
     assert informe_complementario.save.called
+
+
+def test_informe_complementario_detail_post_vuelve_a_acompanamiento(mocker):
+    view = module.InformeTecnicoComplementarioDetailView()
+    admision = SimpleNamespace(id=12, comedor_id=5)
+    informe_tecnico = SimpleNamespace(admision=admision, admision_id=12)
+    view.kwargs = {"tipo": "base", "pk": 88}
+    view.get_object = lambda: informe_tecnico
+    request = _Req(
+        POST={"campo_estado": " valor "},
+        GET={"origen": "acompanamiento"},
+        user=_user(),
+        get_full_path=lambda: "/x?origen=acompanamiento",
+    )
+    informe_complementario = SimpleNamespace(estado=None, save=mocker.Mock())
+    mocker.patch(
+        "admisiones.views.web_views.InformeService.guardar_campos_complementarios",
+        return_value=informe_complementario,
+    )
+    mocker.patch(
+        "admisiones.services.legales_service.LegalesService.actualizar_estado_por_accion",
+        return_value=None,
+    )
+    mocker.patch("admisiones.views.web_views.messages.success")
+    reverse = mocker.patch(
+        "admisiones.views.web_views.reverse",
+        return_value="/acompanamientos/acompanamiento/5/detalle/",
+    )
+
+    response = view.post(request, pk=88)
+
+    assert response.url == "/acompanamientos/acompanamiento/5/detalle/?admision_id=12"
+    reverse.assert_called_once_with("detalle_acompanamiento", args=[5])

@@ -7,10 +7,11 @@ from django.contrib.auth.models import User, Permission
 from django.test import RequestFactory, TestCase, Client
 from django.urls import reverse
 
-from organizaciones.models import Organizacion, TipoEntidad
-from organizaciones.views import OrganizacionDetailView
-from organizaciones.forms import OrganizacionForm
+from comedores.models import Comedor, Programas, TipoDeComedor
 from core.models import Provincia
+from organizaciones.models import Organizacion, TipoEntidad
+from organizaciones.forms import OrganizacionForm
+from organizaciones.views import OrganizacionDetailView
 
 
 class CuilDuplicadoTemplateTests(TestCase):
@@ -67,6 +68,44 @@ class OrganizacionDetailViewTests(TestCase):
 
         self.assertFalse(context["avales"])
         self.assertEqual(context["tipo_entidad"], tipo_entidad)
+
+    def test_detalle_muestra_programas_de_comedores_y_fallback(self):
+        """El tab de comedores muestra el catálogo y conserva los sin programa."""
+        user = User.objects.create_superuser(
+            username="admin", email="admin@example.com", password="secret"
+        )
+        organizacion = Organizacion.objects.create(nombre="Organización Programa")
+        programas = [
+            Programas.objects.create(nombre="Alimentar comunidad"),
+            Programas.objects.create(nombre="Abordaje comunitario - Línea Secos"),
+            Programas.objects.create(nombre="Abordaje comunitario - Línea Tradicional"),
+        ]
+        for index, programa in enumerate(programas, start=1):
+            Comedor.objects.create(
+                nombre=f"Comedor con programa {index}",
+                organizacion=organizacion,
+                programa=programa,
+            )
+        tipo_comedor = TipoDeComedor.objects.create(nombre="Comunitario")
+        Comedor.objects.create(
+            nombre="Comedor histórico sin programa",
+            organizacion=organizacion,
+            tipocomedor=tipo_comedor,
+        )
+
+        self.client.force_login(user)
+        response = self.client.get(
+            reverse("organizacion_detalle", kwargs={"pk": organizacion.pk})
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "<th>Programa</th>", html=True)
+        for programa in programas:
+            self.assertContains(response, programa.nombre)
+        self.assertRegex(
+            response.content.decode(),
+            r"(?s)Comedor histórico sin programa.*?<td>Comunitario</td>\s*<td>-</td>",
+        )
 
 
 class CuilDuplicadoFormTests(TestCase):

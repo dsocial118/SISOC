@@ -1522,6 +1522,11 @@ class InformeTecnicoComplementarioDetailView(LoginRequiredMixin, DetailView):
         )
 
         messages.success(request, "Informe complementario enviado para validación.")
+        if request.GET.get("origen") == "acompanamiento":
+            return HttpResponseRedirect(
+                f"{reverse('detalle_acompanamiento', args=[self.object.admision.comedor_id])}"
+                f"?admision_id={self.object.admision_id}"
+            )
         return HttpResponseRedirect(
             reverse("admisiones_tecnicos_editar", args=[self.object.admision.id])
         )
@@ -1530,6 +1535,12 @@ class InformeTecnicoComplementarioDetailView(LoginRequiredMixin, DetailView):
         context = super().get_context_data(**kwargs)
         tipo = self.kwargs.get("tipo", "base")
         context.update(InformeService.get_context_informe_detail(self.object, tipo))
+        context["campos_agrupados"] = InformeService.get_campos_agrupados_informe(
+            self.object
+        )
+        context["origen_acompanamiento"] = (
+            self.request.GET.get("origen") == "acompanamiento"
+        )
 
         from admisiones.models.admisiones import (
             InformeComplementario,

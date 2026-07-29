@@ -99,7 +99,7 @@ def test_acompanamiento_detail_view_normaliza_admision_id_y_reusa_el_mismo_scope
         "django.views.generic.detail.DetailView.get_context_data",
         return_value={},
     )
-    mocker.patch("acompanamientos.views.user_has_permission_code", return_value=False)
+    mocker.patch("acompanamientos.views.user_has_permission_code", return_value=True)
     obtener_hitos = mocker.patch(
         "acompanamientos.views.AcompanamientoService.obtener_hitos",
         return_value="hitos",
@@ -135,6 +135,13 @@ def test_acompanamiento_detail_view_normaliza_admision_id_y_reusa_el_mismo_scope
             "dias_semana": [],
         },
     )
+    informe = SimpleNamespace(id=70, tipo="base")
+    informe_filter = mocker.patch(
+        "acompanamientos.views.InformeTecnico.objects.filter",
+        return_value=SimpleNamespace(
+            order_by=lambda *_args: SimpleNamespace(first=lambda: informe)
+        ),
+    )
 
     view = module.AcompanamientoDetailView()
     view.request = req
@@ -146,6 +153,11 @@ def test_acompanamiento_detail_view_normaliza_admision_id_y_reusa_el_mismo_scope
     obtener_hitos.assert_called_once_with(comedor, admision_id=7)
     assert ctx["admision_id_activa"] == 7
     assert ctx["nro_convenio"] == "CONV-7"
+    assert ctx["informe_tecnico_complementario"] == informe
+    informe_filter.assert_called_once_with(
+        admision=admision,
+        estado_formulario="finalizado",
+    )
 
 
 def test_acompanamiento_detail_view_toma_ultima_cerrada_si_no_hay_activa(mocker):

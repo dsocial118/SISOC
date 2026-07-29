@@ -229,8 +229,35 @@ def test_get_prestacion_conformidad_periods_limit(mocker):
 def test_get_prestacion_conformidad_pending_period_devuelve_periodo_anterior(mocker):
     _mock_sin_rendicion(mocker)
     _mock_today(mocker, date(2026, 6, 17))
+    queryset = mocker.Mock()
+    queryset.exclude.return_value.exists.return_value = False
+    mocker.patch(
+        "comedores.utils.PrestacionAlimentariaConformidad.objects.filter",
+        return_value=queryset,
+    )
 
     comedor = _comedor("Alimentar Comunidad")
     result = module.get_prestacion_conformidad_pending_period(comedor)
 
     assert result == date(2026, 5, 1)
+
+
+def test_get_prestacion_conformidad_pending_period_oculta_periodo_certificado(mocker):
+    _mock_sin_rendicion(mocker)
+    _mock_today(mocker, date(2026, 1, 17))
+    queryset = mocker.Mock()
+    queryset.exclude.return_value.exists.return_value = True
+    conformidades = mocker.patch(
+        "comedores.utils.PrestacionAlimentariaConformidad.objects.filter",
+        return_value=queryset,
+    )
+
+    comedor = _comedor("Abordaje Comunitario")
+
+    assert module.get_prestacion_conformidad_pending_period(comedor) is None
+    conformidades.assert_called_once_with(
+        comedor=comedor,
+        periodo=date(2025, 12, 1),
+        certificacion_pdf__isnull=False,
+    )
+    queryset.exclude.assert_called_once_with(certificacion_pdf="")
