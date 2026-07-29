@@ -10514,7 +10514,13 @@ def test_resultados_tab_oculta_sin_permiso_de_inscripcion(
     ctx = vat_comision_resultados
     _crear_inscripcion_resultados(ctx, documento=40000020)
     lector = User.objects.create_user(username="lector-resultados", password="test1234")
-    lector.user_permissions.add(Permission.objects.get(codename="view_comisioncurso"))
+    # Estar en `referentes` no alcanza: `access_scope.is_vat_referente` exige el
+    # marcador de rol, y sin el el scope territorial devuelve none() -> 404.
+    # Se le da lectura pero NO `change_inscripcion`, que es lo que gatea la solapa.
+    _grant_vat_referente_access(
+        lector,
+        Permission.objects.get(codename="view_comisioncurso"),
+    )
     ctx.centro.referentes.add(lector)
 
     client.force_login(lector)
@@ -10523,6 +10529,7 @@ def test_resultados_tab_oculta_sin_permiso_de_inscripcion(
     )
 
     assert response.status_code == 200
+    assert not lector.has_perm("VAT.change_inscripcion")
     assert 'data-sisoc-tab-target="resultados"' not in response.content.decode()
 
 
