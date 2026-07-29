@@ -11,10 +11,12 @@
                class="btn btn-sm btn-primary w-100 w-sm-auto backbutton-handler">Volver</a>
         </div>
         <div class="col-12 col-lg d-flex flex-wrap justify-content-start justify-content-lg-end gap-2 align-items-center header-actions">
-            <a href="#"
-               class="btn btn-md btn-warning"
-               data-bs-toggle="modal"
-               data-bs-target="#modalValidacion"><i class="bi bi-clipboard-check me-1"></i>Validar</a>
+            {% if puede_validar_comedor %}
+                <a href="#"
+                   class="btn btn-md btn-warning"
+                   data-bs-toggle="modal"
+                   data-bs-target="#modalValidacion"><i class="bi bi-clipboard-check me-1"></i>Validar</a>
+            {% endif %}
             {% if usa_convenio_pnud %}
                 <a href="{% url 'comedor_convenio_pnud' comedor.id %}"
                    class="btn btn-md btn-outline-light"><i class="bi bi-file-earmark-text me-1"></i>Cargar datos del Convenio</a>
@@ -1943,8 +1945,9 @@
     </div>
 </div>
 
-<!-- Modal Validaci&oacute;n -->
-<div class="modal fade"
+{% if puede_validar_comedor %}
+    <!-- Modal Validaci&oacute;n -->
+    <div class="modal fade"
      id="modalValidacion"
      tabindex="-1"
      aria-labelledby="modalValidacionLabel"
@@ -2024,6 +2027,7 @@
         </div>
     </div>
 </div>
+{% endif %}
 {% endblock %}
 {% block customJS %}
     <script nonce="{{ request.csp_nonce }}">
@@ -2212,6 +2216,7 @@
             });
         });
     </script>
+    {% if puede_validar_comedor %}
     <script nonce="{{ request.csp_nonce }}">
     function validarComedor() {
       const form = document.createElement('form');
@@ -2300,6 +2305,7 @@
       return true;
     }
     </script>
+    {% endif %}
     <script nonce="{{ request.csp_nonce }}">
     document.addEventListener("DOMContentLoaded", function () {
       const tieneDocumentacion = document.getElementById("id_tiene_documentacion");
