@@ -155,7 +155,11 @@ def test_camino_curso_tiene_lote_y_resultados(escenario):
     assert "cambiar-estado-lote" in html
     assert 'class="ci-lote-check"' in html
     assert 'data-sisoc-tab-target="resultados"' in html
-    assert 'colspan="9"' in html
+    assert "<th>Tipo de alumno</th>" in html
+    panel = html.split('data-sisoc-panel="inscriptos"')[1].split(
+        'data-sisoc-panel="sesiones"'
+    )[0]
+    assert 'colspan="10"' in panel
 
 
 @pytest.mark.django_db
@@ -172,12 +176,13 @@ def test_camino_legacy_no_renderiza_lote_ni_resultados(escenario):
     assert 'name="estado" id="inscriptosLoteEstado"' not in html
     # La solapa Resultados tampoco (es solo del camino ComisionCurso).
     assert 'data-sisoc-tab-target="resultados"' not in html
-    # La columna Estado si se agrega en ambos caminos.
+    # Las columnas Estado y Tipo de alumno si se agregan en ambos caminos.
     assert "<th>Estado</th>" in html
-    # colspan correcto DENTRO del panel de inscriptos: 7 base + acciones, sin
+    assert "<th>Tipo de alumno</th>" in html
+    # colspan correcto DENTRO del panel de inscriptos: 8 base + acciones, sin
     # checkbox. Se acota al panel porque la tabla de Clases usa 9 legitimamente.
     panel = html.split('data-sisoc-panel="inscriptos"')[1].split(
         'data-sisoc-panel="sesiones"'
     )[0]
-    assert 'colspan="8"' in panel
-    assert 'colspan="9"' not in panel
+    assert 'colspan="9"' in panel
+    assert 'colspan="10"' not in panel

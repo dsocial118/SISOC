@@ -881,7 +881,7 @@
             box-shadow: 0 0 0 .18rem rgba(59, 134, 129, 0.25);
         }
 
-        .ci-prof-search { position: relative; }
+        .ci-prof-input-wrap { position: relative; }
 
         .ci-prof-results {
             position: absolute;
@@ -1049,6 +1049,19 @@
 
         .sisoc-block-card + .sisoc-block-card {
             margin-top: 30px;
+        }
+
+        /* El buscador de profesor abre un dropdown en position:absolute y el
+           `overflow: hidden` del card lo recortaba contra el borde inferior.
+           Se libera el overflow y el radio superior pasa al title, que es el
+           unico hijo con fondo propio que necesitaba el recorte. */
+        .sisoc-block-card--overflow {
+            overflow: visible;
+        }
+
+        .sisoc-block-card--overflow .sisoc-block-title {
+            border-top-left-radius: 15px;
+            border-top-right-radius: 15px;
         }
 
         .sisoc-block-title {
@@ -1468,6 +1481,7 @@
                                         <th>Apellido</th>
                                         <th>Nombre</th>
                                         <th>Documento</th>
+                                        <th>Tipo de alumno</th>
                                         <th>Estado</th>
                                         <th>Email</th>
                                         <th>Teléfono</th>
@@ -1493,6 +1507,13 @@
                                             </td>
                                             <td>{{ insc.ciudadano.nombre|default:"—" }}</td>
                                             <td>{{ insc.ciudadano.documento|default:"—" }}</td>
+                                            <td>
+                                                {% if insc.es_alumno_vat %}
+                                                    <span class="ci-pill ci-pill-teal">{{ insc.tipo_alumno }}</span>
+                                                {% else %}
+                                                    <span class="ci-pill ci-pill-gray">{{ insc.tipo_alumno }}</span>
+                                                {% endif %}
+                                            </td>
                                             <td>
                                                 {% if insc.estado == "inscripta" or insc.estado == "validada_presencial" %}
                                                     <span class="ci-pill ci-pill-green">{{ insc.get_estado_display }}</span>
@@ -1530,13 +1551,13 @@
                                         </tr>
                                     {% empty %}
                                         <tr class="ci-tbl-empty" data-empty-row>
-                                            <td colspan="{% if puede_gestionar_lote_inscriptos %}9{% elif puede_cambiar_inscripcion or puede_eliminar_inscripcion %}8{% else %}7{% endif %}">
+                                            <td colspan="{% if puede_gestionar_lote_inscriptos %}10{% elif puede_cambiar_inscripcion or puede_eliminar_inscripcion %}9{% else %}8{% endif %}">
                                                 Sin inscriptos aún. Inscribí ciudadanos a esta comisión para verlos aquí.
                                             </td>
                                         </tr>
                                     {% endfor %}
                                     <tr class="ci-tbl-empty d-none" data-no-results-row>
-                                        <td colspan="{% if puede_gestionar_lote_inscriptos %}9{% elif puede_cambiar_inscripcion or puede_eliminar_inscripcion %}8{% else %}7{% endif %}">
+                                        <td colspan="{% if puede_gestionar_lote_inscriptos %}10{% elif puede_cambiar_inscripcion or puede_eliminar_inscripcion %}9{% else %}8{% endif %}">
                                             No se encontraron inscriptos para la búsqueda.
                                         </td>
                                     </tr>
@@ -1942,7 +1963,7 @@
                                 </article>
                             </div>
 
-                            <div class="sisoc-block-card">
+                            <div class="sisoc-block-card sisoc-block-card--overflow">
                                 <div class="sisoc-block-title">
                                     <i class="bi bi-file-earmark-text"></i>
                                     <span>Datos del acta</span>
@@ -1954,16 +1975,20 @@
                                             <label class="ci-field-label" for="profesorBuscador">
                                                 Profesor a cargo<span class="text-danger">*</span>
                                             </label>
-                                            <input type="text"
-                                                   class="ci-field-input"
-                                                   id="profesorBuscador"
-                                                   placeholder="Buscar por nombre o DNI"
-                                                   autocomplete="off" />
-                                            <input type="hidden"
-                                                   name="profesor"
-                                                   id="profesorId"
-                                                   value="{{ acta_cierre.profesor_id|default_if_none:'' }}" />
-                                            <div class="ci-prof-results d-none" id="profesorResultados"></div>
+                                            {# El wrap ancla el dropdown al input: si se anclara al #}
+                                            {# contenedor, con el chip visible caeria debajo de el. #}
+                                            <div class="ci-prof-input-wrap">
+                                                <input type="text"
+                                                       class="ci-field-input"
+                                                       id="profesorBuscador"
+                                                       placeholder="Buscar por nombre o DNI"
+                                                       autocomplete="off" />
+                                                <input type="hidden"
+                                                       name="profesor"
+                                                       id="profesorId"
+                                                       value="{{ acta_cierre.profesor_id|default_if_none:'' }}" />
+                                                <div class="ci-prof-results d-none" id="profesorResultados"></div>
+                                            </div>
                                             <div class="ci-prof-chip {% if not acta_cierre %}d-none{% endif %}"
                                                  id="profesorChip">
                                                 <span id="profesorChipTexto">

@@ -58,6 +58,7 @@ def test_user_creation_form_requires_some_mobile_scope():
     form = UserCreationForm(
         data={
             "username": "rep_forms",
+            "tipo_usuario": "interno",
             "email": "rep_forms@example.com",
             "es_representante_pwa": True,
         }
@@ -72,6 +73,7 @@ def test_user_creation_form_requires_visible_space_for_mobile_user(comedor):
     form = UserCreationForm(
         data={
             "username": "rep_forms_org",
+            "tipo_usuario": "interno",
             "email": "rep_forms_org@example.com",
             "es_representante_pwa": True,
             "tipo_asociacion_pwa": AccesoComedorPWA.TIPO_ASOCIACION_ORGANIZACION,
@@ -89,6 +91,7 @@ def test_user_creation_form_creates_mobile_user_associated_to_organization(comed
     form = UserCreationForm(
         data={
             "username": "rep_forms_ok",
+            "tipo_usuario": "interno",
             "email": "rep_forms_ok@example.com",
             "groups": [],
             "es_representante_pwa": True,
@@ -123,6 +126,7 @@ def test_user_creation_form_assigns_mobile_rendicion_permission_with_checkbox(co
     form = UserCreationForm(
         data={
             "username": "rep_forms_rendicion",
+            "tipo_usuario": "interno",
             "email": "rep_forms_rendicion@example.com",
             "es_representante_pwa": True,
             "puede_gestionar_rendiciones_mobile": True,
@@ -143,6 +147,7 @@ def test_custom_user_change_form_deactivates_mobile_access(comedor):
     create_form = UserCreationForm(
         data={
             "username": "rep_edit",
+            "tipo_usuario": "interno",
             "email": "rep_edit@example.com",
             "es_representante_pwa": True,
             "tipo_asociacion_pwa": AccesoComedorPWA.TIPO_ASOCIACION_ORGANIZACION,
@@ -157,6 +162,7 @@ def test_custom_user_change_form_deactivates_mobile_access(comedor):
         instance=user,
         data={
             "username": user.username,
+            "tipo_usuario": "interno",
             "email": user.email,
             "password": "",
             "es_representante_pwa": False,
@@ -194,6 +200,7 @@ def test_custom_user_change_form_can_remove_mobile_rendicion_permission(comedor)
     create_form = UserCreationForm(
         data={
             "username": "rep_edit_rendicion",
+            "tipo_usuario": "interno",
             "email": "rep_edit_rendicion@example.com",
             "es_representante_pwa": True,
             "puede_gestionar_rendiciones_mobile": True,
@@ -210,6 +217,7 @@ def test_custom_user_change_form_can_remove_mobile_rendicion_permission(comedor)
         instance=user,
         data={
             "username": user.username,
+            "tipo_usuario": "interno",
             "email": user.email,
             "password": "",
             "es_representante_pwa": True,
@@ -234,6 +242,7 @@ def test_custom_user_change_form_allows_disabling_mobile_even_if_post_keeps_hidd
     create_form = UserCreationForm(
         data={
             "username": "rep_disable_hidden",
+            "tipo_usuario": "interno",
             "email": "rep_disable_hidden@example.com",
             "es_representante_pwa": True,
             "tipo_asociacion_pwa": AccesoComedorPWA.TIPO_ASOCIACION_ORGANIZACION,
@@ -248,6 +257,7 @@ def test_custom_user_change_form_allows_disabling_mobile_even_if_post_keeps_hidd
         instance=user,
         data={
             "username": user.username,
+            "tipo_usuario": "interno",
             "email": user.email,
             "password": "",
             "es_representante_pwa": False,
@@ -269,6 +279,7 @@ def test_custom_user_change_form_allows_space_association_without_organizations(
     create_form = UserCreationForm(
         data={
             "username": "rep_space_edit",
+            "tipo_usuario": "interno",
             "email": "rep_space_edit@example.com",
             "es_representante_pwa": True,
             "tipo_asociacion_pwa": AccesoComedorPWA.TIPO_ASOCIACION_ORGANIZACION,
@@ -283,6 +294,7 @@ def test_custom_user_change_form_allows_space_association_without_organizations(
         instance=user,
         data={
             "username": user.username,
+            "tipo_usuario": "interno",
             "email": user.email,
             "password": "",
             "es_representante_pwa": True,
@@ -314,6 +326,7 @@ def test_user_creation_form_allows_organization_plus_direct_space(
     form = UserCreationForm(
         data={
             "username": "rep_forms_mixed",
+            "tipo_usuario": "interno",
             "email": "rep_forms_mixed@example.com",
             "es_representante_pwa": True,
             "organizaciones_pwa": [comedor.organizacion_id],
@@ -355,6 +368,7 @@ def test_user_creation_form_allows_some_spaces_from_org_plus_external_space(
     form = UserCreationForm(
         data={
             "username": "rep_forms_partial_org",
+            "tipo_usuario": "interno",
             "email": "rep_forms_partial_org@example.com",
             "es_representante_pwa": True,
             "organizaciones_pwa": [comedor.organizacion_id],
@@ -402,6 +416,7 @@ def test_backoffice_authentication_form_rejects_mobile_user(comedor):
     create_form = UserCreationForm(
         data={
             "username": "rep_login_form",
+            "tipo_usuario": "interno",
             "email": "rep_login_form@example.com",
             "es_representante_pwa": True,
             "tipo_asociacion_pwa": AccesoComedorPWA.TIPO_ASOCIACION_ORGANIZACION,
@@ -416,6 +431,7 @@ def test_backoffice_authentication_form_rejects_mobile_user(comedor):
         request=None,
         data={
             "username": "rep_login_form",
+            "tipo_usuario": "interno",
             "password": create_form.generated_password,
         },
     )

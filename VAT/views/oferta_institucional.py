@@ -48,6 +48,7 @@ from VAT.services.access_scope import (
     filter_sesiones_queryset_for_user,
 )
 from VAT.services.sesion_comision_service.impl import SesionComisionService
+from VAT.services.tipo_alumno_service import anotar_tipo_alumno
 
 logger = logging.getLogger("django")
 
@@ -378,7 +379,7 @@ class ComisionDetailView(LoginRequiredMixin, DetailView):
             .select_related("ciudadano", "programa")
             .order_by("estado", "fecha_inscripcion")
         )
-        inscripciones = list(inscripciones_qs)
+        inscripciones = anotar_tipo_alumno(list(inscripciones_qs))
         context["inscripciones"] = [
             inscripcion
             for inscripcion in inscripciones
@@ -451,11 +452,13 @@ class AsistenciaSesionView(LoginRequiredMixin, TemplateView):
         return get_object_or_404(scoped_qs, pk=sesion_pk)
 
     def _inscripciones_activas(self, comision):
-        return list(
-            Inscripcion.objects.filter(
-                comision=comision,
-                estado__in=["inscripta", "validada_presencial"],
-            ).select_related("ciudadano")
+        return anotar_tipo_alumno(
+            list(
+                Inscripcion.objects.filter(
+                    comision=comision,
+                    estado__in=["inscripta", "validada_presencial"],
+                ).select_related("ciudadano")
+            )
         )
 
     def get_context_data(self, **kwargs):

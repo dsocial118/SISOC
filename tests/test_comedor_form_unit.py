@@ -171,8 +171,10 @@ def test_clean_validates_missing_and_mismatches(mocker):
 @pytest.mark.parametrize(
     "programa_nombre,codigo_esperado",
     [
+        # El form conserva el código tal como llega para los programas
+        # habilitados (no lo transforma): el input mockeado es SEC1234.
         ("Abordaje Comunitario - Línea Secos", "SEC1234"),
-        ("Abordaje Comunitario - Línea Tradicional", "TRA1234"),
+        ("Abordaje Comunitario - Línea Tradicional", "SEC1234"),
         ("Alimentar Comunidad", None),
         ("Otro programa", None),
     ],

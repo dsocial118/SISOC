@@ -52,6 +52,7 @@ from VAT.models import (
     PlanVersionCurricular,
     SesionComision,
     Voucher,
+    VoucherLog,
     VoucherParametria,
     ProfesorCentro,
     ActaCierreComision,
@@ -8212,6 +8213,7 @@ def test_comision_curso_exporta_nomina_preinscriptos_en_excel(client, vat_geo_da
         "DNI / CUIL",
         "Fecha de Nacimiento",
         "G\u00e9nero",
+        "Tipo de alumno",
         "Comisi\u00f3n",
         "Curso",
         "Centro de Formaci\u00f3n",
@@ -8338,7 +8340,8 @@ def test_comision_curso_exporta_nomina_inscriptos_solo_estado_inscripta(
     assert len(rows) == 1
     assert rows[0][0] == "Perez"
     assert rows[0][1] == "Ana"
-    assert rows[0][8] == "Inscripta"
+    assert rows[0][5] == "Sin Plan"
+    assert rows[0][9] == "Inscripta"
 
 
 @pytest.mark.django_db
@@ -11230,6 +11233,29 @@ def _inscripcion_lote(ctx, *, documento, estado="pre_inscripta", comision=None):
     )
 
 
+def _crear_voucher_lote(ctx, inscripcion, *, cantidad_usada, cantidad_disponible):
+    parametria = VoucherParametria.objects.create(
+        nombre=f"Voucher lote {inscripcion.pk}",
+        programa=ctx.programa,
+        cantidad_inicial=5,
+        fecha_vencimiento=timezone.localdate() + timedelta(days=30),
+        creado_por=ctx.user,
+        activa=True,
+    )
+    ctx.curso.voucher_parametrias.add(parametria)
+    return Voucher.objects.create(
+        parametria=parametria,
+        ciudadano=inscripcion.ciudadano,
+        programa=ctx.programa,
+        cantidad_inicial=5,
+        cantidad_usada=cantidad_usada,
+        cantidad_disponible=cantidad_disponible,
+        fecha_vencimiento=timezone.localdate() + timedelta(days=30),
+        estado="activo",
+        asignado_por=ctx.user,
+    )
+
+
 def _url_lote(comision):
     return reverse(
         "vat_inscripcion_curso_cambiar_estado_lote", kwargs={"pk": comision.pk}
@@ -11293,6 +11319,90 @@ def test_lote_rechaza_varias_inscripciones_en_una_sola_accion(
     dos.refresh_from_db()
     assert uno.estado == "rechazada"
     assert dos.estado == "rechazada"
+
+
+@pytest.mark.django_db
+def test_lote_reintegra_voucher_al_rechazar_y_no_lo_debita_dos_veces(
+    client, vat_comision_lote
+):
+    """Rechazar devuelve el débito vigente y reaceptar vuelve a debitar una vez."""
+    ctx = vat_comision_lote
+    ctx.curso.usa_voucher = True
+    ctx.curso.costo_creditos = 2
+    ctx.curso.save(update_fields=["usa_voucher", "costo_creditos"])
+    inscripcion = _inscripcion_lote(ctx, documento=43000012, estado="inscripta")
+    voucher = _crear_voucher_lote(
+        ctx,
+        inscripcion,
+        cantidad_usada=2,
+        cantidad_disponible=3,
+    )
+    VoucherLog.objects.create(
+        voucher=voucher,
+        tipo_evento="uso",
+        cantidad_afectada=-2,
+        usuario=ctx.user,
+        detalles={"inscripcion_id": inscripcion.pk},
+    )
+
+    client.force_login(ctx.user)
+    client.post(
+        _url_lote(ctx.comision),
+        data={"estado": "rechazada", "inscripciones": [str(inscripcion.pk)]},
+    )
+    voucher.refresh_from_db()
+    assert voucher.cantidad_disponible == 5
+    assert voucher.cantidad_usada == 0
+    assert VoucherLog.objects.filter(
+        voucher=voucher,
+        tipo_evento="recarga",
+        detalles__inscripcion_id=inscripcion.pk,
+    ).exists()
+
+    client.post(
+        _url_lote(ctx.comision),
+        data={"estado": "inscripta", "inscripciones": [str(inscripcion.pk)]},
+    )
+    voucher.refresh_from_db()
+    assert voucher.cantidad_disponible == 3
+    assert voucher.cantidad_usada == 2
+
+
+@pytest.mark.django_db
+def test_lote_reacepta_rechazada_con_debito_historico_sin_cobrar_de_nuevo(
+    client, vat_comision_lote
+):
+    """Un rechazo anterior sin compensación conserva su débito original."""
+    ctx = vat_comision_lote
+    ctx.curso.usa_voucher = True
+    ctx.curso.costo_creditos = 2
+    ctx.curso.save(update_fields=["usa_voucher", "costo_creditos"])
+    inscripcion = _inscripcion_lote(ctx, documento=43000013, estado="rechazada")
+    voucher = _crear_voucher_lote(
+        ctx,
+        inscripcion,
+        cantidad_usada=2,
+        cantidad_disponible=3,
+    )
+    VoucherLog.objects.create(
+        voucher=voucher,
+        tipo_evento="uso",
+        cantidad_afectada=-2,
+        usuario=ctx.user,
+        detalles={"inscripcion_id": inscripcion.pk},
+    )
+
+    client.force_login(ctx.user)
+    client.post(
+        _url_lote(ctx.comision),
+        data={"estado": "inscripta", "inscripciones": [str(inscripcion.pk)]},
+    )
+
+    inscripcion.refresh_from_db()
+    voucher.refresh_from_db()
+    assert inscripcion.estado == "inscripta"
+    assert voucher.cantidad_disponible == 3
+    assert voucher.cantidad_usada == 2
 
 
 @pytest.mark.django_db
@@ -11708,3 +11818,40 @@ def test_resultados_profesor_no_numerico_no_rompe_con_500(
     assert not ActaCierreComision.objects.filter(comision_curso=ctx.comision).exists()
     mensajes = _mensajes_de(response).lower()
     assert "profesor a cargo" in mensajes
+
+
+@pytest.mark.django_db
+def test_cue_valida_prefijo_en_edicion_con_provincia_oculta(
+    vat_geo_data, vat_cue_referente
+):
+    """
+    En edicion `provincia` va oculta y `required=False` (hide_provincia). Si no
+    llega en el POST, el prefijo debe validarse igual contra la provincia de la
+    instancia, no saltearse en silencio.
+    """
+    provincia, municipio, localidad = vat_geo_data
+    propio = _centro_existente_para_cue(
+        vat_cue_referente, provincia, municipio, localidad, "060166500"
+    )
+    data = _build_centro_payload(
+        vat_cue_referente,
+        provincia,
+        municipio,
+        localidad,
+        codigo="500144900",  # prefijo Mendoza sobre un centro de Buenos Aires
+        referentes=[str(vat_cue_referente.pk)],
+    )
+    data.pop("provincia", None)  # el POST no la trae
+
+    form = CentroAltaForm(
+        data=data,
+        instance=propio,
+        actor=vat_cue_referente,
+        hide_provincia=True,
+        provincia_inicial=propio.provincia,
+    )
+
+    assert not form.is_valid()
+    assert form.errors["codigo"] == [
+        "Los primeros 2 dígitos del CUE no corresponden a la provincia seleccionada."
+    ]
