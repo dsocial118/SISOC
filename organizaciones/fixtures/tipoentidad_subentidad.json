@@ -15,14 +15,6 @@
     "fields": {"nombre": "Asociación de Hecho", "descripcion": null}
   },
   {
-    "model": "organizaciones.tipoentidad",
-    "pk": 4,
-    "fields": {
-      "nombre": "Simple Asociación (art. 187 CCCN)",
-      "descripcion": null
-    }
-  },
-  {
     "model": "organizaciones.subtipoentidad",
     "pk": 1,
     "fields": {"nombre": "Asociación Civil", "activo": true, "tipo_entidad": 1}
@@ -98,5 +90,14 @@
     "model": "organizaciones.subtipoentidad",
     "pk": 13,
     "fields": {"nombre": "Cuasiparroquia", "activo": true, "tipo_entidad": 2}
+  },
+  {
+    "model": "organizaciones.subtipoentidad",
+    "pk": 14,
+    "fields": {
+      "nombre": "Simple Asociación (art. 187 CCCN)",
+      "activo": true,
+      "tipo_entidad": 1
+    }
   }
 ]
