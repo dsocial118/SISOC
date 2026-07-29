@@ -6,7 +6,7 @@ from django.utils import timezone
 from rest_framework.authtoken.models import Token
 from rest_framework.test import APIClient
 
-from comedores.models import Comedor
+from comedores.models import Comedor, Programas
 from core.models import Provincia
 from organizaciones.models import Organizacion
 from pwa.models import PushSubscriptionPWA
@@ -50,22 +50,26 @@ def _grant_mobile_rendicion_permission(user):
 def espacios_push(db):
     provincia = Provincia.objects.create(nombre="Buenos Aires")
     organizacion = Organizacion.objects.create(nombre="Organizacion Push")
+    programa = Programas.objects.create(nombre="Abordaje Comunitario")
     espacio_1 = Comedor.objects.create(
         nombre="Espacio Push Uno",
         provincia=provincia,
         organizacion=organizacion,
+        programa=programa,
         codigo_de_proyecto="PROY-PUSH",
     )
     espacio_2 = Comedor.objects.create(
         nombre="Espacio Push Dos",
         provincia=provincia,
         organizacion=organizacion,
+        programa=programa,
         codigo_de_proyecto="PROY-PUSH",
     )
     espacio_3 = Comedor.objects.create(
         nombre="Espacio Push Tres",
         provincia=provincia,
         organizacion=organizacion,
+        programa=programa,
         codigo_de_proyecto="PROY-OTRO",
     )
     return espacio_1, espacio_2, espacio_3

@@ -3,13 +3,15 @@ from datetime import date
 import pytest
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Permission
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.utils import timezone
 from rest_framework.authtoken.models import Token
 from rest_framework.test import APIClient
 
 from admisiones.models.admisiones import Admision
 from ciudadanos.models import Ciudadano
-from comedores.models import Comedor, Nomina
+from comedores.models import Comedor, Nomina, Programas
+from comedores.views.nomina import _get_asistencia_nomina_context
 from core.models import Dia, Provincia, Sexo
 from pwa.models import (
     ActividadEspacioPWA,
@@ -34,7 +36,12 @@ def _grant_pwa_permission(user, codename):
 @pytest.fixture
 def comedor(db):
     provincia = Provincia.objects.create(nombre="Buenos Aires")
-    return Comedor.objects.create(nombre="Comedor Nómina API", provincia=provincia)
+    programa = Programas.objects.create(nombre="Abordaje Comunitario")
+    return Comedor.objects.create(
+        nombre="Comedor Nómina API",
+        provincia=provincia,
+        programa=programa,
+    )
 
 
 @pytest.fixture
@@ -181,6 +188,22 @@ def test_nomina_list_stats_and_tabs(comedor, admision, sexo_f, sexo_m, dia):
     assert response_formacion.status_code == 200
     assert len(response_formacion.data["results"]) == 1
     assert response_formacion.data["results"][0]["apellido"] == "Lopez"
+
+
+@pytest.mark.django_db
+def test_nomina_rechaza_comedor_cuando_se_quita_el_programa(comedor, admision):
+    representante = _create_representante(
+        comedor=comedor,
+        username="rep_nomina_sin_programa",
+    )
+    client = _auth_client_for_user(representante)
+
+    comedor.programa = None
+    comedor.save(update_fields=["programa"])
+
+    response = client.get(f"/api/pwa/espacios/{comedor.id}/nomina/")
+
+    assert response.status_code == 403
 
 
 @pytest.mark.django_db
@@ -607,6 +630,102 @@ def test_nomina_bulk_attendance_alimentaria_syncs_current_period(
     )
     assert repetida.status_code == 400
     assert "periodo" in repetida.data["detail"]
+
+
+@pytest.mark.django_db
+def test_historial_asistencia_expone_pdf_en_api_y_contexto_web(
+    comedor, admision, sexo_f, settings, tmp_path
+):
+    settings.MEDIA_ROOT = str(tmp_path)
+    representante = _create_representante(comedor=comedor, username="rep_historial_pdf")
+    client = _auth_client_for_user(representante)
+    ciudadano = Ciudadano.objects.create(
+        nombre="Ana",
+        apellido="Pérez",
+        documento=30111222,
+        fecha_nacimiento="1990-01-01",
+        sexo=sexo_f,
+    )
+    nomina = Nomina.objects.create(
+        admision=admision,
+        ciudadano=ciudadano,
+        estado=Nomina.ESTADO_ACTIVO,
+    )
+    NominaEspacioPWA.objects.create(
+        nomina=nomina,
+        asistencia_alimentaria=True,
+        asistencia_actividades=True,
+        activo=True,
+    )
+    periodo = date(2026, 5, 1)
+    RegistroAsistenciaNominaPWA.objects.create(
+        nomina=nomina,
+        periodo_referencia=periodo,
+        tomado_por=representante,
+    )
+    documento = NominaDestinatariosDocumentoPWA.objects.create(
+        comedor=comedor,
+        periodo_referencia=periodo,
+        archivo=SimpleUploadedFile(
+            "nomina-mayo.pdf",
+            b"%PDF-1.4 historial",
+            content_type="application/pdf",
+        ),
+        cantidad_destinatarios=1,
+        generado_por=representante,
+    )
+    documento_actualizado = NominaDestinatariosDocumentoPWA.objects.create(
+        comedor=comedor,
+        periodo_referencia=periodo,
+        version=2,
+        archivo=SimpleUploadedFile(
+            "nomina-mayo-v2.pdf",
+            b"%PDF-1.4 historial actualizado",
+            content_type="application/pdf",
+        ),
+        cantidad_destinatarios=1,
+        generado_por=representante,
+    )
+
+    list_response = client.get(
+        f"/api/pwa/espacios/{comedor.id}/nomina/asistencias-periodos/",
+        {"tab": "alimentaria"},
+    )
+    assert list_response.status_code == 200
+    item = list_response.data["results"][0]
+    assert item["nomina_destinatarios_documento"]["id"] == documento_actualizado.id
+    assert item["nomina_destinatarios_documento"]["archivo_url"].endswith(
+        "/nomina-mayo-v2.pdf"
+    )
+
+    detail_response = client.get(
+        f"/api/pwa/espacios/{comedor.id}/nomina/asistencias-periodo/",
+        {"tab": "alimentaria", "periodo": "2026-05"},
+    )
+    assert detail_response.status_code == 200
+    assert (
+        detail_response.data["nomina_destinatarios_documento"]["id"]
+        == documento_actualizado.id
+    )
+
+    formacion_response = client.get(
+        f"/api/pwa/espacios/{comedor.id}/nomina/asistencias-periodos/",
+        {"tab": "formacion"},
+    )
+    assert formacion_response.status_code == 200
+    assert (
+        formacion_response.data["results"][0]["nomina_destinatarios_documento"] is None
+    )
+
+    web_context = _get_asistencia_nomina_context(
+        type("Request", (), {"GET": {}})(),
+        admision_id=admision.id,
+        comedor_id=comedor.id,
+    )
+    assert (
+        web_context["asistencia_periodos"][0]["documento_nomina"]
+        == documento_actualizado
+    )
 
 
 @pytest.mark.django_db

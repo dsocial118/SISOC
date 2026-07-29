@@ -86,7 +86,7 @@ class DocumentacionAdjunta(SoftDeleteModelMixin, models.Model):
             "codigo": CATEGORIA_FORMULARIO_III_ALIMENTARIO,
             "label": "Formulario III - Desagregado por Facturas Prestación Alimentaria",
             "required": True,
-            "multiple": False,
+            "multiple": True,
             "order": 3,
         },
         {
@@ -94,7 +94,7 @@ class DocumentacionAdjunta(SoftDeleteModelMixin, models.Model):
             "label": "Formulario III - Desagregado por Facturas SIPH",
             "description": "Este documento es obligatorio si presentó actividades para este Convenio",
             "required": False,
-            "multiple": False,
+            "multiple": True,
             "order": 4,
         },
         {
@@ -136,7 +136,7 @@ class DocumentacionAdjunta(SoftDeleteModelMixin, models.Model):
         {
             "codigo": CATEGORIA_COMPROBANTES,
             "label": "Comprobante/s",
-            "required": True,
+            "required": False,
             "multiple": True,
             "order": 10,
         },

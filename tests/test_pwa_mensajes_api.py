@@ -16,7 +16,7 @@ from comunicados.models import (
     SubtipoComunicado,
     TipoComunicado,
 )
-from comedores.models import Comedor
+from comedores.models import Comedor, Programas
 from core.models import Provincia
 from organizaciones.models import Organizacion
 from pwa.models import AuditoriaOperacionPWA, LecturaMensajePWA
@@ -28,11 +28,16 @@ from users.models import AccesoComedorPWA
 @pytest.fixture
 def espacios(db):
     provincia = Provincia.objects.create(nombre="Buenos Aires")
+    programa = Programas.objects.create(nombre="Abordaje Comunitario")
     espacio_1 = Comedor.objects.create(
-        nombre="Espacio Mensajes Uno", provincia=provincia
+        nombre="Espacio Mensajes Uno",
+        provincia=provincia,
+        programa=programa,
     )
     espacio_2 = Comedor.objects.create(
-        nombre="Espacio Mensajes Dos", provincia=provincia
+        nombre="Espacio Mensajes Dos",
+        provincia=provincia,
+        programa=programa,
     )
     return espacio_1, espacio_2
 

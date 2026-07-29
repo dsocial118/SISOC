@@ -1099,7 +1099,7 @@ class ComedorListView(LoginRequiredMixin, ListView):
             {
                 # Breadcrumb
                 "breadcrumb_items": [
-                    {"text": "Comedores", "url": reverse("comedores")},
+                    {"text": "Espacios Comunitarios", "url": reverse("comedores")},
                     {"text": "Listar", "active": True},
                 ],
                 # Barra de busqueda

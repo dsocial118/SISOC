@@ -840,6 +840,7 @@
                                         <tr>
                                             <th>Nombre</th>
                                             <th>Tipo</th>
+                                            <th>Programa</th>
                                             <th>Ubicación</th>
                                             <th>Dirección</th>
                                             <th>Referente</th>
@@ -856,6 +857,7 @@
                                                               text-decoration: underline">{{ comedor.nombre }}</a>
                                                 </td>
                                                 <td>{{ comedor.tipocomedor.nombre|default:'-' }}</td>
+                                                <td>{{ comedor.programa.nombre|default:'-' }}</td>
                                                 <td>
                                                     <div>
                                                         <div style="font-size: 0.9rem;">{{ comedor.provincia.nombre|default:'-' }}</div>

@@ -1,4 +1,6 @@
 from django.contrib import admin
+
+from core.admin_import_export import BaseExportAdmin
 from admisiones.models.admisiones import (
     EstadoAdmision,
     TipoConvenio,
@@ -13,8 +15,22 @@ from admisiones.models.admisiones import (
     DocumentosExpediente,
 )
 
-admin.site.register(EstadoAdmision)
-admin.site.register(TipoConvenio)
+
+# EstadoAdmision y TipoConvenio se resuelven por nombre dentro de los servicios
+# de admisiones (ej. EstadoAdmision.objects.get(nombre=...)): renombrarlos en
+# lote rompería el flujo de estados, por eso solo se habilita exportación.
+@admin.register(EstadoAdmision)
+class EstadoAdmisionAdmin(BaseExportAdmin):
+    list_display = ("id", "nombre")
+    search_fields = ("nombre",)
+
+
+@admin.register(TipoConvenio)
+class TipoConvenioAdmin(BaseExportAdmin):
+    list_display = ("id", "nombre")
+    search_fields = ("nombre",)
+
+
 admin.site.register(Admision)
 admin.site.register(Documentacion)
 admin.site.register(ArchivoAdmision)
