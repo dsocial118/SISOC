@@ -593,66 +593,66 @@
 
         <!-- 6) SEGUIMIENTO: INTERVENCIONES / OBSERVACIONES -->
         {% if cdi_intervenciones_visible %}
-        <div class="cdf-card">
-            <div class="cdf-card-head">
-                <i class="bi bi-clipboard-data"></i>
-                <span>Seguimiento</span>
-            </div>
-            <ul class="nav cdf-tabs"
-                id="intervencionesObservacionesTabs"
-                role="tablist">
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link active"
-                            id="intervenciones-tab"
-                            data-bs-toggle="tab"
-                            data-bs-target="#intervenciones-pane"
-                            type="button"
-                            role="tab"
-                            aria-controls="intervenciones-pane"
-                            aria-selected="true">Intervenciones</button>
-                </li>
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link"
-                            id="observaciones-tab"
-                            data-bs-toggle="tab"
-                            data-bs-target="#observaciones-pane"
-                            type="button"
-                            role="tab"
-                            aria-controls="observaciones-pane"
-                            aria-selected="false">Observaciones</button>
-                </li>
-            </ul>
-            <div class="tab-content" id="intervencionesObservacionesContent">
-                <div class="tab-pane fade show active"
-                     id="intervenciones-pane"
-                     role="tabpanel"
-                     aria-labelledby="intervenciones-tab">
-                    <div class="cdf-card-body">
-                        <div class="d-flex mb-2">
-                            <button type="button"
-                                    class="cdf-btn cdf-btn--primary ms-auto"
-                                    data-bs-toggle="modal"
-                                    data-bs-target="#modalIntervencion">Agregar intervención</button>
+            <div class="cdf-card">
+                <div class="cdf-card-head">
+                    <i class="bi bi-clipboard-data"></i>
+                    <span>Seguimiento</span>
+                </div>
+                <ul class="nav cdf-tabs"
+                    id="intervencionesObservacionesTabs"
+                    role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active"
+                                id="intervenciones-tab"
+                                data-bs-toggle="tab"
+                                data-bs-target="#intervenciones-pane"
+                                type="button"
+                                role="tab"
+                                aria-controls="intervenciones-pane"
+                                aria-selected="true">Intervenciones</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link"
+                                id="observaciones-tab"
+                                data-bs-toggle="tab"
+                                data-bs-target="#observaciones-pane"
+                                type="button"
+                                role="tab"
+                                aria-controls="observaciones-pane"
+                                aria-selected="false">Observaciones</button>
+                    </li>
+                </ul>
+                <div class="tab-content" id="intervencionesObservacionesContent">
+                    <div class="tab-pane fade show active"
+                         id="intervenciones-pane"
+                         role="tabpanel"
+                         aria-labelledby="intervenciones-tab">
+                        <div class="cdf-card-body">
+                            <div class="d-flex mb-2">
+                                <button type="button"
+                                        class="cdf-btn cdf-btn--primary ms-auto"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#modalIntervencion">Agregar intervención</button>
+                            </div>
+                            {% include 'components/data_table.html' with headers=intervenciones_headers items=intervenciones_items custom_cells=True empty_message='Aún no se han registrado intervenciones.' table_class='table-sm table-compact' include_pagination=True is_paginated=intervenciones_is_paginated page_obj=intervenciones_page_obj page_range=intervenciones_page_range page_param='intervenciones_page' %}
                         </div>
-                        {% include 'components/data_table.html' with headers=intervenciones_headers items=intervenciones_items custom_cells=True empty_message='Aún no se han registrado intervenciones.' table_class='table-sm table-compact' include_pagination=True is_paginated=intervenciones_is_paginated page_obj=intervenciones_page_obj page_range=intervenciones_page_range page_param='intervenciones_page' %}
+                    </div>
+                    <div class="tab-pane fade"
+                         id="observaciones-pane"
+                         role="tabpanel"
+                         aria-labelledby="observaciones-tab">
+                        <div class="cdf-card-body">
+                            <div class="d-flex mb-2">
+                                <button type="button"
+                                        class="cdf-btn cdf-btn--primary ms-auto"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#modalObservacion">Agregar observación</button>
+                            </div>
+                            {% include 'components/data_table.html' with headers=observaciones_headers items=observaciones_items custom_cells=True empty_message='Sin observaciones registradas.' table_class='table-sm table-compact' include_pagination=True is_paginated=observaciones_is_paginated page_obj=observaciones_page_obj page_range=observaciones_page_range page_param='observaciones_page' %}
+                        </div>
                     </div>
                 </div>
-                <div class="tab-pane fade"
-                     id="observaciones-pane"
-                     role="tabpanel"
-                     aria-labelledby="observaciones-tab">
-                    <div class="cdf-card-body">
-                        <div class="d-flex mb-2">
-                            <button type="button"
-                                    class="cdf-btn cdf-btn--primary ms-auto"
-                                    data-bs-toggle="modal"
-                                    data-bs-target="#modalObservacion">Agregar observación</button>
-                        </div>
-                        {% include 'components/data_table.html' with headers=observaciones_headers items=observaciones_items custom_cells=True empty_message='Sin observaciones registradas.' table_class='table-sm table-compact' include_pagination=True is_paginated=observaciones_is_paginated page_obj=observaciones_page_obj page_range=observaciones_page_range page_param='observaciones_page' %}
-                    </div>
-                </div>
             </div>
-        </div>
         {% else %}
             <div class="cdf-card">
                 <div class="cdf-card-head">
@@ -673,88 +673,92 @@
 
         <!-- 7) MODALES -->
         {% if cdi_intervenciones_visible %}
-        <div class="modal fade"
-             id="modalIntervencion"
-             tabindex="-1"
-             aria-labelledby="modalIntervencionLabel"
-             aria-hidden="true">
-            <div class="modal-dialog modal-lg modal-dialog-centered">
-                <div class="modal-content">
-                    <form method="POST"
-                          action="{% url 'centrodeinfancia_intervencion_crear' centro.id %}"
-                          enctype="multipart/form-data"
-                          id="intervencionModalForm">
-                        {% csrf_token %}
-                        <input type="hidden"
-                               name="next"
-                               value="{% url 'centrodeinfancia_detalle' pk=centro.id %}" />
-                        <div class="modal-header">
-                            <h5 class="modal-title" id="modalIntervencionLabel">Nueva intervención</h5>
-                            <button type="button"
-                                    class="btn-close btn-close-white"
-                                    data-bs-dismiss="modal"
-                                    aria-label="Close"></button>
-                        </div>
-                        <div class="modal-body">
-                            <div class="row g-3">
-                                <div class="col-md-6">
-                                    <label for="{{ intervencion_form.fecha.id_for_label }}" class="form-label">{{ intervencion_form.fecha.label }}</label>
-                                    {{ intervencion_form.fecha }}
-                                    <div id="fecha-error-intervencion" class="invalid-feedback d-none"></div>
-                                </div>
-                                <div class="col-md-6">
-                                    <label for="{{ intervencion_form.tipo_intervencion.id_for_label }}"
-                                           class="form-label">{{ intervencion_form.tipo_intervencion.label }}</label>
-                                    {{ intervencion_form.tipo_intervencion }}
-                                </div>
-                                <div class="col-md-6">
-                                    <label for="{{ intervencion_form.subintervencion.id_for_label }}"
-                                           class="form-label">{{ intervencion_form.subintervencion.label }}</label>
-                                    {{ intervencion_form.subintervencion }}
-                                </div>
-                                {% if intervencion_form.destinatario.is_hidden %}
-                                    <div class="col-md-6 d-none">{{ intervencion_form.destinatario }}</div>
-                                {% else %}
+            <div class="modal fade"
+                 id="modalIntervencion"
+                 tabindex="-1"
+                 aria-labelledby="modalIntervencionLabel"
+                 aria-hidden="true">
+                <div class="modal-dialog modal-lg modal-dialog-centered">
+                    <div class="modal-content">
+                        <form method="POST"
+                              action="{% url 'centrodeinfancia_intervencion_crear' centro.id %}"
+                              enctype="multipart/form-data"
+                              id="intervencionModalForm">
+                            {% csrf_token %}
+                            <input type="hidden"
+                                   name="next"
+                                   value="{% url 'centrodeinfancia_detalle' pk=centro.id %}" />
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="modalIntervencionLabel">Nueva intervención</h5>
+                                <button type="button"
+                                        class="btn-close btn-close-white"
+                                        data-bs-dismiss="modal"
+                                        aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="row g-3">
                                     <div class="col-md-6">
-                                        <label for="{{ intervencion_form.destinatario.id_for_label }}"
-                                               class="form-label">{{ intervencion_form.destinatario.label }}</label>
-                                        {{ intervencion_form.destinatario }}
+                                        <label for="{{ intervencion_form.fecha.id_for_label }}" class="form-label">{{ intervencion_form.fecha.label }}</label>
+                                        {{ intervencion_form.fecha }}
+                                        <div id="fecha-error-intervencion" class="invalid-feedback d-none"></div>
                                     </div>
-                                {% endif %}
-                                <div class="col-md-6">
-                                    <label for="{{ intervencion_form.forma_contacto.id_for_label }}"
-                                           class="form-label">{{ intervencion_form.forma_contacto.label }}</label>
-                                    {{ intervencion_form.forma_contacto }}
-                                </div>
-                                <div class="col-12">
-                                    <label for="{{ intervencion_form.observaciones.id_for_label }}"
-                                           class="form-label">{{ intervencion_form.observaciones.label }}</label>
-                                    {{ intervencion_form.observaciones }}
-                                </div>
-                                <div class="col-12">
-                                    <div class="form-check">
-                                        {{ intervencion_form.tiene_documentacion }}
-                                        <label class="form-check-label"
-                                               for="{{ intervencion_form.tiene_documentacion.id_for_label }}">
-                                            {{ intervencion_form.tiene_documentacion.label }}
+                                    <div class="col-md-6">
+                                        <label for="{{ intervencion_form.tipo_intervencion.id_for_label }}"
+                                               class="form-label">
+                                            {{ intervencion_form.tipo_intervencion.label }}
                                         </label>
+                                        {{ intervencion_form.tipo_intervencion }}
                                     </div>
-                                </div>
-                                <div class="col-12 d-none" id="documentacion-field-modal">
-                                    <label for="{{ intervencion_form.documentacion.id_for_label }}"
-                                           class="form-label">{{ intervencion_form.documentacion.label }}</label>
-                                    {{ intervencion_form.documentacion }}
+                                    <div class="col-md-6">
+                                        <label for="{{ intervencion_form.subintervencion.id_for_label }}"
+                                               class="form-label">{{ intervencion_form.subintervencion.label }}</label>
+                                        {{ intervencion_form.subintervencion }}
+                                    </div>
+                                    {% if intervencion_form.destinatario.is_hidden %}
+                                        <div class="col-md-6 d-none">{{ intervencion_form.destinatario }}</div>
+                                    {% else %}
+                                        <div class="col-md-6">
+                                            <label for="{{ intervencion_form.destinatario.id_for_label }}"
+                                                   class="form-label">
+                                                {{ intervencion_form.destinatario.label }}
+                                            </label>
+                                            {{ intervencion_form.destinatario }}
+                                        </div>
+                                    {% endif %}
+                                    <div class="col-md-6">
+                                        <label for="{{ intervencion_form.forma_contacto.id_for_label }}"
+                                               class="form-label">{{ intervencion_form.forma_contacto.label }}</label>
+                                        {{ intervencion_form.forma_contacto }}
+                                    </div>
+                                    <div class="col-12">
+                                        <label for="{{ intervencion_form.observaciones.id_for_label }}"
+                                               class="form-label">{{ intervencion_form.observaciones.label }}</label>
+                                        {{ intervencion_form.observaciones }}
+                                    </div>
+                                    <div class="col-12">
+                                        <div class="form-check">
+                                            {{ intervencion_form.tiene_documentacion }}
+                                            <label class="form-check-label"
+                                                   for="{{ intervencion_form.tiene_documentacion.id_for_label }}">
+                                                {{ intervencion_form.tiene_documentacion.label }}
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="col-12 d-none" id="documentacion-field-modal">
+                                        <label for="{{ intervencion_form.documentacion.id_for_label }}"
+                                               class="form-label">{{ intervencion_form.documentacion.label }}</label>
+                                        {{ intervencion_form.documentacion }}
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                            <button type="submit" class="btn btn-primary">Guardar intervención</button>
-                        </div>
-                    </form>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                <button type="submit" class="btn btn-primary">Guardar intervención</button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
             </div>
-        </div>
         {% endif %}
 
         {% if puede_eliminar_trabajadores %}

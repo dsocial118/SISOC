@@ -710,10 +710,9 @@ class CentroDeInfanciaDetailView(LoginRequiredMixin, DetailView):
             context["tipo_intervencion_programas_json"] = json.dumps(tipo_programas_map)
             context["tipo_intervencion_programa_aliases_json"] = json.dumps(alias_list)
         context.update(_build_trabajadores_context(self.request, self.object))
-        context["puede_tomar_asistencia_nomina"] = (
-            context["cdi_asistencia_nomina_visible"]
-            and self.request.user.has_perm("centrodeinfancia.change_centrodeinfancia")
-        )
+        context["puede_tomar_asistencia_nomina"] = context[
+            "cdi_asistencia_nomina_visible"
+        ] and self.request.user.has_perm("centrodeinfancia.change_centrodeinfancia")
         context["puede_generar_usuario_cdi"] = puede_generar_usuario_cdi(
             self.request.user, self.object
         )
