@@ -11708,3 +11708,40 @@ def test_resultados_profesor_no_numerico_no_rompe_con_500(
     assert not ActaCierreComision.objects.filter(comision_curso=ctx.comision).exists()
     mensajes = _mensajes_de(response).lower()
     assert "profesor a cargo" in mensajes
+
+
+@pytest.mark.django_db
+def test_cue_valida_prefijo_en_edicion_con_provincia_oculta(
+    vat_geo_data, vat_cue_referente
+):
+    """
+    En edicion `provincia` va oculta y `required=False` (hide_provincia). Si no
+    llega en el POST, el prefijo debe validarse igual contra la provincia de la
+    instancia, no saltearse en silencio.
+    """
+    provincia, municipio, localidad = vat_geo_data
+    propio = _centro_existente_para_cue(
+        vat_cue_referente, provincia, municipio, localidad, "060166500"
+    )
+    data = _build_centro_payload(
+        vat_cue_referente,
+        provincia,
+        municipio,
+        localidad,
+        codigo="500144900",  # prefijo Mendoza sobre un centro de Buenos Aires
+        referentes=[str(vat_cue_referente.pk)],
+    )
+    data.pop("provincia", None)  # el POST no la trae
+
+    form = CentroAltaForm(
+        data=data,
+        instance=propio,
+        actor=vat_cue_referente,
+        hide_provincia=True,
+        provincia_inicial=propio.provincia,
+    )
+
+    assert not form.is_valid()
+    assert form.errors["codigo"] == [
+        "Los primeros 2 dígitos del CUE no corresponden a la provincia seleccionada."
+    ]

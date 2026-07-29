@@ -671,9 +671,17 @@ class CentroForm(forms.ModelForm):
         # El prefijo se valida acá porque es cross-field: necesita `provincia`,
         # que se limpia después de `codigo`. Si `codigo` ya falló, no está en
         # cleaned_data y no se re-reporta.
+        #
+        # Fallback a la instancia: en edición `provincia` va oculta y
+        # `required=False` (ver `hide_provincia`), así que si no llega en el POST
+        # quedaría en None y la validación de prefijo se saltearía en silencio.
+        # La provincia del centro que se está editando es la fuente correcta.
+        provincia = cleaned_data.get("provincia") or getattr(
+            self.instance, "provincia", None
+        )
         error_prefijo = _validar_prefijo_cue(
             cleaned_data.get("codigo"),
-            cleaned_data.get("provincia"),
+            provincia,
         )
         if error_prefijo:
             self.add_error("codigo", error_prefijo)
