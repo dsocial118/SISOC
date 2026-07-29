@@ -695,6 +695,13 @@ class UserCreationForm(
     forms.ModelForm,
 ):
     password = forms.CharField(widget=forms.PasswordInput, label="Contraseña")
+    dni = forms.CharField(max_length=16, required=False, label="DNI")
+    cuil = forms.CharField(max_length=16, required=False, label="CUIL")
+    tipo_usuario = forms.ChoiceField(
+        choices=Profile.TipoUsuario.choices,
+        widget=forms.RadioSelect,
+        label="Tipo de usuario",
+    )
     groups = forms.ModelMultipleChoiceField(
         queryset=Group.objects.all(),
         required=False,
@@ -747,6 +754,9 @@ class UserCreationForm(
             "username",
             "email",
             "password",
+            "dni",
+            "cuil",
+            "tipo_usuario",
             "groups",
             "user_permissions",
             "es_usuario_provincial",
@@ -824,6 +834,9 @@ class UserCreationForm(
         profile.es_usuario_provincial = self.cleaned_data.get(
             "es_usuario_provincial", False
         )
+        profile.dni = self.cleaned_data.get("dni", "")
+        profile.cuil = self.cleaned_data.get("cuil", "")
+        profile.tipo_usuario = self.cleaned_data["tipo_usuario"]
         profile.provincia = None
         profile.es_coordinador = self.cleaned_data.get("es_coordinador", False)
         profile.rol = self.cleaned_data.get("rol")
@@ -885,6 +898,13 @@ class CustomUserChangeForm(
         label="Contraseña (dejar en blanco para no cambiarla)",
         required=False,
     )
+    dni = forms.CharField(max_length=16, required=False, label="DNI")
+    cuil = forms.CharField(max_length=16, required=False, label="CUIL")
+    tipo_usuario = forms.ChoiceField(
+        choices=Profile.TipoUsuario.choices,
+        widget=forms.RadioSelect,
+        label="Tipo de usuario",
+    )
     groups = forms.ModelMultipleChoiceField(
         queryset=Group.objects.all(),
         required=False,
@@ -937,6 +957,9 @@ class CustomUserChangeForm(
             "username",
             "email",
             "password",
+            "dni",
+            "cuil",
+            "tipo_usuario",
             "groups",
             "user_permissions",
             "es_usuario_provincial",
@@ -967,6 +990,9 @@ class CustomUserChangeForm(
 
         self._setup_territorial_scope_fields(prof)
         if prof:
+            self.fields["dni"].initial = prof.dni
+            self.fields["cuil"].initial = prof.cuil
+            self.fields["tipo_usuario"].initial = prof.tipo_usuario
             self.fields["es_usuario_provincial"].initial = prof.es_usuario_provincial
             self.fields["provincia"].initial = prof.provincia
             self.fields["es_coordinador"].initial = prof.es_coordinador
@@ -1035,6 +1061,9 @@ class CustomUserChangeForm(
             profile.es_usuario_provincial = self.cleaned_data.get(
                 "es_usuario_provincial", False
             )
+            profile.dni = self.cleaned_data.get("dni", "")
+            profile.cuil = self.cleaned_data.get("cuil", "")
+            profile.tipo_usuario = self.cleaned_data["tipo_usuario"]
             profile.provincia = None
             profile.es_coordinador = self.cleaned_data.get("es_coordinador", False)
             profile.rol = self.cleaned_data.get("rol")
