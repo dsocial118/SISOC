@@ -52,6 +52,7 @@ from VAT.models import (
     PlanVersionCurricular,
     SesionComision,
     Voucher,
+    VoucherLog,
     VoucherParametria,
     ProfesorCentro,
     ActaCierreComision,
@@ -11232,6 +11233,29 @@ def _inscripcion_lote(ctx, *, documento, estado="pre_inscripta", comision=None):
     )
 
 
+def _crear_voucher_lote(ctx, inscripcion, *, cantidad_usada, cantidad_disponible):
+    parametria = VoucherParametria.objects.create(
+        nombre=f"Voucher lote {inscripcion.pk}",
+        programa=ctx.programa,
+        cantidad_inicial=5,
+        fecha_vencimiento=timezone.localdate() + timedelta(days=30),
+        creado_por=ctx.user,
+        activa=True,
+    )
+    ctx.curso.voucher_parametrias.add(parametria)
+    return Voucher.objects.create(
+        parametria=parametria,
+        ciudadano=inscripcion.ciudadano,
+        programa=ctx.programa,
+        cantidad_inicial=5,
+        cantidad_usada=cantidad_usada,
+        cantidad_disponible=cantidad_disponible,
+        fecha_vencimiento=timezone.localdate() + timedelta(days=30),
+        estado="activo",
+        asignado_por=ctx.user,
+    )
+
+
 def _url_lote(comision):
     return reverse(
         "vat_inscripcion_curso_cambiar_estado_lote", kwargs={"pk": comision.pk}
@@ -11295,6 +11319,90 @@ def test_lote_rechaza_varias_inscripciones_en_una_sola_accion(
     dos.refresh_from_db()
     assert uno.estado == "rechazada"
     assert dos.estado == "rechazada"
+
+
+@pytest.mark.django_db
+def test_lote_reintegra_voucher_al_rechazar_y_no_lo_debita_dos_veces(
+    client, vat_comision_lote
+):
+    """Rechazar devuelve el débito vigente y reaceptar vuelve a debitar una vez."""
+    ctx = vat_comision_lote
+    ctx.curso.usa_voucher = True
+    ctx.curso.costo_creditos = 2
+    ctx.curso.save(update_fields=["usa_voucher", "costo_creditos"])
+    inscripcion = _inscripcion_lote(ctx, documento=43000012, estado="inscripta")
+    voucher = _crear_voucher_lote(
+        ctx,
+        inscripcion,
+        cantidad_usada=2,
+        cantidad_disponible=3,
+    )
+    VoucherLog.objects.create(
+        voucher=voucher,
+        tipo_evento="uso",
+        cantidad_afectada=-2,
+        usuario=ctx.user,
+        detalles={"inscripcion_id": inscripcion.pk},
+    )
+
+    client.force_login(ctx.user)
+    client.post(
+        _url_lote(ctx.comision),
+        data={"estado": "rechazada", "inscripciones": [str(inscripcion.pk)]},
+    )
+    voucher.refresh_from_db()
+    assert voucher.cantidad_disponible == 5
+    assert voucher.cantidad_usada == 0
+    assert VoucherLog.objects.filter(
+        voucher=voucher,
+        tipo_evento="recarga",
+        detalles__inscripcion_id=inscripcion.pk,
+    ).exists()
+
+    client.post(
+        _url_lote(ctx.comision),
+        data={"estado": "inscripta", "inscripciones": [str(inscripcion.pk)]},
+    )
+    voucher.refresh_from_db()
+    assert voucher.cantidad_disponible == 3
+    assert voucher.cantidad_usada == 2
+
+
+@pytest.mark.django_db
+def test_lote_reacepta_rechazada_con_debito_historico_sin_cobrar_de_nuevo(
+    client, vat_comision_lote
+):
+    """Un rechazo anterior sin compensación conserva su débito original."""
+    ctx = vat_comision_lote
+    ctx.curso.usa_voucher = True
+    ctx.curso.costo_creditos = 2
+    ctx.curso.save(update_fields=["usa_voucher", "costo_creditos"])
+    inscripcion = _inscripcion_lote(ctx, documento=43000013, estado="rechazada")
+    voucher = _crear_voucher_lote(
+        ctx,
+        inscripcion,
+        cantidad_usada=2,
+        cantidad_disponible=3,
+    )
+    VoucherLog.objects.create(
+        voucher=voucher,
+        tipo_evento="uso",
+        cantidad_afectada=-2,
+        usuario=ctx.user,
+        detalles={"inscripcion_id": inscripcion.pk},
+    )
+
+    client.force_login(ctx.user)
+    client.post(
+        _url_lote(ctx.comision),
+        data={"estado": "inscripta", "inscripciones": [str(inscripcion.pk)]},
+    )
+
+    inscripcion.refresh_from_db()
+    voucher.refresh_from_db()
+    assert inscripcion.estado == "inscripta"
+    assert voucher.cantidad_disponible == 3
+    assert voucher.cantidad_usada == 2
 
 
 @pytest.mark.django_db
