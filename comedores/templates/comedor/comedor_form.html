@@ -87,7 +87,9 @@
                         <div class="form-group row">
                             <div class="col-md-4">{{ form.organizacion|as_crispy_field }}</div>
                             <div class="col-md-4">{{ form.programa|as_crispy_field }}</div>
-                            <div class="col-md-2">
+                            <div id="codigo-proyecto-wrapper"
+                                 class="col-md-2"
+                                 data-programa-ids="{{ form.codigo_de_proyecto_programa_ids }}">
                                 {{ form.codigo_de_proyecto|as_crispy_field }}
                                 <span class="field-tooltip">
                                     <i class="fas fa-info-circle"></i>
@@ -545,6 +547,31 @@
 
             categoriaInput.addEventListener("change", actualizarOtraCategoria);
             actualizarOtraCategoria();
+        }());
+
+        (function () {
+            var programaInput = document.getElementById("id_programa");
+            var codigoWrapper = document.getElementById("codigo-proyecto-wrapper");
+            var codigoInput = document.getElementById("id_codigo_de_proyecto");
+
+            if (!programaInput || !codigoWrapper || !codigoInput) {
+                return;
+            }
+
+            var programasPermitidos = codigoWrapper.dataset.programaIds
+                .split(",")
+                .filter(Boolean);
+
+            function actualizarCodigoProyecto() {
+                var permitido = programasPermitidos.indexOf(programaInput.value) !== -1;
+                codigoWrapper.classList.toggle("d-none", !permitido);
+                if (!permitido) {
+                    codigoInput.value = "";
+                }
+            }
+
+            programaInput.addEventListener("change", actualizarCodigoProyecto);
+            actualizarCodigoProyecto();
         }());
     </script>
 
