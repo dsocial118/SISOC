@@ -5,6 +5,7 @@ from datetime import date, datetime
 
 import json
 
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -382,16 +383,23 @@ class CentroDeInfanciaDetailView(LoginRequiredMixin, DetailView):
         self, **kwargs
     ):
         context = super().get_context_data(**kwargs)
+        context["cdi_asistencia_nomina_visible"] = (
+            settings.CDI_ASISTENCIA_NOMINA_VISIBLE
+        )
+        context["cdi_formularios_visible"] = settings.CDI_FORMULARIOS_VISIBLE
+        context["cdi_intervenciones_visible"] = settings.CDI_INTERVENCIONES_VISIBLE
         nomina_qs = self.object.nominas.select_related(
             "ciudadano",
             "ciudadano__sexo",
         ).order_by("-fecha")
-        intervenciones_qs = self.object.intervenciones.select_related(
-            "tipo_intervencion",
-            "subintervencion",
-            "destinatario",
-            "creado_por",
-        ).order_by("-fecha")
+        intervenciones_qs = IntervencionCentroInfancia.objects.none()
+        if context["cdi_intervenciones_visible"]:
+            intervenciones_qs = self.object.intervenciones.select_related(
+                "tipo_intervencion",
+                "subintervencion",
+                "destinatario",
+                "creado_por",
+            ).order_by("-fecha")
 
         today = timezone.now().date()
         hombres = 0
@@ -669,13 +677,8 @@ class CentroDeInfanciaDetailView(LoginRequiredMixin, DetailView):
             "modalidad_gestion_otra": self.object.modalidad_gestion_otra or "",
         }
 
-        intervencion_form = IntervencionCentroInfanciaForm(
-            destinatario_fijo_nombre="Centro",
-            hide_destinatario=True,
-        )
-        context["intervencion_form"] = intervencion_form
         context["observacion_form"] = ObservacionCentroInfanciaForm()
-        if user_has_permission_code(
+        if context["cdi_formularios_visible"] and user_has_permission_code(
             self.request.user, "centrodeinfancia.view_formulariocdi"
         ):
             formularios_qs = self.object.formularios.select_related(
@@ -689,22 +692,28 @@ class CentroDeInfanciaDetailView(LoginRequiredMixin, DetailView):
             context["formularios_total"] = 0
             context["formularios_recent"] = []
 
-        tipo_intervencion_queryset = list(
-            intervencion_form.fields["tipo_intervencion"].queryset
-        )
-        tipo_programas_map = {
-            str(tipo.pk): (tipo.programa or "").strip()
-            for tipo in tipo_intervencion_queryset
-        }
-        alias_list = list(PROGRAMA_ALIASES_CENTRO_INFANCIA)
-        context["tipo_intervencion_programas"] = tipo_programas_map
-        context["tipo_intervencion_programa_aliases"] = alias_list
-        context["tipo_intervencion_programas_json"] = json.dumps(tipo_programas_map)
-        context["tipo_intervencion_programa_aliases_json"] = json.dumps(alias_list)
+        if context["cdi_intervenciones_visible"]:
+            intervencion_form = IntervencionCentroInfanciaForm(
+                destinatario_fijo_nombre="Centro",
+                hide_destinatario=True,
+            )
+            context["intervencion_form"] = intervencion_form
+            tipo_intervencion_queryset = list(
+                intervencion_form.fields["tipo_intervencion"].queryset
+            )
+            tipo_programas_map = {
+                str(tipo.pk): (tipo.programa or "").strip()
+                for tipo in tipo_intervencion_queryset
+            }
+            alias_list = list(PROGRAMA_ALIASES_CENTRO_INFANCIA)
+            context["tipo_intervencion_programas"] = tipo_programas_map
+            context["tipo_intervencion_programa_aliases"] = alias_list
+            context["tipo_intervencion_programas_json"] = json.dumps(tipo_programas_map)
+            context["tipo_intervencion_programa_aliases_json"] = json.dumps(alias_list)
         context.update(_build_trabajadores_context(self.request, self.object))
-        context["puede_tomar_asistencia_nomina"] = self.request.user.has_perm(
-            "centrodeinfancia.change_centrodeinfancia"
-        )
+        context["puede_tomar_asistencia_nomina"] = context[
+            "cdi_asistencia_nomina_visible"
+        ] and self.request.user.has_perm("centrodeinfancia.change_centrodeinfancia")
         context["puede_generar_usuario_cdi"] = puede_generar_usuario_cdi(
             self.request.user, self.object
         )
