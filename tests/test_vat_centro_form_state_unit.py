@@ -11,7 +11,7 @@ from core.models import Localidad, Municipio, Provincia
 def _build_centro_form_data(referente, provincia, municipio, localidad, **overrides):
     data = {
         "nombre": "Centro de Formacion 401",
-        "codigo": "500144900",
+        "codigo": "060144900",
         "provincia": str(provincia.pk),
         "municipio": str(municipio.pk),
         "localidad": str(localidad.pk),
@@ -54,7 +54,7 @@ def vat_centro_form_context(db):
 def _build_centro_instance(provincia, municipio, localidad, referente, activo=True):
     return Centro.objects.create(
         nombre="Centro de Formacion 401",
-        codigo="500144900",
+        codigo="060144900",
         provincia=provincia,
         municipio=municipio,
         localidad=localidad,

@@ -2731,6 +2731,7 @@
             var waitlistToggle = formEl.querySelector('[name="acepta_lista_espera"]');
             var waitlistCapacityWrapper = modalEl.querySelector('[data-waitlist-capacity-wrapper]');
             var waitlistCapacityField = formEl.querySelector('[name="cupo_lista_espera"]');
+            var waitlistRequiredMark = modalEl.querySelector('[data-waitlist-required-mark]');
 
             function syncWaitlistCapacity() {
                 if (!waitlistToggle || !waitlistCapacityWrapper || !waitlistCapacityField) {
@@ -2739,6 +2740,11 @@
                 var enabled = !!waitlistToggle.checked;
                 waitlistCapacityWrapper.classList.toggle('d-none', !enabled);
                 waitlistCapacityField.required = enabled;
+                // El campo es opcional en el form pero obligatorio cuando la
+                // lista de espera esta activa (lo valida ComisionCurso.clean).
+                if (waitlistRequiredMark) {
+                    waitlistRequiredMark.classList.toggle('d-none', !enabled);
+                }
                 if (!enabled) {
                     waitlistCapacityField.value = '';
                 }

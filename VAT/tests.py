@@ -10,10 +10,12 @@ from django.conf import settings
 from django.contrib.auth.models import Group, User
 from django.contrib.auth.models import Permission
 from django.contrib.contenttypes.models import ContentType
-from django.core.exceptions import ValidationError
+from django.contrib.messages import get_messages
+from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.management import call_command
+from django.http import Http404
 from django.test import RequestFactory, override_settings
-from django.urls import reverse
+from django.urls import resolve, reverse
 from django.utils import timezone
 from openpyxl import load_workbook
 from rest_framework.test import APIClient
@@ -22,6 +24,7 @@ from rest_framework_api_key.models import APIKey
 from VAT import serializers as vat_serializers
 from VAT.api_views import CursoViewSet
 from VAT.forms import (
+    CUE_PREFIJOS_POR_PROVINCIA,
     ComisionCursoForm,
     CentroAltaForm,
     CursoForm,
@@ -50,7 +53,10 @@ from VAT.models import (
     SesionComision,
     Voucher,
     VoucherParametria,
+    ProfesorCentro,
+    ActaCierreComision,
 )
+from VAT.services.resultados_comision_service import ResultadosComisionService
 from VAT.services.access_scope import (
     can_user_access_centro,
     can_user_create_centro,
@@ -130,9 +136,12 @@ def vat_api_client(vat_api_key):
 
 
 def _build_centro_payload(referente_user, provincia, municipio, localidad, **overrides):
+    # El CUE arranca con el prefijo INDEC de la provincia: desde #2146 el form
+    # bloquea el alta si los 2 primeros dígitos no coinciden.
+    prefijo = CUE_PREFIJOS_POR_PROVINCIA.get(provincia.nombre, "06")
     payload = {
         "nombre": "Centro de Formación 401",
-        "codigo": "500144900",
+        "codigo": f"{prefijo}0144900",
         "provincia": str(provincia.pk),
         "municipio": str(municipio.pk),
         "localidad": str(localidad.pk),
@@ -246,7 +255,7 @@ def test_centro_create_crea_entidades_relacionadas(
 
     response = vat_admin_client.post(reverse("vat_centro_create"), data=payload)
 
-    centro = Centro.objects.get(codigo="500144900")
+    centro = Centro.objects.get(codigo="060144900")
 
     assert response.status_code == 302
     assert response.url == reverse("vat_centro_detail", kwargs={"pk": centro.pk})
@@ -261,7 +270,7 @@ def test_centro_create_crea_entidades_relacionadas(
     assert InstitucionIdentificadorHist.objects.filter(
         centro=centro,
         tipo_identificador="cue",
-        valor_identificador="500144900",
+        valor_identificador="060144900",
     ).exists()
     assert InstitucionUbicacion.objects.filter(
         centro=centro,
@@ -295,7 +304,7 @@ def test_centro_create_permite_guardar_sin_contactos_institucionales(
 
     response = vat_admin_client.post(reverse("vat_centro_create"), data=payload)
 
-    centro = Centro.objects.get(codigo="500144900")
+    centro = Centro.objects.get(codigo="060144900")
 
     assert response.status_code == 302
     assert centro.contactos_adicionales.count() == 0
@@ -324,7 +333,7 @@ def test_centro_create_rechaza_referente_sin_grupo_cfp(vat_admin_client, vat_geo
     response = vat_admin_client.post(reverse("vat_centro_create"), data=payload)
 
     assert response.status_code == 200
-    assert Centro.objects.filter(codigo="500144900").count() == 0
+    assert Centro.objects.filter(codigo="060144900").count() == 0
     assert (
         "El referente seleccionado debe tener un rol valido de referente VAT."
         in response.content.decode("utf-8")
@@ -401,7 +410,7 @@ def test_centro_alta_form_permite_multiples_referentes_y_revisores(vat_geo_data)
         provincia,
         municipio,
         localidad,
-        codigo="500144901",
+        codigo="060144901",
         referentes=[str(referente_uno.pk), str(referente_dos.pk)],
         revisores=[str(revisor_uno.pk), str(revisor_dos.pk)],
     )
@@ -433,7 +442,7 @@ def test_centro_alta_form_rechaza_referentes_fuera_de_grupo_cfp(vat_geo_data):
         provincia,
         municipio,
         localidad,
-        codigo="500144902",
+        codigo="060144902",
         referentes=[str(referente.pk), str(user_sin_cfp.pk)],
     )
 
@@ -454,7 +463,7 @@ def test_centro_update_renderiza_mismo_formulario_extendido_que_alta(
         vat_referente_user, provincia, municipio, localidad, save_continue="1"
     )
     vat_admin_client.post(reverse("vat_centro_create"), data=payload)
-    centro = Centro.objects.get(codigo="500144900")
+    centro = Centro.objects.get(codigo="060144900")
 
     response = vat_admin_client.get(
         reverse("vat_centro_update", kwargs={"pk": centro.pk})
@@ -494,7 +503,7 @@ def test_centro_update_conserva_activo_si_el_form_no_envia_el_switch(
     referente.groups.add(group)
     centro = Centro.objects.create(
         nombre="CFP Estado Editable",
-        codigo="500144999",
+        codigo="060144999",
         provincia=provincia_ba,
         municipio=municipio_ba,
         localidad=localidad_ba,
@@ -531,7 +540,7 @@ def test_centro_update_conserva_activo_si_el_form_no_envia_el_switch(
         municipio_ba,
         localidad_ba,
         nombre="CFP Estado Editable",
-        codigo="500144999",
+        codigo="060144999",
         **{
             "contactos-TOTAL_FORMS": "1",
             "contactos-INITIAL_FORMS": "1",
@@ -579,7 +588,7 @@ def test_centro_update_permite_desactivar_activo_desde_switch(client, vat_geo_da
     referente.groups.add(group)
     centro = Centro.objects.create(
         nombre="CFP Estado Editable",
-        codigo="500144998",
+        codigo="060144998",
         provincia=provincia_ba,
         municipio=municipio_ba,
         localidad=localidad_ba,
@@ -616,7 +625,7 @@ def test_centro_update_permite_desactivar_activo_desde_switch(client, vat_geo_da
         municipio_ba,
         localidad_ba,
         nombre="CFP Estado Editable",
-        codigo="500144998",
+        codigo="060144998",
         activo_present="1",
         **{
             "contactos-TOTAL_FORMS": "1",
@@ -667,7 +676,7 @@ def test_centro_update_rechaza_formset_contactos_sin_ids_existentes(
     referente.groups.add(group)
     centro = Centro.objects.create(
         nombre="CFP Contactos Seguros",
-        codigo="500145000",
+        codigo="060145000",
         provincia=provincia_ba,
         municipio=municipio_ba,
         localidad=localidad_ba,
@@ -704,7 +713,7 @@ def test_centro_update_rechaza_formset_contactos_sin_ids_existentes(
         municipio_ba,
         localidad_ba,
         nombre="CFP Contactos Seguros",
-        codigo="500145000",
+        codigo="060145000",
         **{
             "contactos-TOTAL_FORMS": "1",
             "contactos-INITIAL_FORMS": "0",
@@ -759,7 +768,7 @@ def test_centro_create_oculta_jurisdiccion_y_asigna_provincia_del_usuario(
 
     post_response = vat_admin_client.post(reverse("vat_centro_create"), data=payload)
 
-    centro = Centro.objects.get(codigo="500144900")
+    centro = Centro.objects.get(codigo="060144900")
     assert post_response.status_code == 302
     assert centro.provincia_id == provincia.id
 
@@ -809,7 +818,7 @@ def test_centro_create_muestra_provincia_y_permite_alta_si_usuario_no_tiene_prov
     payload = _build_centro_payload(vat_referente_user, provincia, municipio, localidad)
     post_response = client.post(reverse("vat_centro_create"), data=payload)
 
-    centro = Centro.objects.get(codigo="500144900")
+    centro = Centro.objects.get(codigo="060144900")
     assert post_response.status_code == 302
     assert centro.provincia_id == provincia.id
 
@@ -826,7 +835,7 @@ def test_centro_update_actualiza_entidades_relacionadas_del_formulario_extendido
     )
     vat_admin_client.post(reverse("vat_centro_create"), data=payload)
 
-    centro = Centro.objects.get(codigo="500144900")
+    centro = Centro.objects.get(codigo="060144900")
     contacto = centro.contactos_adicionales.get(nombre_contacto="María Gómez")
 
     update_payload = _build_centro_payload(
@@ -835,7 +844,7 @@ def test_centro_update_actualiza_entidades_relacionadas_del_formulario_extendido
         municipio,
         localidad,
         nombre="Centro de Formación 402",
-        codigo="500144901",
+        codigo="060144901",
         domicilio_actividad="Calle 8 N° 4321",
         nombre_referente="Laura",
         apellido_referente="Gómez",
@@ -871,7 +880,7 @@ def test_centro_update_actualiza_entidades_relacionadas_del_formulario_extendido
     assert centro.nombre == "Centro de Formación 402"
     assert centro.nombre_referente == "Laura Gómez"
     assert centro.correo_referente == "direccion2@vat.test"
-    assert identificador.valor_identificador == "500144901"
+    assert identificador.valor_identificador == "060144901"
     assert ubicacion.domicilio == "Calle 8 N° 4321"
     assert contacto.nombre_contacto == "Laura Gómez"
     assert contacto.documento == "30999888"
@@ -987,7 +996,7 @@ def test_sync_responsable_principal_prioriza_contacto_marcado(vat_geo_data):
     referente.groups.add(group)
     centro = Centro.objects.create(
         nombre="CFP Contactos Principales",
-        codigo="500145111",
+        codigo="060145111",
         provincia=provincia,
         municipio=municipio,
         localidad=localidad,
@@ -1053,7 +1062,7 @@ def test_centro_update_no_reactiva_centros_inactivos(
     )
     vat_admin_client.post(reverse("vat_centro_create"), data=payload)
 
-    centro = Centro.objects.get(codigo="500144900")
+    centro = Centro.objects.get(codigo="060144900")
     centro.activo = False
     centro.save(update_fields=["activo"])
 
@@ -1063,7 +1072,7 @@ def test_centro_update_no_reactiva_centros_inactivos(
         municipio,
         localidad,
         nombre="Centro inactivo editado",
-        codigo="500144902",
+        codigo="060144902",
     )
 
     response = vat_admin_client.post(
@@ -1090,7 +1099,7 @@ def test_centro_update_permite_reactivar_centros_inactivos_desde_switch(
     )
     vat_admin_client.post(reverse("vat_centro_create"), data=payload)
 
-    centro = Centro.objects.get(codigo="500144900")
+    centro = Centro.objects.get(codigo="060144900")
     centro.activo = False
     centro.save(update_fields=["activo"])
 
@@ -1100,7 +1109,7 @@ def test_centro_update_permite_reactivar_centros_inactivos_desde_switch(
         municipio,
         localidad,
         nombre="Centro reactivado",
-        codigo="500144902",
+        codigo="060144902",
         activo_present="1",
     )
 
@@ -1521,7 +1530,7 @@ def test_centro_update_operador_cfp_no_puede_modificar_datos_administrativos(
     operador = User.objects.get(pk=operador.pk)
 
     centro = _create_vat_centro(
-        codigo="500177001",
+        codigo="060177001",
         provincia=provincia,
         municipio=municipio,
         localidad=localidad,
@@ -1593,7 +1602,7 @@ def test_centro_detail_operador_cfp_oculta_sector_de_gestion(client, vat_geo_dat
     operador = User.objects.get(pk=operador.pk)
 
     centro = _create_vat_centro(
-        codigo="500177002",
+        codigo="060177002",
         provincia=provincia,
         municipio=municipio,
         localidad=localidad,
@@ -1619,7 +1628,7 @@ def test_centro_detail_admin_inet_muestra_sector_de_gestion(client, vat_geo_data
     )
 
     centro = _create_vat_centro(
-        codigo="500177003",
+        codigo="060177003",
         provincia=provincia,
         municipio=municipio,
         localidad=localidad,
@@ -1694,7 +1703,7 @@ def test_inet_provincia_no_puede_modificar_campos_bloqueados_en_centro_update(
     referente.groups.add(Group.objects.get_or_create(name="CFP")[0])
 
     centro = _create_vat_centro(
-        codigo="500144901",
+        codigo="060144901",
         provincia=provincia,
         municipio=municipio,
         localidad=localidad,
@@ -2384,7 +2393,7 @@ def test_vat_centro_list_filtra_por_cue_actual_en_codigo(vat_geo_data):
     InstitucionIdentificadorHist.objects.create(
         centro=centro_match,
         tipo_identificador="cue",
-        valor_identificador="500144900",
+        valor_identificador="060144900",
         rol_institucional="sede",
         es_actual=True,
     )
@@ -2412,7 +2421,7 @@ def test_vat_centro_list_filtra_por_cue_actual_en_codigo(vat_geo_data):
     InstitucionIdentificadorHist.objects.create(
         centro=centro_other,
         tipo_identificador="cue",
-        valor_identificador="500144901",
+        valor_identificador="060144901",
         rol_institucional="sede",
         es_actual=True,
     )
@@ -2427,7 +2436,7 @@ def test_vat_centro_list_filtra_por_cue_actual_en_codigo(vat_geo_data):
                         {
                             "field": "codigo",
                             "op": "contains",
-                            "value": "500144900",
+                            "value": "060144900",
                         }
                     ],
                 }
@@ -2693,7 +2702,7 @@ def test_centro_create_usuario_provincial_puede_crear_con_su_provincia(client):
     payload.pop("provincia")
     response = client.post(reverse("vat_centro_create"), data=payload)
 
-    centro = Centro.objects.get(codigo="500144900")
+    centro = Centro.objects.get(codigo="060144900")
 
     assert response.status_code == 302
     assert centro.provincia_id == provincia_ba.id
@@ -2784,7 +2793,7 @@ def test_centro_update_usuario_provincial_puede_editar_dentro_de_su_provincia(cl
         municipio_ba,
         localidad_ba,
         nombre="Centro Provincial Editado",
-        codigo="500144902",
+        codigo="060144902",
         domicilio_actividad="Calle 8 N° 4321",
         autoridad_dni="30999888",
         nombre_referente="Laura",
@@ -10344,3 +10353,1358 @@ def test_wizard_flujo_completo_crea_comision_y_horario(client, wizard_setup):
     assert sesiones.exists()
     assert sesiones.count() == horario.sesiones.count()
     assert all(s.fecha.weekday() == 2 for s in sesiones)  # miércoles
+
+
+# ============================================================================
+# RESULTADOS / ACTA DE CIERRE DE COMISIÓN DE CURSO
+# ============================================================================
+
+
+@pytest.fixture
+def vat_comision_resultados(db, vat_geo_data):
+    """Comisión de curso activa con superusuario referente y sexo cargado."""
+    provincia, municipio, localidad = vat_geo_data
+    modalidad = ModalidadCursada.objects.create(
+        nombre="Presencial Resultados", activo=True
+    )
+    programa = Programa.objects.create(nombre="Programa Resultados")
+    sexo = Sexo.objects.create(sexo="No Binario Resultados")
+    group, _ = Group.objects.get_or_create(name="CFP")
+    user = User.objects.create_superuser(
+        username="admin-resultados",
+        email="admin-resultados@vat.test",
+        password="test1234",
+    )
+    user.groups.add(group)
+    centro = Centro.objects.create(
+        nombre="CFP Resultados",
+        codigo="CFP-RES-01",
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad,
+        calle="21",
+        numero=800,
+        domicilio_actividad="Calle 21 N 800",
+        telefono="221-1111150",
+        celular="221-2222250",
+        correo="cfpresultados@vat.test",
+        nombre_referente="Ana",
+        apellido_referente="Gomez",
+        telefono_referente="221-3333350",
+        correo_referente="ana-resultados@vat.test",
+        referente=user,
+        tipo_gestion="Estatal",
+        clase_institucion="Formación Profesional",
+        situacion="Institución de ETP",
+        activo=True,
+    )
+    ubicacion = InstitucionUbicacion.objects.create(
+        centro=centro,
+        localidad=localidad,
+        rol_ubicacion="sede_principal",
+        domicilio="Calle 21 N 800",
+        es_principal=True,
+    )
+    curso = Curso.objects.create(
+        centro=centro,
+        nombre="Curso resultados",
+        modalidad=modalidad,
+        estado="activo",
+    )
+    comision = ComisionCurso.objects.create(
+        curso=curso,
+        ubicacion=ubicacion,
+        codigo_comision="RES-01",
+        nombre="Comisión Resultados",
+        cupo_total=10,
+        fecha_inicio=timezone.localdate() - timedelta(days=60),
+        fecha_fin=timezone.localdate() + timedelta(days=10),
+        estado="activa",
+    )
+    return SimpleNamespace(
+        user=user,
+        centro=centro,
+        curso=curso,
+        comision=comision,
+        programa=programa,
+        sexo=sexo,
+    )
+
+
+def _crear_inscripcion_resultados(
+    ctx, *, documento, estado="inscripta", apellido="Perez"
+):
+    ciudadano = Ciudadano.objects.create(
+        apellido=apellido,
+        nombre="Alumno",
+        fecha_nacimiento=date(2000, 1, 1),
+        tipo_documento=Ciudadano.DOCUMENTO_DNI,
+        documento=documento,
+        sexo=ctx.sexo,
+    )
+    return Inscripcion.objects.create(
+        ciudadano=ciudadano,
+        comision_curso=ctx.comision,
+        programa=ctx.programa,
+        estado=estado,
+        origen_canal="backoffice",
+    )
+
+
+def _crear_profesor(ctx, *, documento=28456789):
+    return ProfesorCentro.objects.create(
+        centro=ctx.centro,
+        apellido="Gomez",
+        nombre="Martin",
+        documento=documento,
+        email="mgomez@mail.com",
+    )
+
+
+def test_resultados_solo_lista_inscripciones_confirmadas(vat_comision_resultados):
+    ctx = vat_comision_resultados
+    confirmada = _crear_inscripcion_resultados(
+        ctx, documento=40000001, apellido="Confirmada"
+    )
+    _crear_inscripcion_resultados(
+        ctx, documento=40000002, estado="pre_inscripta", apellido="Preinscripta"
+    )
+    _crear_inscripcion_resultados(
+        ctx, documento=40000003, estado="rechazada", apellido="Rechazada"
+    )
+    ya_calificada = _crear_inscripcion_resultados(
+        ctx, documento=40000004, estado="completada", apellido="Calificada"
+    )
+
+    calificables = list(ResultadosComisionService.alumnos_calificables(ctx.comision))
+
+    # `inscripta` define quién entra; `completada` se incluye para que el
+    # resultado siga siendo editable después de guardado.
+    assert {i.pk for i in calificables} == {confirmada.pk, ya_calificada.pk}
+
+
+def test_resultados_tab_se_renderiza_con_cards_y_alumnos(
+    client, vat_comision_resultados
+):
+    ctx = vat_comision_resultados
+    _crear_inscripcion_resultados(ctx, documento=40000010, apellido="Fretes")
+    _crear_inscripcion_resultados(ctx, documento=40000011, apellido="Velozo")
+
+    client.force_login(ctx.user)
+    response = client.get(
+        reverse("vat_comision_curso_detail", kwargs={"pk": ctx.comision.pk})
+    )
+
+    assert response.status_code == 200
+    content = response.content.decode()
+    assert 'data-sisoc-tab-target="resultados"' in content
+    assert "Calificación de alumnos" in content
+    assert "Datos del acta" in content
+    assert response.context["resumen_resultados"] == {
+        "aprobados": 0,
+        "desaprobados": 0,
+        "sin_calificar": 2,
+        "inscriptos": 2,
+    }
+
+
+def test_resultados_tab_oculta_sin_permiso_de_inscripcion(
+    client, vat_comision_resultados
+):
+    ctx = vat_comision_resultados
+    _crear_inscripcion_resultados(ctx, documento=40000020)
+    lector = User.objects.create_user(username="lector-resultados", password="test1234")
+    # Estar en `referentes` no alcanza: `access_scope.is_vat_referente` exige el
+    # marcador de rol, y sin el el scope territorial devuelve none() -> 404.
+    # Se le da lectura pero NO `change_inscripcion`, que es lo que gatea la solapa.
+    _grant_vat_referente_access(
+        lector,
+        Permission.objects.get(codename="view_comisioncurso"),
+    )
+    ctx.centro.referentes.add(lector)
+
+    client.force_login(lector)
+    response = client.get(
+        reverse("vat_comision_curso_detail", kwargs={"pk": ctx.comision.pk})
+    )
+
+    assert response.status_code == 200
+    assert not lector.has_perm("VAT.change_inscripcion")
+    assert 'data-sisoc-tab-target="resultados"' not in response.content.decode()
+
+
+def test_resultados_guardado_persiste_acta_y_calificaciones(
+    client, vat_comision_resultados
+):
+    ctx = vat_comision_resultados
+    aprobado = _crear_inscripcion_resultados(ctx, documento=40000030, apellido="Fretes")
+    desaprobado = _crear_inscripcion_resultados(
+        ctx, documento=40000031, apellido="Quinenao"
+    )
+    sin_calificar = _crear_inscripcion_resultados(
+        ctx, documento=40000032, apellido="Velozo"
+    )
+    profesor = _crear_profesor(ctx)
+
+    client.force_login(ctx.user)
+    response = client.post(
+        reverse("vat_comision_curso_resultados", kwargs={"pk": ctx.comision.pk}),
+        data={
+            "profesor": profesor.pk,
+            "fecha_fin": "2026-06-26",
+            "numero_acta": "0245/2026",
+            f"resultado_{aprobado.pk}": "aprobado",
+            f"resultado_{desaprobado.pk}": "desaprobado",
+            f"resultado_{sin_calificar.pk}": "",
+        },
+    )
+
+    assert response.status_code == 302
+    aprobado.refresh_from_db()
+    desaprobado.refresh_from_db()
+    sin_calificar.refresh_from_db()
+    assert aprobado.resultado_final == "aprobado"
+    assert desaprobado.resultado_final == "desaprobado"
+    assert sin_calificar.resultado_final is None
+    # Calificar cierra el ciclo de la inscripción.
+    assert aprobado.estado == "completada"
+    assert desaprobado.estado == "completada"
+    assert sin_calificar.estado == "inscripta"
+    assert aprobado.resultado_registrado_por_id == ctx.user.pk
+    assert aprobado.resultado_fecha is not None
+
+    acta = ActaCierreComision.objects.get(comision_curso=ctx.comision)
+    assert acta.profesor_id == profesor.pk
+    assert acta.numero_acta == "0245/2026"
+    assert acta.fecha_fin == date(2026, 6, 26)
+    assert acta.registrado_por_id == ctx.user.pk
+
+
+def test_resultados_guardado_no_modifica_fecha_fin_de_la_comision(
+    client, vat_comision_resultados
+):
+    ctx = vat_comision_resultados
+    fecha_fin_original = ctx.comision.fecha_fin
+    _crear_inscripcion_resultados(ctx, documento=40000040)
+    profesor = _crear_profesor(ctx)
+
+    client.force_login(ctx.user)
+    client.post(
+        reverse("vat_comision_curso_resultados", kwargs={"pk": ctx.comision.pk}),
+        data={
+            "profesor": profesor.pk,
+            "fecha_fin": "2026-06-26",
+            "numero_acta": "",
+        },
+    )
+
+    ctx.comision.refresh_from_db()
+    assert ctx.comision.fecha_fin == fecha_fin_original
+
+
+def test_resultados_numero_acta_es_opcional(client, vat_comision_resultados):
+    ctx = vat_comision_resultados
+    _crear_inscripcion_resultados(ctx, documento=40000050)
+    profesor = _crear_profesor(ctx)
+
+    client.force_login(ctx.user)
+    response = client.post(
+        reverse("vat_comision_curso_resultados", kwargs={"pk": ctx.comision.pk}),
+        data={"profesor": profesor.pk, "fecha_fin": "2026-06-26", "numero_acta": ""},
+    )
+
+    assert response.status_code == 302
+    assert ActaCierreComision.objects.filter(
+        comision_curso=ctx.comision, numero_acta__isnull=True
+    ).exists()
+
+
+def test_resultados_no_guarda_sin_profesor(client, vat_comision_resultados):
+    ctx = vat_comision_resultados
+    inscripcion = _crear_inscripcion_resultados(ctx, documento=40000060)
+
+    client.force_login(ctx.user)
+    response = client.post(
+        reverse("vat_comision_curso_resultados", kwargs={"pk": ctx.comision.pk}),
+        data={"fecha_fin": "2026-06-26", f"resultado_{inscripcion.pk}": "aprobado"},
+    )
+
+    assert not ActaCierreComision.objects.filter(comision_curso=ctx.comision).exists()
+    inscripcion.refresh_from_db()
+    assert inscripcion.resultado_final is None
+    mensajes = _mensajes_de(response).lower()
+    assert "profesor a cargo" in mensajes
+
+
+def test_resultados_no_guarda_sin_fecha_de_fin(client, vat_comision_resultados):
+    ctx = vat_comision_resultados
+    inscripcion = _crear_inscripcion_resultados(ctx, documento=40000061)
+    profesor = _crear_profesor(ctx)
+
+    client.force_login(ctx.user)
+    response = client.post(
+        reverse("vat_comision_curso_resultados", kwargs={"pk": ctx.comision.pk}),
+        data={
+            "profesor": profesor.pk,
+            "fecha_fin": "",
+            f"resultado_{inscripcion.pk}": "aprobado",
+        },
+    )
+
+    assert not ActaCierreComision.objects.filter(comision_curso=ctx.comision).exists()
+    inscripcion.refresh_from_db()
+    assert inscripcion.resultado_final is None
+    mensajes = _mensajes_de(response).lower()
+    assert "fecha de fin" in mensajes
+
+
+def test_resultados_permite_corregir_una_calificacion_ya_guardada(
+    client, vat_comision_resultados
+):
+    ctx = vat_comision_resultados
+    inscripcion = _crear_inscripcion_resultados(ctx, documento=40000070)
+    profesor = _crear_profesor(ctx)
+    url = reverse("vat_comision_curso_resultados", kwargs={"pk": ctx.comision.pk})
+
+    client.force_login(ctx.user)
+    client.post(
+        url,
+        data={
+            "profesor": profesor.pk,
+            "fecha_fin": "2026-06-26",
+            f"resultado_{inscripcion.pk}": "aprobado",
+        },
+    )
+    inscripcion.refresh_from_db()
+    assert inscripcion.resultado_final == "aprobado"
+    assert inscripcion.estado == "completada"
+
+    # Corrección posterior: la inscripción ya está en `completada` y sigue
+    # apareciendo en el listado calificable.
+    client.post(
+        url,
+        data={
+            "profesor": profesor.pk,
+            "fecha_fin": "2026-06-26",
+            f"resultado_{inscripcion.pk}": "desaprobado",
+        },
+    )
+    inscripcion.refresh_from_db()
+    assert inscripcion.resultado_final == "desaprobado"
+
+
+def test_resultados_ignora_inscripciones_de_otra_comision(
+    client, vat_comision_resultados
+):
+    ctx = vat_comision_resultados
+    otra_comision = ComisionCurso.objects.create(
+        curso=ctx.curso,
+        ubicacion=ctx.comision.ubicacion,
+        codigo_comision="RES-02",
+        nombre="Otra Comisión",
+        cupo_total=5,
+        fecha_inicio=timezone.localdate() - timedelta(days=60),
+        fecha_fin=timezone.localdate() + timedelta(days=10),
+        estado="activa",
+    )
+    ajena = Inscripcion.objects.create(
+        ciudadano=Ciudadano.objects.create(
+            apellido="Ajena",
+            nombre="Alumna",
+            fecha_nacimiento=date(2000, 1, 1),
+            tipo_documento=Ciudadano.DOCUMENTO_DNI,
+            documento=40000080,
+            sexo=ctx.sexo,
+        ),
+        comision_curso=otra_comision,
+        programa=ctx.programa,
+        estado="inscripta",
+        origen_canal="backoffice",
+    )
+    profesor = _crear_profesor(ctx)
+
+    client.force_login(ctx.user)
+    client.post(
+        reverse("vat_comision_curso_resultados", kwargs={"pk": ctx.comision.pk}),
+        data={
+            "profesor": profesor.pk,
+            "fecha_fin": "2026-06-26",
+            f"resultado_{ajena.pk}": "aprobado",
+        },
+    )
+
+    ajena.refresh_from_db()
+    assert ajena.resultado_final is None
+    assert ajena.estado == "inscripta"
+
+
+def test_resultados_rechaza_profesor_de_otro_centro(client, vat_comision_resultados):
+    ctx = vat_comision_resultados
+    _crear_inscripcion_resultados(ctx, documento=40000090)
+    otro_centro = Centro.objects.create(
+        nombre="CFP Ajeno Resultados",
+        codigo="CFP-RES-AJE",
+        provincia=ctx.centro.provincia,
+        municipio=ctx.centro.municipio,
+        localidad=ctx.centro.localidad,
+        calle="99",
+        numero=1,
+        domicilio_actividad="Calle 99 N 1",
+        telefono="221-9999999",
+        celular="221-9999998",
+        correo="ajeno-resultados@vat.test",
+        nombre_referente="Otro",
+        apellido_referente="Referente",
+        telefono_referente="221-9999997",
+        correo_referente="otro-resultados@vat.test",
+        tipo_gestion="Estatal",
+        clase_institucion="Formación Profesional",
+        situacion="Institución de ETP",
+        activo=True,
+    )
+    profesor_ajeno = ProfesorCentro.objects.create(
+        centro=otro_centro,
+        apellido="Ajeno",
+        nombre="Profesor",
+        documento=27000000,
+        email="ajeno@mail.com",
+    )
+
+    client.force_login(ctx.user)
+    response = client.post(
+        reverse("vat_comision_curso_resultados", kwargs={"pk": ctx.comision.pk}),
+        data={"profesor": profesor_ajeno.pk, "fecha_fin": "2026-06-26"},
+    )
+
+    assert not ActaCierreComision.objects.filter(comision_curso=ctx.comision).exists()
+    mensajes = _mensajes_de(response).lower()
+    assert "profesor a cargo" in mensajes
+
+
+def test_profesor_buscar_filtra_por_nombre_y_dni_del_centro(
+    client, vat_comision_resultados
+):
+    ctx = vat_comision_resultados
+    _crear_profesor(ctx, documento=28456789)
+    ProfesorCentro.objects.create(
+        centro=ctx.centro,
+        apellido="Rodriguez",
+        nombre="Laura",
+        documento=30111222,
+        email="lrodriguez@mail.com",
+    )
+    url = reverse("vat_profesor_centro_buscar", kwargs={"pk": ctx.comision.pk})
+
+    client.force_login(ctx.user)
+    por_nombre = client.get(url, {"q": "Gomez"}).json()["results"]
+    por_dni = client.get(url, {"q": "3011"}).json()["results"]
+
+    assert len(por_nombre) == 1
+    assert por_nombre[0]["documento"] == "28456789"
+    # El email es parte del dato que el acta debe mostrar.
+    assert por_nombre[0]["email"] == "mgomez@mail.com"
+    assert len(por_dni) == 1
+    assert por_dni[0]["apellido"] == "Rodriguez"
+
+
+def test_profesor_crear_da_de_alta_sin_validacion_externa(
+    client, vat_comision_resultados
+):
+    ctx = vat_comision_resultados
+
+    client.force_login(ctx.user)
+    response = client.post(
+        reverse("vat_profesor_centro_crear", kwargs={"pk": ctx.comision.pk}),
+        data={
+            "apellido": "Nuevo",
+            "nombre": "Profesor",
+            "documento": "33444555",
+            "email": "nuevo@mail.com",
+        },
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["ok"] is True
+    assert payload["profesor"]["email"] == "nuevo@mail.com"
+    profesor = ProfesorCentro.objects.get(pk=payload["profesor"]["id"])
+    assert profesor.centro_id == ctx.centro.pk
+
+
+def test_profesor_crear_rechaza_documento_duplicado_en_el_centro(
+    client, vat_comision_resultados
+):
+    ctx = vat_comision_resultados
+    _crear_profesor(ctx, documento=28456789)
+
+    client.force_login(ctx.user)
+    response = client.post(
+        reverse("vat_profesor_centro_crear", kwargs={"pk": ctx.comision.pk}),
+        data={
+            "apellido": "Duplicado",
+            "nombre": "Profesor",
+            "documento": "28456789",
+            "email": "dup@mail.com",
+        },
+    )
+
+    assert response.status_code == 400
+    assert ProfesorCentro.objects.filter(centro=ctx.centro).count() == 1
+
+
+# ============================================================================
+# CUE: UNICIDAD Y PREFIJO PROVINCIAL (#2146)
+# ============================================================================
+
+
+def _centro_existente_para_cue(referente, provincia, municipio, localidad, codigo):
+    """Crea un centro por ORM para chocar contra su CUE."""
+    return Centro.objects.create(
+        nombre="Centro CUE Existente",
+        codigo=codigo,
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad,
+        calle="1",
+        numero=1,
+        domicilio_actividad="Calle 1 N 1",
+        telefono="221-1000000",
+        celular="221-2000000",
+        correo="cue-existente@vat.test",
+        nombre_referente="Ana",
+        apellido_referente="Gomez",
+        telefono_referente="221-3000000",
+        correo_referente="ana-cue@vat.test",
+        referente=referente,
+        tipo_gestion="Estatal",
+        clase_institucion="Formación Profesional",
+        situacion="Institución de ETP",
+        activo=True,
+    )
+
+
+@pytest.fixture
+def vat_cue_referente(db):
+    cfp_group, _ = Group.objects.get_or_create(name="CFP")
+    referente = User.objects.create_user(username="referente-cue", password="test1234")
+    referente.groups.add(cfp_group)
+    return referente
+
+
+@pytest.mark.django_db
+def test_cue_rechaza_alta_con_codigo_ya_registrado(vat_geo_data, vat_cue_referente):
+    provincia, municipio, localidad = vat_geo_data
+    _centro_existente_para_cue(
+        vat_cue_referente, provincia, municipio, localidad, "060155000"
+    )
+    data = _build_centro_payload(
+        vat_cue_referente,
+        provincia,
+        municipio,
+        localidad,
+        codigo="060155000",
+        referentes=[str(vat_cue_referente.pk)],
+    )
+
+    form = CentroAltaForm(data=data)
+
+    assert not form.is_valid()
+    assert form.errors["codigo"] == [
+        "El CUE ingresado ya se encuentra registrado en otro centro."
+    ]
+
+
+@pytest.mark.django_db
+def test_cue_rechaza_edicion_que_toma_el_codigo_de_otro_centro(
+    vat_geo_data, vat_cue_referente
+):
+    provincia, municipio, localidad = vat_geo_data
+    ajeno = _centro_existente_para_cue(
+        vat_cue_referente, provincia, municipio, localidad, "060155001"
+    )
+    propio = _centro_existente_para_cue(
+        vat_cue_referente, provincia, municipio, localidad, "060155002"
+    )
+    propio.nombre = "Centro Propio"
+    propio.save(update_fields=["nombre"])
+    data = _build_centro_payload(
+        vat_cue_referente,
+        provincia,
+        municipio,
+        localidad,
+        codigo=ajeno.codigo,
+        referentes=[str(vat_cue_referente.pk)],
+    )
+
+    form = CentroAltaForm(data=data, instance=propio)
+
+    assert not form.is_valid()
+    assert form.errors["codigo"] == [
+        "El CUE ingresado ya se encuentra registrado en otro centro."
+    ]
+
+
+@pytest.mark.django_db
+def test_cue_permite_guardar_edicion_sin_cambiar_el_codigo_propio(
+    vat_geo_data, vat_cue_referente
+):
+    provincia, municipio, localidad = vat_geo_data
+    propio = _centro_existente_para_cue(
+        vat_cue_referente, provincia, municipio, localidad, "060155003"
+    )
+    data = _build_centro_payload(
+        vat_cue_referente,
+        provincia,
+        municipio,
+        localidad,
+        codigo=propio.codigo,
+        nombre="Centro Propio Editado",
+        referentes=[str(vat_cue_referente.pk)],
+    )
+
+    form = CentroAltaForm(data=data, instance=propio)
+
+    # La unicidad debe excluir al propio centro que se está editando.
+    assert form.is_valid(), form.errors
+    guardado = form.save()
+    assert guardado.pk == propio.pk
+    assert guardado.codigo == "060155003"
+
+
+@pytest.mark.django_db
+def test_cue_rechaza_prefijo_que_no_corresponde_a_la_provincia(
+    vat_geo_data, vat_cue_referente
+):
+    provincia, municipio, localidad = vat_geo_data
+    assert provincia.nombre == "Buenos Aires"  # prefijo esperado 06
+    data = _build_centro_payload(
+        vat_cue_referente,
+        provincia,
+        municipio,
+        localidad,
+        codigo="500144900",  # prefijo de Mendoza
+        referentes=[str(vat_cue_referente.pk)],
+    )
+
+    form = CentroAltaForm(data=data)
+
+    assert not form.is_valid()
+    assert form.errors["codigo"] == [
+        "Los primeros 2 dígitos del CUE no corresponden a la provincia seleccionada."
+    ]
+
+
+@pytest.mark.django_db
+def test_cue_acepta_prefijo_correcto_de_otra_provincia(vat_cue_referente, db):
+    provincia = Provincia.objects.create(nombre="Mendoza")
+    municipio = Municipio.objects.create(nombre="Guaymallén", provincia=provincia)
+    localidad = Localidad.objects.create(nombre="Dorrego", municipio=municipio)
+    data = _build_centro_payload(
+        vat_cue_referente,
+        provincia,
+        municipio,
+        localidad,
+        codigo="500144900",  # 50 = Mendoza
+        referentes=[str(vat_cue_referente.pk)],
+    )
+
+    form = CentroAltaForm(data=data)
+
+    assert form.is_valid(), form.errors
+
+
+@pytest.mark.django_db
+def test_cue_acepta_la_pampa_con_prefijo_42(vat_cue_referente, db):
+    """La Pampa no figuraba en la tabla del ticket; se usa su código INDEC."""
+    provincia = Provincia.objects.create(nombre="La Pampa")
+    municipio = Municipio.objects.create(nombre="Santa Rosa", provincia=provincia)
+    localidad = Localidad.objects.create(nombre="Toay", municipio=municipio)
+    data = _build_centro_payload(
+        vat_cue_referente,
+        provincia,
+        municipio,
+        localidad,
+        codigo="420144900",
+        referentes=[str(vat_cue_referente.pk)],
+    )
+
+    form = CentroAltaForm(data=data)
+
+    assert form.is_valid(), form.errors
+
+
+@pytest.mark.django_db
+def test_cue_no_valida_prefijo_si_la_provincia_no_esta_en_el_mapeo(
+    vat_cue_referente, db
+):
+    """Nombre no canónico: no se bloquea el alta por un desajuste de nomenclatura."""
+    provincia = Provincia.objects.create(nombre="Tierra del Fuego")
+    municipio = Municipio.objects.create(nombre="Ushuaia", provincia=provincia)
+    localidad = Localidad.objects.create(nombre="Ushuaia Centro", municipio=municipio)
+    data = _build_centro_payload(
+        vat_cue_referente,
+        provincia,
+        municipio,
+        localidad,
+        codigo="990144900",
+        referentes=[str(vat_cue_referente.pk)],
+    )
+
+    form = CentroAltaForm(data=data)
+
+    assert form.is_valid(), form.errors
+
+
+@pytest.mark.django_db
+def test_cue_mantiene_la_validacion_numerica(vat_geo_data, vat_cue_referente):
+    provincia, municipio, localidad = vat_geo_data
+    data = _build_centro_payload(
+        vat_cue_referente,
+        provincia,
+        municipio,
+        localidad,
+        codigo="06014ABCD",
+        referentes=[str(vat_cue_referente.pk)],
+    )
+
+    form = CentroAltaForm(data=data)
+
+    assert not form.is_valid()
+    assert form.errors["codigo"] == ["El CUE debe contener solo números."]
+
+
+@pytest.mark.django_db
+def test_cue_duplicado_contra_centro_dado_de_baja_no_rompe_con_integrityerror(
+    vat_geo_data, vat_cue_referente
+):
+    """
+    `Centro.codigo` es unique en DB, pero el manager por defecto de soft delete
+    excluye los borrados: sin validar contra `all_objects` esto terminaba en
+    IntegrityError (500) en lugar de un error de formulario.
+    """
+    provincia, municipio, localidad = vat_geo_data
+    baja = _centro_existente_para_cue(
+        vat_cue_referente, provincia, municipio, localidad, "060155004"
+    )
+    baja.delete(user=vat_cue_referente)
+    assert not Centro.objects.filter(codigo="060155004").exists()
+    assert Centro.all_objects.filter(codigo="060155004").exists()
+
+    data = _build_centro_payload(
+        vat_cue_referente,
+        provincia,
+        municipio,
+        localidad,
+        codigo="060155004",
+        referentes=[str(vat_cue_referente.pk)],
+    )
+    form = CentroAltaForm(data=data)
+
+    assert not form.is_valid()
+    assert form.errors["codigo"] == [
+        "El CUE ingresado ya se encuentra registrado en otro centro dado de baja."
+    ]
+
+
+@pytest.mark.django_db
+def test_cue_error_duplicado_no_se_duplica_con_el_mensaje_default_de_django(
+    vat_geo_data, vat_cue_referente
+):
+    """`codigo` es unique=True: el error propio debe reemplazar al de Django."""
+    provincia, municipio, localidad = vat_geo_data
+    _centro_existente_para_cue(
+        vat_cue_referente, provincia, municipio, localidad, "060155005"
+    )
+    data = _build_centro_payload(
+        vat_cue_referente,
+        provincia,
+        municipio,
+        localidad,
+        codigo="060155005",
+        referentes=[str(vat_cue_referente.pk)],
+    )
+
+    form = CentroAltaForm(data=data)
+
+    assert not form.is_valid()
+    assert len(form.errors["codigo"]) == 1
+
+
+@pytest.mark.django_db
+def test_cue_prefijos_cubren_todas_las_provincias_del_sistema(db):
+    """Ninguna provincia del fixture canónico debe quedar sin prefijo."""
+    call_command("loaddata", "localidad_municipio_provincia", verbosity=0)
+    nombres = set(Provincia.objects.values_list("nombre", flat=True))
+
+    sin_prefijo = sorted(nombres - set(CUE_PREFIJOS_POR_PROVINCIA))
+
+    assert not sin_prefijo, f"Provincias sin prefijo de CUE: {sin_prefijo}"
+    assert len(CUE_PREFIJOS_POR_PROVINCIA) == 24
+    assert len(set(CUE_PREFIJOS_POR_PROVINCIA.values())) == 24
+
+
+# ============================================================================
+# SELECCIÓN MÚLTIPLE: ACEPTAR / RECHAZAR EN LOTE (#2132)
+# ============================================================================
+
+
+@pytest.fixture
+def vat_comision_lote(db, vat_geo_data):
+    """Comisión de curso activa con cupo amplio y superusuario referente."""
+    provincia, municipio, localidad = vat_geo_data
+    modalidad = ModalidadCursada.objects.create(nombre="Presencial Lote", activo=True)
+    programa = Programa.objects.create(nombre="Programa Lote")
+    sexo = Sexo.objects.create(sexo="No Binario Lote")
+    group, _ = Group.objects.get_or_create(name="CFP")
+    user = User.objects.create_superuser(
+        username="admin-lote", email="admin-lote@vat.test", password="test1234"
+    )
+    user.groups.add(group)
+    centro = Centro.objects.create(
+        nombre="CFP Lote",
+        codigo="060166001",
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad,
+        calle="30",
+        numero=100,
+        domicilio_actividad="Calle 30 N 100",
+        telefono="221-1111170",
+        celular="221-2222270",
+        correo="cfplote@vat.test",
+        nombre_referente="Ana",
+        apellido_referente="Gomez",
+        telefono_referente="221-3333370",
+        correo_referente="ana-lote@vat.test",
+        referente=user,
+        tipo_gestion="Estatal",
+        clase_institucion="Formación Profesional",
+        situacion="Institución de ETP",
+        activo=True,
+    )
+    ubicacion = InstitucionUbicacion.objects.create(
+        centro=centro,
+        localidad=localidad,
+        rol_ubicacion="sede_principal",
+        domicilio="Calle 30 N 100",
+        es_principal=True,
+    )
+    curso = Curso.objects.create(
+        centro=centro, nombre="Curso lote", modalidad=modalidad, estado="activo"
+    )
+    comision = ComisionCurso.objects.create(
+        curso=curso,
+        ubicacion=ubicacion,
+        codigo_comision="LOTE-01",
+        nombre="Comisión Lote",
+        cupo_total=20,
+        fecha_inicio=timezone.localdate() - timedelta(days=30),
+        fecha_fin=timezone.localdate() + timedelta(days=30),
+        estado="activa",
+    )
+    return SimpleNamespace(
+        user=user,
+        centro=centro,
+        curso=curso,
+        comision=comision,
+        programa=programa,
+        sexo=sexo,
+    )
+
+
+def _inscripcion_lote(ctx, *, documento, estado="pre_inscripta", comision=None):
+    ciudadano = Ciudadano.objects.create(
+        apellido=f"Alumno{documento}",
+        nombre="Lote",
+        fecha_nacimiento=date(2000, 1, 1),
+        tipo_documento=Ciudadano.DOCUMENTO_DNI,
+        documento=documento,
+        sexo=ctx.sexo,
+    )
+    return Inscripcion.objects.create(
+        ciudadano=ciudadano,
+        comision_curso=comision or ctx.comision,
+        programa=ctx.programa,
+        estado=estado,
+        origen_canal="backoffice",
+    )
+
+
+def _url_lote(comision):
+    return reverse(
+        "vat_inscripcion_curso_cambiar_estado_lote", kwargs={"pk": comision.pk}
+    )
+
+
+def _mensajes_de(response):
+    """Lee los messages del request sin seguir el redirect (evita renderizar)."""
+    return " ".join(str(m) for m in get_messages(response.wsgi_request))
+
+
+def _invocar_url_lote(user, comision, data):
+    """
+    Invoca la URL del lote vía `resolve` para ejercitar el decorador de permisos
+    sin que Django renderice las páginas 403/404.
+    """
+    match = resolve(_url_lote(comision))
+    request = RequestFactory().post(_url_lote(comision), data=data)
+    request.user = user
+    return match.func(request, *match.args, **match.kwargs)
+
+
+@pytest.mark.django_db
+def test_lote_acepta_varias_inscripciones_en_una_sola_accion(client, vat_comision_lote):
+    ctx = vat_comision_lote
+    uno = _inscripcion_lote(ctx, documento=43000001)
+    dos = _inscripcion_lote(ctx, documento=43000002)
+    tres = _inscripcion_lote(ctx, documento=43000003)
+
+    client.force_login(ctx.user)
+    response = client.post(
+        _url_lote(ctx.comision),
+        data={
+            "estado": "inscripta",
+            "inscripciones": [str(uno.pk), str(dos.pk), str(tres.pk)],
+        },
+    )
+
+    assert response.status_code == 302
+    assert response.url.endswith("#inscriptos")
+    for inscripcion in (uno, dos, tres):
+        inscripcion.refresh_from_db()
+        assert inscripcion.estado == "inscripta"
+
+
+@pytest.mark.django_db
+def test_lote_rechaza_varias_inscripciones_en_una_sola_accion(
+    client, vat_comision_lote
+):
+    ctx = vat_comision_lote
+    uno = _inscripcion_lote(ctx, documento=43000010)
+    dos = _inscripcion_lote(ctx, documento=43000011)
+
+    client.force_login(ctx.user)
+    client.post(
+        _url_lote(ctx.comision),
+        data={"estado": "rechazada", "inscripciones": [str(uno.pk), str(dos.pk)]},
+    )
+
+    uno.refresh_from_db()
+    dos.refresh_from_db()
+    assert uno.estado == "rechazada"
+    assert dos.estado == "rechazada"
+
+
+@pytest.mark.django_db
+def test_lote_solo_afecta_las_inscripciones_seleccionadas(client, vat_comision_lote):
+    ctx = vat_comision_lote
+    elegida = _inscripcion_lote(ctx, documento=43000020)
+    intacta = _inscripcion_lote(ctx, documento=43000021)
+
+    client.force_login(ctx.user)
+    client.post(
+        _url_lote(ctx.comision),
+        data={"estado": "inscripta", "inscripciones": [str(elegida.pk)]},
+    )
+
+    elegida.refresh_from_db()
+    intacta.refresh_from_db()
+    assert elegida.estado == "inscripta"
+    assert intacta.estado == "pre_inscripta"
+
+
+@pytest.mark.django_db
+def test_lote_sin_seleccion_no_hace_nada(client, vat_comision_lote):
+    ctx = vat_comision_lote
+    inscripcion = _inscripcion_lote(ctx, documento=43000030)
+
+    client.force_login(ctx.user)
+    response = client.post(_url_lote(ctx.comision), data={"estado": "inscripta"})
+
+    inscripcion.refresh_from_db()
+    assert inscripcion.estado == "pre_inscripta"
+    mensajes = _mensajes_de(response).lower()
+    assert "no seleccionaste" in mensajes
+
+
+@pytest.mark.django_db
+def test_lote_rechaza_estado_fuera_del_whitelist(client, vat_comision_lote):
+    ctx = vat_comision_lote
+    inscripcion = _inscripcion_lote(ctx, documento=43000040)
+
+    client.force_login(ctx.user)
+    response = client.post(
+        _url_lote(ctx.comision),
+        # `abandonada` es un estado válido del modelo pero no del lote.
+        data={"estado": "abandonada", "inscripciones": [str(inscripcion.pk)]},
+    )
+
+    inscripcion.refresh_from_db()
+    assert inscripcion.estado == "pre_inscripta"
+    mensajes = _mensajes_de(response).lower()
+    assert "acción no válida" in mensajes
+
+
+@pytest.mark.django_db
+def test_lote_ignora_inscripciones_de_otra_comision(client, vat_comision_lote):
+    ctx = vat_comision_lote
+    otra_comision = ComisionCurso.objects.create(
+        curso=ctx.curso,
+        ubicacion=ctx.comision.ubicacion,
+        codigo_comision="LOTE-02",
+        nombre="Otra Comisión Lote",
+        cupo_total=10,
+        fecha_inicio=timezone.localdate() - timedelta(days=30),
+        fecha_fin=timezone.localdate() + timedelta(days=30),
+        estado="activa",
+    )
+    propia = _inscripcion_lote(ctx, documento=43000050)
+    ajena = _inscripcion_lote(ctx, documento=43000051, comision=otra_comision)
+
+    client.force_login(ctx.user)
+    client.post(
+        _url_lote(ctx.comision),
+        data={"estado": "inscripta", "inscripciones": [str(propia.pk), str(ajena.pk)]},
+    )
+
+    propia.refresh_from_db()
+    ajena.refresh_from_db()
+    assert propia.estado == "inscripta"
+    assert ajena.estado == "pre_inscripta"
+
+
+@pytest.mark.django_db
+def test_lote_informa_las_que_ya_estaban_en_el_estado(client, vat_comision_lote):
+    ctx = vat_comision_lote
+    ya_inscripta = _inscripcion_lote(ctx, documento=43000060, estado="inscripta")
+    pendiente = _inscripcion_lote(ctx, documento=43000061)
+
+    client.force_login(ctx.user)
+    response = client.post(
+        _url_lote(ctx.comision),
+        data={
+            "estado": "inscripta",
+            "inscripciones": [str(ya_inscripta.pk), str(pendiente.pk)],
+        },
+    )
+
+    pendiente.refresh_from_db()
+    assert pendiente.estado == "inscripta"
+    mensajes = _mensajes_de(response).lower()
+    assert "1 ya estaban en ese estado" in mensajes
+
+
+@pytest.mark.django_db
+def test_lote_aplica_los_exitos_y_reporta_los_errores(client, vat_comision_lote):
+    """
+    Un fallo puntual (cupo completo) no descarta los cambios ya aplicados: se
+    informa qué filas quedaron afuera.
+    """
+    ctx = vat_comision_lote
+    ctx.comision.cupo_total = 1
+    ctx.comision.save(update_fields=["cupo_total"])
+    # `rechazada` no ocupa cupo, así que al aceptar compiten por el único lugar.
+    primera = _inscripcion_lote(ctx, documento=43000070, estado="rechazada")
+    segunda = _inscripcion_lote(ctx, documento=43000071, estado="rechazada")
+
+    client.force_login(ctx.user)
+    response = client.post(
+        _url_lote(ctx.comision),
+        data={
+            "estado": "inscripta",
+            "inscripciones": [str(primera.pk), str(segunda.pk)],
+        },
+    )
+
+    primera.refresh_from_db()
+    segunda.refresh_from_db()
+    estados = sorted([primera.estado, segunda.estado])
+    assert estados == ["inscripta", "rechazada"]
+    mensajes = _mensajes_de(response).lower()
+    assert "cupo" in mensajes
+
+
+@pytest.mark.django_db
+def test_lote_requiere_permiso_de_cambio_de_inscripcion(vat_comision_lote):
+    ctx = vat_comision_lote
+    inscripcion = _inscripcion_lote(ctx, documento=43000080)
+    lector = User.objects.create_user(username="lector-lote", password="test1234")
+    lector.user_permissions.add(Permission.objects.get(codename="view_comisioncurso"))
+    ctx.centro.referentes.add(lector)
+
+    with pytest.raises(PermissionDenied):
+        _invocar_url_lote(
+            lector,
+            ctx.comision,
+            {"estado": "inscripta", "inscripciones": [str(inscripcion.pk)]},
+        )
+
+    inscripcion.refresh_from_db()
+    assert inscripcion.estado == "pre_inscripta"
+
+
+@pytest.mark.django_db
+def test_lote_fuera_de_scope_territorial_devuelve_404(vat_comision_lote):
+    ctx = vat_comision_lote
+    inscripcion = _inscripcion_lote(ctx, documento=43000090)
+    ajeno = User.objects.create_superuser(
+        username="admin-ajeno-lote", email="ajeno-lote@vat.test", password="test1234"
+    )
+    cfp_group, _ = Group.objects.get_or_create(name="CFP")
+    ajeno.groups.add(cfp_group)
+    ajeno.is_superuser = False
+    ajeno.is_staff = False
+    ajeno.save(update_fields=["is_superuser", "is_staff"])
+    ajeno.user_permissions.add(Permission.objects.get(codename="change_inscripcion"))
+
+    with pytest.raises(Http404):
+        _invocar_url_lote(
+            ajeno,
+            ctx.comision,
+            {"estado": "inscripta", "inscripciones": [str(inscripcion.pk)]},
+        )
+
+    inscripcion.refresh_from_db()
+    assert inscripcion.estado == "pre_inscripta"
+
+
+@pytest.mark.django_db
+def test_actualizar_estado_en_lote_devuelve_resumen(vat_comision_lote):
+    ctx = vat_comision_lote
+    cambia = _inscripcion_lote(ctx, documento=43000100)
+    igual = _inscripcion_lote(ctx, documento=43000101, estado="inscripta")
+
+    resumen = InscripcionService.actualizar_estado_en_lote(
+        inscripciones=[cambia, igual],
+        nuevo_estado="inscripta",
+        usuario=ctx.user,
+    )
+
+    assert [i.pk for i in resumen["actualizadas"]] == [cambia.pk]
+    assert [i.pk for i in resumen["sin_cambios"]] == [igual.pk]
+    assert resumen["errores"] == []
+
+
+@pytest.mark.django_db
+def test_actualizar_estado_en_lote_rechaza_estado_invalido(vat_comision_lote):
+    ctx = vat_comision_lote
+    inscripcion = _inscripcion_lote(ctx, documento=43000110)
+
+    with pytest.raises(ValueError):
+        InscripcionService.actualizar_estado_en_lote(
+            inscripciones=[inscripcion],
+            nuevo_estado="inexistente",
+            usuario=ctx.user,
+        )
+
+
+# ============================================================================
+# LISTA DE ESPERA: CUPO CONFIGURABLE Y ESTADO DEL CHECKBOX (#2006)
+# ============================================================================
+
+
+@pytest.fixture
+def vat_centro_espera(db, vat_geo_data):
+    """Centro con curso y superusuario referente, para el panel de cursos."""
+    provincia, municipio, localidad = vat_geo_data
+    modalidad = ModalidadCursada.objects.create(nombre="Presencial Espera", activo=True)
+    user = User.objects.create_superuser(
+        username="admin-espera", email="admin-espera@vat.test", password="test1234"
+    )
+    group, _ = Group.objects.get_or_create(name="CFP")
+    user.groups.add(group)
+    centro = Centro.objects.create(
+        nombre="CFP Espera",
+        codigo="060177001",
+        provincia=provincia,
+        municipio=municipio,
+        localidad=localidad,
+        calle="40",
+        numero=200,
+        domicilio_actividad="Calle 40 N 200",
+        telefono="221-1111180",
+        celular="221-2222280",
+        correo="cfpespera@vat.test",
+        nombre_referente="Ana",
+        apellido_referente="Gomez",
+        telefono_referente="221-3333380",
+        correo_referente="ana-espera@vat.test",
+        referente=user,
+        tipo_gestion="Estatal",
+        clase_institucion="Formación Profesional",
+        situacion="Institución de ETP",
+        activo=True,
+    )
+    ubicacion = InstitucionUbicacion.objects.create(
+        centro=centro,
+        localidad=localidad,
+        rol_ubicacion="sede_principal",
+        domicilio="Calle 40 N 200",
+        es_principal=True,
+    )
+    curso = Curso.objects.create(
+        centro=centro, nombre="Curso espera", modalidad=modalidad, estado="activo"
+    )
+    return SimpleNamespace(user=user, centro=centro, curso=curso, ubicacion=ubicacion)
+
+
+def _comision_espera(ctx, *, codigo, acepta, cupo_espera=None):
+    return ComisionCurso.objects.create(
+        curso=ctx.curso,
+        ubicacion=ctx.ubicacion,
+        codigo_comision=codigo,
+        nombre=f"Comisión {codigo}",
+        cupo_total=15,
+        acepta_lista_espera=acepta,
+        cupo_lista_espera=cupo_espera,
+        fecha_inicio=timezone.localdate() - timedelta(days=10),
+        fecha_fin=timezone.localdate() + timedelta(days=30),
+        estado="activa",
+    )
+
+
+def _render_panel_cursos(ctx):
+    """Renderiza el partial sin test client (evita el bug de py3.14)."""
+    from VAT.views.centro import CentroCursosPanelView
+
+    url = reverse("vat_centro_cursos_panel", kwargs={"pk": ctx.centro.pk})
+    request = RequestFactory().get(url)
+    request.user = ctx.user
+    request.csp_nonce = "test-nonce"
+    response = CentroCursosPanelView.as_view()(request, pk=ctx.centro.pk)
+    return response.render().content.decode()
+
+
+@pytest.mark.django_db
+def test_panel_expone_cupo_de_lista_espera_en_el_boton_editar(vat_centro_espera):
+    """El trigger del modal debe llevar el cupo configurado, no solo el toggle."""
+    ctx = vat_centro_espera
+    _comision_espera(ctx, codigo="ESP-ON", acepta=True, cupo_espera=7)
+
+    html = _render_panel_cursos(ctx)
+
+    assert 'data-acepta-lista-espera="1"' in html
+    assert 'data-cupo-lista-espera="7"' in html
+
+
+@pytest.mark.django_db
+def test_panel_marca_toggle_apagado_cuando_no_acepta_espera(vat_centro_espera):
+    ctx = vat_centro_espera
+    _comision_espera(ctx, codigo="ESP-OFF", acepta=False)
+
+    html = _render_panel_cursos(ctx)
+
+    assert 'data-acepta-lista-espera="0"' in html
+    # Sin cupo configurado el atributo viaja vacio, no como "None".
+    assert 'data-cupo-lista-espera=""' in html
+    assert "None" not in html.split('data-cupo-lista-espera="')[1][:10]
+
+
+@pytest.mark.django_db
+def test_modal_renderiza_campo_de_cupo_con_wrapper_y_marca_de_requerido(
+    vat_centro_espera,
+):
+    """El campo de limite y sus marcadores de JS tienen que estar en el modal."""
+    ctx = vat_centro_espera
+    _comision_espera(ctx, codigo="ESP-MODAL", acepta=True, cupo_espera=3)
+
+    html = _render_panel_cursos(ctx)
+
+    assert "data-waitlist-capacity-wrapper" in html
+    assert "data-waitlist-required-mark" in html
+    assert 'name="cupo_lista_espera"' in html
+    assert "Cupo Lista de Espera" in html
+
+
+@pytest.mark.django_db
+def test_comision_curso_form_exige_cupo_cuando_acepta_lista_espera(vat_centro_espera):
+    """Regla de negocio detras del campo: activar la espera obliga a dar cupo."""
+    ctx = vat_centro_espera
+    base = {
+        "curso": str(ctx.curso.pk),
+        "ubicacion": str(ctx.ubicacion.pk),
+        "cupo_total": "15",
+        "fecha_inicio": "2026-04-30",
+        "fecha_fin": "2026-06-18",
+        "estado": "activa",
+        "observaciones": "",
+    }
+
+    sin_cupo = ComisionCursoForm(data={**base, "acepta_lista_espera": "on"})
+    con_cupo = ComisionCursoForm(
+        data={**base, "acepta_lista_espera": "on", "cupo_lista_espera": "5"}
+    )
+
+    assert not sin_cupo.is_valid()
+    assert "cupo_lista_espera" in sin_cupo.errors
+    assert con_cupo.is_valid(), con_cupo.errors
+
+
+@pytest.mark.django_db
+def test_comision_curso_form_descarta_cupo_si_no_acepta_lista_espera(vat_centro_espera):
+    ctx = vat_centro_espera
+    form = ComisionCursoForm(
+        data={
+            "curso": str(ctx.curso.pk),
+            "ubicacion": str(ctx.ubicacion.pk),
+            "cupo_total": "15",
+            "cupo_lista_espera": "5",
+            "fecha_inicio": "2026-04-30",
+            "fecha_fin": "2026-06-18",
+            "estado": "activa",
+            "observaciones": "",
+        }
+    )
+
+    assert form.is_valid(), form.errors
+    comision = form.save()
+    # ComisionCurso.clean limpia el cupo cuando la espera esta desactivada.
+    assert comision.acepta_lista_espera is False
+    assert comision.cupo_lista_espera is None
+
+
+@pytest.mark.django_db
+def test_resultados_fecha_fin_invalida_no_rompe_con_500(
+    client, vat_comision_resultados
+):
+    """Un POST con fecha no ISO debe dar mensaje de error, no ValidationError."""
+    ctx = vat_comision_resultados
+    inscripcion = _crear_inscripcion_resultados(ctx, documento=40000200)
+    profesor = _crear_profesor(ctx)
+
+    client.force_login(ctx.user)
+    response = client.post(
+        reverse("vat_comision_curso_resultados", kwargs={"pk": ctx.comision.pk}),
+        data={
+            "profesor": profesor.pk,
+            "fecha_fin": "26/06/2026",
+            f"resultado_{inscripcion.pk}": "aprobado",
+        },
+    )
+
+    assert response.status_code == 302
+    assert not ActaCierreComision.objects.filter(comision_curso=ctx.comision).exists()
+    inscripcion.refresh_from_db()
+    assert inscripcion.resultado_final is None
+    mensajes = _mensajes_de(response).lower()
+    assert "no es válida" in mensajes
+
+
+@pytest.mark.django_db
+def test_resultados_profesor_no_numerico_no_rompe_con_500(
+    client, vat_comision_resultados
+):
+    """`filter(pk="abc")` levantaria ValueError al evaluar el queryset."""
+    ctx = vat_comision_resultados
+    _crear_inscripcion_resultados(ctx, documento=40000201)
+
+    client.force_login(ctx.user)
+    response = client.post(
+        reverse("vat_comision_curso_resultados", kwargs={"pk": ctx.comision.pk}),
+        data={"profesor": "abc", "fecha_fin": "2026-06-26"},
+    )
+
+    assert response.status_code == 302
+    assert not ActaCierreComision.objects.filter(comision_curso=ctx.comision).exists()
+    mensajes = _mensajes_de(response).lower()
+    assert "profesor a cargo" in mensajes

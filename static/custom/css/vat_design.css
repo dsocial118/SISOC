@@ -203,8 +203,29 @@
 
 .vat-ui select option { color: #1c2742; background: #ffffff; }
 
+/* Los modales llevan `.vat-ui-modal` sin estar necesariamente dentro de
+   `.vat-ui` (p. ej. centro_detail usa `.sisoc-centro-page` como raiz), asi que
+   los checkbox/radio se estilan por ambos scopes. Sin esto, sobre el fondo
+   navy del modal el checkbox no muestra su estado marcado. */
 .vat-ui input[type="checkbox"],
-.vat-ui input[type="radio"] { accent-color: var(--cteal); }
+.vat-ui input[type="radio"],
+.vat-ui-modal input[type="checkbox"],
+.vat-ui-modal input[type="radio"] { accent-color: var(--cteal); }
+
+/* Checkbox visible sobre superficie oscura: sin esto Bootstrap lo pinta
+   blanco con borde gris claro y el tilde se pierde contra el modal. */
+.vat-ui-modal .form-check-input {
+    width: 1.15em;
+    height: 1.15em;
+    margin-top: .15em;
+    background-color: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.55);
+}
+
+.vat-ui-modal .form-check-input:focus {
+    border-color: var(--cteal);
+    box-shadow: 0 0 0 .2rem rgba(59, 134, 129, 0.3);
+}
 
 /* Select2 dark */
 .vat-ui .select2-container--default .select2-selection--single,
@@ -514,7 +535,11 @@
 .vat-ui .btn-outline-secondary:hover { background: rgba(255, 255, 255, 0.1); color: #ffffff; }
 
 .vat-ui .form-switch .form-check-input { background-color: rgba(255, 255, 255, 0.12); }
-.vat-ui .form-check-input:checked { background-color: var(--cteal); border-color: var(--cteal); }
+.vat-ui .form-check-input:checked,
+.vat-ui-modal .form-check-input:checked {
+    background-color: var(--cteal);
+    border-color: var(--cteal);
+}
 
 .vat-ui .alert-danger {
     background: rgba(198, 40, 40, 0.18);
