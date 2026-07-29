@@ -177,7 +177,9 @@ def test_clean_validates_missing_and_mismatches(mocker):
         ("Otro programa", None),
     ],
 )
-def test_clean_aplica_regla_codigo_de_proyecto(mocker, programa_nombre, codigo_esperado):
+def test_clean_aplica_regla_codigo_de_proyecto(
+    mocker, programa_nombre, codigo_esperado
+):
     form = _build_form_stub()
     actividad = SimpleNamespace(id=1)
     proceso = SimpleNamespace(id=2, estado_actividad_id=1)
