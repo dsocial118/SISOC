@@ -24,12 +24,14 @@
                class="btn btn-md btn-outline-light">
                 <i class="bi bi-people me-1"></i>Ver Nómina
             </a>
-            <button type="button"
-                    class="btn btn-md btn-outline-light"
-                    data-bs-toggle="modal"
-                    data-bs-target="#modalIntervencion">
-                <i class="bi bi-clipboard-plus me-1"></i>Nueva Intervención
-            </button>
+            {% if cdi_intervenciones_visible %}
+                <button type="button"
+                        class="btn btn-md btn-outline-light"
+                        data-bs-toggle="modal"
+                        data-bs-target="#modalIntervencion">
+                    <i class="bi bi-clipboard-plus me-1"></i>Nueva Intervención
+                </button>
+            {% endif %}
             {% if perms.auditlog.view_logentry %}
                 <a href="{% url 'audittrail:log_instance' 'centrodeinfancia' 'centrodeinfancia' centro.pk %}"
                    class="btn btn-md btn-outline-light"><i class="bi bi-journal-text me-1"></i>Historial</a>
@@ -88,7 +90,7 @@
                 <div class="cdi-hero-stat">
                     <b>{{ trabajadores|length }}</b><span>Trabajadores</span>
                 </div>
-                {% if request.user|has_perm_code:'centrodeinfancia.view_formulariocdi' %}
+                {% if cdi_formularios_visible and request.user|has_perm_code:'centrodeinfancia.view_formulariocdi' %}
                     <div class="cdi-hero-stat-sep"></div>
                     <div class="cdi-hero-stat">
                         <b>{{ formularios_total }}</b><span>Formularios</span>
@@ -534,7 +536,7 @@
         </div>
 
         <!-- 5) FORMULARIOS -->
-        {% if request.user|has_perm_code:'centrodeinfancia.view_formulariocdi' %}
+        {% if cdi_formularios_visible and request.user|has_perm_code:'centrodeinfancia.view_formulariocdi' %}
             <div class="cdf-card">
                 <div class="cdf-card-head">
                     <i class="bi bi-file-earmark-text"></i>
@@ -590,6 +592,7 @@
         {% endif %}
 
         <!-- 6) SEGUIMIENTO: INTERVENCIONES / OBSERVACIONES -->
+        {% if cdi_intervenciones_visible %}
         <div class="cdf-card">
             <div class="cdf-card-head">
                 <i class="bi bi-clipboard-data"></i>
@@ -650,8 +653,26 @@
                 </div>
             </div>
         </div>
+        {% else %}
+            <div class="cdf-card">
+                <div class="cdf-card-head">
+                    <i class="bi bi-chat-left-text"></i>
+                    <span>Observaciones</span>
+                </div>
+                <div class="cdf-card-body">
+                    <div class="d-flex mb-2">
+                        <button type="button"
+                                class="cdf-btn cdf-btn--primary ms-auto"
+                                data-bs-toggle="modal"
+                                data-bs-target="#modalObservacion">Agregar observación</button>
+                    </div>
+                    {% include 'components/data_table.html' with headers=observaciones_headers items=observaciones_items custom_cells=True empty_message='Sin observaciones registradas.' table_class='table-sm table-compact' include_pagination=True is_paginated=observaciones_is_paginated page_obj=observaciones_page_obj page_range=observaciones_page_range page_param='observaciones_page' %}
+                </div>
+            </div>
+        {% endif %}
 
         <!-- 7) MODALES -->
+        {% if cdi_intervenciones_visible %}
         <div class="modal fade"
              id="modalIntervencion"
              tabindex="-1"
@@ -734,6 +755,7 @@
                 </div>
             </div>
         </div>
+        {% endif %}
 
         {% if puede_eliminar_trabajadores %}
             <div class="modal fade"
@@ -854,6 +876,23 @@
                 });
             }
 
+            {% if puede_eliminar_trabajadores %}
+            const trabajadorDeleteForm = document.getElementById("trabajadorDeleteForm");
+            const trabajadorDeleteName = document.getElementById("trabajadorDeleteName");
+
+            document.querySelectorAll(".trabajador-eliminar-btn").forEach(function(button) {
+                button.addEventListener("click", function() {
+                    if (trabajadorDeleteForm) {
+                        trabajadorDeleteForm.action = this.dataset.deleteUrl;
+                    }
+                    if (trabajadorDeleteName) {
+                        trabajadorDeleteName.textContent = this.dataset.fullName || "este trabajador";
+                    }
+                });
+            });
+            {% endif %}
+
+            {% if cdi_intervenciones_visible %}
             const tipoProgramasMap = {{ tipo_intervencion_programas_json|safe }};
             const tipoAliasList = {{ tipo_intervencion_programa_aliases_json|safe }};
             const tieneDocumentacionCheckbox = document.getElementById("id_tiene_documentacion");
@@ -963,21 +1002,6 @@
 
             const fechaInput = document.getElementById("id_fecha");
             const fechaError = document.getElementById("fecha-error-intervencion");
-            {% if puede_eliminar_trabajadores %}
-            const trabajadorDeleteForm = document.getElementById("trabajadorDeleteForm");
-            const trabajadorDeleteName = document.getElementById("trabajadorDeleteName");
-
-            document.querySelectorAll(".trabajador-eliminar-btn").forEach(function(button) {
-                button.addEventListener("click", function() {
-                    if (trabajadorDeleteForm) {
-                        trabajadorDeleteForm.action = this.dataset.deleteUrl;
-                    }
-                    if (trabajadorDeleteName) {
-                        trabajadorDeleteName.textContent = this.dataset.fullName || "este trabajador";
-                    }
-                });
-            });
-            {% endif %}
 
             function validarFecha() {
                 if (!fechaInput) {
@@ -1032,6 +1056,7 @@
                     }
                 });
             }
+            {% endif %}
         });
     </script>
 {% endblock %}

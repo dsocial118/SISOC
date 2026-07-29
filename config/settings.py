@@ -137,6 +137,14 @@ def _safe_bool_env(var_name: str, default: bool) -> bool:
 
 CSRF_TRUSTED_ORIGINS = _build_csrf_trusted_origins()
 
+# CDI: funcionalidades suspendidas temporalmente por el issue #2182.
+# Se reactivan de forma independiente mediante las variables de entorno homónimas.
+CDI_ASISTENCIA_NOMINA_VISIBLE = _safe_bool_env(
+    "CDI_ASISTENCIA_NOMINA_VISIBLE", False
+)
+CDI_FORMULARIOS_VISIBLE = _safe_bool_env("CDI_FORMULARIOS_VISIBLE", False)
+CDI_INTERVENCIONES_VISIBLE = _safe_bool_env("CDI_INTERVENCIONES_VISIBLE", False)
+
 # Apps
 INSTALLED_APPS = [
     # Django
