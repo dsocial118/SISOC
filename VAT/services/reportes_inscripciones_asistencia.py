@@ -14,6 +14,10 @@ from openpyxl.styles import Font
 
 from VAT.models import Centro, Comision, ComisionCurso, Curso, Inscripcion
 from VAT.services.access_scope import filter_centros_queryset_for_user
+from VAT.services.tipo_alumno_service import (
+    tiene_voucher_activo_subquery,
+    tipo_alumno_label,
+)
 
 
 DATE_INPUT_FORMAT = "%Y-%m-%d"
@@ -376,6 +380,7 @@ DETALLE_VALUES = (
     "ciudadano__apellido",
     "ciudadano__nombre",
     "estado",
+    "tiene_voucher_activo",
     "fecha_inscripcion",
     "centro_nombre_ref",
     "comision_codigo_ref",
@@ -387,7 +392,11 @@ def build_detalle_queryset(user, filtros: ReporteFiltros):
     """Queryset (sin materializar) del detalle nominal, ordenado de forma estable
     para paginar con LIMIT/OFFSET sin solapamientos entre páginas."""
     queryset = _apply_filters(_base_queryset_for_user(user), filtros)
-    return queryset.values(*DETALLE_VALUES).order_by("-fecha_inscripcion", "id")
+    return (
+        queryset.annotate(tiene_voucher_activo=tiene_voucher_activo_subquery())
+        .values(*DETALLE_VALUES)
+        .order_by("-fecha_inscripcion", "id")
+    )
 
 
 def build_detalle_personas_inscriptas(
@@ -482,6 +491,7 @@ DETALLE_HEADERS = [
     "Apellido",
     "Nombre",
     "Estado",
+    "Tipo de alumno",
     "Fecha inscripción",
     "Centro",
     "Provincia",
@@ -493,18 +503,23 @@ DETALLE_HEADERS = [
 def _detalle_export_queryset(user, filtros: ReporteFiltros):
     """Detalle nominal completo (sin tope de filas) para exportar."""
     queryset = _apply_filters(_base_queryset_for_user(user), filtros)
-    return queryset.values(
-        "id",
-        "ciudadano__documento",
-        "ciudadano__apellido",
-        "ciudadano__nombre",
-        "estado",
-        "fecha_inscripcion",
-        "centro_nombre_ref",
-        "provincia_nombre_ref",
-        "unidad_formativa_nombre",
-        "comision_codigo_ref",
-    ).order_by("centro_nombre_ref", "ciudadano__apellido", "ciudadano__nombre")
+    return (
+        queryset.annotate(tiene_voucher_activo=tiene_voucher_activo_subquery())
+        .values(
+            "id",
+            "ciudadano__documento",
+            "ciudadano__apellido",
+            "ciudadano__nombre",
+            "estado",
+            "tiene_voucher_activo",
+            "fecha_inscripcion",
+            "centro_nombre_ref",
+            "provincia_nombre_ref",
+            "unidad_formativa_nombre",
+            "comision_codigo_ref",
+        )
+        .order_by("centro_nombre_ref", "ciudadano__apellido", "ciudadano__nombre")
+    )
 
 
 def _detalle_row_cells(row, estado_labels):
@@ -515,6 +530,7 @@ def _detalle_row_cells(row, estado_labels):
         row.get("ciudadano__apellido") or "",
         row.get("ciudadano__nombre") or "",
         estado_labels.get(estado, estado),
+        tipo_alumno_label(row.get("tiene_voucher_activo")),
         fecha.strftime("%Y-%m-%d %H:%M") if fecha else "",
         row.get("centro_nombre_ref") or "",
         row.get("provincia_nombre_ref") or "",

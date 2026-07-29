@@ -20,6 +20,7 @@ class UserGroups:
     ABOGADO_DUPLA = "Abogado Dupla"
     AREA_LEGALES = "Area Legales"
     AREA_CONTABLE = "Area Contable"
+    VALIDADOR_COMEDORES = "Validador Comedores"
     CDI_REFERENTE_CENTRO = "CDI - Referente centro"
     CDI_TRABAJADOR = "CDI - Trabajador"
     CDF_REFERENTE_CENTRO = "CDF - Referente centro"

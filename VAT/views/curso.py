@@ -51,6 +51,7 @@ from VAT.services.nomina_export import (
 )
 from VAT.services.resultados_comision_service import ResultadosComisionService
 from VAT.services.sesion_comision_service.impl import SesionComisionService
+from VAT.services.tipo_alumno_service import anotar_tipo_alumno
 
 
 def _scoped_centros_ids(user):
@@ -413,10 +414,12 @@ class ComisionCursoDetailView(LoginRequiredMixin, DetailView):
         horario_form.fields["comision_curso"].queryset = ComisionCurso.objects.filter(
             pk=comision.pk
         )
-        inscripciones = list(
-            Inscripcion.objects.filter(comision_curso=comision)
-            .select_related("ciudadano", "programa")
-            .order_by("estado", "fecha_inscripcion")
+        inscripciones = anotar_tipo_alumno(
+            list(
+                Inscripcion.objects.filter(comision_curso=comision)
+                .select_related("ciudadano", "programa")
+                .order_by("estado", "fecha_inscripcion")
+            )
         )
         sesiones = list(
             SesionComision.objects.filter(comision_curso=comision)
@@ -976,11 +979,13 @@ class AsistenciaSesionCursoView(LoginRequiredMixin, TemplateView):
         )
 
     def _inscripciones_activas(self, comision):
-        return list(
-            Inscripcion.objects.filter(
-                comision_curso=comision,
-                estado__in=["inscripta", "validada_presencial"],
-            ).select_related("ciudadano")
+        return anotar_tipo_alumno(
+            list(
+                Inscripcion.objects.filter(
+                    comision_curso=comision,
+                    estado__in=["inscripta", "validada_presencial"],
+                ).select_related("ciudadano")
+            )
         )
 
     def get_context_data(self, **kwargs):

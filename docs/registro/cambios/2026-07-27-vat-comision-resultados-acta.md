@@ -1,4 +1,4 @@
-# VAT/INET: pestaña "Resultados" en el detalle de comisión de curso
+# VAT/INET: pestaña "Resultados" en el detalle de comisión de curso (#2147)
 
 ## Contexto
 

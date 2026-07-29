@@ -284,6 +284,21 @@
 
         .asis-mark-all { color: #ffffff; font-size: 16px; font-weight: 700; }
 
+        /* ── Tipo de alumno ── */
+        .asis-chip-vat {
+            display: inline-block;
+            border-radius: 6px;
+            padding: .2em .7em;
+            background: #ffffff;
+            color: #232D4F;
+            font-size: .78rem;
+            font-weight: 700;
+            letter-spacing: .04em;
+            line-height: 1.2;
+        }
+
+        .asis-tipo-sin-plan { color: var(--cmuted); font-size: .85rem; }
+
         /* ── Pie de tabla ── */
         .asis-foot {
             display: flex;
@@ -427,6 +442,7 @@
                                 <tr>
                                     <th>Apellido</th>
                                     <th>Nombre</th>
+                                    <th>Tipo de alumno</th>
                                     <th class="asis-col-check">
                                         <label class="asis-mark asis-mark-all">
                                             <input type="checkbox"
@@ -450,6 +466,13 @@
                                     <tr class="asis-row">
                                         <td>{{ fila.inscripcion.ciudadano.apellido|default:"—" }}</td>
                                         <td>{{ fila.inscripcion.ciudadano.nombre|default:"—" }}</td>
+                                        <td>
+                                            {% if fila.inscripcion.es_alumno_vat %}
+                                                <span class="asis-chip-vat">{{ fila.inscripcion.tipo_alumno }}</span>
+                                            {% else %}
+                                                <span class="asis-tipo-sin-plan">{{ fila.inscripcion.tipo_alumno }}</span>
+                                            {% endif %}
+                                        </td>
                                         <td>
                                             <input type="hidden"
                                                    name="obs_{{ fila.inscripcion.pk }}"
