@@ -8212,6 +8212,7 @@ def test_comision_curso_exporta_nomina_preinscriptos_en_excel(client, vat_geo_da
         "DNI / CUIL",
         "Fecha de Nacimiento",
         "G\u00e9nero",
+        "Tipo de alumno",
         "Comisi\u00f3n",
         "Curso",
         "Centro de Formaci\u00f3n",
@@ -8338,7 +8339,8 @@ def test_comision_curso_exporta_nomina_inscriptos_solo_estado_inscripta(
     assert len(rows) == 1
     assert rows[0][0] == "Perez"
     assert rows[0][1] == "Ana"
-    assert rows[0][8] == "Inscripta"
+    assert rows[0][5] == "Sin Plan"
+    assert rows[0][9] == "Inscripta"
 
 
 @pytest.mark.django_db

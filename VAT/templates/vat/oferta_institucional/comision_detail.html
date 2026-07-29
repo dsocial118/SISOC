@@ -1481,6 +1481,7 @@
                                         <th>Apellido</th>
                                         <th>Nombre</th>
                                         <th>Documento</th>
+                                        <th>Tipo de alumno</th>
                                         <th>Estado</th>
                                         <th>Email</th>
                                         <th>Teléfono</th>
@@ -1506,6 +1507,13 @@
                                             </td>
                                             <td>{{ insc.ciudadano.nombre|default:"—" }}</td>
                                             <td>{{ insc.ciudadano.documento|default:"—" }}</td>
+                                            <td>
+                                                {% if insc.es_alumno_vat %}
+                                                    <span class="ci-pill ci-pill-teal">{{ insc.tipo_alumno }}</span>
+                                                {% else %}
+                                                    <span class="ci-pill ci-pill-gray">{{ insc.tipo_alumno }}</span>
+                                                {% endif %}
+                                            </td>
                                             <td>
                                                 {% if insc.estado == "inscripta" or insc.estado == "validada_presencial" %}
                                                     <span class="ci-pill ci-pill-green">{{ insc.get_estado_display }}</span>
@@ -1543,13 +1551,13 @@
                                         </tr>
                                     {% empty %}
                                         <tr class="ci-tbl-empty" data-empty-row>
-                                            <td colspan="{% if puede_gestionar_lote_inscriptos %}9{% elif puede_cambiar_inscripcion or puede_eliminar_inscripcion %}8{% else %}7{% endif %}">
+                                            <td colspan="{% if puede_gestionar_lote_inscriptos %}10{% elif puede_cambiar_inscripcion or puede_eliminar_inscripcion %}9{% else %}8{% endif %}">
                                                 Sin inscriptos aún. Inscribí ciudadanos a esta comisión para verlos aquí.
                                             </td>
                                         </tr>
                                     {% endfor %}
                                     <tr class="ci-tbl-empty d-none" data-no-results-row>
-                                        <td colspan="{% if puede_gestionar_lote_inscriptos %}9{% elif puede_cambiar_inscripcion or puede_eliminar_inscripcion %}8{% else %}7{% endif %}">
+                                        <td colspan="{% if puede_gestionar_lote_inscriptos %}10{% elif puede_cambiar_inscripcion or puede_eliminar_inscripcion %}9{% else %}8{% endif %}">
                                             No se encontraron inscriptos para la búsqueda.
                                         </td>
                                     </tr>
