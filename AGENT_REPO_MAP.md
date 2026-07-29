@@ -352,6 +352,18 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
   `/mobile/login` y las descargas sensibles se limitan al solicitante o a un
   superusuario.
 
+### Si necesitas cambiar el import/export Excel-CSV del Django admin
+
+- `core/admin_import_export.py`: bases `BaseImportExportAdmin` (import +
+  export) y `BaseExportAdmin` (solo export), con formatos limitados a XLSX/CSV.
+- `<app>/resources.py`: resources explicitos cuando hay que acotar campos o
+  resolver relaciones por nombre (`core`, `intervenciones`).
+- `config/settings.py`: bloque `IMPORT_EXPORT_*` (transacciones, preview
+  obligatorio, permisos requeridos, escape de formulas).
+- `tests/test_admin_import_export.py`.
+- docs: `docs/registro/cambios/2026-07-27-import-export-admin.md` lista que
+  modelo quedo habilitado y cual no, con motivo.
+
 ### Si necesitas cambiar permisos o IAM
 
 - `users/bootstrap/groups_seed.py`
