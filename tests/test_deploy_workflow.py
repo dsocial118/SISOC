@@ -67,7 +67,9 @@ def test_deploy_produccion_espera_migraciones_y_healthcheck_del_entrypoint():
     assert production_step.index(migrations) < production_step.index(healthcheck)
 
     healthcheck_start = production_step.index(healthcheck)
-    healthcheck_end = production_step.index("\n                  fi\n", healthcheck_start)
+    healthcheck_end = production_step.index(
+        "\n                  fi\n", healthcheck_start
+    )
     healthcheck_block = production_step[healthcheck_start:healthcheck_end]
 
     assert "show_django_diagnostics" in healthcheck_block
