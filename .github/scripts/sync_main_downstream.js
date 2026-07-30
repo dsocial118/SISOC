@@ -47,6 +47,11 @@ async function mergeIntoSynchronizationBranch({ github, owner, repo, branch, sou
     commit_message: "Actualizacion segura de la rama temporal de sincronizacion descendente.",
   });
 
+  // GitHub returns 204 without a body when the source is already in the base.
+  if (!merged?.data) {
+    return;
+  }
+
   if (!merged.data.merged && !isAlreadyUpToDate(merged)) {
     throw new Error(
       `No se pudo incorporar ${source} en ${branch}: ${merged.data.message}`,

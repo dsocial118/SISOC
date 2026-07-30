@@ -43,7 +43,7 @@ test("deploy_guard se ejecuta aunque falle un check requerido", () => {
   );
 });
 
-test("crea un PR desde una rama tecnica actualizada para development", async () => {
+test("crea un PR si GitHub responde sin cuerpo para la rama destino ya contenida", async () => {
   const calls = [];
   const github = {
     rest: {
@@ -53,6 +53,9 @@ test("crea un PR desde una rama tecnica actualizada para development", async () 
         }),
         merge: async (payload) => {
           calls.push(["merge", payload]);
+          if (payload.head === "development") {
+            return undefined;
+          }
           return { data: { merged: true } };
         },
       },
