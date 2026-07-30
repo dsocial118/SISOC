@@ -41,3 +41,34 @@ def test_deploy_produccion_actualiza_helper_obsoleto_antes_del_deploy_versionado
     assert stale_helper_block.index(main_branch_guard) < stale_helper_block.index(
         fast_forward
     )
+
+
+def test_deploy_produccion_espera_migraciones_y_healthcheck_del_entrypoint():
+    """Producción no debe fallar mientras el contenedor termina sus migraciones."""
+
+    production_step = _production_deploy_step()
+    deploy_versioned = (
+        "./scripts/operacion/deploy_refresh.sh --yes --expected-revision "
+        '"$EXPECTED_SHA" --with-mobile --mobile-dir /sisoc/SISOC-Mobile'
+    )
+    wait_for = "wait_for() {"
+    diagnostics = "Diagnostico del servicio django de produccion"
+    migrations = 'if ! wait_for "migraciones de produccion" 30 docker compose'
+    healthcheck = (
+        'if ! wait_for "healthcheck de produccion" 30 bash '
+        '"$APP_ROOT/scripts/infra/healthcheck_prod.sh"'
+    )
+
+    assert diagnostics in production_step
+    assert migrations in production_step
+    assert healthcheck in production_step
+    assert production_step.index(deploy_versioned) < production_step.index(wait_for)
+    assert production_step.index(wait_for) < production_step.index(migrations)
+    assert production_step.index(migrations) < production_step.index(healthcheck)
+
+    healthcheck_start = production_step.index(healthcheck)
+    healthcheck_end = production_step.index("\n                  fi\n", healthcheck_start)
+    healthcheck_block = production_step[healthcheck_start:healthcheck_end]
+
+    assert "show_django_diagnostics" in healthcheck_block
+    assert "exit 1" in healthcheck_block

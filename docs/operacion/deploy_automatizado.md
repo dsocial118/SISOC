@@ -24,8 +24,8 @@ correspondiente. El runner local:
 5. prueba `migrate --check`, el healthcheck específico del entorno y registra
    el SHA realmente desplegado en el summary del job.
 
-Como el entrypoint del contenedor aplica migraciones durante el arranque, QA y
-homologación consultan ambos checks mediante sondeo acotado: continúan apenas
+Como el entrypoint del contenedor aplica migraciones durante el arranque, QA,
+homologación y producción consultan ambos checks mediante sondeo acotado: continúan apenas
 las migraciones y el healthcheck responden, o publican el último error después
 del límite. Para homologación, si el checkout local aún no admite
 `--expected-revision`, el workflow hace primero un `merge --ff-only` de la
