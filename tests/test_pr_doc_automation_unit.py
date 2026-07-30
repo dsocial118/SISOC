@@ -279,14 +279,33 @@ def test_sync_pr_artifacts_mueve_pr_de_fecha_y_limpia_bloque_obsoleto(
         impact="no",
         source_url="https://example.test/pr/18",
     )
+    retained_note = pr_doc_automation.PendingReleaseNote(
+        pr_number=19,
+        release_date="2026-03-25",
+        category="Corrección de Errores",
+        area="CI/CD",
+        title="Otro hotfix de deploy",
+        summary="Conserva la release pendiente",
+        impact="no",
+        source_url="https://example.test/pr/19",
+    )
     stale_pending = tmp_path / "docs/registro/releases/pending/2026-03-25-pr-18.md"
+    retained_pending = (
+        tmp_path / "docs/registro/releases/pending/2026-03-25-pr-19.md"
+    )
     stale_pending.parent.mkdir(parents=True, exist_ok=True)
     stale_pending.write_text(
         pr_doc_automation.build_pending_release_note(stale_note),
         encoding="utf-8",
     )
     (tmp_path / "CHANGELOG.md").write_text(
-        pr_doc_automation.build_release_changelog_block("2026-03-25", [stale_note]),
+        pr_doc_automation.build_release_changelog_block(
+            "2026-03-25", [stale_note, retained_note]
+        ),
+        encoding="utf-8",
+    )
+    retained_pending.write_text(
+        pr_doc_automation.build_pending_release_note(retained_note),
         encoding="utf-8",
     )
 
@@ -312,7 +331,10 @@ def test_sync_pr_artifacts_mueve_pr_de_fecha_y_limpia_bloque_obsoleto(
     changelog = (tmp_path / "CHANGELOG.md").read_text(encoding="utf-8")
 
     assert not stale_pending.exists()
-    assert "2026-03-25" not in changelog
+    assert retained_pending.exists()
+    assert "Corrige el deploy anterior" not in changelog
+    assert "Conserva la release pendiente" in changelog
+    assert "2026-03-25" in changelog
     assert "2026-03-18" in changelog
 
 
