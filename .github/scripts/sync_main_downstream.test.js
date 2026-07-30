@@ -31,6 +31,18 @@ test("deploy_guard ejecuta las pruebas de automatizacion de release", () => {
   );
 });
 
+test("deploy_guard se ejecuta aunque falle un check requerido", () => {
+  const testsWorkflow = fs.readFileSync(
+    path.join(__dirname, "..", "workflows", "tests.yml"),
+    "utf8",
+  );
+
+  assert.match(
+    testsWorkflow,
+    /deploy_guard:\s+if: \$\{\{ always\(\) && github\.event_name == 'pull_request' \}\}/,
+  );
+});
+
 test("crea un PR desde una rama tecnica actualizada para development", async () => {
   const calls = [];
   const github = {
