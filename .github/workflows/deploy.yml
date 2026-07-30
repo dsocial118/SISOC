@@ -16,7 +16,6 @@ on:
                 options:
                     - deploy
                     - inspect-cdi-talla-blockers
-                    - repair-confirmed-cdi-talla-blockers-as-null
 
 permissions: { contents: read }
 
@@ -294,13 +293,12 @@ jobs:
         if: >-
             github.ref == 'refs/heads/main' &&
             github.event_name == 'workflow_dispatch' &&
-            (inputs.maintenance_action == 'inspect-cdi-talla-blockers' ||
-            inputs.maintenance_action == 'repair-confirmed-cdi-talla-blockers-as-null')
+            inputs.maintenance_action == 'inspect-cdi-talla-blockers'
         environment: production
         runs-on: [self-hosted, sisoc-produccion]
 
         steps:
-            - name: Clasificar o reparar tallas legacy bloqueantes
+            - name: Clasificar tallas legacy bloqueantes
               shell: bash
               env:
                   GH_APP_ROOT: "${{ vars.APP_ROOT }}"

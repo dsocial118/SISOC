@@ -1023,14 +1023,13 @@ class NominaCentroInfanciaDestinatariosForm(NominaCentroInfanciaBaseForm):
     RANGOS_ANTROPOMETRIA = [
         ("peso", Decimal("1.6"), Decimal("29.5"), "kg"),
         ("longitud_acostado", Decimal("34.9"), Decimal("115.0"), "cm"),
-        ("talla", Decimal("60.6"), Decimal("146.4"), "cm"),
         ("perimetro_cefalico", Decimal("25.2"), Decimal("64.7"), "cm"),
     ]
 
     # Obligatorios según los casos que QA marcó como "campo requerido".
     # Quedan fuera los condicionales (numero_cud, recibe_apoyo_discapacidad) y los
-    # campos pendientes de definición de producto: teléfonos de responsables (enteros)
-    # y los campos que QA pidió eliminar.
+    # campos pendientes de definición de producto: teléfonos de responsables (enteros),
+    # talla legacy de texto y los campos que QA pidió eliminar.
     CAMPOS_OBLIGATORIOS = [
         # Registro
         "tipo_registro",
@@ -1079,7 +1078,6 @@ class NominaCentroInfanciaDestinatariosForm(NominaCentroInfanciaBaseForm):
         # Antropometría (TC_113 a TC_116)
         "peso",
         "longitud_acostado",
-        "talla",
         "perimetro_cefalico",
         # Nutrición
         "lactancia",
