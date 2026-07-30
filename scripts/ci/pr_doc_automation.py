@@ -201,6 +201,18 @@ def remove_previous_pr_files(directory: Path, pattern: str) -> None:
         stale_file.unlink()
 
 
+def find_previous_release_dates(directory: Path, pr_number: int) -> set[str]:
+    """Recupera las fechas de artefactos previos antes de regenerar un PR."""
+
+    release_dates: set[str] = set()
+    pattern = re.compile(r"^(\d{4}-\d{2}-\d{2})-pr-\d+\.md$")
+    for stale_file in directory.glob(f"*-pr-{pr_number}.md"):
+        match = pattern.match(stale_file.name)
+        if match:
+            release_dates.add(match.group(1))
+    return release_dates
+
+
 def detect_affected_areas(changed_files: list[str]) -> list[str]:
     """Resume áreas afectadas por el diff del PR."""
 
@@ -596,6 +608,17 @@ def replace_auto_release_block(
     return replacement_block
 
 
+def remove_auto_release_block(changelog_content: str, release_date: str) -> str:
+    """Quita un bloque auto-generado cuando ya no tiene notas pendientes."""
+
+    pattern = re.compile(
+        rf"{re.escape(AUTO_RELEASE_START.format(release_date=release_date))}\n.*?"
+        rf"{re.escape(AUTO_RELEASE_END.format(release_date=release_date))}\n?",
+        re.S,
+    )
+    return pattern.sub("", changelog_content).lstrip()
+
+
 def render_changelog(
     existing_content: str,
     release_date: str,
@@ -747,6 +770,9 @@ def sync_pr_artifacts(
         return
 
     release_file_date = resolve_release_date(metadata, today or date.today())
+    previous_release_dates = find_previous_release_dates(
+        DOCS_RELEASE_PENDING_DIR, pr.number
+    )
     remove_previous_pr_files(DOCS_RELEASE_PENDING_DIR, f"*-pr-{pr.number}.md")
     pending_note = PendingReleaseNote(
         pr_number=pr.number,
@@ -767,6 +793,18 @@ def sync_pr_artifacts(
     existing_changelog = ""
     if CHANGELOG_PATH.exists():
         existing_changelog = CHANGELOG_PATH.read_text(encoding="utf-8")
+    for previous_release_date in sorted(previous_release_dates - {release_file_date}):
+        previous_notes = load_pending_release_notes(
+            DOCS_RELEASE_PENDING_DIR, previous_release_date
+        )
+        if previous_notes:
+            existing_changelog = render_changelog(
+                existing_changelog, previous_release_date, previous_notes
+            )
+        else:
+            existing_changelog = remove_auto_release_block(
+                existing_changelog, previous_release_date
+            )
     notes = load_pending_release_notes(DOCS_RELEASE_PENDING_DIR, release_file_date)
     updated_changelog = render_changelog(existing_changelog, release_file_date, notes)
     write_text_file(CHANGELOG_PATH, updated_changelog)
