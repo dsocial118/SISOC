@@ -43,11 +43,11 @@ test("deploy_guard se ejecuta aunque falle un check requerido", () => {
   );
 });
 
-test("solo acepta el 204 sin cuerpo para la rama destino ya contenida", async () => {
+test("acepta un merge 201 con commit y solo el 204 sin cuerpo cuando ya esta incorporado", async () => {
   const calls = [];
   const errors = [];
   const failures = [];
-  let noContentResponse = { status: 204 };
+  let developmentMergeResponse = { status: 201, data: { sha: "development-merge-sha" } };
   const github = {
     rest: {
       repos: {
@@ -57,9 +57,9 @@ test("solo acepta el 204 sin cuerpo para la rama destino ya contenida", async ()
         merge: async (payload) => {
           calls.push(["merge", payload]);
           if (payload.head === "development") {
-            return noContentResponse;
+            return developmentMergeResponse;
           }
-          return { data: { merged: true } };
+          return { status: 201, data: { sha: "main-merge-sha" } };
         },
       },
       git: {
@@ -163,8 +163,16 @@ test("solo acepta el 204 sin cuerpo para la rama destino ya contenida", async ()
     ["enableAutoMerge", { pullRequestId: "pull-42" }],
   ]);
 
+  const callsBeforeNoContentResponse = calls.length;
+  developmentMergeResponse = { status: 204 };
+  await run({ github, context: { repo: { owner: "acme", repo: "sisoc" } }, core });
+  assert.deepEqual(
+    calls.slice(callsBeforeNoContentResponse).map(([name]) => name),
+    ["closeLegacyPull", "createRef", "merge", "merge", "createPull", "enableAutoMerge"],
+  );
+
   const callsBeforeInvalidResponse = calls.length;
-  noContentResponse = { status: 201 };
+  developmentMergeResponse = { status: 201 };
   await assert.rejects(
     run({ github, context: { repo: { owner: "acme", repo: "sisoc" } }, core }),
     /respuesta inesperada.*status 201/i,

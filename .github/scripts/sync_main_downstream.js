@@ -6,10 +6,6 @@ function synchronizationBranch(target) {
   return `${SYNCHRONIZATION_BRANCH_PREFIX}${target}`;
 }
 
-function isAlreadyUpToDate(result) {
-  return result.data.message === "Already up to date.";
-}
-
 async function ensureSynchronizationBranch({ github, owner, repo, target, branch }) {
   try {
     await github.rest.git.getRef({
@@ -48,21 +44,20 @@ async function mergeIntoSynchronizationBranch({ github, owner, repo, branch, sou
   });
 
   // GitHub returns 204 without a body when the source is already in the base.
-  if (merged?.status === 204 && !merged.data) {
+  if (merged?.status === 204 && merged.data == null) {
     return;
   }
 
-  if (!merged?.data) {
-    throw new Error(
-      `Respuesta inesperada al incorporar ${source} en ${branch}: falta cuerpo (status ${merged?.status ?? "desconocido"}).`,
-    );
+  // A successful non-fast-forward merge returns the resulting commit (201).
+  if (merged?.status === 201 && typeof merged.data?.sha === "string" && merged.data.sha) {
+    return;
   }
 
-  if (!merged.data.merged && !isAlreadyUpToDate(merged)) {
-    throw new Error(
-      `No se pudo incorporar ${source} en ${branch}: ${merged.data.message}`,
-    );
-  }
+  const detail = merged?.data?.message
+    ?? (merged?.data ? "falta SHA del commit resultante" : "falta cuerpo");
+  throw new Error(
+    `Respuesta inesperada al incorporar ${source} en ${branch}: ${detail} (status ${merged?.status ?? "desconocido"}).`,
+  );
 }
 
 async function enableAutoMerge({ github, core, pull }) {
