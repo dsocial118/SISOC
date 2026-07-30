@@ -32,16 +32,23 @@
 - Revisar primero estos archivos del diff:
 - `.github/workflows/deploy.yml`
 - `AGENT_REPO_MAP.md`
+- `CHANGELOG.md`
+- `docs/contexto/features/pr-2207-fix-deploy-recuperar-tallas-legacy-bloqueantes.md`
 - `docs/operacion/deploy_automatizado.md`
 - `docs/registro/cambios/2026-07-30-reparacion-controlada-talla-legacy-produccion.md`
+- `docs/registro/prs/PR-2207.md`
+- `docs/registro/releases/pending/2026-07-30-pr-2207.md`
 - `tests/test_deploy_workflow.py`
 - Documentación sugerida para ampliar contexto:
 - `docs/indice.md`
 - `docs/ia/CONTEXT_HYGIENE.md`
 - `docs/ia/ARCHITECTURE.md`
 - `docs/ia/TESTING.md`
+- `docs/contexto/features/pr-2207-fix-deploy-recuperar-tallas-legacy-bloqueantes.md`
 - `docs/operacion/deploy_automatizado.md`
 - `docs/registro/cambios/2026-07-30-reparacion-controlada-talla-legacy-produccion.md`
+- `docs/registro/prs/PR-2207.md`
+- `docs/registro/releases/pending/2026-07-30-pr-2207.md`
 
 ## Trazabilidad
 
