@@ -1,9 +1,35 @@
 "use strict";
 
 const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const path = require("node:path");
 const test = require("node:test");
 
 const { run, synchronizationBranch } = require("./sync_main_downstream");
+
+test("el workflow carga la automatizacion desde development, donde existe el helper", () => {
+  const workflow = fs.readFileSync(
+    path.join(__dirname, "..", "workflows", "sync-main-downstream.yml"),
+    "utf8",
+  );
+
+  assert.match(
+    workflow,
+    /name: Checkout de la automatizacion versionada\s+uses: actions\/checkout@v6\.0\.2\s+with:\s+ref: development/,
+  );
+});
+
+test("deploy_guard ejecuta las pruebas de automatizacion de release", () => {
+  const testsWorkflow = fs.readFileSync(
+    path.join(__dirname, "..", "workflows", "tests.yml"),
+    "utf8",
+  );
+
+  assert.match(
+    testsWorkflow,
+    /name: Ejecutar pruebas de automatizacion de release\s+run: node --test \.github\/scripts\/release_orchestrator\.test\.js \.github\/scripts\/sync_main_downstream\.test\.js/,
+  );
+});
 
 test("crea un PR desde una rama tecnica actualizada para development", async () => {
   const calls = [];

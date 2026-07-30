@@ -1,0 +1,155 @@
+# Contexto de feature PR #2192 - release: promover development a main (2026-07-29)
+
+## Resumen
+
+- PR: https://github.com/dsocial118/SISOC/pull/2192
+- Base: `main`
+- Rama origen: `development`
+- Autor: `juanikitro`
+
+## Contexto funcional
+
+- Promoción semanal de development a main con recuperación segura de la sincronización descendente.
+
+## Arquitectura tocada
+
+- El PR toca lógica en `services/`, por lo que impacta reglas de negocio u orquestación.
+- Hay cambios en capa API/DRF y conviene revisar contratos de request/response.
+- Hay cambios en vistas web y puede existir impacto en permisos o renderizado.
+- Se modifican templates, con posible impacto visual o de composición UI.
+- Existen cambios de persistencia o migraciones que requieren revisión de datos.
+- El alcance incluye automatización o tooling de CI/CD.
+
+## Decisiones y supuestos detectados
+
+- Tipo de cambio declarado: Fix
+- Área principal declarada: CI/CD
+- Impacto usuario declarado: Sin cambio directo de interfaz; evita que una promoción quede bloqueada antes del deploy.
+- Riesgos / rollback: El workflow ejecuta automatización desde development; revertir a main solo cuando el helper esté promovido. El rollback funcional usa el tag estable del main previo.
+
+## Design system y UI
+
+- El PR toca piezas de UI y conviene revisar consistencia visual con el patrón existente.
+- Archivos visuales relevantes: .github/scripts/release_orchestrator.js, .github/scripts/release_orchestrator.test.js, .github/scripts/sync_main_downstream.js, .github/scripts/sync_main_downstream.test.js, VAT/templates/vat/centros/centro_detail.html, VAT/templates/vat/centros/partials/centro_cursos_panel.html, VAT/templates/vat/oferta_institucional/asistencia_sesion.html, VAT/templates/vat/oferta_institucional/comision_detail.html
+
+## Memoria operativa para agentes
+
+- Empezar por `docs/registro/prs/PR-2192.md` para contexto resumido del PR.
+- Revisar primero estos archivos del diff:
+- `.env.example`
+- `.gitattributes`
+- `.github/pull_request_template.md`
+- `.github/scripts/release_orchestrator.js`
+- `.github/scripts/release_orchestrator.test.js`
+- `.github/scripts/sync_main_downstream.js`
+- `.github/scripts/sync_main_downstream.test.js`
+- `.github/workflows/architecture.yml`
+- `.github/workflows/deploy.yml`
+- `.github/workflows/lint.yml`
+- `.github/workflows/pr-docs.yml`
+- `.github/workflows/release-orchestrator.yml`
+- `.github/workflows/secrets.yml`
+- `.github/workflows/sync-main-downstream.yml`
+- `.github/workflows/tests.yml`
+- `AGENT_REPO_MAP.md`
+- `VAT/forms.py`
+- `VAT/migrations/0050_resultados_comision_curso.py`
+- `VAT/models.py`
+- `VAT/services/inscripcion_service.py`
+- ... y 205 archivo(s) adicional(es) relacionados.
+- Documentación sugerida para ampliar contexto:
+- `docs/indice.md`
+- `docs/ia/CONTEXT_HYGIENE.md`
+- `docs/ia/ARCHITECTURE.md`
+- `docs/ia/TESTING.md`
+- `docs/contexto/features/pr-2080-fixes.md`
+- `docs/contexto/features/pr-2088-fix-users-credenciales-pwa-y-descarga-csv-por-lote.md`
+- `docs/contexto/features/pr-2089-docs-qa-sidebar-guia-de-testeo-roles-simepi-cdi-y-reubicacion-de-alta-egp-2038.md`
+- `docs/contexto/features/pr-2091-comedores-cambios-mes-ejecucion.md`
+- `docs/contexto/features/pr-2095-fix-inicio-corregir-descentrado-y-footer-ausente-en-pantalla-de-inicio-2087.md`
+- `docs/contexto/features/pr-2097-task-ver-todos-los-expedientes.md`
+- `docs/contexto/features/pr-2098-feat-cdi-registrar-asistencia-sobre-nomina.md`
+- `docs/contexto/features/pr-2100-fix-cdi-permitir-destildar-asistencia.md`
+- `docs/contexto/features/pr-2101-fix-layout-evitar-solapamiento-del-sidebar-con-el-footer.md`
+- `docs/contexto/features/pr-2102-fix-layout-priorizar-footer-sobre-sidebar.md`
+- `docs/contexto/features/pr-2103-feat-core-incorporar-municipios-y-localidades-faltantes-desde-bahra.md`
+- `docs/contexto/features/pr-2104-feat-comedores-reemplazar-colaboradores-de-comedores-pnud-via-data-migration.md`
+- `docs/contexto/features/pr-2105-fix-2085-2084-2083-2081-2063-2036-2096-1990-2001-1.md`
+- `docs/contexto/features/pr-2107-chore-sync-integrar-main-en-development.md`
+- `docs/contexto/features/pr-2109-create-0049-merge-20260720-1003-py.md`
+- `docs/contexto/features/pr-2114-chore-sync-integrar-main-en-development.md`
+- `docs/contexto/features/pr-2116-homologacion.md`
+- `docs/contexto/features/pr-2118-fix-organizaciones-corregir-migracion-arca-por-convenio.md`
+- `docs/contexto/features/pr-2119-modificaciones-en-informe-tecnico-complementario-alimentar-comunidad.md`
+- `docs/contexto/features/pr-2121-fix-organizaciones-tolerar-arca-duplicado-por-convenio.md`
+- `docs/contexto/features/pr-2126-docs-architecture-definir-modulos-extraibles.md`
+- `docs/contexto/features/pr-2127-fix-cdi-primeros-dos-documentos.md`
+- `docs/contexto/features/pr-2128-docs-infra-registrar-retiro-stage-2-mysql-qa.md`
+- `docs/contexto/features/pr-2129-fix-comedores-corregir-seguimiento-de-certificaciones.md`
+- `docs/contexto/features/pr-2134-fix-correcciones-en-documentos-de-rendiciones-pwa.md`
+- `docs/contexto/features/pr-2135-fix-organizaciones-sanea-rollback-arca-antes-de-promocion.md`
+- `docs/contexto/features/pr-2139-feat-release-automatizar-promocion-development-a-main.md`
+- `docs/implementaciones/centrodeinfancia_nomina_renaper.md`
+- `docs/ocr.md`
+- `docs/operacion/comandos_administracion.md`
+- `docs/operacion/deploy_automatizado.md`
+- `docs/registro/cambios/2026-07-21-cdi-validaciones-nomina-nino.md`
+- `docs/registro/cambios/2026-07-23-orquestacion-promocion-automatica.md`
+- `docs/registro/cambios/2026-07-27-cdf-exportacion-beneficiarios.md`
+- `docs/registro/cambios/2026-07-27-import-export-admin.md`
+- `docs/registro/cambios/2026-07-27-issue-2153-mover-expedientes-pago.md`
+- `docs/registro/cambios/2026-07-27-restricciones-abm-usuarios-cdi.md`
+- `docs/registro/cambios/2026-07-27-sincronizacion-descendente-con-checks-estrictos.md`
+- `docs/registro/cambios/2026-07-27-vat-comision-resultados-acta.md`
+- `docs/registro/cambios/2026-07-27-vat-cue-unicidad-y-prefijo-provincial.md`
+- `docs/registro/cambios/2026-07-27-vat-inscriptos-aceptar-rechazar-en-lote.md`
+- `docs/registro/cambios/2026-07-27-vat-lista-espera-estado-visual-checkbox.md`
+- `docs/registro/cambios/2026-07-28-deploy-qa-hml-readiness.md`
+- `docs/registro/cambios/2026-07-28-issue-2149-visibilidad-pwa-programa.md`
+- `docs/registro/cambios/2026-07-28-issue-2151-mover-modulo-ocr.md`
+- `docs/registro/cambios/2026-07-28-issue-2163-categorias-espacios.md`
+- `docs/registro/cambios/2026-07-28-issues-2158-2159-pwa.md`
+- `docs/registro/cambios/2026-07-28-programa-comedores-asociados.md`
+- `docs/registro/cambios/2026-07-28-recuperacion-qa-pwa-y-diagnostico.md`
+- `docs/registro/cambios/2026-07-29-bootstrap-sincronizacion-descendente.md`
+- `docs/registro/cambios/2026-07-29-cdf-beneficiarios-botones-centrados.md`
+- `docs/registro/cambios/2026-07-29-issue-2163-simple-asociacion.md`
+- `docs/registro/cambios/2026-07-29-issue-2169-codigo-proyecto.md`
+- `docs/registro/cambios/2026-07-29-issue-2182-cdi-ocultamiento-temporal.md`
+- `docs/registro/cambios/2026-07-29-permiso-validar-comedores.md`
+- `docs/registro/cambios/2026-07-29-usuarios-dni-cuil-tipo.md`
+- `docs/registro/cambios/2026-07-29-vat-reintegro-voucher-rechazo.md`
+- `docs/registro/cambios/2026-07-29-vat-tipo-alumno-vat-sin-plan.md`
+- `docs/registro/decisiones/2026-07-23-promocion-automatica-con-tag-estable.md`
+- `docs/registro/prs/PR-2080.md`
+- `docs/registro/prs/PR-2088.md`
+- `docs/registro/prs/PR-2089.md`
+- `docs/registro/prs/PR-2091.md`
+- `docs/registro/prs/PR-2095.md`
+- `docs/registro/prs/PR-2097.md`
+- `docs/registro/prs/PR-2098.md`
+- `docs/registro/prs/PR-2100.md`
+- `docs/registro/prs/PR-2101.md`
+- `docs/registro/prs/PR-2102.md`
+- `docs/registro/prs/PR-2103.md`
+- `docs/registro/prs/PR-2104.md`
+- `docs/registro/prs/PR-2105.md`
+- `docs/registro/prs/PR-2107.md`
+- `docs/registro/prs/PR-2109.md`
+- `docs/registro/prs/PR-2114.md`
+- `docs/registro/prs/PR-2116.md`
+- `docs/registro/prs/PR-2118.md`
+- `docs/registro/prs/PR-2119.md`
+- `docs/registro/prs/PR-2121.md`
+- `docs/registro/prs/PR-2126.md`
+- `docs/registro/prs/PR-2127.md`
+- `docs/registro/prs/PR-2128.md`
+- `docs/registro/prs/PR-2129.md`
+- `docs/registro/prs/PR-2134.md`
+- `docs/registro/prs/PR-2135.md`
+- `docs/registro/prs/PR-2139.md`
+
+## Trazabilidad
+
+- Documento generado automáticamente desde el evento de `pull_request`.
+- Si este PR cambia de título, el archivo se renombrará para mantener el slug alineado.
