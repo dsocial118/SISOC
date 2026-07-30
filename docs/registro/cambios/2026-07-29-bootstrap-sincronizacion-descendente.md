@@ -18,7 +18,8 @@ orquestador de release. Así el workflow y el helper se cargan desde la misma
 fuente versionada que GitHub Actions evalúa como rama por defecto.
 
 Se agrega una regresión Node que valida ese contrato de bootstrap en el
-workflow YAML.
+workflow YAML. `deploy_guard`, que es el check requerido por la ruleset,
+ejecuta esa prueba junto con la del orquestador de release.
 
 ## Compatibilidad y seguridad
 
@@ -33,6 +34,7 @@ apuntarse el checkout a una rama que no lo contiene.
 ## Validación y rollback
 
 La prueba focalizada cubre el contrato workflow-helper y conserva las pruebas
-de creación de PR técnico y auto-merge. El rollback consiste en restaurar el
-checkout a `main` solo después de confirmar que el helper está presente en el
-SHA de `main` que ejecutará el workflow.
+de creación de PR técnico y auto-merge; el check requerido `deploy_guard` las
+ejecuta en cada PR. El rollback consiste en restaurar el checkout a `main` solo
+después de confirmar que el helper está presente en el SHA de `main` que
+ejecutará el workflow.

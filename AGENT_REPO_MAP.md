@@ -489,7 +489,8 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - El workflow descendente debe checkoutear `development`, donde vive el helper
   versionado; un checkout de `main` falla durante el bootstrap si todavía no
   contiene ese archivo. La regresión se cubre en
-  `.github/scripts/sync_main_downstream.test.js`.
+  `.github/scripts/sync_main_downstream.test.js` y `deploy_guard` ejecuta las
+  pruebas Node de ambos orquestadores.
 - `.github/workflows/deploy.yml`
 - La automatización de promociones usa una GitHub App privada: variable
   `RELEASE_AUTOMATION_APP_CLIENT_ID` y secret

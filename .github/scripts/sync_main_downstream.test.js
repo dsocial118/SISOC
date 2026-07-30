@@ -19,6 +19,18 @@ test("el workflow carga la automatizacion desde development, donde existe el hel
   );
 });
 
+test("deploy_guard ejecuta las pruebas de automatizacion de release", () => {
+  const testsWorkflow = fs.readFileSync(
+    path.join(__dirname, "..", "workflows", "tests.yml"),
+    "utf8",
+  );
+
+  assert.match(
+    testsWorkflow,
+    /name: Ejecutar pruebas de automatizacion de release\s+run: node --test \.github\/scripts\/release_orchestrator\.test\.js \.github\/scripts\/sync_main_downstream\.test\.js/,
+  );
+});
+
 test("crea un PR desde una rama tecnica actualizada para development", async () => {
   const calls = [];
   const github = {
