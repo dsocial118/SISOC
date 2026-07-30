@@ -265,7 +265,7 @@ jobs:
                       core.info("Evidencia de calidad de release verificada.");
 
     deploy_guard:
-        if: github.event_name == 'pull_request'
+        if: ${{ always() && github.event_name == 'pull_request' }}
         runs-on: ubuntu-latest
         needs:
             - smoke
