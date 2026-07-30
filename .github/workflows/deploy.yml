@@ -218,6 +218,14 @@ jobs:
                       } >> "$GITHUB_STEP_SUMMARY"
                       exit 0
                   fi
+                  if ! grep -q -- "--expected-revision" "$APP_ROOT/scripts/operacion/deploy_refresh.sh"; then
+                      [[ "$(git -C "$APP_ROOT" branch --show-current)" == "main" ]] || {
+                          echo "::error::El checkout de produccion no esta en la branch main."
+                          exit 1;
+                      }
+                      echo "[deploy] Actualizando el helper local de produccion antes del deploy versionado."
+                      git -C "$APP_ROOT" merge --ff-only origin/main
+                  fi
                   echo "Commit previo al deploy para rollback: $(git rev-parse HEAD)"
                   ./scripts/operacion/deploy_refresh.sh --yes --expected-revision "$EXPECTED_SHA" --with-mobile --mobile-dir /sisoc/SISOC-Mobile
                   docker compose -f "$APP_ROOT/docker-compose.deploy.yml" -f "$APP_ROOT/docker-compose.produccion.yml" --project-directory "$APP_ROOT" exec -T django python manage.py migrate --check
