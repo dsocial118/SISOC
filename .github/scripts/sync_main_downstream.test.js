@@ -47,7 +47,7 @@ test("acepta un merge 201 con commit y solo el 204 sin cuerpo cuando ya esta inc
   const calls = [];
   const errors = [];
   const failures = [];
-  let developmentMergeResponse = { status: 201, data: { sha: "development-merge-sha" } };
+  let developmentMergeResponse = { status: 201, data: { sha: "d".repeat(40) } };
   const github = {
     rest: {
       repos: {
@@ -59,7 +59,7 @@ test("acepta un merge 201 con commit y solo el 204 sin cuerpo cuando ya esta inc
           if (payload.head === "development") {
             return developmentMergeResponse;
           }
-          return { status: 201, data: { sha: "main-merge-sha" } };
+          return { status: 201, data: { sha: "a".repeat(40) } };
         },
       },
       git: {
@@ -171,18 +171,24 @@ test("acepta un merge 201 con commit y solo el 204 sin cuerpo cuando ya esta inc
     ["closeLegacyPull", "createRef", "merge", "merge", "createPull", "enableAutoMerge"],
   );
 
-  const callsBeforeInvalidResponse = calls.length;
-  developmentMergeResponse = { status: 201 };
-  await assert.rejects(
-    run({ github, context: { repo: { owner: "acme", repo: "sisoc" } }, core }),
-    /respuesta inesperada.*status 201/i,
-  );
-  assert.match(errors.at(-1), /respuesta inesperada.*status 201/i);
-  assert.match(failures.at(-1), /development: respuesta inesperada.*status 201/i);
-  assert.deepEqual(
-    calls.slice(callsBeforeInvalidResponse).map(([name]) => name),
-    ["closeLegacyPull", "createRef", "merge"],
-  );
+  for (const invalidResponse of [
+    { status: 201 },
+    { status: 201, data: {} },
+    { status: 201, data: { sha: "not-a-sha" } },
+  ]) {
+    const callsBeforeInvalidResponse = calls.length;
+    developmentMergeResponse = invalidResponse;
+    await assert.rejects(
+      run({ github, context: { repo: { owner: "acme", repo: "sisoc" } }, core }),
+      /respuesta inesperada.*status 201/i,
+    );
+    assert.match(errors.at(-1), /respuesta inesperada.*status 201/i);
+    assert.match(failures.at(-1), /development: respuesta inesperada.*status 201/i);
+    assert.deepEqual(
+      calls.slice(callsBeforeInvalidResponse).map(([name]) => name),
+      ["closeLegacyPull", "createRef", "merge"],
+    );
+  }
 });
 
 test("nombra una rama tecnica aislada por destino", () => {

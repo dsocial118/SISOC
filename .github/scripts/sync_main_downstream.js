@@ -6,6 +6,10 @@ function synchronizationBranch(target) {
   return `${SYNCHRONIZATION_BRANCH_PREFIX}${target}`;
 }
 
+function isCommitSha(value) {
+  return typeof value === "string" && /^(?:[0-9a-f]{40}|[0-9a-f]{64})$/i.test(value);
+}
+
 async function ensureSynchronizationBranch({ github, owner, repo, target, branch }) {
   try {
     await github.rest.git.getRef({
@@ -49,12 +53,12 @@ async function mergeIntoSynchronizationBranch({ github, owner, repo, branch, sou
   }
 
   // A successful non-fast-forward merge returns the resulting commit (201).
-  if (merged?.status === 201 && typeof merged.data?.sha === "string" && merged.data.sha) {
+  if (merged?.status === 201 && isCommitSha(merged.data?.sha)) {
     return;
   }
 
   const detail = merged?.data?.message
-    ?? (merged?.data ? "falta SHA del commit resultante" : "falta cuerpo");
+    ?? (merged?.data ? "falta SHA valido del commit resultante" : "falta cuerpo");
   throw new Error(
     `Respuesta inesperada al incorporar ${source} en ${branch}: ${detail} (status ${merged?.status ?? "desconocido"}).`,
   );
