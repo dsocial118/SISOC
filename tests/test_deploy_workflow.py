@@ -22,12 +22,14 @@ def test_deploy_produccion_actualiza_helper_obsoleto_antes_del_deploy_versionado
     main_branch_guard = '[[ "$(git -C "$APP_ROOT" branch --show-current)" == "main" ]]'
     fast_forward = 'git -C "$APP_ROOT" merge --ff-only origin/main'
     deploy_versioned = (
-        './scripts/operacion/deploy_refresh.sh --yes --expected-revision '
+        "./scripts/operacion/deploy_refresh.sh --yes --expected-revision "
         '"$EXPECTED_SHA" --with-mobile --mobile-dir /sisoc/SISOC-Mobile'
     )
 
     stale_helper_start = production_step.index(stale_helper_guard)
-    stale_helper_end = production_step.index("\n                  fi\n", stale_helper_start)
+    stale_helper_end = production_step.index(
+        "\n                  fi\n", stale_helper_start
+    )
     deploy_start = production_step.index(deploy_versioned)
     stale_helper_block = production_step[stale_helper_start:stale_helper_end]
 
