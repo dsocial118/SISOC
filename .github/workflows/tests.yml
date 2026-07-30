@@ -265,7 +265,7 @@ jobs:
                       core.info("Evidencia de calidad de release verificada.");
 
     deploy_guard:
-        if: github.event_name == 'pull_request'
+        if: ${{ always() && github.event_name == 'pull_request' }}
         runs-on: ubuntu-latest
         needs:
             - smoke
@@ -274,6 +274,12 @@ jobs:
             - mysql_compat
             - release_quality
         steps:
+            - name: Checkout code
+              uses: actions/checkout@v6.0.2
+
+            - name: Ejecutar pruebas de automatizacion de release
+              run: node --test .github/scripts/release_orchestrator.test.js .github/scripts/sync_main_downstream.test.js
+
             - name: Validate required CI checks
               uses: actions/github-script@v8
               with:

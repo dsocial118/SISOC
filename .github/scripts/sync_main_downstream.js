@@ -6,8 +6,8 @@ function synchronizationBranch(target) {
   return `${SYNCHRONIZATION_BRANCH_PREFIX}${target}`;
 }
 
-function isAlreadyUpToDate(result) {
-  return result.data.message === "Already up to date.";
+function isCommitSha(value) {
+  return typeof value === "string" && /^(?:[0-9a-f]{40}|[0-9a-f]{64})$/i.test(value);
 }
 
 async function ensureSynchronizationBranch({ github, owner, repo, target, branch }) {
@@ -47,11 +47,21 @@ async function mergeIntoSynchronizationBranch({ github, owner, repo, branch, sou
     commit_message: "Actualizacion segura de la rama temporal de sincronizacion descendente.",
   });
 
-  if (!merged.data.merged && !isAlreadyUpToDate(merged)) {
-    throw new Error(
-      `No se pudo incorporar ${source} en ${branch}: ${merged.data.message}`,
-    );
+  // GitHub returns 204 without a body when the source is already in the base.
+  if (merged?.status === 204 && merged.data == null) {
+    return;
   }
+
+  // A successful non-fast-forward merge returns the resulting commit (201).
+  if (merged?.status === 201 && isCommitSha(merged.data?.sha)) {
+    return;
+  }
+
+  const detail = merged?.data?.message
+    ?? (merged?.data ? "falta SHA valido del commit resultante" : "falta cuerpo");
+  throw new Error(
+    `Respuesta inesperada al incorporar ${source} en ${branch}: ${detail} (status ${merged?.status ?? "desconocido"}).`,
+  );
 }
 
 async function enableAutoMerge({ github, core, pull }) {
