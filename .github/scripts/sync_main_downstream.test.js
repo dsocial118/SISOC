@@ -43,8 +43,11 @@ test("deploy_guard se ejecuta aunque falle un check requerido", () => {
   );
 });
 
-test("crea un PR desde una rama tecnica actualizada para development", async () => {
+test("solo acepta el 204 sin cuerpo para la rama destino ya contenida", async () => {
   const calls = [];
+  const errors = [];
+  const failures = [];
+  let noContentResponse = { status: 204 };
   const github = {
     rest: {
       repos: {
@@ -53,6 +56,9 @@ test("crea un PR desde una rama tecnica actualizada para development", async () 
         }),
         merge: async (payload) => {
           calls.push(["merge", payload]);
+          if (payload.head === "development") {
+            return noContentResponse;
+          }
           return { data: { merged: true } };
         },
       },
@@ -99,10 +105,11 @@ test("crea un PR desde una rama tecnica actualizada para development", async () 
   const core = {
     endGroup() {},
     error(message) {
-      throw new Error(message);
+      errors.push(message);
     },
     info() {},
     setFailed(message) {
+      failures.push(message);
       throw new Error(message);
     },
     startGroup() {},
@@ -155,6 +162,19 @@ test("crea un PR desde una rama tecnica actualizada para development", async () 
     }],
     ["enableAutoMerge", { pullRequestId: "pull-42" }],
   ]);
+
+  const callsBeforeInvalidResponse = calls.length;
+  noContentResponse = { status: 201 };
+  await assert.rejects(
+    run({ github, context: { repo: { owner: "acme", repo: "sisoc" } }, core }),
+    /respuesta inesperada.*status 201/i,
+  );
+  assert.match(errors.at(-1), /respuesta inesperada.*status 201/i);
+  assert.match(failures.at(-1), /development: respuesta inesperada.*status 201/i);
+  assert.deepEqual(
+    calls.slice(callsBeforeInvalidResponse).map(([name]) => name),
+    ["closeLegacyPull", "createRef", "merge"],
+  );
 });
 
 test("nombra una rama tecnica aislada por destino", () => {
