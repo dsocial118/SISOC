@@ -45,6 +45,8 @@ test("deploy_guard se ejecuta aunque falle un check requerido", () => {
 
 test("solo acepta el 204 sin cuerpo para la rama destino ya contenida", async () => {
   const calls = [];
+  const errors = [];
+  const failures = [];
   let noContentResponse = { status: 204 };
   const github = {
     rest: {
@@ -103,10 +105,11 @@ test("solo acepta el 204 sin cuerpo para la rama destino ya contenida", async ()
   const core = {
     endGroup() {},
     error(message) {
-      throw new Error(message);
+      errors.push(message);
     },
     info() {},
     setFailed(message) {
+      failures.push(message);
       throw new Error(message);
     },
     startGroup() {},
@@ -160,10 +163,17 @@ test("solo acepta el 204 sin cuerpo para la rama destino ya contenida", async ()
     ["enableAutoMerge", { pullRequestId: "pull-42" }],
   ]);
 
+  const callsBeforeInvalidResponse = calls.length;
   noContentResponse = { status: 201 };
   await assert.rejects(
     run({ github, context: { repo: { owner: "acme", repo: "sisoc" } }, core }),
     /respuesta inesperada.*status 201/i,
+  );
+  assert.match(errors.at(-1), /respuesta inesperada.*status 201/i);
+  assert.match(failures.at(-1), /development: respuesta inesperada.*status 201/i);
+  assert.deepEqual(
+    calls.slice(callsBeforeInvalidResponse).map(([name]) => name),
+    ["closeLegacyPull", "createRef", "merge"],
   );
 });
 
