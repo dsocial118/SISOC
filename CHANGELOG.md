@@ -1,13 +1,9 @@
-<!-- AUTO-GENERATED RELEASE START: 2026-08-05 -->
-# Versión SISOC 05.08.2026
+<!-- AUTO-GENERATED RELEASE START: 2026-07-30 -->
+# Versión SISOC 30.07.2026
 
 ## Actualizaciones
 
-- [sin-area] revert(centrodeinfancia): restaurar talla legacy como texto. (PR #2210)
-<!-- AUTO-GENERATED RELEASE END: 2026-08-05 -->
-
-<!-- AUTO-GENERATED RELEASE START: 2026-07-30 -->
-# Versión SISOC 30.07.2026
+- [Centro de Infancia y despliegue productivo.] Restaura talla CDI como texto para evitar que la migración bloqueante detenga producción. (PR #2210)
 
 ## Corrección de Errores
 
