@@ -31,16 +31,24 @@
 - Empezar por `docs/registro/prs/PR-2204.md` para contexto resumido del PR.
 - Revisar primero estos archivos del diff:
 - `.github/workflows/deploy.yml`
+- `AGENT_REPO_MAP.md`
+- `CHANGELOG.md`
+- `docs/contexto/features/pr-2204-fix-deploy-esperar-migraciones-en-produccion.md`
 - `docs/operacion/deploy_automatizado.md`
 - `docs/registro/cambios/2026-07-30-espera-migraciones-produccion.md`
+- `docs/registro/prs/PR-2204.md`
+- `docs/registro/releases/pending/2026-08-05-pr-2204.md`
 - `tests/test_deploy_workflow.py`
 - Documentación sugerida para ampliar contexto:
 - `docs/indice.md`
 - `docs/ia/CONTEXT_HYGIENE.md`
 - `docs/ia/ARCHITECTURE.md`
 - `docs/ia/TESTING.md`
+- `docs/contexto/features/pr-2204-fix-deploy-esperar-migraciones-en-produccion.md`
 - `docs/operacion/deploy_automatizado.md`
 - `docs/registro/cambios/2026-07-30-espera-migraciones-produccion.md`
+- `docs/registro/prs/PR-2204.md`
+- `docs/registro/releases/pending/2026-08-05-pr-2204.md`
 
 ## Trazabilidad
 
