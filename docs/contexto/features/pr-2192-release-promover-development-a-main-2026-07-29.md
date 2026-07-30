@@ -52,11 +52,11 @@
 - `.github/workflows/sync-main-downstream.yml`
 - `.github/workflows/tests.yml`
 - `AGENT_REPO_MAP.md`
+- `CHANGELOG.md`
 - `VAT/forms.py`
 - `VAT/migrations/0050_resultados_comision_curso.py`
 - `VAT/models.py`
-- `VAT/services/inscripcion_service.py`
-- ... y 205 archivo(s) adicional(es) relacionados.
+- ... y 210 archivo(s) adicional(es) relacionados.
 - Documentación sugerida para ampliar contexto:
 - `docs/indice.md`
 - `docs/ia/CONTEXT_HYGIENE.md`
@@ -89,6 +89,7 @@
 - `docs/contexto/features/pr-2134-fix-correcciones-en-documentos-de-rendiciones-pwa.md`
 - `docs/contexto/features/pr-2135-fix-organizaciones-sanea-rollback-arca-antes-de-promocion.md`
 - `docs/contexto/features/pr-2139-feat-release-automatizar-promocion-development-a-main.md`
+- `docs/contexto/features/pr-2192-release-promover-development-a-main-2026-07-29.md`
 - `docs/implementaciones/centrodeinfancia_nomina_renaper.md`
 - `docs/ocr.md`
 - `docs/operacion/comandos_administracion.md`
@@ -148,6 +149,8 @@
 - `docs/registro/prs/PR-2134.md`
 - `docs/registro/prs/PR-2135.md`
 - `docs/registro/prs/PR-2139.md`
+- `docs/registro/prs/PR-2192.md`
+- `docs/registro/releases/pending/2026-07-29-pr-2192.md`
 
 ## Trazabilidad
 
