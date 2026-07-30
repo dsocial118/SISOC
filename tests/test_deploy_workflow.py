@@ -26,15 +26,16 @@ def test_deploy_produccion_actualiza_helper_obsoleto_antes_del_deploy_versionado
         '"$EXPECTED_SHA" --with-mobile --mobile-dir /sisoc/SISOC-Mobile'
     )
 
+    stale_helper_start = production_step.index(stale_helper_guard)
+    stale_helper_end = production_step.index("\n                  fi\n", stale_helper_start)
+    deploy_start = production_step.index(deploy_versioned)
+    stale_helper_block = production_step[stale_helper_start:stale_helper_end]
+
     assert remote_revision_check in production_step
-    assert stale_helper_guard in production_step
-    assert main_branch_guard in production_step
-    assert fast_forward in production_step
-    assert deploy_versioned in production_step
-    assert production_step.index(remote_revision_check) < production_step.index(
-        stale_helper_guard
+    assert main_branch_guard in stale_helper_block
+    assert fast_forward in stale_helper_block
+    assert production_step.index(remote_revision_check) < stale_helper_start
+    assert stale_helper_end < deploy_start
+    assert stale_helper_block.index(main_branch_guard) < stale_helper_block.index(
+        fast_forward
     )
-    assert production_step.index(stale_helper_guard) < production_step.index(
-        deploy_versioned
-    )
-    assert production_step.index(fast_forward) < production_step.index(deploy_versioned)
