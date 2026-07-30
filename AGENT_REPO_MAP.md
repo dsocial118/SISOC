@@ -486,6 +486,10 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - `.github/scripts/sync_main_downstream.js`: crea y actualiza ramas técnicas
   `automation/sync-main-to-<destino>` para que los PRs descendentes cumplan
   checks estrictos sin mezclar QA/HML en `main`.
+- El workflow descendente debe checkoutear `development`, donde vive el helper
+  versionado; un checkout de `main` falla durante el bootstrap si todavía no
+  contiene ese archivo. La regresión se cubre en
+  `.github/scripts/sync_main_downstream.test.js`.
 - `.github/workflows/deploy.yml`
 - La automatización de promociones usa una GitHub App privada: variable
   `RELEASE_AUTOMATION_APP_CLIENT_ID` y secret
