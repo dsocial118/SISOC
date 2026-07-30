@@ -228,8 +228,44 @@ jobs:
                   fi
                   echo "Commit previo al deploy para rollback: $(git rev-parse HEAD)"
                   ./scripts/operacion/deploy_refresh.sh --yes --expected-revision "$EXPECTED_SHA" --with-mobile --mobile-dir /sisoc/SISOC-Mobile
-                  docker compose -f "$APP_ROOT/docker-compose.deploy.yml" -f "$APP_ROOT/docker-compose.produccion.yml" --project-directory "$APP_ROOT" exec -T django python manage.py migrate --check
-                  bash "$APP_ROOT/scripts/infra/healthcheck_prod.sh"
+                  wait_for() {
+                      local description="$1"
+                      local attempts="$2"
+                      local output
+                      local attempt
+                      shift 2
+                      output="$(mktemp)"
+
+                      for ((attempt = 1; attempt <= attempts; attempt++)); do
+                          if "$@" >"$output" 2>&1; then
+                              cat "$output"
+                              rm -f "$output"
+                              return 0
+                          fi
+                          if ((attempt < attempts)); then
+                              echo "[deploy] Esperando $description ($attempt/$attempts)..."
+                              sleep 2
+                          fi
+                      done
+
+                      cat "$output"
+                      rm -f "$output"
+                      echo "::error::$description no estuvo listo luego de $attempts intentos."
+                      return 1
+                  }
+
+                  show_django_diagnostics() {
+                      echo "::group::Diagnostico del servicio django de produccion"
+                      docker compose -f "$APP_ROOT/docker-compose.deploy.yml" -f "$APP_ROOT/docker-compose.produccion.yml" --project-directory "$APP_ROOT" ps || true
+                      docker compose -f "$APP_ROOT/docker-compose.deploy.yml" -f "$APP_ROOT/docker-compose.produccion.yml" --project-directory "$APP_ROOT" logs --tail 200 django || true
+                      echo "::endgroup::"
+                  }
+
+                  if ! wait_for "migraciones de produccion" 30 docker compose -f "$APP_ROOT/docker-compose.deploy.yml" -f "$APP_ROOT/docker-compose.produccion.yml" --project-directory "$APP_ROOT" exec -T django python manage.py migrate --check; then
+                      show_django_diagnostics
+                      exit 1
+                  fi
+                  wait_for "healthcheck de produccion" 30 bash "$APP_ROOT/scripts/infra/healthcheck_prod.sh"
                   deployed_sha="$(git -C "$APP_ROOT" rev-parse HEAD)"
                   [[ "$deployed_sha" == "$EXPECTED_SHA" ]]
                   {
