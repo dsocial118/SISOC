@@ -9,7 +9,7 @@
 
 ## Contexto funcional
 
-- No informado explícitamente; inferir desde el título del PR y el diff.
+- Restituir el deploy oficial de producción sin falsos fallos mientras el entrypoint aplica migraciones versionadas.
 
 ## Arquitectura tocada
 
@@ -17,10 +17,10 @@
 
 ## Decisiones y supuestos detectados
 
-- Tipo de cambio declarado: No informado
-- Área principal declarada: No informada
-- Impacto usuario declarado: No informado
-- Riesgos / rollback: No informado
+- Tipo de cambio declarado: correccion
+- Área principal declarada: CI/CD
+- Impacto usuario declarado: Evita una interrupción de despliegue sin cambiar contratos ni datos de usuarios.
+- Riesgos / rollback: La espera máxima es de 60 segundos; si no converge, el job falla con logs. Revertir no deshace migraciones ya aplicadas.
 
 ## Design system y UI
 

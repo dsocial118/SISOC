@@ -1,3 +1,12 @@
+<!-- AUTO-GENERATED RELEASE START: 2026-07-30 -->
+# Versión SISOC 30.07.2026
+
+## Corrección de Errores
+
+- [CI/CD] Evita que el deploy de producción falle cuando el helper local del runner es anterior al contrato de revisión esperada. (PR #2199)
+- [CI/CD] Evita que el deploy de producción falle mientras finalizan las migraciones versionadas. (PR #2204)
+<!-- AUTO-GENERATED RELEASE END: 2026-07-30 -->
+
 <!-- AUTO-GENERATED RELEASE START: 2026-08-05 -->
 # Versión SISOC 05.08.2026
 
@@ -6,13 +15,6 @@
 - [sin-area] fix(deploy): esperar migraciones en producción. (PR #2204)
 <!-- AUTO-GENERATED RELEASE END: 2026-08-05 -->
 
-<!-- AUTO-GENERATED RELEASE START: 2026-07-30 -->
-# Versión SISOC 30.07.2026
-
-## Corrección de Errores
-
-- [CI/CD] Evita que el deploy de producción falle cuando el helper local del runner es anterior al contrato de revisión esperada. (PR #2199)
-<!-- AUTO-GENERATED RELEASE END: 2026-07-30 -->
 
 <!-- AUTO-GENERATED RELEASE START: 2026-07-29 -->
 # Versión SISOC 29.07.2026
