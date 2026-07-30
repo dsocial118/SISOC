@@ -32,22 +32,29 @@
 - Empezar por `docs/registro/prs/PR-2210.md` para contexto resumido del PR.
 - Revisar primero estos archivos del diff:
 - `.github/workflows/deploy.yml`
+- `CHANGELOG.md`
 - `centrodeinfancia/forms.py`
 - `centrodeinfancia/migrations/0042_alter_nominacentroinfancia_talla.py`
 - `centrodeinfancia/migrations/0043_revert_nominacentroinfancia_talla_to_text.py`
 - `centrodeinfancia/models.py`
 - `centrodeinfancia/tests/test_destinatario_form.py`
 - `centrodeinfancia/tests/test_talla_migration.py`
+- `docs/contexto/features/pr-2210-revert-centrodeinfancia-restaurar-talla-legacy-como-texto.md`
 - `docs/operacion/deploy_automatizado.md`
 - `docs/registro/cambios/2026-07-30-reversion-segura-talla-cdi.md`
+- `docs/registro/prs/PR-2210.md`
+- `docs/registro/releases/pending/2026-07-30-pr-2210.md`
 - `tests/test_deploy_workflow.py`
 - Documentación sugerida para ampliar contexto:
 - `docs/indice.md`
 - `docs/ia/CONTEXT_HYGIENE.md`
 - `docs/ia/ARCHITECTURE.md`
 - `docs/ia/TESTING.md`
+- `docs/contexto/features/pr-2210-revert-centrodeinfancia-restaurar-talla-legacy-como-texto.md`
 - `docs/operacion/deploy_automatizado.md`
 - `docs/registro/cambios/2026-07-30-reversion-segura-talla-cdi.md`
+- `docs/registro/prs/PR-2210.md`
+- `docs/registro/releases/pending/2026-07-30-pr-2210.md`
 
 ## Trazabilidad
 
