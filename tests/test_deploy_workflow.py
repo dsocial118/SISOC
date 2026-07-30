@@ -94,6 +94,18 @@ def test_deploy_produccion_recupera_tallas_legacy_solo_bajo_precondiciones():
     assert "environment: production" in recovery_job
     assert "runs-on: [self-hosted, sisoc-produccion]" in recovery_job
     assert 'remote_sha="$(git -C "$APP_ROOT" rev-parse origin/main)"' in recovery_job
+    assert '[[ "$(git -C "$APP_ROOT" branch --show-current)" == "main" ]]' in recovery_job
+    assert 'git -C "$APP_ROOT" diff --quiet' in recovery_job
+    assert 'git -C "$APP_ROOT" diff --cached --quiet' in recovery_job
+    assert 'git -C "$APP_ROOT" merge --ff-only origin/main' in recovery_job
+    assert 'local_sha="$(git -C "$APP_ROOT" rev-parse HEAD)"' in recovery_job
+    assert 'if [[ "$local_sha" != "$EXPECTED_SHA" ]]; then' in recovery_job
+    assert "PROD_EXPECTED_DB_HOST" in recovery_job
+    assert "PROD_EXPECTED_DB_SERVER" in recovery_job
+    assert "PROD_EXPECTED_DB_NAME" in recovery_job
+    assert "-e PROD_EXPECTED_DB_HOST" in recovery_job
+    assert "-e PROD_EXPECTED_DB_SERVER" in recovery_job
+    assert "-e PROD_EXPECTED_DB_NAME" in recovery_job
     assert "SELECT talla FROM centrodeinfancia_nominacentroinfancia" in recovery_job
     assert "FOR UPDATE" in recovery_job
     assert "with transaction.atomic():" in recovery_job
@@ -110,8 +122,16 @@ def test_deploy_produccion_recupera_tallas_legacy_solo_bajo_precondiciones():
     )
 
     assert embedded_source is not None
-    compile(
-        bytes(embedded_source.group(1), "utf-8").decode("unicode_escape"),
-        "<legacy-talla-recovery>",
-        "exec",
+    recovery_source = bytes(embedded_source.group(1), "utf-8").decode(
+        "unicode_escape"
     )
+    compile(recovery_source, "<legacy-talla-recovery>", "exec")
+
+    assert "connection.ensure_connection()" in recovery_source
+    assert "SELECT @@hostname, DATABASE()" in recovery_source
+    assert "validate_database_identity()" in recovery_source
+
+    action_start = recovery_source.index('action = os.environ["MAINTENANCE_ACTION"]')
+    identity_check = recovery_source.index("validate_database_identity()", action_start)
+    inspect_start = recovery_source.index('if action == "inspect-cdi-talla-blockers":')
+    assert identity_check < inspect_start
