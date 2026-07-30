@@ -1367,7 +1367,7 @@ class NominaCentroInfancia(SoftDeleteModelMixin, models.Model):
         null=True,
     )
 
-    talla = models.DecimalField(max_digits=5, decimal_places=1, blank=True, null=True)
+    talla = models.CharField(max_length=50, blank=True, null=True)
     peso = models.DecimalField(max_digits=6, decimal_places=2, blank=True, null=True)
     calendario_vacunacion_al_dia = models.BooleanField(blank=True, null=True)
     tiene_discapacidad = models.CharField(
