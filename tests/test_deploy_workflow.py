@@ -1,4 +1,5 @@
 from pathlib import Path
+import re
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -72,3 +73,45 @@ def test_deploy_produccion_espera_migraciones_y_healthcheck_del_entrypoint():
 
     assert "show_django_diagnostics" in healthcheck_block
     assert "exit 1" in healthcheck_block
+
+
+def test_deploy_produccion_recupera_tallas_legacy_solo_bajo_precondiciones():
+    """La reparación productiva debe ser manual, acotada y transaccional."""
+
+    workflow = DEPLOY_WORKFLOW.read_text(encoding="utf-8")
+    production_job = workflow.split(
+        "    deploy-produccion:\n", maxsplit=1
+    )[1].split("    recuperar-talla-legacy-produccion:\n", maxsplit=1)[0]
+    recovery_job = workflow.split(
+        "    recuperar-talla-legacy-produccion:\n", maxsplit=1
+    )[1]
+
+    assert "maintenance_action:" in workflow
+    assert "inspect-cdi-talla-blockers" in workflow
+    assert "repair-confirmed-cdi-talla-blockers-as-null" in workflow
+    assert "maintenance_action == 'deploy'" in production_job
+    assert "github.event_name == 'workflow_dispatch'" in recovery_job
+    assert "environment: production" in recovery_job
+    assert "runs-on: [self-hosted, sisoc-produccion]" in recovery_job
+    assert 'remote_sha="$(git -C "$APP_ROOT" rev-parse origin/main)"' in recovery_job
+    assert "SELECT talla FROM centrodeinfancia_nominacentroinfancia" in recovery_job
+    assert "FOR UPDATE" in recovery_job
+    assert "with transaction.atomic():" in recovery_job
+    assert '7: "non_numeric"' in recovery_job
+    assert '237: "out_of_range"' in recovery_job
+    assert '242: "non_numeric"' in recovery_job
+    assert (
+        "UPDATE centrodeinfancia_nominacentroinfancia SET talla = NULL WHERE id = %s"
+        in recovery_job
+    )
+
+    embedded_source = re.search(
+        r"recovery=\$'(.*)'\n\s+docker compose", recovery_job
+    )
+
+    assert embedded_source is not None
+    compile(
+        bytes(embedded_source.group(1), "utf-8").decode("unicode_escape"),
+        "<legacy-talla-recovery>",
+        "exec",
+    )

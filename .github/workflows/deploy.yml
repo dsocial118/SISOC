@@ -7,6 +7,16 @@ on:
             - homologacion
             - main
     workflow_dispatch:
+        inputs:
+            maintenance_action:
+                description: "Accion manual de produccion; deploy conserva el flujo normal"
+                required: true
+                type: choice
+                default: deploy
+                options:
+                    - deploy
+                    - inspect-cdi-talla-blockers
+                    - repair-confirmed-cdi-talla-blockers-as-null
 
 permissions: { contents: read }
 
@@ -187,7 +197,9 @@ jobs:
                   } >> "$GITHUB_STEP_SUMMARY"
 
     deploy-produccion:
-        if: github.ref == 'refs/heads/main'
+        if: >-
+            github.ref == 'refs/heads/main' &&
+            (github.event_name != 'workflow_dispatch' || inputs.maintenance_action == 'deploy')
         environment: production
         runs-on: [self-hosted, sisoc-produccion]
 
@@ -277,3 +289,38 @@ jobs:
                       echo "- Migraciones: \`migrate --check\` OK"
                       echo "- Health: \`healthcheck_prod.sh\` OK";
                   } >> "$GITHUB_STEP_SUMMARY"
+
+    recuperar-talla-legacy-produccion:
+        if: >-
+            github.ref == 'refs/heads/main' &&
+            github.event_name == 'workflow_dispatch' &&
+            (inputs.maintenance_action == 'inspect-cdi-talla-blockers' ||
+            inputs.maintenance_action == 'repair-confirmed-cdi-talla-blockers-as-null')
+        environment: production
+        runs-on: [self-hosted, sisoc-produccion]
+
+        steps:
+            - name: Clasificar o reparar tallas legacy bloqueantes
+              shell: bash
+              env:
+                  GH_APP_ROOT: "${{ vars.APP_ROOT }}"
+                  EXPECTED_SHA: "${{ github.sha }}"
+                  MAINTENANCE_ACTION: "${{ inputs.maintenance_action }}"
+              run: |
+                  set -Eeuo pipefail
+
+                  APP_ROOT="${GH_APP_ROOT:-${APP_ROOT:-}}"
+                  if [[ -z "$APP_ROOT" ]]; then
+                      echo "::error::APP_ROOT no esta configurado. Definir vars.APP_ROOT en el Environment production o APP_ROOT en el servicio del runner."
+                      exit 1
+                  fi
+
+                  git -C "$APP_ROOT" fetch origin --prune
+                  remote_sha="$(git -C "$APP_ROOT" rev-parse origin/main)"
+                  if [[ "$remote_sha" != "$EXPECTED_SHA" ]]; then
+                      echo "::error::origin/main avanzo desde el dispatch; no se modifica la base."
+                      exit 1
+                  fi
+
+                  recovery=$'from decimal import Decimal, InvalidOperation\nimport os\n\nfrom django.db import connection, transaction\n\nEXPECTED_CATEGORIES = {7: "non_numeric", 237: "out_of_range", 242: "non_numeric"}\nMAX_TALLA_DECIMAL = Decimal("9999.9")\nUN_DECIMAL = Decimal("0.1")\n\ndef classify_talla(value):\n    if value is None:\n        return "null"\n    text = str(value).strip()\n    if not text:\n        return "blank"\n    try:\n        decimal_value = Decimal(text.replace(",", "."))\n    except InvalidOperation:\n        return "non_numeric"\n    if not decimal_value.is_finite():\n        return "non_finite"\n    if abs(decimal_value) > MAX_TALLA_DECIMAL:\n        return "out_of_range"\n    try:\n        normalized = decimal_value.quantize(UN_DECIMAL)\n    except InvalidOperation:\n        return "too_many_decimals"\n    if decimal_value != normalized:\n        return "too_many_decimals"\n    return "convertible"\n\ndef read_categories(cursor, lock):\n    categories = {}\n    suffix = " FOR UPDATE" if lock else ""\n    for record_id in EXPECTED_CATEGORIES:\n        cursor.execute(\n            "SELECT talla FROM centrodeinfancia_nominacentroinfancia WHERE id = %s" + suffix,\n            [record_id],\n        )\n        row = cursor.fetchone()\n        categories[record_id] = "record_missing" if row is None else classify_talla(row[0])\n    return categories\n\ndef print_categories(categories):\n    for record_id in sorted(categories):\n        print(f"legacy_talla_id={record_id} category={categories[record_id]}")\n\naction = os.environ["MAINTENANCE_ACTION"]\nif action == "inspect-cdi-talla-blockers":\n    with connection.cursor() as cursor:\n        categories = read_categories(cursor, lock=False)\n    print_categories(categories)\nelif action == "repair-confirmed-cdi-talla-blockers-as-null":\n    with transaction.atomic():\n        with connection.cursor() as cursor:\n            categories = read_categories(cursor, lock=True)\n            print_categories(categories)\n            unexpected = {\n                record_id: category\n                for record_id, category in categories.items()\n                if category != EXPECTED_CATEGORIES[record_id]\n            }\n            if unexpected:\n                raise RuntimeError(\n                    f"Las precondiciones de talla legacy no coinciden: {unexpected}"\n                )\n            for record_id in EXPECTED_CATEGORIES:\n                cursor.execute(\n                    "UPDATE centrodeinfancia_nominacentroinfancia SET talla = NULL WHERE id = %s",\n                    [record_id],\n                )\n                if cursor.rowcount != 1:\n                    raise RuntimeError(\n                        f"No se actualizo exactamente un registro legacy: id={record_id}"\n                    )\n    print("legacy_talla_repair=repaired_as_null ids=7,237,242")\nelse:\n    raise RuntimeError("Accion de mantenimiento no permitida.")'
+                  docker compose -f "$APP_ROOT/docker-compose.deploy.yml" -f "$APP_ROOT/docker-compose.produccion.yml" --project-directory "$APP_ROOT" run --rm --no-deps -e MAINTENANCE_ACTION --entrypoint python django manage.py shell -c "$recovery"

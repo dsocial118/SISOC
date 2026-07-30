@@ -39,6 +39,26 @@ ya verificada, y levanta con `up -d --build`.
 Cuando incluye SISOC-Mobile, valida que `origin` sea el repositorio publico
 esperado y normaliza las variantes SSH conocidas a HTTPS antes del downtime.
 
+## Recuperacion controlada de talla legacy en produccion
+
+Si `centrodeinfancia.0042_alter_nominacentroinfancia_talla` bloquea el arranque,
+no se debe modificar la migracion ni convertir valores historicos de forma
+silenciosa. El workflow `Despliegue automatizado`, despachado sobre `main`,
+ofrece estas acciones manuales de `maintenance_action`:
+
+1. `inspect-cdi-talla-blockers`: informa solo la categoria de los ids 7, 237 y
+   242, sin imprimir valores ni datos de personas.
+2. `repair-confirmed-cdi-talla-blockers-as-null`: solo se habilita tras una
+   confirmacion explicita y vuelve a exigir las categorias
+   `non_numeric`, `out_of_range` y `non_numeric`, respectivamente. Bloquea las
+   tres filas con `FOR UPDATE` y las actualiza a `NULL` en una unica transaccion.
+
+Ambas acciones siguen sujetas al Environment `production` y rechazan el trabajo
+si `origin/main` avanzó desde el dispatch. La reparacion no tiene rollback
+automatico porque los valores originales son invalidos y no deben exponerse ni
+inventarse; una altura valida posterior debe cargarse desde una fuente
+autorizada. Luego se reintenta el deploy del SHA vigente.
+
 ## Plan A: `main` como subconjunto comun
 
 `.github/workflows/sync-main-downstream.yml` mantiene automaticamente este
