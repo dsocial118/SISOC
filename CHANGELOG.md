@@ -3,7 +3,7 @@
 
 ## Corrección de Errores
 
-- [CI/CD] Corrige el manejo de la sincronización descendente y evita promover con evidencia de calidad incompleta. (PR #2192)
+- [CI/CD] Corrige la interpretación de la respuesta del merge descendente y evita promover con evidencia de calidad incompleta. (PR #2192)
 <!-- AUTO-GENERATED RELEASE END: 2026-07-29 -->
 
 <!-- AUTO-GENERATED RELEASE START: 2026-07-22 -->
