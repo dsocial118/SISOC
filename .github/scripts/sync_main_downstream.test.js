@@ -43,8 +43,9 @@ test("deploy_guard se ejecuta aunque falle un check requerido", () => {
   );
 });
 
-test("crea un PR si GitHub responde sin cuerpo para la rama destino ya contenida", async () => {
+test("solo acepta el 204 sin cuerpo para la rama destino ya contenida", async () => {
   const calls = [];
+  let noContentResponse = { status: 204 };
   const github = {
     rest: {
       repos: {
@@ -54,7 +55,7 @@ test("crea un PR si GitHub responde sin cuerpo para la rama destino ya contenida
         merge: async (payload) => {
           calls.push(["merge", payload]);
           if (payload.head === "development") {
-            return undefined;
+            return noContentResponse;
           }
           return { data: { merged: true } };
         },
@@ -158,6 +159,12 @@ test("crea un PR si GitHub responde sin cuerpo para la rama destino ya contenida
     }],
     ["enableAutoMerge", { pullRequestId: "pull-42" }],
   ]);
+
+  noContentResponse = { status: 201 };
+  await assert.rejects(
+    run({ github, context: { repo: { owner: "acme", repo: "sisoc" } }, core }),
+    /respuesta inesperada.*status 201/i,
+  );
 });
 
 test("nombra una rama tecnica aislada por destino", () => {

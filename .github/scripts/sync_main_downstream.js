@@ -48,8 +48,14 @@ async function mergeIntoSynchronizationBranch({ github, owner, repo, branch, sou
   });
 
   // GitHub returns 204 without a body when the source is already in the base.
-  if (!merged?.data) {
+  if (merged?.status === 204 && !merged.data) {
     return;
+  }
+
+  if (!merged?.data) {
+    throw new Error(
+      `Respuesta inesperada al incorporar ${source} en ${branch}: falta cuerpo (status ${merged?.status ?? "desconocido"}).`,
+    );
   }
 
   if (!merged.data.merged && !isAlreadyUpToDate(merged)) {
