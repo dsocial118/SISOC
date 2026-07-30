@@ -265,7 +265,10 @@ jobs:
                       show_django_diagnostics
                       exit 1
                   fi
-                  wait_for "healthcheck de produccion" 30 bash "$APP_ROOT/scripts/infra/healthcheck_prod.sh"
+                  if ! wait_for "healthcheck de produccion" 30 bash "$APP_ROOT/scripts/infra/healthcheck_prod.sh"; then
+                      show_django_diagnostics
+                      exit 1
+                  fi
                   deployed_sha="$(git -C "$APP_ROOT" rev-parse HEAD)"
                   [[ "$deployed_sha" == "$EXPECTED_SHA" ]]
                   {

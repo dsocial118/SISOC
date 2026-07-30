@@ -14,7 +14,7 @@ El job de producción adopta el mismo sondeo acotado de QA y homologación:
 intenta `migrate --check` hasta 30 veces, cada dos segundos, y sólo continúa al
 healthcheck cuando las migraciones ya están aplicadas. Si se agota el límite,
 publica el último error junto con `docker compose ps` y los últimos logs de
-`django`.
+`django`, tanto para migraciones como para el healthcheck.
 
 ## Datos, compatibilidad y rollback
 

@@ -55,7 +55,7 @@ def test_deploy_produccion_espera_migraciones_y_healthcheck_del_entrypoint():
     diagnostics = "Diagnostico del servicio django de produccion"
     migrations = 'if ! wait_for "migraciones de produccion" 30 docker compose'
     healthcheck = (
-        'wait_for "healthcheck de produccion" 30 bash '
+        'if ! wait_for "healthcheck de produccion" 30 bash '
         '"$APP_ROOT/scripts/infra/healthcheck_prod.sh"'
     )
 
@@ -65,3 +65,10 @@ def test_deploy_produccion_espera_migraciones_y_healthcheck_del_entrypoint():
     assert production_step.index(deploy_versioned) < production_step.index(wait_for)
     assert production_step.index(wait_for) < production_step.index(migrations)
     assert production_step.index(migrations) < production_step.index(healthcheck)
+
+    healthcheck_start = production_step.index(healthcheck)
+    healthcheck_end = production_step.index("\n                  fi\n", healthcheck_start)
+    healthcheck_block = production_step[healthcheck_start:healthcheck_end]
+
+    assert "show_django_diagnostics" in healthcheck_block
+    assert "exit 1" in healthcheck_block

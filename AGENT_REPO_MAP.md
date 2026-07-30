@@ -492,6 +492,9 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
   `.github/scripts/sync_main_downstream.test.js` y `deploy_guard` ejecuta las
   pruebas Node de ambos orquestadores.
 - `.github/workflows/deploy.yml`
+- Producción sondea hasta 30 veces `migrate --check` y su healthcheck luego
+  de `deploy_refresh.sh`; si no convergen, publica `docker compose ps` y los
+  últimos logs de Django. La regresión vive en `tests/test_deploy_workflow.py`.
 - La automatización de promociones usa una GitHub App privada: variable
   `RELEASE_AUTOMATION_APP_CLIENT_ID` y secret
   `RELEASE_AUTOMATION_APP_PRIVATE_KEY`; no sustituirla por un PAT.
