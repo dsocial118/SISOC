@@ -1,3 +1,11 @@
+<!-- AUTO-GENERATED RELEASE START: 2026-08-05 -->
+# Versión SISOC 05.08.2026
+
+## Actualizaciones
+
+- [sin-area] fix(deploy): esperar migraciones en producción. (PR #2204)
+<!-- AUTO-GENERATED RELEASE END: 2026-08-05 -->
+
 <!-- AUTO-GENERATED RELEASE START: 2026-07-30 -->
 # Versión SISOC 30.07.2026
 
