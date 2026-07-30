@@ -24,8 +24,8 @@
 
 - Tipo de cambio declarado: Fix
 - Área principal declarada: CI/CD
-- Impacto usuario declarado: Sin cambio directo de interfaz; impide que una promoción avance con evidencia incompleta o sin sincronización descendente.
-- Riesgos / rollback: El workflow ejecuta automatización desde development; sólo un 204 sin cuerpo puede ser no-op. El rollback funcional usa el tag estable del main previo.
+- Impacto usuario declarado: Sin cambio directo de interfaz; impide que una promoción avance con una respuesta de sincronización incompleta o inesperada.
+- Riesgos / rollback: El workflow ejecuta automatización desde development; sólo un 201 con SHA válido o un 204 sin cuerpo puede avanzar. El rollback funcional usa el tag estable del main previo.
 
 ## Design system y UI
 
