@@ -9,12 +9,13 @@ from comedores.models import (
     Referente,
     ImagenComedor,
     Nomina,
+    Programas,
     EstadoActividad,
     EstadoProceso,
     EstadoDetalle,
 )
 from comedores.services.estado_manager import registrar_cambio_estado
-from comedores.utils import is_pnud_comedor
+from comedores.utils import is_pnud_comedor, permite_codigo_de_proyecto
 
 from core.models import Municipio, Provincia
 from core.models import Localidad
@@ -263,6 +264,12 @@ class ComedorForm(forms.ModelForm):
         else:
             self.fields["organizacion"].queryset = Organizacion.objects.none()
 
+        self.codigo_de_proyecto_programa_ids = ",".join(
+            str(programa.pk)
+            for programa in Programas.objects.only("id", "nombre")
+            if permite_codigo_de_proyecto(programa)
+        )
+
     def _can_edit_estado_fields(self):
         user = self.current_user
         if not user or not getattr(user, "is_authenticated", False):
@@ -464,6 +471,15 @@ class ComedorForm(forms.ModelForm):
 
     def clean(self):
         cleaned_data = super().clean()
+
+        if (
+            cleaned_data.get("categoria_espacio_comunitario")
+            != Comedor.CATEGORIA_ESPACIO_OTRA
+        ):
+            cleaned_data["categoria_espacio_comunitario_otra"] = ""
+
+        if not permite_codigo_de_proyecto(cleaned_data.get("programa")):
+            cleaned_data["codigo_de_proyecto"] = None
 
         estado_actividad = cleaned_data.get("estado_general")
         estado_proceso = cleaned_data.get("subestado")

@@ -60,6 +60,10 @@ class Profile(models.Model):
     -------
     user : OneToOneField
         Usuario de Django asociado (relación 1:1)
+    dni, cuil : CharField
+        Datos identificatorios informativos del usuario
+    tipo_usuario : CharField
+        Clasificación informativa independiente de permisos y alcances
     dark_mode : BooleanField
         Preferencia de tema oscuro en la UI
     es_usuario_provincial : BooleanField
@@ -82,7 +86,20 @@ class Profile(models.Model):
     - duplas.models.Dupla: Modelo de equipos técnicos
     """
 
+    class TipoUsuario(models.TextChoices):
+        INTERNO = "interno", "Interno"
+        PROVINCIAL = "provincial", "Provincial"
+        EXTERNO = "externo", "Externo"
+
     user = models.OneToOneField(User, on_delete=models.CASCADE)
+    dni = models.CharField(max_length=16, blank=True)
+    cuil = models.CharField(max_length=16, blank=True)
+    tipo_usuario = models.CharField(
+        max_length=10,
+        choices=TipoUsuario.choices,
+        null=True,
+        blank=True,
+    )
     dark_mode = models.BooleanField(default=True)
     es_usuario_provincial = models.BooleanField(default=False)
     provincia = models.ForeignKey(

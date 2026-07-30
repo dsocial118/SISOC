@@ -2,7 +2,15 @@ import pytest
 from django.contrib.auth import get_user_model
 from rest_framework.test import APIRequestFactory, force_authenticate
 
-from comedores.models import Comedor, CursoAppMobile, Programas
+from comedores.models import (
+    Comedor,
+    CursoAppMobile,
+    EstadoActividad,
+    EstadoGeneral,
+    EstadoHistorial,
+    EstadoProceso,
+    Programas,
+)
 from core.models import Provincia
 from pwa.api_views import CursoAppMobilePWAViewSet
 from users.models import AccesoComedorPWA
@@ -34,6 +42,24 @@ def _create_comedor(programa_nombre):
         provincia=provincia,
         programa=programa,
     )
+
+
+def _marcar_activo_en_ejecucion(comedor):
+    estado_actividad = EstadoActividad.objects.create(estado="Activo")
+    estado_proceso = EstadoProceso.objects.create(
+        estado="En ejecución",
+        estado_actividad=estado_actividad,
+    )
+    estado_general = EstadoGeneral.objects.create(
+        estado_actividad=estado_actividad,
+        estado_proceso=estado_proceso,
+    )
+    historial = EstadoHistorial.objects.create(
+        comedor=comedor,
+        estado_general=estado_general,
+    )
+    comedor.ultimo_estado = historial
+    comedor.save(update_fields=["ultimo_estado"])
 
 
 def _formacion_url(comedor):
@@ -87,6 +113,7 @@ def test_formacion_pwa_filtra_cursos_para_pnud():
 
 def test_formacion_pwa_filtra_cursos_para_alimentar_comunidad():
     comedor = _create_comedor("Alimentar Comunidad")
+    _marcar_activo_en_ejecucion(comedor)
     representante = _create_representante(comedor=comedor, username="rep_alimentar")
 
     CursoAppMobile.objects.create(

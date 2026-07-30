@@ -443,7 +443,13 @@ urlpatterns = [
     ),
     path(
         "comedores/<int:pk>/validar/",
-        login_required(validar_comedor),
+        permissions_any_required(
+            [
+                "comedores.view_comedor",
+                "admisiones.view_admision",
+                "acompanamientos.view_informacionrelevante",
+            ]
+        )(login_required(validar_comedor)),
         name="validar_comedor",
     ),
     path(

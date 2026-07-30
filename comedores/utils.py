@@ -13,6 +13,12 @@ from rendicioncuentasmensual.models import RendicionCuentaMensual
 # IDs de programa PNUD en la tabla core_programa (prog 3 = PNUD Prog1, prog 4 = PNUD Prog2).
 # Se complementa con la búsqueda por nombre para tolerar entornos donde los IDs difieren.
 _PNUD_PROGRAMA_IDS = frozenset((3, 4))
+_PROGRAMAS_CON_CODIGO_DE_PROYECTO = frozenset(
+    (
+        "abordaje comunitario - linea secos",
+        "abordaje comunitario - linea tradicional",
+    )
+)
 
 
 def is_pnud_comedor(comedor) -> bool:
@@ -42,6 +48,12 @@ def _normalize_programa(nombre: str) -> str:
 def _get_programa_nombre_normalizado(comedor) -> str:
     nombre = str(getattr(getattr(comedor, "programa", None), "nombre", "") or "")
     return _normalize_programa(nombre)
+
+
+def permite_codigo_de_proyecto(programa) -> bool:
+    """Indica si el programa admite código de proyecto en el legajo."""
+    nombre = str(getattr(programa, "nombre", "") or "")
+    return _normalize_programa(nombre) in _PROGRAMAS_CON_CODIGO_DE_PROYECTO
 
 
 def is_prestacion_alimentaria_conformidad_program(comedor) -> bool:

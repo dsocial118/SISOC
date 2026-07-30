@@ -1,7 +1,7 @@
 {% extends "includes/main.html" %}
 {% load static crispy_forms_tags %}
-{% block title %}Comedores{% endblock %}
-{% block titulo-pagina %}Comedores{% endblock %}
+{% block title %}Espacios Comunitarios{% endblock %}
+{% block titulo-pagina %}Espacios Comunitarios{% endblock %}
 {% block breadcrumb %}
     {% include 'components/breadcrumb.html' with items=breadcrumb_items %}
 {% endblock %}
@@ -60,7 +60,7 @@
                             </div>
                             <div class="section-title-group">
                                 <h3 class="section-title">Información Básica</h3>
-                                <p class="section-subtitle">Datos generales del comedor/merendero</p>
+                                <p class="section-subtitle">Datos generales del espacio comunitario</p>
                             </div>
                         </div>
                         <div class="section-status">
@@ -79,9 +79,17 @@
                             <div class="col-md-4">{{ form.tipocomedor|as_crispy_field }}</div>
                         </div>
                         <div class="form-group row">
+                            <div class="col-md-6">{{ form.categoria_espacio_comunitario|as_crispy_field }}</div>
+                            <div id="categoria-espacio-otra-wrapper" class="col-md-6 d-none">
+                                {{ form.categoria_espacio_comunitario_otra|as_crispy_field }}
+                            </div>
+                        </div>
+                        <div class="form-group row">
                             <div class="col-md-4">{{ form.organizacion|as_crispy_field }}</div>
                             <div class="col-md-4">{{ form.programa|as_crispy_field }}</div>
-                            <div class="col-md-2">
+                            <div id="codigo-proyecto-wrapper"
+                                 class="col-md-2"
+                                 data-programa-ids="{{ form.codigo_de_proyecto_programa_ids }}">
                                 {{ form.codigo_de_proyecto|as_crispy_field }}
                                 <span class="field-tooltip">
                                     <i class="fas fa-info-circle"></i>
@@ -518,6 +526,53 @@
         var ajaxLoadMunicipiosUrl = "{% url 'ajax_load_municipios' %}";
         var ajaxLoadLocalidadesUrl = "{% url 'ajax_load_localidades' %}";
         var ajaxLoadOrganizacionesUrl = "{% url 'ajax_load_organizaciones' %}";
+
+        (function () {
+            var categoriaInput = document.getElementById("id_categoria_espacio_comunitario");
+            var otraWrapper = document.getElementById("categoria-espacio-otra-wrapper");
+            var otraInput = document.getElementById("id_categoria_espacio_comunitario_otra");
+
+            if (!categoriaInput || !otraWrapper || !otraInput) {
+                return;
+            }
+
+            function actualizarOtraCategoria() {
+                var esOtra = categoriaInput.value === "otra";
+                otraWrapper.classList.toggle("d-none", !esOtra);
+                otraInput.required = esOtra;
+                if (!esOtra) {
+                    otraInput.value = "";
+                }
+            }
+
+            categoriaInput.addEventListener("change", actualizarOtraCategoria);
+            actualizarOtraCategoria();
+        }());
+
+        (function () {
+            var programaInput = document.getElementById("id_programa");
+            var codigoWrapper = document.getElementById("codigo-proyecto-wrapper");
+            var codigoInput = document.getElementById("id_codigo_de_proyecto");
+
+            if (!programaInput || !codigoWrapper || !codigoInput) {
+                return;
+            }
+
+            var programasPermitidos = codigoWrapper.dataset.programaIds
+                .split(",")
+                .filter(Boolean);
+
+            function actualizarCodigoProyecto() {
+                var permitido = programasPermitidos.indexOf(programaInput.value) !== -1;
+                codigoWrapper.classList.toggle("d-none", !permitido);
+                if (!permitido) {
+                    codigoInput.value = "";
+                }
+            }
+
+            programaInput.addEventListener("change", actualizarCodigoProyecto);
+            actualizarCodigoProyecto();
+        }());
     </script>
 
     <!-- Scripts externos -->

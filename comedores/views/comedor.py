@@ -40,6 +40,7 @@ from comedores.models import (
     PrestacionAlimentariaConformidad,
 )
 from comedores.services.comedor_service import ComedorService
+from comedores.services.validacion_service import ValidacionService
 from comedores.services.capacitaciones_certificados_service import (
     is_alimentar_comunidad_program,
     list_capacitaciones_certificados,
@@ -1099,7 +1100,7 @@ class ComedorListView(LoginRequiredMixin, ListView):
             {
                 # Breadcrumb
                 "breadcrumb_items": [
-                    {"text": "Comedores", "url": reverse("comedores")},
+                    {"text": "Espacios Comunitarios", "url": reverse("comedores")},
                     {"text": "Listar", "active": True},
                 ],
                 # Barra de busqueda
@@ -1491,6 +1492,9 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
         # Agregar opciones de validación
 
         context["opciones_no_validar"] = HistorialValidacion.get_opciones_no_validar()
+        context["puede_validar_comedor"] = ValidacionService.puede_validar(
+            self.request.user, self.object
+        )
 
         context.update(
             {

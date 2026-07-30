@@ -36,6 +36,26 @@ def test_normalize_programa_remueve_acentos():
 
 
 # ---------------------------------------------------------------------------
+# permite_codigo_de_proyecto
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "nombre,expected",
+    [
+        ("Abordaje Comunitario - Línea Secos", True),
+        ("abordaje comunitario - linea tradicional", True),
+        ("Alimentar Comunidad", False),
+        ("Abordaje Comunitario", False),
+        ("", False),
+    ],
+)
+def test_permite_codigo_de_proyecto(nombre, expected):
+    programa = SimpleNamespace(nombre=nombre)
+    assert module.permite_codigo_de_proyecto(programa) is expected
+
+
+# ---------------------------------------------------------------------------
 # is_prestacion_alimentaria_conformidad_program
 # ---------------------------------------------------------------------------
 

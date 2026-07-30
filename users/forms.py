@@ -68,6 +68,28 @@ ROLE_PERMISSION_QUERYSET = (
 )
 
 
+CDI_ABM_RESTRICTED_GROUPS = (
+    UserGroups.SIMEPI_ADMINISTRADOR,
+    UserGroups.SIMEPI_EQUIPO_NACIONAL,
+    UserGroups.SIMEPI_EGP,
+    UserGroups.CDI_REFERENTE_CENTRO,
+)
+
+CDI_ABM_RESTRICTED_FIELDS = (
+    "es_representante_pwa",
+    "puede_gestionar_rendiciones_mobile",
+    *PWA_OPERATION_PERMISSION_FIELDS,
+    "tipo_asociacion_pwa",
+    "organizaciones_pwa",
+    "comedores_pwa",
+    "user_permissions",
+    "es_coordinador",
+    "duplas_asignadas",
+    "grupos_asignables",
+    "roles_asignables",
+)
+
+
 def _validation_error_messages(error):
     if hasattr(error, "messages"):
         return error.messages
@@ -484,6 +506,34 @@ class DelegationScopeMixin:
             help_text="Permisos auth.role_* delegables a terceros.",
         )
 
+    def _apply_cdi_abm_restrictions(self):
+        """Restringe capacidades administrativas para los gestores CDI.
+
+        Los campos quedan deshabilitados, además de ocultos en el template, para
+        que un POST construido manualmente no pueda modificar configuraciones
+        ajenas al circuito CDI. En edición Django conserva sus valores iniciales.
+        """
+        actor_groups = (
+            set(
+                self.actor.groups.filter(
+                    name__in=CDI_ABM_RESTRICTED_GROUPS
+                ).values_list("name", flat=True)
+            )
+            if self.actor and not self.actor.is_superuser
+            else set()
+        )
+        self.is_cdi_abm_restricted = bool(actor_groups)
+        self.can_manage_mobile_access = not self.is_cdi_abm_restricted
+        self.can_manage_direct_permissions = not self.is_cdi_abm_restricted
+        self.can_manage_technical_teams = not self.is_cdi_abm_restricted
+        self.can_manage_delegation = not self.is_cdi_abm_restricted
+
+        if not self.is_cdi_abm_restricted:
+            return
+
+        for field_name in CDI_ABM_RESTRICTED_FIELDS:
+            self.fields[field_name].disabled = True
+
     def _is_unrestricted_actor(self):
         return not self.actor or self.actor.is_superuser
 
@@ -645,6 +695,13 @@ class UserCreationForm(
     forms.ModelForm,
 ):
     password = forms.CharField(widget=forms.PasswordInput, label="Contraseña")
+    dni = forms.CharField(max_length=16, required=False, label="DNI")
+    cuil = forms.CharField(max_length=16, required=False, label="CUIL")
+    tipo_usuario = forms.ChoiceField(
+        choices=Profile.TipoUsuario.choices,
+        widget=forms.RadioSelect,
+        label="Tipo de usuario",
+    )
     groups = forms.ModelMultipleChoiceField(
         queryset=Group.objects.all(),
         required=False,
@@ -697,6 +754,9 @@ class UserCreationForm(
             "username",
             "email",
             "password",
+            "dni",
+            "cuil",
+            "tipo_usuario",
             "groups",
             "user_permissions",
             "es_usuario_provincial",
@@ -720,6 +780,7 @@ class UserCreationForm(
         self.generated_password = None
         self.password_was_auto_generated = False
         self._setup_territorial_scope_fields()
+        self._apply_cdi_abm_restrictions()
 
     def clean(self):
         cleaned = super().clean()
@@ -773,6 +834,9 @@ class UserCreationForm(
         profile.es_usuario_provincial = self.cleaned_data.get(
             "es_usuario_provincial", False
         )
+        profile.dni = self.cleaned_data.get("dni", "")
+        profile.cuil = self.cleaned_data.get("cuil", "")
+        profile.tipo_usuario = self.cleaned_data["tipo_usuario"]
         profile.provincia = None
         profile.es_coordinador = self.cleaned_data.get("es_coordinador", False)
         profile.rol = self.cleaned_data.get("rol")
@@ -834,6 +898,13 @@ class CustomUserChangeForm(
         label="Contraseña (dejar en blanco para no cambiarla)",
         required=False,
     )
+    dni = forms.CharField(max_length=16, required=False, label="DNI")
+    cuil = forms.CharField(max_length=16, required=False, label="CUIL")
+    tipo_usuario = forms.ChoiceField(
+        choices=Profile.TipoUsuario.choices,
+        widget=forms.RadioSelect,
+        label="Tipo de usuario",
+    )
     groups = forms.ModelMultipleChoiceField(
         queryset=Group.objects.all(),
         required=False,
@@ -886,6 +957,9 @@ class CustomUserChangeForm(
             "username",
             "email",
             "password",
+            "dni",
+            "cuil",
+            "tipo_usuario",
             "groups",
             "user_permissions",
             "es_usuario_provincial",
@@ -916,12 +990,16 @@ class CustomUserChangeForm(
 
         self._setup_territorial_scope_fields(prof)
         if prof:
+            self.fields["dni"].initial = prof.dni
+            self.fields["cuil"].initial = prof.cuil
+            self.fields["tipo_usuario"].initial = prof.tipo_usuario
             self.fields["es_usuario_provincial"].initial = prof.es_usuario_provincial
             self.fields["provincia"].initial = prof.provincia
             self.fields["es_coordinador"].initial = prof.es_coordinador
             self.fields["duplas_asignadas"].initial = prof.duplas_asignadas.all()
             self.fields["rol"].initial = prof.rol
             self._init_delegation_fields(prof)
+        self._apply_cdi_abm_restrictions()
 
     def clean(self):
         cleaned = super().clean()
@@ -983,6 +1061,9 @@ class CustomUserChangeForm(
             profile.es_usuario_provincial = self.cleaned_data.get(
                 "es_usuario_provincial", False
             )
+            profile.dni = self.cleaned_data.get("dni", "")
+            profile.cuil = self.cleaned_data.get("cuil", "")
+            profile.tipo_usuario = self.cleaned_data["tipo_usuario"]
             profile.provincia = None
             profile.es_coordinador = self.cleaned_data.get("es_coordinador", False)
             profile.rol = self.cleaned_data.get("rol")
