@@ -9,7 +9,7 @@
 
 ## Contexto funcional
 
-- Promoción semanal de development a main con recuperación segura de la sincronización descendente.
+- Promoción semanal de development a main con recuperación segura de la sincronización descendente y de sus gates de calidad.
 
 ## Arquitectura tocada
 
@@ -24,8 +24,8 @@
 
 - Tipo de cambio declarado: Fix
 - Área principal declarada: CI/CD
-- Impacto usuario declarado: Sin cambio directo de interfaz; evita que una promoción quede bloqueada antes del deploy.
-- Riesgos / rollback: El workflow ejecuta automatización desde development; revertir a main solo cuando el helper esté promovido. El rollback funcional usa el tag estable del main previo.
+- Impacto usuario declarado: Sin cambio directo de interfaz; impide que una promoción avance con evidencia incompleta o sin sincronización descendente.
+- Riesgos / rollback: El workflow ejecuta automatización desde development; sólo un 204 sin cuerpo puede ser no-op. El rollback funcional usa el tag estable del main previo.
 
 ## Design system y UI
 
