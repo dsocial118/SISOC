@@ -1,3 +1,11 @@
+<!-- AUTO-GENERATED RELEASE START: 2026-07-29 -->
+# Versión SISOC 29.07.2026
+
+## Corrección de Errores
+
+- [CI/CD] Corrige el bootstrap de la sincronización automática de main hacia QA y HML. (PR #2192)
+<!-- AUTO-GENERATED RELEASE END: 2026-07-29 -->
+
 <!-- AUTO-GENERATED RELEASE START: 2026-07-22 -->
 # Versión SISOC 22.07.2026
 
