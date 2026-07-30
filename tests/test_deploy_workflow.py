@@ -94,12 +94,13 @@ def test_deploy_produccion_recupera_tallas_legacy_solo_bajo_precondiciones():
     assert "environment: production" in recovery_job
     assert "runs-on: [self-hosted, sisoc-produccion]" in recovery_job
     assert 'remote_sha="$(git -C "$APP_ROOT" rev-parse origin/main)"' in recovery_job
-    assert '[[ "$(git -C "$APP_ROOT" branch --show-current)" == "main" ]]' in recovery_job
-    assert 'git -C "$APP_ROOT" diff --quiet' in recovery_job
-    assert 'git -C "$APP_ROOT" diff --cached --quiet' in recovery_job
-    assert 'git -C "$APP_ROOT" merge --ff-only origin/main' in recovery_job
-    assert 'local_sha="$(git -C "$APP_ROOT" rev-parse HEAD)"' in recovery_job
-    assert 'if [[ "$local_sha" != "$EXPECTED_SHA" ]]; then' in recovery_job
+    assert 'git -C "$APP_ROOT" merge --ff-only origin/main' not in recovery_job
+    assert 'git -C "$APP_ROOT" cat-file -e "$EXPECTED_SHA^{commit}"' in recovery_job
+    assert 'git -C "$APP_ROOT" archive --format=tar "$EXPECTED_SHA"' in recovery_job
+    assert 'tar -x -C "$RECOVERY_ROOT"' in recovery_job
+    assert 'ln -s "$APP_ROOT/.env" "$RECOVERY_ROOT/.env"' in recovery_job
+    assert 'trap cleanup_recovery EXIT' in recovery_job
+    assert '--project-directory "$RECOVERY_ROOT"' in recovery_job
     assert "PROD_EXPECTED_DB_HOST" in recovery_job
     assert "PROD_EXPECTED_DB_SERVER" in recovery_job
     assert "PROD_EXPECTED_DB_NAME" in recovery_job

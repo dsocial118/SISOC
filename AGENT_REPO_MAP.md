@@ -498,8 +498,8 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - Ante el bloqueo conocido de `centrodeinfancia.0042`, `deploy.yml` concentra
   una recuperación manual de los ids legacy 7, 237 y 242: clasifica sin PII y
   sólo permite nulificarlos bajo categorías exactas, `FOR UPDATE` y transacción;
-  antes fija un checkout `main` limpio al SHA aprobado y valida host, servidor y
-  schema de DB esperados.
+  antes archiva el SHA aprobado en un directorio temporal y valida host,
+  servidor y schema de DB esperados, sin tocar el checkout vivo.
 - Al cambiar la fecha explícita de un PR a `main`,
   `scripts/ci/pr_doc_automation.py` regenera o elimina el bloque de changelog
   previo de ese PR para no dejar una release fantasma.

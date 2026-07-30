@@ -20,11 +20,11 @@ esperadas, bloquea cada fila con `FOR UPDATE` y actualiza las tres dentro de una
 misma transaccion. Cualquier fila ausente, categoria distinta o conteo de update
 inesperado revierte todo.
 
-Antes de ejecutar Django, ambas acciones exigen un checkout local limpio en sus
-archivos versionados, ubicado en `main` y fast-forward al SHA aprobado. Tambien
-comprueban que el host configurado, el servidor y el schema de la conexion
-coincidan con los contratos operativos `PROD_EXPECTED_DB_*`; ante cualquier
-diferencia terminan sin leer ni modificar las filas.
+Antes de ejecutar Django, ambas acciones archivan el SHA aprobado en un
+directorio temporal aislado y conservan sin cambios el checkout que sirve a
+produccion. Tambien comprueban que el host configurado, el servidor y el schema
+de la conexion coincidan con los contratos operativos `PROD_EXPECTED_DB_*`; ante
+cualquier diferencia terminan sin leer ni modificar las filas.
 
 ## Compatibilidad, riesgo y rollback
 

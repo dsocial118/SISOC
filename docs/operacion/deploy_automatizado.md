@@ -54,11 +54,11 @@ ofrece estas acciones manuales de `maintenance_action`:
    tres filas con `FOR UPDATE` y las actualiza a `NULL` en una unica transaccion.
 
 Ambas acciones siguen sujetas al Environment `production` y rechazan el trabajo
-si `origin/main` avanzó desde el dispatch. Antes de abrir Django, exigen que el
-checkout local este limpio en sus archivos versionados, en la branch `main` y
-exactamente en el SHA aprobado; tambien validan host configurado, servidor y
-schema de DB contra los contratos `PROD_EXPECTED_DB_*`. Cualquier diferencia
-falla sin leer ni modificar las filas. La reparacion no tiene rollback
+si `origin/main` avanzó desde el dispatch. Antes de abrir Django, archivan el
+SHA aprobado en un directorio temporal aislado, sin modificar el checkout que
+sirve a produccion; tambien validan host configurado, servidor y schema de DB
+contra los contratos `PROD_EXPECTED_DB_*`. Cualquier diferencia falla sin leer
+ni modificar las filas. La reparacion no tiene rollback
 automatico porque los valores originales son invalidos y no deben exponerse ni
 inventarse; una altura valida posterior debe cargarse desde una fuente
 autorizada. Luego se reintenta el deploy del SHA vigente.
