@@ -81,9 +81,9 @@ def test_deploy_produccion_recupera_tallas_legacy_solo_bajo_precondiciones():
     """La reparación productiva debe ser manual, acotada y transaccional."""
 
     workflow = DEPLOY_WORKFLOW.read_text(encoding="utf-8")
-    production_job = workflow.split(
-        "    deploy-produccion:\n", maxsplit=1
-    )[1].split("    recuperar-talla-legacy-produccion:\n", maxsplit=1)[0]
+    production_job = workflow.split("    deploy-produccion:\n", maxsplit=1)[1].split(
+        "    recuperar-talla-legacy-produccion:\n", maxsplit=1
+    )[0]
     recovery_job = workflow.split(
         "    recuperar-talla-legacy-produccion:\n", maxsplit=1
     )[1]
@@ -101,7 +101,7 @@ def test_deploy_produccion_recupera_tallas_legacy_solo_bajo_precondiciones():
     assert 'git -C "$APP_ROOT" archive --format=tar "$EXPECTED_SHA"' in recovery_job
     assert 'tar -x -C "$RECOVERY_ROOT"' in recovery_job
     assert 'ln -s "$APP_ROOT/.env" "$RECOVERY_ROOT/.env"' in recovery_job
-    assert 'trap cleanup_recovery EXIT' in recovery_job
+    assert "trap cleanup_recovery EXIT" in recovery_job
     assert '--project-directory "$RECOVERY_ROOT"' in recovery_job
     assert "PROD_EXPECTED_DB_HOST" in recovery_job
     assert "PROD_EXPECTED_DB_SERVER" in recovery_job
@@ -120,14 +120,10 @@ def test_deploy_produccion_recupera_tallas_legacy_solo_bajo_precondiciones():
         in recovery_job
     )
 
-    embedded_source = re.search(
-        r"recovery=\$'(.*)'\n\s+docker compose", recovery_job
-    )
+    embedded_source = re.search(r"recovery=\$'(.*)'\n\s+docker compose", recovery_job)
 
     assert embedded_source is not None
-    recovery_source = bytes(embedded_source.group(1), "utf-8").decode(
-        "unicode_escape"
-    )
+    recovery_source = bytes(embedded_source.group(1), "utf-8").decode("unicode_escape")
     compile(recovery_source, "<legacy-talla-recovery>", "exec")
 
     assert "connection.ensure_connection()" in recovery_source

@@ -4,13 +4,19 @@ import unicodedata
 
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.core.exceptions import PermissionDenied
 from django.http import HttpResponseRedirect
 from django.urls import reverse
 from django.views.generic import View
 
-from centrodefamilia.services.beneficiarios_service import get_filtered_beneficiarios
+from centrodefamilia.access import ROLE_CDF_SSE_PERMISSION
+from centrodefamilia.services.beneficiarios_service import (
+    formatear_fecha_nacimiento,
+    get_filtered_beneficiarios,
+)
 from core.mixins import CSVExportMixin
 from core.services.advanced_filters.payload import extract_raw_filters, load_payload
+from iam.services import user_has_any_permission_codes
 
 FILTERS_PARAM_NAME = "filters"
 FILENAME_FIELDS_PRIORITY = ("provincia", "municipio", "localidad")
@@ -19,8 +25,10 @@ SORT_FIELDS = {
     "cuil": ("cuil",),
     "apellido_nombre": ("apellido", "nombre"),
     "dni": ("dni",),
+    "fecha_nacimiento_display": ("fecha_nacimiento",),
     "genero_display": ("genero",),
     "responsable_nombre": ("responsable__apellido", "responsable__nombre"),
+    "responsable_cuil": ("responsable__cuil",),
     "provincia": ("provincia__nombre",),
     "municipio": ("municipio__nombre",),
 }
@@ -39,14 +47,33 @@ def _neutralize_csv_formula(value):
 
 class BeneficiariosExportView(LoginRequiredMixin, CSVExportMixin, View):
     export_filename = "listado_beneficiarios.csv"
+    # El rol CDF SSE exporta el padrón de preinscriptos sin necesitar el rol
+    # transversal de exportación a CSV.
+    export_permission_codes = (
+        CSVExportMixin.export_permission_code,
+        ROLE_CDF_SSE_PERMISSION,
+    )
+
+    def check_export_permission(self, request):
+        if not request.user.is_authenticated:
+            raise PermissionDenied
+
+        if not user_has_any_permission_codes(
+            request.user, self.export_permission_codes
+        ):
+            raise PermissionDenied
+
+        return True
 
     def get_export_columns(self):
         return [
             ("CUIL", "cuil"),
             ("Apellido y Nombre", "custom_apellido_nombre"),
             ("DNI", "dni"),
+            ("Fecha de nacimiento", "custom_fecha_nacimiento"),
             ("Género", "custom_genero"),
             ("Responsable", "custom_responsable"),
+            ("CUIL del responsable", "responsable.cuil"),
             ("Provincia", "provincia.nombre"),
             ("Municipio", "municipio.nombre"),
         ]
@@ -54,6 +81,8 @@ class BeneficiariosExportView(LoginRequiredMixin, CSVExportMixin, View):
     def resolve_field(self, obj, field_path):
         if field_path == "custom_apellido_nombre":
             value = f"{obj.apellido}, {obj.nombre}"
+        elif field_path == "custom_fecha_nacimiento":
+            value = formatear_fecha_nacimiento(obj.fecha_nacimiento, vacio="")
         elif field_path == "custom_genero":
             value = obj.get_genero_display()
         elif field_path == "custom_responsable":
