@@ -283,8 +283,11 @@ def test_beneficiarios_list_muestra_boton_exportar_con_permiso(
     content = response.content.decode()
     assert "btn-export-csv" in content
     assert reverse("beneficiarios_export") in content
-    assert "Descargar CSV" in content
-    assert "search-actions" in content
+    # El boton se renombro a "Exportar busqueda" y se movio de .search-actions
+    # a la barra superior (.poncho-topbar), segun el prototipo de Figma.
+    # Se conserva .btn-export-csv porque export_helper.js engancha por esa clase.
+    assert "Exportar búsqueda" in content
+    assert "poncho-topbar" in content
 
 
 @pytest.mark.django_db

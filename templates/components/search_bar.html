@@ -2,33 +2,80 @@
 <link rel="stylesheet"
       href="{% static 'custom/css/comedoresSearchBar.css' %}" />
 {% comment %}
+poncho_listados.css se carga aca a proposito: el componente se incluye despues
+del listModerno.css de cada listado, asi que es el ultimo en la cascada y puede
+reestilar tabla, fondo y botones sin pelear con !important.
+{% endcomment %}
+<link rel="stylesheet" href="{% static 'custom/css/poncho_listados.css' %}" />
+{% comment %}
 Componente Search Bar
 Uso clásico (texto): {% include 'components/search_bar.html' with titulo='Mi Título' placeholder='Buscar...' help_text='Ayuda' reset_url=url add_url=url show_add_button=True query=query add_text='Agregar' %}
 Modo filtros combinables: {% include 'components/search_bar.html' with titulo='Buscar' reset_url=reset_url add_url=add_url filters_mode=True %}
 Modo búsqueda AJAX dinámica: {% include 'components/search_bar.html' with titulo='Buscar' placeholder='Buscar...' reset_url=reset_url add_url=add_url ajax_search_mode=True ajax_url=ajax_url target_tbody_id='table-tbody' %}
+
+Layout (prototipo Figma "SISOC_ Versión UX", nodo 13501:32237):
+- Sin filtros: solo el buscador (input + lupa). La lupa dispara la búsqueda;
+  ya no hay botón "Filtrar".
+- Con filtros (filters_mode): el primer filtro vive dentro de la barra
+  (campo + operador + valor + lupa) y "+ Filtro" agrega filas adicionales
+  debajo. AND/OR y Favoritos quedan en una línea secundaria.
+- "Exportar búsqueda" se ubica arriba a la derecha cuando se pasa export_url.
 {% endcomment %}
 {% firstof filters_mode comedores_filters_mode False as filters_mode_value %}
 {% with filters_mode=filters_mode_value %}
-    <h2 class="text-center display-4 mb-4">{{ titulo|default:"Buscar" }}</h2>
+    {% if export_url %}
+        {% firstof export_permissions export_group "auth.role_exportar_a_csv" as export_permissions_value %}
+        {% firstof export_admin_permissions "" as export_admin_permissions_value %}
+        <div class="poncho-topbar">
+            {% if request.user.is_superuser or request.user|has_any_perm:export_admin_permissions_value %}
+                <button type="button"
+                        class="poncho-export btn-export-csv"
+                        data-url="{{ export_url }}"
+                        title="Descargar listado actual en CSV">
+                    <i class="fas fa-file-excel" aria-hidden="true"></i>Exportar búsqueda
+                </button>
+            {% elif export_required_permission %}
+                {% if request.user|has_any_perm:export_permissions_value and request.user|has_perm_code:export_required_permission %}
+                    <button type="button"
+                            class="poncho-export btn-export-csv"
+                            data-url="{{ export_url }}"
+                            title="Descargar listado actual en CSV">
+                        <i class="fas fa-file-excel" aria-hidden="true"></i>Exportar búsqueda
+                    </button>
+                {% endif %}
+            {% elif request.user|has_any_perm:export_permissions_value %}
+                <button type="button"
+                        class="poncho-export btn-export-csv"
+                        data-url="{{ export_url }}"
+                        title="Descargar listado actual en CSV">
+                    <i class="fas fa-file-excel" aria-hidden="true"></i>Exportar búsqueda
+                </button>
+            {% endif %}
+        </div>
+    {% endif %}
+    <h2 class="text-center mb-4 poncho-titulo">{{ titulo|default:"Buscar" }}</h2>
     {% if ajax_search_mode %}
         <!-- Modo búsqueda AJAX dinámica -->
-        <div class="row">
-            <div class="col-12 col-lg-10 offset-lg-1">
-                <div class="form-group">
-                    <div class="input-group input-group-lg">
-                        <input type="search"
-                               id="ajax-search-input"
-                               class="form-control form-control-lg"
-                               placeholder="{{ placeholder|default:'Buscar' }}"
-                               title="{{ help_text|default:'Ingrese términos de búsqueda' }}"
-                               autocomplete="off"
-                               value="{{ query|default:'' }}" />
-                    </div>
-                    <small class="form-text text-muted">
-                        <span id="ajax-results-count"></span>
-                    </small>
-                </div>
+        <div class="poncho-search poncho-search--solo">
+            <div class="poncho-search__box">
+                <input type="search"
+                       id="ajax-search-input"
+                       class="poncho-search__input"
+                       placeholder="{{ placeholder|default:'Buscar' }}"
+                       title="{{ help_text|default:'Ingrese términos de búsqueda' }}"
+                       autocomplete="off"
+                       aria-label="{{ help_text|default:'Ingrese términos de búsqueda' }}"
+                       value="{{ query|default:'' }}" />
+                <button type="button"
+                        id="ajax-search-go"
+                        class="poncho-search__go"
+                        aria-label="Buscar">
+                    <i class="fas fa-search" aria-hidden="true"></i>
+                </button>
             </div>
+        </div>
+        <div class="poncho-search__meta">
+            <span id="ajax-results-count"></span>
         </div>
         <!-- Indicador de carga para AJAX -->
         <div id="ajax-loading-indicator"
@@ -48,62 +95,100 @@ Modo búsqueda AJAX dinámica: {% include 'components/search_bar.html' with titu
               data-seccion-filtros-favoritos="{{ seccion_filtros_favoritos|default:'' }}"
               data-url-filtros-favoritos="{% url 'filtros_favoritos' %}"
               data-plantilla-url-filtro-favorito="{% url 'detalle_filtro_favorito' pk=0 %}">
-            <div class="row">
-                <div class="col-12 col-lg-10 offset-lg-1">
-                    <div class="form-group">
-                        <div class="filters-toolbar d-flex flex-wrap align-items-center gap-2 mb-2">
-                            <label class="mb-0">
-                                Combinar filtros con
-                                <span class="field-tooltip tooltip-in-label">
-                                    <i class="fas fa-info-circle"></i>
-                                    <span class="tooltip-text">
-                                        <p>AND: deben cumplirse todos los filtros.</p>
-                                        <p>OR: basta con que se cumpla solo un filtro.</p>
-                                    </span>
+            <div class="poncho-search">
+                <select id="filters-primary-field"
+                        class="poncho-search__field"
+                        aria-label="Buscar por"></select>
+                <div class="poncho-search__box">
+                    <input type="text"
+                           id="filters-primary-value"
+                           class="poncho-search__input"
+                           placeholder="{{ placeholder|default:'Buscar por filtro 1...' }}"
+                           autocomplete="off"
+                           aria-label="Valor a buscar" />
+                    <select id="filters-primary-select"
+                            class="poncho-search__input poncho-search__input--select"
+                            aria-label="Valor a buscar"
+                            hidden></select>
+                    <select id="filters-primary-empty"
+                            class="poncho-search__input poncho-search__input--select"
+                            aria-label="Modo de vacío"
+                            hidden></select>
+                    <button type="submit" class="poncho-search__go" aria-label="Buscar">
+                        <i class="fas fa-search" aria-hidden="true"></i>
+                    </button>
+                </div>
+                <button type="button"
+                        id="add-filter"
+                        class="poncho-addfilter"
+                        aria-expanded="false"
+                        aria-controls="filters-advanced">
+                    <i class="fas fa-plus" aria-hidden="true"></i><span>Filtro</span>
+                </button>
+            </div>
+            {% comment %}
+            Panel avanzado. Oculto por defecto para que el estado en reposo sea
+            identico al prototipo. Lo abre "+ Filtro" (o se abre solo si la URL
+            trae mas de un filtro o un operador que no es el default).
+            {% endcomment %}
+            <div id="filters-advanced" class="poncho-advanced" hidden>
+                <div class="poncho-advanced__inner">
+                    <div class="poncho-advanced__coincidencia">
+                        <label class="poncho-advanced__label" for="filters-primary-op">Tipo de coincidencia</label>
+                        <select id="filters-primary-op"
+                                class="form-select form-select-sm poncho-advanced__select"></select>
+                    </div>
+                    <div id="filters-rows"></div>
+                    <div class="poncho-advanced__footer">
+                        <label class="poncho-advanced__label" for="filters-logic">
+                            Combinar filtros con
+                            <span class="field-tooltip tooltip-in-label">
+                                <i class="fas fa-info-circle"></i>
+                                <span class="tooltip-text">
+                                    <p>AND: deben cumplirse todos los filtros.</p>
+                                    <p>OR: basta con que se cumpla solo un filtro.</p>
                                 </span>
-                            </label>
-                            <select id="filters-logic"
-                                    class="form-select form-select-sm filters-logic-select">
-                                <option value="AND" selected>AND</option>
-                                <option value="OR">OR</option>
-                            </select>
-                            <button type="button" id="add-filter" class="btn btn-sm btn-outline-success">Agregar filtro</button>
-                            <button type="button"
-                                    id="abrir-filtros-favoritos"
-                                    class="btn btn-sm btn-warning"
-                                    data-bs-toggle="modal"
-                                    data-bs-target="#modal-filtros-favoritos">
-                                <i class="bi bi-star-fill me-1"></i>Favoritos
-                            </button>
-                        </div>
-                        <div id="filters-rows" class="mb-2"></div>
-                        <input type="hidden" name="filters" id="filters-input" />
+                            </span>
+                        </label>
+                        <select id="filters-logic"
+                                class="form-select form-select-sm filters-logic-select">
+                            <option value="AND" selected>AND</option>
+                            <option value="OR">OR</option>
+                        </select>
+                        <button type="button"
+                                id="abrir-filtros-favoritos"
+                                class="btn btn-sm btn-warning"
+                                data-bs-toggle="modal"
+                                data-bs-target="#modal-filtros-favoritos">
+                            <i class="bi bi-star-fill me-1"></i>Favoritos
+                        </button>
                     </div>
                 </div>
             </div>
+            <input type="hidden" name="filters" id="filters-input" />
         </form>
     {% else %}
         <form method="GET"
               action="{{ search_action|default:'' }}"
               id="simple-search-form">
-            <div class="row">
-                <div class="col-12 col-lg-10 offset-lg-1">
-                    <div class="form-group">
-                        <div class="input-group input-group-lg">
-                            <input type="search"
-                                   id="ajax-search-input"
-                                   name="busqueda"
-                                   class="form-control form-control-lg"
-                                   placeholder="{{ placeholder|default:'Buscar' }}"
-                                   title="{{ help_text|default:'Ingrese términos de búsqueda' }}"
-                                   autocomplete="off"
-                                   value="{{ query|default:'' }}" />
-                        </div>
-                        <small class="form-text text-muted">
-                            <span id="ajax-results-count"></span>
-                        </small>
-                    </div>
+            <div class="poncho-search poncho-search--solo">
+                <div class="poncho-search__box">
+                    <input type="search"
+                           id="ajax-search-input"
+                           name="busqueda"
+                           class="poncho-search__input"
+                           placeholder="{{ placeholder|default:'Buscar' }}"
+                           title="{{ help_text|default:'Ingrese términos de búsqueda' }}"
+                           autocomplete="off"
+                           aria-label="{{ help_text|default:'Ingrese términos de búsqueda' }}"
+                           value="{{ query|default:'' }}" />
+                    <button type="submit" class="poncho-search__go" aria-label="Buscar">
+                        <i class="fas fa-search" aria-hidden="true"></i>
+                    </button>
                 </div>
+            </div>
+            <div class="poncho-search__meta">
+                <span id="ajax-results-count"></span>
             </div>
             <!-- Indicador de carga para AJAX -->
             <div id="ajax-loading-indicator"
@@ -116,54 +201,33 @@ Modo búsqueda AJAX dinámica: {% include 'components/search_bar.html' with titu
         </form>
     {% endif %}
     <div class="row mt-3">
-        <div class="col-12 d-flex flex-wrap justify-content-center gap-2 search-actions">
-            {% if add_url and show_add_button|default:True %}
-                {% if add_url_full %}
-                    <a href="{{ add_url_full }}" class="btn btn-primary btn-lg">{{ add_text|default:"Agregar" }}</a>
-                {% elif add_url|is_url %}
-                    <a href="{{ add_url }}" class="btn btn-primary btn-lg">{{ add_text|default:"Agregar" }}</a>
-                {% else %}
-                    <a href="{% url add_url %}" class="btn btn-primary btn-lg">{{ add_text|default:"Agregar" }}</a>
-                {% endif %}
-            {% endif %}
-            {% if not ajax_search_mode %}
-                {% with form_id=filters_mode|yesno:"filters-form,simple-search-form" %}
-                    <button type="submit" form="{{ form_id }}" class="btn btn-success btn-lg">Filtrar</button>
-                {% endwith %}
-            {% endif %}
+        <div class="col-12 d-flex flex-wrap justify-content-end gap-2 search-actions">
             {% if reset_url_full %}
                 <a href="{{ reset_url_full }}"
-                   class="btn btn-secondary btn-lg"
+                   class="poncho-btn poncho-btn--neutro"
                    {% if filters_mode %}data-restablecer-filtros-favoritos="true"{% endif %}>Resetear</a>
             {% elif reset_url|is_url %}
                 <a href="{{ reset_url }}"
-                   class="btn btn-secondary btn-lg"
+                   class="poncho-btn poncho-btn--neutro"
                    {% if filters_mode %}data-restablecer-filtros-favoritos="true"{% endif %}>Resetear</a>
             {% else %}
                 <a href="{% url reset_url %}"
-                   class="btn btn-secondary btn-lg"
+                   class="poncho-btn poncho-btn--neutro"
                    {% if filters_mode %}data-restablecer-filtros-favoritos="true"{% endif %}>Resetear</a>
             {% endif %}
-            {% if export_url %}
-                {% firstof export_permissions export_group "auth.role_exportar_a_csv" as export_permissions_value %}
-                {% firstof export_admin_permissions "" as export_admin_permissions_value %}
-                {% if request.user.is_superuser or request.user|has_any_perm:export_admin_permissions_value %}
-                    <button type="button"
-                            class="btn btn-lg btn-export-csv"
-                            data-url="{{ export_url }}"
-                            title="Descargar listado actual en CSV">Descargar CSV</button>
-                {% elif export_required_permission %}
-                    {% if request.user|has_any_perm:export_permissions_value and request.user|has_perm_code:export_required_permission %}
-                        <button type="button"
-                                class="btn btn-lg btn-export-csv"
-                                data-url="{{ export_url }}"
-                                title="Descargar listado actual en CSV">Descargar CSV</button>
-                    {% endif %}
-                {% elif request.user|has_any_perm:export_permissions_value %}
-                    <button type="button"
-                            class="btn btn-lg btn-export-csv"
-                            data-url="{{ export_url }}"
-                            title="Descargar listado actual en CSV">Descargar CSV</button>
+            {% if add_url and show_add_button|default:True %}
+                {% if add_url_full %}
+                    <a href="{{ add_url_full }}" class="poncho-btn poncho-btn--cta">
+                        <i class="fas fa-plus" aria-hidden="true"></i>{{ add_text|default:"Agregar" }}
+                    </a>
+                {% elif add_url|is_url %}
+                    <a href="{{ add_url }}" class="poncho-btn poncho-btn--cta">
+                        <i class="fas fa-plus" aria-hidden="true"></i>{{ add_text|default:"Agregar" }}
+                    </a>
+                {% else %}
+                    <a href="{% url add_url %}" class="poncho-btn poncho-btn--cta">
+                        <i class="fas fa-plus" aria-hidden="true"></i>{{ add_text|default:"Agregar" }}
+                    </a>
                 {% endif %}
             {% endif %}
             <!-- Botones adicionales personalizados -->
@@ -220,6 +284,7 @@ Modo búsqueda AJAX dinámica: {% include 'components/search_bar.html' with titu
     <script nonce="{{ request.csp_nonce }}">
   document.addEventListener("DOMContentLoaded", function () {
     const searchInput = document.getElementById("ajax-search-input");
+    const searchGo = document.getElementById("ajax-search-go");
     const tbody = document.getElementById(
       '{{ target_tbody_id|default:"ajax-table-tbody" }}'
     );
@@ -382,6 +447,14 @@ Modo búsqueda AJAX dinámica: {% include 'components/search_bar.html' with titu
 
       // Configurar manejadores de paginación inicial
       setupPaginationHandlers();
+    }
+
+    // La lupa dispara la búsqueda sin esperar el debounce del input
+    if (searchGo && searchInput) {
+      searchGo.addEventListener("click", function () {
+        clearTimeout(searchTimeout);
+        performSearch(searchInput.value.trim());
+      });
     }
   });
     </script>
