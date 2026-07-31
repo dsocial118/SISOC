@@ -521,8 +521,19 @@ class AdmisionService:
         obligatorios_totales = 0
         obligatorios_completos = 0
         ids_documentacion_admision_usados = set()
+        nombres_documentos_organizacion = set()
 
         if admision:
+            categoria_organizacional = (
+                AdmisionService._categoria_organizacional_admision(admision)
+            )
+            if categoria_organizacional:
+                nombres_documentos_organizacion = {
+                    AdmisionService._normalizar_nombre_documental(nombre)
+                    for nombre in DocumentacionOrganizacion.objects.filter(
+                        categoria=categoria_organizacional
+                    ).values_list("nombre", flat=True)
+                }
             (
                 documentos_info,
                 ids_documentacion_admision_usados,
@@ -551,10 +562,26 @@ class AdmisionService:
                 if doc_serializado.get("estado") == "Aceptado":
                     obligatorios_completos += 1
 
+        # Un adjunto sin ``documentacion`` no es necesariamente adicional: al
+        # materializar un documento catalogado del legajo de la organizacion
+        # que no tiene equivalente en ``Documentacion`` se conserva con nombre
+        # personalizado. Ese archivo ya se muestra en la seccion organizacional
+        # y no debe duplicarse como documentacion adicional. Tambien se cubren
+        # registros legacy que no guardaron la FK de origen: su nombre coincide
+        # con el catalogo vigente de documentos de la organizacion.
         documentos_personalizados_info = [
             AdmisionService.serialize_documento_personalizado(archivo)
             for archivo in archivos_subidos
             if not archivo.documentacion_id
+            and not getattr(
+                getattr(archivo, "archivo_organizacion_origen", None),
+                "documentacion_id",
+                None,
+            )
+            and AdmisionService._normalizar_nombre_documental(
+                archivo.nombre_personalizado
+            )
+            not in nombres_documentos_organizacion
         ]
 
         resumen_estados = AdmisionService._resumen_documentos(
@@ -978,7 +1005,7 @@ class AdmisionService:
 
             archivos_subidos = ArchivoAdmision.objects.filter(
                 admision=admision
-            ).select_related("documentacion")
+            ).select_related("documentacion", "archivo_organizacion_origen")
             documentos_context = AdmisionService._build_documentos_update_context(
                 documentaciones=documentaciones,
                 archivos_subidos=archivos_subidos,
