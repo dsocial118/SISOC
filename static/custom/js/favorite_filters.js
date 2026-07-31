@@ -81,6 +81,13 @@
             return null;
         }
 
+        // advanced_filters.js es la fuente de verdad: la fila primaria vive en la
+        // barra de búsqueda y no en #filters-rows, asi que recorrer el contenedor
+        // por nuestra cuenta perderia ese filtro.
+        if (window.AdvancedFilters && typeof window.AdvancedFilters.collectPayload === 'function') {
+            return window.AdvancedFilters.collectPayload();
+        }
+
         const elementos = [];
         const filas = contenedorFilas.children;
 
