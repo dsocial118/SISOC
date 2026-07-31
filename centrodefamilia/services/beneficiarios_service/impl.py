@@ -41,6 +41,14 @@ logger = logging.getLogger("django")
 logger = logging.getLogger("django")
 
 
+def formatear_fecha_nacimiento(fecha, vacio="-"):
+    """Formatea la fecha de nacimiento para listado y exportación (dd/mm/aaaa)."""
+
+    if not fecha:
+        return vacio
+    return fecha.strftime("%d/%m/%Y")
+
+
 def _normalize_genero(value):
     """Devuelve el código de género aceptado a partir de entradas humanas."""
 
@@ -519,14 +527,20 @@ def buscar_cuil_beneficiario(request, cuil):
 def get_beneficiarios_list_context(request=None):
     """Configuración para la lista de beneficiarios."""
     headers = [
-        {"title": "CUIL", "width": "12%", "sortable": True, "sort_key": "cuil"},
+        {"title": "CUIL", "width": "10%", "sortable": True, "sort_key": "cuil"},
         {
             "title": "Apellido y Nombre",
-            "width": "20%",
+            "width": "16%",
             "sortable": True,
             "sort_key": "apellido_nombre",
         },
-        {"title": "DNI", "width": "10%", "sortable": True, "sort_key": "dni"},
+        {"title": "DNI", "width": "9%", "sortable": True, "sort_key": "dni"},
+        {
+            "title": "Fecha de nacimiento",
+            "width": "10%",
+            "sortable": True,
+            "sort_key": "fecha_nacimiento_display",
+        },
         {
             "title": "Género",
             "width": "8%",
@@ -535,19 +549,25 @@ def get_beneficiarios_list_context(request=None):
         },
         {
             "title": "Responsable",
-            "width": "20%",
+            "width": "16%",
             "sortable": True,
             "sort_key": "responsable_nombre",
         },
         {
+            "title": "CUIL del responsable",
+            "width": "11%",
+            "sortable": True,
+            "sort_key": "responsable_cuil",
+        },
+        {
             "title": "Provincia",
-            "width": "15%",
+            "width": "10%",
             "sortable": True,
             "sort_key": "provincia",
         },
         {
             "title": "Municipio",
-            "width": "15%",
+            "width": "10%",
             "sortable": True,
             "sort_key": "municipio",
         },
@@ -556,8 +576,10 @@ def get_beneficiarios_list_context(request=None):
         {"name": "cuil"},
         {"name": "apellido_nombre"},
         {"name": "dni"},
+        {"name": "fecha_nacimiento_display"},
         {"name": "genero_display"},
         {"name": "responsable_nombre"},
+        {"name": "responsable_cuil"},
         {"name": "provincia"},
         {"name": "municipio"},
     ]
@@ -649,9 +671,13 @@ def prepare_beneficiarios_for_display(beneficiarios):
     for beneficiario in beneficiarios:
         beneficiario.apellido_nombre = f"{beneficiario.apellido}, {beneficiario.nombre}"
         beneficiario.genero_display = beneficiario.get_genero_display()
+        beneficiario.fecha_nacimiento_display = formatear_fecha_nacimiento(
+            beneficiario.fecha_nacimiento
+        )
         beneficiario.responsable_nombre = (
             f"{beneficiario.responsable.apellido}, {beneficiario.responsable.nombre}"
         )
+        beneficiario.responsable_cuil = beneficiario.responsable.cuil
 
 
 def prepare_responsables_for_display(responsables):
