@@ -34,6 +34,22 @@
         return;
     }
 
+    // La primera fila de filtro vive dentro de la barra de búsqueda (lupa incluida),
+    // segun el prototipo. "+ Filtro" agrega las filas siguientes en #filters-rows.
+    const primaryRefs = {
+        fieldSel: document.getElementById('filters-primary-field'),
+        opSel: document.getElementById('filters-primary-op'),
+        valueInput: document.getElementById('filters-primary-value'),
+        selectValue: document.getElementById('filters-primary-select'),
+        emptyModeSel: document.getElementById('filters-primary-empty'),
+    };
+
+    const hasPrimary = Object.keys(primaryRefs).every(key => primaryRefs[key]);
+    if (!hasPrimary) {
+        console.warn('AdvancedFilters: falta la fila primaria en la barra de búsqueda.');
+        return;
+    }
+
     const operatorLabels = Object.assign(
         {
             contains: 'Contiene',
@@ -123,6 +139,13 @@
         options.forEach(opt => {
             select.appendChild(createOption(opt.value, opt.label));
         });
+    }
+
+    // Unifica el ocultado: las filas dinámicas usan style.display y la fila
+    // primaria el atributo hidden (es hija flex de la barra de búsqueda).
+    function setVisible(el, visible) {
+        el.hidden = !visible;
+        el.style.display = visible ? '' : 'none';
     }
 
     function tryInitSelect2(el, opts) {
@@ -225,70 +248,17 @@
         }
     }
 
-    function addHeaderRow() {
-        // Check if header already exists
-        if (rowsContainer.querySelector('.filters-header-row')) {
-            return;
-        }
-
-        const headerRow = document.createElement('div');
-        headerRow.className = 'filters-header-row';
-        
-        const headerField = document.createElement('div');
-        headerField.className = 'filter-header';
-        headerField.textContent = 'Buscar por';
-        
-        const headerOp = document.createElement('div');
-        headerOp.className = 'filter-header';
-        headerOp.textContent = 'Tipo de coincidencia';
-        
-        const headerValue = document.createElement('div');
-        headerValue.className = 'filter-header';
-        headerValue.textContent = 'Ingresar valor';
-        
-        const headerEmpty = document.createElement('div');
-        headerEmpty.className = 'filter-header';
-        
-        headerRow.appendChild(headerField);
-        headerRow.appendChild(headerOp);
-        headerRow.appendChild(headerValue);
-        headerRow.appendChild(headerEmpty);
-        
-        rowsContainer.prepend(headerRow);
-    }
-
-    function addRow(prefill) {
-        // Add header row if it doesn't exist
-        addHeaderRow();
-
-        const row = document.createElement('div');
-        row.className = 'filters-row';
-
-        const fieldSel = createSelect('form-select', fieldOptions);
-        const opSel = createSelect('form-select');
-        const valueInput = document.createElement('input');
-        valueInput.type = 'text';
-        valueInput.className = 'form-control form-control-sm';
-        valueInput.placeholder = 'Valor';
-
-        const selectValue = createSelect('form-select form-select-sm');
-        selectValue.style.display = 'none';
-
-        const emptyModeSel = createSelect('form-select form-select-sm', emptyModeOptions);
-        emptyModeSel.style.display = 'none';
-
-        const removeBtn = document.createElement('button');
-        removeBtn.type = 'button';
-        removeBtn.className = 'btn btn-sm btn-outline-danger';
-        removeBtn.textContent = '-';
-
-        const refs = {
-            fieldSel,
-            opSel,
-            valueInput,
-            selectValue,
-            emptyModeSel,
-        };
+    /**
+     * Conecta la lógica de un filtro (campo -> operadores -> valor) sobre un
+     * conjunto de elementos ya existentes. Lo usan tanto la fila primaria de la
+     * barra como las filas que agrega "+ Filtro".
+     *
+     * @param {Object} refs elementos del filtro
+     * @param {Object} options useSelect2: la barra usa selects nativos estilados
+     */
+    function wireRow(refs, options) {
+        const useSelect2 = !options || options.useSelect2 !== false;
+        const { fieldSel, opSel, valueInput, selectValue, emptyModeSel } = refs;
 
         function currentFieldDef() {
             return getFieldDefinition(fieldSel.value) || fields[0];
@@ -330,10 +300,12 @@
             const type = fieldDef.type;
 
             if (operator === 'empty') {
-                valueInput.style.display = 'none';
-                tryDestroySelect2(selectValue);
-                selectValue.style.display = 'none';
-                emptyModeSel.style.display = 'inline-block';
+                setVisible(valueInput, false);
+                if (useSelect2) {
+                    tryDestroySelect2(selectValue);
+                }
+                setVisible(selectValue, false);
+                setVisible(emptyModeSel, true);
                 disableBlankOption(
                     emptyModeSel,
                     type === 'number' || type === 'boolean' || type === 'date'
@@ -341,20 +313,26 @@
                 return;
             }
 
-            emptyModeSel.style.display = 'none';
+            setVisible(emptyModeSel, false);
 
             if (type === 'choice' || type === 'boolean') {
-                tryDestroySelect2(selectValue);
+                if (useSelect2) {
+                    tryDestroySelect2(selectValue);
+                }
                 refreshSelectOptions(fieldDef, prefillValue);
-                selectValue.style.display = 'inline-block';
-                tryInitSelect2(selectValue, { width: '100%' });
-                valueInput.style.display = 'none';
+                setVisible(selectValue, true);
+                if (useSelect2) {
+                    tryInitSelect2(selectValue, { width: '100%' });
+                }
+                setVisible(valueInput, false);
                 return;
             }
 
-            tryDestroySelect2(selectValue);
-            selectValue.style.display = 'none';
-            valueInput.style.display = 'inline-block';
+            if (useSelect2) {
+                tryDestroySelect2(selectValue);
+            }
+            setVisible(selectValue, false);
+            setVisible(valueInput, true);
             applyInputAttributes(valueInput, fieldDef);
 
             if (prefillValue !== undefined) {
@@ -373,98 +351,199 @@
             }
         }
 
-        refs.handleFieldChange = handleFieldChange;
-
-        fieldSel.addEventListener('change', handleFieldChange);
-
-        opSel.addEventListener('change', () => adjustVisibility());
-        removeBtn.addEventListener('click', () => {
-            tryDestroySelect2(fieldSel);
-            tryDestroySelect2(selectValue);
-            row.remove();
-        });
-
-        row.appendChild(fieldSel);
-        row.appendChild(opSel);
-        row.appendChild(valueInput);
-        row.appendChild(selectValue);
-        row.appendChild(emptyModeSel);
-        row.appendChild(removeBtn);
-        rowsContainer.appendChild(row);
-
-        // Prefill / defaults
-        if (prefill) {
-            if (prefill.field && fieldsByName[prefill.field]) {
-                fieldSel.value = prefill.field;
-            }
-            refreshOperators(true);
-            if (prefill.op) {
-                opSel.value = prefill.op;
-            }
-            adjustVisibility(prefill.op === 'empty' ? undefined : prefill.value);
-
-            if (opSel.value === 'empty' && prefill.empty_mode) {
-                emptyModeSel.value = prefill.empty_mode;
-            } else if (prefill.value !== undefined) {
-                const fieldDef = currentFieldDef();
-                if (fieldDef.type === 'choice' || fieldDef.type === 'boolean') {
-                    refreshSelectOptions(fieldDef, prefill.value);
-                } else {
-                    valueInput.value = String(prefill.value);
+        function applyPrefill(prefill) {
+            if (prefill) {
+                if (prefill.field && fieldsByName[prefill.field]) {
+                    fieldSel.value = prefill.field;
                 }
+                refreshOperators(true);
+                if (prefill.op) {
+                    opSel.value = prefill.op;
+                }
+                adjustVisibility(prefill.op === 'empty' ? undefined : prefill.value);
+
+                if (opSel.value === 'empty' && prefill.empty_mode) {
+                    emptyModeSel.value = prefill.empty_mode;
+                } else if (prefill.value !== undefined) {
+                    const fieldDef = currentFieldDef();
+                    if (fieldDef.type === 'choice' || fieldDef.type === 'boolean') {
+                        refreshSelectOptions(fieldDef, prefill.value);
+                    } else {
+                        valueInput.value = String(prefill.value);
+                    }
+                }
+                return;
             }
-        } else {
+
             fieldSel.value = fieldOptions[0].value;
             refreshOperators(false);
             adjustVisibility();
         }
 
-        row._advancedFilterRefs = refs;
+        refs.handleFieldChange = handleFieldChange;
+        refs.applyPrefill = applyPrefill;
 
-        tryInitSelect2(fieldSel, { width: '100%' });
-        bindSelect2FieldEvents(fieldSel, handleFieldChange);
+        fieldSel.addEventListener('change', handleFieldChange);
+        opSel.addEventListener('change', () => adjustVisibility());
+
+        return refs;
     }
 
-    addBtn.addEventListener('click', () => addRow());
+    function initPrimaryRow(prefill) {
+        // El prototipo muestra "Buscar por" como estado en reposo, no el nombre
+        // del primer campo. Se agrega como opcion placeholder; si el usuario
+        // busca sin elegir, readRow() cae al primer campo configurado.
+        populateOptions(primaryRefs.fieldSel, [
+            { value: '', label: 'Buscar por' },
+        ].concat(fieldOptions));
+        populateOptions(primaryRefs.emptyModeSel, emptyModeOptions);
+        // Selects nativos: el estilo de la barra los dibuja, select2 lo rompería.
+        wireRow(primaryRefs, { useSelect2: false });
+        primaryRefs.applyPrefill(prefill);
+        if (!prefill) {
+            // applyPrefill deja seleccionado el primer campo; volvemos al
+            // placeholder para que en reposo se lea "Buscar por".
+            primaryRefs.fieldSel.value = '';
+        }
+    }
 
-    form.addEventListener('submit', () => {
-        const items = [];
-        const rows = rowsContainer.children;
+    function addRow(prefill) {
+        const refs = {
+            fieldSel: createSelect('form-select', fieldOptions),
+            opSel: createSelect('form-select'),
+            valueInput: document.createElement('input'),
+            selectValue: createSelect('form-select form-select-sm'),
+            emptyModeSel: createSelect('form-select form-select-sm', emptyModeOptions),
+        };
 
-        for (let i = 0; i < rows.length; i += 1) {
-            const refs = rows[i]._advancedFilterRefs;
-            if (!refs) {
-                continue;
-            }
+        refs.valueInput.type = 'text';
+        refs.valueInput.className = 'form-control form-control-sm';
+        refs.valueInput.placeholder = 'Valor';
+        setVisible(refs.selectValue, false);
+        setVisible(refs.emptyModeSel, false);
 
-            const field = refs.fieldSel.value;
-            const op = refs.opSel.value;
-            const fieldDef = getFieldDefinition(field);
-            if (!fieldDef || !field || !op) {
-                continue;
-            }
+        const row = document.createElement('div');
+        row.className = 'filters-row';
 
-            if (op === 'empty') {
-                items.push({ field, op, empty_mode: refs.emptyModeSel.value || 'both' });
-                continue;
-            }
+        const removeBtn = document.createElement('button');
+        removeBtn.type = 'button';
+        removeBtn.className = 'btn btn-sm btn-outline-danger';
+        removeBtn.textContent = '-';
+        removeBtn.addEventListener('click', () => {
+            tryDestroySelect2(refs.fieldSel);
+            tryDestroySelect2(refs.selectValue);
+            row.remove();
+        });
 
-            if (fieldDef.type === 'choice' || fieldDef.type === 'boolean') {
-                const selected = refs.selectValue.value;
-                if (selected !== '') {
-                    items.push({ field, op, value: selected });
-                }
-                continue;
-            }
+        wireRow(refs);
 
-            const rawValue = refs.valueInput.value.trim();
-            if (rawValue !== '') {
-                items.push({ field, op, value: rawValue });
-            }
+        row.appendChild(refs.fieldSel);
+        row.appendChild(refs.opSel);
+        row.appendChild(refs.valueInput);
+        row.appendChild(refs.selectValue);
+        row.appendChild(refs.emptyModeSel);
+        row.appendChild(removeBtn);
+        rowsContainer.appendChild(row);
+
+        refs.applyPrefill(prefill);
+
+        row._advancedFilterRefs = refs;
+
+        tryInitSelect2(refs.fieldSel, { width: '100%' });
+        bindSelect2FieldEvents(refs.fieldSel, refs.handleFieldChange);
+    }
+
+    function readRow(refs) {
+        // '' es el placeholder "Buscar por": se busca por el primer campo.
+        const field = refs.fieldSel.value || fieldOptions[0].value;
+        const op = refs.opSel.value;
+        const fieldDef = getFieldDefinition(field);
+        if (!fieldDef || !field || !op) {
+            return null;
         }
 
-        const logic = logicSelect.value || 'AND';
-        hiddenInput.value = JSON.stringify({ logic, items });
+        if (op === 'empty') {
+            return { field, op, empty_mode: refs.emptyModeSel.value || 'both' };
+        }
+
+        if (fieldDef.type === 'choice' || fieldDef.type === 'boolean') {
+            const selected = refs.selectValue.value;
+            return selected !== '' ? { field, op, value: selected } : null;
+        }
+
+        const rawValue = refs.valueInput.value.trim();
+        return rawValue !== '' ? { field, op, value: rawValue } : null;
+    }
+
+    function collectItems() {
+        const items = [];
+        const primary = readRow(primaryRefs);
+        if (primary) {
+            items.push(primary);
+        }
+
+        Array.from(rowsContainer.children).forEach(row => {
+            const refs = row._advancedFilterRefs;
+            if (!refs) {
+                return;
+            }
+            const item = readRow(refs);
+            if (item) {
+                items.push(item);
+            }
+        });
+
+        return items;
+    }
+
+    function collectPayload() {
+        return {
+            logic: logicSelect.value || 'AND',
+            items: collectItems(),
+        };
+    }
+
+    // Expuesto para favorite_filters.js: la fila primaria ya no vive en
+    // #filters-rows, asi que recorrer ese contenedor la dejaria afuera.
+    window.AdvancedFilters = { collectPayload };
+
+    // Panel avanzado: en reposo la barra debe verse igual al prototipo, asi que
+    // operador, AND/OR y Favoritos viven plegados hasta que el usuario los pide.
+    const advancedPanel = document.getElementById('filters-advanced');
+
+    function openAdvanced() {
+        if (!advancedPanel || !advancedPanel.hidden) {
+            return;
+        }
+        advancedPanel.hidden = false;
+        addBtn.setAttribute('aria-expanded', 'true');
+    }
+
+    addBtn.addEventListener('click', () => {
+        openAdvanced();
+        addRow();
+    });
+
+    // Si el estado que llega por URL no es representable en la barra sola
+    // (mas de un filtro, u operador distinto del default del campo), el panel
+    // arranca abierto: si no, el usuario no veria por que filtra asi.
+    function necesitaPanelAbierto(items) {
+        if (items.length > 1) {
+            return true;
+        }
+        const primero = items[0];
+        if (!primero) {
+            return false;
+        }
+        const fieldDef = getFieldDefinition(primero.field);
+        if (!fieldDef) {
+            return false;
+        }
+        return primero.op !== (defaultOpByType[fieldDef.type] || 'contains');
+    }
+
+    form.addEventListener('submit', () => {
+        hiddenInput.value = JSON.stringify(collectPayload());
     });
 
     function loadFromQuerystring() {
@@ -480,7 +559,11 @@
             }
 
             logicSelect.value = parsed.logic === 'OR' ? 'OR' : 'AND';
-            parsed.items.forEach(item => addRow(item));
+            initPrimaryRow(parsed.items[0]);
+            parsed.items.slice(1).forEach(item => addRow(item));
+            if (necesitaPanelAbierto(parsed.items)) {
+                openAdvanced();
+            }
             return true;
         } catch (error) {
             console.warn('AdvancedFilters: no se pudo reconstruir filtros desde la URL.', error);
@@ -489,18 +572,18 @@
     }
 
     if (!loadFromQuerystring()) {
-        addRow();
+        initPrimaryRow();
     }
 
-    // Inicializar Select2 en filas ya existentes una vez que jQuery y Select2 estén disponibles.
-    // Esto cubre la llamada inicial a addRow() que ocurre antes de que jQuery se cargue.
+    // Inicializar Select2 en filas ya existentes una vez que jQuery y Select2 estén
+    // disponibles. La fila primaria queda fuera a propósito: usa selects nativos.
     window.addEventListener('load', function () {
         rowsContainer.querySelectorAll('.filters-row').forEach(function (row) {
             var refs = row._advancedFilterRefs;
             if (!refs) { return; }
             tryInitSelect2(refs.fieldSel, { width: '100%' });
             bindSelect2FieldEvents(refs.fieldSel, refs.handleFieldChange);
-            if (refs.selectValue.style.display !== 'none') {
+            if (!refs.selectValue.hidden) {
                 tryInitSelect2(refs.selectValue, { width: '100%' });
             }
         });
