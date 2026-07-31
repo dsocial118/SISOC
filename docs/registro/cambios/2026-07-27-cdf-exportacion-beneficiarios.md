@@ -13,6 +13,10 @@ La descarga conserva el permiso de acceso al listado
 textuales que comienzan con caracteres de fórmula de planilla se prefijan con
 una comilla simple para que Excel los trate como texto.
 
+Actualización: desde `2026-07-31-cdf-beneficiarios-columnas-y-export-sse.md` el
+rol `auth.role_cdf_sse` también habilita la descarga, como alternativa a
+`auth.role_exportar_a_csv`.
+
 ## Contrato de exportación
 
 El endpoint reutiliza los filtros del listado y acepta únicamente las columnas
