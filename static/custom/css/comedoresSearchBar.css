@@ -1,3 +1,355 @@
+/* ============================================
+   BARRA DE BÚSQUEDA - PONCHO
+   ============================================
+   Valores tomados del prototipo Figma "SISOC_ Versión UX"
+   (file yXUvxp2RKEMNDS8JHv0HdU, nodo 13503:33051 "SEARCH BAR").
+   Los selectores usan .poncho-* para no depender de las reglas .btn de
+   listModerno.css, que se carga antes que esta hoja.
+   ============================================ */
+
+/* Barra superior: "Exportar búsqueda" */
+.poncho-topbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: .5rem;
+}
+
+.poncho-export {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--poncho-space-1-5);
+  background: none;
+  border: none;
+  padding: 4px 8px;
+  color: var(--poncho-blanco);
+  font-family: var(--poncho-font-base);
+  font-size: 16px;
+  cursor: pointer;
+  transition: opacity .2s ease;
+}
+
+.poncho-export:hover {
+  opacity: .75;
+  text-decoration: underline;
+}
+
+/* Barra de búsqueda.
+   Grid `1fr auto 1fr` en vez de flex centrado: con flex se centra el GRUPO, y
+   como "Buscar por" es mas ancho que "+ Filtro" la caja quedaba ~37px corrida a
+   la derecha respecto de la tabla. Con las columnas laterales iguales, la caja
+   queda exactamente centrada sobre la tabla. */
+.poncho-search {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: var(--poncho-space-5);
+  margin-bottom: .75rem;
+}
+
+.poncho-search > .poncho-search__field {
+  justify-self: end;
+}
+
+.poncho-search > .poncho-addfilter {
+  justify-self: start;
+}
+
+/* Modo sin filtros: la caja es el unico hijo, no hacen falta las columnas */
+.poncho-search--solo {
+  display: flex;
+  justify-content: center;
+}
+
+/* Selector de campo ("Buscar por").
+   Se usa selector compuesto (0-2-0) y appearance:none porque las hojas por
+   pagina redefinen `select` con bordes propios y a veces con !important; sin
+   esto el control se dibuja distinto en cada listado. */
+.poncho-search .poncho-search__field {
+  flex: 0 0 auto;
+  width: auto;
+  max-width: 260px;
+  height: auto;
+  padding: 0 28px 0 10px;
+  background-color: transparent;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%23ffffff' stroke-width='2'%3E%3Cpath d='M3 6l5 5 5-5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 6px center;
+  background-size: 16px 16px;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  color: var(--poncho-blanco);
+  font-family: var(--poncho-font-base);
+  font-size: var(--poncho-text-selector);
+  letter-spacing: .24px;
+  line-height: 40px;
+  cursor: pointer;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+}
+
+.poncho-search__field:focus-visible {
+  outline: 2px solid var(--poncho-blanco);
+  outline-offset: 4px;
+}
+
+.poncho-search__field option {
+  background: var(--poncho-azul-principal);
+  color: var(--poncho-blanco);
+  font-size: 16px;
+}
+
+/* Caja: valor + lupa */
+.poncho-search__box {
+  display: flex;
+  align-items: stretch;
+  width: min(737px, 100%);
+  height: var(--poncho-buscador-alto);
+  background: var(--poncho-azul-principal);
+  border: var(--poncho-buscador-borde) solid var(--poncho-blanco);
+  border-radius: var(--poncho-radio-buscador);
+  overflow: hidden;
+}
+
+
+/* Titulo del buscador: el prototipo lo usa en mixto y bold, no en mayusculas */
+.poncho-titulo {
+  font-family: var(--poncho-font-base);
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: var(--poncho-blanco);
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.poncho-search .poncho-search__input {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: auto;
+  padding: 10px var(--poncho-space-5);
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  color: var(--poncho-blanco);
+  font-family: var(--poncho-font-base);
+  font-size: var(--poncho-text-buscador);
+  letter-spacing: .2px;
+}
+
+.poncho-search__input::placeholder {
+  color: var(--poncho-texto-placeholder);
+}
+
+.poncho-search__input:focus {
+  outline: none;
+}
+
+.poncho-search__input--select {
+  cursor: pointer;
+}
+
+.poncho-search__input--select option {
+  background: var(--poncho-azul-principal);
+  color: var(--poncho-blanco);
+  font-size: 16px;
+}
+
+/* Lupa: reemplaza al botón "Filtrar" */
+.poncho-search .poncho-search__go {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--poncho-buscador-alto);
+  align-self: stretch;
+  background: var(--poncho-azul-principal);
+  border: none;
+  border-left: var(--poncho-buscador-borde) solid var(--poncho-blanco);
+  color: var(--poncho-blanco);
+  font-size: 23px;
+  cursor: pointer;
+  transition: background .2s ease;
+}
+
+.poncho-search__go:hover {
+  background: var(--poncho-azul-secundario);
+}
+
+.poncho-search__go:focus-visible {
+  outline: 2px solid var(--poncho-blanco);
+  outline-offset: -4px;
+}
+
+/* "+ Filtro" */
+.poncho-search .poncho-addfilter {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: none;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 0;
+  color: var(--poncho-blanco);
+  font-family: var(--poncho-font-base);
+  font-size: var(--poncho-text-sm);
+  font-weight: 500;
+  letter-spacing: normal;
+  text-transform: none;
+  cursor: pointer;
+}
+
+.poncho-search .poncho-addfilter i {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  background: var(--poncho-verde);
+  border-radius: 6px;
+  font-size: 16px;
+  transition: background .2s ease;
+}
+
+.poncho-search .poncho-addfilter:hover i {
+  background: var(--poncho-verde-hover);
+}
+
+.poncho-search__meta {
+  min-height: 1.25rem;
+  margin-bottom: .5rem;
+  text-align: center;
+  font-size: 14px;
+  color: var(--poncho-texto-placeholder);
+}
+
+/* ============================================
+   PANEL AVANZADO
+   ============================================
+   El prototipo no muestra operador, AND/OR ni Favoritos. En vez de eliminarlos
+   (perderiamos "vacio", "mayor a", "distinto de" y la logica OR) se pliegan:
+   el estado en reposo queda igual al mockup y "+ Filtro" los revela.
+   Ver docs/registro/cambios/2026-07-31-buscador-transversal-lupa-y-cta.md
+   ============================================ */
+.poncho-advanced {
+  max-width: 1100px;
+  margin: 0 auto 1rem;
+}
+
+.poncho-advanced[hidden] {
+  display: none;
+}
+
+.poncho-advanced__inner {
+  padding: 1rem 1.25rem;
+  background: rgba(35, 45, 79, .55);
+  border: 1px solid rgba(255, 255, 255, .18);
+  border-radius: var(--poncho-radio-buscador);
+}
+
+.poncho-advanced__coincidencia {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  margin-bottom: .75rem;
+}
+
+.poncho-advanced__label {
+  margin-bottom: 0;
+  color: var(--poncho-blanco);
+  font-family: var(--poncho-font-base);
+  font-size: var(--poncho-text-sm);
+  white-space: nowrap;
+}
+
+.poncho-advanced__select {
+  width: auto;
+  min-width: 170px;
+}
+
+.poncho-advanced__footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .5rem;
+  margin-top: .75rem;
+  padding-top: .75rem;
+  border-top: 1px solid rgba(255, 255, 255, .18);
+}
+
+/* Botones PONCHO. La forma (radio 20px) se aplica acá solo a la search bar;
+   extenderla a toda la app es el PR siguiente. */
+.poncho-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--poncho-space-1-5);
+  padding: var(--poncho-space-3) var(--poncho-space-5);
+  border: 1px solid transparent;
+  border-radius: var(--poncho-radio-cta);
+  font-family: var(--poncho-font-base);
+  font-size: var(--poncho-text-cta);
+  font-weight: 500;
+  line-height: 20px;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background .2s ease, transform .2s ease;
+}
+
+.poncho-btn:hover {
+  transform: translateY(-1px);
+  text-decoration: none;
+}
+
+.poncho-btn--cta {
+  background: var(--poncho-verde);
+  border-color: var(--poncho-verde);
+  color: var(--poncho-blanco);
+}
+
+.poncho-btn--cta:hover,
+.poncho-btn--cta:focus {
+  background: var(--poncho-verde-hover);
+  border-color: var(--poncho-verde-hover);
+  color: var(--poncho-blanco);
+}
+
+.poncho-btn--neutro {
+  background: transparent;
+  border-color: var(--poncho-blanco);
+  color: var(--poncho-blanco);
+}
+
+.poncho-btn--neutro:hover,
+.poncho-btn--neutro:focus {
+  background: var(--poncho-azul-secundario);
+  color: var(--poncho-blanco);
+}
+
+@media (max-width: 767.98px) {
+  .poncho-search {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    gap: .75rem;
+  }
+
+  .poncho-search > .poncho-search__field,
+  .poncho-search > .poncho-addfilter {
+    justify-self: center;
+  }
+
+  .poncho-search__field {
+    max-width: 100%;
+    font-size: var(--poncho-text-buscador);
+  }
+
+  .poncho-titulo {
+    font-size: 1.75rem;
+  }
+}
+
 /* Fila de filtros en grid con inputs full width */
 #filters-rows .filters-row {
   display: grid;
@@ -24,8 +376,10 @@
   font-size: 14px;
 }
 
-/* Botones principales de filtros (Agregar y Favoritos) */
-#add-filter,
+/* Botones principales de filtros (Favoritos).
+   Las reglas de #add-filter se eliminaron: ahora ese boton es "+ Filtro" y se
+   estila con .poncho-addfilter. Al ser selector de ID le ganaban a la clase y
+   lo dibujaban como pildora verde en mayusculas. */
 #favorite-filters-open,
 #abrir-filtros-favoritos {
   border-radius: 6px;
@@ -35,20 +389,6 @@
   transition: all 0.3s ease;
   text-transform: uppercase;
   letter-spacing: 0.3px;
-}
-
-#add-filter {
-  background: #10b981;
-  color: #ffffff;
-  border: 2px solid #10b981;
-  box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2);
-}
-
-#add-filter:hover {
-  background: #059669;
-  border-color: #047857;
-  transform: translateY(-2px);
-  box-shadow: 0 6px 12px rgba(16, 185, 129, 0.3);
 }
 
 #abrir-filtros-favoritos,
