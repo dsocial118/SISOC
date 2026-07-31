@@ -99,3 +99,41 @@ def test_migracion_corrige_simple_asociacion_como_subtipo_de_personeria(db):
     assert not TipoEntidad.objects.filter(
         nombre="Simple Asociación (art. 187 CCCN)"
     ).exists()
+
+
+def test_migracion_restaura_simple_asociacion_como_tipo_y_conserva_el_subtipo(db):
+    nombre = "Simple Asociación (art. 187 CCCN)"
+    TipoEntidad.objects.filter(nombre=nombre).delete()
+    SubtipoEntidad.objects.filter(nombre=nombre).delete()
+
+    juridica, _ = TipoEntidad.objects.get_or_create(nombre="Personería Jurídica")
+    simple_subtipo = SubtipoEntidad.objects.create(
+        nombre=nombre,
+        tipo_entidad=juridica,
+    )
+    organizacion = Organizacion.objects.create(
+        nombre="Simple asociación existente",
+        tipo_entidad=juridica,
+        subtipo_entidad=simple_subtipo,
+    )
+
+    migration = import_module(
+        "organizaciones.migrations.0019_restaurar_simple_asociacion_tipo"
+    )
+    migration.restaurar_simple_asociacion_como_tipo(
+        import_module("django.apps").apps, None
+    )
+    migration.restaurar_simple_asociacion_como_tipo(
+        import_module("django.apps").apps, None
+    )
+
+    simple_tipo = TipoEntidad.objects.get(nombre=nombre)
+    simple_subtipo.refresh_from_db()
+    organizacion.refresh_from_db()
+
+    assert simple_tipo.pk != juridica.pk
+    assert TipoEntidad.objects.filter(nombre=nombre).count() == 1
+    assert simple_subtipo.tipo_entidad_id == juridica.pk
+    assert organizacion.tipo_entidad_id == juridica.pk
+    assert organizacion.subtipo_entidad_id == simple_subtipo.pk
+    assert simple_tipo in OrganizacionForm().fields["tipo_entidad"].queryset
