@@ -873,12 +873,7 @@ class InformeService:
                     )
                 )
 
-            usar_fallback_heredado = (
-                PlantillaInformeTecnicoService.es_configuracion_faltante(error_template)
-            )
-            accion_para_estado = (
-                "draft" if error_template and not usar_fallback_heredado else action
-            )
+            accion_para_estado = "draft" if error_template else action
 
             if es_creacion:
                 InformeService.preparar_informe_para_creacion(
@@ -909,7 +904,7 @@ class InformeService:
             if hasattr(form, "save_m2m"):
                 form.save_m2m()
 
-            if error_template and not usar_fallback_heredado:
+            if error_template:
                 if es_creacion:
                     AdmisionService.actualizar_estado_admision(
                         admision,
@@ -1183,14 +1178,7 @@ class InformeService:
     def generar_docx_borrador(informe, publicacion):
         """Genera el DOCX borrador desde la versión publicada aplicable."""
         try:
-            if publicacion is None:
-                logger.info(
-                    "No hay template dinámico publicado para el informe %s; "
-                    "se utiliza el generador heredado durante la transición.",
-                    getattr(informe, "pk", None),
-                )
-                return InformeService._generar_docx_borrador_heredado(informe)
-            if not getattr(publicacion, "version", None):
+            if publicacion is None or not getattr(publicacion, "version", None):
                 logger.error(
                     "No se puede generar el DOCX del informe %s sin una publicación aplicable.",
                     getattr(informe, "pk", None),
@@ -1245,49 +1233,6 @@ class InformeService:
             logger.exception(
                 "Error en generar_docx_borrador",
                 extra={"informe_pk": getattr(informe, "pk", None)},
-            )
-            return None
-
-    @staticmethod
-    def _generar_docx_borrador_heredado(informe):
-        """Conserva la generación vigente hasta completar la configuración inicial."""
-
-        try:
-            docx_buffer = InformeService.generar_docx_con_template(informe)
-            if docx_buffer:
-                return ContentFile(docx_buffer.getvalue(), name="tmp.docx")
-            raise ValueError("Template DOCX retornó None")
-        except Exception as error:
-            logger.warning(
-                "Template DOCX heredado falló para informe %s: %s; usando fallback HTML",
-                getattr(informe, "pk", None),
-                error,
-            )
-
-        context = {
-            "informe": informe,
-            "texto_comidas": generar_texto_comidas(informe),
-        }
-        admision_tipo = InformeService._normalizar_tipo_admision(informe.admision)
-        informe_tipo_map = {
-            "base": "base",
-            "juridico": "juridico",
-            "juridico eclesiastico": "juridico",
-        }
-        informe_tipo = informe_tipo_map.get(informe.tipo, "base")
-        docx_template = (
-            f"admisiones/docx/{admision_tipo}_docx_informe_tecnico_{informe_tipo}.html"
-        )
-        try:
-            html_docx = render_to_string(docx_template, context)
-            return InformeService._generate_docx_content(
-                html_docx,
-                getattr(informe, "pk", None),
-            )
-        except Exception:
-            logger.exception(
-                "Fallback HTML heredado falló para informe %s",
-                getattr(informe, "pk", None),
             )
             return None
 

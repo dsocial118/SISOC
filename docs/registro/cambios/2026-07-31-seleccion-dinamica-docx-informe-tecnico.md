@@ -13,11 +13,10 @@ Las validaciones consideradas son el tipo de admisión y de convenio, más Ex PN
 Si faltan validaciones, no se genera el DOCX ni se finaliza la admisión. El
 Informe Técnico queda guardado como borrador y editable para corregirlas.
 
-Mientras se completa la carga inicial de publicaciones dinámicas, una admisión
-con validaciones completas pero sin una versión publicada coincidente conserva
-la generación DOCX heredada. Esto evita interrumpir el circuito operativo al
-desplegar el gestor; cuando exista una publicación aplicable, se usa siempre la
-versión dinámica y queda registrada su trazabilidad.
+Si las validaciones están completas pero no existe una versión publicada
+coincidente, tampoco se genera el DOCX ni se finaliza la admisión. El Informe
+Técnico queda como borrador hasta que los referentes publiquen una versión
+aplicable.
 
 ## Trazabilidad
 

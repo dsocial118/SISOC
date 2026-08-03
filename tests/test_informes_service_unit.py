@@ -507,7 +507,7 @@ def test_guardar_informe_and_detail_context(mocker):
     assert detail["pdf"] == "pdf"
 
 
-def test_guardar_informe_submit_sin_publicacion_usa_fallback_heredado(mocker):
+def test_guardar_informe_submit_sin_publicacion_lo_conserva_en_borrador(mocker):
     admision = SimpleNamespace(id=12, estado_admision="x", save=mocker.Mock())
     instance = SimpleNamespace(
         tipo="base",
@@ -540,13 +540,9 @@ def test_guardar_informe_submit_sin_publicacion_usa_fallback_heredado(mocker):
         "_todos_obligatorios_aceptados",
         return_value=True,
     )
-    mocker.patch(
+    actualizar_estado = mocker.patch(
         "admisiones.services.admisiones_service.AdmisionService."
         "actualizar_estado_admision"
-    )
-    mocker.patch(
-        "admisiones.services.admisiones_service.AdmisionService."
-        "congelar_documentacion_organizacional"
     )
     generar_docx = mocker.patch.object(
         module.InformeService,
@@ -570,9 +566,12 @@ def test_guardar_informe_submit_sin_publicacion_usa_fallback_heredado(mocker):
         usuario=SimpleNamespace(),
     )
 
-    assert resultado["success"]
+    assert resultado["success"] is False
+    assert "No existe una versión publicada" in resultado["error"]
+    assert "guardó el Informe Técnico como borrador" in resultado["error"]
     form.save.assert_called_once()
-    generar_docx.assert_called_once_with(instance, None)
+    generar_docx.assert_not_called()
+    actualizar_estado.assert_called_once_with(admision, "iniciar_informe_tecnico")
 
 
 def test_generar_docx_con_version_publicada_renderiza_variables(mocker):
