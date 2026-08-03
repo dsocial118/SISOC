@@ -399,6 +399,10 @@ LISTADO_DEFINED_GROUPS = (
         ),
     ),
     BootstrapGroupSeed(
+        "Gestor de templates",
+        ("admisiones.gestionar_templates_informe_tecnico",),
+    ),
+    BootstrapGroupSeed(
         "Celiaquia Total",
         (
             "auth.role_ciudadanos",
