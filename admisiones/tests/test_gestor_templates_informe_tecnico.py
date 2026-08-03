@@ -459,8 +459,8 @@ def test_reporte_faltante_agrupa_casos_y_reincide_al_resolver(
     )
 
     incidencia.refresh_from_db()
-    assert "reportada" in mensaje
-    assert "reportada" in segundo_mensaje
+    assert "configuración pendiente" in mensaje
+    assert "configuración pendiente" in segundo_mensaje
     assert misma_incidencia.pk == incidencia.pk
     assert incidencia.cantidad_casos == 2
     assert (
