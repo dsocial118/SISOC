@@ -1,0 +1,91 @@
+{% extends "includes/main.html" %}
+{% load static %}
+{% block title %}Incidencias de templates{% endblock %}
+{% block titulo-pagina %}Gestor de templates{% endblock %}
+{% block head %}
+    <link rel="stylesheet" href="{% static 'custom/css/gestor_templates.css' %}" />
+{% endblock %}
+{% block breadcrumb %}
+    <ol class="breadcrumb float-sm-right">
+        <li class="breadcrumb-item"><a href="{% url 'gestor_templates_listar' %}">Gestor de templates</a></li>
+        <li class="breadcrumb-item active">Incidencias</li>
+    </ol>
+{% endblock %}
+{% block content %}
+    <div class="gestor-templates">
+        <div class="gt-page">
+            {% include "admisiones/templates_informes_tecnicos/includes/navigation.html" with active_section="incidencias" %}
+            <section class="gt-hero">
+                <div>
+                    <span class="gt-eyebrow">Seguimiento de configuración</span>
+                    <h1>Incidencias de templates</h1>
+                    <p>Casos reportados al intentar generar un informe técnico sin un template publicado que coincida.</p>
+                </div>
+            </section>
+            <section class="card gt-card gt-card--list">
+                <div class="card-header">
+                    <h2 class="card-title"><i class="fas fa-exclamation-triangle"></i>Configuraciones faltantes</h2>
+                </div>
+                <div class="card-body">
+                    <div class="gt-toolbar">
+                        <div class="btn-group" aria-label="Filtrar incidencias por estado">
+                            {% for valor, etiqueta in estados %}
+                                <a href="{% url 'gestor_templates_incidencias_listar' %}?estado={{ valor }}{% if busqueda %}&q={{ busqueda|urlencode }}{% endif %}" class="btn {% if estado_filtro == valor %}btn-primary{% else %}btn-outline-primary{% endif %}">{{ etiqueta }}</a>
+                            {% endfor %}
+                            <a href="{% url 'gestor_templates_incidencias_listar' %}?estado=todas{% if busqueda %}&q={{ busqueda|urlencode }}{% endif %}" class="btn {% if estado_filtro == 'todas' %}btn-primary{% else %}btn-outline-primary{% endif %}">Todas</a>
+                        </div>
+                        <form method="get" class="gt-search" role="search">
+                            <input type="hidden" name="estado" value="{{ estado_filtro }}" />
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-search"></i></span>
+                                <input type="search" name="q" value="{{ busqueda }}" class="form-control" placeholder="Código, combinación, comedor u organización" />
+                                <button type="submit" class="btn btn-outline-primary">Buscar</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                {% if incidencias %}
+                    <div class="table-responsive">
+                        <table class="table gt-table">
+                            <thead>
+                                <tr>
+                                    <th>Código</th>
+                                    <th>Combinación</th>
+                                    <th>Casos</th>
+                                    <th>Último reporte</th>
+                                    <th>Estado</th>
+                                    <th><span class="visually-hidden">Acciones</span></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for incidencia in incidencias %}
+                                    <tr>
+                                        <td><span class="gt-row-title">{{ incidencia.codigo }}</span></td>
+                                        <td><code>{{ incidencia.clave_condiciones }}</code></td>
+                                        <td>{{ incidencia.cantidad_casos }}</td>
+                                        <td>{{ incidencia.ultima_fecha|date:"d/m/Y H:i" }}</td>
+                                        <td>
+                                            {% if incidencia.estado == "pendiente" %}
+                                                <span class="gt-status gt-status--pending">{{ incidencia.get_estado_display }}</span>
+                                            {% elif incidencia.estado == "resuelta" %}
+                                                <span class="gt-status gt-status--success">{{ incidencia.get_estado_display }}</span>
+                                            {% else %}
+                                                <span class="gt-status gt-status--muted">{{ incidencia.get_estado_display }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="text-end">
+                                            <a href="{% url 'gestor_templates_incidencia_detalle' incidencia.pk %}" class="btn btn-sm btn-outline-primary">Gestionar</a>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    {% include "components/empty_state.html" with icon="fas fa-check-circle" color="success" title="No hay incidencias para este filtro" message="Las incidencias aparecen cuando no hay un template publicado para una combinación." container_class="gt-empty" %}
+                {% endif %}
+            </section>
+            {% include "components/pagination.html" with is_paginated=is_paginated page_obj=page_obj prev_text="Volver" next_text="Continuar" %}
+        </div>
+    </div>
+{% endblock %}

@@ -1,0 +1,94 @@
+{% extends "includes/main.html" %}
+{% load crispy_forms_tags static %}
+{% block title %}{{ incidencia.codigo }} · Incidencias{% endblock %}
+{% block titulo-pagina %}Gestor de templates{% endblock %}
+{% block head %}
+    <link rel="stylesheet" href="{% static 'custom/css/gestor_templates.css' %}" />
+{% endblock %}
+{% block breadcrumb %}
+    <ol class="breadcrumb float-sm-right">
+        <li class="breadcrumb-item"><a href="{% url 'gestor_templates_listar' %}">Gestor de templates</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'gestor_templates_incidencias_listar' %}">Incidencias</a></li>
+        <li class="breadcrumb-item active">{{ incidencia.codigo }}</li>
+    </ol>
+{% endblock %}
+{% block content %}
+    <div class="gestor-templates">
+        <div class="gt-page">
+            {% include "admisiones/templates_informes_tecnicos/includes/navigation.html" with active_section="incidencias" %}
+            <section class="gt-hero">
+                <div>
+                    <span class="gt-eyebrow">{{ incidencia.codigo }}</span>
+                    <h1>Gestionar incidencia</h1>
+                    <p>Registrá cómo se resolvió la falta de template para esta combinación y revisá las admisiones afectadas.</p>
+                </div>
+                <div class="gt-hero__actions">
+                    <a href="{% url 'gestor_templates_incidencias_listar' %}" class="btn btn-outline-light">Volver a incidencias</a>
+                </div>
+            </section>
+            <div class="row g-3">
+                <div class="col-lg-5">
+                    <section class="card gt-card mb-3">
+                        <div class="card-header"><h2 class="card-title"><i class="fas fa-info-circle"></i>Detalle del reporte</h2></div>
+                        <div class="card-body">
+                            <div class="gt-summary mb-3">
+                                <div class="gt-summary__item"><span class="gt-summary__label">Casos agrupados</span><span class="gt-summary__value">{{ incidencia.cantidad_casos }}</span></div>
+                                <div class="gt-summary__item"><span class="gt-summary__label">Primer reporte</span><span class="gt-summary__value">{{ incidencia.primera_fecha|date:"d/m/Y H:i" }}</span></div>
+                                <div class="gt-summary__item"><span class="gt-summary__label">Último reporte</span><span class="gt-summary__value">{{ incidencia.ultima_fecha|date:"d/m/Y H:i" }}</span></div>
+                                {% if incidencia.incidencia_anterior %}<div class="gt-summary__item"><span class="gt-summary__label">Incidencia anterior</span><span class="gt-summary__value">{{ incidencia.incidencia_anterior.codigo }}</span></div>{% endif %}
+                            </div>
+                            <h3 class="h6 fw-bold">Combinación</h3>
+                            <p><code>{{ incidencia.clave_condiciones }}</code></p>
+                            <h3 class="h6 fw-bold">Condiciones reportadas</h3>
+                            {% for clave, condicion in incidencia.condiciones.items %}
+                                <p class="mb-1"><strong>{{ clave|title }}:</strong> {{ condicion.descripcion|default:"-" }}</p>
+                            {% endfor %}
+                        </div>
+                    </section>
+                    <section class="card gt-card">
+                        <form method="post" class="gt-form">
+                            {% csrf_token %}
+                            <div class="card-header"><h2 class="card-title"><i class="fas fa-tasks"></i>Gestión</h2></div>
+                            <div class="card-body">
+                                {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
+                                {{ form.estado|as_crispy_field }}
+                                {{ form.plantilla|as_crispy_field }}
+                                {{ form.observaciones|as_crispy_field }}
+                            </div>
+                            <div class="card-footer gt-actions">
+                                <a href="{% url 'gestor_templates_incidencias_listar' %}" class="btn btn-outline-secondary">Cancelar</a>
+                                <button type="submit" class="btn btn-primary">Guardar gestión</button>
+                            </div>
+                        </form>
+                    </section>
+                </div>
+                <div class="col-lg-7">
+                    <section class="card gt-card h-100">
+                        <div class="card-header"><h2 class="card-title"><i class="fas fa-list"></i>Admisiones afectadas</h2></div>
+                        {% if incidencia.casos.all %}
+                            <div class="table-responsive">
+                                <table class="table gt-table">
+                                    <thead><tr><th>Admisión</th><th>Informe</th><th>Comedor</th><th>Organización</th><th>Reportado por</th><th>Fecha</th></tr></thead>
+                                    <tbody>
+                                        {% for caso in incidencia.casos.all %}
+                                            <tr>
+                                                <td>{{ caso.admision_id_reportada }}</td>
+                                                <td>{{ caso.informe_id_reportado|default:"-" }}</td>
+                                                <td>{{ caso.comedor_nombre|default:"-" }}</td>
+                                                <td>{{ caso.organizacion_nombre|default:"-" }}</td>
+                                                <td>{{ caso.reportado_por|default:"-" }}</td>
+                                                <td>{{ caso.creado|date:"d/m/Y H:i" }}</td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% else %}
+                            {% include "components/empty_state.html" with icon="fas fa-inbox" title="No hay casos registrados" message="Todavía no se registraron admisiones para esta incidencia." container_class="gt-empty" %}
+                        {% endif %}
+                    </section>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

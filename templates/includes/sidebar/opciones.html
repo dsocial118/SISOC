@@ -118,8 +118,8 @@
             </ul>
         </li>
     {% endif %}
-    {% if not vat_sidebar_only and request.user|has_any_perm:"auth.role_admin,core.view_montoprestacionprograma,pwa.view_catalogoactividadpwa,pwa.manage_catalogoactividadpwa,insumos.view_insumo" %}
-        <li class="nav-item nav-main-item {% if 'dupla' in pagina_actual or 'equipo-tecnico' in pagina_actual or 'montoprestacion' in pagina_actual or 'cursos-app-mobile' in pagina_actual or 'actividades-pnud' in pagina_actual or 'insumos' in pagina_actual %}menu-open{% endif %}"
+    {% if not vat_sidebar_only and request.user|has_any_perm:"auth.role_admin,core.view_montoprestacionprograma,pwa.view_catalogoactividadpwa,pwa.manage_catalogoactividadpwa,insumos.view_insumo,admisiones.gestionar_templates_informe_tecnico" %}
+        <li class="nav-item nav-main-item {% if 'dupla' in pagina_actual or 'equipo-tecnico' in pagina_actual or 'montoprestacion' in pagina_actual or 'cursos-app-mobile' in pagina_actual or 'actividades-pnud' in pagina_actual or 'insumos' in pagina_actual or 'configuracion/templates' in pagina_actual %}menu-open{% endif %}"
             style="order: 5">
             <a href="#" class="nav-link">
                 <img src="{% static 'custom/img/iconos_sidebar/legajos.svg' %}" alt="" />
@@ -167,6 +167,37 @@
                         </a>
                     </li>
                 {% endif %}
+                 {% if request.user|has_perm_code:"admisiones.gestionar_templates_informe_tecnico" %}
+                    <li class="nav-item {% if 'configuracion/templates' in pagina_actual %}menu-open{% endif %}">
+                        <a href="#" class="nav-link nav-dot ms-2 {% if 'configuracion/templates' in pagina_actual %}active{% endif %}">
+                            <p>Gestor de templates</p>
+                            <i class="nav-arrow bi bi-chevron-right"></i>
+                        </a>
+                        <ul class="nav nav-treeview">
+                            <li class="nav-item">
+                                <a href="{% url 'gestor_templates_listar' %}"
+                                   class="nav-link ms-4 {% if 'configuracion/templates' in pagina_actual and 'incidencias' not in pagina_actual and 'variables' not in pagina_actual %}active{% endif %}">
+                                    <i class="nav-icon bi bi-arrow-return-right"></i>
+                                    <p>Templates</p>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="{% url 'gestor_templates_variables_listar' %}"
+                                   class="nav-link ms-4 {% if 'configuracion/templates/variables' in pagina_actual %}active{% endif %}">
+                                    <i class="nav-icon bi bi-arrow-return-right"></i>
+                                    <p>Variables documentales</p>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="{% url 'gestor_templates_incidencias_listar' %}"
+                                   class="nav-link ms-4 {% if 'configuracion/templates/incidencias' in pagina_actual %}active{% endif %}">
+                                    <i class="nav-icon bi bi-arrow-return-right"></i>
+                                    <p>Incidencias de templates</p>
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                 {% endif %}
             </ul>
         </li>
     {% endif %}

@@ -1,0 +1,126 @@
+{% extends "includes/main.html" %}
+{% load static %}
+{% block title %}Crear template{% endblock %}
+{% block titulo-pagina %}Gestor de templates{% endblock %}
+{% block head %}
+    <link rel="stylesheet" href="{% static 'custom/css/gestor_templates.css' %}" />
+{% endblock %}
+{% block breadcrumb %}
+    <ol class="breadcrumb float-sm-right">
+        <li class="breadcrumb-item"><a href="{% url 'gestor_templates_listar' %}">Gestor de templates</a></li>
+        <li class="breadcrumb-item active">Crear template</li>
+    </ol>
+{% endblock %}
+{% block content %}
+    <div class="gestor-templates">
+        <div class="gt-page">
+            {% include "admisiones/templates_informes_tecnicos/includes/navigation.html" with active_section="templates" %}
+            <section class="gt-hero">
+                <div>
+                    <span class="gt-eyebrow">Nuevo template</span>
+                    <h1>Definir una combinación</h1>
+                    <p>Las condiciones identifican una única combinación para seleccionar el modelo de informe técnico correspondiente.</p>
+                </div>
+            </section>
+            <div class="row g-3">
+                <div class="col-xl-8">
+                    <section class="card gt-card">
+                        <form method="post" class="gt-form">
+                            {% csrf_token %}
+                            <div class="card-header"><h2 class="card-title"><i class="fas fa-sliders-h"></i>Nueva plantilla lógica</h2></div>
+                            <div class="card-body">
+                                {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
+                                <div class="row">
+                                    <div class="col-md-8 form-group">
+                                        <label for="{{ form.nombre.id_for_label }}">Nombre</label>
+                                        {{ form.nombre }}
+                                        {% for error in form.nombre.errors %}<div class="invalid-feedback">{{ error }}</div>{% endfor %}
+                                    </div>
+                                    <div class="col-md-4 form-group">
+                                        <label for="{{ form.tipo_admision.id_for_label }}">Tipo de admisión</label>
+                                        {{ form.tipo_admision }}
+                                        {% for error in form.tipo_admision.errors %}<div class="invalid-feedback">{{ error }}</div>{% endfor %}
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="{{ form.descripcion.id_for_label }}">Descripción</label>
+                                    {{ form.descripcion }}
+                                </div>
+                                <div class="form-group">
+                                    <label for="{{ form.tipo_convenio.id_for_label }}">Tipo de convenio</label>
+                                    {{ form.tipo_convenio }}
+                                    <div class="form-text">Esta condición toma el tipo de convenio registrado en la admisión. Asociación de hecho utiliza el valor existente Organización Base.</div>
+                                    {% for error in form.tipo_convenio.errors %}<div class="invalid-feedback">{{ error }}</div>{% endfor %}
+                                </div>
+                                <div id="condicionesIncorporacion" class="row">
+                                    <div class="col-md-6 form-group">
+                                        <label for="{{ form.es_ex_pnud.id_for_label }}">¿Es Ex PNUD?</label>
+                                        {{ form.es_ex_pnud }}
+                                        {% for error in form.es_ex_pnud.errors %}<div class="invalid-feedback">{{ error }}</div>{% endfor %}
+                                    </div>
+                                    <div class="col-md-6 form-group" id="estadoPnudContainer">
+                                        <label for="{{ form.estado_convenio_pnud.id_for_label }}">Estado del convenio PNUD</label>
+                                        {{ form.estado_convenio_pnud }}
+                                        {% for error in form.estado_convenio_pnud.errors %}<div class="invalid-feedback">{{ error }}</div>{% endfor %}
+                                    </div>
+                                </div>
+                                <div id="condicionesRenovacion" class="row">
+                                    <div class="col-md-6 form-group">
+                                        <label for="{{ form.tipo_renovacion.id_for_label }}">Renovación que tramita</label>
+                                        {{ form.tipo_renovacion }}
+                                        {% for error in form.tipo_renovacion.errors %}<div class="invalid-feedback">{{ error }}</div>{% endfor %}
+                                    </div>
+                                    <div class="col-md-6 form-group">
+                                        <label for="{{ form.estado_financiamiento.id_for_label }}">Estado del financiamiento</label>
+                                        {{ form.estado_financiamiento }}
+                                        {% for error in form.estado_financiamiento.errors %}<div class="invalid-feedback">{{ error }}</div>{% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-footer gt-actions">
+                                <a href="{% url 'gestor_templates_listar' %}" class="btn btn-outline-secondary">Cancelar</a>
+                                <button type="submit" class="btn btn-primary">Crear borrador</button>
+                            </div>
+                        </form>
+                    </section>
+                </div>
+                <aside class="col-xl-4">
+                    <div class="gt-help">
+                        <h2><i class="fas fa-lightbulb"></i> Antes de crear</h2>
+                        <p>Las condiciones no se editan después de crear el template. Si necesitás resolver otra combinación, creá un template independiente.</p>
+                        <p class="mb-0">Después se genera una versión en borrador para cargar el contenido y, cuando esté validada, publicarla.</p>
+                    </div>
+                </aside>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+{% block customJS %}
+    <script nonce="{{ request.csp_nonce }}">
+        (function () {
+            const tipo = document.getElementById('{{ form.tipo_admision.id_for_label }}');
+            const exPnud = document.getElementById('{{ form.es_ex_pnud.id_for_label }}');
+            const estadoPnud = document.getElementById('{{ form.estado_convenio_pnud.id_for_label }}');
+            const bloqueIncorporacion = document.getElementById('condicionesIncorporacion');
+            const bloqueRenovacion = document.getElementById('condicionesRenovacion');
+            const estadoPnudContainer = document.getElementById('estadoPnudContainer');
+
+            function actualizarCondiciones() {
+                const esIncorporacion = tipo.value === 'incorporacion';
+                bloqueIncorporacion.hidden = !esIncorporacion;
+                bloqueRenovacion.hidden = esIncorporacion;
+                exPnud.required = esIncorporacion;
+                document.getElementById('{{ form.tipo_renovacion.id_for_label }}').required = !esIncorporacion;
+                document.getElementById('{{ form.estado_financiamiento.id_for_label }}').required = !esIncorporacion;
+                const requiereEstadoPnud = esIncorporacion && exPnud.value === 'si';
+                estadoPnudContainer.hidden = !requiereEstadoPnud;
+                estadoPnud.required = requiereEstadoPnud;
+                if (!requiereEstadoPnud) estadoPnud.value = '';
+            }
+
+            tipo.addEventListener('change', actualizarCondiciones);
+            exPnud.addEventListener('change', actualizarCondiciones);
+            actualizarCondiciones();
+        })();
+    </script>
+{% endblock %}

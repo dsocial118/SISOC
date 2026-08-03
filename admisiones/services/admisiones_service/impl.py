@@ -27,6 +27,7 @@ from admisiones.models.admisiones import (
 from admisiones.forms.admisiones_forms import (
     CaratularForm,
     IFInformeTecnicoForm,
+    ValidacionesTemplateAdmisionForm,
 )
 from acompanamientos.acompanamiento_service import AcompanamientoService
 from ..docx_service import DocumentTemplateService, TextFormatterService
@@ -997,10 +998,15 @@ class AdmisionService:
     @staticmethod
     def get_admision_update_context(admision, user=None):
         try:
+            # Con un convenio sin seleccionar, ``convenios=None`` devuelve los
+            # documentos que no pertenecen a ningun convenio. No son requisitos
+            # de la admision y no deben mostrarse detras del modal inicial.
             documentaciones = (
-                Documentacion.objects.filter(models.Q(convenios=admision.tipo_convenio))
+                Documentacion.objects.filter(convenios=admision.tipo_convenio)
                 .distinct()
                 .order_by("orden")
+                if admision.tipo_convenio_id
+                else Documentacion.objects.none()
             )
 
             archivos_subidos = ArchivoAdmision.objects.filter(
@@ -1165,7 +1171,13 @@ class AdmisionService:
             (
                 "confirmar_tipo_convenio",
                 lambda: AdmisionService._procesar_post_confirmar_tipo_convenio(
-                    admision
+                    request, admision
+                ),
+            ),
+            (
+                "guardar_validaciones_template",
+                lambda: AdmisionService.guardar_validaciones_template(
+                    admision, request.POST, request.user
                 ),
             ),
         )
@@ -1600,7 +1612,36 @@ class AdmisionService:
         return admision
 
     @staticmethod
-    def confirmar_tipo_convenio_desde_organizacion(admision):
+    def puede_editar_validaciones_template(admision):
+        return not InformeTecnico.objects.filter(
+            admision=admision,
+            estado_formulario="finalizado",
+        ).exists()
+
+    @staticmethod
+    def guardar_validaciones_template(admision, data, user=None):
+        if not AdmisionService.puede_editar_validaciones_template(admision):
+            return (
+                False,
+                "No se pueden modificar las validaciones después de generar el Informe Técnico.",
+            )
+
+        if user is not None and not (
+            user.is_superuser
+            or AdmisionService._verificar_permiso_tecnico_dupla(user, admision.comedor)
+        ):
+            return False, "No tiene permisos para modificar estas validaciones."
+
+        form = ValidacionesTemplateAdmisionForm(data, instance=admision)
+        if not form.is_valid():
+            errores = " ".join(", ".join(messages) for messages in form.errors.values())
+            return False, errores or "Las validaciones ingresadas no son válidas."
+
+        form.save()
+        return True, "Validaciones de templates guardadas correctamente."
+
+    @staticmethod
+    def confirmar_tipo_convenio_desde_organizacion(admision, data=None, user=None):
         tipo_convenio = AdmisionService.resolver_tipo_convenio_desde_organizacion(
             getattr(getattr(admision, "comedor", None), "organizacion", None)
         )
@@ -1610,18 +1651,43 @@ class AdmisionService:
                 "No se pudo resolver el Tipo de Convenio desde el Tipo de Entidad de la organización.",
             )
 
-        admision.tipo_convenio = tipo_convenio
-        admision.estado_admision = "convenio_seleccionado"
-        admision.save(update_fields=["tipo_convenio", "estado_admision"])
-        AdmisionService.congelar_documentacion_organizacional(admision)
-        # Sincronizar snapshot tras materializar docs: sin este paso la primera
-        # modificacion en el legajo no dispararia la advertencia (Bug A #1799).
-        AdmisionService.refrescar_snapshot_documentacion_organizacional(admision)
+        if user is not None and not (
+            user.is_superuser
+            or AdmisionService._verificar_permiso_tecnico_dupla(user, admision.comedor)
+        ):
+            return False, "No tiene permisos para confirmar estas validaciones."
+
+        validaciones_form = None
+        if data is not None:
+            validaciones_form = ValidacionesTemplateAdmisionForm(
+                data, instance=admision
+            )
+            if not validaciones_form.is_valid():
+                errores = " ".join(
+                    ", ".join(messages)
+                    for messages in validaciones_form.errors.values()
+                )
+                return False, errores or "Las validaciones ingresadas no son válidas."
+
+        with transaction.atomic():
+            admision.tipo_convenio = tipo_convenio
+            admision.estado_admision = "convenio_seleccionado"
+            admision.save(update_fields=["tipo_convenio", "estado_admision"])
+            if validaciones_form is not None:
+                validaciones_form.save()
+            AdmisionService.congelar_documentacion_organizacional(admision)
+            # Sincronizar snapshot tras materializar docs: sin este paso la primera
+            # modificacion en el legajo no dispararia la advertencia (Bug A #1799).
+            AdmisionService.refrescar_snapshot_documentacion_organizacional(admision)
         return True, "Tipo de convenio precargado desde la organización."
 
     @staticmethod
-    def _procesar_post_confirmar_tipo_convenio(admision):
-        return AdmisionService.confirmar_tipo_convenio_desde_organizacion(admision)
+    def _procesar_post_confirmar_tipo_convenio(request, admision):
+        return AdmisionService.confirmar_tipo_convenio_desde_organizacion(
+            admision,
+            data=request.POST,
+            user=request.user,
+        )
 
     @staticmethod
     def _build_defaults_handle_file_upload(archivo, usuario=None):
