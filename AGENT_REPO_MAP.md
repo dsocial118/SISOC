@@ -278,7 +278,7 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 | `centrodefamilia/` | beneficiarios/centros/familia + consulta RENAPER + API | `models.py`, `views.py`, `api_views.py`, `services/consulta_renaper` | Alto |
 | `celiaquia/` | modulo especializado con bastante logica en services y vistas | `models.py`, `views/`, `services/`, `permissions.py`, tests | Alto |
 | `admisiones/` | flujo de admision, legales/tecnicos, generacion DOCX/PDF | `views/web_views.py`, `services/`, `forms/`, templates `docx/` y `pdf/` | Alto |
-| `VAT/` | modulo amplio propio con views, API, services y reportes | `models.py`, `views/`, `api_views.py`, `services/`, `serializers.py` | Alto |
+| `VAT/` | modulo amplio propio con views, API, services y reportes | `models.py`, `views/`, `api_views.py`, `services/`, `serializers.py`; docs `docs/vat/` | Alto |
 | `pwa/` | endpoints backend para experiencia PWA | `api_urls.py`, `api_views.py`, `services/`, `models.py` | Medio |
 | `ticketera/` | API server-to-server con kill-switch | `api_urls.py`, `api_views.py`, `api_serializers.py` | Medio |
 | `comunicados/` | mensajes/comunicados y API asociada | `models.py`, `views.py`, `api_views.py`, forms | Medio |
@@ -474,6 +474,15 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - GESTIONAR: `comedores/tasks.py`, `relevamientos/tasks.py`, management commands relacionados, `.env.example`
 - RENAPER: `centrodefamilia/services/consulta_renaper.py`, `VAT/services/consulta_renaper/impl.py`, docs `docs/flujos/consulta_renaper.md`
 - Ticketera: `ticketera/`, `docs/integraciones/ticketera_api.md`
+
+### Si necesitas cambiar preinscriptos CDF o vouchers VAT
+
+- Preinscriptos y CSV CDF: `centrodefamilia/views/beneficiarios_export.py`,
+  `centrodefamilia/services/beneficiarios_service/impl.py`, tests de
+  exportación y `docs/implementaciones/centrodefamilia_preinscriptos.md`.
+- Vouchers VAT: `VAT/services/voucher_service/`,
+  `VAT/services/tipo_alumno_service.py`, tests VAT y
+  `docs/vat/VOUCHER_SETUP.md`.
 
 ### Si necesitas cambiar CI o reglas de calidad
 
