@@ -167,9 +167,10 @@
                         </a>
                     </li>
                 {% endif %}
-                 {% if request.user|has_perm_code:"admisiones.gestionar_templates_informe_tecnico" %}
+                {% if request.user|has_perm_code:"admisiones.gestionar_templates_informe_tecnico" %}
                     <li class="nav-item {% if 'configuracion/templates' in pagina_actual %}menu-open{% endif %}">
-                        <a href="#" class="nav-link nav-dot ms-2 {% if 'configuracion/templates' in pagina_actual %}active{% endif %}">
+                        <a href="#"
+                           class="nav-link nav-dot ms-2 {% if 'configuracion/templates' in pagina_actual %}active{% endif %}">
                             <p>Gestor de templates</p>
                             <i class="nav-arrow bi bi-chevron-right"></i>
                         </a>
@@ -197,7 +198,7 @@
                             </li>
                         </ul>
                     </li>
-                 {% endif %}
+                {% endif %}
             </ul>
         </li>
     {% endif %}

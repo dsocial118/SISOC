@@ -3,13 +3,19 @@
 {% block title %}Editar versión · Gestor de templates{% endblock %}
 {% block titulo-pagina %}Gestor de templates{% endblock %}
 {% block head %}
-    <link rel="stylesheet" href="{% static 'custom/css/gestor_templates.css' %}?v=20260731-a4-2" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/summernote/0.8.18/summernote-bs4.min.css" />
+    <link rel="stylesheet"
+          href="{% static 'custom/css/gestor_templates.css' %}?v=20260731-a4-2" />
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/summernote/0.8.18/summernote-bs4.min.css" />
 {% endblock %}
 {% block breadcrumb %}
     <ol class="breadcrumb float-sm-right">
-        <li class="breadcrumb-item"><a href="{% url 'gestor_templates_listar' %}">Gestor de templates</a></li>
-        <li class="breadcrumb-item"><a href="{% url 'gestor_templates_detalle' version.plantilla.pk %}">{{ version.plantilla.codigo }}</a></li>
+        <li class="breadcrumb-item">
+            <a href="{% url 'gestor_templates_listar' %}">Gestor de templates</a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{% url 'gestor_templates_detalle' version.plantilla.pk %}">{{ version.plantilla.codigo }}</a>
+        </li>
         <li class="breadcrumb-item active">Editar v{{ version.numero }}</li>
     </ol>
 {% endblock %}
@@ -24,7 +30,8 @@
                     <p>{{ version.plantilla.nombre }}. Guardá los cambios como borrador y publicá la versión cuando esté lista.</p>
                 </div>
                 <div class="gt-hero__actions">
-                    <a href="{% url 'gestor_templates_detalle' version.plantilla.pk %}" class="btn btn-outline-primary">
+                    <a href="{% url 'gestor_templates_detalle' version.plantilla.pk %}"
+                       class="btn btn-outline-primary">
                         <i class="fas fa-arrow-left"></i> Volver al template
                     </a>
                 </div>
@@ -32,51 +39,57 @@
             <form method="post" class="gt-form">
                 {% csrf_token %}
                 <details class="gt-editor-panel gt-editor-panel--variables">
-                <summary>
-                    <span class="gt-editor-panel__title"><i class="fas fa-code"></i> Variables disponibles</span>
-                    <span class="gt-editor-panel__status">
-                        <span class="gt-editor-panel__closed">Expandir</span>
-                        <span class="gt-editor-panel__open">Ocultar</span>
-                        <i class="fas fa-chevron-down"></i>
-                    </span>
-                </summary>
-                <div class="gt-editor-panel__body">
-                    <div class="gt-variable-drawer__toolbar">
-                        <div>
-                            <p class="mb-0">Hacé clic o arrastrá una variable para insertarla en la posición actual del cursor.</p>
+                    <summary>
+                        <span class="gt-editor-panel__title"><i class="fas fa-code"></i> Variables disponibles</span>
+                        <span class="gt-editor-panel__status">
+                            <span class="gt-editor-panel__closed">Expandir</span>
+                            <span class="gt-editor-panel__open">Ocultar</span>
+                            <i class="fas fa-chevron-down"></i>
+                        </span>
+                    </summary>
+                    <div class="gt-editor-panel__body">
+                        <div class="gt-variable-drawer__toolbar">
+                            <div>
+                                <p class="mb-0">Hacé clic o arrastrá una variable para insertarla en la posición actual del cursor.</p>
+                            </div>
+                            <div class="gt-variable-drawer__controls">
+                                <input id="buscar-variable-template"
+                                       type="search"
+                                       class="form-control form-control-sm"
+                                       placeholder="Buscar una variable" />
+                                <a class="btn btn-sm btn-outline-primary"
+                                   href="{% url 'gestor_templates_variables_listar' %}"
+                                   target="_blank"
+                                   rel="noopener">Administrar catálogo</a>
+                            </div>
                         </div>
-                        <div class="gt-variable-drawer__controls">
-                            <input id="buscar-variable-template" type="search" class="form-control form-control-sm" placeholder="Buscar una variable" />
-                            <a class="btn btn-sm btn-outline-primary" href="{% url 'gestor_templates_variables_listar' %}" target="_blank" rel="noopener">Administrar catálogo</a>
+                        <div id="catalogo-variables-template" class="gt-variable-catalog">
+                            {% regroup variables_template by categoria as variables_por_categoria %}
+                            {% for categoria in variables_por_categoria %}
+                                <section class="gt-variable-category" data-categoria-variable>
+                                    <header class="gt-variable-category__header">
+                                        <h3 class="gt-category-title">{{ categoria.grouper }}</h3>
+                                        <span class="gt-variable-category__count">{{ categoria.list|length }}</span>
+                                    </header>
+                                    <div class="gt-variable-category__items">
+                                        {% for variable in categoria.list %}
+                                            <button type="button"
+                                                    class="gt-variable variable-template"
+                                                    draggable="true"
+                                                    data-template-variable="{{ variable.token }}"
+                                                    data-variable-search="{{ variable.nombre|lower }} {{ variable.codigo|lower }} {{ variable.categoria|lower }}"
+                                                    title="Hacé clic o arrastrá para insertar {{ variable.token }}">
+                                                <span>{{ variable.nombre }}</span>
+                                                <code>{{ variable.token }}</code>
+                                            </button>
+                                        {% endfor %}
+                                    </div>
+                                </section>
+                            {% empty %}
+                                <p class="text-muted mb-0">No hay variables activas en el catálogo.</p>
+                            {% endfor %}
                         </div>
                     </div>
-                    <div id="catalogo-variables-template" class="gt-variable-catalog">
-                        {% regroup variables_template by categoria as variables_por_categoria %}
-                        {% for categoria in variables_por_categoria %}
-                            <section class="gt-variable-category" data-categoria-variable>
-                                <header class="gt-variable-category__header">
-                                    <h3 class="gt-category-title">{{ categoria.grouper }}</h3>
-                                    <span class="gt-variable-category__count">{{ categoria.list|length }}</span>
-                                </header>
-                                <div class="gt-variable-category__items">
-                                    {% for variable in categoria.list %}
-                                        <button type="button"
-                                                class="gt-variable variable-template"
-                                                draggable="true"
-                                                data-template-variable="{{ variable.token }}"
-                                                data-variable-search="{{ variable.nombre|lower }} {{ variable.codigo|lower }} {{ variable.categoria|lower }}"
-                                                title="Hacé clic o arrastrá para insertar {{ variable.token }}">
-                                            <span>{{ variable.nombre }}</span>
-                                            <code>{{ variable.token }}</code>
-                                        </button>
-                                    {% endfor %}
-                                </div>
-                            </section>
-                        {% empty %}
-                            <p class="text-muted mb-0">No hay variables activas en el catálogo.</p>
-                        {% endfor %}
-                    </div>
-                </div>
                 </details>
                 <details class="gt-editor-panel gt-editor-panel--content" open>
                     <summary>
@@ -113,7 +126,8 @@
                     </div>
                 </details>
                 <div class="gt-actions gt-editor-actions">
-                    <a href="{% url 'gestor_templates_detalle' version.plantilla.pk %}" class="btn btn-outline-secondary">Cancelar</a>
+                    <a href="{% url 'gestor_templates_detalle' version.plantilla.pk %}"
+                       class="btn btn-outline-secondary">Cancelar</a>
                     <button type="submit" class="btn btn-primary">Guardar borrador</button>
                 </div>
             </form>
@@ -127,13 +141,25 @@
                     </span>
                 </summary>
                 <div class="gt-editor-panel__body">
-                    <p>Probá esta versión con un Informe Técnico real. El DOCX se descarga con la marca de agua <em>VISTA PREVIA — DOCUMENTO NO VÁLIDO</em> y no se guarda en la admisión.</p>
-                    <form method="get" action="{% url 'gestor_templates_version_previsualizar' version.plantilla.pk version.pk %}" target="_blank" class="row g-2 align-items-end gt-form">
+                    <p>
+                        Probá esta versión con un Informe Técnico real. El DOCX se descarga con la marca de agua <em>VISTA PREVIA — DOCUMENTO NO VÁLIDO</em> y no se guarda en la admisión.
+                    </p>
+                    <form method="get"
+                          action="{% url 'gestor_templates_version_previsualizar' version.plantilla.pk version.pk %}"
+                          target="_blank"
+                          class="row g-2 align-items-end gt-form">
                         <div class="col-md-6 form-group mb-0">
                             <label for="id_informe_id" class="form-label">ID del Informe Técnico</label>
-                            <input id="id_informe_id" name="informe_id" type="number" min="1" required class="form-control" />
+                            <input id="id_informe_id"
+                                   name="informe_id"
+                                   type="number"
+                                   min="1"
+                                   required
+                                   class="form-control" />
                         </div>
-                        <div class="col-md-auto"><button type="submit" class="btn btn-outline-primary">Descargar vista previa</button></div>
+                        <div class="col-md-auto">
+                            <button type="submit" class="btn btn-outline-primary">Descargar vista previa</button>
+                        </div>
                     </form>
                 </div>
             </details>

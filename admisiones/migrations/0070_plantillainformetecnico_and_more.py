@@ -42,7 +42,10 @@ class Migration(migrations.Migration):
 
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ("admisiones", "0069_admision_es_ex_pnud_admision_estado_convenio_pnud_and_more"),
+        (
+            "admisiones",
+            "0069_admision_es_ex_pnud_admision_estado_convenio_pnud_and_more",
+        ),
     ]
 
     operations = [

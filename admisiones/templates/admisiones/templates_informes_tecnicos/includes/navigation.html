@@ -3,13 +3,16 @@
         <i class="fas fa-file-alt"></i>Gestor de templates
     </p>
     <div class="nav nav-pills gt-section-links">
-        <a href="{% url 'gestor_templates_listar' %}" class="nav-link {% if active_section == 'templates' %}active{% endif %}">
+        <a href="{% url 'gestor_templates_listar' %}"
+           class="nav-link {% if active_section == 'templates' %}active{% endif %}">
             <i class="fas fa-copy"></i>Templates
         </a>
-        <a href="{% url 'gestor_templates_variables_listar' %}" class="nav-link {% if active_section == 'variables' %}active{% endif %}">
+        <a href="{% url 'gestor_templates_variables_listar' %}"
+           class="nav-link {% if active_section == 'variables' %}active{% endif %}">
             <i class="fas fa-code"></i>Variables documentales
         </a>
-        <a href="{% url 'gestor_templates_incidencias_listar' %}" class="nav-link {% if active_section == 'incidencias' %}active{% endif %}">
+        <a href="{% url 'gestor_templates_incidencias_listar' %}"
+           class="nav-link {% if active_section == 'incidencias' %}active{% endif %}">
             <i class="fas fa-exclamation-triangle"></i>Incidencias
         </a>
     </div>

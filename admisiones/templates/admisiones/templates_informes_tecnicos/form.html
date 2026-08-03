@@ -3,11 +3,14 @@
 {% block title %}Crear template{% endblock %}
 {% block titulo-pagina %}Gestor de templates{% endblock %}
 {% block head %}
-    <link rel="stylesheet" href="{% static 'custom/css/gestor_templates.css' %}" />
+    <link rel="stylesheet"
+          href="{% static 'custom/css/gestor_templates.css' %}" />
 {% endblock %}
 {% block breadcrumb %}
     <ol class="breadcrumb float-sm-right">
-        <li class="breadcrumb-item"><a href="{% url 'gestor_templates_listar' %}">Gestor de templates</a></li>
+        <li class="breadcrumb-item">
+            <a href="{% url 'gestor_templates_listar' %}">Gestor de templates</a>
+        </li>
         <li class="breadcrumb-item active">Crear template</li>
     </ol>
 {% endblock %}
@@ -27,7 +30,11 @@
                     <section class="card gt-card">
                         <form method="post" class="gt-form">
                             {% csrf_token %}
-                            <div class="card-header"><h2 class="card-title"><i class="fas fa-sliders-h"></i>Nueva plantilla lógica</h2></div>
+                            <div class="card-header">
+                                <h2 class="card-title">
+                                    <i class="fas fa-sliders-h"></i>Nueva plantilla lógica
+                                </h2>
+                            </div>
                             <div class="card-body">
                                 {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
                                 <div class="row">
@@ -49,7 +56,9 @@
                                 <div class="form-group">
                                     <label for="{{ form.tipo_convenio.id_for_label }}">Tipo de convenio</label>
                                     {{ form.tipo_convenio }}
-                                    <div class="form-text">Esta condición toma el tipo de convenio registrado en la admisión. Asociación de hecho utiliza el valor existente Organización Base.</div>
+                                    <div class="form-text">
+                                        Esta condición toma el tipo de convenio registrado en la admisión. Asociación de hecho utiliza el valor existente Organización Base.
+                                    </div>
                                     {% for error in form.tipo_convenio.errors %}<div class="invalid-feedback">{{ error }}</div>{% endfor %}
                                 </div>
                                 <div id="condicionesIncorporacion" class="row">
@@ -78,7 +87,8 @@
                                 </div>
                             </div>
                             <div class="card-footer gt-actions">
-                                <a href="{% url 'gestor_templates_listar' %}" class="btn btn-outline-secondary">Cancelar</a>
+                                <a href="{% url 'gestor_templates_listar' %}"
+                                   class="btn btn-outline-secondary">Cancelar</a>
                                 <button type="submit" class="btn btn-primary">Crear borrador</button>
                             </div>
                         </form>
@@ -86,9 +96,15 @@
                 </div>
                 <aside class="col-xl-4">
                     <div class="gt-help">
-                        <h2><i class="fas fa-lightbulb"></i> Antes de crear</h2>
-                        <p>Las condiciones no se editan después de crear el template. Si necesitás resolver otra combinación, creá un template independiente.</p>
-                        <p class="mb-0">Después se genera una versión en borrador para cargar el contenido y, cuando esté validada, publicarla.</p>
+                        <h2>
+                            <i class="fas fa-lightbulb"></i> Antes de crear
+                        </h2>
+                        <p>
+                            Las condiciones no se editan después de crear el template. Si necesitás resolver otra combinación, creá un template independiente.
+                        </p>
+                        <p class="mb-0">
+                            Después se genera una versión en borrador para cargar el contenido y, cuando esté validada, publicarla.
+                        </p>
                     </div>
                 </aside>
             </div>

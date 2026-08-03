@@ -3,11 +3,14 @@
 {% block title %}Variables documentales · Gestor de templates{% endblock %}
 {% block titulo-pagina %}Gestor de templates{% endblock %}
 {% block head %}
-    <link rel="stylesheet" href="{% static 'custom/css/gestor_templates.css' %}" />
+    <link rel="stylesheet"
+          href="{% static 'custom/css/gestor_templates.css' %}" />
 {% endblock %}
 {% block breadcrumb %}
     <ol class="breadcrumb float-sm-right">
-        <li class="breadcrumb-item"><a href="{% url 'gestor_templates_listar' %}">Gestor de templates</a></li>
+        <li class="breadcrumb-item">
+            <a href="{% url 'gestor_templates_listar' %}">Gestor de templates</a>
+        </li>
         <li class="breadcrumb-item active">Variables documentales</li>
     </ol>
 {% endblock %}
@@ -23,25 +26,37 @@
                 </div>
             </section>
             <div class="gt-help mb-3">
-                <h2><i class="fas fa-info-circle"></i> Cómo funciona este catálogo</h2>
-                <p class="mb-0">Estas variables se resuelven con datos que ya existen en SISOC. Podés activarlas o eliminarlas de forma lógica; para crear una nueva, antes debe existir el dato que el sistema pueda completar.</p>
+                <h2>
+                    <i class="fas fa-info-circle"></i> Cómo funciona este catálogo
+                </h2>
+                <p class="mb-0">
+                    Estas variables se resuelven con datos que ya existen en SISOC. Podés activarlas o eliminarlas de forma lógica; para crear una nueva, antes debe existir el dato que el sistema pueda completar.
+                </p>
             </div>
             <section class="card gt-card gt-card--list">
                 <div class="card-header">
-                    <h2 class="card-title"><i class="fas fa-code"></i>Variables disponibles</h2>
+                    <h2 class="card-title">
+                        <i class="fas fa-code"></i>Variables disponibles
+                    </h2>
                 </div>
                 <div class="card-body">
                     <div class="gt-toolbar">
                         <div class="btn-group" aria-label="Filtrar variables por estado">
-                            <a href="{% url 'gestor_templates_variables_listar' %}?estado=activas{% if busqueda %}&q={{ busqueda|urlencode }}{% endif %}" class="btn {% if estado_filtro == 'activas' %}btn-primary{% else %}btn-outline-primary{% endif %}">Activas</a>
-                            <a href="{% url 'gestor_templates_variables_listar' %}?estado=inactivas{% if busqueda %}&q={{ busqueda|urlencode }}{% endif %}" class="btn {% if estado_filtro == 'inactivas' %}btn-primary{% else %}btn-outline-primary{% endif %}">Eliminadas</a>
-                            <a href="{% url 'gestor_templates_variables_listar' %}?estado=todas{% if busqueda %}&q={{ busqueda|urlencode }}{% endif %}" class="btn {% if estado_filtro == 'todas' %}btn-primary{% else %}btn-outline-primary{% endif %}">Todas</a>
+                            <a href="{% url 'gestor_templates_variables_listar' %}?estado=activas{% if busqueda %}&q={{ busqueda|urlencode }}{% endif %}"
+                               class="btn {% if estado_filtro == 'activas' %}btn-primary{% else %}btn-outline-primary{% endif %}">Activas</a>
+                            <a href="{% url 'gestor_templates_variables_listar' %}?estado=inactivas{% if busqueda %}&q={{ busqueda|urlencode }}{% endif %}"
+                               class="btn {% if estado_filtro == 'inactivas' %}btn-primary{% else %}btn-outline-primary{% endif %}">Eliminadas</a>
+                            <a href="{% url 'gestor_templates_variables_listar' %}?estado=todas{% if busqueda %}&q={{ busqueda|urlencode }}{% endif %}"
+                               class="btn {% if estado_filtro == 'todas' %}btn-primary{% else %}btn-outline-primary{% endif %}">Todas</a>
                         </div>
                         <form method="get" class="gt-search" role="search">
                             <input type="hidden" name="estado" value="{{ estado_filtro }}" />
                             <div class="input-group">
                                 <span class="input-group-text"><i class="fas fa-search"></i></span>
-                                <input name="q" class="form-control" value="{{ busqueda }}" placeholder="Buscar por nombre, categoría o código" />
+                                <input name="q"
+                                       class="form-control"
+                                       value="{{ busqueda }}"
+                                       placeholder="Buscar por nombre, categoría o código" />
                                 <button class="btn btn-outline-primary">Buscar</button>
                             </div>
                         </form>
@@ -56,7 +71,9 @@
                                     <th>Variable</th>
                                     <th>Código insertado</th>
                                     <th>Estado</th>
-                                    <th><span class="visually-hidden">Acciones</span></th>
+                                    <th>
+                                        <span class="visually-hidden">Acciones</span>
+                                    </th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -67,7 +84,9 @@
                                             <span class="gt-row-title">{{ variable.nombre }}</span>
                                             {% if variable.descripcion %}<span class="gt-row-subtitle">{{ variable.descripcion }}</span>{% endif %}
                                         </td>
-                                        <td><code>{{ variable.token }}</code></td>
+                                        <td>
+                                            <code>{{ variable.token }}</code>
+                                        </td>
                                         <td>
                                             {% if variable.activo %}
                                                 <span class="gt-status gt-status--success">Activa</span>
@@ -76,11 +95,16 @@
                                             {% endif %}
                                         </td>
                                         <td class="text-end">
-                                            <form method="post" action="{% url 'gestor_templates_variables_alternar' variable.pk %}">
+                                            <form method="post"
+                                                  action="{% url 'gestor_templates_variables_alternar' variable.pk %}">
                                                 {% csrf_token %}
                                                 <input type="hidden" name="next" value="{{ request.get_full_path }}" />
                                                 <button class="btn btn-sm {% if variable.activo %}btn-danger{% else %}btn-success{% endif %}">
-                                                    {% if variable.activo %}Eliminar{% else %}Activar{% endif %}
+                                                    {% if variable.activo %}
+                                                        Eliminar
+                                                    {% else %}
+                                                        Activar
+                                                    {% endif %}
                                                 </button>
                                             </form>
                                         </td>

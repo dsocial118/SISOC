@@ -3,11 +3,14 @@
 {% block title %}Incidencias de templates{% endblock %}
 {% block titulo-pagina %}Gestor de templates{% endblock %}
 {% block head %}
-    <link rel="stylesheet" href="{% static 'custom/css/gestor_templates.css' %}" />
+    <link rel="stylesheet"
+          href="{% static 'custom/css/gestor_templates.css' %}" />
 {% endblock %}
 {% block breadcrumb %}
     <ol class="breadcrumb float-sm-right">
-        <li class="breadcrumb-item"><a href="{% url 'gestor_templates_listar' %}">Gestor de templates</a></li>
+        <li class="breadcrumb-item">
+            <a href="{% url 'gestor_templates_listar' %}">Gestor de templates</a>
+        </li>
         <li class="breadcrumb-item active">Incidencias</li>
     </ol>
 {% endblock %}
@@ -24,21 +27,29 @@
             </section>
             <section class="card gt-card gt-card--list">
                 <div class="card-header">
-                    <h2 class="card-title"><i class="fas fa-exclamation-triangle"></i>Configuraciones faltantes</h2>
+                    <h2 class="card-title">
+                        <i class="fas fa-exclamation-triangle"></i>Configuraciones faltantes
+                    </h2>
                 </div>
                 <div class="card-body">
                     <div class="gt-toolbar">
                         <div class="btn-group" aria-label="Filtrar incidencias por estado">
                             {% for valor, etiqueta in estados %}
-                                <a href="{% url 'gestor_templates_incidencias_listar' %}?estado={{ valor }}{% if busqueda %}&q={{ busqueda|urlencode }}{% endif %}" class="btn {% if estado_filtro == valor %}btn-primary{% else %}btn-outline-primary{% endif %}">{{ etiqueta }}</a>
+                                <a href="{% url 'gestor_templates_incidencias_listar' %}?estado={{ valor }}{% if busqueda %}&q={{ busqueda|urlencode }}{% endif %}"
+                                   class="btn {% if estado_filtro == valor %}btn-primary{% else %}btn-outline-primary{% endif %}">{{ etiqueta }}</a>
                             {% endfor %}
-                            <a href="{% url 'gestor_templates_incidencias_listar' %}?estado=todas{% if busqueda %}&q={{ busqueda|urlencode }}{% endif %}" class="btn {% if estado_filtro == 'todas' %}btn-primary{% else %}btn-outline-primary{% endif %}">Todas</a>
+                            <a href="{% url 'gestor_templates_incidencias_listar' %}?estado=todas{% if busqueda %}&q={{ busqueda|urlencode }}{% endif %}"
+                               class="btn {% if estado_filtro == 'todas' %}btn-primary{% else %}btn-outline-primary{% endif %}">Todas</a>
                         </div>
                         <form method="get" class="gt-search" role="search">
                             <input type="hidden" name="estado" value="{{ estado_filtro }}" />
                             <div class="input-group">
                                 <span class="input-group-text"><i class="fas fa-search"></i></span>
-                                <input type="search" name="q" value="{{ busqueda }}" class="form-control" placeholder="Código, combinación, comedor u organización" />
+                                <input type="search"
+                                       name="q"
+                                       value="{{ busqueda }}"
+                                       class="form-control"
+                                       placeholder="Código, combinación, comedor u organización" />
                                 <button type="submit" class="btn btn-outline-primary">Buscar</button>
                             </div>
                         </form>
@@ -54,14 +65,20 @@
                                     <th>Casos</th>
                                     <th>Último reporte</th>
                                     <th>Estado</th>
-                                    <th><span class="visually-hidden">Acciones</span></th>
+                                    <th>
+                                        <span class="visually-hidden">Acciones</span>
+                                    </th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {% for incidencia in incidencias %}
                                     <tr>
-                                        <td><span class="gt-row-title">{{ incidencia.codigo }}</span></td>
-                                        <td><code>{{ incidencia.clave_condiciones }}</code></td>
+                                        <td>
+                                            <span class="gt-row-title">{{ incidencia.codigo }}</span>
+                                        </td>
+                                        <td>
+                                            <code>{{ incidencia.clave_condiciones }}</code>
+                                        </td>
                                         <td>{{ incidencia.cantidad_casos }}</td>
                                         <td>{{ incidencia.ultima_fecha|date:"d/m/Y H:i" }}</td>
                                         <td>
@@ -74,7 +91,8 @@
                                             {% endif %}
                                         </td>
                                         <td class="text-end">
-                                            <a href="{% url 'gestor_templates_incidencia_detalle' incidencia.pk %}" class="btn btn-sm btn-outline-primary">Gestionar</a>
+                                            <a href="{% url 'gestor_templates_incidencia_detalle' incidencia.pk %}"
+                                               class="btn btn-sm btn-outline-primary">Gestionar</a>
                                         </td>
                                     </tr>
                                 {% endfor %}

@@ -195,7 +195,9 @@
                                 </div>
                                 <div class="mt-3 d-none" id="estadoConvenioPnudInicialContainer">
                                     <label for="estadoConvenioPnudInicial" class="form-label fw-bold">Estado del convenio PNUD</label>
-                                    <select class="form-select" id="estadoConvenioPnudInicial" name="estado_convenio_pnud">
+                                    <select class="form-select"
+                                            id="estadoConvenioPnudInicial"
+                                            name="estado_convenio_pnud">
                                         <option value="" selected disabled>Seleccione una opción</option>
                                         <option value="vigente">Vigente</option>
                                         <option value="finalizado">Finalizado</option>
@@ -204,7 +206,10 @@
                             {% elif admision.tipo == "renovacion" %}
                                 <div class="mt-3">
                                     <label for="tipoRenovacionInicial" class="form-label fw-bold">¿Qué renovación tramita?</label>
-                                    <select class="form-select" id="tipoRenovacionInicial" name="tipo_renovacion" required>
+                                    <select class="form-select"
+                                            id="tipoRenovacionInicial"
+                                            name="tipo_renovacion"
+                                            required>
                                         <option value="" selected disabled>Seleccione una opción</option>
                                         <option value="primera">Primera renovación</option>
                                         <option value="segunda_o_posterior">Segunda renovación o posterior</option>
@@ -212,7 +217,10 @@
                                 </div>
                                 <div class="mt-3">
                                     <label for="estadoFinanciamientoInicial" class="form-label fw-bold">Estado del financiamiento</label>
-                                    <select class="form-select" id="estadoFinanciamientoInicial" name="estado_financiamiento" required>
+                                    <select class="form-select"
+                                            id="estadoFinanciamientoInicial"
+                                            name="estado_financiamiento"
+                                            required>
                                         <option value="" selected disabled>Seleccione una opción</option>
                                         <option value="vigente">Financiamiento vigente</option>
                                         <option value="finalizado">Financiamiento finalizado</option>
@@ -241,9 +249,7 @@
                         <h2 class="card-title fw-bold">Validaciones para templates</h2>
                     </div>
                     <div class="card-body">
-                        <p class="text-muted">
-                            Estas validaciones no modifican la documentación requerida por el tipo de convenio.
-                        </p>
+                        <p class="text-muted">Estas validaciones no modifican la documentación requerida por el tipo de convenio.</p>
                         {% if puede_editar_validaciones_template %}
                             <form method="post">
                                 {% csrf_token %}
@@ -251,7 +257,9 @@
                                 <div class="row">
                                     {% if admision.tipo == "incorporacion" %}
                                         <div class="col-md-6">{{ validaciones_template_form.es_ex_pnud|as_crispy_field }}</div>
-                                        <div class="col-md-6" id="estadoConvenioPnudEdicionContainer">{{ validaciones_template_form.estado_convenio_pnud|as_crispy_field }}</div>
+                                        <div class="col-md-6" id="estadoConvenioPnudEdicionContainer">
+                                            {{ validaciones_template_form.estado_convenio_pnud|as_crispy_field }}
+                                        </div>
                                     {% elif admision.tipo == "renovacion" %}
                                         <div class="col-md-6">{{ validaciones_template_form.tipo_renovacion|as_crispy_field }}</div>
                                         <div class="col-md-6">{{ validaciones_template_form.estado_financiamiento|as_crispy_field }}</div>
@@ -262,16 +270,24 @@
                         {% elif admision.tipo == "incorporacion" %}
                             <dl class="row mb-0">
                                 <dt class="col-sm-4">¿Es Ex PNUD?</dt>
-                                <dd class="col-sm-8">{{ admision.get_es_ex_pnud_display|default:"-" }}</dd>
+                                <dd class="col-sm-8">
+                                    {{ admision.get_es_ex_pnud_display|default:"-" }}
+                                </dd>
                                 <dt class="col-sm-4">Estado del convenio PNUD</dt>
-                                <dd class="col-sm-8">{{ admision.get_estado_convenio_pnud_display|default:"No aplica" }}</dd>
+                                <dd class="col-sm-8">
+                                    {{ admision.get_estado_convenio_pnud_display|default:"No aplica" }}
+                                </dd>
                             </dl>
                         {% elif admision.tipo == "renovacion" %}
                             <dl class="row mb-0">
                                 <dt class="col-sm-4">Renovación que tramita</dt>
-                                <dd class="col-sm-8">{{ admision.get_tipo_renovacion_display|default:"-" }}</dd>
+                                <dd class="col-sm-8">
+                                    {{ admision.get_tipo_renovacion_display|default:"-" }}
+                                </dd>
                                 <dt class="col-sm-4">Estado del financiamiento</dt>
-                                <dd class="col-sm-8">{{ admision.get_estado_financiamiento_display|default:"-" }}</dd>
+                                <dd class="col-sm-8">
+                                    {{ admision.get_estado_financiamiento_display|default:"-" }}
+                                </dd>
                             </dl>
                         {% endif %}
                     </div>

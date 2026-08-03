@@ -23,10 +23,14 @@
                 {% if "configuracion-template" in message.tags %}
                     <section class="alert border-0 shadow-sm mb-4"
                              role="status"
-                             style="background: #0b5f8a; color: #fff;">
+                             style="background: #0b5f8a;
+                                    color: #fff">
                         <div class="d-flex align-items-center gap-3">
                             <span class="rounded-circle d-inline-flex align-items-center justify-content-center flex-shrink-0"
-                                  style="width: 2.25rem; height: 2.25rem; background: #9ee7ff; color: #06415f;">
+                                  style="width: 2.25rem;
+                                         height: 2.25rem;
+                                         background: #9ee7ff;
+                                         color: #06415f">
                                 <i class="fas fa-check" aria-hidden="true"></i>
                             </span>
                             <div>
@@ -60,16 +64,23 @@
             {% elif template_error %}
                 <section class="alert shadow-sm mb-4"
                          role="alert"
-                         style="background: #103a5d; border: 1px solid #3b82c4; color: #f8fbff;">
+                         style="background: #103a5d;
+                                border: 1px solid #3b82c4;
+                                color: #f8fbff">
                     <div class="d-flex align-items-start gap-3">
                         <span class="rounded-circle d-inline-flex align-items-center justify-content-center flex-shrink-0"
-                              style="width: 2.5rem; height: 2.5rem; background: #7dd3fc; color: #073655;">
+                              style="width: 2.5rem;
+                                     height: 2.5rem;
+                                     background: #7dd3fc;
+                                     color: #073655">
                             <i class="fas fa-cog" aria-hidden="true"></i>
                         </span>
                         <div class="flex-grow-1">
                             <h2 class="h5 fw-bold mb-2">Configuración pendiente</h2>
                             <p class="mb-2">Todavía no está configurado el template necesario para generar este Informe Técnico.</p>
-                            <p class="mb-0">Puede continuar y guardar el informe como borrador. Si necesita generar la versión final, notifique a los referentes del sistema para que completen la configuración.</p>
+                            <p class="mb-0">
+                                Puede continuar y guardar el informe como borrador. Si necesita generar la versión final, notifique a los referentes del sistema para que completen la configuración.
+                            </p>
                         </div>
                     </div>
                     {% if template_configuracion_faltante %}
@@ -87,7 +98,11 @@
                                 name="informe_id"
                                 value="{% if informe_tecnico %}{{ informe_tecnico.pk }}{% endif %}"
                                 class="btn mt-3"
-                                style="background: #f6c453; border-color: #f6c453; color: #18212b;"><i class="fas fa-bell me-1" aria-hidden="true"></i> Notificar a referentes del sistema</button>
+                                style="background: #f6c453;
+                                       border-color: #f6c453;
+                                       color: #18212b">
+                            <i class="fas fa-bell me-1" aria-hidden="true"></i> Notificar a referentes del sistema
+                        </button>
                     {% endif %}
                 </section>
             {% endif %}
