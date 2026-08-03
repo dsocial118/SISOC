@@ -874,9 +874,7 @@ class InformeService:
                 )
 
             usar_fallback_heredado = (
-                PlantillaInformeTecnicoService.es_configuracion_faltante(
-                    error_template
-                )
+                PlantillaInformeTecnicoService.es_configuracion_faltante(error_template)
             )
             accion_para_estado = (
                 "draft" if error_template and not usar_fallback_heredado else action
