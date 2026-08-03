@@ -1097,6 +1097,10 @@ def test_generar_documento_admision_and_update_context(mocker):
         ),
     )
     mocker.patch(
+        "admisiones.services.admisiones_service.DocumentacionOrganizacion.objects.filter",
+        return_value=_ListChain(),
+    )
+    mocker.patch(
         "admisiones.services.admisiones_service.ArchivoAdmision.objects.filter",
         return_value=archs,
     )
