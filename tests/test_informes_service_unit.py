@@ -507,7 +507,7 @@ def test_guardar_informe_and_detail_context(mocker):
     assert detail["pdf"] == "pdf"
 
 
-def test_guardar_informe_submit_sin_template_lo_conserva_en_borrador(mocker):
+def test_guardar_informe_submit_sin_publicacion_usa_fallback_heredado(mocker):
     admision = SimpleNamespace(id=12, estado_admision="x", save=mocker.Mock())
     instance = SimpleNamespace(
         tipo="base",
@@ -544,11 +544,22 @@ def test_guardar_informe_submit_sin_template_lo_conserva_en_borrador(mocker):
         "admisiones.services.admisiones_service.AdmisionService."
         "actualizar_estado_admision"
     )
-    generar_docx = mocker.patch.object(module.InformeService, "generar_docx_borrador")
+    mocker.patch(
+        "admisiones.services.admisiones_service.AdmisionService."
+        "congelar_documentacion_organizacional"
+    )
+    generar_docx = mocker.patch.object(
+        module.InformeService,
+        "generar_docx_borrador",
+        return_value=SimpleNamespace(),
+    )
     mocker.patch(
         "admisiones.services.templates_informe_tecnico_service."
         "PlantillaInformeTecnicoService.resolver_publicacion_para_admision",
-        return_value=(None, "No existe una versión publicada de template."),
+        return_value=(
+            None,
+            "No existe una versión publicada de template para la combinación de esta admisión.",
+        ),
     )
 
     resultado = module.InformeService.guardar_informe(
@@ -559,12 +570,9 @@ def test_guardar_informe_submit_sin_template_lo_conserva_en_borrador(mocker):
         usuario=SimpleNamespace(),
     )
 
-    assert not resultado["success"]
-    assert "guardó el Informe Técnico como borrador" in resultado["error"]
-    assert instance.estado_formulario == "borrador"
-    assert instance.estado == "Iniciado"
+    assert resultado["success"]
     form.save.assert_called_once()
-    generar_docx.assert_not_called()
+    generar_docx.assert_called_once_with(instance, None)
 
 
 def test_generar_docx_con_version_publicada_renderiza_variables(mocker):
