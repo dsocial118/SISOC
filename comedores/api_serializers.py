@@ -885,7 +885,7 @@ class ComedorDetailSerializer(serializers.ModelSerializer):
                 "titulo": "Domicilio del Espacio",
                 "items": self._filter_relevamiento_mobile_items(
                     self._collect_model_items(getattr(relevamiento, "comedor", None)),
-                    hidden_contains=("judicializado", "dupla"),
+                    hidden_contains=("judicializado", "dupla", "caritas"),
                 ),
             },
             {

@@ -212,7 +212,7 @@ class ProfileTerritorialScope(models.Model):
         verbose_name_plural = "Alcances territoriales de perfil"
         constraints = [
             models.CheckConstraint(
-                check=Q(localidad__isnull=True) | Q(municipio__isnull=False),
+                condition=Q(localidad__isnull=True) | Q(municipio__isnull=False),
                 name="profile_scope_localidad_requires_municipio",
             ),
             models.UniqueConstraint(

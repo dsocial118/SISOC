@@ -239,6 +239,13 @@ class ComedorForm(forms.ModelForm):
     latitud = forms.FloatField(min_value=-90, max_value=90, required=False)
     codigo_postal = forms.IntegerField(min_value=1000, max_value=999999, required=False)
     codigo_de_proyecto = forms.CharField(max_length=7, required=False)
+    es_caritas = forms.TypedChoiceField(
+        label="¿Es CARITAS?",
+        choices=[("", "---------"), ("True", "Sí"), ("False", "No")],
+        coerce=lambda value: value == "True",
+        empty_value=None,
+        required=True,
+    )
 
     def __init__(self, *args, **kwargs):
         self.current_user = kwargs.pop("user", None)

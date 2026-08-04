@@ -159,7 +159,6 @@ INSTALLED_APPS = [
     "django_extensions",
     "formtools",
     "import_export",
-    "multiselectfield",
     "auditlog",
     "rest_framework",
     "rest_framework.authtoken",
