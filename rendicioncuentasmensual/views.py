@@ -170,8 +170,9 @@ class RendicionCuentaMensualDetailView(LoginRequiredMixin, DetailView):
     @classmethod
     def _user_can_territorial(cls, user):
         return (
-            user.is_superuser
-            or user.groups.filter(
+            getattr(user, "is_superuser", False)
+            or getattr(user, "groups", None)
+            and user.groups.filter(
                 name__in=[cls.GRUPO_TERRITORIAL, cls.GRUPO_ADMIN_AUDITORIA]
             ).exists()
         )
@@ -179,8 +180,9 @@ class RendicionCuentaMensualDetailView(LoginRequiredMixin, DetailView):
     @classmethod
     def _user_can_auditoria(cls, user):
         return (
-            user.is_superuser
-            or user.groups.filter(
+            getattr(user, "is_superuser", False)
+            or getattr(user, "groups", None)
+            and user.groups.filter(
                 name__in=[cls.GRUPO_AUDITORIA, cls.GRUPO_ADMIN_AUDITORIA]
             ).exists()
         )

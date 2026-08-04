@@ -1690,13 +1690,6 @@ class ComedorDetailViewSet(
     @action(detail=True, methods=["get"], url_path="prestacion-alimentaria")
     def prestacion_alimentaria(self, request, pk=None):
         comedor = self.get_object()
-        if usa_datos_convenio_pnud(comedor):
-            return Response(
-                {
-                    "detail": "Prestaciones conveniadas temporalmente no disponibles para este programa."
-                },
-                status=status.HTTP_404_NOT_FOUND,
-            )
         datos_convenio_pnud = self._get_pnud_prestacion_alimentaria_datos(comedor)
         informe = (
             None
@@ -1730,13 +1723,6 @@ class ComedorDetailViewSet(
         self, request, pk=None
     ):  # pylint: disable=too-many-return-statements
         comedor = self.get_object()
-        if usa_datos_convenio_pnud(comedor):
-            return Response(
-                {
-                    "detail": "Prestaciones conveniadas temporalmente no disponibles para este programa."
-                },
-                status=status.HTTP_404_NOT_FOUND,
-            )
 
         conforme = request.data.get("conforme")
         if not isinstance(conforme, bool):
