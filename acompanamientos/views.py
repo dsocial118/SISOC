@@ -1,6 +1,5 @@
 from urllib.parse import parse_qs, urlparse
 
-from django.shortcuts import get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -15,6 +14,7 @@ from django.urls import reverse
 
 from acompanamientos.acompanamiento_service import AcompanamientoService
 from comedores.models import Comedor
+from comedores.services.comedor_service import ComedorService
 from admisiones.models.admisiones import InformeTecnico
 from core.services.column_preferences import build_columns_context_for_custom_cells
 from core.security import safe_redirect
@@ -49,7 +49,7 @@ def restaurar_hito(request, comedor_id):
     admision_id = _parse_admision_id(
         request.POST.get("admision_id") or request.GET.get("admision_id")
     ) or _extract_admision_id_from_referer(request)
-    comedor = get_object_or_404(Comedor, pk=comedor_id)
+    comedor = ComedorService.get_scoped_comedor_or_404(comedor_id, request.user)
     hito = AcompanamientoService.obtener_hitos(comedor, admision_id=admision_id)
 
     if not hito:
@@ -86,6 +86,9 @@ class AcompanamientoDetailView(LoginRequiredMixin, DetailView):
     template_name = "acompañamiento_detail.html"
     context_object_name = "comedor"
     pk_url_kwarg = "comedor_id"
+
+    def get_queryset(self):
+        return ComedorService.get_scoped_comedor_queryset(self.request.user)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

@@ -46,11 +46,13 @@ def test_export_csv_incluye_los_datos(auth_client, nacionalidad_admin):
 
     response = auth_client.post(
         reverse("admin:core_nacionalidad_export"),
-        {"file_format": _indice_de_formato(nacionalidad_admin, "csv")},
+        {"format": _indice_de_formato(nacionalidad_admin, "csv")},
     )
 
     assert response.status_code == 200
-    assert response["Content-Type"].startswith("text/csv")
+    assert response["Content-Type"].startswith("text/csv"), response.context[
+        "form"
+    ].errors
     assert b"Argentina" in response.content
 
 
@@ -60,11 +62,11 @@ def test_export_xlsx_devuelve_un_archivo(auth_client, nacionalidad_admin):
 
     response = auth_client.post(
         reverse("admin:core_nacionalidad_export"),
-        {"file_format": _indice_de_formato(nacionalidad_admin, "xlsx")},
+        {"format": _indice_de_formato(nacionalidad_admin, "xlsx")},
     )
 
     assert response.status_code == 200
-    assert "spreadsheetml" in response["Content-Type"]
+    assert "spreadsheetml" in response["Content-Type"], response.context["form"].errors
     # Firma de un archivo xlsx (zip).
     assert response.content[:2] == b"PK"
 
@@ -85,9 +87,7 @@ def test_import_muestra_preview_sin_persistir_y_confirma(
         reverse("admin:core_nacionalidad_import"),
         {
             "import_file": archivo,
-            "input_format": _indice_de_formato(
-                nacionalidad_admin, "csv", tipo="import"
-            ),
+            "format": _indice_de_formato(nacionalidad_admin, "csv", tipo="import"),
         },
     )
 
@@ -134,8 +134,8 @@ def test_export_only_sigue_exportando(auth_client):
 
     response = auth_client.post(
         reverse("admin:comedores_programas_export"),
-        {"file_format": _indice_de_formato(programas_admin, "csv")},
+        {"format": _indice_de_formato(programas_admin, "csv")},
     )
 
     assert response.status_code == 200
-    assert b"Programa de prueba" in response.content
+    assert b"Programa de prueba" in response.content, response.context["form"].errors
