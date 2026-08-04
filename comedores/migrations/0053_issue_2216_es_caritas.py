@@ -13,6 +13,6 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name="comedor",
             name="es_caritas",
-            field=models.BooleanField(null=True, verbose_name="¿Es CARITAS?"),
+            field=models.BooleanField(blank=True, null=True, verbose_name="¿Es CARITAS?"),
         ),
     ]

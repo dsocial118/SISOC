@@ -322,6 +322,7 @@ class Comedor(SoftDeleteModelMixin, models.Model):
     )
     es_caritas = models.BooleanField(
         null=True,
+        blank=True,
         verbose_name="¿Es CARITAS?",
     )
     comienzo = models.IntegerField(
