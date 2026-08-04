@@ -73,7 +73,7 @@ class MontoPrestacionPrograma(models.Model):
         verbose_name_plural = "Prestaciones"
         constraints = [
             models.CheckConstraint(
-                check=(
+                condition=(
                     Q(desayuno_valor__isnull=False)
                     | Q(almuerzo_valor__isnull=False)
                     | Q(merienda_valor__isnull=False)

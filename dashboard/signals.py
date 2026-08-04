@@ -1,6 +1,7 @@
 from django.db.models.signals import post_delete, post_save
 from django.dispatch import receiver
 
+
 from relevamientos.models import Relevamiento
 from relevamientos.models import Prestacion
 from comedores.models import Comedor, ValorComida
@@ -13,8 +14,6 @@ from dashboard.utils import (
     calcular_presupuesto_comida,
 )
 from core.soft_delete.signals import post_soft_delete, post_restore
-
-from .utils import table_exists
 
 
 def update_dashboard_key(llave, cantidad):
@@ -42,55 +41,53 @@ def update_dashboard_comedores(sender, instance, **kwargs):
     update_dashboard_key("presupuesto_comida", calcular_presupuesto_comida())
 
 
-def register_signals():
-    if (
-        table_exists("comedores_comedor")
-        and table_exists("comedores_relevamiento")
-        and table_exists("comedores_prestacion")
-        and table_exists("comedores_valorcomida")
-    ):
-
-        @receiver(post_save, sender=Comedor)
-        def trigger_update_comedor(sender, instance, **kwargs):
-            return update_dashboard_comedores(sender, instance, **kwargs)
-
-        @receiver(post_save, sender=Relevamiento)
-        def trigger_update_relevamiento(sender, instance, **kwargs):
-            return update_dashboard_comedores(sender, instance, **kwargs)
-
-        @receiver(post_save, sender=Prestacion)
-        def trigger_update_prestacion(sender, instance, **kwargs):
-            return update_dashboard_comedores(sender, instance, **kwargs)
-
-        @receiver(post_save, sender=ValorComida)
-        def trigger_update_valorcomida(sender, instance, **kwargs):
-            return update_dashboard_comedores(sender, instance, **kwargs)
-
-        @receiver(post_delete, sender=Comedor)
-        def trigger_update_delete_comedor(sender, instance, **kwargs):
-            return update_dashboard_comedores(sender, instance, **kwargs)
-
-        @receiver(post_delete, sender=Relevamiento)
-        def trigger_update_delete_relevamiento(sender, instance, **kwargs):
-            return update_dashboard_comedores(sender, instance, **kwargs)
-
-        @receiver(post_soft_delete, sender=Comedor)
-        @receiver(post_restore, sender=Comedor)
-        def trigger_update_soft_delete_comedor(sender, instance, **kwargs):
-            return update_dashboard_comedores(sender, instance, **kwargs)
-
-        @receiver(post_soft_delete, sender=Relevamiento)
-        @receiver(post_restore, sender=Relevamiento)
-        def trigger_update_soft_delete_relevamiento(sender, instance, **kwargs):
-            return update_dashboard_comedores(sender, instance, **kwargs)
-
-        @receiver(post_delete, sender=Prestacion)
-        def trigger_update_delete_prestacion(sender, instance, **kwargs):
-            return update_dashboard_comedores(sender, instance, **kwargs)
-
-        @receiver(post_delete, sender=ValorComida)
-        def trigger_update_delete_valorcomida(sender, instance, **kwargs):
-            return update_dashboard_comedores(sender, instance, **kwargs)
+@receiver(post_save, sender=Comedor)
+def trigger_update_comedor(sender, instance, **kwargs):
+    return update_dashboard_comedores(sender, instance, **kwargs)
 
 
-register_signals()
+@receiver(post_save, sender=Relevamiento)
+def trigger_update_relevamiento(sender, instance, **kwargs):
+    return update_dashboard_comedores(sender, instance, **kwargs)
+
+
+@receiver(post_save, sender=Prestacion)
+def trigger_update_prestacion(sender, instance, **kwargs):
+    return update_dashboard_comedores(sender, instance, **kwargs)
+
+
+@receiver(post_save, sender=ValorComida)
+def trigger_update_valorcomida(sender, instance, **kwargs):
+    return update_dashboard_comedores(sender, instance, **kwargs)
+
+
+@receiver(post_delete, sender=Comedor)
+def trigger_update_delete_comedor(sender, instance, **kwargs):
+    return update_dashboard_comedores(sender, instance, **kwargs)
+
+
+@receiver(post_delete, sender=Relevamiento)
+def trigger_update_delete_relevamiento(sender, instance, **kwargs):
+    return update_dashboard_comedores(sender, instance, **kwargs)
+
+
+@receiver(post_soft_delete, sender=Comedor)
+@receiver(post_restore, sender=Comedor)
+def trigger_update_soft_delete_comedor(sender, instance, **kwargs):
+    return update_dashboard_comedores(sender, instance, **kwargs)
+
+
+@receiver(post_soft_delete, sender=Relevamiento)
+@receiver(post_restore, sender=Relevamiento)
+def trigger_update_soft_delete_relevamiento(sender, instance, **kwargs):
+    return update_dashboard_comedores(sender, instance, **kwargs)
+
+
+@receiver(post_delete, sender=Prestacion)
+def trigger_update_delete_prestacion(sender, instance, **kwargs):
+    return update_dashboard_comedores(sender, instance, **kwargs)
+
+
+@receiver(post_delete, sender=ValorComida)
+def trigger_update_delete_valorcomida(sender, instance, **kwargs):
+    return update_dashboard_comedores(sender, instance, **kwargs)
