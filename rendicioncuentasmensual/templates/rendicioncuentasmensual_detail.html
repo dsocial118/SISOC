@@ -140,20 +140,28 @@
                     <div class="d-flex flex-wrap gap-2">
                         {% if puede_revision_territorial and rendicion.etapa_proceso == 'revision_documentacion' %}
                             {% if rendicion.subestado_proceso == 'pendiente' or rendicion.subestado_proceso == 'subsanado' %}
-                                <form method="post">{% csrf_token %}<input type="hidden" name="accion_proceso" value="iniciar_revision_territorial"><button class="btn btn-primary">Iniciar revisión territorial</button></form>
+                                <form method="post">{% csrf_token %}<input type="hidden"
+       name="accion_proceso"
+       value="iniciar_revision_territorial" /><button class="btn btn-primary">Iniciar revisión territorial</button></form>
                             {% elif rendicion.subestado_proceso == 'en_curso' %}
-                                <form method="post">{% csrf_token %}<input type="hidden" name="accion_proceso" value="finalizar_revision_territorial"><button class="btn btn-success">Finalizar revisión territorial</button></form>
+                                <form method="post">{% csrf_token %}<input type="hidden"
+       name="accion_proceso"
+       value="finalizar_revision_territorial" /><button class="btn btn-success">Finalizar revisión territorial</button></form>
                             {% endif %}
                         {% endif %}
                         {% if puede_revision_auditoria and rendicion.etapa_proceso == 'revision_auditoria' %}
                             {% if rendicion.subestado_proceso == 'pendiente' or rendicion.subestado_proceso == 'subsanado' %}
-                                <form method="post">{% csrf_token %}<input type="hidden" name="accion_proceso" value="iniciar_revision_auditoria"><button class="btn btn-primary">Iniciar revisión de Auditoría</button></form>
+                                <form method="post">{% csrf_token %}<input type="hidden"
+       name="accion_proceso"
+       value="iniciar_revision_auditoria" /><button class="btn btn-primary">Iniciar revisión de Auditoría</button></form>
                             {% elif rendicion.subestado_proceso == 'en_curso' %}
-                                <form method="post">{% csrf_token %}<input type="hidden" name="accion_proceso" value="finalizar_revision_auditoria"><button class="btn btn-success">Finalizar revisión de Auditoría</button></form>
+                                <form method="post">{% csrf_token %}<input type="hidden"
+       name="accion_proceso"
+       value="finalizar_revision_auditoria" /><button class="btn btn-success">Finalizar revisión de Auditoría</button></form>
                             {% endif %}
                         {% endif %}
                         {% if puede_revision_auditoria and rendicion.etapa_proceso == 'auditoria' and rendicion.subestado_proceso == 'pendiente' %}
-                            <form method="post">{% csrf_token %}<input type="hidden" name="accion_proceso" value="iniciar_auditoria"><button class="btn btn-primary">Comenzar Auditoría</button></form>
+                            <form method="post">{% csrf_token %}<input type="hidden" name="accion_proceso" value="iniciar_auditoria" /><button class="btn btn-primary">Comenzar Auditoría</button></form>
                         {% endif %}
                     </div>
 
@@ -161,14 +169,20 @@
                         <div class="row mt-3">
                             <div class="col-lg-6">
                                 <form method="post" enctype="multipart/form-data">
-                                    {% csrf_token %}<input type="hidden" name="accion_proceso" value="finalizar_sin_observaciones">
+                                    {% csrf_token %}
+                                    <input type="hidden"
+                                           name="accion_proceso"
+                                           value="finalizar_sin_observaciones" />
                                     {{ proceso_form.monto_rendido|as_crispy_field }}{{ proceso_form.acta_auditoria|as_crispy_field }}
                                     <button class="btn btn-success">Finalizar sin observaciones</button>
                                 </form>
                             </div>
                             <div class="col-lg-6">
                                 <form method="post" enctype="multipart/form-data">
-                                    {% csrf_token %}<input type="hidden" name="accion_proceso" value="finalizar_con_observaciones">
+                                    {% csrf_token %}
+                                    <input type="hidden"
+                                           name="accion_proceso"
+                                           value="finalizar_con_observaciones" />
                                     {{ proceso_form.monto_rendido|as_crispy_field }}{{ proceso_form.observaciones|as_crispy_field }}{{ proceso_form.acta_auditoria|as_crispy_field }}
                                     <button class="btn btn-warning">Finalizar con observaciones</button>
                                 </form>
@@ -177,10 +191,11 @@
                     {% endif %}
 
                     {% if puede_revision_auditoria and rendicion.etapa_proceso == 'auditoria' and rendicion.subestado_proceso == 'finalizada_con_observaciones' %}
-                        <form method="post" class="mt-3">{% csrf_token %}<input type="hidden" name="accion_proceso" value="iniciar_regularizacion"><button class="btn btn-primary">Iniciar regularización</button></form>
+                        <form method="post" class="mt-3">{% csrf_token %}<input type="hidden" name="accion_proceso" value="iniciar_regularizacion" /><button class="btn btn-primary">Iniciar regularización</button></form>
                     {% elif puede_revision_auditoria and rendicion.etapa_proceso == 'regularizacion' and rendicion.subestado_proceso == 'en_curso' %}
                         <form method="post" enctype="multipart/form-data" class="mt-3">
-                            {% csrf_token %}<input type="hidden" name="accion_proceso" value="finalizar_regularizacion">
+                            {% csrf_token %}
+                            <input type="hidden" name="accion_proceso" value="finalizar_regularizacion" />
                             {{ proceso_form.documento_regularizacion|as_crispy_field }}
                             <button class="btn btn-success">Finalizar regularización</button>
                         </form>

@@ -17,7 +17,9 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name="organizacion",
             name="fecha_vencimiento",
-            field=models.DateTimeField(blank=True, null=True, verbose_name="Fecha de vencimiento"),
+            field=models.DateTimeField(
+                blank=True, null=True, verbose_name="Fecha de vencimiento"
+            ),
         ),
         migrations.AddField(
             model_name="firmante",

@@ -11,7 +11,15 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name="ProyectoOrganizacion",
             fields=[
-                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
                 ("codigo", models.CharField(max_length=255)),
                 ("nombre", models.CharField(blank=True, max_length=255, null=True)),
                 ("activo", models.BooleanField(default=True)),
