@@ -7,6 +7,14 @@ from admisiones.models.admisiones import (
     Admision,
     InformeTecnico,
 )
+from acompanamientos.services.filter_config import (
+    CHOICE_OPS,
+    DATE_OPS,
+    FIELD_MAP,
+    FIELD_TYPES,
+    NUM_OPS,
+    TEXT_OPS,
+)
 from acompanamientos.models.hitos import Hitos, HitosIntervenciones
 from acompanamientos.models.acompanamiento import (
     Acompanamiento,
@@ -18,8 +26,21 @@ from intervenciones.models.intervenciones import Intervencion, SubIntervencion
 from comedores.models import Comedor
 from iam.services import user_has_any_permission_codes
 from users.services import UserPermissionService
+from core.services.advanced_filters import AdvancedFilterEngine
+from core.services.list_ordering import apply_allowed_ordering
 
 logger = logging.getLogger("django")
+
+ACOMPANAMIENTO_ADVANCED_FILTER = AdvancedFilterEngine(
+    field_map=FIELD_MAP,
+    field_types=FIELD_TYPES,
+    allowed_ops={
+        "text": TEXT_OPS,
+        "number": NUM_OPS,
+        "date": DATE_OPS,
+        "choice": CHOICE_OPS,
+    },
+)
 
 
 class AcompanamientoService:
@@ -540,7 +561,7 @@ class AcompanamientoService:
             raise
 
     @staticmethod
-    def obtener_comedores_acompanamiento(user, busqueda=None):
+    def obtener_comedores_acompanamiento(user, request_or_query=None):
         """
         Obtiene un queryset de objetos Comedor que cumplen con los criterios de acompañamiento,
         filtrando según el usuario y una búsqueda opcional.
@@ -601,6 +622,14 @@ class AcompanamientoService:
                         Exists(dupla_abogado_subq) | Exists(dupla_tecnico_subq)
                     )
 
+            if hasattr(request_or_query, "GET"):
+                qs = ACOMPANAMIENTO_ADVANCED_FILTER.filter_queryset(
+                    qs, request_or_query
+                )
+                busqueda = request_or_query.GET.get("busqueda", "").strip().lower()
+            else:
+                busqueda = (request_or_query or "").strip().lower()
+
             if busqueda:
                 qs = qs.filter(
                     Q(nombre__icontains=busqueda)
@@ -613,7 +642,12 @@ class AcompanamientoService:
                     | Q(referente__celular__icontains=busqueda)
                 )
 
-            return qs
+            return apply_allowed_ordering(
+                qs.distinct(),
+                request_or_query,
+                {"nombre": "nombre"},
+                default=("-id",),
+            )
 
         except Exception:
             logger.exception(
@@ -647,7 +681,11 @@ class AcompanamientoService:
                     {
                         "cells": [
                             {"content": comedor.id or "-"},
-                            {"content": comedor.nombre or "-"},
+                            {
+                                "content": comedor.nombre or "-",
+                                "data_attr": "nombre",
+                                "data_value": comedor.nombre or "",
+                            },
                             {
                                 "content": (
                                     comedor.organizacion.nombre

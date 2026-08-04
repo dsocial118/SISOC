@@ -284,7 +284,7 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 | `comunicados/` | mensajes/comunicados y API asociada | `models.py`, `views.py`, `api_views.py`, forms | Medio |
 | `organizaciones/` | entidades/organizaciones vinculadas | `models.py`, `views.py`, forms | Medio |
 | `centrodeinfancia/` | dominio de centros de infancia, personal y asistencia | `models.py`, `services.py`, `views.py`, `tests/`, urls | Alto |
-| `acompanamientos/` | seguimiento/acompanamientos | `views.py`, service, templates | Medio |
+| `acompanamientos/` | seguimiento/acompanamientos | `views.py`, `acompanamiento_service.py`, `services/filter_config.py`, templates | Medio |
 | `expedientespagos/` | expedientes de pagos | `models.py`, `views.py`, urls | Bajo |
 | `rendicioncuentasfinal/` | rendicion final | `models.py`, `views.py`, urls | Bajo |
 | `rendicioncuentasmensual/` | rendicion mensual | `models.py`, `views.py`, urls | Bajo |
