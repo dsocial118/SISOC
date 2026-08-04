@@ -13,20 +13,39 @@ Uso clásico (texto): {% include 'components/search_bar.html' with titulo='Mi T�
 Modo filtros combinables: {% include 'components/search_bar.html' with titulo='Buscar' reset_url=reset_url add_url=add_url filters_mode=True %}
 Modo búsqueda AJAX dinámica: {% include 'components/search_bar.html' with titulo='Buscar' placeholder='Buscar...' reset_url=reset_url add_url=add_url ajax_search_mode=True ajax_url=ajax_url target_tbody_id='table-tbody' %}
 
+Boton "Volver" (opcional): pasar back_url (nombre de url o url completa) y
+opcionalmente back_text. Si no se pasa, no se renderiza.
+
 Layout (prototipo Figma "SISOC_ Versión UX", nodo 13501:32237):
 - Sin filtros: solo el buscador (input + lupa). La lupa dispara la búsqueda;
   ya no hay botón "Filtrar".
-- Con filtros (filters_mode): el primer filtro vive dentro de la barra
-  (campo + operador + valor + lupa) y "+ Filtro" agrega filas adicionales
-  debajo. AND/OR y Favoritos quedan en una línea secundaria.
+- Con filtros (filters_mode): cada filtro es una barra completa
+  (campo + valor + lupa). "+ Filtro" agrega una fila y "- Filtro" la quita,
+  visible recién desde la segunda. El JS clona #poncho-filter-row-template.
+- El selector de "tipo de coincidencia" se eliminó por definición de UX/UI:
+  el operador sale del tipo de campo. Implica que ya no se puede buscar por
+  campo vacío ni por rango. Ver docs/registro.
+- AND/OR y Favoritos se retiraron por definición de UX/UI: los filtros se
+  combinan siempre con AND y el modal de favoritos ya no se renderiza.
 - "Exportar búsqueda" se ubica arriba a la derecha cuando se pasa export_url.
 {% endcomment %}
 {% firstof filters_mode comedores_filters_mode False as filters_mode_value %}
 {% with filters_mode=filters_mode_value %}
-    {% if export_url %}
+    {% if back_url or export_url %}
         {% firstof export_permissions export_group "auth.role_exportar_a_csv" as export_permissions_value %}
         {% firstof export_admin_permissions "" as export_admin_permissions_value %}
         <div class="poncho-topbar">
+            {% if back_url %}
+                {% if back_url|is_url %}
+                    <a href="{{ back_url }}" class="poncho-volver">
+                        <i class="fas fa-arrow-left" aria-hidden="true"></i>{{ back_text|default:"Volver" }}
+                    </a>
+                {% else %}
+                    <a href="{% url back_url %}" class="poncho-volver">
+                        <i class="fas fa-arrow-left" aria-hidden="true"></i>{{ back_text|default:"Volver" }}
+                    </a>
+                {% endif %}
+            {% endif %}
             {% if request.user.is_superuser or request.user|has_any_perm:export_admin_permissions_value %}
                 <button type="button"
                         class="poncho-export btn-export-csv"
@@ -95,76 +114,52 @@ Layout (prototipo Figma "SISOC_ Versión UX", nodo 13501:32237):
               data-seccion-filtros-favoritos="{{ seccion_filtros_favoritos|default:'' }}"
               data-url-filtros-favoritos="{% url 'filtros_favoritos' %}"
               data-plantilla-url-filtro-favorito="{% url 'detalle_filtro_favorito' pk=0 %}">
-            <div class="poncho-search">
-                <select id="filters-primary-field"
-                        class="poncho-search__field"
-                        aria-label="Buscar por"></select>
-                <div class="poncho-search__box">
-                    <input type="text"
-                           id="filters-primary-value"
-                           class="poncho-search__input"
-                           placeholder="{{ placeholder|default:'Buscar por filtro 1...' }}"
-                           autocomplete="off"
-                           aria-label="Valor a buscar" />
-                    <select id="filters-primary-select"
-                            class="poncho-search__input poncho-search__input--select"
-                            aria-label="Valor a buscar"
-                            hidden></select>
-                    <select id="filters-primary-empty"
-                            class="poncho-search__input poncho-search__input--select"
-                            aria-label="Modo de vacío"
-                            hidden></select>
-                    <button type="submit" class="poncho-search__go" aria-label="Buscar">
-                        <i class="fas fa-search" aria-hidden="true"></i>
-                    </button>
-                </div>
-                <button type="button"
-                        id="add-filter"
-                        class="poncho-addfilter"
-                        aria-expanded="false"
-                        aria-controls="filters-advanced">
-                    <i class="fas fa-plus" aria-hidden="true"></i><span>Filtro</span>
-                </button>
-            </div>
             {% comment %}
-            Panel avanzado. Oculto por defecto para que el estado en reposo sea
-            identico al prototipo. Lo abre "+ Filtro" (o se abre solo si la URL
-            trae mas de un filtro o un operador que no es el default).
+            Cada filtro es una barra completa (campo + valor + lupa), segun el
+            mockup. "+ Filtro" agrega una fila; "- Filtro" la quita y aparece
+            recien desde la segunda. El JS clona #poncho-filter-row-template.
+            El operador de coincidencia se eliminó por definicion de UX/UI: se
+            aplica el default segun el tipo de campo. Ver docs/registro.
             {% endcomment %}
-            <div id="filters-advanced" class="poncho-advanced" hidden>
-                <div class="poncho-advanced__inner">
-                    <div class="poncho-advanced__coincidencia">
-                        <label class="poncho-advanced__label" for="filters-primary-op">Tipo de coincidencia</label>
-                        <select id="filters-primary-op"
-                                class="form-select form-select-sm poncho-advanced__select"></select>
+            {% comment %}
+            El id NO es "filters-rows" a proposito: listModerno.css tiene reglas
+            `#filters-rows select/input { border: 2px solid #e7ba61 !important }`
+            del diseño anterior. Como ahora todas las filas viven dentro del
+            contenedor, ese id les metia el borde dorado por encima del estilo
+            del prototipo. Renombrarlo es mas limpio que competir con !important.
+            {% endcomment %}
+            <div id="poncho-filters-rows" class="poncho-rows"></div>
+            <template id="poncho-filter-row-template">
+                <div class="poncho-search poncho-search--row">
+                    <select class="poncho-search__field" data-rol="campo" aria-label="Buscar por"></select>
+                    <div class="poncho-search__box">
+                        <input type="text"
+                               class="poncho-search__input"
+                               data-rol="valor"
+                               autocomplete="off"
+                               aria-label="Valor a buscar" />
+                        <select class="poncho-search__input poncho-search__input--select"
+                                data-rol="valor-select"
+                                aria-label="Valor a buscar"
+                                hidden></select>
+                        <button type="submit" class="poncho-search__go" aria-label="Buscar">
+                            <i class="fas fa-search" aria-hidden="true"></i>
+                        </button>
                     </div>
-                    <div id="filters-rows"></div>
-                    <div class="poncho-advanced__footer">
-                        <label class="poncho-advanced__label" for="filters-logic">
-                            Combinar filtros con
-                            <span class="field-tooltip tooltip-in-label">
-                                <i class="fas fa-info-circle"></i>
-                                <span class="tooltip-text">
-                                    <p>AND: deben cumplirse todos los filtros.</p>
-                                    <p>OR: basta con que se cumpla solo un filtro.</p>
-                                </span>
-                            </span>
-                        </label>
-                        <select id="filters-logic"
-                                class="form-select form-select-sm filters-logic-select">
-                            <option value="AND" selected>AND</option>
-                            <option value="OR">OR</option>
-                        </select>
-                        <button type="button"
-                                id="abrir-filtros-favoritos"
-                                class="btn btn-sm btn-warning"
-                                data-bs-toggle="modal"
-                                data-bs-target="#modal-filtros-favoritos">
-                            <i class="bi bi-star-fill me-1"></i>Favoritos
+                    <div class="poncho-row-actions">
+                        <button type="button" class="poncho-addfilter" data-rol="agregar">
+                            <i class="fas fa-plus" aria-hidden="true"></i><span>Filtro</span>
+                        </button>
+                        <button type="button" class="poncho-removefilter" data-rol="quitar">
+                            <i class="fas fa-minus" aria-hidden="true"></i><span>Filtro</span>
                         </button>
                     </div>
                 </div>
-            </div>
+            </template>
+            {% comment %}
+            AND/OR y Favoritos se retiraron por definicion de UX/UI (2026-08-04).
+            Los filtros se combinan siempre con AND. Ver docs/registro.
+            {% endcomment %}
             <input type="hidden" name="filters" id="filters-input" />
         </form>
     {% else %}
@@ -244,42 +239,12 @@ Layout (prototipo Figma "SISOC_ Versión UX", nodo 13501:32237):
     </div>
 </div>
 {% if filters_mode %}
-    <div class="modal fade"
-         id="modal-filtros-favoritos"
-         tabindex="-1"
-         aria-labelledby="modal-filtros-favoritos-label"
-         aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="modal-filtros-favoritos-label">Filtros favoritos</h5>
-                    <button type="button"
-                            class="btn-close"
-                            data-bs-dismiss="modal"
-                            aria-label="Cerrar"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label for="nombre-filtro-favorito" class="form-label">Nombre</label>
-                        <div class="input-group">
-                            <input type="text"
-                                   class="form-control"
-                                   id="nombre-filtro-favorito"
-                                   placeholder="Nombre del favorito"
-                                   autocomplete="off" />
-                            <button type="button" class="btn btn-primary" id="guardar-filtro-favorito">Guardar como favorito</button>
-                        </div>
-                        <div class="form-text text-danger d-none" id="error-filtro-favorito"></div>
-                    </div>
-                    <hr />
-                    <div id="filtros-favoritos-vacio" class="text-muted">No hay favoritos guardados.</div>
-                    <div id="lista-filtros-favoritos" class="list-group"></div>
-                </div>
-            </div>
-        </div>
-    </div>
+    {% comment %}
+    El modal de filtros favoritos y favorite_filters.js se retiraron por
+    definicion de UX/UI (2026-08-04). El backend de favoritos sigue existiendo,
+    solo se saco de la UI. Ver docs/registro.
+    {% endcomment %}
     <script src="{% static filters_js|default:'custom/js/advanced_filters.js' %}"></script>
-    <script src="{% static 'custom/js/favorite_filters.js' %}"></script>
 {% elif ajax_search_mode %}
     <script nonce="{{ request.csp_nonce }}">
   document.addEventListener("DOMContentLoaded", function () {
