@@ -566,6 +566,9 @@ class ComedorForm(forms.ModelForm):
             "es_judicializado": forms.Select(
                 choices=[("", "---------"), ("True", "Sí"), ("False", "No")]
             ),
+            "es_caritas": forms.Select(
+                choices=[("", "---------"), ("True", "Sí"), ("False", "No")]
+            ),
         }
 
 

@@ -320,6 +320,10 @@ class Comedor(SoftDeleteModelMixin, models.Model):
         blank=True,
         verbose_name="¿Es judicializado?",
     )
+    es_caritas = models.BooleanField(
+        null=True,
+        verbose_name="¿Es CARITAS?",
+    )
     comienzo = models.IntegerField(
         validators=[
             MinValueValidator(1900),
