@@ -1,10 +1,10 @@
 from pathlib import Path
 
-import dashboard
 from django.db import connection
 from django.test import RequestFactory
 from django.test.utils import CaptureQueriesContext
 
+import dashboard
 from dashboard.apps import DashboardConfig
 from dashboard.models import Tablero
 from dashboard.templatetags.dashboard_tags import tableros_para_sidebar

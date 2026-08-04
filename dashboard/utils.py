@@ -1,11 +1,47 @@
-"""Utilidades de dashboard."""
+"""Utilidades de dashboard con manejo defensivo de la base de datos."""
+
+import logging
 
 from django.conf import settings
 from django.core.cache import cache
+from django.core.exceptions import ImproperlyConfigured
+from django.db import connection
 from django.db.models import Sum
+from django.db.utils import OperationalError, ProgrammingError
 
-from comedores.models import Comedor, ValorComida
 from relevamientos.models import Relevamiento
+from comedores.models import Comedor, ValorComida
+
+
+logger = logging.getLogger(__name__)
+
+
+def table_exists(table_name):
+    """Check if a DB table exists without exploding when DB is unavailable."""
+
+    try:
+        vendor = connection.vendor
+    except ImproperlyConfigured:
+        logger.debug(
+            "Base de datos no configurada; omitiendo chequeo de %s", table_name
+        )
+        return False
+
+    try:
+        if vendor == "mysql":
+            with connection.cursor() as cursor:
+                cursor.execute("SHOW TABLES LIKE %s", [table_name])
+                return cursor.fetchone() is not None
+
+        return table_name in connection.introspection.table_names()
+    except (OperationalError, ProgrammingError, AttributeError) as error:
+        logger.debug(
+            "No se pudo comprobar la existencia de %s (%s); se asume ausente",
+            table_name,
+            error,
+        )
+        return False
+
 
 # Usar el timeout de settings en lugar de hardcodeado
 CACHE_TIMEOUT = getattr(settings, "DASHBOARD_CACHE_TIMEOUT", 300)
