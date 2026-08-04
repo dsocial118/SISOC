@@ -30,6 +30,57 @@
   padding: 0;
 }
 
+/* ---------- Encabezado de card y filtros extra ----------
+   De los 40 listados que usan el componente, ciudadanos es el UNICO que
+   envuelve la tabla en una card con header y agrega su propio formulario de
+   filtros (#province-filter-form). Sin estas reglas quedaba con la estetica
+   vieja (fondo gris azulado, selects con borde dorado) al lado del buscador
+   nuevo. Se cubre aca en vez de tocar ese template para no bifurcar estilos. */
+.app-main:has(.poncho-search) .card .card-header {
+  background: transparent;
+  border-bottom: 1px solid rgba(255, 255, 255, .25);
+  padding: 0 0 .75rem;
+  margin-bottom: 1rem;
+}
+
+.app-main:has(.poncho-search) .card .card-title {
+  color: var(--poncho-blanco);
+  font-family: var(--poncho-font-base);
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.app-main:has(.poncho-search) #province-filter-form label {
+  color: var(--poncho-blanco);
+  font-family: var(--poncho-font-base);
+  font-size: var(--poncho-text-sm);
+}
+
+.app-main:has(.poncho-search) #province-filter-form select,
+.app-main:has(.poncho-search) #province-filter-form .form-select {
+  background-color: var(--poncho-azul-principal);
+  border: 1px solid var(--poncho-blanco);
+  border-radius: var(--poncho-radio-base);
+  color: var(--poncho-blanco);
+  font-family: var(--poncho-font-base);
+}
+
+.app-main:has(.poncho-search) #province-filter-form .btn {
+  background: var(--poncho-verde);
+  border: 1px solid var(--poncho-verde);
+  border-radius: var(--poncho-radio-cta);
+  color: var(--poncho-blanco);
+  font-family: var(--poncho-font-base);
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.app-main:has(.poncho-search) #province-filter-form .btn:hover {
+  background: var(--poncho-verde-hover);
+  border-color: var(--poncho-verde-hover);
+}
+
 /* ---------- Tabla ---------- */
 .app-main:has(.poncho-search) .table,
 .app-main:has(.poncho-search) .projects {
@@ -91,12 +142,14 @@
   background: var(--poncho-azul-principal);
 }
 
-.app-main:has(.poncho-search) .table tbody tr:nth-of-type(odd) > *,
-.app-main:has(.poncho-search) .projects tbody tr:nth-of-type(odd) > * {
-  /* neutraliza el table-striped de Bootstrap, que usa su propia variable */
+/* El fondo va en las CELDAS, no solo en la fila: `.table-striped` de Bootstrap
+   pinta `> *` en las filas impares, asi que si solo pintabamos el <tr> quedaba
+   una fila con el color nuevo y la siguiente con el viejo. */
+.app-main:has(.poncho-search) .table tbody tr > *,
+.app-main:has(.poncho-search) .projects tbody tr > * {
   --bs-table-accent-bg: transparent;
   --bs-table-bg-type: transparent;
-  background: var(--poncho-azul-principal);
+  background-color: var(--poncho-azul-principal);
 }
 
 .app-main:has(.poncho-search) .table tbody tr:hover > *,
