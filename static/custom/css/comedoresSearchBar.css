@@ -7,17 +7,44 @@
    listModerno.css, que se carga antes que esta hoja.
    ============================================ */
 
-/* Barra superior: "Exportar búsqueda" */
+/* Barra superior: "Volver" a la izquierda, "Exportar búsqueda" a la derecha */
 .poncho-topbar {
   display: flex;
-  justify-content: flex-end;
+  align-items: center;
+  gap: .75rem;
   margin-bottom: .5rem;
+}
+
+/* Pildora blanca del prototipo (nodo 13501:32237, esquina superior izquierda) */
+.poncho-volver {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--poncho-space-1-5);
+  padding: 6px 18px;
+  background: var(--poncho-blanco);
+  border: 1px solid var(--poncho-blanco);
+  border-radius: var(--poncho-radio-cta);
+  color: var(--poncho-azul-principal);
+  font-family: var(--poncho-font-base);
+  font-size: 16px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: background .2s ease;
+}
+
+.poncho-volver:hover,
+.poncho-volver:focus {
+  background: #e9edf5;
+  color: var(--poncho-azul-principal);
+  text-decoration: none;
 }
 
 .poncho-export {
   display: inline-flex;
   align-items: center;
   gap: var(--poncho-space-1-5);
+  /* empuja a la derecha exista o no el boton Volver */
+  margin-left: auto;
   background: none;
   border: none;
   padding: 4px 8px;
@@ -54,6 +81,67 @@
   justify-self: start;
 }
 
+/* ---------- Filas de filtro ----------
+   Cada filtro es una barra completa. Las columnas laterales son de ancho fijo
+   (no 1fr) para que las cajas de todas las filas queden alineadas entre si:
+   con 1fr, la fila que suma "- Filtro" desplazaria su caja respecto de la
+   primera. */
+.poncho-rows {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: .75rem;
+}
+
+.poncho-search--row {
+  grid-template-columns: 190px minmax(0, 737px) 190px;
+  width: 100%;
+  max-width: 1150px;
+  margin-bottom: 0;
+}
+
+.poncho-row-actions {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  justify-self: start;
+}
+
+.poncho-removefilter {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: none;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 0;
+  color: var(--poncho-blanco);
+  font-family: var(--poncho-font-base);
+  font-size: var(--poncho-text-sm);
+  font-weight: 500;
+  letter-spacing: normal;
+  text-transform: none;
+  cursor: pointer;
+}
+
+.poncho-removefilter i {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  background: var(--poncho-rojo);
+  border-radius: 6px;
+  font-size: 16px;
+  transition: background .2s ease;
+}
+
+.poncho-removefilter:hover i {
+  background: #a92020;
+}
+
 /* Modo sin filtros: la caja es el unico hijo, no hacen falta las columnas */
 .poncho-search--solo {
   display: flex;
@@ -67,16 +155,18 @@
 .poncho-search .poncho-search__field {
   flex: 0 0 auto;
   width: auto;
-  max-width: 260px;
+  /* 10px + 133px de texto + 40px de la caja del chevron = 183px (prototipo) */
+  max-width: 193px;
   height: auto;
-  padding: 0 28px 0 10px;
+  padding: 0 40px 0 10px;
   background-color: transparent;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%23ffffff' stroke-width='2'%3E%3Cpath d='M3 6l5 5 5-5'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
-  background-position: right 6px center;
+  /* centrado dentro de la caja de 40px del chevron: (40 - 16) / 2 = 12 */
+  background-position: right 12px center;
   background-size: 16px 16px;
   border: none;
-  border-radius: 0;
+  border-radius: 5px;
   box-shadow: none;
   color: var(--poncho-blanco);
   font-family: var(--poncho-font-base);
@@ -87,6 +177,14 @@
   -webkit-appearance: none;
   -moz-appearance: none;
   appearance: none;
+}
+
+/* El chevron es un SVG de fondo con el color escrito adentro, asi que en hover
+   hay que reemplazar la imagen: no alcanza con cambiar `color`. */
+.poncho-search .poncho-search__field:hover {
+  color: #e7ba61;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%23e7ba61' stroke-width='2'%3E%3Cpath d='M3 6l5 5 5-5'/%3E%3C/svg%3E");
+  background-color: rgba(255,255,255,0.2);
 }
 
 .poncho-search__field:focus-visible {
@@ -100,12 +198,16 @@
   font-size: 16px;
 }
 
-/* Caja: valor + lupa */
+/* Caja: valor + lupa.
+   padding-left y gap salen del prototipo (nodo I13503:33051;9908:10339):
+   la caja tiene pl 20px y 45px de separacion entre el texto y la lupa. */
 .poncho-search__box {
   display: flex;
   align-items: stretch;
+  gap: 45px;
   width: min(737px, 100%);
   height: var(--poncho-buscador-alto);
+  padding-left: var(--poncho-space-5);
   background: var(--poncho-azul-principal);
   border: var(--poncho-buscador-borde) solid var(--poncho-blanco);
   border-radius: var(--poncho-radio-buscador);
@@ -123,11 +225,13 @@
   letter-spacing: normal;
 }
 
+/* padding 10px en los 4 lados: sumado al pl 20px de la caja da los 30px de
+   sangria izquierda del prototipo (nodo I13503:33051;9908:10340). */
 .poncho-search .poncho-search__input {
   flex: 1 1 auto;
   min-width: 0;
   height: auto;
-  padding: 10px var(--poncho-space-5);
+  padding: 10px;
   background: transparent;
   border: none;
   border-radius: 0;
@@ -136,6 +240,7 @@
   font-family: var(--poncho-font-base);
   font-size: var(--poncho-text-buscador);
   letter-spacing: .2px;
+  line-height: 40px;
 }
 
 .poncho-search__input::placeholder {
@@ -225,60 +330,6 @@
   color: var(--poncho-texto-placeholder);
 }
 
-/* ============================================
-   PANEL AVANZADO
-   ============================================
-   El prototipo no muestra operador, AND/OR ni Favoritos. En vez de eliminarlos
-   (perderiamos "vacio", "mayor a", "distinto de" y la logica OR) se pliegan:
-   el estado en reposo queda igual al mockup y "+ Filtro" los revela.
-   Ver docs/registro/cambios/2026-07-31-buscador-transversal-lupa-y-cta.md
-   ============================================ */
-.poncho-advanced {
-  max-width: 1100px;
-  margin: 0 auto 1rem;
-}
-
-.poncho-advanced[hidden] {
-  display: none;
-}
-
-.poncho-advanced__inner {
-  padding: 1rem 1.25rem;
-  background: rgba(35, 45, 79, .55);
-  border: 1px solid rgba(255, 255, 255, .18);
-  border-radius: var(--poncho-radio-buscador);
-}
-
-.poncho-advanced__coincidencia {
-  display: flex;
-  align-items: center;
-  gap: .5rem;
-  margin-bottom: .75rem;
-}
-
-.poncho-advanced__label {
-  margin-bottom: 0;
-  color: var(--poncho-blanco);
-  font-family: var(--poncho-font-base);
-  font-size: var(--poncho-text-sm);
-  white-space: nowrap;
-}
-
-.poncho-advanced__select {
-  width: auto;
-  min-width: 170px;
-}
-
-.poncho-advanced__footer {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: .5rem;
-  margin-top: .75rem;
-  padding-top: .75rem;
-  border-top: 1px solid rgba(255, 255, 255, .18);
-}
-
 /* Botones PONCHO. La forma (radio 20px) se aplica acá solo a la search bar;
    extenderla a toda la app es el PR siguiente. */
 .poncho-btn {
@@ -350,62 +401,10 @@
   }
 }
 
-/* Fila de filtros en grid con inputs full width */
-#filters-rows .filters-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr auto;
-  gap: .5rem;
-  margin-bottom: .5rem;
-}
-
-#filters-rows .filters-row select,
-#filters-rows .filters-row input {
-  width: 100%;
-}
-
-/* Header row for filters */
-#filters-rows .filters-header-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr auto;
-  gap: .5rem;
-  margin-bottom: .75rem;
-}
-
-#filters-rows .filter-header {
-  font-weight: 600;
-  font-size: 14px;
-}
-
-/* Botones principales de filtros (Favoritos).
-   Las reglas de #add-filter se eliminaron: ahora ese boton es "+ Filtro" y se
-   estila con .poncho-addfilter. Al ser selector de ID le ganaban a la clase y
-   lo dibujaban como pildora verde en mayusculas. */
-#favorite-filters-open,
-#abrir-filtros-favoritos {
-  border-radius: 6px;
-  padding: 6px 16px;
-  font-weight: 600;
-  font-size: 13px;
-  transition: all 0.3s ease;
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
-}
-
-#abrir-filtros-favoritos,
-#favorite-filters-open {
-  background: #e7ba61;
-  color: #ffffff;
-  border: 2px solid #e7ba61;
-  box-shadow: 0 2px 4px rgba(231, 186, 97, 0.2);
-}
-
-#abrir-filtros-favoritos:hover,
-#favorite-filters-open:hover {
-  background: #d9a24f;
-  border-color: #d9a24f;
-  transform: translateY(-2px);
-  box-shadow: 0 6px 12px rgba(231, 186, 97, 0.3);
-}
+/* Los estilos de #add-filter y #abrir-filtros-favoritos se eliminaron: el
+   primero ahora es "+ Filtro" (.poncho-addfilter) y el segundo salio de la UI
+   por definicion de UX/UI. Eran selectores de ID y le ganaban a las clases
+   nuevas, dibujando el boton como pildora verde en mayusculas. */
 
 /* Botones en la barra de acciones con igual ancho */
 .search-actions .btn.btn-lg {
@@ -418,10 +417,6 @@
   align-items: center;
   justify-content: center;
   text-align: center;
-}
-
-.filters-logic-select {
-  width: auto;
 }
 
 /* Tooltips como en formulario de comedores */
@@ -492,25 +487,7 @@ label:has(.field-tooltip) {
   gap: 4px;
 }
 
-@media (max-width: 991.98px) {
-  #filters-rows .filters-row,
-  #filters-rows .filters-header-row {
-    grid-template-columns: 1fr 1fr;
-  }
-}
-
-@media (max-width: 575.98px) {
-  #filters-rows .filters-row,
-  #filters-rows .filters-header-row {
-    grid-template-columns: 1fr;
-  }
-}
-
 @media (max-width: 767.98px) {
-  .filters-toolbar > * {
-    width: 100%;
-  }
-
   .search-actions .btn {
     width: 100%;
   }
@@ -530,24 +507,6 @@ label:has(.field-tooltip) {
   box-shadow: 0 4px 8px rgba(33, 115, 70, 0.3);
 }
 
-/* Select2 en filtros avanzados: igualar borde dorado de controles nativos.
-   Usa #filters-rows (ID) para ganar en especificidad sobre body.dark-mode del tema base. */
-#filters-rows .select2-container--default .select2-selection--single {
-  background: #1e2a3a !important;
-  border: 2px solid #e7ba61 !important;
-  border-radius: 6px !important;
-  transition: all 0.3s ease !important;
-}
-
-#filters-rows .select2-container--default:hover .select2-selection--single {
-  background: #253446 !important;
-  border-color: #e67e22 !important;
-  box-shadow: 0 4px 8px rgba(243, 156, 18, 0.2) !important;
-}
-
-#filters-rows .select2-container--default.select2-container--focus .select2-selection--single,
-#filters-rows .select2-container--default.select2-container--open .select2-selection--single {
-  background: #253446 !important;
-  border-color: #e7ba61 !important;
-  box-shadow: 0 0 0 0.3rem rgba(243, 156, 18, 0.25) !important;
-}
+/* El bloque que igualaba select2 al borde dorado (#filters-rows ...) se
+   elimino: las filas ya no usan select2 y el contenedor se renombro a
+   #poncho-filters-rows. El selector de campo es un <select> nativo estilado. */
