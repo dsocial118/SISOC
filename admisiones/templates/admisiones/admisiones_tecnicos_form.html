@@ -115,7 +115,7 @@
             </div>
         </div>
     {% endif %}
-    {% if mostrar_informe_complementario %}
+    {% if informe_complementario_requerido %}
         <div class="row mb-3">
             <div class="col-12">
                 <div class="alert alert-warning" role="alert">
@@ -184,6 +184,49 @@
                                        value="{{ tipo_convenio_precargado.nombre|default:'Sin información' }}"
                                        readonly />
                             </div>
+                            {% if admision.tipo == "incorporacion" %}
+                                <div class="mt-3">
+                                    <label for="esExPnudInicial" class="form-label fw-bold">¿Es Ex PNUD?</label>
+                                    <select class="form-select" id="esExPnudInicial" name="es_ex_pnud" required>
+                                        <option value="" selected disabled>Seleccione una opción</option>
+                                        <option value="si">Sí</option>
+                                        <option value="no">No</option>
+                                    </select>
+                                </div>
+                                <div class="mt-3 d-none" id="estadoConvenioPnudInicialContainer">
+                                    <label for="estadoConvenioPnudInicial" class="form-label fw-bold">Estado del convenio PNUD</label>
+                                    <select class="form-select"
+                                            id="estadoConvenioPnudInicial"
+                                            name="estado_convenio_pnud">
+                                        <option value="" selected disabled>Seleccione una opción</option>
+                                        <option value="vigente">Vigente</option>
+                                        <option value="finalizado">Finalizado</option>
+                                    </select>
+                                </div>
+                            {% elif admision.tipo == "renovacion" %}
+                                <div class="mt-3">
+                                    <label for="tipoRenovacionInicial" class="form-label fw-bold">¿Qué renovación tramita?</label>
+                                    <select class="form-select"
+                                            id="tipoRenovacionInicial"
+                                            name="tipo_renovacion"
+                                            required>
+                                        <option value="" selected disabled>Seleccione una opción</option>
+                                        <option value="primera">Primera renovación</option>
+                                        <option value="segunda_o_posterior">Segunda renovación o posterior</option>
+                                    </select>
+                                </div>
+                                <div class="mt-3">
+                                    <label for="estadoFinanciamientoInicial" class="form-label fw-bold">Estado del financiamiento</label>
+                                    <select class="form-select"
+                                            id="estadoFinanciamientoInicial"
+                                            name="estado_financiamiento"
+                                            required>
+                                        <option value="" selected disabled>Seleccione una opción</option>
+                                        <option value="vigente">Financiamiento vigente</option>
+                                        <option value="finalizado">Financiamiento finalizado</option>
+                                    </select>
+                                </div>
+                            {% endif %}
                         </div>
                         <div class="modal-footer">
                             <a href="{% url 'admisiones_tecnicos_listar' %}"
@@ -194,6 +237,60 @@
                                     {% if not tipo_convenio_precargado %}disabled{% endif %}>Continuar</button>
                         </div>
                     </form>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+    {% if admision.tipo_convenio %}
+        <div class="row mb-3">
+            <div class="col-12">
+                <div class="card card-primary card-outline">
+                    <div class="card-header">
+                        <h2 class="card-title fw-bold">Validaciones para templates</h2>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted">Estas validaciones no modifican la documentación requerida por el tipo de convenio.</p>
+                        {% if puede_editar_validaciones_template %}
+                            <form method="post">
+                                {% csrf_token %}
+                                <input type="hidden" name="guardar_validaciones_template" value="1" />
+                                <div class="row">
+                                    {% if admision.tipo == "incorporacion" %}
+                                        <div class="col-md-6">{{ validaciones_template_form.es_ex_pnud|as_crispy_field }}</div>
+                                        <div class="col-md-6" id="estadoConvenioPnudEdicionContainer">
+                                            {{ validaciones_template_form.estado_convenio_pnud|as_crispy_field }}
+                                        </div>
+                                    {% elif admision.tipo == "renovacion" %}
+                                        <div class="col-md-6">{{ validaciones_template_form.tipo_renovacion|as_crispy_field }}</div>
+                                        <div class="col-md-6">{{ validaciones_template_form.estado_financiamiento|as_crispy_field }}</div>
+                                    {% endif %}
+                                </div>
+                                <button type="submit" class="btn btn-primary">Guardar validaciones</button>
+                            </form>
+                        {% elif admision.tipo == "incorporacion" %}
+                            <dl class="row mb-0">
+                                <dt class="col-sm-4">¿Es Ex PNUD?</dt>
+                                <dd class="col-sm-8">
+                                    {{ admision.get_es_ex_pnud_display|default:"-" }}
+                                </dd>
+                                <dt class="col-sm-4">Estado del convenio PNUD</dt>
+                                <dd class="col-sm-8">
+                                    {{ admision.get_estado_convenio_pnud_display|default:"No aplica" }}
+                                </dd>
+                            </dl>
+                        {% elif admision.tipo == "renovacion" %}
+                            <dl class="row mb-0">
+                                <dt class="col-sm-4">Renovación que tramita</dt>
+                                <dd class="col-sm-8">
+                                    {{ admision.get_tipo_renovacion_display|default:"-" }}
+                                </dd>
+                                <dt class="col-sm-4">Estado del financiamiento</dt>
+                                <dd class="col-sm-8">
+                                    {{ admision.get_estado_financiamiento_display|default:"-" }}
+                                </dd>
+                            </dl>
+                        {% endif %}
+                    </div>
                 </div>
             </div>
         </div>
@@ -1110,9 +1207,43 @@
                         document.addEventListener('DOMContentLoaded', function() {
                             var modal = new bootstrap.Modal(document.getElementById('seleccionModal'));
                             modal.show();
+
+                            var exPnudInicial = document.getElementById('esExPnudInicial');
+                            var estadoPnudInicialContainer = document.getElementById('estadoConvenioPnudInicialContainer');
+                            var estadoPnudInicial = document.getElementById('estadoConvenioPnudInicial');
+                            if (exPnudInicial && estadoPnudInicialContainer && estadoPnudInicial) {
+                                exPnudInicial.addEventListener('change', function() {
+                                    var aplicaPnud = this.value === 'si';
+                                    estadoPnudInicialContainer.classList.toggle('d-none', !aplicaPnud);
+                                    estadoPnudInicial.required = aplicaPnud;
+                                    if (!aplicaPnud) {
+                                        estadoPnudInicial.value = '';
+                                    }
+                                });
+                            }
                         });
                     </script>
                 {% endif %}
+
+                <script nonce="{{ request.csp_nonce }}">
+                    document.addEventListener('DOMContentLoaded', function() {
+                        var exPnudEdicion = document.getElementById('id_es_ex_pnud');
+                        var estadoPnudEdicionContainer = document.getElementById('estadoConvenioPnudEdicionContainer');
+                        var estadoPnudEdicion = document.getElementById('id_estado_convenio_pnud');
+                        if (exPnudEdicion && estadoPnudEdicionContainer && estadoPnudEdicion) {
+                            function actualizarEstadoConvenioPnud() {
+                                var aplicaPnud = exPnudEdicion.value === 'si';
+                                estadoPnudEdicionContainer.classList.toggle('d-none', !aplicaPnud);
+                                estadoPnudEdicion.required = aplicaPnud;
+                                if (!aplicaPnud) {
+                                    estadoPnudEdicion.value = '';
+                                }
+                            }
+                            exPnudEdicion.addEventListener('change', actualizarEstadoConvenioPnud);
+                            actualizarEstadoConvenioPnud();
+                        }
+                    });
+                </script>
 
                 <script src="{% static 'custom/js/admisionestecnico.js' %}"></script>
                 <script src="{% static 'custom/js/admisionesactualizarestado.js' %}"></script>

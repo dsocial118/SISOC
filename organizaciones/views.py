@@ -35,7 +35,7 @@ from organizaciones.models import (
     RolFirmante,
 )
 
-MAX_DOCUMENTO_ORGANIZACION_FILE_SIZE = 10 * 1024 * 1024
+MAX_DOCUMENTO_ORGANIZACION_FILE_SIZE = 20 * 1024 * 1024
 DOCUMENTO_ORGANIZACION_FORMATOS_VALIDOS = "PDF, JPG, PNG, Excel o Word"
 ALLOWED_DOCUMENTO_ORGANIZACION_EXTENSIONS = {
     ".pdf",
@@ -267,7 +267,7 @@ def _validar_archivo_documento_organizacion(archivo):
 
     size = getattr(archivo, "size", 0) or 0
     if size > MAX_DOCUMENTO_ORGANIZACION_FILE_SIZE:
-        return "El archivo excede el tamaño máximo permitido de 10 MB."
+        return "El archivo excede el tamaño máximo permitido de 20 MB."
 
     extension = Path(getattr(archivo, "name", "") or "").suffix.lower()
     if extension not in ALLOWED_DOCUMENTO_ORGANIZACION_EXTENSIONS:
@@ -777,7 +777,12 @@ class OrganizacionDetailView(LoginRequiredMixin, DetailView):
 
         # Obtener comedores asociados a la organización
         comedores = self.object.comedor_set.select_related(
-            "tipocomedor", "provincia", "municipio", "localidad", "referente"
+            "tipocomedor",
+            "provincia",
+            "municipio",
+            "localidad",
+            "referente",
+            "programa",
         ).all()
         context["comedores"] = comedores
         context["comedores_count"] = comedores.count()
@@ -1207,7 +1212,7 @@ def sub_tipo_entidad_ajax(request):
     tipo_entidad_id = request.GET.get("tipo_entidad")
     if tipo_entidad_id:
         subtipo_entidades = SubtipoEntidad.objects.filter(
-            tipo_entidad_id=tipo_entidad_id
+            tipo_entidad_id=tipo_entidad_id, activo=True
         ).order_by("nombre")
     else:
         subtipo_entidades = SubtipoEntidad.objects.none()

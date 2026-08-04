@@ -11,10 +11,12 @@ from django.core.cache import cache
 from django.core.paginator import Paginator
 from django.db import transaction
 from django.db.models import Count, Q
-from django.shortcuts import redirect
+from django.http import FileResponse, Http404
+from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse, reverse_lazy
 from django.utils import timezone
 from django.utils.html import escape, format_html, format_html_join
+from django.utils.safestring import mark_safe
 from django.utils.text import Truncator
 from django.utils.decorators import method_decorator
 from django.views.generic import (
@@ -36,8 +38,10 @@ from comedores.models import (
     HistorialValidacion,
     ImagenComedor,
     Observacion,
+    PrestacionAlimentariaConformidad,
 )
 from comedores.services.comedor_service import ComedorService
+from comedores.services.validacion_service import ValidacionService
 from comedores.services.capacitaciones_certificados_service import (
     is_alimentar_comunidad_program,
     list_capacitaciones_certificados,
@@ -50,6 +54,7 @@ from comedores.utils import (
     get_prestacion_conformidad_pending_period,
     is_abordaje_comunitario_relevamientos_header_program,
     is_abordaje_comunitario_linea_secos_program,
+    is_abordaje_comunitario_linea_tradicional_program,
     is_pnud_comedor,
     usa_datos_convenio_pnud,
 )
@@ -80,6 +85,48 @@ MESES_ES_CORTOS = [
     "Nov",
     "Dic",
 ]
+
+
+def descargar_certificacion_prestaciones_web(request, pk, certificacion_id):
+    certificacion = get_object_or_404(
+        PrestacionAlimentariaConformidad,
+        id=certificacion_id,
+        comedor_id=pk,
+        certificacion_pdf__isnull=False,
+    )
+    if not certificacion.certificacion_pdf:
+        raise Http404("Certificación no encontrada.")
+    return FileResponse(
+        certificacion.certificacion_pdf.open("rb"),
+        as_attachment=True,
+        filename=f"certificacion-prestaciones-{pk}-{certificacion.periodo:%Y-%m}.pdf",
+        content_type="application/pdf",
+    )
+
+
+class CertificacionesPrestacionesHistorialView(LoginRequiredMixin, ListView):
+    template_name = "comedor/certificaciones_prestaciones_historial.html"
+    context_object_name = "certificaciones_prestaciones"
+    paginate_by = 20
+
+    def get_queryset(self):
+        self.comedor = ComedorService.get_scoped_comedor_or_404(
+            self.kwargs["pk"], self.request.user
+        )
+        return (
+            PrestacionAlimentariaConformidad.objects.filter(
+                comedor_id=self.comedor.id,
+                certificacion_pdf__isnull=False,
+            )
+            .exclude(certificacion_pdf="")
+            .select_related("usuario")
+            .order_by("-periodo", "-creado")
+        )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["comedor"] = self.comedor
+        return context
 
 
 def _safe_cell_content(value):
@@ -339,9 +386,9 @@ def _build_intervenciones_table_context(comedor_obj, request, admision_id=None):
     intervenciones_items = []
     for intervencion in intervenciones_page_obj:
         doc_badge = (
-            format_html('<span class="badge bg-success">Sí</span>')
+            mark_safe('<span class="badge bg-success">Sí</span>')
             if getattr(intervencion, "tiene_documentacion", False)
-            else format_html('<span class="badge bg-secondary">No</span>')
+            else mark_safe('<span class="badge bg-secondary">No</span>')
         )
         fecha_display = (
             intervencion.fecha.strftime("%d/%m/%Y") if intervencion.fecha else None
@@ -438,11 +485,7 @@ def _build_intervenciones_table_context(comedor_obj, request, admision_id=None):
                             f"v{documento.version}"
                         )
                     },
-                    {
-                        "content": format_html(
-                            '<span class="badge bg-success">Si</span>'
-                        )
-                    },
+                    {"content": mark_safe('<span class="badge bg-success">Si</span>')},
                     {"content": _safe_cell_content("Destinatarios")},
                     {"content": _safe_cell_content(usuario_creador)},
                     {"content": actions_html},
@@ -681,11 +724,11 @@ def _build_admisiones_table_context(comedor_id, admisiones_qs, request):
                     },
                     {
                         "content": (
-                            format_html(
+                            mark_safe(
                                 '<i class="bi bi-check-circle-fill text-success"></i>'
                             )
                             if getattr(a, "activa", True)
-                            else format_html(
+                            else mark_safe(
                                 '<i class="bi bi-x-circle-fill text-danger"></i>'
                             )
                         )
@@ -1054,7 +1097,7 @@ class ComedorListView(LoginRequiredMixin, ListView):
             {
                 # Breadcrumb
                 "breadcrumb_items": [
-                    {"text": "Comedores", "url": reverse("comedores")},
+                    {"text": "Espacios Comunitarios", "url": reverse("comedores")},
                     {"text": "Listar", "active": True},
                 ],
                 # Barra de busqueda
@@ -1446,6 +1489,9 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
         # Agregar opciones de validación
 
         context["opciones_no_validar"] = HistorialValidacion.get_opciones_no_validar()
+        context["puede_validar_comedor"] = ValidacionService.puede_validar(
+            self.request.user, self.object
+        )
 
         context.update(
             {
@@ -1490,12 +1536,25 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
                 "usa_convenio_pnud": usa_convenio_pnud,
                 "puede_gestionar_actividades_espacio": puede_gestionar_actividades_espacio,
                 "mostrar_relevamientos_header": mostrar_relevamientos_header,
+                "es_linea_secos": is_abordaje_comunitario_linea_secos_program(
+                    self.object
+                ),
+                "es_linea_tradicional": is_abordaje_comunitario_linea_tradicional_program(
+                    self.object
+                ),
                 "datos_convenio_pnud": datos_convenio_pnud,
                 "prestaciones_aprobadas_source": (
                     datos_convenio_pnud if usa_convenio_pnud else informe_tecnico
                 ),
                 "domicilio_completo_comedor": _build_domicilio_completo(self.object),
                 "conformidad_prestacion_pendiente": self._build_conformidad_prestacion_context(),
+                "certificaciones_prestaciones": PrestacionAlimentariaConformidad.objects.filter(
+                    comedor_id=self.object.id,
+                    certificacion_pdf__isnull=False,
+                )
+                .exclude(certificacion_pdf="")
+                .select_related("usuario")
+                .order_by("-periodo", "-creado")[:6],
                 **actividades_pnud_context,
                 **responsables_context,
                 **mes_ejecucion_context,
@@ -1541,12 +1600,23 @@ class ComedorDatosConvenioPnudUpdateView(LoginRequiredMixin, UpdateView):
         obj, _ = ComedorDatosConvenioPnud.objects.get_or_create(comedor=self.comedor)
         return obj
 
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["comedor"] = self.comedor
+        return kwargs
+
     def get_success_url(self):
         return reverse("comedor_detalle", kwargs={"pk": self.comedor.pk})
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["comedor"] = self.comedor
+        context["es_linea_secos"] = is_abordaje_comunitario_linea_secos_program(
+            self.comedor
+        )
+        context["es_linea_tradicional"] = (
+            is_abordaje_comunitario_linea_tradicional_program(self.comedor)
+        )
         context["prefill_data"] = {
             "organizacion_solicitante": getattr(
                 getattr(self.comedor, "organizacion", None), "nombre", None

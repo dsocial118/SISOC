@@ -3,10 +3,52 @@ from django.contrib.auth.models import Group, Permission, User
 from django.contrib.messages import get_messages
 from django.urls import reverse
 
-from centrodeinfancia.models import AccesoCDI, CentroDeInfancia, Trabajador
+from centrodeinfancia.models import (
+    AccesoCDI,
+    CentroDeInfancia,
+    DepartamentoIpi,
+    OfertaServicio,
+    Trabajador,
+)
+from centrodeinfancia.tests.test_centrodeinfancia_form import (
+    datos_validos as _datos_validos_cdi,
+)
+from centrodeinfancia.tests.test_trabajadores_views import datos_validos_trabajador
 from core.constants import UserGroups
+from core.models import Localidad, Municipio, Provincia
 from users.models import Profile
 from users.services_group_permissions import sync_permissions_for_group
+
+
+def _ubicacion_cdi():
+    """Ubicación válida para completar el alta/edición de CDI (obligatoria)."""
+
+    provincia, _ = Provincia.objects.get_or_create(nombre="Buenos Aires")
+    departamento, _ = DepartamentoIpi.objects.get_or_create(
+        codigo_departamento="06515",
+        defaults={"provincia": provincia, "nombre": "Moreno", "decil_ipi": 3},
+    )
+    municipio, _ = Municipio.objects.get_or_create(nombre="Moreno", provincia=provincia)
+    localidad, _ = Localidad.objects.get_or_create(
+        nombre="Paso del Rey", municipio=municipio
+    )
+    return {
+        "provincia": provincia,
+        "departamento": departamento,
+        "municipio": municipio,
+        "localidad": localidad,
+    }
+
+
+def _payload_cdi(centro, **overrides):
+    """Payload completo de CDI (todos los campos son obligatorios en alta y edición)."""
+
+    servicio, _ = OfertaServicio.objects.get_or_create(
+        codigo="multiedad", defaults={"orden": 5}
+    )
+    datos = _datos_validos_cdi(_ubicacion_cdi(), servicio, nombre=centro.nombre)
+    datos.update(overrides)
+    return datos
 
 
 def _actor(*, can_delegate=True):
@@ -29,12 +71,7 @@ def _actor(*, can_delegate=True):
 def _guardar_centro(client, centro, **referente):
     return client.post(
         reverse("centrodeinfancia_editar", kwargs={"pk": centro.pk}),
-        {
-            "nombre": centro.nombre,
-            "telefono": centro.telefono,
-            "telefono_referente": centro.telefono_referente,
-            **referente,
-        },
+        _payload_cdi(centro, **referente),
     )
 
 
@@ -60,7 +97,9 @@ def _guardar_trabajador(client, centro, trabajador=None, **datos):
             "centrodeinfancia_trabajador_editar",
             kwargs={"pk": centro.pk, "trabajador_id": trabajador.pk},
         )
-    return client.post(url, {"nombre": "Ana", "apellido": "Lopez", **datos})
+    return client.post(
+        url, datos_validos_trabajador(nombre="Ana", apellido="Lopez", **datos)
+    )
 
 
 def _usuario_temporal(username, email, *, must_change_password):
@@ -108,16 +147,19 @@ def test_crear_cdi_con_referente_crea_usuario_automaticamente(client):
     actor = _actor()
     client.force_login(actor)
 
+    servicio, _ = OfertaServicio.objects.get_or_create(
+        codigo="multiedad", defaults={"orden": 5}
+    )
     response = client.post(
         reverse("centrodeinfancia_crear"),
-        {
-            "nombre": "CDI Alta completa",
-            "telefono": "1122334455",
-            "telefono_referente": "1199887766",
-            "nombre_referente": "Lia",
-            "apellido_referente": "Paz",
-            "email_referente": "lia.alta@example.com",
-        },
+        _datos_validos_cdi(
+            _ubicacion_cdi(),
+            servicio,
+            nombre="CDI Alta completa",
+            nombre_referente="Lia",
+            apellido_referente="Paz",
+            email_referente="lia.alta@example.com",
+        ),
     )
 
     assert response.status_code == 302
@@ -148,7 +190,9 @@ def test_reguardar_cdi_no_duplica_referente(client):
 
 
 @pytest.mark.django_db
-def test_guardar_cdi_sin_email_no_crea_referente_y_avisa(client):
+def test_guardar_cdi_sin_email_referente_es_rechazado(client):
+    # email_referente es obligatorio (QA tanda 1). Antes esta feature permitía guardar
+    # el CDI sin referente y avisaba; ahora el form rechaza el guardado directamente.
     actor = _actor()
     client.force_login(actor)
     centro = CentroDeInfancia.objects.create(
@@ -165,12 +209,9 @@ def test_guardar_cdi_sin_email_no_crea_referente_y_avisa(client):
         email_referente="",
     )
 
-    assert response.status_code == 302
+    assert response.status_code == 200
+    assert "email_referente" in response.context["form"].errors
     assert not AccesoCDI.objects.filter(centro=centro).exists()
-    assert any(
-        "falta el email" in str(message)
-        for message in get_messages(response.wsgi_request)
-    )
 
 
 @pytest.mark.django_db
@@ -336,7 +377,9 @@ def test_email_referente_no_se_sincroniza_si_el_campo_no_cambio(client):
 
 
 @pytest.mark.django_db
-def test_email_referente_se_limpia_si_el_campo_cambio_a_vacio(client):
+def test_no_se_puede_vaciar_el_email_del_referente(client):
+    # email_referente es obligatorio: no se puede vaciar, así que el email del
+    # referente no queda sin sincronizar por esta vía (antes sí se podía).
     actor = _actor()
     client.force_login(actor)
     centro = CentroDeInfancia.objects.create(
@@ -363,9 +406,9 @@ def test_email_referente_se_limpia_si_el_campo_cambio_a_vacio(client):
     )
 
     referente.refresh_from_db()
-    assert response.status_code == 302
-    assert referente.email == ""
-    assert referente.username == "referente-limpiar-email"
+    assert response.status_code == 200
+    assert "email_referente" in response.context["form"].errors
+    assert referente.email == "referente.a.limpiar@example.com"
 
 
 @pytest.mark.django_db

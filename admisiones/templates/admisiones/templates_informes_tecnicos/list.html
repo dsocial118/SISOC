@@ -1,0 +1,238 @@
+{% extends "includes/main.html" %}
+{% load static %}
+{% block title %}Gestor de templates{% endblock %}
+{% block titulo-pagina %}Gestor de templates{% endblock %}
+{% block head %}
+    <link rel="stylesheet"
+          href="{% static 'custom/css/gestor_templates.css' %}" />
+{% endblock %}
+{% block customJS %}
+    <script nonce="{{ request.csp_nonce }}">
+        (function () {
+            const tipoAdmision = document.querySelector('[data-template-filter="tipo-admision"]');
+            const grupos = document.querySelectorAll('[data-template-filter-group]');
+            function actualizarFiltrosCondicionales() {
+                grupos.forEach((grupo) => {
+                    grupo.hidden = tipoAdmision.value && grupo.dataset.templateFilterGroup !== tipoAdmision.value;
+                });
+            }
+            tipoAdmision.addEventListener('change', actualizarFiltrosCondicionales);
+            actualizarFiltrosCondicionales();
+        })();
+    </script>
+{% endblock %}
+{% block breadcrumb %}
+    <ol class="breadcrumb float-sm-right">
+        <li class="breadcrumb-item active">Gestor de templates</li>
+    </ol>
+{% endblock %}
+{% block content %}
+    <div class="gestor-templates">
+        <div class="gt-page">
+            {% include "admisiones/templates_informes_tecnicos/includes/navigation.html" with active_section="templates" %}
+            <section class="gt-hero">
+                <div>
+                    <span class="gt-eyebrow">Configuración documental</span>
+                    <h1>Templates de informes técnicos</h1>
+                    <p>Administrá las combinaciones que determinan qué modelo de documento se usará en cada admisión.</p>
+                </div>
+                <div class="gt-hero__actions">
+                    <a href="{% url 'gestor_templates_crear' %}" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Crear template
+                    </a>
+                </div>
+            </section>
+            <section class="card gt-card gt-card--list">
+                <div class="card-header">
+                    <h2 class="card-title">
+                        <i class="fas fa-copy"></i>Templates configurados
+                    </h2>
+                </div>
+                <div class="card-body">
+                    <form method="get" class="gt-filters" role="search">
+                        <input type="hidden" name="estado" value="{{ estado_filtro }}" />
+                        <div class="gt-toolbar">
+                            <div class="btn-group" aria-label="Filtrar por estado">
+                                <button type="submit"
+                                        name="estado"
+                                        value="activa"
+                                        class="btn {% if estado_filtro == 'activa' %}btn-primary{% else %}btn-outline-primary{% endif %}">
+                                    Activas
+                                </button>
+                                <button type="submit"
+                                        name="estado"
+                                        value="inactiva"
+                                        class="btn {% if estado_filtro == 'inactiva' %}btn-primary{% else %}btn-outline-primary{% endif %}">
+                                    Inactivas
+                                </button>
+                                <button type="submit"
+                                        name="estado"
+                                        value="todas"
+                                        class="btn {% if estado_filtro == 'todas' %}btn-primary{% else %}btn-outline-primary{% endif %}">
+                                    Todas
+                                </button>
+                            </div>
+                            <div class="gt-search">
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-search"></i></span>
+                                    <input type="search"
+                                           name="q"
+                                           value="{{ busqueda }}"
+                                           class="form-control"
+                                           placeholder="Buscar por código o nombre" />
+                                    <button type="submit" class="btn btn-outline-primary">Buscar</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="gt-filters__fields">
+                            <label>
+                                <span>Tipo de admisión</span>
+                                <select name="tipo_admision"
+                                        class="form-select"
+                                        data-template-filter="tipo-admision">
+                                    <option value="">Todos</option>
+                                    {% for valor, etiqueta in tipos_admision %}
+                                        <option value="{{ valor }}"
+                                                {% if filtros.tipo_admision == valor %}selected{% endif %}>
+                                            {{ etiqueta }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </label>
+                            <label>
+                                <span>Tipo de convenio</span>
+                                <select name="tipo_convenio" class="form-select">
+                                    <option value="">Todos</option>
+                                    {% for convenio in tipos_convenio %}
+                                        <option value="{{ convenio.pk }}"
+                                                {% if filtros.tipo_convenio == convenio.pk|stringformat:'s' %}selected{% endif %}>
+                                            {{ convenio.nombre }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </label>
+                            <label data-template-filter-group="incorporacion">
+                                <span>Ex PNUD</span>
+                                <select name="es_ex_pnud" class="form-select">
+                                    <option value="">Todos</option>
+                                    {% for valor, etiqueta in opciones_ex_pnud %}
+                                        <option value="{{ valor }}"
+                                                {% if filtros.es_ex_pnud == valor %}selected{% endif %}>
+                                            {{ etiqueta }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </label>
+                            <label data-template-filter-group="incorporacion">
+                                <span>Estado convenio PNUD</span>
+                                <select name="estado_convenio_pnud" class="form-select">
+                                    <option value="">Todos</option>
+                                    {% for valor, etiqueta in estados_convenio_pnud %}
+                                        <option value="{{ valor }}"
+                                                {% if filtros.estado_convenio_pnud == valor %}selected{% endif %}>
+                                            {{ etiqueta }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </label>
+                            <label data-template-filter-group="renovacion">
+                                <span>Renovación que tramita</span>
+                                <select name="tipo_renovacion" class="form-select">
+                                    <option value="">Todas</option>
+                                    {% for valor, etiqueta in tipos_renovacion %}
+                                        <option value="{{ valor }}"
+                                                {% if filtros.tipo_renovacion == valor %}selected{% endif %}>
+                                            {{ etiqueta }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </label>
+                            <label data-template-filter-group="renovacion">
+                                <span>Estado del financiamiento</span>
+                                <select name="estado_financiamiento" class="form-select">
+                                    <option value="">Todos</option>
+                                    {% for valor, etiqueta in estados_financiamiento %}
+                                        <option value="{{ valor }}"
+                                                {% if filtros.estado_financiamiento == valor %}selected{% endif %}>
+                                            {{ etiqueta }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </label>
+                        </div>
+                        <div class="gt-filters__actions">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-filter"></i> Aplicar filtros
+                            </button>
+                            <a href="{% url 'gestor_templates_listar' %}"
+                               class="btn btn-outline-secondary">Limpiar</a>
+                        </div>
+                    </form>
+                </div>
+                {% if plantillas %}
+                    <div class="table-responsive">
+                        <table class="table gt-table">
+                            <thead>
+                                <tr>
+                                    <th>Código</th>
+                                    <th>Nombre</th>
+                                    <th>Combinación</th>
+                                    <th>Versión vigente</th>
+                                    <th>Estado</th>
+                                    <th>
+                                        <span class="visually-hidden">Acciones</span>
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for plantilla in plantillas %}
+                                    <tr>
+                                        <td>
+                                            <span class="gt-row-title">{{ plantilla.codigo }}</span>
+                                        </td>
+                                        <td>
+                                            <span class="gt-row-title">{{ plantilla.nombre }}</span>
+                                            {% if plantilla.descripcion %}
+                                                <span class="gt-row-subtitle">{{ plantilla.descripcion|truncatechars:85 }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {{ plantilla.get_tipo_admision_display }} · {{ plantilla.tipo_convenio.nombre }}
+                                            {% if plantilla.tipo_admision == "incorporacion" %}
+                                                · Ex PNUD: {{ plantilla.get_es_ex_pnud_display }}
+                                                {% if plantilla.es_ex_pnud == "si" %}· PNUD: {{ plantilla.get_estado_convenio_pnud_display }}{% endif %}
+                                            {% else %}
+                                                · {{ plantilla.get_tipo_renovacion_display }} · {{ plantilla.get_estado_financiamiento_display }}
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if plantilla.publicacion_vigente %}
+                                                <span class="gt-status gt-status--success">v{{ plantilla.publicacion_vigente.version.numero }} publicada</span>
+                                            {% else %}
+                                                <span class="gt-status gt-status--pending">Sin versión publicada</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if plantilla.estado == "activa" %}
+                                                <span class="gt-status gt-status--success">{{ plantilla.get_estado_display }}</span>
+                                            {% else %}
+                                                <span class="gt-status gt-status--muted">{{ plantilla.get_estado_display }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="text-end">
+                                            <a href="{% url 'gestor_templates_detalle' plantilla.pk %}"
+                                               class="btn btn-sm btn-outline-primary">Gestionar</a>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    {% include "components/empty_state.html" with icon="fas fa-copy" title="No hay templates para este filtro" message="Podés crear una nueva combinación o cambiar los filtros de búsqueda." action_url=crear_template_url action_text="Crear template" action_icon="fas fa-plus" container_class="gt-empty" %}
+                {% endif %}
+            </section>
+            {% include "components/pagination.html" with is_paginated=is_paginated page_obj=page_obj prev_text="Volver" next_text="Continuar" %}
+        </div>
+    </div>
+{% endblock %}

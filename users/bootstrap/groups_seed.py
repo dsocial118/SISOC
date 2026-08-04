@@ -102,6 +102,7 @@ LISTADO_DEFINED_GROUPS = (
             "auth.role_comedores_relevamiento_ver",
         ),
     ),
+    BootstrapGroupSeed(UserGroups.VALIDADOR_COMEDORES),
     BootstrapGroupSeed(
         "Area Legales",
         (
@@ -394,6 +395,10 @@ LISTADO_DEFINED_GROUPS = (
             "insumos.view_insumo",
             "insumos.view_insumocategoria",
         ),
+    ),
+    BootstrapGroupSeed(
+        "Gestor de templates",
+        ("admisiones.gestionar_templates_informe_tecnico",),
     ),
     BootstrapGroupSeed(
         "Celiaquia Total",
@@ -996,6 +1001,7 @@ LISTADO_DEFINED_GROUPS = (
             "auth.role_tablero_datacalle_tucuman",
             "auth.role_tecnico_comedor",
             "auth.role_tecnicoceliaquia",
+            "auth.role_validador_comedores",
             "auth.view_group",
             "auth.view_user",
             "celiaquia.view_expediente",

@@ -5,10 +5,12 @@ from datetime import date, datetime
 
 import json
 
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.contenttypes.models import ContentType
+from django.core import signing
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.paginator import Paginator
 from django.db import transaction
@@ -18,6 +20,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
 from django.urls import reverse, reverse_lazy
 from django.utils.html import escape, format_html, format_html_join
+from django.utils.safestring import mark_safe
 from django.utils.text import Truncator
 from django.utils import timezone
 from django.views.decorators.http import require_GET, require_POST
@@ -381,16 +384,23 @@ class CentroDeInfanciaDetailView(LoginRequiredMixin, DetailView):
         self, **kwargs
     ):
         context = super().get_context_data(**kwargs)
+        context["cdi_asistencia_nomina_visible"] = (
+            settings.CDI_ASISTENCIA_NOMINA_VISIBLE
+        )
+        context["cdi_formularios_visible"] = settings.CDI_FORMULARIOS_VISIBLE
+        context["cdi_intervenciones_visible"] = settings.CDI_INTERVENCIONES_VISIBLE
         nomina_qs = self.object.nominas.select_related(
             "ciudadano",
             "ciudadano__sexo",
         ).order_by("-fecha")
-        intervenciones_qs = self.object.intervenciones.select_related(
-            "tipo_intervencion",
-            "subintervencion",
-            "destinatario",
-            "creado_por",
-        ).order_by("-fecha")
+        intervenciones_qs = IntervencionCentroInfancia.objects.none()
+        if context["cdi_intervenciones_visible"]:
+            intervenciones_qs = self.object.intervenciones.select_related(
+                "tipo_intervencion",
+                "subintervencion",
+                "destinatario",
+                "creado_por",
+            ).order_by("-fecha")
 
         today = timezone.now().date()
         hombres = 0
@@ -482,9 +492,9 @@ class CentroDeInfanciaDetailView(LoginRequiredMixin, DetailView):
         intervenciones_items = []
         for intervencion in intervenciones_page_obj:
             doc_badge = (
-                format_html('<span class="badge bg-success">Sí</span>')
+                mark_safe('<span class="badge bg-success">Sí</span>')
                 if getattr(intervencion, "tiene_documentacion", False)
-                else format_html('<span class="badge bg-secondary">No</span>')
+                else mark_safe('<span class="badge bg-secondary">No</span>')
             )
 
             fecha_display = (
@@ -668,13 +678,8 @@ class CentroDeInfanciaDetailView(LoginRequiredMixin, DetailView):
             "modalidad_gestion_otra": self.object.modalidad_gestion_otra or "",
         }
 
-        intervencion_form = IntervencionCentroInfanciaForm(
-            destinatario_fijo_nombre="Centro",
-            hide_destinatario=True,
-        )
-        context["intervencion_form"] = intervencion_form
         context["observacion_form"] = ObservacionCentroInfanciaForm()
-        if user_has_permission_code(
+        if context["cdi_formularios_visible"] and user_has_permission_code(
             self.request.user, "centrodeinfancia.view_formulariocdi"
         ):
             formularios_qs = self.object.formularios.select_related(
@@ -688,22 +693,28 @@ class CentroDeInfanciaDetailView(LoginRequiredMixin, DetailView):
             context["formularios_total"] = 0
             context["formularios_recent"] = []
 
-        tipo_intervencion_queryset = list(
-            intervencion_form.fields["tipo_intervencion"].queryset
-        )
-        tipo_programas_map = {
-            str(tipo.pk): (tipo.programa or "").strip()
-            for tipo in tipo_intervencion_queryset
-        }
-        alias_list = list(PROGRAMA_ALIASES_CENTRO_INFANCIA)
-        context["tipo_intervencion_programas"] = tipo_programas_map
-        context["tipo_intervencion_programa_aliases"] = alias_list
-        context["tipo_intervencion_programas_json"] = json.dumps(tipo_programas_map)
-        context["tipo_intervencion_programa_aliases_json"] = json.dumps(alias_list)
+        if context["cdi_intervenciones_visible"]:
+            intervencion_form = IntervencionCentroInfanciaForm(
+                destinatario_fijo_nombre="Centro",
+                hide_destinatario=True,
+            )
+            context["intervencion_form"] = intervencion_form
+            tipo_intervencion_queryset = list(
+                intervencion_form.fields["tipo_intervencion"].queryset
+            )
+            tipo_programas_map = {
+                str(tipo.pk): (tipo.programa or "").strip()
+                for tipo in tipo_intervencion_queryset
+            }
+            alias_list = list(PROGRAMA_ALIASES_CENTRO_INFANCIA)
+            context["tipo_intervencion_programas"] = tipo_programas_map
+            context["tipo_intervencion_programa_aliases"] = alias_list
+            context["tipo_intervencion_programas_json"] = json.dumps(tipo_programas_map)
+            context["tipo_intervencion_programa_aliases_json"] = json.dumps(alias_list)
         context.update(_build_trabajadores_context(self.request, self.object))
-        context["puede_tomar_asistencia_nomina"] = self.request.user.has_perm(
-            "centrodeinfancia.change_centrodeinfancia"
-        )
+        context["puede_tomar_asistencia_nomina"] = context[
+            "cdi_asistencia_nomina_visible"
+        ] and self.request.user.has_perm("centrodeinfancia.change_centrodeinfancia")
         context["puede_generar_usuario_cdi"] = puede_generar_usuario_cdi(
             self.request.user, self.object
         )
@@ -794,6 +805,8 @@ class TrabajadorCentroInfanciaCreateView(
         "F": "mujer",
         "X": "indeterminado",
     }
+    _RENAPER_PREFILL_SALT = "centrodeinfancia.trabajador.renaper_prefill"
+    _RENAPER_PREFILL_MAX_AGE_SECONDS = 15 * 60
 
     def dispatch(self, request, *args, **kwargs):
         self.centro = _get_centro_cdi_scoped_or_404(request.user, pk=kwargs["pk"])
@@ -817,9 +830,10 @@ class TrabajadorCentroInfanciaCreateView(
         context["ciudadanos"] = ciudadanos
         context["selected_ciudadano"] = selected_ciudadano
         context["no_resultados"] = no_resultados
-        context["renaper_precarga"] = bool(renaper_data) or (
-            self.request.POST.get("origen_dato") == "renaper"
-        )
+        renaper_prefill, token = self._obtener_prefill_renaper()
+        context["renaper_precarga"] = bool(renaper_data) or bool(renaper_prefill)
+        if token:
+            context["renaper_prefill_token"] = token
         context["mostrar_formulario"] = bool(
             selected_ciudadano
             or no_resultados
@@ -853,11 +867,91 @@ class TrabajadorCentroInfanciaCreateView(
                 initial=self._build_initial_from_ciudadano(selected_ciudadano)
             )
         elif renaper_data:
-            context["form"] = self.form_class(initial=renaper_data)
+            campos = self._campos_renaper_con_valor(renaper_data)
+            context["form"] = self.form_class(
+                initial=renaper_data, campos_renaper=campos
+            )
+            context["renaper_prefill_token"] = self._crear_token_renaper(renaper_data)
         elif query and not ciudadanos:
             context["form"] = self.form_class(
                 initial={"dni": query if query.isdigit() else None}
             )
+
+    def _campos_renaper_con_valor(self, renaper_data):
+        return [
+            field
+            for field in TrabajadorCDIForm.RENAPER_FIELDS
+            if renaper_data.get(field)
+        ]
+
+    @staticmethod
+    def _serializar_valor_renaper(value):
+        if isinstance(value, (date, datetime)):
+            return value.isoformat()
+        return value
+
+    def _crear_token_renaper(self, renaper_data):
+        values = {
+            field: self._serializar_valor_renaper(renaper_data[field])
+            for field in self._campos_renaper_con_valor(renaper_data)
+        }
+        if not values:
+            return None
+        return signing.dumps(
+            {
+                "centro_id": self.centro.pk,
+                "user_id": self.request.user.pk,
+                "values": values,
+            },
+            salt=self._RENAPER_PREFILL_SALT,
+        )
+
+    def _obtener_prefill_renaper(self):
+        token = self.request.POST.get("renaper_prefill_token")
+        if not token:
+            return {}, None
+        try:
+            payload = signing.loads(
+                token,
+                salt=self._RENAPER_PREFILL_SALT,
+                max_age=self._RENAPER_PREFILL_MAX_AGE_SECONDS,
+            )
+        except signing.BadSignature:
+            return {}, None
+        if (
+            payload.get("centro_id") != self.centro.pk
+            or payload.get("user_id") != self.request.user.pk
+        ):
+            return {}, None
+        values = payload.get("values")
+        if not isinstance(values, dict):
+            return {}, None
+        return {
+            field: values[field]
+            for field in TrabajadorCDIForm.RENAPER_FIELDS
+            if values.get(field)
+        }, token
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        if self.request.method == "POST":
+            renaper_prefill, _ = self._obtener_prefill_renaper()
+            if renaper_prefill:
+                kwargs["initial"] = renaper_prefill
+                kwargs["campos_renaper"] = list(renaper_prefill)
+        return kwargs
+
+    def form_valid(self, form):
+        renaper_prefill, _ = self._obtener_prefill_renaper()
+        email_cambio = "email" in form.changed_data
+        form.instance.centro = self.centro
+        form.instance.campos_verificados_renaper = list(renaper_prefill)
+        response = super().form_valid(form)
+        crear_usuario_trabajador_automaticamente(self.request, self.object)
+        if email_cambio:
+            sincronizar_email_trabajador(self.request, self.object)
+        messages.success(self.request, "Trabajador agregado correctamente.")
+        return response
 
     def _get_selected_ciudadano(self):
         ciudadano_id = self.request.GET.get("ciudadano_id") or self.request.POST.get(
@@ -913,16 +1007,6 @@ class TrabajadorCentroInfanciaCreateView(
             or datos_api.get("pais")
             or "",
         }
-
-    def form_valid(self, form):
-        email_cambio = "email" in form.changed_data
-        form.instance.centro = self.centro
-        response = super().form_valid(form)
-        crear_usuario_trabajador_automaticamente(self.request, self.object)
-        if email_cambio:
-            sincronizar_email_trabajador(self.request, self.object)
-        messages.success(self.request, "Trabajador agregado correctamente.")
-        return response
 
     def get_success_url(self):
         return reverse("centrodeinfancia_detalle", kwargs={"pk": self.centro.pk})

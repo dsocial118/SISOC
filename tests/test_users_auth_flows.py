@@ -1,6 +1,7 @@
 """Tests de seguridad para usuarios/perfil e IAM auth flows."""
 
 import pytest
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group, Permission
 from django.contrib.auth.tokens import default_token_generator
@@ -29,11 +30,32 @@ from users.temporary_passwords import store_temporary_password
 User = get_user_model()
 
 
+@pytest.mark.parametrize(
+    "template_name",
+    [
+        "includes/base.html",
+        "includes/header.html",
+        "includes/navbar.html",
+        "includes/new_base.html",
+        "includes/new_navbar.html",
+    ],
+)
+def test_web_logout_controls_submit_post_with_csrf(template_name):
+    template_source = (settings.BASE_DIR / "templates" / template_name).read_text(
+        encoding="utf-8"
+    )
+
+    assert "href=\"{% url 'logout' %}\"" not in template_source
+    assert '<form method="post" action="{% url \'logout\' %}"' in template_source
+    assert "{% csrf_token %}" in template_source
+
+
 @pytest.mark.django_db
 def test_user_creation_form_allows_empty_email():
     form = UserCreationForm(
         data={
             "username": "sinemail",
+            "tipo_usuario": "interno",
             "email": "",
             "password": "Secreta123!",
         }
@@ -50,6 +72,7 @@ def test_custom_user_change_form_allows_empty_email(user):
         instance=user,
         data={
             "username": user.username,
+            "tipo_usuario": "interno",
             "email": "",
             "password": "",
         },
@@ -92,6 +115,7 @@ def test_custom_user_change_form_assigns_direct_permissions(user):
         instance=user,
         data={
             "username": user.username,
+            "tipo_usuario": "interno",
             "email": user.email,
             "password": "",
             "groups": [],
@@ -113,6 +137,7 @@ def test_user_creation_sets_first_login_password_flags():
     form = UserCreationForm(
         data={
             "username": "nuevo_user",
+            "tipo_usuario": "interno",
             "email": "nuevo@example.com",
             "password": "Secreta123!",
             "groups": [],
@@ -142,6 +167,7 @@ def test_mobile_user_creation_generates_password_automatically():
     form = UserCreationForm(
         data={
             "username": "mobile_auto_pwd",
+            "tipo_usuario": "interno",
             "email": "mobile_auto_pwd@example.com",
             "es_representante_pwa": True,
             "tipo_asociacion_pwa": "organizacion",
@@ -178,6 +204,7 @@ def test_existing_user_keeps_password_when_gaining_mobile_access():
         instance=user,
         data={
             "username": user.username,
+            "tipo_usuario": "interno",
             "email": user.email,
             "password": "",
             "es_representante_pwa": True,
@@ -567,6 +594,7 @@ def test_user_create_view_redirects_with_temporary_password_visible(
         reverse("usuario_crear"),
         data={
             "username": "mobile_visible",
+            "tipo_usuario": "interno",
             "email": "mobile_visible@example.com",
             "es_representante_pwa": True,
             "tipo_asociacion_pwa": "organizacion",

@@ -137,6 +137,12 @@ def _safe_bool_env(var_name: str, default: bool) -> bool:
 
 CSRF_TRUSTED_ORIGINS = _build_csrf_trusted_origins()
 
+# CDI: funcionalidades suspendidas temporalmente por el issue #2182.
+# Se reactivan de forma independiente mediante las variables de entorno homónimas.
+CDI_ASISTENCIA_NOMINA_VISIBLE = _safe_bool_env("CDI_ASISTENCIA_NOMINA_VISIBLE", False)
+CDI_FORMULARIOS_VISIBLE = _safe_bool_env("CDI_FORMULARIOS_VISIBLE", False)
+CDI_INTERVENCIONES_VISIBLE = _safe_bool_env("CDI_INTERVENCIONES_VISIBLE", False)
+
 # Apps
 INSTALLED_APPS = [
     # Django
@@ -153,7 +159,6 @@ INSTALLED_APPS = [
     "django_extensions",
     "formtools",
     "import_export",
-    "multiselectfield",
     "auditlog",
     "rest_framework",
     "rest_framework.authtoken",
@@ -689,6 +694,16 @@ CSP_ALLOW_UNSAFE_INLINE_SCRIPTS = (
     os.getenv("CSP_ALLOW_UNSAFE_INLINE_SCRIPTS", "false").lower() == "true"
 )
 CSP_ALLOW_UNSAFE_EVAL = os.getenv("CSP_ALLOW_UNSAFE_EVAL", "false").lower() == "true"
+
+# django-import-export (import/export Excel-CSV desde el admin)
+# Ver docs/registro/cambios/2026-07-27-import-export-admin.md
+IMPORT_EXPORT_USE_TRANSACTIONS = True
+# Preview obligatorio: la importación nunca se confirma en un solo paso.
+IMPORT_EXPORT_SKIP_ADMIN_CONFIRM = False
+IMPORT_EXPORT_IMPORT_PERMISSION_CODE = "change"
+IMPORT_EXPORT_EXPORT_PERMISSION_CODE = "view"
+# Neutraliza fórmulas en las celdas exportadas (CSV/formula injection).
+IMPORT_EXPORT_ESCAPE_FORMULAE_ON_EXPORT = True
 
 # Config propia (constantes)
 PROG_MILD = 24

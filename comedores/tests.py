@@ -174,6 +174,40 @@ def test_comedor_detail_view_get_context(client_logged_fixture, comedor_fixture)
 
 
 @pytest.mark.django_db
+def test_comedor_detail_hides_validation_controls_without_permission(
+    client_logged_fixture, comedor_fixture
+):
+    """La UI no ofrece validar si el usuario no puede ejecutar la acción."""
+    response = client_logged_fixture.get(
+        reverse("comedor_detalle", kwargs={"pk": comedor_fixture.pk})
+    )
+
+    assert response.status_code == 200
+    assert 'data-bs-target="#modalValidacion"' not in response.content.decode()
+
+
+@pytest.mark.django_db
+def test_comedor_detail_shows_validation_controls_for_validator_group(
+    client_logged_fixture, comedor_fixture
+):
+    """El grupo validador habilita la acción en el legajo accesible."""
+    user = get_user_model().objects.get(
+        pk=client_logged_fixture.session["_auth_user_id"]
+    )
+    validator_group, _ = Group.objects.get_or_create(name="Validador Comedores")
+    user.groups.add(validator_group)
+    client_logged_fixture.force_login(user)
+
+    response = client_logged_fixture.get(
+        reverse("comedor_detalle", kwargs={"pk": comedor_fixture.pk})
+    )
+
+    assert response.status_code == 200
+    assert response.context["puede_validar_comedor"] is True
+    assert 'data-bs-target="#modalValidacion"' in response.content.decode()
+
+
+@pytest.mark.django_db
 def test_comedor_detail_view_renderiza_card_colaboradores(
     client_logged_fixture, comedor_fixture, monkeypatch
 ):

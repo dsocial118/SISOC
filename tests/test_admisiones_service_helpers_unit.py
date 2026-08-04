@@ -27,6 +27,10 @@ class _ListChain(list):
     def prefetch_related(self, *_args, **_kwargs):
         return self
 
+    def values_list(self, field, flat=False):
+        values = [getattr(item, field) for item in self]
+        return values if flat else [(value,) for value in values]
+
     def select_related(self, *_args, **_kwargs):
         return self
 
@@ -1050,6 +1054,7 @@ def test_generar_documento_admision_and_update_context(mocker):
     adm = SimpleNamespace(
         pk=8,
         tipo_convenio=object(),
+        tipo_convenio_id=1,
         comedor=SimpleNamespace(nombre="Comedor X"),
         estado_legales="Informe Complementario Solicitado",
         estado_admision="informe_tecnico_finalizado",
@@ -1090,6 +1095,10 @@ def test_generar_documento_admision_and_update_context(mocker):
         return_value=SimpleNamespace(
             distinct=lambda: SimpleNamespace(order_by=lambda *_: docs)
         ),
+    )
+    mocker.patch(
+        "admisiones.services.admisiones_service.DocumentacionOrganizacion.objects.filter",
+        return_value=_ListChain(),
     )
     mocker.patch(
         "admisiones.services.admisiones_service.ArchivoAdmision.objects.filter",
@@ -1246,3 +1255,29 @@ def test_generar_documento_admision_devuelve_none_en_paths_no_exitosos(mocker):
         side_effect=RuntimeError("x"),
     )
     assert module.AdmisionService.generar_documento_admision(adm) is None
+
+
+def test_alerta_complementario_solo_si_fue_requerido(mocker):
+    mocker.patch(
+        "admisiones.services.admisiones_service.InformeTecnico.objects.filter",
+        return_value=SimpleNamespace(exists=lambda: True),
+    )
+    sin_complementario = SimpleNamespace(
+        filter=lambda **_kwargs: SimpleNamespace(first=lambda: None)
+    )
+    admision = SimpleNamespace(estado_legales="")
+
+    contexto = module.AdmisionService._build_informe_complementario_update_context(
+        admision, sin_complementario
+    )
+
+    assert contexto["mostrar_informe_complementario"] is True
+    assert contexto["informe_complementario_requerido"] is False
+
+    admision.estado_legales = "Informe Complementario Solicitado"
+    contexto_requerido = (
+        module.AdmisionService._build_informe_complementario_update_context(
+            admision, sin_complementario
+        )
+    )
+    assert contexto_requerido["informe_complementario_requerido"] is True

@@ -121,7 +121,7 @@ class RendicionCuentaMensualGlobalListView(LoginRequiredMixin, ListView):
         context["filters_js"] = "custom/js/advanced_filters.js"
         context["seccion_filtros_favoritos"] = SeccionesFiltrosFavoritos.RENDICIONES
         context["breadcrumb_items"] = [
-            {"text": "Comedores", "url": reverse_lazy("comedores")},
+            {"text": "Organizaciones", "url": reverse_lazy("organizaciones")},
             {"text": "Rendiciones", "active": True},
         ]
         return context
