@@ -439,6 +439,25 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - templates `admisiones/templates/admisiones/docx/`
 - templates `admisiones/templates/admisiones/pdf/`
 - `admisiones/tests/`
+- El catálogo de variables de contenido se persiste como
+  `VariableTemplateInformeTecnico`; guarda expresiones Django sin delimitadores
+  (por ejemplo, `informe.nombre_organizacion`). Sólo las variables activas se
+  pueden publicar. La migración `0073` precarga las 106 expresiones de los
+  cuatro modelos DOCX vigentes y `0074` agrega los alias planos compatibles
+  con el primer editor del Gestor.
+- Templates dinámicos de Informe Técnico: condiciones, versiones y publicaciones
+  en `admisiones/models/admisiones.py`; servicio en
+  `admisiones/services/templates_informe_tecnico_service/`; UI de gestión en
+  `admisiones/views/templates_informe_tecnico.py` y
+  `admisiones/templates/admisiones/templates_informes_tecnicos/`. La UI se
+  agrupa visualmente bajo Gestor de templates mediante el parcial
+  `includes/navigation.html` y los estilos aislados
+  `static/custom/css/gestor_templates.css`; el sidebar anida Templates,
+  Variables documentales e Incidencias de templates. Las incidencias se
+  agrupan por combinación abierta; las vistas previas son DOCX temporales con
+  marca de agua y nunca se adjuntan a la admisión. Al crear un template, el
+  tipo de convenio se limita al catálogo de Personerías o Organización Base,
+  presentada funcionalmente como Asociación de hecho.
 - El Informe Tecnico Complementario se abre tanto desde Admision como desde el
   convenio seleccionado en `acompanamientos/views.py` y
   `acompanamientos/templates/acompañamiento_detail.html`.

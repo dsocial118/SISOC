@@ -123,6 +123,58 @@ class AdmisionForm(forms.ModelForm):
         fields = "__all__"
 
 
+class ValidacionesTemplateAdmisionForm(forms.ModelForm):
+    class Meta:
+        model = Admision
+        fields = [
+            "es_ex_pnud",
+            "estado_convenio_pnud",
+            "tipo_renovacion",
+            "estado_financiamiento",
+        ]
+        widgets = {
+            "es_ex_pnud": forms.Select(attrs={"class": "form-select"}),
+            "estado_convenio_pnud": forms.Select(attrs={"class": "form-select"}),
+            "tipo_renovacion": forms.Select(attrs={"class": "form-select"}),
+            "estado_financiamiento": forms.Select(attrs={"class": "form-select"}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        tipo_admision = getattr(self.instance, "tipo", None)
+
+        if tipo_admision == "incorporacion":
+            self.fields["es_ex_pnud"].required = True
+        elif tipo_admision == "renovacion":
+            self.fields["tipo_renovacion"].required = True
+            self.fields["estado_financiamiento"].required = True
+
+    def clean(self):
+        cleaned_data = super().clean()
+        tipo_admision = getattr(self.instance, "tipo", None)
+
+        if tipo_admision == "incorporacion":
+            es_ex_pnud = cleaned_data.get("es_ex_pnud")
+            estado_convenio_pnud = cleaned_data.get("estado_convenio_pnud")
+
+            cleaned_data["tipo_renovacion"] = None
+            cleaned_data["estado_financiamiento"] = None
+
+            if es_ex_pnud == "si" and not estado_convenio_pnud:
+                self.add_error(
+                    "estado_convenio_pnud",
+                    "Debe indicar el estado del convenio PNUD.",
+                )
+            elif es_ex_pnud == "no":
+                cleaned_data["estado_convenio_pnud"] = None
+
+        elif tipo_admision == "renovacion":
+            cleaned_data["es_ex_pnud"] = None
+            cleaned_data["estado_convenio_pnud"] = None
+
+        return cleaned_data
+
+
 class InformeTecnicoJuridicoForm(forms.ModelForm):
     class Meta:
         model = InformeTecnico
