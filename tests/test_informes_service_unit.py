@@ -3,9 +3,12 @@
 from datetime import date, datetime
 from io import BytesIO
 from types import SimpleNamespace
+from zipfile import ZipFile
 
 import pytest
 from django.utils import timezone
+from docx import Document
+from docx.shared import Mm, Pt
 
 from admisiones.services import informes_service as module
 
@@ -337,6 +340,39 @@ def test_generate_docx_content_primary_and_fallback(mocker):
     assert out is not None
 
 
+def test_generate_docx_content_estiliza_tablas_de_templates_dinamicos():
+    contenido = (
+        "<table><tr><th>Dato</th><th>Información</th></tr>"
+        "<tr><td>Nombre</td><td>Caritas X</td></tr></table>"
+    )
+
+    archivo_docx = module.InformeService._generate_docx_content(
+        contenido,
+        estilizar_tablas_templates=True,
+    )
+
+    documento = Document(BytesIO(archivo_docx.read()))
+    tabla = documento.tables[0]
+    propiedades_tabla = tabla._tbl.tblPr.xml
+    propiedades_encabezado = tabla.cell(0, 0)._tc.tcPr.xml
+    propiedades_celda = tabla.cell(1, 0)._tc.tcPr.xml
+    seccion = documento.sections[0]
+    estilo_normal = documento.styles["Normal"]
+
+    assert "w:tblBorders" in propiedades_tabla
+    assert 'w:color="7A8EA1"' in propiedades_tabla
+    assert 'w:fill="EAF3F2"' in propiedades_encabezado
+    assert "w:tcMar" in propiedades_celda
+    assert abs(seccion.page_width - Mm(210)) <= 635
+    assert abs(seccion.page_height - Mm(297)) <= 635
+    assert abs(seccion.top_margin - Mm(20)) <= 635
+    assert abs(seccion.right_margin - Mm(20)) <= 635
+    assert abs(seccion.bottom_margin - Mm(20)) <= 635
+    assert abs(seccion.left_margin - Mm(20)) <= 635
+    assert estilo_normal.font.name == "Times New Roman"
+    assert estilo_normal.font.size == Pt(12)
+
+
 def test_generar_y_guardar_pdf_and_context_helpers(mocker):
     """Genera PDF/DOCX y cubre contextos de creación/actualización de informe."""
     informe = SimpleNamespace(
@@ -436,6 +472,11 @@ def test_guardar_informe_and_detail_context(mocker):
         module.InformeService, "generar_docx_borrador", return_value=SimpleNamespace()
     )
     mocker.patch(
+        "admisiones.services.templates_informe_tecnico_service."
+        "PlantillaInformeTecnicoService.resolver_publicacion_para_admision",
+        return_value=(SimpleNamespace(), None),
+    )
+    mocker.patch(
         "admisiones.services.admisiones_service.AdmisionService._todos_obligatorios_tienen_archivos",
         return_value=True,
     )
@@ -464,6 +505,127 @@ def test_guardar_informe_and_detail_context(mocker):
     )
     detail = module.InformeService.get_context_informe_detail(informe_det, "base")
     assert detail["pdf"] == "pdf"
+
+
+def test_guardar_informe_submit_sin_publicacion_lo_conserva_en_borrador(mocker):
+    admision = SimpleNamespace(id=12, estado_admision="x", save=mocker.Mock())
+    instance = SimpleNamespace(
+        tipo="base",
+        pk=None,
+        _state=SimpleNamespace(adding=True),
+        estado_formulario="borrador",
+        estado="Iniciado",
+        observaciones_subsanacion=None,
+        admision=None,
+        save=mocker.Mock(),
+    )
+    form = mocker.Mock(
+        instance=instance,
+        save=mocker.Mock(return_value=instance),
+        save_m2m=mocker.Mock(),
+    )
+    mocker.patch(
+        "admisiones.services.informes_service.InformeTecnico.objects.filter",
+        return_value=SimpleNamespace(
+            order_by=lambda *_: SimpleNamespace(first=lambda: None)
+        ),
+    )
+    mocker.patch(
+        "admisiones.services.admisiones_service.AdmisionService."
+        "_todos_obligatorios_tienen_archivos",
+        return_value=True,
+    )
+    mocker.patch(
+        "admisiones.services.admisiones_service.AdmisionService."
+        "_todos_obligatorios_aceptados",
+        return_value=True,
+    )
+    actualizar_estado = mocker.patch(
+        "admisiones.services.admisiones_service.AdmisionService."
+        "actualizar_estado_admision"
+    )
+    generar_docx = mocker.patch.object(
+        module.InformeService,
+        "generar_docx_borrador",
+        return_value=SimpleNamespace(),
+    )
+    mocker.patch(
+        "admisiones.services.templates_informe_tecnico_service."
+        "PlantillaInformeTecnicoService.resolver_publicacion_para_admision",
+        return_value=(
+            None,
+            "No existe una versión publicada de template para la combinación de esta admisión.",
+        ),
+    )
+
+    resultado = module.InformeService.guardar_informe(
+        form,
+        admision,
+        es_creacion=True,
+        action="submit",
+        usuario=SimpleNamespace(),
+    )
+
+    assert resultado["success"] is False
+    assert "No existe una versión publicada" in resultado["error"]
+    assert "guardó el Informe Técnico como borrador" in resultado["error"]
+    form.save.assert_called_once()
+    generar_docx.assert_not_called()
+    actualizar_estado.assert_called_once_with(admision, "iniciar_informe_tecnico")
+
+
+def test_generar_docx_con_version_publicada_renderiza_variables(mocker):
+    informe = SimpleNamespace(admision=SimpleNamespace(comedor=SimpleNamespace()))
+    version = SimpleNamespace(
+        pk=4,
+        contenido_html="<p>{{ nombre_organizacion }}</p>",
+    )
+    mocker.patch.object(
+        module.AdmisionesContextService,
+        "preparar_contexto_informe_tecnico",
+        return_value={"nombre_organizacion": "Organización de prueba"},
+    )
+    generar = mocker.patch.object(
+        module.InformeService,
+        "_generate_docx_content",
+        return_value=SimpleNamespace(),
+    )
+
+    resultado = module.InformeService.generar_docx_con_version_publicada(
+        informe,
+        version,
+    )
+
+    assert resultado is not None
+    generar.assert_called_once_with(
+        "<p>Organización de prueba</p>",
+        None,
+        estilizar_tablas_templates=True,
+    )
+
+
+def test_generar_docx_vista_previa_agrega_marca_de_agua(mocker):
+    contenido_original = module.InformeService._generate_docx_content("<p>Prueba</p>")
+    mocker.patch.object(
+        module.InformeService,
+        "generar_docx_con_version_publicada",
+        return_value=contenido_original,
+    )
+
+    resultado = module.InformeService.generar_docx_vista_previa(
+        SimpleNamespace(pk=7),
+        SimpleNamespace(pk=3),
+    )
+
+    assert resultado is not None
+    with ZipFile(BytesIO(resultado.read())) as archivo_docx:
+        encabezados = "".join(
+            archivo_docx.read(nombre).decode("utf-8")
+            for nombre in archivo_docx.namelist()
+            if nombre.startswith("word/header")
+        )
+    assert "VISTA PREVIA" in encabezados
+    assert "DOCUMENTO NO VÁLIDO" in encabezados
 
 
 def test_guardar_informe_submit_bloquea_si_faltan_obligatorios(mocker):
@@ -563,7 +725,7 @@ def test_revision_and_complementarios_flows(mocker):
                 k, d
             ),
             getlist=lambda k: ["Campo"],
-        )
+        ),
     )
     upd = mocker.patch.object(module.InformeService, "actualizar_estado_informe")
     mocker.patch(
@@ -629,10 +791,10 @@ def test_revision_and_complementarios_flows(mocker):
 
     mocker.patch.object(
         module.InformeService,
-        "generar_docx_con_template",
+        "generar_docx_con_version_publicada",
         return_value=BytesIO(b"docx"),
     )
-    mocker.patch(
+    guardar_docx = mocker.patch(
         "admisiones.services.informes_service.InformeTecnicoPDF.objects.update_or_create",
         return_value=(SimpleNamespace(pk=1), True),
     )
@@ -645,9 +807,16 @@ def test_revision_and_complementarios_flows(mocker):
             admision=SimpleNamespace(id=4, comedor=SimpleNamespace()),
             admision_id=4,
             save=mocker.Mock(),
-        )
+        ),
+        SimpleNamespace(
+            plantilla=SimpleNamespace(pk=2),
+            version=SimpleNamespace(pk=3),
+        ),
     )
     assert borrador is not None
+    defaults_docx = guardar_docx.call_args.kwargs["defaults"]
+    assert defaults_docx["plantilla_informe_tecnico"].pk == 2
+    assert defaults_docx["version_plantilla_informe_tecnico"].pk == 3
 
     pdf_obj = SimpleNamespace(save=mocker.Mock())
     mocker.patch(
