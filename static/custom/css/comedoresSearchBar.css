@@ -192,9 +192,12 @@
   outline-offset: 4px;
 }
 
+/* Panel desplegable en claro, como el prototipo. Del panel de un <select>
+   nativo solo se pueden estilar fondo y color: el borde, el radio y el
+   resaltado de la opcion activa los dibuja el sistema operativo. */
 .poncho-search__field option {
-  background: var(--poncho-azul-principal);
-  color: var(--poncho-blanco);
+  background: var(--poncho-blanco);
+  color: var(--poncho-azul-principal);
   font-size: 16px;
 }
 
@@ -256,8 +259,8 @@
 }
 
 .poncho-search__input--select option {
-  background: var(--poncho-azul-principal);
-  color: var(--poncho-blanco);
+  background: var(--poncho-blanco);
+  color: var(--poncho-azul-principal);
   font-size: 16px;
 }
 
