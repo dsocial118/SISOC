@@ -37,10 +37,8 @@ def test_listado_selecciona_nombres_de_estado_proceso_y_detalle():
         in queryset.selected_values
     )
     assert (
-        "ultimo_estado__estado_general__estado_proceso"
-        not in queryset.selected_values
+        "ultimo_estado__estado_general__estado_proceso" not in queryset.selected_values
     )
     assert (
-        "ultimo_estado__estado_general__estado_detalle"
-        not in queryset.selected_values
+        "ultimo_estado__estado_general__estado_detalle" not in queryset.selected_values
     )
