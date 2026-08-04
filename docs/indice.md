@@ -46,6 +46,8 @@
 - `docs/implementaciones/pwa_backend.md`: implementación backend de funcionalidades PWA.
 - `docs/implementaciones/usuarios_perfil_iam.md`: implementación de Usuarios/Perfil + IAM por permisos Django y guía para extender nuevas features.
 - `docs/implementaciones/centrodeinfancia_nomina_renaper.md`: contrato de asistencia de nómina CDI, alcance y precarga RENAPER de trabajadores.
+- `docs/implementaciones/centrodefamilia_preinscriptos.md`: contrato del listado y exportación CSV de preinscriptos CDF, incluyendo columnas, ordenamiento y permisos.
+- `docs/vat/`: guías funcionales, API, operación de vouchers y desarrollo del módulo VAT.
 
 ### 5. Flujos y sincronizaciones
 - `docs/flujos/comedor_sync.md`: cómo funciona la sincronización de comedores con servicios externos.

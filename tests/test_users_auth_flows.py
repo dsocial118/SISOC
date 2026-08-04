@@ -1,6 +1,7 @@
 """Tests de seguridad para usuarios/perfil e IAM auth flows."""
 
 import pytest
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group, Permission
 from django.contrib.auth.tokens import default_token_generator
@@ -27,6 +28,26 @@ from users.services_group_permissions import sync_permissions_for_group
 from users.temporary_passwords import store_temporary_password
 
 User = get_user_model()
+
+
+@pytest.mark.parametrize(
+    "template_name",
+    [
+        "includes/base.html",
+        "includes/header.html",
+        "includes/navbar.html",
+        "includes/new_base.html",
+        "includes/new_navbar.html",
+    ],
+)
+def test_web_logout_controls_submit_post_with_csrf(template_name):
+    template_source = (settings.BASE_DIR / "templates" / template_name).read_text(
+        encoding="utf-8"
+    )
+
+    assert "href=\"{% url 'logout' %}\"" not in template_source
+    assert '<form method="post" action="{% url \'logout\' %}"' in template_source
+    assert "{% csrf_token %}" in template_source
 
 
 @pytest.mark.django_db

@@ -785,6 +785,14 @@ body.sidebar-collapse .sidebar-user-name {
   border-color: #b71c1c;
 }
 
+.badge-caritas {
+  background: rgba(13, 110, 253, 0.6);
+  color: white;
+  border: 1px solid #0d6efd;
+  padding: 0.45rem 0.65rem;
+  font-size: 0.875rem;
+}
+
 .relevamiento-container .table-sm > :not(caption) > * > *,
 .tabs-comedor-wrap .table-sm > :not(caption) > * > * {
   padding: 0.25rem 0.75rem;

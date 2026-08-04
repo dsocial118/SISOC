@@ -85,8 +85,8 @@
                             </div>
                         </div>
                         <div class="form-group row">
-                            <div class="col-md-4">{{ form.organizacion|as_crispy_field }}</div>
-                            <div class="col-md-4">{{ form.programa|as_crispy_field }}</div>
+                            <div class="col-md-3">{{ form.organizacion|as_crispy_field }}</div>
+                            <div class="col-md-3">{{ form.programa|as_crispy_field }}</div>
                             <div id="codigo-proyecto-wrapper"
                                  class="col-md-2"
                                  data-programa-ids="{{ form.codigo_de_proyecto_programa_ids }}">
@@ -97,6 +97,7 @@
                                 </span>
                             </div>
                             <div class="col-md-2">{{ form.es_judicializado|as_crispy_field }}</div>
+                            <div class="col-md-2">{{ form.es_caritas|as_crispy_field }}</div>
                         </div>
                     </div>
                 </div>
