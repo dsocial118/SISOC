@@ -855,6 +855,14 @@
                                                     <a href="{% url 'comedor_detalle' comedor.id %}"
                                                        style="color: #E7BA61;
                                                               text-decoration: underline">{{ comedor.nombre }}</a>
+                                                    {% if comedor.es_caritas %}
+                                                        <span class="badge ms-1"
+                                                              style="background: rgba(13, 110, 253, 0.2);
+                                                                     color: #3498db;
+                                                                     border: 1px solid #3498db">
+                                                            <i class="fas fa-heart"></i> CARITAS
+                                                        </span>
+                                                    {% endif %}
                                                 </td>
                                                 <td>{{ comedor.tipocomedor.nombre|default:'-' }}</td>
                                                 <td>{{ comedor.programa.nombre|default:'-' }}</td>
