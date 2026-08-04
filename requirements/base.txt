@@ -18,7 +18,7 @@ cssselect2==0.8.0
 defusedxml==0.7.1
 diff-match-patch==20241021
 dill==0.3.8
-Django==4.2.27
+Django==5.2.16
 django-cors-headers==4.7.0
 django-crispy-forms==2.5
 django-formtools==2.6.1
