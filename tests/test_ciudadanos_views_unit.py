@@ -977,3 +977,60 @@ def test_ciudadanos_create_and_update_form_valid_and_context(mocker):
     assert ciudadano2.documento_unico_key is None
     assert ciudadano2.requiere_revision_manual is True
     assert ciudadano2.motivo_no_validacion_renaper is None
+
+
+@pytest.mark.django_db
+def test_ciudadanos_list_usa_filtros_combinables(client, superuser):
+    """El listado debe renderizar la misma barra de filtros que el resto."""
+
+    client.force_login(superuser)
+    respuesta = client.get(reverse("ciudadanos"))
+
+    assert respuesta.status_code == 200
+    contenido = respuesta.content.decode()
+    # Barra compartida en modo filtros
+    assert 'id="poncho-filters-rows"' in contenido
+    assert 'id="poncho-filter-row-template"' in contenido
+    assert "filters-config-json" in contenido
+    # Provincia paso a las filas; estado identidad y revision siguen en el
+    # formulario propio porque el segundo depende del primero.
+    assert 'id="province-filter-form"' in contenido
+    assert "estado-revision-group" in contenido
+
+
+@pytest.mark.django_db
+def test_ciudadanos_list_filtros_combinables_no_pisan_el_formulario(client, superuser):
+    """Aplicar la barra no debe perder estado identidad ni estado de revision."""
+
+    client.force_login(superuser)
+    respuesta = client.get(reverse("ciudadanos"))
+    contenido = respuesta.content.decode()
+
+    # Los hidden enganchados por form= arrastran lo del formulario propio
+    assert 'name="tipo_registro"' in contenido
+    assert 'name="estado_revision"' in contenido
+    assert 'form="filters-form"' in contenido
+
+
+# Necesita DB: get_filters_ui_config() pobla las provincias con
+# get_cached_provincia_filter_choices(), que consulta si el cache esta frio.
+@pytest.mark.django_db
+def test_ciudadanos_filter_config_no_expone_campos_condicionales():
+    """estado_revision y tipo_registro no pueden ser filtros de campo."""
+
+    from ciudadanos.ciudadanos_filter_config import FIELD_MAP, get_filters_ui_config
+
+    assert "estado_revision" not in FIELD_MAP
+    assert "tipo_registro_identidad" not in FIELD_MAP
+
+    config = get_filters_ui_config()
+    nombres = {campo["name"] for campo in config["fields"]}
+    assert nombres == {
+        "apellido",
+        "nombre",
+        "documento",
+        "identificador_interno",
+        "provincia",
+    }
+    # documento solo admite igualdad: un contains seria un scan completo
+    assert config["operators"]["number"] == ["eq"]
