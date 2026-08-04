@@ -13,6 +13,7 @@ El detalle de qué modelo quedó en cada grupo vive en
 
 from django.contrib import admin
 from import_export.admin import ExportMixin, ImportExportModelAdmin
+from import_export.forms import ExportForm
 from import_export.formats import base_formats
 
 # Solo Excel y CSV: evita exponer JSON/YAML/HTML, que no aportan al caso de uso
@@ -23,6 +24,9 @@ FORMATOS_HABILITADOS = [base_formats.XLSX, base_formats.CSV]
 class BaseImportExportAdmin(ImportExportModelAdmin):
     """Admin con acciones de importación y exportación en XLSX/CSV."""
 
+    # Mantiene el flujo previo a django-import-export 4.x: el usuario elige el
+    # formato, pero no una selección parcial de columnas.
+    export_form_class = ExportForm
     formats = FORMATOS_HABILITADOS
     # django-import-export 4.x reemplaza `formats` por estos dos atributos.
     # Se declaran los tres para que la restricción siga vigente si se sube el
@@ -34,5 +38,6 @@ class BaseImportExportAdmin(ImportExportModelAdmin):
 class BaseExportAdmin(ExportMixin, admin.ModelAdmin):
     """Admin que solo exporta: no habilita la carga de archivos."""
 
+    export_form_class = ExportForm
     formats = FORMATOS_HABILITADOS
     export_formats = FORMATOS_HABILITADOS
