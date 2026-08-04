@@ -1,3 +1,5 @@
+# pylint: disable=too-many-lines
+
 import logging
 import os
 import subprocess
@@ -1032,7 +1034,9 @@ class RendicionProcesoService:
 
     @staticmethod
     @transaction.atomic
-    def ejecutar(*, rendicion, accion, datos, actor=None):
+    def ejecutar(
+        *, rendicion, accion, datos, actor=None
+    ):  # pylint: disable=too-many-statements
         ahora = timezone.now()
         pendiente = RendicionCuentaMensual.SUBESTADO_PENDIENTE
         en_curso = RendicionCuentaMensual.SUBESTADO_EN_CURSO
@@ -1066,9 +1070,11 @@ class RendicionProcesoService:
             )
             rendicion.subestado_proceso = en_curso
             rendicion.estado = RendicionCuentaMensual.ESTADO_REVISION
-            RendicionCuentaMensualService._documentos_vigentes_queryset(
+            RendicionCuentaMensualService._documentos_vigentes_queryset(  # pylint: disable=protected-access
                 rendicion
-            ).filter(estado=DocumentacionAdjunta.ESTADO_VALIDADO).update(
+            ).filter(
+                estado=DocumentacionAdjunta.ESTADO_VALIDADO
+            ).update(
                 estado=DocumentacionAdjunta.ESTADO_PRESENTADO,
                 observaciones=None,
             )
@@ -1129,7 +1135,7 @@ class RendicionProcesoService:
         else:
             raise ValidationError("Acción de proceso inválida.")
 
-        RendicionCuentaMensualService._aplicar_usuario_ultima_modificacion(
+        RendicionCuentaMensualService._aplicar_usuario_ultima_modificacion(  # pylint: disable=protected-access
             rendicion, actor
         )
         rendicion.save()

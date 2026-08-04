@@ -185,7 +185,9 @@ class RendicionCuentaMensualDetailView(LoginRequiredMixin, DetailView):
             ).exists()
         )
 
-    def post(self, request, *args, **kwargs):
+    def post(  # pylint: disable=too-many-return-statements,too-many-branches
+        self, request, *args, **kwargs
+    ):
         rendicion = self.get_object()
         accion_proceso = (request.POST.get("accion_proceso") or "").strip()
         if accion_proceso:
