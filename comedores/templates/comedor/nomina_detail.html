@@ -227,9 +227,13 @@
                                     {% endif %}
                                 </td>
                                 <td>
-                                    <a href="{% url 'ciudadanos_ver' e.ciudadano.id %}"
-                                       style="color: #3498db;
-                                              text-decoration: none">{{ e.ciudadano.apellido }}</a>
+                                    {% if perms.ciudadanos.view_ciudadano %}
+                                        <a href="{% url 'ciudadanos_ver' e.ciudadano.id %}"
+                                           style="color: #3498db;
+                                                  text-decoration: none">{{ e.ciudadano.apellido }}</a>
+                                    {% else %}
+                                        {{ e.ciudadano.apellido }}
+                                    {% endif %}
                                 </td>
                                 <td>{{ e.ciudadano.documento|default:"-" }}</td>
                                 <td>{{ e.ciudadano.sexo.sexo|default:"-" }}</td>
@@ -263,12 +267,14 @@
                                                     <i class="fas fa-edit"></i> Editar
                                                 </a>
                                             </li>
-                                            <li>
-                                                <a class="dropdown-item"
-                                                   href="{% url 'ciudadanos_ver' e.ciudadano.id %}">
-                                                    <i class="fas fa-eye"></i> Ver detalles
-                                                </a>
-                                            </li>
+                                            {% if perms.ciudadanos.view_ciudadano %}
+                                                <li>
+                                                    <a class="dropdown-item"
+                                                       href="{% url 'ciudadanos_ver' e.ciudadano.id %}">
+                                                        <i class="fas fa-eye"></i> Ver detalles
+                                                    </a>
+                                                </li>
+                                            {% endif %}
                                             {% if e.estado == "activo" %}
                                                 <li>
                                                     <a class="dropdown-item nomina-derivar-btn"
