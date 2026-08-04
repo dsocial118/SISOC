@@ -48,10 +48,94 @@ Cambios de interaccion:
 
 ## Decisiones y trade-offs
 
-### Operador, AND/OR y Favoritos: se conservan, pero plegados
+### Operadores: UX/UI definio eliminarlos (2026-08-04)
 
-**Esta es la unica desviacion respecto del prototipo y queda asentada aca a
-pedido del equipo, para que UX/UI pueda revisarla y decidir.**
+**Definicion recibida:** el selector de "tipo de coincidencia" no va mas, y los
+filtros se agregan tal cual el mockup nuevo: cada filtro es una barra completa
+(campo + valor + lupa), con "+ Filtro" para sumar una fila y "- Filtro" para
+quitarla, visible recien desde la segunda.
+
+Implementado asi. El operador ahora se deduce del tipo de campo
+(`defaultOpByType`): texto -> `contains`, numero / fecha / choice / boolean ->
+`eq`.
+
+**Lo que se pierde con esta definicion** (se detalla porque la decision fue
+tomada con la tabla de abajo a la vista, y conviene que quede el registro):
+
+| Se pierde | Impacto |
+|---|---|
+| `vacio` (+ modo nulos/vacios/ambos) | no se puede listar registros con un campo sin cargar |
+| `mayor a` / `menor a` | no se puede filtrar por rango en numeros ni fechas |
+| `distinto de` / `no contiene` | no se puede excluir |
+
+**AND/OR y Favoritos: tambien se retiran (definicion del 2026-08-04).**
+
+- El selector AND/OR salio de la UI. Los filtros se combinan **siempre con
+  AND** (`LOGICA_FIJA` en `advanced_filters.js`). El backend sigue aceptando el
+  campo `logic`, asi que reponerlo es agregar el control.
+- Favoritos salio de la UI: se quitaron el boton, el modal y la carga de
+  `favorite_filters.js`. **El backend y el archivo JS siguen existiendo**, solo
+  se dejaron de renderizar. Los favoritos ya guardados no se borran.
+
+### El borde dorado del buscador: causa y solucion
+
+En revision se vio que el selector "Buscar por" y la caja del buscador salian
+con borde dorado en vez del blanco del prototipo. La causa concreta:
+`listModerno.css` tiene reglas del diseño anterior
+
+    #filters-rows select, #filters-rows input { border: 2px solid #e7ba61 !important }
+
+Mientras el filtro primario vivia fuera del contenedor no las tocaba, pero al
+pasar **todas** las filas a `#filters-rows` quedaron alcanzadas.
+
+Solucion: se renombro el contenedor a **`#poncho-filters-rows`**. Es mas limpio
+que competir con `!important` y deja las reglas viejas intactas para quien
+todavia use ese marcado. Se aprovecho para borrar de `comedoresSearchBar.css`
+las reglas muertas del modelo anterior (`.filters-row`, `.filters-header-row`,
+`.filters-toolbar`, `.filters-logic-select` y el bloque select2 dorado).
+
+### Medidas del buscador tomadas del componente
+
+Se alinearon contra el nodo `13503:33051` ("SEARCH BAR"):
+
+- caja: `padding-left: 20px` y `gap: 45px` entre el texto y la lupa;
+- input: `padding: 10px` en los cuatro lados (sumado al `pl` de la caja da los
+  30px de sangria del prototipo) y `line-height: 40px`;
+- selector de campo: `padding-right: 40px` (el ancho de la caja del chevron),
+  `max-width: 193px` y chevron centrado en esa caja (`right 12px`);
+- el placeholder de cada fila es "Buscar por filtro N", como el mockup: no se
+  usa el `placeholder` que pasa cada listado.
+
+El `border-radius: 5px` del selector y el fondo `rgba(255,255,255,.2)` de su
+hover salen de los estados del prototipo.
+
+Unica diferencia conocida que queda: el chevron del prototipo mide `18x10` y el
+implementado es un SVG de `16x16`. Igualarlo requiere redibujar el path, porque
+escalar el viewBox cuadrado lo deforma.
+
+### select2: se probo y se descarto
+
+Se llego a montar select2 sobre el selector de campo con un tema propio, pero
+el equipo pidio sacarlo. El selector quedo como **`<select>` nativo estilado**
+(`appearance: none` + chevron propio en SVG), que es lo que ya replicaba el
+prototipo.
+
+Con eso se removieron tambien el wrapper `.poncho-search__fieldwrap` (existia
+solo porque select2 inserta su `<span>` como hermano del `<select>` y hubiera
+sido una cuarta columna del grid) y todo el bloque de estilos `.poncho-select2`.
+
+Consecuencia a tener en cuenta: en listados con muchos campos, el combo no
+tiene buscador interno.
+
+Nota tecnica: al desaparecer el operador tambien se removieron el selector de
+"modo de vacio" y el panel avanzado plegable. Las filas ya no usan select2 (el
+campo es un `select` nativo estilado, como pide el diseño); en listados con
+muchas opciones eso cambia la experiencia de busqueda dentro del combo.
+
+### Version anterior de esta decision (reemplazada)
+
+Antes de la definicion de UX/UI se habia optado por conservar los operadores
+plegados en un panel avanzado. Ese enfoque quedo sin efecto.
 
 El prototipo muestra unicamente `Buscar por` + valor + lupa + `+ Filtro`. No
 muestra el selector de **"Tipo de coincidencia"**, ni **AND/OR**, ni
@@ -169,22 +253,31 @@ con diseno una de dos: o el fondo de pagina migra a la paleta PONCHO, o la caja
 del buscador necesita otro tratamiento sobre el tema oscuro actual. No se
 cambio por cuenta propia porque implica tocar el tema global.
 
-## Sobre el color del buscador y las filas (`#232d4f`)
+## El buscador y las filas se veian violeta: colision de variables
 
-En revision se reporto que el buscador y las filas "se ven violeta y ese no es
-el color". Se verifico contra las **variables reales del archivo de Figma** (no
-el fallback del snippet generado): `Poncho/ Azul Principar` es efectivamente
-`#232d4f`, y el prototipo lo usa tanto para la caja del buscador como para las
-filas de la tabla, sobre un fondo `Poncho/ Azul Secundario #3e5a7e` — que es
-exactamente el par implementado.
+Sintoma: la caja del buscador y las filas de la tabla se veian violeta en vez
+del azul del prototipo.
 
-Tambien se verifico que ninguna hoja de la app este inyectando un violeta: no
-hay hex de ese rango aplicable a estos selectores.
+Causa: **`hitos.css` declaraba la misma variable** `--poncho-azul-principal`
+con valor `#230D4F` —que es violeta— y en `templates/includes/base.html` se
+carga **despues** de `poncho.css`, asi que pisaba el `#232d4f` correcto. Los dos
+valores difieren en un solo caracter (`230d4f` vs `232d4f`), asi que muy
+probablemente el de `hitos.css` era un typo o un valor viejo. El valor bueno
+esta verificado contra las variables reales del archivo de Figma:
+`Poncho/ Azul Principar = #232d4f`.
 
-Conclusion: el color es fiel al design system y se dejo como esta. La lectura
-violeta viene del contraste con el teal del encabezado y el azul del fondo. Si
-UX/UI quiere corregirlo, **es una sola linea**: `--poncho-azul-principal` en
-`static/custom/css/poncho.css`, y se propaga a buscador, filas y paginacion.
+Solucion: se quito la declaracion de `hitos.css` y se dejo un comentario en su
+lugar advirtiendo que la variable vive en `poncho.css` y que no hay que volver
+a declararla ahi. Las tres reglas de `hitos.css` que la usan (lineas 166, 419 y
+607) pasan a tomar `#232d4f`; el cambio de tono es imperceptible.
+
+Se revisaron las demas colisiones entre ambos archivos: `--poncho-verde`,
+`--poncho-rojo` y `--poncho-blanco` estan declaradas en los dos pero con el
+**mismo valor**, asi que son inocuas.
+
+Nota: en una primera revision se concluyo, equivocadamente, que el violeta era
+el token correcto y que se trataba de contraste con el teal del encabezado. No
+lo era; queda asentado para que no se repita el diagnostico.
 
 ## Pendientes / deuda
 
