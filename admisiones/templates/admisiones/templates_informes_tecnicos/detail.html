@@ -1,0 +1,198 @@
+{% extends "includes/main.html" %}
+{% load static %}
+{% block title %}{{ plantilla.codigo }} · Gestor de templates{% endblock %}
+{% block titulo-pagina %}Gestor de templates{% endblock %}
+{% block head %}
+    <link rel="stylesheet"
+          href="{% static 'custom/css/gestor_templates.css' %}" />
+{% endblock %}
+{% block breadcrumb %}
+    <ol class="breadcrumb float-sm-right">
+        <li class="breadcrumb-item">
+            <a href="{% url 'gestor_templates_listar' %}">Gestor de templates</a>
+        </li>
+        <li class="breadcrumb-item active">{{ plantilla.codigo }}</li>
+    </ol>
+{% endblock %}
+{% block content %}
+    <div class="gestor-templates">
+        <div class="gt-page">
+            {% include "admisiones/templates_informes_tecnicos/includes/navigation.html" with active_section="templates" %}
+            <section class="gt-hero">
+                <div>
+                    <span class="gt-eyebrow">{{ plantilla.codigo }}</span>
+                    <h1>{{ plantilla.nombre }}</h1>
+                    <p>
+                        {% if plantilla.descripcion %}
+                            {{ plantilla.descripcion }}
+                        {% else %}
+                            Configuración de condiciones y versiones de este template lógico.
+                        {% endif %}
+                    </p>
+                </div>
+                <div class="gt-hero__actions">
+                    {% if not borrador_actual and plantilla.estado == "activa" %}
+                        <form method="post"
+                              action="{% url 'gestor_templates_version_crear' plantilla.pk %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-plus"></i> Crear nueva versión
+                            </button>
+                        </form>
+                    {% endif %}
+                </div>
+            </section>
+            <section class="gt-template-context" aria-labelledby="condiciones-template">
+                <div class="gt-template-context__header">
+                    <h2 id="condiciones-template">
+                        <i class="fas fa-sliders-h"></i> Condiciones del template
+                    </h2>
+                    <div class="gt-template-context__actions">
+                        {% if plantilla.estado == "activa" %}
+                            <span class="gt-status gt-status--success">{{ plantilla.get_estado_display }}</span>
+                            <form method="post"
+                                  action="{% url 'gestor_templates_inactivar' plantilla.pk %}">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-danger">Inactivar template</button>
+                            </form>
+                        {% else %}
+                            <span class="gt-status gt-status--muted">{{ plantilla.get_estado_display }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <dl class="gt-template-context__items">
+                    <div class="gt-template-context__item">
+                        <dt>Tipo de admisión</dt>
+                        <dd>
+                            {{ plantilla.get_tipo_admision_display }}
+                        </dd>
+                    </div>
+                    <div class="gt-template-context__item">
+                        <dt>Tipo de convenio</dt>
+                        <dd>
+                            {{ plantilla.tipo_convenio.nombre }}
+                        </dd>
+                    </div>
+                    {% if plantilla.tipo_admision == "incorporacion" %}
+                        <div class="gt-template-context__item">
+                            <dt>Ex PNUD</dt>
+                            <dd>
+                                {{ plantilla.get_es_ex_pnud_display }}
+                            </dd>
+                        </div>
+                        {% if plantilla.es_ex_pnud == "si" %}
+                            <div class="gt-template-context__item">
+                                <dt>Convenio PNUD</dt>
+                                <dd>
+                                    {{ plantilla.get_estado_convenio_pnud_display }}
+                                </dd>
+                            </div>
+                        {% endif %}
+                    {% else %}
+                        <div class="gt-template-context__item">
+                            <dt>Renovación</dt>
+                            <dd>
+                                {{ plantilla.get_tipo_renovacion_display }}
+                            </dd>
+                        </div>
+                        <div class="gt-template-context__item">
+                            <dt>Financiamiento</dt>
+                            <dd>
+                                {{ plantilla.get_estado_financiamiento_display }}
+                            </dd>
+                        </div>
+                    {% endif %}
+                </dl>
+            </section>
+            {% if borrador_actual %}
+                <section class="gt-working-version" aria-labelledby="version-preparacion">
+                    <div>
+                        <span class="gt-eyebrow">Versión en preparación</span>
+                        <h2 id="version-preparacion">v{{ borrador_actual.numero }}</h2>
+                        <p>
+                            Estos cambios todavía no se usan en las admisiones. Podés continuar editando y guardar las veces que necesites antes de publicar.
+                        </p>
+                        <small>Última modificación: {{ borrador_actual.modificado|date:"d/m/Y H:i" }}</small>
+                    </div>
+                    <div class="gt-working-version__actions">
+                        <a href="{% url 'gestor_templates_version_editar' plantilla.pk borrador_actual.pk %}"
+                           class="btn btn-primary"><i class="fas fa-pen"></i> Continuar editando</a>
+                        <form method="post"
+                              action="{% url 'gestor_templates_version_publicar' plantilla.pk borrador_actual.pk %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-success">Publicar versión</button>
+                        </form>
+                        <form method="post"
+                              action="{% url 'gestor_templates_version_descartar' plantilla.pk borrador_actual.pk %}"
+                              onsubmit="return confirm('¿Descartar la versión en preparación? Esta acción no se puede deshacer.');">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-outline-secondary">Descartar versión</button>
+                        </form>
+                    </div>
+                </section>
+            {% endif %}
+            <section class="card gt-card gt-card--versions">
+                <div class="card-header">
+                    <h2 class="card-title">
+                        <i class="fas fa-history"></i>Historial de versiones
+                    </h2>
+                </div>
+                {% if versiones_historial %}
+                    <div class="table-responsive">
+                        <table class="table gt-table">
+                            <thead>
+                                <tr>
+                                    <th>Versión</th>
+                                    <th>Estado</th>
+                                    <th>Creada</th>
+                                    <th>Publicada</th>
+                                    <th>
+                                        <span class="visually-hidden">Acciones</span>
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for version in versiones_historial %}
+                                    <tr>
+                                        <td>
+                                            <span class="gt-row-title">v{{ version.numero }}</span>
+                                        </td>
+                                        <td>
+                                            {% if version.estado == "publicada" %}
+                                                <span class="gt-status gt-status--success">{{ version.get_estado_display }}</span>
+                                            {% else %}
+                                                <span class="gt-status gt-status--pending">{{ version.get_estado_display }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ version.creado|date:"d/m/Y H:i" }}</td>
+                                        <td>
+                                            {% if version.publicado %}
+                                                {{ version.publicado|date:"d/m/Y H:i" }}
+                                            {% else %}
+                                                <span class="text-muted">—</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="text-end">
+                                            <div class="gt-version-actions">
+                                                {% if plantilla.estado == "activa" %}
+                                                    <form method="post"
+                                                          action="{% url 'gestor_templates_version_crear' plantilla.pk %}">
+                                                        {% csrf_token %}
+                                                        <input type="hidden" name="origen_version_id" value="{{ version.pk }}" />
+                                                        <button type="submit" class="btn btn-sm btn-outline-secondary">Usar como punto de partida</button>
+                                                    </form>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    {% include "components/empty_state.html" with icon="fas fa-file" title="No hay versiones publicadas todavía" message="Creá una versión en preparación para empezar a cargar el contenido del documento." container_class="gt-empty" %}
+                {% endif %}
+            </section>
+        </div>
+    </div>
+{% endblock %}

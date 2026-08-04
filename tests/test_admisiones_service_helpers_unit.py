@@ -27,6 +27,10 @@ class _ListChain(list):
     def prefetch_related(self, *_args, **_kwargs):
         return self
 
+    def values_list(self, field, flat=False):
+        values = [getattr(item, field) for item in self]
+        return values if flat else [(value,) for value in values]
+
     def select_related(self, *_args, **_kwargs):
         return self
 
@@ -1050,6 +1054,7 @@ def test_generar_documento_admision_and_update_context(mocker):
     adm = SimpleNamespace(
         pk=8,
         tipo_convenio=object(),
+        tipo_convenio_id=1,
         comedor=SimpleNamespace(nombre="Comedor X"),
         estado_legales="Informe Complementario Solicitado",
         estado_admision="informe_tecnico_finalizado",
@@ -1090,6 +1095,10 @@ def test_generar_documento_admision_and_update_context(mocker):
         return_value=SimpleNamespace(
             distinct=lambda: SimpleNamespace(order_by=lambda *_: docs)
         ),
+    )
+    mocker.patch(
+        "admisiones.services.admisiones_service.DocumentacionOrganizacion.objects.filter",
+        return_value=_ListChain(),
     )
     mocker.patch(
         "admisiones.services.admisiones_service.ArchivoAdmision.objects.filter",
