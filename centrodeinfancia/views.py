@@ -20,6 +20,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
 from django.urls import reverse, reverse_lazy
 from django.utils.html import escape, format_html, format_html_join
+from django.utils.safestring import mark_safe
 from django.utils.text import Truncator
 from django.utils import timezone
 from django.views.decorators.http import require_GET, require_POST
@@ -491,9 +492,9 @@ class CentroDeInfanciaDetailView(LoginRequiredMixin, DetailView):
         intervenciones_items = []
         for intervencion in intervenciones_page_obj:
             doc_badge = (
-                format_html('<span class="badge bg-success">Sí</span>')
+                mark_safe('<span class="badge bg-success">Sí</span>')
                 if getattr(intervencion, "tiene_documentacion", False)
-                else format_html('<span class="badge bg-secondary">No</span>')
+                else mark_safe('<span class="badge bg-secondary">No</span>')
             )
 
             fecha_display = (

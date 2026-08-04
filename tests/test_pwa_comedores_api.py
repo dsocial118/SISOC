@@ -361,6 +361,7 @@ def test_comedor_detail_includes_mobile_relevamiento_summary():
     organizacion = Organizacion.objects.create(nombre="Organización Central")
     comedor = Comedor.objects.create(
         nombre="Espacio Relevado",
+        es_caritas=True,
         provincia=provincia,
         municipio=municipio,
         localidad=localidad,
@@ -456,6 +457,12 @@ def test_comedor_detail_includes_mobile_relevamiento_summary():
     assert items["¿Cómo se abastece de agua?"] == "Red"
     assert items["¿En qué lugar realiza sus compras?"] == "Supermercado, Mayoristas"
     assert "Murga" in items["¿Qué tipo de actividades se realizan?"]
+    domicilio = next(
+        section
+        for section in response.data["relevamiento_actual_mobile"]["sections"]
+        if section["titulo"] == "Domicilio del Espacio"
+    )
+    assert not any("caritas" in item["pregunta"].lower() for item in domicilio["items"])
 
 
 @pytest.mark.django_db

@@ -25,7 +25,7 @@ def migrar_proyectos(apps, schema_editor):
 class Migration(migrations.Migration):
     dependencies = [
         ("organizaciones", "0020_proyecto_organizacion"),
-        ("comedores", "0052_issue_2169_codigo_proyecto"),
+        ("comedores", "0053_issue_2216_es_caritas"),
     ]
 
     operations = [

@@ -65,6 +65,21 @@ def test_referente_clean_mail_paths(mocker):
     validator.assert_called_once_with("a@b.com")
 
 
+def test_comedor_form_requires_explicit_caritas_selection():
+    field = module.ComedorForm.base_fields["es_caritas"]
+
+    assert field.required is True
+    assert list(field.widget.choices) == [
+        ("", "---------"),
+        ("True", "Sí"),
+        ("False", "No"),
+    ]
+    assert field.clean("True") is True
+    assert field.clean("False") is False
+    with pytest.raises(ValidationError):
+        field.clean("")
+
+
 def test_imagen_comedor_form_rejects_files_over_3mb():
     form = module.ImagenComedorForm.__new__(module.ImagenComedorForm)
 

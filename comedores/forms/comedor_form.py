@@ -244,6 +244,14 @@ class ComedorForm(forms.ModelForm):
         empty_label="Seleccione un proyecto",
         label="Código de Proyecto",
     )
+    codigo_de_proyecto = forms.CharField(max_length=7, required=False)
+    es_caritas = forms.TypedChoiceField(
+        label="¿Es CARITAS?",
+        choices=[("", "---------"), ("True", "Sí"), ("False", "No")],
+        coerce=lambda value: value == "True",
+        empty_value=None,
+        required=True,
+    )
 
     def __init__(self, *args, **kwargs):
         self.current_user = kwargs.pop("user", None)
