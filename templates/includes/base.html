@@ -134,7 +134,10 @@
                             <p>¿Estás seguro de que deseas cerrar sesión?</p>
                         </div>
                         <div class="modal-footer justify-content-end">
-                            <a class="btn btn-danger" href="{% url 'logout' %}">Cerrar sesión</a>
+                            <form method="post" action="{% url 'logout' %}" class="d-inline">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-danger">Cerrar sesión</button>
+                            </form>
                             <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
                         </div>
                     </div>
@@ -155,7 +158,8 @@
             {% block customJS %}
             {% endblock %}
             <!-- Bloque de modales - renderizado fuera de la estructura principal -->
-            {% block modals %}{% endblock %}
+            {% block modals %}
+            {% endblock %}
         </div>
     </body>
 </html>
