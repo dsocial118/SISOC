@@ -1124,13 +1124,17 @@
                                         aria-label="Cerrar"></button>
                             </div>
                             <div class="modal-body">
-                                <label for="num-expediente-input" class="form-label">N&uacute;mero de expediente</label>
-                                <input type="text"
-                                       id="num-expediente-input"
-                                       class="form-control"
-                                       value="{{ admision.num_expediente|default_if_none:'' }}"
-                                       required
-                                       maxlength="255" />
+                                <label class="form-label">N&uacute;mero de expediente</label>
+                                <div class="input-group expediente-estructurado">
+                                    <span class="input-group-text">EX-</span>
+                                    <input id="num-expediente-anio" class="form-control" inputmode="numeric" maxlength="4" placeholder="2025" required>
+                                    <span class="input-group-text">-</span>
+                                    <input id="num-expediente-numero" class="form-control" inputmode="numeric" maxlength="9" placeholder="112100154" required>
+                                    <span class="input-group-text">- -APN-</span>
+                                    <input id="num-expediente-reparticion" class="form-control" maxlength="50" placeholder="DDNAYF" required>
+                                    <span class="input-group-text">#</span>
+                                    <input id="num-expediente-organismo" class="form-control" maxlength="50" value="MCH" required>
+                                </div>
                                 <small class="text-muted">
                                     Ten&eacute; en cuenta que, si modific&aacute;s el n&uacute;mero de expediente, este cambio no se reflejar&aacute; en el informe t&eacute;cnico en caso de que ya est&eacute; finalizado.
                                 </small>
@@ -1164,15 +1168,16 @@
                                 <div class="modal-body">
                                     <div class="form-group row mb-2">
                                         <div class="col-sm-10">
-                                            {% if caratular_form and caratular_form.num_expediente %}
-                                                {{ caratular_form.num_expediente| as_crispy_field }}
-                                            {% else %}
-                                                <input type="text"
-                                                       name="num_expediente"
-                                                       class="form-control"
-                                                       placeholder="Número de Expediente"
-                                                       required />
-                                            {% endif %}
+                                            <div class="input-group expediente-estructurado">
+                                                <span class="input-group-text">EX-</span>
+                                                {{ caratular_form.expediente_anio }}
+                                                <span class="input-group-text">-</span>
+                                                {{ caratular_form.expediente_numero }}
+                                                <span class="input-group-text">- -APN-</span>
+                                                {{ caratular_form.expediente_reparticion }}
+                                                <span class="input-group-text">#</span>
+                                                {{ caratular_form.expediente_organismo }}
+                                            </div>
                                         </div>
                                     </div>
                                 </div>

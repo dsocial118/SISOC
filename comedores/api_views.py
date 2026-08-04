@@ -950,13 +950,6 @@ class ComedorDetailViewSet(
     )
     def capacitaciones(self, request, pk=None):
         comedor = self.get_object()
-        if not is_alimentar_comunidad_program(comedor):
-            return Response(
-                {
-                    "detail": "Capacitaciones disponibles solo para programa Alimentar Comunidad."
-                },
-                status=status.HTTP_404_NOT_FOUND,
-            )
         records = list_capacitaciones_certificados(comedor)
         return Response(
             {
@@ -980,13 +973,6 @@ class ComedorDetailViewSet(
     )
     def subir_capacitacion(self, request, pk=None):
         comedor = self.get_object()
-        if not is_alimentar_comunidad_program(comedor):
-            return Response(
-                {
-                    "detail": "Capacitaciones disponibles solo para programa Alimentar Comunidad."
-                },
-                status=status.HTTP_404_NOT_FOUND,
-            )
         capacitacion = (request.data.get("capacitacion") or "").strip()
         archivo = request.FILES.get("archivo")
 
@@ -1027,13 +1013,6 @@ class ComedorDetailViewSet(
     )
     def eliminar_capacitacion(self, request, pk=None):
         comedor = self.get_object()
-        if not is_alimentar_comunidad_program(comedor):
-            return Response(
-                {
-                    "detail": "La sección de capacitaciones aplica solo a Alimentar Comunidad."
-                },
-                status=status.HTTP_400_BAD_REQUEST,
-            )
 
         capacitacion = (request.data.get("capacitacion") or "").strip()
         if capacitacion not in dict(
@@ -1711,6 +1690,13 @@ class ComedorDetailViewSet(
     @action(detail=True, methods=["get"], url_path="prestacion-alimentaria")
     def prestacion_alimentaria(self, request, pk=None):
         comedor = self.get_object()
+        if usa_datos_convenio_pnud(comedor):
+            return Response(
+                {
+                    "detail": "Prestaciones conveniadas temporalmente no disponibles para este programa."
+                },
+                status=status.HTTP_404_NOT_FOUND,
+            )
         datos_convenio_pnud = self._get_pnud_prestacion_alimentaria_datos(comedor)
         informe = (
             None
@@ -1744,6 +1730,13 @@ class ComedorDetailViewSet(
         self, request, pk=None
     ):  # pylint: disable=too-many-return-statements
         comedor = self.get_object()
+        if usa_datos_convenio_pnud(comedor):
+            return Response(
+                {
+                    "detail": "Prestaciones conveniadas temporalmente no disponibles para este programa."
+                },
+                status=status.HTTP_404_NOT_FOUND,
+            )
 
         conforme = request.data.get("conforme")
         if not isinstance(conforme, bool):

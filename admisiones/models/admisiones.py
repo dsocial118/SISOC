@@ -178,7 +178,7 @@ class Admision(models.Model):
     )
     num_expediente = models.CharField(max_length=255, blank=True, null=True)
     num_if = models.CharField(max_length=100, blank=True, null=True)
-    legales_num_if = models.CharField(max_length=100, blank=True, null=True)
+    legales_num_if = models.CharField(max_length=255, blank=True, null=True)
     creado = models.DateField(auto_now_add=True, null=True, blank=True)
     modificado = models.DateField(auto_now=True, null=True, blank=True)
     enviado_legales = models.BooleanField(

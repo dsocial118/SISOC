@@ -1524,17 +1524,11 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
                     if prestaciones_convenio_context is None
                     else prestaciones_convenio_context["monto_prestacion_mensual"]
                 ),
-                "show_capacitaciones_certificados": is_alimentar_comunidad_program(
-                    self.object
-                ),
-                "capacitaciones_certificados": (
-                    [
-                        serialize_certificate(item, request=self.request)
-                        for item in list_capacitaciones_certificados(self.object)
-                    ]
-                    if is_alimentar_comunidad_program(self.object)
-                    else []
-                ),
+                "show_capacitaciones_certificados": True,
+                "capacitaciones_certificados": [
+                    serialize_certificate(item, request=self.request)
+                    for item in list_capacitaciones_certificados(self.object)
+                ],
                 "es_programa_pnud": es_programa_pnud,
                 "usa_convenio_pnud": usa_convenio_pnud,
                 "puede_gestionar_actividades_espacio": puede_gestionar_actividades_espacio,

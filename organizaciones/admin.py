@@ -6,6 +6,7 @@ from organizaciones.models import (
     DocumentacionOrganizacion,
     Firmante,
     Organizacion,
+    ProyectoOrganizacion,
     RolFirmante,
     TipoOrganizacion,
 )
@@ -14,6 +15,7 @@ from organizaciones.models import (
 # reglas propias: quedan sin import/export por ahora.
 admin.site.register(Firmante)
 admin.site.register(Organizacion)
+admin.site.register(ProyectoOrganizacion)
 admin.site.register(DocumentacionOrganizacion)
 admin.site.register(ArchivoOrganizacion)
 
