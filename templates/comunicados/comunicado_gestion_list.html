@@ -10,98 +10,51 @@
 
     <div class="container mt-4">
 
-        <div class="card mb-4">
-            <div class="card-body">
-
-                <form method="get">
-
-                    <div class="row g-3 align-items-center">
-
-                        <!-- Buscador -->
-                        <div class="col-md-5">
-                            <div class="input-group">
-                                <input type="text"
-                                       name="titulo"
-                                       class="form-control"
-                                       placeholder="Buscar comunicado..."
-                                       value="{{ filtro_titulo }}" />
-
-                                <button class="btn btn-primary" type="submit">
-                                    <i class="fas fa-search"></i>
-                                </button>
-
-                                {% if filtro_titulo %}
-                                    <a href="?{% if filtro_estado %}estado={{ filtro_estado }}{% endif %}{% if filtro_tipo %}{% if filtro_estado %}&amp;{% endif %}tipo={{ filtro_tipo }}{% endif %}"
-                                       class="btn btn-outline-danger"
-                                       title="Limpiar búsqueda">
-                                        <i class="fas fa-times"></i>
-                                    </a>
-                                {% endif %}
-                            </div>
-                        </div>
-
-                        <!-- Filtro estado -->
-                        <div class="col-md-3">
-                            <select name="estado" class="form-select" onchange="this.form.submit()">
-                                <option value="">Estado: Todos</option>
-
-                                <option value="borrador"
-                                        {% if filtro_estado == 'borrador' %}selected{% endif %}>Borrador</option>
-
-                                <option value="publicado"
-                                        {% if filtro_estado == 'publicado' %}selected{% endif %}>Publicado</option>
-
-                                <option value="archivado"
-                                        {% if filtro_estado == 'archivado' %}selected{% endif %}>Archivado</option>
-                            </select>
-                        </div>
-
-                        <!-- Filtro tipo -->
-                        {% if not es_tecnico %}
-                            <div class="col-md-2">
-                                <select name="tipo" class="form-select" onchange="this.form.submit()">
-                                    <option value="">Tipo: Todos</option>
-
-                                    <option value="interno" {% if filtro_tipo == 'interno' %}selected{% endif %}>Interno</option>
-
-                                    <option value="externo" {% if filtro_tipo == 'externo' %}selected{% endif %}>Externo</option>
-                                </select>
-                            </div>
-                        {% endif %}
-
-                        {% if filtro_estado or filtro_tipo or filtro_titulo %}
-                            <div class="col-auto">
-                                <a href="?"
-                                   class="btn btn-outline-danger btn-sm"
-                                   title="Limpiar filtros">
-                                    <i class="fas fa-times"></i>
-                                </a>
-                            </div>
-                        {% endif %}
-
-                        {% if can_create %}
-                            <div class="col-auto">
-                                <a href="{% url 'comunicados_crear' %}" class="btn btn-success">
-                                    <i class="fas fa-plus me-1"></i> Nuevo
-                                </a>
-                            </div>
-                        {% endif %}
-
-                        {% if is_admin %}
-                            <div class="col-auto">
-                                <a href="{% url 'comunicados_mailing' %}" class="btn btn-primary">
-                                    <i class="fas fa-envelope me-1"></i> Mailing masivo
-                                </a>
-                            </div>
-                        {% endif %}
-
-                    </div>
-
-                </form>
-
-            </div>
+        {% include 'components/search_bar.html' with titulo='Buscar comunicado' placeholder='Buscar comunicado...' help_text='Buscar por título.' reset_url='comunicados_gestion' back_url='' search_name='titulo' query=filtro_titulo show_add_button=can_create add_url='comunicados_crear' add_text='Nuevo' additional_buttons=additional_buttons %}
+        {% comment %}
+        Estado y tipo son selects propios del modulo. Se enganchan al formulario
+        del componente con form= para que buscar no los pierda; `this.form`
+        sigue resolviendo a ese formulario, asi que el submit al cambiar anda.
+        {% endcomment %}
+        <div class="d-flex justify-content-center align-items-center flex-wrap gap-2 mb-4">
+            <label for="filtro-estado" class="mb-0">Estado</label>
+            <select id="filtro-estado"
+                    name="estado"
+                    form="simple-search-form"
+                    class="form-select w-auto"
+                    onchange="this.form.submit()">
+                <option value="">Todos</option>
+                <option value="borrador"
+                        {% if filtro_estado == 'borrador' %}selected{% endif %}>Borrador</option>
+                <option value="publicado"
+                        {% if filtro_estado == 'publicado' %}selected{% endif %}>Publicado</option>
+                <option value="archivado"
+                        {% if filtro_estado == 'archivado' %}selected{% endif %}>Archivado</option>
+            </select>
+            {% if not es_tecnico %}
+                <label for="filtro-tipo" class="mb-0 ms-3">Tipo</label>
+                <select id="filtro-tipo"
+                        name="tipo"
+                        form="simple-search-form"
+                        class="form-select w-auto"
+                        onchange="this.form.submit()">
+                    <option value="">Todos</option>
+                    <option value="interno" {% if filtro_tipo == 'interno' %}selected{% endif %}>Interno</option>
+                    <option value="externo" {% if filtro_tipo == 'externo' %}selected{% endif %}>Externo</option>
+                </select>
+            {% endif %}
+            {% comment %}
+            "Limpiar busqueda" borra solo el texto y conserva estado y tipo.
+            No lo cubre "Resetear" del componente, que vuelve al listado pelado.
+            {% endcomment %}
+            {% if filtro_titulo %}
+                <a href="?{% if filtro_estado %}estado={{ filtro_estado }}{% endif %}{% if filtro_tipo %}{% if filtro_estado %}&amp;{% endif %}tipo={{ filtro_tipo }}{% endif %}"
+                   class="btn btn-outline-danger btn-sm"
+                   title="Limpiar búsqueda">
+                    <i class="fas fa-times"></i>
+                </a>
+            {% endif %}
         </div>
-
 
         <!-- Tabla de comunicados -->
         <div class="card">
