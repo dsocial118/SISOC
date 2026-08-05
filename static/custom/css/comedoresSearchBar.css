@@ -295,8 +295,11 @@
   outline-offset: -4px;
 }
 
-/* "+ Filtro" */
-.poncho-search .poncho-addfilter {
+/* "+ Filtro". Sin scope a .poncho-search: en VPSL el boton vive dentro de
+   .poncho-filtros-modulo y quedaba con el estilo por defecto del navegador
+   (gris y sin forma). Las reglas #add-filter que obligaban al scope se
+   eliminaron de listModerno.css: ese id ya no existe. */
+.poncho-addfilter {
   display: inline-flex;
   align-items: center;
   gap: 5px;
@@ -314,7 +317,7 @@
   cursor: pointer;
 }
 
-.poncho-search .poncho-addfilter i {
+.poncho-addfilter i {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -326,7 +329,7 @@
   transition: background .2s ease;
 }
 
-.poncho-search .poncho-addfilter:hover i {
+.poncho-addfilter:hover i {
   background: var(--poncho-verde-hover);
 }
 
@@ -336,6 +339,48 @@
   text-align: center;
   font-size: 14px;
   color: var(--poncho-texto-placeholder);
+}
+
+/* ============================================
+   FILTROS PROPIOS DE CADA MODULO
+   ============================================
+   Algunos listados tienen controles que no entran en la barra (estado, tipo,
+   categoria, "buscar por"). Se enganchan al formulario del componente con
+   form= y se alinean a la izquierda, debajo del buscador.
+   Una sola clase para que todos se vean igual, en vez de repetir utilidades
+   sueltas en cada template.
+   ============================================ */
+.poncho-filtros-modulo {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  gap: .5rem;
+  margin-bottom: 1.5rem;
+}
+
+.poncho-filtros-modulo label {
+  margin-bottom: 0;
+  color: var(--poncho-blanco);
+  font-family: var(--poncho-font-base);
+  white-space: nowrap;
+}
+
+.poncho-filtros-modulo select,
+.poncho-filtros-modulo select.form-select,
+.poncho-filtros-modulo .form-select {
+  width: auto;
+  max-width: 100%;
+  background-color: var(--poncho-azul-principal);
+  border: 1px solid var(--poncho-blanco);
+  border-radius: var(--poncho-radio-base);
+  color: var(--poncho-blanco);
+  font-family: var(--poncho-font-base);
+}
+
+.poncho-filtros-modulo select option {
+  background: var(--poncho-blanco);
+  color: var(--poncho-azul-principal);
 }
 
 /* Botones PONCHO. La forma (radio 20px) se aplica acá solo a la search bar;

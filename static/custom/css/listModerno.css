@@ -947,27 +947,8 @@ h2.text-center.display-4 {
   transform: translateY(-1px);
 }
 
-/* Botón "Agregar filtro" */
-#add-filter {
-  background: #10b981 !important;
-  color: white !important;
-  border: 2px solid #10b981 !important;
-  border-radius: 6px !important;
-  padding: 6px 16px !important;
-  font-weight: 600 !important;
-  font-size: 13px !important;
-  transition: all 0.3s ease !important;
-  text-transform: uppercase !important;
-  letter-spacing: 0.3px !important;
-  box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2) !important;
-}
-
-#add-filter:hover {
-  background: #059669 !important;
-  border-color: #047857 !important;
-  transform: translateY(-2px) !important;
-  box-shadow: 0 6px 12px rgba(16, 185, 129, 0.3) !important;
-}
+/* Las reglas de #add-filter se eliminaron: el componente ya no usa ese id
+   (el boton "+ Filtro" es .poncho-addfilter con data-rol="agregar"). */
 
 /* Botón "Favoritos" */
 #favorite-filters-open {
