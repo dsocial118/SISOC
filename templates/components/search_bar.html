@@ -16,6 +16,10 @@ Modo búsqueda AJAX dinámica: {% include 'components/search_bar.html' with titu
 Boton "Volver" (opcional): pasar back_url (nombre de url o url completa) y
 opcionalmente back_text. Si no se pasa, no se renderiza.
 
+search_name (opcional, default 'busqueda'): nombre del parametro GET del input
+en modo simple. Sirve para migrar listados cuya vista ya lee otro nombre
+(por ejemplo 'q' o 'titulo') sin tener que tocar el backend.
+
 Layout (prototipo Figma "SISOC_ Versión UX", nodo 13501:32237):
 - Sin filtros: solo el buscador (input + lupa). La lupa dispara la búsqueda;
   ya no hay botón "Filtrar".
@@ -170,7 +174,7 @@ Layout (prototipo Figma "SISOC_ Versión UX", nodo 13501:32237):
                 <div class="poncho-search__box">
                     <input type="search"
                            id="ajax-search-input"
-                           name="busqueda"
+                           name="{{ search_name|default:'busqueda' }}"
                            class="poncho-search__input"
                            placeholder="{{ placeholder|default:'Buscar' }}"
                            title="{{ help_text|default:'Ingrese términos de búsqueda' }}"
