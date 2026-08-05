@@ -402,6 +402,9 @@ def test_comedor_detail_get_context_data_selected_admision_flow(mocker):
         "comedores.views.comedor.get_prestacion_conformidad_pending_period",
         return_value=None,
     )
+    mocker.patch(
+        "comedores.views.comedor.list_capacitaciones_certificados", return_value=[]
+    )
 
     ctx = view.get_context_data()
 
@@ -454,6 +457,9 @@ def test_comedor_detail_no_consulta_transacciones_sin_permiso_comedor(mocker):
         "comedores.views.comedor.get_prestacion_conformidad_pending_period",
         return_value=None,
     )
+    mocker.patch(
+        "comedores.views.comedor.list_capacitaciones_certificados", return_value=[]
+    )
 
     ctx = view.get_context_data()
 
@@ -502,6 +508,9 @@ def test_comedor_detail_consulta_transacciones_con_permiso_comedor(mocker):
     mocker.patch(
         "comedores.views.comedor.get_prestacion_conformidad_pending_period",
         return_value=None,
+    )
+    mocker.patch(
+        "comedores.views.comedor.list_capacitaciones_certificados", return_value=[]
     )
 
     ctx = view.get_context_data()

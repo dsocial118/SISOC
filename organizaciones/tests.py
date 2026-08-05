@@ -6,12 +6,14 @@ from pathlib import Path
 from django.contrib.auth.models import User, Permission
 from django.test import RequestFactory, TestCase, Client
 from django.urls import reverse
+from django.utils import timezone
 
 from comedores.models import Comedor, Programas, TipoDeComedor
 from core.models import Provincia
 from organizaciones.models import Organizacion, TipoEntidad
 from organizaciones.forms import OrganizacionForm
 from organizaciones.views import OrganizacionDetailView
+from rendicioncuentasmensual.models import RendicionCuentaMensual
 
 
 class CuilDuplicadoTemplateTests(TestCase):
@@ -106,6 +108,96 @@ class OrganizacionDetailViewTests(TestCase):
             response.content.decode(),
             r"(?s)Comedor histórico sin programa.*?<td>Comunitario</td>\s*<td>-</td>",
         )
+
+
+class OrganizacionRendicionesPresentadasTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_superuser(
+            username="admin-rendiciones",
+            email="admin-rendiciones@example.com",
+            password="secret",
+        )
+        self.client.force_login(self.user)
+        self.organizacion = Organizacion.objects.create(nombre="Organización PNUD")
+        self.comedor_p01 = Comedor.objects.create(
+            nombre="Comedor P01",
+            organizacion=self.organizacion,
+            codigo_de_proyecto="P01",
+        )
+        self.comedor_p02 = Comedor.objects.create(
+            nombre="Comedor P02",
+            organizacion=self.organizacion,
+            codigo_de_proyecto="P02",
+        )
+        self.rendicion_p01 = RendicionCuentaMensual.objects.create(
+            comedor=self.comedor_p01,
+            mes=6,
+            anio=2026,
+            convenio="CONV-01",
+            numero_rendicion=1,
+            monto_rendido="3000000.00",
+            fecha_validacion_territorial=timezone.now(),
+        )
+        self.rendicion_p02 = RendicionCuentaMensual.objects.create(
+            comedor=self.comedor_p02,
+            mes=7,
+            anio=2026,
+            convenio="CONV-02",
+            numero_rendicion=2,
+        )
+
+    def test_legajo_muestra_rendiciones_y_proyectos_disponibles(self):
+        response = self.client.get(
+            reverse("organizacion_detalle", kwargs={"pk": self.organizacion.pk})
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Rendiciones Presentadas")
+        self.assertContains(response, "CONV-01")
+        self.assertContains(response, "CONV-02")
+        self.assertEqual(response.context["proyectos_rendiciones"], ["P01", "P02"])
+
+    def test_filtro_por_proyecto_limita_resultados_y_activa_tab(self):
+        response = self.client.get(
+            reverse("organizacion_detalle", kwargs={"pk": self.organizacion.pk}),
+            {"proyecto": "P01"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "CONV-01")
+        self.assertNotContains(response, "CONV-02")
+        self.assertTrue(response.context["rendiciones_tab_activo"])
+
+    def test_detalle_muestra_datos_y_enlace_a_rendicion(self):
+        response = self.client.get(
+            reverse(
+                "organizacion_rendicion_detalle",
+                kwargs={
+                    "organizacion_id": self.organizacion.pk,
+                    "pk": self.rendicion_p01.pk,
+                },
+            )
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "CONV-01")
+        self.assertEqual(response.context["rendicion"].monto_rendido, 3000000)
+        self.assertContains(response, "Ir a Rendición")
+
+    def test_detalle_no_expone_rendicion_de_otra_organizacion(self):
+        otra_organizacion = Organizacion.objects.create(nombre="Otra organización")
+
+        response = self.client.get(
+            reverse(
+                "organizacion_rendicion_detalle",
+                kwargs={
+                    "organizacion_id": otra_organizacion.pk,
+                    "pk": self.rendicion_p01.pk,
+                },
+            )
+        )
+
+        self.assertEqual(response.status_code, 404)
 
 
 class CuilDuplicadoFormTests(TestCase):

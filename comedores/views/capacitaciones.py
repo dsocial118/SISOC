@@ -4,7 +4,6 @@ from django.shortcuts import get_object_or_404
 
 from comedores.models import CapacitacionComedorCertificado
 from comedores.services.capacitaciones_certificados_service import (
-    is_alimentar_comunidad_program,
     review_certificate,
     serialize_certificate,
 )
@@ -19,14 +18,6 @@ def capacitacion_certificado_estado_ajax(request, pk, certificado_id):
         )
 
     comedor = ComedorService.get_scoped_comedor_or_404(pk, request.user)
-    if not is_alimentar_comunidad_program(comedor):
-        return JsonResponse(
-            {
-                "success": False,
-                "error": "Capacitaciones no habilitadas para este programa.",
-            },
-            status=404,
-        )
     certificado = get_object_or_404(
         CapacitacionComedorCertificado,
         pk=certificado_id,
