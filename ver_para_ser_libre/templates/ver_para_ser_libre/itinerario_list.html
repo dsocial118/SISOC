@@ -13,122 +13,124 @@
 
 {% block content %}
     <div class="comedor-list-container vpsl-page vpsl-home">
-        <div class="vpsl-page-toolbar">
-            <a href="{% url 'inicio' %}" class="btn btn-light">Volver</a>
-        </div>
-        <section class="vpsl-search-hero" aria-labelledby="vpsl-search-title">
-            <h1 id="vpsl-search-title" class="vpsl-search-title">Buscar Itinerarios</h1>
-            <form method="get" class="vpsl-filter-panel">
-                <div class="vpsl-search-row">
-                    <label for="id_buscar_por" class="visually-hidden">Buscar por</label>
-                    <select id="id_buscar_por"
-                            name="buscar_por"
-                            class="form-select vpsl-search-kind"
-                            aria-label="Buscar por">
-                        <option value="todos"
-                                {% if filtros.buscar_por == "todos" %}selected{% endif %}>Buscar por</option>
-                        <option value="codigo"
-                                {% if filtros.buscar_por == "codigo" %}selected{% endif %}>Código</option>
-                        <option value="provincia"
-                                {% if filtros.buscar_por == "provincia" %}selected{% endif %}>Provincia</option>
-                        <option value="estado"
-                                {% if filtros.buscar_por == "estado" %}selected{% endif %}>Estado</option>
-                        <option value="referente"
-                                {% if filtros.buscar_por == "referente" %}selected{% endif %}>Referente</option>
-                    </select>
-                    <div class="vpsl-search-input-group">
-                        <input type="search"
-                               id="id_busqueda"
-                               name="busqueda"
-                               class="form-control"
-                               placeholder="Buscar por filtro..."
-                               value="{{ filtros.busqueda }}" />
-                        <button type="submit" class="btn btn-outline-light vpsl-search-button">
-                            <i class="bi bi-search" aria-hidden="true"></i>
-                            <span class="visually-hidden">Buscar</span>
-                        </button>
+        {% include 'components/search_bar.html' with titulo='Buscar Itinerarios' placeholder='Buscar por filtro...' help_text='Buscar itinerarios.' reset_url='vpsl_itinerario_list' back_url='inicio' query=filtros.busqueda show_add_button=perms.ver_para_ser_libre.add_itinerariovpsl add_url='vpsl_itinerario_create' add_text='Crear itinerario' %}
+        <div class="vpsl-filtros-propios">
+            <h1 id="vpsl-search-title" class="visually-hidden">Buscar Itinerarios</h1>
+            {% comment %}
+            "Buscar por" y el panel avanzado quedan como controles propios del
+            modulo, enganchados al formulario del componente con form=.
+            No se migraron a filters_mode porque la logica no es expresable con
+            AdvancedFilterEngine: "todos" hace un OR entre siete campos, estado
+            mapea texto a estado con una funcion, localidad cruza tres rutas y
+            provincia depende de permisos. El motor arma un Q por fila y los
+            combina con AND.
+            {% endcomment %}
+            <div class="d-flex justify-content-center align-items-center flex-wrap gap-2 mb-3">
+                <label for="id_buscar_por" class="mb-0">Buscar por</label>
+                <select id="id_buscar_por"
+                        name="buscar_por"
+                        form="simple-search-form"
+                        class="form-select w-auto">
+                    <option value="todos"
+                            {% if filtros.buscar_por == "todos" %}selected{% endif %}>Todos</option>
+                    <option value="codigo"
+                            {% if filtros.buscar_por == "codigo" %}selected{% endif %}>Código</option>
+                    <option value="provincia"
+                            {% if filtros.buscar_por == "provincia" %}selected{% endif %}>Provincia</option>
+                    <option value="estado"
+                            {% if filtros.buscar_por == "estado" %}selected{% endif %}>Estado</option>
+                    <option value="referente"
+                            {% if filtros.buscar_por == "referente" %}selected{% endif %}>Referente</option>
+                </select>
+                <button class="poncho-addfilter"
+                        type="button"
+                        data-bs-toggle="collapse"
+                        data-bs-target="#vpslAdvancedFilters"
+                        aria-expanded="false"
+                        aria-controls="vpslAdvancedFilters">
+                    <i class="fas fa-plus" aria-hidden="true"></i><span>Filtro</span>
+                </button>
+            </div>
+            <div id="vpslAdvancedFilters"
+                 class="collapse {% if filtros.estado or filtros.provincia or filtros.localidad or filtros.fecha_desde or filtros.fecha_hasta %}show{% endif %}">
+                <div class="row g-3 pt-3">
+                    <div class="col-12 col-md-6 col-xl">
+                        <label for="id_estado" class="form-label">Estado</label>
+                        <select id="id_estado"
+                                name="estado"
+                                form="simple-search-form"
+                                class="form-control">
+                            <option value="">Todos</option>
+                            {% for value,label in estado_choices %}
+                                <option value="{{ value }}"
+                                        {% if filtros.estado == value %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
                     </div>
-                    <button class="btn btn-link vpsl-filter-toggle"
-                            type="button"
-                            data-bs-toggle="collapse"
-                            data-bs-target="#vpslAdvancedFilters"
-                            aria-expanded="false"
-                            aria-controls="vpslAdvancedFilters">
-                        <i class="bi bi-plus" aria-hidden="true"></i> Filtro
-                    </button>
-                </div>
-                <div id="vpslAdvancedFilters"
-                     class="collapse {% if filtros.estado or filtros.provincia or filtros.localidad or filtros.fecha_desde or filtros.fecha_hasta %}show{% endif %}">
-                    <div class="row g-3 pt-3">
-                        <div class="col-12 col-md-6 col-xl">
-                            <label for="id_estado" class="form-label">Estado</label>
-                            <select id="id_estado" name="estado" class="form-control">
-                                <option value="">Todos</option>
-                                {% for value,label in estado_choices %}
-                                    <option value="{{ value }}"
-                                            {% if filtros.estado == value %}selected{% endif %}>{{ label }}</option>
+                    <div class="col-12 col-md-6 col-xl">
+                        <label for="id_provincia" class="form-label">Provincia</label>
+                        {% if provincia_restringida %}
+                            <input type="text"
+                                   id="id_provincia"
+                                   class="form-control bg-dark text-white"
+                                   value="{{ provincia_restringida }}"
+                                   disabled />
+                        {% else %}
+                            <select id="id_provincia"
+                                    name="provincia"
+                                    form="simple-search-form"
+                                    class="form-control">
+                                <option value="">Todas</option>
+                                {% for provincia in provincias %}
+                                    <option value="{{ provincia.pk }}"
+                                            {% if filtros.provincia == provincia.pk|stringformat:"s" %}selected{% endif %}>
+                                        {{ provincia.nombre }}
+                                    </option>
                                 {% endfor %}
                             </select>
-                        </div>
-                        <div class="col-12 col-md-6 col-xl">
-                            <label for="id_provincia" class="form-label">Provincia</label>
-                            {% if provincia_restringida %}
-                                <input type="text"
-                                       id="id_provincia"
-                                       class="form-control bg-dark text-white"
-                                       value="{{ provincia_restringida }}"
-                                       disabled />
-                            {% else %}
-                                <select id="id_provincia" name="provincia" class="form-control">
-                                    <option value="">Todas</option>
-                                    {% for provincia in provincias %}
-                                        <option value="{{ provincia.pk }}"
-                                                {% if filtros.provincia == provincia.pk|stringformat:"s" %}selected{% endif %}>
-                                            {{ provincia.nombre }}
-                                        </option>
-                                    {% endfor %}
-                                </select>
-                            {% endif %}
-                        </div>
-                        <div class="col-12 col-md-6 col-xl">
-                            <label for="id_localidad" class="form-label">Localidad</label>
-                            <input type="text"
-                                   id="id_localidad"
-                                   name="localidad"
-                                   class="form-control"
-                                   value="{{ filtros.localidad }}"
-                                   placeholder="Localidad" />
-                        </div>
-                        <div class="col-12 col-md-3 col-xl">
-                            <label for="id_fecha_desde" class="form-label">Desde</label>
-                            <input type="date"
-                                   id="id_fecha_desde"
-                                   name="fecha_desde"
-                                   class="form-control"
-                                   value="{{ filtros.fecha_desde }}" />
-                        </div>
-                        <div class="col-12 col-md-3 col-xl">
-                            <label for="id_fecha_hasta" class="form-label">Hasta</label>
-                            <input type="date"
-                                   id="id_fecha_hasta"
-                                   name="fecha_hasta"
-                                   class="form-control"
-                                   value="{{ filtros.fecha_hasta }}" />
-                        </div>
+                        {% endif %}
                     </div>
-                    <div class="vpsl-filter-actions">
-                        <button type="submit" class="btn btn-primary">Aplicar filtros</button>
-                        <a href="{% url 'vpsl_itinerario_list' %}" class="btn btn-outline-light">Limpiar</a>
+                    <div class="col-12 col-md-6 col-xl">
+                        <label for="id_localidad" class="form-label">Localidad</label>
+                        <input type="text"
+                               id="id_localidad"
+                               name="localidad"
+                               form="simple-search-form"
+                               class="form-control"
+                               value="{{ filtros.localidad }}"
+                               placeholder="Localidad" />
+                    </div>
+                    <div class="col-12 col-md-3 col-xl">
+                        <label for="id_fecha_desde" class="form-label">Desde</label>
+                        <input type="date"
+                               id="id_fecha_desde"
+                               name="fecha_desde"
+                               form="simple-search-form"
+                               class="form-control"
+                               value="{{ filtros.fecha_desde }}" />
+                    </div>
+                    <div class="col-12 col-md-3 col-xl">
+                        <label for="id_fecha_hasta" class="form-label">Hasta</label>
+                        <input type="date"
+                               id="id_fecha_hasta"
+                               name="fecha_hasta"
+                               form="simple-search-form"
+                               class="form-control"
+                               value="{{ filtros.fecha_hasta }}" />
                     </div>
                 </div>
-            </form>
-        </section>
+                <div class="vpsl-filter-actions">
+                    <button type="submit" form="simple-search-form" class="btn btn-primary">Aplicar filtros</button>
+                    <a href="{% url 'vpsl_itinerario_list' %}" class="btn btn-outline-light">Limpiar</a>
+                </div>
+            </div>
+        </div>
+        {% comment %}
+        "Crear itinerario" ya lo renderiza el componente de busqueda; aca
+        quedaba duplicado.
+        {% endcomment %}
         <div class="vpsl-list-toolbar">
             <span class="vpsl-list-caption">Itinerarios</span>
-            {% if perms.ver_para_ser_libre.add_itinerariovpsl %}
-                <a href="{% url 'vpsl_itinerario_create' %}"
-                   class="btn btn-success btn-sm"><i class="bi bi-plus-lg"></i> Crear itinerario</a>
-            {% endif %}
         </div>
         <div class="row max-width-100">
             <div class="col-12">
