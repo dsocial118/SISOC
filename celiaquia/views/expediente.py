@@ -804,6 +804,15 @@ class ExpedienteListView(ListView):
         ctx["can_manage_excel_masivo_audit"] = is_admin or is_coord
         ctx["show_tecnico_column_celiaquia"] = is_admin or is_coord or is_tecnico
 
+        # El titulo depende del rol y lo consume el componente de busqueda, que
+        # lo recibe como parametro; armarlo aca evita repetir el include.
+        if ctx["can_manage_tecnicos_celiaquia"]:
+            ctx["titulo_listado"] = "Bandeja de Subsecretaría"
+        elif is_tecnico:
+            ctx["titulo_listado"] = "Mis Expedientes Asignados"
+        else:
+            ctx["titulo_listado"] = "Mis Expedientes"
+
         if is_admin or is_coord:
             ctx["tecnicos"] = _tecnicos_queryset().order_by("last_name", "first_name")
         return ctx
