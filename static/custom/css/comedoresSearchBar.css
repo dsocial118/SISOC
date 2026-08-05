@@ -155,6 +155,7 @@
 .poncho-search .poncho-search__field {
   flex: 0 0 auto;
   width: auto;
+  min-height: 0;
   /* 10px + 133px de texto + 40px de la caja del chevron = 183px (prototipo) */
   max-width: 193px;
   height: auto;
@@ -229,11 +230,15 @@
 }
 
 /* padding 10px en los 4 lados: sumado al pl 20px de la caja da los 30px de
-   sangria izquierda del prototipo (nodo I13503:33051;9908:10340). */
-.poncho-search .poncho-search__input {
+   sangria izquierda del prototipo (nodo I13503:33051;9908:10340).
+   La cadena incluye __box para llegar a (0,3,0): hay hojas por modulo con
+   selectores como `.vat-ui input[type="search"]` (0,2,1) que si no le ganan
+   al input y le dibujan una segunda caja dentro de la nuestra. */
+.poncho-search .poncho-search__box .poncho-search__input {
   flex: 1 1 auto;
   min-width: 0;
   height: auto;
+  min-height: 0;
   padding: 10px;
   background: transparent;
   border: none;
@@ -265,7 +270,7 @@
 }
 
 /* Lupa: reemplaza al botón "Filtrar" */
-.poncho-search .poncho-search__go {
+.poncho-search .poncho-search__box .poncho-search__go {
   flex: 0 0 auto;
   display: flex;
   align-items: center;
