@@ -646,6 +646,39 @@ body:has(.vpsl-page) .app-content-header {
   color: #fff;
 }
 
+/* Panel desplegable de filtros avanzados: usa la paleta PONCHO como el resto
+   del listado. Antes heredaba el fondo de la pagina y no se distinguia. */
+#vpslAdvancedFilters {
+  margin-bottom: 1.5rem;
+  padding: 1.25rem;
+  background: var(--poncho-azul-principal);
+  border: 1px solid rgba(255, 255, 255, .25);
+  border-radius: var(--poncho-radio-buscador);
+}
+
+#vpslAdvancedFilters .form-label {
+  color: var(--poncho-blanco);
+  font-family: var(--poncho-font-base);
+}
+
+#vpslAdvancedFilters .form-control,
+#vpslAdvancedFilters select.form-control {
+  background-color: var(--poncho-azul-secundario);
+  border: 1px solid var(--poncho-blanco);
+  border-radius: var(--poncho-radio-base);
+  color: var(--poncho-blanco);
+  font-family: var(--poncho-font-base);
+}
+
+#vpslAdvancedFilters select.form-control option {
+  background: var(--poncho-blanco);
+  color: var(--poncho-azul-principal);
+}
+
+#vpslAdvancedFilters .form-control::placeholder {
+  color: var(--poncho-texto-placeholder);
+}
+
 .vpsl-filter-actions {
   display: flex;
   justify-content: flex-end;
