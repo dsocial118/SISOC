@@ -226,11 +226,13 @@
                         <div class="form-group row">
                             <div class="col-md-6">
                                 {{ form.fecha_vencimiento|as_crispy_field }}
+                                {{ form.sin_vencimiento|as_crispy_field }}
                                 <span class="field-tooltip">
                                     <i class="fas fa-info-circle"></i>
                                     <span class="tooltip-text">Fecha de vencimiento del convenio o acuerdo</span>
                                 </span>
                             </div>
+                            <div class="col-md-6">{{ form.codigos_proyecto|as_crispy_field }}</div>
                         </div>
                     </div>
                 </div>

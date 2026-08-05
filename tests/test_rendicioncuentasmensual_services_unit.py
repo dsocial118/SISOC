@@ -751,7 +751,7 @@ def test_sincronizar_estado_rendicion_por_documentos_mueve_a_subsanar(mocker):
 
     assert rendicion.estado == RendicionCuentaMensual.ESTADO_SUBSANAR
     rendicion.save.assert_called_once_with(
-        update_fields=["estado", "ultima_modificacion"]
+        update_fields=["estado", "subestado_proceso", "ultima_modificacion"]
     )
 
 
@@ -776,7 +776,7 @@ def test_sincronizar_estado_rendicion_por_documentos_mueve_a_finalizada(mocker):
 
     assert rendicion.estado == RendicionCuentaMensual.ESTADO_FINALIZADA
     rendicion.save.assert_called_once_with(
-        update_fields=["estado", "ultima_modificacion"]
+        update_fields=["estado", "subestado_proceso", "ultima_modificacion"]
     )
 
 

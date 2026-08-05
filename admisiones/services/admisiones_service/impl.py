@@ -3115,7 +3115,34 @@ class AdmisionService:
                     "El número de expediente es obligatorio."
                 )
 
+            if not re.fullmatch(
+                r"EX-\d{4}-\d{9}- -APN-[A-Z0-9]+#[A-Z0-9]+",
+                numero_raw,
+                re.IGNORECASE,
+            ):
+                return AdmisionService._build_error_response_actualizar_num_expediente(
+                    "Formato inválido. Use EX-AÑO-NÚMERO- -APN-REPARTICIÓN#ORGANISMO."
+                )
+
+            numero_raw = numero_raw.upper()
+
             admision = get_object_or_404(Admision, id=admision_id)
+
+            duplicada = (
+                Admision.objects.filter(num_expediente__iexact=numero_raw)
+                .exclude(pk=admision.pk)
+                .select_related("comedor__organizacion")
+                .first()
+            )
+            if duplicada:
+                comedor = duplicada.comedor
+                organizacion = comedor.organizacion if comedor else None
+                tipo = duplicada.get_tipo_display() if duplicada.tipo else "Sin tipo"
+                return AdmisionService._build_error_response_actualizar_num_expediente(
+                    f"El expediente ya pertenece a la admisión #{duplicada.pk}; "
+                    f"comedor: {comedor or 'Sin comedor'}; organización: "
+                    f"{organizacion or 'Sin organización'}; tipo: {tipo}."
+                )
 
             if not AdmisionService._puede_editar_num_expediente(request.user, admision):
                 if admision.enviado_legales:
