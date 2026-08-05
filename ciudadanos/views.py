@@ -147,10 +147,12 @@ CIUDADANOS_ADVANCED_FILTER = AdvancedFilterEngine(
 )
 
 
-class CiudadanosListView(LoginRequiredMixin, ListView):
+class CiudadanosListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
     template_name = "ciudadanos/ciudadano_list.html"
     context_object_name = "ciudadanos"
     paginate_by = 25
+    permission_required = "ciudadanos.view_ciudadano"
+    raise_exception = True
 
     def get_filter_form_data(self):
         data = self.request.GET
@@ -197,10 +199,12 @@ class CiudadanosListView(LoginRequiredMixin, ListView):
         return ctx
 
 
-class CiudadanosDetailView(LoginRequiredMixin, DetailView):
+class CiudadanosDetailView(LoginRequiredMixin, PermissionRequiredMixin, DetailView):
     model = Ciudadano
     template_name = "ciudadanos/ciudadano_detail.html"
     context_object_name = "ciudadano"
+    permission_required = "ciudadanos.view_ciudadano"
+    raise_exception = True
     MESES_NOMBRES = [
         "",
         "Ene",
@@ -546,10 +550,12 @@ class CiudadanosDetailView(LoginRequiredMixin, DetailView):
         }
 
 
-class CiudadanosCreateView(LoginRequiredMixin, CreateView):
+class CiudadanosCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView):
     model = Ciudadano
     form_class = CiudadanoForm
     template_name = "ciudadanos/ciudadano_form.html"
+    permission_required = "ciudadanos.add_ciudadano"
+    raise_exception = True
     SEXO_BUSQUEDA_CHOICES = (
         ("M", "Masculino"),
         ("F", "Femenino"),
@@ -722,10 +728,12 @@ class CiudadanosCreateView(LoginRequiredMixin, CreateView):
         return redirect(ciudadano.get_absolute_url())
 
 
-class CiudadanosUpdateView(LoginRequiredMixin, UpdateView):
+class CiudadanosUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
     model = Ciudadano
     form_class = CiudadanoForm
     template_name = "ciudadanos/ciudadano_form.html"
+    permission_required = "ciudadanos.change_ciudadano"
+    raise_exception = True
 
     def form_valid(self, form):
         ciudadano = form.save(commit=False)
@@ -745,16 +753,22 @@ class CiudadanosUpdateView(LoginRequiredMixin, UpdateView):
         return redirect(ciudadano.get_absolute_url())
 
 
-class CiudadanosDeleteView(SoftDeleteDeleteViewMixin, LoginRequiredMixin, DeleteView):
+class CiudadanosDeleteView(
+    SoftDeleteDeleteViewMixin, LoginRequiredMixin, PermissionRequiredMixin, DeleteView
+):
     model = Ciudadano
     template_name = "ciudadanos/ciudadano_confirm_delete.html"
     success_url = reverse_lazy("ciudadanos")
     success_message = "Ciudadano dado de baja correctamente."
+    permission_required = "ciudadanos.delete_ciudadano"
+    raise_exception = True
 
 
-class GrupoFamiliarCreateView(LoginRequiredMixin, FormView):
+class GrupoFamiliarCreateView(LoginRequiredMixin, PermissionRequiredMixin, FormView):
     form_class = GrupoFamiliarForm
     template_name = "ciudadanos/grupofamiliar_form.html"
+    permission_required = "ciudadanos.change_ciudadano"
+    raise_exception = True
 
     def dispatch(self, request, *args, **kwargs):
         self.ciudadano = get_object_or_404(Ciudadano, pk=kwargs.get("pk"))
@@ -783,11 +797,14 @@ class GrupoFamiliarCreateView(LoginRequiredMixin, FormView):
 class GrupoFamiliarDeleteView(
     SoftDeleteDeleteViewMixin,
     LoginRequiredMixin,
+    PermissionRequiredMixin,
     DeleteView,
 ):
     model = GrupoFamiliar
     template_name = "ciudadanos/grupofamiliar_confirm_delete.html"
     success_message = None
+    permission_required = "ciudadanos.change_ciudadano"
+    raise_exception = True
 
     def get_success_url(self):
         messages.success(self.request, "Relación familiar eliminada.")

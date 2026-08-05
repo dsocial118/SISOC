@@ -7,6 +7,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Permission
 from django.http import QueryDict
 from django.urls import reverse
 
@@ -566,6 +567,14 @@ def test_ciudadanos_crear_permite_no_estandar_con_dni_de_estandar(client, monkey
     user = get_user_model().objects.create_user(
         username="ciudadanos_duplicados",
         password="test-pass",
+    )
+    user.user_permissions.add(
+        Permission.objects.get(
+            content_type__app_label="ciudadanos", codename="add_ciudadano"
+        ),
+        Permission.objects.get(
+            content_type__app_label="ciudadanos", codename="view_ciudadano"
+        ),
     )
     estandar = module.Ciudadano.objects.create(
         apellido="Gomez",
