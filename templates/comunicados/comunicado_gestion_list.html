@@ -48,9 +48,7 @@
             No lo cubre "Resetear" del componente, que vuelve al listado pelado.
             {% endcomment %}
             {% if filtro_titulo %}
-                <a href="?{% if filtro_estado %}estado={{ filtro_estado }}{% endif %}{% if filtro_tipo %}{% if filtro_estado %}&amp;{% endif %}tipo={{ filtro_tipo }}{% endif %}"
-                   class="btn btn-outline-danger btn-sm"
-                   title="Limpiar búsqueda">
+                <a href="?{% if filtro_estado %}estado={{ filtro_estado }}{% endif %}{% if filtro_tipo %}{% if filtro_estado %}&amp;{% endif %}tipo={{ filtro_tipo }}{% endif %}" class="btn btn-outline-danger btn-sm" title="Limpiar búsqueda">
                     <i class="fas fa-times"></i>
                 </a>
             {% endif %}
