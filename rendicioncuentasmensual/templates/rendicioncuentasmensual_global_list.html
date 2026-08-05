@@ -41,14 +41,12 @@
                                                 {% endif %}
                                             </td>
                                             <td>
-                                                {% if rendicion.estado == 'finalizada' %}
-                                                    <span class="badge-validacion validado">Finalizada</span>
-                                                {% elif rendicion.estado == 'subsanar' %}
-                                                    <span class="badge-validacion no-validado">A subsanar</span>
-                                                {% elif rendicion.estado == 'revision' %}
-                                                    <span class="badge-validacion pendiente">En revisión</span>
+                                                {% if rendicion.subestado_proceso == 'finalizada' %}
+                                                    <span class="badge-validacion validado">{{ rendicion.estado_proceso_display }}</span>
+                                                {% elif rendicion.subestado_proceso == 'pendiente_correcciones' %}
+                                                    <span class="badge-validacion no-validado">{{ rendicion.estado_proceso_display }}</span>
                                                 {% else %}
-                                                    <span class="badge-validacion pendiente">En elaboración</span>
+                                                    <span class="badge-validacion pendiente">{{ rendicion.estado_proceso_display }}</span>
                                                 {% endif %}
                                             </td>
                                             <td>{{ rendicion.ultima_modificacion|date:"d/m/Y H:i" }}</td>

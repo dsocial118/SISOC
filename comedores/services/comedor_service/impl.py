@@ -27,7 +27,7 @@ from django.shortcuts import redirect
 from django.urls import reverse
 from django.shortcuts import get_object_or_404
 from django.db.models.functions import Coalesce, Now
-from django.utils.html import format_html
+from django.utils.safestring import mark_safe
 
 from relevamientos.models import Relevamiento, ClasificacionComedor
 from ciudadanos.models import Ciudadano
@@ -737,7 +737,7 @@ class ComedorService:
 
         if admision_enviada:
             admision_step_class = "step completed"
-            admision_circle_html = format_html('<i class="bi bi-check-lg"></i>')
+            admision_circle_html = mark_safe('<i class="bi bi-check-lg"></i>')
             connector_class = "connector completed"
             ejecucion_step_class = "step active"
         else:
@@ -774,7 +774,7 @@ class ComedorService:
 
         if admision_enviada:
             admision_step_class = "step completed"
-            admision_circle_html = format_html('<i class="bi bi-check-lg"></i>')
+            admision_circle_html = mark_safe('<i class="bi bi-check-lg"></i>')
             connector_class = "connector completed"
             ejecucion_step_class = "step active"
         else:

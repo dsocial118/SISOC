@@ -278,16 +278,16 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 | `centrodefamilia/` | beneficiarios/centros/familia + consulta RENAPER + API | `models.py`, `views.py`, `api_views.py`, `services/consulta_renaper` | Alto |
 | `celiaquia/` | modulo especializado con bastante logica en services y vistas | `models.py`, `views/`, `services/`, `permissions.py`, tests | Alto |
 | `admisiones/` | flujo de admision, legales/tecnicos, generacion DOCX/PDF | `views/web_views.py`, `services/`, `forms/`, templates `docx/` y `pdf/` | Alto |
-| `VAT/` | modulo amplio propio con views, API, services y reportes | `models.py`, `views/`, `api_views.py`, `services/`, `serializers.py` | Alto |
+| `VAT/` | modulo amplio propio con views, API, services y reportes | `models.py`, `views/`, `api_views.py`, `services/`, `serializers.py`; docs `docs/vat/` | Alto |
 | `pwa/` | endpoints backend para experiencia PWA | `api_urls.py`, `api_views.py`, `services/`, `models.py` | Medio |
 | `ticketera/` | API server-to-server con kill-switch | `api_urls.py`, `api_views.py`, `api_serializers.py` | Medio |
 | `comunicados/` | mensajes/comunicados y API asociada | `models.py`, `views.py`, `api_views.py`, forms | Medio |
-| `organizaciones/` | entidades/organizaciones vinculadas | `models.py`, `views.py`, forms | Medio |
+| `organizaciones/` | entidades/organizaciones vinculadas; el detalle incluye rendiciones presentadas por proyecto | `models.py`, `views.py`, `templates/organizacion_detail.html` | Medio |
 | `centrodeinfancia/` | dominio de centros de infancia, personal y asistencia | `models.py`, `services.py`, `views.py`, `tests/`, urls | Alto |
 | `acompanamientos/` | seguimiento/acompanamientos | `views.py`, `acompanamiento_service.py`, `services/filter_config.py`, templates | Medio |
 | `expedientespagos/` | expedientes de pagos | `models.py`, `views.py`, urls | Bajo |
 | `rendicioncuentasfinal/` | rendicion final | `models.py`, `views.py`, urls | Bajo |
-| `rendicioncuentasmensual/` | rendicion mensual | `models.py`, `views.py`, urls | Bajo |
+| `rendicioncuentasmensual/` | rendicion mensual, revisión documental y datos de auditoría expuestos en Organizaciones | `models.py`, `services.py`, `views.py`, urls | Medio |
 | `duplas/` | equipos tecnicos/duplas | `models.py`, `views.py` | Bajo-Medio |
 | `dispositivos/` | dominio de dispositivos | `models.py`, `views.py`, tests | Bajo |
 | `importarexpediente/` | flujo de importacion de expedientes | `views.py`, `models.py`, urls, tests | Medio |
@@ -439,6 +439,25 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - templates `admisiones/templates/admisiones/docx/`
 - templates `admisiones/templates/admisiones/pdf/`
 - `admisiones/tests/`
+- El catálogo de variables de contenido se persiste como
+  `VariableTemplateInformeTecnico`; guarda expresiones Django sin delimitadores
+  (por ejemplo, `informe.nombre_organizacion`). Sólo las variables activas se
+  pueden publicar. La migración `0073` precarga las 106 expresiones de los
+  cuatro modelos DOCX vigentes y `0074` agrega los alias planos compatibles
+  con el primer editor del Gestor.
+- Templates dinámicos de Informe Técnico: condiciones, versiones y publicaciones
+  en `admisiones/models/admisiones.py`; servicio en
+  `admisiones/services/templates_informe_tecnico_service/`; UI de gestión en
+  `admisiones/views/templates_informe_tecnico.py` y
+  `admisiones/templates/admisiones/templates_informes_tecnicos/`. La UI se
+  agrupa visualmente bajo Gestor de templates mediante el parcial
+  `includes/navigation.html` y los estilos aislados
+  `static/custom/css/gestor_templates.css`; el sidebar anida Templates,
+  Variables documentales e Incidencias de templates. Las incidencias se
+  agrupan por combinación abierta; las vistas previas son DOCX temporales con
+  marca de agua y nunca se adjuntan a la admisión. Al crear un template, el
+  tipo de convenio se limita al catálogo de Personerías o Organización Base,
+  presentada funcionalmente como Asociación de hecho.
 - El Informe Tecnico Complementario se abre tanto desde Admision como desde el
   convenio seleccionado en `acompanamientos/views.py` y
   `acompanamientos/templates/acompañamiento_detail.html`.
@@ -474,6 +493,15 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - GESTIONAR: `comedores/tasks.py`, `relevamientos/tasks.py`, management commands relacionados, `.env.example`
 - RENAPER: `centrodefamilia/services/consulta_renaper.py`, `VAT/services/consulta_renaper/impl.py`, docs `docs/flujos/consulta_renaper.md`
 - Ticketera: `ticketera/`, `docs/integraciones/ticketera_api.md`
+
+### Si necesitas cambiar preinscriptos CDF o vouchers VAT
+
+- Preinscriptos y CSV CDF: `centrodefamilia/views/beneficiarios_export.py`,
+  `centrodefamilia/services/beneficiarios_service/impl.py`, tests de
+  exportación y `docs/implementaciones/centrodefamilia_preinscriptos.md`.
+- Vouchers VAT: `VAT/services/voucher_service/`,
+  `VAT/services/tipo_alumno_service.py`, tests VAT y
+  `docs/vat/VOUCHER_SETUP.md`.
 
 ### Si necesitas cambiar CI o reglas de calidad
 

@@ -55,6 +55,7 @@ def test_formulario_limpia_detalle_de_otra_categoria_que_ya_no_aplica(db):
             "estado_general": str(actividad.pk),
             "subestado": str(proceso.pk),
             "motivo": "",
+            "es_caritas": "False",
             "categoria_espacio_comunitario": Comedor.CATEGORIA_ESPACIO_HOGAR,
             "categoria_espacio_comunitario_otra": "Dato obsoleto",
         }

@@ -37,6 +37,7 @@
                 {% csrf_token %}
                 <div class="row">
                     <div class="col-md-6">{{ form.monto_total_conveniado|as_crispy_field }}</div>
+                    <div class="col-md-6">{{ form.personas_declaradas_siph|as_crispy_field }}</div>
                     <div class="col-md-6">{{ form.nro_convenio|as_crispy_field }}</div>
                     <div class="col-md-6">{{ form.monto_convenio_prestaciones_alimentarias|as_crispy_field }}</div>
                     <div class="col-md-6">{{ form.monto_convenio_siph|as_crispy_field }}</div>

@@ -19,7 +19,7 @@ from comedores.utils import is_pnud_comedor, permite_codigo_de_proyecto
 
 from core.models import Municipio, Provincia
 from core.models import Localidad
-from organizaciones.models import Organizacion
+from organizaciones.models import Organizacion, ProyectoOrganizacion
 from pwa.models import ActividadEspacioPWA
 from core.validators import validate_unicode_email
 from users.services import UserPermissionService
@@ -238,7 +238,20 @@ class ComedorForm(forms.ModelForm):
     longitud = forms.FloatField(min_value=-180, max_value=180, required=False)
     latitud = forms.FloatField(min_value=-90, max_value=90, required=False)
     codigo_postal = forms.IntegerField(min_value=1000, max_value=999999, required=False)
+    proyecto = forms.ModelChoiceField(
+        queryset=ProyectoOrganizacion.objects.none(),
+        required=False,
+        empty_label="Seleccione un proyecto",
+        label="Código de Proyecto",
+    )
     codigo_de_proyecto = forms.CharField(max_length=7, required=False)
+    es_caritas = forms.TypedChoiceField(
+        label="¿Es CARITAS?",
+        choices=[("", "---------"), ("True", "Sí"), ("False", "No")],
+        coerce=lambda value: value == "True",
+        empty_value=None,
+        required=True,
+    )
 
     def __init__(self, *args, **kwargs):
         self.current_user = kwargs.pop("user", None)
@@ -263,6 +276,14 @@ class ComedorForm(forms.ModelForm):
             )
         else:
             self.fields["organizacion"].queryset = Organizacion.objects.none()
+
+        if selected_organizacion_id:
+            self.fields["proyecto"].queryset = ProyectoOrganizacion.objects.filter(
+                organizacion_id=selected_organizacion_id,
+                activo=True,
+            ).order_by("codigo")
+        else:
+            self.fields["proyecto"].queryset = ProyectoOrganizacion.objects.none()
 
         self.codigo_de_proyecto_programa_ids = ",".join(
             str(programa.pk)
@@ -478,8 +499,26 @@ class ComedorForm(forms.ModelForm):
         ):
             cleaned_data["categoria_espacio_comunitario_otra"] = ""
 
-        if not permite_codigo_de_proyecto(cleaned_data.get("programa")):
+        programa_permite_proyecto = permite_codigo_de_proyecto(
+            cleaned_data.get("programa")
+        )
+        proyecto = cleaned_data.get("proyecto")
+        organizacion = cleaned_data.get("organizacion")
+        if not programa_permite_proyecto:
+            cleaned_data["proyecto"] = None
             cleaned_data["codigo_de_proyecto"] = None
+        elif not proyecto:
+            self.add_error(
+                "proyecto",
+                "La organización debe tener un proyecto activo para este programa.",
+            )
+        elif proyecto.organizacion_id != getattr(organizacion, "pk", None):
+            self.add_error(
+                "proyecto",
+                "El proyecto seleccionado no pertenece a la organización.",
+            )
+        else:
+            cleaned_data["codigo_de_proyecto"] = proyecto.codigo
 
         estado_actividad = cleaned_data.get("estado_general")
         estado_proceso = cleaned_data.get("subestado")

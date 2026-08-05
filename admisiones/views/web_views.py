@@ -1,6 +1,12 @@
 from django.contrib import messages
 from django.db.models import Q
-from django.http import Http404, HttpResponseRedirect, JsonResponse, HttpResponse
+from django.http import (
+    FileResponse,
+    Http404,
+    HttpResponseRedirect,
+    JsonResponse,
+    HttpResponse,
+)
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.shortcuts import redirect, get_object_or_404
@@ -17,6 +23,10 @@ from admisiones.forms.admisiones_forms import (
     AdmisionForm,
     LegalesRectificarForm,
     LegalesNumIFForm,
+    ValidacionesTemplateAdmisionForm,
+)
+from admisiones.services.templates_informe_tecnico_service import (
+    PlantillaInformeTecnicoService,
 )
 from admisiones.models.admisiones import (
     Admision,
@@ -193,6 +203,150 @@ def _handle_informe_tecnico_form_valid(view, form, admision_obj, es_creacion):
 
     view.object = resultado.get("informe")
     return HttpResponseRedirect(view.get_success_url())
+
+
+def _get_template_informe_context(admision):
+    publicacion, error_template = (
+        PlantillaInformeTecnicoService.resolver_publicacion_para_admision(admision)
+    )
+    contexto = {
+        "template_publicacion": publicacion,
+        "template_error": error_template,
+    }
+    if PlantillaInformeTecnicoService.es_configuracion_faltante(error_template):
+        detalle = PlantillaInformeTecnicoService.detalle_configuracion_faltante(
+            admision,
+            error_template,
+        )
+        condiciones = detalle["condiciones"]
+        contexto.update(
+            {
+                "template_configuracion_faltante": True,
+                "template_detalle_copiable": "\n".join(
+                    (
+                        f"Combinación: {detalle['clave_condiciones']}",
+                        f"Tipo de admisión: {condiciones['tipo_admision']['descripcion']}",
+                        f"Tipo de convenio: {condiciones['tipo_convenio']['descripcion']}",
+                        *(
+                            [
+                                f"Ex PNUD: {condiciones['es_ex_pnud']['descripcion']}",
+                                "Convenio PNUD: "
+                                f"{condiciones['estado_convenio_pnud']['descripcion']}",
+                            ]
+                            if "es_ex_pnud" in condiciones
+                            else [
+                                "Renovación: "
+                                f"{condiciones['tipo_renovacion']['descripcion']}",
+                                "Financiamiento: "
+                                f"{condiciones['estado_financiamiento']['descripcion']}",
+                            ]
+                        ),
+                    )
+                ),
+            }
+        )
+    return contexto
+
+
+def _puede_operar_template_desde_admision(user, admision):
+    return user.is_superuser or AdmisionService._verificar_permiso_tecnico_dupla(
+        user,
+        getattr(admision, "comedor", None),
+    )
+
+
+@login_required
+def previsualizar_informe_tecnico_template(request, tipo, pk):
+    """Entrega un DOCX temporal; no escribe documentos ni cambia estados."""
+
+    informe = get_object_or_404(
+        InformeTecnico.objects.select_related("admision", "admision__comedor"),
+        pk=pk,
+        tipo=tipo,
+    )
+    if not _puede_operar_template_desde_admision(request.user, informe.admision):
+        return HttpResponse(status=403)
+    if informe.estado_formulario == "finalizado":
+        messages.error(
+            request,
+            "No se puede generar una vista previa de un Informe Técnico finalizado.",
+        )
+        return redirect(
+            "informe_tecnico_editar",
+            tipo=informe.tipo,
+            pk=informe.pk,
+        )
+
+    publicacion, error_template = (
+        PlantillaInformeTecnicoService.resolver_publicacion_para_admision(
+            informe.admision
+        )
+    )
+    if error_template:
+        messages.error(request, error_template)
+        return redirect(
+            "informe_tecnico_editar",
+            tipo=informe.tipo,
+            pk=informe.pk,
+        )
+
+    docx_content = InformeService.generar_docx_vista_previa(
+        informe,
+        publicacion.version,
+    )
+    if not docx_content:
+        messages.error(
+            request, "No se pudo generar la vista previa del Informe Técnico."
+        )
+        return redirect(
+            "informe_tecnico_editar",
+            tipo=informe.tipo,
+            pk=informe.pk,
+        )
+    return FileResponse(
+        docx_content,
+        as_attachment=True,
+        filename=f"vista-previa-informe-{informe.pk}.docx",
+        content_type=(
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        ),
+    )
+
+
+@login_required
+@require_POST
+def reportar_configuracion_faltante_template(request, pk):
+    """Registra un faltante de configuración desde una admisión asignada."""
+
+    admision = get_object_or_404(Admision.objects.select_related("comedor"), pk=pk)
+    if not _puede_operar_template_desde_admision(request.user, admision):
+        return HttpResponse(status=403)
+
+    informe = None
+    informe_id = request.POST.get("informe_id")
+    if informe_id:
+        informe = InformeTecnico.objects.filter(
+            pk=informe_id, admision=admision
+        ).first()
+    if informe is None:
+        informe = (
+            InformeTecnico.objects.filter(admision=admision).order_by("-id").first()
+        )
+
+    incidencia, mensaje = (
+        PlantillaInformeTecnicoService.reportar_configuracion_faltante(
+            admision,
+            informe,
+            request.user,
+        )
+    )
+    if incidencia:
+        messages.success(request, mensaje, extra_tags="configuracion-template")
+    else:
+        messages.error(request, mensaje)
+    if informe:
+        return redirect("informe_tecnico_editar", tipo=informe.tipo, pk=informe.pk)
+    return redirect("admisiones_tecnicos_editar", pk=admision.pk)
 
 
 def _format_datetime_for_context(value):
@@ -882,9 +1036,19 @@ class AdmisionesTecnicosUpdateView(LoginRequiredMixin, UpdateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        admision = self.get_object()
         context.update(
-            AdmisionService.get_admision_update_context(
-                self.get_object(), self.request.user
+            AdmisionService.get_admision_update_context(admision, self.request.user)
+        )
+        context["validaciones_template_form"] = ValidacionesTemplateAdmisionForm(
+            instance=admision
+        )
+        context[
+            "puede_editar_validaciones_template"
+        ] = AdmisionService.puede_editar_validaciones_template(admision) and (
+            self.request.user.is_superuser
+            or AdmisionService._verificar_permiso_tecnico_dupla(
+                self.request.user, admision.comedor
             )
         )
         return context
@@ -1183,6 +1347,7 @@ class InformeTecnicosCreateView(LoginRequiredMixin, CreateView):
                 "comedor": getattr(self.admision_obj, "comedor", None),
             }
         )
+        context.update(_get_template_informe_context(self.admision_obj))
         return context
 
     def form_valid(self, form):
@@ -1238,6 +1403,7 @@ class InformeTecnicosUpdateView(LoginRequiredMixin, UpdateView):
         context = super().get_context_data(**kwargs)
         tipo = InformeService.get_tipo_from_kwargs(self.kwargs)
         context.update(InformeService.get_informe_update_context(self.object, tipo))
+        context.update(_get_template_informe_context(self.object.admision))
         return context
 
     def form_valid(self, form):

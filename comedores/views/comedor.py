@@ -16,6 +16,7 @@ from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse, reverse_lazy
 from django.utils import timezone
 from django.utils.html import escape, format_html, format_html_join
+from django.utils.safestring import mark_safe
 from django.utils.text import Truncator
 from django.utils.decorators import method_decorator
 from django.views.generic import (
@@ -385,9 +386,9 @@ def _build_intervenciones_table_context(comedor_obj, request, admision_id=None):
     intervenciones_items = []
     for intervencion in intervenciones_page_obj:
         doc_badge = (
-            format_html('<span class="badge bg-success">Sí</span>')
+            mark_safe('<span class="badge bg-success">Sí</span>')
             if getattr(intervencion, "tiene_documentacion", False)
-            else format_html('<span class="badge bg-secondary">No</span>')
+            else mark_safe('<span class="badge bg-secondary">No</span>')
         )
         fecha_display = (
             intervencion.fecha.strftime("%d/%m/%Y") if intervencion.fecha else None
@@ -484,11 +485,7 @@ def _build_intervenciones_table_context(comedor_obj, request, admision_id=None):
                             f"v{documento.version}"
                         )
                     },
-                    {
-                        "content": format_html(
-                            '<span class="badge bg-success">Si</span>'
-                        )
-                    },
+                    {"content": mark_safe('<span class="badge bg-success">Si</span>')},
                     {"content": _safe_cell_content("Destinatarios")},
                     {"content": _safe_cell_content(usuario_creador)},
                     {"content": actions_html},
@@ -727,11 +724,11 @@ def _build_admisiones_table_context(comedor_id, admisiones_qs, request):
                     },
                     {
                         "content": (
-                            format_html(
+                            mark_safe(
                                 '<i class="bi bi-check-circle-fill text-success"></i>'
                             )
                             if getattr(a, "activa", True)
-                            else format_html(
+                            else mark_safe(
                                 '<i class="bi bi-x-circle-fill text-danger"></i>'
                             )
                         )
@@ -1524,17 +1521,11 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
                     if prestaciones_convenio_context is None
                     else prestaciones_convenio_context["monto_prestacion_mensual"]
                 ),
-                "show_capacitaciones_certificados": is_alimentar_comunidad_program(
-                    self.object
-                ),
-                "capacitaciones_certificados": (
-                    [
-                        serialize_certificate(item, request=self.request)
-                        for item in list_capacitaciones_certificados(self.object)
-                    ]
-                    if is_alimentar_comunidad_program(self.object)
-                    else []
-                ),
+                "show_capacitaciones_certificados": True,
+                "capacitaciones_certificados": [
+                    serialize_certificate(item, request=self.request)
+                    for item in list_capacitaciones_certificados(self.object)
+                ],
                 "es_programa_pnud": es_programa_pnud,
                 "usa_convenio_pnud": usa_convenio_pnud,
                 "puede_gestionar_actividades_espacio": puede_gestionar_actividades_espacio,
