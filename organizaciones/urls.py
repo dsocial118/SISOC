@@ -6,6 +6,7 @@ from organizaciones.views import (
     OrganizacionCreateView,
     OrganizacionUpdateView,
     OrganizacionDetailView,
+    OrganizacionRendicionDetailView,
     OrganizacionDeleteView,
     FirmanteCreateView,
     AvalCreateView,
@@ -18,6 +19,7 @@ from organizaciones.views import (
     historial_documento_organizacion,
     sub_tipo_entidad_ajax,
     organizaciones_ajax,
+    proyectos_organizacion_ajax,
     cuil_check_ajax,
     subir_documento_organizacion,
     agregar_documento_personalizado_organizacion,
@@ -66,6 +68,13 @@ urlpatterns = [
             OrganizacionDetailView.as_view()
         ),
         name="organizacion_detalle",
+    ),
+    path(
+        "organizaciones/<int:organizacion_id>/rendiciones/<int:pk>/detalle/",
+        permissions_any_required(ORGANIZACION_DOCUMENTACION_PERMS)(
+            OrganizacionRendicionDetailView.as_view()
+        ),
+        name="organizacion_rendicion_detalle",
     ),
     path(
         "organizaciones/eliminar/<int:pk>",
@@ -169,6 +178,13 @@ urlpatterns = [
         "organizaciones/ajax/",
         permissions_any_required(ORGANIZACION_DOCUMENTACION_PERMS)(organizaciones_ajax),
         name="organizaciones_ajax",
+    ),
+    path(
+        "organizaciones/<int:organizacion_id>/proyectos/ajax/",
+        permissions_any_required(ORGANIZACION_DOCUMENTACION_PERMS)(
+            proyectos_organizacion_ajax
+        ),
+        name="organizacion_proyectos_ajax",
     ),
     path(
         "organizaciones/cuil-check/ajax/",

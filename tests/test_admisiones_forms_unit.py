@@ -219,15 +219,20 @@ def test_informe_tecnico_estado_form_valido_en_validado_sin_campos():
 
 
 @pytest.mark.django_db
-def test_legales_num_if_form_precarga_y_readonly():
-    """Precarga legales_num_if y bloquea edición cuando hay expediente."""
-    admision = Admision(num_expediente="EX-1", legales_num_if="")
+def test_legales_num_if_form_precarga_y_permite_rectificar():
+    """Precarga las partes del expediente y permite rectificarlas."""
+    admision = Admision(
+        num_expediente="EX-2025-112100154- -APN-DDNAYF#MCH",
+        legales_num_if="",
+    )
 
     form = LegalesNumIFForm(instance=admision)
 
-    assert form.initial["legales_num_if"] == "EX-1"
-    assert form.fields["legales_num_if"].widget.attrs["readonly"] is True
-    assert "Informe Técnico" in form.fields["legales_num_if"].help_text
+    assert form.initial["expediente_anio"] == "2025"
+    assert form.initial["expediente_numero"] == "112100154"
+    assert form.initial["expediente_reparticion"] == "DDNAYF"
+    assert form.initial["expediente_organismo"] == "MCH"
+    assert all(not field.disabled for field in form.fields.values())
 
 
 @pytest.mark.django_db

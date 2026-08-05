@@ -2,6 +2,7 @@ from django import forms
 from django.forms import inlineformset_factory
 from organizaciones.models import (
     Organizacion,
+    ProyectoOrganizacion,
     Firmante,
     Aval,
     SubtipoEntidad,
@@ -10,6 +11,11 @@ from core.models import Municipio, Provincia, Localidad
 
 
 class OrganizacionForm(forms.ModelForm):
+    codigos_proyecto = forms.CharField(
+        required=False,
+        label="Códigos de Proyecto",
+        help_text="Separá múltiples códigos con comas.",
+    )
     cuit = forms.RegexField(
         regex=r"^[0-9]{11}$",
         required=False,
@@ -43,6 +49,7 @@ class OrganizacionForm(forms.ModelForm):
         if not self.is_bound and fecha_vencimiento:
             self.initial["fecha_vencimiento"] = fecha_vencimiento.date()
         self.fields["fecha_vencimiento"].input_formats = ["%Y-%m-%d"]
+        self.fields["fecha_vencimiento"].required = False
 
         self.popular_campos_ubicacion()
         subtipo_actual_id = (
@@ -54,6 +61,12 @@ class OrganizacionForm(forms.ModelForm):
         if subtipo_actual_id:
             subtipos = subtipos | SubtipoEntidad.objects.filter(pk=subtipo_actual_id)
         self.fields["subtipo_entidad"].queryset = subtipos.order_by("nombre")
+        if not self.is_bound and self.instance.pk:
+            self.initial["codigos_proyecto"] = ", ".join(
+                self.instance.proyectos.filter(activo=True).values_list(
+                    "codigo", flat=True
+                )
+            )
 
     def popular_campos_ubicacion(self):
 
@@ -122,7 +135,37 @@ class OrganizacionForm(forms.ModelForm):
                     ),
                 )
 
+        sin_vencimiento = cleaned_data.get("sin_vencimiento")
+        if sin_vencimiento:
+            cleaned_data["fecha_vencimiento"] = None
+        elif not cleaned_data.get("fecha_vencimiento"):
+            self.add_error(
+                "fecha_vencimiento",
+                "Ingresá una fecha o seleccioná Sin Vencimiento.",
+            )
+
         return cleaned_data
+
+    def clean_codigos_proyecto(self):
+        codigos = {
+            codigo.strip()
+            for codigo in (self.cleaned_data.get("codigos_proyecto") or "").split(",")
+            if codigo.strip()
+        }
+        return sorted(codigos)
+
+    def save(self, commit=True):
+        organizacion = super().save(commit=commit)
+        if commit:
+            codigos = self.cleaned_data.get("codigos_proyecto", [])
+            organizacion.proyectos.exclude(codigo__in=codigos).update(activo=False)
+            for codigo in codigos:
+                ProyectoOrganizacion.objects.update_or_create(
+                    organizacion=organizacion,
+                    codigo=codigo,
+                    defaults={"activo": True},
+                )
+        return organizacion
 
     class Meta:
         model = Organizacion
@@ -138,7 +181,7 @@ class OrganizacionForm(forms.ModelForm):
 class FirmanteForm(forms.ModelForm):
     class Meta:
         model = Firmante
-        fields = ["nombre", "rol", "cuit"]
+        fields = ["nombre", "rol", "cuit", "programa"]
 
     def clean(self):
         cleaned_data = super().clean()

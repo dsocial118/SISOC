@@ -315,6 +315,13 @@ class Comedor(SoftDeleteModelMixin, models.Model):
         blank=True,
         null=True,
     )
+    proyecto = models.ForeignKey(
+        "organizaciones.ProyectoOrganizacion",
+        on_delete=models.PROTECT,
+        related_name="comedores",
+        blank=True,
+        null=True,
+    )
     es_judicializado = models.BooleanField(
         null=True,
         blank=True,
@@ -590,6 +597,7 @@ class ComedorDatosConvenioPnud(models.Model):
         null=True, blank=True
     )
     personas_conveniadas = models.PositiveIntegerField(null=True, blank=True)
+    personas_declaradas_siph = models.PositiveIntegerField(null=True, blank=True)
     cantidad_modulos = models.PositiveIntegerField(null=True, blank=True)
     aprobadas_desayuno_lunes = models.IntegerField(
         default=0, validators=[MinValueValidator(0)]
