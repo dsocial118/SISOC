@@ -8,36 +8,15 @@
     <link rel="stylesheet" href="{% static 'custom/css/listModerno.css' %}" />
 
     <div class="container mt-4">
-        <!-- Barra de búsqueda, filtros y acciones -->
-        <div class="card mb-4">
-            <div class="card-body" style="padding: 20px;">
-                <!-- Búsqueda + Gestionar -->
-                <div class="d-flex gap-3 align-items-center flex-wrap">
-                    <form method="get" class="input-group" style="flex: 1; min-width: 250px;">
-                        <input type="text"
-                               name="titulo"
-                               class="form-control"
-                               placeholder="Buscar por título..."
-                               value="{{ filtro_titulo }}" />
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-search"></i>
-                        </button>
-                        {% if filtro_titulo %}
-                            <a href="?" class="btn btn-outline-danger" title="Limpiar búsqueda">
-                                <i class="fas fa-times"></i>
-                            </a>
-                        {% endif %}
-                    </form>
-                    {% if can_manage %}
-                        <a href="{% url 'comunicados_gestion' %}"
-                           class="btn btn-outline-secondary"
-                           style="white-space: nowrap">
-                            <i class="fas fa-cog me-1"></i> Gestionar
-                        </a>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
+        {% comment %}
+        `only` es necesario: sin el, el include hereda todo el contexto y el
+        componente referencia ~17 variables opcionales que este listado no
+        define. Por cada una Django recorre la pila de contexto buscando el
+        nombre y termina evaluando el queryset `comunicados` una vez por
+        variable. Lo detecta test_listado_publico_no_hace_consultas_n_mas_1.
+        Se pasa `request` explicito porque el componente lo usa para permisos.
+        {% endcomment %}
+        {% include 'components/search_bar.html' with titulo='Buscar comunicado' placeholder='Buscar por título...' help_text='Buscar por título.' reset_url='comunicados' back_url='' search_name='titulo' query=filtro_titulo show_add_button=False additional_buttons=additional_buttons request=request only %}
 
         <!-- Lista de comunicados -->
         {% for comunicado in comunicados %}
