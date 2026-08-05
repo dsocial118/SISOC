@@ -1,17 +1,22 @@
 """Configuracion de filtros combinables para el listado de acompanamientos."""
 
+import logging
+
 from typing import Any, Dict
+
+logger = logging.getLogger(__name__)
+
 
 FIELD_MAP: Dict[str, str] = {
     "comedor_nombre": "nombre",
     "comedor_id": "id",
-    "tipo_admision": "admision__tipo",
+    "tipo_admision": "acompanamiento_tipo_admision",
     "organizacion": "organizacion__nombre",
-    "num_expediente": "admision__num_expediente",
+    "num_expediente": "acompanamiento_num_expediente",
     "provincia": "provincia__nombre",
     "equipo_tecnico": "dupla__nombre",
-    "estado": "admision__estado_admision",
-    "fecha_modificado": "admision__modificado",
+    "estado": "acompanamiento_estado_admision",
+    "fecha_modificado": "acompanamiento_fecha_modificado",
 }
 
 FIELD_TYPES: Dict[str, str] = {
@@ -84,7 +89,9 @@ def get_filters_ui_config() -> Dict[str, Any]:
             if choices:
                 field["choices"] = choices
     except Exception:
-        pass
+        logger.exception(
+            "No se pudieron cargar las opciones de filtros de acompanamientos"
+        )
 
     return {
         "fields": fields,

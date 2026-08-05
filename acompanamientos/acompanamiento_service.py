@@ -1,6 +1,6 @@
 import logging
 from datetime import datetime, date
-from django.db.models import Q, Exists, OuterRef, Prefetch
+from django.db.models import Q, Exists, OuterRef, Prefetch, Subquery
 from django.db import transaction
 from django.utils.timezone import localtime
 from admisiones.models.admisiones import (
@@ -579,6 +579,11 @@ class AcompanamientoService:
                 comedor=OuterRef("pk"), tecnico=user
             )
 
+            admisiones_acompanamiento = Admision.objects.filter(
+                comedor=OuterRef("pk"),
+                enviado_acompaniamiento=True,
+                activa=True,
+            ).order_by("-id")
             admisiones_prefetch = Prefetch(
                 "admision_set",
                 queryset=Admision.objects.filter(
@@ -610,8 +615,21 @@ class AcompanamientoService:
                     "organizacion",
                 )
                 .prefetch_related(admisiones_prefetch, "dupla__tecnico")
-                .filter(admision__enviado_acompaniamiento=True, admision__activa=True)
-                .distinct()
+                .filter(Exists(admisiones_acompanamiento))
+                .annotate(
+                    acompanamiento_tipo_admision=Subquery(
+                        admisiones_acompanamiento.values("tipo")[:1]
+                    ),
+                    acompanamiento_num_expediente=Subquery(
+                        admisiones_acompanamiento.values("num_expediente")[:1]
+                    ),
+                    acompanamiento_estado_admision=Subquery(
+                        admisiones_acompanamiento.values("estado_admision")[:1]
+                    ),
+                    acompanamiento_fecha_modificado=Subquery(
+                        admisiones_acompanamiento.values("modificado")[:1]
+                    ),
+                )
             )
 
             if not user.is_superuser:
@@ -643,7 +661,7 @@ class AcompanamientoService:
                 )
 
             return apply_allowed_ordering(
-                qs.distinct(),
+                qs,
                 request_or_query,
                 {"nombre": "nombre"},
                 default=("-id",),

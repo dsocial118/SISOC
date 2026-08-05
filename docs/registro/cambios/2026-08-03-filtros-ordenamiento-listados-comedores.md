@@ -17,6 +17,9 @@
 Los filtros de Acompañamiento usan el motor compartido
 `AdvancedFilterEngine` y una configuración propia, porque el queryset parte de
 `Comedor` mientras que los listados de Admisiones parten de `Admision`.
+Los campos propios de una admisión se evalúan contra la admisión activa de
+Acompañamiento más reciente, que es la misma que se muestra en la fila y se
+exporta a CSV.
 
 El ordenamiento por nombre se resuelve en el servidor:
 
