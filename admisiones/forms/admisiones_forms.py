@@ -1,3 +1,4 @@
+import re
 import unicodedata
 
 from django import forms
@@ -623,13 +624,81 @@ class InformeTecnicoEstadoForm(forms.Form):
         return cleaned_data
 
 
-class CaratularForm(forms.ModelForm):
+class NumeroExpedienteMixin:
+    expediente_anio = forms.CharField(label="Año", min_length=4, max_length=4)
+    expediente_numero = forms.CharField(label="Número", min_length=9, max_length=9)
+    expediente_reparticion = forms.CharField(label="Repartición", max_length=50)
+    expediente_organismo = forms.CharField(
+        label="Organismo", max_length=50, initial="MCH"
+    )
 
-    num_expediente = forms.CharField(required=True, label="Número de Expediente")
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        match = re.fullmatch(
+            r"EX-(\d{4})-(\d{9})- -APN-([A-Z0-9]+)#([A-Z0-9]+)",
+            self._numero_actual() or "",
+            re.IGNORECASE,
+        )
+        if match:
+            for campo, dato in zip(
+                (
+                    "expediente_anio",
+                    "expediente_numero",
+                    "expediente_reparticion",
+                    "expediente_organismo",
+                ),
+                match.groups(),
+            ):
+                self.initial[campo] = dato
 
+    def _numero_actual(self):
+        return self.instance.num_expediente if self.instance else ""
+
+    def clean(self):
+        cleaned_data = super().clean()
+        anio = cleaned_data.get("expediente_anio", "").strip()
+        numero = cleaned_data.get("expediente_numero", "").strip()
+        reparticion = cleaned_data.get("expediente_reparticion", "").strip().upper()
+        organismo = cleaned_data.get("expediente_organismo", "").strip().upper()
+        if anio and not anio.isdigit():
+            self.add_error("expediente_anio", "Debe contener exactamente 4 dígitos.")
+        if numero and not numero.isdigit():
+            self.add_error("expediente_numero", "Debe contener exactamente 9 dígitos.")
+        if reparticion and not re.fullmatch(r"[A-Z0-9]+", reparticion):
+            self.add_error("expediente_reparticion", "Use solamente letras y números.")
+        if organismo and not re.fullmatch(r"[A-Z0-9]+", organismo):
+            self.add_error("expediente_organismo", "Use solamente letras y números.")
+        if self.errors:
+            return cleaned_data
+
+        valor = f"EX-{anio}-{numero}- -APN-{reparticion}#{organismo}"
+        duplicada = (
+            Admision.objects.filter(num_expediente__iexact=valor)
+            .exclude(pk=self.instance.pk)
+            .select_related("comedor__organizacion")
+            .first()
+        )
+        if duplicada:
+            comedor = duplicada.comedor
+            organizacion = comedor.organizacion if comedor else None
+            tipo = duplicada.get_tipo_display() if duplicada.tipo else "Sin tipo"
+            raise forms.ValidationError(
+                f"El expediente ya pertenece a la admisión #{duplicada.pk}; "
+                f"comedor: {comedor or 'Sin comedor'}; organización: "
+                f"{organizacion or 'Sin organización'}; tipo: {tipo}."
+            )
+        cleaned_data["numero_expediente_compilado"] = valor
+        return cleaned_data
+
+
+class CaratularForm(NumeroExpedienteMixin, forms.ModelForm):
     class Meta:
         model = Admision
-        fields = ["num_expediente"]
+        fields = []
+
+    def save(self, commit=True):
+        self.instance.num_expediente = self.cleaned_data["numero_expediente_compilado"]
+        return super().save(commit=commit)
 
 
 class LegalesRectificarForm(forms.ModelForm):
@@ -688,34 +757,27 @@ class ProyectoConvenioForm(forms.ModelForm):
             field.required = True
 
 
-class LegalesNumIFForm(forms.ModelForm):
+class LegalesNumIFForm(NumeroExpedienteMixin, forms.ModelForm):
     class Meta:
         model = Admision
-        fields = ["legales_num_if"]
-        labels = {
-            "legales_num_if": "Número de expediente",
-        }
+        fields = []
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        # Precargar legales_num_if desde num_expediente si está vacío
-        if (
-            self.instance
-            and self.instance.num_expediente
-            and not self.instance.legales_num_if
-        ):
-            self.initial["legales_num_if"] = self.instance.num_expediente
-
         for field in self.fields.values():
             field.required = True
 
-        # Hacer campo readonly para evitar errores de carga
-        if self.instance and self.instance.num_expediente:
-            self.fields["legales_num_if"].widget.attrs["readonly"] = True
-            self.fields["legales_num_if"].help_text = (
-                "Este número fue precargado desde el Informe Técnico"
-            )
+    def _numero_actual(self):
+        if not self.instance:
+            return ""
+        return self.instance.legales_num_if or self.instance.num_expediente
+
+    def save(self, commit=True):
+        valor = self.cleaned_data["numero_expediente_compilado"]
+        self.instance.num_expediente = valor
+        self.instance.legales_num_if = valor
+        return super().save(commit=commit)
 
 
 class DocumentosExpedienteForm(forms.ModelForm):

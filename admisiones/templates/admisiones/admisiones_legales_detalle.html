@@ -623,7 +623,19 @@
                                 data-bs-dismiss="modal"
                                 aria-label="Close"></button>
                     </div>
-                    <div class="modal-body">{{ form_legales_num_if.legales_num_if|as_crispy_field }}</div>
+                    <div class="modal-body">
+                        <div class="input-group expediente-estructurado">
+                            <span class="input-group-text">EX-</span>
+                            {{ form_legales_num_if.expediente_anio }}
+                            <span class="input-group-text">-</span>
+                            {{ form_legales_num_if.expediente_numero }}
+                            <span class="input-group-text">- -APN-</span>
+                            {{ form_legales_num_if.expediente_reparticion }}
+                            <span class="input-group-text">#</span>
+                            {{ form_legales_num_if.expediente_organismo }}
+                        </div>
+                        <small class="text-muted">Legales puede rectificar el dato; el cambio se aplicar&aacute; a las etapas siguientes.</small>
+                    </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                         <button type="submit"

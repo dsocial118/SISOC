@@ -1,0 +1,143 @@
+{% extends "includes/main.html" %}
+{% block title %}Detalle de Rendición{% endblock %}
+{% block content %}
+    <div class="container-fluid py-4">
+        <div class="card shadow-sm">
+            <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <div>
+                    <h4 class="mb-1">Rendición {{ rendicion.numero_rendicion|default:rendicion.id }}</h4>
+                    <small>{{ organizacion.nombre }}</small>
+                </div>
+                <div class="d-flex gap-2">
+                    <a class="btn btn-outline-secondary"
+                       href="{% url 'organizacion_detalle' organizacion.id %}?proyecto={{ codigo_proyecto|urlencode }}#rendiciones-presentadas">Volver</a>
+                    {% if perms.rendicioncuentasmensual.view_rendicioncuentamensual %}
+                        <a class="btn btn-primary"
+                           href="{% url 'rendicioncuentasmensual_detail' rendicion.id %}">Ir a Rendición</a>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row g-4">
+                    <div class="col-md-4">
+                        <small class="text-muted d-block">Código de Proyecto</small><strong>{{ codigo_proyecto|default:"-" }}</strong>
+                    </div>
+                    <div class="col-md-4">
+                        <small class="text-muted d-block">Convenio</small><strong>{{ rendicion.convenio|default:"-" }}</strong>
+                    </div>
+                    <div class="col-md-4">
+                        <small class="text-muted d-block">Número de Rendición</small><strong>{{ rendicion.numero_rendicion|default:"-" }}</strong>
+                    </div>
+                    <div class="col-md-4">
+                        <small class="text-muted d-block">Período</small><strong>
+                            {% if rendicion.periodo_inicio and rendicion.periodo_fin %}
+                                {{ rendicion.periodo_inicio|date:"d/m/Y" }} al {{ rendicion.periodo_fin|date:"d/m/Y" }}
+                            {% else %}
+                                {{ rendicion.get_mes_display }} {{ rendicion.anio }}
+                            {% endif %}
+                        </strong>
+                    </div>
+                    <div class="col-md-4">
+                        <small class="text-muted d-block">Monto Rendido</small><strong>
+                            {% if rendicion.monto_rendido != None %}
+                                ${{ rendicion.monto_rendido|floatformat:2 }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </strong>
+                    </div>
+                    <div class="col-md-4">
+                        <small class="text-muted d-block">Estado del proceso</small><strong>{{ rendicion.get_etapa_proceso_display }} — {{ rendicion.get_subestado_proceso_display }}</strong>
+                    </div>
+                    <div class="col-md-4">
+                        <small class="text-muted d-block">Validación Territorial</small><strong>
+                            {% if rendicion.validacion_territorial_finalizada %}
+                                Sí
+                            {% else %}
+                                No
+                            {% endif %}
+                        </strong>
+                    </div>
+                    <div class="col-md-4">
+                        <small class="text-muted d-block">Fecha de Validación Territorial</small><strong>{{ rendicion.fecha_validacion_territorial|date:"d/m/Y H:i"|default:"-" }}</strong>
+                    </div>
+                    <div class="col-md-4">
+                        <small class="text-muted d-block">Validación Auditoría</small><strong>
+                            {% if rendicion.validacion_auditoria_finalizada %}
+                                Sí
+                            {% else %}
+                                No
+                            {% endif %}
+                        </strong>
+                    </div>
+                    <div class="col-md-4">
+                        <small class="text-muted d-block">Fecha de Validación Auditoría</small><strong>{{ rendicion.fecha_validacion_auditoria|date:"d/m/Y H:i"|default:"-" }}</strong>
+                    </div>
+                    <div class="col-md-4">
+                        <small class="text-muted d-block">Cargada para Auditoría</small><strong>
+                            {% if rendicion.cargada_para_auditoria %}
+                                Sí
+                            {% else %}
+                                No
+                            {% endif %}
+                        </strong>
+                    </div>
+                    <div class="col-md-4">
+                        <small class="text-muted d-block">Fecha de Cargada para Auditoría</small><strong>{{ rendicion.fecha_carga_auditoria|date:"d/m/Y H:i"|default:"-" }}</strong>
+                    </div>
+                    <div class="col-md-4">
+                        <small class="text-muted d-block">PDF Rendición</small>
+                        {% if perms.rendicioncuentasmensual.view_rendicioncuentamensual and rendicion.validacion_auditoria_finalizada %}
+                            <a href="{% url 'rendicioncuentasmensual_download_pdf' rendicion.id %}">Descargar</a>
+                        {% else %}
+                            <strong>-</strong>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-4">
+                        <small class="text-muted d-block">Auditada</small><strong>
+                            {% if rendicion.auditada %}
+                                Sí
+                            {% else %}
+                                No
+                            {% endif %}
+                        </strong>
+                    </div>
+                    <div class="col-md-4">
+                        <small class="text-muted d-block">Fecha de Auditada</small><strong>{{ rendicion.fecha_auditada|date:"d/m/Y H:i"|default:"-" }}</strong>
+                    </div>
+                    <div class="col-12">
+                        <small class="text-muted d-block">Observaciones</small><strong>{{ rendicion.observaciones|default:"-" }}</strong>
+                    </div>
+                    <div class="col-md-4">
+                        <small class="text-muted d-block">PDF Acta de Auditoría</small>
+                        {% if rendicion.acta_auditoria %}
+                            <a href="{{ rendicion.acta_auditoria.url }}" target="_blank">Ver archivo</a>
+                        {% else %}
+                            <strong>-</strong>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-4">
+                        <small class="text-muted d-block">Regularización de Rendición</small><strong>
+                            {% if rendicion.regularizada %}
+                                Sí
+                            {% else %}
+                                No
+                            {% endif %}
+                        </strong>
+                    </div>
+                    <div class="col-md-4">
+                        <small class="text-muted d-block">Fecha de Regularización</small><strong>{{ rendicion.fecha_regularizacion|date:"d/m/Y H:i"|default:"-" }}</strong>
+                    </div>
+                    <div class="col-md-4">
+                        <small class="text-muted d-block">PDF Regularización</small>
+                        {% if rendicion.documento_regularizacion %}
+                            <a href="{{ rendicion.documento_regularizacion.url }}" target="_blank">Ver archivo</a>
+                        {% else %}
+                            <strong>-</strong>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

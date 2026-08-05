@@ -282,12 +282,12 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 | `pwa/` | endpoints backend para experiencia PWA | `api_urls.py`, `api_views.py`, `services/`, `models.py` | Medio |
 | `ticketera/` | API server-to-server con kill-switch | `api_urls.py`, `api_views.py`, `api_serializers.py` | Medio |
 | `comunicados/` | mensajes/comunicados y API asociada | `models.py`, `views.py`, `api_views.py`, forms | Medio |
-| `organizaciones/` | entidades/organizaciones vinculadas | `models.py`, `views.py`, forms | Medio |
+| `organizaciones/` | entidades/organizaciones vinculadas; el detalle incluye rendiciones presentadas por proyecto | `models.py`, `views.py`, `templates/organizacion_detail.html` | Medio |
 | `centrodeinfancia/` | dominio de centros de infancia, personal y asistencia | `models.py`, `services.py`, `views.py`, `tests/`, urls | Alto |
 | `acompanamientos/` | seguimiento/acompanamientos | `views.py`, service, templates | Medio |
 | `expedientespagos/` | expedientes de pagos | `models.py`, `views.py`, urls | Bajo |
 | `rendicioncuentasfinal/` | rendicion final | `models.py`, `views.py`, urls | Bajo |
-| `rendicioncuentasmensual/` | rendicion mensual | `models.py`, `views.py`, urls | Bajo |
+| `rendicioncuentasmensual/` | rendicion mensual, revisión documental y datos de auditoría expuestos en Organizaciones | `models.py`, `services.py`, `views.py`, urls | Medio |
 | `duplas/` | equipos tecnicos/duplas | `models.py`, `views.py` | Bajo-Medio |
 | `dispositivos/` | dominio de dispositivos | `models.py`, `views.py`, tests | Bajo |
 | `importarexpediente/` | flujo de importacion de expedientes | `views.py`, `models.py`, urls, tests | Medio |
