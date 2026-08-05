@@ -30,7 +30,10 @@ FIELD_MAP: Dict[str, str] = {
     "nombre": "nombre",
     "documento": "documento",
     "identificador_interno": "identificador_interno",
-    "provincia": "provincia_id",
+    # Apunta al nombre y no a provincia_id: el motor traduce choice+eq a
+    # `__iexact`, que Django no admite sobre una FK ("Unsupported lookup
+    # 'iexact' for ForeignKey"). Es el mismo criterio que centro_filter_config.
+    "provincia": "provincia__nombre",
 }
 
 FIELD_TYPES: Dict[str, str] = {
@@ -58,8 +61,18 @@ FILTER_FIELDS = [
 ]
 
 
-def _choices_to_ui(choices):
-    return [{"value": value, "label": label} for value, label in choices]
+def _provincias_a_ui():
+    """Opciones de provincia por NOMBRE, no por id.
+
+    El filtro apunta a ``provincia__nombre``, asi que el valor enviado tiene que
+    ser el nombre. ``get_cached_provincia_filter_choices`` devuelve ``(id, nombre)``
+    porque lo usa el formulario propio del listado, que si filtra por FK.
+    """
+
+    return [
+        {"value": nombre, "label": nombre}
+        for _id, nombre in get_cached_provincia_filter_choices()
+    ]
 
 
 def get_filters_ui_config() -> Dict[str, Any]:
@@ -68,7 +81,7 @@ def get_filters_ui_config() -> Dict[str, Any]:
     fields = [dict(field) for field in FILTER_FIELDS]
     for field in fields:
         if field["name"] == "provincia":
-            field["choices"] = _choices_to_ui(get_cached_provincia_filter_choices())
+            field["choices"] = _provincias_a_ui()
 
     return {
         "fields": fields,

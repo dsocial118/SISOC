@@ -1,5 +1,6 @@
 """Tests unitarios para ciudadanos.views."""
 
+import json
 from contextlib import nullcontext
 from datetime import date
 from types import SimpleNamespace
@@ -1043,3 +1044,64 @@ def test_ciudadanos_filter_config_no_expone_campos_condicionales():
     }
     # documento solo admite igualdad: un contains seria un scan completo
     assert config["operators"]["number"] == ["eq"]
+
+
+@pytest.mark.django_db
+def test_ciudadanos_filtros_combinables_se_ejecutan_contra_la_base(client, superuser):
+    """Cada campo del filter_config tiene que producir un lookup valido.
+
+    Regresion: `provincia` estaba mapeada a `provincia_id` con tipo choice, y el
+    motor traduce choice+eq a `__iexact`, que Django rechaza sobre una FK
+    ("Unsupported lookup 'iexact' for ForeignKey"). Renderizar la pagina no
+    alcanzaba para detectarlo: hay que ejecutar el filtro.
+    """
+
+    from core.models import Provincia
+
+    provincia = Provincia.objects.create(nombre="Buenos Aires")
+    esperado = module.Ciudadano.objects.create(
+        apellido="Filtrable",
+        nombre="Ana",
+        fecha_nacimiento=date(1990, 1, 1),
+        tipo_documento=module.Ciudadano.DOCUMENTO_DNI,
+        documento=41222333,
+        provincia=provincia,
+    )
+    module.Ciudadano.objects.create(
+        apellido="Otro",
+        nombre="Luis",
+        fecha_nacimiento=date(1990, 1, 1),
+        tipo_documento=module.Ciudadano.DOCUMENTO_DNI,
+        documento=41222334,
+    )
+
+    client.force_login(superuser)
+    url = reverse("ciudadanos")
+
+    casos = [
+        ("provincia", "eq", "Buenos Aires"),
+        ("apellido", "contains", "Filtrable"),
+        ("nombre", "eq", "Ana"),
+        ("documento", "eq", "41222333"),
+        ("identificador_interno", "contains", "CIU"),
+    ]
+    for campo, operador, valor in casos:
+        payload = json.dumps(
+            {
+                "logic": "AND",
+                "items": [{"field": campo, "op": operador, "value": valor}],
+            }
+        )
+        respuesta = client.get(url, {"filters": payload})
+        assert respuesta.status_code == 200, f"{campo} rompio el queryset"
+
+    # Ademas de no romper, el filtro tiene que discriminar
+    payload = json.dumps(
+        {
+            "logic": "AND",
+            "items": [{"field": "provincia", "op": "eq", "value": "Buenos Aires"}],
+        }
+    )
+    respuesta = client.get(url, {"filters": payload})
+    ids = [c.pk for c in respuesta.context["ciudadanos"]]
+    assert ids == [esperado.pk]
