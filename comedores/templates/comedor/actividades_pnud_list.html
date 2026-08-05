@@ -9,33 +9,24 @@
 {% block content %}
     <link rel="stylesheet" href="{% static 'custom/css/listModerno.css' %}" />
     <link rel="stylesheet" href="{% static 'custom/css/actividadesPnud.css' %}" />
-    <div class="action-bar mb-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
-        <div class="actividades-pnud-filter" aria-label="Filtro por estado">
-            <a href="{% url 'actividades_pnud_list' %}?estado=todas{% if busqueda %}&q={{ busqueda|urlencode }}{% endif %}"
-               class="btn {% if estado_filtro == 'todas' %}btn-primary{% else %}btn-outline-primary{% endif %}">Todas</a>
-            <a href="{% url 'actividades_pnud_list' %}?estado=activa{% if busqueda %}&q={{ busqueda|urlencode }}{% endif %}"
-               class="btn {% if estado_filtro == 'activa' %}btn-primary{% else %}btn-outline-primary{% endif %}">Activas</a>
-            <a href="{% url 'actividades_pnud_list' %}?estado=inactiva{% if busqueda %}&q={{ busqueda|urlencode }}{% endif %}"
-               class="btn {% if estado_filtro == 'inactiva' %}btn-primary{% else %}btn-outline-primary{% endif %}">Inactivas</a>
-        </div>
-        <form method="get" class="actividades-pnud-search" role="search">
-            {% if estado_filtro %}<input type="hidden" name="estado" value="{{ estado_filtro }}" />{% endif %}
-            <input type="search"
-                   name="q"
-                   value="{{ busqueda }}"
-                   class="form-control"
-                   placeholder="Buscar por categoria o actividad" />
-            <button type="submit" class="btn btn-outline-primary">Buscar</button>
-            {% if busqueda %}
-                <a href="{% url 'actividades_pnud_list' %}?estado={{ estado_filtro }}"
-                   class="btn btn-outline-secondary">Limpiar</a>
-            {% endif %}
-        </form>
-        {% if can_manage_actividades_pnud %}
-            <a href="{% url 'actividades_pnud_crear' %}" class="btn btn-primary">
-                <i class="fas fa-plus"></i> Agregar
-            </a>
-        {% endif %}
+    {% include 'components/search_bar.html' with titulo='Buscar Actividades PNUD' placeholder='Buscar por categoria o actividad' help_text='Buscar por categoria o actividad.' reset_url='actividades_pnud_list' back_url='' search_name='q' query=busqueda show_add_button=can_manage_actividades_pnud add_url='actividades_pnud_crear' add_text='Agregar' %}
+    {% comment %}
+    El filtro por estado es un control segmentado de enlaces, no un campo, asi
+    que no entra en la barra. Se lo engancha al formulario del componente con
+    form= para que buscar no pierda el estado elegido.
+    {% endcomment %}
+    <input type="hidden"
+           name="estado"
+           form="simple-search-form"
+           value="{{ estado_filtro }}" />
+    <div class="actividades-pnud-filter mb-3 d-flex justify-content-center flex-wrap gap-2"
+         aria-label="Filtro por estado">
+        <a href="{% url 'actividades_pnud_list' %}?estado=todas{% if busqueda %}&q={{ busqueda|urlencode }}{% endif %}"
+           class="btn {% if estado_filtro == 'todas' %}btn-primary{% else %}btn-outline-primary{% endif %}">Todas</a>
+        <a href="{% url 'actividades_pnud_list' %}?estado=activa{% if busqueda %}&q={{ busqueda|urlencode }}{% endif %}"
+           class="btn {% if estado_filtro == 'activa' %}btn-primary{% else %}btn-outline-primary{% endif %}">Activas</a>
+        <a href="{% url 'actividades_pnud_list' %}?estado=inactiva{% if busqueda %}&q={{ busqueda|urlencode }}{% endif %}"
+           class="btn {% if estado_filtro == 'inactiva' %}btn-primary{% else %}btn-outline-primary{% endif %}">Inactivas</a>
     </div>
     <div class="row mt-3 max-width-100">
         <div class="col-12">
