@@ -10,12 +10,12 @@
         El filtro por categoria es un select propio del modulo. Se lo engancha
         al formulario del componente con form= para que buscar no lo pierda.
         {% endcomment %}
-        <div class="d-flex justify-content-center align-items-center gap-2 mb-4">
+        <div class="poncho-filtros-modulo">
             <label for="categoria" class="mb-0">Categoría</label>
             <select name="categoria"
                     id="categoria"
                     form="simple-search-form"
-                    class="form-select w-auto">
+                    class="form-select">
                 <option value="">Todas las categorías</option>
                 <option value="{{ sin_categoria_value }}"
                         {% if categoria_seleccionada == sin_categoria_value %}selected{% endif %}>

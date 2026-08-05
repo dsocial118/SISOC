@@ -25,12 +25,12 @@
             provincia depende de permisos. El motor arma un Q por fila y los
             combina con AND.
             {% endcomment %}
-            <div class="d-flex justify-content-center align-items-center flex-wrap gap-2 mb-3">
+            <div class="poncho-filtros-modulo">
                 <label for="id_buscar_por" class="mb-0">Buscar por</label>
                 <select id="id_buscar_por"
                         name="buscar_por"
                         form="simple-search-form"
-                        class="form-select w-auto">
+                        class="form-select">
                     <option value="todos"
                             {% if filtros.buscar_por == "todos" %}selected{% endif %}>Todos</option>
                     <option value="codigo"

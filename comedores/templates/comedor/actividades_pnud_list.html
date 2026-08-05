@@ -19,7 +19,7 @@
            name="estado"
            form="simple-search-form"
            value="{{ estado_filtro }}" />
-    <div class="actividades-pnud-filter mb-3 d-flex justify-content-center flex-wrap gap-2"
+    <div class="actividades-pnud-filter poncho-filtros-modulo"
          aria-label="Filtro por estado">
         <a href="{% url 'actividades_pnud_list' %}?estado=todas{% if busqueda %}&q={{ busqueda|urlencode }}{% endif %}"
            class="btn {% if estado_filtro == 'todas' %}btn-primary{% else %}btn-outline-primary{% endif %}">Todas</a>

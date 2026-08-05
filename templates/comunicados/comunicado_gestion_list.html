@@ -8,7 +8,7 @@
 
     <link rel="stylesheet" href="{% static 'custom/css/listModerno.css' %}" />
 
-    <div class="container mt-4">
+    <div class="mt-4">
 
         {% include 'components/search_bar.html' with titulo='Buscar comunicado' placeholder='Buscar comunicado...' help_text='Buscar por título.' reset_url='comunicados_gestion' back_url='' search_name='titulo' query=filtro_titulo show_add_button=can_create add_url='comunicados_crear' add_text='Nuevo' additional_buttons=additional_buttons %}
         {% comment %}
@@ -16,12 +16,12 @@
         del componente con form= para que buscar no los pierda; `this.form`
         sigue resolviendo a ese formulario, asi que el submit al cambiar anda.
         {% endcomment %}
-        <div class="d-flex justify-content-center align-items-center flex-wrap gap-2 mb-4">
+        <div class="poncho-filtros-modulo">
             <label for="filtro-estado" class="mb-0">Estado</label>
             <select id="filtro-estado"
                     name="estado"
                     form="simple-search-form"
-                    class="form-select w-auto"
+                    class="form-select"
                     onchange="this.form.submit()">
                 <option value="">Todos</option>
                 <option value="borrador"
@@ -36,7 +36,7 @@
                 <select id="filtro-tipo"
                         name="tipo"
                         form="simple-search-form"
-                        class="form-select w-auto"
+                        class="form-select"
                         onchange="this.form.submit()">
                     <option value="">Todos</option>
                     <option value="interno" {% if filtro_tipo == 'interno' %}selected{% endif %}>Interno</option>
@@ -48,7 +48,9 @@
             No lo cubre "Resetear" del componente, que vuelve al listado pelado.
             {% endcomment %}
             {% if filtro_titulo %}
-                <a href="?{% if filtro_estado %}estado={{ filtro_estado }}{% endif %}{% if filtro_tipo %}{% if filtro_estado %}&amp;{% endif %}tipo={{ filtro_tipo }}{% endif %}" class="btn btn-outline-danger btn-sm" title="Limpiar búsqueda">
+                <a href="?{% if filtro_estado %}estado={{ filtro_estado }}{% endif %}{% if filtro_tipo %}{% if filtro_estado %}&amp;{% endif %}tipo={{ filtro_tipo }}{% endif %}"
+                   class="btn btn-outline-danger btn-sm"
+                   title="Limpiar búsqueda">
                     <i class="fas fa-times"></i>
                 </a>
             {% endif %}
