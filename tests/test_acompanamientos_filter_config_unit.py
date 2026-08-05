@@ -41,4 +41,7 @@ def test_config_ui_registra_falla_al_cargar_choices(mocker, caplog):
     with caplog.at_level(logging.ERROR):
         get_filters_ui_config()
 
-    assert "No se pudieron cargar las opciones de filtros de acompanamientos" in caplog.text
+    assert (
+        "No se pudieron cargar las opciones de filtros de acompanamientos"
+        in caplog.text
+    )

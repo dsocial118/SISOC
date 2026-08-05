@@ -56,9 +56,7 @@ def _desactivar_scope_de_duplas(monkeypatch):
     )
 
 
-def test_filtros_acompanamiento_consultan_la_admision_mostrada(
-    superuser, monkeypatch
-):
+def test_filtros_acompanamiento_consultan_la_admision_mostrada(superuser, monkeypatch):
     comedor = _crear_comedor_con_dos_admisiones()
     _desactivar_scope_de_duplas(monkeypatch)
     request = RequestFactory().get(
