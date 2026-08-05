@@ -25,7 +25,7 @@ from core.soft_delete.view_helpers import (
 from iam.services import user_has_permission_code
 from rendicioncuentasmensual.models import RendicionCuentaMensual, DocumentacionAdjunta
 from rendicioncuentasmensual.services import RendicionCuentaMensualService
-from rendicioncuentasmensual.services import RendicionProcesoService
+from rendicioncuentasmensual.services_proceso import RendicionProcesoService
 from rendicioncuentasmensual.forms import (
     RendicionCuentaMensualForm,
     DocumentacionAdjuntaForm,

@@ -1563,3 +1563,44 @@ def test_prestacion_alimentaria_pnud_expone_datos_convenio():
     assert conformidad.status_code == 201
     registro = PrestacionAlimentariaConformidad.objects.get(comedor=comedor)
     assert registro.informe_tecnico_id is None
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "programa_nombre",
+    [
+        "Abordaje Comunitario - Línea Secos",
+        "Abordaje Comunitario - Línea Tradicional",
+    ],
+)
+def test_prestaciones_no_estan_disponibles_para_lineas_pnud(programa_nombre):
+    provincia = Provincia.objects.create(nombre=f"Provincia {programa_nombre}")
+    programa = Programas.objects.create(nombre=programa_nombre)
+    comedor = Comedor.objects.create(
+        nombre=f"Comedor {programa_nombre}",
+        provincia=provincia,
+        programa=programa,
+    )
+    representante = _create_pwa_user(
+        comedor=comedor,
+        role=AccesoComedorPWA.ROL_REPRESENTANTE,
+        username=f"rep_{programa.id}",
+    )
+    client = _token_client(representante)
+
+    detalle = client.get(f"/api/comedores/{comedor.id}/prestacion-alimentaria/")
+    detalle_comedor = client.get(f"/api/comedores/{comedor.id}/")
+    conformidad = client.post(
+        f"/api/comedores/{comedor.id}/prestacion-alimentaria/conformidad/",
+        {"conforme": True, "periodo": "2036-01"},
+        format="json",
+    )
+
+    assert detalle.status_code == 404
+    assert detalle_comedor.status_code == 200
+    assert detalle_comedor.data["conformidad_prestacion_pendiente"] == {
+        "pendiente": False,
+        "periodo": None,
+    }
+    assert conformidad.status_code == 404
+    assert not PrestacionAlimentariaConformidad.objects.filter(comedor=comedor).exists()

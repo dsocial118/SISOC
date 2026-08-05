@@ -228,6 +228,10 @@ def test_get_comedor_detail_object_prefetchea_relaciones_y_to_attrs():
     assert [x.id for x in obj.observaciones_optimized] == [observacion.id]
     assert [x.id for x in obj.rendiciones_optimized] == [rendicion.id]
     assert [x.id for x in obj.programa_changes_optimized] == [cambio_programa.id]
+    assert not {
+        "etapa_proceso",
+        "subestado_proceso",
+    }.intersection(obj.rendiciones_optimized[0].get_deferred_fields())
 
 
 def test_get_comedor_detail_object_limita_y_ordena_observaciones_prefetch():

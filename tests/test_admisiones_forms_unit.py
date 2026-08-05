@@ -4,6 +4,7 @@ from decimal import Decimal
 from types import SimpleNamespace
 
 import pytest
+from django.db import IntegrityError
 
 from admisiones.forms.admisiones_forms import (
     ConvenioForm,
@@ -315,3 +316,21 @@ def test_convenio_y_disposicion_num_if_labels_configurados():
 
     assert "Proyecto de Convenio" in form_convenio.fields["numero_if"].label
     assert "Proyecto Disposición" in form_disposicion.fields["numero_if"].label
+
+
+@pytest.mark.django_db
+def test_numero_expediente_no_puede_repetirse_en_base_de_datos():
+    numero_expediente = "EX-2025-112100154- -APN-DDNAYF#MCH"
+    Admision.objects.create(num_expediente=numero_expediente)
+
+    with pytest.raises(IntegrityError):
+        Admision.objects.create(num_expediente=numero_expediente)
+
+
+@pytest.mark.django_db
+def test_expediente_vacio_se_normaliza_para_permitir_varias_admisiones():
+    primera = Admision.objects.create(num_expediente="")
+    segunda = Admision.objects.create(num_expediente="")
+
+    assert primera.num_expediente is None
+    assert segunda.num_expediente is None

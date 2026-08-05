@@ -59,7 +59,11 @@ def permite_codigo_de_proyecto(programa) -> bool:
 def is_prestacion_alimentaria_conformidad_program(comedor) -> bool:
     """Programas que gestionan conformidad mensual de prestaciones en mobile."""
     normalized = _get_programa_nombre_normalizado(comedor)
-    return normalized == "alimentar comunidad" or "abordaje comunitario" in normalized
+    return normalized == "alimentar comunidad" or (
+        "abordaje comunitario" in normalized
+        and "linea secos" not in normalized
+        and "linea tradicional" not in normalized
+    )
 
 
 def is_abordaje_comunitario_linea_secos_program(comedor) -> bool:

@@ -605,7 +605,17 @@ def _get_comedor_detail_prefetches():
         ),
         Prefetch(
             "rendiciones_cuentas_mensuales",
-            queryset=RendicionCuentaMensual.objects.only("id"),
+            queryset=RendicionCuentaMensual.objects.only(
+                "id",
+                "mes",
+                "anio",
+                "observaciones",
+                "documento_adjunto",
+                "etapa_proceso",
+                "subestado_proceso",
+                "ultima_modificacion",
+                "fecha_creacion",
+            ),
             to_attr="rendiciones_optimized",
         ),
         Prefetch(

@@ -36,7 +36,7 @@ from organizaciones.models import (
     RolFirmante,
 )
 from rendicioncuentasmensual.models import RendicionCuentaMensual
-from rendicioncuentasmensual.services import RendicionesOrganizacionService
+from rendicioncuentasmensual.services_proceso import RendicionesOrganizacionService
 
 MAX_DOCUMENTO_ORGANIZACION_FILE_SIZE = 20 * 1024 * 1024
 DOCUMENTO_ORGANIZACION_FORMATOS_VALIDOS = "PDF, JPG, PNG, Excel o Word"

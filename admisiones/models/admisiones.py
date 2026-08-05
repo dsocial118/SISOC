@@ -283,6 +283,9 @@ class Admision(models.Model):
         self._estado_mostrar_inicial = self.estado_mostrar
 
     def save(self, *args, **kwargs):
+        if isinstance(self.num_expediente, str):
+            self.num_expediente = self.num_expediente.strip() or None
+
         # Obtener el estado anterior si existe
         estado_anterior = None if self._state.adding else self._estado_mostrar_inicial
 
@@ -335,6 +338,10 @@ class Admision(models.Model):
 
     class Meta:
         constraints = [
+            models.UniqueConstraint(
+                fields=["num_expediente"],
+                name="uniq_admision_num_expediente",
+            ),
             models.UniqueConstraint(
                 fields=["comedor"],
                 condition=models.Q(vigente_pwa=True),

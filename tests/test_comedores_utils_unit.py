@@ -69,7 +69,8 @@ def test_permite_codigo_de_proyecto(nombre, expected):
         # Con tilde en caso de variante tipográfica
         ("Álimentar Comunidad", True),
         ("Abordaje Comunitario", True),
-        ("Abordaje Comunitario - Linea Secos", True),
+        ("Abordaje Comunitario - Linea Secos", False),
+        ("Abordaje Comunitario - Linea Tradicional", False),
         # Con acentos en "Comunitário"
         ("Abordaje Comunitário", True),
         ("PNUD Programa 1", False),

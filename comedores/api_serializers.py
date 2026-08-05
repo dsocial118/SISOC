@@ -18,6 +18,7 @@ from comedores.utils import (
     get_prestacion_conformidad_pending_period,
     is_abordaje_comunitario_linea_secos_program,
     is_abordaje_comunitario_linea_tradicional_program,
+    is_prestacion_alimentaria_conformidad_program,
     usa_datos_convenio_pnud,
 )
 from core.models import Localidad, Municipio, Provincia
@@ -190,6 +191,8 @@ class ComedorDetailSerializer(serializers.ModelSerializer):
         return {"id": obj.programa.id, "nombre": obj.programa.nombre}
 
     def get_conformidad_prestacion_pendiente(self, obj):
+        if not is_prestacion_alimentaria_conformidad_program(obj):
+            return {"pendiente": False, "periodo": None}
         pending_period = get_prestacion_conformidad_pending_period(obj)
         return {"pendiente": pending_period is not None, "periodo": pending_period}
 
