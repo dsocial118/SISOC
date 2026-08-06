@@ -1,6 +1,7 @@
 """Unit tests for helpers and forms in admisiones forms module."""
 
 from decimal import Decimal
+from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
@@ -233,6 +234,54 @@ def test_legales_num_if_form_precarga_y_permite_rectificar():
     assert form.initial["expediente_reparticion"] == "DDNAYF"
     assert form.initial["expediente_organismo"] == "MCH"
     assert all(not field.disabled for field in form.fields.values())
+
+
+def test_numero_expediente_campos_son_editables_y_responsivos():
+    form = LegalesNumIFForm(instance=Admision())
+
+    assert form.fields["expediente_anio"].widget.attrs == {
+        "class": "form-control",
+        "inputmode": "numeric",
+        "autocomplete": "off",
+        "placeholder": "2025",
+        "maxlength": "4",
+        "minlength": "4",
+    }
+    assert form.fields["expediente_numero"].widget.attrs["inputmode"] == "numeric"
+    assert form.fields["expediente_numero"].widget.attrs["placeholder"] == "112100154"
+    assert (
+        "text-uppercase" in form.fields["expediente_reparticion"].widget.attrs["class"]
+    )
+
+
+def test_modales_expediente_usan_layout_amplio_y_parcial_compartido():
+    tecnicos = Path(
+        "admisiones/templates/admisiones/admisiones_tecnicos_form.html"
+    ).read_text(encoding="utf-8")
+    legales = Path(
+        "admisiones/templates/admisiones/admisiones_legales_detalle.html"
+    ).read_text(encoding="utf-8")
+
+    assert tecnicos.count("modal-expediente-amplio") == 2
+    assert "modal-expediente-amplio" in legales
+    assert (
+        "modal-xl"
+        not in tecnicos.split('id="caratularExpediente"', maxsplit=1)[1].split(
+            '<div class="modal-content">', maxsplit=1
+        )[0]
+    )
+    modal_editar = tecnicos.split('id="editarExpedienteModal"', maxsplit=1)[1]
+    assert (
+        "modal-dialog-centered modal-expediente-amplio"
+        in modal_editar.split('<div class="modal-content">', maxsplit=1)[0]
+    )
+    modal_legales = legales.split('id="modalLegalesNumIF"', maxsplit=1)[1]
+    assert (
+        "modal-expediente-amplio"
+        in modal_legales.split('<div class="modal-content">', maxsplit=1)[0]
+    )
+    assert "numero_expediente_form=caratular_form" in tecnicos
+    assert "numero_expediente_form=form_legales_num_if" in legales
 
 
 @pytest.mark.django_db

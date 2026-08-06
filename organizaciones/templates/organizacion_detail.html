@@ -407,8 +407,9 @@
                                     <div class="info-row">
                                         <strong>Códigos de Proyecto:</strong>
                                         <span class="value">
-                                            {% for proyecto in proyectos_rendiciones %}
-                                                {{ proyecto }}{% if not forloop.last %}, {% endif %}
+                                            {% for proyecto in proyectos_organizacion %}
+                                                {{ proyecto }}
+                                                {% if not forloop.last %},{% endif %}
                                             {% empty %}
                                                 -
                                             {% endfor %}

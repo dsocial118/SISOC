@@ -2,6 +2,7 @@
 
 import json
 from pathlib import Path
+from unittest.mock import patch
 
 from django.contrib.auth.models import User, Permission
 from django.test import RequestFactory, TestCase, Client
@@ -10,7 +11,7 @@ from django.utils import timezone
 
 from comedores.models import Comedor, Programas, TipoDeComedor
 from core.models import Provincia
-from organizaciones.models import Organizacion, TipoEntidad
+from organizaciones.models import Organizacion, ProyectoOrganizacion, TipoEntidad
 from organizaciones.forms import OrganizacionForm
 from organizaciones.views import OrganizacionDetailView
 from rendicioncuentasmensual.models import RendicionCuentaMensual
@@ -24,6 +25,54 @@ class CuilDuplicadoTemplateTests(TestCase):
 
         self.assertIn("var initialSeq = requestSeq;", template)
         self.assertIn("fetchCuilCheck(initialVal, initialSeq);", template)
+
+
+class ProyectosOrganizacionAjaxTests(TestCase):
+    def test_formulario_escucha_cambios_de_select2_con_jquery(self):
+        template = Path("comedores/templates/comedor/comedor_form.html").read_text(
+            encoding="utf-8"
+        )
+
+        self.assertIn(
+            '$(organizacionInput).on("change", actualizarProyectos);', template
+        )
+
+    def test_usuario_que_puede_crear_comedor_carga_proyectos_en_primer_intento(self):
+        user = User.objects.create_user(username="creador-comedor", password="secret")
+        user.user_permissions.add(
+            Permission.objects.get(
+                content_type__app_label="comedores",
+                codename="add_comedor",
+            )
+        )
+        organizacion = Organizacion.objects.create(nombre="OrganizaciÃ³n con proyectos")
+        proyecto = ProyectoOrganizacion.objects.create(
+            organizacion=organizacion,
+            codigo="P-1961",
+        )
+        ProyectoOrganizacion.objects.create(
+            organizacion=organizacion,
+            codigo="INACTIVO",
+            activo=False,
+        )
+        self.client.force_login(user)
+
+        with patch(
+            "organizaciones.views._filtrar_organizaciones_por_dupla",
+            side_effect=lambda queryset, _user: queryset,
+        ):
+            response = self.client.get(
+                reverse(
+                    "organizacion_proyectos_ajax",
+                    kwargs={"organizacion_id": organizacion.pk},
+                )
+            )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.json(),
+            {"proyectos": [{"id": proyecto.id, "codigo": "P-1961", "nombre": None}]},
+        )
 
 
 class OrganizacionDetailViewTests(TestCase):
