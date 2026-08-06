@@ -1,12 +1,10 @@
 import logging
-from collections import defaultdict
-
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.db import IntegrityError, transaction
-from django.db.models import Q, Sum
+from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
 from django.utils import timezone
@@ -21,6 +19,7 @@ from django.views.generic import (
 )
 
 from ciudadanos.forms import CiudadanoFiltroForm, CiudadanoForm, GrupoFamiliarForm
+from ciudadanos.detail_contributions import obtener_contexto_contribucion
 from ciudadanos.models import Ciudadano, GrupoFamiliar
 from comedores.services.comedor_service import ComedorService
 from core.models import Localidad, Municipio
@@ -263,266 +262,50 @@ class CiudadanosDetailView(LoginRequiredMixin, PermissionRequiredMixin, DetailVi
         }
 
     def get_celiaquia_context(self, ciudadano):
-        try:
-            from celiaquia.models import ExpedienteCiudadano
-        except ImportError:
-            return {"expedientes_celiaquia": []}
-
-        try:
-            expedientes = (
-                ExpedienteCiudadano.objects.filter(ciudadano=ciudadano)
-                .select_related("expediente", "estado")
-                .order_by("-creado_en")
-            )
-        except Exception:
-            logger.exception(
-                "Error cargando expedientes celiaquia para ciudadano %s", ciudadano.pk
-            )
-            return {"expedientes_celiaquia": []}
-        contexto = {"expedientes_celiaquia": expedientes}
-        expediente_actual = expedientes.first()
-        if expediente_actual:
-            contexto["expediente_actual"] = expediente_actual
-        return contexto
+        return obtener_contexto_contribucion(
+            "celiaquia", ciudadano, logger, lambda: {"expedientes_celiaquia": []}
+        )
 
     def get_cdf_context(self, ciudadano):
-        try:
-            from centrodefamilia.models import ParticipanteActividad
-        except ImportError:
-            return {"participaciones_cdf": [], "costo_total_cdf": 0}
-
-        try:
-            participaciones = (
-                ParticipanteActividad.objects.filter(ciudadano=ciudadano)
-                .select_related(
-                    "actividad_centro__centro", "actividad_centro__actividad"
-                )
-                .order_by("-fecha_registro")
-            )
-            costo_total_cdf = (
-                ParticipanteActividad.objects.filter(
-                    ciudadano=ciudadano, estado="inscrito"
-                ).aggregate(total=Sum("actividad_centro__precio"))["total"]
-                or 0
-            )
-        except Exception:
-            logger.exception(
-                "Error cargando participaciones CDF para ciudadano %s", ciudadano.pk
-            )
-            return {"participaciones_cdf": [], "costo_total_cdf": 0}
-        return {
-            "participaciones_cdf": participaciones,
-            "costo_total_cdf": costo_total_cdf,
-        }
+        return obtener_contexto_contribucion(
+            "centrodefamilia",
+            ciudadano,
+            logger,
+            lambda: {"participaciones_cdf": [], "costo_total_cdf": 0},
+        )
 
     def get_comedor_context(self, ciudadano):
-        try:
-            from comedores.models import ColaboradorEspacio, Nomina
-        except ImportError:
-            return {"nominas_comedor": [], "colaboraciones_comedor": []}
-
-        try:
-            nominas = list(
-                Nomina.objects.filter(ciudadano=ciudadano)
-                .select_related(
-                    "admision__comedor__provincia",
-                    "admision__comedor__municipio",
-                    "admision__comedor__tipocomedor",
-                )
-                .order_by("-fecha")
-            )
-            colaboraciones = list(
-                ColaboradorEspacio.objects.filter(ciudadano=ciudadano)
-                .select_related(
-                    "comedor__provincia",
-                    "comedor__municipio",
-                    "comedor__tipocomedor",
-                )
-                .prefetch_related("actividades")
-                .order_by("-fecha_alta", "-id")
-            )
-        except Exception:
-            logger.exception(
-                "Error cargando nominas de comedor para ciudadano %s", ciudadano.pk
-            )
-            return {"nominas_comedor": [], "colaboraciones_comedor": []}
-        contexto = {
-            "nominas_comedor": nominas,
-            "colaboraciones_comedor": colaboraciones,
-        }
-        nomina_actual = nominas[0] if nominas else None
-        if nomina_actual:
-            contexto["nomina_actual"] = nomina_actual
-        return contexto
+        return obtener_contexto_contribucion(
+            "comedores",
+            ciudadano,
+            logger,
+            lambda: {"nominas_comedor": [], "colaboraciones_comedor": []},
+        )
 
     def get_flags_sociales_context(self, ciudadano):
-        from pwa.models import NominaEspacioPWA
-
-        perfiles = NominaEspacioPWA.objects.filter(
-            nomina__ciudadano=ciudadano,
-            activo=True,
+        return obtener_contexto_contribucion(
+            "pwa",
+            ciudadano,
+            logger,
+            lambda: {
+                "pertenece_comunidad_indigena": False,
+                "situacion_calle_pwa": False,
+                "persona_con_celiaquia_pwa": False,
+            },
         )
-        return {
-            "pertenece_comunidad_indigena": perfiles.filter(
-                pertenece_comunidad_indigena=True
-            ).exists(),
-            "situacion_calle_pwa": perfiles.filter(situacion_calle=True).exists(),
-            "persona_con_celiaquia_pwa": perfiles.filter(
-                persona_con_celiaquia=True
-            ).exists(),
-        }
 
-    def get_vat_context(
-        self, ciudadano
-    ):  # pylint: disable=too-many-locals,too-many-branches,too-many-statements
-        try:
-            from VAT.models import (
-                AsistenciaSesion,
-                Inscripcion,
-                InscripcionOferta,
-                Voucher,
-            )
-        except ImportError:
-            return {
+    def get_vat_context(self, ciudadano):
+        return obtener_contexto_contribucion(
+            "vat",
+            ciudadano,
+            logger,
+            lambda: {
                 "vat_inscripciones": [],
                 "vat_vouchers": [],
                 "vat_inscripciones_oferta": [],
                 "vat_programas": [],
-            }
-
-        try:
-            inscripciones = list(
-                Inscripcion.objects.filter(ciudadano=ciudadano)
-                .select_related(
-                    "comision__oferta__centro",
-                    "programa",
-                )
-                .prefetch_related("comision__oferta__plan_curricular__titulos")
-                .order_by("-fecha_inscripcion")
-            )
-            vouchers = list(
-                Voucher.objects.filter(ciudadano=ciudadano)
-                .select_related("programa")
-                .order_by("-fecha_asignacion")
-            )
-            inscripciones_oferta = list(
-                InscripcionOferta.objects.filter(ciudadano=ciudadano)
-                .select_related(
-                    "oferta__oferta__centro",
-                )
-                .prefetch_related("oferta__oferta__plan_curricular__titulos")
-                .order_by("-fecha_inscripcion")
-            )
-            asistencias = list(
-                AsistenciaSesion.objects.filter(inscripcion__ciudadano=ciudadano)
-                .select_related("inscripcion")
-                .order_by("-fecha_registro")
-            )
-        except Exception:
-            logger.exception("Error cargando datos VAT para ciudadano %s", ciudadano.pk)
-            return {
-                "vat_inscripciones": [],
-                "vat_vouchers": [],
-                "vat_inscripciones_oferta": [],
-                "vat_programas": [],
-            }
-
-        creditos_totales = sum(v.cantidad_inicial for v in vouchers)
-        creditos_disponibles = sum(
-            v.cantidad_disponible for v in vouchers if v.estado == "activo"
+            },
         )
-        voucher_activo = next((v for v in vouchers if v.estado == "activo"), None)
-        asistencias_por_inscripcion = defaultdict(
-            lambda: {"presentes": 0, "registradas": 0}
-        )
-
-        for asistencia in asistencias:
-            resumen = asistencias_por_inscripcion[asistencia.inscripcion_id]
-            resumen["registradas"] += 1
-            if asistencia.presente:
-                resumen["presentes"] += 1
-
-        for inscripcion in inscripciones:
-            resumen = asistencias_por_inscripcion.get(
-                inscripcion.id, {"presentes": 0, "registradas": 0}
-            )
-            registradas = resumen["registradas"]
-            inscripcion.asistencias_presentes = resumen["presentes"]
-            inscripcion.asistencias_registradas = registradas
-            inscripcion.asistencia_porcentaje = (
-                round((resumen["presentes"] / registradas) * 100) if registradas else 0
-            )
-
-        programas = {}
-
-        def ensure_programa(programa):
-            if not programa:
-                return None
-            programa_id = programa.id
-            if programa_id not in programas:
-                programas[programa_id] = {
-                    "programa": programa,
-                    "vouchers": [],
-                    "voucher_activo": None,
-                    "voucher_referencia": None,
-                    "inscripciones": [],
-                    "inscripciones_oferta": [],
-                    "creditos_totales": 0,
-                    "creditos_actuales": 0,
-                    "cursos_asignados": 0,
-                    "asistencias_presentes": 0,
-                    "asistencias_registradas": 0,
-                }
-            return programas[programa_id]
-
-        for voucher in vouchers:
-            programa_ctx = ensure_programa(voucher.programa)
-            if not programa_ctx:
-                continue
-            programa_ctx["vouchers"].append(voucher)
-            programa_ctx["creditos_totales"] += voucher.cantidad_inicial
-            if voucher.estado == "activo":
-                programa_ctx["creditos_actuales"] += voucher.cantidad_disponible
-                if programa_ctx["voucher_activo"] is None:
-                    programa_ctx["voucher_activo"] = voucher
-            if programa_ctx["voucher_referencia"] is None:
-                programa_ctx["voucher_referencia"] = voucher
-
-        for inscripcion in inscripciones:
-            programa_ctx = ensure_programa(inscripcion.programa)
-            if not programa_ctx:
-                continue
-            programa_ctx["inscripciones"].append(inscripcion)
-            programa_ctx["cursos_asignados"] += 1
-            programa_ctx["asistencias_presentes"] += inscripcion.asistencias_presentes
-            programa_ctx[
-                "asistencias_registradas"
-            ] += inscripcion.asistencias_registradas
-
-        for inscripcion_oferta in inscripciones_oferta:
-            programa = getattr(
-                getattr(inscripcion_oferta.oferta, "oferta", None), "programa", None
-            )
-            programa_ctx = ensure_programa(programa)
-            if not programa_ctx:
-                continue
-            programa_ctx["inscripciones_oferta"].append(inscripcion_oferta)
-            programa_ctx["cursos_asignados"] += 1
-
-        vat_programas = sorted(
-            programas.values(),
-            key=lambda item: str(item["programa"]).lower(),
-        )
-
-        return {
-            "vat_inscripciones": inscripciones,
-            "vat_vouchers": vouchers,
-            "vat_inscripciones_oferta": inscripciones_oferta,
-            "vat_creditos_totales": creditos_totales,
-            "vat_creditos_disponibles": creditos_disponibles,
-            "vat_voucher_activo": voucher_activo,
-            "vat_programas": vat_programas,
-        }
 
 
 class CiudadanosCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView):

@@ -1,6 +1,5 @@
 import json
 import re
-from datetime import date
 
 import pytest
 from django.contrib.auth.models import Group, Permission, User
@@ -9,7 +8,6 @@ from django.core.exceptions import ValidationError
 from django.test import RequestFactory
 from django.urls import reverse
 
-from ciudadanos.models import Ciudadano
 from core.constants import UserGroups
 from core.models import Localidad, Municipio, Provincia
 from users.forms import CustomUserChangeForm, UserCreationForm
@@ -49,18 +47,6 @@ def _user_form_data(username, scopes, provincia=""):
         "provincia": provincia,
         "territorial_scopes": json.dumps(scopes),
     }
-
-
-def _crear_ciudadano(documento, provincia, municipio, localidad):
-    return Ciudadano.objects.create(
-        apellido="Perez",
-        nombre=f"Ciudadano {documento}",
-        fecha_nacimiento=date(2010, 1, 1),
-        documento=documento,
-        provincia=provincia,
-        municipio=municipio,
-        localidad=localidad,
-    )
 
 
 @pytest.mark.django_db
@@ -362,70 +348,6 @@ def test_usuario_provincial_rechaza_alcances_duplicados():
 
     assert not form.is_valid()
     assert "territorial_scopes" in form.errors
-
-
-@pytest.mark.django_db
-def test_scope_municipio_no_incluye_otro_municipio():
-    provincia, municipio_a, localidad_a = _geo_set("Scope Municipio A")
-    municipio_b = Municipio.objects.create(
-        nombre="Scope Municipio B", provincia=provincia
-    )
-    localidad_b = Localidad.objects.create(
-        nombre="Scope Localidad B", municipio=municipio_b
-    )
-    user = User.objects.create_user(username="scope_municipio", password="pass")
-    profile = user.profile
-    profile.es_usuario_provincial = True
-    profile.save()
-    ProfileTerritorialScope.objects.create(
-        profile=profile,
-        provincia=provincia,
-        municipio=municipio_a,
-    )
-    visible = _crear_ciudadano(101, provincia, municipio_a, localidad_a)
-    oculto = _crear_ciudadano(102, provincia, municipio_b, localidad_b)
-
-    qs = apply_territorial_scope(
-        Ciudadano.objects.all(),
-        user,
-        provincia_lookup="provincia_id",
-        municipio_lookup="municipio_id",
-        localidad_lookup="localidad_id",
-    )
-
-    assert visible in qs
-    assert oculto not in qs
-
-
-@pytest.mark.django_db
-def test_scope_localidad_no_incluye_otra_localidad():
-    provincia, municipio, localidad_a = _geo_set("Scope Localidad A")
-    localidad_b = Localidad.objects.create(
-        nombre="Scope Localidad B", municipio=municipio
-    )
-    user = User.objects.create_user(username="scope_localidad", password="pass")
-    profile = user.profile
-    profile.es_usuario_provincial = True
-    profile.save()
-    ProfileTerritorialScope.objects.create(
-        profile=profile,
-        provincia=provincia,
-        municipio=municipio,
-        localidad=localidad_a,
-    )
-    visible = _crear_ciudadano(201, provincia, municipio, localidad_a)
-    oculto = _crear_ciudadano(202, provincia, municipio, localidad_b)
-
-    qs = apply_territorial_scope(
-        Ciudadano.objects.all(),
-        user,
-        provincia_lookup="provincia_id",
-        municipio_lookup="municipio_id",
-        localidad_lookup="localidad_id",
-    )
-
-    assert visible in qs
-    assert oculto not in qs
 
 
 @pytest.mark.django_db

@@ -7,3 +7,8 @@ class AdmisionesConfig(AppConfig):
 
     def ready(self):
         import admisiones.signals  # pylint: disable=unused-import, import-outside-toplevel
+        from admisiones.favorite_filters import (  # pylint: disable=import-outside-toplevel
+            registrar_filtros_favoritos,
+        )
+
+        registrar_filtros_favoritos()
