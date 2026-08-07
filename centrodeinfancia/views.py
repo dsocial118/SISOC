@@ -70,8 +70,13 @@ from centrodeinfancia.models import (
     Trabajador,
 )
 from centrodeinfancia.services import (
+    MENSAJE_NOMINA_VIGENTE_EN_OTRO_CENTRO,
+    MOTIVO_NOMINA_DUPLICADA_MISMO_CENTRO,
+    MOTIVO_NOMINA_VIGENTE_OTRO_CENTRO,
     AsistenciaNominaCentroInfanciaService,
     CentroDeInfanciaService,
+    bloquear_ciudadano_para_nomina_cdi,
+    tiene_nomina_cdi_vigente_en_otro_centro,
 )
 from centrodeinfancia.services_user_provisioning import (
     crear_referente_cdi_automaticamente,
@@ -1383,21 +1388,37 @@ class NominaCentroInfanciaCreateView(
 
     @staticmethod
     def _crear_nomina_con_bloqueo(centro, ciudadano, form):
+        """Crea la nómina si la persona no tiene otra vigente.
+
+        Devuelve ``(creado, motivo)``: cuando ``creado`` es False, ``motivo`` es
+        una de las constantes ``MOTIVO_NOMINA_*`` para que la vista elija el
+        mensaje sin exponer datos del otro centro.
+        """
+        bloquear_ciudadano_para_nomina_cdi(ciudadano.pk)
         CentroDeInfancia.objects.select_for_update().filter(pk=centro.pk).exists()
-        existente = NominaCentroInfancia.objects.filter(
-            centro=centro,
-            ciudadano=ciudadano,
-            deleted_at__isnull=True,
-        ).exists()
+        existente = (
+            NominaCentroInfancia.objects.select_for_update()
+            .filter(
+                centro=centro,
+                ciudadano=ciudadano,
+                deleted_at__isnull=True,
+            )
+            .exists()
+        )
         if existente:
-            return False
+            return False, MOTIVO_NOMINA_DUPLICADA_MISMO_CENTRO
+
+        if tiene_nomina_cdi_vigente_en_otro_centro(
+            ciudadano.pk, centro.pk, bloquear=True
+        ):
+            return False, MOTIVO_NOMINA_VIGENTE_OTRO_CENTRO
 
         nomina = form.save(commit=False)
         nomina.centro = centro
         nomina.ciudadano = ciudadano
         nomina.clean()
         nomina.save()
-        return True
+        return True, None
 
     def get_queryset(self):
         return _nomina_cdi_queryset_scoped(self.request.user).filter(
@@ -1563,7 +1584,9 @@ class NominaCentroInfanciaCreateView(
             pieces.append(f'Departamento {cleaned_data["departamento_domicilio"]}')
         return " / ".join(pieces) or None
 
-    def post(self, request, *args, **kwargs):
+    def post(  # pylint: disable=too-many-return-statements
+        self, request, *args, **kwargs
+    ):
         self.object = None
         centro = self._get_centro()
         form = self.form_class(request.POST, centro=centro)
@@ -1635,7 +1658,7 @@ class NominaCentroInfanciaCreateView(
                             modificado_por=request.user,
                         )
 
-                creado = self._crear_nomina_con_bloqueo(
+                creado, motivo_rechazo = self._crear_nomina_con_bloqueo(
                     centro=centro,
                     ciudadano=ciudadano,
                     form=form,
@@ -1650,6 +1673,12 @@ class NominaCentroInfanciaCreateView(
                 },
             )
             messages.error(request, "No se pudo guardar la ficha en la nómina.")
+            context = self.get_context_data(form=form)
+            return self.render_to_response(context)
+
+        if motivo_rechazo == MOTIVO_NOMINA_VIGENTE_OTRO_CENTRO:
+            form.add_error(None, MENSAJE_NOMINA_VIGENTE_EN_OTRO_CENTRO)
+            messages.error(request, MENSAJE_NOMINA_VIGENTE_EN_OTRO_CENTRO)
             context = self.get_context_data(form=form)
             return self.render_to_response(context)
 
