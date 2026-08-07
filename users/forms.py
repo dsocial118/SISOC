@@ -16,9 +16,11 @@ from django.utils import timezone
 from comedores.models import Comedor
 from core.constants import UserGroups
 from core.models import Provincia
+from core.validators import solo_digitos, validate_cuit
 from duplas.models import Dupla
 from organizaciones.models import Organizacion
 from users.models import AccesoComedorPWA, Profile
+from users.profile_utils import get_profile_or_none
 from users.services_delegation import effective_delegatable_groups_qs
 from users.services_pwa import (
     PWA_ASSIGNABLE_PERMISSION_CODES,
@@ -1180,3 +1182,108 @@ class UserImportForm(forms.Form):
         initial=False,
         help_text="Los usuarios importados son usuarios de la app movil (PWA).",
     )
+
+
+# PENDIENTE: texto definitivo de la declaración a confirmar por UX.
+# Cambiar únicamente esta constante cuando lo envíen; no hay copia duplicada
+# en templates ni en tests.
+TEXTO_DECLARACION = "TEXTO A CONFIRMAR POR UX"
+
+
+class MiCuentaForm(forms.ModelForm):
+    """Edición de los datos personales del propio usuario.
+
+    Se comparte entre la vista persistente "Mi cuenta" y la confirmación
+    obligatoria de primer ingreso, para que ambas apliquen exactamente la
+    misma validación y el mismo guardado.
+
+    A diferencia de ``CustomUserChangeForm``, acá no se exponen grupos,
+    permisos, alcances territoriales ni delegación: el usuario solo edita sus
+    propios datos identificatorios. ``tipo_usuario`` y ``rol`` quedan fuera a
+    pedido de UX/UI: son datos de administración y el usuario final no los
+    toca.
+
+    Todos los campos son obligatorios salvo ``correo_institucional``.
+    """
+
+    dni = forms.CharField(
+        max_length=16,
+        label="DNI",
+        help_text="Solo números, sin puntos.",
+        error_messages={"required": "Ingrese su DNI."},
+    )
+    cuil = forms.CharField(
+        max_length=16,
+        label="CUIL",
+        help_text="11 dígitos, con o sin guiones.",
+        error_messages={"required": "Ingrese su CUIL."},
+    )
+    correo_institucional = forms.EmailField(
+        required=False,
+        label="Correo institucional",
+        help_text="Opcional.",
+    )
+    declaracion_aceptada = forms.BooleanField(
+        required=True,
+        label=TEXTO_DECLARACION,
+        error_messages={"required": "Debe aceptar la declaración para continuar."},
+    )
+
+    class Meta:
+        model = User
+        fields = ["first_name", "last_name", "email"]
+        labels = {
+            "first_name": "Nombre",
+            "last_name": "Apellido",
+            "email": "Mail",
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for nombre in ("first_name", "last_name", "email"):
+            self.fields[nombre].required = True
+        # Hay usuarios históricos sin perfil; el form igual debe poder abrirse.
+        profile = get_profile_or_none(self.instance)
+        if profile:
+            self.fields["dni"].initial = profile.dni
+            self.fields["cuil"].initial = profile.cuil
+            self.fields["correo_institucional"].initial = profile.correo_institucional
+            self.fields["declaracion_aceptada"].initial = profile.declaracion_aceptada
+
+    def clean_dni(self):
+        dni = solo_digitos(self.cleaned_data.get("dni"))
+        if len(dni) < 6:
+            raise forms.ValidationError("Ingrese un DNI válido (solo números).")
+        return dni
+
+    def clean_cuil(self):
+        return validate_cuit((self.cleaned_data.get("cuil") or "").strip())
+
+    def clean_email(self):
+        # El mail es obligatorio en este formulario pero sigue sin ser único:
+        # la unicidad vive en username.
+        return (self.cleaned_data.get("email") or "").strip()
+
+    def save(self, commit=True):
+        if not commit:
+            raise ValueError("MiCuentaForm requiere commit=True para ser atómico.")
+        with transaction.atomic():
+            user = super().save(commit=True)
+            profile, _ = Profile.objects.get_or_create(user=user)
+            profile.dni = self.cleaned_data["dni"]
+            profile.cuil = self.cleaned_data["cuil"]
+            profile.correo_institucional = self.cleaned_data["correo_institucional"]
+            profile.declaracion_aceptada = self.cleaned_data["declaracion_aceptada"]
+            profile.needs_profile_confirmation = False
+            profile.datos_confirmados_at = timezone.now()
+            profile.save(
+                update_fields=[
+                    "dni",
+                    "cuil",
+                    "correo_institucional",
+                    "declaracion_aceptada",
+                    "needs_profile_confirmation",
+                    "datos_confirmados_at",
+                ]
+            )
+        return user
