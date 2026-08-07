@@ -7,7 +7,10 @@ from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
 
 from rendicioncuentasmensual.models import DocumentacionAdjunta, RendicionCuentaMensual
-from rendicioncuentasmensual.services import RendicionCuentaMensualService
+from rendicioncuentasmensual.services import (
+    RendicionCuentaMensualService,
+    RendicionProcesoService,
+)
 
 
 def test_crear_rendicion_cuenta_mensual_success(mocker):
@@ -832,3 +835,81 @@ def test_presentar_rendicion_mobile_rechaza_documentos_observados_vigentes(mocke
         RendicionCuentaMensualService.presentar_rendicion_mobile(rendicion)
 
     assert "pendiente de subsanar" in str(exc_info.value)
+
+
+@pytest.mark.django_db
+def test_presentar_rendicion_mobile_reanuda_revision_territorial_sin_nuevo_inicio(
+    mocker,
+):
+    rendicion = SimpleNamespace(
+        estado=RendicionCuentaMensual.ESTADO_SUBSANAR,
+        etapa_proceso=RendicionCuentaMensual.ETAPA_REVISION_DOCUMENTACION,
+        subestado_proceso=RendicionCuentaMensual.SUBESTADO_PENDIENTE_CORRECCIONES,
+        documento_adjunto=True,
+        save=mocker.Mock(),
+    )
+    mocker.patch.object(
+        RendicionCuentaMensualService, "validar_documentacion_obligatoria"
+    )
+    mocker.patch.object(
+        RendicionCuentaMensualService, "_sincronizar_flag_documento_adjunto"
+    )
+    mocker.patch.object(
+        RendicionCuentaMensualService,
+        "_documentos_vigentes_queryset",
+        return_value=[SimpleNamespace(estado=DocumentacionAdjunta.ESTADO_PRESENTADO)],
+    )
+    mocker.patch.object(
+        RendicionCuentaMensualService, "_archivar_notificaciones_mobile_rendicion"
+    )
+
+    RendicionCuentaMensualService.presentar_rendicion_mobile(rendicion)
+
+    assert rendicion.etapa_proceso == (
+        RendicionCuentaMensual.ETAPA_REVISION_DOCUMENTACION
+    )
+    assert rendicion.subestado_proceso == RendicionCuentaMensual.SUBESTADO_EN_CURSO
+
+
+@pytest.mark.django_db
+def test_iniciar_revision_auditoria_actualiza_documentos_con_ids_materializados(
+    mocker,
+):
+    rendicion = SimpleNamespace(
+        etapa_proceso=RendicionCuentaMensual.ETAPA_REVISION_AUDITORIA,
+        subestado_proceso=RendicionCuentaMensual.SUBESTADO_PENDIENTE,
+        estado=RendicionCuentaMensual.ESTADO_FINALIZADA,
+        save=mocker.Mock(),
+    )
+    queryset_vigentes = mocker.Mock()
+    queryset_validados = queryset_vigentes.filter.return_value
+    queryset_validados.values_list.return_value = [11, 12]
+    mocker.patch.object(
+        RendicionCuentaMensualService,
+        "_documentos_vigentes_queryset",
+        return_value=queryset_vigentes,
+    )
+    queryset_actualizacion = mocker.Mock()
+    filter_mock = mocker.patch.object(
+        DocumentacionAdjunta.objects,
+        "filter",
+        return_value=queryset_actualizacion,
+    )
+
+    RendicionProcesoService.ejecutar(
+        rendicion=rendicion,
+        accion=RendicionProcesoService.ACCION_INICIAR_REVISION_AUDITORIA,
+        datos={},
+    )
+
+    queryset_vigentes.filter.assert_called_once_with(
+        estado=DocumentacionAdjunta.ESTADO_VALIDADO
+    )
+    queryset_validados.values_list.assert_called_once_with("pk", flat=True)
+    filter_mock.assert_called_once_with(pk__in=[11, 12])
+    queryset_actualizacion.update.assert_called_once_with(
+        estado=DocumentacionAdjunta.ESTADO_PRESENTADO,
+        observaciones=None,
+    )
+    assert rendicion.subestado_proceso == RendicionCuentaMensual.SUBESTADO_EN_CURSO
+    assert rendicion.estado == RendicionCuentaMensual.ESTADO_REVISION

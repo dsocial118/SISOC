@@ -751,7 +751,12 @@ class RendicionCuentaMensualService:
         } and rendicion.subestado_proceso == (
             RendicionCuentaMensual.SUBESTADO_PENDIENTE_CORRECCIONES
         ):
-            rendicion.subestado_proceso = RendicionCuentaMensual.SUBESTADO_SUBSANADO
+            rendicion.subestado_proceso = (
+                RendicionCuentaMensual.SUBESTADO_EN_CURSO
+                if rendicion.etapa_proceso
+                == RendicionCuentaMensual.ETAPA_REVISION_DOCUMENTACION
+                else RendicionCuentaMensual.SUBESTADO_SUBSANADO
+            )
         else:
             rendicion.etapa_proceso = (
                 RendicionCuentaMensual.ETAPA_REVISION_DOCUMENTACION
@@ -1070,11 +1075,14 @@ class RendicionProcesoService:
             )
             rendicion.subestado_proceso = en_curso
             rendicion.estado = RendicionCuentaMensual.ESTADO_REVISION
-            RendicionCuentaMensualService._documentos_vigentes_queryset(  # pylint: disable=protected-access
-                rendicion
-            ).filter(
-                estado=DocumentacionAdjunta.ESTADO_VALIDADO
-            ).update(
+            documentos_validados_ids = list(
+                RendicionCuentaMensualService._documentos_vigentes_queryset(  # pylint: disable=protected-access
+                    rendicion
+                )
+                .filter(estado=DocumentacionAdjunta.ESTADO_VALIDADO)
+                .values_list("pk", flat=True)
+            )
+            DocumentacionAdjunta.objects.filter(pk__in=documentos_validados_ids).update(
                 estado=DocumentacionAdjunta.ESTADO_PRESENTADO,
                 observaciones=None,
             )

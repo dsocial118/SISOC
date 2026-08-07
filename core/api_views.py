@@ -9,8 +9,8 @@ from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework_api_key.permissions import HasAPIKey
 
-from centrodefamilia.services.consulta_renaper.impl import APIClient
 from core.api_serializers import RenaperConsultaSerializer
+from core.services.renaper import consultar_datos_renaper
 
 logger = logging.getLogger("django")
 
@@ -72,8 +72,7 @@ class RenaperConsultaViewSet(viewsets.ViewSet):
         )
 
         try:
-            client = APIClient()
-            response = client.consultar_ciudadano(dni, sexo)
+            response = consultar_datos_renaper(dni, sexo)
         except Exception as exc:
             logger.error(f"Excepción en consulta RENAPER: {str(exc)}")
             return Response(
