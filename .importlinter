@@ -85,8 +85,53 @@ ignore_imports =
     # por diseño; no participa de requests, comandos operativos ni AppConfig.
     core.benchmarks.** -> **
 
+[importlinter:contract:celiaquia-public-api]
+name = los dominios solo consumen la API pública de Celiaquía
+type = forbidden
+allow_indirect_imports = True
+source_modules =
+    core
+    users
+    ciudadanos
+    comedores
+    organizaciones
+    duplas
+    admisiones
+    intervenciones
+    historial
+    acompanamientos
+    expedientespagos
+    relevamientos
+    rendicioncuentasfinal
+    rendicioncuentasmensual
+    centrodefamilia
+    VAT
+    importarexpediente
+    comunicados
+    centrodeinfancia
+    ver_para_ser_libre
+    dispositivos
+    pwa
+    ticketera
+forbidden_modules =
+    celiaquia.admin
+    celiaquia.apps
+    celiaquia.ciudadano_detail
+    celiaquia.forms
+    celiaquia.global_urls
+    celiaquia.management
+    celiaquia.models
+    celiaquia.permissions
+    celiaquia.services
+    celiaquia.signals
+    celiaquia.templatetags
+    celiaquia.utils
+    celiaquia.views
+    celiaquia.urls
+ignore_imports =
+
 [importlinter:contract:ciudadanos-no-domains]
-name = ciudadanos no debe importar otras apps de dominio
+name = ciudadanos no debe importar internals de otros dominios
 type = forbidden
 allow_indirect_imports = True
 source_modules =
@@ -105,7 +150,6 @@ forbidden_modules =
     rendicioncuentasmensual
     centrodefamilia
     VAT
-    celiaquia
     importarexpediente
     comunicados
     centrodeinfancia

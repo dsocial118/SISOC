@@ -40,7 +40,7 @@ Mapa practico del repositorio `SISOC` para futuros agentes de IA y desarrollador
 | PyMySQL + mysqlclient | Hecho observado | `requirements/base.txt` |
 | pytest / pytest-django / pytest-xdist / pytest-cov | Hecho observado | `requirements/test.txt`, `pytest.ini` |
 | black / pylint / djlint | Hecho observado | `pyproject.toml`, `requirements/dev.txt`, `requirements/lint.txt` |
-| import-linter | Hecho observado | `.importlinter`, `requirements/arch.txt` |
+| import-linter | Hecho observado | `.importlinter`, `.importlinter_celiaquia_config`, `requirements/arch.txt` |
 | Sentry | Hecho observado | `.env.example`, `requirements/base.txt` |
 | OCR / PDF / DOCX / Excel tooling | Hecho observado | `requirements/base.txt`, app `ocr/`, templates/docx/pdf |
 
@@ -276,7 +276,7 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 | `relevamientos/` | relevamientos y sync externo asociado | `models.py`, `tasks.py`, `views.py`, commands | Alto |
 | `ciudadanos/` | gestion de ciudadanos/beneficiarios | `models.py`, `views.py`, `api_views.py`, forms | Medio |
 | `centrodefamilia/` | beneficiarios/centros/familia + consulta RENAPER + API | `models.py`, `views.py`, `api_views.py`, `services/consulta_renaper` | Alto |
-| `celiaquia/` | modulo especializado con bastante logica en services y vistas | `models.py`, `views/`, `services/`, `permissions.py`, tests | Alto |
+| `celiaquia/` | modulo especializado con bastante logica en services y vistas; expone un contrato Python acotado | `api.py`, `models.py`, `views/`, `services/`, `permissions.py`, tests | Alto |
 | `admisiones/` | flujo de admision, legales/tecnicos, generacion DOCX/PDF | `views/web_views.py`, `services/`, `forms/`, templates `docx/` y `pdf/` | Alto |
 | `VAT/` | modulo amplio propio con views, API, services y reportes | `models.py`, `views/`, `api_views.py`, `services/`, `serializers.py`; docs `docs/vat/` | Alto |
 | `pwa/` | endpoints backend para experiencia PWA | `api_urls.py`, `api_views.py`, `services/`, `models.py` | Medio |
@@ -436,6 +436,9 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 
 ### Si necesitas cambiar Celiaquia
 
+- `celiaquia/api.py` para el contrato Python público; consumidores externos no
+  deben importar sus modelos, services, views, formularios, permisos o signals.
+- `celiaquia/global_urls.py` para rutas globales de propiedad del dominio.
 - `celiaquia/views/`
 - `celiaquia/services/`
 - `celiaquia/models.py`

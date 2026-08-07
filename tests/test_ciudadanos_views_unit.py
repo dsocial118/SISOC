@@ -449,24 +449,21 @@ def test_ciudadanos_detail_helpers_contexts(mocker):
     ciudadano = SimpleNamespace(pk=7)
 
     mocker.patch(
-        "celiaquia.models.ExpedienteCiudadano.objects.filter",
-        side_effect=Exception("boom"),
+        "ciudadanos.views.obtener_resumen_ciudadano", side_effect=Exception("boom")
     )
     log_exc = mocker.patch("ciudadanos.views.logger.exception")
     out_err = module.CiudadanosDetailView().get_celiaquia_context(ciudadano)
-    assert out_err == {"expedientes_celiaquia": []}
+    assert out_err == {"celiaquia_resumen": None}
     assert log_exc.called
 
-    exped = SimpleNamespace(id=1)
-    qs = _ExpedientesList([exped])
-    mocker.patch(
-        "celiaquia.models.ExpedienteCiudadano.objects.filter",
-        return_value=SimpleNamespace(
-            select_related=lambda *a, **k: SimpleNamespace(order_by=lambda *x, **y: qs)
-        ),
+    resumen = SimpleNamespace(legajo_actual=SimpleNamespace())
+    obtener_resumen = mocker.patch(
+        "ciudadanos.views.obtener_resumen_ciudadano", return_value=resumen
     )
     out_ok = module.CiudadanosDetailView().get_celiaquia_context(ciudadano)
-    assert out_ok["expediente_actual"] is exped
+
+    assert out_ok == {"celiaquia_resumen": resumen}
+    obtener_resumen.assert_called_once_with(ciudadano.pk)
 
 
 def test_ciudadanos_create_busqueda_paths(mocker):
