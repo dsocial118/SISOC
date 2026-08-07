@@ -1,10 +1,16 @@
 {% extends "includes/main.html" %}
+{% load static %}
 
 {% block title %}Confirma tus datos personales{% endblock %}
 {% block titulo-pagina %}Confirma tus datos personales{% endblock %}
 
 {% block content %}
-    <div class="row">
+    <link rel="stylesheet"
+          href="{% static 'custom/css/poncho_formularios.css' %}" />
+
+    {# El wrapper tambien vive en el contenido, no solo en el modal: es lo que #}
+    {# hace que .app-main:has(.poncho-form) pinte el fondo de la pagina. #}
+    <div class="row poncho-form">
         <div class="col-12">
             <p class="text-muted">Para continuar usando SISOC necesitamos que confirmes o corrijas tus datos personales.</p>
         </div>
@@ -21,7 +27,7 @@
          aria-labelledby="modal-confirmar-datos-titulo">
         <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg"
              role="document">
-            <div class="modal-content">
+            <div class="modal-content poncho-form">
                 <div class="modal-header">
                     <h4 class="modal-title" id="modal-confirmar-datos-titulo">Confirma tus datos personales</h4>
                 </div>
@@ -31,13 +37,18 @@
                     {% csrf_token %}
                     <div class="modal-body">
                         <p class="text-muted">
-                            Revisá la información y completá lo que falte. Vas a poder modificarla luego desde <strong>Mi cuenta</strong>.
+                            Como parte del proceso de actualización de datos, te solicitamos que revises tu información personal y completes los campos pendientes o desactualizados.
+                        </p>
+                        <p class="text-muted small">
+                            Vas a poder modificar estos datos luego desde <strong>Mi cuenta</strong>.
                         </p>
                         {% include "user/_mi_cuenta_campos.html" %}
                         <p class="text-muted small mb-0">Estos datos se usan para identificación y auditoría interna.</p>
                     </div>
                     <div class="modal-footer justify-content-end">
-                        <button type="submit" class="btn btn-primary" data-mi-cuenta-submit>Guardar datos</button>
+                        <button type="submit"
+                                class="poncho-btn poncho-btn--cta"
+                                data-mi-cuenta-submit>Guardar datos</button>
                     </div>
                 </form>
             </div>

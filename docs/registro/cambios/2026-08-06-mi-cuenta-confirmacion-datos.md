@@ -28,12 +28,28 @@ El alcance original del ticket se modificó antes de mergear:
   `False` para quien nunca confirmó y el usuario debe marcarlo para poder guardar.
 - **El botón Guardar datos se habilita solo con el formulario completo.**
 
-### Texto de la declaración: pendiente
+### Texto de la declaración: redacción provisoria
 
-La leyenda del checkbox está en la constante `TEXTO_DECLARACION`
-(`users/forms.py`), hoy con el placeholder `"TEXTO A CONFIRMAR POR UX"`. Cuando UX
-envíe el texto definitivo se cambia **solo esa constante**: no hay copia duplicada en
-templates ni en tests.
+La leyenda del checkbox vive en la constante `TEXTO_DECLARACION` (`users/forms.py`).
+Para cambiarla alcanza con esa constante: no hay copia duplicada en templates ni en
+tests.
+
+El texto que envió UX venía redactado como aviso en segunda persona y mezclaba dos
+cosas: una instrucción ("te solicitamos que revises tu información personal y
+completes los campos pendientes o desactualizados") y un compromiso
+("comprometiéndote a preservar su confidencialidad"). Una leyenda de checkbox no puede
+ser un aviso: al tildarlo el usuario tiene que estar declarando algo en primera
+persona.
+
+Se resolvió separando las dos partes:
+
+- la instrucción pasó al encabezado del modal (`confirmar_datos.html`), que es donde
+  corresponde: eso se lee, no se acepta;
+- el compromiso quedó en el checkbox, reformulado a primera persona y precedido de
+  "Acepto que". Cambió la persona gramatical, no el alcance normativo.
+
+Queda **pendiente de un filtro de aprobación posterior**, así que la redacción puede
+volver con cambios.
 
 ### El gate del botón es client-side, la validación no
 
@@ -45,6 +61,32 @@ declaración para probarlo.
 El botón se renderiza **habilitado** y el script lo deshabilita al cargar, no al revés.
 Es deliberado: si el JS fallara, un botón deshabilitado por HTML dejaría al usuario sin
 poder salir de un flujo que le bloquea la navegación.
+
+## Paleta PONCHO
+
+Las dos pantallas adoptan la paleta que `development` introdujo con los buscadores
+nuevos, para que no queden con la estética vieja al lado de los listados
+rediseñados. `poncho.css` (solo tokens) ya lo carga `base.html` globalmente, así que
+alcanza con una hoja que los aplique.
+
+`static/custom/css/poncho_formularios.css` sigue el mismo patrón que
+`poncho_listados.css`: todo cuelga de una clase de alcance (`.poncho-form`) en lugar
+de repintar los formularios de toda la app, que es un cambio de tema con otro riesgo.
+Reparto de superficies tomado de los listados: fondo de página en azul secundario,
+controles en azul principal con borde blanco y radio base, CTA en verde.
+
+Dos cosas quedaron duplicadas a propósito, ambas anotadas en el archivo:
+
+- La forma del CTA (`.poncho-btn`) vive en `comedoresSearchBar.css`, que solo carga
+  `components/search_bar.html`. Estas pantallas no tienen buscador, así que se repite
+  scopeada en vez de arrastrar 565 líneas de estilos del buscador. Si el CTA se muda a
+  una hoja compartida, la copia se borra.
+- El rojo del design system (`#c62828`) no da contraste suficiente como texto sobre el
+  azul principal, así que los errores inline usan una versión aclarada. El rojo
+  original se conserva como fondo de la alerta, donde sí funciona con texto blanco.
+
+El estado deshabilitado del botón no existe en el design system y esta pantalla lo
+necesita, porque el CTA arranca bloqueado hasta que el formulario esté completo.
 
 ## Decisiones y trade-offs
 
