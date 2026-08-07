@@ -19,7 +19,7 @@ históricos de comedores, mientras que el selector solo admite proyectos activos
 - Los cambios de Organización y Programa se escuchan mediante jQuery, el mismo canal
   de eventos utilizado por Select2.
 
-## ValidaciÃ³n
+## Validación
 
-Se agregÃ³ una regresiÃ³n que verifica el acceso con `comedores.add_comedor` y que el
-endpoint devuelve solamente los proyectos activos de la organizaciÃ³n.
+Se agregó una regresión que verifica el acceso con `comedores.add_comedor` y que el
+endpoint devuelve solamente los proyectos activos de la organización.

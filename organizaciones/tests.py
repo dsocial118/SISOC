@@ -45,7 +45,7 @@ class ProyectosOrganizacionAjaxTests(TestCase):
                 codename="add_comedor",
             )
         )
-        organizacion = Organizacion.objects.create(nombre="OrganizaciÃ³n con proyectos")
+        organizacion = Organizacion.objects.create(nombre="Organización con proyectos")
         proyecto = ProyectoOrganizacion.objects.create(
             organizacion=organizacion,
             codigo="P-1961",
