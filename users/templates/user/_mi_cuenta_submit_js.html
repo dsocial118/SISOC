@@ -1,0 +1,23 @@
+{% comment %}
+Habilita el botón Guardar datos solo cuando el formulario está completo.
+Es una ayuda de UX: la validación real vive en MiCuentaForm, del lado del
+servidor. El botón se renderiza habilitado y este script lo deshabilita al
+cargar, para que un fallo de JS no deje al usuario sin poder guardar en un
+flujo que bloquea la navegación.
+{% endcomment %}
+<script nonce="{{ request.csp_nonce }}">
+    document.addEventListener("DOMContentLoaded", function () {
+        var wrapper = document.querySelector("[data-mi-cuenta-form]");
+        var form = wrapper && wrapper.closest("form");
+        var boton = form && form.querySelector("[data-mi-cuenta-submit]");
+        if (!boton) {
+            return;
+        }
+        function actualizarBoton() {
+            boton.disabled = !form.checkValidity();
+        }
+        form.addEventListener("input", actualizarBoton);
+        form.addEventListener("change", actualizarBoton);
+        actualizarBoton();
+    });
+</script>

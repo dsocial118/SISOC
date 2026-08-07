@@ -13,6 +13,8 @@ from users.views import (
     UserDeleteView,
     GroupListView,
     GroupUpdateView,
+    ConfirmacionDatosView,
+    MiCuentaView,
     PasswordResetConfirmCustomView,
     UserGenerateTemporaryPasswordView,
     UserListView,
@@ -37,6 +39,16 @@ urlpatterns = [
         "password/first-change/",
         FirstLoginPasswordChangeView.as_view(),
         name="password_change_required",
+    ),
+    path(
+        "mi-cuenta/",
+        MiCuentaView.as_view(),
+        name="mi_cuenta",
+    ),
+    path(
+        "mi-cuenta/confirmar/",
+        ConfirmacionDatosView.as_view(),
+        name="confirmar_datos_personales",
     ),
     path(
         "password/reset/confirm/<uidb64>/<token>/",
