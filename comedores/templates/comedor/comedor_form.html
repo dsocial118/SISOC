@@ -582,17 +582,26 @@
                 }
                 var url = codigoWrapper.dataset.proyectosUrl.replace("/0/", "/" + organizacionId + "/");
                 fetch(url)
-                    .then(function (response) { return response.json(); })
+                    .then(function (response) {
+                        if (!response.ok) {
+                            throw new Error("No se pudieron cargar los proyectos de la organización.");
+                        }
+                        return response.json();
+                    })
                     .then(function (data) {
                         data.proyectos.forEach(function (proyecto) {
                             var option = new Option(proyecto.codigo, proyecto.id, false, String(proyecto.id) === selected);
                             proyectoInput.add(option);
                         });
+                        $(proyectoInput).trigger("change.select2");
+                    })
+                    .catch(function () {
+                        proyectoInput.innerHTML = '<option value="">No fue posible cargar los proyectos</option>';
                     });
             }
 
-            programaInput.addEventListener("change", actualizarCodigoProyecto);
-            organizacionInput.addEventListener("change", actualizarProyectos);
+            $(programaInput).on("change", actualizarCodigoProyecto);
+            $(organizacionInput).on("change", actualizarProyectos);
             actualizarCodigoProyecto();
         }());
     </script>

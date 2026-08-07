@@ -32,6 +32,11 @@ ORGANIZACION_DOCUMENTACION_PERMS = [
     "auth.role_tecnico_comedor",
     "auth.role_abogado_dupla",
 ]
+ORGANIZACION_PROYECTOS_PERMS = [
+    *ORGANIZACION_DOCUMENTACION_PERMS,
+    "comedores.add_comedor",
+    "comedores.change_comedor",
+]
 
 urlpatterns = [
     path(
@@ -181,7 +186,7 @@ urlpatterns = [
     ),
     path(
         "organizaciones/<int:organizacion_id>/proyectos/ajax/",
-        permissions_any_required(ORGANIZACION_DOCUMENTACION_PERMS)(
+        permissions_any_required(ORGANIZACION_PROYECTOS_PERMS)(
             proyectos_organizacion_ajax
         ),
         name="organizacion_proyectos_ajax",

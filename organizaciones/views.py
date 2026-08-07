@@ -875,6 +875,11 @@ class OrganizacionDetailView(LoginRequiredMixin, DetailView):
         )
 
         proyectos = RendicionesOrganizacionService.obtener_proyectos(self.object)
+        context["proyectos_organizacion"] = list(
+            self.object.proyectos.filter(activo=True)
+            .order_by("codigo")
+            .values_list("codigo", flat=True)
+        )
         proyecto_solicitado = (self.request.GET.get("proyecto") or "").strip()
         proyecto_seleccionado = (
             proyecto_solicitado if proyecto_solicitado in proyectos else ""

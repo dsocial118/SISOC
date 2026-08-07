@@ -303,7 +303,13 @@ def _build_actividades_pnud_legajo_context(comedor):
     )
     return {
         "actividades_pnud_legajo": actividades,
-        "actividades_pnud_legajo_count": len(actividades),
+        "actividades_pnud_legajo_count": len(
+            {
+                actividad.catalogo_actividad_id
+                for actividad in actividades
+                if actividad.activo
+            }
+        ),
     }
 
 

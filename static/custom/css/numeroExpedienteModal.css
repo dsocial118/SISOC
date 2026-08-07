@@ -1,0 +1,58 @@
+.modal-dialog.modal-expediente-amplio {
+  width: min(70vw, 1000px);
+  max-width: min(70vw, 1000px);
+}
+
+.modal-expediente-amplio .expediente-estructurado-grid {
+  display: grid;
+  grid-template-columns:
+    minmax(110px, 0.8fr)
+    minmax(170px, 1.1fr)
+    minmax(210px, 1.5fr)
+    minmax(140px, 1fr);
+  gap: 1rem;
+  align-items: end;
+  margin: 0;
+}
+
+.modal-expediente-amplio .expediente-estructurado-grid > div {
+  width: auto;
+  max-width: none;
+  padding: 0;
+}
+
+.modal-expediente-amplio .expediente-estructurado-grid .form-control {
+  width: 100%;
+  min-width: 0;
+}
+
+.modal-expediente-amplio .expediente-estructurado-grid .input-group .form-control {
+  width: 1%;
+  flex: 1 1 auto;
+}
+
+.modal-expediente-amplio .expediente-estructurado-grid .input-group {
+  display: flex !important;
+  flex-flow: row nowrap !important;
+  align-items: stretch;
+  width: 100%;
+}
+
+.modal-expediente-amplio .expediente-estructurado-grid .input-group-text {
+  display: flex !important;
+  flex: 0 0 auto;
+  align-items: center;
+  white-space: nowrap;
+}
+
+@media (max-width: 767.98px) {
+  .modal-dialog.modal-expediente-amplio {
+    width: auto;
+    max-width: calc(100vw - 1rem);
+    margin: 0.5rem;
+  }
+
+  .modal-expediente-amplio .expediente-estructurado-grid {
+    grid-template-columns: 1fr;
+  }
+}

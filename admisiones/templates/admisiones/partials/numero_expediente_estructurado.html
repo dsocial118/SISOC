@@ -1,0 +1,38 @@
+<div class="row g-3 expediente-estructurado-grid">
+    <div class="col-12 col-md-2">
+        <label class="form-label"
+               for="{{ numero_expediente_form.expediente_anio.id_for_label }}">Año</label>
+        <div class="input-group">
+            <span class="input-group-text">EX-</span>
+            {{ numero_expediente_form.expediente_anio }}
+        </div>
+        {{ numero_expediente_form.expediente_anio.errors }}
+    </div>
+    <div class="col-12 col-md-3">
+        <label class="form-label"
+               for="{{ numero_expediente_form.expediente_numero.id_for_label }}">Número</label>
+        {{ numero_expediente_form.expediente_numero }}
+        {{ numero_expediente_form.expediente_numero.errors }}
+    </div>
+    <div class="col-12 col-md-4">
+        <label class="form-label"
+               for="{{ numero_expediente_form.expediente_reparticion.id_for_label }}">Repartición</label>
+        <div class="input-group">
+            <span class="input-group-text">APN-</span>
+            {{ numero_expediente_form.expediente_reparticion }}
+        </div>
+        {{ numero_expediente_form.expediente_reparticion.errors }}
+    </div>
+    <div class="col-12 col-md-3">
+        <label class="form-label"
+               for="{{ numero_expediente_form.expediente_organismo.id_for_label }}">Organismo</label>
+        <div class="input-group">
+            <span class="input-group-text">#</span>
+            {{ numero_expediente_form.expediente_organismo }}
+        </div>
+        {{ numero_expediente_form.expediente_organismo.errors }}
+    </div>
+</div>
+{% if numero_expediente_form.non_field_errors %}
+    <div class="alert alert-danger mt-3 mb-0">{{ numero_expediente_form.non_field_errors }}</div>
+{% endif %}
