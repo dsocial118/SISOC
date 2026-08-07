@@ -1,10 +1,14 @@
 {% extends "includes/main.html" %}
+{% load static %}
 
 {% block title %}Mi cuenta{% endblock %}
 {% block titulo-pagina %}Mi cuenta{% endblock %}
 
 {% block content %}
-    <div class="row justify-content-center">
+    <link rel="stylesheet"
+          href="{% static 'custom/css/poncho_formularios.css' %}" />
+
+    <div class="row justify-content-center poncho-form">
         <div class="col-lg-8">
             <div class="card shadow-sm">
                 <div class="card-body">
@@ -12,7 +16,9 @@
                         {% csrf_token %}
                         {% include "user/_mi_cuenta_campos.html" %}
                         <p class="text-muted small mb-3">Estos datos se usan para identificación y auditoría interna.</p>
-                        <button class="btn btn-primary" type="submit" data-mi-cuenta-submit>Guardar datos</button>
+                        <button class="poncho-btn poncho-btn--cta"
+                                type="submit"
+                                data-mi-cuenta-submit>Guardar datos</button>
                     </form>
                 </div>
             </div>

@@ -1188,10 +1188,23 @@ class UserImportForm(forms.Form):
     )
 
 
-# PENDIENTE: texto definitivo de la declaración a confirmar por UX.
-# Cambiar únicamente esta constante cuando lo envíen; no hay copia duplicada
-# en templates ni en tests.
-TEXTO_DECLARACION = "TEXTO A CONFIRMAR POR UX"
+# Leyenda del checkbox de declaración. Es la redacción provisoria acordada con
+# UX/UI: queda pendiente de un filtro de aprobación posterior, así que puede
+# volver con cambios. Para modificarla alcanza con esta constante; no hay copia
+# duplicada en templates ni en tests.
+#
+# El texto original de UX estaba redactado como aviso en segunda persona
+# ("comprometiéndote a..."), que no funciona como leyenda de un checkbox: al
+# tildarlo el usuario tiene que estar declarando algo en primera persona. Se
+# reformuló la persona gramatical sin tocar el alcance normativo, y la parte
+# instructiva ("revisá y completá tus datos") se movió al encabezado del modal,
+# que es donde corresponde: eso se lee, no se acepta.
+TEXTO_DECLARACION = (
+    "Acepto que la información contenida en el sistema será utilizada "
+    "exclusivamente para el cumplimiento de las funciones autorizadas y me "
+    "comprometo a preservar su confidencialidad, de conformidad con la "
+    "normativa vigente."
+)
 
 
 class MiCuentaForm(forms.ModelForm):
