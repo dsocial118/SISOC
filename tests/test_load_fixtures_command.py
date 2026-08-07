@@ -53,13 +53,9 @@ def test_handle_sincroniza_catalogo_cdi_despues_de_cargar():
     with (
         patch.object(command, "load_fixtures") as load_mock,
         patch(
-            "core.management.commands.load_fixtures.sync_catalogo_intervenciones",
-            return_value={
-                "tipos_sincronizados": 1,
-                "subtipos_sincronizados": 2,
-                "subtipos_vacios_eliminados": 3,
-            },
-        ) as sync_mock,
+            "core.management.commands.load_fixtures.ejecutar_fixture_post_load_handlers",
+            return_value=("✅ Catálogo de intervenciones sincronizado",),
+        ) as handlers_mock,
         patch(
             "core.management.commands.load_fixtures.sync_territorio_desde_fixture",
             return_value={
@@ -73,7 +69,7 @@ def test_handle_sincroniza_catalogo_cdi_despues_de_cargar():
         command.handle(force=False)
 
     load_mock.assert_called_once_with()
-    sync_mock.assert_called_once_with()
+    handlers_mock.assert_called_once_with()
     territorio_mock.assert_called_once_with()
 
 

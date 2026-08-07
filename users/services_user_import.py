@@ -16,13 +16,8 @@ from django.urls import reverse
 from django.utils import timezone
 from openpyxl import Workbook, load_workbook
 
-from comedores.models import Comedor
-from comedores.services.capacitaciones_certificados_service import (
-    is_alimentar_comunidad_program,
-)
 from core.constants import UserGroups
 from core.models import Provincia
-from organizaciones.models import Organizacion
 from users.models import (
     AccesoComedorPWA,
     ProfileTerritorialScope,
@@ -36,6 +31,10 @@ from users.services_pwa import (
     sync_representante_accesses,
 )
 from users.territorial_scope import sync_profile_territorial_scopes
+from users.pwa_import_access import (
+    SeleccionAccesosPWAImportacion,
+    resolver_accesos_pwa_importacion,
+)
 
 User = get_user_model()
 logger = logging.getLogger("django")
@@ -391,48 +390,9 @@ def _resolver_provincias(provincias_raw: str) -> list:
     return provincias
 
 
-def _resolver_organizaciones(organizaciones_raw: str) -> list:
-    organizaciones = []
-    for token in _parse_semicolon_field(organizaciones_raw):
-        try:
-            organizacion_id = int(token)
-        except ValueError as exc:
-            raise ValidationError(
-                f"El ID de organizacion '{token}' no es valido."
-            ) from exc
-        organizacion = Organizacion.objects.filter(pk=organizacion_id).first()
-        if organizacion is None:
-            raise ValidationError(
-                f"La organizacion con ID '{token}' no existe en el sistema."
-            )
-        organizaciones.append(organizacion)
-    return organizaciones
-
-
-def _resolver_comedores(comedores_raw: str) -> list:
-    comedores = []
-    for token in _parse_semicolon_field(comedores_raw):
-        try:
-            comedor_id = int(token)
-        except ValueError as exc:
-            raise ValidationError(f"El ID de comedor '{token}' no es valido.") from exc
-        comedor = Comedor.objects.filter(pk=comedor_id).first()
-        if comedor is None:
-            raise ValidationError(
-                f"El comedor con ID '{token}' no existe en el sistema."
-            )
-        comedores.append(comedor)
-    return comedores
-
-
-def _comedor_id_alimentar_comunidad_en_lista(comedores: list) -> int | None:
-    for comedor in comedores:
-        if is_alimentar_comunidad_program(comedor):
-            return comedor.pk
-    return None
-
-
-def _build_pwa_access_specs(*, organizaciones: list, comedores: list) -> list[dict]:
+def _build_pwa_access_specs(
+    seleccion: SeleccionAccesosPWAImportacion,
+) -> list[dict]:
     """Arma los accesos PWA a partir de organizaciones y comedores de la fila.
 
     Un usuario asociado a una organizacion opera con todos los comedores de
@@ -441,20 +401,18 @@ def _build_pwa_access_specs(*, organizaciones: list, comedores: list) -> list[di
     """
     specs_by_comedor_id: dict[int, dict] = {}
 
-    organizacion_ids = {organizacion.pk for organizacion in organizaciones}
-    if organizacion_ids:
-        for comedor in Comedor.objects.filter(organizacion_id__in=organizacion_ids):
-            specs_by_comedor_id[comedor.pk] = {
-                "comedor_id": comedor.pk,
-                "tipo_asociacion": AccesoComedorPWA.TIPO_ASOCIACION_ORGANIZACION,
-                "organizacion_id": comedor.organizacion_id,
-            }
+    for comedor_organizacion in seleccion.comedores_por_organizacion:
+        specs_by_comedor_id[comedor_organizacion.comedor_id] = {
+            "comedor_id": comedor_organizacion.comedor_id,
+            "tipo_asociacion": AccesoComedorPWA.TIPO_ASOCIACION_ORGANIZACION,
+            "organizacion_id": comedor_organizacion.organizacion_id,
+        }
 
-    for comedor in comedores:
+    for comedor_id in seleccion.comedor_ids:
         specs_by_comedor_id.setdefault(
-            comedor.pk,
+            comedor_id,
             {
-                "comedor_id": comedor.pk,
+                "comedor_id": comedor_id,
                 "tipo_asociacion": AccesoComedorPWA.TIPO_ASOCIACION_ESPACIO,
                 "organizacion_id": None,
             },
@@ -517,26 +475,22 @@ class _PermisosFila:
     allowed_group_ids: set | None
     permisos_pwa: list
     allowed_permiso_ids: set | None
-    organizaciones: list
-    comedores: list
+    tiene_asignaciones_pwa: bool
     access_specs: list
 
 
 def _resolver_permisos_fila(row_data: dict, job: UserImportJob) -> _PermisosFila:
     if job.is_pwa_import:
-        organizaciones = _resolver_organizaciones(
-            row_data.get("organizaciones", "").strip()
+        seleccion_pwa = resolver_accesos_pwa_importacion(
+            row_data.get("organizaciones", "").strip(),
+            row_data.get("comedores", "").strip(),
         )
-        comedores = _resolver_comedores(row_data.get("comedores", "").strip())
     else:
-        organizaciones = []
-        comedores = []
-    comedor_id = _comedor_id_alimentar_comunidad_en_lista(comedores)
+        seleccion_pwa = SeleccionAccesosPWAImportacion()
+    comedor_id = seleccion_pwa.comedor_id_alimentar_comunidad
 
-    access_specs = _build_pwa_access_specs(
-        organizaciones=organizaciones, comedores=comedores
-    )
-    if job.is_pwa_import and (organizaciones or comedores) and not access_specs:
+    access_specs = _build_pwa_access_specs(seleccion_pwa)
+    if job.is_pwa_import and seleccion_pwa.tiene_asignaciones and not access_specs:
         raise ValidationError(
             "Las organizaciones o comedores indicados no tienen comedores "
             "asociados; el usuario quedaria sin ningun acceso PWA activo."
@@ -564,8 +518,7 @@ def _resolver_permisos_fila(row_data: dict, job: UserImportJob) -> _PermisosFila
         allowed_group_ids=allowed_group_ids,
         permisos_pwa=permisos_pwa,
         allowed_permiso_ids=allowed_permiso_ids,
-        organizaciones=organizaciones,
-        comedores=comedores,
+        tiene_asignaciones_pwa=seleccion_pwa.tiene_asignaciones,
         access_specs=access_specs,
     )
 
@@ -782,8 +735,7 @@ class _DatosFilaValidados:
     allowed_group_ids: set | None
     permisos_pwa: list
     allowed_permiso_ids: set | None
-    organizaciones: list
-    comedores: list
+    tiene_asignaciones_pwa: bool
     access_specs: list
 
 
@@ -888,8 +840,7 @@ def _validar_y_preparar_fila(row_data: dict, job: UserImportJob) -> _DatosFilaVa
         allowed_group_ids=permisos_fila.allowed_group_ids,
         permisos_pwa=permisos_fila.permisos_pwa,
         allowed_permiso_ids=permisos_fila.allowed_permiso_ids,
-        organizaciones=permisos_fila.organizaciones,
-        comedores=permisos_fila.comedores,
+        tiene_asignaciones_pwa=permisos_fila.tiene_asignaciones_pwa,
         access_specs=permisos_fila.access_specs,
     )
 
@@ -920,7 +871,7 @@ def process_single_user_import_row(*, row_data: dict, job: UserImportJob) -> dic
     if not datos.nombre or not datos.apellido:
         raise ValidationError("Los campos Nombre y Apellido son obligatorios.")
 
-    if job.is_pwa_import and not (datos.organizaciones or datos.comedores):
+    if job.is_pwa_import and not datos.tiene_asignaciones_pwa:
         raise ValidationError(
             "Los usuarios PWA deben tener al menos una organizacion o comedor "
             "asignado en las columnas Organizaciones/Comedores del archivo."

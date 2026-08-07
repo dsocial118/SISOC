@@ -2,8 +2,7 @@
 Tests para el endpoint proxy de RENAPER (/api/renaper/).
 """
 
-import json
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
 import pytest
 from rest_framework.test import APIClient
@@ -48,7 +47,7 @@ class TestRenaperConsultaEndpoint:
             },
         }
 
-        with patch("core.api_views.APIClient.consultar_ciudadano") as mock_consulta:
+        with patch("core.api_views.consultar_datos_renaper") as mock_consulta:
             mock_consulta.return_value = mock_response
 
             response = api_client.post(
@@ -94,7 +93,7 @@ class TestRenaperConsultaEndpoint:
             "error": "No se encontró coincidencia.",
         }
 
-        with patch("core.api_views.APIClient.consultar_ciudadano") as mock_consulta:
+        with patch("core.api_views.consultar_datos_renaper") as mock_consulta:
             mock_consulta.return_value = mock_response
 
             response = api_client.post(
@@ -110,7 +109,7 @@ class TestRenaperConsultaEndpoint:
 
     def test_consultar_excepcion_interna(self, api_client, api_key):
         """Debe manejar excepciones internas."""
-        with patch("core.api_views.APIClient.consultar_ciudadano") as mock_consulta:
+        with patch("core.api_views.consultar_datos_renaper") as mock_consulta:
             mock_consulta.side_effect = Exception("Error de conexión")
 
             response = api_client.post(
@@ -130,7 +129,7 @@ class TestRenaperConsultaEndpoint:
             "data": {"nombre": "Test"},
         }
 
-        with patch("core.api_views.APIClient.consultar_ciudadano") as mock_consulta:
+        with patch("core.api_views.consultar_datos_renaper") as mock_consulta:
             mock_consulta.return_value = mock_response
 
             response = api_client.post(

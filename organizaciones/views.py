@@ -12,7 +12,7 @@ from django.template.loader import render_to_string
 from django.urls import reverse, reverse_lazy
 from django.utils import timezone
 from django.utils.dateparse import parse_date
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_GET, require_POST
 from django.views.generic import (
     CreateView,
     DeleteView,
@@ -98,6 +98,29 @@ def _apply_organizacion_search(queryset, query):
         )
 
     return queryset.filter(Q(nombre__icontains=busqueda) | Q(email__icontains=busqueda))
+
+
+@login_required
+@require_GET
+def load_organizaciones(request):
+    """Carga organizaciones con búsqueda para Select2."""
+    busqueda = request.GET.get("q", "").strip()
+    pagina = int(request.GET.get("page", 1))
+    tamano_pagina = 30
+
+    organizaciones = Organizacion.objects.all().order_by("nombre")
+
+    if busqueda:
+        organizaciones = organizaciones.filter(nombre__icontains=busqueda)
+
+    inicio = (pagina - 1) * tamano_pagina
+    fin = inicio + tamano_pagina
+    total = organizaciones.count()
+    organizaciones_pagina = organizaciones[inicio:fin]
+
+    resultados = [{"id": org.id, "text": org.nombre} for org in organizaciones_pagina]
+
+    return JsonResponse({"results": resultados, "pagination": {"more": fin < total}})
 
 
 def _puede_ver_todas_las_organizaciones(user):
@@ -875,6 +898,11 @@ class OrganizacionDetailView(LoginRequiredMixin, DetailView):
         )
 
         proyectos = RendicionesOrganizacionService.obtener_proyectos(self.object)
+        context["proyectos_organizacion"] = list(
+            self.object.proyectos.filter(activo=True)
+            .order_by("codigo")
+            .values_list("codigo", flat=True)
+        )
         proyecto_solicitado = (self.request.GET.get("proyecto") or "").strip()
         proyecto_seleccionado = (
             proyecto_solicitado if proyecto_solicitado in proyectos else ""

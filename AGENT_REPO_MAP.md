@@ -284,7 +284,7 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 | `comunicados/` | mensajes/comunicados y API asociada | `models.py`, `views.py`, `api_views.py`, forms | Medio |
 | `organizaciones/` | entidades/organizaciones vinculadas; el detalle incluye rendiciones presentadas por proyecto | `models.py`, `views.py`, `templates/organizacion_detail.html` | Medio |
 | `centrodeinfancia/` | dominio de centros de infancia, personal y asistencia | `models.py`, `services.py`, `views.py`, `tests/`, urls | Alto |
-| `acompanamientos/` | seguimiento/acompanamientos | `views.py`, service, templates | Medio |
+| `acompanamientos/` | seguimiento/acompanamientos | `views.py`, `acompanamiento_service.py`, `services/filter_config.py`, templates | Medio |
 | `expedientespagos/` | expedientes de pagos | `models.py`, `views.py`, urls | Bajo |
 | `rendicioncuentasfinal/` | rendicion final | `models.py`, `views.py`, urls | Bajo |
 | `rendicioncuentasmensual/` | rendicion mensual, revisión documental y datos de auditoría expuestos en Organizaciones | `models.py`, `services.py`, `views.py`, urls | Medio |
@@ -312,7 +312,19 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - El repo intenta llevar la logica de negocio a `services/`, pero no es uniforme.
 - Se usan management commands como extension operativa importante.
 - Se usan signals para side effects de negocio.
-- La arquitectura actual tiene boundaries monitoreados por `import-linter`, pero con baseline de excepciones existentes.
+- La arquitectura actual tiene boundaries monitoreados por `import-linter`, con baseline de excepciones a reducir por cortes. Los filtros favoritos se aportan desde cada app mediante `core.services.favorite_filters.registry`; `core` no debe volver a importar configuraciones de dominio para resolverlos.
+- Los paneles de Ciudadano 360 se aportan por dominio mediante `ciudadanos.detail_contributions`; las vistas de ciudadanos no deben consultar modelos de esos dominios directamente.
+- Las consultas RENAPER pasan por `core.services.renaper`; el proveedor actual se registra desde Centro de Familia y no debe importarse desde consumidores del kernel.
+- Los efectos de backfill de soft delete se registran desde cada dominio en `core.soft_delete.registry`; `core.soft_delete.state_sync` no debe importar handlers de dominio.
+- Las restricciones de navegacion aportadas por dominios se registran en `core.services.sidebar_access`; el template tag global no debe importar reglas VAT.
+- El endpoint Select2 de organizaciones vive en `organizaciones.views` y `organizaciones.urls`, aunque conserva la ruta global `ajax/load-organizaciones/`.
+- Los post-procesos de dominio de `load_fixtures` se registran en `core.services.fixture_post_load`; el comando de `core` no debe importar sus servicios directamente.
+- La auditoria de autenticacion se solicita desde `users.auth_audit`; PWA registra el persistidor de `AuditoriaSesionPWA` durante su arranque.
+- La sincronizacion entre `Profile.duplas_asignadas` y `Dupla.coordinador` se suscribe desde `duplas.signals`; `users` no debe conocer el modelo Dupla.
+- Las restricciones PWA por programa de Comedores se consultan mediante `users.pwa_comedores`; Comedores registra la capacidad concreta durante su arranque.
+- Las pruebas de alcance territorial que ejercitan `Ciudadano` viven en `ciudadanos/test_territorial_scope.py`; el módulo heredado de regresiones de Users vive en `tests/test_users_regressions.py` para no abrir imports de dominio dentro de la app.
+- Los querysets de dominio requeridos por formularios administrativos de Users se registran en `users.form_catalogs`; `users.forms` no debe importar modelos de Comedores, Duplas ni Organizaciones.
+- La expansión de organizaciones y comedores del importador PWA se resuelve mediante `users.pwa_import_access`; Comedores registra el proveedor y `users.services_user_import` sólo consume IDs y especificaciones de acceso.
 
 ### Convenciones visibles
 

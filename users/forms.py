@@ -13,12 +13,10 @@ from django.db import transaction
 from django.utils.crypto import get_random_string
 from django.utils import timezone
 
-from comedores.models import Comedor
 from core.constants import UserGroups
 from core.models import Provincia
 from core.validators import solo_digitos, validate_cuit
-from duplas.models import Dupla
-from organizaciones.models import Organizacion
+from users.form_catalogs import obtener_queryset_formulario
 from users.models import AccesoComedorPWA, Profile
 from users.profile_utils import get_profile_or_none
 from users.services_delegation import effective_delegatable_groups_qs
@@ -316,16 +314,14 @@ class PWAAccessMixin:
             label="Tipo de asociación mobile",
         )
         self.fields["organizaciones_pwa"] = forms.ModelMultipleChoiceField(
-            queryset=Organizacion.objects.all().order_by("nombre"),
+            queryset=obtener_queryset_formulario("organizaciones_pwa"),
             required=False,
             widget=forms.SelectMultiple(attrs={"class": "select2"}),
             label="Organizaciones",
             help_text="Seleccione una o más organizaciones registradas en el sistema.",
         )
         self.fields["comedores_pwa"] = forms.ModelMultipleChoiceField(
-            queryset=Comedor.objects.select_related("organizacion").order_by(
-                "organizacion__nombre", "nombre"
-            ),
+            queryset=obtener_queryset_formulario("comedores_pwa"),
             required=False,
             widget=ComedorPWASelectMultiple(attrs={"class": "select2"}),
             label="Comedores PWA",
@@ -410,8 +406,10 @@ class PWAAccessMixin:
 
         if not es_representante_pwa:
             cleaned["tipo_asociacion_pwa"] = ""
-            cleaned["organizaciones_pwa"] = Organizacion.objects.none()
-            cleaned["comedores_pwa"] = Comedor.objects.none()
+            cleaned["organizaciones_pwa"] = self.fields[
+                "organizaciones_pwa"
+            ].queryset.none()
+            cleaned["comedores_pwa"] = self.fields["comedores_pwa"].queryset.none()
             tipo_asociacion_pwa = ""
             organizaciones_pwa = cleaned["organizaciones_pwa"]
             comedores_pwa = cleaned["comedores_pwa"]
@@ -742,7 +740,7 @@ class UserCreationForm(
         label="Es Coordinador de Equipo Técnico",
     )
     duplas_asignadas = forms.ModelMultipleChoiceField(
-        queryset=Dupla.objects.activas(),
+        queryset=User.objects.none(),
         required=False,
         widget=forms.SelectMultiple(attrs={"class": "select2"}),
         label="Equipos técnicos (Duplas) asignadas",
@@ -774,6 +772,9 @@ class UserCreationForm(
     def __init__(self, *args, **kwargs):
         self.actor = kwargs.pop("actor", None)
         super().__init__(*args, **kwargs)
+        self.fields["duplas_asignadas"].queryset = obtener_queryset_formulario(
+            "duplas_asignadas"
+        )
         self._setup_pwa_fields()
         self._setup_delegation_fields()
         self._scope_assignable_fields_for_actor()
@@ -945,7 +946,7 @@ class CustomUserChangeForm(
         label="Es Coordinador de Equipo Técnico",
     )
     duplas_asignadas = forms.ModelMultipleChoiceField(
-        queryset=Dupla.objects.activas(),
+        queryset=User.objects.none(),
         required=False,
         widget=forms.SelectMultiple(attrs={"class": "select2"}),
         label="Equipos técnicos (Duplas) asignadas",
@@ -977,6 +978,9 @@ class CustomUserChangeForm(
     def __init__(self, *args, **kwargs):
         self.actor = kwargs.pop("actor", None)
         super().__init__(*args, **kwargs)
+        self.fields["duplas_asignadas"].queryset = obtener_queryset_formulario(
+            "duplas_asignadas"
+        )
         self._setup_pwa_fields()
         self._setup_delegation_fields()
         self._scope_assignable_fields_for_actor()

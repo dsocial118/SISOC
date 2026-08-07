@@ -5,7 +5,7 @@ from django.apps import apps
 from django.core import serializers
 from django.db import transaction
 
-from intervenciones.services_catalogo import sync_catalogo_intervenciones
+from core.services.fixture_post_load import ejecutar_fixture_post_load_handlers
 from core.services.territorio_sync import sync_territorio_desde_fixture
 
 
@@ -151,13 +151,8 @@ class Command(BaseCommand):
                 self.upsert_fixture(fx)
 
     def sync_post_load_catalogs(self):
-        resumen = sync_catalogo_intervenciones()
-        self.stdout.write(
-            "✅ Catálogo de intervenciones sincronizado: "
-            f"tipos={resumen['tipos_sincronizados']}, "
-            f"subtipos={resumen['subtipos_sincronizados']}, "
-            f"subtipos_vacios_eliminados={resumen['subtipos_vacios_eliminados']}"
-        )
+        for mensaje in ejecutar_fixture_post_load_handlers():
+            self.stdout.write(mensaje)
         territorio = sync_territorio_desde_fixture()
         self.stdout.write(
             "✅ Territorio sincronizado: "

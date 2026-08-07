@@ -946,7 +946,7 @@ class ComedorDetailViewSet(
         detail=True,
         methods=["get"],
         url_path="capacitaciones",
-        permission_classes=[IsPWARepresentativeForComedor],
+        permission_classes=[IsPWAUserForComedor],
     )
     def capacitaciones(self, request, pk=None):
         comedor = self.get_object()
@@ -969,7 +969,7 @@ class ComedorDetailViewSet(
         methods=["post"],
         url_path="capacitaciones/subir",
         parser_classes=[MultiPartParser, FormParser],
-        permission_classes=[IsPWARepresentativeForComedor],
+        permission_classes=[IsPWAUserForComedor],
     )
     def subir_capacitacion(self, request, pk=None):
         comedor = self.get_object()

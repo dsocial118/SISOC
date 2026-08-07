@@ -356,6 +356,28 @@ def test_tecnicos_update_view_post_docx_and_router_paths(mocker):
     assert view.post(req_router) == "sr2"
 
 
+def test_tecnicos_update_view_renders_invalid_caratulacion_form(mocker):
+    view = module.AdmisionesTecnicosUpdateView()
+    admision = SimpleNamespace(pk=1, comedor=SimpleNamespace())
+    invalid_form = mocker.Mock(is_valid=mocker.Mock(return_value=False))
+    request = _Req(
+        POST={"btnCaratulacion": "1"},
+        FILES={},
+        user=_user(),
+        get_full_path=lambda: "/admisiones/1",
+    )
+    view.get_object = lambda: admision
+    view.get_context_data = mocker.Mock(return_value={"base": "context"})
+    view.render_to_response = mocker.Mock(return_value="rendered")
+    mocker.patch("admisiones.views.web_views.CaratularForm", return_value=invalid_form)
+
+    assert view.post(request) == "rendered"
+    view.get_context_data.assert_called_once_with(
+        caratular_form=invalid_form,
+        abrir_modal_caratulacion=True,
+    )
+
+
 def test_tecnicos_update_view_post_docx_happy_path(mocker):
     view = module.AdmisionesTecnicosUpdateView()
     adm = SimpleNamespace(
@@ -1120,6 +1142,25 @@ def test_admisiones_legales_detail_contexto_y_post(mocker):
         return_value="OK_POST",
     )
     assert view.post(_Req(user=_user()), pk=99) == "OK_POST"
+
+
+def test_admisiones_legales_detail_renders_invalid_num_if_form(mocker):
+    view = module.AdmisionesLegalesDetailView()
+    admision = SimpleNamespace(pk=99)
+    invalid_form = mocker.Mock(is_valid=mocker.Mock(return_value=False))
+    request = _Req(POST={"btnLegalesNumIF": "1"}, user=_user())
+    view.get_object = lambda: admision
+    view.get_context_data = mocker.Mock(return_value={"base": "context"})
+    view.render_to_response = mocker.Mock(return_value="rendered")
+    mocker.patch(
+        "admisiones.views.web_views.LegalesNumIFForm", return_value=invalid_form
+    )
+
+    assert view.post(request, pk=99) == "rendered"
+    view.get_context_data.assert_called_once_with(
+        form_legales_num_if=invalid_form,
+        abrir_modal_legales_num_if=True,
+    )
 
 
 def test_informe_complementario_review_contexto_con_y_sin_informe(mocker):
