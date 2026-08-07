@@ -13,10 +13,13 @@ from django.template.loader import render_to_string
 from django.urls import reverse
 
 from acompanamientos.acompanamiento_service import AcompanamientoService
+from acompanamientos.services.filter_config import get_filters_ui_config
 from comedores.models import Comedor
 from comedores.services.comedor_service import ComedorService
 from admisiones.models.admisiones import InformeTecnico
 from core.services.column_preferences import build_columns_context_for_custom_cells
+from core.services.favorite_filters import SeccionesFiltrosFavoritos
+from core.services.list_ordering import build_ordering_header
 from core.security import safe_redirect
 from iam.services import user_has_permission_code
 
@@ -253,9 +256,9 @@ class ComedoresAcompanamientoListView(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         user = self.request.user
-        busqueda = self.request.GET.get("busqueda", "").strip().lower()
-
-        return AcompanamientoService.obtener_comedores_acompanamiento(user, busqueda)
+        return AcompanamientoService.obtener_comedores_acompanamiento(
+            user, self.request
+        )
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -264,7 +267,7 @@ class ComedoresAcompanamientoListView(LoginRequiredMixin, ListView):
         # Configuración para data_table
         headers = [
             {"key": "id", "title": "ID"},
-            {"key": "nombre", "title": "Nombre"},
+            build_ordering_header(self.request, key="nombre", title="Nombre"),
             {"key": "organizacion", "title": "Organización"},
             {"key": "expediente", "title": "N° Expediente"},
             {"key": "provincia", "title": "Provincia"},
@@ -291,6 +294,17 @@ class ComedoresAcompanamientoListView(LoginRequiredMixin, ListView):
         )
 
         context["custom_actions"] = True
+        context.update(
+            {
+                "reset_url": reverse("lista_comedores_acompanamiento"),
+                "filters_mode": True,
+                "filters_config": get_filters_ui_config(),
+                "filters_action": reverse("lista_comedores_acompanamiento"),
+                "seccion_filtros_favoritos": (
+                    SeccionesFiltrosFavoritos.ACOMPANAMIENTOS
+                ),
+            }
+        )
         return context
 
 

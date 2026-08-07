@@ -429,9 +429,11 @@ def test_table_data_filtering_and_post_router(mocker):
     assert rows and rows[0]["cells"][0]["content"] == "10"
 
     # filtering happy path
+    ordenamientos = []
     qs = SimpleNamespace(
         select_related=lambda *a, **k: qs,
         filter=lambda *a, **k: qs,
+        order_by=lambda *args, **kwargs: ordenamientos.append(args) or qs,
         none=lambda: "none",
     )
     mocker.patch(
@@ -449,6 +451,7 @@ def test_table_data_filtering_and_post_router(mocker):
         {"busqueda": "x"}, user=SimpleNamespace(is_superuser=False)
     )
     assert out is qs
+    assert ordenamientos == [("-creado",)]
 
     # post router
     req = SimpleNamespace(POST={"btnConvenio": "1"})

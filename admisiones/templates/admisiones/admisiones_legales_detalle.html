@@ -26,6 +26,8 @@
 {% endblock %}
 ;
 {% block content %}
+    <link rel="stylesheet"
+          href="{% static 'custom/css/numeroExpedienteModal.css' %}" />
     <div class="row justify-content-between d-print-none mx-1 mb-3">
         <div class="col-auto">
             <a href="{% url 'admisiones_legales_listar' %}"
@@ -612,7 +614,7 @@
          tabindex="-1"
          aria-labelledby="modalLegalesNumIFLabel"
          aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-dialog modal-dialog-centered modal-expediente-amplio">
             <div class="modal-content">
                 <form method="POST" action="">
                     {% csrf_token %}
@@ -624,16 +626,7 @@
                                 aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
-                        <div class="input-group expediente-estructurado">
-                            <span class="input-group-text">EX-</span>
-                            {{ form_legales_num_if.expediente_anio }}
-                            <span class="input-group-text">-</span>
-                            {{ form_legales_num_if.expediente_numero }}
-                            <span class="input-group-text">- -APN-</span>
-                            {{ form_legales_num_if.expediente_reparticion }}
-                            <span class="input-group-text">#</span>
-                            {{ form_legales_num_if.expediente_organismo }}
-                        </div>
+                        {% include "admisiones/partials/numero_expediente_estructurado.html" with numero_expediente_form=form_legales_num_if %}
                         <small class="text-muted">Legales puede rectificar el dato; el cambio se aplicar&aacute; a las etapas siguientes.</small>
                     </div>
                     <div class="modal-footer">
@@ -778,5 +771,15 @@
     </div>
 {% endblock %}
 {% block customJS %}
+    {% if abrir_modal_legales_num_if %}
+        <script nonce="{{ request.csp_nonce }}">
+            document.addEventListener("DOMContentLoaded", function() {
+                var modalElement = document.getElementById("modalLegalesNumIF");
+                if (modalElement) {
+                    new bootstrap.Modal(modalElement).show();
+                }
+            });
+        </script>
+    {% endif %}
     <script src="{% static 'custom/js/admisioneslegalesdetail.js' %}"></script>
 {% endblock %}

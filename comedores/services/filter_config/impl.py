@@ -15,7 +15,6 @@ FIELD_MAP: Dict[str, str] = {
     "nombre": "nombre",
     "estado": "estado",
     "estado_general": "ultimo_estado__estado_general__estado_actividad__estado",
-    "estado_actividad": "ultimo_estado__estado_general__estado_actividad__estado",
     "estado_proceso": "ultimo_estado__estado_general__estado_proceso__estado",
     "estado_detalle": "ultimo_estado__estado_general__estado_detalle__estado",
     "estado_validacion": "estado_validacion",
@@ -60,7 +59,6 @@ FIELD_TYPES: Dict[str, str] = {
         for k in [
             "nombre",
             "estado",
-            "estado_general",
             "referente_apellido",
             "calle",
             "piso",
@@ -86,7 +84,7 @@ FIELD_TYPES: Dict[str, str] = {
     **{
         k: "choice"
         for k in [
-            "estado_actividad",
+            "estado_general",
             "estado_proceso",
             "estado_detalle",
             "estado_validacion",
@@ -121,8 +119,15 @@ BOOL_OPS = ["eq", "ne"]
 FILTER_FIELDS = [
     {"name": "nombre", "label": "Nombre", "type": "text"},
     {"name": "estado", "label": "Estado", "type": "text"},
-    {"name": "estado_general", "label": "Estado general", "type": "text"},
-    {"name": "estado_actividad", "label": "Estado de actividad", "type": "choice"},
+    {
+        "name": "estado_general",
+        "label": "Estado general",
+        "type": "choice",
+        "choices": [
+            {"value": "Activo", "label": "Activo"},
+            {"value": "Inactivo", "label": "Inactivo"},
+        ],
+    },
     {"name": "estado_proceso", "label": "Estado de proceso", "type": "choice"},
     {"name": "estado_detalle", "label": "Estado de detalle", "type": "choice"},
     {"name": "estado_validacion", "label": "Estado de validacion", "type": "choice"},
@@ -183,7 +188,7 @@ FILTER_FIELDS = [
 ]
 
 DEFAULT_FIELD = "nombre"
-FILTERS_UI_CONFIG_CACHE_KEY = "comedores:filters_ui_config:v4"
+FILTERS_UI_CONFIG_CACHE_KEY = "comedores:filters_ui_config:v5"
 FILTERS_UI_CONFIG_CACHE_TTL = 60 * 15
 
 
@@ -206,7 +211,7 @@ def get_filters_ui_config() -> Dict[str, Any]:
             ]
 
     try:
-        from comedores.models import EstadoActividad, EstadoDetalle, EstadoProceso
+        from comedores.models import EstadoDetalle, EstadoProceso
 
         def build_state_choices(model_cls):
             return [
@@ -218,7 +223,6 @@ def get_filters_ui_config() -> Dict[str, Any]:
             ]
 
         choices_by_field = {
-            "estado_actividad": build_state_choices(EstadoActividad),
             "estado_proceso": build_state_choices(EstadoProceso),
             "estado_detalle": build_state_choices(EstadoDetalle),
             "estado_validacion": [

@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from functools import lru_cache
 from typing import Any
 
 from django.apps import apps
@@ -23,14 +22,13 @@ def build_soft_restore_operational_updates(model) -> dict[str, Any]:
     return dict(explicit_updates or {})
 
 
-@lru_cache(maxsize=1)
 def _get_backfill_side_effect_handlers():
-    from VAT.cache_utils import invalidate_planes_centro_cache_on_soft_delete
     from core.cache_utils import invalidate_cache_on_soft_delete_events
+    from core.soft_delete.registry import obtener_backfill_side_effect_handlers
 
     return (
         invalidate_cache_on_soft_delete_events,
-        invalidate_planes_centro_cache_on_soft_delete,
+        *obtener_backfill_side_effect_handlers(),
     )
 
 
