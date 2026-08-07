@@ -158,6 +158,10 @@ no dando al nuevo servicio propiedad de esas tablas.
   únicamente `celiaquia.api` para su resumen de lectura. El contrato devuelve
   DTOs y no expone modelos ni `QuerySet`; ningún otro módulo debe importar
   `models`, `services`, `views`, formularios, permisos o señales de Celiaquía.
+- La composición global se valida además con
+  `.importlinter_celiaquia_config`: `config` no importa módulos Python de
+  Celiaquía; solo incluye sus rutas por string. Este chequeo aislado no amplía
+  el baseline legacy de la Fase 0.
 - No reutilizar un cliente externo que viva en otra app (por ejemplo,
   `centrodefamilia.services.consulta_renaper`). Si falta una integración
   transversal, primero se debe definir y ubicar su contrato compartido; no
@@ -180,6 +184,7 @@ La validación mínima del cambio incluye:
 
 ```powershell
 lint-imports
+lint-imports --config .importlinter_celiaquia_config
 git diff --check
 ```
 

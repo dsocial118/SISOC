@@ -40,7 +40,7 @@ Mapa practico del repositorio `SISOC` para futuros agentes de IA y desarrollador
 | PyMySQL + mysqlclient | Hecho observado | `requirements/base.txt` |
 | pytest / pytest-django / pytest-xdist / pytest-cov | Hecho observado | `requirements/test.txt`, `pytest.ini` |
 | black / pylint / djlint | Hecho observado | `pyproject.toml`, `requirements/dev.txt`, `requirements/lint.txt` |
-| import-linter | Hecho observado | `.importlinter`, `requirements/arch.txt` |
+| import-linter | Hecho observado | `.importlinter`, `.importlinter_celiaquia_config`, `requirements/arch.txt` |
 | Sentry | Hecho observado | `.env.example`, `requirements/base.txt` |
 | OCR / PDF / DOCX / Excel tooling | Hecho observado | `requirements/base.txt`, app `ocr/`, templates/docx/pdf |
 

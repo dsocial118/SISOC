@@ -39,10 +39,9 @@ preservar URL, nombre y permiso sin que `config.urls` importe una view interna.
 
 - No hay cambios de esquema, permisos, transacciones ni efectos laterales.
 - El template usa campos estables del DTO en vez de atributos y métodos ORM.
-- `import-linter` ahora incluye paquetes externos para analizar también
-  `config`; tres puentes runtime preexistentes (`core.views -> historial` y
-  dos imports de `ciudadanos` a `comedores`) quedan como baseline documentado,
-  por lo que dependencias nuevas siguen rompiendo CI.
+- El chequeo aislado `.importlinter_celiaquia_config` analiza `config` con
+  paquetes externos para impedir imports Python de Celiaquía, sin ampliar el
+  baseline legacy de los contratos de Fase 0.
 - `scripts/debug_cruce.py` sigue siendo tooling diagnóstico fuera del runtime y
   no forma parte de la API pública.
 
