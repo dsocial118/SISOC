@@ -129,9 +129,7 @@ def test_configuracion_favoritos_acompanamientos_acepta_fechas():
 
     assert config is not None
     assert config.tipos_campos["fecha_modificado"] == "date"
-    assert list(config.operadores_permitidos["date"]) == list(
-        ACOMPANAMIENTOS_DATE_OPS
-    )
+    assert list(config.operadores_permitidos["date"]) == list(ACOMPANAMIENTOS_DATE_OPS)
 
 
 def test_registro_de_configuracion_es_idempotente_y_rechaza_conflictos():
