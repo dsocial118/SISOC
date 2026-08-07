@@ -46,6 +46,7 @@ from admisiones.services.informes_service import InformeService
 from admisiones.services.legales_service import LegalesService
 from core.services.column_preferences import build_columns_context_for_custom_cells
 from core.services.favorite_filters import SeccionesFiltrosFavoritos
+from core.services.list_ordering import build_ordering_header
 from core.soft_delete.preview import build_delete_preview
 from core.soft_delete.view_helpers import is_soft_deletable_instance
 from core.security import safe_redirect
@@ -967,7 +968,7 @@ class AdmisionesTecnicosListView(LoginRequiredMixin, ListView):
         headers = [
             {"key": "comedor_id", "title": "ID Comedor"},
             {"key": "tipo", "title": "Tipo"},
-            {"key": "nombre", "title": "Nombre"},
+            build_ordering_header(self.request, key="nombre", title="Nombre"),
             {"key": "organizacion", "title": "Organización"},
             {"key": "expediente", "title": "N° Expediente"},
             {"key": "convenio", "title": "N° Convenio"},
@@ -1551,7 +1552,7 @@ class AdmisionesLegalesListView(LoginRequiredMixin, ListView):
         headers = [
             {"key": "comedor_id", "title": "ID Comedor"},
             {"key": "tipo", "title": "Tipo"},
-            {"key": "nombre", "title": "Nombre"},
+            build_ordering_header(self.request, key="nombre", title="Nombre"),
             {"key": "organizacion", "title": "Organización"},
             {"key": "expediente", "title": "N° Expediente"},
             {"key": "convenio", "title": "N° Convenio"},

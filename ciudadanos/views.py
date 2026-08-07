@@ -20,10 +20,19 @@ from django.views.generic import (
     UpdateView,
 )
 
+from ciudadanos.ciudadanos_filter_config import (
+    CHOICE_OPS as CIUDADANOS_CHOICE_OPS,
+    FIELD_MAP as CIUDADANOS_FIELD_MAP,
+    FIELD_TYPES as CIUDADANOS_FIELD_TYPES,
+    NUM_OPS as CIUDADANOS_NUM_OPS,
+    TEXT_OPS as CIUDADANOS_TEXT_OPS,
+    get_filters_ui_config,
+)
 from ciudadanos.forms import CiudadanoFiltroForm, CiudadanoForm, GrupoFamiliarForm
 from ciudadanos.models import Ciudadano, GrupoFamiliar
 from comedores.services.comedor_service import ComedorService
 from core.models import Localidad, Municipio
+from core.services.advanced_filters.engine import AdvancedFilterEngine
 from core.pagination import NoCountPaginator, build_no_count_page_range
 from core.security import safe_redirect
 from core.soft_delete.view_helpers import SoftDeleteDeleteViewMixin
@@ -127,6 +136,17 @@ def _agregar_error_identidad_unica(form):
     )
 
 
+CIUDADANOS_ADVANCED_FILTER = AdvancedFilterEngine(
+    field_map=CIUDADANOS_FIELD_MAP,
+    field_types=CIUDADANOS_FIELD_TYPES,
+    allowed_ops={
+        "text": CIUDADANOS_TEXT_OPS,
+        "number": CIUDADANOS_NUM_OPS,
+        "choice": CIUDADANOS_CHOICE_OPS,
+    },
+)
+
+
 class CiudadanosListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
     template_name = "ciudadanos/ciudadano_list.html"
     context_object_name = "ciudadanos"
@@ -146,7 +166,9 @@ class CiudadanosListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
         form = CiudadanoFiltroForm(self.get_filter_form_data())
         if form.is_valid():
             queryset = apply_ciudadanos_filters(queryset, form.cleaned_data)
-        return queryset
+        # Los filtros combinables se aplican ADEMAS de los del formulario, que
+        # sigue a cargo de estado identidad y estado de revision.
+        return CIUDADANOS_ADVANCED_FILTER.filter_queryset(queryset, self.request)
 
     def paginate_queryset(self, queryset, page_size):
         paginator = NoCountPaginator(queryset.values_list("pk", flat=True), page_size)
@@ -158,6 +180,9 @@ class CiudadanosListView(LoginRequiredMixin, PermissionRequiredMixin, ListView):
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         ctx["filter_form"] = CiudadanoFiltroForm(self.get_filter_form_data())
+        ctx["filters_mode"] = True
+        ctx["filters_config"] = get_filters_ui_config()
+        ctx["filters_action"] = str(reverse_lazy("ciudadanos"))
         ctx["additional_buttons"] = []
         if self.request.user.has_perm("ciudadanos.add_ciudadano"):
             ctx["additional_buttons"].append(

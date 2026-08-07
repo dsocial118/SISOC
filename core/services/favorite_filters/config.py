@@ -19,6 +19,13 @@ from admisiones.services.legales_filter_config import (
     NUM_OPS as ADMISIONES_LEGALES_OPS_NUMERO,
     TEXT_OPS as ADMISIONES_LEGALES_OPS_TEXTO,
 )
+from acompanamientos.services.filter_config import (
+    CHOICE_OPS as ACOMPANAMIENTOS_OPS_ELECCION,
+    DATE_OPS as ACOMPANAMIENTOS_OPS_FECHA,
+    FIELD_TYPES as ACOMPANAMIENTOS_TIPOS_CAMPOS,
+    NUM_OPS as ACOMPANAMIENTOS_OPS_NUMERO,
+    TEXT_OPS as ACOMPANAMIENTOS_OPS_TEXTO,
+)
 from centrodefamilia.services.beneficiarios_filter_config import (
     CHOICE_OPS as BENEFICIARIOS_OPS_ELECCION,
     FIELD_TYPES as BENEFICIARIOS_TIPOS_CAMPOS,
@@ -85,6 +92,7 @@ class SeccionesFiltrosFavoritos:
     USUARIOS = "usuarios"
     ADMISIONES_TECNICOS = "admisiones_tecnicos"
     ADMISIONES_LEGALES = "admisiones_legales"
+    ACOMPANAMIENTOS = "acompanamientos"
     DUPLAS = "duplas"
     CDF_CENTROS = "centrodefamilia_centros"
     CDF_BENEFICIARIOS = "centrodefamilia_beneficiarios"
@@ -133,6 +141,15 @@ CONFIGURACIONES_POR_SECCION = {
             "number": ADMISIONES_LEGALES_OPS_NUMERO,
             "date": ADMISIONES_LEGALES_OPS_FECHA,
             "choice": ADMISIONES_LEGALES_OPS_ELECCION,
+        },
+    ),
+    SeccionesFiltrosFavoritos.ACOMPANAMIENTOS: ConfiguracionFiltrosSeccion(
+        tipos_campos=ACOMPANAMIENTOS_TIPOS_CAMPOS,
+        operadores_permitidos={
+            "text": ACOMPANAMIENTOS_OPS_TEXTO,
+            "number": ACOMPANAMIENTOS_OPS_NUMERO,
+            "date": ACOMPANAMIENTOS_OPS_FECHA,
+            "choice": ACOMPANAMIENTOS_OPS_ELECCION,
         },
     ),
     SeccionesFiltrosFavoritos.DUPLAS: ConfiguracionFiltrosSeccion(

@@ -82,6 +82,7 @@ ignore_imports =
     core.management.commands.load_fixtures -> intervenciones.services_catalogo
     core.services.favorite_filters.config -> admisiones.services.admisiones_filter_config
     core.services.favorite_filters.config -> admisiones.services.legales_filter_config
+    core.services.favorite_filters.config -> acompanamientos.services.filter_config
     core.services.favorite_filters.config -> centrodefamilia.services.beneficiarios_filter_config
     core.services.favorite_filters.config -> centrodefamilia.services.centro_filter_config
     core.services.favorite_filters.config -> centrodefamilia.services.responsables_filter_config
