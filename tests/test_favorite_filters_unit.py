@@ -1,5 +1,8 @@
-"""Tests for test favorite filters unit."""
+"""Tests for favorite filters."""
 
+import pytest
+
+from acompanamientos.services.filter_config import DATE_OPS as ACOMPANAMIENTOS_DATE_OPS
 from comedores.services.filter_config import BOOL_OPS as COMEDORES_BOOL_OPS
 from core.services.favorite_filters import (
     ConfiguracionFiltrosSeccion,
@@ -8,6 +11,7 @@ from core.services.favorite_filters import (
     normalizar_carga,
     obtener_configuracion_seccion,
     obtener_items_obsoletos,
+    registrar_configuracion_seccion,
 )
 
 
@@ -118,3 +122,25 @@ def test_configuracion_favoritos_comedores_acepta_booleanos():
         )
         == []
     )
+
+
+def test_configuracion_favoritos_acompanamientos_acepta_fechas():
+    config = obtener_configuracion_seccion(SeccionesFiltrosFavoritos.ACOMPANAMIENTOS)
+
+    assert config is not None
+    assert config.tipos_campos["fecha_modificado"] == "date"
+    assert list(config.operadores_permitidos["date"]) == list(ACOMPANAMIENTOS_DATE_OPS)
+
+
+def test_registro_de_configuracion_es_idempotente_y_rechaza_conflictos():
+    seccion = SeccionesFiltrosFavoritos.COMEDORES
+    configuracion = obtener_configuracion_seccion(seccion)
+
+    assert configuracion is not None
+    registrar_configuracion_seccion(seccion, configuracion)
+
+    with pytest.raises(ValueError, match="ya tiene otra configuracion"):
+        registrar_configuracion_seccion(
+            seccion,
+            ConfiguracionFiltrosSeccion(tipos_campos={}, operadores_permitidos={}),
+        )

@@ -78,22 +78,11 @@ forbidden_modules =
     pwa
     ticketera
 ignore_imports =
-    core.api_views -> centrodefamilia.services.consulta_renaper.impl
-    core.management.commands.load_fixtures -> intervenciones.services_catalogo
-    core.services.favorite_filters.config -> admisiones.services.admisiones_filter_config
-    core.services.favorite_filters.config -> admisiones.services.legales_filter_config
-    core.services.favorite_filters.config -> acompanamientos.services.filter_config
-    core.services.favorite_filters.config -> centrodefamilia.services.beneficiarios_filter_config
-    core.services.favorite_filters.config -> centrodefamilia.services.centro_filter_config
-    core.services.favorite_filters.config -> centrodefamilia.services.responsables_filter_config
-    core.services.favorite_filters.config -> dispositivos.dispositivos_filter_config
-    core.services.favorite_filters.config -> duplas.dupla_filter_config
-    core.services.favorite_filters.config -> rendicioncuentasmensual.filter_config
-    core.services.favorite_filters.config -> VAT.services.centro_filter_config
-    core.soft_delete.state_sync -> VAT.cache_utils
-    core.templatetags.custom_filters -> VAT.services.access_scope
-    core.views -> organizaciones.models
+    # Herramientas de diagnóstico locales: ejercitan vistas/modelos de dominio
+    # fuera del runtime de la aplicación y no se cargan durante el arranque.
     core.debug_queries -> **
+    # Bootstrap de benchmarks reproducibles: crea datos de múltiples dominios
+    # por diseño; no participa de requests, comandos operativos ni AppConfig.
     core.benchmarks.** -> **
 
 [importlinter:contract:ciudadanos-no-domains]
@@ -125,12 +114,6 @@ forbidden_modules =
     pwa
     ticketera
 ignore_imports =
-    ciudadanos.services_importacion_masiva -> centrodefamilia.services.consulta_renaper
-    ciudadanos.views -> celiaquia.models
-    ciudadanos.views -> centrodefamilia.models
-    ciudadanos.views -> comedores.models
-    ciudadanos.views -> pwa.models
-    ciudadanos.views -> VAT.models
 
 [importlinter:contract:users-no-domains]
 name = users no debe importar apps de dominio
@@ -162,13 +145,3 @@ forbidden_modules =
     pwa
     ticketera
 ignore_imports =
-    users.api_views -> pwa.models
-    users.api_views -> pwa.services.auditoria_service
-    users.forms -> comedores.models
-    users.forms -> duplas.models
-    users.forms -> organizaciones.models
-    users.services_pwa -> comedores.models
-    users.services_user_import -> comedores.models
-    users.services_user_import -> organizaciones.models
-    users.signals -> duplas.models
-    users.tests -> **

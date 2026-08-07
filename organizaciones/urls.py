@@ -17,6 +17,7 @@ from organizaciones.views import (
     actualizar_estado_documento_organizacion,
     actualizar_vencimiento_documento_organizacion,
     historial_documento_organizacion,
+    load_organizaciones,
     sub_tipo_entidad_ajax,
     organizaciones_ajax,
     proyectos_organizacion_ajax,
@@ -39,6 +40,11 @@ ORGANIZACION_PROYECTOS_PERMS = [
 ]
 
 urlpatterns = [
+    path(
+        "ajax/load-organizaciones/",
+        load_organizaciones,
+        name="ajax_load_organizaciones",
+    ),
     path(
         "organizaciones/listar",
         permissions_any_required(ORGANIZACION_DOCUMENTACION_PERMS)(

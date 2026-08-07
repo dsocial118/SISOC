@@ -14,11 +14,8 @@ from django.db import IntegrityError, transaction
 from django.db.models import F, Q
 from django.utils import timezone
 
-from comedores.models import Comedor
-from comedores.services.capacitaciones_certificados_service import (
-    is_alimentar_comunidad_program,
-)
 from users.models import AccesoComedorPWA, AuditAccesoComedorPWA, Profile
+from users.pwa_comedores import es_comedor_alimentar_comunidad
 from users.profile_utils import get_profile_or_none
 from iam.services import get_effective_permission_codes
 
@@ -208,19 +205,12 @@ def _resolve_permission_codes(permission_codes: Iterable[str]) -> list[Permissio
     return permissions
 
 
-def _is_alimentar_comunidad_comedor(comedor_id: int | None) -> bool:
-    if not comedor_id:
-        return False
-    comedor = Comedor.objects.select_related("programa").filter(pk=comedor_id).first()
-    return bool(comedor and is_alimentar_comunidad_program(comedor))
-
-
 def _filter_permission_codes_for_comedor_context(
     permission_codes: Iterable[str],
     comedor_id: int | None,
 ) -> list[str]:
     codes = {str(code).strip() for code in permission_codes or [] if str(code).strip()}
-    if _is_alimentar_comunidad_comedor(comedor_id):
+    if es_comedor_alimentar_comunidad(comedor_id):
         codes.discard(MOBILE_RENDICION_PERMISSION_CODE)
     return sorted(codes)
 

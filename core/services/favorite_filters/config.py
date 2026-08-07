@@ -1,92 +1,15 @@
-"""Configuración por sección para filtros favoritos."""
+"""Contrato compartido para configuraciones de filtros favoritos."""
 
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Iterable, Mapping, Optional
-
-from admisiones.services.admisiones_filter_config import (
-    CHOICE_OPS as ADMISIONES_TECNICOS_OPS_ELECCION,
-    DATE_OPS as ADMISIONES_TECNICOS_OPS_FECHA,
-    FIELD_TYPES as ADMISIONES_TECNICOS_TIPOS_CAMPOS,
-    NUM_OPS as ADMISIONES_TECNICOS_OPS_NUMERO,
-    TEXT_OPS as ADMISIONES_TECNICOS_OPS_TEXTO,
-)
-from admisiones.services.legales_filter_config import (
-    CHOICE_OPS as ADMISIONES_LEGALES_OPS_ELECCION,
-    DATE_OPS as ADMISIONES_LEGALES_OPS_FECHA,
-    FIELD_TYPES as ADMISIONES_LEGALES_TIPOS_CAMPOS,
-    NUM_OPS as ADMISIONES_LEGALES_OPS_NUMERO,
-    TEXT_OPS as ADMISIONES_LEGALES_OPS_TEXTO,
-)
-from acompanamientos.services.filter_config import (
-    CHOICE_OPS as ACOMPANAMIENTOS_OPS_ELECCION,
-    DATE_OPS as ACOMPANAMIENTOS_OPS_FECHA,
-    FIELD_TYPES as ACOMPANAMIENTOS_TIPOS_CAMPOS,
-    NUM_OPS as ACOMPANAMIENTOS_OPS_NUMERO,
-    TEXT_OPS as ACOMPANAMIENTOS_OPS_TEXTO,
-)
-from centrodefamilia.services.beneficiarios_filter_config import (
-    CHOICE_OPS as BENEFICIARIOS_OPS_ELECCION,
-    FIELD_TYPES as BENEFICIARIOS_TIPOS_CAMPOS,
-    NUM_OPS as BENEFICIARIOS_OPS_NUMERO,
-    TEXT_OPS as BENEFICIARIOS_OPS_TEXTO,
-)
-from centrodefamilia.services.centro_filter_config import (
-    BOOL_OPS as CDF_CENTROS_OPS_BOOLEANO,
-    FIELD_TYPES as CDF_CENTROS_TIPOS_CAMPOS,
-    NUM_OPS as CDF_CENTROS_OPS_NUMERO,
-    TEXT_OPS as CDF_CENTROS_OPS_TEXTO,
-)
-from centrodefamilia.services.responsables_filter_config import (
-    CHOICE_OPS as RESPONSABLES_OPS_ELECCION,
-    FIELD_TYPES as RESPONSABLES_TIPOS_CAMPOS,
-    NUM_OPS as RESPONSABLES_OPS_NUMERO,
-    TEXT_OPS as RESPONSABLES_OPS_TEXTO,
-)
-from VAT.services.centro_filter_config import (
-    BOOL_OPS as VAT_CENTROS_OPS_BOOLEANO,
-    FIELD_TYPES as VAT_CENTROS_TIPOS_CAMPOS,
-    NUM_OPS as VAT_CENTROS_OPS_NUMERO,
-    TEXT_OPS as VAT_CENTROS_OPS_TEXTO,
-)
-from comedores.services.filter_config import (
-    BOOL_OPS as COMEDORES_OPS_BOOLEANO,
-    CHOICE_OPS as COMEDORES_OPS_ELECCION,
-    FIELD_TYPES as COMEDORES_TIPOS_CAMPOS,
-    NUM_OPS as COMEDORES_OPS_NUMERO,
-    TEXT_OPS as COMEDORES_OPS_TEXTO,
-)
-from duplas.dupla_filter_config import (
-    FIELD_TYPES as DUPLAS_TIPOS_CAMPOS,
-    NUM_OPS as DUPLAS_OPS_NUMERO,
-    TEXT_OPS as DUPLAS_OPS_TEXTO,
-)
-from dispositivos.dispositivos_filter_config import (
-    CHOICE_OPS as DISPOSITIVOS_OPS_ELECCION,
-    FIELD_TYPES as DISPOSITIVOS_TIPOS_CAMPOS,
-    NUM_OPS as DISPOSITIVOS_OPS_NUMERO,
-    TEXT_OPS as DISPOSITIVOS_OPS_TEXTO,
-)
-from rendicioncuentasmensual.filter_config import (
-    BOOL_OPS as RENDICIONES_OPS_BOOLEANO,
-    CHOICE_OPS as RENDICIONES_OPS_ELECCION,
-    DATE_OPS as RENDICIONES_OPS_FECHA,
-    FIELD_TYPES as RENDICIONES_TIPOS_CAMPOS,
-    NUM_OPS as RENDICIONES_OPS_NUMERO,
-    TEXT_OPS as RENDICIONES_OPS_TEXTO,
-)
-from users.users_filter_config import (
-    FIELD_TYPES as USUARIOS_TIPOS_CAMPOS,
-    NUM_OPS as USUARIOS_OPS_NUMERO,
-    TEXT_OPS as USUARIOS_OPS_TEXTO,
-)
+from typing import Iterable, Mapping
 
 TTL_CACHE_FILTROS_FAVORITOS = 300
 
 
 class SeccionesFiltrosFavoritos:
-    """Identificadores de secciones para filtros favoritos."""
+    """Identificadores estables de secciones para filtros favoritos."""
 
     COMEDORES = "comedores"
     USUARIOS = "usuarios"
@@ -108,115 +31,16 @@ class ConfiguracionFiltrosSeccion:
     operadores_permitidos: Mapping[str, Iterable[str]]
 
 
-CONFIGURACIONES_POR_SECCION = {
-    SeccionesFiltrosFavoritos.COMEDORES: ConfiguracionFiltrosSeccion(
-        tipos_campos=COMEDORES_TIPOS_CAMPOS,
-        operadores_permitidos={
-            "text": COMEDORES_OPS_TEXTO,
-            "number": COMEDORES_OPS_NUMERO,
-            "choice": COMEDORES_OPS_ELECCION,
-            "boolean": COMEDORES_OPS_BOOLEANO,
-        },
-    ),
-    SeccionesFiltrosFavoritos.USUARIOS: ConfiguracionFiltrosSeccion(
-        tipos_campos=USUARIOS_TIPOS_CAMPOS,
-        operadores_permitidos={
-            "text": USUARIOS_OPS_TEXTO,
-            "number": USUARIOS_OPS_NUMERO,
-        },
-    ),
-    SeccionesFiltrosFavoritos.ADMISIONES_TECNICOS: ConfiguracionFiltrosSeccion(
-        tipos_campos=ADMISIONES_TECNICOS_TIPOS_CAMPOS,
-        operadores_permitidos={
-            "text": ADMISIONES_TECNICOS_OPS_TEXTO,
-            "number": ADMISIONES_TECNICOS_OPS_NUMERO,
-            "date": ADMISIONES_TECNICOS_OPS_FECHA,
-            "choice": ADMISIONES_TECNICOS_OPS_ELECCION,
-        },
-    ),
-    SeccionesFiltrosFavoritos.ADMISIONES_LEGALES: ConfiguracionFiltrosSeccion(
-        tipos_campos=ADMISIONES_LEGALES_TIPOS_CAMPOS,
-        operadores_permitidos={
-            "text": ADMISIONES_LEGALES_OPS_TEXTO,
-            "number": ADMISIONES_LEGALES_OPS_NUMERO,
-            "date": ADMISIONES_LEGALES_OPS_FECHA,
-            "choice": ADMISIONES_LEGALES_OPS_ELECCION,
-        },
-    ),
-    SeccionesFiltrosFavoritos.ACOMPANAMIENTOS: ConfiguracionFiltrosSeccion(
-        tipos_campos=ACOMPANAMIENTOS_TIPOS_CAMPOS,
-        operadores_permitidos={
-            "text": ACOMPANAMIENTOS_OPS_TEXTO,
-            "number": ACOMPANAMIENTOS_OPS_NUMERO,
-            "date": ACOMPANAMIENTOS_OPS_FECHA,
-            "choice": ACOMPANAMIENTOS_OPS_ELECCION,
-        },
-    ),
-    SeccionesFiltrosFavoritos.DUPLAS: ConfiguracionFiltrosSeccion(
-        tipos_campos=DUPLAS_TIPOS_CAMPOS,
-        operadores_permitidos={
-            "text": DUPLAS_OPS_TEXTO,
-            "number": DUPLAS_OPS_NUMERO,
-        },
-    ),
-    SeccionesFiltrosFavoritos.CDF_CENTROS: ConfiguracionFiltrosSeccion(
-        tipos_campos=CDF_CENTROS_TIPOS_CAMPOS,
-        operadores_permitidos={
-            "text": CDF_CENTROS_OPS_TEXTO,
-            "number": CDF_CENTROS_OPS_NUMERO,
-            "boolean": CDF_CENTROS_OPS_BOOLEANO,
-        },
-    ),
-    SeccionesFiltrosFavoritos.CDF_BENEFICIARIOS: ConfiguracionFiltrosSeccion(
-        tipos_campos=BENEFICIARIOS_TIPOS_CAMPOS,
-        operadores_permitidos={
-            "text": BENEFICIARIOS_OPS_TEXTO,
-            "number": BENEFICIARIOS_OPS_NUMERO,
-            "choice": BENEFICIARIOS_OPS_ELECCION,
-        },
-    ),
-    SeccionesFiltrosFavoritos.CDF_RESPONSABLES: ConfiguracionFiltrosSeccion(
-        tipos_campos=RESPONSABLES_TIPOS_CAMPOS,
-        operadores_permitidos={
-            "text": RESPONSABLES_OPS_TEXTO,
-            "number": RESPONSABLES_OPS_NUMERO,
-            "choice": RESPONSABLES_OPS_ELECCION,
-        },
-    ),
-    SeccionesFiltrosFavoritos.VAT_CENTROS: ConfiguracionFiltrosSeccion(
-        tipos_campos=VAT_CENTROS_TIPOS_CAMPOS,
-        operadores_permitidos={
-            "text": VAT_CENTROS_OPS_TEXTO,
-            "number": VAT_CENTROS_OPS_NUMERO,
-            "boolean": VAT_CENTROS_OPS_BOOLEANO,
-        },
-    ),
-    SeccionesFiltrosFavoritos.DISPOSITIVOS: ConfiguracionFiltrosSeccion(
-        tipos_campos=DISPOSITIVOS_TIPOS_CAMPOS,
-        operadores_permitidos={
-            "text": DISPOSITIVOS_OPS_TEXTO,
-            "number": DISPOSITIVOS_OPS_NUMERO,
-            "choice": DISPOSITIVOS_OPS_ELECCION,
-        },
-    ),
-    SeccionesFiltrosFavoritos.RENDICIONES: ConfiguracionFiltrosSeccion(
-        tipos_campos=RENDICIONES_TIPOS_CAMPOS,
-        operadores_permitidos={
-            "text": RENDICIONES_OPS_TEXTO,
-            "number": RENDICIONES_OPS_NUMERO,
-            "date": RENDICIONES_OPS_FECHA,
-            "choice": RENDICIONES_OPS_ELECCION,
-            "boolean": RENDICIONES_OPS_BOOLEANO,
-        },
-    ),
-}
-
-
 def clave_cache_filtros_favoritos(id_usuario: int, seccion: str) -> str:
     return f"filtros_favoritos_{id_usuario}_{seccion}"
 
 
 def obtener_configuracion_seccion(
     seccion: str,
-) -> Optional[ConfiguracionFiltrosSeccion]:
-    return CONFIGURACIONES_POR_SECCION.get(seccion)
+) -> ConfiguracionFiltrosSeccion | None:
+    """Obtiene la configuracion aportada por la app dueña de la seccion."""
+    from core.services.favorite_filters.registry import (  # pylint: disable=import-outside-toplevel
+        obtener_configuracion_registrada,
+    )
+
+    return obtener_configuracion_registrada(seccion)
