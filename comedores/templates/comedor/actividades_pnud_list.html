@@ -9,7 +9,7 @@
 {% block content %}
     <link rel="stylesheet" href="{% static 'custom/css/listModerno.css' %}" />
     <link rel="stylesheet" href="{% static 'custom/css/actividadesPnud.css' %}" />
-    {% include 'components/search_bar.html' with titulo='Buscar Actividades PNUD' placeholder='Buscar por categoria o actividad' help_text='Buscar por categoria o actividad.' reset_url='actividades_pnud_list' back_url='' search_name='q' query=busqueda show_add_button=can_manage_actividades_pnud add_url='actividades_pnud_crear' add_text='Agregar' %}
+    {% include 'components/search_bar.html' with titulo='Buscar Actividades PNUD' placeholder='Buscar por categoria o actividad' help_text='Buscar por categoria o actividad.' reset_url='actividades_pnud_list' back_url='' search_name='q' query=busqueda show_add_button=can_manage_actividades_pnud add_url='actividades_pnud_crear' add_text='Agregar' request=request only %}
     {% comment %}
     El filtro por estado es un control segmentado de enlaces, no un campo, asi
     que no entra en la barra. Se lo engancha al formulario del componente con

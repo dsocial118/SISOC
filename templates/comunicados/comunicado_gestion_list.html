@@ -10,7 +10,7 @@
 
     <div class="mt-4">
 
-        {% include 'components/search_bar.html' with titulo='Buscar comunicado' placeholder='Buscar comunicado...' help_text='Buscar por título.' reset_url='comunicados_gestion' back_url='' search_name='titulo' query=filtro_titulo show_add_button=can_create add_url='comunicados_crear' add_text='Nuevo' additional_buttons=additional_buttons %}
+        {% include 'components/search_bar.html' with titulo='Buscar comunicado' placeholder='Buscar comunicado...' help_text='Buscar por título.' reset_url='comunicados_gestion' back_url='' search_name='titulo' query=filtro_titulo show_add_button=can_create add_url='comunicados_crear' add_text='Nuevo' additional_buttons=additional_buttons request=request only %}
         {% comment %}
         Estado y tipo son selects propios del modulo. Se enganchan al formulario
         del componente con form= para que buscar no los pierda; `this.form`

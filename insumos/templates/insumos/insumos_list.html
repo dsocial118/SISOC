@@ -5,7 +5,7 @@
     <link rel="stylesheet" href="{% static 'custom/css/listModerno.css' %}" />
 
     <div class="list-container">
-        {% include 'components/search_bar.html' with titulo='Buscar insumos' placeholder='Buscar por título o descripción' help_text='Buscar por título o descripción.' reset_url='insumos_listar' back_url='' query=busqueda show_add_button=puede_gestionar add_url='insumos_crear' add_text='Agregar insumo' additional_buttons=insumos_additional_buttons %}
+        {% include 'components/search_bar.html' with titulo='Buscar insumos' placeholder='Buscar por título o descripción' help_text='Buscar por título o descripción.' reset_url='insumos_listar' back_url='' query=busqueda show_add_button=puede_gestionar add_url='insumos_crear' add_text='Agregar insumo' additional_buttons=insumos_additional_buttons request=request only %}
         {% comment %}
         El filtro por categoria es un select propio del modulo. Se lo engancha
         al formulario del componente con form= para que buscar no lo pierda.

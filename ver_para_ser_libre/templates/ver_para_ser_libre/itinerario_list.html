@@ -13,7 +13,7 @@
 
 {% block content %}
     <div class="comedor-list-container vpsl-page vpsl-home">
-        {% include 'components/search_bar.html' with titulo='Buscar Itinerarios' placeholder='Buscar por filtro...' help_text='Buscar itinerarios.' reset_url='vpsl_itinerario_list' back_url='inicio' query=filtros.busqueda show_add_button=perms.ver_para_ser_libre.add_itinerariovpsl add_url='vpsl_itinerario_create' add_text='Crear itinerario' %}
+        {% include 'components/search_bar.html' with titulo='Buscar Itinerarios' placeholder='Buscar por filtro...' help_text='Buscar itinerarios.' reset_url='vpsl_itinerario_list' back_url='inicio' query=filtros.busqueda show_add_button=perms.ver_para_ser_libre.add_itinerariovpsl add_url='vpsl_itinerario_create' add_text='Crear itinerario' request=request only %}
         <div class="vpsl-filtros-propios">
             <h1 id="vpsl-search-title" class="visually-hidden">Buscar Itinerarios</h1>
             {% comment %}

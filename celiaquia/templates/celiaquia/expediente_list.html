@@ -12,7 +12,7 @@
 {% block content %}
     <!-- Estilos modernos reutilizables para listados -->
     <link rel="stylesheet" href="{% static 'custom/css/listModerno.css' %}" />
-    {% include 'components/search_bar.html' with titulo=titulo_listado placeholder="Buscar por ID, número, estado, provincia o técnico…" help_text="Buscar por ID, número, estado, provincia o técnico." reset_url='expediente_list' back_url='' search_name='q' query=request.GET.q show_add_button=is_provincial_celiaquia add_url='expediente_create' add_text='Nuevo Expediente' %}
+    {% include 'components/search_bar.html' with titulo=titulo_listado placeholder="Buscar por ID, número, estado, provincia o técnico…" help_text="Buscar por ID, número, estado, provincia o técnico." reset_url='expediente_list' back_url='' search_name='q' query=request.GET.q show_add_button=is_provincial_celiaquia add_url='expediente_create' add_text='Nuevo Expediente' request=request only %}
     <div id="list-alerts"></div>
     <div class="card shadow-sm">
         <div class="table-responsive">
