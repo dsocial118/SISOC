@@ -11,7 +11,7 @@ _es_alimentar_comunidad: EsAlimentarComunidad | None = None
 
 def registrar_capacidad_alimentar_comunidad(capacidad: EsAlimentarComunidad) -> None:
     """Registra la regla de programa provista por Comedores."""
-    global _es_alimentar_comunidad
+    global _es_alimentar_comunidad  # pylint: disable=global-statement
 
     if _es_alimentar_comunidad is None or _es_alimentar_comunidad is capacidad:
         _es_alimentar_comunidad = capacidad

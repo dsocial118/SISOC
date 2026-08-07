@@ -36,7 +36,7 @@ def registrar_resolvedor_accesos_pwa_importacion(
     resolver: ResolverAccesosPWAImportacion,
 ) -> None:
     """Registra el proveedor de Comedores para importaciones PWA de Users."""
-    global _resolver
+    global _resolver  # pylint: disable=global-statement
 
     if _resolver is None or _resolver is resolver:
         _resolver = resolver

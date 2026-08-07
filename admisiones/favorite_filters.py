@@ -1,13 +1,13 @@
 """Contribuciones de filtros favoritos de Admisiones."""
 
-from admisiones.services.admisiones_filter_config import (
+from admisiones.services.admisiones_filter_config import (  # pylint: disable=no-name-in-module
     CHOICE_OPS as TECNICOS_OPS_ELECCION,
     DATE_OPS as TECNICOS_OPS_FECHA,
     FIELD_TYPES as TECNICOS_TIPOS_CAMPOS,
     NUM_OPS as TECNICOS_OPS_NUMERO,
     TEXT_OPS as TECNICOS_OPS_TEXTO,
 )
-from admisiones.services.legales_filter_config import (
+from admisiones.services.legales_filter_config import (  # pylint: disable=no-name-in-module
     CHOICE_OPS as LEGALES_OPS_ELECCION,
     DATE_OPS as LEGALES_OPS_FECHA,
     FIELD_TYPES as LEGALES_TIPOS_CAMPOS,

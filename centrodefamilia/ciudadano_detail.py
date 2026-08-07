@@ -2,9 +2,10 @@
 
 from typing import Any
 
+from django.db.models import Sum
+
 from centrodefamilia.models import ParticipanteActividad
 from ciudadanos.detail_contributions import registrar_contribucion_detalle
-from django.db.models import Sum
 
 
 def obtener_contexto(ciudadano: Any, logger: Any) -> dict[str, Any]:

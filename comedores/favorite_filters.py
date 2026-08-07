@@ -1,6 +1,6 @@
 """Contribuciones de filtros favoritos de Comedores."""
 
-from comedores.services.filter_config import (
+from comedores.services.filter_config import (  # pylint: disable=no-name-in-module
     BOOL_OPS,
     CHOICE_OPS,
     FIELD_TYPES,

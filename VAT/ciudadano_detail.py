@@ -7,7 +7,9 @@ from ciudadanos.detail_contributions import registrar_contribucion_detalle
 from VAT.models import AsistenciaSesion, Inscripcion, InscripcionOferta, Voucher
 
 
-def obtener_contexto(ciudadano: Any, logger: Any) -> dict[str, Any]:
+def obtener_contexto(  # pylint: disable=too-many-locals,too-many-branches
+    ciudadano: Any, logger: Any
+) -> dict[str, Any]:
     try:
         inscripciones = list(
             Inscripcion.objects.filter(ciudadano=ciudadano)

@@ -19,7 +19,7 @@ _registrar_evento: AuthAuditHandler | None = None
 
 def registrar_auditoria_auth(handler: AuthAuditHandler) -> None:
     """Registra el persistidor de auditoría de autenticación."""
-    global _registrar_evento
+    global _registrar_evento  # pylint: disable=global-statement
 
     if _registrar_evento is None or _registrar_evento is handler:
         _registrar_evento = handler
