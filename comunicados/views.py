@@ -86,6 +86,18 @@ class ComunicadoListView(LoginRequiredMixin, ListView):
         ctx = super().get_context_data(**kwargs)
         ctx["can_manage"] = can_manage_comunicados(self.request.user)
         ctx["filtro_titulo"] = self.request.GET.get("titulo", "")
+        # "Gestionar" viaja como boton adicional del componente de busqueda:
+        # el componente solo acepta una lista, no un condicional en template.
+        ctx["additional_buttons"] = []
+        if ctx["can_manage"]:
+            ctx["additional_buttons"].append(
+                {
+                    "label": "Gestionar",
+                    "url": str(reverse_lazy("comunicados_gestion")),
+                    "class": "poncho-btn poncho-btn--neutro",
+                    "title": "Gestionar comunicados",
+                }
+            )
         return ctx
 
 
@@ -146,6 +158,17 @@ class ComunicadoGestionListView(LoginRequiredMixin, ListView):
         ctx["tipos"] = TipoComunicado.choices
         ctx["is_admin"] = is_admin(self.request.user)
         ctx["es_tecnico"] = es_tecnico(self.request.user) and not ctx["is_admin"]
+        # "Mailing masivo" viaja como boton adicional del componente de busqueda.
+        ctx["additional_buttons"] = []
+        if ctx["is_admin"]:
+            ctx["additional_buttons"].append(
+                {
+                    "label": "Mailing masivo",
+                    "url": str(reverse_lazy("comunicados_mailing")),
+                    "class": "poncho-btn poncho-btn--neutro",
+                    "title": "Enviar mailing masivo",
+                }
+            )
         return ctx
 
 

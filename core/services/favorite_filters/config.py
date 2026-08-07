@@ -15,6 +15,7 @@ class SeccionesFiltrosFavoritos:
     USUARIOS = "usuarios"
     ADMISIONES_TECNICOS = "admisiones_tecnicos"
     ADMISIONES_LEGALES = "admisiones_legales"
+    ACOMPANAMIENTOS = "acompanamientos"
     DUPLAS = "duplas"
     CDF_CENTROS = "centrodefamilia_centros"
     CDF_BENEFICIARIOS = "centrodefamilia_beneficiarios"

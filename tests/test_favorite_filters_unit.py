@@ -2,6 +2,7 @@
 
 import pytest
 
+from acompanamientos.services.filter_config import DATE_OPS as ACOMPANAMIENTOS_DATE_OPS
 from comedores.services.filter_config import BOOL_OPS as COMEDORES_BOOL_OPS
 from core.services.favorite_filters import (
     ConfiguracionFiltrosSeccion,
@@ -120,6 +121,16 @@ def test_configuracion_favoritos_comedores_acepta_booleanos():
             config,
         )
         == []
+    )
+
+
+def test_configuracion_favoritos_acompanamientos_acepta_fechas():
+    config = obtener_configuracion_seccion(SeccionesFiltrosFavoritos.ACOMPANAMIENTOS)
+
+    assert config is not None
+    assert config.tipos_campos["fecha_modificado"] == "date"
+    assert list(config.operadores_permitidos["date"]) == list(
+        ACOMPANAMIENTOS_DATE_OPS
     )
 
 
