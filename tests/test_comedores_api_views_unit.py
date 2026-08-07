@@ -4,12 +4,22 @@ from datetime import date, datetime
 from types import SimpleNamespace
 
 from comedores import api_views as module
+from users.api_permissions import IsPWAUserForComedor
 
 
 def _build_view(request=None):
     view = module.ComedorDetailViewSet()
     view.request = request or SimpleNamespace(user=None)
     return view
+
+
+def test_capacitaciones_are_available_to_any_user_with_space_access():
+    assert module.ComedorDetailViewSet.capacitaciones.kwargs["permission_classes"] == [
+        IsPWAUserForComedor
+    ]
+    assert module.ComedorDetailViewSet.subir_capacitacion.kwargs[
+        "permission_classes"
+    ] == [IsPWAUserForComedor]
 
 
 def test_get_scoped_comedor_ids_pwa_and_non_pwa(mocker):

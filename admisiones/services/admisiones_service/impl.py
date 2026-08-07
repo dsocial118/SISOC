@@ -32,6 +32,7 @@ from admisiones.forms.admisiones_forms import (
 from acompanamientos.acompanamiento_service import AcompanamientoService
 from ..docx_service import DocumentTemplateService, TextFormatterService
 from core.services.advanced_filters import AdvancedFilterEngine
+from core.services.list_ordering import apply_allowed_ordering
 from iam.services import user_has_any_permission_codes, user_has_permission_code
 from admisiones.services.admisiones_filter_config import (
     FIELD_MAP as ADMISION_FILTER_MAP,
@@ -698,16 +699,18 @@ class AdmisionService:
 
         distinct_ids = queryset.values_list("id", flat=True).distinct()
 
-        return (
-            Admision.objects.filter(id__in=distinct_ids)
-            .select_related(
-                "comedor",
-                "comedor__provincia",
-                "comedor__tipocomedor",
-                "comedor__referente",
-                "estado",
-            )
-            .order_by("-creado")
+        queryset = Admision.objects.filter(id__in=distinct_ids).select_related(
+            "comedor",
+            "comedor__provincia",
+            "comedor__tipocomedor",
+            "comedor__referente",
+            "estado",
+        )
+        return apply_allowed_ordering(
+            queryset,
+            request_or_query,
+            {"nombre": "comedor__nombre"},
+            default=("-creado",),
         )
 
     @staticmethod
@@ -781,6 +784,8 @@ class AdmisionService:
                         # Nombre
                         {
                             "content": comedor_nombre,
+                            "data_attr": "nombre",
+                            "data_value": comedor_nombre,
                             "link_url": comedor_link_url,
                             "link_class": "font-weight-bold link-handler",
                             "link_title": "Ver detalles",

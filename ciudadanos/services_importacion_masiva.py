@@ -10,12 +10,10 @@ from django.db import transaction
 from django.utils import timezone
 from openpyxl import Workbook, load_workbook
 
-from centrodefamilia.services.consulta_renaper import (  # pylint: disable=no-name-in-module
-    consultar_datos_renaper,
-)
 from ciudadanos.models import Ciudadano, CiudadanosImportJobRow
 from comedores.services.comedor_service import ComedorService
 from core.models import Sexo
+from core.services.renaper import consultar_datos_renaper
 
 SHEET_NAME = "ciudadanos"
 TEMPLATE_HEADERS = ("cuil_o_dni", "sexo")

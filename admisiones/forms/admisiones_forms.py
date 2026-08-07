@@ -625,15 +625,62 @@ class InformeTecnicoEstadoForm(forms.Form):
 
 
 class NumeroExpedienteMixin:
-    expediente_anio = forms.CharField(label="Año", min_length=4, max_length=4)
-    expediente_numero = forms.CharField(label="Número", min_length=9, max_length=9)
-    expediente_reparticion = forms.CharField(label="Repartición", max_length=50)
-    expediente_organismo = forms.CharField(
-        label="Organismo", max_length=50, initial="MCH"
-    )
+    @staticmethod
+    def _campos_numero_expediente():
+        attrs_base = {"class": "form-control", "autocomplete": "off"}
+        return {
+            "expediente_anio": forms.CharField(
+                label="Año",
+                min_length=4,
+                max_length=4,
+                widget=forms.TextInput(
+                    attrs={
+                        **attrs_base,
+                        "inputmode": "numeric",
+                        "placeholder": "2025",
+                    }
+                ),
+            ),
+            "expediente_numero": forms.CharField(
+                label="Número",
+                min_length=9,
+                max_length=9,
+                widget=forms.TextInput(
+                    attrs={
+                        **attrs_base,
+                        "inputmode": "numeric",
+                        "placeholder": "112100154",
+                    }
+                ),
+            ),
+            "expediente_reparticion": forms.CharField(
+                label="Repartición",
+                max_length=50,
+                widget=forms.TextInput(
+                    attrs={
+                        **attrs_base,
+                        "class": "form-control text-uppercase",
+                        "placeholder": "DDNAYF",
+                    }
+                ),
+            ),
+            "expediente_organismo": forms.CharField(
+                label="Organismo",
+                max_length=50,
+                initial="MCH",
+                widget=forms.TextInput(
+                    attrs={
+                        **attrs_base,
+                        "class": "form-control text-uppercase",
+                        "placeholder": "MCH",
+                    }
+                ),
+            ),
+        }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.fields.update(self._campos_numero_expediente())
         match = re.fullmatch(
             r"EX-(\d{4})-(\d{9})- -APN-([A-Z0-9]+)#([A-Z0-9]+)",
             self._numero_actual() or "",

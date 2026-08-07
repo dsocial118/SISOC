@@ -646,6 +646,39 @@ body:has(.vpsl-page) .app-content-header {
   color: #fff;
 }
 
+/* Panel desplegable de filtros avanzados: usa la paleta PONCHO como el resto
+   del listado. Antes heredaba el fondo de la pagina y no se distinguia. */
+#vpslAdvancedFilters {
+  margin-bottom: 1.5rem;
+  padding: 1.25rem;
+  background: var(--poncho-azul-principal);
+  border: 1px solid rgba(255, 255, 255, .25);
+  border-radius: var(--poncho-radio-buscador);
+}
+
+#vpslAdvancedFilters .form-label {
+  color: var(--poncho-blanco);
+  font-family: var(--poncho-font-base);
+}
+
+#vpslAdvancedFilters .form-control,
+#vpslAdvancedFilters select.form-control {
+  background-color: var(--poncho-azul-secundario);
+  border: 1px solid var(--poncho-blanco);
+  border-radius: var(--poncho-radio-base);
+  color: var(--poncho-blanco);
+  font-family: var(--poncho-font-base);
+}
+
+#vpslAdvancedFilters select.form-control option {
+  background: var(--poncho-blanco);
+  color: var(--poncho-azul-principal);
+}
+
+#vpslAdvancedFilters .form-control::placeholder {
+  color: var(--poncho-texto-placeholder);
+}
+
 .vpsl-filter-actions {
   display: flex;
   justify-content: flex-end;
@@ -763,15 +796,9 @@ body:has(.vpsl-page) .app-content-header {
   line-height: 1.1 !important;
 }
 
-.vpsl-sedes-list > h2 {
-  margin-bottom: .45rem !important;
-  color: var(--vpsl-text);
-  font-size: 1.375rem !important;
-  font-weight: 700;
-  line-height: 1.15;
-  text-transform: none !important;
-  letter-spacing: 0 !important;
-}
+/* El override de > h2 se elimino: pisaba el titulo del componente
+   (.poncho-titulo), bajandolo a 1.375rem y recortandole el margen inferior.
+   Estaba pensado para el encabezado del buscador anterior. */
 
 .vpsl-sedes-shell {
   --vpsl-panel: #232d4f;
@@ -781,92 +808,40 @@ body:has(.vpsl-page) .app-content-header {
   color: var(--vpsl-text);
 }
 
-.vpsl-sedes-list #simple-search-form {
-  width: min(100%, 94rem);
-  max-width: calc(100% - 2rem);
-  margin-inline: auto;
-  margin-bottom: 0;
-}
+/* Las reglas de .vpsl-sedes-list #simple-search-form se eliminaron:
+   apuntaban al markup anterior (.form-group, .row, .col-12, .input-group,
+   #ajax-search-input.form-control) que el componente compartido ya no
+   renderiza. Lo unico que seguia aplicando era margin-bottom:0, que dejaba
+   el listado pegado al borde superior. El espaciado ahora lo da el propio
+   componente, igual que en el resto de los listados. */
 
-.vpsl-sedes-list #simple-search-form .form-group {
-  margin-bottom: 0;
-}
-
-.vpsl-sedes-list #simple-search-form .row,
-.vpsl-sedes-list #simple-search-form [class*="col-"] {
-  margin-inline: 0;
-}
-
-.vpsl-sedes-list #simple-search-form .col-12 {
-  width: 100% !important;
-  max-width: 100% !important;
-  margin-left: 0 !important;
-  padding-inline: 0;
-  flex: 0 0 100% !important;
-}
-
-.vpsl-sedes-list #simple-search-form .input-group {
-  width: 100%;
-}
-
-.vpsl-sedes-list #simple-search-form #ajax-search-input.form-control {
-  width: 100%;
-  min-height: 3rem !important;
-  height: 3rem !important;
-  border-color: rgba(255, 255, 255, .48) !important;
-  background-color: var(--vpsl-panel) !important;
-  color: var(--vpsl-text) !important;
-  border-radius: .55rem !important;
-  padding: .65rem 1.05rem !important;
-  font-size: 1rem !important;
-}
-
-.vpsl-sedes-list #simple-search-form .input-group-lg {
-  min-height: 0;
-}
-
-.vpsl-sedes-list #simple-search-form .form-control-lg {
-  height: 3rem !important;
-  min-height: 3rem !important;
-}
-
-.vpsl-sedes-list .search-actions {
-  margin-top: .5rem !important;
-  gap: .5rem !important;
-}
-
-.vpsl-sedes-list .search-actions .btn {
-  min-width: 0 !important;
-  border-radius: 999px !important;
-  padding: .42rem .9rem !important;
-  text-transform: none !important;
-  letter-spacing: 0 !important;
-  transform: none !important;
-}
-
-.vpsl-page.vpsl-sedes-list {
+/* Los overrides de .vpsl-sedes-list .search-actions se eliminaron: apretaban
+   el bloque contra el borde superior (margin-top .5rem) y estilaban .btn, clase
+   que el componente ya no usa para Resetear ni para el CTA (.poncho-btn).
+   min-height:0 se conserva para que la pagina no fuerce alto completo. */
+/* Las paginas de listado no fuerzan alto: el contenido manda. El
+   min-height de .vpsl-page estiraba itinerarios y dejaba un hueco entre los
+   filtros y la tabla. */
+.vpsl-page.vpsl-sedes-list,
+.vpsl-page.vpsl-home {
   min-height: 0;
   padding-bottom: 1rem;
 }
 
-.vpsl-sedes-list .search-actions .btn-lg {
-  padding: .42rem .9rem !important;
-  font-size: .82rem !important;
-  line-height: 1.2 !important;
-}
-
-.vpsl-sedes-list .row.mt-3 {
-  margin-top: .55rem !important;
-}
-
+/* Los overrides de .row.mt-3 y .row.mt-5 se eliminaron: apretaban los
+   contenedores del componente compartido (la fila de acciones y la de la
+   tabla) a un tercio de su margen. Eran un ajuste a medida del buscador
+   anterior; con el componente dejaban el listado pegado al borde superior.
+   Ahora vale el espaciado de Bootstrap, igual que en el resto. */
 .vpsl-sedes-list .row.mt-5 {
-  margin: .35rem 1rem 0 !important;
   max-width: calc(100% - 2rem) !important;
 }
 
+/* margin-top .35rem dejaba la tabla pegada a los botones; se usa el mismo
+   respiro que da .row.mt-5 en el resto de los listados. */
 .vpsl-sedes-table-wrap {
   width: calc(100% - 2rem);
-  margin: .35rem auto 0;
+  margin: 3rem auto 0;
 }
 
 .vpsl-sedes-table-wrap .vpsl-table-card,
