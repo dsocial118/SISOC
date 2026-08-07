@@ -1,3 +1,16 @@
+/**
+ * Filtros favoritos.
+ *
+ * OJO: desde 2026-08-04 este archivo NO se carga. UX/UI decidio sacar Favoritos
+ * de la UI, asi que components/search_bar.html ya no incluye ni el modal ni
+ * este script. El backend y los favoritos guardados siguen intactos.
+ *
+ * Para reponerlo hay que, ademas de volver a renderizar el modal y el boton:
+ *   - actualizar #filters-rows -> #poncho-filters-rows (el contenedor se
+ *     renombro para escapar de reglas !important de listModerno.css);
+ *   - resolver #filters-logic, que ya no existe: la logica es fija en AND.
+ * Sin eso, construirCargaFiltros() devuelve null y no se puede guardar.
+ */
 (function () {
     const formulario = document.getElementById('filters-form');
     if (!formulario) {
@@ -81,47 +94,17 @@
             return null;
         }
 
-        const elementos = [];
-        const filas = contenedorFilas.children;
-
-        for (let i = 0; i < filas.length; i += 1) {
-            const refs = filas[i]._advancedFilterRefs;
-            if (!refs) {
-                continue;
-            }
-
-            const campo = refs.fieldSel.value;
-            const operador = refs.opSel.value;
-            const definicionCampo = camposPorNombre[campo];
-            if (!definicionCampo || !campo || !operador) {
-                continue;
-            }
-
-            if (operador === 'empty') {
-                elementos.push({
-                    field: campo,
-                    op: operador,
-                    empty_mode: refs.emptyModeSel.value || 'both',
-                });
-                continue;
-            }
-
-            if (definicionCampo.type === 'choice' || definicionCampo.type === 'boolean') {
-                const seleccionado = refs.selectValue.value;
-                if (seleccionado !== '') {
-                    elementos.push({ field: campo, op: operador, value: seleccionado });
-                }
-                continue;
-            }
-
-            const valor = refs.valueInput.value.trim();
-            if (valor !== '') {
-                elementos.push({ field: campo, op: operador, value: valor });
-            }
+        // advanced_filters.js es la unica fuente de verdad: conoce la estructura
+        // de las filas y de que operador corresponde a cada tipo de campo.
+        // Si no esta disponible devolvemos null a proposito, para que el usuario
+        // vea "No se pudo leer los filtros actuales" en vez de guardar en
+        // silencio un favorito vacio.
+        if (window.AdvancedFilters && typeof window.AdvancedFilters.collectPayload === 'function') {
+            return window.AdvancedFilters.collectPayload();
         }
 
-        const logica = selectorLogica.value || 'AND';
-        return { logic: logica, items: elementos };
+        console.warn('FavoriteFilters: AdvancedFilters no está disponible.');
+        return null;
     }
 
     async function leerRespuestaJson(respuesta) {
