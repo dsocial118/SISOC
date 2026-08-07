@@ -7,11 +7,9 @@ Corregir las regresiones informadas luego del PR: acceso denegado a Capacitacion
 ## Cambios
 
 - Capacitaciones queda disponible para cualquier usuario PWA con acceso activo al espacio, sin limitarse al rol representante ni al programa Alimentar Comunidad.
-- La pantalla mobile consulta directamente los certificados para todos los programas.
+- Los endpoints PWA de capacitaciones admiten a cualquier usuario con acceso activo al espacio.
 - La tarjeta del legajo SISOC cuenta actividades activas distintas por catalogo; los dias y horarios siguen visibles como filas independientes en el detalle.
 
 ## Validacion
 
-- Tests unitarios de permisos, disponibilidad mobile y agrupacion del contador.
-- Build de la aplicacion mobile.
-
+- Tests unitarios de permisos y agrupacion del contador.

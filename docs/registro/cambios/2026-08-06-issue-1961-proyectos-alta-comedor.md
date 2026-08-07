@@ -2,21 +2,21 @@
 
 ## Problema
 
-Un usuario autorizado a crear comedores podÃ­a abrir el formulario, pero la consulta
-AJAX de proyectos exigÃ­a permisos adicionales de Organizaciones. Por eso el selector
-quedaba vacÃ­o en el primer intento y reciÃ©n se reconstruÃ­a luego de un POST invÃ¡lido.
+Un usuario autorizado a crear comedores podía abrir el formulario, pero la consulta
+AJAX de proyectos exigía permisos adicionales de Organizaciones. Por eso el selector
+quedaba vacío en el primer intento y recién se reconstruía luego de un POST inválido.
 
-AdemÃ¡s, el resumen del legajo de OrganizaciÃ³n mezclaba proyectos activos con cÃ³digos
-histÃ³ricos de comedores, mientras que el selector solo admite proyectos activos.
+Además, el resumen del legajo de Organización mezclaba proyectos activos con códigos
+históricos de comedores, mientras que el selector solo admite proyectos activos.
 
 ## Cambio
 
 - El endpoint de proyectos admite los permisos para crear o editar comedores, sin
   quitar el filtrado de organizaciones accesibles para el usuario.
-- El resumen de la OrganizaciÃ³n muestra como proyectos disponibles la misma fuente
+- El resumen de la Organización muestra como proyectos disponibles la misma fuente
   usada por el selector: `ProyectoOrganizacion` activos.
 - El formulario informa una falla de carga y sincroniza Select2 al completar opciones.
-- Los cambios de OrganizaciÃ³n y Programa se escuchan mediante jQuery, el mismo canal
+- Los cambios de Organización y Programa se escuchan mediante jQuery, el mismo canal
   de eventos utilizado por Select2.
 
 ## ValidaciÃ³n

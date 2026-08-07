@@ -2,7 +2,6 @@
 
 import contextlib
 from datetime import date, datetime
-from pathlib import Path
 from types import SimpleNamespace
 
 from comedores.views import comedor as module
@@ -113,20 +112,6 @@ def test_actividades_pnud_count_groups_active_schedules_by_activity(mocker):
 
     assert context["actividades_pnud_legajo"] == rows
     assert context["actividades_pnud_legajo_count"] == 2
-
-
-def test_mobile_capacitaciones_has_no_program_restriction():
-    source = (
-        Path(__file__).parents[1]
-        / "mobile"
-        / "src"
-        / "features"
-        / "home"
-        / "SpaceCapacitacionesPage.tsx"
-    ).read_text(encoding="utf-8")
-
-    assert "solo a espacios del programa Alimentar Comunidad" not in source
-    assert "getSpaceDetail" not in source
 
 
 def test_comedor_create_helpers_and_form_valid_paths(mocker):

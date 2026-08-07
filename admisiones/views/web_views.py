@@ -21,6 +21,7 @@ import logging
 logger = logging.getLogger(__name__)
 from admisiones.forms.admisiones_forms import (
     AdmisionForm,
+    CaratularForm,
     LegalesRectificarForm,
     LegalesNumIFForm,
     ValidacionesTemplateAdmisionForm,
@@ -1073,6 +1074,16 @@ class AdmisionesTecnicosUpdateView(LoginRequiredMixin, UpdateView):
         return self._safe_redirect_to_edit(request, admision)
 
     def _handle_post_update_actions(self, request, admision):
+        if "btnCaratulacion" in request.POST:
+            caratular_form = CaratularForm(request.POST, instance=admision)
+            if not caratular_form.is_valid():
+                return self.render_to_response(
+                    self.get_context_data(
+                        caratular_form=caratular_form,
+                        abrir_modal_caratulacion=True,
+                    )
+                )
+
         success, message = AdmisionService.procesar_post_update(request, admision)
         if success is None:
             return None
@@ -1595,7 +1606,17 @@ class AdmisionesLegalesDetailView(LoginRequiredMixin, FormMixin, DetailView):
         return context
 
     def post(self, request, *args, **kwargs):
-        return LegalesService.procesar_post_legales(request, self.get_object())
+        admision = self.get_object()
+        if "btnLegalesNumIF" in getattr(request, "POST", {}):
+            legales_num_if_form = LegalesNumIFForm(request.POST, instance=admision)
+            if not legales_num_if_form.is_valid():
+                return self.render_to_response(
+                    self.get_context_data(
+                        form_legales_num_if=legales_num_if_form,
+                        abrir_modal_legales_num_if=True,
+                    )
+                )
+        return LegalesService.procesar_post_legales(request, admision)
 
 
 class InformeTecnicoComplementarioReviewView(LoginRequiredMixin, DetailView):

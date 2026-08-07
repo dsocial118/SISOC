@@ -1199,6 +1199,16 @@
     </div>
 {% endblock %}
 {% block customJS %}
+    {% if abrir_modal_caratulacion %}
+        <script nonce="{{ request.csp_nonce }}">
+            document.addEventListener("DOMContentLoaded", function() {
+                var modalElement = document.getElementById("caratularExpediente");
+                if (modalElement) {
+                    new bootstrap.Modal(modalElement).show();
+                }
+            });
+        </script>
+    {% endif %}
     <div id="admisiones-tecnicos-config"
          data-csrf-token="{{ csrf_token }}"
          data-url-actualizar-estado="{% url 'actualizar_estado_archivo' %}"

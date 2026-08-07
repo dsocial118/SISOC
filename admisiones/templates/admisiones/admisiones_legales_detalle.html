@@ -771,5 +771,15 @@
     </div>
 {% endblock %}
 {% block customJS %}
+    {% if abrir_modal_legales_num_if %}
+        <script nonce="{{ request.csp_nonce }}">
+            document.addEventListener("DOMContentLoaded", function() {
+                var modalElement = document.getElementById("modalLegalesNumIF");
+                if (modalElement) {
+                    new bootstrap.Modal(modalElement).show();
+                }
+            });
+        </script>
+    {% endif %}
     <script src="{% static 'custom/js/admisioneslegalesdetail.js' %}"></script>
 {% endblock %}
