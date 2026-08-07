@@ -8,8 +8,6 @@ from drf_spectacular.views import (
     SpectacularSwaggerView,
     SpectacularRedocView,
 )
-from celiaquia.views.reporter_provincias import ReporterProvinciasView
-from core.decorators import permissions_any_required
 from config.views import VatSpectacularAPIView
 from users.views import (
     PasswordResetConfirmCustomView,
@@ -61,13 +59,7 @@ urlpatterns = [
     path("", include("dispositivos.urls")),
     path("", include("insumos.urls")),
     path("rendicioncuentasmensual/", include("rendicioncuentasmensual.urls")),
-    path(
-        "reporter-provincias/",
-        permissions_any_required(["celiaquia.view_expediente"])(
-            ReporterProvinciasView.as_view()
-        ),
-        name="reporter_provincias",
-    ),
+    path("", include("celiaquia.global_urls")),
     path("celiaquia/", include("celiaquia.urls")),
     # API URLs
     path("api/users/", include("users.api_urls")),

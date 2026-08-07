@@ -154,6 +154,10 @@ no dando al nuevo servicio propiedad de esas tablas.
   `core` o `ciudadanos` importen la app. SISOC todavía no tiene un registro de
   extensiones público para esos casos: abrir una tarea de boundary separada y
   conservar la feature aislada hasta definirlo.
+- Celiaquía es el piloto de esa tarea de boundary: Ciudadano 360 puede importar
+  únicamente `celiaquia.api` para su resumen de lectura. El contrato devuelve
+  DTOs y no expone modelos ni `QuerySet`; ningún otro módulo debe importar
+  `models`, `services`, `views`, formularios, permisos o señales de Celiaquía.
 - No reutilizar un cliente externo que viva en otra app (por ejemplo,
   `centrodefamilia.services.consulta_renaper`). Si falta una integración
   transversal, primero se debe definir y ubicar su contrato compartido; no
