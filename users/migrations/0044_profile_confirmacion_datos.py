@@ -24,9 +24,7 @@ def marcar_perfiles_existentes(apps, schema_editor):
     if perfiles_faltantes:
         Profile.objects.bulk_create(perfiles_faltantes, batch_size=500)
 
-    Profile.objects.filter(user__is_active=True).update(
-        needs_profile_confirmation=True
-    )
+    Profile.objects.filter(user__is_active=True).update(needs_profile_confirmation=True)
 
 
 def desmarcar_perfiles(apps, schema_editor):
