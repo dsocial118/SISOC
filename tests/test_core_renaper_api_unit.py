@@ -22,3 +22,47 @@ def test_consulta_renaper_usa_el_proveedor_registrado(mocker):
     assert response.status_code == 200
     assert response.data == {"success": True, "data": {"nombre": "Ana"}}
     consultar.assert_called_once_with("12345678", "F")
+
+
+def test_consulta_renaper_no_expone_excepcion_del_proveedor(mocker):
+    mocker.patch(
+        "core.api_views.consultar_datos_renaper",
+        side_effect=RuntimeError("detalle remoto sensible"),
+    )
+    mocker.patch.object(RenaperConsultaViewSet, "permission_classes", [])
+    log_error = mocker.patch("core.api_views.logger.error")
+    request = APIRequestFactory().post(
+        "/api/renaper/consultar/",
+        {"dni": "00000001", "sexo": "F"},
+        format="json",
+    )
+
+    response = RenaperConsultaViewSet.as_view({"post": "consultar"})(request)
+
+    assert response.status_code == 500
+    assert response.data == {
+        "success": False,
+        "error": "No se pudo consultar RENAPER en este momento.",
+    }
+    assert "detalle remoto sensible" not in str(log_error.call_args)
+
+
+def test_consulta_renaper_conserva_trace_seguro_ante_error_inesperado(mocker):
+    mocker.patch(
+        "core.api_views.consultar_datos_renaper",
+        side_effect=RuntimeError("DNI 00000001 sensible"),
+    )
+    mocker.patch.object(RenaperConsultaViewSet, "permission_classes", [])
+    log_exception = mocker.patch("core.api_views.logger.exception")
+    request = APIRequestFactory().post(
+        "/api/renaper/consultar/",
+        {"dni": "00000001", "sexo": "F"},
+        format="json",
+    )
+
+    response = RenaperConsultaViewSet.as_view({"post": "consultar"})(request)
+
+    assert response.status_code == 500
+    log_exception.assert_called_once()
+    assert "00000001" not in str(log_exception.call_args)
+    assert "DNI" not in str(log_exception.call_args)
