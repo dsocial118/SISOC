@@ -2,6 +2,7 @@
 
 from types import SimpleNamespace
 
+import pytest
 import requests
 
 import core.integrations.renaper as client_module
@@ -34,6 +35,71 @@ def test_api_client_uses_cached_token_without_request(mocker):
 
     assert client.get_token() == "token"
     client.session.post.assert_not_called()
+
+
+def test_api_client_logs_in_and_caches_token_with_configured_ttl(mocker, settings):
+    settings.RENAPER_TOKEN_CACHE_TTL_SECONDS = 321
+    session = mocker.Mock()
+    session.post.return_value = _ResponseMock({"token": "token"})
+    cache_set = mocker.patch.object(client_module.cache, "set")
+
+    client = client_module.APIClient()
+    client.session = session
+
+    assert client.get_token() == "token"
+    session.post.assert_called_once_with(
+        client.login_url,
+        json={"username": client.username, "password": client.password},
+        timeout=settings.RENAPER_REQUEST_TIMEOUT_SECONDS,
+    )
+    cache_set.assert_called_once_with(
+        client_module.TOKEN_CACHE_KEY,
+        {"token": "token"},
+        321,
+    )
+
+
+def test_api_client_clasifica_timeout_de_login_sin_loguear_credenciales(
+    mocker, settings
+):
+    settings.RENAPER_API_USERNAME = "usuario-renaper"
+    settings.RENAPER_API_PASSWORD = "secreto-renaper"
+    session = mocker.Mock()
+    session.post.side_effect = requests.Timeout()
+    client = client_module.APIClient()
+    client.session = session
+    log_warning = mocker.patch.object(client_module.logger, "warning")
+
+    with pytest.raises(
+        client_module.RenaperServiceError, match="no respondio a tiempo"
+    ) as exc:
+        client.get_token()
+
+    assert exc.value.error_type == "timeout"
+    logged = str(log_warning.call_args)
+    assert "usuario-renaper" not in logged
+    assert "secreto-renaper" not in logged
+
+
+@pytest.mark.parametrize(
+    ("response", "error_type"),
+    [
+        (_HTTPErrorResponse({"detail": "forbidden"}, 403), "auth_error"),
+        (_ResponseMock(ValueError("bad json")), "invalid_response"),
+    ],
+)
+def test_api_client_clasifica_respuesta_invalida_o_error_de_login(
+    mocker, response, error_type
+):
+    session = mocker.Mock()
+    session.post.return_value = response
+    client = client_module.APIClient()
+    client.session = session
+
+    with pytest.raises(client_module.RenaperServiceError) as exc:
+        client.get_token()
+
+    assert exc.value.error_type == error_type
 
 
 def test_api_client_no_log_error_when_no_match(mocker):

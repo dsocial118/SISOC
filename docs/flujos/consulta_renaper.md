@@ -25,7 +25,7 @@ con cache de token y una fachada compatible para los dominios consumidores.
 
 ## Errores comunes y debug
 - Login fallido: revisar credenciales `RENAPER_API_USERNAME/PASSWORD`, conectividad y el evento `renaper.integration.failure`.
-- Error decodificar JSON o sin coincidencia: revisar el tipo de error del resultado; los payloads remotos no se exponen ni se registran.
+- Error decodificar JSON o sin coincidencia: revisar el tipo de error del resultado; los payloads remotos no se exponen ni se registran en errores o logs. La respuesta exitosa conserva `datos_api` por compatibilidad de la fachada.
 - Datos incompletos: revisar la respuesta funcional del consumidor con datos sintéticos en un entorno de prueba.
 
 ## Tests existentes

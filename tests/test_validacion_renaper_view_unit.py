@@ -101,14 +101,7 @@ def test_helpers_build_log_data():
     legajo = SimpleNamespace(pk=2, expediente_id=20)
     ciudadano = SimpleNamespace(id=30, sexo=SimpleNamespace(sexo="Masculino"))
 
-    data = module._build_log_data(
-        user,
-        legajo,
-        ciudadano,
-        documento_original="20123456780",
-        documento_consulta="12345678",
-        sexo_renaper="M",
-    )
+    data = module._build_log_data(user, legajo, ciudadano)
 
     assert data["user_id"] == 10
     assert data["legajo_id"] == 2

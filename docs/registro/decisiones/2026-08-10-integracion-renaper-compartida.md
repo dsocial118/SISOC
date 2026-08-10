@@ -14,6 +14,9 @@ El transporte, autenticación, cache de token, timeout y clasificación de
 errores viven en `core.integrations.renaper`. La fachada
 `core.services.renaper` conserva el contrato compartido de consulta y su
 normalización compatible. Los dominios importan únicamente esa fachada.
+La normalización y el caso `FALLECIDO` permanecen en la fachada como contrato
+transversal heredado; una eventual interpretación distinta por dominio requiere
+una fase posterior para evitar cambiar consumidores en esta migración técnica.
 
 Se preservan el nombre de cache `renaper_token` y el TTL por defecto de 3000
 segundos. No se agrega Redis: el cache sigue siendo una optimización local.

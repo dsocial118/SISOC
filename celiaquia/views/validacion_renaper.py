@@ -49,7 +49,6 @@ def _build_log_data(
     user,
     legajo=None,
     ciudadano=None,
-    **_unused_sensitive_context,
 ):
     data = {
         "user_id": getattr(user, "id", None),
@@ -544,7 +543,6 @@ class ValidacionRenaperView(View):
                             user,
                             legajo,
                             ciudadano,
-                            documento_original=documento_original,
                         )
                     },
                 )
@@ -566,8 +564,6 @@ class ValidacionRenaperView(View):
                             user,
                             legajo,
                             ciudadano,
-                            documento_original=documento_original,
-                            documento_consulta=documento_consulta,
                         )
                     },
                 )
@@ -590,9 +586,6 @@ class ValidacionRenaperView(View):
                 user,
                 legajo,
                 ciudadano,
-                documento_original=documento_original,
-                documento_consulta=documento_consulta,
-                sexo_renaper=sexo_renaper,
             )
 
             logger.info(
