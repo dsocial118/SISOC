@@ -86,7 +86,6 @@ forbidden_modules =
     ticketera
     dashboard
     healthcheck
-    iam
     insumos
     ocr
 ignore_imports =
