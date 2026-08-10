@@ -30,6 +30,7 @@ root_packages =
     organizaciones
     duplas
     admisiones
+    audittrail
     intervenciones
     historial
     acompanamientos
@@ -47,6 +48,11 @@ root_packages =
     dispositivos
     pwa
     ticketera
+    dashboard
+    healthcheck
+    iam
+    insumos
+    ocr
 
 [importlinter:contract:core-no-domains]
 name = core no debe importar apps de dominio
@@ -60,6 +66,7 @@ forbidden_modules =
     organizaciones
     duplas
     admisiones
+    audittrail
     intervenciones
     historial
     acompanamientos
@@ -77,6 +84,11 @@ forbidden_modules =
     dispositivos
     pwa
     ticketera
+    dashboard
+    healthcheck
+    iam
+    insumos
+    ocr
 ignore_imports =
     # Herramientas de diagnóstico locales: ejercitan vistas/modelos de dominio
     # fuera del runtime de la aplicación y no se cargan durante el arranque.
@@ -97,6 +109,7 @@ source_modules =
     organizaciones
     duplas
     admisiones
+    audittrail
     intervenciones
     historial
     acompanamientos
@@ -113,6 +126,11 @@ source_modules =
     dispositivos
     pwa
     ticketera
+    dashboard
+    healthcheck
+    iam
+    insumos
+    ocr
 forbidden_modules =
     celiaquia.admin
     celiaquia.apps
@@ -141,6 +159,7 @@ forbidden_modules =
     organizaciones
     duplas
     admisiones
+    audittrail
     intervenciones
     historial
     acompanamientos
@@ -157,6 +176,10 @@ forbidden_modules =
     dispositivos
     pwa
     ticketera
+    dashboard
+    healthcheck
+    insumos
+    ocr
 ignore_imports =
 
 [importlinter:contract:users-no-domains]
