@@ -54,10 +54,10 @@ crea Pendiente en la misma transacción).
 
 ### Restauración lógica
 
-- `NominaCentroInfancia.validar_restauracion_soft` se ejecuta dentro de la transacción de
-  restauración genérica. Si una ficha Activa/Pendiente borrada lógicamente entraría en
-  conflicto con otro CDI, la restauración se rechaza con el mensaje neutro y permanece en
-  papelera.
+- `validar_restauracion_nomina_cdi` se ejecuta dentro de la transacción de restauración
+  genérica mediante el hook declarativo `SOFT_RESTORE_VALIDATOR`. Si una ficha
+  Activa/Pendiente borrada lógicamente entraría en conflicto con otro CDI, la restauración
+  se rechaza con el mensaje neutro y permanece en papelera.
 
 ## Concurrencia
 

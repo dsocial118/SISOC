@@ -1294,6 +1294,10 @@ class NominaNacionalidad(models.Model):
 
 
 class NominaCentroInfancia(SoftDeleteModelMixin, models.Model):
+    SOFT_RESTORE_VALIDATOR = (
+        "centrodeinfancia.services.validar_restauracion_nomina_cdi"
+    )
+
     class RespuestaSiNoNsNc(models.TextChoices):
         SI = "si", "Si"
         NO = "no", "No"
@@ -1460,27 +1464,6 @@ class NominaCentroInfancia(SoftDeleteModelMixin, models.Model):
         max_length=255, blank=True, null=True
     )
     observaciones = models.TextField(blank=True, null=True)
-
-    def validar_restauracion_soft(self) -> None:
-        """Evita restaurar una ficha vigente si ya existe otra en otro CDI."""
-        if self.estado not in (self.ESTADO_ACTIVO, self.ESTADO_PENDIENTE):
-            return
-
-        # La importación diferida evita el ciclo modelo -> servicio -> modelo.
-        from centrodeinfancia.services import (
-            MENSAJE_NOMINA_VIGENTE_EN_OTRO_CENTRO,
-            bloquear_ciudadano_para_nomina_cdi,
-            tiene_nomina_cdi_vigente_en_otro_centro,
-        )
-
-        bloquear_ciudadano_para_nomina_cdi(self.ciudadano_id)
-        if tiene_nomina_cdi_vigente_en_otro_centro(
-            self.ciudadano_id,
-            self.centro_id,
-            excluir_nomina_id=self.pk,
-            bloquear=True,
-        ):
-            raise ValidationError(MENSAJE_NOMINA_VIGENTE_EN_OTRO_CENTRO)
 
     # ── Sección 3: Registro ──────────────────────────────────────────────────
     tipo_registro = models.CharField(

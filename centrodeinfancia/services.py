@@ -120,6 +120,21 @@ def puede_reactivar_nomina_cdi_bajo_bloqueo(
     )
 
 
+def validar_restauracion_nomina_cdi(nomina: NominaCentroInfancia) -> None:
+    """Impide restaurar una ficha vigente si existe otra en un CDI distinto."""
+    if nomina.estado not in ESTADOS_NOMINA_CDI_VIGENTE:
+        return
+
+    bloquear_ciudadano_para_nomina_cdi(nomina.ciudadano_id)
+    if tiene_nomina_cdi_vigente_en_otro_centro(
+        nomina.ciudadano_id,
+        nomina.centro_id,
+        excluir_nomina_id=nomina.pk,
+        bloquear=True,
+    ):
+        raise ValidationError(MENSAJE_NOMINA_VIGENTE_EN_OTRO_CENTRO)
+
+
 _CAMPOS_COPIABLES = [
     "dni",
     "apellido",
