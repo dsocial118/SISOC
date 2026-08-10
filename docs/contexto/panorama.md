@@ -49,7 +49,7 @@
 ## 6) Integraciones externas
 - MySQL como base de datos principal. Evidencia: config/settings.py:153-168; docker-compose.yml:1-19.
 - GESTIONAR (API) para sincronizar comedores, referentes, observaciones y relevamientos (con threads y `requests`). Evidencia: comedores/tasks.py:11-249; relevamientos/tasks.py:13-144; config/settings.py:236-241.
-- RENAPER para consulta de datos de ciudadanos con token cacheado. Evidencia: centrodefamilia/services/consulta_renaper.py:13-170; config/settings.py:236-241.
+- RENAPER para consulta de datos de ciudadanos mediante la integración compartida. Evidencia: core/integrations/renaper.py; core/services/renaper.py.
 - Google Maps API key opcional. Evidencia: config/settings.py:241.
 
 ## 7) Riesgos y supuestos

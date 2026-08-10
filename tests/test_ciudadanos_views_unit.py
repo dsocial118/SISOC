@@ -2,7 +2,7 @@
 
 import json
 from contextlib import nullcontext
-from datetime import date
+from datetime import date, datetime
 from types import SimpleNamespace
 from unittest.mock import Mock, patch
 
@@ -12,6 +12,7 @@ from django.contrib.auth.models import Permission
 from django.http import QueryDict
 from django.urls import reverse
 
+from celiaquia.api import LegajoResumenCiudadano, ResumenCiudadano
 from ciudadanos import views as module
 from ciudadanos import views_export as export_module
 
@@ -449,24 +450,55 @@ def test_ciudadanos_detail_helpers_contexts(mocker):
     ciudadano = SimpleNamespace(pk=7)
 
     mocker.patch(
-        "celiaquia.models.ExpedienteCiudadano.objects.filter",
-        side_effect=Exception("boom"),
+        "ciudadanos.views.obtener_resumen_ciudadano", side_effect=Exception("boom")
     )
     log_exc = mocker.patch("ciudadanos.views.logger.exception")
     out_err = module.CiudadanosDetailView().get_celiaquia_context(ciudadano)
-    assert out_err == {"expedientes_celiaquia": []}
+    assert out_err == {"celiaquia_resumen": None}
     assert log_exc.called
 
-    exped = SimpleNamespace(id=1)
-    qs = _ExpedientesList([exped])
-    mocker.patch(
-        "celiaquia.models.ExpedienteCiudadano.objects.filter",
-        return_value=SimpleNamespace(
-            select_related=lambda *a, **k: SimpleNamespace(order_by=lambda *x, **y: qs)
-        ),
+    resumen = SimpleNamespace(legajo_actual=SimpleNamespace())
+    obtener_resumen = mocker.patch(
+        "ciudadanos.views.obtener_resumen_ciudadano", return_value=resumen
     )
     out_ok = module.CiudadanosDetailView().get_celiaquia_context(ciudadano)
-    assert out_ok["expediente_actual"] is exped
+
+    assert out_ok == {"celiaquia_resumen": resumen}
+    obtener_resumen.assert_called_once_with(ciudadano.pk)
+
+
+@pytest.mark.django_db
+def test_ciudadano_detail_renderiza_resumen_publico_celiaquia(
+    client, superuser, mocker
+):
+    ciudadano = module.Ciudadano.objects.create(
+        apellido="Resumen",
+        nombre="Publico",
+        fecha_nacimiento=date(1990, 1, 1),
+        documento=30111222,
+    )
+    legajo = LegajoResumenCiudadano(
+        estado_expediente="Estado desde DTO",
+        estado_legajo="Legajo desde DTO",
+        resultado_cruce="Cruce desde DTO",
+        estado_cupo="Cupo desde DTO",
+        es_titular_activo=True,
+        revision_tecnica="Revision desde DTO",
+        creado_en=datetime(2026, 8, 7, 10, 30),
+    )
+    mocker.patch(
+        "ciudadanos.views.obtener_resumen_ciudadano",
+        return_value=ResumenCiudadano(legajo_actual=legajo, historial=(legajo,)),
+    )
+    client.force_login(superuser)
+
+    response = client.get(reverse("ciudadanos_ver", args=[ciudadano.pk]))
+
+    assert response.status_code == 200
+    content = response.content.decode()
+    assert "Estado desde DTO" in content
+    assert "Legajo desde DTO" in content
+    assert "Cruce desde DTO" in content
 
 
 def test_ciudadanos_create_busqueda_paths(mocker):

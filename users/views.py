@@ -31,10 +31,12 @@ from .forms import (
     BulkCredentialsUploadForm,
     CustomUserChangeForm,
     GroupForm,
+    MiCuentaForm,
     UserCreationForm,
 )
 from .grupos_column_config import GRUPOS_COLUMNS, GRUPOS_LIST_KEY
 from .models import AccesoComedorPWA
+from .profile_utils import needs_profile_confirmation
 from .services import BULK_CREDENTIALS_PERMISSION_CODE, UsuariosService
 from .services_auth import generate_temporary_password_for_user
 from .services_bulk_credentials import (
@@ -515,6 +517,43 @@ class FirstLoginPasswordChangeView(LoginRequiredMixin, FormView):
         update_session_auth_hash(self.request, user)
         messages.success(self.request, "Contraseña actualizada correctamente.")
         return super().form_valid(form)
+
+
+class MiCuentaView(LoginRequiredMixin, UpdateView):
+    """Vista persistente para que el usuario edite sus propios datos."""
+
+    template_name = "user/mi_cuenta.html"
+    form_class = MiCuentaForm
+    success_url = reverse_lazy("mi_cuenta")
+
+    def get_object(self, queryset=None):
+        return self.request.user
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        messages.success(self.request, "Datos personales actualizados correctamente.")
+        return response
+
+
+class ConfirmacionDatosView(MiCuentaView):
+    """Confirmación obligatoria de datos personales en el primer ingreso.
+
+    Es una vista dedicada y no un modal embebido en el layout: el modal se
+    puede saltear navegando por URL, y el requisito es bloquear la navegación
+    hasta que el usuario guarde datos válidos. El bloqueo real lo hace
+    ``ProfileConfirmationMiddleware``; esta vista se presenta con estética de
+    modal y sin opción de cerrar.
+    """
+
+    template_name = "user/confirmar_datos.html"
+    success_url = reverse_lazy("inicio")
+
+    def dispatch(self, request, *args, **kwargs):
+        if request.user.is_authenticated and not needs_profile_confirmation(
+            request.user
+        ):
+            return HttpResponseRedirect(str(self.success_url))
+        return super().dispatch(request, *args, **kwargs)
 
 
 class PasswordResetConfirmCustomView(PasswordResetConfirmView):

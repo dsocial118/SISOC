@@ -30,6 +30,7 @@ root_packages =
     organizaciones
     duplas
     admisiones
+    audittrail
     intervenciones
     historial
     acompanamientos
@@ -47,6 +48,11 @@ root_packages =
     dispositivos
     pwa
     ticketera
+    dashboard
+    healthcheck
+    iam
+    insumos
+    ocr
 
 [importlinter:contract:core-no-domains]
 name = core no debe importar apps de dominio
@@ -60,6 +66,7 @@ forbidden_modules =
     organizaciones
     duplas
     admisiones
+    audittrail
     intervenciones
     historial
     acompanamientos
@@ -77,6 +84,10 @@ forbidden_modules =
     dispositivos
     pwa
     ticketera
+    dashboard
+    healthcheck
+    insumos
+    ocr
 ignore_imports =
     # Herramientas de diagnóstico locales: ejercitan vistas/modelos de dominio
     # fuera del runtime de la aplicación y no se cargan durante el arranque.
@@ -85,8 +96,59 @@ ignore_imports =
     # por diseño; no participa de requests, comandos operativos ni AppConfig.
     core.benchmarks.** -> **
 
+[importlinter:contract:celiaquia-public-api]
+name = los dominios solo consumen la API pública de Celiaquía
+type = forbidden
+allow_indirect_imports = True
+source_modules =
+    core
+    users
+    ciudadanos
+    comedores
+    organizaciones
+    duplas
+    admisiones
+    audittrail
+    intervenciones
+    historial
+    acompanamientos
+    expedientespagos
+    relevamientos
+    rendicioncuentasfinal
+    rendicioncuentasmensual
+    centrodefamilia
+    VAT
+    importarexpediente
+    comunicados
+    centrodeinfancia
+    ver_para_ser_libre
+    dispositivos
+    pwa
+    ticketera
+    dashboard
+    healthcheck
+    iam
+    insumos
+    ocr
+forbidden_modules =
+    celiaquia.admin
+    celiaquia.apps
+    celiaquia.ciudadano_detail
+    celiaquia.forms
+    celiaquia.global_urls
+    celiaquia.management
+    celiaquia.models
+    celiaquia.permissions
+    celiaquia.services
+    celiaquia.signals
+    celiaquia.templatetags
+    celiaquia.utils
+    celiaquia.views
+    celiaquia.urls
+ignore_imports =
+
 [importlinter:contract:ciudadanos-no-domains]
-name = ciudadanos no debe importar otras apps de dominio
+name = ciudadanos no debe importar internals de otros dominios
 type = forbidden
 allow_indirect_imports = True
 source_modules =
@@ -96,6 +158,7 @@ forbidden_modules =
     organizaciones
     duplas
     admisiones
+    audittrail
     intervenciones
     historial
     acompanamientos
@@ -105,7 +168,6 @@ forbidden_modules =
     rendicioncuentasmensual
     centrodefamilia
     VAT
-    celiaquia
     importarexpediente
     comunicados
     centrodeinfancia
@@ -113,6 +175,21 @@ forbidden_modules =
     dispositivos
     pwa
     ticketera
+    dashboard
+    healthcheck
+    insumos
+    ocr
+ignore_imports =
+
+[importlinter:contract:renaper-consumers-no-centrodefamilia]
+name = Celiaquia y Comedores consumen RENAPER desde la fachada compartida
+type = forbidden
+allow_indirect_imports = True
+source_modules =
+    celiaquia
+    comedores
+forbidden_modules =
+    centrodefamilia
 ignore_imports =
 
 [importlinter:contract:users-no-domains]
