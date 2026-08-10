@@ -8,6 +8,12 @@ from celiaquia.services.ciudadano_resumen_service import (
     obtener_resumen_ciudadano as _obtener_resumen_ciudadano,
 )
 
+__all__ = [
+    "LegajoResumenCiudadano",
+    "ResumenCiudadano",
+    "obtener_resumen_ciudadano",
+]
+
 
 def obtener_resumen_ciudadano(ciudadano_id: int) -> ResumenCiudadano:
     """Devuelve el resumen público de Celiaquía del ciudadano."""
