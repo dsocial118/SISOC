@@ -43,6 +43,10 @@ def _paragraph_by_label(paragraphs, label):
     return None
 
 
+def _user_dni(user):
+    return str(getattr(getattr(user, "profile", None), "dni", "") or "")
+
+
 def _completar_plantilla(
     template_path,
     output_path,
@@ -80,7 +84,7 @@ def _completar_plantilla(
         signer_values = (
             usuario.username,
             usuario.get_full_name() or usuario.username,
-            usuario.username,
+            _user_dni(usuario),
         )
         for label, value in zip(signer_labels, signer_values):
             paragraph = _paragraph_by_label(paragraphs, label)
@@ -104,7 +108,7 @@ def _completar_plantilla(
             principal_values = (
                 usuario_principal.username,
                 usuario_principal.get_full_name() or usuario_principal.username,
-                usuario_principal.username,
+                _user_dni(usuario_principal),
             )
             if start is not None:
                 for label, value in zip(principal_labels, principal_values):
