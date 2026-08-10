@@ -32,6 +32,15 @@ def _error_result(message: str, error_type: str, **extra: Any) -> dict[str, Any]
     return {"success": False, "error": message, "error_type": error_type, **extra}
 
 
+def _log_unexpected_error(event: str, exc: Exception) -> None:
+    """Conserva el traceback sin registrar el mensaje potencialmente sensible."""
+    sanitized_error = RuntimeError("unexpected RENAPER integration error")
+    logger.exception(
+        event,
+        exc_info=(RuntimeError, sanitized_error, exc.__traceback__),
+    )
+
+
 def _normalizar(texto: object) -> str:
     if not texto:
         return ""
@@ -89,7 +98,7 @@ def _mapear_datos_renaper(datos: dict[str, Any], dni: str, sexo: str) -> dict[st
 
 
 def consultar_datos_renaper(dni: str, sexo: str) -> dict[str, Any]:
-    """Consulta RENAPER y conserva el contrato compartido de ciudadanos."""
+    """Adaptador temporal del contrato compartido de consulta ciudadana."""
     try:
         response = APIClient().consultar_ciudadano(dni, sexo)
         if not response.get("success"):
@@ -113,8 +122,8 @@ def consultar_datos_renaper(dni: str, sexo: str) -> dict[str, Any]:
             "data": _mapear_datos_renaper(datos, dni, sexo),
             "datos_api": datos,
         }
-    except Exception:  # pylint: disable=broad-exception-caught
-        logger.error("renaper.integration.unhandled_error")
+    except Exception as exc:  # pylint: disable=broad-exception-caught
+        _log_unexpected_error("renaper.integration.unhandled_error", exc)
         return _error_result(
             "Error inesperado al consultar RENAPER.", "unexpected_error"
         )

@@ -1372,7 +1372,7 @@ class ComedorService:
             if resultado.get("success"):
                 return resultado
             last_error = resultado.get("error") or last_error
-            if not resultado.get("raw_response"):
+            if resultado.get("error_type") != "no_match":
                 return {
                     "success": False,
                     "error": last_error or "No se encontraron datos en RENAPER.",

@@ -28,20 +28,19 @@ class _HTTPErrorResponse(_ResponseMock):
         raise requests.HTTPError(response=self)
 
 
-def test_api_client_uses_cached_token_without_request(mocker):
+def test_api_client_does_not_persist_tokens_between_queries(mocker):
     client = client_module.APIClient()
-    mocker.patch.object(client_module.cache, "get", return_value={"token": "token"})
     client.session = mocker.Mock()
+    client.session.post.return_value = _ResponseMock({"token": "token"})
 
     assert client.get_token() == "token"
-    client.session.post.assert_not_called()
+    assert client.get_token() == "token"
+    assert client.session.post.call_count == 2
 
 
-def test_api_client_logs_in_and_caches_token_with_configured_ttl(mocker, settings):
-    settings.RENAPER_TOKEN_CACHE_TTL_SECONDS = 321
+def test_api_client_logs_in_with_configured_timeout(mocker, settings):
     session = mocker.Mock()
     session.post.return_value = _ResponseMock({"token": "token"})
-    cache_set = mocker.patch.object(client_module.cache, "set")
 
     client = client_module.APIClient()
     client.session = session
@@ -51,11 +50,6 @@ def test_api_client_logs_in_and_caches_token_with_configured_ttl(mocker, setting
         client.login_url,
         json={"username": client.username, "password": client.password},
         timeout=settings.RENAPER_REQUEST_TIMEOUT_SECONDS,
-    )
-    cache_set.assert_called_once_with(
-        client_module.TOKEN_CACHE_KEY,
-        {"token": "token"},
-        321,
     )
 
 
@@ -119,6 +113,45 @@ def test_api_client_no_log_error_when_no_match(mocker):
         "error_type": "no_match",
     }
     log_warning.assert_not_called()
+
+
+def test_api_client_consulta_construye_request_y_retorna_resultado(mocker, settings):
+    session = mocker.Mock()
+    session.get.return_value = _ResponseMock(
+        {"isSuccess": True, "result": {"nombres": "Ana"}}
+    )
+    client = client_module.APIClient()
+    client.session = session
+    mocker.patch.object(client, "get_token", return_value="token")
+
+    out = client.consultar_ciudadano("00000001", "f")
+
+    assert out == {"success": True, "data": {"nombres": "Ana"}}
+    session.get.assert_called_once_with(
+        client.consulta_url,
+        headers={"Authorization": "Bearer token"},
+        params={"dni": "00000001", "sexo": "F"},
+        timeout=settings.RENAPER_REQUEST_TIMEOUT_SECONDS,
+    )
+
+
+def test_api_client_clasifica_error_remoto_sin_exponer_datos_sensibles(mocker):
+    session = mocker.Mock()
+    session.get.side_effect = requests.ConnectionError("conexion 00000001 caida")
+    client = client_module.APIClient()
+    client.session = session
+    mocker.patch.object(client, "get_token", return_value="token")
+    log_warning = mocker.patch.object(client_module.logger, "warning")
+
+    out = client.consultar_ciudadano("00000001", "M")
+
+    assert out == {
+        "success": False,
+        "error": "No se pudo consultar RENAPER.",
+        "error_type": "remote_error",
+    }
+    assert "00000001" not in str(log_warning.call_args)
+    assert "token" not in str(log_warning.call_args)
 
 
 def test_api_client_clasifica_timeout_y_no_loguea_datos_sensibles(mocker):
@@ -186,6 +219,20 @@ def test_consultar_datos_renaper_propagates_error_type_without_raw_response(mock
     assert out["success"] is False
     assert out["error_type"] == "remote_error"
     assert "raw_response" not in out
+
+
+def test_consultar_datos_renaper_registra_trace_seguro_ante_error_inesperado(mocker):
+    client = mocker.Mock()
+    client.consultar_ciudadano.side_effect = RuntimeError("DNI 00000001 sensible")
+    mocker.patch("core.services.renaper.APIClient", return_value=client)
+    log_exception = mocker.patch.object(module.logger, "exception")
+
+    out = module.consultar_datos_renaper("00000001", "M")
+
+    assert out["error_type"] == "unexpected_error"
+    log_exception.assert_called_once()
+    assert "00000001" not in str(log_exception.call_args)
+    assert "DNI" not in str(log_exception.call_args)
 
 
 def test_consultar_datos_renaper_detecta_fallecido(mocker):

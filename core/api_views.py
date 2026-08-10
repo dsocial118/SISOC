@@ -68,8 +68,12 @@ class RenaperConsultaViewSet(viewsets.ViewSet):
 
         try:
             response = consultar_datos_renaper(dni, sexo)
-        except Exception:  # pylint: disable=broad-exception-caught
-            logger.error("renaper.api.unhandled_error")
+        except Exception as exc:  # pylint: disable=broad-exception-caught
+            sanitized_error = RuntimeError("unexpected RENAPER API error")
+            logger.exception(
+                "renaper.api.unhandled_error",
+                exc_info=(RuntimeError, sanitized_error, exc.__traceback__),
+            )
             return Response(
                 {
                     "success": False,

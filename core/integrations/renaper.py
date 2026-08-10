@@ -7,11 +7,9 @@ from typing import Any
 
 import requests
 from django.conf import settings
-from django.core.cache import cache
 
 
 logger = logging.getLogger("django")
-TOKEN_CACHE_KEY = "renaper_token"
 
 
 class RenaperServiceError(RuntimeError):
@@ -38,7 +36,7 @@ def _log_failure(
 
 
 class APIClient:
-    """Encapsula autenticacion, cache, transporte y errores de RENAPER."""
+    """Encapsula autenticacion, transporte y errores de RENAPER."""
 
     def __init__(self):
         self.username = settings.RENAPER_API_USERNAME
@@ -54,12 +52,10 @@ class APIClient:
         return f"{settings.RENAPER_API_URL.rstrip('/')}/consultarenaper"
 
     def get_token(self) -> str:
-        token_data = cache.get(TOKEN_CACHE_KEY)
-        if isinstance(token_data, dict) and token_data.get("token"):
-            return token_data["token"]
-        return self._login_and_cache_token()
+        """Obtiene un token efímero sin persistirlo en cache local."""
+        return self._login()
 
-    def _login_and_cache_token(self) -> str:
+    def _login(self) -> str:
         try:
             response = self.session.post(
                 self.login_url,
@@ -104,11 +100,6 @@ class APIClient:
                 "RENAPER no devolvio un token de autenticacion.", "invalid_response"
             )
 
-        cache.set(
-            TOKEN_CACHE_KEY,
-            {"token": token},
-            settings.RENAPER_TOKEN_CACHE_TTL_SECONDS,
-        )
         return token
 
     def consultar_ciudadano(self, dni: str, sexo: str) -> dict[str, Any]:

@@ -10,23 +10,27 @@ durante el arranque.
 
 ## Decisión
 
-El transporte, autenticación, cache de token, timeout y clasificación de
+El transporte, autenticación, timeout y clasificación de
 errores viven en `core.integrations.renaper`. La fachada
 `core.services.renaper` conserva el contrato compartido de consulta y su
 normalización compatible. Los dominios importan únicamente esa fachada.
 La normalización y el caso `FALLECIDO` permanecen en la fachada como contrato
-transversal heredado; una eventual interpretación distinta por dominio requiere
-una fase posterior para evitar cambiar consumidores en esta migración técnica.
+transversal heredado. Es un adaptador temporal limitado a los consumidores
+existentes: no debe incorporar reglas nuevas. Se retirará cuando cada dominio
+migre su mapeo e interpretación de la respuesta técnica; ese es el criterio de
+salida explícito para una fase posterior, sin cambiar consumidores en esta
+migración técnica.
 
-Se preservan el nombre de cache `renaper_token` y el TTL por defecto de 3000
-segundos. No se agrega Redis: el cache sigue siendo una optimización local.
+No se persisten tokens en cache local. No se agrega Redis: cada consulta obtiene
+un token efímero y evita que una credencial forme parte de estado compartido.
 
 ## Seguridad y operación
 
 La integración no registra ni devuelve en errores DNI, credenciales, tokens o
 payloads remotos. Los logs técnicos contienen sólo operación, tipo de error y
-status HTTP cuando está disponible. Timeout y TTL se configuran con
-`RENAPER_REQUEST_TIMEOUT_SECONDS` y `RENAPER_TOKEN_CACHE_TTL_SECONDS`.
+status HTTP cuando está disponible; los errores inesperados conservan un
+traceback con mensaje sanitizado. El timeout se configura con
+`RENAPER_REQUEST_TIMEOUT_SECONDS` y debe ser positivo.
 
 ## Consecuencias
 
