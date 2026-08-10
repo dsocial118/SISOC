@@ -1067,6 +1067,16 @@ class NominaCentroInfanciaAdminForm(forms.ModelForm):
             ):
                 return cleaned_data
 
+        if (
+            NominaCentroInfancia.objects.filter(
+                ciudadano=ciudadano,
+                centro=centro,
+            )
+            .exclude(pk=instancia.pk)
+            .exists()
+        ):
+            raise ValidationError(MENSAJE_NOMINA_VIGENTE_EN_OTRO_CENTRO)
+
         if tiene_nomina_cdi_vigente_en_otro_centro(
             ciudadano.pk,
             centro.pk,

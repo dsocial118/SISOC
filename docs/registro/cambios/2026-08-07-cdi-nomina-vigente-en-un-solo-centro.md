@@ -49,8 +49,9 @@ crea Pendiente en la misma transacción).
 - **Sólo valida la transición hacia un estado vigente.** Una ficha que ya estaba vigente
   puede seguir editándose: los duplicados históricos están fuera de alcance y no deben
   volverse ineditables.
-- `NominaCentroInfanciaAdminForm`: aplica la misma validación al alta y a la reactivación
-  desde Django admin, sin revelar el otro centro.
+- `NominaCentroInfanciaAdminForm`: aplica la misma validación al alta, la reactivación y
+  el cambio de centro desde Django admin, sin revelar el otro centro ni permitir duplicar
+  el mismo centro.
 
 ### Restauración lógica
 
