@@ -187,6 +187,7 @@ class PlantillaInformeTecnicoForm(forms.ModelForm):
             "estado_convenio_pnud",
             "tipo_renovacion",
             "estado_financiamiento",
+            "informe_complementario_modifica_prestaciones",
         ]
         widgets = {
             "nombre": forms.TextInput(attrs={"class": "form-control"}),
@@ -197,6 +198,9 @@ class PlantillaInformeTecnicoForm(forms.ModelForm):
             "estado_convenio_pnud": forms.Select(attrs={"class": "form-select"}),
             "tipo_renovacion": forms.Select(attrs={"class": "form-select"}),
             "estado_financiamiento": forms.Select(attrs={"class": "form-select"}),
+            "informe_complementario_modifica_prestaciones": forms.Select(
+                attrs={"class": "form-select"}
+            ),
         }
 
     def __init__(self, *args, **kwargs):
@@ -222,6 +226,7 @@ class PlantillaInformeTecnicoForm(forms.ModelForm):
                 cleaned_data["estado_convenio_pnud"] = None
             cleaned_data["tipo_renovacion"] = None
             cleaned_data["estado_financiamiento"] = None
+            cleaned_data["informe_complementario_modifica_prestaciones"] = None
         elif tipo_admision == "renovacion":
             cleaned_data["es_ex_pnud"] = None
             cleaned_data["estado_convenio_pnud"] = None

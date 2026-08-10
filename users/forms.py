@@ -5,7 +5,7 @@ from datetime import timedelta
 from django import forms
 from django.contrib.admin.widgets import FilteredSelectMultiple
 from django.conf import settings
-from django.contrib.auth.forms import AuthenticationForm
+from django.contrib.auth.forms import AuthenticationForm, PasswordResetForm
 from django.contrib.auth.models import Group, Permission, User
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.core.validators import FileExtensionValidator
@@ -33,6 +33,19 @@ from users.territorial_scope import (
     serialize_profile_scopes,
     sync_profile_territorial_scopes,
 )
+
+
+class UsernameEmailPasswordResetForm(PasswordResetForm):
+    username = forms.CharField(label="Usuario", max_length=150, required=True)
+
+    def get_users(self, email):
+        username = (self.cleaned_data.get("username") or "").strip()
+        return User._default_manager.filter(
+            username__iexact=username,
+            email__iexact=email,
+            is_active=True,
+        )
+
 
 MOBILE_RENDICION_PERMISSION_CODE = "rendicioncuentasmensual.manage_mobile_rendicion"
 PWA_OPERATION_PERMISSION_CODES = PWA_ASSIGNABLE_PERMISSION_CODES | {

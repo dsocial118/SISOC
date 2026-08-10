@@ -758,9 +758,11 @@ def test_sincronizar_estado_rendicion_por_documentos_mueve_a_subsanar(mocker):
     )
 
 
-def test_sincronizar_estado_rendicion_por_documentos_mueve_a_finalizada(mocker):
+def test_sincronizar_estado_rendicion_por_documentos_reanuda_revision(mocker):
     rendicion = SimpleNamespace(
         estado=RendicionCuentaMensual.ESTADO_SUBSANAR,
+        etapa_proceso=RendicionCuentaMensual.ETAPA_REVISION_DOCUMENTACION,
+        subestado_proceso=RendicionCuentaMensual.SUBESTADO_PENDIENTE_CORRECCIONES,
         save=mocker.Mock(),
     )
     documentos = [
@@ -777,7 +779,8 @@ def test_sincronizar_estado_rendicion_por_documentos_mueve_a_finalizada(mocker):
         rendicion
     )
 
-    assert rendicion.estado == RendicionCuentaMensual.ESTADO_FINALIZADA
+    assert rendicion.estado == RendicionCuentaMensual.ESTADO_REVISION
+    assert rendicion.subestado_proceso == RendicionCuentaMensual.SUBESTADO_EN_CURSO
     rendicion.save.assert_called_once_with(
         update_fields=["estado", "subestado_proceso", "ultima_modificacion"]
     )
@@ -788,6 +791,8 @@ def test_sincronizar_estado_rendicion_por_documentos_archiva_notificaciones_si_s
 ):
     rendicion = SimpleNamespace(
         estado=RendicionCuentaMensual.ESTADO_SUBSANAR,
+        etapa_proceso=RendicionCuentaMensual.ETAPA_REVISION_DOCUMENTACION,
+        subestado_proceso=RendicionCuentaMensual.SUBESTADO_PENDIENTE_CORRECCIONES,
         save=mocker.Mock(),
     )
     documentos = [
@@ -913,3 +918,34 @@ def test_iniciar_revision_auditoria_actualiza_documentos_con_ids_materializados(
     )
     assert rendicion.subestado_proceso == RendicionCuentaMensual.SUBESTADO_EN_CURSO
     assert rendicion.estado == RendicionCuentaMensual.ESTADO_REVISION
+
+
+@pytest.mark.django_db
+def test_iniciar_revision_auditoria_actualiza_documentos_en_mysql():
+    rendicion = RendicionCuentaMensual.objects.create(
+        mes=7,
+        anio=2026,
+        etapa_proceso=RendicionCuentaMensual.ETAPA_REVISION_AUDITORIA,
+        subestado_proceso=RendicionCuentaMensual.SUBESTADO_PENDIENTE,
+        estado=RendicionCuentaMensual.ESTADO_FINALIZADA,
+    )
+    documento = DocumentacionAdjunta.objects.create(
+        nombre="Documento validado",
+        estado=DocumentacionAdjunta.ESTADO_VALIDADO,
+        observaciones="Revisión territorial",
+        archivo=SimpleUploadedFile("documento.pdf", b"contenido"),
+        rendicion_cuenta_mensual=rendicion,
+    )
+
+    RendicionProcesoService.ejecutar(
+        rendicion=rendicion,
+        accion=RendicionProcesoService.ACCION_INICIAR_REVISION_AUDITORIA,
+        datos={},
+    )
+
+    rendicion.refresh_from_db()
+    documento.refresh_from_db()
+    assert rendicion.subestado_proceso == RendicionCuentaMensual.SUBESTADO_EN_CURSO
+    assert rendicion.estado == RendicionCuentaMensual.ESTADO_REVISION
+    assert documento.estado == DocumentacionAdjunta.ESTADO_PRESENTADO
+    assert documento.observaciones is None

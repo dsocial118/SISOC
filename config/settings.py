@@ -445,6 +445,7 @@ SPECTACULAR_SETTINGS = {
 
 # Dominios / Integraciones
 DOMINIO = os.environ.get("DOMINIO", "localhost:8001")
+PWA_BASE_URL = os.environ.get("PWA_BASE_URL", "")
 
 # Kill-switch de la API server-to-server con la Ticketera (/api/ticketera/).
 # Default True: los endpoints operan igual que hoy. En False responden 503 con

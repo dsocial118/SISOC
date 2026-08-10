@@ -221,6 +221,15 @@ class AdmisionesContextService:
             "total_meriendas": sum(p["merienda"] for p in prestaciones),
             "total_cenas": sum(p["cena"] for p in prestaciones),
             "conclusiones": getattr(informe, "conclusiones", ""),
+            "criterio_seleccionado": informe.get_criterio_seleccionado_display(),
+            "antecedentes_renovaciones": informe.antecedentes_renovaciones,
+            "finalizacion_convenio_pnud_vigente": informe.finalizacion_convenio_pnud_vigente,
+            "acreditaciones_ultimo_convenio": informe.acreditaciones_ultimo_convenio,
+            "monto_total_conveniado_informe": informe.monto_total_conveniado_informe,
+            "monto_total_conveniado": informe.monto_total_conveniado,
+            "expediente_incorporacion": informe.expediente_incorporacion,
+            "convenio_incorporacion": informe.convenio_incorporacion,
+            "presentacion_avales": informe.presentacion_avales,
         }
 
     @staticmethod

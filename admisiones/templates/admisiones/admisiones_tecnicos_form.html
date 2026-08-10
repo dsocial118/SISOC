@@ -228,6 +228,17 @@
                                         <option value="finalizado">Financiamiento finalizado</option>
                                     </select>
                                 </div>
+                                <div class="mt-3">
+                                    <label for="informeComplementarioPrestacionesInicial" class="form-label fw-bold">¿Se realizó Informe Complementario para modificar prestaciones?</label>
+                                    <select class="form-select"
+                                            id="informeComplementarioPrestacionesInicial"
+                                            name="informe_complementario_modifica_prestaciones"
+                                            required>
+                                        <option value="" selected disabled>Seleccione una opción</option>
+                                        <option value="si">Sí</option>
+                                        <option value="no">No</option>
+                                    </select>
+                                </div>
                             {% endif %}
                         </div>
                         <div class="modal-footer">
@@ -265,6 +276,7 @@
                                     {% elif admision.tipo == "renovacion" %}
                                         <div class="col-md-6">{{ validaciones_template_form.tipo_renovacion|as_crispy_field }}</div>
                                         <div class="col-md-6">{{ validaciones_template_form.estado_financiamiento|as_crispy_field }}</div>
+                                        <div class="col-md-6">{{ validaciones_template_form.informe_complementario_modifica_prestaciones|as_crispy_field }}</div>
                                     {% endif %}
                                 </div>
                                 <button type="submit" class="btn btn-primary">Guardar validaciones</button>
@@ -289,6 +301,10 @@
                                 <dt class="col-sm-4">Estado del financiamiento</dt>
                                 <dd class="col-sm-8">
                                     {{ admision.get_estado_financiamiento_display|default:"-" }}
+                                </dd>
+                                <dt class="col-sm-4">Informe Complementario - Modificación de Prestaciones</dt>
+                                <dd class="col-sm-8">
+                                    {{ admision.get_informe_complementario_modifica_prestaciones_display|default:"-" }}
                                 </dd>
                             </dl>
                         {% endif %}

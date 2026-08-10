@@ -158,6 +158,12 @@
                                         </option>
                                     {% endfor %}
                                 </select>
+                                <select name="informe_complementario_modifica_prestaciones" class="form-select mt-2">
+                                    <option value="">Informe complementario: todos</option>
+                                    {% for valor, etiqueta in opciones_informe_complementario %}
+                                        <option value="{{ valor }}" {% if filtros.informe_complementario_modifica_prestaciones == valor %}selected{% endif %}>{{ etiqueta }}</option>
+                                    {% endfor %}
+                                </select>
                             </label>
                         </div>
                         <div class="gt-filters__actions">
@@ -202,7 +208,7 @@
                                                 · Ex PNUD: {{ plantilla.get_es_ex_pnud_display }}
                                                 {% if plantilla.es_ex_pnud == "si" %}· PNUD: {{ plantilla.get_estado_convenio_pnud_display }}{% endif %}
                                             {% else %}
-                                                · {{ plantilla.get_tipo_renovacion_display }} · {{ plantilla.get_estado_financiamiento_display }}
+                                                · {{ plantilla.get_tipo_renovacion_display }} · {{ plantilla.get_estado_financiamiento_display }} · Informe complementario: {{ plantilla.get_informe_complementario_modifica_prestaciones_display }}
                                             {% endif %}
                                         </td>
                                         <td>

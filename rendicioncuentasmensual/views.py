@@ -158,6 +158,8 @@ class RendicionCuentaMensualDetailView(LoginRequiredMixin, DetailView):
             return False
         if rendicion is None:
             return True
+        if rendicion.subestado_proceso != RendicionCuentaMensual.SUBESTADO_EN_CURSO:
+            return False
         if (
             rendicion.etapa_proceso
             == RendicionCuentaMensual.ETAPA_REVISION_DOCUMENTACION
