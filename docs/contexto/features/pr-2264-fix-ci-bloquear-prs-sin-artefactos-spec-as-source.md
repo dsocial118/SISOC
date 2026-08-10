@@ -43,14 +43,14 @@
 - `docs/contexto/features/pr-2255-fixes-post-revision-issues-1961-2076-2079-y-2188.md`
 - `docs/contexto/features/pr-2260-cdi-nomina-restriccion.md`
 - `docs/contexto/features/pr-2261-mi-cuenta.md`
+- `docs/contexto/features/pr-2264-fix-ci-bloquear-prs-sin-artefactos-spec-as-source.md`
 - `docs/registro/cambios/2026-08-10-ci-artefactos-pr-no-trackeados.md`
 - `docs/registro/prs/PR-2222.md`
 - `docs/registro/prs/PR-2227.md`
 - `docs/registro/prs/PR-2228.md`
 - `docs/registro/prs/PR-2230.md`
 - `docs/registro/prs/PR-2231.md`
-- `docs/registro/prs/PR-2235.md`
-- ... y 6 archivo(s) adicional(es) relacionados.
+- ... y 8 archivo(s) adicional(es) relacionados.
 - Documentación sugerida para ampliar contexto:
 - `docs/indice.md`
 - `docs/ia/CONTEXT_HYGIENE.md`
@@ -67,6 +67,7 @@
 - `docs/contexto/features/pr-2255-fixes-post-revision-issues-1961-2076-2079-y-2188.md`
 - `docs/contexto/features/pr-2260-cdi-nomina-restriccion.md`
 - `docs/contexto/features/pr-2261-mi-cuenta.md`
+- `docs/contexto/features/pr-2264-fix-ci-bloquear-prs-sin-artefactos-spec-as-source.md`
 - `docs/registro/cambios/2026-08-10-ci-artefactos-pr-no-trackeados.md`
 - `docs/registro/prs/PR-2222.md`
 - `docs/registro/prs/PR-2227.md`
@@ -79,6 +80,7 @@
 - `docs/registro/prs/PR-2255.md`
 - `docs/registro/prs/PR-2260.md`
 - `docs/registro/prs/PR-2261.md`
+- `docs/registro/prs/PR-2264.md`
 
 ## Trazabilidad
 
