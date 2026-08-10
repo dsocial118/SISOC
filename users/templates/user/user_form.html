@@ -494,13 +494,7 @@
           <tr data-organizacion-row data-organizacion-nombre="${escapeHtml(option.text)}">
             <td class="mobile-org-check-column">
               <div class="form-check mb-0">
-                <input
-                  type="checkbox"
-                  class="form-check-input mobile-organizacion-check"
-                  id="mobile-organizacion-${escapeHtml(option.value)}"
-                  value="${escapeHtml(option.value)}"
-                  ${option.selected ? 'checked' : ''}
-                />
+                <input type="checkbox" class="form-check-input mobile-organizacion-check" id="mobile-organizacion-${escapeHtml(option.value)}" value="${escapeHtml(option.value)}" ${option.selected ? 'checked' : ''} />
               </div>
             </td>
             <td>
@@ -527,13 +521,7 @@
             <tr data-comedor-row data-comedor-id="${escapeHtml(option.value)}" data-comedor-nombre="${escapeHtml(option.text)}" data-organizacion-nombre="${escapeHtml(organizacionName)}">
               <td class="mobile-selector-check-column">
                 <div class="form-check mb-0">
-                  <input
-                    type="checkbox"
-                    class="form-check-input mobile-comedor-check"
-                    id="${tbody.id}-comedor-${escapeHtml(option.value)}"
-                    value="${escapeHtml(option.value)}"
-                    ${option.selected ? 'checked' : ''}
-                  />
+                  <input type="checkbox" class="form-check-input mobile-comedor-check" id="${tbody.id}-comedor-${escapeHtml(option.value)}" value="${escapeHtml(option.value)}" ${option.selected ? 'checked' : ''} />
                 </div>
               </td>
               <td>

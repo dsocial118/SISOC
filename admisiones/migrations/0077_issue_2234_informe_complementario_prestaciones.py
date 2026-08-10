@@ -4,9 +4,7 @@ from django.db import migrations, models
 def completar_renovaciones_existentes(apps, schema_editor):
     Admision = apps.get_model("admisiones", "Admision")
     Plantilla = apps.get_model("admisiones", "PlantillaInformeTecnico")
-    Publicacion = apps.get_model(
-        "admisiones", "PlantillaInformeTecnicoPublicacion"
-    )
+    Publicacion = apps.get_model("admisiones", "PlantillaInformeTecnicoPublicacion")
 
     Admision.objects.filter(tipo="renovacion").update(
         informe_complementario_modifica_prestaciones="no"
@@ -47,5 +45,7 @@ class Migration(migrations.Migration):
                 null=True,
             ),
         ),
-        migrations.RunPython(completar_renovaciones_existentes, migrations.RunPython.noop),
+        migrations.RunPython(
+            completar_renovaciones_existentes, migrations.RunPython.noop
+        ),
     ]

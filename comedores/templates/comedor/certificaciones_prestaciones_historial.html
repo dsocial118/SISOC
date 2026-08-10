@@ -20,14 +20,19 @@
             <form method="get" class="row g-3 mb-4">
                 <div class="col-md-3">
                     <label for="periodo" class="form-label">Período de Certificación</label>
-                    <input type="month" id="periodo" name="periodo" class="form-control" value="{{ filtros.periodo }}">
+                    <input type="month"
+                           id="periodo"
+                           name="periodo"
+                           class="form-control"
+                           value="{{ filtros.periodo }}" />
                 </div>
                 <div class="col-md-4">
                     <label for="usuario" class="form-label">Usuario Generador</label>
                     <select id="usuario" name="usuario" class="form-control">
                         <option value="">Todos</option>
                         {% for item in usuarios_generadores %}
-                            <option value="{{ item.usuario_id }}" {% if filtros.usuario == item.usuario_id|stringformat:"s" %}selected{% endif %}>
+                            <option value="{{ item.usuario_id }}"
+                                    {% if filtros.usuario == item.usuario_id|stringformat:"s" %}selected{% endif %}>
                                 {% if item.usuario__first_name or item.usuario__last_name %}
                                     {{ item.usuario__first_name }} {{ item.usuario__last_name }}
                                 {% else %}
@@ -47,7 +52,8 @@
                 </div>
                 <div class="col-md-2 d-flex align-items-end gap-2">
                     <button type="submit" class="btn btn-primary">Filtrar</button>
-                    <a href="{% url 'certificaciones_prestaciones_historial' comedor.id %}" class="btn btn-secondary">Limpiar</a>
+                    <a href="{% url 'certificaciones_prestaciones_historial' comedor.id %}"
+                       class="btn btn-secondary">Limpiar</a>
                 </div>
             </form>
             <div class="table-responsive">

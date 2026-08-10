@@ -551,16 +551,22 @@
             <!-- Campos específicos para Renovación -->
             {% if admision.tipo and admision.tipo == 'renovacion' %}
                 <div class="card mb-4">
-                    <div class="card-header"><h5>Referencia a la Incorporaci&oacute;n</h5></div>
-                    <div class="card-body"><div class="row">
-                        <div class="col-md-6 mb-3">{{ form.expediente_incorporacion|as_crispy_field }}</div>
-                        <div class="col-md-6 mb-3">{{ form.convenio_incorporacion|as_crispy_field }}</div>
-                        {% if form.presentacion_avales %}<div class="col-12 mb-3">{{ form.presentacion_avales|as_crispy_field }}</div>{% endif %}
-                    </div></div>
+                    <div class="card-header">
+                        <h5>Referencia a la Incorporaci&oacute;n</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">{{ form.expediente_incorporacion|as_crispy_field }}</div>
+                            <div class="col-md-6 mb-3">{{ form.convenio_incorporacion|as_crispy_field }}</div>
+                            {% if form.presentacion_avales %}<div class="col-12 mb-3">{{ form.presentacion_avales|as_crispy_field }}</div>{% endif %}
+                        </div>
+                    </div>
                 </div>
                 {% if form.antecedentes_renovaciones_campos %}
                     <div class="card mb-4">
-                        <div class="card-header"><h5>Antecedentes de Renovaciones</h5></div>
+                        <div class="card-header">
+                            <h5>Antecedentes de Renovaciones</h5>
+                        </div>
                         <div class="card-body">
                             {% for antecedente in form.antecedentes_renovaciones_campos %}
                                 <div class="border rounded p-3 mb-3">

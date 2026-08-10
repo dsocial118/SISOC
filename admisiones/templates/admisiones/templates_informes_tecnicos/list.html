@@ -158,10 +158,12 @@
                                         </option>
                                     {% endfor %}
                                 </select>
-                                <select name="informe_complementario_modifica_prestaciones" class="form-select mt-2">
+                                <select name="informe_complementario_modifica_prestaciones"
+                                        class="form-select mt-2">
                                     <option value="">Informe complementario: todos</option>
                                     {% for valor, etiqueta in opciones_informe_complementario %}
-                                        <option value="{{ valor }}" {% if filtros.informe_complementario_modifica_prestaciones == valor %}selected{% endif %}>{{ etiqueta }}</option>
+                                        <option value="{{ valor }}"
+                                                {% if filtros.informe_complementario_modifica_prestaciones == valor %}selected{% endif %}>{{ etiqueta }}</option>
                                     {% endfor %}
                                 </select>
                             </label>

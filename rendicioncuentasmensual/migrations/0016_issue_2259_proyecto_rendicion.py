@@ -5,7 +5,9 @@ import django.db.models.deletion
 def vincular_proyectos_existentes(apps, schema_editor):
     Rendicion = apps.get_model("rendicioncuentasmensual", "RendicionCuentaMensual")
     Proyecto = apps.get_model("organizaciones", "ProyectoOrganizacion")
-    for rendicion in Rendicion.objects.filter(proyecto__isnull=True).select_related("comedor"):
+    for rendicion in Rendicion.objects.filter(proyecto__isnull=True).select_related(
+        "comedor"
+    ):
         comedor = rendicion.comedor
         if not comedor:
             continue
@@ -30,7 +32,13 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name="rendicioncuentamensual",
             name="proyecto",
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.PROTECT, related_name="rendiciones_cuentas_mensuales", to="organizaciones.proyectoorganizacion"),
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.PROTECT,
+                related_name="rendiciones_cuentas_mensuales",
+                to="organizaciones.proyectoorganizacion",
+            ),
         ),
         migrations.RunPython(vincular_proyectos_existentes, migrations.RunPython.noop),
     ]
