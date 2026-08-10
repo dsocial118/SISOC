@@ -1,9 +1,12 @@
 """Tests unitarios para la automatización de documentación de PR."""
 
+import shutil
 import subprocess
 from dataclasses import replace
 from datetime import date
 from pathlib import Path
+
+import pytest
 
 from scripts.ci import pr_doc_automation
 
@@ -42,6 +45,10 @@ def test_pr_docs_workflow_detecta_artefactos_nuevos_no_trackeados():
     assert "exit 1" in workflow
 
 
+@pytest.mark.skipif(
+    shutil.which("git") is None,
+    reason="requiere el ejecutable git para probar el estado del worktree",
+)
 def test_git_status_detecta_los_artefactos_nuevos_que_git_diff_omite(tmp_path):
     """Reproduce el estado no trackeado que impedía el commit automático."""
 
