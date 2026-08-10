@@ -39,4 +39,6 @@ jobs:
                   pip install -r requirements/arch.txt
 
             - name: Run import-linter
-              run: lint-imports
+              run: |
+                  lint-imports
+                  lint-imports --config .importlinter_celiaquia_config

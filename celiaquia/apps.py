@@ -7,8 +7,3 @@ class CeliaquiaConfig(AppConfig):
 
     def ready(self):  # pragma: no cover - Django startup
         from . import signals  # pylint: disable=import-outside-toplevel, unused-import
-        from .ciudadano_detail import (  # pylint: disable=import-outside-toplevel
-            registrar_contribucion_ciudadano,
-        )
-
-        registrar_contribucion_ciudadano()
