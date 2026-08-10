@@ -8,6 +8,7 @@ from functools import lru_cache
 
 from django.db import models, transaction
 from django.utils import timezone
+from django.utils.module_loading import import_string
 
 from .state_sync import (
     build_soft_delete_operational_updates,
@@ -498,6 +499,12 @@ def execute_restore_plan(plan: CascadePlan, *, user=None) -> tuple[int, dict]:
 
     with transaction.atomic():
         soft_nodes_by_model = _group_soft_nodes(plan)
+        for node in plan.iter_nodes_by_mode(MODE_SOFT):
+            validator_path = getattr(
+                node.instance.__class__, "SOFT_RESTORE_VALIDATOR", None
+            )
+            if validator_path:
+                import_string(validator_path)(node.instance)
         restore_updates_by_model = {
             model: build_soft_restore_operational_updates(model)
             for model in soft_nodes_by_model
