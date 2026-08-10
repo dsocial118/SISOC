@@ -50,7 +50,7 @@ from comedores.utils import (
     preload_valores_comida_cache,
     usa_datos_convenio_pnud,
 )
-from centrodefamilia.services.consulta_renaper import consultar_datos_renaper
+from core.services.renaper import consultar_datos_renaper
 from core.models import Provincia, Municipio, Localidad, Nacionalidad
 from admisiones.models.admisiones import (
     Admision,
@@ -1372,7 +1372,7 @@ class ComedorService:
             if resultado.get("success"):
                 return resultado
             last_error = resultado.get("error") or last_error
-            if not resultado.get("raw_response"):
+            if resultado.get("error_type") != "no_match":
                 return {
                     "success": False,
                     "error": last_error or "No se encontraron datos en RENAPER.",

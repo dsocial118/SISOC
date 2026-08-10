@@ -181,6 +181,17 @@ forbidden_modules =
     ocr
 ignore_imports =
 
+[importlinter:contract:renaper-consumers-no-centrodefamilia]
+name = Celiaquia y Comedores consumen RENAPER desde la fachada compartida
+type = forbidden
+allow_indirect_imports = True
+source_modules =
+    celiaquia
+    comedores
+forbidden_modules =
+    centrodefamilia
+ignore_imports =
+
 [importlinter:contract:users-no-domains]
 name = users no debe importar apps de dominio
 type = forbidden
