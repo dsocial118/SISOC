@@ -14,6 +14,6 @@
 
 ## Servicios externos
 - GESTIONAR: sincronización asíncrona de comedores, referentes, observaciones y relevamientos mediante `requests` y `ThreadPoolExecutor`, usando claves `GESTIONAR_API_*` y `DOMINIO` para adjuntar imágenes. Evidencia: comedores/tasks.py:11-125 y relevamientos/tasks.py:13-85; config/settings.py:236-241.
-- RENAPER: cliente HTTP compartido en `core/integrations/renaper.py`, con token cacheado y fachada compatible en `core/services/renaper.py`; credenciales `RENAPER_API_*`, timeout y TTL configurables. No registra DNI, tokens ni payloads remotos.
+- RENAPER: cliente HTTP compartido en `core/integrations/renaper.py`, con autenticación efímera por consulta y fachada compatible en `core/services/renaper.py`; credenciales `RENAPER_API_*`, timeout y retries/backoff configurables. No persiste tokens en cache ni registra DNI, tokens o payloads remotos.
 - Google Maps: clave opcional `GOOGLE_MAPS_API_KEY`. Evidencia: config/settings.py:241.
 - Correo saliente: Django usa `send_mail` y puede operar con backend SMTP. Para Resend, la configuración recomendada es `EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend`, `EMAIL_HOST=smtp.resend.com`, `EMAIL_PORT=587`, `EMAIL_HOST_USER=resend`, `EMAIL_HOST_PASSWORD=<API_KEY>`, `EMAIL_USE_TLS=true`, `EMAIL_USE_SSL=false` y un `DEFAULT_FROM_EMAIL` verificado en el proveedor. Si falta alguno de los datos críticos del SMTP, SISOC vuelve al backend de consola para no romper entornos locales. Evidencia: config/settings.py:189-242; users/services_auth.py:45-81.
