@@ -1050,17 +1050,15 @@ class NominaCentroInfanciaAdminForm(forms.ModelForm):
         estado = cleaned_data.get("estado")
         instancia = self.instance
 
-        if (
-            not ciudadano
-            or not centro
-            or estado not in ESTADOS_NOMINA_CDI_VIGENTE
-        ):
+        if not ciudadano or not centro or estado not in ESTADOS_NOMINA_CDI_VIGENTE:
             return cleaned_data
 
         if instancia.pk:
-            datos_persistidos = NominaCentroInfancia.objects.filter(
-                pk=instancia.pk
-            ).values("estado", "centro_id", "ciudadano_id").first()
+            datos_persistidos = (
+                NominaCentroInfancia.objects.filter(pk=instancia.pk)
+                .values("estado", "centro_id", "ciudadano_id")
+                .first()
+            )
             if (
                 datos_persistidos
                 and datos_persistidos["estado"] in ESTADOS_NOMINA_CDI_VIGENTE
