@@ -310,15 +310,11 @@ class RendicionCuentaMensualService:
         numero_rendicion,
         periodo,
         proyecto=None,
-        exclude_id=None,
     ):
         periodo_inicio, periodo_fin = periodo
         queryset = RendicionCuentaMensualService._get_project_queryset(
             comedor, proyecto
         )
-        if exclude_id:
-            queryset = queryset.exclude(id=exclude_id)
-
         if queryset.filter(
             convenio=convenio,
             numero_rendicion=numero_rendicion,

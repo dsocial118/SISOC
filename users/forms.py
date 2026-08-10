@@ -40,7 +40,7 @@ class UsernameEmailPasswordResetForm(PasswordResetForm):
 
     def get_users(self, email):
         username = (self.cleaned_data.get("username") or "").strip()
-        return User._default_manager.filter(
+        return User.objects.filter(
             username__iexact=username,
             email__iexact=email,
             is_active=True,

@@ -137,6 +137,25 @@ class ComedorDetailViewSet(
         filtered_rows = ComedorService.get_filtered_comedores(self.request, user=user)
         return [row["id"] for row in filtered_rows]
 
+    @staticmethod
+    def _get_active_projects_by_organization(queryset):
+        organization_ids = {
+            comedor.organizacion_id for comedor in queryset if comedor.organizacion_id
+        }
+        projects_by_organization = {}
+        for proyecto in ProyectoOrganizacion.objects.filter(
+            organizacion_id__in=organization_ids,
+            activo=True,
+        ).order_by("codigo"):
+            projects_by_organization.setdefault(proyecto.organizacion_id, []).append(
+                {
+                    "id": proyecto.id,
+                    "codigo": proyecto.codigo,
+                    "nombre": proyecto.nombre,
+                }
+            )
+        return projects_by_organization
+
     def _get_pwa_spaces_selector_rows(self, user):
         access_rows = list(
             get_access_rows(user).select_related(
@@ -164,21 +183,7 @@ class ComedorDetailViewSet(
             .order_by("nombre", "id")
         )
         queryset = self._filter_pwa_visible_spaces(queryset)
-        organizacion_ids = {
-            comedor.organizacion_id for comedor in queryset if comedor.organizacion_id
-        }
-        proyectos_por_organizacion = {}
-        for proyecto in ProyectoOrganizacion.objects.filter(
-            organizacion_id__in=organizacion_ids,
-            activo=True,
-        ).order_by("codigo"):
-            proyectos_por_organizacion.setdefault(proyecto.organizacion_id, []).append(
-                {
-                    "id": proyecto.id,
-                    "codigo": proyecto.codigo,
-                    "nombre": proyecto.nombre,
-                }
-            )
+        proyectos_por_organizacion = self._get_active_projects_by_organization(queryset)
 
         rows = []
         for comedor in queryset:
