@@ -1,6 +1,7 @@
 """Tests unitarios para la automatización de documentación de PR."""
 
 import subprocess
+from dataclasses import replace
 from datetime import date
 from pathlib import Path
 
@@ -379,6 +380,59 @@ def test_sync_pr_artifacts_genera_los_dos_artefactos_para_pr_a_development(
     ]
     assert not list((tmp_path / "docs/registro/releases/pending").glob("*.md"))
     assert not (tmp_path / "CHANGELOG.md").exists()
+
+
+def test_sync_pr_artifacts_ignora_updated_at_para_evitar_autocommits_en_bucle(
+    tmp_path, monkeypatch
+):
+    """Un push del bot no debe cambiar artefactos sólo por el timestamp del PR."""
+
+    monkeypatch.setattr(
+        pr_doc_automation, "DOCS_PR_DIR", tmp_path / "docs/registro/prs"
+    )
+    monkeypatch.setattr(
+        pr_doc_automation,
+        "DOCS_FEATURE_DIR",
+        tmp_path / "docs/contexto/features",
+    )
+    monkeypatch.setattr(
+        pr_doc_automation,
+        "DOCS_RELEASE_PENDING_DIR",
+        tmp_path / "docs/registro/releases/pending",
+    )
+    monkeypatch.setattr(
+        pr_doc_automation,
+        "CHANGELOG_PATH",
+        tmp_path / "CHANGELOG.md",
+    )
+
+    pr = pr_doc_automation.PullRequestData(
+        number=2264,
+        title="Documentar artefactos",
+        body="",
+        html_url="https://example.test/pr/2264",
+        base_ref="development",
+        head_ref="feature/docs",
+        author="tester",
+        updated_at="2026-08-10T17:41:37Z",
+        repo_full_name="org/repo",
+    )
+
+    pr_doc_automation.sync_pr_artifacts(
+        pr,
+        token="fake-token",
+        changed_files=[".github/workflows/pr-docs.yml"],
+    )
+    document_path = tmp_path / "docs/registro/prs/PR-2264.md"
+    first_content = document_path.read_text(encoding="utf-8")
+
+    pr_doc_automation.sync_pr_artifacts(
+        replace(pr, updated_at="2026-08-10T18:35:35Z"),
+        token="fake-token",
+        changed_files=[".github/workflows/pr-docs.yml"],
+    )
+
+    assert document_path.read_text(encoding="utf-8") == first_content
 
 
 def test_sync_pr_artifacts_mueve_pr_de_fecha_y_limpia_bloque_obsoleto(
