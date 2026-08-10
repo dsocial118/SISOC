@@ -8,9 +8,7 @@ from pathlib import Path
 from scripts.ci import pr_doc_automation
 
 
-WORKFLOW_PATH = (
-    Path(__file__).resolve().parents[1] / ".github/workflows/pr-docs.yml"
-)
+WORKFLOW_PATH = Path(__file__).resolve().parents[1] / ".github/workflows/pr-docs.yml"
 
 
 def test_pr_docs_workflow_detecta_artefactos_nuevos_no_trackeados():
@@ -25,7 +23,9 @@ def test_pr_docs_workflow_detecta_artefactos_nuevos_no_trackeados():
     assert "- homologacion" in workflow
     assert "- main" in workflow
     assert "git status --porcelain --untracked-files=all --" in workflow
-    assert "git diff --quiet -- docs/registro/prs docs/contexto/features" not in workflow
+    assert (
+        "git diff --quiet -- docs/registro/prs docs/contexto/features" not in workflow
+    )
     assert "generate_pr_artifacts:" in workflow
     assert "contents: write" in workflow
     assert (
@@ -47,9 +47,7 @@ def test_git_status_detecta_los_artefactos_nuevos_que_git_diff_omite(tmp_path):
 
     subprocess.run(["git", "init"], cwd=tmp_path, check=True, capture_output=True)
     record_path = tmp_path / "docs/registro/prs/PR-2260.md"
-    feature_path = (
-        tmp_path / "docs/contexto/features/pr-2260-cdi-nomina-restriccion.md"
-    )
+    feature_path = tmp_path / "docs/contexto/features/pr-2260-cdi-nomina-restriccion.md"
     record_path.parent.mkdir(parents=True)
     feature_path.parent.mkdir(parents=True)
     record_path.write_text("registro\n", encoding="utf-8")
@@ -85,7 +83,9 @@ def test_git_status_detecta_los_artefactos_nuevos_que_git_diff_omite(tmp_path):
 
     assert diff.returncode == 0
     assert "?? docs/registro/prs/PR-2260.md" in status.stdout
-    assert "?? docs/contexto/features/pr-2260-cdi-nomina-restriccion.md" in status.stdout
+    assert (
+        "?? docs/contexto/features/pr-2260-cdi-nomina-restriccion.md" in status.stdout
+    )
 
 
 def test_parse_pr_body_metadata_extrae_campos_relevantes():
@@ -371,13 +371,9 @@ def test_sync_pr_artifacts_genera_los_dos_artefactos_para_pr_a_development(
     )
 
     assert (tmp_path / "docs/registro/prs/PR-2260.md").is_file()
-    feature_files = list(
-        (tmp_path / "docs/contexto/features").glob("pr-2260-*.md")
-    )
+    feature_files = list((tmp_path / "docs/contexto/features").glob("pr-2260-*.md"))
 
-    assert [path.name for path in feature_files] == [
-        "pr-2260-nomina-cdi.md"
-    ]
+    assert [path.name for path in feature_files] == ["pr-2260-nomina-cdi.md"]
     assert not list((tmp_path / "docs/registro/releases/pending").glob("*.md"))
     assert not (tmp_path / "CHANGELOG.md").exists()
 
