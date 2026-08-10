@@ -16,6 +16,8 @@ def test_select2_no_modifica_overflow_del_layout_principal():
 
     assert "appContent.style.overflow" not in javascript
     assert "document.body.style.overflow" not in javascript
+    assert "document.documentElement.style.overflow" not in javascript
+    assert "classList.add('select2-container--open')" not in javascript
     assert "body.select2-container--open" not in stylesheet
 
 
