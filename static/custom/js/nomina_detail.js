@@ -159,7 +159,10 @@ document.addEventListener("DOMContentLoaded", function() {
         for (const field in data.errors) {
           const div = document.createElement("div");
           div.classList.add("text-danger");
-          div.textContent = `${field}: ${data.errors[field].join(", ")}`;
+          const mensaje = data.errors[field].join(", ");
+          // Los errores generales (no asociados a un campo) se muestran solos:
+          // el prefijo "__all__" no le dice nada al usuario.
+          div.textContent = field === "__all__" ? mensaje : `${field}: ${mensaje}`;
           modalBody.appendChild(div);
         }
       }

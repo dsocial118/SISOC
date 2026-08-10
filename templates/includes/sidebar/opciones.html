@@ -729,4 +729,12 @@
             {% endif %}
         </ul>
     </li>
+    <!-- MI CUENTA (siempre al pie del sidebar) -->
+    <li class="nav-item mt-auto border-top pt-2">
+        <a href="{% url 'mi_cuenta' %}"
+           class="nav-link {% if pagina_actual == 'mi-cuenta/' %}active{% endif %}">
+            <i class="nav-icon fas fa-user-circle"></i>
+            <p>Mi cuenta</p>
+        </a>
+    </li>
 {% endwith %}

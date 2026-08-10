@@ -352,6 +352,12 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - `users/bootstrap/groups_seed.py`
 - `users/management/commands/create_groups.py`
 - templates en `users/templates/`
+- La autogestión vive en `MiCuentaForm`, `MiCuentaView` y la ruta `/mi-cuenta/`.
+  La confirmación inicial usa `/mi-cuenta/confirmar/` y
+  `ProfileConfirmationMiddleware`, registrado después del cambio de contraseña.
+  El middleware solo bloquea web: `/api/` está exento; al tocar ese flujo, revisar
+  `users/profile_utils.py`, las migraciones `0044`/`0045` y
+  `tests/test_users_mi_cuenta.py`.
 
 ### Si necesitas cambiar la importacion masiva de usuarios
 
