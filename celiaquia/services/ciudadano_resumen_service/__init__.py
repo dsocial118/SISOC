@@ -1,7 +1,13 @@
-"""Compatibility alias for the citizen-summary service implementation."""
+"""Read projection used by the public Celiaquía API."""
 
-import sys as _sys
+from .impl import (
+    LegajoResumenCiudadano,
+    ResumenCiudadano,
+    obtener_resumen_ciudadano,
+)
 
-from . import impl as _impl
-
-_sys.modules[__name__] = _impl
+__all__ = [
+    "LegajoResumenCiudadano",
+    "ResumenCiudadano",
+    "obtener_resumen_ciudadano",
+]

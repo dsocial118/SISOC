@@ -31,7 +31,7 @@ def test_obtener_resumen_ciudadano_expone_dtos_y_no_modelos(mocker):
         creado_en=creado_en,
     )
     filter_mock = mocker.patch(
-        "celiaquia.services.ciudadano_resumen_service.ExpedienteCiudadano.objects.filter",
+        "celiaquia.services.ciudadano_resumen_service.impl.ExpedienteCiudadano.objects.filter",
         return_value=_LegajosQuery([legajo]),
     )
 
@@ -51,7 +51,7 @@ def test_obtener_resumen_ciudadano_expone_dtos_y_no_modelos(mocker):
 
 def test_obtener_resumen_ciudadano_sin_legajos(mocker):
     mocker.patch(
-        "celiaquia.services.ciudadano_resumen_service.ExpedienteCiudadano.objects.filter",
+        "celiaquia.services.ciudadano_resumen_service.impl.ExpedienteCiudadano.objects.filter",
         return_value=_LegajosQuery([]),
     )
 
