@@ -787,6 +787,10 @@ Marcar esas zonas como `A inferir` hasta relevarlas cuando una tarea real las to
 - `.github/workflows/release-sanity.yml`
 - `.github/workflows/release-orchestrator.yml`
 - `.github/workflows/sync-main-downstream.yml`
+- `.github/workflows/pr-docs.yml`: genera los artefactos spec-as-source; usa
+  `git status --porcelain --untracked-files=all` para incluir archivos nuevos.
+  Solo pushea en ramas internas no protegidas; para forks y ramas protegidas
+  falla `sync_pr_artifacts` con los paths pendientes para bloquear el merge.
 - `.github/workflows/deploy.yml`
 - `scripts/ai/codex_run.ps1`
 - `scripts/ai/codex_task.ps1`
