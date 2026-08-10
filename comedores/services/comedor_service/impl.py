@@ -50,7 +50,7 @@ from comedores.utils import (
     preload_valores_comida_cache,
     usa_datos_convenio_pnud,
 )
-from centrodefamilia.services.consulta_renaper import consultar_datos_renaper
+from core.services.renaper import consultar_datos_renaper
 from core.models import Provincia, Municipio, Localidad, Nacionalidad
 from admisiones.models.admisiones import (
     Admision,

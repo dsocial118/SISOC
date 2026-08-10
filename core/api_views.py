@@ -51,9 +51,7 @@ class RenaperConsultaViewSet(viewsets.ViewSet):
         """
         serializer = RenaperConsultaSerializer(data=request.data)
         if not serializer.is_valid():
-            logger.warning(
-                f"Validación fallida en /api/renaper/consultar: {serializer.errors}"
-            )
+            logger.warning("renaper.api.invalid_request")
             return Response(
                 {
                     "success": False,
@@ -66,17 +64,17 @@ class RenaperConsultaViewSet(viewsets.ViewSet):
         dni = serializer.validated_data["dni"]
         sexo = serializer.validated_data["sexo"]
 
-        # Log técnico (sin PII detallado)
-        logger.info(
-            f"Consulta RENAPER vía API: DNI hash={hash(dni) % 10000}, sexo={sexo}"
-        )
+        logger.info("renaper.api.request")
 
         try:
             response = consultar_datos_renaper(dni, sexo)
-        except Exception as exc:
-            logger.error(f"Excepción en consulta RENAPER: {str(exc)}")
+        except Exception:  # pylint: disable=broad-exception-caught
+            logger.error("renaper.api.unhandled_error")
             return Response(
-                {"success": False, "error": f"Error interno: {str(exc)}"},
+                {
+                    "success": False,
+                    "error": "No se pudo consultar RENAPER en este momento.",
+                },
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 

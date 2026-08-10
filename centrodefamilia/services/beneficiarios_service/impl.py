@@ -23,7 +23,7 @@ from centrodefamilia.services.beneficiarios_filter_config import (
     NUM_OPS as BENEFICIARIO_NUM_OPS,
     TEXT_OPS as BENEFICIARIO_TEXT_OPS,
 )
-from centrodefamilia.services.consulta_renaper import consultar_datos_renaper
+from core.services.renaper import consultar_datos_renaper
 from centrodefamilia.services.responsables_filter_config import (
     CHOICE_OPS as RESPONSABLE_CHOICE_OPS,
     DATE_OPS as RESPONSABLE_DATE_OPS,
