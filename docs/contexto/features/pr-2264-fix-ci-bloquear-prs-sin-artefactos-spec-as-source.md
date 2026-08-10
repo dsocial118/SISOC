@@ -50,7 +50,7 @@
 - `docs/registro/prs/PR-2228.md`
 - `docs/registro/prs/PR-2230.md`
 - `docs/registro/prs/PR-2231.md`
-- ... y 8 archivo(s) adicional(es) relacionados.
+- ... y 9 archivo(s) adicional(es) relacionados.
 - Documentación sugerida para ampliar contexto:
 - `docs/indice.md`
 - `docs/ia/CONTEXT_HYGIENE.md`
