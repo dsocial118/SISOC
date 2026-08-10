@@ -122,6 +122,11 @@ def _safe_float_env(var_name: str, default: float) -> float:
         return default
 
 
+def _safe_positive_float_env(var_name: str, default: float) -> float:
+    value = _safe_float_env(var_name, default)
+    return value if value > 0 else default
+
+
 def _safe_bool_env(var_name: str, default: bool) -> bool:
     raw_value = os.getenv(var_name)
     if raw_value is None or raw_value.strip() == "":
@@ -206,6 +211,7 @@ MIDDLEWARE = [
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "users.middleware.FirstLoginPasswordChangeMiddleware",
+    "users.middleware.ProfileConfirmationMiddleware",
     "sentry.middleware.SentryUserContextMiddleware",
     "auditlog.middleware.AuditlogMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
@@ -476,6 +482,10 @@ else:
 RENAPER_API_USERNAME = os.getenv("RENAPER_API_USERNAME")
 RENAPER_API_PASSWORD = os.getenv("RENAPER_API_PASSWORD")
 RENAPER_API_URL = "https://wsv2.secretarianaf.gob.ar/api"
+RENAPER_REQUEST_TIMEOUT_SECONDS = _safe_positive_float_env(
+    "RENAPER_REQUEST_TIMEOUT_SECONDS",
+    10.0,
+)
 RENAPER_VALIDACION_MAX_RETRIES = _safe_int_env(
     "RENAPER_VALIDACION_MAX_RETRIES",
     1,

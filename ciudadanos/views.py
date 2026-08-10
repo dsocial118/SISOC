@@ -18,6 +18,7 @@ from django.views.generic import (
     UpdateView,
 )
 
+from celiaquia.api import obtener_resumen_ciudadano
 from ciudadanos.ciudadanos_filter_config import (
     CHOICE_OPS as CIUDADANOS_CHOICE_OPS,
     FIELD_MAP as CIUDADANOS_FIELD_MAP,
@@ -287,9 +288,13 @@ class CiudadanosDetailView(LoginRequiredMixin, PermissionRequiredMixin, DetailVi
         }
 
     def get_celiaquia_context(self, ciudadano):
-        return obtener_contexto_contribucion(
-            "celiaquia", ciudadano, logger, lambda: {"expedientes_celiaquia": []}
-        )
+        try:
+            return {"celiaquia_resumen": obtener_resumen_ciudadano(ciudadano.pk)}
+        except Exception:
+            logger.exception(
+                "Error cargando expedientes celiaquia para ciudadano %s", ciudadano.pk
+            )
+            return {"celiaquia_resumen": None}
 
     def get_cdf_context(self, ciudadano):
         return obtener_contexto_contribucion(

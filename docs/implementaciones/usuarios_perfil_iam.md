@@ -96,6 +96,24 @@ Reglas actuales para usuarios con acceso PWA creados desde web:
   - `must_change_password` pasa a `False`;
   - se limpia `temporary_password_plaintext`.
 
+### Mi cuenta y confirmación de datos personales
+
+- La autogestión de datos vive en `/mi-cuenta/`; el usuario solo puede editar
+  su propio nombre, apellido, DNI, CUIL, mail y correo institucional.
+- `/mi-cuenta/confirmar/` es un gate de confirmación de una sola vez para los
+  perfiles históricos activos. DNI, CUIL y la declaración de confidencialidad
+  son obligatorios; el correo institucional es opcional.
+- `ProfileConfirmationMiddleware` se ejecuta después de
+  `FirstLoginPasswordChangeMiddleware`: primero se exige el cambio de
+  contraseña, si corresponde, y luego la confirmación de datos. Las rutas API
+  están exentas para no bloquear clientes PWA/mobile.
+- El servidor valida y guarda con `MiCuentaForm`; el botón deshabilitado en la
+  interfaz solo es una ayuda de UX y no reemplaza la validación del formulario.
+- `Profile.needs_profile_confirmation` y `datos_confirmados_at` registran el
+  estado de la confirmación. Las migraciones también crean perfiles faltantes
+  para usuarios activos históricos; los nuevos perfiles conservan el default
+  de no requerir confirmación.
+
 ### Historial de acceso PWA
 
 - Los accesos mobile del usuario no se borran físicamente al quitar permisos.
@@ -132,6 +150,8 @@ Reglas actuales para usuarios con acceso PWA creados desde web:
 - `users/migrations/0013_profile_password_security_fields.py`
 - `users/migrations/0014_bootstrap_group_permissions.py`
 - `users/migrations/0015_assign_bootstrap_group_permissions.py`
+- `users/migrations/0044_profile_confirmacion_datos.py`
+- `users/migrations/0045_profile_correo_institucional_declaracion.py`
 
 ## 5) Operación post-deploy
 
@@ -145,6 +165,10 @@ Validaciones mínimas:
 - Un usuario con permiso puede ver/entrar al módulo.
 - Un usuario sin permiso no ve el ítem de sidebar y recibe `403` por URL directa.
 - Reset de contraseña web y API funcionan de punta a punta.
+- Tras desplegar las migraciones 0044/0045, un usuario web activo sin
+  confirmación debe ser redirigido a `/mi-cuenta/confirmar/`; completar el
+  formulario debe quitar el bloqueo. Verificar también que una llamada `/api/`
+  autenticada no sea redirigida.
 
 ## Guía para nuevas features
 
