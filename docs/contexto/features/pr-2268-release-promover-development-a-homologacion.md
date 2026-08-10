@@ -56,7 +56,7 @@
 - `centrodefamilia/services/beneficiarios_service/impl.py`
 - `centrodefamilia/services/consulta_renaper/__init__.py`
 - `centrodefamilia/services/consulta_renaper/impl.py`
-- ... y 86 archivo(s) adicional(es) relacionados.
+- ... y 88 archivo(s) adicional(es) relacionados.
 - Documentación sugerida para ampliar contexto:
 - `docs/indice.md`
 - `docs/ia/CONTEXT_HYGIENE.md`
@@ -75,6 +75,7 @@
 - `docs/contexto/features/pr-2260-cdi-nomina-restriccion.md`
 - `docs/contexto/features/pr-2261-mi-cuenta.md`
 - `docs/contexto/features/pr-2264-fix-ci-bloquear-prs-sin-artefactos-spec-as-source.md`
+- `docs/contexto/features/pr-2268-release-promover-development-a-homologacion.md`
 - `docs/contexto/panorama.md`
 - `docs/flujos/consulta_renaper.md`
 - `docs/flujos/derivar_nomina_centros.md`
@@ -100,6 +101,7 @@
 - `docs/registro/prs/PR-2260.md`
 - `docs/registro/prs/PR-2261.md`
 - `docs/registro/prs/PR-2264.md`
+- `docs/registro/prs/PR-2268.md`
 
 ## Trazabilidad
 
