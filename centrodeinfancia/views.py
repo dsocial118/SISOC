@@ -76,6 +76,7 @@ from centrodeinfancia.services import (
     AsistenciaNominaCentroInfanciaService,
     CentroDeInfanciaService,
     bloquear_ciudadano_para_nomina_cdi,
+    puede_reactivar_nomina_cdi_bajo_bloqueo,
     tiene_nomina_cdi_vigente_en_otro_centro,
 )
 from centrodeinfancia.services_user_provisioning import (
@@ -1368,6 +1369,14 @@ class NominaCentroInfanciaEditView(
     def get_success_url(self):
         return reverse("centrodeinfancia_nomina_ver", kwargs={"pk": self.kwargs["pk"]})
 
+    def form_valid(self, form):
+        with transaction.atomic():
+            if not puede_reactivar_nomina_cdi_bajo_bloqueo(form.instance):
+                form.add_error(None, MENSAJE_NOMINA_VIGENTE_EN_OTRO_CENTRO)
+                return self.form_invalid(form)
+            self.object = form.save()
+        return redirect(self.get_success_url())
+
 
 class NominaCentroInfanciaCreateView(
     _AuditoriaSoloLecturaMixin,
@@ -1742,7 +1751,11 @@ def nomina_centrodeinfancia_editar_ajax(request, pk):
             raise PermissionDenied("El rol Auditoría tiene acceso de solo lectura.")
         form = NominaCentroInfanciaForm(request.POST, instance=nomina)
         if form.is_valid():
-            form.save()
+            with transaction.atomic():
+                if not puede_reactivar_nomina_cdi_bajo_bloqueo(form.instance):
+                    form.add_error(None, MENSAJE_NOMINA_VIGENTE_EN_OTRO_CENTRO)
+                    return JsonResponse({"success": False, "errors": form.errors})
+                form.save()
             return JsonResponse(
                 {"success": True, "message": "Datos modificados con éxito."}
             )

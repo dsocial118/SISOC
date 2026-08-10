@@ -1036,6 +1036,49 @@ class NominaCentroInfanciaForm(NominaCentroInfanciaBaseForm):
     pass
 
 
+class NominaCentroInfanciaAdminForm(forms.ModelForm):
+    """Aplica la regla de vigencia única también en el admin de Django."""
+
+    class Meta:
+        model = NominaCentroInfancia
+        fields = "__all__"
+
+    def clean(self):
+        cleaned_data = super().clean()
+        ciudadano = cleaned_data.get("ciudadano")
+        centro = cleaned_data.get("centro")
+        estado = cleaned_data.get("estado")
+        instancia = self.instance
+
+        if (
+            not ciudadano
+            or not centro
+            or estado not in ESTADOS_NOMINA_CDI_VIGENTE
+        ):
+            return cleaned_data
+
+        if instancia.pk:
+            datos_persistidos = NominaCentroInfancia.objects.filter(
+                pk=instancia.pk
+            ).values("estado", "centro_id", "ciudadano_id").first()
+            if (
+                datos_persistidos
+                and datos_persistidos["estado"] in ESTADOS_NOMINA_CDI_VIGENTE
+                and datos_persistidos["centro_id"] == centro.pk
+                and datos_persistidos["ciudadano_id"] == ciudadano.pk
+            ):
+                return cleaned_data
+
+        if tiene_nomina_cdi_vigente_en_otro_centro(
+            ciudadano.pk,
+            centro.pk,
+            excluir_nomina_id=instancia.pk,
+        ):
+            raise ValidationError(MENSAJE_NOMINA_VIGENTE_EN_OTRO_CENTRO)
+
+        return cleaned_data
+
+
 class NominaCentroInfanciaCreateForm(NominaCentroInfanciaBaseForm):
     pass
 

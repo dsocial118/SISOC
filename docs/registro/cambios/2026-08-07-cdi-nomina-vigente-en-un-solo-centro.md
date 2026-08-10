@@ -24,6 +24,8 @@ crea Pendiente en la misma transacción).
   delete) quedan fuera del cálculo de vigencia sin filtros extra.
 - `bloquear_ciudadano_para_nomina_cdi(ciudadano_id)`: toma el lock de fila del ciudadano
   dentro de la transacción en curso.
+- `puede_reactivar_nomina_cdi_bajo_bloqueo(...)`: revalida y serializa la transición
+  desde Baja inmediatamente antes de persistirla.
 - Derivación (`transferir_ciudadano_entre_centros`): la validación de destino se extrajo a
   `_validar_vigencia_para_derivacion` (se usaba duplicada dentro y fuera de la
   transacción) y ahora también cubre la vigencia en un **tercer** centro, que antes
@@ -47,6 +49,15 @@ crea Pendiente en la misma transacción).
 - **Sólo valida la transición hacia un estado vigente.** Una ficha que ya estaba vigente
   puede seguir editándose: los duplicados históricos están fuera de alcance y no deben
   volverse ineditables.
+- `NominaCentroInfanciaAdminForm`: aplica la misma validación al alta y a la reactivación
+  desde Django admin, sin revelar el otro centro.
+
+### Restauración lógica
+
+- `NominaCentroInfancia.validar_restauracion_soft` se ejecuta dentro de la transacción de
+  restauración genérica. Si una ficha Activa/Pendiente borrada lógicamente entraría en
+  conflicto con otro CDI, la restauración se rechaza con el mensaje neutro y permanece en
+  papelera.
 
 ## Concurrencia
 
@@ -68,7 +79,8 @@ Por eso las verificaciones de los caminos que escriben usan lectura con lock
 revalidación de la derivación y en el chequeo de duplicado del mismo centro): una lectura
 con lock siempre ve la última versión commiteada y, al no haber filas, toma el gap lock
 del índice de `ciudadano_id`, que además frena el insert simultáneo. La validación de
-edición **no** bloquea: corre fuera de transacción.
+edición mantiene el error temprano del formulario y se **revalida bajo el mismo lock**
+justo antes del `save`, tanto en la página completa como en el modal AJAX.
 
 **No se agregó constraint de DB a propósito:**
 
@@ -82,11 +94,12 @@ alcance del ticket. La garantía es de aplicación, apoyada en el row lock de In
 
 ## Validación
 
-- `centrodeinfancia/tests/test_nomina_vigencia_unica.py` (nuevo, 16 tests): alta permitida
+- `centrodeinfancia/tests/test_nomina_vigencia_unica.py` (nuevo): alta permitida
   sin vigencia; bloqueo por Activo y por Pendiente (parametrizado); reingreso tras Baja y
   tras baja lógica; duplicado en el mismo centro conservado; mensaje neutro en la vista sin
-  filtrar nombre ni enlace del centro de origen; alta simultánea; edición (form y ajax);
-  derivación con tercer centro y camino feliz de derivación intacto.
+  filtrar nombre ni enlace del centro de origen; altas concurrentes en MySQL; edición
+  (form y ajax), admin y restauración; derivación con tercer centro y camino feliz de
+  derivación intacto.
 - `test_nomina_integridad.py`: actualizado al nuevo retorno `(creado, motivo)`.
 - `pytest centrodeinfancia` → **515 passed**. `pytest tests -k "cdi or centrodeinfancia or
   nomina or ciudadano"` → **223 passed**. `black` y `pylint` (10.00/10) OK.
@@ -94,21 +107,13 @@ alcance del ticket. La garantía es de aplicación, apoyada en el row lock de In
 ### Límite conocido de los tests de concurrencia
 
 En SQLite `select_for_update` es un no-op, así que la suite por defecto no puede provocar
-una carrera real. Se cubre en dos partes: un test verifica que el alta pida el lock del
-ciudadano y haga la verificación de vigencia con `bloquear=True`, y otro que dos altas del
-mismo destinatario en centros distintos dejen un solo registro vigente. El bloqueo
-efectivo lo aporta InnoDB en MySQL.
+una carrera real. La prueba marcada `mysql_compat` usa dos transacciones simultáneas sobre
+MySQL para verificar que sólo una alta del mismo destinatario queda vigente. El bloqueo
+efectivo lo aporta InnoDB.
 
 ## Fuera de alcance / gaps conocidos
 
 - No se corrigen duplicados históricos ni se agrega migración de datos.
-- La validación de **edición** valida y guarda sin transacción propia, así que dos
-  reactivaciones simultáneas en centros distintos son teóricamente posibles. Requiere que
-  dos operadores reactiven a la misma persona en el mismo instante; el alta —que es el
-  flujo real del ticket— sí está serializada.
-- **Restaurar** una nómina borrada lógicamente (flujo de soft-delete/admin) no pasa por
-  esta validación: podría reactivar un registro Activo y generar una segunda vigencia. No
-  es un flujo de la UI de CDI; queda registrado como deuda.
 - `NominaCentroInfanciaFormEdit` no se tocó: no está conectado a ninguna URL.
 
 ## Riesgos y rollback

@@ -37,8 +37,11 @@ MOTIVO_NOMINA_VIGENTE_OTRO_CENTRO = "vigente_otro_centro"
 
 
 def tiene_nomina_cdi_vigente_en_otro_centro(
-    ciudadano_id, centro_id, excluir_nomina_id=None, bloquear=False
-):
+    ciudadano_id: int | None,
+    centro_id: int | None,
+    excluir_nomina_id: int | None = None,
+    bloquear: bool = False,
+) -> bool:
     """Indica si la persona ya tiene una nómina CDI vigente fuera de ``centro_id``.
 
     Devuelve sólo un booleano a propósito: quien llama no debe poder informar
@@ -72,7 +75,7 @@ def tiene_nomina_cdi_vigente_en_otro_centro(
     return queryset.exists()
 
 
-def bloquear_ciudadano_para_nomina_cdi(ciudadano_id):
+def bloquear_ciudadano_para_nomina_cdi(ciudadano_id: int | None) -> None:
     """Toma el lock de fila del ciudadano dentro de la transacción en curso.
 
     Serializa altas/derivaciones simultáneas del mismo destinatario en centros
@@ -84,6 +87,37 @@ def bloquear_ciudadano_para_nomina_cdi(ciudadano_id):
     if not ciudadano_id:
         return
     Ciudadano.objects.select_for_update().filter(pk=ciudadano_id).exists()
+
+
+def puede_reactivar_nomina_cdi_bajo_bloqueo(
+    nomina: NominaCentroInfancia,
+) -> bool:
+    """Revalida una reactivación mientras serializa por ciudadano.
+
+    Debe invocarse dentro de ``transaction.atomic()`` inmediatamente antes de
+    guardar. Complementa la validación temprana del formulario y evita que dos
+    reactivaciones concurrentes de fichas en baja creen dos vigencias.
+    """
+    if (
+        not nomina.pk
+        or not nomina.ciudadano_id
+        or nomina.estado not in ESTADOS_NOMINA_CDI_VIGENTE
+    ):
+        return True
+
+    bloquear_ciudadano_para_nomina_cdi(nomina.ciudadano_id)
+    nomina_persistida = NominaCentroInfancia.objects.select_for_update().get(
+        pk=nomina.pk
+    )
+    if nomina_persistida.estado in ESTADOS_NOMINA_CDI_VIGENTE:
+        return True
+
+    return not tiene_nomina_cdi_vigente_en_otro_centro(
+        nomina_persistida.ciudadano_id,
+        nomina_persistida.centro_id,
+        excluir_nomina_id=nomina_persistida.pk,
+        bloquear=True,
+    )
 
 
 _CAMPOS_COPIABLES = [
@@ -255,8 +289,10 @@ class AsistenciaNominaCentroInfanciaService:
 class CentroDeInfanciaService:
     @staticmethod
     def _validar_vigencia_para_derivacion(
-        nomina_origen, centro_destino, bloquear=False
-    ):
+        nomina_origen: NominaCentroInfancia,
+        centro_destino: CentroDeInfancia,
+        bloquear: bool = False,
+    ) -> str | None:
         """Devuelve el mensaje de impedimento, o None si la derivación puede seguir.
 
         El origen no cuenta: pasa a baja dentro de la misma transacción.

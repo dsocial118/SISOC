@@ -498,6 +498,12 @@ def execute_restore_plan(plan: CascadePlan, *, user=None) -> tuple[int, dict]:
 
     with transaction.atomic():
         soft_nodes_by_model = _group_soft_nodes(plan)
+        for node in plan.iter_nodes_by_mode(MODE_SOFT):
+            validar_restauracion = getattr(
+                node.instance, "validar_restauracion_soft", None
+            )
+            if callable(validar_restauracion):
+                validar_restauracion()
         restore_updates_by_model = {
             model: build_soft_restore_operational_updates(model)
             for model in soft_nodes_by_model

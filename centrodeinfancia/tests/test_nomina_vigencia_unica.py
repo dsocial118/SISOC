@@ -4,21 +4,28 @@ Vigente = estado Activo o Pendiente y registro no dado de baja. El impedimento
 nunca debe exponer cuál es el otro centro involucrado.
 """
 
+from concurrent.futures import ThreadPoolExecutor
 from datetime import date
+from threading import Barrier
 
 import pytest
 from django.contrib.auth.models import User
-from django.db import transaction
+from django.core.exceptions import ValidationError
+from django.db import close_old_connections, connection, transaction
 from django.urls import reverse
 
 from ciudadanos.models import Ciudadano
-from centrodeinfancia.forms import NominaCentroInfanciaForm
+from centrodeinfancia.forms import (
+    NominaCentroInfanciaAdminForm,
+    NominaCentroInfanciaForm,
+)
 from centrodeinfancia.models import CentroDeInfancia, NominaCentroInfancia
 from centrodeinfancia.services import (
     MENSAJE_NOMINA_VIGENTE_EN_OTRO_CENTRO,
     MOTIVO_NOMINA_DUPLICADA_MISMO_CENTRO,
     MOTIVO_NOMINA_VIGENTE_OTRO_CENTRO,
     CentroDeInfanciaService,
+    puede_reactivar_nomina_cdi_bajo_bloqueo,
     tiene_nomina_cdi_vigente_en_otro_centro,
 )
 from centrodeinfancia.tests.test_destinatario_form import datos_validos
@@ -196,8 +203,12 @@ def test_alta_toma_el_lock_de_fila_del_ciudadano(centro_destino, ciudadano, mock
 
 
 @pytest.mark.django_db(transaction=True)
-def test_altas_simultaneas_no_generan_dos_registros_vigentes(provincia):
-    """Dos altas del mismo destinatario en centros distintos: sólo una prospera."""
+@pytest.mark.mysql_compat
+def test_altas_concurrentes_en_mysql_no_generan_dos_registros_vigentes(provincia):
+    """Dos transacciones MySQL simultáneas quedan serializadas por ciudadano."""
+    if connection.vendor != "mysql":
+        pytest.skip("La contención real se verifica contra MySQL.")
+
     centro_1 = CentroDeInfancia.objects.create(nombre="CDI Race 1", provincia=provincia)
     centro_2 = CentroDeInfancia.objects.create(nombre="CDI Race 2", provincia=provincia)
     persona = Ciudadano.objects.create(
@@ -207,13 +218,27 @@ def test_altas_simultaneas_no_generan_dos_registros_vigentes(provincia):
         tipo_documento=Ciudadano.DOCUMENTO_DNI,
         documento=46999888,
     )
+    inicio = Barrier(2)
 
-    creado_1, _ = _intentar_alta(centro_1, persona)
-    creado_2, motivo_2 = _intentar_alta(centro_2, persona)
+    def alta_concurrente(centro_id):
+        close_old_connections()
+        try:
+            inicio.wait(timeout=10)
+            centro = CentroDeInfancia.objects.get(pk=centro_id)
+            ciudadano_actual = Ciudadano.objects.get(pk=persona.pk)
+            return _intentar_alta(centro, ciudadano_actual)
+        finally:
+            close_old_connections()
 
-    assert creado_1 is True
-    assert creado_2 is False
-    assert motivo_2 == MOTIVO_NOMINA_VIGENTE_OTRO_CENTRO
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        resultados = list(
+            executor.map(alta_concurrente, (centro_1.pk, centro_2.pk), timeout=20)
+        )
+
+    assert sum(creado for creado, _ in resultados) == 1
+    assert sorted(motivo for creado, motivo in resultados if not creado) == [
+        MOTIVO_NOMINA_VIGENTE_OTRO_CENTRO
+    ]
     assert (
         NominaCentroInfancia.objects.filter(
             ciudadano=persona,
@@ -320,6 +345,76 @@ def test_edicion_permite_reactivar_si_no_hay_vigencia_en_otro_centro(
     )
 
     assert form.is_valid() is True, form.errors
+
+
+@pytest.mark.django_db
+def test_reactivacion_revalida_bajo_bloqueo_antes_de_guardar(
+    centro_origen, centro_destino, ciudadano
+):
+    _crear_nomina(centro_origen, ciudadano, NominaCentroInfancia.ESTADO_ACTIVO)
+    nomina_baja = _crear_nomina(
+        centro_destino, ciudadano, NominaCentroInfancia.ESTADO_BAJA
+    )
+    nomina_baja.estado = NominaCentroInfancia.ESTADO_ACTIVO
+
+    with transaction.atomic():
+        assert puede_reactivar_nomina_cdi_bajo_bloqueo(nomina_baja) is False
+
+
+@pytest.mark.django_db
+def test_admin_rechaza_alta_si_hay_vigencia_en_otro_centro(
+    centro_origen, centro_destino, ciudadano
+):
+    _crear_nomina(centro_origen, ciudadano, NominaCentroInfancia.ESTADO_ACTIVO)
+
+    form = NominaCentroInfanciaAdminForm(
+        data={
+            "centro": centro_destino.pk,
+            "ciudadano": ciudadano.pk,
+            "estado": NominaCentroInfancia.ESTADO_ACTIVO,
+        }
+    )
+
+    assert form.is_valid() is False
+    assert form.errors["__all__"] == [MENSAJE_NOMINA_VIGENTE_EN_OTRO_CENTRO]
+
+
+@pytest.mark.django_db
+def test_admin_rechaza_mover_ficha_vigente_a_otro_centro_con_vigencia(
+    centro_origen, centro_destino, ciudadano
+):
+    nomina_origen = _crear_nomina(
+        centro_origen, ciudadano, NominaCentroInfancia.ESTADO_ACTIVO
+    )
+    _crear_nomina(centro_destino, ciudadano, NominaCentroInfancia.ESTADO_ACTIVO)
+
+    form = NominaCentroInfanciaAdminForm(
+        data={
+            "centro": centro_destino.pk,
+            "ciudadano": ciudadano.pk,
+            "estado": NominaCentroInfancia.ESTADO_ACTIVO,
+        },
+        instance=nomina_origen,
+    )
+
+    assert form.is_valid() is False
+    assert form.errors["__all__"] == [MENSAJE_NOMINA_VIGENTE_EN_OTRO_CENTRO]
+
+
+@pytest.mark.django_db
+def test_restore_rechaza_ficha_vigente_si_hay_otro_centro_activo(
+    centro_origen, centro_destino, ciudadano
+):
+    nomina_eliminada = _crear_nomina(
+        centro_origen, ciudadano, NominaCentroInfancia.ESTADO_ACTIVO
+    )
+    nomina_eliminada.delete()
+    _crear_nomina(centro_destino, ciudadano, NominaCentroInfancia.ESTADO_ACTIVO)
+
+    with pytest.raises(ValidationError, match="No se puede avanzar"):
+        NominaCentroInfancia.all_objects.get(pk=nomina_eliminada.pk).restore()
+
+    assert NominaCentroInfancia.all_objects.get(pk=nomina_eliminada.pk).is_deleted
 
 
 @pytest.mark.django_db
