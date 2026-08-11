@@ -33,13 +33,14 @@ jobs:
                   python-version: "3.11.15"
 
             - name: Generar artefactos spec-as-source
+              if: github.event.sender.login != 'github-actions[bot]'
               env:
                   GITHUB_TOKEN: ${{ github.token }}
                   GITHUB_EVENT_PATH: ${{ github.event_path }}
               run: python scripts/ci/pr_doc_automation.py
 
             - name: Reportar artefactos para ramas protegidas
-              if: github.event.pull_request.head.repo.full_name == github.repository && (github.event.pull_request.head.ref == 'development' || github.event.pull_request.head.ref == 'homologacion' || github.event.pull_request.head.ref == 'main')
+              if: github.event.sender.login != 'github-actions[bot]' && github.event.pull_request.head.repo.full_name == github.repository && (github.event.pull_request.head.ref == 'development' || github.event.pull_request.head.ref == 'homologacion' || github.event.pull_request.head.ref == 'main')
               run: |
                   if git diff --quiet -- docs/registro/prs docs/contexto/features docs/registro/releases/pending CHANGELOG.md; then
                     echo "No hay cambios generados para reportar."
@@ -57,7 +58,7 @@ jobs:
                   } >> "$GITHUB_STEP_SUMMARY"
 
             - name: Commit automatico de artefactos
-              if: github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref != 'development' && github.event.pull_request.head.ref != 'homologacion' && github.event.pull_request.head.ref != 'main'
+              if: github.event.sender.login != 'github-actions[bot]' && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref != 'development' && github.event.pull_request.head.ref != 'homologacion' && github.event.pull_request.head.ref != 'main'
               run: |
                   if git diff --quiet -- docs/registro/prs docs/contexto/features docs/registro/releases/pending CHANGELOG.md; then
                     echo "No hay cambios generados para commitear."
