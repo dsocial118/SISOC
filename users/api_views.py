@@ -31,8 +31,7 @@ from users.profile_utils import get_profile_or_none
 from users.services_auth import (
     change_password_for_authenticated_user,
     confirm_password_reset,
-    request_password_reset_for_email,
-    request_password_reset_for_username,
+    request_password_reset_for_identity,
 )
 from users.services_pwa import get_access_rows, is_pwa_user
 
@@ -215,7 +214,7 @@ class PasswordResetRequestViewSet(viewsets.ViewSet):
         ip = request.META.get("REMOTE_ADDR", "anon")
         email = serializer.validated_data.get("email")
         username = serializer.validated_data.get("username")
-        identity_value = (email or username or "").lower()
+        identity_value = f"{username}:{email}".lower()
         if hit_rate_limit(
             scope="password_reset_request",
             identity=f"{ip}:{identity_value}",
@@ -231,14 +230,15 @@ class PasswordResetRequestViewSet(viewsets.ViewSet):
                 status=status.HTTP_429_TOO_MANY_REQUESTS,
             )
 
-        if email:
-            request_password_reset_for_email(email=email, request=request)
-        elif username:
-            request_password_reset_for_username(username=username)
+        request_password_reset_for_identity(
+            username=username,
+            email=email,
+            request=request,
+        )
         return Response(
             {
                 "detail": (
-                    "Si el usuario existe en el sistema, se registró la solicitud de reseteo."
+                    "Si los datos son correctos, recibirás un enlace de recuperación."
                 )
             },
             status=status.HTTP_200_OK,

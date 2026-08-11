@@ -84,6 +84,11 @@
                                         {{ form.estado_financiamiento }}
                                         {% for error in form.estado_financiamiento.errors %}<div class="invalid-feedback">{{ error }}</div>{% endfor %}
                                     </div>
+                                    <div class="col-md-6 form-group">
+                                        <label for="{{ form.informe_complementario_modifica_prestaciones.id_for_label }}">Informe Técnico Complementario - Modificación de Prestaciones</label>
+                                        {{ form.informe_complementario_modifica_prestaciones }}
+                                        {% for error in form.informe_complementario_modifica_prestaciones.errors %}<div class="invalid-feedback">{{ error }}</div>{% endfor %}
+                                    </div>
                                 </div>
                             </div>
                             <div class="card-footer gt-actions">
@@ -128,6 +133,7 @@
                 exPnud.required = esIncorporacion;
                 document.getElementById('{{ form.tipo_renovacion.id_for_label }}').required = !esIncorporacion;
                 document.getElementById('{{ form.estado_financiamiento.id_for_label }}').required = !esIncorporacion;
+                document.getElementById('{{ form.informe_complementario_modifica_prestaciones.id_for_label }}').required = !esIncorporacion;
                 const requiereEstadoPnud = esIncorporacion && exPnud.value === 'si';
                 estadoPnudContainer.hidden = !requiereEstadoPnud;
                 estadoPnud.required = requiereEstadoPnud;

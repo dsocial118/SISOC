@@ -51,6 +51,7 @@ def test_renovacion_guarda_solo_sus_validaciones():
         {
             "tipo_renovacion": "segunda_o_posterior",
             "estado_financiamiento": "finalizado",
+            "informe_complementario_modifica_prestaciones": "si",
         },
         instance=admision,
     )
@@ -60,6 +61,7 @@ def test_renovacion_guarda_solo_sus_validaciones():
 
     assert actualizada.tipo_renovacion == "segunda_o_posterior"
     assert actualizada.estado_financiamiento == "finalizado"
+    assert actualizada.informe_complementario_modifica_prestaciones == "si"
     assert actualizada.es_ex_pnud is None
     assert actualizada.estado_convenio_pnud is None
 

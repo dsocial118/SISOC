@@ -469,6 +469,13 @@ class RendicionCuentaMensual(SoftDeleteModelMixin, models.Model):
         null=True,
         blank=True,
     )
+    proyecto = models.ForeignKey(
+        "organizaciones.ProyectoOrganizacion",
+        on_delete=models.PROTECT,
+        related_name="rendiciones_cuentas_mensuales",
+        null=True,
+        blank=True,
+    )
     mes = models.IntegerField(verbose_name="Mes", choices=MESES)
     anio = models.IntegerField(verbose_name="Año")
     convenio = models.CharField(

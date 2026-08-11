@@ -70,6 +70,7 @@ from relevamientos.models import ClasificacionComedor, Relevamiento
 from rendicioncuentasfinal.models import DocumentoRendicionFinal
 from rendicioncuentasmensual.models import DocumentacionAdjunta, RendicionCuentaMensual
 from rendicioncuentasmensual.services import RendicionCuentaMensualService
+from organizaciones.models import ProyectoOrganizacion
 from pwa.models import NominaDestinatariosDocumentoPWA
 from users.api_permissions import (
     HasMobileRendicionPermission,
@@ -136,6 +137,25 @@ class ComedorDetailViewSet(
         filtered_rows = ComedorService.get_filtered_comedores(self.request, user=user)
         return [row["id"] for row in filtered_rows]
 
+    @staticmethod
+    def _get_active_projects_by_organization(queryset):
+        organization_ids = {
+            comedor.organizacion_id for comedor in queryset if comedor.organizacion_id
+        }
+        projects_by_organization = {}
+        for proyecto in ProyectoOrganizacion.objects.filter(
+            organizacion_id__in=organization_ids,
+            activo=True,
+        ).order_by("codigo"):
+            projects_by_organization.setdefault(proyecto.organizacion_id, []).append(
+                {
+                    "id": proyecto.id,
+                    "codigo": proyecto.codigo,
+                    "nombre": proyecto.nombre,
+                }
+            )
+        return projects_by_organization
+
     def _get_pwa_spaces_selector_rows(self, user):
         access_rows = list(
             get_access_rows(user).select_related(
@@ -163,6 +183,7 @@ class ComedorDetailViewSet(
             .order_by("nombre", "id")
         )
         queryset = self._filter_pwa_visible_spaces(queryset)
+        proyectos_por_organizacion = self._get_active_projects_by_organization(queryset)
 
         rows = []
         for comedor in queryset:
@@ -188,6 +209,10 @@ class ComedorDetailViewSet(
                         comedor.programa.nombre if comedor.programa_id else None
                     ),
                     "codigo_de_proyecto": comedor.codigo_de_proyecto,
+                    "proyecto_id": comedor.proyecto_id,
+                    "organizacion_proyectos": proyectos_por_organizacion.get(
+                        comedor.organizacion_id, []
+                    ),
                     "provincia__nombre": (
                         comedor.provincia.nombre if comedor.provincia_id else None
                     ),
@@ -1195,8 +1220,11 @@ class ComedorDetailViewSet(
     def _get_rendiciones_queryset(self, comedor):
         return (
             RendicionCuentaMensualService.obtener_rendiciones_cuentas_mensuales(comedor)
+            .select_related("proyecto")
             .only(
                 "id",
+                "proyecto_id",
+                "proyecto__codigo",
                 "convenio",
                 "numero_rendicion",
                 "mes",
@@ -1767,11 +1795,34 @@ class ComedorDetailViewSet(
         )
         if source is not None:
             try:
+                acceso = (
+                    AccesoComedorPWA.objects.filter(
+                        user=request.user,
+                        comedor=comedor,
+                        activo=True,
+                        rol=AccesoComedorPWA.ROL_OPERADOR,
+                    )
+                    .select_related("creado_por")
+                    .first()
+                )
+                usuario_principal = None
+                if acceso and acceso.creado_por_id:
+                    es_representante = AccesoComedorPWA.objects.filter(
+                        user_id=acceso.creado_por_id,
+                        comedor=comedor,
+                        activo=True,
+                        rol=AccesoComedorPWA.ROL_REPRESENTANTE,
+                    ).exists()
+                    if es_representante:
+                        usuario_principal = acceso.creado_por
                 pdf_bytes = generar_certificacion_prestaciones_pdf(
                     comedor=comedor,
                     periodo=periodo,
                     usuario=request.user,
                     source=source,
+                    conforme=conforme,
+                    observaciones=observaciones,
+                    usuario_principal=usuario_principal,
                 )
                 conformidad.certificacion_pdf.save(
                     f"certificacion-prestaciones-{comedor.id}-{periodo:%Y-%m}-{conformidad.id}.pdf",
