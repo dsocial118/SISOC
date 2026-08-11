@@ -31,6 +31,7 @@ def test_pr_docs_workflow_detecta_artefactos_nuevos_no_trackeados():
     )
     assert "generate_pr_artifacts:" in workflow
     assert "contents: write" in workflow
+    assert "github.event.sender.login != 'github-actions[bot]'" in workflow
     assert (
         "head.repo.full_name == github.repository && "
         "github.event.pull_request.head.ref != 'development'"
