@@ -176,6 +176,13 @@ class Admision(models.Model):
         blank=True,
         verbose_name="Estado del financiamiento",
     )
+    informe_complementario_modifica_prestaciones = models.CharField(
+        max_length=2,
+        choices=RESPUESTA_SI_NO,
+        null=True,
+        blank=True,
+        verbose_name="¿Se realizó Informe Complementario para modificar prestaciones?",
+    )
     num_expediente = models.CharField(max_length=255, blank=True, null=True)
     num_if = models.CharField(max_length=100, blank=True, null=True)
     legales_num_if = models.CharField(max_length=255, blank=True, null=True)
@@ -442,6 +449,11 @@ class ArchivoAdmision(SoftDeleteModelMixin, models.Model):
 
 
 class InformeTecnico(models.Model):
+    CRITERIOS = [
+        ("A", "A - Coincidencia"),
+        ("B", "B - Solicitud Menor"),
+        ("C", "C - Solicitud Mayor"),
+    ]
     ESTADOS = [
         ("Iniciado", "Iniciado"),
         ("Para revision", "Para revisión"),
@@ -596,6 +608,45 @@ class InformeTecnico(models.Model):
         "IF de relevamiento territorial", max_length=255
     )
     conclusiones = models.TextField("Aplicación de Criterios", null=True, blank=True)
+    criterio_seleccionado = models.CharField(
+        "Criterio seleccionado",
+        max_length=1,
+        choices=CRITERIOS,
+        null=True,
+        blank=True,
+    )
+    antecedentes_renovaciones = models.JSONField(default=list, blank=True)
+    finalizacion_convenio_pnud_vigente = models.DateField(
+        "Finalización de Convenio PNUD Vigente", null=True, blank=True
+    )
+    acreditaciones_ultimo_convenio = models.PositiveIntegerField(
+        "Acreditaciones realizadas último convenio", null=True, blank=True
+    )
+    monto_total_conveniado_informe = models.DecimalField(
+        "Monto total conveniado al momento del informe",
+        max_digits=15,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        validators=[MinValueValidator(0)],
+    )
+    monto_total_conveniado = models.DecimalField(
+        "Monto total conveniado",
+        max_digits=15,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        validators=[MinValueValidator(0)],
+    )
+    expediente_incorporacion = models.CharField(
+        "Expediente de Incorporación", max_length=255, null=True, blank=True
+    )
+    convenio_incorporacion = models.CharField(
+        "Convenio de Incorporación", max_length=255, null=True, blank=True
+    )
+    presentacion_avales = models.CharField(
+        "Presentación de Avales", max_length=255, null=True, blank=True
+    )
     observaciones_subsanacion = models.TextField(
         "Observaciones de Subsanación",
         null=True,
@@ -1410,6 +1461,12 @@ class PlantillaInformeTecnico(models.Model):
         null=True,
         blank=True,
     )
+    informe_complementario_modifica_prestaciones = models.CharField(
+        max_length=2,
+        choices=Admision.RESPUESTA_SI_NO,
+        null=True,
+        blank=True,
+    )
     estado = models.CharField(max_length=12, choices=ESTADOS, default="activa")
     creado = models.DateTimeField(auto_now_add=True)
     modificado = models.DateTimeField(auto_now=True)
@@ -1457,7 +1514,11 @@ class PlantillaInformeTecnico(models.Model):
                 errores["estado_convenio_pnud"] = (
                     "No corresponde informar un convenio PNUD cuando no es Ex PNUD."
                 )
-            if self.tipo_renovacion or self.estado_financiamiento:
+            if (
+                self.tipo_renovacion
+                or self.estado_financiamiento
+                or self.informe_complementario_modifica_prestaciones
+            ):
                 errores["tipo_renovacion"] = (
                     "Las condiciones de renovación no aplican a una incorporación."
                 )
@@ -1467,6 +1528,10 @@ class PlantillaInformeTecnico(models.Model):
             if not self.estado_financiamiento:
                 errores["estado_financiamiento"] = (
                     "Debe indicar el estado del financiamiento."
+                )
+            if not self.informe_complementario_modifica_prestaciones:
+                errores["informe_complementario_modifica_prestaciones"] = (
+                    "Debe indicar si se realizó un Informe Complementario para modificar prestaciones."
                 )
             if self.es_ex_pnud or self.estado_convenio_pnud:
                 errores["es_ex_pnud"] = (
@@ -1486,6 +1551,7 @@ class PlantillaInformeTecnico(models.Model):
             estado_convenio_pnud=self.estado_convenio_pnud,
             tipo_renovacion=self.tipo_renovacion,
             estado_financiamiento=self.estado_financiamiento,
+            informe_complementario_modifica_prestaciones=self.informe_complementario_modifica_prestaciones,
         )
 
     @staticmethod
@@ -1497,6 +1563,7 @@ class PlantillaInformeTecnico(models.Model):
         estado_convenio_pnud=None,
         tipo_renovacion=None,
         estado_financiamiento=None,
+        informe_complementario_modifica_prestaciones=None,
     ):
         if tipo_admision == "incorporacion":
             return "|".join(
@@ -1513,6 +1580,7 @@ class PlantillaInformeTecnico(models.Model):
                 f"convenio:{tipo_convenio_id}",
                 f"renovacion:{tipo_renovacion}",
                 f"financiamiento:{estado_financiamiento}",
+                f"informe_complementario:{informe_complementario_modifica_prestaciones}",
             )
         )
 

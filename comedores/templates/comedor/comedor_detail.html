@@ -1499,6 +1499,7 @@
                                 <tr>
                                     <th>Período</th>
                                     <th>Usuario generador</th>
+                                    <th>Estado Conformidad</th>
                                     <th>Fecha de certificación</th>
                                     <th>Ver PDF</th>
                                 </tr>
@@ -1514,6 +1515,13 @@
                                                 -
                                             {% endif %}
                                         </td>
+                                        <td>
+                                            {% if certificacion.conforme %}
+                                                <span class="badge bg-success">Conforme</span>
+                                            {% else %}
+                                                <span class="badge bg-danger">No conforme</span>
+                                            {% endif %}
+                                        </td>
                                         <td>{{ certificacion.creado|date:"d/m/Y H:i" }}</td>
                                         <td>
                                             <a href="{% url 'descargar_certificacion_prestaciones_web' comedor.id certificacion.id %}"
@@ -1524,7 +1532,7 @@
                                     </tr>
                                 {% empty %}
                                     <tr>
-                                        <td colspan="4" class="text-center text-muted py-3">No hay certificaciones mensuales registradas.</td>
+                                        <td colspan="5" class="text-center text-muted py-3">No hay certificaciones mensuales registradas.</td>
                                     </tr>
                                 {% endfor %}
                             </tbody>

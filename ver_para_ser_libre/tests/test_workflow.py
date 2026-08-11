@@ -1477,7 +1477,7 @@ def test_consultar_renaper_vpsl_devuelve_datos_normalizados(client, mocker):
     )
     client.force_login(user)
     renaper = mocker.patch(
-        "ver_para_ser_libre.views.ComedorService.obtener_datos_ciudadano_desde_renaper",
+        "ver_para_ser_libre.views.consultar_ciudadano_renaper",
         return_value={
             "success": True,
             "message": "Datos obtenidos desde RENAPER.",
@@ -1516,7 +1516,7 @@ def test_consultar_renaper_vpsl_normaliza_sexo_display_si_viene_codigo(client, m
     )
     client.force_login(user)
     mocker.patch(
-        "ver_para_ser_libre.views.ComedorService.obtener_datos_ciudadano_desde_renaper",
+        "ver_para_ser_libre.views.consultar_ciudadano_renaper",
         return_value={
             "success": True,
             "data": {
@@ -1564,7 +1564,7 @@ def test_consultar_renaper_vpsl_normaliza_codigos_numericos_de_sexo(
     )
     client.force_login(user)
     mocker.patch(
-        "ver_para_ser_libre.views.ComedorService.obtener_datos_ciudadano_desde_renaper",
+        "ver_para_ser_libre.views.consultar_ciudadano_renaper",
         return_value={
             "success": True,
             "data": {
@@ -1597,9 +1597,7 @@ def test_consultar_renaper_vpsl_registro_usa_ciudadano_existente_sin_renaper(
         password="testpass123",
     )
     ciudadano = crear_ciudadano_validado(documento=12345678)
-    renaper = mocker.patch(
-        "comedores.services.comedor_service.impl.ComedorService.obtener_datos_ciudadano_desde_renaper"
-    )
+    renaper = mocker.patch("ciudadanos.api.consultar_ciudadano_renaper")
     client.force_login(user)
 
     response = client.get(
@@ -1625,7 +1623,7 @@ def test_consultar_renaper_vpsl_registro_consulta_renaper_sin_crear_ciudadano(
         password="testpass123",
     )
     renaper = mocker.patch(
-        "comedores.services.comedor_service.impl.ComedorService.obtener_datos_ciudadano_desde_renaper",
+        "ver_para_ser_libre.views.prevalidar_ciudadano_renaper",
         return_value={
             "success": True,
             "message": "Datos obtenidos desde RENAPER.",
@@ -1639,6 +1637,7 @@ def test_consultar_renaper_vpsl_registro_consulta_renaper_sin_crear_ciudadano(
                 "origen_dato": "renaper",
             },
             "datos_api": {"origen": "renaper"},
+            "pending_creation": True,
         },
     )
     client.force_login(user)
@@ -1888,18 +1887,15 @@ def test_registro_create_crea_ciudadano_al_guardar_si_no_existe(client, mocker):
     jornada = crear_jornada(estado=EstadoJornada.HABILITADA)
     sexo = Sexo.objects.create(sexo="Masculino")
     renaper = mocker.patch(
-        "comedores.services.comedor_service.impl.ComedorService.obtener_datos_ciudadano_desde_renaper",
+        "ciudadanos.api.consultar_datos_renaper",
         return_value={
             "success": True,
-            "message": "Datos obtenidos desde RENAPER.",
             "data": {
-                "apellido": "Gomez",
                 "nombre": "Juan",
-                "fecha_nacimiento": date(2010, 1, 10),
-                "documento": 22333444,
-                "tipo_documento": Ciudadano.DOCUMENTO_DNI,
+                "apellido": "Gomez",
+                "dni": 22333444,
                 "sexo": sexo.pk,
-                "origen_dato": "renaper",
+                "fecha_nacimiento": date(2010, 1, 10),
             },
             "datos_api": {"origen": "renaper"},
         },
@@ -1935,7 +1931,7 @@ def test_registro_create_crea_ciudadano_al_guardar_si_no_existe(client, mocker):
     assert registro.datos_renaper["ciudadano_id"] == ciudadano.pk
     assert registro.datos_renaper["ciudadano_created"] is True
     assert registro.datos_renaper["origen_validacion"] == "renaper"
-    renaper.assert_called_once_with("22333444", sexo="M")
+    renaper.assert_called_once_with("22333444", "M")
 
 
 def test_registro_create_precarga_fecha_de_jornada(client):

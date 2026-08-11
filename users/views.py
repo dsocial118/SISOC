@@ -33,12 +33,12 @@ from .forms import (
     GroupForm,
     MiCuentaForm,
     UserCreationForm,
+    UsernameEmailPasswordResetForm,
 )
 from .grupos_column_config import GRUPOS_COLUMNS, GRUPOS_LIST_KEY
 from .models import AccesoComedorPWA
 from .profile_utils import needs_profile_confirmation
 from .services import BULK_CREDENTIALS_PERMISSION_CODE, UsuariosService
-from .services_auth import generate_temporary_password_for_user
 from .services_bulk_credentials import (
     generate_bulk_credentials_template,
     get_bulk_credentials_send_type_config,
@@ -255,43 +255,6 @@ class UserDeleteView(AdminRequiredMixin, DeleteView):
         self.object.save(update_fields=["is_active"])
         messages.success(request, "Usuario desactivado correctamente.")
         return HttpResponseRedirect(self.success_url)
-
-
-class UserGenerateTemporaryPasswordView(AdminRequiredMixin, View):
-    required_permissions = ("auth.change_user",)
-
-    def post(self, request, *args, **kwargs):
-        # Restringido al alcance del actor: no se puede resetear la contraseña de
-        # usuarios fuera del alcance accediendo por URL.
-        user = (
-            UsuariosService.get_usuarios_en_alcance(request)
-            .filter(pk=kwargs["pk"])
-            .first()
-        )
-        if not user:
-            messages.error(request, "Usuario inexistente.")
-            return HttpResponseRedirect(reverse("usuarios"))
-
-        profile = getattr(user, "profile", None)
-        if not getattr(profile, "password_reset_requested_at", None):
-            messages.warning(
-                request,
-                (
-                    "El usuario no tiene una solicitud pendiente "
-                    "de reseteo de contraseña."
-                ),
-            )
-            return HttpResponseRedirect(reverse("usuarios"))
-
-        generate_temporary_password_for_user(user=user)
-        messages.success(
-            request,
-            (
-                "Se generó una nueva contraseña temporal. "
-                "Puede verla en la pantalla de edición del usuario."
-            ),
-        )
-        return HttpResponseRedirect(reverse("usuario_editar", kwargs={"pk": user.pk}))
 
 
 class UserActiveView(AdminRequiredMixin, UpdateView):
@@ -643,6 +606,7 @@ class GroupUpdateView(AdminRequiredMixin, UpdateView):
 
 
 class SisocPasswordResetView(PasswordResetView):
+    form_class = UsernameEmailPasswordResetForm
     template_name = "user/password_reset_form.html"
     email_template_name = "user/password_reset_email.txt"
     subject_template_name = "user/password_reset_subject.txt"

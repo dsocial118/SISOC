@@ -17,12 +17,52 @@
                class="btn btn-secondary btn-sm backbutton-handler">Volver al legajo</a>
         </div>
         <div class="card-body">
+            <form method="get" class="row g-3 mb-4">
+                <div class="col-md-3">
+                    <label for="periodo" class="form-label">Período de Certificación</label>
+                    <input type="month"
+                           id="periodo"
+                           name="periodo"
+                           class="form-control"
+                           value="{{ filtros.periodo }}" />
+                </div>
+                <div class="col-md-4">
+                    <label for="usuario" class="form-label">Usuario Generador</label>
+                    <select id="usuario" name="usuario" class="form-control">
+                        <option value="">Todos</option>
+                        {% for item in usuarios_generadores %}
+                            <option value="{{ item.usuario_id }}"
+                                    {% if filtros.usuario == item.usuario_id|stringformat:"s" %}selected{% endif %}>
+                                {% if item.usuario__first_name or item.usuario__last_name %}
+                                    {{ item.usuario__first_name }} {{ item.usuario__last_name }}
+                                {% else %}
+                                    {{ item.usuario__username }}
+                                {% endif %}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="conforme" class="form-label">Estado de Conformidad</label>
+                    <select id="conforme" name="conforme" class="form-control">
+                        <option value="">Todos</option>
+                        <option value="true" {% if filtros.conforme == "true" %}selected{% endif %}>Conforme</option>
+                        <option value="false" {% if filtros.conforme == "false" %}selected{% endif %}>No conforme</option>
+                    </select>
+                </div>
+                <div class="col-md-2 d-flex align-items-end gap-2">
+                    <button type="submit" class="btn btn-primary">Filtrar</button>
+                    <a href="{% url 'certificaciones_prestaciones_historial' comedor.id %}"
+                       class="btn btn-secondary">Limpiar</a>
+                </div>
+            </form>
             <div class="table-responsive">
                 <table class="table table-bordered table-striped">
                     <thead>
                         <tr>
                             <th>Período</th>
                             <th>Usuario generador</th>
+                            <th>Estado Conformidad</th>
                             <th>Fecha de certificación</th>
                             <th>Ver PDF</th>
                         </tr>
@@ -38,6 +78,13 @@
                                         -
                                     {% endif %}
                                 </td>
+                                <td>
+                                    {% if certificacion.conforme %}
+                                        <span class="badge bg-success">Conforme</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">No conforme</span>
+                                    {% endif %}
+                                </td>
                                 <td>{{ certificacion.creado|date:"d/m/Y H:i" }}</td>
                                 <td>
                                     <a href="{% url 'descargar_certificacion_prestaciones_web' comedor.id certificacion.id %}"
@@ -48,7 +95,7 @@
                             </tr>
                         {% empty %}
                             <tr>
-                                <td colspan="4" class="text-center text-muted">No hay certificaciones mensuales registradas.</td>
+                                <td colspan="5" class="text-center text-muted">No hay certificaciones mensuales registradas.</td>
                             </tr>
                         {% endfor %}
                     </tbody>

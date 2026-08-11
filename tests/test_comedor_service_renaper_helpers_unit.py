@@ -189,22 +189,26 @@ def test_match_geo_mapear_and_nacionalidad(mocker):
 
 
 def test_consultar_renaper_and_build_data(mocker):
-    mocker.patch(
+    consultar_mock = mocker.patch(
         "comedores.services.comedor_service.impl.consultar_datos_renaper",
         side_effect=[
-            {"success": False, "error": "x", "raw_response": {"coincidencias": 0}},
+            {"success": False, "error": "x", "error_type": "no_match"},
             {"success": True, "data": {"dni": "123"}},
         ],
     )
     ok = module.ComedorService._consultar_renaper_por_dni("123")
     assert ok["success"] is True
+    assert consultar_mock.call_args_list == [
+        mocker.call("123", "M"),
+        mocker.call("123", "F"),
+    ]
 
     mocker.patch(
         "comedores.services.comedor_service.impl.consultar_datos_renaper",
         side_effect=[
-            {"success": False, "error": "x", "raw_response": {"coincidencias": 0}},
-            {"success": False, "error": "y", "raw_response": {"coincidencias": 0}},
-            {"success": False, "error": "z", "raw_response": {"coincidencias": 0}},
+            {"success": False, "error": "x", "error_type": "no_match"},
+            {"success": False, "error": "y", "error_type": "no_match"},
+            {"success": False, "error": "z", "error_type": "no_match"},
         ],
     )
     fail = module.ComedorService._consultar_renaper_por_dni("123")

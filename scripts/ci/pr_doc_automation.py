@@ -372,7 +372,6 @@ def build_pr_document(
 - Base: `{pr.base_ref}`
 - Rama origen: `{pr.head_ref}`
 - Autor: `{pr.author}`
-- Última actualización: `{pr.updated_at}`
 
 ## Resumen operativo
 

@@ -204,7 +204,7 @@ SISOC/
 | Testing | `USE_SQLITE_FOR_TESTS`, `PYTEST_RUNNING` |
 | Integracion GESTIONAR | `GESTIONAR_API_KEY`, endpoints `GESTIONAR_API_*`, workers `GESTIONAR_*`, `DOMINIO` |
 | Ticketera | `TICKETERA_ENABLED` |
-| RENAPER | `RENAPER_API_USERNAME`, `RENAPER_API_PASSWORD`, retries/backoff |
+| RENAPER | `RENAPER_API_USERNAME`, `RENAPER_API_PASSWORD`, `RENAPER_REQUEST_TIMEOUT_SECONDS`, retries/backoff; sin cache ni TTL de token |
 | Google Maps | `GOOGLE_MAPS_API_KEY` |
 | Sentry | `SENTRY_ENABLED`, `SENTRY_DSN`, `SENTRY_RELEASE` |
 | Email/password reset | `EMAIL_*`, `DEFAULT_FROM_EMAIL`, `PASSWORD_RESET_TIMEOUT`, `INITIAL_PASSWORD_MAX_AGE_HOURS` |
@@ -275,7 +275,7 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 | `comedores/` | dominio fuerte: comedores, nomina, estados, sync GESTIONAR | `models.py`, `tasks.py`, `signals.py`, `api_views.py`, `services/`, `urls.py` | Alto |
 | `relevamientos/` | relevamientos y sync externo asociado | `models.py`, `tasks.py`, `views.py`, commands | Alto |
 | `ciudadanos/` | gestion de ciudadanos/beneficiarios | `models.py`, `views.py`, `api_views.py`, forms | Medio |
-| `centrodefamilia/` | beneficiarios/centros/familia + consulta RENAPER + API | `models.py`, `views.py`, `api_views.py`, `services/consulta_renaper` | Alto |
+| `centrodefamilia/` | beneficiarios/centros/familia + API | `models.py`, `views.py`, `api_views.py`, `services/` | Alto |
 | `celiaquia/` | modulo especializado con bastante logica en services y vistas; expone un contrato Python acotado | `api.py`, `models.py`, `views/`, `services/`, `permissions.py`, tests | Alto |
 | `admisiones/` | flujo de admision, legales/tecnicos, generacion DOCX/PDF | `views/web_views.py`, `services/`, `forms/`, templates `docx/` y `pdf/` | Alto |
 | `VAT/` | modulo amplio propio con views, API, services y reportes | `models.py`, `views/`, `api_views.py`, `services/`, `serializers.py`; docs `docs/vat/` | Alto |
@@ -314,7 +314,10 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - Se usan signals para side effects de negocio.
 - La arquitectura actual tiene boundaries monitoreados por `import-linter`, con baseline de excepciones a reducir por cortes. Los filtros favoritos se aportan desde cada app mediante `core.services.favorite_filters.registry`; `core` no debe volver a importar configuraciones de dominio para resolverlos.
 - Los paneles de Ciudadano 360 se aportan por dominio mediante `ciudadanos.detail_contributions`; las vistas de ciudadanos no deben consultar modelos de esos dominios directamente.
-- Las consultas RENAPER pasan por `core.services.renaper`; el proveedor actual se registra desde Centro de Familia y no debe importarse desde consumidores del kernel.
+- Las consultas RENAPER pasan por `core.services.renaper`, que delega el transporte compartido a `core.integrations.renaper`; ningún dominio debe tener su propio cliente ni importar otro dominio para consultarlo.
+- Los consumidores interdominio usan contratos Python acotados: `centrodefamilia.api` expone métricas para Dashboard, `ciudadanos.api` resuelve ciudadanos desde RENAPER y `intervenciones.api` provee el catálogo autorizado para CDI.
+- Los receivers de auditoría de Centro de Infancia viven en `centrodeinfancia.signals` y llaman `audittrail.api`; Audittrail no debe importar modelos CDI.
+- Dispositivos, VAT y Ver para Ser Libre no exponen internals a otros dominios. La composición de rutas de preview de VAT se realiza desde `VAT.global_urls`.
 - Los efectos de backfill de soft delete se registran desde cada dominio en `core.soft_delete.registry`; `core.soft_delete.state_sync` no debe importar handlers de dominio.
 - Las restricciones de navegacion aportadas por dominios se registran en `core.services.sidebar_access`; el template tag global no debe importar reglas VAT.
 - El endpoint Select2 de organizaciones vive en `organizaciones.views` y `organizaciones.urls`, aunque conserva la ruta global `ajax/load-organizaciones/`.
@@ -512,7 +515,7 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 ### Si necesitas cambiar syncs externos
 
 - GESTIONAR: `comedores/tasks.py`, `relevamientos/tasks.py`, management commands relacionados, `.env.example`
-- RENAPER: `centrodefamilia/services/consulta_renaper.py`, `VAT/services/consulta_renaper/impl.py`, docs `docs/flujos/consulta_renaper.md`
+- RENAPER: `core/integrations/renaper.py`, `core/services/renaper.py`, docs `docs/flujos/consulta_renaper.md`
 - Ticketera: `ticketera/`, `docs/integraciones/ticketera_api.md`
 
 ### Si necesitas cambiar preinscriptos CDF o vouchers VAT
@@ -726,7 +729,7 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 | filtro/listado generico | `core/`, `templates/components/data_table.html`, JS de la pantalla |
 | comedores | `comedores/models.py`, `tasks.py`, `signals.py`, tests `test_comedor*` |
 | relevamientos | `relevamientos/models.py`, `tasks.py`, `views.py` |
-| RENAPER | `centrodefamilia/services/consulta_renaper.py`, `VAT/services/consulta_renaper/impl.py` |
+| RENAPER | `core/integrations/renaper.py`, `core/services/renaper.py` |
 | GESTIONAR | `comedores/tasks.py`, `relevamientos/tasks.py`, commands relacionados |
 | docx/pdf | `admisiones/services/`, `comedores/services/certificacion_prestaciones_service.py`, `pwa/services/nomina_destinatarios_pdf_service.py`, `pwa/files/varios/` |
 | PWA | `pwa/api_views.py`, `pwa/services/`, tests `test_pwa_*` |
@@ -787,6 +790,10 @@ Marcar esas zonas como `A inferir` hasta relevarlas cuando una tarea real las to
 - `.github/workflows/release-sanity.yml`
 - `.github/workflows/release-orchestrator.yml`
 - `.github/workflows/sync-main-downstream.yml`
+- `.github/workflows/pr-docs.yml`: genera los artefactos spec-as-source; usa
+  `git status --porcelain --untracked-files=all` para incluir archivos nuevos.
+  Solo pushea en ramas internas no protegidas; para forks y ramas protegidas
+  falla `sync_pr_artifacts` con los paths pendientes para bloquear el merge.
 - `.github/workflows/deploy.yml`
 - `scripts/ai/codex_run.ps1`
 - `scripts/ai/codex_task.ps1`

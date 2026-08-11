@@ -1041,6 +1041,8 @@ class AdmisionesTecnicosUpdateView(LoginRequiredMixin, UpdateView):
         context.update(
             AdmisionService.get_admision_update_context(admision, self.request.user)
         )
+        if "caratular_form" in kwargs:
+            context["caratular_form"] = kwargs["caratular_form"]
         context["validaciones_template_form"] = ValidacionesTemplateAdmisionForm(
             instance=admision
         )
@@ -1097,11 +1099,12 @@ class AdmisionesTecnicosUpdateView(LoginRequiredMixin, UpdateView):
 
     def post(self, request, *args, **kwargs):
         _log_post_and_files_keys(request)
+        self.object = self.get_object()
 
         response = _run_post_handlers_until_response(
             (
                 lambda: self._handle_docx_final_post(request),
-                lambda: self._handle_post_update_actions(request, self.get_object()),
+                lambda: self._handle_post_update_actions(request, self.object),
             )
         )
         if response is not None:
