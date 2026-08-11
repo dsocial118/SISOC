@@ -59,7 +59,7 @@ jobs:
 
     sync_pr_artifacts:
         needs: generate_pr_artifacts
-        if: always()
+        if: always() && github.event.pull_request.head.ref != 'development' && github.event.pull_request.head.ref != 'homologacion' && github.event.pull_request.head.ref != 'main'
         runs-on: ubuntu-latest
 
         steps:
