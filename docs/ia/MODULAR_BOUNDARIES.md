@@ -162,10 +162,10 @@ no dando al nuevo servicio propiedad de esas tablas.
   `.importlinter_celiaquia_config`: `config` no importa módulos Python de
   Celiaquía; solo incluye sus rutas por string. Este chequeo aislado no amplía
   el baseline legacy de la Fase 0.
-- No reutilizar un cliente externo que viva en otra app (por ejemplo,
-  `centrodefamilia.services.consulta_renaper`). Si falta una integración
-  transversal, primero se debe definir y ubicar su contrato compartido; no
-  propagar ese acoplamiento legacy.
+- No reutilizar un cliente externo que viva en otra app. Las integraciones
+  transversales deben exponerse desde la capa compartida; por ejemplo,
+  RENAPER usa `core.integrations.renaper` y la fachada
+  `core.services.renaper`, no una app consumidora.
 - Pasar el actor de forma explícita a los services. No usar thread-local para
   decidir reglas de negocio ni auditoría.
 - El cache puede ser sólo una optimización local. No guardar allí tokens,

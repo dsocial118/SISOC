@@ -1,7 +1,7 @@
 name: Documentacion automatica de PR
 
 permissions:
-    contents: write
+    contents: read
     pull-requests: read
 
 on:
@@ -17,7 +17,11 @@ on:
             - main
 
 jobs:
-    sync_pr_artifacts:
+    generate_pr_artifacts:
+        if: github.event.sender.login != 'github-actions[bot]' && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref != 'development' && github.event.pull_request.head.ref != 'homologacion' && github.event.pull_request.head.ref != 'main'
+        permissions:
+            contents: write
+            pull-requests: read
         runs-on: ubuntu-latest
 
         steps:
@@ -33,34 +37,15 @@ jobs:
                   python-version: "3.11.15"
 
             - name: Generar artefactos spec-as-source
-              if: github.event.sender.login != 'github-actions[bot]'
               env:
                   GITHUB_TOKEN: ${{ github.token }}
                   GITHUB_EVENT_PATH: ${{ github.event_path }}
               run: python scripts/ci/pr_doc_automation.py
 
-            - name: Reportar artefactos para ramas protegidas
-              if: github.event.sender.login != 'github-actions[bot]' && github.event.pull_request.head.repo.full_name == github.repository && (github.event.pull_request.head.ref == 'development' || github.event.pull_request.head.ref == 'homologacion' || github.event.pull_request.head.ref == 'main')
-              run: |
-                  if git diff --quiet -- docs/registro/prs docs/contexto/features docs/registro/releases/pending CHANGELOG.md; then
-                    echo "No hay cambios generados para reportar."
-                    exit 0
-                  fi
-
-                  {
-                    echo "### Artefactos spec-as-source generados"
-                    echo ""
-                    echo "La rama origen \`${{ github.event.pull_request.head.ref }}\` esta protegida; no se intenta push directo desde el workflow."
-                    echo ""
-                    echo '```diff'
-                    git diff -- docs/registro/prs docs/contexto/features docs/registro/releases/pending CHANGELOG.md
-                    echo '```'
-                  } >> "$GITHUB_STEP_SUMMARY"
-
             - name: Commit automatico de artefactos
-              if: github.event.sender.login != 'github-actions[bot]' && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref != 'development' && github.event.pull_request.head.ref != 'homologacion' && github.event.pull_request.head.ref != 'main'
               run: |
-                  if git diff --quiet -- docs/registro/prs docs/contexto/features docs/registro/releases/pending CHANGELOG.md; then
+                  changes="$(git status --porcelain --untracked-files=all -- docs/registro/prs docs/contexto/features docs/registro/releases/pending CHANGELOG.md)"
+                  if [ -z "$changes" ]; then
                     echo "No hay cambios generados para commitear."
                     exit 0
                   fi
@@ -71,3 +56,53 @@ jobs:
                   git add docs/registro/prs docs/contexto/features docs/registro/releases/pending CHANGELOG.md
                   git commit -m "docs(ci): actualizar artefactos automaticos del PR #${{ github.event.pull_request.number }}"
                   git push
+
+    sync_pr_artifacts:
+        needs: generate_pr_artifacts
+        if: always()
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout base confiable del PR
+              uses: actions/checkout@v6.0.2
+              with:
+                  ref: ${{ github.event.pull_request.base.sha }}
+                  fetch-depth: 0
+
+            - name: Verificar artefactos spec-as-source en la rama origen
+              run: |
+                  if [ "${{ github.event.pull_request.head.repo.full_name }}" = "${{ github.repository }}" ]; then
+                    git fetch --no-tags origin "+refs/heads/${{ github.event.pull_request.head.ref }}:refs/remotes/origin/pr-head"
+                  else
+                    git fetch --no-tags origin "+refs/pull/${{ github.event.pull_request.number }}/head:refs/remotes/origin/pr-head"
+                  fi
+
+                  paths="$(git ls-tree -r --name-only refs/remotes/origin/pr-head -- docs/registro/prs docs/contexto/features)"
+                  record_path="docs/registro/prs/PR-${{ github.event.pull_request.number }}.md"
+                  feature_pattern="^docs/contexto/features/pr-${{ github.event.pull_request.number }}-.*\\.md$"
+                  missing=()
+
+                  if ! grep -Fxq "$record_path" <<< "$paths"; then
+                    missing+=("$record_path")
+                  fi
+                  if ! grep -Eq "$feature_pattern" <<< "$paths"; then
+                    missing+=("docs/contexto/features/pr-${{ github.event.pull_request.number }}-*.md")
+                  fi
+
+                  if [ "${#missing[@]}" -eq 0 ]; then
+                    echo "Artefactos spec-as-source presentes en la rama origen."
+                    exit 0
+                  fi
+
+                  {
+                    echo "### Artefactos spec-as-source pendientes"
+                    echo ""
+                    echo "Faltan los siguientes paths en la rama origen:"
+                    echo '```text'
+                    printf '%s\n' "${missing[@]}"
+                    echo '```'
+                    echo "Regenerá y commiteá los artefactos con \`python scripts/ci/pr_doc_automation.py --repository ${{ github.repository }} --pr ${{ github.event.pull_request.number }}\`."
+                  } >> "$GITHUB_STEP_SUMMARY"
+
+                  echo "Faltan artefactos spec-as-source requeridos para mergear."
+                  exit 1
