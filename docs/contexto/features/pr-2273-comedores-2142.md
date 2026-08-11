@@ -40,14 +40,18 @@
 - `comedores/services/comedor_service/impl.py`
 - `comedores/templates/comedor/nomina_form.html`
 - `comedores/views/nomina.py`
+- `docs/contexto/features/pr-2273-comedores-2142.md`
 - `docs/registro/cambios/2026-08-10-alta-ciudadano-sin-dni-nomina.md`
+- `docs/registro/prs/PR-2273.md`
 - `tests/test_comedor_service_renaper_helpers_unit.py`
 - Documentación sugerida para ampliar contexto:
 - `docs/indice.md`
 - `docs/ia/CONTEXT_HYGIENE.md`
 - `docs/ia/ARCHITECTURE.md`
 - `docs/ia/TESTING.md`
+- `docs/contexto/features/pr-2273-comedores-2142.md`
 - `docs/registro/cambios/2026-08-10-alta-ciudadano-sin-dni-nomina.md`
+- `docs/registro/prs/PR-2273.md`
 
 ## Trazabilidad
 
