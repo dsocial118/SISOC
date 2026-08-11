@@ -1714,6 +1714,13 @@ class ComedorService:
                         "Ya existe un ciudadano estandar con este tipo y numero de documento.",
                     )
 
+                if not _ciudadano_puede_ingresar_a_nomina(ciudadano):
+                    return (
+                        True,
+                        "El ciudadano fue creado y quedó pendiente de revisión de "
+                        "identidad. Podrá agregarse a la nómina cuando finalice la revisión.",
+                    )
+
                 ok, msg = ComedorService.agregar_ciudadano_a_nomina(
                     ciudadano_id=ciudadano.id,
                     user=user,

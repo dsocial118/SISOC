@@ -40,6 +40,9 @@
                                value="{{ request.GET.query }}" />
                     </div>
                     <button class="btn btn-secondary mt-3" type="submit">Buscar</button>
+                    <button class="btn btn-outline-primary mt-3 ml-2"
+                            type="button"
+                            id="btn-sin-dni">Sin DNI</button>
                 </form>
             </div>
         </div>
@@ -118,14 +121,23 @@
                     No se encontraron coincidencias.
                 {% endif %}
             </div>
-            <div class="card mb-3">
-                <div class="card-header font-weight-bold">Crear Nuevo Ciudadano</div>
-                <div class="card-body">
+        {% endif %}
+        <div class="card mb-3 {% if not mostrar_form_ciudadano and modo_creacion != 'sin_dni' %}d-none{% endif %}"
+             id="card-creacion-ciudadano">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span class="font-weight-bold" id="titulo-creacion-ciudadano">Crear Nuevo Ciudadano</span>
+                <button type="button"
+                        class="btn btn-sm btn-outline-secondary"
+                        id="btn-cambiar-modo">Sin DNI</button>
+            </div>
+            <div class="card-body">
+                <div id="formulario-con-dni" {% if modo_creacion == 'sin_dni' %}class="d-none"{% endif %}>
                     {% if form_ciudadano.non_field_errors %}
                         <div class="alert alert-danger">{{ form_ciudadano.non_field_errors }}</div>
                     {% endif %}
                     <form method="post">
                         {% csrf_token %}
+                        <input type="hidden" name="modo_creacion" value="con_dni" />
                         {% if renaper_precarga %}<input type="hidden" name="origen_dato" value="renaper" />{% endif %}
                         {{ form_ciudadano|crispy }}
                         <div class="mt-4 alert alert-light">
@@ -139,8 +151,30 @@
                                 data-submit-with-spinner="Procesando…">Crear y Agregar</button>
                     </form>
                 </div>
+                <div id="formulario-sin-dni" {% if modo_creacion != 'sin_dni' %}class="d-none"{% endif %}>
+                    <div class="alert alert-warning">
+                        La identidad quedará pendiente de revisión porque la persona no posee DNI.
+                    </div>
+                    {% if form_ciudadano_sin_dni.non_field_errors %}
+                        <div class="alert alert-danger">{{ form_ciudadano_sin_dni.non_field_errors }}</div>
+                    {% endif %}
+                    <form method="post">
+                        {% csrf_token %}
+                        <input type="hidden" name="modo_creacion" value="sin_dni" />
+                        {{ form_ciudadano_sin_dni|crispy }}
+                        <div class="mt-4 alert alert-light">
+                            <h5 class="mb-3">
+                                <i class="bi bi-info-circle-fill"></i> Estado y observaciones en la Nómina
+                            </h5>
+                            {{ form_nomina_extra|crispy }}
+                        </div>
+                        <button type="submit"
+                                class="btn btn-primary"
+                                data-submit-with-spinner="Procesando…">Crear ciudadano sin DNI</button>
+                    </form>
+                </div>
             </div>
-        {% endif %}
+        </div>
     </div>
 
     <!-- Modal Agregar Ciudadano -->
@@ -232,6 +266,34 @@
 {% block customJS %}
     <script nonce="{{ request.csp_nonce }}">
         document.addEventListener("DOMContentLoaded", function() {
+            const cardCreacion = document.getElementById("card-creacion-ciudadano");
+            const formularioConDni = document.getElementById("formulario-con-dni");
+            const formularioSinDni = document.getElementById("formulario-sin-dni");
+            const tituloCreacion = document.getElementById("titulo-creacion-ciudadano");
+            const btnSinDni = document.getElementById("btn-sin-dni");
+            const btnCambiarModo = document.getElementById("btn-cambiar-modo");
+
+            function mostrarModo(sinDni, revelar) {
+                if (revelar) cardCreacion.classList.remove("d-none");
+                formularioConDni.classList.toggle("d-none", sinDni);
+                formularioSinDni.classList.toggle("d-none", !sinDni);
+                tituloCreacion.textContent = sinDni ? "Crear Ciudadano sin DNI" : "Crear Nuevo Ciudadano";
+                btnCambiarModo.textContent = sinDni ? "Con DNI" : "Sin DNI";
+                formularioConDni.querySelectorAll("input, select, textarea, button").forEach(function(control) {
+                    control.disabled = sinDni;
+                });
+                formularioSinDni.querySelectorAll("input, select, textarea, button").forEach(function(control) {
+                    control.disabled = !sinDni;
+                });
+                if (revelar) cardCreacion.scrollIntoView({ behavior: "smooth", block: "start" });
+            }
+
+            btnSinDni.addEventListener("click", function() { mostrarModo(true, true); });
+            btnCambiarModo.addEventListener("click", function() {
+                mostrarModo(formularioSinDni.classList.contains("d-none"), true);
+            });
+            mostrarModo(!formularioSinDni.classList.contains("d-none"), false);
+
             // Configurar modal para agregar ciudadanos existentes
             document.querySelectorAll(".btn-agregar").forEach(function(btn) {
                 btn.addEventListener("click", function() {
