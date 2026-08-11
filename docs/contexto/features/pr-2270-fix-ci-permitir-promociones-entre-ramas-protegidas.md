@@ -31,12 +31,16 @@
 - Empezar por `docs/registro/prs/PR-2270.md` para contexto resumido del PR.
 - Revisar primero estos archivos del diff:
 - `.github/workflows/pr-docs.yml`
+- `docs/contexto/features/pr-2270-fix-ci-permitir-promociones-entre-ramas-protegidas.md`
+- `docs/registro/prs/PR-2270.md`
 - `tests/test_pr_doc_automation_unit.py`
 - Documentación sugerida para ampliar contexto:
 - `docs/indice.md`
 - `docs/ia/CONTEXT_HYGIENE.md`
 - `docs/ia/ARCHITECTURE.md`
 - `docs/ia/TESTING.md`
+- `docs/contexto/features/pr-2270-fix-ci-permitir-promociones-entre-ramas-protegidas.md`
+- `docs/registro/prs/PR-2270.md`
 
 ## Trazabilidad
 
