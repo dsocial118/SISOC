@@ -55,13 +55,15 @@
 - `comedores/api_views.py`
 - `comedores/services/certificacion_prestaciones_service.py`
 - `comedores/templates/comedor/certificaciones_prestaciones_historial.html`
-- ... y 25 archivo(s) adicional(es) relacionados.
+- ... y 27 archivo(s) adicional(es) relacionados.
 - Documentación sugerida para ampliar contexto:
 - `docs/indice.md`
 - `docs/ia/CONTEXT_HYGIENE.md`
 - `docs/ia/ARCHITECTURE.md`
 - `docs/ia/TESTING.md`
+- `docs/contexto/features/pr-2267-fixes-de-admisiones-rendiciones-y-pwa.md`
 - `docs/registro/cambios/2026-08-10-fixes-admisiones-pwa-rendiciones.md`
+- `docs/registro/prs/PR-2267.md`
 
 ## Trazabilidad
 
