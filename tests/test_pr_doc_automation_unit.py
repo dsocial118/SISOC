@@ -39,6 +39,10 @@ def test_pr_docs_workflow_detecta_artefactos_nuevos_no_trackeados():
     assert "ref: ${{ github.event.pull_request.base.sha }}" in workflow
     assert "needs: generate_pr_artifacts" in workflow
     assert "if: always()" in workflow
+    assert (
+        "if: always() && github.event.pull_request.head.ref != 'development'"
+        in workflow
+    )
     assert "refs/pull/${{ github.event.pull_request.number }}/head" in workflow
     assert "git ls-tree -r --name-only refs/remotes/origin/pr-head" in workflow
     assert "Faltan artefactos spec-as-source requeridos para mergear." in workflow
