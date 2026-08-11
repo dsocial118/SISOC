@@ -498,6 +498,7 @@ class NominaCreateView(LoginRequiredMixin, CreateView):
                     user=request.user,
                     estado=estado,
                     observaciones=observaciones,
+                    omitir_revision_manual=es_sin_dni,
                 )
 
                 if ok:
@@ -842,6 +843,7 @@ class NominaDirectaCreateView(LoginRequiredMixin, CreateView):
                     estado=estado,
                     observaciones=observaciones,
                     comedor_id=comedor_id,
+                    omitir_revision_manual=es_sin_dni,
                 )
                 if ok:
                     ciudadano = _ciudadano_recien_creado(ciudadano_data)

@@ -1699,6 +1699,7 @@ class ComedorService:
         observaciones,
         admision_id=None,
         comedor_id=None,
+        omitir_revision_manual=False,
     ):
         """
         Crea un ciudadano nuevo y lo agrega a la nómina con estado y observaciones.
@@ -1714,12 +1715,13 @@ class ComedorService:
                         "Ya existe un ciudadano estandar con este tipo y numero de documento.",
                     )
 
-                if not _ciudadano_puede_ingresar_a_nomina(ciudadano):
-                    return (
-                        True,
-                        "El ciudadano fue creado y quedó pendiente de revisión de "
-                        "identidad. Podrá agregarse a la nómina cuando finalice la revisión.",
-                    )
+                if (
+                    omitir_revision_manual
+                    and ciudadano.tipo_registro_identidad
+                    == Ciudadano.TIPO_REGISTRO_SIN_DNI
+                ):
+                    ciudadano.requiere_revision_manual = False
+                    ciudadano.save(update_fields=["requiere_revision_manual"])
 
                 ok, msg = ComedorService.agregar_ciudadano_a_nomina(
                     ciudadano_id=ciudadano.id,

@@ -153,7 +153,7 @@
                 </div>
                 <div id="formulario-sin-dni" {% if modo_creacion != 'sin_dni' %}class="d-none"{% endif %}>
                     <div class="alert alert-warning">
-                        La identidad quedará pendiente de revisión porque la persona no posee DNI.
+                        Esta alta excepcional se guardará sin revisión manual y se agregará directamente a la nómina.
                     </div>
                     {% if form_ciudadano_sin_dni.non_field_errors %}
                         <div class="alert alert-danger">{{ form_ciudadano_sin_dni.non_field_errors }}</div>
