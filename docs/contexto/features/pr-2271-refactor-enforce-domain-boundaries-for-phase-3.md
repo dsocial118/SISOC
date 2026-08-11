@@ -45,18 +45,20 @@
 - `ciudadanos/api.py`
 - `config/urls_preview.py`
 - `dashboard/views.py`
+- `docs/contexto/features/pr-2271-refactor-enforce-domain-boundaries-for-phase-3.md`
 - `docs/registro/decisiones/2026-08-11-boundaries-fase-3.md`
+- `docs/registro/prs/PR-2271.md`
 - `intervenciones/api.py`
 - `intervenciones/tests/test_intervenciones_public_api.py`
-- `tests/test_ciudadanos_renaper_api_unit.py`
-- `ver_para_ser_libre/tests/test_boundary_api.py`
-- ... y 2 archivo(s) adicional(es) relacionados.
+- ... y 4 archivo(s) adicional(es) relacionados.
 - Documentación sugerida para ampliar contexto:
 - `docs/indice.md`
 - `docs/ia/CONTEXT_HYGIENE.md`
 - `docs/ia/ARCHITECTURE.md`
 - `docs/ia/TESTING.md`
+- `docs/contexto/features/pr-2271-refactor-enforce-domain-boundaries-for-phase-3.md`
 - `docs/registro/decisiones/2026-08-11-boundaries-fase-3.md`
+- `docs/registro/prs/PR-2271.md`
 
 ## Trazabilidad
 
