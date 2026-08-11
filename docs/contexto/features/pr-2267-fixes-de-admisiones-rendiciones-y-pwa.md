@@ -18,6 +18,7 @@
 - Hay cambios en vistas web y puede existir impacto en permisos o renderizado.
 - Se modifican templates, con posible impacto visual o de composición UI.
 - Existen cambios de persistencia o migraciones que requieren revisión de datos.
+- El alcance incluye automatización o tooling de CI/CD.
 
 ## Decisiones y supuestos detectados
 
@@ -36,6 +37,7 @@
 - Empezar por `docs/registro/prs/PR-2267.md` para contexto resumido del PR.
 - Revisar primero estos archivos del diff:
 - `.env.example`
+- `.github/workflows/pr-docs.yml`
 - `admisiones/forms/admisiones_forms.py`
 - `admisiones/forms/templates_informe_tecnico_forms.py`
 - `admisiones/migrations/0076_issue_2233_campos_informe_tecnico.py`
@@ -54,8 +56,7 @@
 - `comedores/api_serializers.py`
 - `comedores/api_views.py`
 - `comedores/services/certificacion_prestaciones_service.py`
-- `comedores/templates/comedor/certificaciones_prestaciones_historial.html`
-- ... y 27 archivo(s) adicional(es) relacionados.
+- ... y 28 archivo(s) adicional(es) relacionados.
 - Documentación sugerida para ampliar contexto:
 - `docs/indice.md`
 - `docs/ia/CONTEXT_HYGIENE.md`
