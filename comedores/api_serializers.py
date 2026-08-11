@@ -1443,6 +1443,7 @@ class ComprobanteRendicionSerializer(serializers.ModelSerializer):
 
 
 class RendicionMensualListSerializer(serializers.ModelSerializer):
+    proyecto_codigo = serializers.CharField(source="proyecto.codigo", read_only=True)
     estado_label = serializers.CharField(source="get_estado_display", read_only=True)
     estado_proceso_label = serializers.CharField(
         source="estado_proceso_display", read_only=True
@@ -1458,6 +1459,8 @@ class RendicionMensualListSerializer(serializers.ModelSerializer):
         model = RendicionCuentaMensual
         fields = (
             "id",
+            "proyecto",
+            "proyecto_codigo",
             "convenio",
             "numero_rendicion",
             "mes",
@@ -1552,6 +1555,7 @@ class RendicionMensualDetailSerializer(RendicionMensualListSerializer):
 
 
 class RendicionMensualCreateSerializer(NoSaveSerializer):
+    proyecto_id = serializers.IntegerField(min_value=1, required=False, allow_null=True)
     convenio = serializers.CharField(max_length=100)
     numero_rendicion = serializers.IntegerField(min_value=1)
     periodo_inicio = serializers.DateField()

@@ -113,7 +113,7 @@ class CertificacionesPrestacionesHistorialView(LoginRequiredMixin, ListView):
         self.comedor = ComedorService.get_scoped_comedor_or_404(
             self.kwargs["pk"], self.request.user
         )
-        return (
+        queryset = (
             PrestacionAlimentariaConformidad.objects.filter(
                 comedor_id=self.comedor.id,
                 certificacion_pdf__isnull=False,
@@ -122,10 +122,44 @@ class CertificacionesPrestacionesHistorialView(LoginRequiredMixin, ListView):
             .select_related("usuario")
             .order_by("-periodo", "-creado")
         )
+        periodo = self.request.GET.get("periodo", "").strip()
+        if periodo:
+            try:
+                year, month = (int(value) for value in periodo.split("-", 1))
+                queryset = queryset.filter(periodo__year=year, periodo__month=month)
+            except (TypeError, ValueError):
+                pass
+        usuario = self.request.GET.get("usuario", "").strip()
+        if usuario.isdigit():
+            queryset = queryset.filter(usuario_id=usuario)
+        conforme = self.request.GET.get("conforme", "").strip()
+        if conforme in {"true", "false"}:
+            queryset = queryset.filter(conforme=conforme == "true")
+        return queryset
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["comedor"] = self.comedor
+        context["usuarios_generadores"] = (
+            PrestacionAlimentariaConformidad.objects.filter(
+                comedor_id=self.comedor.id,
+                usuario__isnull=False,
+            )
+            .select_related("usuario")
+            .order_by("usuario__first_name", "usuario__last_name", "usuario__username")
+            .values(
+                "usuario_id",
+                "usuario__first_name",
+                "usuario__last_name",
+                "usuario__username",
+            )
+            .distinct()
+        )
+        context["filtros"] = {
+            "periodo": self.request.GET.get("periodo", ""),
+            "usuario": self.request.GET.get("usuario", ""),
+            "conforme": self.request.GET.get("conforme", ""),
+        }
         return context
 
 

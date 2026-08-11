@@ -203,8 +203,8 @@ class OperadorCreateResponseSerializer(serializers.ModelSerializer):
 
 
 class PasswordResetRequestSerializer(serializers.Serializer):
-    email = serializers.EmailField(required=False)
-    username = serializers.CharField(required=False, max_length=150)
+    email = serializers.EmailField(required=True)
+    username = serializers.CharField(required=True, max_length=150)
 
     def _raise_read_only(self):
         raise NotImplementedError("Serializer de solo lectura.")
@@ -219,16 +219,8 @@ class PasswordResetRequestSerializer(serializers.Serializer):
         email = (attrs.get("email") or "").strip()
         username = (attrs.get("username") or "").strip()
 
-        if bool(email) == bool(username):
-            raise serializers.ValidationError(
-                {"detail": ("Debe enviar email o username para solicitar el reseteo.")}
-            )
-
-        if username:
-            attrs["username"] = username
-            attrs.pop("email", None)
-        else:
-            attrs["email"] = email
+        attrs["username"] = username
+        attrs["email"] = email
         return attrs
 
 

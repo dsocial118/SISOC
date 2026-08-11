@@ -70,6 +70,9 @@ class PlantillaInformeTecnicoListView(GestorTemplatesPermissionMixin, ListView):
             "estado_financiamiento": self.request.GET.get(
                 "estado_financiamiento", ""
             ).strip(),
+            "informe_complementario_modifica_prestaciones": self.request.GET.get(
+                "informe_complementario_modifica_prestaciones", ""
+            ).strip(),
         }
         valores_validos = {
             "tipo_admision": dict(
@@ -86,6 +89,11 @@ class PlantillaInformeTecnicoListView(GestorTemplatesPermissionMixin, ListView):
             ),
             "estado_financiamiento": dict(
                 PlantillaInformeTecnico._meta.get_field("estado_financiamiento").choices
+            ),
+            "informe_complementario_modifica_prestaciones": dict(
+                PlantillaInformeTecnico._meta.get_field(
+                    "informe_complementario_modifica_prestaciones"
+                ).choices
             ),
         }
         for campo, opciones in valores_validos.items():
@@ -109,6 +117,7 @@ class PlantillaInformeTecnicoListView(GestorTemplatesPermissionMixin, ListView):
                 "estado_convenio_pnud",
                 "tipo_renovacion",
                 "estado_financiamiento",
+                "informe_complementario_modifica_prestaciones",
             )
         }
         context["tipos_admision"] = PlantillaInformeTecnico._meta.get_field(
@@ -127,6 +136,11 @@ class PlantillaInformeTecnicoListView(GestorTemplatesPermissionMixin, ListView):
         context["estados_financiamiento"] = PlantillaInformeTecnico._meta.get_field(
             "estado_financiamiento"
         ).choices
+        context["opciones_informe_complementario"] = (
+            PlantillaInformeTecnico._meta.get_field(
+                "informe_complementario_modifica_prestaciones"
+            ).choices
+        )
         return context
 
 
