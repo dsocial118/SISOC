@@ -257,15 +257,20 @@
   border-color: var(--poncho-blanco);
 }
 
-/* Badges de estado: el prototipo los muestra como texto plano */
+/* Badges: NO se toca el fondo.
+   El color es informacion, no decoracion: estados de expediente, alertas,
+   tecnicos asignados, tipos. Antes se los aplanaba a texto plano
+   (background: transparent !important) imitando la columna "Estado" del
+   prototipo de CFP, y eso invisibilizaba las etiquetas de celiaquia,
+   comunicados, VAT, ciudadanos y otros 8 listados. Aca solo se alinean forma
+   y tipografia con el design system. */
 .app-main:has(.poncho-search) .table td .badge,
 .app-main:has(.poncho-search) .projects td .badge {
-  padding: 0;
-  background: transparent !important;
-  color: var(--poncho-blanco);
+  padding: .35em .7em;
+  border-radius: var(--poncho-radio-base);
   font-family: var(--poncho-font-base);
-  font-size: 16px;
-  font-weight: 400;
+  font-size: 13px;
+  font-weight: 500;
 }
 
 @media (max-width: 767.98px) {
