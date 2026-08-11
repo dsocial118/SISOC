@@ -155,18 +155,25 @@ def _consultar_por_dni(dni: str, sexo: str | None) -> dict[str, Any]:
     return {"success": False, "error": ultimo_error}
 
 
-def _datos_para_ciudadano(datos: dict[str, Any], dni: str) -> dict[str, Any] | None:
+def _datos_para_ciudadano(
+    datos: dict[str, Any], dni: str
+) -> tuple[dict[str, Any] | None, str | None]:
     apellido = " ".join(str(datos.get("apellido") or "").split()).title()
     nombre = " ".join(str(datos.get("nombre") or "").split()).title()
     fecha_nacimiento = _parse_fecha(datos.get("fecha_nacimiento"))
     if not apellido or not nombre or not fecha_nacimiento:
-        return None
+        return None, "RENAPER no devolvió datos mínimos para crear el ciudadano."
+
+    try:
+        documento = int(datos.get("dni") or dni)
+    except (TypeError, ValueError):
+        return None, "RENAPER devolvió un DNI inválido."
 
     ubicacion = _resolver_ubicacion(datos)
     ciudadano_data: dict[str, Any] = {
         "apellido": apellido,
         "nombre": nombre,
-        "documento": int(datos.get("dni") or dni),
+        "documento": documento,
         "tipo_documento": datos.get("tipo_documento") or Ciudadano.DOCUMENTO_DNI,
         "fecha_nacimiento": fecha_nacimiento,
         "origen_dato": "renaper",
@@ -188,7 +195,7 @@ def _datos_para_ciudadano(datos: dict[str, Any], dni: str) -> dict[str, Any] | N
     nacionalidad = _resolver_nacionalidad(datos.get("nacionalidad_api"))
     if nacionalidad:
         ciudadano_data["nacionalidad_id"] = nacionalidad.pk
-    return ciudadano_data
+    return ciudadano_data, None
 
 
 def _buscar_ciudadano_verificado(dni: str):
@@ -275,13 +282,13 @@ def resolver_ciudadano_renaper(
     resultado = prevalidar_ciudadano_renaper(dni, sexo)
     if not resultado.get("success") or not resultado.get("pending_creation"):
         return resultado
-    ciudadano_data = _datos_para_ciudadano(
+    ciudadano_data, error = _datos_para_ciudadano(
         resultado.get("data") or {}, str(dni).strip()
     )
     if not ciudadano_data:
         return {
             "success": False,
-            "message": "RENAPER no devolvió datos mínimos para crear el ciudadano.",
+            "message": error,
         }
     if usuario and getattr(usuario, "is_authenticated", False):
         ciudadano_data.update({"creado_por": usuario, "modificado_por": usuario})

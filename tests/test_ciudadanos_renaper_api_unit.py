@@ -35,7 +35,7 @@ def test_resolver_ciudadano_crea_y_expone_resumen(mocker):
     )
     mocker.patch(
         "ciudadanos.api._datos_para_ciudadano",
-        return_value={"nombre": "Ana"},
+        return_value=({"nombre": "Ana"}, None),
     )
     ciudadano = SimpleNamespace(
         documento=12345678,
@@ -56,3 +56,26 @@ def test_resolver_ciudadano_crea_y_expone_resumen(mocker):
     crear.assert_called_once_with(nombre="Ana")
     assert resultado["success"] is True
     assert resultado["data"]["ciudadano_id"] == 12
+
+
+def test_resolver_ciudadano_rechaza_dni_invalido_de_renaper(mocker):
+    mocker.patch(
+        "ciudadanos.api.prevalidar_ciudadano_renaper",
+        return_value={
+            "success": True,
+            "pending_creation": True,
+            "data": {
+                "dni": "no-es-un-dni",
+                "nombre": "Ana",
+                "apellido": "Pérez",
+                "fecha_nacimiento": "2000-01-01",
+            },
+        },
+    )
+
+    resultado = api.resolver_ciudadano_renaper("12345678")
+
+    assert resultado == {
+        "success": False,
+        "message": "RENAPER devolvió un DNI inválido.",
+    }
