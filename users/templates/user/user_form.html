@@ -85,23 +85,6 @@
                         </h5>
                     </div>
                     <div class="card-body">
-                        {% if password_reset_requested_at %}
-                            <div class="alert alert-info" role="alert">
-                                <strong>El usuario pidió el blanqueamiento de contraseña.</strong>
-                                <div class="small mt-2">Solicitud registrada en {{ password_reset_requested_at }}.</div>
-                            </div>
-                            {% if object.pk %}
-                                <div class="mb-3">
-                                    <button type="submit"
-                                            formaction="{% url 'usuario_generar_password_temporal' object.pk %}"
-                                            formmethod="post"
-                                            class="btn btn-warning"
-                                            onclick="return confirm('Se generará una nueva contraseña temporal para este usuario.');">
-                                        <i class="fas fa-key mr-2"></i>Resetear contraseña
-                                    </button>
-                                </div>
-                            {% endif %}
-                        {% endif %}
                         {% if pwa_operator_context %}
                             <div class="alert alert-info mb-3" role="alert">
                                 <strong>Subusuario mobile.</strong>
@@ -511,13 +494,7 @@
           <tr data-organizacion-row data-organizacion-nombre="${escapeHtml(option.text)}">
             <td class="mobile-org-check-column">
               <div class="form-check mb-0">
-                <input
-                  type="checkbox"
-                  class="form-check-input mobile-organizacion-check"
-                  id="mobile-organizacion-${escapeHtml(option.value)}"
-                  value="${escapeHtml(option.value)}"
-                  ${option.selected ? 'checked' : ''}
-                />
+                <input type="checkbox" class="form-check-input mobile-organizacion-check" id="mobile-organizacion-${escapeHtml(option.value)}" value="${escapeHtml(option.value)}" ${option.selected ? 'checked' : ''} />
               </div>
             </td>
             <td>
@@ -544,13 +521,7 @@
             <tr data-comedor-row data-comedor-id="${escapeHtml(option.value)}" data-comedor-nombre="${escapeHtml(option.text)}" data-organizacion-nombre="${escapeHtml(organizacionName)}">
               <td class="mobile-selector-check-column">
                 <div class="form-check mb-0">
-                  <input
-                    type="checkbox"
-                    class="form-check-input mobile-comedor-check"
-                    id="${tbody.id}-comedor-${escapeHtml(option.value)}"
-                    value="${escapeHtml(option.value)}"
-                    ${option.selected ? 'checked' : ''}
-                  />
+                  <input type="checkbox" class="form-check-input mobile-comedor-check" id="${tbody.id}-comedor-${escapeHtml(option.value)}" value="${escapeHtml(option.value)}" ${option.selected ? 'checked' : ''} />
                 </div>
               </td>
               <td>

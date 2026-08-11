@@ -18,7 +18,7 @@ on:
 
 jobs:
     generate_pr_artifacts:
-        if: github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref != 'development' && github.event.pull_request.head.ref != 'homologacion' && github.event.pull_request.head.ref != 'main'
+        if: github.event.sender.login != 'github-actions[bot]' && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref != 'development' && github.event.pull_request.head.ref != 'homologacion' && github.event.pull_request.head.ref != 'main'
         permissions:
             contents: write
             pull-requests: read

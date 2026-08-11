@@ -84,7 +84,11 @@ class RendicionCuentaMensualService:
         if not comedor:
             return []
 
-        proyecto_codigo = (getattr(comedor, "codigo_de_proyecto", "") or "").strip()
+        proyecto_codigo = (
+            getattr(getattr(rendicion, "proyecto", None), "codigo", "")
+            or getattr(comedor, "codigo_de_proyecto", "")
+            or ""
+        ).strip()
         if not proyecto_codigo:
             return [comedor]
 
@@ -217,8 +221,10 @@ class RendicionCuentaMensualService:
         setattr(rendicion, "archivos_adjuntos", archivos_adjuntos)
 
     @staticmethod
-    def _get_project_queryset(comedor):
+    def _get_project_queryset(comedor, proyecto=None):
         queryset = RendicionCuentaMensual.objects.filter(deleted_at__isnull=True)
+        if proyecto is not None:
+            return queryset.filter(proyecto=proyecto)
         proyecto_codigo = (getattr(comedor, "codigo_de_proyecto", "") or "").strip()
         if proyecto_codigo:
             filters = {"comedor__codigo_de_proyecto": proyecto_codigo}
@@ -264,7 +270,7 @@ class RendicionCuentaMensualService:
             documento.estado == DocumentacionAdjunta.ESTADO_VALIDADO
             for documento in documentos
         ):
-            nuevo_estado = RendicionCuentaMensual.ESTADO_FINALIZADA
+            nuevo_estado = RendicionCuentaMensual.ESTADO_REVISION
         elif any(
             documento.estado == DocumentacionAdjunta.ESTADO_SUBSANAR
             for documento in documentos
@@ -279,6 +285,14 @@ class RendicionCuentaMensualService:
             rendicion.subestado_proceso = (
                 RendicionCuentaMensual.SUBESTADO_PENDIENTE_CORRECCIONES
             )
+        elif rendicion.etapa_proceso in {
+            RendicionCuentaMensual.ETAPA_REVISION_DOCUMENTACION,
+            RendicionCuentaMensual.ETAPA_REVISION_AUDITORIA,
+        } and rendicion.subestado_proceso in {
+            RendicionCuentaMensual.SUBESTADO_PENDIENTE_CORRECCIONES,
+            RendicionCuentaMensual.SUBESTADO_SUBSANADO,
+        }:
+            rendicion.subestado_proceso = RendicionCuentaMensual.SUBESTADO_EN_CURSO
         rendicion.save(
             update_fields=["estado", "subestado_proceso", "ultima_modificacion"]
         )
@@ -295,13 +309,12 @@ class RendicionCuentaMensualService:
         convenio,
         numero_rendicion,
         periodo,
-        exclude_id=None,
+        proyecto=None,
     ):
         periodo_inicio, periodo_fin = periodo
-        queryset = RendicionCuentaMensualService._get_project_queryset(comedor)
-        if exclude_id:
-            queryset = queryset.exclude(id=exclude_id)
-
+        queryset = RendicionCuentaMensualService._get_project_queryset(
+            comedor, proyecto
+        )
         if queryset.filter(
             convenio=convenio,
             numero_rendicion=numero_rendicion,
@@ -627,6 +640,18 @@ class RendicionCuentaMensualService:
     @staticmethod
     @transaction.atomic
     def crear_rendicion_mobile(*, comedor, data, actor=None):
+        proyecto_id = data.get("proyecto_id") or getattr(comedor, "proyecto_id", None)
+        proyecto = ProyectoOrganizacion.objects.filter(
+            pk=proyecto_id,
+            organizacion_id=comedor.organizacion_id,
+            activo=True,
+        ).first()
+        if proyecto_id and not proyecto:
+            raise ValidationError(
+                {
+                    "proyecto_id": "El proyecto seleccionado no pertenece a la organización."
+                }
+            )
         convenio = (data.get("convenio") or "").strip()
         numero_rendicion = data.get("numero_rendicion")
         periodo_inicio = data.get("periodo_inicio")
@@ -641,10 +666,12 @@ class RendicionCuentaMensualService:
             convenio=convenio,
             numero_rendicion=numero_rendicion,
             periodo=(periodo_inicio, periodo_fin),
+            proyecto=proyecto,
         )
 
         return RendicionCuentaMensual.objects.create(
             comedor=comedor,
+            proyecto=proyecto,
             mes=periodo_inicio.month,
             anio=periodo_inicio.year,
             convenio=convenio,
@@ -751,12 +778,7 @@ class RendicionCuentaMensualService:
         } and rendicion.subestado_proceso == (
             RendicionCuentaMensual.SUBESTADO_PENDIENTE_CORRECCIONES
         ):
-            rendicion.subestado_proceso = (
-                RendicionCuentaMensual.SUBESTADO_EN_CURSO
-                if rendicion.etapa_proceso
-                == RendicionCuentaMensual.ETAPA_REVISION_DOCUMENTACION
-                else RendicionCuentaMensual.SUBESTADO_SUBSANADO
-            )
+            rendicion.subestado_proceso = RendicionCuentaMensual.SUBESTADO_EN_CURSO
         else:
             rendicion.etapa_proceso = (
                 RendicionCuentaMensual.ETAPA_REVISION_DOCUMENTACION
@@ -983,6 +1005,7 @@ class RendicionesOrganizacionService:
             queryset = queryset.filter(
                 Q(comedor__proyecto__codigo=codigo)
                 | Q(comedor__codigo_de_proyecto=codigo)
+                | Q(proyecto__codigo=codigo)
             )
         return queryset
 

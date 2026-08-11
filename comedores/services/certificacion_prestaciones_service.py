@@ -35,8 +35,28 @@ def _reemplazar_texto(paragraph, value):
     _agregar_texto(paragraph, value)
 
 
+def _paragraph_by_label(paragraphs, label):
+    for paragraph in paragraphs:
+        text = "".join(paragraph.itertext()).strip()
+        if text.startswith(label):
+            return paragraph
+    return None
+
+
+def _user_dni(user):
+    return str(getattr(getattr(user, "profile", None), "dni", "") or "")
+
+
 def _completar_plantilla(
-    template_path, output_path, *, comedor, periodo, usuario, source
+    template_path,
+    output_path,
+    *,
+    comedor,
+    periodo,
+    usuario,
+    usuario_principal=None,
+    observaciones="",
+    source,
 ):
     with zipfile.ZipFile(template_path, "r") as source_zip:
         document_xml = source_zip.read("word/document.xml")
@@ -47,21 +67,69 @@ def _completar_plantilla(
         direccion = " ".join(
             part for part in (comedor.calle, str(comedor.numero or "")) if part
         )
-        _agregar_texto(paragraphs[2], f" {comedor.nombre or ''}")
-        _agregar_texto(paragraphs[3], direccion)
-        _agregar_texto(
-            paragraphs[4], getattr(getattr(comedor, "localidad", None), "nombre", "")
+        values = {
+            "NOMBRE DEL ESPACIO:": comedor.nombre or "",
+            "DIRECCIÓN:": direccion,
+            "LOCALIDAD:": getattr(getattr(comedor, "localidad", None), "nombre", ""),
+            "PROVINCIA:": getattr(getattr(comedor, "provincia", None), "nombre", ""),
+            "MES:": str(periodo.month),
+            "AÑO:": str(periodo.year),
+        }
+        for label, value in values.items():
+            paragraph = _paragraph_by_label(paragraphs, label)
+            if paragraph is not None:
+                _agregar_texto(paragraph, f" {value}")
+
+        signer_labels = ("Usuario autorizado:", "Apellido y nombre:", "DNI:")
+        signer_values = (
+            usuario.username,
+            usuario.get_full_name() or usuario.username,
+            _user_dni(usuario),
         )
-        _agregar_texto(
-            paragraphs[5], getattr(getattr(comedor, "provincia", None), "nombre", "")
-        )
-        _agregar_texto(paragraphs[6], str(periodo.month))
-        _agregar_texto(paragraphs[7], str(periodo.year))
-        _agregar_texto(paragraphs[12], f" {usuario.username}")
-        _agregar_texto(
-            paragraphs[13], f" {usuario.get_full_name() or usuario.username}"
-        )
-        _agregar_texto(paragraphs[14], f" {usuario.username}")
+        for label, value in zip(signer_labels, signer_values):
+            paragraph = _paragraph_by_label(paragraphs, label)
+            if paragraph is not None:
+                _agregar_texto(paragraph, f" {value}")
+
+        if usuario_principal:
+            principal_labels = (
+                "Usuario Presidente de la organización que autoriza:",
+                "Apellido y nombre:",
+                "DNI:",
+            )
+            start = next(
+                (
+                    index
+                    for index, paragraph in enumerate(paragraphs)
+                    if "Usuario Presidente" in "".join(paragraph.itertext())
+                ),
+                None,
+            )
+            principal_values = (
+                usuario_principal.username,
+                usuario_principal.get_full_name() or usuario_principal.username,
+                _user_dni(usuario_principal),
+            )
+            if start is not None:
+                for label, value in zip(principal_labels, principal_values):
+                    paragraph = next(
+                        (
+                            item
+                            for item in paragraphs[start:]
+                            if "".join(item.itertext()).strip().startswith(label)
+                        ),
+                        None,
+                    )
+                    if paragraph is not None:
+                        _agregar_texto(paragraph, f" {value}")
+
+        if observaciones:
+            motivo = _paragraph_by_label(
+                paragraphs,
+                "Se deja constancia que no se cumplieron las prestaciones",
+            )
+            if motivo is not None:
+                _agregar_texto(motivo, f" {observaciones}")
 
         table = body.find(".//w:tbl", NS)
         rows = table.findall("w:tr", NS)
@@ -104,14 +172,23 @@ def _completar_plantilla(
                 output_zip.writestr(item, content)
 
 
-def generar_certificacion_prestaciones_pdf(*, comedor, periodo, usuario, source):
-    template_path = (
-        Path(settings.BASE_DIR)
-        / "pwa"
-        / "files"
-        / "varios"
-        / "PROGRAMA.ALIMENTAR.COMUNIDAD.docx"
-    )
+def generar_certificacion_prestaciones_pdf(
+    *,
+    comedor,
+    periodo,
+    usuario,
+    source,
+    conforme,
+    observaciones="",
+    usuario_principal=None,
+):
+    template_name = {
+        (True, False): "PRESTACIONES.1.docx",
+        (True, True): "PRESTACIONES.2.docx",
+        (False, False): "PRESTACIONES.3.docx",
+        (False, True): "PRESTACIONES.54.docx",
+    }[(conforme, usuario_principal is not None)]
+    template_path = Path(settings.BASE_DIR) / "pwa" / "files" / "varios" / template_name
     with tempfile.TemporaryDirectory(prefix="certificacion-prestaciones-") as temp_dir:
         temp_path = Path(temp_dir)
         docx_path = temp_path / "certificacion.docx"
@@ -123,6 +200,8 @@ def generar_certificacion_prestaciones_pdf(*, comedor, periodo, usuario, source)
             comedor=comedor,
             periodo=periodo,
             usuario=usuario,
+            usuario_principal=usuario_principal,
+            observaciones=observaciones,
             source=source,
         )
         result = subprocess.run(

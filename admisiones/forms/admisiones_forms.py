@@ -45,6 +45,134 @@ def _ultimo_numero_gde(admision, documentacion_nombre):
     )
 
 
+def _configurar_campos_informe_2233(form, admision, tipo_informe):
+    form._antecedentes_renovaciones_nombres = []
+    form.fields.pop("antecedentes_renovaciones", None)
+    for nombre in ["conclusiones"] + [
+        item
+        for numero in range(1, 7)
+        for item in (f"resolucion_de_pago_{numero}", f"monto_{numero}")
+    ]:
+        form.fields.pop(nombre, None)
+
+    if "finalizacion_convenio_pnud_vigente" in form.fields:
+        form.fields["finalizacion_convenio_pnud_vigente"].widget = forms.DateInput(
+            format="%Y-%m-%d", attrs={"type": "date", "class": "form-control"}
+        )
+
+    es_renovacion = bool(admision and admision.tipo == "renovacion")
+    es_pnud_vigente = bool(
+        admision
+        and admision.tipo == "incorporacion"
+        and admision.es_ex_pnud == "si"
+        and admision.estado_convenio_pnud == "vigente"
+    )
+    financiamiento = getattr(admision, "estado_financiamiento", None)
+    condiciones = {
+        "finalizacion_convenio_pnud_vigente": es_pnud_vigente,
+        "acreditaciones_ultimo_convenio": es_renovacion and financiamiento == "vigente",
+        "monto_total_conveniado_informe": es_renovacion and financiamiento == "vigente",
+        "monto_total_conveniado": es_renovacion and financiamiento == "finalizado",
+        "expediente_incorporacion": es_renovacion,
+        "convenio_incorporacion": es_renovacion,
+        "presentacion_avales": es_renovacion and tipo_informe == "base",
+    }
+    for nombre, aplica in condiciones.items():
+        if not aplica:
+            form.fields.pop(nombre, None)
+        elif form.require_full:
+            form.fields[nombre].required = True
+
+    if "criterio_seleccionado" in form.fields:
+        form.fields["criterio_seleccionado"].required = form.require_full
+
+    if es_renovacion and admision.comedor_id:
+        incorporacion = (
+            Admision.objects.filter(
+                comedor_id=admision.comedor_id,
+                tipo="incorporacion",
+            )
+            .exclude(pk=admision.pk)
+            .order_by("creado", "pk")
+            .first()
+        )
+        if incorporacion:
+            if "expediente_incorporacion" in form.fields:
+                form.fields["expediente_incorporacion"].initial = (
+                    incorporacion.num_expediente
+                )
+            if "convenio_incorporacion" in form.fields:
+                form.fields["convenio_incorporacion"].initial = (
+                    incorporacion.numero_convenio
+                )
+
+    if not (
+        es_renovacion
+        and getattr(admision, "tipo_renovacion", None) == "segunda_o_posterior"
+        and admision.comedor_id
+    ):
+        return
+
+    guardados = {
+        str(item.get("admision_id")): item
+        for item in (getattr(form.instance, "antecedentes_renovaciones", None) or [])
+    }
+    anteriores = (
+        Admision.objects.filter(comedor_id=admision.comedor_id, tipo="renovacion")
+        .exclude(pk=admision.pk)
+        .order_by("creado", "pk")
+    )
+    for anterior in anteriores:
+        datos = guardados.get(str(anterior.pk), {})
+        nombres = {}
+        for clave, etiqueta, valor in (
+            (
+                "resolucion",
+                "Resolución / Disposición de Renovación",
+                anterior.numero_disposicion,
+            ),
+            ("convenio", "Convenio de Renovación", anterior.numero_convenio),
+            ("expediente", "Expediente de Renovación", anterior.num_expediente),
+        ):
+            nombre = f"antecedente_{anterior.pk}_{clave}"
+            form.fields[nombre] = forms.CharField(
+                label=etiqueta,
+                max_length=255,
+                required=form.require_full,
+                initial=datos.get(clave) or valor,
+            )
+            nombres[clave] = nombre
+        form._antecedentes_renovaciones_nombres.append(
+            {"admision": anterior, "campos": nombres}
+        )
+    form.antecedentes_renovaciones_campos = [
+        {
+            "admision": item["admision"],
+            "resolucion": form[item["campos"]["resolucion"]],
+            "convenio": form[item["campos"]["convenio"]],
+            "expediente": form[item["campos"]["expediente"]],
+        }
+        for item in form._antecedentes_renovaciones_nombres
+    ]
+
+
+def _guardar_antecedentes_informe_2233(form, informe):
+    criterio = form.cleaned_data.get("criterio_seleccionado")
+    informe.conclusiones = dict(InformeTecnico.CRITERIOS).get(criterio, "")
+    antecedentes = []
+    for item in form._antecedentes_renovaciones_nombres:
+        antecedentes.append(
+            {
+                "admision_id": item["admision"].pk,
+                "resolucion": form.cleaned_data.get(item["campos"]["resolucion"], ""),
+                "convenio": form.cleaned_data.get(item["campos"]["convenio"], ""),
+                "expediente": form.cleaned_data.get(item["campos"]["expediente"], ""),
+            }
+        )
+    informe.antecedentes_renovaciones = antecedentes
+    return informe
+
+
 def _if_relevamiento_a_pac(fields, admision):
     """Setea el último número GDE disponible en los campos de relevamiento."""
 
@@ -132,12 +260,16 @@ class ValidacionesTemplateAdmisionForm(forms.ModelForm):
             "estado_convenio_pnud",
             "tipo_renovacion",
             "estado_financiamiento",
+            "informe_complementario_modifica_prestaciones",
         ]
         widgets = {
             "es_ex_pnud": forms.Select(attrs={"class": "form-select"}),
             "estado_convenio_pnud": forms.Select(attrs={"class": "form-select"}),
             "tipo_renovacion": forms.Select(attrs={"class": "form-select"}),
             "estado_financiamiento": forms.Select(attrs={"class": "form-select"}),
+            "informe_complementario_modifica_prestaciones": forms.Select(
+                attrs={"class": "form-select"}
+            ),
         }
 
     def __init__(self, *args, **kwargs):
@@ -149,6 +281,7 @@ class ValidacionesTemplateAdmisionForm(forms.ModelForm):
         elif tipo_admision == "renovacion":
             self.fields["tipo_renovacion"].required = True
             self.fields["estado_financiamiento"].required = True
+            self.fields["informe_complementario_modifica_prestaciones"].required = True
 
     def clean(self):
         cleaned_data = super().clean()
@@ -160,6 +293,7 @@ class ValidacionesTemplateAdmisionForm(forms.ModelForm):
 
             cleaned_data["tipo_renovacion"] = None
             cleaned_data["estado_financiamiento"] = None
+            cleaned_data["informe_complementario_modifica_prestaciones"] = None
 
             if es_ex_pnud == "si" and not estado_convenio_pnud:
                 self.add_error(
@@ -361,6 +495,8 @@ class InformeTecnicoJuridicoForm(forms.ModelForm):
                         organizacion.fecha_vencimiento
                     )
 
+        _configurar_campos_informe_2233(self, admision, "juridico")
+
     def clean(self):
         cleaned_data = super().clean()
         no_corresponde = cleaned_data.get("no_corresponde_fecha_vencimiento")
@@ -388,6 +524,14 @@ class InformeTecnicoJuridicoForm(forms.ModelForm):
             cleaned_data["fecha_vencimiento_mandatos"] = None
 
         return cleaned_data
+
+    def save(self, commit=True):
+        informe = super().save(commit=False)
+        _guardar_antecedentes_informe_2233(self, informe)
+        if commit:
+            informe.save()
+            self.save_m2m()
+        return informe
 
 
 class InformeTecnicoBaseForm(forms.ModelForm):
@@ -562,6 +706,8 @@ class InformeTecnicoBaseForm(forms.ModelForm):
                         organizacion.fecha_vencimiento
                     )
 
+        _configurar_campos_informe_2233(self, admision, "base")
+
     def clean(self):
         cleaned_data = super().clean()
         no_corresponde = cleaned_data.get("no_corresponde_fecha_vencimiento")
@@ -589,6 +735,14 @@ class InformeTecnicoBaseForm(forms.ModelForm):
             cleaned_data["fecha_vencimiento_mandatos"] = None
 
         return cleaned_data
+
+    def save(self, commit=True):
+        informe = super().save(commit=False)
+        _guardar_antecedentes_informe_2233(self, informe)
+        if commit:
+            informe.save()
+            self.save_m2m()
+        return informe
 
 
 class InformeTecnicoEstadoForm(forms.Form):
