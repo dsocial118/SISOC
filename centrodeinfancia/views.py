@@ -86,7 +86,7 @@ from centrodeinfancia.services_user_provisioning import (
     sincronizar_email_trabajador,
 )
 from centrodeinfancia.views_formulario_cdi import construir_resumenes_formularios
-from intervenciones.constants import PROGRAMA_ALIASES_CENTRO_INFANCIA
+from intervenciones.api import programa_aliases_cdi
 
 
 CDI_LIST_HEADERS = [
@@ -712,7 +712,7 @@ class CentroDeInfanciaDetailView(LoginRequiredMixin, DetailView):
                 str(tipo.pk): (tipo.programa or "").strip()
                 for tipo in tipo_intervencion_queryset
             }
-            alias_list = list(PROGRAMA_ALIASES_CENTRO_INFANCIA)
+            alias_list = list(programa_aliases_cdi())
             context["tipo_intervencion_programas"] = tipo_programas_map
             context["tipo_intervencion_programa_aliases"] = alias_list
             context["tipo_intervencion_programas_json"] = json.dumps(tipo_programas_map)

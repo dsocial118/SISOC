@@ -222,3 +222,268 @@ forbidden_modules =
     pwa
     ticketera
 ignore_imports =
+
+[importlinter:contract:dispositivos-public-boundary]
+name = los dominios no importan internals de Dispositivos
+type = forbidden
+allow_indirect_imports = True
+source_modules =
+    core
+    users
+    ciudadanos
+    comedores
+    organizaciones
+    duplas
+    admisiones
+    audittrail
+    intervenciones
+    historial
+    acompanamientos
+    expedientespagos
+    relevamientos
+    rendicioncuentasfinal
+    rendicioncuentasmensual
+    centrodefamilia
+    VAT
+    celiaquia
+    importarexpediente
+    comunicados
+    centrodeinfancia
+    ver_para_ser_libre
+    pwa
+    ticketera
+    dashboard
+    healthcheck
+    iam
+    insumos
+    ocr
+forbidden_modules =
+    dispositivos.admin
+    dispositivos.apps
+    dispositivos.dispositivos_filter_config
+    dispositivos.favorite_filters
+    dispositivos.forms
+    dispositivos.management
+    dispositivos.models
+    dispositivos.services
+    dispositivos.urls
+    dispositivos.validators
+    dispositivos.views
+ignore_imports =
+
+[importlinter:contract:vat-public-boundary]
+name = los dominios no importan internals de VAT
+type = forbidden
+allow_indirect_imports = True
+source_modules =
+    core
+    users
+    ciudadanos
+    comedores
+    organizaciones
+    duplas
+    admisiones
+    audittrail
+    intervenciones
+    historial
+    acompanamientos
+    expedientespagos
+    relevamientos
+    rendicioncuentasfinal
+    rendicioncuentasmensual
+    centrodefamilia
+    celiaquia
+    importarexpediente
+    comunicados
+    centrodeinfancia
+    ver_para_ser_libre
+    dispositivos
+    pwa
+    ticketera
+    dashboard
+    healthcheck
+    iam
+    insumos
+    ocr
+forbidden_modules =
+    VAT.admin
+    VAT.api_views
+    VAT.api_web_views
+    VAT.apps
+    VAT.cache_utils
+    VAT.forms
+    VAT.global_urls
+    VAT.management
+    VAT.models
+    VAT.pagination
+    VAT.serializers
+    VAT.services
+    VAT.sidebar_access
+    VAT.urls
+    VAT.views
+ignore_imports =
+
+[importlinter:contract:vpsl-public-boundary]
+name = los dominios no importan internals de Ver para Ser Libre
+type = forbidden
+allow_indirect_imports = True
+source_modules =
+    core
+    users
+    ciudadanos
+    comedores
+    organizaciones
+    duplas
+    admisiones
+    audittrail
+    intervenciones
+    historial
+    acompanamientos
+    expedientespagos
+    relevamientos
+    rendicioncuentasfinal
+    rendicioncuentasmensual
+    centrodefamilia
+    VAT
+    celiaquia
+    importarexpediente
+    comunicados
+    centrodeinfancia
+    dispositivos
+    pwa
+    ticketera
+    dashboard
+    healthcheck
+    iam
+    insumos
+    ocr
+forbidden_modules =
+    ver_para_ser_libre.admin
+    ver_para_ser_libre.apps
+    ver_para_ser_libre.forms
+    ver_para_ser_libre.management
+    ver_para_ser_libre.models
+    ver_para_ser_libre.services
+    ver_para_ser_libre.urls
+    ver_para_ser_libre.views
+ignore_imports =
+
+[importlinter:contract:centrodefamilia-public-boundary]
+name = los dominios no importan internals de Centro de Familia
+type = forbidden
+allow_indirect_imports = True
+source_modules =
+    core
+    users
+    ciudadanos
+    comedores
+    organizaciones
+    duplas
+    admisiones
+    audittrail
+    intervenciones
+    historial
+    acompanamientos
+    expedientespagos
+    relevamientos
+    rendicioncuentasfinal
+    rendicioncuentasmensual
+    VAT
+    celiaquia
+    importarexpediente
+    comunicados
+    centrodeinfancia
+    ver_para_ser_libre
+    dispositivos
+    pwa
+    ticketera
+    dashboard
+    healthcheck
+    iam
+    insumos
+    ocr
+forbidden_modules =
+    centrodefamilia.access
+    centrodefamilia.admin
+    centrodefamilia.api_urls
+    centrodefamilia.api_views
+    centrodefamilia.apps
+    centrodefamilia.ciudadano_detail
+    centrodefamilia.forms
+    centrodefamilia.management
+    centrodefamilia.models
+    centrodefamilia.services
+    centrodefamilia.urls
+    centrodefamilia.views
+ignore_imports =
+
+[importlinter:contract:centrodeinfancia-public-boundary]
+name = los dominios no importan internals de Centro de Infancia
+type = forbidden
+allow_indirect_imports = True
+source_modules =
+    core
+    users
+    ciudadanos
+    comedores
+    organizaciones
+    duplas
+    admisiones
+    audittrail
+    intervenciones
+    historial
+    acompanamientos
+    expedientespagos
+    relevamientos
+    rendicioncuentasfinal
+    rendicioncuentasmensual
+    centrodefamilia
+    VAT
+    celiaquia
+    importarexpediente
+    comunicados
+    ver_para_ser_libre
+    dispositivos
+    pwa
+    ticketera
+    dashboard
+    healthcheck
+    iam
+    insumos
+    ocr
+forbidden_modules =
+    centrodeinfancia.access
+    centrodeinfancia.admin
+    centrodeinfancia.apps
+    centrodeinfancia.forms
+    centrodeinfancia.management
+    centrodeinfancia.models
+    centrodeinfancia.services
+    centrodeinfancia.signals
+    centrodeinfancia.urls
+    centrodeinfancia.views
+ignore_imports =
+
+[importlinter:contract:centrodeinfancia-consumes-intervenciones-api]
+name = Centro de Infancia consume el catálogo público de Intervenciones
+type = forbidden
+allow_indirect_imports = True
+source_modules =
+    centrodeinfancia
+forbidden_modules =
+    intervenciones.constants
+    intervenciones.forms
+    intervenciones.models
+    intervenciones.services_catalogo
+    intervenciones.views
+ignore_imports =
+
+[importlinter:contract:vpsl-no-comedores]
+name = Ver para Ser Libre no depende de Comedores
+type = forbidden
+allow_indirect_imports = True
+source_modules =
+    ver_para_ser_libre
+forbidden_modules =
+    comedores
+ignore_imports =
