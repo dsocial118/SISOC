@@ -78,6 +78,12 @@ class PlantillaInformeTecnicoService:
                 return None, "Falta completar el tipo de renovación."
             if not getattr(admision, "estado_financiamiento", None):
                 return None, "Falta completar el estado del financiamiento."
+            if not getattr(
+                admision, "informe_complementario_modifica_prestaciones", None
+            ):
+                return None, (
+                    "Falta indicar si se realizó un Informe Complementario para modificar prestaciones."
+                )
         else:
             return None, "El tipo de trámite de la admisión no es válido."
 
@@ -88,6 +94,9 @@ class PlantillaInformeTecnicoService:
             estado_convenio_pnud=getattr(admision, "estado_convenio_pnud", None),
             tipo_renovacion=getattr(admision, "tipo_renovacion", None),
             estado_financiamiento=getattr(admision, "estado_financiamiento", None),
+            informe_complementario_modifica_prestaciones=getattr(
+                admision, "informe_complementario_modifica_prestaciones", None
+            ),
         )
         publicacion = (
             PlantillaInformeTecnicoPublicacion.objects.select_related(
@@ -176,6 +185,22 @@ class PlantillaInformeTecnicoService:
                             ),
                         )(),
                     },
+                    "informe_complementario_modifica_prestaciones": {
+                        "valor": getattr(
+                            admision,
+                            "informe_complementario_modifica_prestaciones",
+                            None,
+                        ),
+                        "descripcion": getattr(
+                            admision,
+                            "get_informe_complementario_modifica_prestaciones_display",
+                            lambda: getattr(
+                                admision,
+                                "informe_complementario_modifica_prestaciones",
+                                "",
+                            ),
+                        )(),
+                    },
                 }
             )
 
@@ -186,6 +211,9 @@ class PlantillaInformeTecnicoService:
             estado_convenio_pnud=getattr(admision, "estado_convenio_pnud", None),
             tipo_renovacion=getattr(admision, "tipo_renovacion", None),
             estado_financiamiento=getattr(admision, "estado_financiamiento", None),
+            informe_complementario_modifica_prestaciones=getattr(
+                admision, "informe_complementario_modifica_prestaciones", None
+            ),
         )
         return {
             "clave_condiciones": clave_condiciones,

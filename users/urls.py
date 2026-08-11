@@ -16,7 +16,6 @@ from users.views import (
     ConfirmacionDatosView,
     MiCuentaView,
     PasswordResetConfirmCustomView,
-    UserGenerateTemporaryPasswordView,
     UserListView,
     UserUpdateView,
     UsuariosLoginView,
@@ -76,13 +75,6 @@ urlpatterns = [
         "usuarios/editar/<int:pk>/",
         permissions_any_required(["auth.change_user"])(UserUpdateView.as_view()),
         name="usuario_editar",
-    ),
-    path(
-        "usuarios/generar-password-temporal/<int:pk>/",
-        permissions_any_required(["auth.change_user"])(
-            UserGenerateTemporaryPasswordView.as_view()
-        ),
-        name="usuario_generar_password_temporal",
     ),
     path(
         "usuarios/credenciales-masivas/",
