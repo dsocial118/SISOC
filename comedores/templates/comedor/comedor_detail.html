@@ -1524,10 +1524,14 @@
                                         </td>
                                         <td>{{ certificacion.creado|date:"d/m/Y H:i" }}</td>
                                         <td>
-                                            <a href="{% url 'descargar_certificacion_prestaciones_web' comedor.id certificacion.id %}"
-                                               class="btn btn-sm btn-primary"
-                                               target="_blank"
-                                               rel="noopener">Ver PDF</a>
+                                            {% if certificacion.certificacion_pdf %}
+                                                <a href="{% url 'descargar_certificacion_prestaciones_web' comedor.id certificacion.id %}"
+                                                   class="btn btn-sm btn-primary"
+                                                   target="_blank"
+                                                   rel="noopener">Ver PDF</a>
+                                            {% else %}
+                                                <span class="text-muted">No disponible</span>
+                                            {% endif %}
                                         </td>
                                     </tr>
                                 {% empty %}

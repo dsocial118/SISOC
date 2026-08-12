@@ -116,9 +116,7 @@ class CertificacionesPrestacionesHistorialView(LoginRequiredMixin, ListView):
         queryset = (
             PrestacionAlimentariaConformidad.objects.filter(
                 comedor_id=self.comedor.id,
-                certificacion_pdf__isnull=False,
             )
-            .exclude(certificacion_pdf="")
             .select_related("usuario")
             .order_by("-periodo", "-creado")
         )
@@ -1584,9 +1582,7 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
                 "conformidad_prestacion_pendiente": self._build_conformidad_prestacion_context(),
                 "certificaciones_prestaciones": PrestacionAlimentariaConformidad.objects.filter(
                     comedor_id=self.object.id,
-                    certificacion_pdf__isnull=False,
                 )
-                .exclude(certificacion_pdf="")
                 .select_related("usuario")
                 .order_by("-periodo", "-creado")[:6],
                 **actividades_pnud_context,
