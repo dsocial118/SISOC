@@ -174,7 +174,7 @@ INSTALLED_APPS = [
     "users",
     "core",
     "sentry.apps.SentryConfig",
-    "dashboard",
+    "dashboard.apps.DashboardConfig",
     "comedores",
     "organizaciones",
     "ciudadanos",
