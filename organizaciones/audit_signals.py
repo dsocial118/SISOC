@@ -8,10 +8,14 @@ from core.soft_delete.signals import post_soft_delete
 from organizaciones.models import Aval, Firmante
 
 
+DELETE_EVENT_LOGGED_ATTR = "_audittrail_delete_logged"
+PREVIOUS_STATE_ATTR = "_audittrail_previous_state"
+
+
 def _mark_delete_event_logged(instance) -> bool:
-    if getattr(instance, "_audittrail_delete_logged", False):
+    if getattr(instance, DELETE_EVENT_LOGGED_ATTR, False):
         return True
-    instance._audittrail_delete_logged = True
+    setattr(instance, DELETE_EVENT_LOGGED_ATTR, True)
     return False
 
 
@@ -30,11 +34,13 @@ def cache_firmante_state(sender, instance, **kwargs):
     if not instance.pk:
         return
     try:
-        instance._audittrail_previous_state = sender.objects.select_related(
-            "rol", "organizacion"
-        ).get(pk=instance.pk)
+        setattr(
+            instance,
+            PREVIOUS_STATE_ATTR,
+            sender.objects.select_related("rol", "organizacion").get(pk=instance.pk),
+        )
     except sender.DoesNotExist:
-        instance._audittrail_previous_state = None
+        setattr(instance, PREVIOUS_STATE_ATTR, None)
 
 
 @receiver(post_save, sender=Firmante)
@@ -48,7 +54,7 @@ def registrar_cambios_firmante(sender, instance, created: bool, **kwargs):
             ACTION_CREATE,
         )
         return
-    previous = getattr(instance, "_audittrail_previous_state", None)
+    previous = getattr(instance, PREVIOUS_STATE_ATTR, None)
     changes = {}
     if previous:
         if previous.nombre != instance.nombre:
@@ -60,8 +66,8 @@ def registrar_cambios_firmante(sender, instance, created: bool, **kwargs):
                 str(previous.rol) if previous.rol else None,
                 str(instance.rol) if instance.rol else None,
             ]
-    if hasattr(instance, "_audittrail_previous_state"):
-        delattr(instance, "_audittrail_previous_state")
+    if hasattr(instance, PREVIOUS_STATE_ATTR):
+        delattr(instance, PREVIOUS_STATE_ATTR)
     if changes:
         registrar_evento(instance.organizacion, changes, ACTION_UPDATE)
 
@@ -71,11 +77,13 @@ def cache_aval_state(sender, instance, **kwargs):
     if not instance.pk:
         return
     try:
-        instance._audittrail_previous_state = sender.objects.select_related(
-            "organizacion"
-        ).get(pk=instance.pk)
+        setattr(
+            instance,
+            PREVIOUS_STATE_ATTR,
+            sender.objects.select_related("organizacion").get(pk=instance.pk),
+        )
     except sender.DoesNotExist:
-        instance._audittrail_previous_state = None
+        setattr(instance, PREVIOUS_STATE_ATTR, None)
 
 
 @receiver(post_save, sender=Aval)
@@ -89,15 +97,15 @@ def registrar_cambios_aval(sender, instance, created: bool, **kwargs):
             ACTION_CREATE,
         )
         return
-    previous = getattr(instance, "_audittrail_previous_state", None)
+    previous = getattr(instance, PREVIOUS_STATE_ATTR, None)
     changes = {}
     if previous:
         if previous.nombre != instance.nombre:
             changes["Aval: Nombre"] = [previous.nombre, instance.nombre]
         if previous.cuit != instance.cuit:
             changes["Aval: CUIT"] = [previous.cuit, instance.cuit]
-    if hasattr(instance, "_audittrail_previous_state"):
-        delattr(instance, "_audittrail_previous_state")
+    if hasattr(instance, PREVIOUS_STATE_ATTR):
+        delattr(instance, PREVIOUS_STATE_ATTR)
     if changes:
         registrar_evento(instance.organizacion, changes, ACTION_UPDATE)
 

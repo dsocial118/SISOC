@@ -8,6 +8,8 @@ from comedores.models import Comedor, ImagenComedor, Referente
 
 
 REFERENTE_FIELDS = ("nombre", "apellido", "mail", "celular", "documento", "funcion")
+PREVIOUS_STATE_ATTR = "_audittrail_previous_state"
+PREVIOUS_IMAGE_ATTR = "_audittrail_previous_image"
 
 
 @receiver(pre_save, sender=Referente)
@@ -15,9 +17,9 @@ def cache_referente_state(sender, instance, **kwargs):
     if not instance.pk:
         return
     try:
-        instance._audittrail_previous_state = sender.objects.get(pk=instance.pk)
+        setattr(instance, PREVIOUS_STATE_ATTR, sender.objects.get(pk=instance.pk))
     except sender.DoesNotExist:
-        instance._audittrail_previous_state = None
+        setattr(instance, PREVIOUS_STATE_ATTR, None)
 
 
 @receiver(post_save, sender=Referente)
@@ -25,7 +27,7 @@ def registrar_cambios_referente(sender, instance, created: bool, **kwargs):
     if created:
         return
 
-    previous = getattr(instance, "_audittrail_previous_state", None)
+    previous = getattr(instance, PREVIOUS_STATE_ATTR, None)
     changes = {}
     if previous:
         for field_name in REFERENTE_FIELDS:
@@ -33,8 +35,8 @@ def registrar_cambios_referente(sender, instance, created: bool, **kwargs):
             if old != new:
                 verbose = sender._meta.get_field(field_name).verbose_name
                 changes[f"Referente: {verbose}"] = [old, new]
-    if hasattr(instance, "_audittrail_previous_state"):
-        delattr(instance, "_audittrail_previous_state")
+    if hasattr(instance, PREVIOUS_STATE_ATTR):
+        delattr(instance, PREVIOUS_STATE_ATTR)
     if not changes:
         return
     for comedor in Comedor.objects.filter(referente=instance):
@@ -50,10 +52,10 @@ def cache_imagen_comedor_state(sender, instance, **kwargs):
     except sender.DoesNotExist:
         previous = None
     if previous:
-        instance._audittrail_previous_image = {
+        setattr(instance, PREVIOUS_IMAGE_ATTR, {
             "imagen": previous.imagen.name if previous.imagen else "",
             "comedor_id": previous.comedor_id,
-        }
+        })
 
 
 @receiver(post_save, sender=ImagenComedor)
@@ -67,7 +69,7 @@ def registrar_cambios_imagen_comedor(sender, instance, created: bool, **kwargs):
         )
         return
 
-    previous = getattr(instance, "_audittrail_previous_image", None)
+    previous = getattr(instance, PREVIOUS_IMAGE_ATTR, None)
     changes = {}
     if previous:
         if previous["imagen"] != image_name:
@@ -80,8 +82,8 @@ def registrar_cambios_imagen_comedor(sender, instance, created: bool, **kwargs):
                 previous["comedor_id"],
                 instance.comedor_id,
             ]
-    if hasattr(instance, "_audittrail_previous_image"):
-        delattr(instance, "_audittrail_previous_image")
+    if hasattr(instance, PREVIOUS_IMAGE_ATTR):
+        delattr(instance, PREVIOUS_IMAGE_ATTR)
     if changes:
         registrar_evento(instance.comedor, changes, ACTION_UPDATE)
 
