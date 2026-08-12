@@ -16,7 +16,7 @@
     'use strict';
 
     // Incluye .card-body porque hay listados sin envoltorio .table-responsive:
-    // la tabla cuelga directo de la card. Los que no desbordan no se marcan.
+    // la tabla cuelga directo de la card. Se filtran los paneles sin tabla.
     var SELECTOR = '.table-responsive, .table-responsive-lg, .card-body';
     var MARGEN = 2; // tolerancia en px para redondeos del navegador
 
@@ -31,6 +31,11 @@
         );
     }
 
+    function esContenedorTabla(contenedor) {
+        return !contenedor.classList.contains('card-body') ||
+            Boolean(contenedor.querySelector('table, .projects'));
+    }
+
     function preparar() {
         // Solo en listados con el buscador nuevo, para no alterar otras vistas
         if (!document.querySelector('.poncho-search')) {
@@ -39,6 +44,9 @@
 
         var contenedores = document.querySelectorAll(SELECTOR);
         Array.prototype.forEach.call(contenedores, function (contenedor) {
+            if (!esContenedorTabla(contenedor)) {
+                return;
+            }
             if (contenedor.dataset.ponchoScroll === 'listo') {
                 return;
             }
@@ -67,6 +75,10 @@
 
     window.addEventListener('resize', function () {
         var contenedores = document.querySelectorAll(SELECTOR);
-        Array.prototype.forEach.call(contenedores, actualizar);
+        Array.prototype.forEach.call(contenedores, function (contenedor) {
+            if (esContenedorTabla(contenedor)) {
+                actualizar(contenedor);
+            }
+        });
     });
 })();
