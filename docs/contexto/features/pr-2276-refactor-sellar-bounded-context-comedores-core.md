@@ -51,13 +51,15 @@
 - `comunicados/forms.py`
 - `comunicados/permissions.py`
 - `comunicados/views.py`
-- ... y 21 archivo(s) adicional(es) relacionados.
+- ... y 23 archivo(s) adicional(es) relacionados.
 - Documentación sugerida para ampliar contexto:
 - `docs/indice.md`
 - `docs/ia/CONTEXT_HYGIENE.md`
 - `docs/ia/ARCHITECTURE.md`
 - `docs/ia/TESTING.md`
+- `docs/contexto/features/pr-2276-refactor-sellar-bounded-context-comedores-core.md`
 - `docs/registro/decisiones/2026-08-12-bounded-context-comedores-core.md`
+- `docs/registro/prs/PR-2276.md`
 
 ## Trazabilidad
 
