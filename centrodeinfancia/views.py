@@ -33,8 +33,11 @@ from django.views.generic import (
     UpdateView,
 )
 from auditlog.models import LogEntry
+from ciudadanos.api import (
+    obtener_datos_ciudadano_desde_renaper,
+    resolver_nacionalidad_desde_renaper,
+)
 from ciudadanos.models import Ciudadano
-from comedores.services.comedor_service import ComedorService
 from core.decorators import permissions_any_required
 from core.models import Nacionalidad, Sexo
 from core.security import safe_redirect
@@ -853,7 +856,7 @@ class TrabajadorCentroInfanciaCreateView(
         ciudadanos = Ciudadano.buscar_por_documento(query, max_results=50)
         if ciudadanos or not query.isdigit() or len(query) < 7 or form_bound:
             return ciudadanos, None
-        renaper_result = ComedorService.obtener_datos_ciudadano_desde_renaper(query)
+        renaper_result = obtener_datos_ciudadano_desde_renaper(query)
         if renaper_result.get("success"):
             if renaper_result.get("message"):
                 messages.info(self.request, renaper_result["message"])
@@ -1499,9 +1502,7 @@ class NominaCentroInfanciaCreateView(
         if query and len(query) >= 4:
             ciudadanos = Ciudadano.buscar_por_documento(query, max_results=50)
             if not ciudadanos and query.isdigit() and len(query) >= 7 and not form:
-                renaper_result = ComedorService.obtener_datos_ciudadano_desde_renaper(
-                    query
-                )
+                renaper_result = obtener_datos_ciudadano_desde_renaper(query)
                 if renaper_result.get("success"):
                     renaper_data = self._build_nomina_initial_from_renaper(
                         renaper_result
@@ -1634,7 +1635,7 @@ class NominaCentroInfanciaCreateView(
                     sexo_obj = Sexo.objects.filter(
                         sexo=form.cleaned_data.get("sexo")
                     ).first()
-                    nacionalidad_obj = ComedorService._match_nacionalidad(  # pylint: disable=protected-access
+                    nacionalidad_obj = resolver_nacionalidad_desde_renaper(
                         form.cleaned_data.get("nacionalidad")
                     )
                     ciudadano = Ciudadano.objects.filter(

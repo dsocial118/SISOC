@@ -53,6 +53,33 @@
   border-color: var(--poncho-form-borde-sutil);
 }
 
+/* `.modal-dialog-scrollable` de Bootstrap da por sentado que header, body y
+   footer son hijos directos de `.modal-content`, que es el contenedor flex.
+   Aca el <form> envuelve al body y al footer para poder postear todo junto,
+   asi que el `.modal-body` deja de ser item flex: su `flex: 1 1 auto` y su
+   `overflow-y: auto` no tienen contra que resolverse, el form crece sin tope y
+   el footer con el boton Guardar queda fuera del viewport apenas el contenido
+   crece (por ejemplo al mostrarse un error de validacion).
+
+   Se restituye la cadena: el form pasa a ser el item flexible y a su vez
+   contenedor columna. El `min-height: 0` es lo que habilita que el hijo
+   scrollee, porque por defecto un item flex no baja de su contenido. */
+.modal-content.poncho-form > form {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.modal-content.poncho-form .modal-body {
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.modal-content.poncho-form .modal-footer {
+  flex: 0 0 auto;
+}
+
 /* ---------- Tipografia ---------- */
 .poncho-form,
 .poncho-form .modal-title {

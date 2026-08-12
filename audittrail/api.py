@@ -13,6 +13,8 @@ from config.middlewares.threadlocals import get_current_user
 
 
 ACTION_CREATE = LogEntry.Action.CREATE
+ACTION_UPDATE = LogEntry.Action.UPDATE
+ACTION_DELETE = LogEntry.Action.DELETE
 
 
 def _actor_actual():

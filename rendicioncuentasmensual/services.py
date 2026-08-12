@@ -81,16 +81,28 @@ class RendicionCuentaMensualService:
     @staticmethod
     def _obtener_comedores_destino_notificacion(rendicion):
         comedor = getattr(rendicion, "comedor", None)
-        if not comedor:
-            return []
-
+        proyecto = getattr(rendicion, "proyecto", None)
         proyecto_codigo = (
-            getattr(getattr(rendicion, "proyecto", None), "codigo", "")
+            getattr(proyecto, "codigo", "")
             or getattr(comedor, "codigo_de_proyecto", "")
             or ""
         ).strip()
         if not proyecto_codigo:
-            return [comedor]
+            return [comedor] if comedor else []
+
+        if proyecto:
+            return list(
+                Comedor.objects.filter(
+                    Q(proyecto=proyecto)
+                    | Q(
+                        organizacion=proyecto.organizacion,
+                        codigo_de_proyecto=proyecto.codigo,
+                    ),
+                    deleted_at__isnull=True,
+                )
+                .distinct()
+                .order_by("nombre", "id")
+            )
 
         filters = {
             "codigo_de_proyecto": proyecto_codigo,
@@ -145,8 +157,11 @@ class RendicionCuentaMensualService:
 
         numero_rendicion = getattr(rendicion, "numero_rendicion", None) or rendicion.id
         estado_legible = documento.get_estado_display()
-        comedor = getattr(rendicion, "comedor", None)
-        proyecto_codigo = (getattr(comedor, "codigo_de_proyecto", "") or "").strip()
+        proyecto_codigo = (
+            getattr(getattr(rendicion, "proyecto", None), "codigo", "")
+            or getattr(getattr(rendicion, "comedor", None), "codigo_de_proyecto", "")
+            or ""
+        ).strip()
         convenio = (getattr(rendicion, "convenio", "") or "").strip()
         proyecto_label = proyecto_codigo or "Sin proyecto"
         convenio_label = convenio or "Sin convenio"
@@ -223,6 +238,8 @@ class RendicionCuentaMensualService:
     @staticmethod
     def _get_project_queryset(comedor, proyecto=None):
         queryset = RendicionCuentaMensual.objects.filter(deleted_at__isnull=True)
+        if proyecto is None:
+            proyecto = getattr(comedor, "proyecto", None)
         if proyecto is not None:
             return queryset.filter(proyecto=proyecto)
         proyecto_codigo = (getattr(comedor, "codigo_de_proyecto", "") or "").strip()
@@ -526,7 +543,15 @@ class RendicionCuentaMensualService:
 
     @staticmethod
     def rendicion_esta_completamente_validada(rendicion):
-        return rendicion.estado == RendicionCuentaMensual.ESTADO_FINALIZADA
+        documentos_vigentes = (
+            RendicionCuentaMensualService._documentos_vigentes_queryset(rendicion)
+        )
+        return (
+            documentos_vigentes.exists()
+            and not documentos_vigentes.exclude(
+                estado=DocumentacionAdjunta.ESTADO_VALIDADO
+            ).exists()
+        )
 
     @staticmethod
     def obtener_documentos_para_descarga_pdf(rendicion):
@@ -588,11 +613,31 @@ class RendicionCuentaMensualService:
     @staticmethod
     def obtener_scope_proyecto(rendicion):
         comedor = getattr(rendicion, "comedor", None)
-        organizacion = getattr(comedor, "organizacion", None) if comedor else None
-        proyecto_codigo = (getattr(comedor, "codigo_de_proyecto", "") or "").strip()
+        proyecto = getattr(rendicion, "proyecto", None)
+        organizacion = getattr(proyecto, "organizacion", None) or (
+            getattr(comedor, "organizacion", None) if comedor else None
+        )
+        proyecto_codigo = (
+            getattr(proyecto, "codigo", "")
+            or getattr(comedor, "codigo_de_proyecto", "")
+            or ""
+        ).strip()
 
         related_comedores = []
-        if comedor:
+        if proyecto:
+            related_comedores = list(
+                Comedor.objects.filter(
+                    Q(proyecto=proyecto)
+                    | Q(
+                        organizacion=proyecto.organizacion,
+                        codigo_de_proyecto=proyecto.codigo,
+                    ),
+                    deleted_at__isnull=True,
+                )
+                .distinct()
+                .order_by("nombre")
+            )
+        elif comedor:
             if proyecto_codigo:
                 filters = {
                     "codigo_de_proyecto": proyecto_codigo,
@@ -778,7 +823,12 @@ class RendicionCuentaMensualService:
         } and rendicion.subestado_proceso == (
             RendicionCuentaMensual.SUBESTADO_PENDIENTE_CORRECCIONES
         ):
-            rendicion.subestado_proceso = RendicionCuentaMensual.SUBESTADO_EN_CURSO
+            rendicion.subestado_proceso = (
+                RendicionCuentaMensual.SUBESTADO_SUBSANADO
+                if rendicion.etapa_proceso
+                == RendicionCuentaMensual.ETAPA_REVISION_AUDITORIA
+                else RendicionCuentaMensual.SUBESTADO_EN_CURSO
+            )
         else:
             rendicion.etapa_proceso = (
                 RendicionCuentaMensual.ETAPA_REVISION_DOCUMENTACION
@@ -854,13 +904,6 @@ class RendicionCuentaMensualService:
             rendicion.save(
                 update_fields=["usuario_ultima_modificacion", "ultima_modificacion"]
             )
-        RendicionCuentaMensualService._sincronizar_estado_rendicion_por_documentos(
-            rendicion
-        )
-        RendicionCuentaMensualService._crear_notificacion_mobile_revision_documento(
-            documento=documento,
-            actor=actor,
-        )
         return documento
 
     @staticmethod
@@ -994,10 +1037,21 @@ class RendicionesOrganizacionService:
         queryset = (
             RendicionCuentaMensual.objects.filter(
                 deleted_at__isnull=True,
-                comedor__deleted_at__isnull=True,
-                comedor__organizacion=organizacion,
             )
-            .select_related("comedor", "comedor__organizacion")
+            .filter(
+                Q(proyecto__organizacion=organizacion)
+                | Q(
+                    comedor__organizacion=organizacion,
+                    comedor__deleted_at__isnull=True,
+                )
+            )
+            .select_related(
+                "proyecto",
+                "proyecto__organizacion",
+                "comedor",
+                "comedor__organizacion",
+            )
+            .distinct()
             .order_by("-periodo_inicio", "-id")
         )
         codigo = (codigo_proyecto or "").strip()
@@ -1042,12 +1096,26 @@ class RendicionProcesoService:
     ACCION_FINALIZAR_REGULARIZACION = "finalizar_regularizacion"
 
     @staticmethod
-    def _validar_documentos(rendicion):
-        if not RendicionCuentaMensualService.rendicion_esta_completamente_validada(
+    def _documentos_observados_al_finalizar(rendicion):
+        documentos = RendicionCuentaMensualService._documentos_vigentes_queryset(  # pylint: disable=protected-access
             rendicion
-        ):
+        )
+        if documentos.filter(estado=DocumentacionAdjunta.ESTADO_PRESENTADO).exists():
             raise ValidationError(
-                "No se puede finalizar la etapa mientras existan documentos sin validar."
+                "No se puede finalizar la etapa mientras existan documentos sin revisar."
+            )
+        return list(documentos.filter(estado=DocumentacionAdjunta.ESTADO_SUBSANAR))
+
+    @staticmethod
+    def _enviar_documentos_a_subsanacion(rendicion, documentos, actor):
+        rendicion.estado = RendicionCuentaMensual.ESTADO_SUBSANAR
+        rendicion.subestado_proceso = (
+            RendicionCuentaMensual.SUBESTADO_PENDIENTE_CORRECCIONES
+        )
+        for documento in documentos:
+            RendicionCuentaMensualService._crear_notificacion_mobile_revision_documento(  # pylint: disable=protected-access
+                documento=documento,
+                actor=actor,
             )
 
     @staticmethod
@@ -1064,7 +1132,7 @@ class RendicionProcesoService:
     @transaction.atomic
     def ejecutar(
         *, rendicion, accion, datos, actor=None
-    ):  # pylint: disable=too-many-statements
+    ):  # pylint: disable=too-many-statements,too-many-branches
         ahora = timezone.now()
         pendiente = RendicionCuentaMensual.SUBESTADO_PENDIENTE
         en_curso = RendicionCuentaMensual.SUBESTADO_EN_CURSO
@@ -1085,41 +1153,61 @@ class RendicionProcesoService:
                 RendicionCuentaMensual.ETAPA_REVISION_DOCUMENTACION,
                 {en_curso},
             )
-            RendicionProcesoService._validar_documentos(rendicion)
-            rendicion.fecha_validacion_territorial = ahora
-            rendicion.etapa_proceso = RendicionCuentaMensual.ETAPA_REVISION_AUDITORIA
-            rendicion.subestado_proceso = pendiente
-            rendicion.estado = RendicionCuentaMensual.ESTADO_FINALIZADA
+            documentos_observados = (
+                RendicionProcesoService._documentos_observados_al_finalizar(rendicion)
+            )
+            if documentos_observados:
+                RendicionProcesoService._enviar_documentos_a_subsanacion(
+                    rendicion, documentos_observados, actor
+                )
+            else:
+                rendicion.fecha_validacion_territorial = ahora
+                rendicion.etapa_proceso = (
+                    RendicionCuentaMensual.ETAPA_REVISION_AUDITORIA
+                )
+                rendicion.subestado_proceso = pendiente
+                rendicion.estado = RendicionCuentaMensual.ESTADO_REVISION
         elif accion == RendicionProcesoService.ACCION_INICIAR_REVISION_AUDITORIA:
             RendicionProcesoService._validar_estado(
                 rendicion,
                 RendicionCuentaMensual.ETAPA_REVISION_AUDITORIA,
                 {pendiente, subsanado},
             )
+            es_primer_inicio_auditoria = rendicion.subestado_proceso == pendiente
             rendicion.subestado_proceso = en_curso
             rendicion.estado = RendicionCuentaMensual.ESTADO_REVISION
-            documentos_validados_ids = list(
-                RendicionCuentaMensualService._documentos_vigentes_queryset(  # pylint: disable=protected-access
-                    rendicion
+            if es_primer_inicio_auditoria:
+                documentos_validados_ids = list(
+                    RendicionCuentaMensualService._documentos_vigentes_queryset(  # pylint: disable=protected-access
+                        rendicion
+                    )
+                    .filter(estado=DocumentacionAdjunta.ESTADO_VALIDADO)
+                    .values_list("pk", flat=True)
                 )
-                .filter(estado=DocumentacionAdjunta.ESTADO_VALIDADO)
-                .values_list("pk", flat=True)
-            )
-            DocumentacionAdjunta.objects.filter(pk__in=documentos_validados_ids).update(
-                estado=DocumentacionAdjunta.ESTADO_PRESENTADO,
-                observaciones=None,
-            )
+                DocumentacionAdjunta.objects.filter(
+                    pk__in=documentos_validados_ids
+                ).update(
+                    estado=DocumentacionAdjunta.ESTADO_PRESENTADO,
+                    observaciones=None,
+                )
         elif accion == RendicionProcesoService.ACCION_FINALIZAR_REVISION_AUDITORIA:
             RendicionProcesoService._validar_estado(
                 rendicion,
                 RendicionCuentaMensual.ETAPA_REVISION_AUDITORIA,
                 {en_curso},
             )
-            RendicionProcesoService._validar_documentos(rendicion)
-            rendicion.fecha_validacion_auditoria = ahora
-            rendicion.etapa_proceso = RendicionCuentaMensual.ETAPA_AUDITORIA
-            rendicion.subestado_proceso = pendiente
-            rendicion.estado = RendicionCuentaMensual.ESTADO_FINALIZADA
+            documentos_observados = (
+                RendicionProcesoService._documentos_observados_al_finalizar(rendicion)
+            )
+            if documentos_observados:
+                RendicionProcesoService._enviar_documentos_a_subsanacion(
+                    rendicion, documentos_observados, actor
+                )
+            else:
+                rendicion.fecha_validacion_auditoria = ahora
+                rendicion.etapa_proceso = RendicionCuentaMensual.ETAPA_AUDITORIA
+                rendicion.subestado_proceso = pendiente
+                rendicion.estado = RendicionCuentaMensual.ESTADO_FINALIZADA
         elif accion == RendicionProcesoService.ACCION_INICIAR_AUDITORIA:
             RendicionProcesoService._validar_estado(
                 rendicion,

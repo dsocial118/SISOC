@@ -143,10 +143,51 @@ class CiudadanoFormParaNomina(forms.ModelForm):
             "tipo_documento",
             "documento",
             "sexo",
+            "pertenece_comunidad_indigena",
+            "en_situacion_de_calle",
+            "persona_con_celiaquia",
         ]
         widgets = {
             "fecha_nacimiento": forms.DateInput(attrs={"type": "date"}),
         }
+
+
+class CiudadanoSinDniFormParaNomina(forms.ModelForm):
+    """Alta manual para personas que no cuentan con DNI."""
+
+    class Meta:
+        model = Ciudadano
+        fields = [
+            "apellido",
+            "nombre",
+            "fecha_nacimiento",
+            "sexo",
+            "motivo_sin_dni",
+            "motivo_sin_dni_descripcion",
+            "pertenece_comunidad_indigena",
+            "en_situacion_de_calle",
+            "persona_con_celiaquia",
+        ]
+        widgets = {
+            "fecha_nacimiento": forms.DateInput(attrs={"type": "date"}),
+            "motivo_sin_dni_descripcion": forms.Textarea(attrs={"rows": 2}),
+        }
+
+    def clean(self):
+        cleaned_data = super().clean()
+        if not cleaned_data.get("motivo_sin_dni"):
+            self.add_error(
+                "motivo_sin_dni",
+                "Debe indicar el motivo por el que no posee DNI.",
+            )
+        cleaned_data.update(
+            {
+                "tipo_registro_identidad": Ciudadano.TIPO_REGISTRO_SIN_DNI,
+                "tipo_documento": Ciudadano.DOCUMENTO_DNI,
+                "documento": None,
+            }
+        )
+        return cleaned_data
 
 
 class ColaboradorEspacioForm(forms.ModelForm):

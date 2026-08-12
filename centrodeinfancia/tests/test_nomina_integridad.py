@@ -224,7 +224,7 @@ def test_create_view_precarga_fecha_renaper_desde_contrato_servicio(mocker):
     )
     request.user = user
     mock_obtener = mocker.patch(
-        "centrodeinfancia.views.ComedorService.obtener_datos_ciudadano_desde_renaper",
+        "centrodeinfancia.views.obtener_datos_ciudadano_desde_renaper",
         return_value={
             "success": True,
             "data": {

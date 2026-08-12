@@ -8,6 +8,11 @@ reestilar tabla, fondo y botones sin pelear con !important.
 {% endcomment %}
 <link rel="stylesheet" href="{% static 'custom/css/poncho_listados.css' %}" />
 {% comment %}
+Marca los bordes de las tablas que scrollean en horizontal. Va con el
+componente porque aplica a los 46 listados por igual.
+{% endcomment %}
+<script src="{% static 'custom/js/poncho_scroll_tablas.js' %}" defer></script>
+{% comment %}
 Componente Search Bar
 Uso clásico (texto): {% include 'components/search_bar.html' with titulo='Mi Título' placeholder='Buscar...' help_text='Ayuda' reset_url=url add_url=url show_add_button=True query=query add_text='Agregar' %}
 Modo filtros combinables: {% include 'components/search_bar.html' with titulo='Buscar' reset_url=reset_url add_url=add_url filters_mode=True %}

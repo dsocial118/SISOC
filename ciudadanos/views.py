@@ -30,7 +30,7 @@ from ciudadanos.ciudadanos_filter_config import (
 from ciudadanos.forms import CiudadanoFiltroForm, CiudadanoForm, GrupoFamiliarForm
 from ciudadanos.detail_contributions import obtener_contexto_contribucion
 from ciudadanos.models import Ciudadano, GrupoFamiliar
-from comedores.services.comedor_service import ComedorService
+from ciudadanos.api import obtener_datos_ciudadano_desde_renaper
 from core.models import Localidad, Municipio
 from core.services.advanced_filters.engine import AdvancedFilterEngine
 from core.pagination import NoCountPaginator, build_no_count_page_range
@@ -399,9 +399,7 @@ class CiudadanosCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateVi
         if sexo not in {"M", "F", "X"}:
             sexo = None
 
-        resultado = ComedorService.obtener_datos_ciudadano_desde_renaper(
-            dni_clean, sexo=sexo
-        )
+        resultado = obtener_datos_ciudadano_desde_renaper(dni_clean, sexo=sexo)
         if not resultado.get("success"):
             messages.warning(
                 request,
