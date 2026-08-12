@@ -52,10 +52,14 @@ def cache_imagen_comedor_state(sender, instance, **kwargs):
     except sender.DoesNotExist:
         previous = None
     if previous:
-        setattr(instance, PREVIOUS_IMAGE_ATTR, {
-            "imagen": previous.imagen.name if previous.imagen else "",
-            "comedor_id": previous.comedor_id,
-        })
+        setattr(
+            instance,
+            PREVIOUS_IMAGE_ATTR,
+            {
+                "imagen": previous.imagen.name if previous.imagen else "",
+                "comedor_id": previous.comedor_id,
+            },
+        )
 
 
 @receiver(post_save, sender=ImagenComedor)
