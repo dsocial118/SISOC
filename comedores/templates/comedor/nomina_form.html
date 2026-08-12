@@ -131,7 +131,8 @@
                         id="btn-cambiar-modo">Sin DNI</button>
             </div>
             <div class="card-body">
-                <div id="formulario-con-dni" {% if modo_creacion == 'sin_dni' %}class="d-none"{% endif %}>
+                <div id="formulario-con-dni"
+                     {% if modo_creacion == 'sin_dni' %}class="d-none"{% endif %}>
                     {% if form_ciudadano.non_field_errors %}
                         <div class="alert alert-danger">{{ form_ciudadano.non_field_errors }}</div>
                     {% endif %}
@@ -151,7 +152,8 @@
                                 data-submit-with-spinner="Procesando…">Crear y Agregar</button>
                     </form>
                 </div>
-                <div id="formulario-sin-dni" {% if modo_creacion != 'sin_dni' %}class="d-none"{% endif %}>
+                <div id="formulario-sin-dni"
+                     {% if modo_creacion != 'sin_dni' %}class="d-none"{% endif %}>
                     <div class="alert alert-warning">
                         Esta alta excepcional se guardará sin revisión manual y se agregará directamente a la nómina.
                     </div>
