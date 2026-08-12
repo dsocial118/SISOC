@@ -34,7 +34,6 @@
 - Empezar por `docs/registro/prs/PR-2273.md` para contexto resumido del PR.
 - Revisar primero estos archivos del diff:
 - `ciudadanos/migrations/0031_ciudadano_en_situacion_de_calle_and_more.py`
-- `ciudadanos/migrations/0032_alter_ciudadano_en_situacion_de_calle_and_more.py`
 - `ciudadanos/models.py`
 - `comedores/forms/comedor_form.py`
 - `comedores/services/comedor_service/impl.py`
@@ -44,6 +43,7 @@
 - `docs/registro/cambios/2026-08-10-alta-ciudadano-sin-dni-nomina.md`
 - `docs/registro/prs/PR-2273.md`
 - `tests/test_comedor_service_renaper_helpers_unit.py`
+- `tests/test_comedor_sin_dni_form_unit.py`
 - Documentación sugerida para ampliar contexto:
 - `docs/indice.md`
 - `docs/ia/CONTEXT_HYGIENE.md`
