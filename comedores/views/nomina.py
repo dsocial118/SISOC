@@ -39,23 +39,6 @@ def _ciudadano_form_para_post(request):
     return CiudadanoFormParaNomina(request.POST)
 
 
-def _ciudadano_recien_creado(ciudadano_data):
-    filtros = {
-        "tipo_registro_identidad": ciudadano_data.get(
-            "tipo_registro_identidad", Ciudadano.TIPO_REGISTRO_ESTANDAR
-        ),
-        "documento": ciudadano_data.get("documento"),
-    }
-    if filtros["documento"] is None:
-        filtros.update(
-            apellido=ciudadano_data.get("apellido"),
-            nombre=ciudadano_data.get("nombre"),
-        )
-    else:
-        filtros["tipo_documento"] = ciudadano_data.get("tipo_documento")
-    return Ciudadano.objects.filter(**filtros).order_by("-id").first()
-
-
 def _get_nomina_scoped_or_404(pk, user):
     """Obtiene una Nomina scoped al usuario, soportando tanto prog 2 (admision) como 3/4 (comedor)."""
     scoped_comedores = ComedorService.get_scoped_comedor_queryset(user)
@@ -492,17 +475,19 @@ class NominaCreateView(LoginRequiredMixin, CreateView):
                 if request.POST.get("origen_dato") == "renaper":
                     ciudadano_data["origen_dato"] = "renaper"
 
-                ok, msg = ComedorService.crear_ciudadano_y_agregar_a_nomina(
+                result = ComedorService.crear_ciudadano_y_agregar_a_nomina(
                     ciudadano_data=ciudadano_data,
                     admision_id=admision_id,
                     user=request.user,
                     estado=estado,
                     observaciones=observaciones,
                     omitir_revision_manual=es_sin_dni,
+                    return_ciudadano=True,
                 )
+                ok, msg = result[:2]
+                ciudadano = result[2] if len(result) > 2 else None
 
                 if ok:
-                    ciudadano = _ciudadano_recien_creado(ciudadano_data)
                     nomina = (
                         _get_nomina_creada(
                             ciudadano_id=ciudadano.id,
@@ -837,16 +822,18 @@ class NominaDirectaCreateView(LoginRequiredMixin, CreateView):
                 if request.POST.get("origen_dato") == "renaper":
                     ciudadano_data["origen_dato"] = "renaper"
 
-                ok, msg = ComedorService.crear_ciudadano_y_agregar_a_nomina(
+                result = ComedorService.crear_ciudadano_y_agregar_a_nomina(
                     ciudadano_data=ciudadano_data,
                     user=request.user,
                     estado=estado,
                     observaciones=observaciones,
                     comedor_id=comedor_id,
                     omitir_revision_manual=es_sin_dni,
+                    return_ciudadano=True,
                 )
+                ok, msg = result[:2]
+                ciudadano = result[2] if len(result) > 2 else None
                 if ok:
-                    ciudadano = _ciudadano_recien_creado(ciudadano_data)
                     nomina = (
                         _get_nomina_creada(
                             ciudadano_id=ciudadano.id,

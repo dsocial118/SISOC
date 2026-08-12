@@ -175,6 +175,11 @@ class CiudadanoSinDniFormParaNomina(forms.ModelForm):
 
     def clean(self):
         cleaned_data = super().clean()
+        if not cleaned_data.get("motivo_sin_dni"):
+            self.add_error(
+                "motivo_sin_dni",
+                "Debe indicar el motivo por el que no posee DNI.",
+            )
         cleaned_data.update(
             {
                 "tipo_registro_identidad": Ciudadano.TIPO_REGISTRO_SIN_DNI,

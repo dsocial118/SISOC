@@ -1700,6 +1700,7 @@ class ComedorService:
         admision_id=None,
         comedor_id=None,
         omitir_revision_manual=False,
+        return_ciudadano=False,
     ):
         """
         Crea un ciudadano nuevo y lo agrega a la nómina con estado y observaciones.
@@ -1710,10 +1711,11 @@ class ComedorService:
                 try:
                     ciudadano = Ciudadano.objects.create(**ciudadano_data)
                 except IntegrityError:
-                    return (
+                    result = (
                         False,
                         "Ya existe un ciudadano estandar con este tipo y numero de documento.",
                     )
+                    return (*result, None) if return_ciudadano else result
 
                 if (
                     omitir_revision_manual
@@ -1733,12 +1735,15 @@ class ComedorService:
                 )
                 if not ok:
                     ciudadano.delete()
+                if return_ciudadano:
+                    return ok, msg, ciudadano if ok else None
                 return ok, msg
         except IntegrityError:
             logger.exception(
                 "Error de integridad al crear ciudadano y agregarlo a la nómina."
             )
-            return False, MENSAJE_ERROR_AGREGAR_NOMINA
+            result = (False, MENSAJE_ERROR_AGREGAR_NOMINA)
+            return (*result, None) if return_ciudadano else result
 
     @staticmethod
     def importar_nomina_ultimo_convenio(admision_id, comedor_id):

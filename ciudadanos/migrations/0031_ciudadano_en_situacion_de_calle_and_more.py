@@ -18,7 +18,7 @@ class Migration(migrations.Migration):
             name="en_situacion_de_calle",
             field=models.CharField(
                 blank=True,
-                choices=[(True, "Sí"), (False, "No")],
+                choices=[("SI", "Sí"), ("NO", "No")],
                 max_length=5,
                 null=True,
             ),
@@ -28,7 +28,7 @@ class Migration(migrations.Migration):
             name="persona_con_celiaquia",
             field=models.CharField(
                 blank=True,
-                choices=[(True, "Sí"), (False, "No")],
+                choices=[("SI", "Sí"), ("NO", "No")],
                 max_length=5,
                 null=True,
             ),
@@ -38,7 +38,7 @@ class Migration(migrations.Migration):
             name="pertenece_comunidad_indigena",
             field=models.CharField(
                 blank=True,
-                choices=[(True, "Sí"), (False, "No")],
+                choices=[("SI", "Sí"), ("NO", "No")],
                 max_length=5,
                 null=True,
             ),
