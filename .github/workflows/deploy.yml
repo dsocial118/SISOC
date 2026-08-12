@@ -149,7 +149,10 @@ jobs:
                   MOBILE_ROOT=/sisoc/SISOC-Mobile
                   if ! git -C "$MOBILE_ROOT" fetch origin --prune; then
                       echo "::warning::El checkout movil no puede actualizarse; reparando permisos de su metadata git."
-                      sudo -n chown -R "$(id -u):$(id -g)" "$MOBILE_ROOT/.git"
+                      docker run --rm --user 0:0 \
+                          -v "$MOBILE_ROOT/.git:/target" \
+                          --entrypoint chown sisoc-django \
+                          -R "$(id -u):$(id -g)" /target
                       git -C "$MOBILE_ROOT" fetch origin --prune
                   fi
                   git -C "$MOBILE_ROOT" update-index --refresh
