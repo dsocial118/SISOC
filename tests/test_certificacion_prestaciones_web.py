@@ -30,7 +30,7 @@ def test_descarga_certificacion_web_requiere_autenticacion(client):
 
 
 @pytest.mark.django_db
-def test_historial_certificaciones_lista_todos_los_pdf(client, django_user_model):
+def test_historial_certificaciones_lista_todos_los_registros(client, django_user_model):
     user = django_user_model.objects.create_superuser(
         username="historial_certificaciones_admin",
         password="testpass",
@@ -60,7 +60,8 @@ def test_historial_certificaciones_lista_todos_los_pdf(client, django_user_model
     content = response.content.decode()
     assert "07/2035" in content
     assert "01/2035" in content
-    assert "12/2034" not in content
+    assert "12/2034" in content
+    assert "No disponible" in content
 
 
 @pytest.mark.django_db

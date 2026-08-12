@@ -161,6 +161,20 @@ class Ciudadano(SoftDeleteModelMixin, models.Model):
     telefono_alternativo = models.CharField(max_length=50, null=True, blank=True)
     email = models.EmailField(null=True, blank=True)
 
+    SI_NO_CHOICES = [
+        ("SI", "Sí"),
+        ("NO", "No"),
+    ]
+    pertenece_comunidad_indigena = models.CharField(
+        max_length=5, choices=SI_NO_CHOICES, null=True, blank=True
+    )
+    en_situacion_de_calle = models.CharField(
+        max_length=5, choices=SI_NO_CHOICES, null=True, blank=True
+    )
+    persona_con_celiaquia = models.CharField(
+        max_length=5, choices=SI_NO_CHOICES, null=True, blank=True
+    )
+
     ESTADO_CIVIL_CHOICES = [
         ("soltero", "Soltero/a"),
         ("casado", "Casado/a"),
