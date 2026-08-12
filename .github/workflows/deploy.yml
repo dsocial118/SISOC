@@ -146,9 +146,15 @@ jobs:
                       echo "[deploy] Actualizando el helper local de HML antes del deploy versionado."
                       git -C "$APP_ROOT" merge --ff-only origin/homologacion
                   fi
-                  git -C /sisoc/SISOC-Mobile update-index --refresh
+                  MOBILE_ROOT=/sisoc/SISOC-Mobile
+                  if ! git -C "$MOBILE_ROOT" fetch origin --prune; then
+                      echo "::warning::El checkout movil no puede actualizarse; reparando permisos de su metadata git."
+                      sudo -n chown -R "$(id -u):$(id -g)" "$MOBILE_ROOT/.git"
+                      git -C "$MOBILE_ROOT" fetch origin --prune
+                  fi
+                  git -C "$MOBILE_ROOT" update-index --refresh
                   echo "Commit previo al deploy para rollback: $(git rev-parse HEAD)"
-                  ./scripts/operacion/deploy_refresh.sh --yes --expected-revision "$EXPECTED_SHA" --with-mobile --mobile-dir /sisoc/SISOC-Mobile
+                  ./scripts/operacion/deploy_refresh.sh --yes --expected-revision "$EXPECTED_SHA" --with-mobile --mobile-dir "$MOBILE_ROOT"
                   wait_for() {
                       local description="$1"
                       local attempts="$2"
