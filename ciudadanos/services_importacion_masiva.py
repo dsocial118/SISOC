@@ -11,7 +11,7 @@ from django.utils import timezone
 from openpyxl import Workbook, load_workbook
 
 from ciudadanos.models import Ciudadano, CiudadanosImportJobRow
-from comedores.services.comedor_service import ComedorService
+from ciudadanos.api import construir_datos_ciudadano_desde_renaper
 from core.models import Sexo
 from core.services.renaper import consultar_datos_renaper
 
@@ -405,7 +405,7 @@ def _build_ciudadano_payload_from_renaper(
     sexo: str,
 ) -> tuple[dict[str, object] | None, str | None]:
     data = _apply_sexo_to_renaper_data(result.get("data") or {}, sexo)
-    ciudadano_data, error = ComedorService.build_ciudadano_data_from_renaper(data, dni)
+    ciudadano_data, error = construir_datos_ciudadano_desde_renaper(data, dni)
     if not ciudadano_data:
         return None, error
     ciudadano_data.update(

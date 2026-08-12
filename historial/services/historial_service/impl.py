@@ -2,10 +2,9 @@ import logging
 import json
 from datetime import date, datetime, time
 from decimal import Decimal
-from django.contrib.contenttypes.models import ContentType
-from rendicioncuentasfinal.models import DocumentoRendicionFinal
 from config.middlewares.threadlocals import get_current_user
 from historial.models import Historial
+from rendicioncuentasfinal.api import obtener_content_type_id_documento
 
 
 logger = logging.getLogger("django")
@@ -106,13 +105,13 @@ class HistorialService:
             rendicion_cuentas_final: Una instancia de RendicionCuentasFinal
         """
         try:
-            content_type = ContentType.objects.get_for_model(DocumentoRendicionFinal)
+            content_type_id = obtener_content_type_id_documento()
             documentos_ids = rendicion_cuentas_final.documentos.values_list(
                 "pk", flat=True
             ).iterator()
 
             return Historial.objects.filter(
-                content_type=content_type,
+                content_type_id=content_type_id,
                 object_id__in=map(str, documentos_ids),
             ).order_by("-fecha")
 
