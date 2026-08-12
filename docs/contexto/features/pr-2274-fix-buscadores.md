@@ -32,6 +32,8 @@
 - Empezar por `docs/registro/prs/PR-2274.md` para contexto resumido del PR.
 - Revisar primero estos archivos del diff:
 - `celiaquia/templates/celiaquia/expediente_list.html`
+- `docs/contexto/features/pr-2274-fix-buscadores.md`
+- `docs/registro/prs/PR-2274.md`
 - `static/custom/css/poncho_listados.css`
 - `static/custom/js/poncho_scroll_tablas.js`
 - `templates/components/search_bar.html`
@@ -40,6 +42,8 @@
 - `docs/ia/CONTEXT_HYGIENE.md`
 - `docs/ia/ARCHITECTURE.md`
 - `docs/ia/TESTING.md`
+- `docs/contexto/features/pr-2274-fix-buscadores.md`
+- `docs/registro/prs/PR-2274.md`
 
 ## Trazabilidad
 
