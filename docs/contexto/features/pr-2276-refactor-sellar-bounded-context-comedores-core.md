@@ -51,7 +51,7 @@
 - `comunicados/forms.py`
 - `comunicados/permissions.py`
 - `comunicados/views.py`
-- ... y 23 archivo(s) adicional(es) relacionados.
+- ... y 24 archivo(s) adicional(es) relacionados.
 - Documentación sugerida para ampliar contexto:
 - `docs/indice.md`
 - `docs/ia/CONTEXT_HYGIENE.md`
