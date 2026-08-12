@@ -1097,7 +1097,7 @@ class RendicionProcesoService:
 
     @staticmethod
     def _documentos_observados_al_finalizar(rendicion):
-        documentos = RendicionCuentaMensualService._documentos_vigentes_queryset(
+        documentos = RendicionCuentaMensualService._documentos_vigentes_queryset(  # pylint: disable=protected-access
             rendicion
         )
         if documentos.filter(estado=DocumentacionAdjunta.ESTADO_PRESENTADO).exists():
@@ -1113,7 +1113,7 @@ class RendicionProcesoService:
             RendicionCuentaMensual.SUBESTADO_PENDIENTE_CORRECCIONES
         )
         for documento in documentos:
-            RendicionCuentaMensualService._crear_notificacion_mobile_revision_documento(
+            RendicionCuentaMensualService._crear_notificacion_mobile_revision_documento(  # pylint: disable=protected-access
                 documento=documento,
                 actor=actor,
             )
@@ -1132,7 +1132,7 @@ class RendicionProcesoService:
     @transaction.atomic
     def ejecutar(
         *, rendicion, accion, datos, actor=None
-    ):  # pylint: disable=too-many-statements
+    ):  # pylint: disable=too-many-statements,too-many-branches
         ahora = timezone.now()
         pendiente = RendicionCuentaMensual.SUBESTADO_PENDIENTE
         en_curso = RendicionCuentaMensual.SUBESTADO_EN_CURSO
