@@ -44,9 +44,7 @@ class Command(BaseCommand):
         "La ejecución con escritura requiere una ventana sin altas ni ediciones."
     )
 
-    manifest_sha256 = (
-        "CF9899747608D668B7B17FF41791E77E5D473B56D62EE1FD71CFDAF854387403"
-    )
+    manifest_sha256 = "CF9899747608D668B7B17FF41791E77E5D473B56D62EE1FD71CFDAF854387403"
 
     def add_arguments(self, parser):
         modo = parser.add_mutually_exclusive_group()
@@ -68,9 +66,7 @@ class Command(BaseCommand):
 
     def get_manifest_path(self):
         return (
-            Path(__file__).resolve().parents[2]
-            / "data"
-            / "issue_2272_expedientes.csv"
+            Path(__file__).resolve().parents[2] / "data" / "issue_2272_expedientes.csv"
         )
 
     def handle(self, *args, **options):
@@ -82,9 +78,7 @@ class Command(BaseCommand):
         self._detener_si_hay_errores(resultado)
 
         if verificar:
-            errores = self._verificar_correcciones(
-                resultado.correcciones, database
-            )
+            errores = self._verificar_correcciones(resultado.correcciones, database)
             if errores:
                 for error in errores:
                     self.stderr.write(self.style.ERROR(error))
@@ -238,9 +232,9 @@ class Command(BaseCommand):
 
         expedientes_por_admision = defaultdict(list)
         for correccion in resultado.correcciones.values():
-            expedientes_por_admision[
-                correccion.numero_expediente.upper()
-            ].append(correccion.admision_id)
+            expedientes_por_admision[correccion.numero_expediente.upper()].append(
+                correccion.admision_id
+            )
         for admisiones in expedientes_por_admision.values():
             if len(admisiones) > 1:
                 resultado.errores.append(
@@ -271,8 +265,7 @@ class Command(BaseCommand):
     @staticmethod
     def _obtener_propietarios_actuales(correcciones, database):
         expedientes = {
-            correccion.numero_expediente.upper()
-            for correccion in correcciones.values()
+            correccion.numero_expediente.upper() for correccion in correcciones.values()
         }
         propietarios = defaultdict(set)
         filas = (

@@ -43,8 +43,7 @@ def test_preflight_rechaza_colision_con_admision_fuera_del_manifiesto(tmp_path):
     _configurar_manifiesto(
         command,
         tmp_path,
-        "ID ADMISION,Expediente Correcto\n"
-        "100,EX-2026-987654321- -APN-DDNAYF#MCH\n",
+        "ID ADMISION,Expediente Correcto\n" "100,EX-2026-987654321- -APN-DDNAYF#MCH\n",
     )
 
     resultado = command._preflight(database="default", bloquear_filas=False)
@@ -62,8 +61,7 @@ def test_preflight_conserva_todos_los_propietarios_de_un_expediente(tmp_path):
     _configurar_manifiesto(
         command,
         tmp_path,
-        "ID ADMISION,Expediente Correcto\n"
-        f"200,{numero_compartido}\n",
+        "ID ADMISION,Expediente Correcto\n" f"200,{numero_compartido}\n",
     )
 
     with pytest.raises(CommandError):
@@ -79,9 +77,7 @@ def test_preflight_admite_permutacion_de_expedientes_del_manifiesto(tmp_path):
     _configurar_manifiesto(
         command,
         tmp_path,
-        "ID ADMISION,Expediente Correcto\n"
-        f"100,{numero_b}\n"
-        f"200,{numero_a}\n",
+        "ID ADMISION,Expediente Correcto\n" f"100,{numero_b}\n" f"200,{numero_a}\n",
     )
 
     command.handle(apply=True, database="default")
@@ -122,8 +118,7 @@ def test_apply_sobrescribe_tecnicos_legales_y_registra_historial(tmp_path):
     _configurar_manifiesto(
         command,
         tmp_path,
-        "ID ADMISION,Expediente Correcto\n"
-        f"{admision.pk},{numero_corregido}\n",
+        "ID ADMISION,Expediente Correcto\n" f"{admision.pk},{numero_corregido}\n",
     )
 
     command.handle(apply=True, database="default")
@@ -150,8 +145,7 @@ def test_verify_rechaza_si_legales_no_coincide_con_el_manifiesto(tmp_path):
     _configurar_manifiesto(
         command,
         tmp_path,
-        "ID ADMISION,Expediente Correcto\n"
-        f"100,{numero_corregido}\n",
+        "ID ADMISION,Expediente Correcto\n" f"100,{numero_corregido}\n",
     )
 
     with pytest.raises(CommandError):
@@ -169,8 +163,7 @@ def test_verify_confirma_campos_tecnicos_y_legales(tmp_path):
     _configurar_manifiesto(
         command_instance,
         tmp_path,
-        "ID ADMISION,Expediente Correcto\n"
-        f"100,{numero_corregido}\n",
+        "ID ADMISION,Expediente Correcto\n" f"100,{numero_corregido}\n",
     )
 
     call_command(command_instance, "--verify", "--database", "default")
@@ -193,8 +186,7 @@ def test_apply_no_modifica_datos_si_el_preflight_falla(tmp_path):
     _configurar_manifiesto(
         command,
         tmp_path,
-        "ID ADMISION,Expediente Correcto\n"
-        "100,EX-2026-123- -APN-DDNAYF#MCH\n",
+        "ID ADMISION,Expediente Correcto\n" "100,EX-2026-123- -APN-DDNAYF#MCH\n",
     )
 
     with pytest.raises(CommandError):
