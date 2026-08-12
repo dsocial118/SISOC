@@ -43,7 +43,9 @@
 - `comedores/templates/comedor/certificaciones_prestaciones_historial.html`
 - `comedores/templates/comedor/comedor_detail.html`
 - `comedores/views/comedor.py`
+- `docs/contexto/features/pr-2277-fix-corregir-issues-reabiertos-de-rendiciones.md`
 - `docs/registro/cambios/2026-08-12-correcciones-issues-reabiertos.md`
+- `docs/registro/prs/PR-2277.md`
 - `organizaciones/forms.py`
 - `organizaciones/templates/organizacion_detail.html`
 - `organizaciones/templates/organizacion_form.html`
@@ -52,15 +54,15 @@
 - `rendicioncuentasmensual/services.py`
 - `rendicioncuentasmensual/templates/rendicioncuentasmensual_detail.html`
 - `tests/test_certificacion_prestaciones_web.py`
-- `tests/test_pwa_mensajes_api.py`
-- `tests/test_pwa_push_api.py`
-- ... y 2 archivo(s) adicional(es) relacionados.
+- ... y 4 archivo(s) adicional(es) relacionados.
 - Documentación sugerida para ampliar contexto:
 - `docs/indice.md`
 - `docs/ia/CONTEXT_HYGIENE.md`
 - `docs/ia/ARCHITECTURE.md`
 - `docs/ia/TESTING.md`
+- `docs/contexto/features/pr-2277-fix-corregir-issues-reabiertos-de-rendiciones.md`
 - `docs/registro/cambios/2026-08-12-correcciones-issues-reabiertos.md`
+- `docs/registro/prs/PR-2277.md`
 
 ## Trazabilidad
 
