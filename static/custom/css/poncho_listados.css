@@ -82,16 +82,50 @@
 }
 
 /* ---------- Tabla ---------- */
+/* Sin overflow:hidden. Lo usaba para respetar las esquinas redondeadas, pero
+   recorta el contenido en tablas anchas: estos listados usan columnas
+   configurables y pueden tener 9-10 columnas contra las 5 del prototipo.
+   El radio se aplica en las celdas de las esquinas (mas abajo). */
 .app-main:has(.poncho-search) .table,
 .app-main:has(.poncho-search) .projects {
   margin-bottom: 0;
   border-collapse: separate;
   border-spacing: 0;
-  border-radius: var(--poncho-radio-buscador);
-  overflow: hidden;
   color: var(--poncho-blanco);
   font-family: var(--poncho-font-base);
   box-shadow: 0 20px 13.5px rgba(0, 0, 0, .1);
+}
+
+/* El contenedor scrollea en horizontal en vez de cortar.
+   Se incluye .card-body:has(> .table) porque hay listados (organizaciones,
+   importarexpediente) donde la tabla cuelga directo de la card, sin envoltorio
+   .table-responsive: ahi no habia nada que pudiera scrollear. */
+.app-main:has(.poncho-search) .table-responsive,
+.app-main:has(.poncho-search) .table-responsive-lg,
+.app-main:has(.poncho-search) .card-body:has(> .table),
+.app-main:has(.poncho-search) .card-body:has(> .projects) {
+  overflow-x: auto;
+  border-radius: var(--poncho-radio-buscador);
+}
+
+.app-main:has(.poncho-search) .table thead th:first-child,
+.app-main:has(.poncho-search) .projects thead th:first-child {
+  border-top-left-radius: var(--poncho-radio-buscador);
+}
+
+.app-main:has(.poncho-search) .table thead th:last-child,
+.app-main:has(.poncho-search) .projects thead th:last-child {
+  border-top-right-radius: var(--poncho-radio-buscador);
+}
+
+.app-main:has(.poncho-search) .table tbody tr:last-child td:first-child,
+.app-main:has(.poncho-search) .projects tbody tr:last-child td:first-child {
+  border-bottom-left-radius: var(--poncho-radio-buscador);
+}
+
+.app-main:has(.poncho-search) .table tbody tr:last-child td:last-child,
+.app-main:has(.poncho-search) .projects tbody tr:last-child td:last-child {
+  border-bottom-right-radius: var(--poncho-radio-buscador);
 }
 
 /* Encabezado teal, texto blanco en mixto (hoy: gris azulado + dorado + MAYUS) */
@@ -106,12 +140,14 @@
   background: var(--poncho-verde-azulado);
   color: var(--poncho-blanco);
   font-family: var(--poncho-font-base);
-  font-size: 20px;
+  /* rem en vez de px: escala con el tamaño de fuente del navegador. El
+     prototipo pedia 20px sobre 5 columnas; estos listados llegan a 10, asi
+     que se achica el padding horizontal para que entren. */
+  font-size: 1.125rem;
   font-weight: 700;
   text-transform: none;
-  text-align: left;
   letter-spacing: -.03px;
-  padding: 13px 30px;
+  padding: .8rem 1.15rem;
   border: none;
   border-bottom: 2px solid var(--poncho-blanco);
 }
@@ -159,11 +195,11 @@
 
 .app-main:has(.poncho-search) .table tbody td,
 .app-main:has(.poncho-search) .projects tbody td {
-  padding: 17px 30px;
+  padding: .9rem 1.15rem;
   border: none;
   border-bottom: 1px solid rgba(229, 231, 235, .25);
   color: var(--poncho-blanco);
-  font-size: 16px;
+  font-size: .95rem;
   letter-spacing: -.024px;
   vertical-align: middle;
 }
@@ -176,6 +212,18 @@
 .app-main:has(.poncho-search) .table tbody td a,
 .app-main:has(.poncho-search) .projects tbody td a {
   color: var(--poncho-blanco);
+}
+
+/* Alineacion pareja entre encabezado y contenido.
+   Los th quedaban a la izquierda (prototipo) y los td al centro, porque
+   listModerno.css define `text-align: center` para las celdas del diseño
+   anterior. Se unifica en izquierda, salvo que el template pida otra cosa con
+   .text-center o .text-end (por ejemplo la columna Acciones). */
+.app-main:has(.poncho-search) .table thead th:not(.text-center):not(.text-end),
+.app-main:has(.poncho-search) .projects thead th:not(.text-center):not(.text-end),
+.app-main:has(.poncho-search) .table tbody td:not(.text-center):not(.text-end),
+.app-main:has(.poncho-search) .projects tbody td:not(.text-center):not(.text-end) {
+  text-align: left;
 }
 
 /* ---------- Botones de accion dentro de la tabla ----------
@@ -273,15 +321,96 @@
   font-weight: 500;
 }
 
-@media (max-width: 767.98px) {
+/* ---------- Afordancia de scroll horizontal ----------
+   Con 9-12 columnas la tabla scrollea, pero sin señal visual se lee como si
+   estuviera cortada. Las clases las pone poncho_scroll_tablas.js, que es quien
+   puede saber si el contenedor desborda: CSS no tiene forma de detectarlo.
+   La sombra va en un ::after del contenedor (pintado por encima de la tabla,
+   que tiene celdas opacas) y no intercepta clicks. */
+.app-main:has(.poncho-search) .poncho-scroll {
+  position: relative;
+}
+
+.app-main:has(.poncho-search) .poncho-scroll::before,
+.app-main:has(.poncho-search) .poncho-scroll::after {
+  content: "";
+  position: sticky;
+  top: 0;
+  display: block;
+  width: 42px;
+  height: 100%;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity .2s ease;
+}
+
+.app-main:has(.poncho-search) .poncho-scroll::before {
+  float: left;
+  left: 0;
+  margin-right: -42px;
+  background: linear-gradient(to right, rgba(0, 0, 0, .45), transparent);
+}
+
+.app-main:has(.poncho-search) .poncho-scroll::after {
+  float: right;
+  right: 0;
+  margin-left: -42px;
+  background: linear-gradient(to left, rgba(0, 0, 0, .45), transparent);
+}
+
+.app-main:has(.poncho-search) .poncho-scroll--izq::before,
+.app-main:has(.poncho-search) .poncho-scroll--der::after {
+  opacity: 1;
+}
+
+/* Barra de scroll visible y acorde a la paleta: parte del aviso es que se vea
+   que hay una barra para arrastrar. */
+.app-main:has(.poncho-search) .poncho-scroll {
+  scrollbar-color: var(--poncho-verde-azulado) transparent;
+  scrollbar-width: thin;
+}
+
+.app-main:has(.poncho-search) .poncho-scroll::-webkit-scrollbar {
+  height: 10px;
+}
+
+.app-main:has(.poncho-search) .poncho-scroll::-webkit-scrollbar-thumb {
+  background: var(--poncho-verde-azulado);
+  border-radius: 999px;
+}
+
+.app-main:has(.poncho-search) .poncho-scroll::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, .08);
+  border-radius: 999px;
+}
+
+/* Notebooks de 1280-1400px: estos listados usan columnas configurables y
+   llegan a 9-12 columnas contra las 5 del prototipo. Descontando el sidebar
+   quedan ~1000px utiles, asi que con el padding completo el contenido casi no
+   entra. Se comprime antes de que aparezca el scroll horizontal. */
+@media (max-width: 1399.98px) {
   .app-main:has(.poncho-search) .table thead th,
   .app-main:has(.poncho-search) .projects thead th {
-    font-size: 16px;
-    padding: 12px 16px;
+    font-size: 1rem;
+    padding: .65rem .75rem;
   }
 
   .app-main:has(.poncho-search) .table tbody td,
   .app-main:has(.poncho-search) .projects tbody td {
-    padding: 12px 16px;
+    font-size: .875rem;
+    padding: .7rem .75rem;
+  }
+}
+
+@media (max-width: 767.98px) {
+  .app-main:has(.poncho-search) .table thead th,
+  .app-main:has(.poncho-search) .projects thead th {
+    font-size: 1rem;
+    padding: .75rem .9rem;
+  }
+
+  .app-main:has(.poncho-search) .table tbody td,
+  .app-main:has(.poncho-search) .projects tbody td {
+    padding: .75rem .9rem;
   }
 }
