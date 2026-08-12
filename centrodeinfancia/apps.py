@@ -5,3 +5,6 @@ class CentrodeinfanciaConfig(AppConfig):
     default_auto_field = "django.db.models.BigAutoField"
     name = "centrodeinfancia"
     verbose_name = "Centro de Desarrollo Infantil"
+
+    def ready(self):
+        import centrodeinfancia.signals  # pylint: disable=unused-import,import-outside-toplevel

@@ -406,14 +406,13 @@
                                     </div>
                                     <div class="info-row">
                                         <strong>Códigos de Proyecto:</strong>
-                                        <span class="value">
+                                        <div class="value d-flex flex-wrap justify-content-end gap-1">
                                             {% for proyecto in proyectos_organizacion %}
-                                                {{ proyecto }}
-                                                {% if not forloop.last %},{% endif %}
+                                                <span class="badge rounded-pill bg-primary px-3 py-2">{{ proyecto }}</span>
                                             {% empty %}
-                                                -
+                                                <span>-</span>
                                             {% endfor %}
-                                        </span>
+                                        </div>
                                     </div>
                                 </div>
 
@@ -441,7 +440,11 @@
                                     <div class="info-row">
                                         <strong>Fecha de Vencimiento:</strong>
                                         <span class="value">
-                                            {% if organizacion.sin_vencimiento %}Sin Vencimiento{% else %}{{ organizacion.fecha_vencimiento|date:"d/m/Y"|default:'-' }}{% endif %}
+                                            {% if organizacion.sin_vencimiento %}
+                                                Sin Vencimiento
+                                            {% else %}
+                                                {{ organizacion.fecha_vencimiento|date:"d/m/Y"|default:'-' }}
+                                            {% endif %}
                                             {% if organizacion.fecha_vencimiento %}
                                                 {% now "Y-m-d" as today %}
                                                 {% if organizacion.fecha_vencimiento|date:"Y-m-d" >= today %}
@@ -681,9 +684,7 @@
                                                                 </select>
                                                             {% elif not puede_validar_documentacion_organizacion and archivo.estado != "Aceptado" %}
                                                                 <select class="form-control form-control-sm org-doc-state-select{% if archivo.estado == 'Rectificar' %} border border-danger border-2{% endif %}" data-url="{% url 'organizacion_documento_estado' archivo.id %}" data-current-value="{{ archivo.estado }}" data-requires-observacion="0">
-                                                                    {% if archivo.estado == "Rectificar" %}
-                                                                        <option value="Rectificar" selected disabled>Rectificar</option>
-                                                                    {% endif %}
+                                                                    {% if archivo.estado == "Rectificar" %}<option value="Rectificar" selected disabled>Rectificar</option>{% endif %}
                                                                     <option value="Documento adjunto" {% if archivo.estado == "Documento adjunto" %}selected{% endif %}>Documento adjunto</option>
                                                                     <option value="A Validar Abogado" {% if archivo.estado == "A Validar Abogado" %}selected{% endif %}>A Validar Abogado</option>
                                                                 </select>

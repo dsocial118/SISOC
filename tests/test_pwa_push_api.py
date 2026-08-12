@@ -11,7 +11,10 @@ from core.models import Provincia
 from organizaciones.models import Organizacion
 from pwa.models import PushSubscriptionPWA
 from rendicioncuentasmensual.models import DocumentacionAdjunta, RendicionCuentaMensual
-from rendicioncuentasmensual.services import RendicionCuentaMensualService
+from rendicioncuentasmensual.services import (
+    RendicionCuentaMensualService,
+    RendicionProcesoService,
+)
 from users.models import AccesoComedorPWA
 
 
@@ -245,6 +248,8 @@ def test_revision_de_rendicion_envia_push_a_usuarios_del_scope_con_permiso(
         periodo_inicio=timezone.now().date(),
         periodo_fin=timezone.now().date(),
         estado=RendicionCuentaMensual.ESTADO_REVISION,
+        etapa_proceso=RendicionCuentaMensual.ETAPA_REVISION_DOCUMENTACION,
+        subestado_proceso=RendicionCuentaMensual.SUBESTADO_EN_CURSO,
     )
     documento = DocumentacionAdjunta.objects.create(
         nombre="comprobante.pdf",
@@ -262,6 +267,12 @@ def test_revision_de_rendicion_envia_push_a_usuarios_del_scope_con_permiso(
         documento=documento,
         estado=DocumentacionAdjunta.ESTADO_SUBSANAR,
         observaciones="Falta detalle",
+        actor=actor,
+    )
+    RendicionProcesoService.ejecutar(
+        rendicion=rendicion,
+        accion=RendicionProcesoService.ACCION_FINALIZAR_TERRITORIAL,
+        datos={},
         actor=actor,
     )
 

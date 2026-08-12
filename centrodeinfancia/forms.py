@@ -16,12 +16,7 @@ from core.validators import (
     validate_telefono_ar,
     validate_unicode_email,
 )
-from intervenciones.constants import PROGRAMA_ALIASES_CENTRO_INFANCIA
-from intervenciones.models.intervenciones import (
-    SubIntervencion,
-    TipoDestinatario,
-    TipoIntervencion,
-)
+from intervenciones.api import obtener_configuracion_formulario_cdi
 from users.models import Profile
 from users.territorial_scope import (
     get_single_full_province_scope_id,
@@ -2026,29 +2021,26 @@ class IntervencionCentroInfanciaForm(forms.ModelForm):
             selected_subtipo_id = self._parse_selected_id(
                 self.data.get(self.add_prefix("subintervencion"))
             )
-        self.fields["tipo_intervencion"].queryset = TipoIntervencion.para_programas(
-            *PROGRAMA_ALIASES_CENTRO_INFANCIA,
-            include_ids=[selected_tipo_id] if selected_tipo_id else None,
-        )
-        self.fields["subintervencion"].queryset = SubIntervencion.para_tipo(
+        configuracion_catalogo = obtener_configuracion_formulario_cdi(
             selected_tipo_id,
-            include_ids=[selected_subtipo_id] if selected_subtipo_id else None,
+            selected_subtipo_id,
+            destinatario_fijo_nombre,
         )
+        self.fields["tipo_intervencion"].queryset = configuracion_catalogo.tipos
+        self.fields["subintervencion"].queryset = configuracion_catalogo.subtipos
 
         self.destinatario_fijo_instance = None
         self.destinatario_fijo_missing = False
         self.destinatario_fijo_nombre = destinatario_fijo_nombre
         if destinatario_fijo_nombre:
-            destinatario_fijo = TipoDestinatario.objects.filter(
-                nombre__iexact=destinatario_fijo_nombre
-            ).first()
+            destinatario_fijo = configuracion_catalogo.destinatario_fijo
             if destinatario_fijo:
                 self.destinatario_fijo_instance = destinatario_fijo
                 self.fields["destinatario"].required = False
                 self.fields["destinatario"].initial = destinatario_fijo.pk
-                self.fields["destinatario"].queryset = TipoDestinatario.objects.filter(
-                    pk=destinatario_fijo.pk
-                )
+                self.fields["destinatario"].queryset = self.fields[
+                    "destinatario"
+                ].queryset.filter(pk=destinatario_fijo.pk)
             else:
                 self.destinatario_fijo_missing = True
                 self.fields["destinatario"].required = False

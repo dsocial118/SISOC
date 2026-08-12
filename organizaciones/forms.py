@@ -14,7 +14,7 @@ class OrganizacionForm(forms.ModelForm):
     codigos_proyecto = forms.CharField(
         required=False,
         label="Códigos de Proyecto",
-        help_text="Separá múltiples códigos con comas.",
+        widget=forms.HiddenInput(),
     )
     cuit = forms.RegexField(
         regex=r"^[0-9]{11}$",

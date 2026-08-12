@@ -282,12 +282,12 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 | `pwa/` | endpoints backend para experiencia PWA | `api_urls.py`, `api_views.py`, `services/`, `models.py` | Medio |
 | `ticketera/` | API server-to-server con kill-switch | `api_urls.py`, `api_views.py`, `api_serializers.py` | Medio |
 | `comunicados/` | mensajes/comunicados y API asociada | `models.py`, `views.py`, `api_views.py`, forms | Medio |
-| `organizaciones/` | entidades/organizaciones vinculadas; el detalle incluye rendiciones presentadas por proyecto | `models.py`, `views.py`, `templates/organizacion_detail.html` | Medio |
+| `organizaciones/` | entidades/organizaciones vinculadas; edición modal de proyectos y detalle con rendiciones por relación directa o legado | `models.py`, `forms.py`, `views.py`, templates de organización | Alto |
 | `centrodeinfancia/` | dominio de centros de infancia, personal y asistencia | `models.py`, `services.py`, `views.py`, `tests/`, urls | Alto |
 | `acompanamientos/` | seguimiento/acompanamientos | `views.py`, `acompanamiento_service.py`, `services/filter_config.py`, templates | Medio |
 | `expedientespagos/` | expedientes de pagos | `models.py`, `views.py`, urls | Bajo |
 | `rendicioncuentasfinal/` | rendicion final | `models.py`, `views.py`, urls | Bajo |
-| `rendicioncuentasmensual/` | rendicion mensual, revisión documental y datos de auditoría expuestos en Organizaciones | `models.py`, `services.py`, `views.py`, urls | Medio |
+| `rendicioncuentasmensual/` | rendición mensual, revisión Territorial/Auditoría, subsanaciones y datos expuestos en Organizaciones | `models.py`, `services.py`, `views.py`, templates, urls | Alto |
 | `duplas/` | equipos tecnicos/duplas | `models.py`, `views.py` | Bajo-Medio |
 | `dispositivos/` | dominio de dispositivos | `models.py`, `views.py`, tests | Bajo |
 | `importarexpediente/` | flujo de importacion de expedientes | `views.py`, `models.py`, urls, tests | Medio |
@@ -315,6 +315,12 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - La arquitectura actual tiene boundaries monitoreados por `import-linter`, con baseline de excepciones a reducir por cortes. Los filtros favoritos se aportan desde cada app mediante `core.services.favorite_filters.registry`; `core` no debe volver a importar configuraciones de dominio para resolverlos.
 - Los paneles de Ciudadano 360 se aportan por dominio mediante `ciudadanos.detail_contributions`; las vistas de ciudadanos no deben consultar modelos de esos dominios directamente.
 - Las consultas RENAPER pasan por `core.services.renaper`, que delega el transporte compartido a `core.integrations.renaper`; ningún dominio debe tener su propio cliente ni importar otro dominio para consultarlo.
+- Comedores Core es un bounded context lógico: Comedores, Admisiones, Relevamientos, Organizaciones, Dúplas, Expedientes, Rendiciones, Intervenciones y Acompañamientos conservan sus ciclos internos; Dashboard consume sus métricas mediante `comedores.api` y `relevamientos.api`.
+- Los receivers de auditoría de Comedores Core se registran desde sus dominios y usan `audittrail.api`; Audittrail no debe recuperar imports de esos modelos.
+- Los módulos externos sólo consumen `*.api` de Comedores Core. La FK histórica `centrodefamilia.Centro.organizacion_asociada` es la única excepción declarada hasta que se trate su migración y semántica de borrado.
+- Los consumidores interdominio usan contratos Python acotados: `centrodefamilia.api` expone métricas para Dashboard, `ciudadanos.api` resuelve ciudadanos desde RENAPER y `intervenciones.api` provee el catálogo autorizado para CDI.
+- Los receivers de auditoría de Centro de Infancia viven en `centrodeinfancia.signals` y llaman `audittrail.api`; Audittrail no debe importar modelos CDI.
+- Dispositivos, VAT y Ver para Ser Libre no exponen internals a otros dominios. La composición de rutas de preview de VAT se realiza desde `VAT.global_urls`.
 - Los efectos de backfill de soft delete se registran desde cada dominio en `core.soft_delete.registry`; `core.soft_delete.state_sync` no debe importar handlers de dominio.
 - Las restricciones de navegacion aportadas por dominios se registran en `core.services.sidebar_access`; el template tag global no debe importar reglas VAT.
 - El endpoint Select2 de organizaciones vive en `organizaciones.views` y `organizaciones.urls`, aunque conserva la ruta global `ajax/load-organizaciones/`.
@@ -502,6 +508,14 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - nómina de destinatarios: `pwa/services/nomina_destinatarios_pdf_service.py`
 - conversión e incrustación de Office en rendiciones: `rendicioncuentasmensual/service_helpers.py`
 - el runtime Django requiere LibreOffice Writer/Calc para convertir DOCX/XLSX a PDF
+
+### Si necesitas cambiar rendiciones mensuales u Organizaciones
+
+- estados, etapas, subsanaciones y alcance por proyecto: `rendicioncuentasmensual/services.py`
+- asociación actual: `RendicionCuentaMensual.proyecto`; conservar fallback por `comedor.codigo_de_proyecto` para datos legados
+- listado y detalle del legajo: `organizaciones/views.py` y templates `organizacion_*`
+- proyectos editables: `OrganizacionForm.codigos_proyecto` mantiene el contrato CSV mediante un campo oculto
+- tests: `tests/test_rendicioncuentasmensual_services_unit.py` y `organizaciones/tests.py`
 
 ### Si necesitas cambiar OCR / procesamiento documental
 
