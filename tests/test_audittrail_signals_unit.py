@@ -1,10 +1,17 @@
 """Tests unitarios para audittrail.signals."""
 
+from datetime import date
 from types import SimpleNamespace
 
 from django.db import OperationalError
 
-from audittrail import signals as module
+from admisiones import audit_signals as admisiones_signals
+from audittrail import api as audittrail_api
+from audittrail import signals as audittrail_signals
+from comedores import audit_signals as comedores_signals
+from intervenciones import audit_signals as intervenciones_signals
+from organizaciones import audit_signals as organizaciones_signals
+from relevamientos import audit_signals as relevamientos_signals
 
 
 class _Meta:
@@ -15,55 +22,57 @@ class _Meta:
 
 def test_get_actor_and_log_event_helpers(mocker):
     mocker.patch(
-        "audittrail.signals.get_current_user",
+        "audittrail.api.get_current_user",
         return_value=SimpleNamespace(is_authenticated=True),
     )
-    assert module._get_actor() is not None
+    assert audittrail_api._actor_actual() is not None
 
     mocker.patch(
-        "audittrail.signals.get_current_user",
+        "audittrail.api.get_current_user",
         return_value=SimpleNamespace(is_authenticated=False),
     )
-    assert module._get_actor() is None
+    assert audittrail_api._actor_actual() is None
 
-    log_create = mocker.patch("audittrail.signals.LogEntry.objects.log_create")
+    log_create = mocker.patch("audittrail.api.LogEntry.objects.log_create")
     mocker.patch(
-        "audittrail.signals.transaction.on_commit", side_effect=lambda cb: cb()
+        "audittrail.api.transaction.on_commit", side_effect=lambda cb: cb()
     )
-    mocker.patch("audittrail.signals._get_actor", return_value="actor")
+    mocker.patch("audittrail.api._actor_actual", return_value="actor")
 
     comedor = SimpleNamespace(pk=1)
-    module._log_comedor_event(comedor, {"k": [None, "v"]}, 1)
+    audittrail_api.registrar_evento(comedor, {"k": [None, "v"]}, 1)
     assert log_create.called
 
-    module._log_comedor_event(None, {"k": [None, "v"]}, 1)
-    module._log_comedor_event(comedor, {}, 1)
+    audittrail_api.registrar_evento(None, {"k": [None, "v"]}, 1)
+    audittrail_api.registrar_evento(comedor, {}, 1)
 
 
 def test_log_creation_signals_for_admision_intervencion_relevamiento(mocker):
-    log_comedor = mocker.patch("audittrail.signals._log_comedor_event")
+    log_admision = mocker.patch("admisiones.audit_signals.registrar_evento")
 
     adm = SimpleNamespace(pk=1, comedor="comedor", estado_mostrar="Aprobada")
-    module.log_admision_creation(None, adm, created=True)
-    assert log_comedor.called
+    admisiones_signals.registrar_alta_admision(None, adm, created=True)
+    assert log_admision.called
 
-    log_comedor.reset_mock()
-    module.log_admision_creation(
+    log_admision.reset_mock()
+    admisiones_signals.registrar_alta_admision(
         None, SimpleNamespace(pk=1, comedor=None), created=True
     )
-    assert not log_comedor.called
+    assert not log_admision.called
 
+    log_intervencion = mocker.patch("intervenciones.audit_signals.registrar_evento")
     inter = SimpleNamespace(pk=2, comedor="comedor", tipo_intervencion="Visita")
-    module.log_intervencion_creation(None, inter, created=True)
-    assert log_comedor.called
+    intervenciones_signals.registrar_alta_intervencion(None, inter, created=True)
+    assert log_intervencion.called
 
+    log_relevamiento = mocker.patch("relevamientos.audit_signals.registrar_evento")
     rel = SimpleNamespace(
         pk=3,
         comedor="comedor",
-        fecha_visita=SimpleNamespace(strftime=lambda *_: "2024-01-01"),
+        fecha_visita=date(2024, 1, 1),
     )
-    module.log_relevamiento_creation(None, rel, created=True)
-    assert log_comedor.called
+    relevamientos_signals.registrar_alta_relevamiento(None, rel, created=True)
+    assert log_relevamiento.called
 
 
 def test_cache_and_log_referente_update(mocker):
@@ -91,14 +100,17 @@ def test_cache_and_log_referente_update(mocker):
         funcion="F",
     )
 
-    module.cache_referente_state(sender, inst)
-    assert getattr(inst, "_previous_state", None) is not None
+    comedores_signals.cache_referente_state(sender, inst)
+    assert getattr(inst, comedores_signals.PREVIOUS_STATE_ATTR, None) is not None
 
-    log_comedor = mocker.patch("audittrail.signals._log_comedor_event")
-    mocker.patch("audittrail.signals.Comedor.objects.filter", return_value=["c1", "c2"])
-    module.log_referente_update(sender, inst, created=False)
+    log_comedor = mocker.patch("comedores.audit_signals.registrar_evento")
+    mocker.patch(
+        "comedores.audit_signals.Comedor.objects.filter",
+        return_value=["c1", "c2"],
+    )
+    comedores_signals.registrar_cambios_referente(sender, inst, created=False)
     assert log_comedor.call_count == 2
-    assert not hasattr(inst, "_previous_state")
+    assert not hasattr(inst, comedores_signals.PREVIOUS_STATE_ATTR)
 
 
 def test_cache_and_log_imagen_comedor_change_and_delete(mocker):
@@ -113,25 +125,28 @@ def test_cache_and_log_imagen_comedor_change_and_delete(mocker):
         comedor_id=2,
         comedor="comedor",
     )
-    module.cache_imagen_comedor_state(sender, inst)
-    assert getattr(inst, "_previous_imagen", None)["imagen"] == "old.jpg"
+    comedores_signals.cache_imagen_comedor_state(sender, inst)
+    assert (
+        getattr(inst, comedores_signals.PREVIOUS_IMAGE_ATTR, None)["imagen"]
+        == "old.jpg"
+    )
 
-    log_comedor = mocker.patch("audittrail.signals._log_comedor_event")
-    module.log_imagen_comedor_change(sender, inst, created=False)
+    log_comedor = mocker.patch("comedores.audit_signals.registrar_evento")
+    comedores_signals.registrar_cambios_imagen_comedor(sender, inst, created=False)
     assert log_comedor.called
-    assert not hasattr(inst, "_previous_imagen")
+    assert not hasattr(inst, comedores_signals.PREVIOUS_IMAGE_ATTR)
 
-    module.log_imagen_comedor_change(
+    comedores_signals.registrar_cambios_imagen_comedor(
         sender, SimpleNamespace(imagen=None, comedor="comedor"), created=True
     )
-    module.log_imagen_comedor_deletion(
+    comedores_signals.registrar_baja_imagen_comedor(
         sender, SimpleNamespace(imagen=None, comedor="comedor")
     )
     assert log_comedor.call_count >= 3
 
 
 def test_firmante_and_aval_changes(mocker):
-    log_org = mocker.patch("audittrail.signals._log_organizacion_event")
+    log_org = mocker.patch("organizaciones.audit_signals.registrar_evento")
 
     # Firmante created
     firmante = SimpleNamespace(
@@ -142,35 +157,41 @@ def test_firmante_and_aval_changes(mocker):
         rol_id=1,
         rol="R",
     )
-    module.log_firmante_changes(None, firmante, created=True)
+    organizaciones_signals.registrar_cambios_firmante(None, firmante, created=True)
     assert log_org.called
 
     # Firmante updated
     firmante2 = SimpleNamespace(
         organizacion="org",
-        _previous_state=SimpleNamespace(nombre="A", cuit="1", rol_id=1, rol="R1"),
+        _audittrail_previous_state=SimpleNamespace(
+            nombre="A", cuit="1", rol_id=1, rol="R1"
+        ),
         nombre="B",
         cuit="2",
         rol_id=2,
         rol="R2",
     )
-    module.log_firmante_changes(None, firmante2, created=False)
-    assert not hasattr(firmante2, "_previous_state")
+    organizaciones_signals.registrar_cambios_firmante(
+        None,
+        firmante2,
+        created=False,
+    )
+    assert not hasattr(firmante2, organizaciones_signals.PREVIOUS_STATE_ATTR)
 
     # Aval created + updated
     aval = SimpleNamespace(
         organizacion="org", __str__=lambda self: "A", nombre="N", cuit="1"
     )
-    module.log_aval_changes(None, aval, created=True)
+    organizaciones_signals.registrar_cambios_aval(None, aval, created=True)
 
     aval2 = SimpleNamespace(
         organizacion="org",
-        _previous_state=SimpleNamespace(nombre="N1", cuit="1"),
+        _audittrail_previous_state=SimpleNamespace(nombre="N1", cuit="1"),
         nombre="N2",
         cuit="2",
     )
-    module.log_aval_changes(None, aval2, created=False)
-    assert not hasattr(aval2, "_previous_state")
+    organizaciones_signals.registrar_cambios_aval(None, aval2, created=False)
+    assert not hasattr(aval2, organizaciones_signals.PREVIOUS_STATE_ATTR)
 
 
 def test_cache_firmante_and_aval_state_does_not_exist_paths():
@@ -183,8 +204,8 @@ def test_cache_firmante_and_aval_state_does_not_exist_paths():
         DoesNotExist=Exception,
     )
     inst_f = SimpleNamespace(pk=1)
-    module.cache_firmante_state(sender_f, inst_f)
-    assert getattr(inst_f, "_previous_state", None) is None
+    organizaciones_signals.cache_firmante_state(sender_f, inst_f)
+    assert getattr(inst_f, organizaciones_signals.PREVIOUS_STATE_ATTR, None) is None
 
     sender_a = SimpleNamespace(
         objects=SimpleNamespace(
@@ -195,32 +216,32 @@ def test_cache_firmante_and_aval_state_does_not_exist_paths():
         DoesNotExist=Exception,
     )
     inst_a = SimpleNamespace(pk=1)
-    module.cache_aval_state(sender_a, inst_a)
-    assert getattr(inst_a, "_previous_state", None) is None
+    organizaciones_signals.cache_aval_state(sender_a, inst_a)
+    assert getattr(inst_a, organizaciones_signals.PREVIOUS_STATE_ATTR, None) is None
 
 
 def test_firmante_and_aval_delete_signals_without_duplicates(mocker):
-    log_org = mocker.patch("audittrail.signals._log_organizacion_event")
+    log_org = mocker.patch("organizaciones.audit_signals.registrar_evento")
 
     firmante = SimpleNamespace(organizacion="org-f", __str__=lambda self: "Firmante X")
-    module.log_firmante_delete(None, firmante)
-    module.log_firmante_delete(None, firmante)
+    organizaciones_signals.registrar_baja_firmante(None, firmante)
+    organizaciones_signals.registrar_baja_firmante(None, firmante)
     assert log_org.call_count == 1
     assert log_org.call_args.args[1] == {"Firmante": [str(firmante), "Eliminado"]}
-    assert log_org.call_args.args[2] == module.LogEntry.Action.DELETE
+    assert log_org.call_args.args[2] == organizaciones_signals.ACTION_DELETE
 
     log_org.reset_mock()
     aval = SimpleNamespace(organizacion="org-a", __str__=lambda self: "Aval X")
-    module.log_aval_delete(None, aval)
-    module.log_aval_delete(None, aval)
+    organizaciones_signals.registrar_baja_aval(None, aval)
+    organizaciones_signals.registrar_baja_aval(None, aval)
     assert log_org.call_count == 1
     assert log_org.call_args.args[1] == {"Aval": [str(aval), "Eliminado"]}
 
 
 def test_delete_helpers_skip_without_organizacion_or_repeated_instance():
     instance = SimpleNamespace(organizacion=None)
-    assert module._mark_delete_event_logged(instance) is False
-    assert module._mark_delete_event_logged(instance) is True
+    assert organizaciones_signals._mark_delete_event_logged(instance) is False
+    assert organizaciones_signals._mark_delete_event_logged(instance) is True
 
 
 def test_build_audit_entry_meta_defaults_uses_context_and_snapshots(mocker):
@@ -252,7 +273,7 @@ def test_build_audit_entry_meta_defaults_uses_context_and_snapshots(mocker):
         },
     )
 
-    defaults = module._build_audit_entry_meta_defaults(entry)
+    defaults = audittrail_signals._build_audit_entry_meta_defaults(entry)
     assert defaults["actor_username_snapshot"] == "ana"
     assert defaults["actor_full_name_snapshot"] == "Ana Pérez"
     assert defaults["source"] == "management_command:fix_audit"
@@ -272,13 +293,13 @@ def test_ensure_audit_entry_meta_persists_and_tolerates_missing_table(mocker):
     )
 
     entry = SimpleNamespace(pk=123)
-    module.ensure_audit_entry_meta(None, entry, created=True)
+    audittrail_signals.ensure_audit_entry_meta(None, entry, created=True)
     update_or_create.assert_called_once_with(log_entry=entry, defaults=defaults)
 
     update_or_create.reset_mock(side_effect=True)
     update_or_create.side_effect = OperationalError("tabla no existe")
-    module.ensure_audit_entry_meta(None, entry, created=True)
+    audittrail_signals.ensure_audit_entry_meta(None, entry, created=True)
 
     update_or_create.reset_mock(side_effect=True)
-    module.ensure_audit_entry_meta(None, entry, created=False)
+    audittrail_signals.ensure_audit_entry_meta(None, entry, created=False)
     update_or_create.assert_not_called()

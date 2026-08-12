@@ -13,6 +13,20 @@ from dashboard.utils import (
 from relevamientos.api import registrar_observador_dashboard as observar_relevamientos
 
 
+TABLES_REQUERIDAS = (
+    "comedores_comedor",
+    "relevamientos_relevamiento",
+    "relevamientos_prestacion",
+    "comedores_valorcomida",
+)
+
+
+def _tablas_requeridas_existen():
+    """Evita actualizar métricas mientras las migraciones aún no crearon sus tablas."""
+
+    return all(table_exists(table) for table in TABLES_REQUERIDAS)
+
+
 def update_dashboard_key(llave, cantidad):
     """Actualiza la métrica persistida identificada por ``llave``."""
 
@@ -25,6 +39,9 @@ def update_dashboard_key(llave, cantidad):
 def update_dashboard_comedores():
     """Refresca el agregado de Comedores y Relevamientos."""
 
+    if not _tablas_requeridas_existen():
+        return
+
     update_dashboard_key("cantidad_comedores_activos", contar_comedores_activos())
     update_dashboard_key(
         "cantidad_relevamientos_activos", contar_relevamientos_activos()
@@ -35,18 +52,7 @@ def update_dashboard_comedores():
 
 
 def register_signals():
-    """Registra los observers cuando las tablas requeridas ya existen."""
-
-    if not all(
-        table_exists(table)
-        for table in (
-            "comedores_comedor",
-            "relevamientos_relevamiento",
-            "relevamientos_prestacion",
-            "comedores_valorcomida",
-        )
-    ):
-        return
+    """Registra observers sin consultar la base durante el arranque de Django."""
 
     observar_comedores(update_dashboard_comedores)
     observar_relevamientos(update_dashboard_comedores)

@@ -2,6 +2,9 @@ import logging
 import json
 from datetime import date, datetime, time
 from decimal import Decimal
+
+from django.contrib.contenttypes.models import ContentType
+
 from config.middlewares.threadlocals import get_current_user
 from historial.models import Historial
 from rendicioncuentasfinal.api import obtener_content_type_id_documento
