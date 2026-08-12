@@ -34,9 +34,7 @@ def test_get_actor_and_log_event_helpers(mocker):
     assert audittrail_api._actor_actual() is None
 
     log_create = mocker.patch("audittrail.api.LogEntry.objects.log_create")
-    mocker.patch(
-        "audittrail.api.transaction.on_commit", side_effect=lambda cb: cb()
-    )
+    mocker.patch("audittrail.api.transaction.on_commit", side_effect=lambda cb: cb())
     mocker.patch("audittrail.api._actor_actual", return_value="actor")
 
     comedor = SimpleNamespace(pk=1)
