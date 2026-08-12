@@ -933,18 +933,36 @@ class OrganizacionRendicionDetailView(LoginRequiredMixin, DetailView):
             .get_queryset()
             .filter(
                 deleted_at__isnull=True,
-                comedor__deleted_at__isnull=True,
-                comedor__organizacion_id=self.kwargs["organizacion_id"],
-                comedor__organizacion__in=organizaciones_visibles,
             )
-            .select_related("comedor", "comedor__organizacion")
+            .filter(
+                Q(
+                    proyecto__organizacion_id=self.kwargs["organizacion_id"],
+                    proyecto__organizacion__in=organizaciones_visibles,
+                )
+                | Q(
+                    comedor__deleted_at__isnull=True,
+                    comedor__organizacion_id=self.kwargs["organizacion_id"],
+                    comedor__organizacion__in=organizaciones_visibles,
+                )
+            )
+            .select_related(
+                "proyecto",
+                "proyecto__organizacion",
+                "comedor",
+                "comedor__organizacion",
+            )
+            .distinct()
         )
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["organizacion"] = self.object.comedor.organizacion
+        proyecto = self.object.proyecto
+        comedor = self.object.comedor
+        context["organizacion"] = (
+            proyecto.organizacion if proyecto else comedor.organizacion
+        )
         context["codigo_proyecto"] = (
-            self.object.comedor.codigo_de_proyecto or ""
+            proyecto.codigo if proyecto else comedor.codigo_de_proyecto or ""
         ).strip()
         return context
 

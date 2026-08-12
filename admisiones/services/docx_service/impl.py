@@ -244,6 +244,11 @@ class AdmisionesContextService:
             ),
             "convenio_incorporacion": getattr(informe, "convenio_incorporacion", ""),
             "presentacion_avales": getattr(informe, "presentacion_avales", None),
+            "informe_tecnico_complementario_modificacion_prestaciones": getattr(
+                informe,
+                "informe_tecnico_complementario_modificacion_prestaciones",
+                None,
+            ),
         }
 
     @staticmethod

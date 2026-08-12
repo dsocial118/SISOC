@@ -77,6 +77,10 @@ def test_detail_view_contexto_expone_documentacion_agrupada(mocker):
         "rendicioncuentasmensual.views.RendicionCuentaMensualService.obtener_scope_proyecto",
         return_value=scope,
     )
+    mocker.patch(
+        "rendicioncuentasmensual.views.RendicionCuentaMensualService.rendicion_esta_completamente_validada",
+        return_value=False,
+    )
 
     contexto = view.get_context_data()
 
