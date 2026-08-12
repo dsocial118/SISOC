@@ -647,6 +647,12 @@ class InformeTecnico(models.Model):
     presentacion_avales = models.CharField(
         "Presentación de Avales", max_length=255, null=True, blank=True
     )
+    informe_tecnico_complementario_modificacion_prestaciones = models.CharField(
+        "Informe Técnico Complementario - Modificación de Prestaciones",
+        max_length=255,
+        null=True,
+        blank=True,
+    )
     observaciones_subsanacion = models.TextField(
         "Observaciones de Subsanación",
         null=True,

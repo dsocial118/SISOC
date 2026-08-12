@@ -6,11 +6,10 @@ from django.conf import settings
 from django.core.cache import cache
 from django.core.exceptions import ImproperlyConfigured
 from django.db import connection
-from django.db.models import Sum
 from django.db.utils import OperationalError, ProgrammingError
 
-from relevamientos.models import Relevamiento
-from comedores.models import Comedor, ValorComida
+from comedores.api import obtener_metricas_dashboard
+from relevamientos.api import contar_relevamientos
 
 
 logger = logging.getLogger(__name__)
@@ -52,7 +51,7 @@ def contar_comedores_activos():
     cache_key = "contar_comedores_activos"
     cached_value = cache.get(cache_key)
     if cached_value is None:
-        cached_value = Comedor.objects.count()
+        cached_value = obtener_metricas_dashboard().cantidad_espacios
         cache.set(cache_key, cached_value, timeout=CACHE_TIMEOUT)
     return cached_value
 
@@ -62,7 +61,7 @@ def contar_relevamientos_activos():
     cache_key = "contar_relevamientos_activos"
     cached_value = cache.get(cache_key)
     if cached_value is None:
-        cached_value = Relevamiento.objects.count()
+        cached_value = contar_relevamientos()
         cache.set(cache_key, cached_value, timeout=CACHE_TIMEOUT)
     return cached_value
 
@@ -72,12 +71,7 @@ def calcular_presupuesto_desayuno():
     cache_key = "calcular_presupuesto_desayuno"
     cached_value = cache.get(cache_key)
     if cached_value is None:
-        cached_value = (
-            ValorComida.objects.filter(tipo="desayuno").aggregate(total=Sum("valor"))[
-                "total"
-            ]
-            or 0
-        )
+        cached_value = obtener_metricas_dashboard().presupuesto_desayuno
         cache.set(cache_key, cached_value, timeout=CACHE_TIMEOUT)
     return cached_value
 
@@ -87,12 +81,7 @@ def calcular_presupuesto_merienda():
     cache_key = "calcular_presupuesto_merienda"
     cached_value = cache.get(cache_key)
     if cached_value is None:
-        cached_value = (
-            ValorComida.objects.filter(tipo="merienda").aggregate(total=Sum("valor"))[
-                "total"
-            ]
-            or 0
-        )
+        cached_value = obtener_metricas_dashboard().presupuesto_merienda
         cache.set(cache_key, cached_value, timeout=CACHE_TIMEOUT)
     return cached_value
 
@@ -102,11 +91,6 @@ def calcular_presupuesto_comida():
     cache_key = "calcular_presupuesto_comida"
     cached_value = cache.get(cache_key)
     if cached_value is None:
-        cached_value = (
-            ValorComida.objects.filter(tipo="comida").aggregate(total=Sum("valor"))[
-                "total"
-            ]
-            or 0
-        )
+        cached_value = obtener_metricas_dashboard().presupuesto_comida
         cache.set(cache_key, cached_value, timeout=CACHE_TIMEOUT)
     return cached_value

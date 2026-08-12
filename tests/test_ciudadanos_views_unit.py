@@ -515,7 +515,7 @@ def test_ciudadanos_create_busqueda_paths(mocker):
         "ciudadanos.views.redirect", side_effect=lambda *a, **k: (a, k)
     )
     renaper = mocker.patch(
-        "ciudadanos.views.ComedorService.obtener_datos_ciudadano_desde_renaper",
+        "ciudadanos.views.obtener_datos_ciudadano_desde_renaper",
         return_value={"success": False, "message": "no"},
     )
 
@@ -577,7 +577,7 @@ def test_ciudadanos_create_busqueda_con_existente_no_estandar_precarga_renaper(m
         return_value=_OrderableResult([existente_no_estandar]),
     )
     renaper = mocker.patch(
-        "ciudadanos.views.ComedorService.obtener_datos_ciudadano_desde_renaper",
+        "ciudadanos.views.obtener_datos_ciudadano_desde_renaper",
         return_value={
             "success": True,
             "data": {"documento": 12345678, "nombre": "Ana"},
@@ -632,11 +632,7 @@ def test_ciudadanos_crear_permite_no_estandar_con_dni_de_estandar(client, monkey
             },
         }
 
-    monkeypatch.setattr(
-        module.ComedorService,
-        "obtener_datos_ciudadano_desde_renaper",
-        renaper_ok,
-    )
+    monkeypatch.setattr(module, "obtener_datos_ciudadano_desde_renaper", renaper_ok)
 
     url = reverse("ciudadanos_crear")
     get_response = client.get(url, {"dni": str(documento)})
