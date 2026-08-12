@@ -558,7 +558,12 @@
                         <div class="row">
                             <div class="col-md-6 mb-3">{{ form.expediente_incorporacion|as_crispy_field }}</div>
                             <div class="col-md-6 mb-3">{{ form.convenio_incorporacion|as_crispy_field }}</div>
-                            {% if form.presentacion_avales %}<div class="col-12 mb-3">{{ form.presentacion_avales|as_crispy_field }}</div>{% endif %}
+                            {% if form.presentacion_avales %}
+                                <div class="col-12 mb-3">{{ form.presentacion_avales|as_crispy_field }}</div>
+                            {% endif %}
+                            {% if form.informe_tecnico_complementario_modificacion_prestaciones %}
+                                <div class="col-12 mb-3">{{ form.informe_tecnico_complementario_modificacion_prestaciones|as_crispy_field }}</div>
+                            {% endif %}
                         </div>
                     </div>
                 </div>

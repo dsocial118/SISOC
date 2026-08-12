@@ -76,6 +76,11 @@ def _configurar_campos_informe_2233(form, admision, tipo_informe):
         "expediente_incorporacion": es_renovacion,
         "convenio_incorporacion": es_renovacion,
         "presentacion_avales": es_renovacion and tipo_informe == "base",
+        "informe_tecnico_complementario_modificacion_prestaciones": (
+            es_renovacion
+            and getattr(admision, "informe_complementario_modifica_prestaciones", None)
+            == "si"
+        ),
     }
     for nombre, aplica in condiciones.items():
         if not aplica:

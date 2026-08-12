@@ -21,7 +21,10 @@ from core.models import Provincia
 from organizaciones.models import Organizacion
 from pwa.models import AuditoriaOperacionPWA, LecturaMensajePWA
 from rendicioncuentasmensual.models import DocumentacionAdjunta, RendicionCuentaMensual
-from rendicioncuentasmensual.services import RendicionCuentaMensualService
+from rendicioncuentasmensual.services import (
+    RendicionCuentaMensualService,
+    RendicionProcesoService,
+)
 from users.models import AccesoComedorPWA
 
 
@@ -305,6 +308,8 @@ def test_list_mensajes_por_espacio_incluye_contadores_agrupados_para_rendiciones
         periodo_inicio=timezone.now().date(),
         periodo_fin=timezone.now().date(),
         estado=RendicionCuentaMensual.ESTADO_REVISION,
+        etapa_proceso=RendicionCuentaMensual.ETAPA_REVISION_DOCUMENTACION,
+        subestado_proceso=RendicionCuentaMensual.SUBESTADO_EN_CURSO,
     )
     documento_1 = DocumentacionAdjunta.objects.create(
         nombre="comprobante-1.pdf",
@@ -339,6 +344,12 @@ def test_list_mensajes_por_espacio_incluye_contadores_agrupados_para_rendiciones
         documento=documento_2,
         estado=DocumentacionAdjunta.ESTADO_SUBSANAR,
         observaciones="Observacion 2",
+        actor=representante,
+    )
+    RendicionProcesoService.ejecutar(
+        rendicion=rendicion,
+        accion=RendicionProcesoService.ACCION_FINALIZAR_TERRITORIAL,
+        datos={},
         actor=representante,
     )
 
@@ -385,6 +396,8 @@ def test_revision_de_rendicion_genera_mensaje_mobile_visible_en_el_espacio(espac
         periodo_inicio=timezone.now().date(),
         periodo_fin=timezone.now().date(),
         estado=RendicionCuentaMensual.ESTADO_REVISION,
+        etapa_proceso=RendicionCuentaMensual.ETAPA_REVISION_DOCUMENTACION,
+        subestado_proceso=RendicionCuentaMensual.SUBESTADO_EN_CURSO,
     )
     documento = DocumentacionAdjunta.objects.create(
         nombre="comprobante.pdf",
@@ -400,6 +413,12 @@ def test_revision_de_rendicion_genera_mensaje_mobile_visible_en_el_espacio(espac
         documento=documento,
         estado=DocumentacionAdjunta.ESTADO_SUBSANAR,
         observaciones="Volver a subir el documento completo",
+        actor=representante,
+    )
+    RendicionProcesoService.ejecutar(
+        rendicion=rendicion,
+        accion=RendicionProcesoService.ACCION_FINALIZAR_TERRITORIAL,
+        datos={},
         actor=representante,
     )
 

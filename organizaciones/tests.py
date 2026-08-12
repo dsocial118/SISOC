@@ -248,6 +248,38 @@ class OrganizacionRendicionesPresentadasTests(TestCase):
 
         self.assertEqual(response.status_code, 404)
 
+    def test_legajo_y_detalle_incluyen_rendicion_vinculada_directamente_a_proyecto(
+        self,
+    ):
+        proyecto = ProyectoOrganizacion.objects.create(
+            organizacion=self.organizacion,
+            codigo="P03",
+        )
+        rendicion = RendicionCuentaMensual.objects.create(
+            proyecto=proyecto,
+            mes=8,
+            anio=2026,
+            convenio="CONV-03",
+            numero_rendicion=3,
+        )
+
+        listado = self.client.get(
+            reverse("organizacion_detalle", kwargs={"pk": self.organizacion.pk})
+        )
+        detalle = self.client.get(
+            reverse(
+                "organizacion_rendicion_detalle",
+                kwargs={
+                    "organizacion_id": self.organizacion.pk,
+                    "pk": rendicion.pk,
+                },
+            )
+        )
+
+        self.assertContains(listado, "CONV-03")
+        self.assertEqual(detalle.status_code, 200)
+        self.assertEqual(detalle.context["organizacion"], self.organizacion)
+
 
 class CuilDuplicadoFormTests(TestCase):
     """Tests del flujo de CUIL duplicado en OrganizacionForm."""
