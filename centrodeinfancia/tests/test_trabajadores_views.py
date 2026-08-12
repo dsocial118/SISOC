@@ -143,7 +143,7 @@ def test_trabajador_create_persiste_y_bloquea_solo_prefill_renaper_servidor(
     url = reverse("centrodeinfancia_trabajador_crear", kwargs={"pk": centro.pk})
     datos_validos_trabajador()
     monkeypatch.setattr(
-        "centrodeinfancia.views.ComedorService.obtener_datos_ciudadano_desde_renaper",
+        "centrodeinfancia.views.obtener_datos_ciudadano_desde_renaper",
         lambda _dni: {
             "success": True,
             "data": {

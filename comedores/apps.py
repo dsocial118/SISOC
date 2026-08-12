@@ -6,6 +6,7 @@ class ComedoresConfig(AppConfig):
     name = "comedores"
 
     def ready(self):
+        import comedores.audit_signals  # pylint: disable=unused-import, import-outside-toplevel
         import comedores.signals  # pylint: disable=unused-import, import-outside-toplevel
         from comedores.favorite_filters import (  # pylint: disable=import-outside-toplevel
             registrar_filtros_favoritos,

@@ -487,3 +487,120 @@ source_modules =
 forbidden_modules =
     comedores
 ignore_imports =
+
+[importlinter:contract:dashboard-consumes-comedores-core-public-api]
+name = Dashboard no consulta internals de Comedores Core
+type = forbidden
+allow_indirect_imports = True
+source_modules =
+    dashboard
+forbidden_modules =
+    comedores.models
+    comedores.services
+    comedores.forms
+    comedores.signals
+    comedores.tasks
+    comedores.utils
+    comedores.views
+    relevamientos.models
+    relevamientos.service
+    relevamientos.form
+    relevamientos.helpers
+    relevamientos.signals
+    relevamientos.tasks
+    relevamientos.views
+ignore_imports =
+
+[importlinter:contract:audittrail-no-comedores-core-events]
+name = Audittrail no posee receivers de Comedores Core
+type = forbidden
+allow_indirect_imports = True
+source_modules =
+    audittrail
+forbidden_modules =
+    admisiones
+    comedores
+    intervenciones
+    organizaciones
+    relevamientos
+ignore_imports =
+
+[importlinter:contract:comedores-core-public-boundary]
+name = los módulos externos consumen sólo APIs públicas de Comedores Core
+type = forbidden
+allow_indirect_imports = True
+source_modules =
+    core
+    users
+    ciudadanos
+    audittrail
+    historial
+    centrodefamilia
+    centrodeinfancia
+    VAT
+    celiaquia
+    comunicados
+    ver_para_ser_libre
+    dispositivos
+    ticketera
+    dashboard
+    healthcheck
+    iam
+    insumos
+    ocr
+forbidden_modules =
+    admisiones.forms
+    admisiones.models
+    admisiones.services
+    admisiones.signals
+    admisiones.tasks
+    admisiones.views
+    acompanamientos.acompanamiento_service
+    acompanamientos.models
+    acompanamientos.services
+    acompanamientos.signals
+    acompanamientos.tasks
+    acompanamientos.views
+    comedores.forms
+    comedores.models
+    comedores.services
+    comedores.signals
+    comedores.tasks
+    comedores.utils
+    comedores.views
+    duplas.models
+    duplas.services
+    duplas.signals
+    duplas.views
+    expedientespagos.forms
+    expedientespagos.models
+    expedientespagos.services
+    expedientespagos.views
+    intervenciones.forms
+    intervenciones.models
+    intervenciones.services
+    intervenciones.signals
+    intervenciones.tasks
+    intervenciones.views
+    organizaciones.forms
+    organizaciones.models
+    organizaciones.services
+    organizaciones.signals
+    organizaciones.tasks
+    organizaciones.views
+    relevamientos.forms
+    relevamientos.helpers
+    relevamientos.models
+    relevamientos.service
+    relevamientos.signals
+    relevamientos.tasks
+    relevamientos.views
+    rendicioncuentasfinal.models
+    rendicioncuentasfinal.rendicion_cuentas_final_service
+    rendicioncuentasfinal.views
+    rendicioncuentasmensual.models
+    rendicioncuentasmensual.services
+    rendicioncuentasmensual.views
+ignore_imports =
+    centrodefamilia.models -> organizaciones.models
+    core.debug_queries -> **

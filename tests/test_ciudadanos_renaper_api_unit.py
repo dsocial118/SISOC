@@ -79,3 +79,36 @@ def test_resolver_ciudadano_rechaza_dni_invalido_de_renaper(mocker):
         "success": False,
         "message": "RENAPER devolvió un DNI inválido.",
     }
+
+
+def test_obtener_datos_para_formulario_conserva_las_claves_de_relacion(mocker):
+    mocker.patch(
+        "ciudadanos.api.consultar_ciudadano_renaper",
+        return_value={
+            "success": True,
+            "message": "Datos obtenidos desde RENAPER.",
+            "data": {"dni": "12345678"},
+            "datos_api": {"origen": "fake"},
+        },
+    )
+    mocker.patch(
+        "ciudadanos.api.construir_datos_ciudadano_desde_renaper",
+        return_value=(
+            {
+                "nombre": "Ana",
+                "sexo_id": 2,
+                "nacionalidad_id": 3,
+            },
+            None,
+        ),
+    )
+
+    resultado = api.obtener_datos_ciudadano_desde_renaper("12345678")
+
+    assert resultado["success"] is True
+    assert resultado["data"] == {
+        "nombre": "Ana",
+        "sexo": 2,
+        "nacionalidad": 3,
+    }
+    assert resultado["datos_api"] == {"origen": "fake"}

@@ -198,6 +198,48 @@ def _datos_para_ciudadano(
     return ciudadano_data, None
 
 
+def construir_datos_ciudadano_desde_renaper(
+    datos: dict[str, Any], dni: object
+) -> tuple[dict[str, Any] | None, str | None]:
+    """Mapea una respuesta RENAPER a campos de ``Ciudadano`` para consumidores."""
+
+    return _datos_para_ciudadano(datos, str(dni).strip())
+
+
+def resolver_nacionalidad_desde_renaper(valor: object):
+    """Resuelve la nacionalidad local informada por RENAPER."""
+
+    return _resolver_nacionalidad(valor)
+
+
+def obtener_datos_ciudadano_desde_renaper(
+    dni: object, sexo: str | None = None
+) -> dict[str, Any]:
+    """Consulta RENAPER y devuelve datos listos para precargar un formulario."""
+
+    resultado = consultar_ciudadano_renaper(dni, sexo)
+    if not resultado.get("success"):
+        return resultado
+
+    ciudadano_data, error = construir_datos_ciudadano_desde_renaper(
+        resultado.get("data") or {}, dni
+    )
+    if not ciudadano_data:
+        return {"success": False, "message": error}
+
+    datos_formulario = dict(ciudadano_data)
+    for field_name in ("sexo", "provincia", "municipio", "localidad", "nacionalidad"):
+        field_id = f"{field_name}_id"
+        if field_id in datos_formulario:
+            datos_formulario[field_name] = datos_formulario.pop(field_id)
+    return {
+        "success": True,
+        "data": datos_formulario,
+        "message": resultado["message"],
+        "datos_api": resultado.get("datos_api"),
+    }
+
+
 def _buscar_ciudadano_verificado(dni: str):
     ciudadano = Ciudadano.objects.filter(documento_unico_key=f"DNI_{dni}").first()
     if ciudadano:
