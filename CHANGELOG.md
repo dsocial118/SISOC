@@ -9,6 +9,10 @@
 <!-- AUTO-GENERATED RELEASE START: 2026-07-30 -->
 # Versión SISOC 30.07.2026
 
+## Actualizaciones
+
+- [Centro de Infancia y despliegue productivo.] Restaura talla CDI como texto para evitar que la migración bloqueante detenga producción. (PR #2210)
+
 ## Corrección de Errores
 
 - [CI/CD] Evita que el deploy de producción falle cuando el helper local del runner es anterior al contrato de revisión esperada. (PR #2199)
