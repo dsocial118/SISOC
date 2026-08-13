@@ -18,9 +18,7 @@ TIPOS = ("desayuno", "almuerzo", "merienda", "cena")
 LEYENDA_PRESTACIONES_NO_DISPONIBLES = "Datos de prestaciones no disponibles."
 
 
-FUENTE_PRESTACIONES_SIN_DATOS = SimpleNamespace(
-    datos_prestaciones_no_disponibles=True
-)
+FUENTE_PRESTACIONES_SIN_DATOS = SimpleNamespace(datos_prestaciones_no_disponibles=True)
 
 
 def _agregar_texto(paragraph, value):
@@ -59,9 +57,7 @@ def _insertar_leyenda_prestaciones_no_disponibles(body, table):
     run = etree.SubElement(paragraph, f"{{{W_NS}}}r")
     run_properties = etree.SubElement(run, f"{{{W_NS}}}rPr")
     etree.SubElement(run_properties, f"{{{W_NS}}}b")
-    etree.SubElement(run, f"{{{W_NS}}}t").text = (
-        LEYENDA_PRESTACIONES_NO_DISPONIBLES
-    )
+    etree.SubElement(run, f"{{{W_NS}}}t").text = LEYENDA_PRESTACIONES_NO_DISPONIBLES
     body.insert(body.index(table), paragraph)
 
 
