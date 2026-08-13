@@ -52,6 +52,7 @@ from comedores.models import (
 )
 from comedores.services.comedor_service import ComedorService
 from comedores.services.certificacion_prestaciones_service import (
+    FUENTE_PRESTACIONES_SIN_DATOS,
     generar_certificacion_prestaciones_pdf,
 )
 from comedores.services.capacitaciones_certificados_service import (
@@ -1785,6 +1786,8 @@ class ComedorDetailViewSet(
             if usa_convenio_pnud
             else informe
         )
+        if source is None:
+            source = FUENTE_PRESTACIONES_SIN_DATOS
         conformidad = PrestacionAlimentariaConformidad.objects.create(
             comedor=comedor,
             informe_tecnico=informe,
