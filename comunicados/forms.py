@@ -5,8 +5,8 @@ from .models import Comunicado, ComunicadoAdjunto, TipoComunicado, SubtipoComuni
 from .permissions import (
     es_tecnico,
     is_admin,
-    get_comedores_del_usuario,
-    get_organizaciones_del_usuario,
+    get_ids_comedores_del_usuario,
+    get_ids_organizaciones_del_usuario,
     can_create_comunicado_interno,
 )
 
@@ -98,10 +98,14 @@ class ComunicadoForm(forms.ModelForm):
             return
 
         # Filtrar comedores según permisos del usuario
-        self.fields["comedores"].queryset = get_comedores_del_usuario(self.user)
-        self.fields["organizaciones"].queryset = get_organizaciones_del_usuario(
-            self.user
-        ).order_by("nombre")
+        self.fields["comedores"].queryset = self.fields["comedores"].queryset.filter(
+            pk__in=get_ids_comedores_del_usuario(self.user)
+        )
+        self.fields["organizaciones"].queryset = (
+            self.fields["organizaciones"]
+            .queryset.filter(pk__in=get_ids_organizaciones_del_usuario(self.user))
+            .order_by("nombre")
+        )
 
         # Si es técnico (no admin), solo puede crear comunicados externos a comedores
         if es_tecnico(self.user) and not is_admin(self.user):

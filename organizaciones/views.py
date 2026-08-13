@@ -12,7 +12,7 @@ from django.template.loader import render_to_string
 from django.urls import reverse, reverse_lazy
 from django.utils import timezone
 from django.utils.dateparse import parse_date
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_GET, require_POST
 from django.views.generic import (
     CreateView,
     DeleteView,
@@ -29,11 +29,14 @@ from organizaciones.models import (
     ArchivoOrganizacion,
     DocumentacionOrganizacion,
     Organizacion,
+    ProyectoOrganizacion,
     SubtipoEntidad,
     Firmante,
     Aval,
     RolFirmante,
 )
+from rendicioncuentasmensual.models import RendicionCuentaMensual
+from rendicioncuentasmensual.services import RendicionesOrganizacionService
 
 MAX_DOCUMENTO_ORGANIZACION_FILE_SIZE = 20 * 1024 * 1024
 DOCUMENTO_ORGANIZACION_FORMATOS_VALIDOS = "PDF, JPG, PNG, Excel o Word"
@@ -95,6 +98,29 @@ def _apply_organizacion_search(queryset, query):
         )
 
     return queryset.filter(Q(nombre__icontains=busqueda) | Q(email__icontains=busqueda))
+
+
+@login_required
+@require_GET
+def load_organizaciones(request):
+    """Carga organizaciones con búsqueda para Select2."""
+    busqueda = request.GET.get("q", "").strip()
+    pagina = int(request.GET.get("page", 1))
+    tamano_pagina = 30
+
+    organizaciones = Organizacion.objects.all().order_by("nombre")
+
+    if busqueda:
+        organizaciones = organizaciones.filter(nombre__icontains=busqueda)
+
+    inicio = (pagina - 1) * tamano_pagina
+    fin = inicio + tamano_pagina
+    total = organizaciones.count()
+    organizaciones_pagina = organizaciones[inicio:fin]
+
+    resultados = [{"id": org.id, "text": org.nombre} for org in organizaciones_pagina]
+
+    return JsonResponse({"results": resultados, "pagination": {"more": fin < total}})
 
 
 def _puede_ver_todas_las_organizaciones(user):
@@ -772,7 +798,7 @@ class OrganizacionDetailView(LoginRequiredMixin, DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["firmantes"] = self.object.firmantes.select_related("rol")
+        context["firmantes"] = self.object.firmantes.select_related("rol", "programa")
         context["avales_data"] = self.object.avales.all()
 
         # Obtener comedores asociados a la organización
@@ -871,6 +897,73 @@ class OrganizacionDetailView(LoginRequiredMixin, DetailView):
             self.request.user
         )
 
+        proyectos = RendicionesOrganizacionService.obtener_proyectos(self.object)
+        context["proyectos_organizacion"] = list(
+            self.object.proyectos.filter(activo=True)
+            .order_by("codigo")
+            .values_list("codigo", flat=True)
+        )
+        proyecto_solicitado = (self.request.GET.get("proyecto") or "").strip()
+        proyecto_seleccionado = (
+            proyecto_solicitado if proyecto_solicitado in proyectos else ""
+        )
+        context["proyectos_rendiciones"] = proyectos
+        context["proyecto_rendiciones_seleccionado"] = proyecto_seleccionado
+        context["rendiciones_presentadas"] = (
+            RendicionesOrganizacionService.obtener_rendiciones(
+                self.object, proyecto_seleccionado
+            )
+        )
+        context["rendiciones_tab_activo"] = "proyecto" in self.request.GET
+
+        return context
+
+
+class OrganizacionRendicionDetailView(LoginRequiredMixin, DetailView):
+    model = RendicionCuentaMensual
+    template_name = "organizacion_rendicion_detail.html"
+    context_object_name = "rendicion"
+
+    def get_queryset(self):
+        organizaciones_visibles = _filtrar_organizaciones_por_dupla(
+            Organizacion.objects.all(), self.request.user
+        )
+        return (
+            super()
+            .get_queryset()
+            .filter(
+                deleted_at__isnull=True,
+            )
+            .filter(
+                Q(
+                    proyecto__organizacion_id=self.kwargs["organizacion_id"],
+                    proyecto__organizacion__in=organizaciones_visibles,
+                )
+                | Q(
+                    comedor__deleted_at__isnull=True,
+                    comedor__organizacion_id=self.kwargs["organizacion_id"],
+                    comedor__organizacion__in=organizaciones_visibles,
+                )
+            )
+            .select_related(
+                "proyecto",
+                "proyecto__organizacion",
+                "comedor",
+                "comedor__organizacion",
+            )
+            .distinct()
+        )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        proyecto = self.object.proyecto
+        comedor = self.object.comedor
+        context["organizacion"] = (
+            proyecto.organizacion if proyecto else comedor.organizacion
+        )
+        context["codigo_proyecto"] = (
+            proyecto.codigo if proyecto else comedor.codigo_de_proyecto or ""
+        ).strip()
         return context
 
 
@@ -1312,3 +1405,16 @@ def organizaciones_ajax(request):
             "has_next": page_obj.has_next(),
         }
     )
+
+
+@login_required
+def proyectos_organizacion_ajax(request, organizacion_id):
+    organizacion = get_object_or_404(
+        _filtrar_organizaciones_por_dupla(Organizacion.objects.all(), request.user),
+        pk=organizacion_id,
+    )
+    proyectos = ProyectoOrganizacion.objects.filter(
+        organizacion=organizacion,
+        activo=True,
+    ).values("id", "codigo", "nombre")
+    return JsonResponse({"proyectos": list(proyectos)})

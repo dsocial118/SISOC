@@ -85,18 +85,20 @@
                             </div>
                         </div>
                         <div class="form-group row">
-                            <div class="col-md-4">{{ form.organizacion|as_crispy_field }}</div>
-                            <div class="col-md-4">{{ form.programa|as_crispy_field }}</div>
+                            <div class="col-md-3">{{ form.organizacion|as_crispy_field }}</div>
+                            <div class="col-md-3">{{ form.programa|as_crispy_field }}</div>
                             <div id="codigo-proyecto-wrapper"
                                  class="col-md-2"
-                                 data-programa-ids="{{ form.codigo_de_proyecto_programa_ids }}">
-                                {{ form.codigo_de_proyecto|as_crispy_field }}
+                                 data-programa-ids="{{ form.codigo_de_proyecto_programa_ids }}"
+                                 data-proyectos-url="{% url 'organizacion_proyectos_ajax' 0 %}">
+                                {{ form.proyecto|as_crispy_field }}
                                 <span class="field-tooltip">
                                     <i class="fas fa-info-circle"></i>
-                                    <span class="tooltip-text">Código de 7 caracteres máximo</span>
+                                    <span class="tooltip-text">Proyecto activo de la organización</span>
                                 </span>
                             </div>
                             <div class="col-md-2">{{ form.es_judicializado|as_crispy_field }}</div>
+                            <div class="col-md-2">{{ form.es_caritas|as_crispy_field }}</div>
                         </div>
                     </div>
                 </div>
@@ -552,9 +554,10 @@
         (function () {
             var programaInput = document.getElementById("id_programa");
             var codigoWrapper = document.getElementById("codigo-proyecto-wrapper");
-            var codigoInput = document.getElementById("id_codigo_de_proyecto");
+            var organizacionInput = document.getElementById("id_organizacion");
+            var proyectoInput = document.getElementById("id_proyecto");
 
-            if (!programaInput || !codigoWrapper || !codigoInput) {
+            if (!programaInput || !organizacionInput || !codigoWrapper || !proyectoInput) {
                 return;
             }
 
@@ -566,11 +569,39 @@
                 var permitido = programasPermitidos.indexOf(programaInput.value) !== -1;
                 codigoWrapper.classList.toggle("d-none", !permitido);
                 if (!permitido) {
-                    codigoInput.value = "";
+                    proyectoInput.value = "";
                 }
             }
 
-            programaInput.addEventListener("change", actualizarCodigoProyecto);
+            function actualizarProyectos() {
+                var organizacionId = organizacionInput.value;
+                var selected = proyectoInput.value;
+                proyectoInput.innerHTML = '<option value="">Seleccione un proyecto</option>';
+                if (!organizacionId) {
+                    return;
+                }
+                var url = codigoWrapper.dataset.proyectosUrl.replace("/0/", "/" + organizacionId + "/");
+                fetch(url)
+                    .then(function (response) {
+                        if (!response.ok) {
+                            throw new Error("No se pudieron cargar los proyectos de la organización.");
+                        }
+                        return response.json();
+                    })
+                    .then(function (data) {
+                        data.proyectos.forEach(function (proyecto) {
+                            var option = new Option(proyecto.codigo, proyecto.id, false, String(proyecto.id) === selected);
+                            proyectoInput.add(option);
+                        });
+                        $(proyectoInput).trigger("change.select2");
+                    })
+                    .catch(function () {
+                        proyectoInput.innerHTML = '<option value="">No fue posible cargar los proyectos</option>';
+                    });
+            }
+
+            $(programaInput).on("change", actualizarCodigoProyecto);
+            $(organizacionInput).on("change", actualizarProyectos);
             actualizarCodigoProyecto();
         }());
     </script>

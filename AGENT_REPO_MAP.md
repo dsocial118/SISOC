@@ -40,7 +40,7 @@ Mapa practico del repositorio `SISOC` para futuros agentes de IA y desarrollador
 | PyMySQL + mysqlclient | Hecho observado | `requirements/base.txt` |
 | pytest / pytest-django / pytest-xdist / pytest-cov | Hecho observado | `requirements/test.txt`, `pytest.ini` |
 | black / pylint / djlint | Hecho observado | `pyproject.toml`, `requirements/dev.txt`, `requirements/lint.txt` |
-| import-linter | Hecho observado | `.importlinter`, `requirements/arch.txt` |
+| import-linter | Hecho observado | `.importlinter`, `.importlinter_celiaquia_config`, `requirements/arch.txt` |
 | Sentry | Hecho observado | `.env.example`, `requirements/base.txt` |
 | OCR / PDF / DOCX / Excel tooling | Hecho observado | `requirements/base.txt`, app `ocr/`, templates/docx/pdf |
 
@@ -204,7 +204,7 @@ SISOC/
 | Testing | `USE_SQLITE_FOR_TESTS`, `PYTEST_RUNNING` |
 | Integracion GESTIONAR | `GESTIONAR_API_KEY`, endpoints `GESTIONAR_API_*`, workers `GESTIONAR_*`, `DOMINIO` |
 | Ticketera | `TICKETERA_ENABLED` |
-| RENAPER | `RENAPER_API_USERNAME`, `RENAPER_API_PASSWORD`, retries/backoff |
+| RENAPER | `RENAPER_API_USERNAME`, `RENAPER_API_PASSWORD`, `RENAPER_REQUEST_TIMEOUT_SECONDS`, retries/backoff; sin cache ni TTL de token |
 | Google Maps | `GOOGLE_MAPS_API_KEY` |
 | Sentry | `SENTRY_ENABLED`, `SENTRY_DSN`, `SENTRY_RELEASE` |
 | Email/password reset | `EMAIL_*`, `DEFAULT_FROM_EMAIL`, `PASSWORD_RESET_TIMEOUT`, `INITIAL_PASSWORD_MAX_AGE_HOURS` |
@@ -275,19 +275,19 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 | `comedores/` | dominio fuerte: comedores, nomina, estados, sync GESTIONAR | `models.py`, `tasks.py`, `signals.py`, `api_views.py`, `services/`, `urls.py` | Alto |
 | `relevamientos/` | relevamientos y sync externo asociado | `models.py`, `tasks.py`, `views.py`, commands | Alto |
 | `ciudadanos/` | gestion de ciudadanos/beneficiarios | `models.py`, `views.py`, `api_views.py`, forms | Medio |
-| `centrodefamilia/` | beneficiarios/centros/familia + consulta RENAPER + API | `models.py`, `views.py`, `api_views.py`, `services/consulta_renaper` | Alto |
-| `celiaquia/` | modulo especializado con bastante logica en services y vistas | `models.py`, `views/`, `services/`, `permissions.py`, tests | Alto |
-| `admisiones/` | flujo de admision, legales/tecnicos, generacion DOCX/PDF | `views/web_views.py`, `services/`, `forms/`, templates `docx/` y `pdf/` | Alto |
-| `VAT/` | modulo amplio propio con views, API, services y reportes | `models.py`, `views/`, `api_views.py`, `services/`, `serializers.py` | Alto |
+| `centrodefamilia/` | beneficiarios/centros/familia + API | `models.py`, `views.py`, `api_views.py`, `services/` | Alto |
+| `celiaquia/` | modulo especializado con bastante logica en services y vistas; expone un contrato Python acotado | `api.py`, `models.py`, `views/`, `services/`, `permissions.py`, tests | Alto |
+| `admisiones/` | flujo de admision, legales/tecnicos, generacion DOCX/PDF y correcciones operativas auditadas | `views/web_views.py`, `services/`, `forms/`, `management/commands/`, templates `docx/` y `pdf/` | Alto |
+| `VAT/` | modulo amplio propio con views, API, services y reportes | `models.py`, `views/`, `api_views.py`, `services/`, `serializers.py`; docs `docs/vat/` | Alto |
 | `pwa/` | endpoints backend para experiencia PWA | `api_urls.py`, `api_views.py`, `services/`, `models.py` | Medio |
 | `ticketera/` | API server-to-server con kill-switch | `api_urls.py`, `api_views.py`, `api_serializers.py` | Medio |
 | `comunicados/` | mensajes/comunicados y API asociada | `models.py`, `views.py`, `api_views.py`, forms | Medio |
-| `organizaciones/` | entidades/organizaciones vinculadas | `models.py`, `views.py`, forms | Medio |
+| `organizaciones/` | entidades/organizaciones vinculadas; edición modal de proyectos y detalle con rendiciones por relación directa o legado | `models.py`, `forms.py`, `views.py`, templates de organización | Alto |
 | `centrodeinfancia/` | dominio de centros de infancia, personal y asistencia | `models.py`, `services.py`, `views.py`, `tests/`, urls | Alto |
-| `acompanamientos/` | seguimiento/acompanamientos | `views.py`, service, templates | Medio |
+| `acompanamientos/` | seguimiento/acompanamientos | `views.py`, `acompanamiento_service.py`, `services/filter_config.py`, templates | Medio |
 | `expedientespagos/` | expedientes de pagos | `models.py`, `views.py`, urls | Bajo |
 | `rendicioncuentasfinal/` | rendicion final | `models.py`, `views.py`, urls | Bajo |
-| `rendicioncuentasmensual/` | rendicion mensual | `models.py`, `views.py`, urls | Bajo |
+| `rendicioncuentasmensual/` | rendición mensual, revisión Territorial/Auditoría, subsanaciones y datos expuestos en Organizaciones | `models.py`, `services.py`, `views.py`, templates, urls | Alto |
 | `duplas/` | equipos tecnicos/duplas | `models.py`, `views.py` | Bajo-Medio |
 | `dispositivos/` | dominio de dispositivos | `models.py`, `views.py`, tests | Bajo |
 | `importarexpediente/` | flujo de importacion de expedientes | `views.py`, `models.py`, urls, tests | Medio |
@@ -312,7 +312,25 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - El repo intenta llevar la logica de negocio a `services/`, pero no es uniforme.
 - Se usan management commands como extension operativa importante.
 - Se usan signals para side effects de negocio.
-- La arquitectura actual tiene boundaries monitoreados por `import-linter`, pero con baseline de excepciones existentes.
+- La arquitectura actual tiene boundaries monitoreados por `import-linter`, con baseline de excepciones a reducir por cortes. Los filtros favoritos se aportan desde cada app mediante `core.services.favorite_filters.registry`; `core` no debe volver a importar configuraciones de dominio para resolverlos.
+- Los paneles de Ciudadano 360 se aportan por dominio mediante `ciudadanos.detail_contributions`; las vistas de ciudadanos no deben consultar modelos de esos dominios directamente.
+- Las consultas RENAPER pasan por `core.services.renaper`, que delega el transporte compartido a `core.integrations.renaper`; ningún dominio debe tener su propio cliente ni importar otro dominio para consultarlo.
+- Comedores Core es un bounded context lógico: Comedores, Admisiones, Relevamientos, Organizaciones, Dúplas, Expedientes, Rendiciones, Intervenciones y Acompañamientos conservan sus ciclos internos; Dashboard consume sus métricas mediante `comedores.api` y `relevamientos.api`.
+- Los receivers de auditoría de Comedores Core se registran desde sus dominios y usan `audittrail.api`; Audittrail no debe recuperar imports de esos modelos.
+- Los módulos externos sólo consumen `*.api` de Comedores Core. La FK histórica `centrodefamilia.Centro.organizacion_asociada` es la única excepción declarada hasta que se trate su migración y semántica de borrado.
+- Los consumidores interdominio usan contratos Python acotados: `centrodefamilia.api` expone métricas para Dashboard, `ciudadanos.api` resuelve ciudadanos desde RENAPER y `intervenciones.api` provee el catálogo autorizado para CDI.
+- Los receivers de auditoría de Centro de Infancia viven en `centrodeinfancia.signals` y llaman `audittrail.api`; Audittrail no debe importar modelos CDI.
+- Dispositivos, VAT y Ver para Ser Libre no exponen internals a otros dominios. La composición de rutas de preview de VAT se realiza desde `VAT.global_urls`.
+- Los efectos de backfill de soft delete se registran desde cada dominio en `core.soft_delete.registry`; `core.soft_delete.state_sync` no debe importar handlers de dominio.
+- Las restricciones de navegacion aportadas por dominios se registran en `core.services.sidebar_access`; el template tag global no debe importar reglas VAT.
+- El endpoint Select2 de organizaciones vive en `organizaciones.views` y `organizaciones.urls`, aunque conserva la ruta global `ajax/load-organizaciones/`.
+- Los post-procesos de dominio de `load_fixtures` se registran en `core.services.fixture_post_load`; el comando de `core` no debe importar sus servicios directamente.
+- La auditoria de autenticacion se solicita desde `users.auth_audit`; PWA registra el persistidor de `AuditoriaSesionPWA` durante su arranque.
+- La sincronizacion entre `Profile.duplas_asignadas` y `Dupla.coordinador` se suscribe desde `duplas.signals`; `users` no debe conocer el modelo Dupla.
+- Las restricciones PWA por programa de Comedores se consultan mediante `users.pwa_comedores`; Comedores registra la capacidad concreta durante su arranque.
+- Las pruebas de alcance territorial que ejercitan `Ciudadano` viven en `ciudadanos/test_territorial_scope.py`; el módulo heredado de regresiones de Users vive en `tests/test_users_regressions.py` para no abrir imports de dominio dentro de la app.
+- Los querysets de dominio requeridos por formularios administrativos de Users se registran en `users.form_catalogs`; `users.forms` no debe importar modelos de Comedores, Duplas ni Organizaciones.
+- La expansión de organizaciones y comedores del importador PWA se resuelve mediante `users.pwa_import_access`; Comedores registra el proveedor y `users.services_user_import` sólo consume IDs y especificaciones de acceso.
 
 ### Convenciones visibles
 
@@ -340,6 +358,12 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - `users/bootstrap/groups_seed.py`
 - `users/management/commands/create_groups.py`
 - templates en `users/templates/`
+- La autogestión vive en `MiCuentaForm`, `MiCuentaView` y la ruta `/mi-cuenta/`.
+  La confirmación inicial usa `/mi-cuenta/confirmar/` y
+  `ProfileConfirmationMiddleware`, registrado después del cambio de contraseña.
+  El middleware solo bloquea web: `/api/` está exento; al tocar ese flujo, revisar
+  `users/profile_utils.py`, las migraciones `0044`/`0045` y
+  `tests/test_users_mi_cuenta.py`.
 
 ### Si necesitas cambiar la importacion masiva de usuarios
 
@@ -424,6 +448,9 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 
 ### Si necesitas cambiar Celiaquia
 
+- `celiaquia/api.py` para el contrato Python público; consumidores externos no
+  deben importar sus modelos, services, views, formularios, permisos o signals.
+- `celiaquia/global_urls.py` para rutas globales de propiedad del dominio.
 - `celiaquia/views/`
 - `celiaquia/services/`
 - `celiaquia/models.py`
@@ -436,9 +463,29 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - `admisiones/views/web_views.py`
 - `admisiones/services/`
 - `admisiones/forms/`
+- `admisiones/management/commands/corregir_expedientes_issue_2272.py`: preflight, aplicación transaccional y verificación de la corrección de expedientes de #2272; ejecutar --apply sólo tras un preflight correcto, en ventana sin escrituras, y confirmar con --verify.
 - templates `admisiones/templates/admisiones/docx/`
 - templates `admisiones/templates/admisiones/pdf/`
 - `admisiones/tests/`
+- El catálogo de variables de contenido se persiste como
+  `VariableTemplateInformeTecnico`; guarda expresiones Django sin delimitadores
+  (por ejemplo, `informe.nombre_organizacion`). Sólo las variables activas se
+  pueden publicar. La migración `0073` precarga las 106 expresiones de los
+  cuatro modelos DOCX vigentes y `0074` agrega los alias planos compatibles
+  con el primer editor del Gestor.
+- Templates dinámicos de Informe Técnico: condiciones, versiones y publicaciones
+  en `admisiones/models/admisiones.py`; servicio en
+  `admisiones/services/templates_informe_tecnico_service/`; UI de gestión en
+  `admisiones/views/templates_informe_tecnico.py` y
+  `admisiones/templates/admisiones/templates_informes_tecnicos/`. La UI se
+  agrupa visualmente bajo Gestor de templates mediante el parcial
+  `includes/navigation.html` y los estilos aislados
+  `static/custom/css/gestor_templates.css`; el sidebar anida Templates,
+  Variables documentales e Incidencias de templates. Las incidencias se
+  agrupan por combinación abierta; las vistas previas son DOCX temporales con
+  marca de agua y nunca se adjuntan a la admisión. Al crear un template, el
+  tipo de convenio se limita al catálogo de Personerías o Organización Base,
+  presentada funcionalmente como Asociación de hecho.
 - El Informe Tecnico Complementario se abre tanto desde Admision como desde el
   convenio seleccionado en `acompanamientos/views.py` y
   `acompanamientos/templates/acompañamiento_detail.html`.
@@ -451,6 +498,8 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - `pwa/api_urls.py`
 - `pwa/api_views.py`
 - `pwa/services/`
+- alcance de nómina por admisión vigente o comedor directo:
+  `pwa/services/nomina_queryset_service.py`
 - frontend: `mobile/src/api/` y `mobile/src/features/home/`
 - tests `tests/test_pwa_*`
 - docs: `docs/implementaciones/pwa_backend.md`, `docs/seguridad/security_baseline_pwa.md`
@@ -463,6 +512,14 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - conversión e incrustación de Office en rendiciones: `rendicioncuentasmensual/service_helpers.py`
 - el runtime Django requiere LibreOffice Writer/Calc para convertir DOCX/XLSX a PDF
 
+### Si necesitas cambiar rendiciones mensuales u Organizaciones
+
+- estados, etapas, subsanaciones y alcance por proyecto: `rendicioncuentasmensual/services.py`
+- asociación actual: `RendicionCuentaMensual.proyecto`; conservar fallback por `comedor.codigo_de_proyecto` para datos legados
+- listado y detalle del legajo: `organizaciones/views.py` y templates `organizacion_*`
+- proyectos editables: `OrganizacionForm.codigos_proyecto` mantiene el contrato CSV mediante un campo oculto
+- tests: `tests/test_rendicioncuentasmensual_services_unit.py` y `organizaciones/tests.py`
+
 ### Si necesitas cambiar OCR / procesamiento documental
 
 - `ocr/`
@@ -472,8 +529,17 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 ### Si necesitas cambiar syncs externos
 
 - GESTIONAR: `comedores/tasks.py`, `relevamientos/tasks.py`, management commands relacionados, `.env.example`
-- RENAPER: `centrodefamilia/services/consulta_renaper.py`, `VAT/services/consulta_renaper/impl.py`, docs `docs/flujos/consulta_renaper.md`
+- RENAPER: `core/integrations/renaper.py`, `core/services/renaper.py`, docs `docs/flujos/consulta_renaper.md`
 - Ticketera: `ticketera/`, `docs/integraciones/ticketera_api.md`
+
+### Si necesitas cambiar preinscriptos CDF o vouchers VAT
+
+- Preinscriptos y CSV CDF: `centrodefamilia/views/beneficiarios_export.py`,
+  `centrodefamilia/services/beneficiarios_service/impl.py`, tests de
+  exportación y `docs/implementaciones/centrodefamilia_preinscriptos.md`.
+- Vouchers VAT: `VAT/services/voucher_service/`,
+  `VAT/services/tipo_alumno_service.py`, tests VAT y
+  `docs/vat/VOUCHER_SETUP.md`.
 
 ### Si necesitas cambiar CI o reglas de calidad
 
@@ -495,11 +561,11 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - Producción sondea hasta 30 veces `migrate --check` y su healthcheck luego
   de `deploy_refresh.sh`; si no convergen, publica `docker compose ps` y los
   últimos logs de Django. La regresión vive en `tests/test_deploy_workflow.py`.
-- Ante el bloqueo conocido de `centrodeinfancia.0042`, `deploy.yml` concentra
-  una recuperación manual de los ids legacy 7, 237 y 242: clasifica sin PII y
-  sólo permite nulificarlos bajo categorías exactas, `FOR UPDATE` y transacción;
-  antes archiva el SHA aprobado en un directorio temporal y valida host,
-  servidor y schema de DB esperados, sin tocar el checkout vivo.
+- Ante el bloqueo histórico de `centrodeinfancia.0042`, `deploy.yml` sólo
+  permite inspeccionar sin PII las categorías de los ids legacy 7, 237 y 242.
+  No expone una acción que nulifique filas; antes archiva el SHA aprobado en un
+  directorio temporal y valida host, servidor y schema de DB esperados, sin
+  tocar el checkout vivo.
 - Al cambiar la fecha explícita de un PR a `main`,
   `scripts/ci/pr_doc_automation.py` regenera o elimina el bloque de changelog
   previo de ese PR para no dejar una release fantasma.
@@ -677,7 +743,7 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 | filtro/listado generico | `core/`, `templates/components/data_table.html`, JS de la pantalla |
 | comedores | `comedores/models.py`, `tasks.py`, `signals.py`, tests `test_comedor*` |
 | relevamientos | `relevamientos/models.py`, `tasks.py`, `views.py` |
-| RENAPER | `centrodefamilia/services/consulta_renaper.py`, `VAT/services/consulta_renaper/impl.py` |
+| RENAPER | `core/integrations/renaper.py`, `core/services/renaper.py` |
 | GESTIONAR | `comedores/tasks.py`, `relevamientos/tasks.py`, commands relacionados |
 | docx/pdf | `admisiones/services/`, `comedores/services/certificacion_prestaciones_service.py`, `pwa/services/nomina_destinatarios_pdf_service.py`, `pwa/files/varios/` |
 | PWA | `pwa/api_views.py`, `pwa/services/`, tests `test_pwa_*` |
@@ -738,6 +804,10 @@ Marcar esas zonas como `A inferir` hasta relevarlas cuando una tarea real las to
 - `.github/workflows/release-sanity.yml`
 - `.github/workflows/release-orchestrator.yml`
 - `.github/workflows/sync-main-downstream.yml`
+- `.github/workflows/pr-docs.yml`: genera los artefactos spec-as-source; usa
+  `git status --porcelain --untracked-files=all` para incluir archivos nuevos.
+  Solo pushea en ramas internas no protegidas; para forks y ramas protegidas
+  falla `sync_pr_artifacts` con los paths pendientes para bloquear el merge.
 - `.github/workflows/deploy.yml`
 - `scripts/ai/codex_run.ps1`
 - `scripts/ai/codex_task.ps1`

@@ -15,6 +15,7 @@ from django.urls import reverse
 from ciudadanos.models import Ciudadano
 from centrodeinfancia.forms import NominaCentroInfanciaCreateForm
 from centrodeinfancia.models import CentroDeInfancia, NominaCentroInfancia
+from centrodeinfancia.services import MOTIVO_NOMINA_DUPLICADA_MISMO_CENTRO
 from centrodeinfancia.views import NominaCentroInfanciaCreateView
 from core.models import Localidad, Municipio, Provincia, Sexo
 
@@ -45,7 +46,7 @@ def test_crear_nomina_con_bloqueo_evitar_duplicados():
             return NominaCentroInfancia(**self._attrs)
 
     with transaction.atomic():
-        creado_1 = NominaCentroInfanciaCreateView._crear_nomina_con_bloqueo(
+        creado_1, motivo_1 = NominaCentroInfanciaCreateView._crear_nomina_con_bloqueo(
             centro=centro,
             ciudadano=ciudadano,
             form=_FormStub(
@@ -57,7 +58,7 @@ def test_crear_nomina_con_bloqueo_evitar_duplicados():
         )
 
     with transaction.atomic():
-        creado_2 = NominaCentroInfanciaCreateView._crear_nomina_con_bloqueo(
+        creado_2, motivo_2 = NominaCentroInfanciaCreateView._crear_nomina_con_bloqueo(
             centro=centro,
             ciudadano=ciudadano,
             form=_FormStub(
@@ -69,7 +70,9 @@ def test_crear_nomina_con_bloqueo_evitar_duplicados():
         )
 
     assert creado_1 is True
+    assert motivo_1 is None
     assert creado_2 is False
+    assert motivo_2 == MOTIVO_NOMINA_DUPLICADA_MISMO_CENTRO
     assert (
         NominaCentroInfancia.objects.filter(
             centro=centro,
@@ -221,7 +224,7 @@ def test_create_view_precarga_fecha_renaper_desde_contrato_servicio(mocker):
     )
     request.user = user
     mock_obtener = mocker.patch(
-        "centrodeinfancia.views.ComedorService.obtener_datos_ciudadano_desde_renaper",
+        "centrodeinfancia.views.obtener_datos_ciudadano_desde_renaper",
         return_value={
             "success": True,
             "data": {

@@ -11,21 +11,27 @@ from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
-from pwa.models import AuditoriaSesionPWA
-from pwa.services.auditoria_service import registrar_evento_auth
 from users.api_serializers import (
     PasswordChangeRequiredSerializer,
     PasswordResetConfirmSerializer,
     PasswordResetRequestSerializer,
     UserContextSerializer,
 )
+from users.auth_audit import (
+    EVENTO_LOGIN_ERROR,
+    EVENTO_LOGIN_OK,
+    EVENTO_LOGOUT,
+    EVENTO_ME_OK,
+    RESULTADO_ERROR,
+    RESULTADO_OK,
+    registrar_evento_auth,
+)
 from users.rate_limits import hit_rate_limit
 from users.profile_utils import get_profile_or_none
 from users.services_auth import (
     change_password_for_authenticated_user,
     confirm_password_reset,
-    request_password_reset_for_email,
-    request_password_reset_for_username,
+    request_password_reset_for_identity,
 )
 from users.services_pwa import get_access_rows, is_pwa_user
 
@@ -77,8 +83,8 @@ class UserLoginViewSet(viewsets.ViewSet):
             )
             registrar_evento_auth(
                 request=request,
-                evento=AuditoriaSesionPWA.EVENTO_LOGIN_ERROR,
-                resultado=AuditoriaSesionPWA.RESULTADO_ERROR,
+                evento=EVENTO_LOGIN_ERROR,
+                resultado=RESULTADO_ERROR,
                 username_intentado=request.data.get("username"),
                 codigo_respuesta=response.status_code,
                 motivo_error=detail,
@@ -93,8 +99,8 @@ class UserLoginViewSet(viewsets.ViewSet):
             )
             registrar_evento_auth(
                 request=request,
-                evento=AuditoriaSesionPWA.EVENTO_LOGIN_ERROR,
-                resultado=AuditoriaSesionPWA.RESULTADO_ERROR,
+                evento=EVENTO_LOGIN_ERROR,
+                resultado=RESULTADO_ERROR,
                 user=user,
                 username_intentado=request.data.get("username"),
                 codigo_respuesta=response.status_code,
@@ -114,8 +120,8 @@ class UserLoginViewSet(viewsets.ViewSet):
         )
         registrar_evento_auth(
             request=request,
-            evento=AuditoriaSesionPWA.EVENTO_LOGIN_OK,
-            resultado=AuditoriaSesionPWA.RESULTADO_OK,
+            evento=EVENTO_LOGIN_OK,
+            resultado=RESULTADO_OK,
             user=user,
             username_intentado=request.data.get("username"),
             codigo_respuesta=response.status_code,
@@ -138,8 +144,8 @@ class UserLogoutViewSet(viewsets.ViewSet):
         response = Response({"detail": "Logout exitoso."}, status=status.HTTP_200_OK)
         registrar_evento_auth(
             request=request,
-            evento=AuditoriaSesionPWA.EVENTO_LOGOUT,
-            resultado=AuditoriaSesionPWA.RESULTADO_OK,
+            evento=EVENTO_LOGOUT,
+            resultado=RESULTADO_OK,
             user=request.user,
             codigo_respuesta=response.status_code,
         )
@@ -187,8 +193,8 @@ class UserContextViewSet(viewsets.ViewSet):
         response = Response(payload, status=status.HTTP_200_OK)
         registrar_evento_auth(
             request=request,
-            evento=AuditoriaSesionPWA.EVENTO_ME_OK,
-            resultado=AuditoriaSesionPWA.RESULTADO_OK,
+            evento=EVENTO_ME_OK,
+            resultado=RESULTADO_OK,
             user=request.user,
             codigo_respuesta=response.status_code,
         )
@@ -208,7 +214,7 @@ class PasswordResetRequestViewSet(viewsets.ViewSet):
         ip = request.META.get("REMOTE_ADDR", "anon")
         email = serializer.validated_data.get("email")
         username = serializer.validated_data.get("username")
-        identity_value = (email or username or "").lower()
+        identity_value = f"{username}:{email}".lower()
         if hit_rate_limit(
             scope="password_reset_request",
             identity=f"{ip}:{identity_value}",
@@ -224,14 +230,15 @@ class PasswordResetRequestViewSet(viewsets.ViewSet):
                 status=status.HTTP_429_TOO_MANY_REQUESTS,
             )
 
-        if email:
-            request_password_reset_for_email(email=email, request=request)
-        elif username:
-            request_password_reset_for_username(username=username)
+        request_password_reset_for_identity(
+            username=username,
+            email=email,
+            request=request,
+        )
         return Response(
             {
                 "detail": (
-                    "Si el usuario existe en el sistema, se registró la solicitud de reseteo."
+                    "Si los datos son correctos, recibirás un enlace de recuperación."
                 )
             },
             status=status.HTTP_200_OK,

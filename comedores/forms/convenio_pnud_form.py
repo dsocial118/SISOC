@@ -76,6 +76,7 @@ class ComedorDatosConvenioPnudForm(forms.ModelForm):
             "prestaciones_financiadas_diarias_merienda_reforzada",
             "prestaciones_financiadas_diarias_cena",
             "personas_conveniadas",
+            "personas_declaradas_siph",
             "cantidad_modulos",
         ] + PRESTACIONES_APROBADAS_FIELDS
         labels = {
@@ -90,6 +91,7 @@ class ComedorDatosConvenioPnudForm(forms.ModelForm):
             "prestaciones_financiadas_diarias_merienda_reforzada": "Prestaciones Financiadas Diarias - Merienda Reforzada",
             "prestaciones_financiadas_diarias_cena": "Prestaciones Financiadas Diarias - Cena",
             "personas_conveniadas": "Personas conveniadas",
+            "personas_declaradas_siph": "Total de Personas declaradas en Servicio Integral de Promoción Humana",
             "cantidad_modulos": "Cantidad Módulos Mensuales",
         }
         widgets = {

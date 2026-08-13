@@ -5,7 +5,7 @@ from datetime import timedelta
 from django import forms
 from django.contrib.admin.widgets import FilteredSelectMultiple
 from django.conf import settings
-from django.contrib.auth.forms import AuthenticationForm
+from django.contrib.auth.forms import AuthenticationForm, PasswordResetForm
 from django.contrib.auth.models import Group, Permission, User
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.core.validators import FileExtensionValidator
@@ -13,12 +13,12 @@ from django.db import transaction
 from django.utils.crypto import get_random_string
 from django.utils import timezone
 
-from comedores.models import Comedor
 from core.constants import UserGroups
 from core.models import Provincia
-from duplas.models import Dupla
-from organizaciones.models import Organizacion
+from core.validators import solo_digitos, validate_cuit
+from users.form_catalogs import obtener_queryset_formulario
 from users.models import AccesoComedorPWA, Profile
+from users.profile_utils import get_profile_or_none
 from users.services_delegation import effective_delegatable_groups_qs
 from users.services_pwa import (
     PWA_ASSIGNABLE_PERMISSION_CODES,
@@ -33,6 +33,19 @@ from users.territorial_scope import (
     serialize_profile_scopes,
     sync_profile_territorial_scopes,
 )
+
+
+class UsernameEmailPasswordResetForm(PasswordResetForm):
+    username = forms.CharField(label="Usuario", max_length=150, required=True)
+
+    def get_users(self, email):
+        username = (self.cleaned_data.get("username") or "").strip()
+        return User.objects.filter(
+            username__iexact=username,
+            email__iexact=email,
+            is_active=True,
+        )
+
 
 MOBILE_RENDICION_PERMISSION_CODE = "rendicioncuentasmensual.manage_mobile_rendicion"
 PWA_OPERATION_PERMISSION_CODES = PWA_ASSIGNABLE_PERMISSION_CODES | {
@@ -314,16 +327,14 @@ class PWAAccessMixin:
             label="Tipo de asociación mobile",
         )
         self.fields["organizaciones_pwa"] = forms.ModelMultipleChoiceField(
-            queryset=Organizacion.objects.all().order_by("nombre"),
+            queryset=obtener_queryset_formulario("organizaciones_pwa"),
             required=False,
             widget=forms.SelectMultiple(attrs={"class": "select2"}),
             label="Organizaciones",
             help_text="Seleccione una o más organizaciones registradas en el sistema.",
         )
         self.fields["comedores_pwa"] = forms.ModelMultipleChoiceField(
-            queryset=Comedor.objects.select_related("organizacion").order_by(
-                "organizacion__nombre", "nombre"
-            ),
+            queryset=obtener_queryset_formulario("comedores_pwa"),
             required=False,
             widget=ComedorPWASelectMultiple(attrs={"class": "select2"}),
             label="Comedores PWA",
@@ -408,8 +419,10 @@ class PWAAccessMixin:
 
         if not es_representante_pwa:
             cleaned["tipo_asociacion_pwa"] = ""
-            cleaned["organizaciones_pwa"] = Organizacion.objects.none()
-            cleaned["comedores_pwa"] = Comedor.objects.none()
+            cleaned["organizaciones_pwa"] = self.fields[
+                "organizaciones_pwa"
+            ].queryset.none()
+            cleaned["comedores_pwa"] = self.fields["comedores_pwa"].queryset.none()
             tipo_asociacion_pwa = ""
             organizaciones_pwa = cleaned["organizaciones_pwa"]
             comedores_pwa = cleaned["comedores_pwa"]
@@ -740,7 +753,7 @@ class UserCreationForm(
         label="Es Coordinador de Equipo Técnico",
     )
     duplas_asignadas = forms.ModelMultipleChoiceField(
-        queryset=Dupla.objects.activas(),
+        queryset=User.objects.none(),
         required=False,
         widget=forms.SelectMultiple(attrs={"class": "select2"}),
         label="Equipos técnicos (Duplas) asignadas",
@@ -772,6 +785,9 @@ class UserCreationForm(
     def __init__(self, *args, **kwargs):
         self.actor = kwargs.pop("actor", None)
         super().__init__(*args, **kwargs)
+        self.fields["duplas_asignadas"].queryset = obtener_queryset_formulario(
+            "duplas_asignadas"
+        )
         self._setup_pwa_fields()
         self._setup_delegation_fields()
         self._scope_assignable_fields_for_actor()
@@ -943,7 +959,7 @@ class CustomUserChangeForm(
         label="Es Coordinador de Equipo Técnico",
     )
     duplas_asignadas = forms.ModelMultipleChoiceField(
-        queryset=Dupla.objects.activas(),
+        queryset=User.objects.none(),
         required=False,
         widget=forms.SelectMultiple(attrs={"class": "select2"}),
         label="Equipos técnicos (Duplas) asignadas",
@@ -975,6 +991,9 @@ class CustomUserChangeForm(
     def __init__(self, *args, **kwargs):
         self.actor = kwargs.pop("actor", None)
         super().__init__(*args, **kwargs)
+        self.fields["duplas_asignadas"].queryset = obtener_queryset_formulario(
+            "duplas_asignadas"
+        )
         self._setup_pwa_fields()
         self._setup_delegation_fields()
         self._scope_assignable_fields_for_actor()
@@ -1180,3 +1199,121 @@ class UserImportForm(forms.Form):
         initial=False,
         help_text="Los usuarios importados son usuarios de la app movil (PWA).",
     )
+
+
+# Leyenda del checkbox de declaración. Es la redacción provisoria acordada con
+# UX/UI: queda pendiente de un filtro de aprobación posterior, así que puede
+# volver con cambios. Para modificarla alcanza con esta constante; no hay copia
+# duplicada en templates ni en tests.
+#
+# El texto original de UX estaba redactado como aviso en segunda persona
+# ("comprometiéndote a..."), que no funciona como leyenda de un checkbox: al
+# tildarlo el usuario tiene que estar declarando algo en primera persona. Se
+# reformuló la persona gramatical sin tocar el alcance normativo, y la parte
+# instructiva ("revisá y completá tus datos") se movió al encabezado del modal,
+# que es donde corresponde: eso se lee, no se acepta.
+TEXTO_DECLARACION = (
+    "Acepto que la información contenida en el sistema será utilizada "
+    "exclusivamente para el cumplimiento de las funciones autorizadas y me "
+    "comprometo a preservar su confidencialidad, de conformidad con la "
+    "normativa vigente."
+)
+
+
+class MiCuentaForm(forms.ModelForm):
+    """Edición de los datos personales del propio usuario.
+
+    Se comparte entre la vista persistente "Mi cuenta" y la confirmación
+    obligatoria de primer ingreso, para que ambas apliquen exactamente la
+    misma validación y el mismo guardado.
+
+    A diferencia de ``CustomUserChangeForm``, acá no se exponen grupos,
+    permisos, alcances territoriales ni delegación: el usuario solo edita sus
+    propios datos identificatorios. ``tipo_usuario`` y ``rol`` quedan fuera a
+    pedido de UX/UI: son datos de administración y el usuario final no los
+    toca.
+
+    Todos los campos son obligatorios salvo ``correo_institucional``.
+    """
+
+    dni = forms.CharField(
+        max_length=16,
+        label="DNI",
+        help_text="Solo números, sin puntos.",
+        error_messages={"required": "Ingrese su DNI."},
+    )
+    cuil = forms.CharField(
+        max_length=16,
+        label="CUIL",
+        help_text="11 dígitos, con o sin guiones.",
+        error_messages={"required": "Ingrese su CUIL."},
+    )
+    correo_institucional = forms.EmailField(
+        required=False,
+        label="Correo institucional",
+        help_text="Opcional.",
+    )
+    declaracion_aceptada = forms.BooleanField(
+        required=True,
+        label=TEXTO_DECLARACION,
+        error_messages={"required": "Debe aceptar la declaración para continuar."},
+    )
+
+    class Meta:
+        model = User
+        fields = ["first_name", "last_name", "email"]
+        labels = {
+            "first_name": "Nombre",
+            "last_name": "Apellido",
+            "email": "Mail",
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for nombre in ("first_name", "last_name", "email"):
+            self.fields[nombre].required = True
+        # Hay usuarios históricos sin perfil; el form igual debe poder abrirse.
+        profile = get_profile_or_none(self.instance)
+        if profile:
+            self.fields["dni"].initial = profile.dni
+            self.fields["cuil"].initial = profile.cuil
+            self.fields["correo_institucional"].initial = profile.correo_institucional
+            self.fields["declaracion_aceptada"].initial = profile.declaracion_aceptada
+
+    def clean_dni(self):
+        dni = solo_digitos(self.cleaned_data.get("dni"))
+        if len(dni) < 6:
+            raise forms.ValidationError("Ingrese un DNI válido (solo números).")
+        return dni
+
+    def clean_cuil(self):
+        return validate_cuit((self.cleaned_data.get("cuil") or "").strip())
+
+    def clean_email(self):
+        # El mail es obligatorio en este formulario pero sigue sin ser único:
+        # la unicidad vive en username.
+        return (self.cleaned_data.get("email") or "").strip()
+
+    def save(self, commit=True):
+        if not commit:
+            raise ValueError("MiCuentaForm requiere commit=True para ser atómico.")
+        with transaction.atomic():
+            user = super().save(commit=True)
+            profile, _ = Profile.objects.get_or_create(user=user)
+            profile.dni = self.cleaned_data["dni"]
+            profile.cuil = self.cleaned_data["cuil"]
+            profile.correo_institucional = self.cleaned_data["correo_institucional"]
+            profile.declaracion_aceptada = self.cleaned_data["declaracion_aceptada"]
+            profile.needs_profile_confirmation = False
+            profile.datos_confirmados_at = timezone.now()
+            profile.save(
+                update_fields=[
+                    "dni",
+                    "cuil",
+                    "correo_institucional",
+                    "declaracion_aceptada",
+                    "needs_profile_confirmation",
+                    "datos_confirmados_at",
+                ]
+            )
+        return user

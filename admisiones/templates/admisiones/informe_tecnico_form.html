@@ -19,11 +19,92 @@
         <form method="post" enctype="multipart/form-data">
             {% csrf_token %}
 
+            {% for message in messages %}
+                {% if "configuracion-template" in message.tags %}
+                    <section class="alert border-0 shadow-sm mb-4"
+                             role="status"
+                             style="background: #0b5f8a;
+                                    color: #fff">
+                        <div class="d-flex align-items-center gap-3">
+                            <span class="rounded-circle d-inline-flex align-items-center justify-content-center flex-shrink-0"
+                                  style="width: 2.25rem;
+                                         height: 2.25rem;
+                                         background: #9ee7ff;
+                                         color: #06415f">
+                                <i class="fas fa-check" aria-hidden="true"></i>
+                            </span>
+                            <div>
+                                <strong>Notificación enviada</strong>
+                                <div>{{ message }}</div>
+                            </div>
+                        </div>
+                    </section>
+                {% endif %}
+            {% endfor %}
+
             <!-- Errores -->
             {% if form.non_field_errors %}
                 <div class="alert alert-danger">
                     {% for error in form.non_field_errors %}<p class="mb-0">{{ error }}</p>{% endfor %}
                 </div>
+            {% endif %}
+
+            {% if template_publicacion %}
+                <div class="alert alert-info">
+                    Al finalizar se generará el DOCX con el template
+                    <strong>{{ template_publicacion.plantilla.codigo }} · {{ template_publicacion.plantilla.nombre }}</strong>,
+                    versión {{ template_publicacion.version.numero }}.
+                    {% if informe_tecnico and informe_tecnico.estado_formulario != "finalizado" %}
+                        <a href="{% url 'informe_tecnico_previsualizar_template' informe_tecnico.tipo informe_tecnico.pk %}"
+                           class="btn btn-sm btn-outline-primary ms-2">
+                            <i class="fas fa-eye"></i> Vista previa DOCX
+                        </a>
+                    {% endif %}
+                </div>
+            {% elif template_error %}
+                <section class="alert shadow-sm mb-4"
+                         role="alert"
+                         style="background: #103a5d;
+                                border: 1px solid #3b82c4;
+                                color: #f8fbff">
+                    <div class="d-flex align-items-start gap-3">
+                        <span class="rounded-circle d-inline-flex align-items-center justify-content-center flex-shrink-0"
+                              style="width: 2.5rem;
+                                     height: 2.5rem;
+                                     background: #7dd3fc;
+                                     color: #073655">
+                            <i class="fas fa-cog" aria-hidden="true"></i>
+                        </span>
+                        <div class="flex-grow-1">
+                            <h2 class="h5 fw-bold mb-2">Configuración pendiente</h2>
+                            <p class="mb-2">Todavía no está configurado el template necesario para generar este Informe Técnico.</p>
+                            <p class="mb-0">
+                                No podrá finalizar el informe hasta que exista una versión dinámica publicada. Notifique a los referentes del sistema para que completen la configuración.
+                            </p>
+                        </div>
+                    </div>
+                    {% if template_configuracion_faltante %}
+                        <details class="mt-3">
+                            <summary class="fw-semibold">Ver detalle para soporte</summary>
+                            <textarea id="detalle-configuracion-faltante"
+                                      class="form-control form-control-sm mt-2 font-monospace"
+                                      rows="5"
+                                      readonly>{{ template_detalle_copiable }}</textarea>
+                        </details>
+                        <button type="submit"
+                                formaction="{% url 'admisiones_reportar_configuracion_faltante_template' admision.pk %}"
+                                formmethod="post"
+                                formnovalidate
+                                name="informe_id"
+                                value="{% if informe_tecnico %}{{ informe_tecnico.pk }}{% endif %}"
+                                class="btn mt-3"
+                                style="background: #f6c453;
+                                       border-color: #f6c453;
+                                       color: #18212b">
+                            <i class="fas fa-bell me-1" aria-hidden="true"></i> Notificar a referentes del sistema
+                        </button>
+                    {% endif %}
+                </section>
             {% endif %}
 
             <!-- Campos a subsanar -->
@@ -411,9 +492,12 @@
                                 </div>
                             {% endif %}
                         </div>
-                        <div class="col-12 mb-3{% if 'conclusiones' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
-                            {{ form.conclusiones|as_crispy_field }}
+                        <div class="col-md-6 mb-3{% if 'criterio_seleccionado' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
+                            {{ form.criterio_seleccionado|as_crispy_field }}
                         </div>
+                        {% if form.finalizacion_convenio_pnud_vigente %}
+                            <div class="col-md-6 mb-3">{{ form.finalizacion_convenio_pnud_vigente|as_crispy_field }}</div>
+                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -468,46 +552,52 @@
             {% if admision.tipo and admision.tipo == 'renovacion' %}
                 <div class="card mb-4">
                     <div class="card-header">
+                        <h5>Referencia a la Incorporaci&oacute;n</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">{{ form.expediente_incorporacion|as_crispy_field }}</div>
+                            <div class="col-md-6 mb-3">{{ form.convenio_incorporacion|as_crispy_field }}</div>
+                            {% if form.presentacion_avales %}
+                                <div class="col-12 mb-3">{{ form.presentacion_avales|as_crispy_field }}</div>
+                            {% endif %}
+                            {% if form.informe_tecnico_complementario_modificacion_prestaciones %}
+                                <div class="col-12 mb-3">{{ form.informe_tecnico_complementario_modificacion_prestaciones|as_crispy_field }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% if form.antecedentes_renovaciones_campos %}
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5>Antecedentes de Renovaciones</h5>
+                        </div>
+                        <div class="card-body">
+                            {% for antecedente in form.antecedentes_renovaciones_campos %}
+                                <div class="border rounded p-3 mb-3">
+                                    <strong class="d-block mb-2">Admisi&oacute;n #{{ antecedente.admision.pk }}</strong>
+                                    <div class="row">
+                                        <div class="col-md-4">{{ antecedente.resolucion|as_crispy_field }}</div>
+                                        <div class="col-md-4">{{ antecedente.convenio|as_crispy_field }}</div>
+                                        <div class="col-md-4">{{ antecedente.expediente|as_crispy_field }}</div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endif %}
+                <div class="card mb-4">
+                    <div class="card-header">
                         <h5>Resolución de pago</h5>
                     </div>
                     <div class="card-body">
                         <div class="row">
-                            <div class="col-md-6 mb-3{% if 'resolucion_de_pago_1' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
-                                {{ form.resolucion_de_pago_1|as_crispy_field }}
-                            </div>
-                            <div class="col-md-6 mb-3{% if 'monto_1' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
-                                {{ form.monto_1|as_crispy_field }}
-                            </div>
-                            <div class="col-md-6 mb-3{% if 'resolucion_de_pago_2' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
-                                {{ form.resolucion_de_pago_2|as_crispy_field }}
-                            </div>
-                            <div class="col-md-6 mb-3{% if 'monto_2' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
-                                {{ form.monto_2|as_crispy_field }}
-                            </div>
-                            <div class="col-md-6 mb-3{% if 'resolucion_de_pago_3' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
-                                {{ form.resolucion_de_pago_3|as_crispy_field }}
-                            </div>
-                            <div class="col-md-6 mb-3{% if 'monto_3' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
-                                {{ form.monto_3|as_crispy_field }}
-                            </div>
-                            <div class="col-md-6 mb-3{% if 'resolucion_de_pago_4' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
-                                {{ form.resolucion_de_pago_4|as_crispy_field }}
-                            </div>
-                            <div class="col-md-6 mb-3{% if 'monto_4' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
-                                {{ form.monto_4|as_crispy_field }}
-                            </div>
-                            <div class="col-md-6 mb-3{% if 'resolucion_de_pago_5' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
-                                {{ form.resolucion_de_pago_5|as_crispy_field }}
-                            </div>
-                            <div class="col-md-6 mb-3{% if 'monto_5' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
-                                {{ form.monto_5|as_crispy_field }}
-                            </div>
-                            <div class="col-md-6 mb-3{% if 'resolucion_de_pago_6' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
-                                {{ form.resolucion_de_pago_6|as_crispy_field }}
-                            </div>
-                            <div class="col-md-6 mb-3{% if 'monto_6' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
-                                {{ form.monto_6|as_crispy_field }}
-                            </div>
+                            {% if form.acreditaciones_ultimo_convenio %}
+                                <div class="col-md-6 mb-3">{{ form.acreditaciones_ultimo_convenio|as_crispy_field }}</div>
+                                <div class="col-md-6 mb-3">{{ form.monto_total_conveniado_informe|as_crispy_field }}</div>
+                            {% else %}
+                                <div class="col-md-6 mb-3">{{ form.monto_total_conveniado|as_crispy_field }}</div>
+                            {% endif %}
                         </div>
                     </div>
                 </div>

@@ -1294,6 +1294,8 @@ class NominaNacionalidad(models.Model):
 
 
 class NominaCentroInfancia(SoftDeleteModelMixin, models.Model):
+    SOFT_RESTORE_VALIDATOR = "centrodeinfancia.services.validar_restauracion_nomina_cdi"
+
     class RespuestaSiNoNsNc(models.TextChoices):
         SI = "si", "Si"
         NO = "no", "No"

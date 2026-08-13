@@ -132,6 +132,7 @@ class ComedorDetailSerializer(serializers.ModelSerializer):
             "nombre",
             "id_externo",
             "codigo_de_proyecto",
+            "proyecto",
             "comienzo",
             "estado",
             "estado_validacion",
@@ -320,6 +321,8 @@ class ComedorDetailSerializer(serializers.ModelSerializer):
                     "anio",
                     "observaciones",
                     "documento_adjunto",
+                    "etapa_proceso",
+                    "subestado_proceso",
                     "ultima_modificacion",
                     "fecha_creacion",
                 )
@@ -331,6 +334,9 @@ class ComedorDetailSerializer(serializers.ModelSerializer):
                 "anio": rendicion.anio,
                 "documento_adjunto": rendicion.documento_adjunto,
                 "observaciones": rendicion.observaciones,
+                "etapa_proceso": rendicion.etapa_proceso,
+                "subestado_proceso": rendicion.subestado_proceso,
+                "estado_proceso_label": rendicion.estado_proceso_display,
                 "ultima_modificacion": rendicion.ultima_modificacion,
                 "fecha_creacion": rendicion.fecha_creacion,
             }
@@ -885,7 +891,7 @@ class ComedorDetailSerializer(serializers.ModelSerializer):
                 "titulo": "Domicilio del Espacio",
                 "items": self._filter_relevamiento_mobile_items(
                     self._collect_model_items(getattr(relevamiento, "comedor", None)),
-                    hidden_contains=("judicializado", "dupla"),
+                    hidden_contains=("judicializado", "dupla", "caritas"),
                 ),
             },
             {
@@ -1134,16 +1140,15 @@ class ComedorDetailSerializer(serializers.ModelSerializer):
             "personas_conveniadas": (
                 datos_pnud.personas_conveniadas if datos_pnud else None
             ),
+            "personas_declaradas_siph": (
+                datos_pnud.personas_declaradas_siph if datos_pnud else None
+            ),
             "cantidad_modulos": datos_pnud.cantidad_modulos if datos_pnud else None,
             "prestaciones_gescom_total_mensual": prestaciones_mensuales,
             "monto_total_convenio": monto_prestacion_mensual,
             "prestaciones_mensuales": prestaciones_mensuales,
             "monto_prestacion_mensual": monto_prestacion_mensual,
         }
-        if self._can_view_monto_total_conveniado(obj):
-            payload["monto_total_conveniado"] = (
-                datos_pnud.monto_total_conveniado if datos_pnud else None
-            )
         return payload
 
     def _can_view_monto_total_conveniado(self, obj):
@@ -1438,7 +1443,11 @@ class ComprobanteRendicionSerializer(serializers.ModelSerializer):
 
 
 class RendicionMensualListSerializer(serializers.ModelSerializer):
+    proyecto_codigo = serializers.CharField(source="proyecto.codigo", read_only=True)
     estado_label = serializers.CharField(source="get_estado_display", read_only=True)
+    estado_proceso_label = serializers.CharField(
+        source="estado_proceso_display", read_only=True
+    )
     linea_programatica_label = serializers.CharField(
         source="get_linea_programatica_display", read_only=True
     )
@@ -1450,6 +1459,8 @@ class RendicionMensualListSerializer(serializers.ModelSerializer):
         model = RendicionCuentaMensual
         fields = (
             "id",
+            "proyecto",
+            "proyecto_codigo",
             "convenio",
             "numero_rendicion",
             "mes",
@@ -1461,6 +1472,9 @@ class RendicionMensualListSerializer(serializers.ModelSerializer):
             "linea_programatica_label",
             "estado",
             "estado_label",
+            "etapa_proceso",
+            "subestado_proceso",
+            "estado_proceso_label",
             "documento_adjunto",
             "observaciones",
             "fecha_creacion",
@@ -1541,6 +1555,7 @@ class RendicionMensualDetailSerializer(RendicionMensualListSerializer):
 
 
 class RendicionMensualCreateSerializer(NoSaveSerializer):
+    proyecto_id = serializers.IntegerField(min_value=1, required=False, allow_null=True)
     convenio = serializers.CharField(max_length=100)
     numero_rendicion = serializers.IntegerField(min_value=1)
     periodo_inicio = serializers.DateField()

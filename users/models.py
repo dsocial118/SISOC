@@ -72,6 +72,10 @@ class Profile(models.Model):
         Provincia legacy; la autorización territorial usa ProfileTerritorialScope
     rol : CharField
         Descripción textual del rol (complementa groups)
+    correo_institucional : EmailField
+        Correo institucional informado por el usuario (opcional)
+    needs_profile_confirmation : BooleanField
+        Obliga a confirmar datos personales en el próximo ingreso web
     es_coordinador : BooleanField
         Marca si este usuario es coordinador de gestión
     duplas_asignadas : ManyToManyField
@@ -136,6 +140,28 @@ class Profile(models.Model):
         null=True,
         blank=True,
         verbose_name="Contraseña temporal visible",
+    )
+    correo_institucional = models.EmailField(
+        blank=True,
+        verbose_name="Correo institucional",
+    )
+    declaracion_aceptada = models.BooleanField(
+        default=False,
+        verbose_name="Declaración aceptada",
+        help_text="El usuario aceptó la declaración al confirmar sus datos personales.",
+    )
+    needs_profile_confirmation = models.BooleanField(
+        default=False,
+        verbose_name="Debe confirmar datos personales",
+        help_text=(
+            "Obliga al usuario a confirmar o corregir sus datos personales "
+            "en su próximo ingreso web."
+        ),
+    )
+    datos_confirmados_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="Datos personales confirmados en",
     )
     source = models.CharField(
         max_length=50,
@@ -212,7 +238,7 @@ class ProfileTerritorialScope(models.Model):
         verbose_name_plural = "Alcances territoriales de perfil"
         constraints = [
             models.CheckConstraint(
-                check=Q(localidad__isnull=True) | Q(municipio__isnull=False),
+                condition=Q(localidad__isnull=True) | Q(municipio__isnull=False),
                 name="profile_scope_localidad_requires_municipio",
             ),
             models.UniqueConstraint(

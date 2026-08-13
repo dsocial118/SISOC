@@ -21,6 +21,7 @@ from django.db import transaction
 import unicodedata
 import traceback
 from core.services.advanced_filters import AdvancedFilterEngine
+from core.services.list_ordering import apply_allowed_ordering
 from core.security import safe_redirect
 
 logger = logging.getLogger("django")
@@ -1032,7 +1033,12 @@ class LegalesService:
                     | Q(estado_legales__icontains=query)
                 )
 
-            return queryset
+            return apply_allowed_ordering(
+                queryset,
+                request_or_query,
+                {"nombre": "comedor__nombre"},
+                default=("-creado",),
+            )
         except Exception:
             logger.exception("Error en get_admisiones_legales_filtradas")
             return Admision.objects.none()
@@ -1082,6 +1088,8 @@ class LegalesService:
                         # Nombre
                         {
                             "content": comedor_nombre,
+                            "data_attr": "nombre",
+                            "data_value": comedor_nombre,
                             "link_url": comedor_link_url,
                             "link_class": "font-weight-bold link-handler",
                             "link_title": "Ver detalles",

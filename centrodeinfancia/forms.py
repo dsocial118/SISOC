@@ -16,12 +16,7 @@ from core.validators import (
     validate_telefono_ar,
     validate_unicode_email,
 )
-from intervenciones.constants import PROGRAMA_ALIASES_CENTRO_INFANCIA
-from intervenciones.models.intervenciones import (
-    SubIntervencion,
-    TipoDestinatario,
-    TipoIntervencion,
-)
+from intervenciones.api import obtener_configuracion_formulario_cdi
 from users.models import Profile
 from users.territorial_scope import (
     get_single_full_province_scope_id,
@@ -48,6 +43,11 @@ from centrodeinfancia.models import (
     NOMINA_VACUNAS,
     NominaPais,
     NominaNacionalidad,
+)
+from centrodeinfancia.services import (
+    ESTADOS_NOMINA_CDI_VIGENTE,
+    MENSAJE_NOMINA_VIGENTE_EN_OTRO_CENTRO,
+    tiene_nomina_cdi_vigente_en_otro_centro,
 )
 from centrodeinfancia.forms_observacion import ObservacionCentroInfanciaForm
 from centrodeinfancia.forms_formulario_cdi import (
@@ -993,6 +993,29 @@ class NominaCentroInfanciaBaseForm(forms.ModelForm):
         for field_name in ["estado", "dni", "apellido", "nombre", "fecha_nacimiento"]:
             self.fields[field_name].required = True
 
+    def _validar_vigencia_unica_cdi(self, cleaned_data):
+        """Impide reactivar una ficha si la persona ya está vigente en otro CDI.
+
+        Sólo se valida la transición hacia un estado vigente: una ficha que ya
+        estaba Activa o Pendiente puede seguir editándose, porque los duplicados
+        históricos están fuera de alcance y no deben volverse ineditables.
+        """
+        instancia = self.instance
+        if not instancia.pk or not instancia.ciudadano_id:
+            return
+        if cleaned_data.get("estado") not in ESTADOS_NOMINA_CDI_VIGENTE:
+            return
+        # `self.instance` todavía tiene el estado persistido: `_post_clean` corre
+        # después de `clean()`.
+        if instancia.estado in ESTADOS_NOMINA_CDI_VIGENTE:
+            return
+        if tiene_nomina_cdi_vigente_en_otro_centro(
+            instancia.ciudadano_id,
+            instancia.centro_id,
+            excluir_nomina_id=instancia.pk,
+        ):
+            raise ValidationError(MENSAJE_NOMINA_VIGENTE_EN_OTRO_CENTRO)
+
     def clean(self):
         cleaned_data = super().clean()
         fecha_nacimiento = cleaned_data.get("fecha_nacimiento")
@@ -1000,11 +1023,63 @@ class NominaCentroInfanciaBaseForm(forms.ModelForm):
             cleaned_data["edad_calculada"] = NominaCentroInfancia(
                 fecha_nacimiento=fecha_nacimiento
             ).edad
+        self._validar_vigencia_unica_cdi(cleaned_data)
         return cleaned_data
 
 
 class NominaCentroInfanciaForm(NominaCentroInfanciaBaseForm):
     pass
+
+
+class NominaCentroInfanciaAdminForm(forms.ModelForm):
+    """Aplica la regla de vigencia única también en el admin de Django."""
+
+    class Meta:
+        model = NominaCentroInfancia
+        fields = "__all__"
+
+    def clean(self):
+        cleaned_data = super().clean()
+        ciudadano = cleaned_data.get("ciudadano")
+        centro = cleaned_data.get("centro")
+        estado = cleaned_data.get("estado")
+        instancia = self.instance
+
+        if not ciudadano or not centro or estado not in ESTADOS_NOMINA_CDI_VIGENTE:
+            return cleaned_data
+
+        if instancia.pk:
+            datos_persistidos = (
+                NominaCentroInfancia.objects.filter(pk=instancia.pk)
+                .values("estado", "centro_id", "ciudadano_id")
+                .first()
+            )
+            if (
+                datos_persistidos
+                and datos_persistidos["estado"] in ESTADOS_NOMINA_CDI_VIGENTE
+                and datos_persistidos["centro_id"] == centro.pk
+                and datos_persistidos["ciudadano_id"] == ciudadano.pk
+            ):
+                return cleaned_data
+
+        if (
+            NominaCentroInfancia.objects.filter(
+                ciudadano=ciudadano,
+                centro=centro,
+            )
+            .exclude(pk=instancia.pk)
+            .exists()
+        ):
+            raise ValidationError(MENSAJE_NOMINA_VIGENTE_EN_OTRO_CENTRO)
+
+        if tiene_nomina_cdi_vigente_en_otro_centro(
+            ciudadano.pk,
+            centro.pk,
+            excluir_nomina_id=instancia.pk,
+        ):
+            raise ValidationError(MENSAJE_NOMINA_VIGENTE_EN_OTRO_CENTRO)
+
+        return cleaned_data
 
 
 class NominaCentroInfanciaCreateForm(NominaCentroInfanciaBaseForm):
@@ -1944,29 +2019,26 @@ class IntervencionCentroInfanciaForm(forms.ModelForm):
             selected_subtipo_id = self._parse_selected_id(
                 self.data.get(self.add_prefix("subintervencion"))
             )
-        self.fields["tipo_intervencion"].queryset = TipoIntervencion.para_programas(
-            *PROGRAMA_ALIASES_CENTRO_INFANCIA,
-            include_ids=[selected_tipo_id] if selected_tipo_id else None,
-        )
-        self.fields["subintervencion"].queryset = SubIntervencion.para_tipo(
+        configuracion_catalogo = obtener_configuracion_formulario_cdi(
             selected_tipo_id,
-            include_ids=[selected_subtipo_id] if selected_subtipo_id else None,
+            selected_subtipo_id,
+            destinatario_fijo_nombre,
         )
+        self.fields["tipo_intervencion"].queryset = configuracion_catalogo.tipos
+        self.fields["subintervencion"].queryset = configuracion_catalogo.subtipos
 
         self.destinatario_fijo_instance = None
         self.destinatario_fijo_missing = False
         self.destinatario_fijo_nombre = destinatario_fijo_nombre
         if destinatario_fijo_nombre:
-            destinatario_fijo = TipoDestinatario.objects.filter(
-                nombre__iexact=destinatario_fijo_nombre
-            ).first()
+            destinatario_fijo = configuracion_catalogo.destinatario_fijo
             if destinatario_fijo:
                 self.destinatario_fijo_instance = destinatario_fijo
                 self.fields["destinatario"].required = False
                 self.fields["destinatario"].initial = destinatario_fijo.pk
-                self.fields["destinatario"].queryset = TipoDestinatario.objects.filter(
-                    pk=destinatario_fijo.pk
-                )
+                self.fields["destinatario"].queryset = self.fields[
+                    "destinatario"
+                ].queryset.filter(pk=destinatario_fijo.pk)
             else:
                 self.destinatario_fijo_missing = True
                 self.fields["destinatario"].required = False

@@ -6,6 +6,7 @@ from urllib.parse import urlencode
 
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
 from django.db.models import Q
 from django.db.utils import OperationalError
@@ -368,7 +369,23 @@ class TrashRestoreView(LoginRequiredMixin, SuperAdminRequiredMixin, View):
             )
             return redirect(_append_next(preview_url, _get_safe_next_url(request)))
 
-        restored_count, _ = instance.restore(user=request.user, cascade=True)
+        try:
+            restored_count, _ = instance.restore(user=request.user, cascade=True)
+        except ValidationError as exc:
+            messages.error(request, exc.messages[0])
+            return redirect(
+                _append_next(
+                    reverse(
+                        "papelera_preview_restore",
+                        kwargs={
+                            "app_label": app_label,
+                            "model_name": model._meta.model_name,
+                            "pk": pk,
+                        },
+                    ),
+                    _get_safe_next_url(request),
+                )
+            )
         messages.success(
             request,
             f"Restauración completada. Registros restaurados: {restored_count}.",

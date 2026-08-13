@@ -1,3 +1,11 @@
+<!-- AUTO-GENERATED RELEASE START: 2026-08-13 -->
+# Versión SISOC 13.08.2026
+
+## Actualizaciones
+
+- [release y plataforma transversal.] Promoción semanal con mejoras de Admisiones, Comedores, Usuarios/PWA, auditoría, APIs y operación. (PR #2289)
+<!-- AUTO-GENERATED RELEASE END: 2026-08-13 -->
+
 <!-- AUTO-GENERATED RELEASE START: 2026-07-30 -->
 # Versión SISOC 30.07.2026
 

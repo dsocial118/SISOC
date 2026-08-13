@@ -88,6 +88,32 @@ def test_comedor_list_paginates_without_count():
     assert is_paginated is False
 
 
+def test_actividades_pnud_count_groups_active_schedules_by_activity(mocker):
+    comedor = SimpleNamespace(id=205108)
+    rows = [
+        SimpleNamespace(catalogo_actividad_id=10, activo=True),
+        SimpleNamespace(catalogo_actividad_id=10, activo=True),
+        SimpleNamespace(catalogo_actividad_id=10, activo=True),
+        SimpleNamespace(catalogo_actividad_id=20, activo=True),
+        SimpleNamespace(catalogo_actividad_id=20, activo=True),
+        SimpleNamespace(catalogo_actividad_id=30, activo=False),
+    ]
+    queryset = mocker.MagicMock()
+    queryset.select_related.return_value.annotate.return_value.order_by.return_value = (
+        rows
+    )
+    mocker.patch("comedores.views.comedor.is_pnud_comedor", return_value=True)
+    mocker.patch(
+        "comedores.views.comedor.ActividadEspacioPWA.objects.filter",
+        return_value=queryset,
+    )
+
+    context = module._build_actividades_pnud_legajo_context(comedor)
+
+    assert context["actividades_pnud_legajo"] == rows
+    assert context["actividades_pnud_legajo_count"] == 2
+
+
 def test_comedor_create_helpers_and_form_valid_paths(mocker):
     view = module.ComedorCreateView()
     user = SimpleNamespace(id=1)
@@ -402,6 +428,9 @@ def test_comedor_detail_get_context_data_selected_admision_flow(mocker):
         "comedores.views.comedor.get_prestacion_conformidad_pending_period",
         return_value=None,
     )
+    mocker.patch(
+        "comedores.views.comedor.list_capacitaciones_certificados", return_value=[]
+    )
 
     ctx = view.get_context_data()
 
@@ -454,6 +483,9 @@ def test_comedor_detail_no_consulta_transacciones_sin_permiso_comedor(mocker):
         "comedores.views.comedor.get_prestacion_conformidad_pending_period",
         return_value=None,
     )
+    mocker.patch(
+        "comedores.views.comedor.list_capacitaciones_certificados", return_value=[]
+    )
 
     ctx = view.get_context_data()
 
@@ -502,6 +534,9 @@ def test_comedor_detail_consulta_transacciones_con_permiso_comedor(mocker):
     mocker.patch(
         "comedores.views.comedor.get_prestacion_conformidad_pending_period",
         return_value=None,
+    )
+    mocker.patch(
+        "comedores.views.comedor.list_capacitaciones_certificados", return_value=[]
     )
 
     ctx = view.get_context_data()

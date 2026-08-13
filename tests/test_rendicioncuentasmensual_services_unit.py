@@ -7,7 +7,10 @@ from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
 
 from rendicioncuentasmensual.models import DocumentacionAdjunta, RendicionCuentaMensual
-from rendicioncuentasmensual.services import RendicionCuentaMensualService
+from rendicioncuentasmensual.services import (
+    RendicionCuentaMensualService,
+    RendicionProcesoService,
+)
 
 
 def test_crear_rendicion_cuenta_mensual_success(mocker):
@@ -540,7 +543,7 @@ def test_obtener_scope_proyecto_sin_codigo_retorna_comedor_actual():
 
 
 @pytest.mark.django_db
-def test_actualizar_estado_documento_revision_valida_documento_y_finaliza_rendicion(
+def test_actualizar_estado_documento_revision_no_cierra_etapa_automaticamente(
     mocker,
 ):
     actor = SimpleNamespace(id=10, is_authenticated=True)
@@ -581,8 +584,8 @@ def test_actualizar_estado_documento_revision_valida_documento_y_finaliza_rendic
     rendicion.save.assert_called_once_with(
         update_fields=["usuario_ultima_modificacion", "ultima_modificacion"]
     )
-    sync_mock.assert_called_once_with(rendicion)
-    notify_mock.assert_called_once_with(documento=documento, actor=actor)
+    sync_mock.assert_not_called()
+    notify_mock.assert_not_called()
 
 
 @pytest.mark.django_db
@@ -751,13 +754,15 @@ def test_sincronizar_estado_rendicion_por_documentos_mueve_a_subsanar(mocker):
 
     assert rendicion.estado == RendicionCuentaMensual.ESTADO_SUBSANAR
     rendicion.save.assert_called_once_with(
-        update_fields=["estado", "ultima_modificacion"]
+        update_fields=["estado", "subestado_proceso", "ultima_modificacion"]
     )
 
 
-def test_sincronizar_estado_rendicion_por_documentos_mueve_a_finalizada(mocker):
+def test_sincronizar_estado_rendicion_por_documentos_reanuda_revision(mocker):
     rendicion = SimpleNamespace(
         estado=RendicionCuentaMensual.ESTADO_SUBSANAR,
+        etapa_proceso=RendicionCuentaMensual.ETAPA_REVISION_DOCUMENTACION,
+        subestado_proceso=RendicionCuentaMensual.SUBESTADO_PENDIENTE_CORRECCIONES,
         save=mocker.Mock(),
     )
     documentos = [
@@ -774,9 +779,10 @@ def test_sincronizar_estado_rendicion_por_documentos_mueve_a_finalizada(mocker):
         rendicion
     )
 
-    assert rendicion.estado == RendicionCuentaMensual.ESTADO_FINALIZADA
+    assert rendicion.estado == RendicionCuentaMensual.ESTADO_REVISION
+    assert rendicion.subestado_proceso == RendicionCuentaMensual.SUBESTADO_EN_CURSO
     rendicion.save.assert_called_once_with(
-        update_fields=["estado", "ultima_modificacion"]
+        update_fields=["estado", "subestado_proceso", "ultima_modificacion"]
     )
 
 
@@ -785,6 +791,8 @@ def test_sincronizar_estado_rendicion_por_documentos_archiva_notificaciones_si_s
 ):
     rendicion = SimpleNamespace(
         estado=RendicionCuentaMensual.ESTADO_SUBSANAR,
+        etapa_proceso=RendicionCuentaMensual.ETAPA_REVISION_DOCUMENTACION,
+        subestado_proceso=RendicionCuentaMensual.SUBESTADO_PENDIENTE_CORRECCIONES,
         save=mocker.Mock(),
     )
     documentos = [
@@ -832,3 +840,167 @@ def test_presentar_rendicion_mobile_rechaza_documentos_observados_vigentes(mocke
         RendicionCuentaMensualService.presentar_rendicion_mobile(rendicion)
 
     assert "pendiente de subsanar" in str(exc_info.value)
+
+
+@pytest.mark.django_db
+def test_presentar_rendicion_mobile_reanuda_revision_territorial_sin_nuevo_inicio(
+    mocker,
+):
+    rendicion = SimpleNamespace(
+        estado=RendicionCuentaMensual.ESTADO_SUBSANAR,
+        etapa_proceso=RendicionCuentaMensual.ETAPA_REVISION_DOCUMENTACION,
+        subestado_proceso=RendicionCuentaMensual.SUBESTADO_PENDIENTE_CORRECCIONES,
+        documento_adjunto=True,
+        save=mocker.Mock(),
+    )
+    mocker.patch.object(
+        RendicionCuentaMensualService, "validar_documentacion_obligatoria"
+    )
+    mocker.patch.object(
+        RendicionCuentaMensualService, "_sincronizar_flag_documento_adjunto"
+    )
+    mocker.patch.object(
+        RendicionCuentaMensualService,
+        "_documentos_vigentes_queryset",
+        return_value=[SimpleNamespace(estado=DocumentacionAdjunta.ESTADO_PRESENTADO)],
+    )
+    mocker.patch.object(
+        RendicionCuentaMensualService, "_archivar_notificaciones_mobile_rendicion"
+    )
+
+    RendicionCuentaMensualService.presentar_rendicion_mobile(rendicion)
+
+    assert rendicion.etapa_proceso == (
+        RendicionCuentaMensual.ETAPA_REVISION_DOCUMENTACION
+    )
+    assert rendicion.subestado_proceso == RendicionCuentaMensual.SUBESTADO_EN_CURSO
+
+
+@pytest.mark.django_db
+def test_presentar_rendicion_mobile_deja_auditoria_lista_para_reiniciar(mocker):
+    rendicion = SimpleNamespace(
+        estado=RendicionCuentaMensual.ESTADO_SUBSANAR,
+        etapa_proceso=RendicionCuentaMensual.ETAPA_REVISION_AUDITORIA,
+        subestado_proceso=RendicionCuentaMensual.SUBESTADO_PENDIENTE_CORRECCIONES,
+        documento_adjunto=True,
+        save=mocker.Mock(),
+    )
+    mocker.patch.object(
+        RendicionCuentaMensualService, "validar_documentacion_obligatoria"
+    )
+    mocker.patch.object(
+        RendicionCuentaMensualService, "_sincronizar_flag_documento_adjunto"
+    )
+    mocker.patch.object(
+        RendicionCuentaMensualService,
+        "_documentos_vigentes_queryset",
+        return_value=[SimpleNamespace(estado=DocumentacionAdjunta.ESTADO_PRESENTADO)],
+    )
+    mocker.patch.object(
+        RendicionCuentaMensualService, "_archivar_notificaciones_mobile_rendicion"
+    )
+
+    RendicionCuentaMensualService.presentar_rendicion_mobile(rendicion)
+
+    assert rendicion.etapa_proceso == RendicionCuentaMensual.ETAPA_REVISION_AUDITORIA
+    assert rendicion.subestado_proceso == RendicionCuentaMensual.SUBESTADO_SUBSANADO
+
+
+@pytest.mark.django_db
+def test_iniciar_revision_auditoria_actualiza_documentos_con_ids_materializados(
+    mocker,
+):
+    rendicion = SimpleNamespace(
+        etapa_proceso=RendicionCuentaMensual.ETAPA_REVISION_AUDITORIA,
+        subestado_proceso=RendicionCuentaMensual.SUBESTADO_PENDIENTE,
+        estado=RendicionCuentaMensual.ESTADO_FINALIZADA,
+        save=mocker.Mock(),
+    )
+    queryset_vigentes = mocker.Mock()
+    queryset_validados = queryset_vigentes.filter.return_value
+    queryset_validados.values_list.return_value = [11, 12]
+    mocker.patch.object(
+        RendicionCuentaMensualService,
+        "_documentos_vigentes_queryset",
+        return_value=queryset_vigentes,
+    )
+    queryset_actualizacion = mocker.Mock()
+    filter_mock = mocker.patch.object(
+        DocumentacionAdjunta.objects,
+        "filter",
+        return_value=queryset_actualizacion,
+    )
+
+    RendicionProcesoService.ejecutar(
+        rendicion=rendicion,
+        accion=RendicionProcesoService.ACCION_INICIAR_REVISION_AUDITORIA,
+        datos={},
+    )
+
+    queryset_vigentes.filter.assert_called_once_with(
+        estado=DocumentacionAdjunta.ESTADO_VALIDADO
+    )
+    queryset_validados.values_list.assert_called_once_with("pk", flat=True)
+    filter_mock.assert_called_once_with(pk__in=[11, 12])
+    queryset_actualizacion.update.assert_called_once_with(
+        estado=DocumentacionAdjunta.ESTADO_PRESENTADO,
+        observaciones=None,
+    )
+    assert rendicion.subestado_proceso == RendicionCuentaMensual.SUBESTADO_EN_CURSO
+    assert rendicion.estado == RendicionCuentaMensual.ESTADO_REVISION
+
+
+@pytest.mark.django_db
+def test_iniciar_revision_auditoria_actualiza_documentos_en_mysql():
+    rendicion = RendicionCuentaMensual.objects.create(
+        mes=7,
+        anio=2026,
+        etapa_proceso=RendicionCuentaMensual.ETAPA_REVISION_AUDITORIA,
+        subestado_proceso=RendicionCuentaMensual.SUBESTADO_PENDIENTE,
+        estado=RendicionCuentaMensual.ESTADO_FINALIZADA,
+    )
+    documento = DocumentacionAdjunta.objects.create(
+        nombre="Documento validado",
+        estado=DocumentacionAdjunta.ESTADO_VALIDADO,
+        observaciones="Revisión territorial",
+        archivo=SimpleUploadedFile("documento.pdf", b"contenido"),
+        rendicion_cuenta_mensual=rendicion,
+    )
+
+    RendicionProcesoService.ejecutar(
+        rendicion=rendicion,
+        accion=RendicionProcesoService.ACCION_INICIAR_REVISION_AUDITORIA,
+        datos={},
+    )
+
+    rendicion.refresh_from_db()
+    documento.refresh_from_db()
+    assert rendicion.subestado_proceso == RendicionCuentaMensual.SUBESTADO_EN_CURSO
+    assert rendicion.estado == RendicionCuentaMensual.ESTADO_REVISION
+    assert documento.estado == DocumentacionAdjunta.ESTADO_PRESENTADO
+    assert documento.observaciones is None
+
+
+@pytest.mark.django_db
+def test_reiniciar_revision_auditoria_preserva_documentos_validados(mocker):
+    rendicion = SimpleNamespace(
+        etapa_proceso=RendicionCuentaMensual.ETAPA_REVISION_AUDITORIA,
+        subestado_proceso=RendicionCuentaMensual.SUBESTADO_SUBSANADO,
+        estado=RendicionCuentaMensual.ESTADO_SUBSANAR,
+        save=mocker.Mock(),
+    )
+    documentos_mock = mocker.patch.object(
+        RendicionCuentaMensualService, "_documentos_vigentes_queryset"
+    )
+    filter_mock = mocker.patch.object(DocumentacionAdjunta.objects, "filter")
+
+    RendicionProcesoService.ejecutar(
+        rendicion=rendicion,
+        accion=RendicionProcesoService.ACCION_INICIAR_REVISION_AUDITORIA,
+        datos={},
+    )
+
+    documentos_mock.assert_not_called()
+    filter_mock.assert_not_called()
+    assert rendicion.subestado_proceso == RendicionCuentaMensual.SUBESTADO_EN_CURSO
+    assert rendicion.estado == RendicionCuentaMensual.ESTADO_REVISION

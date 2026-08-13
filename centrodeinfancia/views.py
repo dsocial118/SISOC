@@ -20,6 +20,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
 from django.urls import reverse, reverse_lazy
 from django.utils.html import escape, format_html, format_html_join
+from django.utils.safestring import mark_safe
 from django.utils.text import Truncator
 from django.utils import timezone
 from django.views.decorators.http import require_GET, require_POST
@@ -32,8 +33,11 @@ from django.views.generic import (
     UpdateView,
 )
 from auditlog.models import LogEntry
+from ciudadanos.api import (
+    obtener_datos_ciudadano_desde_renaper,
+    resolver_nacionalidad_desde_renaper,
+)
 from ciudadanos.models import Ciudadano
-from comedores.services.comedor_service import ComedorService
 from core.decorators import permissions_any_required
 from core.models import Nacionalidad, Sexo
 from core.security import safe_redirect
@@ -69,8 +73,14 @@ from centrodeinfancia.models import (
     Trabajador,
 )
 from centrodeinfancia.services import (
+    MENSAJE_NOMINA_VIGENTE_EN_OTRO_CENTRO,
+    MOTIVO_NOMINA_DUPLICADA_MISMO_CENTRO,
+    MOTIVO_NOMINA_VIGENTE_OTRO_CENTRO,
     AsistenciaNominaCentroInfanciaService,
     CentroDeInfanciaService,
+    bloquear_ciudadano_para_nomina_cdi,
+    puede_reactivar_nomina_cdi_bajo_bloqueo,
+    tiene_nomina_cdi_vigente_en_otro_centro,
 )
 from centrodeinfancia.services_user_provisioning import (
     crear_referente_cdi_automaticamente,
@@ -79,7 +89,7 @@ from centrodeinfancia.services_user_provisioning import (
     sincronizar_email_trabajador,
 )
 from centrodeinfancia.views_formulario_cdi import construir_resumenes_formularios
-from intervenciones.constants import PROGRAMA_ALIASES_CENTRO_INFANCIA
+from intervenciones.api import programa_aliases_cdi
 
 
 CDI_LIST_HEADERS = [
@@ -491,9 +501,9 @@ class CentroDeInfanciaDetailView(LoginRequiredMixin, DetailView):
         intervenciones_items = []
         for intervencion in intervenciones_page_obj:
             doc_badge = (
-                format_html('<span class="badge bg-success">Sí</span>')
+                mark_safe('<span class="badge bg-success">Sí</span>')
                 if getattr(intervencion, "tiene_documentacion", False)
-                else format_html('<span class="badge bg-secondary">No</span>')
+                else mark_safe('<span class="badge bg-secondary">No</span>')
             )
 
             fecha_display = (
@@ -705,7 +715,7 @@ class CentroDeInfanciaDetailView(LoginRequiredMixin, DetailView):
                 str(tipo.pk): (tipo.programa or "").strip()
                 for tipo in tipo_intervencion_queryset
             }
-            alias_list = list(PROGRAMA_ALIASES_CENTRO_INFANCIA)
+            alias_list = list(programa_aliases_cdi())
             context["tipo_intervencion_programas"] = tipo_programas_map
             context["tipo_intervencion_programa_aliases"] = alias_list
             context["tipo_intervencion_programas_json"] = json.dumps(tipo_programas_map)
@@ -846,7 +856,7 @@ class TrabajadorCentroInfanciaCreateView(
         ciudadanos = Ciudadano.buscar_por_documento(query, max_results=50)
         if ciudadanos or not query.isdigit() or len(query) < 7 or form_bound:
             return ciudadanos, None
-        renaper_result = ComedorService.obtener_datos_ciudadano_desde_renaper(query)
+        renaper_result = obtener_datos_ciudadano_desde_renaper(query)
         if renaper_result.get("success"):
             if renaper_result.get("message"):
                 messages.info(self.request, renaper_result["message"])
@@ -1362,6 +1372,14 @@ class NominaCentroInfanciaEditView(
     def get_success_url(self):
         return reverse("centrodeinfancia_nomina_ver", kwargs={"pk": self.kwargs["pk"]})
 
+    def form_valid(self, form):
+        with transaction.atomic():
+            if not puede_reactivar_nomina_cdi_bajo_bloqueo(form.instance):
+                form.add_error(None, MENSAJE_NOMINA_VIGENTE_EN_OTRO_CENTRO)
+                return self.form_invalid(form)
+            self.object = form.save()
+        return redirect(self.get_success_url())
+
 
 class NominaCentroInfanciaCreateView(
     _AuditoriaSoloLecturaMixin,
@@ -1382,21 +1400,37 @@ class NominaCentroInfanciaCreateView(
 
     @staticmethod
     def _crear_nomina_con_bloqueo(centro, ciudadano, form):
+        """Crea la nómina si la persona no tiene otra vigente.
+
+        Devuelve ``(creado, motivo)``: cuando ``creado`` es False, ``motivo`` es
+        una de las constantes ``MOTIVO_NOMINA_*`` para que la vista elija el
+        mensaje sin exponer datos del otro centro.
+        """
+        bloquear_ciudadano_para_nomina_cdi(ciudadano.pk)
         CentroDeInfancia.objects.select_for_update().filter(pk=centro.pk).exists()
-        existente = NominaCentroInfancia.objects.filter(
-            centro=centro,
-            ciudadano=ciudadano,
-            deleted_at__isnull=True,
-        ).exists()
+        existente = (
+            NominaCentroInfancia.objects.select_for_update()
+            .filter(
+                centro=centro,
+                ciudadano=ciudadano,
+                deleted_at__isnull=True,
+            )
+            .exists()
+        )
         if existente:
-            return False
+            return False, MOTIVO_NOMINA_DUPLICADA_MISMO_CENTRO
+
+        if tiene_nomina_cdi_vigente_en_otro_centro(
+            ciudadano.pk, centro.pk, bloquear=True
+        ):
+            return False, MOTIVO_NOMINA_VIGENTE_OTRO_CENTRO
 
         nomina = form.save(commit=False)
         nomina.centro = centro
         nomina.ciudadano = ciudadano
         nomina.clean()
         nomina.save()
-        return True
+        return True, None
 
     def get_queryset(self):
         return _nomina_cdi_queryset_scoped(self.request.user).filter(
@@ -1468,9 +1502,7 @@ class NominaCentroInfanciaCreateView(
         if query and len(query) >= 4:
             ciudadanos = Ciudadano.buscar_por_documento(query, max_results=50)
             if not ciudadanos and query.isdigit() and len(query) >= 7 and not form:
-                renaper_result = ComedorService.obtener_datos_ciudadano_desde_renaper(
-                    query
-                )
+                renaper_result = obtener_datos_ciudadano_desde_renaper(query)
                 if renaper_result.get("success"):
                     renaper_data = self._build_nomina_initial_from_renaper(
                         renaper_result
@@ -1562,7 +1594,9 @@ class NominaCentroInfanciaCreateView(
             pieces.append(f'Departamento {cleaned_data["departamento_domicilio"]}')
         return " / ".join(pieces) or None
 
-    def post(self, request, *args, **kwargs):
+    def post(  # pylint: disable=too-many-return-statements
+        self, request, *args, **kwargs
+    ):
         self.object = None
         centro = self._get_centro()
         form = self.form_class(request.POST, centro=centro)
@@ -1601,7 +1635,7 @@ class NominaCentroInfanciaCreateView(
                     sexo_obj = Sexo.objects.filter(
                         sexo=form.cleaned_data.get("sexo")
                     ).first()
-                    nacionalidad_obj = ComedorService._match_nacionalidad(  # pylint: disable=protected-access
+                    nacionalidad_obj = resolver_nacionalidad_desde_renaper(
                         form.cleaned_data.get("nacionalidad")
                     )
                     ciudadano = Ciudadano.objects.filter(
@@ -1634,7 +1668,7 @@ class NominaCentroInfanciaCreateView(
                             modificado_por=request.user,
                         )
 
-                creado = self._crear_nomina_con_bloqueo(
+                creado, motivo_rechazo = self._crear_nomina_con_bloqueo(
                     centro=centro,
                     ciudadano=ciudadano,
                     form=form,
@@ -1649,6 +1683,12 @@ class NominaCentroInfanciaCreateView(
                 },
             )
             messages.error(request, "No se pudo guardar la ficha en la nómina.")
+            context = self.get_context_data(form=form)
+            return self.render_to_response(context)
+
+        if motivo_rechazo == MOTIVO_NOMINA_VIGENTE_OTRO_CENTRO:
+            form.add_error(None, MENSAJE_NOMINA_VIGENTE_EN_OTRO_CENTRO)
+            messages.error(request, MENSAJE_NOMINA_VIGENTE_EN_OTRO_CENTRO)
             context = self.get_context_data(form=form)
             return self.render_to_response(context)
 
@@ -1712,7 +1752,11 @@ def nomina_centrodeinfancia_editar_ajax(request, pk):
             raise PermissionDenied("El rol Auditoría tiene acceso de solo lectura.")
         form = NominaCentroInfanciaForm(request.POST, instance=nomina)
         if form.is_valid():
-            form.save()
+            with transaction.atomic():
+                if not puede_reactivar_nomina_cdi_bajo_bloqueo(form.instance):
+                    form.add_error(None, MENSAJE_NOMINA_VIGENTE_EN_OTRO_CENTRO)
+                    return JsonResponse({"success": False, "errors": form.errors})
+                form.save()
             return JsonResponse(
                 {"success": True, "message": "Datos modificados con éxito."}
             )

@@ -12,38 +12,11 @@
 {% block content %}
     <!-- Estilos modernos reutilizables para listados -->
     <link rel="stylesheet" href="{% static 'custom/css/listModerno.css' %}" />
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="h3">
-            {% if can_manage_tecnicos_celiaquia %}
-                Bandeja de Subsecretaría
-            {% elif is_tecnico_celiaquia %}
-                Mis Expedientes Asignados
-            {% else %}
-                Mis Expedientes
-            {% endif %}
-        </h2>
-        {% if is_provincial_celiaquia %}
-            <a href="{% url 'expediente_create' %}" class="btn btn-primary">
-                <i class="fa fa-plus-circle me-1"></i> Nuevo Expediente
-            </a>
-        {% endif %}
-    </div>
+    {% include 'components/search_bar.html' with titulo=titulo_listado placeholder="Buscar por ID, número, estado, provincia o técnico…" help_text="Buscar por ID, número, estado, provincia o técnico." reset_url='expediente_list' back_url='' search_name='q' query=request.GET.q show_add_button=is_provincial_celiaquia add_url='expediente_create' add_text='Nuevo Expediente' request=request only %}
     <div id="list-alerts"></div>
-    <form method="get" class="mb-3">
-        <div class="input-group input-group-lg">
-            <input type="search"
-                   name="q"
-                   value="{{ request.GET.q }}"
-                   class="form-control form-control-lg"
-                   placeholder="Buscar por ID, número, estado, provincia o técnico…" />
-            <button class="btn btn-lg btn-outline-secondary" type="submit">
-                <i class="fa fa-search"></i>
-            </button>
-        </div>
-    </form>
     <div class="card shadow-sm">
         <div class="table-responsive">
-            <table class="table table-hover table-striped projects mb-0">
+            <table class="table table-hover table-striped projects mb-0 mt-4">
                 <thead class="table-dark">
                     <tr>
                         <th class="sortable" data-column="id">

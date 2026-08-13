@@ -52,6 +52,7 @@ from comedores.models import (
 )
 from comedores.services.comedor_service import ComedorService
 from comedores.services.certificacion_prestaciones_service import (
+    FUENTE_PRESTACIONES_SIN_DATOS,
     generar_certificacion_prestaciones_pdf,
 )
 from comedores.services.capacitaciones_certificados_service import (
@@ -70,6 +71,7 @@ from relevamientos.models import ClasificacionComedor, Relevamiento
 from rendicioncuentasfinal.models import DocumentoRendicionFinal
 from rendicioncuentasmensual.models import DocumentacionAdjunta, RendicionCuentaMensual
 from rendicioncuentasmensual.services import RendicionCuentaMensualService
+from organizaciones.models import ProyectoOrganizacion
 from pwa.models import NominaDestinatariosDocumentoPWA
 from users.api_permissions import (
     HasMobileRendicionPermission,
@@ -136,6 +138,25 @@ class ComedorDetailViewSet(
         filtered_rows = ComedorService.get_filtered_comedores(self.request, user=user)
         return [row["id"] for row in filtered_rows]
 
+    @staticmethod
+    def _get_active_projects_by_organization(queryset):
+        organization_ids = {
+            comedor.organizacion_id for comedor in queryset if comedor.organizacion_id
+        }
+        projects_by_organization = {}
+        for proyecto in ProyectoOrganizacion.objects.filter(
+            organizacion_id__in=organization_ids,
+            activo=True,
+        ).order_by("codigo"):
+            projects_by_organization.setdefault(proyecto.organizacion_id, []).append(
+                {
+                    "id": proyecto.id,
+                    "codigo": proyecto.codigo,
+                    "nombre": proyecto.nombre,
+                }
+            )
+        return projects_by_organization
+
     def _get_pwa_spaces_selector_rows(self, user):
         access_rows = list(
             get_access_rows(user).select_related(
@@ -163,6 +184,7 @@ class ComedorDetailViewSet(
             .order_by("nombre", "id")
         )
         queryset = self._filter_pwa_visible_spaces(queryset)
+        proyectos_por_organizacion = self._get_active_projects_by_organization(queryset)
 
         rows = []
         for comedor in queryset:
@@ -188,6 +210,10 @@ class ComedorDetailViewSet(
                         comedor.programa.nombre if comedor.programa_id else None
                     ),
                     "codigo_de_proyecto": comedor.codigo_de_proyecto,
+                    "proyecto_id": comedor.proyecto_id,
+                    "organizacion_proyectos": proyectos_por_organizacion.get(
+                        comedor.organizacion_id, []
+                    ),
                     "provincia__nombre": (
                         comedor.provincia.nombre if comedor.provincia_id else None
                     ),
@@ -946,17 +972,10 @@ class ComedorDetailViewSet(
         detail=True,
         methods=["get"],
         url_path="capacitaciones",
-        permission_classes=[IsPWARepresentativeForComedor],
+        permission_classes=[IsPWAUserForComedor],
     )
     def capacitaciones(self, request, pk=None):
         comedor = self.get_object()
-        if not is_alimentar_comunidad_program(comedor):
-            return Response(
-                {
-                    "detail": "Capacitaciones disponibles solo para programa Alimentar Comunidad."
-                },
-                status=status.HTTP_404_NOT_FOUND,
-            )
         records = list_capacitaciones_certificados(comedor)
         return Response(
             {
@@ -976,17 +995,10 @@ class ComedorDetailViewSet(
         methods=["post"],
         url_path="capacitaciones/subir",
         parser_classes=[MultiPartParser, FormParser],
-        permission_classes=[IsPWARepresentativeForComedor],
+        permission_classes=[IsPWAUserForComedor],
     )
     def subir_capacitacion(self, request, pk=None):
         comedor = self.get_object()
-        if not is_alimentar_comunidad_program(comedor):
-            return Response(
-                {
-                    "detail": "Capacitaciones disponibles solo para programa Alimentar Comunidad."
-                },
-                status=status.HTTP_404_NOT_FOUND,
-            )
         capacitacion = (request.data.get("capacitacion") or "").strip()
         archivo = request.FILES.get("archivo")
 
@@ -1027,13 +1039,6 @@ class ComedorDetailViewSet(
     )
     def eliminar_capacitacion(self, request, pk=None):
         comedor = self.get_object()
-        if not is_alimentar_comunidad_program(comedor):
-            return Response(
-                {
-                    "detail": "La sección de capacitaciones aplica solo a Alimentar Comunidad."
-                },
-                status=status.HTTP_400_BAD_REQUEST,
-            )
 
         capacitacion = (request.data.get("capacitacion") or "").strip()
         if capacitacion not in dict(
@@ -1216,8 +1221,11 @@ class ComedorDetailViewSet(
     def _get_rendiciones_queryset(self, comedor):
         return (
             RendicionCuentaMensualService.obtener_rendiciones_cuentas_mensuales(comedor)
+            .select_related("proyecto")
             .only(
                 "id",
+                "proyecto_id",
+                "proyecto__codigo",
                 "convenio",
                 "numero_rendicion",
                 "mes",
@@ -1778,6 +1786,8 @@ class ComedorDetailViewSet(
             if usa_convenio_pnud
             else informe
         )
+        if source is None:
+            source = FUENTE_PRESTACIONES_SIN_DATOS
         conformidad = PrestacionAlimentariaConformidad.objects.create(
             comedor=comedor,
             informe_tecnico=informe,
@@ -1788,11 +1798,34 @@ class ComedorDetailViewSet(
         )
         if source is not None:
             try:
+                acceso = (
+                    AccesoComedorPWA.objects.filter(
+                        user=request.user,
+                        comedor=comedor,
+                        activo=True,
+                        rol=AccesoComedorPWA.ROL_OPERADOR,
+                    )
+                    .select_related("creado_por")
+                    .first()
+                )
+                usuario_principal = None
+                if acceso and acceso.creado_por_id:
+                    es_representante = AccesoComedorPWA.objects.filter(
+                        user_id=acceso.creado_por_id,
+                        comedor=comedor,
+                        activo=True,
+                        rol=AccesoComedorPWA.ROL_REPRESENTANTE,
+                    ).exists()
+                    if es_representante:
+                        usuario_principal = acceso.creado_por
                 pdf_bytes = generar_certificacion_prestaciones_pdf(
                     comedor=comedor,
                     periodo=periodo,
                     usuario=request.user,
                     source=source,
+                    conforme=conforme,
+                    observaciones=observaciones,
+                    usuario_principal=usuario_principal,
                 )
                 conformidad.certificacion_pdf.save(
                     f"certificacion-prestaciones-{comedor.id}-{periodo:%Y-%m}-{conformidad.id}.pdf",

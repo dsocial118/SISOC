@@ -13,8 +13,9 @@ from users.views import (
     UserDeleteView,
     GroupListView,
     GroupUpdateView,
+    ConfirmacionDatosView,
+    MiCuentaView,
     PasswordResetConfirmCustomView,
-    UserGenerateTemporaryPasswordView,
     UserListView,
     UserUpdateView,
     UsuariosLoginView,
@@ -37,6 +38,16 @@ urlpatterns = [
         "password/first-change/",
         FirstLoginPasswordChangeView.as_view(),
         name="password_change_required",
+    ),
+    path(
+        "mi-cuenta/",
+        MiCuentaView.as_view(),
+        name="mi_cuenta",
+    ),
+    path(
+        "mi-cuenta/confirmar/",
+        ConfirmacionDatosView.as_view(),
+        name="confirmar_datos_personales",
     ),
     path(
         "password/reset/confirm/<uidb64>/<token>/",
@@ -64,13 +75,6 @@ urlpatterns = [
         "usuarios/editar/<int:pk>/",
         permissions_any_required(["auth.change_user"])(UserUpdateView.as_view()),
         name="usuario_editar",
-    ),
-    path(
-        "usuarios/generar-password-temporal/<int:pk>/",
-        permissions_any_required(["auth.change_user"])(
-            UserGenerateTemporaryPasswordView.as_view()
-        ),
-        name="usuario_generar_password_temporal",
     ),
     path(
         "usuarios/credenciales-masivas/",

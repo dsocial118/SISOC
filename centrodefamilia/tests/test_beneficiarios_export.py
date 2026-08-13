@@ -29,15 +29,36 @@ def _grant_export_role(user):
     return User.objects.get(pk=user.pk)
 
 
-@pytest.fixture
-def usuario_con_permisos(db):
-    user = User.objects.create_user(username="cdf-export", password="x")
+def _grant_cdf_sse_role(user):
+    content_type = ContentType.objects.get_for_model(Group)
+    permission, _ = Permission.objects.get_or_create(
+        content_type=content_type,
+        codename="role_cdf_sse",
+        defaults={"name": "CDF SSE"},
+    )
+    user.user_permissions.add(permission)
+    return User.objects.get(pk=user.pk)
+
+
+def _crear_usuario_listado(username):
+    user = User.objects.create_user(username=username, password="x")
     user.user_permissions.add(
         Permission.objects.get(
             content_type__app_label="centrodefamilia", codename="view_centro"
         )
     )
-    return _grant_export_role(user)
+    return user
+
+
+@pytest.fixture
+def usuario_con_permisos(db):
+    return _grant_export_role(_crear_usuario_listado("cdf-export"))
+
+
+@pytest.fixture
+def usuario_cdf_sse(db):
+    """Rol CDF SSE: exporta preinscriptos sin el rol transversal de CSV."""
+    return _grant_cdf_sse_role(_crear_usuario_listado("cdf-sse"))
 
 
 @pytest.fixture
@@ -185,6 +206,40 @@ def test_export_respeta_filtros_territoriales_y_nombra_archivo(
 
 
 @pytest.mark.django_db
+def test_export_incluye_fecha_nacimiento_y_cuil_de_responsable(
+    client, usuario_con_permisos, beneficiarios
+):
+    client.force_login(usuario_con_permisos)
+    response = client.get(reverse("beneficiarios_export"))
+
+    content = b"".join(response.streaming_content).decode("utf-8-sig")
+    rows = list(csv.DictReader(StringIO(content), delimiter=";"))
+    row = next(row for row in rows if row["CUIL"] == "20451112223")
+
+    assert row["Fecha de nacimiento"] == "04/03/2012"
+    assert row["CUIL del responsable"] == "20285551113"
+
+
+@pytest.mark.django_db
+def test_export_respeta_orden_por_cuil_de_responsable(
+    client, usuario_con_permisos, beneficiarios
+):
+    client.force_login(usuario_con_permisos)
+    response = client.get(
+        reverse("beneficiarios_export"),
+        {"sort": "responsable_cuil", "direction": "desc"},
+    )
+
+    content = b"".join(response.streaming_content).decode("utf-8-sig")
+    rows = list(csv.DictReader(StringIO(content), delimiter=";"))
+
+    assert [row["CUIL del responsable"] for row in rows] == [
+        "20285551114",
+        "20285551113",
+    ]
+
+
+@pytest.mark.django_db
 def test_export_respeta_orden_visible_por_cuil(
     client, usuario_con_permisos, beneficiarios
 ):
@@ -283,21 +338,60 @@ def test_beneficiarios_list_muestra_boton_exportar_con_permiso(
     content = response.content.decode()
     assert "btn-export-csv" in content
     assert reverse("beneficiarios_export") in content
-    assert "Descargar CSV" in content
-    assert "search-actions" in content
+    # El boton se renombro a "Exportar busqueda" y se movio de .search-actions
+    # a la barra superior (.poncho-topbar), segun el prototipo de Figma.
+    # Se conserva .btn-export-csv porque export_helper.js engancha por esa clase.
+    assert "Exportar búsqueda" in content
+    assert "poncho-topbar" in content
 
 
 @pytest.mark.django_db
 def test_beneficiarios_list_oculta_boton_exportar_sin_permiso(client, db):
-    user = User.objects.create_user(username="cdf-list-sin-export", password="x")
-    user.user_permissions.add(
-        Permission.objects.get(
-            content_type__app_label="centrodefamilia", codename="view_centro"
-        )
-    )
+    user = _crear_usuario_listado("cdf-list-sin-export")
     client.force_login(user)
 
     response = client.get(reverse("beneficiarios_list"))
 
     assert response.status_code == 200
     assert "btn-export-csv" not in response.content.decode()
+
+
+@pytest.mark.django_db
+def test_beneficiarios_list_muestra_boton_exportar_para_cdf_sse(
+    client, usuario_cdf_sse
+):
+    client.force_login(usuario_cdf_sse)
+    response = client.get(reverse("beneficiarios_list"))
+
+    assert response.status_code == 200
+    content = response.content.decode()
+    assert "btn-export-csv" in content
+    assert reverse("beneficiarios_export") in content
+
+
+@pytest.mark.django_db
+def test_export_permite_rol_cdf_sse(client, usuario_cdf_sse, beneficiarios):
+    client.force_login(usuario_cdf_sse)
+    response = client.get(reverse("beneficiarios_export"))
+
+    assert response.status_code == 200
+
+    content = b"".join(response.streaming_content).decode("utf-8-sig")
+    rows = list(csv.DictReader(StringIO(content), delimiter=";"))
+
+    assert {row["CUIL"] for row in rows} == {"20451112223", "20451112224"}
+
+
+@pytest.mark.django_db
+def test_beneficiarios_list_muestra_fecha_nacimiento_y_cuil_de_responsable(
+    client, usuario_con_permisos, beneficiarios
+):
+    client.force_login(usuario_con_permisos)
+    response = client.get(reverse("beneficiarios_list"))
+
+    assert response.status_code == 200
+    content = response.content.decode()
+    assert "Fecha de nacimiento" in content
+    assert "CUIL del responsable" in content
+    assert "04/03/2012" in content
+    assert "20285551113" in content

@@ -361,6 +361,7 @@ def test_comedor_detail_includes_mobile_relevamiento_summary():
     organizacion = Organizacion.objects.create(nombre="Organización Central")
     comedor = Comedor.objects.create(
         nombre="Espacio Relevado",
+        es_caritas=True,
         provincia=provincia,
         municipio=municipio,
         localidad=localidad,
@@ -456,6 +457,12 @@ def test_comedor_detail_includes_mobile_relevamiento_summary():
     assert items["¿Cómo se abastece de agua?"] == "Red"
     assert items["¿En qué lugar realiza sus compras?"] == "Supermercado, Mayoristas"
     assert "Murga" in items["¿Qué tipo de actividades se realizan?"]
+    domicilio = next(
+        section
+        for section in response.data["relevamiento_actual_mobile"]["sections"]
+        if section["titulo"] == "Domicilio del Espacio"
+    )
+    assert not any("caritas" in item["pregunta"].lower() for item in domicilio["items"])
 
 
 @pytest.mark.django_db
@@ -1364,7 +1371,9 @@ def test_prestacion_alimentaria_conformidad_crea_registro():
 
 
 @pytest.mark.django_db
-def test_prestacion_alimentaria_conformidad_sin_pdf_mantiene_advertencia():
+def test_prestacion_alimentaria_conformidad_sin_fuente_genera_pdf_fallback(
+    mocker, settings, tmp_path
+):
     provincia = Provincia.objects.create(nombre="Cordoba sin informe")
     programa = Programas.objects.create(nombre="Programa sin informe")
     comedor = Comedor.objects.create(
@@ -1376,6 +1385,11 @@ def test_prestacion_alimentaria_conformidad_sin_pdf_mantiene_advertencia():
         username="rep_conf_sin_informe",
     )
 
+    settings.MEDIA_ROOT = str(tmp_path)
+    generador_pdf = mocker.patch(
+        "comedores.api_views.generar_certificacion_prestaciones_pdf",
+        return_value=b"%PDF-1.4\n%%EOF",
+    )
     client = _token_client(representante)
     response = client.post(
         f"/api/comedores/{comedor.id}/prestacion-alimentaria/conformidad/",
@@ -1386,12 +1400,19 @@ def test_prestacion_alimentaria_conformidad_sin_pdf_mantiene_advertencia():
 
     assert response.status_code == 201
     registro = PrestacionAlimentariaConformidad.objects.get(comedor=comedor)
-    assert not registro.certificacion_pdf
-    assert detalle.status_code == 200
-    assert detalle.data["conformidad_pendiente"] is True
-    assert detalle.data["periodo_pendiente"] == date.fromisoformat(
-        response.data["periodo"]
+    assert registro.certificacion_pdf
+    assert response.data["certificacion_pdf_url"]
+    assert (
+        generador_pdf.call_args.kwargs["source"].datos_prestaciones_no_disponibles
+        is True
     )
+    descarga = client.get(response.data["certificacion_pdf_url"])
+    assert descarga.status_code == 200
+    assert descarga["Content-Type"] == "application/pdf"
+    assert detalle.status_code == 200
+    assert detalle.data["conformidad_pendiente"] is False
+    assert detalle.data["periodo_pendiente"] is None
+    assert detalle.data["conformidad_actual"]["certificacion_pdf_url"]
 
 
 @pytest.mark.django_db

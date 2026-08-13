@@ -16,6 +16,7 @@ from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse, reverse_lazy
 from django.utils import timezone
 from django.utils.html import escape, format_html, format_html_join
+from django.utils.safestring import mark_safe
 from django.utils.text import Truncator
 from django.utils.decorators import method_decorator
 from django.views.generic import (
@@ -112,19 +113,51 @@ class CertificacionesPrestacionesHistorialView(LoginRequiredMixin, ListView):
         self.comedor = ComedorService.get_scoped_comedor_or_404(
             self.kwargs["pk"], self.request.user
         )
-        return (
+        queryset = (
             PrestacionAlimentariaConformidad.objects.filter(
                 comedor_id=self.comedor.id,
-                certificacion_pdf__isnull=False,
             )
-            .exclude(certificacion_pdf="")
             .select_related("usuario")
             .order_by("-periodo", "-creado")
         )
+        periodo = self.request.GET.get("periodo", "").strip()
+        if periodo:
+            try:
+                year, month = (int(value) for value in periodo.split("-", 1))
+                queryset = queryset.filter(periodo__year=year, periodo__month=month)
+            except (TypeError, ValueError):
+                pass
+        usuario = self.request.GET.get("usuario", "").strip()
+        if usuario.isdigit():
+            queryset = queryset.filter(usuario_id=usuario)
+        conforme = self.request.GET.get("conforme", "").strip()
+        if conforme in {"true", "false"}:
+            queryset = queryset.filter(conforme=conforme == "true")
+        return queryset
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["comedor"] = self.comedor
+        context["usuarios_generadores"] = (
+            PrestacionAlimentariaConformidad.objects.filter(
+                comedor_id=self.comedor.id,
+                usuario__isnull=False,
+            )
+            .select_related("usuario")
+            .order_by("usuario__first_name", "usuario__last_name", "usuario__username")
+            .values(
+                "usuario_id",
+                "usuario__first_name",
+                "usuario__last_name",
+                "usuario__username",
+            )
+            .distinct()
+        )
+        context["filtros"] = {
+            "periodo": self.request.GET.get("periodo", ""),
+            "usuario": self.request.GET.get("usuario", ""),
+            "conforme": self.request.GET.get("conforme", ""),
+        }
         return context
 
 
@@ -302,7 +335,13 @@ def _build_actividades_pnud_legajo_context(comedor):
     )
     return {
         "actividades_pnud_legajo": actividades,
-        "actividades_pnud_legajo_count": len(actividades),
+        "actividades_pnud_legajo_count": len(
+            {
+                actividad.catalogo_actividad_id
+                for actividad in actividades
+                if actividad.activo
+            }
+        ),
     }
 
 
@@ -385,9 +424,9 @@ def _build_intervenciones_table_context(comedor_obj, request, admision_id=None):
     intervenciones_items = []
     for intervencion in intervenciones_page_obj:
         doc_badge = (
-            format_html('<span class="badge bg-success">Sí</span>')
+            mark_safe('<span class="badge bg-success">Sí</span>')
             if getattr(intervencion, "tiene_documentacion", False)
-            else format_html('<span class="badge bg-secondary">No</span>')
+            else mark_safe('<span class="badge bg-secondary">No</span>')
         )
         fecha_display = (
             intervencion.fecha.strftime("%d/%m/%Y") if intervencion.fecha else None
@@ -484,11 +523,7 @@ def _build_intervenciones_table_context(comedor_obj, request, admision_id=None):
                             f"v{documento.version}"
                         )
                     },
-                    {
-                        "content": format_html(
-                            '<span class="badge bg-success">Si</span>'
-                        )
-                    },
+                    {"content": mark_safe('<span class="badge bg-success">Si</span>')},
                     {"content": _safe_cell_content("Destinatarios")},
                     {"content": _safe_cell_content(usuario_creador)},
                     {"content": actions_html},
@@ -727,11 +762,11 @@ def _build_admisiones_table_context(comedor_id, admisiones_qs, request):
                     },
                     {
                         "content": (
-                            format_html(
+                            mark_safe(
                                 '<i class="bi bi-check-circle-fill text-success"></i>'
                             )
                             if getattr(a, "activa", True)
-                            else format_html(
+                            else mark_safe(
                                 '<i class="bi bi-x-circle-fill text-danger"></i>'
                             )
                         )
@@ -1524,17 +1559,11 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
                     if prestaciones_convenio_context is None
                     else prestaciones_convenio_context["monto_prestacion_mensual"]
                 ),
-                "show_capacitaciones_certificados": is_alimentar_comunidad_program(
-                    self.object
-                ),
-                "capacitaciones_certificados": (
-                    [
-                        serialize_certificate(item, request=self.request)
-                        for item in list_capacitaciones_certificados(self.object)
-                    ]
-                    if is_alimentar_comunidad_program(self.object)
-                    else []
-                ),
+                "show_capacitaciones_certificados": True,
+                "capacitaciones_certificados": [
+                    serialize_certificate(item, request=self.request)
+                    for item in list_capacitaciones_certificados(self.object)
+                ],
                 "es_programa_pnud": es_programa_pnud,
                 "usa_convenio_pnud": usa_convenio_pnud,
                 "puede_gestionar_actividades_espacio": puede_gestionar_actividades_espacio,
@@ -1553,9 +1582,7 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
                 "conformidad_prestacion_pendiente": self._build_conformidad_prestacion_context(),
                 "certificaciones_prestaciones": PrestacionAlimentariaConformidad.objects.filter(
                     comedor_id=self.object.id,
-                    certificacion_pdf__isnull=False,
                 )
-                .exclude(certificacion_pdf="")
                 .select_related("usuario")
                 .order_by("-periodo", "-creado")[:6],
                 **actividades_pnud_context,

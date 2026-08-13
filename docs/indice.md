@@ -28,6 +28,7 @@
 - `docs/infra/PROD_*`: inventario, riesgos, checklist de migracion y propuestas
   no ejecutadas para el productivo canonico `prd-old`.
 - `docs/operacion/comandos_administracion.md`: utilidades de management (`manage.py`) disponibles para el equipo.
+- `docs/operacion/correccion_expedientes_issue_2272.md`: runbook de preflight, aplicación, verificación y recuperación de la corrección controlada de expedientes.
 - `docs/operacion/pwa_web_push_deploy.md`: checklist de despliegue y validacion de web push para la PWA.
 
 ### 3. Seguridad
@@ -46,6 +47,8 @@
 - `docs/implementaciones/pwa_backend.md`: implementación backend de funcionalidades PWA.
 - `docs/implementaciones/usuarios_perfil_iam.md`: implementación de Usuarios/Perfil + IAM por permisos Django y guía para extender nuevas features.
 - `docs/implementaciones/centrodeinfancia_nomina_renaper.md`: contrato de asistencia de nómina CDI, alcance y precarga RENAPER de trabajadores.
+- `docs/implementaciones/centrodefamilia_preinscriptos.md`: contrato del listado y exportación CSV de preinscriptos CDF, incluyendo columnas, ordenamiento y permisos.
+- `docs/vat/`: guías funcionales, API, operación de vouchers y desarrollo del módulo VAT.
 
 ### 5. Flujos y sincronizaciones
 - `docs/flujos/comedor_sync.md`: cómo funciona la sincronización de comedores con servicios externos.
@@ -72,4 +75,4 @@
 ## Contexto mínimo
 - Stack: Django + MySQL con despliegue vía Docker Compose. Evidencia: README.md:1-4 y docker-compose.yml:1-34.
 - Variables de entorno documentadas en `.env.example` (incluye DB, GESTIONAR, RENAPER, puertos y dominio). Evidencia: .env.example:1-51.
-- Servicios externos activos: GESTIONAR (sincronización de comedores/relevamientos) y RENAPER (consulta de ciudadanos). Evidencia: comedores/tasks.py:11-125, relevamientos/tasks.py:13-85, centrodefamilia/services/consulta_renaper.py:13-170.
+- Servicios externos activos: GESTIONAR (sincronización de comedores/relevamientos) y RENAPER (consulta de ciudadanos). Evidencia: comedores/tasks.py, relevamientos/tasks.py, core/integrations/renaper.py, core/services/renaper.py.
