@@ -105,6 +105,52 @@ def fecha_fija_en_ventana(mocker):
 
 
 @pytest.mark.django_db
+def test_nomina_list_usa_solo_admision_vigente_pwa(comedor, admision, sexo_f):
+    representante = _create_representante(
+        comedor=comedor,
+        username="rep_nomina_admision_vigente",
+    )
+    client = _auth_client_for_user(representante)
+    admision_vigente = Admision.objects.create(
+        comedor=comedor,
+        activa=True,
+        vigente_pwa=True,
+    )
+    ciudadano_anterior = Ciudadano.objects.create(
+        nombre="Persona",
+        apellido="Anterior",
+        documento=20111222,
+        sexo=sexo_f,
+    )
+    ciudadano_vigente = Ciudadano.objects.create(
+        nombre="Persona",
+        apellido="Vigente",
+        documento=30111222,
+        sexo=sexo_f,
+    )
+    nomina_anterior = Nomina.objects.create(
+        admision=admision,
+        ciudadano=ciudadano_anterior,
+        estado=Nomina.ESTADO_ACTIVO,
+    )
+    nomina_vigente = Nomina.objects.create(
+        admision=admision_vigente,
+        ciudadano=ciudadano_vigente,
+        estado=Nomina.ESTADO_ACTIVO,
+    )
+
+    response = client.get(
+        f"/api/pwa/espacios/{comedor.id}/nomina/",
+        {"tab": "alimentaria"},
+    )
+
+    assert response.status_code == 200
+    assert response.data["stats"]["total_nomina"] == 1
+    assert [row["id"] for row in response.data["results"]] == [nomina_vigente.id]
+    assert nomina_anterior.id not in {row["id"] for row in response.data["results"]}
+
+
+@pytest.mark.django_db
 def test_nomina_list_stats_and_tabs(comedor, admision, sexo_f, sexo_m, dia):
     representante = _create_representante(comedor=comedor, username="rep_nomina_tabs")
     client = _auth_client_for_user(representante)
