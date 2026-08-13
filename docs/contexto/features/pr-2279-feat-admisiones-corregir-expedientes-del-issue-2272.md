@@ -36,18 +36,22 @@
 - `admisiones/management/commands/__init__.py`
 - `admisiones/management/commands/corregir_expedientes_issue_2272.py`
 - `admisiones/tests/test_corregir_expedientes_issue_2272.py`
+- `docs/contexto/features/pr-2279-feat-admisiones-corregir-expedientes-del-issue-2272.md`
 - `docs/indice.md`
 - `docs/operacion/comandos_administracion.md`
 - `docs/operacion/correccion_expedientes_issue_2272.md`
 - `docs/registro/cambios/2026-08-12-issue-2272-correccion-expedientes.md`
+- `docs/registro/prs/PR-2279.md`
 - Documentación sugerida para ampliar contexto:
 - `docs/indice.md`
 - `docs/ia/CONTEXT_HYGIENE.md`
 - `docs/ia/ARCHITECTURE.md`
 - `docs/ia/TESTING.md`
+- `docs/contexto/features/pr-2279-feat-admisiones-corregir-expedientes-del-issue-2272.md`
 - `docs/operacion/comandos_administracion.md`
 - `docs/operacion/correccion_expedientes_issue_2272.md`
 - `docs/registro/cambios/2026-08-12-issue-2272-correccion-expedientes.md`
+- `docs/registro/prs/PR-2279.md`
 
 ## Trazabilidad
 
