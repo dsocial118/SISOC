@@ -24,6 +24,7 @@ from users.services_pwa import (
     PWA_ASSIGNABLE_PERMISSION_CODES,
     PWA_USUARIOS_PERMISSION_CODE,
     deactivate_representante_accesses,
+    get_organizacion_ids,
     is_pwa_user,
     sync_representante_accesses,
 )
@@ -349,7 +350,7 @@ class PWAAccessMixin:
             rol=AccesoComedorPWA.ROL_REPRESENTANTE,
             activo=True,
         )
-        organizacion_ids = list(
+        organizacion_ids = get_organizacion_ids(self.instance) or list(
             accesos.exclude(organizacion_id__isnull=True)
             .values_list("organizacion_id", flat=True)
             .distinct()
@@ -484,6 +485,7 @@ class PWAAccessMixin:
             sync_representante_accesses(
                 user=user,
                 access_specs=access_specs,
+                organizacion_ids=organization_ids,
                 actor=None,
             )
             return
