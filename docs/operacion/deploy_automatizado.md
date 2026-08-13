@@ -39,29 +39,21 @@ ya verificada, y levanta con `up -d --build`.
 Cuando incluye SISOC-Mobile, valida que `origin` sea el repositorio publico
 esperado y normaliza las variantes SSH conocidas a HTTPS antes del downtime.
 
-## Recuperacion controlada de talla legacy en produccion
+## Inspeccion de talla legacy en produccion
 
-Si `centrodeinfancia.0042_alter_nominacentroinfancia_talla` bloquea el arranque,
-no se debe modificar la migracion ni convertir valores historicos de forma
-silenciosa. El workflow `Despliegue automatizado`, despachado sobre `main`,
-ofrece estas acciones manuales de `maintenance_action`:
+Con 0042 sin operación de base de datos y 0043 restaurando `talla` a texto, el
+deploy normal no debe ejecutar una reparación de datos. El workflow
+`Despliegue automatizado`, despachado sobre `main`, expone únicamente una
+acción manual de lectura para diagnóstico:
 
 1. `inspect-cdi-talla-blockers`: informa solo la categoria de los ids 7, 237 y
    242, sin imprimir valores ni datos de personas.
-2. `repair-confirmed-cdi-talla-blockers-as-null`: solo se habilita tras una
-   confirmacion explicita y vuelve a exigir las categorias
-   `non_numeric`, `out_of_range` y `non_numeric`, respectivamente. Bloquea las
-   tres filas con `FOR UPDATE` y las actualiza a `NULL` en una unica transaccion.
-
-Ambas acciones siguen sujetas al Environment `production` y rechazan el trabajo
+La inspección sigue sujeta al Environment `production` y rechaza el trabajo
 si `origin/main` avanzó desde el dispatch. Antes de abrir Django, archivan el
 SHA aprobado en un directorio temporal aislado, sin modificar el checkout que
 sirve a produccion; tambien validan host configurado, servidor y schema de DB
 contra los contratos `PROD_EXPECTED_DB_*`. Cualquier diferencia falla sin leer
-ni modificar las filas. La reparacion no tiene rollback
-automatico porque los valores originales son invalidos y no deben exponerse ni
-inventarse; una altura valida posterior debe cargarse desde una fuente
-autorizada. Luego se reintenta el deploy del SHA vigente.
+ni modificar las filas. El camino mutante que asignaba `NULL` ya no se expone.
 
 ## Plan A: `main` como subconjunto comun
 
