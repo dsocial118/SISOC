@@ -16,6 +16,9 @@
 - `debug_queries`: ejecuta depuración de queries para vistas (todas o Ciudadanos). Evidencia: core/management/commands/debug_queries.py:1-33.
 - `run_benchmarks`: ejecuta benchmarks reproducibles en una DB efímera, serializa resultados JSON y compara contra baseline versionado; soporta `--rebuild-baseline`. Evidencia: core/management/commands/run_benchmarks.py:1-176.
 
+## Admisiones
+- `corregir_expedientes_issue_2272`: preflight, aplicación transaccional (`--apply`) y verificación posterior (`--verify`) de la corrección versionada de expedientes. Requiere una ventana sin escrituras y un manifiesto previamente aprobado; el runbook de HML/PRD está en `docs/operacion/correccion_expedientes_issue_2272.md`. Evidencia: `admisiones/management/commands/corregir_expedientes_issue_2272.py`.
+
 ## Users
 - `create_groups`: crea grupos predeterminados y sincroniza permisos bootstrap segun la semilla declarativa de IAM (`users/bootstrap/groups_seed.py`). Evidencia: `users/management/commands/create_groups.py`.
 - `sync_group_permissions_from_registry`: sincroniza permisos Django por grupo para grupos ya existentes. Util post-migracion en staging/prod. Evidencia: `users/management/commands/sync_group_permissions_from_registry.py`.
