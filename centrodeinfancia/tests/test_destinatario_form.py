@@ -107,7 +107,7 @@ def datos_validos(centro, **overrides):
         "cobertura_salud": "publica_exclusiva",
         "controles_sanitarios_ultimo_anio": "1",
         "calendario_vacunacion_al_dia": "true",
-        # Antropometría (valores dentro de rango OMS)
+        # Antropometría
         "peso": "14.2",
         "longitud_acostado": "80.0",
         "talla": "95.0",
@@ -489,8 +489,6 @@ class TestValidacionesQA:
             ("peso", "40"),  # > 29.5
             ("longitud_acostado", "20"),  # < 34.9
             ("longitud_acostado", "200"),  # > 115.0
-            ("talla", "50"),  # < 60.6
-            ("talla", "200"),  # > 146.4
             ("perimetro_cefalico", "10"),  # < 25.2
             ("perimetro_cefalico", "90"),  # > 64.7
         ],
@@ -505,7 +503,6 @@ class TestValidacionesQA:
         [
             ("peso", "1.6"),
             ("peso", "29.5"),
-            ("talla", "146.4"),
             ("perimetro_cefalico", "25.2"),
         ],
     )
@@ -513,8 +510,12 @@ class TestValidacionesQA:
         form = self._form(centro, **{campo: valor})
         assert form.is_valid(), form.errors
 
-    def test_talla_rechaza_texto(self, centro):
-        # talla dejó de ser texto libre: ahora es numérico.
+    def test_talla_legacy_acepta_texto_y_no_es_obligatoria(self, centro):
+        # El rollback preserva los valores históricos de texto y no obliga a cargarlo.
         form = self._form(centro, talla="alto")
-        assert not form.is_valid()
-        assert "talla" in form.errors
+        assert form.is_valid(), form.errors
+
+        data = datos_validos(centro)
+        data.pop("talla")
+        form = NominaCentroInfanciaDestinatariosForm(data, centro=centro)
+        assert form.is_valid(), form.errors

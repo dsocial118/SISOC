@@ -1,27 +1,32 @@
 from importlib import import_module
 
-import pytest
+from django.db import migrations, models
 
 
 migration_0042 = import_module(
     "centrodeinfancia.migrations.0042_alter_nominacentroinfancia_talla"
 )
-
-
-@pytest.mark.parametrize(
-    ("valor", "esperado"),
-    [
-        ("95", "95.0"),
-        (" 95,5 ", "95.5"),
-        ("95.50", "95.5"),
-        ("", None),
-    ],
+migration_0043 = import_module(
+    "centrodeinfancia.migrations.0043_revert_nominacentroinfancia_talla_to_text"
 )
-def test_normaliza_talla_legacy_convertible_sin_perder_precision(valor, esperado):
-    assert migration_0042.normalizar_talla_legacy(valor) == esperado
 
 
-@pytest.mark.parametrize("valor", ["alto", "95.55", "10000", "NaN"])
-def test_rechaza_talla_legacy_ambigua_o_fuera_de_capacidad(valor):
-    with pytest.raises(ValueError):
-        migration_0042.normalizar_talla_legacy(valor)
+def test_0042_no_convierte_las_tallas_legacy():
+    """La migración fallida debe poder cruzarse sin transformar datos existentes."""
+
+    (operation,) = migration_0042.Migration.operations
+    assert isinstance(operation, migrations.SeparateDatabaseAndState)
+    assert operation.database_operations == []
+    (state_operation,) = operation.state_operations
+    assert isinstance(state_operation, migrations.AlterField)
+    assert isinstance(state_operation.field, models.DecimalField)
+
+
+def test_0043_restaura_la_columna_talla_a_texto():
+    assert migration_0043.Migration.dependencies == [
+        ("centrodeinfancia", "0042_alter_nominacentroinfancia_talla")
+    ]
+    (operation,) = migration_0043.Migration.operations
+    assert isinstance(operation, migrations.AlterField)
+    assert isinstance(operation.field, models.CharField)
+    assert operation.field.max_length == 50
