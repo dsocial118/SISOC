@@ -10,6 +10,19 @@ def _production_deploy_step() -> str:
     return workflow.split("    deploy-produccion:\n", maxsplit=1)[1]
 
 
+def test_deploy_produccion_inspeccion_legacy_no_contiene_escrituras():
+    """El diagnóstico de talla legacy no debe conservar una ruta mutante."""
+
+    workflow = DEPLOY_WORKFLOW.read_text(encoding="utf-8")
+    recovery_job = workflow.split(
+        "    recuperar-talla-legacy-produccion:\n", maxsplit=1
+    )[1]
+
+    assert "FOR UPDATE" not in recovery_job
+    assert "transaction.atomic" not in recovery_job
+    assert "UPDATE centrodeinfancia_nominacentroinfancia" not in recovery_job
+
+
 def test_deploy_produccion_actualiza_helper_obsoleto_antes_del_deploy_versionado():
     """Un runner con helper previo debe poder alcanzar el deploy del SHA aprobado."""
 
@@ -67,7 +80,9 @@ def test_deploy_produccion_espera_migraciones_y_healthcheck_del_entrypoint():
     assert production_step.index(migrations) < production_step.index(healthcheck)
 
     healthcheck_start = production_step.index(healthcheck)
-    healthcheck_end = production_step.index("\n                  fi\n", healthcheck_start)  # fmt: skip
+    # fmt: off
+    healthcheck_end = production_step.index("\n                  fi\n", healthcheck_start)
+    # fmt: on
     healthcheck_block = production_step[healthcheck_start:healthcheck_end]
 
     assert "show_django_diagnostics" in healthcheck_block
@@ -88,6 +103,3 @@ def test_deploy_produccion_solo_expone_inspeccion_legacy_de_lectura():
     assert "inspect-cdi-talla-blockers" in dispatch_inputs
     assert "repair-confirmed-cdi-talla-blockers-as-null" not in dispatch_inputs
     assert "inputs.maintenance_action == 'inspect-cdi-talla-blockers'" in recovery_job
-    assert "FOR UPDATE" not in recovery_job
-    assert "transaction.atomic" not in recovery_job
-    assert "UPDATE centrodeinfancia_nominacentroinfancia" not in recovery_job
