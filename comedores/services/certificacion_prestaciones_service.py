@@ -3,6 +3,7 @@ import subprocess
 import tempfile
 import zipfile
 from pathlib import Path
+from types import SimpleNamespace
 
 from django.conf import settings
 from lxml import etree
@@ -14,6 +15,12 @@ W_NS = "http://schemas.openxmlformats.org/wordprocessingml/2006/main"
 NS = {"w": W_NS}
 DIAS = ("lunes", "martes", "miercoles", "jueves", "viernes", "sabado", "domingo")
 TIPOS = ("desayuno", "almuerzo", "merienda", "cena")
+LEYENDA_PRESTACIONES_NO_DISPONIBLES = "Datos de prestaciones no disponibles."
+
+
+FUENTE_PRESTACIONES_SIN_DATOS = SimpleNamespace(
+    datos_prestaciones_no_disponibles=True
+)
 
 
 def _agregar_texto(paragraph, value):
@@ -45,6 +52,17 @@ def _paragraph_by_label(paragraphs, label):
 
 def _user_dni(user):
     return str(getattr(getattr(user, "profile", None), "dni", "") or "")
+
+
+def _insertar_leyenda_prestaciones_no_disponibles(body, table):
+    paragraph = etree.Element(f"{{{W_NS}}}p")
+    run = etree.SubElement(paragraph, f"{{{W_NS}}}r")
+    run_properties = etree.SubElement(run, f"{{{W_NS}}}rPr")
+    etree.SubElement(run_properties, f"{{{W_NS}}}b")
+    etree.SubElement(run, f"{{{W_NS}}}t").text = (
+        LEYENDA_PRESTACIONES_NO_DISPONIBLES
+    )
+    body.insert(body.index(table), paragraph)
 
 
 def _completar_plantilla(
@@ -132,6 +150,8 @@ def _completar_plantilla(
                 _agregar_texto(motivo, f" {observaciones}")
 
         table = body.find(".//w:tbl", NS)
+        if getattr(source, "datos_prestaciones_no_disponibles", False):
+            _insertar_leyenda_prestaciones_no_disponibles(body, table)
         rows = table.findall("w:tr", NS)
         tipos = list(TIPOS)
         if is_abordaje_comunitario_linea_tradicional_program(comedor):
