@@ -67,7 +67,7 @@ def test_deploy_produccion_espera_migraciones_y_healthcheck_del_entrypoint():
     assert production_step.index(migrations) < production_step.index(healthcheck)
 
     healthcheck_start = production_step.index(healthcheck)
-    healthcheck_end = production_step.index("\n                  fi\n", healthcheck_start)
+    healthcheck_end = production_step.index("\n                  fi\n", healthcheck_start)  # fmt: skip
     healthcheck_block = production_step[healthcheck_start:healthcheck_end]
 
     assert "show_django_diagnostics" in healthcheck_block
@@ -88,3 +88,6 @@ def test_deploy_produccion_solo_expone_inspeccion_legacy_de_lectura():
     assert "inspect-cdi-talla-blockers" in dispatch_inputs
     assert "repair-confirmed-cdi-talla-blockers-as-null" not in dispatch_inputs
     assert "inputs.maintenance_action == 'inspect-cdi-talla-blockers'" in recovery_job
+    assert "FOR UPDATE" not in recovery_job
+    assert "transaction.atomic" not in recovery_job
+    assert "UPDATE centrodeinfancia_nominacentroinfancia" not in recovery_job
