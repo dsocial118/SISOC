@@ -28,6 +28,7 @@
 - `docs/infra/PROD_*`: inventario, riesgos, checklist de migracion y propuestas
   no ejecutadas para el productivo canonico `prd-old`.
 - `docs/operacion/comandos_administracion.md`: utilidades de management (`manage.py`) disponibles para el equipo.
+- `docs/operacion/correccion_expedientes_issue_2272.md`: runbook de preflight, aplicación, verificación y recuperación de la corrección controlada de expedientes.
 - `docs/operacion/pwa_web_push_deploy.md`: checklist de despliegue y validacion de web push para la PWA.
 
 ### 3. Seguridad
