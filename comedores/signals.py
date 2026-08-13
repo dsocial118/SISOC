@@ -29,6 +29,7 @@ from rendicioncuentasfinal.models import (
     RendicionCuentasFinal,
     TipoDocumentoRendicionFinal,
 )
+from users.services_pwa import apply_comedor_organizacion_change
 
 
 @receiver(post_save, sender=Comedor)
@@ -72,6 +73,45 @@ def update_comedor_in_gestionar(sender, instance, **kwargs):
         instance, action="Update"
     )  # usa los NEW values de la instancia
     AsyncSendComedorToGestionar(payload).start()
+
+
+@receiver(pre_save, sender=Comedor)
+def track_organizacion_anterior(sender, instance, **kwargs):
+    """Guarda la organización previa para propagar el cambio a los accesos PWA."""
+    organizacion_anterior_id = (
+        sender.objects.filter(pk=instance.pk)
+        .values_list("organizacion_id", flat=True)
+        .first()
+        if instance.pk
+        else None
+    )
+    instance._pwa_organizacion_anterior_id = (  # pylint: disable=protected-access
+        organizacion_anterior_id
+    )
+
+
+@receiver(post_save, sender=Comedor)
+def sync_accesos_pwa_por_organizacion(sender, instance, created, **kwargs):
+    """Mantiene los accesos PWA por organización al alta y al cambio de comedor.
+
+    Los usuarios mobile asociados a una organización deben ver todos sus
+    comedores sin intervención manual del administrador.
+    """
+    organizacion_anterior_id = (
+        None if created else getattr(instance, "_pwa_organizacion_anterior_id", None)
+    )
+    if organizacion_anterior_id == instance.organizacion_id:
+        return
+
+    apply_comedor_organizacion_change(
+        comedor_id=instance.pk,
+        previous_organizacion_id=organizacion_anterior_id,
+        new_organizacion_id=instance.organizacion_id,
+        actor=get_current_user(),
+    )
+    instance._pwa_organizacion_anterior_id = (  # pylint: disable=protected-access
+        instance.organizacion_id
+    )
 
 
 @receiver(pre_delete, sender=Comedor)
