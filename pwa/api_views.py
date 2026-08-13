@@ -72,6 +72,7 @@ from pwa.services.nomina_destinatarios_pdf_service import (
     get_latest_nomina_destinatarios_documents_by_period,
     serialize_nomina_destinatarios_documento,
 )
+from pwa.services.nomina_queryset_service import get_nomina_queryset_for_comedor
 from pwa.utils import parse_periodo_referencia
 from pwa.view_helpers import (
     build_mensaje_espacio_summary,
@@ -735,9 +736,8 @@ class NominaEspacioPWAViewSet(viewsets.ViewSet):
         comedor_id = self.kwargs["comedor_id"]
         periodo_actual = get_periodo_mensual_actual()
         queryset = (
-            Nomina.objects.filter(
-                Q(admision__comedor_id=comedor_id)
-                | Q(comedor_id=comedor_id, admision__isnull=True),
+            get_nomina_queryset_for_comedor(comedor_id)
+            .filter(
                 deleted_at__isnull=True,
                 estado=Nomina.ESTADO_ACTIVO,
             )
@@ -811,10 +811,10 @@ class NominaEspacioPWAViewSet(viewsets.ViewSet):
     def _attendance_queryset(self, tab: str):
         comedor_id = self.kwargs["comedor_id"]
         tab = (tab or "consolidada").strip().lower()
+        nomina_ids = get_nomina_queryset_for_comedor(comedor_id).values("id")
         queryset = (
             RegistroAsistenciaNominaPWA.objects.filter(
-                Q(nomina__admision__comedor_id=comedor_id)
-                | Q(nomina__comedor_id=comedor_id, nomina__admision__isnull=True),
+                nomina_id__in=nomina_ids,
                 periodicidad=RegistroAsistenciaNominaPWA.PERIODICIDAD_MENSUAL,
                 nomina__deleted_at__isnull=True,
             )
