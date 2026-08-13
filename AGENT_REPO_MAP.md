@@ -498,6 +498,8 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - `pwa/api_urls.py`
 - `pwa/api_views.py`
 - `pwa/services/`
+- alcance de nómina por admisión vigente o comedor directo:
+  `pwa/services/nomina_queryset_service.py`
 - frontend: `mobile/src/api/` y `mobile/src/features/home/`
 - tests `tests/test_pwa_*`
 - docs: `docs/implementaciones/pwa_backend.md`, `docs/seguridad/security_baseline_pwa.md`
