@@ -5,6 +5,7 @@ from __future__ import annotations
 import pytest
 from django.core.management.base import CommandError
 from django.core.management import call_command
+from django.utils import timezone
 
 from admisiones.management.commands.corregir_expedientes_issue_2272 import Command
 from admisiones.models.admisiones import Admision, AdmisionHistorial
@@ -126,6 +127,7 @@ def test_apply_sobrescribe_tecnicos_legales_y_registra_historial(tmp_path):
     admision.refresh_from_db()
     assert admision.num_expediente == numero_corregido
     assert admision.legales_num_if == numero_corregido
+    assert admision.modificado == timezone.localdate()
     historial = AdmisionHistorial.objects.filter(admision=admision)
     assert historial.count() == 2
     assert set(historial.values_list("campo", flat=True)) == {

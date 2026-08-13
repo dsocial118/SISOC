@@ -12,6 +12,7 @@ from pathlib import Path
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 from django.db.models.functions import Upper
+from django.utils import timezone
 
 from admisiones.models.admisiones import Admision, AdmisionHistorial
 
@@ -354,12 +355,13 @@ class Command(BaseCommand):
                 continue
             admision.num_expediente = numero_nuevo
             admision.legales_num_if = numero_nuevo
+            admision.modificado = timezone.localdate()
             actualizadas.append(admision)
 
         if actualizadas:
             Admision.objects.using(database).bulk_update(
                 actualizadas,
-                ["num_expediente", "legales_num_if"],
+                ["num_expediente", "legales_num_if", "modificado"],
                 batch_size=200,
             )
         if historial:
