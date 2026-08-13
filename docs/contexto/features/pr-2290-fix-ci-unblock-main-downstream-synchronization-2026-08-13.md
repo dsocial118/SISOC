@@ -34,8 +34,10 @@
 - `AGENT_REPO_MAP.md`
 - `CHANGELOG.md`
 - `docs/contexto/features/pr-2289-release-pre-deploy-development-main-2026-08-13.md`
+- `docs/contexto/features/pr-2290-fix-ci-unblock-main-downstream-synchronization-2026-08-13.md`
 - `docs/operacion/deploy_automatizado.md`
 - `docs/registro/prs/PR-2289.md`
+- `docs/registro/prs/PR-2290.md`
 - `docs/registro/releases/pending/2026-08-13-pr-2289.md`
 - `tests/test_deploy_workflow.py`
 - Documentación sugerida para ampliar contexto:
@@ -44,8 +46,10 @@
 - `docs/ia/ARCHITECTURE.md`
 - `docs/ia/TESTING.md`
 - `docs/contexto/features/pr-2289-release-pre-deploy-development-main-2026-08-13.md`
+- `docs/contexto/features/pr-2290-fix-ci-unblock-main-downstream-synchronization-2026-08-13.md`
 - `docs/operacion/deploy_automatizado.md`
 - `docs/registro/prs/PR-2289.md`
+- `docs/registro/prs/PR-2290.md`
 - `docs/registro/releases/pending/2026-08-13-pr-2289.md`
 
 ## Trazabilidad
