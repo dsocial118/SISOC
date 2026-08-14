@@ -15,7 +15,6 @@
                     <form method="post" novalidate>
                         {% csrf_token %}
                         {% include "user/_mi_cuenta_campos.html" %}
-                        <p class="text-muted small mb-3">Estos datos se usan para identificación y auditoría interna.</p>
                         <button class="poncho-btn poncho-btn--cta"
                                 type="submit"
                                 data-mi-cuenta-submit>Guardar datos</button>
