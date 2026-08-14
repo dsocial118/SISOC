@@ -31,7 +31,11 @@
 
 - Empezar por `docs/registro/prs/PR-2300.md` para contexto resumido del PR.
 - Revisar primero estos archivos del diff:
+- `CHANGELOG.md`
+- `docs/contexto/features/pr-2300-fix-users-quitar-declaracion-de-confirmacion-de-datos.md`
 - `docs/registro/cambios/2026-08-14-confirmacion-datos-sin-declaracion.md`
+- `docs/registro/prs/PR-2300.md`
+- `docs/registro/releases/pending/2026-08-19-pr-2300.md`
 - `tests/test_users_mi_cuenta.py`
 - `users/forms.py`
 - `users/templates/user/_mi_cuenta_campos.html`
@@ -42,7 +46,10 @@
 - `docs/ia/CONTEXT_HYGIENE.md`
 - `docs/ia/ARCHITECTURE.md`
 - `docs/ia/TESTING.md`
+- `docs/contexto/features/pr-2300-fix-users-quitar-declaracion-de-confirmacion-de-datos.md`
 - `docs/registro/cambios/2026-08-14-confirmacion-datos-sin-declaracion.md`
+- `docs/registro/prs/PR-2300.md`
+- `docs/registro/releases/pending/2026-08-19-pr-2300.md`
 
 ## Trazabilidad
 
