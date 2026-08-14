@@ -11,6 +11,7 @@ from django.views.generic import CreateView, DeleteView, TemplateView, View
 from admisiones.models.admisiones import Admision
 from ciudadanos.models import Ciudadano
 from comedores.forms.comedor_form import (
+    CiudadanoDatosComplementariosNominaForm,
     CiudadanoFormParaNomina,
     CiudadanoSinDniFormParaNomina,
     NominaExtraForm,
@@ -366,6 +367,8 @@ class NominaCreateView(LoginRequiredMixin, CreateView):
                 "form_ciudadano": form_ciudadano,
                 "form_ciudadano_sin_dni": form_ciudadano_sin_dni
                 or CiudadanoSinDniFormParaNomina(),
+                "form_datos_ciudadano": kwargs.get("form_datos_ciudadano")
+                or CiudadanoDatosComplementariosNominaForm(),
                 "modo_creacion": self.request.POST.get("modo_creacion", "con_dni"),
                 "form_nomina_extra": kwargs.get("form_nomina_extra")
                 or NominaExtraForm(comedor=admision.comedor),
@@ -409,9 +412,7 @@ class NominaCreateView(LoginRequiredMixin, CreateView):
         if ciudadano_id:
             # Validación server-side: no se puede agregar a un ciudadano en revisión.
             try:
-                _c = Ciudadano.objects.only("requiere_revision_manual").get(
-                    pk=ciudadano_id
-                )
+                _c = Ciudadano.objects.get(pk=ciudadano_id)
                 if _c.requiere_revision_manual:
                     messages.error(
                         request,
@@ -420,18 +421,23 @@ class NominaCreateView(LoginRequiredMixin, CreateView):
                     )
                     return redirect(self.get_success_url())
             except Ciudadano.DoesNotExist:
-                pass
+                messages.error(request, "El ciudadano seleccionado no existe.")
+                return redirect(self.get_success_url())
 
             # Agregar ciudadano existente
             form_nomina_extra = NominaExtraForm(request.POST, comedor=admision.comedor)
+            form_datos_ciudadano = CiudadanoDatosComplementariosNominaForm(
+                request.POST, instance=_c
+            )
 
-            if not form_nomina_extra.is_valid():
+            if not (form_nomina_extra.is_valid() and form_datos_ciudadano.is_valid()):
                 messages.error(
                     request,
                     "Datos inválidos para agregar ciudadano a la nómina.",
                 )
                 context = self.get_context_data(
                     form_nomina_extra=form_nomina_extra,
+                    form_datos_ciudadano=form_datos_ciudadano,
                 )
                 return self.render_to_response(context)
 
@@ -447,6 +453,7 @@ class NominaCreateView(LoginRequiredMixin, CreateView):
             )
 
             if ok:
+                form_datos_ciudadano.save()
                 nomina = _get_nomina_creada(
                     ciudadano_id=ciudadano_id,
                     admision_id=admision_id,
@@ -745,6 +752,8 @@ class NominaDirectaCreateView(LoginRequiredMixin, CreateView):
                 "form_ciudadano": form_ciudadano,
                 "form_ciudadano_sin_dni": form_ciudadano_sin_dni
                 or CiudadanoSinDniFormParaNomina(),
+                "form_datos_ciudadano": kwargs.get("form_datos_ciudadano")
+                or CiudadanoDatosComplementariosNominaForm(),
                 "modo_creacion": self.request.POST.get("modo_creacion", "con_dni"),
                 "form_nomina_extra": kwargs.get("form_nomina_extra")
                 or NominaExtraForm(comedor=comedor),
@@ -764,9 +773,7 @@ class NominaDirectaCreateView(LoginRequiredMixin, CreateView):
 
         if ciudadano_id:
             try:
-                _c = Ciudadano.objects.only("requiere_revision_manual").get(
-                    pk=ciudadano_id
-                )
+                _c = Ciudadano.objects.get(pk=ciudadano_id)
                 if _c.requiere_revision_manual:
                     messages.error(
                         request,
@@ -775,14 +782,21 @@ class NominaDirectaCreateView(LoginRequiredMixin, CreateView):
                     )
                     return redirect(self.get_success_url())
             except Ciudadano.DoesNotExist:
-                pass
+                messages.error(request, "El ciudadano seleccionado no existe.")
+                return redirect(self.get_success_url())
 
             form_nomina_extra = NominaExtraForm(request.POST, comedor=comedor)
-            if not form_nomina_extra.is_valid():
+            form_datos_ciudadano = CiudadanoDatosComplementariosNominaForm(
+                request.POST, instance=_c
+            )
+            if not (form_nomina_extra.is_valid() and form_datos_ciudadano.is_valid()):
                 messages.error(
                     request, "Datos inválidos para agregar ciudadano a la nómina."
                 )
-                context = self.get_context_data(form_nomina_extra=form_nomina_extra)
+                context = self.get_context_data(
+                    form_nomina_extra=form_nomina_extra,
+                    form_datos_ciudadano=form_datos_ciudadano,
+                )
                 return self.render_to_response(context)
 
             estado = form_nomina_extra.cleaned_data.get("estado")
@@ -796,6 +810,7 @@ class NominaDirectaCreateView(LoginRequiredMixin, CreateView):
                 comedor_id=comedor_id,
             )
             if ok:
+                form_datos_ciudadano.save()
                 nomina = _get_nomina_creada(
                     ciudadano_id=ciudadano_id,
                     comedor_id=comedor_id,

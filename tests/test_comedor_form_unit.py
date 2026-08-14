@@ -80,6 +80,14 @@ def test_comedor_form_requires_explicit_caritas_selection():
         field.clean("")
 
 
+def test_datos_complementarios_nomina_limita_los_campos_del_ciudadano():
+    assert list(module.CiudadanoDatosComplementariosNominaForm.base_fields) == [
+        "pertenece_comunidad_indigena",
+        "en_situacion_de_calle",
+        "persona_con_celiaquia",
+    ]
+
+
 def test_imagen_comedor_form_rejects_files_over_3mb():
     form = module.ImagenComedorForm.__new__(module.ImagenComedorForm)
 

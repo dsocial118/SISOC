@@ -254,8 +254,8 @@ def test_nomina_create_post_ciudadano_existente(mocker):
     # Mock de la validación de identidad agregada en Fix_dni
     _ciudadano_validado = SimpleNamespace(requiere_revision_manual=False)
     mocker.patch(
-        "comedores.views.nomina.Ciudadano.objects.only",
-        return_value=SimpleNamespace(get=lambda **kw: _ciudadano_validado),
+        "comedores.views.nomina.Ciudadano.objects.get",
+        return_value=_ciudadano_validado,
     )
     mocker.patch("comedores.views.nomina._get_nomina_creada", return_value=None)
 
@@ -263,6 +263,11 @@ def test_nomina_create_post_ciudadano_existente(mocker):
         is_valid=lambda: True, cleaned_data={"estado": "A", "observaciones": "o"}
     )
     mocker.patch("comedores.views.nomina.NominaExtraForm", return_value=form)
+    form_datos = SimpleNamespace(is_valid=lambda: True, save=mocker.Mock())
+    mocker.patch(
+        "comedores.views.nomina.CiudadanoDatosComplementariosNominaForm",
+        return_value=form_datos,
+    )
     mocker.patch(
         "comedores.views.nomina.ComedorService.agregar_ciudadano_a_nomina",
         return_value=(True, "ok"),
@@ -273,6 +278,7 @@ def test_nomina_create_post_ciudadano_existente(mocker):
 
     out = view.post(req)
     assert out == "redir"
+    form_datos.save.assert_called_once_with()
     redir.assert_called_once_with("/ok")
 
 
