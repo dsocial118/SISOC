@@ -23,7 +23,6 @@ def _form_data(**overrides):
         "dni": "12345678",
         "cuil": CUIL_VALIDO,
         "correo_institucional": "",
-        "declaracion_aceptada": "on",
     }
     data.update(overrides)
     return data
@@ -81,16 +80,6 @@ def test_form_acepta_correo_institucional_vacio():
 
 
 @pytest.mark.django_db
-def test_form_falla_sin_declaracion_aceptada():
-    user = _crear_usuario("ut2b")
-
-    form = MiCuentaForm(data=_form_data(declaracion_aceptada=""), instance=user)
-
-    assert form.is_valid() is False
-    assert "declaracion_aceptada" in form.errors
-
-
-@pytest.mark.django_db
 def test_form_rechaza_cuil_con_digito_verificador_invalido():
     user = _crear_usuario("ut2d")
 
@@ -118,7 +107,7 @@ def test_form_guarda_user_y_profile_y_limpia_flag():
     assert user.profile.dni == "12345678"
     assert user.profile.cuil == "20123456786"
     assert user.profile.correo_institucional == "ana@desarrollosocial.gob.ar"
-    assert user.profile.declaracion_aceptada is True
+    assert user.profile.declaracion_aceptada is False
     assert user.profile.needs_profile_confirmation is False
     assert user.profile.datos_confirmados_at is not None
 
@@ -133,13 +122,11 @@ def test_form_precarga_datos_del_perfil():
     user.profile.dni = "12345678"
     user.profile.cuil = "20123456786"
     user.profile.correo_institucional = "ana@desarrollosocial.gob.ar"
-    user.profile.declaracion_aceptada = True
     user.profile.save(
         update_fields=[
             "dni",
             "cuil",
             "correo_institucional",
-            "declaracion_aceptada",
         ]
     )
 
@@ -149,7 +136,7 @@ def test_form_precarga_datos_del_perfil():
     assert form.fields["dni"].initial == "12345678"
     assert form.fields["cuil"].initial == "20123456786"
     assert form.fields["correo_institucional"].initial == "ana@desarrollosocial.gob.ar"
-    assert form.fields["declaracion_aceptada"].initial is True
+    assert "declaracion_aceptada" not in form.fields
 
 
 # --- Middleware -------------------------------------------------------------
@@ -317,20 +304,37 @@ def test_boton_guardar_se_habilita_por_js_en_ambas_vistas(client, url_name):
 
 
 @pytest.mark.django_db
-def test_confirmacion_rechaza_guardado_sin_declaracion(client):
-    """El gate de JS no alcanza: el servidor también rechaza."""
-
+def test_confirmacion_no_muestra_declaracion(client):
     user = _crear_usuario("sin_declaracion", needs_profile_confirmation=True)
     client.force_login(user)
 
+    response = client.get(reverse("confirmar_datos_personales"))
+    html = response.content.decode()
+
+    assert "declaracion_aceptada" not in html
+    assert "Acepto que la información contenida" not in html
+    assert "Estos datos se usan para identificación y auditoría interna." not in html
+
     response = client.post(
         reverse("confirmar_datos_personales"),
-        data=_form_data(declaracion_aceptada=""),
+        data=_form_data(),
     )
 
-    assert response.status_code == 200
+    assert response.status_code in {302, 303}
     user.refresh_from_db()
-    assert user.profile.needs_profile_confirmation is True
+    assert user.profile.needs_profile_confirmation is False
+
+
+@pytest.mark.django_db
+def test_mi_cuenta_no_muestra_declaracion(client):
+    user = _crear_usuario("mi_cuenta_sin_declaracion")
+    client.force_login(user)
+
+    html = client.get(reverse("mi_cuenta")).content.decode()
+
+    assert "declaracion_aceptada" not in html
+    assert "Acepto que la información contenida" not in html
+    assert "Estos datos se usan para identificación y auditoría interna." not in html
 
 
 def test_sidebar_expone_mi_cuenta():

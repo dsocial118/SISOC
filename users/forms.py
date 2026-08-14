@@ -1208,18 +1208,6 @@ class UserImportForm(forms.Form):
 #
 # El texto original de UX estaba redactado como aviso en segunda persona
 # ("comprometiéndote a..."), que no funciona como leyenda de un checkbox: al
-# tildarlo el usuario tiene que estar declarando algo en primera persona. Se
-# reformuló la persona gramatical sin tocar el alcance normativo, y la parte
-# instructiva ("revisá y completá tus datos") se movió al encabezado del modal,
-# que es donde corresponde: eso se lee, no se acepta.
-TEXTO_DECLARACION = (
-    "Acepto que la información contenida en el sistema será utilizada "
-    "exclusivamente para el cumplimiento de las funciones autorizadas y me "
-    "comprometo a preservar su confidencialidad, de conformidad con la "
-    "normativa vigente."
-)
-
-
 class MiCuentaForm(forms.ModelForm):
     """Edición de los datos personales del propio usuario.
 
@@ -1253,12 +1241,6 @@ class MiCuentaForm(forms.ModelForm):
         label="Correo institucional",
         help_text="Opcional.",
     )
-    declaracion_aceptada = forms.BooleanField(
-        required=True,
-        label=TEXTO_DECLARACION,
-        error_messages={"required": "Debe aceptar la declaración para continuar."},
-    )
-
     class Meta:
         model = User
         fields = ["first_name", "last_name", "email"]
@@ -1278,7 +1260,6 @@ class MiCuentaForm(forms.ModelForm):
             self.fields["dni"].initial = profile.dni
             self.fields["cuil"].initial = profile.cuil
             self.fields["correo_institucional"].initial = profile.correo_institucional
-            self.fields["declaracion_aceptada"].initial = profile.declaracion_aceptada
 
     def clean_dni(self):
         dni = solo_digitos(self.cleaned_data.get("dni"))
@@ -1303,7 +1284,6 @@ class MiCuentaForm(forms.ModelForm):
             profile.dni = self.cleaned_data["dni"]
             profile.cuil = self.cleaned_data["cuil"]
             profile.correo_institucional = self.cleaned_data["correo_institucional"]
-            profile.declaracion_aceptada = self.cleaned_data["declaracion_aceptada"]
             profile.needs_profile_confirmation = False
             profile.datos_confirmados_at = timezone.now()
             profile.save(
@@ -1311,7 +1291,6 @@ class MiCuentaForm(forms.ModelForm):
                     "dni",
                     "cuil",
                     "correo_institucional",
-                    "declaracion_aceptada",
                     "needs_profile_confirmation",
                     "datos_confirmados_at",
                 ]
