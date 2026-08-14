@@ -35,6 +35,7 @@ class ResultadoPreflight:
     """Resultado sin efectos de validar el manifiesto y la base objetivo."""
 
     correcciones: dict[int, CorreccionExpediente] = field(default_factory=dict)
+    liberaciones: dict[int, str] = field(default_factory=dict)
     errores: list[str] = field(default_factory=list)
     advertencias: list[str] = field(default_factory=list)
 
@@ -46,6 +47,12 @@ class Command(BaseCommand):
     )
 
     manifest_sha256 = "CF9899747608D668B7B17FF41791E77E5D473B56D62EE1FD71CFDAF854387403"
+    transferencias_autorizadas = {
+        2072: 1627,
+        2469: 1490,
+        2052: 1218,
+        802: 842,
+    }
 
     def add_arguments(self, parser):
         modo = parser.add_mutually_exclusive_group()
@@ -80,6 +87,9 @@ class Command(BaseCommand):
 
         if verificar:
             errores = self._verificar_correcciones(resultado.correcciones, database)
+            errores.extend(
+                self._verificar_liberaciones(resultado.correcciones, database)
+            )
             if errores:
                 for error in errores:
                     self.stderr.write(self.style.ERROR(error))
@@ -108,7 +118,7 @@ class Command(BaseCommand):
             resultado = self._preflight(database=database, bloquear_filas=True)
             self._detener_si_hay_errores(resultado)
             actualizadas, historial_creado = self._aplicar_correcciones(
-                resultado.correcciones, database
+                resultado.correcciones, resultado.liberaciones, database
             )
 
         self.stdout.write(
@@ -140,13 +150,17 @@ class Command(BaseCommand):
             return resultado
 
         propietarios_actuales = self._obtener_propietarios_actuales(
-            resultado.correcciones, database
+            resultado.correcciones, database, bloquear_filas=bloquear_filas
         )
+        self._validar_propietarios_actuales(resultado, propietarios_actuales)
+
+        return resultado
+
+    def _validar_propietarios_actuales(self, resultado, propietarios_actuales):
         propietarios_esperados = {
             correccion.numero_expediente.upper(): correccion.admision_id
             for correccion in resultado.correcciones.values()
         }
-        ids_objetivo = set(resultado.correcciones)
         for numero_expediente, propietarios in propietarios_actuales.items():
             propietario_esperado = propietarios_esperados[numero_expediente]
             propietarios_en_conflicto = []
@@ -155,10 +169,20 @@ class Command(BaseCommand):
                     continue
                 correccion_del_propietario = resultado.correcciones.get(propietario)
                 if (
-                    propietario in ids_objetivo
+                    correccion_del_propietario
                     and correccion_del_propietario.numero_expediente.upper()
                     != numero_expediente
                 ):
+                    continue
+                if (
+                    self.transferencias_autorizadas.get(propietario_esperado)
+                    == propietario
+                ):
+                    resultado.liberaciones[propietario] = numero_expediente
+                    resultado.advertencias.append(
+                        "Se liberará el expediente autorizado de la admisión "
+                        f"{propietario} para asignarlo a {propietario_esperado}."
+                    )
                     continue
                 propietarios_en_conflicto.append(propietario)
             if propietarios_en_conflicto:
@@ -168,8 +192,6 @@ class Command(BaseCommand):
                     "asociado actualmente a "
                     f"{propietarios_en_conflicto})."
                 )
-
-        return resultado
 
     def _cargar_y_validar_manifiesto(self):
         resultado = ResultadoPreflight()
@@ -264,7 +286,7 @@ class Command(BaseCommand):
         return hashlib.sha256(contenido_normalizado).hexdigest().upper()
 
     @staticmethod
-    def _obtener_propietarios_actuales(correcciones, database):
+    def _obtener_propietarios_actuales(correcciones, database, *, bloquear_filas):
         expedientes = {
             correccion.numero_expediente.upper() for correccion in correcciones.values()
         }
@@ -277,6 +299,8 @@ class Command(BaseCommand):
             .filter(numero_normalizado__in=expedientes)
             .values_list("pk", "numero_normalizado")
         )
+        if bloquear_filas:
+            filas = filas.select_for_update()
         for admision_id, numero_expediente in filas:
             propietarios[numero_expediente].add(admision_id)
         return propietarios
@@ -315,18 +339,87 @@ class Command(BaseCommand):
             ]
         return []
 
+    def _verificar_liberaciones(self, correcciones, database):
+        ids_liberados = {
+            origen
+            for destino, origen in self.transferencias_autorizadas.items()
+            if destino in correcciones
+        }
+        valores_actuales = {
+            admision_id: (num_expediente, legales_num_if)
+            for admision_id, num_expediente, legales_num_if in (
+                Admision.objects.using(database)
+                .filter(pk__in=ids_liberados)
+                .values_list("pk", "num_expediente", "legales_num_if")
+            )
+        }
+        ids_faltantes = sorted(ids_liberados - set(valores_actuales))
+        if ids_faltantes:
+            return [
+                "La verificación no encontró todas las admisiones liberadas "
+                f"({len(ids_faltantes)} faltantes; ejemplo: {ids_faltantes[:5]})."
+            ]
+        pendientes = [
+            admision_id
+            for admision_id, (
+                num_expediente,
+                legales_num_if,
+            ) in valores_actuales.items()
+            if num_expediente is not None or legales_num_if is not None
+        ]
+        if pendientes:
+            return [
+                "La verificación encontró "
+                f"{len(pendientes)} admisiones con expedientes no liberados; "
+                f"ejemplos: {pendientes[:5]}."
+            ]
+        return []
+
     @staticmethod
-    def _aplicar_correcciones(correcciones, database):
+    def _aplicar_correcciones(correcciones, liberaciones, database):
         admisiones = list(
             Admision.objects.using(database)
             .select_for_update()
-            .filter(pk__in=correcciones)
+            .filter(pk__in=set(correcciones) | set(liberaciones))
             .order_by("pk")
         )
         historial = []
         actualizadas = []
 
         for admision in admisiones:
+            if admision.pk in liberaciones:
+                numero_liberado = liberaciones[admision.pk]
+                if (admision.num_expediente or "").upper() != numero_liberado:
+                    raise CommandError(
+                        "La admisión autorizada para liberar el expediente cambió "
+                        f"antes de aplicar la corrección ({admision.pk})."
+                    )
+                if admision.num_expediente is not None:
+                    historial.append(
+                        AdmisionHistorial(
+                            admision=admision,
+                            campo="Número de expediente",
+                            valor_anterior=admision.num_expediente,
+                            valor_nuevo=None,
+                            usuario=None,
+                        )
+                    )
+                if admision.legales_num_if is not None:
+                    historial.append(
+                        AdmisionHistorial(
+                            admision=admision,
+                            campo="Expediente en Legales",
+                            valor_anterior=admision.legales_num_if,
+                            valor_nuevo=None,
+                            usuario=None,
+                        )
+                    )
+                admision.num_expediente = None
+                admision.legales_num_if = None
+                admision.modificado = timezone.localdate()
+                actualizadas.append(admision)
+                continue
+
             numero_nuevo = correcciones[admision.pk].numero_expediente
             if admision.num_expediente != numero_nuevo:
                 historial.append(
