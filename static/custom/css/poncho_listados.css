@@ -20,10 +20,15 @@
   background: var(--poncho-azul-secundario);
 }
 
-/* La tarjeta contenedora desaparece: en el prototipo la tabla apoya
-   directamente sobre el fondo. */
-.app-main:has(.poncho-search) .card,
-.app-main:has(.poncho-search) .card .card-body {
+/* La tarjeta que envuelve la TABLA desaparece: en el prototipo la tabla apoya
+   directamente sobre el fondo.
+   Acotado con :has(.table) a proposito: hay vistas donde cada item ES una card
+   (comunicados publicos, por ejemplo). Sin el filtro, esas cards perdian fondo,
+   borde y padding, y el listado se desarmaba. */
+.app-main:has(.poncho-search) .card:has(.table),
+.app-main:has(.poncho-search) .card:has(.projects),
+.app-main:has(.poncho-search) .card:has(.table) > .card-body,
+.app-main:has(.poncho-search) .card:has(.projects) > .card-body {
   background: transparent;
   border: none;
   box-shadow: none;
@@ -36,14 +41,14 @@
    filtros (#province-filter-form). Sin estas reglas quedaba con la estetica
    vieja (fondo gris azulado, selects con borde dorado) al lado del buscador
    nuevo. Se cubre aca en vez de tocar ese template para no bifurcar estilos. */
-.app-main:has(.poncho-search) .card .card-header {
+.app-main:has(.poncho-search) .card:has(.table) .card-header {
   background: transparent;
   border-bottom: 1px solid rgba(255, 255, 255, .25);
   padding: 0 0 .75rem;
   margin-bottom: 1rem;
 }
 
-.app-main:has(.poncho-search) .card .card-title {
+.app-main:has(.poncho-search) .card:has(.table) .card-title {
   color: var(--poncho-blanco);
   font-family: var(--poncho-font-base);
   font-size: 1.5rem;
@@ -79,6 +84,54 @@
 .app-main:has(.poncho-search) #province-filter-form .btn:hover {
   background: var(--poncho-verde-hover);
   border-color: var(--poncho-verde-hover);
+}
+
+/* ---------- Cards de contenido ----------
+   Vistas donde cada item ES una card en vez de una fila de tabla (comunicados
+   publicos). No se vacian como la card que envuelve la tabla: se las lleva a
+   la paleta PONCHO para que acompañen al resto del listado. */
+.app-main:has(.poncho-search) .card:not(:has(.table)):not(:has(.projects)) {
+  background: var(--poncho-azul-principal);
+  border: 1px solid rgba(255, 255, 255, .18);
+  border-radius: var(--poncho-radio-buscador);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, .12);
+  color: var(--poncho-blanco);
+}
+
+.app-main:has(.poncho-search) .card:not(:has(.table)):not(:has(.projects)) .card-body {
+  padding: 1.25rem 1.5rem;
+}
+
+.app-main:has(.poncho-search) .card:not(:has(.table)):not(:has(.projects)) .card-title,
+.app-main:has(.poncho-search) .card:not(:has(.table)):not(:has(.projects)) .card-title a {
+  color: var(--poncho-blanco);
+  font-family: var(--poncho-font-base);
+  font-weight: 700;
+}
+
+.app-main:has(.poncho-search) .card:not(:has(.table)):not(:has(.projects)) .card-title a:hover {
+  color: var(--poncho-amarillo, #f7b446);
+}
+
+.app-main:has(.poncho-search) .card:not(:has(.table)):not(:has(.projects)) .card-text {
+  font-family: var(--poncho-font-base);
+}
+
+/* "Leer mas" con la forma de los CTA del design system */
+.app-main:has(.poncho-search) .card:not(:has(.table)):not(:has(.projects)) .btn-outline-primary {
+  background: transparent;
+  border: 1px solid var(--poncho-blanco);
+  border-radius: var(--poncho-radio-cta);
+  color: var(--poncho-blanco);
+  font-family: var(--poncho-font-base);
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.app-main:has(.poncho-search) .card:not(:has(.table)):not(:has(.projects)) .btn-outline-primary:hover {
+  background: var(--poncho-azul-secundario);
+  border-color: var(--poncho-blanco);
+  color: var(--poncho-blanco);
 }
 
 /* ---------- Tabla ---------- */
