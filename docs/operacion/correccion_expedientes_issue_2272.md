@@ -14,6 +14,12 @@ hasta nueve dígitos. La fuente contiene 470 admisiones únicas. No existe una
 regla especial de exclusión: como las admisiones 1448, 1794, 2314 y 2462 no
 figuran en el manifiesto, el comando simplemente las deja intactas.
 
+El CSV prevalece, con autorización operativa, sobre cuatro ocupaciones
+históricas detectadas en PRD: el comando libera ambos campos de 1627, 1490,
+1218 y 842 para asignar los expedientes a 2072, 2469, 2052 y 802. Cualquier
+otra colisión continúa bloqueando el preflight. La aplicación y `--verify`
+registran y comprueban esas liberaciones.
+
 No existe ni debe improvisarse una opción `--manifest` en el host. Cualquier
 nueva fuente requiere un cambio revisado que actualice el CSV y
 `manifest_sha256` antes de desplegarse.

@@ -32,6 +32,12 @@ fuente anterior, no aparecen en la fuente nueva. No existe una regla especial
 de exclusión: el comando actualiza solamente los IDs presentes en el manifiesto
 y deja intactas las demás admisiones.
 
+Con autorización explícita, el comando libera ambos campos de expediente en
+las admisiones 1627, 1490, 1218 y 842 antes de asignar esos números a 2072,
+2469, 2052 y 802, respectivamente. La liberación sólo se permite si la
+ocupación observada coincide exactamente con uno de esos cuatro pares, queda en
+historial y `--verify` confirma que los campos liberados quedaron vacíos.
+
 ## Siguiente paso operativo
 
 La fuente aprobada queda versionada junto con su checksum. No se acepta un
