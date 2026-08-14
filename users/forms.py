@@ -1241,6 +1241,7 @@ class MiCuentaForm(forms.ModelForm):
         label="Correo institucional",
         help_text="Opcional.",
     )
+
     class Meta:
         model = User
         fields = ["first_name", "last_name", "email"]
