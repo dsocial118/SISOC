@@ -327,7 +327,7 @@ def build_export_data(  # pylint: disable=too-many-locals
 
 
 def _register_fonts():
-    global FONT_REGULAR, FONT_BOLD
+    global FONT_REGULAR, FONT_BOLD  # pylint: disable=global-statement
     if "SISOCArial" in pdfmetrics.getRegisteredFontNames():
         FONT_REGULAR = "SISOCArial"
         FONT_BOLD = "SISOCArial-Bold"
@@ -376,7 +376,7 @@ def _header_footer(canvas_obj, _doc, export_data):
     canvas_obj.restoreState()
 
 
-class _NumberedCanvas(canvas.Canvas):
+class _NumberedCanvas(canvas.Canvas):  # pylint: disable=abstract-method
     def __init__(self, *args, export_data, **kwargs):
         super().__init__(*args, **kwargs)
         self._saved_page_states = []
