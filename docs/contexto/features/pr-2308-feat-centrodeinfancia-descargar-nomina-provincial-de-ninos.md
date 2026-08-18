@@ -26,7 +26,7 @@
 ## Design system y UI
 
 - El PR toca piezas de UI y conviene revisar consistencia visual con el patrón existente.
-- Archivos visuales relevantes: centrodeinfancia/templates/centrodeinfancia/centrodeinfancia_list.html, templates/components/search_bar.html
+- Archivos visuales relevantes: centrodeinfancia/templates/centrodeinfancia/centrodeinfancia_list.html, static/custom/css/comedoresSearchBar.css, templates/components/search_bar.html
 
 ## Memoria operativa para agentes
 
@@ -44,6 +44,7 @@
 - `docs/contexto/features/pr-2307-feat-centrodeinfancia-descargar-nomina-provincial-de-ninos-hml.md`
 - `docs/contexto/features/pr-2308-feat-centrodeinfancia-descargar-nomina-provincial-de-ninos.md`
 - `docs/contexto/features/pr-2311-fix-centrodeinfancia-asegurar-nomina-provincial-unica-hml.md`
+- `docs/contexto/features/pr-2312-feat-centrodeinfancia-habilitar-descarga-superadmin-hml.md`
 - `docs/plans/2026-08-18-simepi-descarga-nomina-ninos-design.md`
 - `docs/plans/2026-08-18-simepi-descarga-nomina-ninos-plan.md`
 - `docs/plans/2026-08-18-simepi-superadmin-nomina-provincial-design.md`
@@ -51,8 +52,7 @@
 - `docs/registro/cambios/2026-08-18-simepi-descarga-nomina-ninos.md`
 - `docs/registro/prs/PR-2307.md`
 - `docs/registro/prs/PR-2308.md`
-- `docs/registro/prs/PR-2311.md`
-- ... y 2 archivo(s) adicional(es) relacionados.
+- ... y 5 archivo(s) adicional(es) relacionados.
 - Documentación sugerida para ampliar contexto:
 - `docs/indice.md`
 - `docs/ia/CONTEXT_HYGIENE.md`
@@ -61,6 +61,7 @@
 - `docs/contexto/features/pr-2307-feat-centrodeinfancia-descargar-nomina-provincial-de-ninos-hml.md`
 - `docs/contexto/features/pr-2308-feat-centrodeinfancia-descargar-nomina-provincial-de-ninos.md`
 - `docs/contexto/features/pr-2311-fix-centrodeinfancia-asegurar-nomina-provincial-unica-hml.md`
+- `docs/contexto/features/pr-2312-feat-centrodeinfancia-habilitar-descarga-superadmin-hml.md`
 - `docs/plans/2026-08-18-simepi-descarga-nomina-ninos-design.md`
 - `docs/plans/2026-08-18-simepi-descarga-nomina-ninos-plan.md`
 - `docs/plans/2026-08-18-simepi-superadmin-nomina-provincial-design.md`
@@ -69,6 +70,7 @@
 - `docs/registro/prs/PR-2307.md`
 - `docs/registro/prs/PR-2308.md`
 - `docs/registro/prs/PR-2311.md`
+- `docs/registro/prs/PR-2312.md`
 - `docs/registro/releases/pending/2026-08-19-pr-2308.md`
 
 ## Trazabilidad
