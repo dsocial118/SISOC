@@ -27,7 +27,7 @@
 ## Design system y UI
 
 - El PR toca piezas de UI y conviene revisar consistencia visual con el patrón existente.
-- Archivos visuales relevantes: centrodeinfancia/templates/centrodeinfancia/destinatario_detail.html, centrodeinfancia/templates/centrodeinfancia/destinatario_form.html, static/custom/js/destinatarioForm.js, static/custom/js/trabajadorForm.js, templates/includes/sidebar/opciones.html
+- Archivos visuales relevantes: centrodeinfancia/templates/centrodeinfancia/destinatario_detail.html, centrodeinfancia/templates/centrodeinfancia/destinatario_form.html, centrodeinfancia/templates/centrodeinfancia/nomina_form.html, centrodeinfancia/templates/centrodeinfancia/nomina_form_edit.html, centrodeinfancia/templates/centrodeinfancia/nomina_formulario_detail.html, static/custom/js/destinatarioForm.js, static/custom/js/trabajadorForm.js, templates/includes/sidebar/opciones.html
 
 ## Memoria operativa para agentes
 
@@ -38,8 +38,13 @@
 - `centrodeinfancia/access.py`
 - `centrodeinfancia/apps.py`
 - `centrodeinfancia/forms.py`
+- `centrodeinfancia/migrations/0044_nominacentroinfancia_departamento.py`
+- `centrodeinfancia/models.py`
 - `centrodeinfancia/templates/centrodeinfancia/destinatario_detail.html`
 - `centrodeinfancia/templates/centrodeinfancia/destinatario_form.html`
+- `centrodeinfancia/templates/centrodeinfancia/nomina_form.html`
+- `centrodeinfancia/templates/centrodeinfancia/nomina_form_edit.html`
+- `centrodeinfancia/templates/centrodeinfancia/nomina_formulario_detail.html`
 - `centrodeinfancia/tests/test_access_scope_centrodeinfancia.py`
 - `centrodeinfancia/tests/test_automatic_user_provisioning.py`
 - `centrodeinfancia/tests/test_destinatario_form.py`
@@ -48,12 +53,7 @@
 - `comunicados/migrations/0010_archive_importacion_nomina.py`
 - `docs/contexto/features/pr-2306-fix-cdi-resolver-urgentes-del-issue-2304.md`
 - `docs/contexto/features/pr-2310-fix-cdi-resolver-urgentes-del-issue-2304.md`
-- `docs/plans/2026-08-18-issue-2304-urgentes-cdi-design.md`
-- `docs/registro/cambios/2026-08-18-issue-2304-urgentes-cdi.md`
-- `docs/registro/prs/PR-2306.md`
-- `docs/registro/prs/PR-2310.md`
-- `docs/registro/releases/pending/2026-08-26-pr-2310.md`
-- ... y 8 archivo(s) adicional(es) relacionados.
+- ... y 14 archivo(s) adicional(es) relacionados.
 - Documentación sugerida para ampliar contexto:
 - `docs/indice.md`
 - `docs/ia/CONTEXT_HYGIENE.md`
@@ -62,6 +62,7 @@
 - `docs/contexto/features/pr-2306-fix-cdi-resolver-urgentes-del-issue-2304.md`
 - `docs/contexto/features/pr-2310-fix-cdi-resolver-urgentes-del-issue-2304.md`
 - `docs/plans/2026-08-18-issue-2304-urgentes-cdi-design.md`
+- `docs/registro/cambios/2026-08-18-issue-2304-nomina-domicilio-sala.md`
 - `docs/registro/cambios/2026-08-18-issue-2304-urgentes-cdi.md`
 - `docs/registro/prs/PR-2306.md`
 - `docs/registro/prs/PR-2310.md`
