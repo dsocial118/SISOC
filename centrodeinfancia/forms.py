@@ -932,6 +932,53 @@ class NominaCentroInfanciaBaseForm(forms.ModelForm):
         self.fields["edad_calculada"].widget.attrs["readonly"] = True
         self.fields["edad_calculada"].widget.attrs["tabindex"] = "-1"
 
+    def _resolve_department(self, provincia):
+        departamento_initial = self.initial.get("departamento")
+        departamento = DepartamentoIpi.objects.filter(
+            pk=self._parse_geography_pk(self.data.get(self.add_prefix("departamento")))
+        ).first() or getattr(self.instance, "departamento", None)
+        if (
+            not departamento
+            and departamento_initial
+            and not isinstance(departamento_initial, DepartamentoIpi)
+        ):
+            departamento_queryset = DepartamentoIpi.objects.filter(provincia=provincia)
+            if not provincia:
+                departamento_queryset = DepartamentoIpi.objects.all()
+            departamento = self._resolve_geography_by_name(
+                departamento_queryset, departamento_initial
+            )
+        return departamento
+
+    def _configure_department_field(self, provincia):
+        departamento = self._resolve_department(provincia)
+        self.fields["departamento"].queryset = (
+            DepartamentoIpi.objects.filter(provincia=provincia).order_by("nombre")
+            if provincia
+            else DepartamentoIpi.objects.none()
+        )
+        if departamento:
+            self.fields["departamento"].initial = departamento
+            self.fields["decil_ipi"].initial = (
+                str(departamento.decil_ipi)
+                if departamento.decil_ipi is not None
+                else ""
+            )
+
+    @staticmethod
+    def _parse_geography_pk(value):
+        return int(value) if value and str(value).isdigit() else None
+
+    @staticmethod
+    def _resolve_geography_by_name(queryset, value):
+        normalized = slugify(str(value or "").strip())
+        if not normalized:
+            return None
+        for item in queryset.order_by("nombre"):
+            if slugify(str(item.nombre or "").strip()) == normalized:
+                return item
+        return None
+
     def _configure_geography_fields(self):
         def parse_pk(value):
             return int(value) if value and str(value).isdigit() else None
@@ -949,7 +996,6 @@ class NominaCentroInfanciaBaseForm(forms.ModelForm):
             return None
 
         provincia_initial = self.initial.get("provincia_domicilio")
-        departamento_initial = self.initial.get("departamento")
         municipio_initial = self.initial.get("municipio_domicilio")
         localidad_initial = self.initial.get("localidad_domicilio")
 
@@ -989,37 +1035,12 @@ class NominaCentroInfanciaBaseForm(forms.ModelForm):
                 localidad_queryset = Localidad.objects.all()
             localidad = resolve_by_name(localidad_queryset, localidad_initial)
 
-        departamento = DepartamentoIpi.objects.filter(
-            pk=parse_pk(self.data.get(self.add_prefix("departamento")))
-        ).first() or getattr(self.instance, "departamento", None)
-        if (
-            not departamento
-            and departamento_initial
-            and not isinstance(departamento_initial, DepartamentoIpi)
-        ):
-            departamento_queryset = DepartamentoIpi.objects.filter(provincia=provincia)
-            if not provincia:
-                departamento_queryset = DepartamentoIpi.objects.all()
-            departamento = resolve_by_name(departamento_queryset, departamento_initial)
-
         self.fields["provincia_domicilio"].queryset = Provincia.objects.all().order_by(
             "nombre"
         )
         if provincia:
             self.fields["provincia_domicilio"].initial = provincia
-        if provincia:
-            self.fields["departamento"].queryset = DepartamentoIpi.objects.filter(
-                provincia=provincia
-            ).order_by("nombre")
-        else:
-            self.fields["departamento"].queryset = DepartamentoIpi.objects.none()
-        if departamento:
-            self.fields["departamento"].initial = departamento
-            self.fields["decil_ipi"].initial = (
-                str(departamento.decil_ipi)
-                if departamento.decil_ipi is not None
-                else ""
-            )
+        self._configure_department_field(provincia)
         if provincia:
             self.fields["municipio_domicilio"].queryset = Municipio.objects.filter(
                 provincia=provincia
