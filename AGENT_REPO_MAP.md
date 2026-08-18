@@ -13,7 +13,7 @@ Mapa practico del repositorio `SISOC` para futuros agentes de IA y desarrollador
 ### Hechos observados
 
 - Es un monolito Django grande, modularizado por apps de dominio, con backend renderizado por templates y APIs DRF convivientes.
-- El stack principal es Python 3.11 + Django 4.2 + MySQL 8 + Docker Compose.
+- El stack principal es Python 3.11 + Django 5.2 LTS + MySQL 8 + Docker Compose.
 - La operacion local y CI estan pensadas en modo Docker-first.
 - El repo mezcla backoffice web tradicional, APIs internas/server-to-server, flujos asincronos simples sin Celery, y una capa PWA/API para ciertos casos de uso.
 - La logica de negocio suele vivir en `services/` cuando la app la tiene, pero coexisten apps mas legacy con mas logica en `views.py`, `models.py` o `tasks.py`.
@@ -32,7 +32,7 @@ Mapa practico del repositorio `SISOC` para futuros agentes de IA y desarrollador
 | Item | Estado | Evidencia |
 | --- | --- | --- |
 | Python 3.11 | Hecho observado | `pyproject.toml`, workflows CI |
-| Django 4.2.27 | Hecho observado | `requirements/base.txt` |
+| Django 5.2.16 | Hecho observado | `requirements/base.txt` |
 | Django REST Framework | Hecho observado | `requirements/base.txt`, `config/settings.py` |
 | drf-spectacular | Hecho observado | `requirements/base.txt`, `config/urls.py` |
 | Gunicorn | Hecho observado | `requirements/base.txt`, `docker/django/entrypoint.py` |
@@ -489,6 +489,7 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - El Informe Tecnico Complementario se abre tanto desde Admision como desde el
   convenio seleccionado en `acompanamientos/views.py` y
   `acompanamientos/templates/acompañamiento_detail.html`.
+- Documentación canónica: `docs/implementaciones/admisiones_informes_tecnicos.md`.
 
 ### Si necesitas cambiar PWA
 
@@ -502,7 +503,9 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
   `pwa/services/nomina_queryset_service.py`
 - frontend: `mobile/src/api/` y `mobile/src/features/home/`
 - tests `tests/test_pwa_*`
-- docs: `docs/implementaciones/pwa_backend.md`, `docs/seguridad/security_baseline_pwa.md`
+- docs: `docs/implementaciones/pwa_backend.md`,
+  `docs/implementaciones/comedores_certificaciones_prestaciones.md`,
+  `docs/seguridad/security_baseline_pwa.md`
 
 ### Si necesitas cambiar documentos DOCX/PDF de prestaciones o nóminas
 
@@ -519,6 +522,7 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - listado y detalle del legajo: `organizaciones/views.py` y templates `organizacion_*`
 - proyectos editables: `OrganizacionForm.codigos_proyecto` mantiene el contrato CSV mediante un campo oculto
 - tests: `tests/test_rendicioncuentasmensual_services_unit.py` y `organizaciones/tests.py`
+- documentación canónica: `docs/flujos/rendiciones_mensuales_proyectos.md`
 
 ### Si necesitas cambiar OCR / procesamiento documental
 
@@ -806,8 +810,9 @@ Marcar esas zonas como `A inferir` hasta relevarlas cuando una tarea real las to
 - `.github/workflows/sync-main-downstream.yml`
 - `.github/workflows/pr-docs.yml`: genera los artefactos spec-as-source; usa
   `git status --porcelain --untracked-files=all` para incluir archivos nuevos.
-  Solo pushea en ramas internas no protegidas; para forks y ramas protegidas
-  falla `sync_pr_artifacts` con los paths pendientes para bloquear el merge.
+  Solo pushea en ramas internas no protegidas; `sync_pr_artifacts` verifica
+  también forks y ramas protegidas. Los PRs hacia `main` requieren además
+  release note pendiente y `CHANGELOG.md` ya versionados.
 - `.github/workflows/deploy.yml`
 - `scripts/ai/codex_run.ps1`
 - `scripts/ai/codex_task.ps1`

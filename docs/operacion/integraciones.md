@@ -17,3 +17,8 @@
 - RENAPER: cliente HTTP compartido en `core/integrations/renaper.py`, con autenticación efímera por consulta y fachada compatible en `core/services/renaper.py`; credenciales `RENAPER_API_*`, timeout y retries/backoff configurables. No persiste tokens en cache ni registra DNI, tokens o payloads remotos.
 - Google Maps: clave opcional `GOOGLE_MAPS_API_KEY`. Evidencia: config/settings.py:241.
 - Correo saliente: Django usa `send_mail` y puede operar con backend SMTP. Para Resend, la configuración recomendada es `EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend`, `EMAIL_HOST=smtp.resend.com`, `EMAIL_PORT=587`, `EMAIL_HOST_USER=resend`, `EMAIL_HOST_PASSWORD=<API_KEY>`, `EMAIL_USE_TLS=true`, `EMAIL_USE_SSL=false` y un `DEFAULT_FROM_EMAIL` verificado en el proveedor. Si falta alguno de los datos críticos del SMTP, SISOC vuelve al backend de consola para no romper entornos locales. Evidencia: config/settings.py:189-242; users/services_auth.py:45-81.
+- Recuperación PWA: `PWA_BASE_URL` debe ser la URL pública del frontend Mobile
+  del ambiente, sin slash final. Se usa para construir enlaces de recuperación
+  con `uid` y `token`; en HML/PRD configurarla explícitamente antes de habilitar
+  el flujo y verificar que llegue al frontend esperado. Evidencia:
+  `users/services_auth.py` y `config/settings.py`.
