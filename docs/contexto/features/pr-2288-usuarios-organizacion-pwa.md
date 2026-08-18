@@ -20,8 +20,7 @@
 - Tipo de cambio declarado: Mejora funcional (automatización de una tarea manual) con modelo nuevo y migración de datos.
 - Área principal declarada: users / comedores — accesos PWA (AccesoComedorPWA, AccesoOrganizacionPWA).
 - Impacto usuario declarado: Los administradores dejan de actualizar usuario por usuario cada vez que se da de alta un comedor. Los usuarios de organización dejan de quedar sin acceso a comedores nuevos. No cambia la regla de visibilidad por estado ni el alcance de los usuarios asociados por espacio.
-- Contrato confirmado por issue #2094: una organización representa la totalidad de sus comedores actuales y futuros; no se preservan exclusiones manuales dentro de una organización seleccionada.
-- Riesgos / rollback: la propagación, soft-delete y restore corren dentro de la transacción del comedor; un error revierte ambos dominios y GESTIONAR se notifica sólo después del commit. `queryset.update()` y `bulk_create()` no disparan signals, por lo que requieren el comando de catch-up. El dry-run es de sólo lectura y `--apply` transacciona por organización. Revertir migraciones no elimina automáticamente accesos ya materializados: un rollback funcional exige snapshot y reconciliación explícita.
+- Riesgos / rollback: Riesgo acotado. La propagación corre dentro de la transacción del guardado del comedor y solo escribe tablas de users, así que un error ahí haría fallar el guardado del comedor. Los cambios hechos con queryset.update() no disparan señales (hoy ningún flujo actualiza Comedor.organizacion por esa vía); el comando de catch-up cubre ese caso. El comando recalcula la organización completa, por lo que repone espacios deseleccionados a mano: correr siempre el dry-run primero. Rollback: revertir los 3 commits y aplicar migrate users 0045 (0047 borra las membresías, 0046 elimina la tabla); los accesos por comedor existentes no se tocan.
 
 ## Design system y UI
 
@@ -31,23 +30,35 @@
 
 - Empezar por `docs/registro/prs/PR-2288.md` para contexto resumido del PR.
 - Revisar primero estos archivos del diff:
+- `AGENT_REPO_MAP.md`
 - `comedores/management/commands/sincronizar_accesos_pwa_organizaciones.py`
+- `comedores/models.py`
 - `comedores/signals.py`
+- `docs/contexto/features/pr-2288-usuarios-organizacion-pwa.md`
+- `docs/operacion/comandos_administracion.md`
+- `docs/plans/2026-08-18-pr-2288-accesos-organizacion-hardening-design.md`
 - `docs/registro/cambios/2026-08-12-accesos-pwa-organizacion-automaticos.md`
+- `docs/registro/prs/PR-2288.md`
 - `tests/test_pwa_accesos_organizacion.py`
-- `users/forms.py`
+- `tests/test_pwa_comedores_api.py`
+- `tests/test_pwa_mensajes_api.py`
+- `tests/test_users_pwa_forms.py`
 - `users/api.py`
+- `users/forms.py`
 - `users/migrations/0046_acceso_organizacion_pwa.py`
 - `users/migrations/0047_backfill_acceso_organizacion_pwa.py`
 - `users/models.py`
 - `users/services_pwa.py`
-- `comedores/models.py`
 - Documentación sugerida para ampliar contexto:
 - `docs/indice.md`
 - `docs/ia/CONTEXT_HYGIENE.md`
 - `docs/ia/ARCHITECTURE.md`
 - `docs/ia/TESTING.md`
+- `docs/contexto/features/pr-2288-usuarios-organizacion-pwa.md`
+- `docs/operacion/comandos_administracion.md`
+- `docs/plans/2026-08-18-pr-2288-accesos-organizacion-hardening-design.md`
 - `docs/registro/cambios/2026-08-12-accesos-pwa-organizacion-automaticos.md`
+- `docs/registro/prs/PR-2288.md`
 
 ## Trazabilidad
 
