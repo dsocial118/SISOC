@@ -54,6 +54,8 @@ El desarrollo parte de `main` y se publica en un único PR dirigido a
   comunicados.
 - Compilación de los Python modificados y validación de sintaxis de los dos
   JavaScript del flujo.
+- Import Linter 2.12: 15 contratos mantenidos y 0 rotos.
+- Black 24.8.0 y DJLint 1.43.2: sin cambios pendientes.
 - `git diff --check` para consistencia del diff.
 - La ejecución local de pytest queda condicionada por el entorno: el Python
   global no tiene `crispy_forms` y los entornos virtuales versionados apuntan a
