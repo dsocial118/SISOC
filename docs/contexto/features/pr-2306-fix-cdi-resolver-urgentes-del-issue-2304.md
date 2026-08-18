@@ -27,7 +27,7 @@
 ## Design system y UI
 
 - El PR toca piezas de UI y conviene revisar consistencia visual con el patrón existente.
-- Archivos visuales relevantes: centrodeinfancia/templates/centrodeinfancia/destinatario_detail.html, centrodeinfancia/templates/centrodeinfancia/destinatario_form.html, static/custom/js/destinatarioForm.js, static/custom/js/trabajadorForm.js, templates/includes/sidebar/new_opciones.html, templates/includes/sidebar/opciones.html
+- Archivos visuales relevantes: centrodeinfancia/templates/centrodeinfancia/destinatario_detail.html, centrodeinfancia/templates/centrodeinfancia/destinatario_form.html, static/custom/js/destinatarioForm.js, static/custom/js/trabajadorForm.js, templates/includes/sidebar/opciones.html
 
 ## Memoria operativa para agentes
 
@@ -52,8 +52,8 @@
 - `iam/services.py`
 - `static/custom/js/destinatarioForm.js`
 - `static/custom/js/trabajadorForm.js`
-- `templates/includes/sidebar/new_opciones.html`
-- ... y 5 archivo(s) adicional(es) relacionados.
+- `templates/includes/sidebar/opciones.html`
+- ... y 4 archivo(s) adicional(es) relacionados.
 - Documentación sugerida para ampliar contexto:
 - `docs/indice.md`
 - `docs/ia/CONTEXT_HYGIENE.md`
