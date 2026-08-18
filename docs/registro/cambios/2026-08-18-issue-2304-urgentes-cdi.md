@@ -30,8 +30,9 @@ El desarrollo parte de `main` y se publica en un único PR dirigido a
   Sala también es obligatoria para CDI y vuelve a enviarse al guardar. El
   correo es obligatorio únicamente al crear, para generar el usuario
   automático; una edición histórica todavía admite registros sin correo.
-- El enlace lateral a Grupos sólo se renderiza con `auth.view_group`. No se
-  amplían permisos y el endpoint conserva su protección ante acceso directo.
+- En el sidebar vigente (`templates/includes/sidebar/opciones.html`), el enlace
+  a Grupos sólo se renderiza con `auth.view_group`. No se amplían permisos y el
+  endpoint conserva su protección ante acceso directo.
 - La migración `comunicados.0010` archiva y quita de destacados los comunicados
   internos publicados cuyo título empieza con `Importación de nómina`. No
   elimina registros.
