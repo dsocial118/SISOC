@@ -186,9 +186,14 @@ class TestNominaCentroInfanciaDestinatariosFormValidation:
             nombre="Capital",
         )
         form = NominaCentroInfanciaDestinatariosForm(centro=centro)
-        assert list(
-            form.fields["departamento"].queryset.values_list("provincia_id", flat=True)
-        ) == []
+        assert (
+            list(
+                form.fields["departamento"].queryset.values_list(
+                    "provincia_id", flat=True
+                )
+            )
+            == []
+        )
 
         form = NominaCentroInfanciaDestinatariosForm(
             datos_validos(centro), centro=centro
