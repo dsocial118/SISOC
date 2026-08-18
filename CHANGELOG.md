@@ -5,6 +5,7 @@
 
 - [sin-area] fix(admisiones): autorizar transferencias issue 2272. (PR #2296)
 - [sin-area] fix(users): quitar declaración de confirmación de datos. (PR #2300)
+- [sin-area] fix(cdi): resolver urgentes del issue 2304. (PR #2310)
 <!-- AUTO-GENERATED RELEASE END: 2026-08-19 -->
 
 <!-- AUTO-GENERATED RELEASE START: 2026-08-13 -->
