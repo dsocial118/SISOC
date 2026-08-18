@@ -110,13 +110,9 @@ def _date_text(value):
 
 def _normalize(value):
     normalized = unicodedata.normalize("NFKD", str(value or ""))
-    return (
-        " ".join(
-            "".join(
-                char for char in normalized if not unicodedata.combining(char)
-            ).split()
-        ).casefold()
-    )
+    return " ".join(
+        "".join(char for char in normalized if not unicodedata.combining(char)).split()
+    ).casefold()
 
 
 def _calculate_age(birth_date, unit, as_of):
@@ -124,8 +120,10 @@ def _calculate_age(birth_date, unit, as_of):
         return None
     if birth_date > as_of:
         return None
-    years = as_of.year - birth_date.year - (
-        (as_of.month, as_of.day) < (birth_date.month, birth_date.day)
+    years = (
+        as_of.year
+        - birth_date.year
+        - ((as_of.month, as_of.day) < (birth_date.month, birth_date.day))
     )
     if unit == "anios":
         return years
@@ -160,9 +158,11 @@ def _build_adult_validation_map(documentos):
     ).values_list("documento", "estado_validacion_renaper"):
         matches[str(documento)].append(estado)
     return {
-        documento: "Sí"
-        if len(estados) == 1 and estados[0] == Ciudadano.RENAPER_VALIDADO
-        else "No"
+        documento: (
+            "Sí"
+            if len(estados) == 1 and estados[0] == Ciudadano.RENAPER_VALIDADO
+            else "No"
+        )
         for documento, estados in matches.items()
     }
 
@@ -353,12 +353,7 @@ def _register_fonts():
 
 
 def _escape_paragraph(value):
-    return (
-        str(value)
-        .replace("&", "&amp;")
-        .replace("<", "&lt;")
-        .replace(">", "&gt;")
-    )
+    return str(value).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
 
 def _paragraph(value, style):

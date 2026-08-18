@@ -58,9 +58,7 @@ def _create_child(documento, *, validated=True, birth_date=date(2020, 1, 15)):
         fecha_nacimiento=birth_date,
         documento=documento,
         estado_validacion_renaper=(
-            Ciudadano.RENAPER_VALIDADO
-            if validated
-            else Ciudadano.RENAPER_NO_VALIDADO
+            Ciudadano.RENAPER_VALIDADO if validated else Ciudadano.RENAPER_NO_VALIDADO
         ),
     )
 
