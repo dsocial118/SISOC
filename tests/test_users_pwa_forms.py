@@ -11,7 +11,12 @@ from users.forms import (
     CustomUserChangeForm,
     UserCreationForm,
 )
-from users.models import AccesoComedorPWA, AuditAccesoComedorPWA
+from users.models import (
+    AccesoComedorPWA,
+    AccesoOrganizacionPWA,
+    AuditAccesoComedorPWA,
+)
+from users.services_pwa import get_access_rows
 
 MOBILE_RENDICION_PERMISSION_CODE = "rendicioncuentasmensual.manage_mobile_rendicion"
 
@@ -69,7 +74,7 @@ def test_user_creation_form_requires_some_mobile_scope():
 
 
 @pytest.mark.django_db
-def test_user_creation_form_requires_visible_space_for_mobile_user(comedor):
+def test_user_creation_form_expands_organization_without_explicit_spaces(comedor):
     form = UserCreationForm(
         data={
             "username": "rep_forms_org",
@@ -81,8 +86,16 @@ def test_user_creation_form_requires_visible_space_for_mobile_user(comedor):
         }
     )
 
-    assert form.is_valid() is False
-    assert "comedores_pwa" in form.errors
+    assert form.is_valid(), form.errors
+    user = form.save()
+
+    assert AccesoComedorPWA.objects.filter(
+        user=user,
+        comedor=comedor,
+        organizacion_id=comedor.organizacion_id,
+        tipo_asociacion=AccesoComedorPWA.TIPO_ASOCIACION_ORGANIZACION,
+        activo=True,
+    ).exists()
 
 
 @pytest.mark.django_db
@@ -189,6 +202,63 @@ def test_custom_user_change_form_deactivates_mobile_access(comedor):
         acceso=acceso,
         accion=AuditAccesoComedorPWA.ACCION_DEACTIVATE,
     ).exists()
+
+
+@pytest.mark.django_db
+def test_custom_user_change_form_preserves_org_without_current_spaces(comedor):
+    create_form = UserCreationForm(
+        data={
+            "username": "rep_org_without_spaces",
+            "tipo_usuario": "interno",
+            "email": "rep_org_without_spaces@example.com",
+            "es_representante_pwa": True,
+            "tipo_asociacion_pwa": AccesoComedorPWA.TIPO_ASOCIACION_ORGANIZACION,
+            "organizaciones_pwa": [comedor.organizacion_id],
+            "comedores_pwa": [comedor.id],
+        }
+    )
+    assert create_form.is_valid(), create_form.errors
+    user = create_form.save()
+    organizacion_original = comedor.organizacion
+
+    comedor.organizacion = Organizacion.objects.create(nombre="Organización Destino")
+    comedor.save(update_fields=["organizacion"])
+
+    initial_form = CustomUserChangeForm(instance=user)
+    assert initial_form.fields["es_representante_pwa"].initial is True
+    assert (
+        initial_form.fields["tipo_asociacion_pwa"].initial
+        == AccesoComedorPWA.TIPO_ASOCIACION_ORGANIZACION
+    )
+
+    edit_form = CustomUserChangeForm(
+        instance=user,
+        data={
+            "username": user.username,
+            "tipo_usuario": "interno",
+            "email": "rep_org_updated@example.com",
+            "password": "",
+            "es_representante_pwa": True,
+            "tipo_asociacion_pwa": AccesoComedorPWA.TIPO_ASOCIACION_ORGANIZACION,
+            "organizaciones_pwa": [organizacion_original.id],
+            "comedores_pwa": [],
+        },
+    )
+    assert edit_form.is_valid(), edit_form.errors
+    edit_form.save()
+
+    assert AccesoOrganizacionPWA.objects.filter(
+        user=user,
+        organizacion=organizacion_original,
+        activo=True,
+    ).exists()
+
+    comedor_nuevo = Comedor.objects.create(
+        nombre="Comedor Incorporado Luego",
+        provincia=comedor.provincia,
+        organizacion=organizacion_original,
+    )
+    assert get_access_rows(user).filter(comedor=comedor_nuevo).exists()
 
 
 @pytest.mark.django_db
@@ -362,7 +432,7 @@ def test_user_creation_form_allows_organization_plus_direct_space(
 
 
 @pytest.mark.django_db
-def test_user_creation_form_allows_some_spaces_from_org_plus_external_space(
+def test_user_creation_form_includes_all_org_spaces_plus_external_space(
     comedor, comedor_mismo_org, comedor_extra
 ):
     form = UserCreationForm(
@@ -394,9 +464,11 @@ def test_user_creation_form_allows_some_spaces_from_org_plus_external_space(
         AccesoComedorPWA.objects.filter(
             user=user,
             comedor=comedor_mismo_org,
+            tipo_asociacion=AccesoComedorPWA.TIPO_ASOCIACION_ORGANIZACION,
+            organizacion_id=comedor.organizacion_id,
             activo=True,
         ).exists()
-        is False
+        is True
     )
     assert (
         AccesoComedorPWA.objects.filter(

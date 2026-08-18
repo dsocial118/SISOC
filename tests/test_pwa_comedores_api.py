@@ -54,7 +54,7 @@ from relevamientos.models import (
     TipoTecnologia,
 )
 from rendicioncuentasmensual.models import DocumentacionAdjunta, RendicionCuentaMensual
-from users.models import AccesoComedorPWA
+from users.models import AccesoComedorPWA, AccesoOrganizacionPWA
 
 
 def _grant_pwa_permission(user, codename):
@@ -282,6 +282,10 @@ def test_pwa_spaces_selector_list_returns_metadata_and_sorted_names():
         comedor=comedor_b,
         role=AccesoComedorPWA.ROL_REPRESENTANTE,
         username="rep_selector",
+    )
+    AccesoOrganizacionPWA.objects.create(
+        user=representante,
+        organizacion=organizacion,
     )
     AccesoComedorPWA.objects.filter(user=representante, comedor=comedor_b).update(
         tipo_asociacion=AccesoComedorPWA.TIPO_ASOCIACION_ORGANIZACION,

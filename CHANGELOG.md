@@ -1,3 +1,12 @@
+<!-- AUTO-GENERATED RELEASE START: 2026-08-19 -->
+# Versión SISOC 19.08.2026
+
+## Actualizaciones
+
+- [sin-area] fix(admisiones): autorizar transferencias issue 2272. (PR #2296)
+- [sin-area] fix(users): quitar declaración de confirmación de datos. (PR #2300)
+<!-- AUTO-GENERATED RELEASE END: 2026-08-19 -->
+
 <!-- AUTO-GENERATED RELEASE START: 2026-08-13 -->
 # Versión SISOC 13.08.2026
 

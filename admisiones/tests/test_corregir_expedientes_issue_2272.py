@@ -54,6 +54,53 @@ def test_preflight_rechaza_colision_con_admision_fuera_del_manifiesto(tmp_path):
     )
 
 
+def test_apply_libera_un_conflicto_autorizado_del_csv(tmp_path):
+    numero_corregido = "EX-2026-987654321- -APN-DDNAYF#MCH"
+    origen = Admision.objects.create(
+        pk=1627,
+        num_expediente=numero_corregido,
+        legales_num_if="EX-2025-111111111- -APN-DDNAYF#MCH",
+    )
+    destino = Admision.objects.create(
+        pk=2072,
+        num_expediente="EX-2025-222222222- -APN-DDNAYF#MCH",
+        legales_num_if="EX-2025-333333333- -APN-DDNAYF#MCH",
+    )
+    command = Command()
+    _configurar_manifiesto(
+        command,
+        tmp_path,
+        "ID ADMISION,Expediente Correcto\n" f"2072,{numero_corregido}\n",
+    )
+
+    command.handle(apply=True, database="default")
+
+    origen.refresh_from_db()
+    destino.refresh_from_db()
+    assert (origen.num_expediente, origen.legales_num_if) == (None, None)
+    assert (destino.num_expediente, destino.legales_num_if) == (
+        numero_corregido,
+        numero_corregido,
+    )
+    assert AdmisionHistorial.objects.filter(admision=origen).count() == 2
+    command.handle(apply=False, database="default", verify=True)
+
+
+def test_preflight_rechaza_un_conflicto_distinto_al_autorizado(tmp_path):
+    numero_corregido = "EX-2026-987654321- -APN-DDNAYF#MCH"
+    Admision.objects.create(pk=999, num_expediente=numero_corregido)
+    Admision.objects.create(pk=2072)
+    command = Command()
+    _configurar_manifiesto(
+        command,
+        tmp_path,
+        "ID ADMISION,Expediente Correcto\n" f"2072,{numero_corregido}\n",
+    )
+
+    with pytest.raises(CommandError):
+        command.handle(apply=False, database="default")
+
+
 def test_preflight_conserva_todos_los_propietarios_de_un_expediente(tmp_path):
     numero_compartido = "EX-2026-987654321- -APN-DDNAYF#MCH"
     Admision.objects.create(pk=100, num_expediente=numero_compartido)
