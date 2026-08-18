@@ -7,12 +7,30 @@ from users.models import Profile
 from users.services_delegation import effective_delegatable_groups_qs
 from users.territorial_scope import (
     apply_territorial_scope,
+    get_effective_scopes,
     get_single_full_province_scope_id,
     is_territorial_user,
     user_can_access_territory,
 )
 
 GRUPO_CDI_REFERENTE_CENTRO = UserGroups.CDI_REFERENTE_CENTRO
+
+
+def es_egp_simepi(user):
+    """Indica si el usuario tiene el rol provincial habilitado para la descarga."""
+    if not user or not getattr(user, "is_authenticated", False):
+        return False
+    return user.groups.filter(name=UserGroups.SIMEPI_EGP).exists()
+
+
+def get_provincia_completa_unica_egp_id(user):
+    """Devuelve la provincia sólo para un EGP con un único alcance completo."""
+    if not es_egp_simepi(user):
+        return None
+    scopes = get_effective_scopes(user)
+    if len(scopes) != 1 or not scopes[0].is_full_province:
+        return None
+    return scopes[0].provincia_id
 
 
 def actor_puede_delegar_grupo_nombre(user, grupo_nombre):

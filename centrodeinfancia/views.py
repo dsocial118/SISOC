@@ -48,6 +48,7 @@ from iam.services import user_has_permission_code
 from centrodeinfancia.access import (
     aplicar_scope_centros_cdi as _aplicar_scope_centros_cdi,
     es_auditor_simepi,
+    es_egp_simepi,
     get_object_scoped_cdi_or_404,
     puede_generar_usuario_cdi,
     puede_ver_usuarios_cdi,
@@ -338,6 +339,14 @@ class CentroDeInfanciaListView(LoginRequiredMixin, ListView):
             {"text": "Listar", "active": True},
         ]
         context["query"] = self.request.GET.get("busqueda", "")
+        if es_egp_simepi(self.request.user):
+            context["additional_buttons"] = [
+                {
+                    "url": reverse("centrodeinfancia_nomina_ninos_pdf"),
+                    "label": "Descargar nómina de niños",
+                    "class": "btn btn-outline-primary",
+                }
+            ]
         context["active_columns"] = columns_context.get("column_active_keys") or [
             field["name"] for field in CDI_LIST_FIELDS
         ]

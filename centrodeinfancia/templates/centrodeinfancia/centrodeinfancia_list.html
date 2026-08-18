@@ -11,7 +11,7 @@
 
     <div class="comedor-list-container">
         {% url 'centrodeinfancia_exportar' as export_url %}
-        {% include 'components/search_bar.html' with titulo="Buscar Centro de Desarrollo Infantil" placeholder="Buscar por nombre u organización" help_text="Ingresar nombre u organización." reset_url='centrodeinfancia' add_url='centrodeinfancia_crear' add_text='Nuevo Centro' export_url=export_url query=query %}
+        {% include 'components/search_bar.html' with titulo="Buscar Centro de Desarrollo Infantil" placeholder="Buscar por nombre u organización" help_text="Ingresar nombre u organización." reset_url='centrodeinfancia' add_url='centrodeinfancia_crear' add_text='Nuevo Centro' export_url=export_url query=query additional_buttons=additional_buttons %}
 
         <div class="row mt-5 max-width-100">
             <div class="col-12">
