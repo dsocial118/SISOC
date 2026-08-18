@@ -159,7 +159,7 @@ function checkSectionVacunacion() {
     ];
     return dosisCodes.some(function (code) {
         return val("id_vacuna_" + code + "_dosis") !== "";
-    }) || val("id_recibe_apoyo_desarrollo") !== "";
+    });
 }
 
 function hasSectionData(sectionId) {

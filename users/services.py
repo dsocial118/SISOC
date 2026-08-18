@@ -165,7 +165,16 @@ class UsuariosService:
             is_superuser=True
         )
 
-        return scoped_qs.distinct().order_by("-id")
+        scoped_qs = scoped_qs.distinct().order_by("-id")
+
+        # El alcance delegable define qué roles puede administrar el actor; los
+        # roles SIMEPI/CDI además deben quedar dentro de su provincia o CDI.
+        # Import local para mantener acotada la dependencia entre dominios.
+        from centrodeinfancia.access import (  # noqa: PLC0415
+            aplicar_scope_usuarios_cdi,
+        )
+
+        return aplicar_scope_usuarios_cdi(scoped_qs, actor)
 
     @staticmethod
     def get_usuarios_queryset():

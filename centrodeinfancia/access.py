@@ -1,5 +1,6 @@
 from django.shortcuts import get_object_or_404
 from django.core.exceptions import ObjectDoesNotExist
+from django.db.models import Q
 
 from core.constants import UserGroups
 from core.models import Provincia
@@ -13,6 +14,23 @@ from users.territorial_scope import (
 )
 
 GRUPO_CDI_REFERENTE_CENTRO = UserGroups.CDI_REFERENTE_CENTRO
+GRUPOS_CDI_LOCALES = frozenset(
+    (
+        UserGroups.CDI_REFERENTE_CENTRO,
+        UserGroups.CDI_TRABAJADOR,
+    )
+)
+GRUPOS_CDI_TERRITORIALES = GRUPOS_CDI_LOCALES | {UserGroups.SIMEPI_EGP}
+
+
+def _nombres_grupos_cdi(user):
+    if not user or not getattr(user, "is_authenticated", False):
+        return set()
+    return set(
+        user.groups.filter(name__in=GRUPOS_CDI_TERRITORIALES).values_list(
+            "name", flat=True
+        )
+    )
 
 
 def actor_puede_delegar_grupo_nombre(user, grupo_nombre):
@@ -253,27 +271,83 @@ def aplicar_scope_centros_cdi(
 ):
     """Acota un queryset según el alcance del usuario.
 
-    - Superusuario: sin restricción.
+    - No autenticado o rol CDI incompleto: sin resultados.
+    - Superusuario y roles SIMEPI nacionales: sin restricción.
+    - EGP: sólo los centros de su alcance territorial.
     - Referente CDI: solo sus centros con `AccesoCDI` activo.
     - Trabajador CDI: solo los centros donde su FK `usuario` está vinculado.
     - Resto: filtro provincial existente (sin cambios de comportamiento).
     """
     if not user or not getattr(user, "is_authenticated", False):
-        return queryset
+        return queryset.none()
     if tiene_alcance_simepi_nacional(user):
         return queryset
 
+    group_names = _nombres_grupos_cdi(user)
     referente_ids = _ids_centros_referente(user)
     trabajador_ids = _ids_centros_trabajador(user)
     if referente_ids is not None or trabajador_ids is not None:
         centro_ids = set(referente_ids or []) | set(trabajador_ids or [])
         return queryset.filter(**{f"{id_lookup}__in": centro_ids})
 
+    # Un rol de centro sin su vínculo operativo nunca debe caer al alcance
+    # provincial/genérico: ante una configuración incompleta falla cerrado.
+    if group_names & GRUPOS_CDI_LOCALES:
+        return queryset.none()
+
+    # EGP es necesariamente territorial. Si el perfil o sus alcances faltan,
+    # no puede heredar el comportamiento global de un usuario no territorial.
+    if UserGroups.SIMEPI_EGP in group_names:
+        if not is_territorial_user(user):
+            return queryset.none()
+        return aplicar_filtro_provincia_usuario(
+            queryset,
+            user,
+            provincia_lookup=provincia_lookup,
+        )
+
     return aplicar_filtro_provincia_usuario(
         queryset,
         user,
         provincia_lookup=provincia_lookup,
     )
+
+
+def aplicar_scope_usuarios_cdi(queryset, user):
+    """Interseca el alcance de Usuarios con la jurisdicción SIMEPI/CDI.
+
+    La delegación de grupos sigue decidiendo qué roles puede administrar el
+    actor. Este filtro agrega dónde deben estar vinculados esos usuarios:
+    provincia para EGP y CDI puntual para Referente/Trabajador.
+    """
+    if not user or not getattr(user, "is_authenticated", False):
+        return queryset.none()
+    if tiene_alcance_simepi_nacional(user):
+        return queryset
+    if not _nombres_grupos_cdi(user):
+        return queryset
+
+    from centrodeinfancia.models import (  # noqa: PLC0415
+        AccesoCDI,
+        CentroDeInfancia,
+        Trabajador,
+    )
+
+    centros = aplicar_scope_centros_cdi(CentroDeInfancia.objects.all(), user)
+    referentes_ids = AccesoCDI.objects.filter(
+        centro_id__in=centros.values("pk"),
+        activo=True,
+    ).values("user_id")
+    trabajadores_ids = Trabajador.objects.filter(
+        centro_id__in=centros.values("pk"),
+        usuario_id__isnull=False,
+    ).values("usuario_id")
+
+    return queryset.filter(
+        Q(pk=user.pk)
+        | Q(pk__in=referentes_ids)
+        | Q(pk__in=trabajadores_ids)
+    ).distinct()
 
 
 def get_object_scoped_cdi_or_404(

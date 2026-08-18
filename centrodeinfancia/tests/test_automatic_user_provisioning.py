@@ -278,15 +278,16 @@ def test_trabajadores_con_email_repetido_reciben_usuarios_distintos(client):
 
 
 @pytest.mark.django_db
-def test_guardar_trabajador_sin_email_omite_usuario(client):
+def test_guardar_trabajador_sin_email_es_rechazado(client):
     centro = CentroDeInfancia.objects.create(nombre="CDI Trabajadores sin email")
     actor = _referente_actor(centro)
     client.force_login(actor)
 
-    response = _guardar_trabajador(client, centro)
+    response = _guardar_trabajador(client, centro, email="")
 
-    assert response.status_code == 302
-    assert Trabajador.objects.get(centro=centro).usuario is None
+    assert response.status_code == 200
+    assert "email" in response.context["form"].errors
+    assert not Trabajador.objects.filter(centro=centro).exists()
 
 
 @pytest.mark.django_db

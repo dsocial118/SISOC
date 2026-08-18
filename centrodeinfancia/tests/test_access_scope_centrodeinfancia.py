@@ -553,6 +553,34 @@ def test_trabajador_respeta_scope_en_vistas_de_lectura(client):
 
 
 @pytest.mark.django_db
+def test_egp_sin_alcance_territorial_falla_cerrado():
+    user = _crear_usuario("egp-sin-alcance")
+    user.profile.es_usuario_provincial = True
+    user.profile.save(update_fields=["es_usuario_provincial"])
+    _asignar_grupo_con_permisos(user, UserGroups.SIMEPI_EGP)
+    CentroDeInfancia.objects.create(nombre="CDI que no debe ver")
+
+    scoped = aplicar_scope_centros_cdi(CentroDeInfancia.objects.all(), user)
+
+    assert not scoped.exists()
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "group_name",
+    [UserGroups.CDI_REFERENTE_CENTRO, UserGroups.CDI_TRABAJADOR],
+)
+def test_rol_cdi_sin_vinculo_falla_cerrado(group_name):
+    user = _crear_usuario(f"sin-vinculo-{group_name}")
+    _asignar_grupo_con_permisos(user, group_name)
+    CentroDeInfancia.objects.create(nombre=f"CDI ajeno {group_name}")
+
+    scoped = aplicar_scope_centros_cdi(CentroDeInfancia.objects.all(), user)
+
+    assert not scoped.exists()
+
+
+@pytest.mark.django_db
 @pytest.mark.parametrize(
     "group_name",
     [UserGroups.SIMEPI_ADMINISTRADOR, UserGroups.SIMEPI_ANALISTA_DATOS],

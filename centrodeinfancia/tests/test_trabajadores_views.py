@@ -88,6 +88,7 @@ def test_trabajador_create_post_crea_y_redirige(client):
     assert trabajador.apellido == "Mendez"
     assert trabajador.telefono == "11-2345-6789"
     assert trabajador.subcomponente == "cdi"
+    assert trabajador.sala_cdi == "2_anios"
     assert trabajador.campos_verificados_renaper == []
 
 
