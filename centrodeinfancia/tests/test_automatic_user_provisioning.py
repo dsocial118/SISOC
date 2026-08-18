@@ -65,10 +65,16 @@ def _actor(*, can_delegate=True):
         egp, _ = Group.objects.get_or_create(name=UserGroups.SIMEPI_EGP)
         Group.objects.get_or_create(name=UserGroups.CDI_REFERENTE_CENTRO)
         user.groups.add(egp)
+        user.profile.es_usuario_provincial = True
+        user.profile.provincia = _ubicacion_cdi()["provincia"]
+        user.profile.save(update_fields=["es_usuario_provincial", "provincia"])
     return user
 
 
 def _guardar_centro(client, centro, **referente):
+    if centro.provincia_id is None:
+        centro.provincia = _ubicacion_cdi()["provincia"]
+        centro.save(update_fields=["provincia"])
     return client.post(
         reverse("centrodeinfancia_editar", kwargs={"pk": centro.pk}),
         _payload_cdi(centro, **referente),

@@ -7,10 +7,7 @@ from django.test import RequestFactory
 from django.urls import reverse
 
 
-SIDEBAR_TEMPLATES = (
-    "includes/sidebar/opciones.html",
-    "includes/sidebar/new_opciones.html",
-)
+SIDEBAR_TEMPLATES = ("includes/sidebar/opciones.html",)
 
 
 def _render_sidebar(template_name, user):

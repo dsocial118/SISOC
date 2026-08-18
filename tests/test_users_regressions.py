@@ -906,6 +906,11 @@ def test_actor_cdi_no_ve_ni_puede_enviar_campos_administrativos_en_alta(client):
 
 @pytest.mark.django_db
 def test_actor_cdi_preserva_configuracion_administrativa_oculta_en_edicion(client):
+    provincia = Provincia.objects.create(nombre="Provincia ABM EGP")
+    centro = CentroDeInfancia.objects.create(
+        nombre="CDI ABM EGP",
+        provincia=provincia,
+    )
     actor = User.objects.create_user(username="egp-cdi-abm", password="secret")
     egp = Group.objects.create(name=UserGroups.SIMEPI_EGP)
     referente = Group.objects.create(name=UserGroups.CDI_REFERENTE_CENTRO)
@@ -913,9 +918,16 @@ def test_actor_cdi_preserva_configuracion_administrativa_oculta_en_edicion(clien
         Permission.objects.get(content_type__app_label="auth", codename="change_user")
     )
     actor.groups.add(egp)
+    actor.profile.es_usuario_provincial = True
+    actor.profile.save(update_fields=["es_usuario_provincial"])
+    ProfileTerritorialScope.objects.create(
+        profile=actor.profile,
+        provincia=provincia,
+    )
 
     target = User.objects.create_user(username="referente-editado", password="secret")
     target.groups.add(referente)
+    AccesoCDI.objects.create(user=target, centro=centro)
     direct_permission = Permission.objects.get(
         content_type__app_label="auth",
         codename="change_user",

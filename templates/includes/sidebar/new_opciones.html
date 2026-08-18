@@ -22,13 +22,11 @@
                         <i class="fas fa-arrow-alt-circle-right nav-icon"></i>
                         <p>Usuarios</p>
                     </a>
-                    {% if request.user|has_perm_code:"auth.view_group" %}
-                        <a href="{% url 'grupos' %}"
-                           class="nav-link {% if 'grupos' in pagina_actual %}active{% endif %}">
-                            <i class="fas fa-arrow-alt-circle-right nav-icon"></i>
-                            <p>Grupos</p>
-                        </a>
-                    {% endif %}
+                    <a href="{% url 'grupos' %}"
+                       class="nav-link {% if 'grupos' in pagina_actual %}active{% endif %}">
+                        <i class="fas fa-arrow-alt-circle-right nav-icon"></i>
+                        <p>Grupos</p>
+                    </a>
                     <a href="{% url 'programa_listar' %}"
                        class="nav-link {% if 'programas/' in pagina_actual %}active{% endif %}">
                         <i class="fas fa-arrow-alt-circle-right nav-icon"></i>
