@@ -1,13 +1,29 @@
 from __future__ import annotations
 
-from typing import Iterable
+from typing import Callable, Iterable
 
 from django.contrib.auth.models import Group, Permission
 from django.contrib.contenttypes.models import ContentType
-from django.db.models import Q
+from django.db.models import Q, QuerySet
 from django.utils.text import slugify
 
 from core.permissions.registry import resolve_permission_codes
+
+
+UserQuerysetScope = Callable[[QuerySet, object], QuerySet]
+_USER_QUERYSET_SCOPES: dict[str, UserQuerysetScope] = {}
+
+
+def register_user_queryset_scope(name: str, scope: UserQuerysetScope) -> None:
+    """Registra un filtro de dominio para la administración de usuarios."""
+    _USER_QUERYSET_SCOPES[name] = scope
+
+
+def apply_user_queryset_scopes(queryset: QuerySet, actor) -> QuerySet:
+    """Aplica, en orden de registro, los alcances aportados por los dominios."""
+    for scope in _USER_QUERYSET_SCOPES.values():
+        queryset = scope(queryset, actor)
+    return queryset
 
 
 def _normalize(values: Iterable[str]) -> set[str]:

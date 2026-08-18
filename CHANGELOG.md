@@ -1,3 +1,11 @@
+<!-- AUTO-GENERATED RELEASE START: 2026-08-26 -->
+# Versión SISOC 26.08.2026
+
+## Corrección de Errores
+
+- [Centro de Infancia] Corrige permisos y validaciones urgentes del módulo CDI. (PR #2310)
+<!-- AUTO-GENERATED RELEASE END: 2026-08-26 -->
+
 <!-- AUTO-GENERATED RELEASE START: 2026-08-19 -->
 # Versión SISOC 19.08.2026
 
