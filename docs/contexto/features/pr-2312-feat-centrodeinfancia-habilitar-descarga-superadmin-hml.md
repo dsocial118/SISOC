@@ -26,7 +26,7 @@
 ## Design system y UI
 
 - El PR toca piezas de UI y conviene revisar consistencia visual con el patrón existente.
-- Archivos visuales relevantes: centrodeinfancia/templates/centrodeinfancia/centrodeinfancia_list.html, templates/components/search_bar.html
+- Archivos visuales relevantes: centrodeinfancia/templates/centrodeinfancia/centrodeinfancia_list.html, static/custom/css/comedoresSearchBar.css, templates/components/search_bar.html
 
 ## Memoria operativa para agentes
 
@@ -37,10 +37,13 @@
 - `centrodeinfancia/views.py`
 - `centrodeinfancia/views_export.py`
 - `docs/contexto/features/pr-2308-feat-centrodeinfancia-descargar-nomina-provincial-de-ninos.md`
+- `docs/contexto/features/pr-2312-feat-centrodeinfancia-habilitar-descarga-superadmin-hml.md`
 - `docs/plans/2026-08-18-simepi-superadmin-nomina-provincial-design.md`
 - `docs/plans/2026-08-18-simepi-superadmin-nomina-provincial-plan.md`
 - `docs/registro/cambios/2026-08-18-simepi-descarga-nomina-ninos.md`
 - `docs/registro/prs/PR-2308.md`
+- `docs/registro/prs/PR-2312.md`
+- `static/custom/css/comedoresSearchBar.css`
 - `templates/components/search_bar.html`
 - Documentación sugerida para ampliar contexto:
 - `docs/indice.md`
@@ -48,10 +51,12 @@
 - `docs/ia/ARCHITECTURE.md`
 - `docs/ia/TESTING.md`
 - `docs/contexto/features/pr-2308-feat-centrodeinfancia-descargar-nomina-provincial-de-ninos.md`
+- `docs/contexto/features/pr-2312-feat-centrodeinfancia-habilitar-descarga-superadmin-hml.md`
 - `docs/plans/2026-08-18-simepi-superadmin-nomina-provincial-design.md`
 - `docs/plans/2026-08-18-simepi-superadmin-nomina-provincial-plan.md`
 - `docs/registro/cambios/2026-08-18-simepi-descarga-nomina-ninos.md`
 - `docs/registro/prs/PR-2308.md`
+- `docs/registro/prs/PR-2312.md`
 
 ## Trazabilidad
 
