@@ -33,6 +33,8 @@ exclusivos de `homologacion`.
   completa.
 - Incluir solo fichas `NominaCentroInfancia` activas y no eliminadas cuyos CDI
   pertenezcan a esa provincia.
+- La provincia domiciliaria del nino no interviene en el alcance: una ficha sin
+  `provincia_domicilio` se incluye si el CDI pertenece a la provincia del EGP.
 - Omitir CDI sin ninos activos.
 - Agrupar las filas por CDI y repetir el encabezado del CDI y de las columnas
   en cada pagina correspondiente.
@@ -101,20 +103,27 @@ Los valores visibles siguen el contrato actual de la nomina CDI: valor de
 
 ## Unicidad y orden
 
-La clave de deduplicacion pedida por la especificacion es la tupla normalizada:
+La salida aplica defensas de unicidad en orden, considerando duplicada una
+ficha si coincide cualquiera de estas identidades con una fila ya seleccionada:
 
-1. apellido;
-2. nombre;
-3. DNI;
-4. fecha de nacimiento;
-5. sexo.
+1. el `ciudadano_id` interno;
+2. el DNI resuelto, cuando existe;
+3. la tupla normalizada pedida por la especificacion:
+
+   - apellido;
+   - nombre;
+   - DNI;
+   - fecha de nacimiento;
+   - sexo.
 
 La normalizacion es solo para comparar: trim, espacios repetidos y
 case-insensitive en texto. Los valores impresos conservan el dato resuelto.
 
 La regla de vigencia actual evita nuevas fichas activas simultaneas en distintos
-CDI. Para duplicados historicos, se conserva la ficha activa mas reciente por
-`fecha` e `id`. Se registra solamente la cantidad de duplicados omitidos.
+CDI. Las defensas adicionales cubren fichas historicas inconsistentes del mismo
+ciudadano y ciudadanos legacy distintos con el mismo DNI. Siempre se conserva
+la ficha activa mas reciente por `fecha` e `id`. Se registra solamente la
+cantidad de duplicados omitidos.
 
 El orden es:
 

@@ -197,21 +197,31 @@ def _resolved_child_fields(registro):
 
 def _deduplicate_registros(registros):
     selected = []
-    seen = set()
+    seen_citizen_ids = set()
+    seen_documents = set()
+    seen_identity_keys = set()
     duplicate_count = 0
     for registro in registros:
         apellido, nombre, dni, birth_date, sexo = _resolved_child_fields(registro)
-        key = (
+        document_key = str(dni).strip() if dni not in (None, "") else None
+        identity_key = (
             _normalize(apellido),
             _normalize(nombre),
-            str(dni or ""),
+            document_key or "",
             birth_date.isoformat() if birth_date else "",
             _normalize(sexo),
         )
-        if key in seen:
+        if (
+            registro.ciudadano_id in seen_citizen_ids
+            or (document_key is not None and document_key in seen_documents)
+            or identity_key in seen_identity_keys
+        ):
             duplicate_count += 1
             continue
-        seen.add(key)
+        seen_citizen_ids.add(registro.ciudadano_id)
+        if document_key is not None:
+            seen_documents.add(document_key)
+        seen_identity_keys.add(identity_key)
         selected.append(registro)
     return selected, duplicate_count
 
