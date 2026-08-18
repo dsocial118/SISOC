@@ -170,39 +170,77 @@ def test_alta_espera_el_lock_de_la_membresia_en_mysql(escenario):
         organizacion=None,
         programa=escenario["programa"],
     )
-    started = Event()
-    finished = Event()
+    lock_acquired = Event()
+    release_lock = Event()
+    grant_select_started = Event()
+    grant_finished = Event()
     errors = []
 
-    def grant_in_other_transaction():
+    def hold_membership_lock():
         close_old_connections()
-        started.set()
         try:
-            aplicar_cambio_organizacion_comedor(
-                comedor_id=comedor_nuevo.id,
-                previous_organizacion_id=None,
-                new_organizacion_id=escenario["organizacion"].id,
-            )
+            with transaction.atomic():
+                AccesoOrganizacionPWA.objects.select_for_update().get(
+                    user=user,
+                    organizacion=escenario["organizacion"],
+                )
+                lock_acquired.set()
+                if not release_lock.wait(timeout=10):
+                    raise TimeoutError("No se liberó el lock de la membresía.")
         except Exception as exc:  # pragma: no cover - reportado en el hilo principal
             errors.append(exc)
         finally:
             close_old_connections()
-            finished.set()
 
-    with transaction.atomic():
-        AccesoOrganizacionPWA.objects.select_for_update().get(
-            user=user,
-            organizacion=escenario["organizacion"],
-        )
+    def grant_in_other_transaction():
+        close_old_connections()
+
+        def trace_membership_lock(execute, sql, params, many, context):
+            normalized_sql = sql.lower()
+            if (
+                "users_accesoorganizacionpwa" in normalized_sql
+                and "for update" in normalized_sql
+            ):
+                grant_select_started.set()
+            return execute(sql, params, many, context)
+
+        try:
+            with connection.execute_wrapper(trace_membership_lock):
+                aplicar_cambio_organizacion_comedor(
+                    comedor_id=comedor_nuevo.id,
+                    previous_organizacion_id=None,
+                    new_organizacion_id=escenario["organizacion"].id,
+                )
+        except Exception as exc:  # pragma: no cover - reportado en el hilo principal
+            errors.append(exc)
+        finally:
+            close_old_connections()
+            grant_finished.set()
+
+    locker = Thread(target=hold_membership_lock, daemon=True)
+    locker.start()
+    lock_acquired_in_time = lock_acquired.wait(timeout=5)
+
+    worker = None
+    grant_reached_lock = False
+    was_blocked = False
+    if lock_acquired_in_time:
         worker = Thread(target=grant_in_other_transaction, daemon=True)
         worker.start()
-        assert started.wait(timeout=2)
-        was_blocked = not finished.wait(timeout=1)
+        grant_reached_lock = grant_select_started.wait(timeout=5)
+        was_blocked = grant_reached_lock and not grant_finished.wait(timeout=1)
 
-    worker.join(timeout=10)
+    release_lock.set()
+    locker.join(timeout=10)
+    if worker:
+        worker.join(timeout=10)
 
+    assert lock_acquired_in_time is True
+    assert grant_reached_lock is True
     assert was_blocked is True
-    assert finished.is_set()
+    assert not locker.is_alive()
+    assert worker is not None and not worker.is_alive()
+    assert grant_finished.is_set()
     assert errors == []
     assert AccesoComedorPWA.objects.filter(
         user=user,
