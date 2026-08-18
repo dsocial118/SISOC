@@ -48,9 +48,7 @@ def obtener_ids_organizaciones_con_acceso_pwa(
             organizacion_id__in=requested_ids
         )
     resolved_ids = set(memberships.values_list("organizacion_id", flat=True))
-    resolved_ids.update(
-        projected_accesses.values_list("organizacion_id", flat=True)
-    )
+    resolved_ids.update(projected_accesses.values_list("organizacion_id", flat=True))
     return tuple(sorted(resolved_ids))
 
 

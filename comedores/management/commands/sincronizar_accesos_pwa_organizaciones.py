@@ -73,9 +73,7 @@ class Command(BaseCommand):
     ) -> dict:
         totales = {"altas": 0, "bajas": 0}
         for organizacion_id in organizacion_ids:
-            comedor_ids = tuple(
-                comedores_por_organizacion.get(organizacion_id, [])
-            )
+            comedor_ids = tuple(comedores_por_organizacion.get(organizacion_id, []))
             if aplicar:
                 resultado = sincronizar_accesos_organizacion(
                     organizacion_id=organizacion_id,

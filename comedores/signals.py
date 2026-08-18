@@ -34,11 +34,7 @@ from users.api import aplicar_cambio_organizacion_comedor
 
 def _current_user_id():
     current_user = get_current_user()
-    return (
-        current_user.pk
-        if getattr(current_user, "is_authenticated", False)
-        else None
-    )
+    return current_user.pk if getattr(current_user, "is_authenticated", False) else None
 
 
 @receiver(post_save, sender=Comedor)

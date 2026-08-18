@@ -73,9 +73,7 @@ def get_access_rows(user):
             comedor__deleted_at__isnull=True,
         )
         .annotate(
-            has_active_organization_membership=Exists(
-                active_organization_membership
-            )
+            has_active_organization_membership=Exists(active_organization_membership)
         )
         .select_related("comedor", "creado_por", "organizacion")
     )
@@ -869,9 +867,7 @@ def sync_organizacion_accesses(
         usuarios_obsoletos_por_comedor.setdefault(comedor_id, set()).add(user_id)
 
     bajas = 0
-    for comedor_id, stale_user_ids in sorted(
-        usuarios_obsoletos_por_comedor.items()
-    ):
+    for comedor_id, stale_user_ids in sorted(usuarios_obsoletos_por_comedor.items()):
         bajas += _deactivate_organizacion_comedor_accesses(
             comedor_id=comedor_id,
             organizacion_id=organizacion_id,

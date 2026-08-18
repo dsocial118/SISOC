@@ -459,9 +459,7 @@ class Comedor(SoftDeleteModelMixin, models.Model):
 
     def save(self, *args, **kwargs):
         """Persiste el comedor y sus side effects síncronos en una transacción."""
-        db_alias = kwargs.get("using") or router.db_for_write(
-            type(self), instance=self
-        )
+        db_alias = kwargs.get("using") or router.db_for_write(type(self), instance=self)
         with transaction.atomic(using=db_alias):
             return super().save(*args, **kwargs)
 
@@ -474,8 +472,8 @@ class Comedor(SoftDeleteModelMixin, models.Model):
         cascade=True,
     ):
         """Incluye los side effects del soft-delete en la misma transacción."""
-        db_alias = using or self._state.db or router.db_for_write(
-            type(self), instance=self
+        db_alias = (
+            using or self._state.db or router.db_for_write(type(self), instance=self)
         )
         with transaction.atomic(using=db_alias):
             return super().delete(
