@@ -332,7 +332,10 @@ class PWAAccessMixin:
             required=False,
             widget=forms.SelectMultiple(attrs={"class": "select2"}),
             label="Organizaciones",
-            help_text="Seleccione una o más organizaciones registradas en el sistema.",
+            help_text=(
+                "Cada organización habilita automáticamente todos sus comedores "
+                "actuales y futuros."
+            ),
         )
         self.fields["comedores_pwa"] = forms.ModelMultipleChoiceField(
             queryset=obtener_queryset_formulario("comedores_pwa"),
@@ -359,14 +362,22 @@ class PWAAccessMixin:
             {tipo for tipo in accesos.values_list("tipo_asociacion", flat=True) if tipo}
         )
         comedor_ids = list(accesos.values_list("comedor_id", flat=True))
-        self.fields["es_representante_pwa"].initial = bool(comedor_ids)
+        self.fields["es_representante_pwa"].initial = bool(
+            comedor_ids or organizacion_ids
+        )
         self.fields["puede_gestionar_rendiciones_mobile"].initial = (
             self.instance.has_perm(MOBILE_RENDICION_PERMISSION_CODE)
         )
         for field_name, (permission_code, _) in PWA_OPERATION_PERMISSION_FIELDS.items():
             self.fields[field_name].initial = self.instance.has_perm(permission_code)
         self.fields["tipo_asociacion_pwa"].initial = (
-            tipos_asociacion[0] if len(tipos_asociacion) == 1 else ""
+            tipos_asociacion[0]
+            if len(tipos_asociacion) == 1
+            else (
+                AccesoComedorPWA.TIPO_ASOCIACION_ORGANIZACION
+                if organizacion_ids and not tipos_asociacion
+                else ""
+            )
         )
         self.fields["organizaciones_pwa"].initial = organizacion_ids
         self.fields["comedores_pwa"].initial = comedor_ids
@@ -428,10 +439,11 @@ class PWAAccessMixin:
             organizaciones_pwa = cleaned["organizaciones_pwa"]
             comedores_pwa = cleaned["comedores_pwa"]
 
-        if es_representante_pwa and not comedores_pwa:
+        if es_representante_pwa and not (comedores_pwa or organizaciones_pwa):
             self.add_error(
                 "comedores_pwa",
-                "Debe seleccionar al menos un comedor para un representante PWA.",
+                "Debe seleccionar al menos una organización o un comedor para un "
+                "representante PWA.",
             )
         if not es_representante_pwa and (
             comedores_pwa or organizaciones_pwa or tipo_asociacion_pwa
@@ -463,8 +475,16 @@ class PWAAccessMixin:
             organization_ids = set(
                 self.cleaned_data["organizaciones_pwa"].values_list("id", flat=True)
             )
+            selected_by_id = {
+                comedor.id: comedor for comedor in self.cleaned_data["comedores_pwa"]
+            }
+            for comedor in self.fields["comedores_pwa"].queryset.filter(
+                organizacion_id__in=organization_ids
+            ):
+                selected_by_id[comedor.id] = comedor
+
             access_specs = []
-            for comedor in self.cleaned_data["comedores_pwa"]:
+            for comedor in sorted(selected_by_id.values(), key=lambda item: item.id):
                 association_type = (
                     AccesoComedorPWA.TIPO_ASOCIACION_ORGANIZACION
                     if comedor.organizacion_id in organization_ids

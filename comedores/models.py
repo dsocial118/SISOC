@@ -4,7 +4,7 @@ from io import BytesIO
 from django.conf import settings
 from django.core.validators import MaxValueValidator, MinValueValidator, RegexValidator
 from django.core.exceptions import ValidationError
-from django.db import models, transaction
+from django.db import models, router, transaction
 from django.core.files.base import ContentFile
 from django.utils import timezone
 from PIL import Image, ImageOps
@@ -456,6 +456,40 @@ class Comedor(SoftDeleteModelMixin, models.Model):
 
     def __str__(self) -> str:
         return str(self.nombre)
+
+    def save(self, *args, **kwargs):
+        """Persiste el comedor y sus side effects síncronos en una transacción."""
+        db_alias = kwargs.get("using") or router.db_for_write(
+            type(self), instance=self
+        )
+        with transaction.atomic(using=db_alias):
+            return super().save(*args, **kwargs)
+
+    def delete(  # pylint: disable=arguments-differ
+        self,
+        using=None,
+        keep_parents=False,
+        *,
+        user=None,
+        cascade=True,
+    ):
+        """Incluye los side effects del soft-delete en la misma transacción."""
+        db_alias = using or self._state.db or router.db_for_write(
+            type(self), instance=self
+        )
+        with transaction.atomic(using=db_alias):
+            return super().delete(
+                using=db_alias,
+                keep_parents=keep_parents,
+                user=user,
+                cascade=cascade,
+            )
+
+    def restore(self, *, user=None, cascade=True):
+        """Incluye los side effects del restore en la misma transacción."""
+        db_alias = self._state.db or router.db_for_write(type(self), instance=self)
+        with transaction.atomic(using=db_alias):
+            return super().restore(user=user, cascade=cascade)
 
     def clean(self):
         super().clean()

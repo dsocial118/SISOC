@@ -22,21 +22,33 @@ from comedores.tasks import (
     build_referente_payload,
 )
 from config.middlewares.threadlocals import get_current_user
-from core.soft_delete.signals import post_soft_delete
+from core.soft_delete.signals import post_restore, post_soft_delete
 from relevamientos.models import Relevamiento
 from rendicioncuentasfinal.models import (
     DocumentoRendicionFinal,
     RendicionCuentasFinal,
     TipoDocumentoRendicionFinal,
 )
-from users.services_pwa import apply_comedor_organizacion_change
+from users.api import aplicar_cambio_organizacion_comedor
+
+
+def _current_user_id():
+    current_user = get_current_user()
+    return (
+        current_user.pk
+        if getattr(current_user, "is_authenticated", False)
+        else None
+    )
 
 
 @receiver(post_save, sender=Comedor)
 def send_comedor_to_gestionar(sender, instance, created, **kwargs):
     if created:
         payload = build_comedor_payload(instance)  # usa los NEW values de la instancia
-        AsyncSendComedorToGestionar(payload).start()
+        transaction.on_commit(
+            lambda: AsyncSendComedorToGestionar(payload).start(),
+            using=kwargs.get("using") or instance._state.db,
+        )
 
 
 @receiver(pre_save, sender=Comedor)
@@ -72,14 +84,20 @@ def update_comedor_in_gestionar(sender, instance, **kwargs):
     payload = build_comedor_payload(
         instance, action="Update"
     )  # usa los NEW values de la instancia
-    AsyncSendComedorToGestionar(payload).start()
+    transaction.on_commit(
+        lambda: AsyncSendComedorToGestionar(payload).start(),
+        using=kwargs.get("using") or instance._state.db,
+    )
 
 
 @receiver(pre_save, sender=Comedor)
 def track_organizacion_anterior(sender, instance, **kwargs):
     """Guarda la organización previa para propagar el cambio a los accesos PWA."""
+    database_alias = kwargs.get("using") or instance._state.db
     organizacion_anterior_id = (
-        sender.objects.filter(pk=instance.pk)
+        sender.all_objects.using(database_alias)
+        .select_for_update()
+        .filter(pk=instance.pk)
         .values_list("organizacion_id", flat=True)
         .first()
         if instance.pk
@@ -103,21 +121,50 @@ def sync_accesos_pwa_por_organizacion(sender, instance, created, **kwargs):
     if organizacion_anterior_id == instance.organizacion_id:
         return
 
-    apply_comedor_organizacion_change(
+    aplicar_cambio_organizacion_comedor(
         comedor_id=instance.pk,
         previous_organizacion_id=organizacion_anterior_id,
         new_organizacion_id=instance.organizacion_id,
-        actor=get_current_user(),
+        actor_id=_current_user_id(),
     )
     instance._pwa_organizacion_anterior_id = (  # pylint: disable=protected-access
         instance.organizacion_id
     )
 
 
+@receiver(post_soft_delete, sender=Comedor)
+def deactivate_accesos_pwa_por_soft_delete(sender, instance, user=None, **kwargs):
+    """Revoca la proyección de un comedor eliminado lógicamente."""
+    del sender, kwargs
+    aplicar_cambio_organizacion_comedor(
+        comedor_id=instance.pk,
+        previous_organizacion_id=instance.organizacion_id,
+        new_organizacion_id=None,
+        actor_id=getattr(user, "pk", None),
+    )
+
+
+@receiver(post_restore, sender=Comedor)
+def reactivate_accesos_pwa_por_restore(sender, instance, user=None, **kwargs):
+    """Reconstruye la proyección al restaurar un comedor."""
+    del sender, kwargs
+    aplicar_cambio_organizacion_comedor(
+        comedor_id=instance.pk,
+        previous_organizacion_id=None,
+        new_organizacion_id=instance.organizacion_id,
+        actor_id=getattr(user, "pk", None),
+    )
+
+
 @receiver(pre_delete, sender=Comedor)
 @receiver(post_soft_delete, sender=Comedor)
 def remove_comedor_to_gestionar(sender, instance, **kwargs):
-    AsyncRemoveComedorToGestionar(instance.id).start()
+    transaction.on_commit(
+        lambda comedor_id=instance.id: AsyncRemoveComedorToGestionar(
+            comedor_id
+        ).start(),
+        using=kwargs.get("using") or instance._state.db,
+    )
 
 
 @receiver(post_save, sender=Observacion)

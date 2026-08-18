@@ -1,13 +1,11 @@
 from django.core.management.base import BaseCommand
-from django.db import transaction
 
 from comedores.models import Comedor
-from users.models import AccesoOrganizacionPWA
-from users.services_pwa import sync_organizacion_accesses
-
-
-class _RollbackDryRun(Exception):
-    """Corta la transacción del dry-run sin persistir cambios."""
+from users.api import (
+    obtener_ids_organizaciones_con_acceso_pwa,
+    previsualizar_accesos_organizacion,
+    sincronizar_accesos_organizacion,
+)
 
 
 class Command(BaseCommand):
@@ -52,15 +50,11 @@ class Command(BaseCommand):
 
         comedores_por_organizacion = self._comedores_por_organizacion(organizacion_ids)
 
-        try:
-            with transaction.atomic():
-                totales = self._sincronizar(
-                    organizacion_ids, comedores_por_organizacion
-                )
-                if not aplicar:
-                    raise _RollbackDryRun
-        except _RollbackDryRun:
-            pass
+        totales = self._sincronizar(
+            organizacion_ids,
+            comedores_por_organizacion,
+            aplicar=aplicar,
+        )
 
         self.stdout.write("")
         self.stdout.write(self.style.SUCCESS("=== Resumen ==="))
@@ -74,14 +68,24 @@ class Command(BaseCommand):
                 )
             )
 
-    def _sincronizar(self, organizacion_ids, comedores_por_organizacion) -> dict:
+    def _sincronizar(
+        self, organizacion_ids, comedores_por_organizacion, *, aplicar
+    ) -> dict:
         totales = {"altas": 0, "bajas": 0}
         for organizacion_id in organizacion_ids:
-            comedor_ids = comedores_por_organizacion.get(organizacion_id, [])
-            resultado = sync_organizacion_accesses(
-                organizacion_id=organizacion_id,
-                comedor_ids=comedor_ids,
+            comedor_ids = tuple(
+                comedores_por_organizacion.get(organizacion_id, [])
             )
+            if aplicar:
+                resultado = sincronizar_accesos_organizacion(
+                    organizacion_id=organizacion_id,
+                    comedor_ids=comedor_ids,
+                )
+            else:
+                resultado = previsualizar_accesos_organizacion(
+                    organizacion_id=organizacion_id,
+                    comedor_ids=comedor_ids,
+                )
             totales["altas"] += resultado["altas"]
             totales["bajas"] += resultado["bajas"]
             if resultado["altas"] or resultado["bajas"]:
@@ -93,10 +97,10 @@ class Command(BaseCommand):
         return totales
 
     def _resolver_organizaciones(self, organizacion_ids) -> list:
-        queryset = AccesoOrganizacionPWA.objects.filter(activo=True)
-        if organizacion_ids:
-            queryset = queryset.filter(organizacion_id__in=set(organizacion_ids))
-        return sorted(set(queryset.values_list("organizacion_id", flat=True)))
+        requested_ids = (
+            tuple(sorted(set(organizacion_ids))) if organizacion_ids else None
+        )
+        return list(obtener_ids_organizaciones_con_acceso_pwa(requested_ids))
 
     def _comedores_por_organizacion(self, organizacion_ids) -> dict:
         comedores_por_organizacion = {}

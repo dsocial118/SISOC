@@ -39,6 +39,7 @@
 - `reset_validaciones`: resetea validaciones de comedores a Pendiente. Evidencia: `comedores/management/commands/reset_validaciones.py`.
 - `update_comedores_dupla`: asigna duplas a comedores desde CSV, opcionalmente creando admisiones. Evidencia: `comedores/management/commands/update_comedores_dupla.py`.
 - `sync_comedores_gestionar`: sincroniza payload completo de comedores contra GESTIONAR (`Add`/`Update`, multithread). Evidencia: `comedores/management/commands/sync_comedores_gestionar.py`.
+- `sincronizar_accesos_pwa_organizaciones`: previsualiza y reconcilia la totalidad de accesos PWA derivados de organizaciones. Sin flags es un dry-run de sólo lectura; `--apply` persiste por organización y `--organizacion ID` limita el alcance (repetible). Ejecutar primero `python manage.py sincronizar_accesos_pwa_organizaciones` y revisar totales antes de repetir con `--apply`. Evidencia: `comedores/management/commands/sincronizar_accesos_pwa_organizaciones.py`.
 - `sync_territoriales_cache`: sincroniza cache de territoriales, con opciones de stats, force y cleanup. Evidencia: `comedores/management/commands/sync_territoriales_cache.py`.
 
 ## Centro de familia

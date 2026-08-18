@@ -11,7 +11,7 @@ from django.contrib.auth.models import Permission
 from django.contrib.auth import get_user_model
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import IntegrityError, transaction
-from django.db.models import F, Q
+from django.db.models import Exists, F, OuterRef, Q
 from django.utils import timezone
 
 from users.models import (
@@ -61,15 +61,30 @@ def get_access_rows(user):
     """Retorna accesos PWA activos del usuario."""
     if not user or not getattr(user, "is_authenticated", False):
         return AccesoComedorPWA.objects.none()
-    queryset = AccesoComedorPWA.objects.filter(
-        user=user,
+    active_organization_membership = AccesoOrganizacionPWA.objects.filter(
+        user_id=OuterRef("user_id"),
+        organizacion_id=OuterRef("organizacion_id"),
         activo=True,
-    ).select_related("comedor", "creado_por", "organizacion")
+    )
+    queryset = (
+        AccesoComedorPWA.objects.filter(
+            user=user,
+            activo=True,
+            comedor__deleted_at__isnull=True,
+        )
+        .annotate(
+            has_active_organization_membership=Exists(
+                active_organization_membership
+            )
+        )
+        .select_related("comedor", "creado_por", "organizacion")
+    )
     return queryset.filter(
         Q(tipo_asociacion=AccesoComedorPWA.TIPO_ASOCIACION_ESPACIO)
         | Q(
             tipo_asociacion=AccesoComedorPWA.TIPO_ASOCIACION_ORGANIZACION,
             organizacion_id=F("comedor__organizacion_id"),
+            has_active_organization_membership=True,
         )
     )
 
@@ -582,7 +597,12 @@ def _sync_organizacion_memberships(*, user, organizacion_ids, actor=None):
 
 
 def _deactivate_organizacion_comedor_accesses(
-    *, comedor_id: int, organizacion_id: int, actor=None
+    *,
+    comedor_id: int,
+    organizacion_id: int,
+    actor=None,
+    user_ids: Iterable[int] | None = None,
+    motivo: str = "comedor_fuera_de_organizacion",
 ) -> int:
     """Da de baja los accesos por organización de un comedor que dejó de pertenecer."""
     accesos_qs = AccesoComedorPWA.objects.filter(
@@ -591,6 +611,8 @@ def _deactivate_organizacion_comedor_accesses(
         tipo_asociacion=AccesoComedorPWA.TIPO_ASOCIACION_ORGANIZACION,
         activo=True,
     )
+    if user_ids is not None:
+        accesos_qs = accesos_qs.filter(user_id__in=set(user_ids))
     accesos = list(accesos_qs)
     if not accesos:
         return 0
@@ -606,24 +628,39 @@ def _deactivate_organizacion_comedor_accesses(
             actor=actor,
             metadata={
                 "rol": acceso.rol,
-                "motivo": "comedor_fuera_de_organizacion",
+                "motivo": motivo,
                 "organizacion_id": organizacion_id,
             },
         )
     return len(accesos)
 
 
+def _get_organizacion_user_ids(
+    *, organizacion_id: int, lock_memberships: bool
+) -> tuple[int, ...]:
+    memberships = AccesoOrganizacionPWA.objects.filter(
+        organizacion_id=organizacion_id,
+        activo=True,
+    ).order_by("user_id")
+    if lock_memberships:
+        memberships = memberships.select_for_update()
+    return tuple(memberships.values_list("user_id", flat=True))
+
+
 def _grant_organizacion_comedor_access(
-    *, comedor_id: int, organizacion_id: int, actor=None
+    *,
+    comedor_id: int,
+    organizacion_id: int,
+    actor=None,
+    user_ids: Iterable[int] | None = None,
 ) -> int:
     """Habilita un comedor a los usuarios asignados a su organización."""
-    user_ids = set(
-        AccesoOrganizacionPWA.objects.filter(
+    if user_ids is None:
+        user_ids = _get_organizacion_user_ids(
             organizacion_id=organizacion_id,
-            activo=True,
-            user__is_active=True,
-        ).values_list("user_id", flat=True)
-    )
+            lock_memberships=True,
+        )
+    user_ids = {int(user_id) for user_id in user_ids}
     if not user_ids:
         return 0
 
@@ -719,6 +756,22 @@ def apply_comedor_organizacion_change(
     if previous_organizacion_id == new_organizacion_id:
         return {"altas": 0, "bajas": 0}
 
+    locked_user_ids_by_organization = {
+        organizacion_id: _get_organizacion_user_ids(
+            organizacion_id=organizacion_id,
+            lock_memberships=True,
+        )
+        for organizacion_id in sorted(
+            {
+                organizacion_id
+                for organizacion_id in (
+                    previous_organizacion_id,
+                    new_organizacion_id,
+                )
+                if organizacion_id
+            }
+        )
+    }
     bajas = (
         _deactivate_organizacion_comedor_accesses(
             comedor_id=comedor_id,
@@ -733,10 +786,57 @@ def apply_comedor_organizacion_change(
             comedor_id=comedor_id,
             organizacion_id=new_organizacion_id,
             actor=actor,
+            user_ids=locked_user_ids_by_organization[new_organizacion_id],
         )
         if new_organizacion_id
         else 0
     )
+    return {"altas": altas, "bajas": bajas}
+
+
+def preview_organizacion_accesses(
+    *, organizacion_id: int, comedor_ids: Iterable[int]
+) -> dict[str, int]:
+    """Calcula una reconciliación de organización sin escribir ni bloquear filas."""
+    comedor_ids = {int(comedor_id) for comedor_id in comedor_ids or []}
+    user_ids = set(
+        _get_organizacion_user_ids(
+            organizacion_id=organizacion_id,
+            lock_memberships=False,
+        )
+    )
+
+    bajas = (
+        AccesoComedorPWA.objects.filter(
+            organizacion_id=organizacion_id,
+            tipo_asociacion=AccesoComedorPWA.TIPO_ASOCIACION_ORGANIZACION,
+            activo=True,
+        )
+        .exclude(
+            comedor_id__in=comedor_ids,
+            user_id__in=user_ids,
+        )
+        .count()
+    )
+    if not user_ids or not comedor_ids:
+        return {"altas": 0, "bajas": bajas}
+
+    accesos_sin_cambios = (
+        AccesoComedorPWA.objects.filter(
+            user_id__in=user_ids,
+            comedor_id__in=comedor_ids,
+        )
+        .filter(
+            Q(rol=AccesoComedorPWA.ROL_OPERADOR)
+            | Q(
+                activo=True,
+                tipo_asociacion=AccesoComedorPWA.TIPO_ASOCIACION_ESPACIO,
+            )
+            | Q(activo=True, organizacion_id=organizacion_id)
+        )
+        .count()
+    )
+    altas = len(user_ids) * len(comedor_ids) - accesos_sin_cambios
     return {"altas": altas, "bajas": bajas}
 
 
@@ -749,20 +849,35 @@ def sync_organizacion_accesses(
 ) -> dict:
     """Reconcilia los accesos por organización con sus comedores actuales."""
     comedor_ids = {int(comedor_id) for comedor_id in comedor_ids or []}
+    user_ids = _get_organizacion_user_ids(
+        organizacion_id=organizacion_id,
+        lock_memberships=True,
+    )
 
     accesos_obsoletos_qs = AccesoComedorPWA.objects.filter(
         organizacion_id=organizacion_id,
         tipo_asociacion=AccesoComedorPWA.TIPO_ASOCIACION_ORGANIZACION,
         activo=True,
-    ).exclude(comedor_id__in=comedor_ids)
+    ).exclude(
+        comedor_id__in=comedor_ids,
+        user_id__in=user_ids,
+    )
+    usuarios_obsoletos_por_comedor = {}
+    for comedor_id, user_id in accesos_obsoletos_qs.values_list(
+        "comedor_id", "user_id"
+    ):
+        usuarios_obsoletos_por_comedor.setdefault(comedor_id, set()).add(user_id)
+
     bajas = 0
-    for comedor_id in sorted(
-        set(accesos_obsoletos_qs.values_list("comedor_id", flat=True))
+    for comedor_id, stale_user_ids in sorted(
+        usuarios_obsoletos_por_comedor.items()
     ):
         bajas += _deactivate_organizacion_comedor_accesses(
             comedor_id=comedor_id,
             organizacion_id=organizacion_id,
             actor=actor,
+            user_ids=stale_user_ids,
+            motivo="reconciliacion_organizacion",
         )
 
     altas = 0
@@ -771,6 +886,7 @@ def sync_organizacion_accesses(
             comedor_id=comedor_id,
             organizacion_id=organizacion_id,
             actor=actor,
+            user_ids=user_ids,
         )
     return {"altas": altas, "bajas": bajas}
 
