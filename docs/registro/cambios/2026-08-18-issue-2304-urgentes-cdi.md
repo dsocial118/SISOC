@@ -18,7 +18,8 @@ El desarrollo parte de `main` y se publica en un único PR dirigido a
 - El listado y la administración de usuarios intersectan la delegación de
   roles existente con el mismo alcance geográfico: un EGP sólo administra
   referentes vinculados a CDI de su provincia y un referente sólo administra
-  trabajadores de sus CDI.
+  trabajadores de sus CDI. CDI registra este filtro en la extensión neutral
+  de scopes de `iam.services`, evitando que `users` dependa del dominio.
 - En la nómina de niños, el CUIT del niño es obligatorio. Los CUIT de sus
   responsables continúan optativos. Lenguajes permanece obligatorio y talla,
   peso, longitud acostado y perímetro cefálico pasan a ser optativos, sin

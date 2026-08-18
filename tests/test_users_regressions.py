@@ -629,12 +629,8 @@ def test_referente_solo_administra_trabajadores_de_su_cdi():
     referente_group, _ = Group.objects.get_or_create(
         name=UserGroups.CDI_REFERENTE_CENTRO
     )
-    trabajador_group, _ = Group.objects.get_or_create(
-        name=UserGroups.CDI_TRABAJADOR
-    )
-    actor = User.objects.create_user(
-        username="referente-usuarios", password="secret"
-    )
+    trabajador_group, _ = Group.objects.get_or_create(name=UserGroups.CDI_TRABAJADOR)
+    actor = User.objects.create_user(username="referente-usuarios", password="secret")
     actor.groups.add(referente_group)
     AccesoCDI.objects.create(user=actor, centro=centro_propio)
 

@@ -7,9 +7,7 @@ from django.contrib.auth.models import User
 from comunicados.models import Comunicado
 
 
-MIGRATION = import_module(
-    "comunicados.migrations.0010_archive_importacion_nomina"
-)
+MIGRATION = import_module("comunicados.migrations.0010_archive_importacion_nomina")
 
 
 @pytest.mark.django_db

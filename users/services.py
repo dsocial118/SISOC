@@ -8,7 +8,11 @@ from django.urls import NoReverseMatch, reverse
 from core.services.advanced_filters import AdvancedFilterEngine
 from core.services.column_preferences import build_columns_context
 from core.services.favorite_filters import SeccionesFiltrosFavoritos
-from iam.services import user_has_any_permission_codes, user_has_permission_code
+from iam.services import (
+    apply_user_queryset_scopes,
+    user_has_any_permission_codes,
+    user_has_permission_code,
+)
 from users.models import Profile
 from users.services_delegation import effective_delegatable_groups_qs
 from users.users_filter_config import (
@@ -167,14 +171,9 @@ class UsuariosService:
 
         scoped_qs = scoped_qs.distinct().order_by("-id")
 
-        # El alcance delegable define qué roles puede administrar el actor; los
-        # roles SIMEPI/CDI además deben quedar dentro de su provincia o CDI.
-        # Import local para mantener acotada la dependencia entre dominios.
-        from centrodeinfancia.access import (  # noqa: PLC0415
-            aplicar_scope_usuarios_cdi,
-        )
-
-        return aplicar_scope_usuarios_cdi(scoped_qs, actor)
+        # El alcance delegable define qué roles puede administrar el actor. Los
+        # dominios intersectan luego sus límites sin invertir dependencias.
+        return apply_user_queryset_scopes(scoped_qs, actor)
 
     @staticmethod
     def get_usuarios_queryset():

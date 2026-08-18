@@ -344,9 +344,7 @@ def aplicar_scope_usuarios_cdi(queryset, user):
     ).values("usuario_id")
 
     return queryset.filter(
-        Q(pk=user.pk)
-        | Q(pk__in=referentes_ids)
-        | Q(pk__in=trabajadores_ids)
+        Q(pk=user.pk) | Q(pk__in=referentes_ids) | Q(pk__in=trabajadores_ids)
     ).distinct()
 
 
