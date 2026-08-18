@@ -35,6 +35,11 @@ CUIL, nombres ni datos RENAPER.
 
 - `centrodeinfancia/services_nomina_ninos_pdf.py` concentra consulta,
   normalización, deduplicación, render vectorial y rasterización.
+- El alcance territorial se toma exclusivamente de la provincia del CDI. La
+  provincia domiciliaria del niño puede estar vacía sin excluirlo.
+- La deduplicación conserva la ficha activa más reciente y evita repetir tanto
+  un mismo ciudadano como un mismo DNI, incluso en identidades legacy, además
+  de mantener la comparación compuesta original.
 - ReportLab genera el documento intermedio con Liberation Sans como alternativa
   compatible con Arial.
 - `pdf2image` y Poppler convierten cada página en JPEG dentro de un directorio
@@ -48,11 +53,12 @@ runtime.
 ## Validación y rollback
 
 La regresión focalizada cubre autorización, visibilidad del botón, filtros por
-provincia y estado, deduplicación, orden, datos RENAPER, headers HTTP y
-estructura del PDF final. La inspección local de un documento sintético de tres
-páginas confirmó A4 apaisado, encabezados repetidos, legibilidad, marca de agua,
-pie numerado, resumen provincial y una imagen JPEG por página sin capa de
-texto.
+provincia del CDI y estado, inclusión con provincia domiciliaria vacía,
+deduplicación por ciudadano, DNI e identidad compuesta, orden, datos RENAPER,
+headers HTTP y estructura del PDF final. La inspección local de un documento
+sintético de tres páginas confirmó A4 apaisado, encabezados repetidos,
+legibilidad, marca de agua, pie numerado, resumen provincial y una imagen JPEG
+por página sin capa de texto.
 
 El rollback consiste en revertir la ruta, la acción de interfaz y el servicio;
 no requiere reversión de esquema ni limpieza de datos.

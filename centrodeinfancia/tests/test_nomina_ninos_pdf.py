@@ -247,6 +247,131 @@ def test_export_data_filtra_deduplica_ordena_y_resuelve_validaciones():
     assert data.centros[0].rows[1].renaper_nino == "No"
 
 
+@pytest.mark.django_db
+def test_export_data_usa_provincia_del_centro_aunque_falte_domicilio_del_nino():
+    provincia = Provincia.objects.create(nombre="Buenos Aires")
+    user = _create_egp("egp-buenos-aires", provincia)
+    centro = CentroDeInfancia.objects.create(
+        nombre="CDI Buenos Aires",
+        provincia=provincia,
+    )
+    con_provincia = _create_child(41000001)
+    sin_provincia = _create_child(41000002)
+
+    NominaCentroInfancia.objects.create(
+        centro=centro,
+        ciudadano=con_provincia,
+        estado=NominaCentroInfancia.ESTADO_ACTIVO,
+        provincia_domicilio=provincia,
+    )
+    NominaCentroInfancia.objects.create(
+        centro=centro,
+        ciudadano=sin_provincia,
+        estado=NominaCentroInfancia.ESTADO_ACTIVO,
+        provincia_domicilio=None,
+    )
+
+    data = build_export_data(user=user, provincia=provincia)
+
+    assert data.total_ninos == 2
+    assert {row.dni for row in data.centros[0].rows} == {"41000001", "41000002"}
+
+
+@pytest.mark.django_db
+def test_export_data_no_duplica_mismo_ciudadano_si_sus_fichas_difieren():
+    provincia = Provincia.objects.create(nombre="Provincia Sin Duplicados")
+    user = _create_egp("egp-sin-duplicados", provincia)
+    centro = CentroDeInfancia.objects.create(
+        nombre="CDI Sin Duplicados",
+        provincia=provincia,
+    )
+    child = _create_child(42000001)
+
+    ficha_anterior = NominaCentroInfancia.objects.create(
+        centro=centro,
+        ciudadano=child,
+        estado=NominaCentroInfancia.ESTADO_ACTIVO,
+        apellido="Apellido anterior",
+        nombre="Nombre anterior",
+        dni=42000001,
+        fecha_nacimiento=date(2020, 1, 15),
+        sexo=NominaCentroInfancia.SexoChoices.MASCULINO,
+    )
+    NominaCentroInfancia.objects.filter(pk=ficha_anterior.pk).update(
+        fecha=timezone.make_aware(datetime(2025, 1, 1, 10, 0))
+    )
+    ficha_reciente = NominaCentroInfancia.objects.create(
+        centro=centro,
+        ciudadano=child,
+        estado=NominaCentroInfancia.ESTADO_ACTIVO,
+        apellido="Apellido corregido",
+        nombre="Nombre corregido",
+        dni=42000001,
+        fecha_nacimiento=date(2020, 1, 16),
+        sexo=NominaCentroInfancia.SexoChoices.FEMENINO,
+    )
+    NominaCentroInfancia.objects.filter(pk=ficha_reciente.pk).update(
+        fecha=timezone.make_aware(datetime(2026, 1, 1, 10, 0))
+    )
+
+    data = build_export_data(user=user, provincia=provincia)
+
+    assert data.total_ninos == 1
+    assert data.centros[0].rows[0].apellido == "Apellido corregido"
+
+
+@pytest.mark.django_db
+def test_export_data_no_duplica_mismo_dni_en_ciudadanos_distintos():
+    provincia = Provincia.objects.create(nombre="Provincia DNI Único")
+    user = _create_egp("egp-dni-unico", provincia)
+    centro = CentroDeInfancia.objects.create(
+        nombre="CDI DNI Único",
+        provincia=provincia,
+    )
+    child_anterior = Ciudadano.objects.create(
+        apellido="Apellido ciudadano anterior",
+        nombre="Nombre ciudadano anterior",
+        fecha_nacimiento=date(2020, 1, 15),
+        documento=43000001,
+        tipo_registro_identidad=Ciudadano.TIPO_REGISTRO_DNI_NO_VALIDADO,
+    )
+    child_reciente = Ciudadano.objects.create(
+        apellido="Apellido ciudadano reciente",
+        nombre="Nombre ciudadano reciente",
+        fecha_nacimiento=date(2020, 1, 16),
+        documento=43000001,
+        tipo_registro_identidad=Ciudadano.TIPO_REGISTRO_DNI_NO_VALIDADO,
+    )
+
+    ficha_anterior = NominaCentroInfancia.objects.create(
+        centro=centro,
+        ciudadano=child_anterior,
+        estado=NominaCentroInfancia.ESTADO_ACTIVO,
+        apellido="Apellido anterior",
+        nombre="Nombre anterior",
+        dni=43000001,
+    )
+    NominaCentroInfancia.objects.filter(pk=ficha_anterior.pk).update(
+        fecha=timezone.make_aware(datetime(2025, 1, 1, 10, 0))
+    )
+    ficha_reciente = NominaCentroInfancia.objects.create(
+        centro=centro,
+        ciudadano=child_reciente,
+        estado=NominaCentroInfancia.ESTADO_ACTIVO,
+        apellido="Apellido corregido",
+        nombre="Nombre corregido",
+        dni=43000001,
+    )
+    NominaCentroInfancia.objects.filter(pk=ficha_reciente.pk).update(
+        fecha=timezone.make_aware(datetime(2026, 1, 1, 10, 0))
+    )
+
+    data = build_export_data(user=user, provincia=provincia)
+
+    assert data.total_ninos == 1
+    assert data.centros[0].rows[0].apellido == "Apellido corregido"
+
+
 def _sample_export_data():
     row = NinoRow(
         centro_id=1,
