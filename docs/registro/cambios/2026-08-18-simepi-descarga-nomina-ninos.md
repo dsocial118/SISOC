@@ -49,8 +49,10 @@ runtime.
 
 La regresión focalizada cubre autorización, visibilidad del botón, filtros por
 provincia y estado, deduplicación, orden, datos RENAPER, headers HTTP y
-estructura del PDF final. Además se debe inspeccionar visualmente un documento
-sintético de varias páginas antes de publicar.
+estructura del PDF final. La inspección local de un documento sintético de tres
+páginas confirmó A4 apaisado, encabezados repetidos, legibilidad, marca de agua,
+pie numerado, resumen provincial y una imagen JPEG por página sin capa de
+texto.
 
 El rollback consiste en revertir la ruta, la acción de interfaz y el servicio;
 no requiere reversión de esquema ni limpieza de datos.
