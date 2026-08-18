@@ -40,6 +40,8 @@ CUIL, nombres ni datos RENAPER.
   normalización, deduplicación, render vectorial y rasterización.
 - El listado reutiliza un modal Bootstrap con un selector provincial obligatorio
   para superadministradores, sin JavaScript ni dependencias adicionales.
+- La acción de descarga reutiliza la forma y el radio de los botones Poncho del
+  buscador, con fondo verde azulado para distinguirla de las demás acciones.
 - El alcance territorial se toma exclusivamente de la provincia del CDI. La
   provincia domiciliaria del niño puede estar vacía sin excluirlo.
 - La deduplicación conserva la ficha activa más reciente y evita repetir tanto

@@ -343,7 +343,7 @@ class CentroDeInfanciaListView(LoginRequiredMixin, ListView):
             context["additional_buttons"] = [
                 {
                     "label": "Descargar nómina de niños",
-                    "class": "btn btn-outline-primary",
+                    "class": "poncho-btn poncho-btn--descarga",
                     "modal_target": "#nomina-ninos-provincia-modal",
                 }
             ]
@@ -354,7 +354,7 @@ class CentroDeInfanciaListView(LoginRequiredMixin, ListView):
                 {
                     "url": reverse("centrodeinfancia_nomina_ninos_pdf"),
                     "label": "Descargar nómina de niños",
-                    "class": "btn btn-outline-primary",
+                    "class": "poncho-btn poncho-btn--descarga",
                 }
             ]
         context["active_columns"] = columns_context.get("column_active_keys") or [

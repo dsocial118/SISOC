@@ -203,7 +203,9 @@ def test_boton_descarga_solo_se_muestra_a_egp(client):
     response = client.get(reverse("centrodeinfancia"))
 
     assert response.status_code == 200
-    assert "Descargar nómina de niños" in response.content.decode()
+    content = response.content.decode()
+    assert "Descargar nómina de niños" in content
+    assert "poncho-btn poncho-btn--descarga" in content
 
     regular = User.objects.create_user(username="regular", password="test1234")
     regular.user_permissions.add(permission)
@@ -231,6 +233,7 @@ def test_superadmin_ve_modal_con_selector_provincial_obligatorio(client):
 
     assert response.status_code == 200
     assert "Descargar nómina de niños" in content
+    assert "poncho-btn poncho-btn--descarga" in content
     assert 'data-bs-target="#nomina-ninos-provincia-modal"' in content
     assert 'id="nomina-ninos-provincia-modal"' in content
     assert 'name="provincia"' in content
