@@ -86,6 +86,8 @@ Servicios de dominio: `users/services_pwa.py`
     - `organizaciones_ids`
     - `must_change_password`
 - `POST /api/users/logout/`
+- `POST /api/users/password-reset/request/`
+- `POST /api/users/password-reset/confirm/`
   - invalida token actual.
 
 ### 2) Comedores / perfil de espacio
@@ -108,6 +110,30 @@ Fuentes de documentos consolidadas: foto legajo, imágenes de comedor, documenta
 - `GET /api/comedores/{id}/nomina/`
 - `POST /api/comedores/{id}/nomina/`
 - `PATCH /api/comedores/nomina/{nomina_id}/`
+
+Para programas cuya nómina se organiza por admisión, todos los flujos PWA usan
+exclusivamente la admisión resuelta por
+`ComedorService.get_admision_vigente_pwa`: listado, cupos, validaciones,
+asistencia y PDF mensual. Si no hay marca `vigente_pwa`, el servicio mantiene
+el fallback compatible a la admisión activa de mayor ID y luego a la admisión
+de mayor ID. Los programas de nómina directa consultan solo registros del
+comedor con `admision_id` nulo; no mezclan registros de admisiones históricas.
+
+### Recuperación de contraseña PWA
+
+- `POST /api/users/password-reset/request/` requiere `username` y `email`.
+  Responde de manera genérica y limita intentos por IP e identidad para no
+  revelar cuentas.
+- Solo se envía el enlace cuando ambos datos corresponden a un usuario PWA
+  activo. El enlace apunta a
+  `<PWA_BASE_URL>/password-reset-confirm?uid=...&token=...`.
+- `POST /api/users/password-reset/confirm/` recibe `uid`, `token` y
+  `new_password`; un reset exitoso elimina el requisito de cambiar la
+  contraseña inicial.
+
+`PWA_BASE_URL` debe configurarse con la URL pública de Mobile en cada ambiente.
+No se debe depender del `Origin` recibido en producción para construir enlaces
+de recuperación.
 
 ### 5) Prestación alimentaria
 
