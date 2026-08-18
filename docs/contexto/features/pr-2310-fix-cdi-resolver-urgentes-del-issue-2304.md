@@ -52,7 +52,7 @@
 - `docs/registro/cambios/2026-08-18-issue-2304-urgentes-cdi.md`
 - `docs/registro/prs/PR-2306.md`
 - `docs/registro/prs/PR-2310.md`
-- `docs/registro/releases/pending/2026-08-19-pr-2310.md`
+- `docs/registro/releases/pending/2026-08-26-pr-2310.md`
 - ... y 8 archivo(s) adicional(es) relacionados.
 - Documentación sugerida para ampliar contexto:
 - `docs/indice.md`
@@ -65,7 +65,7 @@
 - `docs/registro/cambios/2026-08-18-issue-2304-urgentes-cdi.md`
 - `docs/registro/prs/PR-2306.md`
 - `docs/registro/prs/PR-2310.md`
-- `docs/registro/releases/pending/2026-08-19-pr-2310.md`
+- `docs/registro/releases/pending/2026-08-26-pr-2310.md`
 
 ## Trazabilidad
 
