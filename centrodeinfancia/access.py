@@ -297,14 +297,8 @@ def aplicar_scope_centros_cdi(
 
     # EGP es necesariamente territorial. Si el perfil o sus alcances faltan,
     # no puede heredar el comportamiento global de un usuario no territorial.
-    if UserGroups.SIMEPI_EGP in group_names:
-        if not is_territorial_user(user):
-            return queryset.none()
-        return aplicar_filtro_provincia_usuario(
-            queryset,
-            user,
-            provincia_lookup=provincia_lookup,
-        )
+    if UserGroups.SIMEPI_EGP in group_names and not is_territorial_user(user):
+        return queryset.none()
 
     return aplicar_filtro_provincia_usuario(
         queryset,
