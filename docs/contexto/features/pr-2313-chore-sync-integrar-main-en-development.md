@@ -15,6 +15,7 @@
 
 - Hay cambios en vistas web y puede existir impacto en permisos o renderizado.
 - Se modifican templates, con posible impacto visual o de composición UI.
+- Existen cambios de persistencia o migraciones que requieren revisión de datos.
 
 ## Decisiones y supuestos detectados
 
@@ -26,7 +27,7 @@
 ## Design system y UI
 
 - El PR toca piezas de UI y conviene revisar consistencia visual con el patrón existente.
-- Archivos visuales relevantes: centrodeinfancia/templates/centrodeinfancia/centrodeinfancia_list.html, static/custom/css/comedoresSearchBar.css, templates/components/search_bar.html
+- Archivos visuales relevantes: centrodeinfancia/templates/centrodeinfancia/centrodeinfancia_list.html, centrodeinfancia/templates/centrodeinfancia/destinatario_detail.html, centrodeinfancia/templates/centrodeinfancia/destinatario_form.html, centrodeinfancia/templates/centrodeinfancia/nomina_form.html, centrodeinfancia/templates/centrodeinfancia/nomina_form_edit.html, centrodeinfancia/templates/centrodeinfancia/nomina_formulario_detail.html, static/custom/css/comedoresSearchBar.css, static/custom/js/destinatarioForm.js
 
 ## Memoria operativa para agentes
 
@@ -35,43 +36,53 @@
 - `AGENT_REPO_MAP.md`
 - `CHANGELOG.md`
 - `centrodeinfancia/access.py`
+- `centrodeinfancia/apps.py`
+- `centrodeinfancia/forms.py`
+- `centrodeinfancia/migrations/0044_nominacentroinfancia_departamento.py`
+- `centrodeinfancia/models.py`
 - `centrodeinfancia/services_nomina_ninos_pdf.py`
 - `centrodeinfancia/templates/centrodeinfancia/centrodeinfancia_list.html`
+- `centrodeinfancia/templates/centrodeinfancia/destinatario_detail.html`
+- `centrodeinfancia/templates/centrodeinfancia/destinatario_form.html`
+- `centrodeinfancia/templates/centrodeinfancia/nomina_form.html`
+- `centrodeinfancia/templates/centrodeinfancia/nomina_form_edit.html`
+- `centrodeinfancia/templates/centrodeinfancia/nomina_formulario_detail.html`
+- `centrodeinfancia/tests/test_access_scope_centrodeinfancia.py`
+- `centrodeinfancia/tests/test_automatic_user_provisioning.py`
+- `centrodeinfancia/tests/test_destinatario_form.py`
 - `centrodeinfancia/tests/test_nomina_ninos_pdf.py`
-- `centrodeinfancia/urls.py`
-- `centrodeinfancia/views.py`
-- `centrodeinfancia/views_export.py`
-- `docs/contexto/features/pr-2307-feat-centrodeinfancia-descargar-nomina-provincial-de-ninos-hml.md`
-- `docs/contexto/features/pr-2308-feat-centrodeinfancia-descargar-nomina-provincial-de-ninos.md`
-- `docs/contexto/features/pr-2311-fix-centrodeinfancia-asegurar-nomina-provincial-unica-hml.md`
-- `docs/contexto/features/pr-2312-feat-centrodeinfancia-habilitar-descarga-superadmin-hml.md`
-- `docs/plans/2026-08-18-simepi-descarga-nomina-ninos-design.md`
-- `docs/plans/2026-08-18-simepi-descarga-nomina-ninos-plan.md`
-- `docs/plans/2026-08-18-simepi-superadmin-nomina-provincial-design.md`
-- `docs/plans/2026-08-18-simepi-superadmin-nomina-provincial-plan.md`
-- `docs/registro/cambios/2026-08-18-simepi-descarga-nomina-ninos.md`
-- `docs/registro/prs/PR-2307.md`
-- `docs/registro/prs/PR-2308.md`
-- ... y 5 archivo(s) adicional(es) relacionados.
+- `centrodeinfancia/tests/test_trabajador_form.py`
+- `centrodeinfancia/tests/test_trabajadores_views.py`
+- ... y 38 archivo(s) adicional(es) relacionados.
 - Documentación sugerida para ampliar contexto:
 - `docs/indice.md`
 - `docs/ia/CONTEXT_HYGIENE.md`
 - `docs/ia/ARCHITECTURE.md`
 - `docs/ia/TESTING.md`
+- `docs/contexto/features/pr-2306-fix-cdi-resolver-urgentes-del-issue-2304.md`
 - `docs/contexto/features/pr-2307-feat-centrodeinfancia-descargar-nomina-provincial-de-ninos-hml.md`
 - `docs/contexto/features/pr-2308-feat-centrodeinfancia-descargar-nomina-provincial-de-ninos.md`
+- `docs/contexto/features/pr-2310-fix-cdi-resolver-urgentes-del-issue-2304.md`
 - `docs/contexto/features/pr-2311-fix-centrodeinfancia-asegurar-nomina-provincial-unica-hml.md`
 - `docs/contexto/features/pr-2312-feat-centrodeinfancia-habilitar-descarga-superadmin-hml.md`
+- `docs/contexto/features/pr-2313-chore-sync-integrar-main-en-development.md`
+- `docs/plans/2026-08-18-issue-2304-urgentes-cdi-design.md`
 - `docs/plans/2026-08-18-simepi-descarga-nomina-ninos-design.md`
 - `docs/plans/2026-08-18-simepi-descarga-nomina-ninos-plan.md`
 - `docs/plans/2026-08-18-simepi-superadmin-nomina-provincial-design.md`
 - `docs/plans/2026-08-18-simepi-superadmin-nomina-provincial-plan.md`
+- `docs/registro/cambios/2026-08-18-issue-2304-nomina-domicilio-sala.md`
+- `docs/registro/cambios/2026-08-18-issue-2304-urgentes-cdi.md`
 - `docs/registro/cambios/2026-08-18-simepi-descarga-nomina-ninos.md`
+- `docs/registro/prs/PR-2306.md`
 - `docs/registro/prs/PR-2307.md`
 - `docs/registro/prs/PR-2308.md`
+- `docs/registro/prs/PR-2310.md`
 - `docs/registro/prs/PR-2311.md`
 - `docs/registro/prs/PR-2312.md`
+- `docs/registro/prs/PR-2313.md`
 - `docs/registro/releases/pending/2026-08-19-pr-2308.md`
+- `docs/registro/releases/pending/2026-08-26-pr-2310.md`
 
 ## Trazabilidad
 
