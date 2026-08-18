@@ -215,15 +215,9 @@
                                 <label for="observaciones" class="form-label">Observaciones</label>
                                 <textarea name="observaciones" id="observaciones" class="form-control" rows="3"></textarea>
                             </div>
-                            <div class="col-md-4 mt-3">
-                                {{ form_datos_ciudadano.pertenece_comunidad_indigena|as_crispy_field }}
-                            </div>
-                            <div class="col-md-4 mt-3">
-                                {{ form_datos_ciudadano.en_situacion_de_calle|as_crispy_field }}
-                            </div>
-                            <div class="col-md-4 mt-3">
-                                {{ form_datos_ciudadano.persona_con_celiaquia|as_crispy_field }}
-                            </div>
+                            <div class="col-md-4 mt-3">{{ form_datos_ciudadano.pertenece_comunidad_indigena|as_crispy_field }}</div>
+                            <div class="col-md-4 mt-3">{{ form_datos_ciudadano.en_situacion_de_calle|as_crispy_field }}</div>
+                            <div class="col-md-4 mt-3">{{ form_datos_ciudadano.persona_con_celiaquia|as_crispy_field }}</div>
                             {% if mostrar_asistencia_pnud %}
                                 <div class="col-md-12 mt-4">
                                     <div class="border rounded p-3">
