@@ -79,6 +79,81 @@ def test_descarga_exige_egp_con_unico_scope_provincial_completo(client):
 
 
 @pytest.mark.django_db
+def test_superadmin_descarga_la_provincia_seleccionada(client):
+    provincia = Provincia.objects.create(nombre="Provincia Seleccionada")
+    superadmin = User.objects.create_superuser(
+        username="superadmin-descarga",
+        password="test1234",
+        email="superadmin@example.test",
+    )
+    client.force_login(superadmin)
+
+    with patch(
+        "centrodeinfancia.views_export.generar_nomina_ninos_pdf",
+        return_value=b"%PDF-1.4\nprueba",
+    ) as generar_pdf:
+        response = client.get(
+            reverse("centrodeinfancia_nomina_ninos_pdf"),
+            {"provincia": provincia.pk},
+        )
+
+    assert response.status_code == 200
+    generar_pdf.assert_called_once_with(user=superadmin, provincia=provincia)
+    assert (
+        response["Content-Disposition"]
+        == 'attachment; filename="nomina-ninos-provincia-seleccionada.pdf"'
+    )
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "query",
+    [
+        {},
+        {"provincia": "no-es-un-id"},
+        {"provincia": "999999"},
+    ],
+)
+def test_superadmin_debe_elegir_una_provincia_valida(client, query):
+    superadmin = User.objects.create_superuser(
+        username=f"superadmin-invalido-{query.get('provincia', 'vacio')}",
+        password="test1234",
+        email="superadmin@example.test",
+    )
+    client.force_login(superadmin)
+
+    with patch("centrodeinfancia.views_export.generar_nomina_ninos_pdf") as generar_pdf:
+        response = client.get(
+            reverse("centrodeinfancia_nomina_ninos_pdf"),
+            query,
+        )
+
+    assert response.status_code == 400
+    assert "Seleccione una provincia válida." in response.content.decode()
+    generar_pdf.assert_not_called()
+
+
+@pytest.mark.django_db
+def test_egp_ignora_una_provincia_inyectada_en_la_descarga(client):
+    provincia_egp = Provincia.objects.create(nombre="Provincia EGP")
+    provincia_inyectada = Provincia.objects.create(nombre="Provincia Inyectada")
+    egp = _create_egp("egp-parametro-inyectado", provincia_egp)
+    client.force_login(egp)
+
+    with patch(
+        "centrodeinfancia.views_export.generar_nomina_ninos_pdf",
+        return_value=b"%PDF-1.4\nprueba",
+    ) as generar_pdf:
+        response = client.get(
+            reverse("centrodeinfancia_nomina_ninos_pdf"),
+            {"provincia": provincia_inyectada.pk},
+        )
+
+    assert response.status_code == 200
+    generar_pdf.assert_called_once_with(user=egp, provincia=provincia_egp)
+
+
+@pytest.mark.django_db
 def test_descarga_pdf_define_attachment_y_no_cache(client):
     provincia = Provincia.objects.create(nombre="Tierra de Prueba")
     user = _create_egp("egp-descarga", provincia)
@@ -138,6 +213,32 @@ def test_boton_descarga_solo_se_muestra_a_egp(client):
 
     assert response.status_code == 200
     assert "Descargar nómina de niños" not in response.content.decode()
+
+
+@pytest.mark.django_db
+def test_superadmin_ve_modal_con_selector_provincial_obligatorio(client):
+    provincia_b = Provincia.objects.create(nombre="Zeta")
+    provincia_a = Provincia.objects.create(nombre="Alfa")
+    superadmin = User.objects.create_superuser(
+        username="superadmin-modal",
+        password="test1234",
+        email="superadmin@example.test",
+    )
+    client.force_login(superadmin)
+
+    response = client.get(reverse("centrodeinfancia"))
+    content = response.content.decode()
+
+    assert response.status_code == 200
+    assert "Descargar nómina de niños" in content
+    assert 'data-bs-target="#nomina-ninos-provincia-modal"' in content
+    assert 'id="nomina-ninos-provincia-modal"' in content
+    assert 'name="provincia"' in content
+    assert "required" in content
+    assert list(response.context["nomina_ninos_provincias"]) == [
+        provincia_a,
+        provincia_b,
+    ]
 
 
 @pytest.mark.django_db
