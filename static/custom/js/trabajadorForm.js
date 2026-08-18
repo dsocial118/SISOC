@@ -157,7 +157,7 @@ function toggleVisible(el, show) {
     if (el) el.classList.toggle("d-none", !show);
 }
 
-function setContainerControlsEnabled(container, enabled, clearWhenDisabled) {
+function setContainerControlsEnabled(container, enabled, clearWhenDisabled, requiredWhenEnabled) {
     if (!container) return;
     container.querySelectorAll("input, select, textarea").forEach(function (control) {
         if (!enabled && clearWhenDisabled) {
@@ -168,6 +168,7 @@ function setContainerControlsEnabled(container, enabled, clearWhenDisabled) {
             }
         }
         control.disabled = !enabled;
+        control.required = Boolean(enabled && requiredWhenEnabled);
     });
 }
 
@@ -203,11 +204,11 @@ function initializeConditionalFields() {
         toggleVisible(rowFuncionCdi, esCdi);
         toggleVisible(rowSalaCdi,    esCdi);
         toggleVisible(rowFuncionUaf, esUaf);
-        setContainerControlsEnabled(rowFuncionPfpi, esPfpi, true);
-        setContainerControlsEnabled(rowFuncionEgp, esEgp, true);
-        setContainerControlsEnabled(rowFuncionCdi, esCdi, true);
-        setContainerControlsEnabled(rowSalaCdi, esCdi, true);
-        setContainerControlsEnabled(rowFuncionUaf, esUaf, true);
+        setContainerControlsEnabled(rowFuncionPfpi, esPfpi, true, true);
+        setContainerControlsEnabled(rowFuncionEgp, esEgp, true, true);
+        setContainerControlsEnabled(rowFuncionCdi, esCdi, true, true);
+        setContainerControlsEnabled(rowSalaCdi, esCdi, true, true);
+        setContainerControlsEnabled(rowFuncionUaf, esUaf, true, true);
     }
 
     function applyFormacion() {

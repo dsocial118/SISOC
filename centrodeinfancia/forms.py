@@ -1102,9 +1102,9 @@ class NominaCentroInfanciaDestinatariosForm(NominaCentroInfanciaBaseForm):
     ]
 
     # Obligatorios según los casos que QA marcó como "campo requerido".
-    # Quedan fuera los condicionales (numero_cud, recibe_apoyo_discapacidad) y los
-    # campos pendientes de definición de producto: teléfonos de responsables (enteros),
-    # talla legacy de texto y los campos que QA pidió eliminar.
+    # Quedan fuera los condicionales (numero_cud, recibe_apoyo_discapacidad), los
+    # teléfonos de responsables y las cuatro medidas antropométricas, que producto
+    # definió como optativas. Si se informan, mantienen sus validaciones.
     CAMPOS_OBLIGATORIOS = [
         # Registro
         "tipo_registro",
@@ -1117,6 +1117,7 @@ class NominaCentroInfanciaDestinatariosForm(NominaCentroInfanciaBaseForm):
         "sexo",
         "tipo_documentacion",
         "dni",
+        "cuit_nino",
         "pais_nacimiento",
         "nacionalidad",
         "sala",
@@ -1150,10 +1151,6 @@ class NominaCentroInfanciaDestinatariosForm(NominaCentroInfanciaBaseForm):
         "cobertura_salud",
         "controles_sanitarios_ultimo_anio",
         "calendario_vacunacion_al_dia",
-        # Antropometría (TC_113 a TC_116)
-        "peso",
-        "longitud_acostado",
-        "perimetro_cefalico",
         # Nutrición
         "lactancia",
         "alergias_alimentarias",
@@ -1678,11 +1675,11 @@ class TrabajadorCDIForm(forms.ModelForm):
     EDAD_MAXIMA = 100
     DNI_MINIMO = 1_000_000
     DNI_MAXIMO = 99_999_999
-    # Obligatorios según los casos que QA marcó como "campo requerido" (TC18-TC44).
-    # Quedan fuera los condicionales (funcion_pfpi, funcion_egp, funcion_cdi, sala_cdi,
-    # funcion_uaf, formacion_academica, pueblo_originario y el bloque de discapacidad):
-    # el modelo los limpia cuando no aplican, así que exigirlos siempre rompería el
-    # guardado. fecha_actualizacion es optativa (no la reporta QA ni la marca la spec).
+    # Obligatorios comunes según los casos que QA marcó como "campo requerido".
+    # Función y Sala se aplican por subcomponente en
+    # `_aplicar_requeridos_condicionales`; el resto de los campos condicionales no
+    # puede exigirse siempre porque el modelo los limpia cuando no aplican.
+    # fecha_actualizacion es optativa (no la reporta QA ni la marca la spec).
     CAMPOS_OBLIGATORIOS = [
         "fecha_carga",
         "subcomponente",
@@ -1718,6 +1715,12 @@ class TrabajadorCDIForm(forms.ModelForm):
         "sexo_registral",
         "nacionalidad_trabajador",
     )
+    CAMPOS_POR_SUBCOMPONENTE = {
+        "pfpi": ("funcion_pfpi",),
+        "egp": ("funcion_egp",),
+        "cdi": ("funcion_cdi", "sala_cdi"),
+        "uaf": ("funcion_uaf",),
+    }
     capacitaciones_certificadas = forms.MultipleChoiceField(
         choices=TRABAJADOR_CAPACITACIONES_CHOICES,
         widget=forms.CheckboxSelectMultiple,
@@ -1818,6 +1821,8 @@ class TrabajadorCDIForm(forms.ModelForm):
         # los requeridos se aplican después.
         self._configurar_pais_nacionalidad()
         self._aplicar_requeridos()
+        self._aplicar_requeridos_condicionales()
+        self._aplicar_email_requerido_en_alta()
         self._aplicar_campo_cuit()
         self._aplicar_limites_fecha_nacimiento()
         self._bloquear_campos_renaper(campos_renaper)
@@ -1860,6 +1865,29 @@ class TrabajadorCDIForm(forms.ModelForm):
             self.fields[field_name].error_messages[
                 "required"
             ] = "Este campo es obligatorio."
+
+    def _subcomponente_actual(self):
+        if self.is_bound:
+            return self.data.get(self.add_prefix("subcomponente"))
+        return self.initial.get("subcomponente") or getattr(
+            self.instance, "subcomponente", None
+        )
+
+    def _aplicar_requeridos_condicionales(self):
+        subcomponente = self._subcomponente_actual()
+        for opcion, field_names in self.CAMPOS_POR_SUBCOMPONENTE.items():
+            for field_name in field_names:
+                field = self.fields[field_name]
+                field.required = opcion == subcomponente
+                field.error_messages["required"] = "Este campo es obligatorio."
+
+    def _aplicar_email_requerido_en_alta(self):
+        if self.instance.pk:
+            return
+        self.fields["email"].required = True
+        self.fields["email"].error_messages[
+            "required"
+        ] = "Este campo es obligatorio para generar el usuario."
 
     def _bloquear_campos_renaper(self, campos_renaper):
         # Los campos provenientes de RENAPER se reciben con initial confiable y quedan
