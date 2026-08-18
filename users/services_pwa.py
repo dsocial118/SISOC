@@ -1,5 +1,7 @@
 """Servicios de dominio para accesos PWA."""
 
+# pylint: disable=too-many-lines
+
 from __future__ import annotations
 
 from datetime import timedelta

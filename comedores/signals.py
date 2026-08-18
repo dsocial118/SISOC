@@ -1,4 +1,4 @@
-from django.db import transaction
+from django.db import router, transaction
 from django.db.models.signals import post_save, pre_delete, pre_save
 from django.dispatch import receiver
 
@@ -37,13 +37,17 @@ def _current_user_id():
     return current_user.pk if getattr(current_user, "is_authenticated", False) else None
 
 
+def _db_alias(instance, using=None):
+    return using or router.db_for_write(type(instance), instance=instance)
+
+
 @receiver(post_save, sender=Comedor)
 def send_comedor_to_gestionar(sender, instance, created, **kwargs):
     if created:
         payload = build_comedor_payload(instance)  # usa los NEW values de la instancia
         transaction.on_commit(
             lambda: AsyncSendComedorToGestionar(payload).start(),
-            using=kwargs.get("using") or instance._state.db,
+            using=_db_alias(instance, kwargs.get("using")),
         )
 
 
@@ -82,14 +86,14 @@ def update_comedor_in_gestionar(sender, instance, **kwargs):
     )  # usa los NEW values de la instancia
     transaction.on_commit(
         lambda: AsyncSendComedorToGestionar(payload).start(),
-        using=kwargs.get("using") or instance._state.db,
+        using=_db_alias(instance, kwargs.get("using")),
     )
 
 
 @receiver(pre_save, sender=Comedor)
 def track_organizacion_anterior(sender, instance, **kwargs):
     """Guarda la organización previa para propagar el cambio a los accesos PWA."""
-    database_alias = kwargs.get("using") or instance._state.db
+    database_alias = _db_alias(instance, kwargs.get("using"))
     organizacion_anterior_id = (
         sender.all_objects.using(database_alias)
         .select_for_update()
@@ -159,7 +163,7 @@ def remove_comedor_to_gestionar(sender, instance, **kwargs):
         lambda comedor_id=instance.id: AsyncRemoveComedorToGestionar(
             comedor_id
         ).start(),
-        using=kwargs.get("using") or instance._state.db,
+        using=_db_alias(instance, kwargs.get("using")),
     )
 
 
