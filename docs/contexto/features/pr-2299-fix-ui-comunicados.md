@@ -31,6 +31,8 @@
 
 - Empezar por `docs/registro/prs/PR-2299.md` para contexto resumido del PR.
 - Revisar primero estos archivos del diff:
+- `docs/contexto/features/pr-2299-fix-ui-comunicados.md`
+- `docs/registro/prs/PR-2299.md`
 - `static/custom/css/poncho_listados.css`
 - `templates/comunicados/comunicado_list.html`
 - Documentación sugerida para ampliar contexto:
@@ -38,6 +40,8 @@
 - `docs/ia/CONTEXT_HYGIENE.md`
 - `docs/ia/ARCHITECTURE.md`
 - `docs/ia/TESTING.md`
+- `docs/contexto/features/pr-2299-fix-ui-comunicados.md`
+- `docs/registro/prs/PR-2299.md`
 
 ## Trazabilidad
 
