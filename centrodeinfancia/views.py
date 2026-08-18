@@ -39,7 +39,7 @@ from ciudadanos.api import (
 )
 from ciudadanos.models import Ciudadano
 from core.decorators import permissions_any_required
-from core.models import Nacionalidad, Sexo
+from core.models import Nacionalidad, Provincia, Sexo
 from core.security import safe_redirect
 from core.services.column_preferences import build_columns_context_from_fields
 from core.soft_delete.view_helpers import SoftDeleteDeleteViewMixin
@@ -339,12 +339,22 @@ class CentroDeInfanciaListView(LoginRequiredMixin, ListView):
             {"text": "Listar", "active": True},
         ]
         context["query"] = self.request.GET.get("busqueda", "")
-        if es_egp_simepi(self.request.user):
+        if self.request.user.is_superuser:
+            context["additional_buttons"] = [
+                {
+                    "label": "Descargar nómina de niños",
+                    "class": "poncho-btn poncho-btn--descarga",
+                    "modal_target": "#nomina-ninos-provincia-modal",
+                }
+            ]
+            context["nomina_ninos_provincias"] = Provincia.objects.order_by("nombre")
+            context["mostrar_modal_nomina_ninos"] = True
+        elif es_egp_simepi(self.request.user):
             context["additional_buttons"] = [
                 {
                     "url": reverse("centrodeinfancia_nomina_ninos_pdf"),
                     "label": "Descargar nómina de niños",
-                    "class": "btn btn-outline-primary",
+                    "class": "poncho-btn poncho-btn--descarga",
                 }
             ]
         context["active_columns"] = columns_context.get("column_active_keys") or [

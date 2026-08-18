@@ -13,6 +13,46 @@
         {% url 'centrodeinfancia_exportar' as export_url %}
         {% include 'components/search_bar.html' with titulo="Buscar Centro de Desarrollo Infantil" placeholder="Buscar por nombre u organización" help_text="Ingresar nombre u organización." reset_url='centrodeinfancia' add_url='centrodeinfancia_crear' add_text='Nuevo Centro' export_url=export_url query=query additional_buttons=additional_buttons %}
 
+        {% if mostrar_modal_nomina_ninos %}
+            <div class="modal fade"
+                 id="nomina-ninos-provincia-modal"
+                 tabindex="-1"
+                 aria-labelledby="nomina-ninos-provincia-modal-label"
+                 aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <form method="get" action="{% url 'centrodeinfancia_nomina_ninos_pdf' %}">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="nomina-ninos-provincia-modal-label">Descargar nómina de niños</h5>
+                                <button type="button"
+                                        class="btn-close"
+                                        data-bs-dismiss="modal"
+                                        aria-label="Cerrar"></button>
+                            </div>
+                            <div class="modal-body">
+                                <label class="form-label" for="nomina-ninos-provincia">Provincia</label>
+                                <select class="form-select"
+                                        id="nomina-ninos-provincia"
+                                        name="provincia"
+                                        required>
+                                    <option value="" selected>Seleccionar provincia</option>
+                                    {% for provincia in nomina_ninos_provincias %}
+                                        <option value="{{ provincia.pk }}">{{ provincia.nombre }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button"
+                                        class="btn btn-outline-secondary"
+                                        data-bs-dismiss="modal">Cancelar</button>
+                                <button type="submit" class="btn btn-primary">Descargar</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
         <div class="row mt-5 max-width-100">
             <div class="col-12">
                 <div class="card comedor-table-card">

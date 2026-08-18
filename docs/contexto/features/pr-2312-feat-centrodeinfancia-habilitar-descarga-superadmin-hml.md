@@ -1,9 +1,9 @@
-# Contexto de feature PR #2308 - feat(centrodeinfancia): descargar nómina provincial de niños
+# Contexto de feature PR #2312 - feat(centrodeinfancia): habilitar descarga superadmin [HML]
 
 ## Resumen
 
-- PR: https://github.com/dsocial118/SISOC/pull/2308
-- Base: `main`
+- PR: https://github.com/dsocial118/SISOC/pull/2312
+- Base: `homologacion`
 - Rama origen: `codex/simepi-descarga-nomina-ninos`
 - Autor: `juanikitro`
 
@@ -30,48 +30,33 @@
 
 ## Memoria operativa para agentes
 
-- Empezar por `docs/registro/prs/PR-2308.md` para contexto resumido del PR.
+- Empezar por `docs/registro/prs/PR-2312.md` para contexto resumido del PR.
 - Revisar primero estos archivos del diff:
-- `AGENT_REPO_MAP.md`
-- `CHANGELOG.md`
-- `centrodeinfancia/access.py`
-- `centrodeinfancia/services_nomina_ninos_pdf.py`
 - `centrodeinfancia/templates/centrodeinfancia/centrodeinfancia_list.html`
 - `centrodeinfancia/tests/test_nomina_ninos_pdf.py`
-- `centrodeinfancia/urls.py`
 - `centrodeinfancia/views.py`
 - `centrodeinfancia/views_export.py`
-- `docs/contexto/features/pr-2307-feat-centrodeinfancia-descargar-nomina-provincial-de-ninos-hml.md`
 - `docs/contexto/features/pr-2308-feat-centrodeinfancia-descargar-nomina-provincial-de-ninos.md`
-- `docs/contexto/features/pr-2311-fix-centrodeinfancia-asegurar-nomina-provincial-unica-hml.md`
 - `docs/contexto/features/pr-2312-feat-centrodeinfancia-habilitar-descarga-superadmin-hml.md`
-- `docs/plans/2026-08-18-simepi-descarga-nomina-ninos-design.md`
-- `docs/plans/2026-08-18-simepi-descarga-nomina-ninos-plan.md`
 - `docs/plans/2026-08-18-simepi-superadmin-nomina-provincial-design.md`
 - `docs/plans/2026-08-18-simepi-superadmin-nomina-provincial-plan.md`
 - `docs/registro/cambios/2026-08-18-simepi-descarga-nomina-ninos.md`
-- `docs/registro/prs/PR-2307.md`
 - `docs/registro/prs/PR-2308.md`
-- ... y 5 archivo(s) adicional(es) relacionados.
+- `docs/registro/prs/PR-2312.md`
+- `static/custom/css/comedoresSearchBar.css`
+- `templates/components/search_bar.html`
 - Documentación sugerida para ampliar contexto:
 - `docs/indice.md`
 - `docs/ia/CONTEXT_HYGIENE.md`
 - `docs/ia/ARCHITECTURE.md`
 - `docs/ia/TESTING.md`
-- `docs/contexto/features/pr-2307-feat-centrodeinfancia-descargar-nomina-provincial-de-ninos-hml.md`
 - `docs/contexto/features/pr-2308-feat-centrodeinfancia-descargar-nomina-provincial-de-ninos.md`
-- `docs/contexto/features/pr-2311-fix-centrodeinfancia-asegurar-nomina-provincial-unica-hml.md`
 - `docs/contexto/features/pr-2312-feat-centrodeinfancia-habilitar-descarga-superadmin-hml.md`
-- `docs/plans/2026-08-18-simepi-descarga-nomina-ninos-design.md`
-- `docs/plans/2026-08-18-simepi-descarga-nomina-ninos-plan.md`
 - `docs/plans/2026-08-18-simepi-superadmin-nomina-provincial-design.md`
 - `docs/plans/2026-08-18-simepi-superadmin-nomina-provincial-plan.md`
 - `docs/registro/cambios/2026-08-18-simepi-descarga-nomina-ninos.md`
-- `docs/registro/prs/PR-2307.md`
 - `docs/registro/prs/PR-2308.md`
-- `docs/registro/prs/PR-2311.md`
 - `docs/registro/prs/PR-2312.md`
-- `docs/registro/releases/pending/2026-08-19-pr-2308.md`
 
 ## Trazabilidad
 

@@ -5,9 +5,10 @@ Fecha: 2026-08-18
 ## Cambio
 
 El listado de Centros de Desarrollo Infantil incorpora la acción `Descargar
-nómina de niños` para usuarios del grupo `SIMEPI - EGP`. La acción genera un
-PDF con las fichas activas y únicas de la única provincia completa asignada al
-perfil.
+nómina de niños` para usuarios del grupo `SIMEPI - EGP` y
+superadministradores. El EGP descarga directamente su única provincia completa;
+el superadministrador debe elegir una provincia en un modal antes de generar el
+PDF.
 
 El documento:
 
@@ -21,10 +22,12 @@ El documento:
 
 ## Autorización y privacidad
 
-El endpoint no recibe una provincia desde el cliente. Exige autenticación,
-pertenencia al grupo `SIMEPI - EGP` y exactamente un alcance territorial de
-provincia completa. Los demás roles, los alcances parciales y los perfiles
-ambiguos reciben una denegación antes de consultar la nómina.
+El endpoint exige autenticación. Para un EGP, toma exclusivamente su único
+alcance territorial de provincia completa e ignora cualquier provincia enviada
+por el cliente. Para un superadministrador, exige y valida la provincia elegida
+en el modal; una selección ausente o inválida recibe `400` antes de generar el
+archivo. Los demás roles, los alcances parciales y los perfiles ambiguos reciben
+una denegación antes de consultar la nómina.
 
 La respuesta usa `private, no-store`, se entrega como attachment y no persiste
 el archivo en `MEDIA_ROOT`. Los errores devuelven un mensaje genérico y los
@@ -35,6 +38,10 @@ CUIL, nombres ni datos RENAPER.
 
 - `centrodeinfancia/services_nomina_ninos_pdf.py` concentra consulta,
   normalización, deduplicación, render vectorial y rasterización.
+- El listado reutiliza un modal Bootstrap con un selector provincial obligatorio
+  para superadministradores, sin JavaScript ni dependencias adicionales.
+- La acción de descarga reutiliza la forma y el radio de los botones Poncho del
+  buscador, con fondo verde azulado para distinguirla de las demás acciones.
 - El alcance territorial se toma exclusivamente de la provincia del CDI. La
   provincia domiciliaria del niño puede estar vacía sin excluirlo.
 - La deduplicación conserva la ficha activa más reciente y evita repetir tanto
@@ -52,11 +59,12 @@ runtime.
 
 ## Validación y rollback
 
-La regresión focalizada cubre autorización, visibilidad del botón, filtros por
-provincia del CDI y estado, inclusión con provincia domiciliaria vacía,
-deduplicación por ciudadano, DNI e identidad compuesta, orden, datos RENAPER,
-headers HTTP y estructura del PDF final. La inspección local de un documento
-sintético de tres páginas confirmó A4 apaisado, encabezados repetidos,
+La regresión focalizada cubre autorización, visibilidad del botón, modal y
+selección obligatoria del superadministrador, aislamiento del alcance EGP,
+filtros por provincia del CDI y estado, inclusión con provincia domiciliaria
+vacía, deduplicación por ciudadano, DNI e identidad compuesta, orden, datos
+RENAPER, headers HTTP y estructura del PDF final. La inspección local de un
+documento sintético de tres páginas confirmó A4 apaisado, encabezados repetidos,
 legibilidad, marca de agua, pie numerado, resumen provincial y una imagen JPEG
 por página sin capa de texto.
 

@@ -101,16 +101,33 @@ class CentroDeInfanciaExportView(LoginRequiredMixin, CSVExportMixin, View):
 
 
 class NominaNinosPDFView(LoginRequiredMixin, View):
-    """Descarga provincial habilitada exclusivamente para SIMEPI - EGP."""
+    """Descarga provincial para SIMEPI - EGP y superadministradores."""
 
     def get(self, request, *args, **kwargs):
-        provincia_id = get_provincia_completa_unica_egp_id(request.user)
+        if request.user.is_superuser:
+            provincia_id = request.GET.get("provincia", "")
+            if not provincia_id.isdecimal():
+                return HttpResponse(
+                    "Seleccione una provincia válida.",
+                    status=400,
+                    content_type="text/plain; charset=utf-8",
+                )
+            provincia = Provincia.objects.filter(pk=provincia_id).first()
+            if provincia is None:
+                return HttpResponse(
+                    "Seleccione una provincia válida.",
+                    status=400,
+                    content_type="text/plain; charset=utf-8",
+                )
+        else:
+            provincia_id = get_provincia_completa_unica_egp_id(request.user)
+            provincia = Provincia.objects.filter(pk=provincia_id).first()
+
         if not provincia_id:
             raise PermissionDenied(
                 "La descarga requiere un único alcance provincial completo."
             )
 
-        provincia = Provincia.objects.filter(pk=provincia_id).first()
         if provincia is None:
             raise PermissionDenied("El alcance provincial no es válido.")
 
