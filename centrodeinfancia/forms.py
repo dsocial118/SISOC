@@ -58,6 +58,16 @@ from centrodeinfancia.forms_formulario_cdi import (
     construir_clase_formset_demanda_insatisfecha,
 )
 
+
+NOMINA_SALA_CHOICES = [
+    ("menos_de_un_ano", "Menos de un año"),
+    ("un_ano", "1 año"),
+    ("dos_anos", "2 años"),
+    ("tres_anos", "3 años"),
+    ("cuatro_anos", "4 años"),
+    ("multiedad", "Multiedad"),
+]
+
 __all__ = [
     "CentroDeInfanciaForm",
     "NominaCentroInfanciaForm",
@@ -711,6 +721,16 @@ class NominaCentroInfanciaBaseForm(forms.ModelForm):
         required=False,
         disabled=True,
     )
+    sala = forms.ChoiceField(
+        choices=NOMINA_SALA_CHOICES,
+        required=False,
+        label="Sala",
+    )
+    decil_ipi = forms.CharField(
+        label="Decil de CDI",
+        required=False,
+        disabled=True,
+    )
 
     class Meta:
         model = NominaCentroInfancia
@@ -740,6 +760,7 @@ class NominaCentroInfanciaBaseForm(forms.ModelForm):
             "piso_domicilio",
             "departamento_domicilio",
             "provincia_domicilio",
+            "departamento",
             "municipio_domicilio",
             "localidad_domicilio",
             "responsable_legal_1_apellido",
@@ -771,12 +792,25 @@ class NominaCentroInfanciaBaseForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self._configure_sala_choices()
         self._configure_boolean_fields()
         self._configure_choice_fields()
         self._configure_widgets()
         self._configure_geography_fields()
         self._configure_initial_age()
         self._apply_required_flags()
+
+    def _configure_sala_choices(self):
+        """Renderiza una sola sala y conserva valores legacy ya registrados."""
+        choices = [("", "---------"), *NOMINA_SALA_CHOICES]
+        current_value = (
+            self.data.get(self.add_prefix("sala"))
+            if self.is_bound
+            else getattr(self.instance, "sala", None)
+        )
+        if current_value and current_value not in dict(choices):
+            choices.insert(1, (current_value, current_value))
+        self.fields["sala"].choices = choices
 
     def _configure_boolean_fields(self):
         boolean_fields = {
@@ -847,8 +881,9 @@ class NominaCentroInfanciaBaseForm(forms.ModelForm):
             "calle_domicilio": "Calle",
             "altura_domicilio": "Altura",
             "piso_domicilio": "Piso",
-            "departamento_domicilio": "Departamento",
+            "departamento_domicilio": "Departamento (piso/depto.)",
             "provincia_domicilio": "Provincia",
+            "departamento": "Departamento (jurisdicción)",
             "municipio_domicilio": "Municipio",
             "localidad_domicilio": "Localidad",
             "responsable_legal_1_apellido": "Apellido",
@@ -914,6 +949,7 @@ class NominaCentroInfanciaBaseForm(forms.ModelForm):
             return None
 
         provincia_initial = self.initial.get("provincia_domicilio")
+        departamento_initial = self.initial.get("departamento")
         municipio_initial = self.initial.get("municipio_domicilio")
         localidad_initial = self.initial.get("localidad_domicilio")
 
@@ -953,11 +989,37 @@ class NominaCentroInfanciaBaseForm(forms.ModelForm):
                 localidad_queryset = Localidad.objects.all()
             localidad = resolve_by_name(localidad_queryset, localidad_initial)
 
+        departamento = DepartamentoIpi.objects.filter(
+            pk=parse_pk(self.data.get(self.add_prefix("departamento")))
+        ).first() or getattr(self.instance, "departamento", None)
+        if (
+            not departamento
+            and departamento_initial
+            and not isinstance(departamento_initial, DepartamentoIpi)
+        ):
+            departamento_queryset = DepartamentoIpi.objects.filter(provincia=provincia)
+            if not provincia:
+                departamento_queryset = DepartamentoIpi.objects.all()
+            departamento = resolve_by_name(departamento_queryset, departamento_initial)
+
         self.fields["provincia_domicilio"].queryset = Provincia.objects.all().order_by(
             "nombre"
         )
         if provincia:
             self.fields["provincia_domicilio"].initial = provincia
+        if provincia:
+            self.fields["departamento"].queryset = DepartamentoIpi.objects.filter(
+                provincia=provincia
+            ).order_by("nombre")
+        else:
+            self.fields["departamento"].queryset = DepartamentoIpi.objects.none()
+        if departamento:
+            self.fields["departamento"].initial = departamento
+            self.fields["decil_ipi"].initial = (
+                str(departamento.decil_ipi)
+                if departamento.decil_ipi is not None
+                else ""
+            )
         if provincia:
             self.fields["municipio_domicilio"].queryset = Municipio.objects.filter(
                 provincia=provincia
@@ -1136,9 +1198,9 @@ class NominaCentroInfanciaDestinatariosForm(NominaCentroInfanciaBaseForm):
         # Domicilio
         "calle_domicilio",
         "altura_domicilio",
-        "departamento_domicilio",
         "tipo_barrio",
         "provincia_domicilio",
+        "departamento",
         "municipio_domicilio",
         "localidad_domicilio",
         # Cultura e identidad

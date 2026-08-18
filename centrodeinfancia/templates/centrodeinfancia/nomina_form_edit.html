@@ -28,12 +28,16 @@
     <script nonce="{{ request.csp_nonce }}">
         var ajaxLoadMunicipiosUrl = "{% url 'ajax_load_municipios' %}";
         var ajaxLoadLocalidadesUrl = "{% url 'ajax_load_localidades' %}";
+        var ajaxLoadDepartamentosIpiUrl = "{% url 'centrodeinfancia_ajax_load_departamentos_ipi' %}";
     </script>
     <script nonce="{{ request.csp_nonce }}">
         document.addEventListener("DOMContentLoaded", function() {
             const provinciaSelect = document.getElementById("id_provincia_domicilio");
+            const departamentoSelect = document.getElementById("id_departamento");
+            const decilIpiInput = document.getElementById("id_decil_ipi");
             const municipioSelect = document.getElementById("id_municipio_domicilio");
             const localidadSelect = document.getElementById("id_localidad_domicilio");
+            const initialDepartamentoValue = departamentoSelect ? departamentoSelect.value : "";
             const initialMunicipioValue = municipioSelect ? municipioSelect.value : "";
             const initialLocalidadValue = localidadSelect ? localidadSelect.value : "";
 
@@ -75,14 +79,57 @@
                 });
             }
 
+            async function loadDepartamentos(provinciaId, selectedValue) {
+                if (!departamentoSelect) {
+                    return;
+                }
+                const response = await fetch(
+                    `${ajaxLoadDepartamentosIpiUrl}?provincia_id=${provinciaId}`,
+                    { headers: { "X-Requested-With": "XMLHttpRequest" }, credentials: "same-origin" }
+                );
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                const data = await response.json();
+                resetSelect(departamentoSelect, "Seleccionar departamento...");
+                data.forEach(function(item) {
+                    const option = document.createElement("option");
+                    option.value = item.id;
+                    option.textContent = item.nombre || "";
+                    option.dataset.decilIpi = item.decil_ipi ?? "";
+                    departamentoSelect.appendChild(option);
+                });
+                if (selectedValue) {
+                    departamentoSelect.value = selectedValue;
+                }
+                const selected = departamentoSelect.options[departamentoSelect.selectedIndex];
+                if (decilIpiInput) {
+                    decilIpiInput.value = selected ? selected.dataset.decilIpi || "" : "";
+                }
+            }
+
+            if (departamentoSelect) {
+                departamentoSelect.addEventListener("change", function() {
+                    const selected = this.options[this.selectedIndex];
+                    if (decilIpiInput) {
+                        decilIpiInput.value = selected ? selected.dataset.decilIpi || "" : "";
+                    }
+                });
+            }
+
             if (provinciaSelect && municipioSelect) {
                 provinciaSelect.addEventListener("change", async function() {
                     try {
+                        resetSelect(departamentoSelect, "Seleccionar departamento...");
+                        if (decilIpiInput) {
+                            decilIpiInput.value = "";
+                        }
                         resetSelect(municipioSelect, "Seleccionar municipio...");
                         resetSelect(localidadSelect, "Seleccionar localidad...");
                         if (!this.value) {
                             return;
                         }
+                        await loadDepartamentos(this.value, "");
                         await loadOptions(
                             `${ajaxLoadMunicipiosUrl}?provincia_id=${this.value}`,
                             municipioSelect,
@@ -113,11 +160,14 @@
             }
 
             if (provinciaSelect && provinciaSelect.value) {
-                loadOptions(
-                    `${ajaxLoadMunicipiosUrl}?provincia_id=${provinciaSelect.value}`,
-                    municipioSelect,
-                    "Seleccionar municipio..."
-                ).then(function() {
+                Promise.all([
+                    loadDepartamentos(provinciaSelect.value, initialDepartamentoValue),
+                    loadOptions(
+                        `${ajaxLoadMunicipiosUrl}?provincia_id=${provinciaSelect.value}`,
+                        municipioSelect,
+                        "Seleccionar municipio..."
+                    ),
+                ]).then(function() {
                     if (initialMunicipioValue) {
                         municipioSelect.value = initialMunicipioValue;
                     }

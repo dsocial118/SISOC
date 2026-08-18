@@ -1399,6 +1399,14 @@ class NominaCentroInfancia(SoftDeleteModelMixin, models.Model):
         null=True,
         related_name="+",
     )
+    departamento = models.ForeignKey(
+        DepartamentoIpi,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name="nominas_centros_infancia",
+        verbose_name="Departamento (jurisdicción)",
+    )
     municipio_domicilio = models.ForeignKey(
         Municipio,
         on_delete=models.SET_NULL,
@@ -1761,6 +1769,12 @@ class NominaCentroInfancia(SoftDeleteModelMixin, models.Model):
 
         # ── Validar geografía domicilio ───────────────────────────────────────
         relation_rules = (
+            (
+                "departamento",
+                "provincia_domicilio",
+                "provincia_id",
+                "El departamento no pertenece a la provincia indicada.",
+            ),
             (
                 "municipio_domicilio",
                 "provincia_domicilio",
