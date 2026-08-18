@@ -13,6 +13,7 @@
 
 ## Arquitectura tocada
 
+- El PR toca lógica en `services/`, por lo que impacta reglas de negocio u orquestación.
 - Se modifican templates, con posible impacto visual o de composición UI.
 
 ## Decisiones y supuestos detectados
@@ -32,9 +33,13 @@
 - Empezar por `docs/registro/prs/PR-2301.md` para contexto resumido del PR.
 - Revisar primero estos archivos del diff:
 - `comedores/forms/comedor_form.py`
+- `comedores/services/comedor_service/impl.py`
 - `comedores/templates/comedor/nomina_form.html`
+- `comedores/tests.py`
 - `comedores/views/nomina.py`
+- `docs/contexto/features/pr-2301-fix.md`
 - `docs/registro/cambios/2026-08-10-alta-ciudadano-sin-dni-nomina.md`
+- `docs/registro/prs/PR-2301.md`
 - `tests/test_comedor_form_unit.py`
 - `tests/test_nomina_views_unit.py`
 - Documentación sugerida para ampliar contexto:
@@ -42,7 +47,9 @@
 - `docs/ia/CONTEXT_HYGIENE.md`
 - `docs/ia/ARCHITECTURE.md`
 - `docs/ia/TESTING.md`
+- `docs/contexto/features/pr-2301-fix.md`
 - `docs/registro/cambios/2026-08-10-alta-ciudadano-sin-dni-nomina.md`
+- `docs/registro/prs/PR-2301.md`
 
 ## Trazabilidad
 
