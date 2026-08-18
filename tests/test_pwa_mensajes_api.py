@@ -25,7 +25,7 @@ from rendicioncuentasmensual.services import (
     RendicionCuentaMensualService,
     RendicionProcesoService,
 )
-from users.models import AccesoComedorPWA
+from users.models import AccesoComedorPWA, AccesoOrganizacionPWA
 
 
 @pytest.fixture
@@ -232,6 +232,10 @@ def test_list_mensajes_por_espacio_expone_organizacion_solo_a_usuario_organizaci
         username="rep_mensajes_organizacion",
         email="rep_mensajes_organizacion@example.com",
         password="testpass123",
+    )
+    AccesoOrganizacionPWA.objects.create(
+        user=representante,
+        organizacion=organizacion,
     )
     for espacio in (espacio_1, espacio_2):
         AccesoComedorPWA.objects.create(
