@@ -163,6 +163,13 @@ class CiudadanoDatosComplementariosNominaForm(forms.ModelForm):
             "persona_con_celiaquia",
         ]
 
+    def clean(self):
+        cleaned_data = super().clean()
+        for field_name in self.Meta.fields:
+            if self.add_prefix(field_name) not in self.data:
+                cleaned_data[field_name] = getattr(self.instance, field_name)
+        return cleaned_data
+
     def save(self, commit=True):
         ciudadano = super().save(commit=False)
         if commit:

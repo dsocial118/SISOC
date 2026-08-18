@@ -320,11 +320,11 @@
                         "Ciudadano seleccionado: " + ciudadanoNombre;
                     document.getElementById("estado").value = "";
                     document.getElementById("observaciones").value = "";
-                    document.getElementById("id_pertenece_comunidad_indigena").value =
+                    formNomina.elements["modal-pertenece_comunidad_indigena"].value =
                         this.dataset.comunidadIndigena || "";
-                    document.getElementById("id_en_situacion_de_calle").value =
+                    formNomina.elements["modal-en_situacion_de_calle"].value =
                         this.dataset.situacionCalle || "";
-                    document.getElementById("id_persona_con_celiaquia").value =
+                    formNomina.elements["modal-persona_con_celiaquia"].value =
                         this.dataset.personaCeliaquia || "";
                     const asistenciaAlimentaria = document.getElementById("modal_asistencia_alimentaria");
                     const asistenciaActividades = document.getElementById("modal_asistencia_actividades");

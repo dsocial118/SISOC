@@ -368,7 +368,7 @@ class NominaCreateView(LoginRequiredMixin, CreateView):
                 "form_ciudadano_sin_dni": form_ciudadano_sin_dni
                 or CiudadanoSinDniFormParaNomina(),
                 "form_datos_ciudadano": kwargs.get("form_datos_ciudadano")
-                or CiudadanoDatosComplementariosNominaForm(),
+                or CiudadanoDatosComplementariosNominaForm(prefix="modal"),
                 "modo_creacion": self.request.POST.get("modo_creacion", "con_dni"),
                 "form_nomina_extra": kwargs.get("form_nomina_extra")
                 or NominaExtraForm(comedor=admision.comedor),
@@ -427,7 +427,7 @@ class NominaCreateView(LoginRequiredMixin, CreateView):
             # Agregar ciudadano existente
             form_nomina_extra = NominaExtraForm(request.POST, comedor=admision.comedor)
             form_datos_ciudadano = CiudadanoDatosComplementariosNominaForm(
-                request.POST, instance=_c
+                request.POST, instance=_c, prefix="modal"
             )
 
             if not (form_nomina_extra.is_valid() and form_datos_ciudadano.is_valid()):
@@ -450,10 +450,10 @@ class NominaCreateView(LoginRequiredMixin, CreateView):
                 user=request.user,
                 estado=estado,
                 observaciones=observaciones,
+                datos_complementarios=form_datos_ciudadano.cleaned_data,
             )
 
             if ok:
-                form_datos_ciudadano.save()
                 nomina = _get_nomina_creada(
                     ciudadano_id=ciudadano_id,
                     admision_id=admision_id,
@@ -753,7 +753,7 @@ class NominaDirectaCreateView(LoginRequiredMixin, CreateView):
                 "form_ciudadano_sin_dni": form_ciudadano_sin_dni
                 or CiudadanoSinDniFormParaNomina(),
                 "form_datos_ciudadano": kwargs.get("form_datos_ciudadano")
-                or CiudadanoDatosComplementariosNominaForm(),
+                or CiudadanoDatosComplementariosNominaForm(prefix="modal"),
                 "modo_creacion": self.request.POST.get("modo_creacion", "con_dni"),
                 "form_nomina_extra": kwargs.get("form_nomina_extra")
                 or NominaExtraForm(comedor=comedor),
@@ -787,7 +787,7 @@ class NominaDirectaCreateView(LoginRequiredMixin, CreateView):
 
             form_nomina_extra = NominaExtraForm(request.POST, comedor=comedor)
             form_datos_ciudadano = CiudadanoDatosComplementariosNominaForm(
-                request.POST, instance=_c
+                request.POST, instance=_c, prefix="modal"
             )
             if not (form_nomina_extra.is_valid() and form_datos_ciudadano.is_valid()):
                 messages.error(
@@ -808,9 +808,9 @@ class NominaDirectaCreateView(LoginRequiredMixin, CreateView):
                 estado=estado,
                 observaciones=observaciones,
                 comedor_id=comedor_id,
+                datos_complementarios=form_datos_ciudadano.cleaned_data,
             )
             if ok:
-                form_datos_ciudadano.save()
                 nomina = _get_nomina_creada(
                     ciudadano_id=ciudadano_id,
                     comedor_id=comedor_id,

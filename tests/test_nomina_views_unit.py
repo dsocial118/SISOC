@@ -263,12 +263,20 @@ def test_nomina_create_post_ciudadano_existente(mocker):
         is_valid=lambda: True, cleaned_data={"estado": "A", "observaciones": "o"}
     )
     mocker.patch("comedores.views.nomina.NominaExtraForm", return_value=form)
-    form_datos = SimpleNamespace(is_valid=lambda: True, save=mocker.Mock())
+    datos_sociales = {
+        "pertenece_comunidad_indigena": "True",
+        "en_situacion_de_calle": "False",
+        "persona_con_celiaquia": "True",
+    }
+    form_datos = SimpleNamespace(
+        is_valid=lambda: True,
+        cleaned_data=datos_sociales,
+    )
     mocker.patch(
         "comedores.views.nomina.CiudadanoDatosComplementariosNominaForm",
         return_value=form_datos,
     )
-    mocker.patch(
+    agregar = mocker.patch(
         "comedores.views.nomina.ComedorService.agregar_ciudadano_a_nomina",
         return_value=(True, "ok"),
     )
@@ -278,7 +286,7 @@ def test_nomina_create_post_ciudadano_existente(mocker):
 
     out = view.post(req)
     assert out == "redir"
-    form_datos.save.assert_called_once_with()
+    assert agregar.call_args.kwargs["datos_complementarios"] == datos_sociales
     redir.assert_called_once_with("/ok")
 
 
