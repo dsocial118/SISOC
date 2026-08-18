@@ -5,6 +5,7 @@
 
 - [sin-area] fix(admisiones): autorizar transferencias issue 2272. (PR #2296)
 - [sin-area] fix(users): quitar declaración de confirmación de datos. (PR #2300)
+- [sin-area] feat(centrodeinfancia): descargar nómina provincial de niños. (PR #2308)
 <!-- AUTO-GENERATED RELEASE END: 2026-08-19 -->
 
 <!-- AUTO-GENERATED RELEASE START: 2026-08-13 -->
