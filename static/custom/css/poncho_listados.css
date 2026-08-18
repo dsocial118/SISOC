@@ -86,11 +86,11 @@
   border-color: var(--poncho-verde-hover);
 }
 
-/* ---------- Cards de contenido ----------
-   Vistas donde cada item ES una card en vez de una fila de tabla (comunicados
-   publicos). No se vacian como la card que envuelve la tabla: se las lleva a
-   la paleta PONCHO para que acompañen al resto del listado. */
-.app-main:has(.poncho-search) .card:not(:has(.table)):not(:has(.projects)) {
+/* ---------- Cards de comunicados ----------
+   Cada comunicado ES una card en vez de una fila de tabla. La clase semantica
+   evita repintar otras cards sin tabla que compartan una pagina con el buscador
+   (por ejemplo, las metricas de importar expedientes). */
+.app-main:has(.poncho-search) .comunicado-card {
   background: var(--poncho-azul-principal);
   border: 1px solid rgba(255, 255, 255, .18);
   border-radius: var(--poncho-radio-buscador);
@@ -98,27 +98,31 @@
   color: var(--poncho-blanco);
 }
 
-.app-main:has(.poncho-search) .card:not(:has(.table)):not(:has(.projects)) .card-body {
+.app-main:has(.poncho-search) .comunicado-card .card-body {
   padding: 1.25rem 1.5rem;
 }
 
-.app-main:has(.poncho-search) .card:not(:has(.table)):not(:has(.projects)) .card-title,
-.app-main:has(.poncho-search) .card:not(:has(.table)):not(:has(.projects)) .card-title a {
+.app-main:has(.poncho-search) .comunicado-card .card-title,
+.app-main:has(.poncho-search) .comunicado-card .card-title a {
   color: var(--poncho-blanco);
   font-family: var(--poncho-font-base);
   font-weight: 700;
 }
 
-.app-main:has(.poncho-search) .card:not(:has(.table)):not(:has(.projects)) .card-title a:hover {
+.app-main:has(.poncho-search) .comunicado-card .card-title a:hover {
   color: var(--poncho-amarillo, #f7b446);
 }
 
-.app-main:has(.poncho-search) .card:not(:has(.table)):not(:has(.projects)) .card-text {
+.app-main:has(.poncho-search) .comunicado-card .card-text {
   font-family: var(--poncho-font-base);
 }
 
+.app-main:has(.poncho-search) .comunicado-card .comunicado-meta {
+  white-space: nowrap;
+}
+
 /* "Leer mas" con la forma de los CTA del design system */
-.app-main:has(.poncho-search) .card:not(:has(.table)):not(:has(.projects)) .btn-outline-primary {
+.app-main:has(.poncho-search) .comunicado-card .btn-outline-primary {
   background: transparent;
   border: 1px solid var(--poncho-blanco);
   border-radius: var(--poncho-radio-cta);
@@ -128,7 +132,7 @@
   letter-spacing: normal;
 }
 
-.app-main:has(.poncho-search) .card:not(:has(.table)):not(:has(.projects)) .btn-outline-primary:hover {
+.app-main:has(.poncho-search) .comunicado-card .btn-outline-primary:hover {
   background: var(--poncho-azul-secundario);
   border-color: var(--poncho-blanco);
   color: var(--poncho-blanco);
@@ -456,6 +460,13 @@
 }
 
 @media (max-width: 767.98px) {
+  .app-main:has(.poncho-search) .comunicado-card .comunicado-meta {
+    max-width: 100%;
+    min-width: 0;
+    overflow-wrap: anywhere;
+    white-space: normal;
+  }
+
   .app-main:has(.poncho-search) .table thead th,
   .app-main:has(.poncho-search) .projects thead th {
     font-size: 1rem;

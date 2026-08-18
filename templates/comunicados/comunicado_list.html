@@ -20,7 +20,7 @@
 
         <!-- Lista de comunicados -->
         {% for comunicado in comunicados %}
-            <div class="card mb-3 mt-4"
+            <div class="card comunicado-card mb-3 mt-4"
                  style="{% if comunicado.destacado %}border-left: 4px solid #e7ba61;
                         {% endif %}">
                 <div class="card-body">
@@ -40,9 +40,7 @@
                             <a href="{% url 'comunicados_ver' comunicado.pk %}"
                                class="text-decoration-none">{{ comunicado.titulo }}</a>
                         </h5>
-                        <p class="card-text small mb-0"
-                           style="color: #9ca3af;
-                                  white-space: nowrap">
+                        <p class="card-text comunicado-meta small mb-0" style="color: #9ca3af;">
                             <i class="fas fa-calendar"></i> {{ comunicado.fecha_publicacion|date:"d/m/Y H:i" }}
                             <span class="ms-3">
                                 <i class="fas fa-user"></i> {{ comunicado.usuario_creador.get_full_name|default:comunicado.usuario_creador.username }}
@@ -62,7 +60,7 @@
                 </div>
             </div>
         {% empty %}
-            <div class="card">
+            <div class="card comunicado-card mt-4">
                 <div class="card-body text-center py-5">
                     <i class="fas fa-newspaper fa-3x mb-3" style="color: #6b7280;"></i>
                     <p class="mb-0" style="color: #9ca3af;">No hay comunicados publicados.</p>
