@@ -224,7 +224,7 @@ class RendicionCuentaMensualDetailView(LoginRequiredMixin, DetailView):
             ).exists()
         )
 
-    def post(  # pylint: disable=too-many-return-statements,too-many-branches
+    def post(  # pylint: disable=too-many-return-statements,too-many-branches,too-many-locals
         self, request, *args, **kwargs
     ):
         rendicion = self.get_object()
@@ -468,7 +468,9 @@ class RendicionCuentaMensualDownloadPdfView(LoginRequiredMixin, DetailView):
         if not hasattr(rendicion, "periodo_inicio") and not hasattr(rendicion, "anio"):
             filename = f"rendicion-{rendicion.numero_rendicion or rendicion.id}.pdf"
         else:
-            filename = f"{proyecto}_{getattr(rendicion, 'convenio', None) or 'sin-convenio'}_rendicion-{rendicion.numero_rendicion or rendicion.id}_{periodo}.pdf"
+            convenio = getattr(rendicion, "convenio", None) or "sin-convenio"
+            numero = rendicion.numero_rendicion or rendicion.id
+            filename = f"{proyecto}_{convenio}_rendicion-{numero}_{periodo}.pdf"
         return FileResponse(
             pdf_buffer,
             as_attachment=True,

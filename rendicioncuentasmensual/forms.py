@@ -45,6 +45,10 @@ class DocumentacionAdjuntaForm(forms.ModelForm):
             "nombre": forms.TextInput(attrs={"class": "form-control"}),
             "archivo": forms.ClearableFileInput(attrs={"class": "form-control"}),
         }
+        labels = {
+            "nombre": "Nombre del Documento",
+            "archivo": "Archivo",
+        }
 
 
 class RendicionDatosForm(forms.ModelForm):
@@ -82,10 +86,6 @@ class RendicionDatosForm(forms.ModelForm):
                 "Las fechas deben pertenecer al mismo período mensual."
             )
         return cleaned
-        labels = {
-            "nombre": "Nombre del Documento",
-            "archivo": "Archivo",
-        }
 
 
 class RendicionProcesoForm(forms.Form):

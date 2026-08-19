@@ -74,7 +74,7 @@ def inferir_linea_programatica(comedor):
     return DocumentacionAdjunta.LINEA_TRADICIONAL
 
 
-class RendicionCuentaMensualService:
+class RendicionCuentaMensualService:  # pylint: disable=too-many-public-methods
     MOBILE_MESSAGE_ACTION_PREFIX = "[SISOC_ACCION]"
     MOBILE_MESSAGE_ACTION_SUFFIX = "[/SISOC_ACCION]"
     CATEGORIAS_CON_HISTORIAL_SUBSANACION = {
