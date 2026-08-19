@@ -36,8 +36,10 @@
 - Revisar primero estos archivos del diff:
 - `AGENT_REPO_MAP.md`
 - `comedores/api_serializers.py`
+- `docs/contexto/features/pr-2315-evolutivos-de-rendicion-de-cuentas-ii-2305.md`
 - `docs/flujos/rendiciones_mensuales_proyectos.md`
 - `docs/registro/cambios/2026-08-19-issue-2305-rendiciones.md`
+- `docs/registro/prs/PR-2315.md`
 - `rendicioncuentasmensual/filter_config.py`
 - `rendicioncuentasmensual/forms.py`
 - `rendicioncuentasmensual/migrations/0017_alter_rendicioncuentamensual_options_and_more.py`
@@ -52,8 +54,10 @@
 - `docs/ia/CONTEXT_HYGIENE.md`
 - `docs/ia/ARCHITECTURE.md`
 - `docs/ia/TESTING.md`
+- `docs/contexto/features/pr-2315-evolutivos-de-rendicion-de-cuentas-ii-2305.md`
 - `docs/flujos/rendiciones_mensuales_proyectos.md`
 - `docs/registro/cambios/2026-08-19-issue-2305-rendiciones.md`
+- `docs/registro/prs/PR-2315.md`
 
 ## Trazabilidad
 
