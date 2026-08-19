@@ -519,6 +519,7 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 ### Si necesitas cambiar rendiciones mensuales u Organizaciones
 
 - estados, etapas, subsanaciones y alcance por proyecto: `rendicioncuentasmensual/services.py`
+- solicitudes de documentos faltantes y categorías documentales: `rendicioncuentasmensual/models.py`; el contrato PWA se serializa en `comedores/api_serializers.py`
 - asociación actual: `RendicionCuentaMensual.proyecto`; conservar fallback por `comedor.codigo_de_proyecto` para datos legados
 - listado y detalle del legajo: `organizaciones/views.py` y templates `organizacion_*`
 - proyectos editables: `OrganizacionForm.codigos_proyecto` mantiene el contrato CSV mediante un campo oculto

@@ -17,6 +17,7 @@ from django.views.generic import (
 from comedores.models import Comedor
 from core.services.advanced_filters import AdvancedFilterEngine
 from core.services.favorite_filters import SeccionesFiltrosFavoritos
+from core.mixins import CSVExportMixin
 from core.soft_delete.preview import build_delete_preview
 from core.soft_delete.view_helpers import (
     SoftDeleteDeleteViewMixin,
@@ -30,6 +31,7 @@ from rendicioncuentasmensual.forms import (
     RendicionCuentaMensualForm,
     DocumentacionAdjuntaForm,
     RendicionProcesoForm,
+    RendicionDatosForm,
 )
 from rendicioncuentasmensual.filter_config import (
     BOOL_OPS,
@@ -89,11 +91,31 @@ class RendicionCuentaMensualListView(LoginRequiredMixin, ListView):
         return context
 
 
-class RendicionCuentaMensualGlobalListView(LoginRequiredMixin, ListView):
+class RendicionCuentaMensualGlobalListView(
+    LoginRequiredMixin, CSVExportMixin, ListView
+):
     model = RendicionCuentaMensual
     template_name = "rendicioncuentasmensual_global_list.html"
     context_object_name = "rendiciones_cuentas_mensuales"
     paginate_by = 25
+    export_filename = "listado_rendiciones.csv"
+
+    def get_export_columns(self):
+        return [
+            ("Proyecto", "comedor.codigo_de_proyecto"),
+            ("Organización", "comedor.organizacion.nombre"),
+            ("Convenio", "convenio"),
+            ("Rendición", "numero_rendicion"),
+            ("Período inicio", "periodo_inicio"),
+            ("Período fin", "periodo_fin"),
+            ("Estado", "get_estado_display"),
+            ("Etapa", "get_etapa_proceso_display"),
+        ]
+
+    def get(self, request, *args, **kwargs):
+        if request.GET.get("export") == "csv":
+            return self.export_csv(self.get_queryset())
+        return super().get(request, *args, **kwargs)
 
     def get_queryset(self):
         """Retorna todas las rendiciones activas para el listado global."""
@@ -119,9 +141,22 @@ class RendicionCuentaMensualGlobalListView(LoginRequiredMixin, ListView):
         context["reset_url"] = "rendicioncuentasmensual_global_list"
         context["filters_mode"] = True
         context["filters_action"] = reverse("rendicioncuentasmensual_global_list")
+        request_export_url = (
+            self.request.get_full_path()
+            if hasattr(self.request, "get_full_path")
+            else reverse("rendicioncuentasmensual_global_list")
+        )
+        separator = "&" if "?" in request_export_url else "?"
+        context["export_url"] = f"{request_export_url}{separator}export=csv"
         context["filters_config"] = get_filters_ui_config()
         context["filters_js"] = "custom/js/advanced_filters.js"
         context["seccion_filtros_favoritos"] = SeccionesFiltrosFavoritos.RENDICIONES
+        context["columnas_configurables"] = [
+            ("proyecto", "Proyecto"),
+            ("convenio", "Convenio"),
+            ("etapa", "Etapa"),
+            ("estado", "Estado"),
+        ]
         context["breadcrumb_items"] = [
             {"text": "Organizaciones", "url": reverse_lazy("organizaciones")},
             {"text": "Rendiciones", "active": True},
@@ -193,6 +228,38 @@ class RendicionCuentaMensualDetailView(LoginRequiredMixin, DetailView):
         self, request, *args, **kwargs
     ):
         rendicion = self.get_object()
+        solicitar_categoria = (request.POST.get("solicitar_categoria") or "").strip()
+        if solicitar_categoria:
+            puede_solicitar = user_has_permission_code(
+                request.user, self.REVIEW_PERMISSION_CODE
+            ) and (
+                (
+                    rendicion.etapa_proceso
+                    == RendicionCuentaMensual.ETAPA_REVISION_DOCUMENTACION
+                    and self._user_can_territorial(request.user)
+                )
+                or (
+                    rendicion.etapa_proceso
+                    == RendicionCuentaMensual.ETAPA_REVISION_AUDITORIA
+                    and self._user_can_auditoria(request.user)
+                )
+            )
+            if not puede_solicitar:
+                raise PermissionDenied
+            try:
+                RendicionCuentaMensualService.solicitar_documento_faltante(
+                    rendicion=rendicion,
+                    categoria=solicitar_categoria,
+                    observaciones=request.POST.get("observaciones_faltante"),
+                    actor=request.user,
+                )
+            except ValidationError as exc:
+                messages.error(request, self.format_validation_error(exc))
+            else:
+                messages.success(request, "Solicitud de documento faltante registrada.")
+            return HttpResponseRedirect(
+                reverse("rendicioncuentasmensual_detail", kwargs={"pk": rendicion.pk})
+            )
         accion_proceso = (request.POST.get("accion_proceso") or "").strip()
         if accion_proceso:
             acciones_territoriales = {
@@ -340,11 +407,28 @@ class RendicionCuentaMensualDetailView(LoginRequiredMixin, DetailView):
         context["puede_revisar_documentos"] = self._user_can_review_documentos(
             self.request.user, rendicion
         )
+        context["puede_solicitar_faltantes"] = user_has_permission_code(
+            self.request.user, self.REVIEW_PERMISSION_CODE
+        ) and (
+            (
+                rendicion.etapa_proceso
+                == RendicionCuentaMensual.ETAPA_REVISION_DOCUMENTACION
+                and self._user_can_territorial(self.request.user)
+            )
+            or (
+                rendicion.etapa_proceso
+                == RendicionCuentaMensual.ETAPA_REVISION_AUDITORIA
+                and self._user_can_auditoria(self.request.user)
+            )
+        )
         context["puede_revision_territorial"] = self._user_can_territorial(
             self.request.user
         )
         context["puede_revision_auditoria"] = self._user_can_auditoria(
             self.request.user
+        )
+        context["puede_editar_datos"] = user_has_permission_code(
+            self.request.user, "rendicioncuentasmensual.edit_rendicion_data"
         )
         context["proceso_form"] = RendicionProcesoForm()
         return context
@@ -370,7 +454,21 @@ class RendicionCuentaMensualDownloadPdfView(LoginRequiredMixin, DetailView):
                 reverse("rendicioncuentasmensual_detail", kwargs={"pk": rendicion.pk})
             )
 
-        filename = f"rendicion-{rendicion.numero_rendicion or rendicion.id}.pdf"
+        proyecto = (
+            getattr(getattr(rendicion, "proyecto", None), "codigo", "")
+            or getattr(getattr(rendicion, "comedor", None), "codigo_de_proyecto", "")
+            or "sin-proyecto"
+        )
+        periodo_inicio = getattr(rendicion, "periodo_inicio", None)
+        anio = getattr(rendicion, "anio", "sin-anio")
+        mes = getattr(rendicion, "mes", 0)
+        periodo = (
+            periodo_inicio.strftime("%Y-%m") if periodo_inicio else f"{anio}-{mes:02d}"
+        )
+        if not hasattr(rendicion, "periodo_inicio") and not hasattr(rendicion, "anio"):
+            filename = f"rendicion-{rendicion.numero_rendicion or rendicion.id}.pdf"
+        else:
+            filename = f"{proyecto}_{getattr(rendicion, 'convenio', None) or 'sin-convenio'}_rendicion-{rendicion.numero_rendicion or rendicion.id}_{periodo}.pdf"
         return FileResponse(
             pdf_buffer,
             as_attachment=True,
@@ -423,7 +521,14 @@ class RendicionCuentaMensualCreateView(LoginRequiredMixin, CreateView):
 class RendicionCuentaMensualUpdateView(LoginRequiredMixin, UpdateView):
     model = RendicionCuentaMensual
     template_name = "rendicioncuentasmensual_form.html"
-    form_class = RendicionCuentaMensualForm
+    form_class = RendicionDatosForm
+
+    def dispatch(self, request, *args, **kwargs):
+        if not user_has_permission_code(
+            request.user, "rendicioncuentasmensual.edit_rendicion_data"
+        ):
+            raise PermissionDenied
+        return super().dispatch(request, *args, **kwargs)
 
     def form_valid(self, form):
         rendicion = self.get_object()
@@ -433,31 +538,22 @@ class RendicionCuentaMensualUpdateView(LoginRequiredMixin, UpdateView):
             form.instance.usuario_ultima_modificacion = self.request.user
         form.instance.ultima_modificacion = rendicion.ultima_modificacion
         form.instance.fecha_creacion = rendicion.fecha_creacion
-        rendicion = form.save()
-
-        archivos = self.request.FILES.getlist("archivo")
-        for archivo in archivos:
-            doc_adjunta = DocumentacionAdjunta.objects.create(
-                nombre=archivo.name,
-                archivo=archivo,
-            )
-            rendicion.archivos_adjuntos.add(doc_adjunta)
+        form.instance.mes = form.cleaned_data["periodo_inicio"].month
+        form.instance.anio = form.cleaned_data["periodo_inicio"].year
+        form.save()
 
         return super().form_valid(form)
 
     def get_success_url(self):
-        comedor_id = self.object.comedor.id
         return reverse_lazy(
-            "rendicioncuentasmensual_list", kwargs={"comedor_id": comedor_id}
+            "rendicioncuentasmensual_detail", kwargs={"pk": self.object.pk}
         )
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         comedor_id = self.object.comedor.id
         context["comedorid"] = comedor_id
-        context["form"] = RendicionCuentaMensualForm(instance=self.object)
-        context["documentacion_adjunta_form"] = DocumentacionAdjuntaForm()
-        context["archivos_adjuntos"] = self.object.archivos_adjuntos.all()
+        context["form"] = RendicionDatosForm(instance=self.object)
         return context
 
 

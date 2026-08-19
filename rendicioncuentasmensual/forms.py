@@ -45,6 +45,43 @@ class DocumentacionAdjuntaForm(forms.ModelForm):
             "nombre": forms.TextInput(attrs={"class": "form-control"}),
             "archivo": forms.ClearableFileInput(attrs={"class": "form-control"}),
         }
+
+
+class RendicionDatosForm(forms.ModelForm):
+    convenio = forms.ChoiceField(
+        choices=((value, value) for value in ("P01", "P02", "P03"))
+    )
+    numero_rendicion = forms.ChoiceField(
+        choices=((value, value) for value in range(1, 7))
+    )
+
+    class Meta:
+        model = RendicionCuentaMensual
+        fields = (
+            "convenio",
+            "numero_rendicion",
+            "periodo_inicio",
+            "periodo_fin",
+            "nombre",
+        )
+        widgets = {
+            "periodo_inicio": forms.DateInput(attrs={"type": "date"}),
+            "periodo_fin": forms.DateInput(attrs={"type": "date"}),
+        }
+
+    def clean(self):
+        cleaned = super().clean()
+        inicio = cleaned.get("periodo_inicio")
+        fin = cleaned.get("periodo_fin")
+        if (
+            inicio
+            and fin
+            and (inicio > fin or (inicio.year, inicio.month) != (fin.year, fin.month))
+        ):
+            raise forms.ValidationError(
+                "Las fechas deben pertenecer al mismo período mensual."
+            )
+        return cleaned
         labels = {
             "nombre": "Nombre del Documento",
             "archivo": "Archivo",
