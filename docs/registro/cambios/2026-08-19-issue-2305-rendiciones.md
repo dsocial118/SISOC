@@ -22,3 +22,11 @@ de categoría `comprobantes` se migran a `comprobantes_alimentario`.
 Backend y SISOC-Mobile deben publicarse coordinadamente. Aplicar migraciones
 antes de desplegar la PWA y validar creación, envío, solicitud de faltante,
 subsanación, exportación y edición con/sin permiso.
+
+## Validación local
+
+- Suite focalizada de rendiciones y API PWA: 77 casos exitosos.
+- Build TypeScript/Vite y lint focalizado de los archivos PWA: sin errores.
+- `black`, `djlint`, chequeo Django y control de migraciones: exitosos.
+- La navegación visual integrada quedó pendiente porque el entorno Docker local
+  no pudo resolver el host `mysql`; no afecta los checks automatizados.
