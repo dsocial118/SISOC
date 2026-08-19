@@ -7,21 +7,36 @@
 {% block content %}
     <link rel="stylesheet" href="{% static 'custom/css/listModerno.css' %}" />
     <div class="comedor-list-container">
-        {% include 'components/search_bar.html' with titulo="Buscar Rendiciones" reset_url=reset_url filters_mode=filters_mode filters_action=filters_action filters_config=filters_config filters_js=filters_js seccion_filtros_favoritos=seccion_filtros_favoritos %}
+        {% include 'components/search_bar.html' with titulo="Buscar Rendiciones" reset_url=reset_url filters_mode=filters_mode filters_action=filters_action filters_config=filters_config filters_js=filters_js seccion_filtros_favoritos=seccion_filtros_favoritos export_url=export_url %}
         <div class="row mt-5 max-width-100">
             <div class="col-12">
                 <div class="card comedor-table-card">
                     <div class="card-body">
+                        <details class="mb-3">
+                            <summary class="btn btn-outline-warning btn-sm">Configurar columnas</summary>
+                            <div class="d-flex flex-wrap gap-3 mt-3">
+                                {% for key, label in columnas_configurables %}
+                                    <label>
+                                        <input class="form-check-input js-rendicion-column"
+                                               type="checkbox"
+                                               value="{{ key }}"
+                                               checked />
+                                        {{ label }}
+                                    </label>
+                                {% endfor %}
+                            </div>
+                        </details>
                         <div class="table-responsive-lg">
                             <table class="table table-comedor-moderno">
                                 <thead>
                                     <tr>
-                                        <th>Proyecto</th>
+                                        <th data-column="proyecto">Proyecto</th>
                                         <th>Organización</th>
-                                        <th>Convenio</th>
+                                        <th data-column="convenio">Convenio</th>
                                         <th>Rendición</th>
                                         <th>Período</th>
-                                        <th>Estado</th>
+                                        <th data-column="etapa">Etapa</th>
+                                        <th data-column="estado">Estado</th>
                                         <th>Última modificación</th>
                                         <th>Acciones</th>
                                     </tr>
@@ -29,9 +44,9 @@
                                 <tbody>
                                     {% for rendicion in rendiciones_cuentas_mensuales %}
                                         <tr>
-                                            <td>{{ rendicion.comedor.codigo_de_proyecto|default:"Sin proyecto" }}</td>
+                                            <td data-column="proyecto">{{ rendicion.comedor.codigo_de_proyecto|default:"Sin proyecto" }}</td>
                                             <td>{{ rendicion.comedor.organizacion.nombre|default:"Sin organización" }}</td>
-                                            <td>{{ rendicion.convenio|default:"-" }}</td>
+                                            <td data-column="convenio">{{ rendicion.convenio|default:"-" }}</td>
                                             <td>{{ rendicion.numero_rendicion|default:rendicion.id }}</td>
                                             <td>
                                                 {% if rendicion.periodo_inicio and rendicion.periodo_fin %}
@@ -40,7 +55,10 @@
                                                     {{ rendicion.mes }}/{{ rendicion.anio }}
                                                 {% endif %}
                                             </td>
-                                            <td>
+                                            <td data-column="etapa">
+                                                <span class="badge bg-info text-dark">{{ rendicion.get_etapa_proceso_display }}</span>
+                                            </td>
+                                            <td data-column="estado">
                                                 {% if rendicion.subestado_proceso == 'finalizada' %}
                                                     <span class="badge-validacion validado">{{ rendicion.estado_proceso_display }}</span>
                                                 {% elif rendicion.subestado_proceso == 'pendiente_correcciones' %}
@@ -63,7 +81,7 @@
                                         </tr>
                                     {% empty %}
                                         <tr>
-                                            <td colspan="8">No hay rendiciones registradas.</td>
+                                            <td colspan="9">No hay rendiciones registradas.</td>
                                         </tr>
                                     {% endfor %}
                                 </tbody>
@@ -75,4 +93,19 @@
         </div>
         {% include 'components/pagination.html' with is_paginated=is_paginated page_obj=page_obj prev_text='Volver' next_text='Continuar' %}
     </div>
+    <script nonce="{{ request.csp_nonce }}">
+        (function () {
+            var key = "rendiciones-columnas-visibles";
+            var checks = Array.from(document.querySelectorAll(".js-rendicion-column"));
+            var saved = JSON.parse(localStorage.getItem(key) || "null");
+            function apply() {
+                var visible = checks.filter(function (item) { return item.checked; }).map(function (item) { return item.value; });
+                document.querySelectorAll("[data-column]").forEach(function (cell) { cell.classList.toggle("d-none", !visible.includes(cell.dataset.column)); });
+                localStorage.setItem(key, JSON.stringify(visible));
+            }
+            if (Array.isArray(saved)) checks.forEach(function (item) { item.checked = saved.includes(item.value); });
+            checks.forEach(function (item) { item.addEventListener("change", apply); });
+            apply();
+        })();
+    </script>
 {% endblock %}
