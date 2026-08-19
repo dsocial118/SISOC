@@ -1,11 +1,27 @@
+import logging
+
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.core.exceptions import PermissionDenied
 from django.db.models import Q
+from django.http import HttpResponse
+from django.utils.text import slugify
 from django.views.generic import View
 
-from centrodeinfancia.access import aplicar_scope_centros_cdi
+from centrodeinfancia.access import (
+    aplicar_scope_centros_cdi,
+    get_provincia_completa_unica_egp_id,
+)
 from centrodeinfancia.models import CentroDeInfancia
+from centrodeinfancia.services_nomina_ninos_pdf import (
+    NominaNinosPDFError,
+    generar_nomina_ninos_pdf,
+)
 from core.mixins import CSVExportMixin
+from core.models import Provincia
 from core.services.column_preferences import build_columns_context_from_fields
+
+
+logger = logging.getLogger(__name__)
 
 
 class CentroDeInfanciaExportView(LoginRequiredMixin, CSVExportMixin, View):
@@ -82,3 +98,63 @@ class CentroDeInfanciaExportView(LoginRequiredMixin, CSVExportMixin, View):
     def get(self, request, *args, **kwargs):
         queryset = self.get_queryset()
         return self.export_csv(queryset)
+
+
+class NominaNinosPDFView(LoginRequiredMixin, View):
+    """Descarga provincial para SIMEPI - EGP y superadministradores."""
+
+    def get(self, request, *args, **kwargs):
+        if request.user.is_superuser:
+            provincia_id = request.GET.get("provincia", "")
+            if not provincia_id.isdecimal():
+                return HttpResponse(
+                    "Seleccione una provincia válida.",
+                    status=400,
+                    content_type="text/plain; charset=utf-8",
+                )
+            provincia = Provincia.objects.filter(pk=provincia_id).first()
+            if provincia is None:
+                return HttpResponse(
+                    "Seleccione una provincia válida.",
+                    status=400,
+                    content_type="text/plain; charset=utf-8",
+                )
+        else:
+            provincia_id = get_provincia_completa_unica_egp_id(request.user)
+            provincia = Provincia.objects.filter(pk=provincia_id).first()
+
+        if not provincia_id:
+            raise PermissionDenied(
+                "La descarga requiere un único alcance provincial completo."
+            )
+
+        if provincia is None:
+            raise PermissionDenied("El alcance provincial no es válido.")
+
+        try:
+            pdf_bytes = generar_nomina_ninos_pdf(
+                user=request.user,
+                provincia=provincia,
+            )
+        except NominaNinosPDFError:
+            logger.exception(
+                "No se pudo generar la nómina provincial de niños",
+                extra={
+                    "data": {
+                        "usuario_id": request.user.pk,
+                        "provincia_id": provincia_id,
+                    }
+                },
+            )
+            return HttpResponse(
+                "No se pudo generar el archivo. Intente nuevamente más tarde.",
+                status=503,
+                content_type="text/plain; charset=utf-8",
+            )
+
+        filename = f"nomina-ninos-{slugify(provincia.nombre) or provincia.pk}.pdf"
+        response = HttpResponse(pdf_bytes, content_type="application/pdf")
+        response["Content-Disposition"] = f'attachment; filename="{filename}"'
+        response["Cache-Control"] = "private, no-store"
+        response["Pragma"] = "no-cache"
+        return response
