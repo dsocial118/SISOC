@@ -8,6 +8,7 @@ from types import SimpleNamespace
 import pytest
 from django.test import RequestFactory
 from django.http import FileResponse
+from django.urls import reverse
 
 from rendicioncuentasmensual import views as module
 
@@ -108,6 +109,23 @@ def test_update_view_usa_template_especifico_para_datos():
     assert module.RendicionCuentaMensualUpdateView.template_name == (
         "rendicioncuentasmensual_datos_form.html"
     )
+
+
+@pytest.mark.django_db
+def test_update_view_renderiza_datos_de_rendicion_para_usuario_autorizado(
+    client, superuser
+):
+    rendicion = module.RendicionCuentaMensual.objects.create(mes=4, anio=2026)
+    client.force_login(superuser)
+
+    response = client.get(
+        reverse("rendicioncuentasmensual_update", kwargs={"pk": rendicion.pk})
+    )
+
+    assert response.status_code == 200
+    assert 'name="convenio"' in response.content.decode()
+    assert 'name="numero_rendicion"' in response.content.decode()
+    assert 'name="periodo_inicio"' in response.content.decode()
 
 
 def test_detail_view_contexto_expone_documentacion_agrupada(mocker):
