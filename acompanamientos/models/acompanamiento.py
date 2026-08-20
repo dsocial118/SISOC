@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db import models
 
 
@@ -9,9 +10,46 @@ class Acompanamiento(models.Model):
     )
     nro_convenio = models.CharField(max_length=100, blank=True, default="")
     fecha_creacion = models.DateTimeField(auto_now_add=True)
+    fecha_finalizado = models.DateTimeField(
+        "Fecha de finalización del acompañamiento",
+        null=True,
+        blank=True,
+    )
+    finalizado_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="acompanamientos_finalizados",
+        verbose_name="Finalizado por",
+    )
 
     def __str__(self):
         return f"Acompañamiento - Conv. {self.nro_convenio}"
+
+    @property
+    def finalizado(self):
+        """True si se marcó la finalización del plazo de ejecución del convenio."""
+        return self.fecha_finalizado is not None
+
+    @property
+    def cerrado(self):
+        """True si la admisión fue inactivada (forzar cierre, descarte, etc.)."""
+        return not self.admision.activa
+
+    @property
+    def puede_finalizarse(self):
+        """La finalización solo aplica sobre un acompañamiento vigente.
+
+        No debe ofrecerse si la admisión ya fue inactivada (forzar cierre) ni si
+        el acompañamiento ya fue finalizado.
+        """
+        return self.admision.activa and not self.finalizado
+
+    @property
+    def es_gestionable(self):
+        """False cuando el acompañamiento ya no admite operaciones en SISOC."""
+        return self.admision.activa and not self.finalizado
 
 
 class InformacionRelevante(models.Model):

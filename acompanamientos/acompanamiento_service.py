@@ -2,6 +2,7 @@ import logging
 from datetime import datetime, date
 from django.db.models import Q, Exists, OuterRef, Prefetch, Subquery
 from django.db import transaction
+from django.utils import timezone
 from django.utils.timezone import localtime
 from admisiones.models.admisiones import (
     Admision,
@@ -261,6 +262,73 @@ class AcompanamientoService:
             logger.exception(
                 f"Error en AcompanamientoService.obtener_admisiones_para_selector "
                 f"para comedor: {comedor.pk}"
+            )
+            raise
+
+    @staticmethod
+    def obtener_acompanamiento(comedor, admision_id):
+        """Recupera el Acompanamiento de una admisión validando que sea del comedor.
+
+        Args:
+            comedor: Comedor dueño del acompañamiento.
+            admision_id: ID de la admisión asociada.
+
+        Returns:
+            Acompanamiento | None
+        """
+        if not admision_id:
+            return None
+        return (
+            Acompanamiento.objects.select_related("admision")
+            .filter(admision_id=admision_id, admision__comedor=comedor)
+            .first()
+        )
+
+    @staticmethod
+    def finalizar_acompanamiento(comedor, admision_id, user):
+        """Marca el acompañamiento como finalizado por fin del plazo del convenio.
+
+        Solo aplica sobre un acompañamiento vigente: si la admisión ya fue
+        inactivada (forzar cierre) o el acompañamiento ya fue finalizado, la
+        operación se rechaza sin modificar nada.
+
+        Args:
+            comedor: Comedor dueño del acompañamiento.
+            admision_id: ID de la admisión asociada.
+            user: Usuario que ejecuta la acción.
+
+        Returns:
+            tuple[Acompanamiento | None, str | None]: instancia finalizada y
+            mensaje de error (uno de los dos siempre es None).
+        """
+        try:
+            acompanamiento = AcompanamientoService.obtener_acompanamiento(
+                comedor, admision_id
+            )
+
+            if not acompanamiento:
+                return None, "No se encontró el acompañamiento del convenio indicado."
+
+            if acompanamiento.finalizado:
+                return None, "El acompañamiento ya se encuentra finalizado."
+
+            if not acompanamiento.admision.activa:
+                return (
+                    None,
+                    "La admisión fue cerrada, por lo que el acompañamiento no "
+                    "puede finalizarse.",
+                )
+
+            acompanamiento.fecha_finalizado = timezone.now()
+            acompanamiento.finalizado_por = user
+            acompanamiento.save(
+                update_fields=["fecha_finalizado", "finalizado_por"],
+            )
+            return acompanamiento, None
+        except Exception:
+            logger.exception(
+                "Error en AcompanamientoService.finalizar_acompanamiento "
+                f"para comedor: {comedor.pk} admision: {admision_id}"
             )
             raise
 
