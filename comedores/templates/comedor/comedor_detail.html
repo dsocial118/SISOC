@@ -1683,14 +1683,24 @@
                                             {% else %}
                                                 Admisión #{{ adm.id }}
                                             {% endif %}
-                                            {% if not adm.activa %}<span class="badge bg-secondary ms-1">Cerrada</span>{% endif %}
+                                            {% if not adm.activa %}
+                                                <span class="badge bg-secondary ms-1">Cerrado</span>
+                                            {% elif adm.acompanamiento.finalizado %}
+                                                <span class="badge bg-dark ms-1">Finalizado</span>
+                                            {% endif %}
                                         </a>
                                     {% endfor %}
                                 {% endif %}
-                                <button type="button"
-                                        class="btn btn-sm btn-primary ms-auto"
-                                        data-bs-toggle="modal"
-                                        data-bs-target="#modalIntervencion">Agregar intervención</button>
+                                {% if intervenciones_admision_gestionable %}
+                                    <button type="button"
+                                            class="btn btn-sm btn-primary ms-auto"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#modalIntervencion">Agregar intervención</button>
+                                {% else %}
+                                    <span class="text-muted small ms-auto">
+                                        <i class="fas fa-lock me-1"></i>Convenio finalizado o cerrado: no admite nuevas intervenciones.
+                                    </span>
+                                {% endif %}
                             </div>
                             {% include 'components/data_table.html' with headers=intervenciones_headers items=intervenciones_items custom_cells=True empty_message='Aún no se han registrado intervenciones.' table_class='table-sm table-compact' include_pagination=True is_paginated=intervenciones_is_paginated page_obj=intervenciones_page_obj page_range=intervenciones_page_range page_param='intervenciones_page' %}
                         </div>

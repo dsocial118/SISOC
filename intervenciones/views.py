@@ -166,6 +166,14 @@ class IntervencionCreateView(LoginRequiredMixin, CreateView):
             )
             return self.form_invalid(form)
         if admision is not None:
+            acompanamiento = getattr(admision, "acompanamiento", None)
+            if acompanamiento and not acompanamiento.es_gestionable:
+                form.add_error(
+                    None,
+                    "El acompañamiento de esta admisión está finalizado o cerrado: "
+                    "no admite nuevas intervenciones.",
+                )
+                return self.form_invalid(form)
             form.instance.admision = admision
 
         _aplicar_campos_intervencion(form)

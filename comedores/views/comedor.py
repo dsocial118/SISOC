@@ -1347,6 +1347,13 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
             comedor_obj=self.object,
             request=self.request,
         )
+        admision_seleccionada = next(
+            (a for a in admisiones_disponibles if a.id == admision_id),
+            None,
+        )
+        acompanamiento_seleccionado = getattr(
+            admision_seleccionada, "acompanamiento", None
+        )
         return {
             **intervenciones_context,
             **observaciones_context,
@@ -1355,6 +1362,10 @@ class ComedorDetailView(LoginRequiredMixin, DetailView):
             **validaciones_context,
             "intervenciones_admision_id": admision_id,
             "intervenciones_admisiones_disponibles": admisiones_disponibles,
+            "intervenciones_admision_gestionable": (
+                acompanamiento_seleccionado is None
+                or acompanamiento_seleccionado.es_gestionable
+            ),
         }
 
     def _redirect_to_detail(self):
