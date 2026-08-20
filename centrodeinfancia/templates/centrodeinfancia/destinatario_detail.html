@@ -195,6 +195,8 @@
                 {% include "centrodeinfancia/_nomina_campo.html" with label="Dpto." value=nomina.departamento_domicilio %}
                 {% include "centrodeinfancia/_nomina_campo.html" with label="Tipo de barrio" value=nomina.get_tipo_barrio_display %}
                 {% include "centrodeinfancia/_nomina_campo.html" with label="Jurisdicción" value=nomina.provincia_domicilio %}
+                {% include "centrodeinfancia/_nomina_campo.html" with label="Departamento (jurisdicción)" value=nomina.departamento %}
+                {% include "centrodeinfancia/_nomina_campo.html" with label="Decil de CDI" value=nomina.departamento.decil_ipi %}
                 {% include "centrodeinfancia/_nomina_campo.html" with label="Municipio" value=nomina.municipio_domicilio %}
                 {% include "centrodeinfancia/_nomina_campo.html" with label="Localidad" value=nomina.localidad_domicilio %}
                 {% include "centrodeinfancia/_nomina_campo.html" with label="Convivientes" value=nomina.convivientes %}
