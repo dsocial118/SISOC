@@ -170,6 +170,15 @@ class CiudadanoDatosComplementariosNominaForm(forms.ModelForm):
                 cleaned_data[field_name] = getattr(self.instance, field_name)
         return cleaned_data
 
+    def _get_validation_exclusions(self):
+        exclusions = super()._get_validation_exclusions()
+        exclusions.update(
+            field_name
+            for field_name in self.Meta.fields
+            if self.add_prefix(field_name) not in self.data
+        )
+        return exclusions
+
     def save(self, commit=True):
         ciudadano = super().save(commit=False)
         if commit:
