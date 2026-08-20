@@ -94,26 +94,30 @@ def test_obtener_prestaciones_detalladas_none_and_values():
     assert out["prestaciones_dias"][1] == {"tipo": "Almuerzo", "cantidad": 0}
 
 
-def test_preparar_datos_tabla_comedores_and_permisos():
-    admision = SimpleNamespace(
-        id=7,
-        num_expediente="EX-1",
-        estado_admision=True,
-        get_estado_admision_display=lambda: "Aprobada",
-        modificado=datetime(2024, 1, 1, 0, 0, 0),
-    )
+def test_preparar_datos_tabla_acompanamientos_and_permisos():
     comedor = SimpleNamespace(
         id=1,
         nombre="Comedor A",
         organizacion=SimpleNamespace(nombre="Org"),
         provincia=SimpleNamespace(nombre="BA"),
         dupla="Dupla X",
-        admisiones_acompaniamiento=[admision],
+    )
+    admision = SimpleNamespace(
+        id=7,
+        comedor=comedor,
+        num_expediente="EX-1",
+        estado_admision=True,
+        get_estado_admision_display=lambda: "Aprobada",
+        modificado=datetime(2024, 1, 1, 0, 0, 0),
+        acompanamiento=SimpleNamespace(nro_convenio="CONV-7"),
+        estado_acompanamiento="finalizado",
     )
 
-    rows = AcompanamientoService.preparar_datos_tabla_comedores([comedor])
+    rows = AcompanamientoService.preparar_datos_tabla_acompanamientos([admision])
     assert rows[0]["cells"][1]["content"] == "Comedor A"
-    assert rows[0]["cells"][3]["content"] == "EX-1"
+    assert rows[0]["cells"][2]["content"] == "CONV-7"
+    assert rows[0]["cells"][4]["content"] == "EX-1"
+    assert "Finalizado" in rows[0]["cells"][8]["content"]
     assert "admision_id=7" in rows[0]["actions"][0]["url"]
 
     comedor_empty = SimpleNamespace(
@@ -122,10 +126,22 @@ def test_preparar_datos_tabla_comedores_and_permisos():
         organizacion=None,
         provincia=None,
         dupla=None,
-        admisiones_acompaniamiento=[],
     )
-    rows_empty = AcompanamientoService.preparar_datos_tabla_comedores([comedor_empty])
+    admision_empty = SimpleNamespace(
+        id=9,
+        comedor=comedor_empty,
+        num_expediente=None,
+        estado_admision=None,
+        get_estado_admision_display=lambda: "",
+        modificado=None,
+        acompanamiento=None,
+        estado_acompanamiento="activo",
+    )
+    rows_empty = AcompanamientoService.preparar_datos_tabla_acompanamientos(
+        [admision_empty]
+    )
     assert rows_empty[0]["cells"][1]["content"] == "-"
+    assert rows_empty[0]["cells"][2]["content"] == "Admisión #9"
 
     user_super = SimpleNamespace(
         is_superuser=True,

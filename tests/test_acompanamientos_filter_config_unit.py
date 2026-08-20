@@ -20,10 +20,13 @@ def test_filtros_acompanamiento_replican_campos_clave_de_admisiones():
         "provincia",
         "equipo_tecnico",
         "estado",
+        "estado_acompanamiento",
         "fecha_modificado",
     ]
-    assert FIELD_MAP["comedor_nombre"] == "nombre"
-    assert FIELD_MAP["estado"] == "acompanamiento_estado_admision"
+    # El queryset del listado tiene a Admision como base, no a Comedor.
+    assert FIELD_MAP["comedor_nombre"] == "comedor__nombre"
+    assert FIELD_MAP["estado"] == "estado_admision"
+    assert FIELD_MAP["estado_acompanamiento"] == "estado_acompanamiento"
 
 
 def test_config_ui_acompanamiento_incluye_operadores_y_choices():
@@ -33,6 +36,14 @@ def test_config_ui_acompanamiento_incluye_operadores_y_choices():
     assert set(config["operators"]) == {"text", "number", "date", "choice"}
     assert fields["tipo_admision"]["type"] == "choice"
     assert fields["estado"]["type"] == "choice"
+    assert fields["estado_acompanamiento"]["type"] == "choice"
+    assert [
+        choice["value"] for choice in fields["estado_acompanamiento"]["choices"]
+    ] == [
+        "activo",
+        "cerrado",
+        "finalizado",
+    ]
 
 
 def test_config_ui_registra_falla_al_cargar_choices(mocker, caplog):
