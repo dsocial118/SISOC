@@ -18,6 +18,7 @@ FIELD_MAP: Dict[str, str] = {
     "periodo_fin": "periodo_fin",
     "linea_programatica": "linea_programatica",
     "estado": "estado",
+    "etapa_proceso": "etapa_proceso",
     "documento_adjunto": "documento_adjunto",
     "fecha_creacion": "fecha_creacion__date",
     "ultima_modificacion": "ultima_modificacion__date",
@@ -35,6 +36,7 @@ FIELD_TYPES: Dict[str, str] = {
     "periodo_fin": "date",
     "linea_programatica": "choice",
     "estado": "choice",
+    "etapa_proceso": "choice",
     "documento_adjunto": "boolean",
     "fecha_creacion": "date",
     "ultima_modificacion": "date",
@@ -56,6 +58,11 @@ ESTADO_CHOICES = [
     ("revision", "Presentacion en revision"),
     ("subsanar", "Presentacion a subsanar"),
     ("finalizada", "Presentacion finalizada"),
+]
+ETAPA_CHOICES = [
+    ("revision_documentacion", "Revisión Territorial"),
+    ("revision_auditoria", "Revisión de Auditoría"),
+    ("auditoria", "Auditoría"),
 ]
 
 FILTER_FIELDS = [
@@ -89,6 +96,12 @@ FILTER_FIELDS = [
         "choices": [
             {"value": value, "label": label} for value, label in ESTADO_CHOICES
         ],
+    },
+    {
+        "name": "etapa_proceso",
+        "label": "Etapa",
+        "type": "choice",
+        "choices": [{"value": value, "label": label} for value, label in ETAPA_CHOICES],
     },
     {"name": "documento_adjunto", "label": "Documento adjunto", "type": "boolean"},
     {"name": "fecha_creacion", "label": "Fecha de creacion", "type": "date"},

@@ -22,10 +22,25 @@ coordinada cuando cambie este contrato.
   documentos heredados desde Territorial.
 - El cierre administrativo de Auditoría usa un único formulario con monto,
   acta, resultado y observaciones condicionales.
+- Una solicitud de documento faltante se registra por categoría, aun cuando la
+  categoría ya tenga archivos. La PWA habilita esa categoría durante la
+  subsanación y la solicitud se cierra al adjuntar un archivo nuevo.
+- Los documentos previamente validados conservan su estado al reenviar una
+  subsanación.
+
+## Contrato de carga
+
+- Convenios admitidos: `P01`, `P02`, `P03`.
+- Números de rendición admitidos: `1` a `6`.
+- Inicio y fin deben pertenecer al mismo mes y no se admiten períodos anteriores
+  al último ya gestionado para el mismo convenio y proyecto.
+- Formulario I, ambos Formulario V, Formulario VI y Extracto Bancario admiten
+  múltiples archivos. Los comprobantes se separan entre Prestación Alimentaria
+  y SIPH.
 
 ## Despliegue y validación
 
-Aplicar `rendicioncuentasmensual.0016` antes de usar la asociación directa.
+Aplicar `rendicioncuentasmensual.0017` antes de usar las solicitudes de faltantes.
 Validar una rendición nueva con proyecto, una histórica con fallback, una
 subsanación de Territorial y otra de Auditoría antes de promover a producción.
 

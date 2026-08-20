@@ -58,6 +58,16 @@ from centrodeinfancia.forms_formulario_cdi import (
     construir_clase_formset_demanda_insatisfecha,
 )
 
+
+NOMINA_SALA_CHOICES = [
+    ("menos_de_un_ano", "Menos de un año"),
+    ("un_ano", "1 año"),
+    ("dos_anos", "2 años"),
+    ("tres_anos", "3 años"),
+    ("cuatro_anos", "4 años"),
+    ("multiedad", "Multiedad"),
+]
+
 __all__ = [
     "CentroDeInfanciaForm",
     "NominaCentroInfanciaForm",
@@ -711,6 +721,16 @@ class NominaCentroInfanciaBaseForm(forms.ModelForm):
         required=False,
         disabled=True,
     )
+    sala = forms.ChoiceField(
+        choices=NOMINA_SALA_CHOICES,
+        required=False,
+        label="Sala",
+    )
+    decil_ipi = forms.CharField(
+        label="Decil de CDI",
+        required=False,
+        disabled=True,
+    )
 
     class Meta:
         model = NominaCentroInfancia
@@ -740,6 +760,7 @@ class NominaCentroInfanciaBaseForm(forms.ModelForm):
             "piso_domicilio",
             "departamento_domicilio",
             "provincia_domicilio",
+            "departamento",
             "municipio_domicilio",
             "localidad_domicilio",
             "responsable_legal_1_apellido",
@@ -771,12 +792,25 @@ class NominaCentroInfanciaBaseForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self._configure_sala_choices()
         self._configure_boolean_fields()
         self._configure_choice_fields()
         self._configure_widgets()
         self._configure_geography_fields()
         self._configure_initial_age()
         self._apply_required_flags()
+
+    def _configure_sala_choices(self):
+        """Renderiza una sola sala y conserva valores legacy ya registrados."""
+        choices = [("", "---------"), *NOMINA_SALA_CHOICES]
+        current_value = (
+            self.data.get(self.add_prefix("sala"))
+            if self.is_bound
+            else getattr(self.instance, "sala", None)
+        )
+        if current_value and current_value not in dict(choices):
+            choices.insert(1, (current_value, current_value))
+        self.fields["sala"].choices = choices
 
     def _configure_boolean_fields(self):
         boolean_fields = {
@@ -847,8 +881,9 @@ class NominaCentroInfanciaBaseForm(forms.ModelForm):
             "calle_domicilio": "Calle",
             "altura_domicilio": "Altura",
             "piso_domicilio": "Piso",
-            "departamento_domicilio": "Departamento",
+            "departamento_domicilio": "Departamento (piso/depto.)",
             "provincia_domicilio": "Provincia",
+            "departamento": "Departamento (jurisdicción)",
             "municipio_domicilio": "Municipio",
             "localidad_domicilio": "Localidad",
             "responsable_legal_1_apellido": "Apellido",
@@ -896,6 +931,53 @@ class NominaCentroInfanciaBaseForm(forms.ModelForm):
 
         self.fields["edad_calculada"].widget.attrs["readonly"] = True
         self.fields["edad_calculada"].widget.attrs["tabindex"] = "-1"
+
+    def _resolve_department(self, provincia):
+        departamento_initial = self.initial.get("departamento")
+        departamento = DepartamentoIpi.objects.filter(
+            pk=self._parse_geography_pk(self.data.get(self.add_prefix("departamento")))
+        ).first() or getattr(self.instance, "departamento", None)
+        if (
+            not departamento
+            and departamento_initial
+            and not isinstance(departamento_initial, DepartamentoIpi)
+        ):
+            departamento_queryset = DepartamentoIpi.objects.filter(provincia=provincia)
+            if not provincia:
+                departamento_queryset = DepartamentoIpi.objects.all()
+            departamento = self._resolve_geography_by_name(
+                departamento_queryset, departamento_initial
+            )
+        return departamento
+
+    def _configure_department_field(self, provincia):
+        departamento = self._resolve_department(provincia)
+        self.fields["departamento"].queryset = (
+            DepartamentoIpi.objects.filter(provincia=provincia).order_by("nombre")
+            if provincia
+            else DepartamentoIpi.objects.none()
+        )
+        if departamento:
+            self.fields["departamento"].initial = departamento
+            self.fields["decil_ipi"].initial = (
+                str(departamento.decil_ipi)
+                if departamento.decil_ipi is not None
+                else ""
+            )
+
+    @staticmethod
+    def _parse_geography_pk(value):
+        return int(value) if value and str(value).isdigit() else None
+
+    @staticmethod
+    def _resolve_geography_by_name(queryset, value):
+        normalized = slugify(str(value or "").strip())
+        if not normalized:
+            return None
+        for item in queryset.order_by("nombre"):
+            if slugify(str(item.nombre or "").strip()) == normalized:
+                return item
+        return None
 
     def _configure_geography_fields(self):
         def parse_pk(value):
@@ -958,6 +1040,7 @@ class NominaCentroInfanciaBaseForm(forms.ModelForm):
         )
         if provincia:
             self.fields["provincia_domicilio"].initial = provincia
+        self._configure_department_field(provincia)
         if provincia:
             self.fields["municipio_domicilio"].queryset = Municipio.objects.filter(
                 provincia=provincia
@@ -1102,9 +1185,9 @@ class NominaCentroInfanciaDestinatariosForm(NominaCentroInfanciaBaseForm):
     ]
 
     # Obligatorios según los casos que QA marcó como "campo requerido".
-    # Quedan fuera los condicionales (numero_cud, recibe_apoyo_discapacidad) y los
-    # campos pendientes de definición de producto: teléfonos de responsables (enteros),
-    # talla legacy de texto y los campos que QA pidió eliminar.
+    # Quedan fuera los condicionales (numero_cud, recibe_apoyo_discapacidad), los
+    # teléfonos de responsables y las cuatro medidas antropométricas, que producto
+    # definió como optativas. Si se informan, mantienen sus validaciones.
     CAMPOS_OBLIGATORIOS = [
         # Registro
         "tipo_registro",
@@ -1117,6 +1200,7 @@ class NominaCentroInfanciaDestinatariosForm(NominaCentroInfanciaBaseForm):
         "sexo",
         "tipo_documentacion",
         "dni",
+        "cuit_nino",
         "pais_nacimiento",
         "nacionalidad",
         "sala",
@@ -1135,9 +1219,9 @@ class NominaCentroInfanciaDestinatariosForm(NominaCentroInfanciaBaseForm):
         # Domicilio
         "calle_domicilio",
         "altura_domicilio",
-        "departamento_domicilio",
         "tipo_barrio",
         "provincia_domicilio",
+        "departamento",
         "municipio_domicilio",
         "localidad_domicilio",
         # Cultura e identidad
@@ -1150,10 +1234,6 @@ class NominaCentroInfanciaDestinatariosForm(NominaCentroInfanciaBaseForm):
         "cobertura_salud",
         "controles_sanitarios_ultimo_anio",
         "calendario_vacunacion_al_dia",
-        # Antropometría (TC_113 a TC_116)
-        "peso",
-        "longitud_acostado",
-        "perimetro_cefalico",
         # Nutrición
         "lactancia",
         "alergias_alimentarias",
@@ -1678,11 +1758,11 @@ class TrabajadorCDIForm(forms.ModelForm):
     EDAD_MAXIMA = 100
     DNI_MINIMO = 1_000_000
     DNI_MAXIMO = 99_999_999
-    # Obligatorios según los casos que QA marcó como "campo requerido" (TC18-TC44).
-    # Quedan fuera los condicionales (funcion_pfpi, funcion_egp, funcion_cdi, sala_cdi,
-    # funcion_uaf, formacion_academica, pueblo_originario y el bloque de discapacidad):
-    # el modelo los limpia cuando no aplican, así que exigirlos siempre rompería el
-    # guardado. fecha_actualizacion es optativa (no la reporta QA ni la marca la spec).
+    # Obligatorios comunes según los casos que QA marcó como "campo requerido".
+    # Función y Sala se aplican por subcomponente en
+    # `_aplicar_requeridos_condicionales`; el resto de los campos condicionales no
+    # puede exigirse siempre porque el modelo los limpia cuando no aplican.
+    # fecha_actualizacion es optativa (no la reporta QA ni la marca la spec).
     CAMPOS_OBLIGATORIOS = [
         "fecha_carga",
         "subcomponente",
@@ -1718,6 +1798,12 @@ class TrabajadorCDIForm(forms.ModelForm):
         "sexo_registral",
         "nacionalidad_trabajador",
     )
+    CAMPOS_POR_SUBCOMPONENTE = {
+        "pfpi": ("funcion_pfpi",),
+        "egp": ("funcion_egp",),
+        "cdi": ("funcion_cdi", "sala_cdi"),
+        "uaf": ("funcion_uaf",),
+    }
     capacitaciones_certificadas = forms.MultipleChoiceField(
         choices=TRABAJADOR_CAPACITACIONES_CHOICES,
         widget=forms.CheckboxSelectMultiple,
@@ -1818,6 +1904,8 @@ class TrabajadorCDIForm(forms.ModelForm):
         # los requeridos se aplican después.
         self._configurar_pais_nacionalidad()
         self._aplicar_requeridos()
+        self._aplicar_requeridos_condicionales()
+        self._aplicar_email_requerido_en_alta()
         self._aplicar_campo_cuit()
         self._aplicar_limites_fecha_nacimiento()
         self._bloquear_campos_renaper(campos_renaper)
@@ -1860,6 +1948,29 @@ class TrabajadorCDIForm(forms.ModelForm):
             self.fields[field_name].error_messages[
                 "required"
             ] = "Este campo es obligatorio."
+
+    def _subcomponente_actual(self):
+        if self.is_bound:
+            return self.data.get(self.add_prefix("subcomponente"))
+        return self.initial.get("subcomponente") or getattr(
+            self.instance, "subcomponente", None
+        )
+
+    def _aplicar_requeridos_condicionales(self):
+        subcomponente = self._subcomponente_actual()
+        for opcion, field_names in self.CAMPOS_POR_SUBCOMPONENTE.items():
+            for field_name in field_names:
+                field = self.fields[field_name]
+                field.required = opcion == subcomponente
+                field.error_messages["required"] = "Este campo es obligatorio."
+
+    def _aplicar_email_requerido_en_alta(self):
+        if self.instance.pk:
+            return
+        self.fields["email"].required = True
+        self.fields["email"].error_messages[
+            "required"
+        ] = "Este campo es obligatorio para generar el usuario."
 
     def _bloquear_campos_renaper(self, campos_renaper):
         # Los campos provenientes de RENAPER se reciben con initial confiable y quedan

@@ -22,7 +22,11 @@ from comedores.models import Comedor
 from organizaciones.models import ProyectoOrganizacion
 from pwa.services.mensajes_service import MOBILE_RENDICION_PERMISSION_CODE
 from pwa.services.push_service import notify_rendicion_revision_push
-from rendicioncuentasmensual.models import DocumentacionAdjunta, RendicionCuentaMensual
+from rendicioncuentasmensual.models import (
+    DocumentacionAdjunta,
+    RendicionCuentaMensual,
+    SolicitudDocumentoFaltante,
+)
 from rendicioncuentasmensual.service_helpers import (
     cerrar_archivo_seguro,
     convertir_documento_office_a_pdf,
@@ -70,11 +74,13 @@ def inferir_linea_programatica(comedor):
     return DocumentacionAdjunta.LINEA_TRADICIONAL
 
 
-class RendicionCuentaMensualService:
+class RendicionCuentaMensualService:  # pylint: disable=too-many-public-methods
     MOBILE_MESSAGE_ACTION_PREFIX = "[SISOC_ACCION]"
     MOBILE_MESSAGE_ACTION_SUFFIX = "[/SISOC_ACCION]"
     CATEGORIAS_CON_HISTORIAL_SUBSANACION = {
         DocumentacionAdjunta.CATEGORIA_COMPROBANTES,
+        DocumentacionAdjunta.CATEGORIA_COMPROBANTES_ALIMENTARIO,
+        DocumentacionAdjunta.CATEGORIA_COMPROBANTES_SIPH,
         DocumentacionAdjunta.CATEGORIA_OTROS,
     }
 
@@ -329,9 +335,38 @@ class RendicionCuentaMensualService:
         proyecto=None,
     ):
         periodo_inicio, periodo_fin = periodo
+        if convenio not in {"P01", "P02", "P03"}:
+            raise ValidationError({"convenio": "El convenio debe ser P01, P02 o P03."})
+        if numero_rendicion not in {1, 2, 3, 4, 5, 6}:
+            raise ValidationError(
+                {"numero_rendicion": "El número de rendición debe estar entre 1 y 6."}
+            )
+        if (
+            periodo_inicio > periodo_fin
+            or periodo_inicio.year != periodo_fin.year
+            or periodo_inicio.month != periodo_fin.month
+        ):
+            raise ValidationError(
+                {"periodo": "Las fechas deben pertenecer al mismo período mensual."}
+            )
         queryset = RendicionCuentaMensualService._get_project_queryset(
             comedor, proyecto
         )
+        ultimo_periodo = (
+            queryset.filter(
+                convenio=convenio,
+                periodo_inicio__isnull=False,
+            )
+            .order_by("-periodo_inicio")
+            .values_list("periodo_inicio", flat=True)
+            .first()
+        )
+        if ultimo_periodo and periodo_inicio < ultimo_periodo:
+            raise ValidationError(
+                {
+                    "periodo": "No se pueden cargar períodos anteriores a los ya gestionados."
+                }
+            )
         if queryset.filter(
             convenio=convenio,
             numero_rendicion=numero_rendicion,
@@ -480,6 +515,22 @@ class RendicionCuentaMensualService:
                 }
             )
 
+        documentos_categoria = (
+            RendicionCuentaMensualService._documentos_activos_queryset(
+                rendicion
+            ).filter(categoria=categoria)
+        )
+        if config["multiple"] and not documento_subsanado_id:
+            return {"config": config, "documento_subsanado": None}
+
+        if (
+            not documentos_categoria.exists()
+            or rendicion.solicitudes_documentos_faltantes.filter(
+                categoria=categoria, activa=True
+            ).exists()
+        ):
+            return {"config": config, "documento_subsanado": None}
+
         documento_subsanado = (
             RendicionCuentaMensualService._obtener_documento_subsanado_para_carga(
                 rendicion=rendicion,
@@ -508,7 +559,10 @@ class RendicionCuentaMensualService:
             )
         }
         for documento in documentos:
-            grouped.setdefault(documento.categoria, []).append(documento)
+            categoria = documento.categoria
+            if categoria == DocumentacionAdjunta.CATEGORIA_COMPROBANTES:
+                categoria = DocumentacionAdjunta.CATEGORIA_COMPROBANTES_ALIMENTARIO
+            grouped.setdefault(categoria, []).append(documento)
         return grouped
 
     @staticmethod
@@ -702,6 +756,7 @@ class RendicionCuentaMensualService:
         periodo_inicio = data.get("periodo_inicio")
         periodo_fin = data.get("periodo_fin")
         observaciones = (data.get("observaciones") or "").strip()
+        nombre = (data.get("nombre") or "").strip()
         linea_programatica = DocumentacionAdjunta.normalizar_linea_programatica(
             data.get("linea_programatica") or inferir_linea_programatica(comedor)
         )
@@ -720,6 +775,7 @@ class RendicionCuentaMensualService:
             mes=periodo_inicio.month,
             anio=periodo_inicio.year,
             convenio=convenio,
+            nombre=nombre or None,
             numero_rendicion=numero_rendicion,
             periodo_inicio=periodo_inicio,
             periodo_fin=periodo_fin,
@@ -777,7 +833,39 @@ class RendicionCuentaMensualService:
                 update_fields=["usuario_ultima_modificacion", "ultima_modificacion"]
             )
         RendicionCuentaMensualService._sincronizar_flag_documento_adjunto(rendicion)
+        SolicitudDocumentoFaltante.objects.filter(
+            rendicion=rendicion, categoria=categoria, activa=True
+        ).update(activa=False)
         return documento
+
+    @staticmethod
+    @transaction.atomic
+    def solicitar_documento_faltante(
+        *, rendicion, categoria, observaciones, actor=None
+    ):
+        RendicionCuentaMensualService._validar_categoria_documental(
+            rendicion, categoria
+        )
+        observaciones = (observaciones or "").strip()
+        if not observaciones:
+            raise ValidationError({"observaciones": "Debe ingresar observaciones."})
+        solicitud, _ = SolicitudDocumentoFaltante.objects.update_or_create(
+            rendicion=rendicion,
+            categoria=categoria,
+            activa=True,
+            defaults={"observaciones": observaciones, "usuario_creador": actor},
+        )
+        rendicion.estado = RendicionCuentaMensual.ESTADO_SUBSANAR
+        rendicion.subestado_proceso = (
+            RendicionCuentaMensual.SUBESTADO_PENDIENTE_CORRECCIONES
+        )
+        rendicion.save(
+            update_fields=["estado", "subestado_proceso", "ultima_modificacion"]
+        )
+        RendicionCuentaMensualService._crear_notificacion_mobile_revision_documento(
+            documento=solicitud, actor=actor
+        )
+        return solicitud
 
     @staticmethod
     @transaction.atomic
@@ -814,6 +902,15 @@ class RendicionCuentaMensualService:
                     "detail": (
                         "Todavía hay documentación observada pendiente de subsanar."
                     )
+                }
+            )
+        if (
+            isinstance(rendicion, RendicionCuentaMensual)
+            and rendicion.solicitudes_documentos_faltantes.filter(activa=True).exists()
+        ):
+            raise ValidationError(
+                {
+                    "detail": "Todavía hay documentos faltantes solicitados pendientes de adjuntar."
                 }
             )
         rendicion.estado = RendicionCuentaMensual.ESTADO_REVISION
