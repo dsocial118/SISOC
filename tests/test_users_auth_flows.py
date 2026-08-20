@@ -308,6 +308,84 @@ def test_password_reset_form_uses_sisoc_template(client):
 
 @pytest.mark.django_db
 @override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
+def test_web_password_reset_elige_un_usuario_aunque_compartan_email(client):
+    User.objects.create_user(
+        username="reset_web_otro",
+        email="compartido@example.com",
+        password="Secreta123!",
+    )
+    User.objects.create_user(
+        username="reset_web_objetivo",
+        email="compartido@example.com",
+        password="Secreta123!",
+    )
+
+    response = client.post(
+        reverse("password_reset"),
+        {
+            "username": "reset_web_objetivo",
+            "email": "compartido@example.com",
+        },
+    )
+
+    assert response.status_code == 302
+    assert response.url == reverse("password_reset_done")
+    assert len(mail.outbox) == 1
+    assert "reset_web_objetivo" in mail.outbox[0].body
+    assert "reset_web_otro" not in mail.outbox[0].body
+
+
+@pytest.mark.django_db
+@override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
+def test_web_password_reset_no_envia_si_username_y_email_no_coinciden(client):
+    User.objects.create_user(
+        username="reset_web_mismatch",
+        email="registrado@example.com",
+        password="Secreta123!",
+    )
+
+    response = client.post(
+        reverse("password_reset"),
+        {
+            "username": "reset_web_mismatch",
+            "email": "otro@example.com",
+        },
+        follow=True,
+    )
+
+    assert response.status_code == 200
+    assert len(mail.outbox) == 0
+    assert (
+        "Si los datos son correctos, recibirás un enlace de recuperación"
+        in response.content.decode("utf-8")
+    )
+
+
+@pytest.mark.django_db
+@override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
+def test_web_password_reset_no_envia_para_password_inutilizable(client):
+    user = User.objects.create_user(
+        username="reset_web_sin_password",
+        email="sin-password@example.com",
+    )
+    user.set_unusable_password()
+    user.save(update_fields=["password"])
+
+    response = client.post(
+        reverse("password_reset"),
+        {
+            "username": "reset_web_sin_password",
+            "email": "sin-password@example.com",
+        },
+    )
+
+    assert response.status_code == 302
+    assert response.url == reverse("password_reset_done")
+    assert len(mail.outbox) == 0
+
+
+@pytest.mark.django_db
+@override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
 def test_password_reset_request_hides_non_existing_user():
     client = APIClient()
 
