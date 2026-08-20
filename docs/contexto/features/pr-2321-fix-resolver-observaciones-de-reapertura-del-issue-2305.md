@@ -34,8 +34,10 @@
 - Empezar por `docs/registro/prs/PR-2321.md` para contexto resumido del PR.
 - Revisar primero estos archivos del diff:
 - `dashboard/signals.py`
+- `docs/contexto/features/pr-2321-fix-resolver-observaciones-de-reapertura-del-issue-2305.md`
 - `docs/registro/cambios/2026-08-19-issue-2305-rendiciones.md`
 - `docs/registro/cambios/2026-08-20-fix-cache-metricas-dashboard.md`
+- `docs/registro/prs/PR-2321.md`
 - `rendicioncuentasmensual/models.py`
 - `rendicioncuentasmensual/services.py`
 - `rendicioncuentasmensual/templates/rendicioncuentasmensual_datos_form.html`
@@ -49,8 +51,10 @@
 - `docs/ia/CONTEXT_HYGIENE.md`
 - `docs/ia/ARCHITECTURE.md`
 - `docs/ia/TESTING.md`
+- `docs/contexto/features/pr-2321-fix-resolver-observaciones-de-reapertura-del-issue-2305.md`
 - `docs/registro/cambios/2026-08-19-issue-2305-rendiciones.md`
 - `docs/registro/cambios/2026-08-20-fix-cache-metricas-dashboard.md`
+- `docs/registro/prs/PR-2321.md`
 
 ## Trazabilidad
 
