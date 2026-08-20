@@ -27,7 +27,7 @@
 ## Design system y UI
 
 - El PR toca piezas de UI y conviene revisar consistencia visual con el patrón existente.
-- Archivos visuales relevantes: rendicioncuentasmensual/templates/rendicioncuentasmensual_datos_form.html, rendicioncuentasmensual/templates/rendicioncuentasmensual_global_list.html, static/custom/css/listModerno.css
+- Archivos visuales relevantes: rendicioncuentasmensual/templates/components/rendicion_global_list_cell.html, rendicioncuentasmensual/templates/rendicioncuentasmensual_datos_form.html, rendicioncuentasmensual/templates/rendicioncuentasmensual_global_list.html, static/custom/css/listModerno.css, templates/components/column_config_modal.html, templates/components/data_table.html
 
 ## Memoria operativa para agentes
 
@@ -35,15 +35,20 @@
 - Revisar primero estos archivos del diff:
 - `dashboard/signals.py`
 - `docs/contexto/features/pr-2321-fix-resolver-observaciones-de-reapertura-del-issue-2305.md`
+- `docs/plans/2026-08-20-pr-2321-review-findings-design.md`
 - `docs/registro/cambios/2026-08-19-issue-2305-rendiciones.md`
 - `docs/registro/cambios/2026-08-20-fix-cache-metricas-dashboard.md`
 - `docs/registro/prs/PR-2321.md`
 - `rendicioncuentasmensual/models.py`
 - `rendicioncuentasmensual/services.py`
+- `rendicioncuentasmensual/templates/components/rendicion_global_list_cell.html`
 - `rendicioncuentasmensual/templates/rendicioncuentasmensual_datos_form.html`
 - `rendicioncuentasmensual/templates/rendicioncuentasmensual_global_list.html`
 - `rendicioncuentasmensual/views.py`
 - `static/custom/css/listModerno.css`
+- `templates/components/column_config_modal.html`
+- `templates/components/data_table.html`
+- `tests/test_dashboard_comedores_core_boundary.py`
 - `tests/test_pwa_comedores_api.py`
 - `tests/test_rendicioncuentasmensual_views_unit.py`
 - Documentación sugerida para ampliar contexto:
@@ -52,6 +57,7 @@
 - `docs/ia/ARCHITECTURE.md`
 - `docs/ia/TESTING.md`
 - `docs/contexto/features/pr-2321-fix-resolver-observaciones-de-reapertura-del-issue-2305.md`
+- `docs/plans/2026-08-20-pr-2321-review-findings-design.md`
 - `docs/registro/cambios/2026-08-19-issue-2305-rendiciones.md`
 - `docs/registro/cambios/2026-08-20-fix-cache-metricas-dashboard.md`
 - `docs/registro/prs/PR-2321.md`
