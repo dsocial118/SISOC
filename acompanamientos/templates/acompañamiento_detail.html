@@ -37,15 +37,37 @@
                 <i class="fas fa-plus me-2"></i>Seguimiento Mensual
             </a>
         </div>
-        {% if informe_tecnico_complementario %}
-            <div class="col-auto">
+        <div class="col-auto d-flex flex-wrap gap-2">
+            {% if informe_tecnico_complementario %}
                 <a href="{% url 'informe_complementario_ver' tipo=informe_tecnico_complementario.tipo pk=informe_tecnico_complementario.id %}?origen=acompanamiento"
                    class="btn btn-primary mb-3">
                     <i class="fas fa-file-alt me-2"></i>Informe Técnico Complementario
                 </a>
-            </div>
-        {% endif %}
+            {% endif %}
+            {% if puede_finalizar_acompanamiento %}
+                <button type="button"
+                        class="btn btn-danger mb-3"
+                        data-bs-toggle="modal"
+                        data-bs-target="#finalizarAcompanamientoModal">
+                    <i class="fas fa-flag-checkered me-2"></i>Finalizar Acompañamiento
+                </button>
+            {% endif %}
+        </div>
     </div>
+    {% if acompanamiento_finalizado %}
+        <div class="alert alert-secondary d-flex align-items-center" role="alert">
+            <i class="fas fa-flag-checkered me-2"></i>
+            <div>
+                <strong>Acompañamiento finalizado</strong>
+                {% if acompanamiento.finalizado_por %}
+                    el {{ acompanamiento.fecha_finalizado|date:"d/m/Y" }} por {{ acompanamiento.finalizado_por }}.
+                {% else %}
+                    el {{ acompanamiento.fecha_finalizado|date:"d/m/Y" }}.
+                {% endif %}
+                Finalizó el plazo de ejecución del convenio: ya no es posible operar con esta admisión en SISOC.
+            </div>
+        </div>
+    {% endif %}
     {% if admisiones_disponibles %}
         <div class="row mb-3">
             <div class="col-12">
@@ -62,7 +84,11 @@
                                 {% else %}
                                     Admisión #{{ adm.id }}
                                 {% endif %}
-                                {% if not adm.activa %}<span class="badge bg-secondary ms-1">Cerrada</span>{% endif %}
+                                {% if not adm.activa %}
+                                    <span class="badge bg-secondary ms-1">Cerrado</span>
+                                {% elif adm.acompanamiento.finalizado %}
+                                    <span class="badge bg-dark ms-1">Finalizado</span>
+                                {% endif %}
                             </a>
                         {% endfor %}
                         {% if tiene_multiples_activos %}
@@ -232,7 +258,7 @@
                                         <form method="POST" action="{% url 'restaurar_hito' comedor.id %}">
                                             {% csrf_token %}
                                             <input type="hidden" name="campo" value="retiro_tarjeta" />
-                                            {% if hitos.retiro_tarjeta and es_tecnico_comedor %}
+                                            {% if hitos.retiro_tarjeta and es_tecnico_comedor and acompanamiento_gestionable %}
                                                 <button type="submit" class="btn-restaurar">
                                                     <i class="fas fa-undo"></i>
                                                     Restaurar
@@ -267,7 +293,7 @@
                                         <form method="POST" action="{% url 'restaurar_hito' comedor.id %}">
                                             {% csrf_token %}
                                             <input type="hidden" name="campo" value="habilitacion_tarjeta" />
-                                            {% if hitos.habilitacion_tarjeta and es_tecnico_comedor %}
+                                            {% if hitos.habilitacion_tarjeta and es_tecnico_comedor and acompanamiento_gestionable %}
                                                 <button type="submit" class="btn-restaurar">
                                                     <i class="fas fa-undo"></i>
                                                     Restaurar
@@ -302,7 +328,7 @@
                                         <form method="POST" action="{% url 'restaurar_hito' comedor.id %}">
                                             {% csrf_token %}
                                             <input type="hidden" name="campo" value="alta_usuario_plataforma" />
-                                            {% if hitos.alta_usuario_plataforma and es_tecnico_comedor %}
+                                            {% if hitos.alta_usuario_plataforma and es_tecnico_comedor and acompanamiento_gestionable %}
                                                 <button type="submit" class="btn-restaurar">
                                                     <i class="fas fa-undo"></i>
                                                     Restaurar
@@ -337,7 +363,7 @@
                                         <form method="POST" action="{% url 'restaurar_hito' comedor.id %}">
                                             {% csrf_token %}
                                             <input type="hidden" name="campo" value="capacitacion_realizada" />
-                                            {% if hitos.capacitacion_realizada and es_tecnico_comedor %}
+                                            {% if hitos.capacitacion_realizada and es_tecnico_comedor and acompanamiento_gestionable %}
                                                 <button type="submit" class="btn-restaurar">
                                                     <i class="fas fa-undo"></i>
                                                     Restaurar
@@ -372,7 +398,7 @@
                                         <form method="POST" action="{% url 'restaurar_hito' comedor.id %}">
                                             {% csrf_token %}
                                             <input type="hidden" name="campo" value="capacitacion_fch_realizada" />
-                                            {% if hitos.capacitacion_fch_realizada and es_tecnico_comedor %}
+                                            {% if hitos.capacitacion_fch_realizada and es_tecnico_comedor and acompanamiento_gestionable %}
                                                 <button type="submit" class="btn-restaurar">
                                                     <i class="fas fa-undo"></i>
                                                     Restaurar
@@ -407,7 +433,7 @@
                                         <form method="POST" action="{% url 'restaurar_hito' comedor.id %}">
                                             {% csrf_token %}
                                             <input type="hidden" name="campo" value="notificacion_acreditacion_1" />
-                                            {% if hitos.notificacion_acreditacion_1 and es_tecnico_comedor %}
+                                            {% if hitos.notificacion_acreditacion_1 and es_tecnico_comedor and acompanamiento_gestionable %}
                                                 <button type="submit" class="btn-restaurar">
                                                     <i class="fas fa-undo"></i>
                                                     Restaurar
@@ -442,7 +468,7 @@
                                         <form method="POST" action="{% url 'restaurar_hito' comedor.id %}">
                                             {% csrf_token %}
                                             <input type="hidden" name="campo" value="notificacion_acreditacion_2" />
-                                            {% if hitos.notificacion_acreditacion_2 and es_tecnico_comedor %}
+                                            {% if hitos.notificacion_acreditacion_2 and es_tecnico_comedor and acompanamiento_gestionable %}
                                                 <button type="submit" class="btn-restaurar">
                                                     <i class="fas fa-undo"></i>
                                                     Restaurar
@@ -477,7 +503,7 @@
                                         <form method="POST" action="{% url 'restaurar_hito' comedor.id %}">
                                             {% csrf_token %}
                                             <input type="hidden" name="campo" value="notificacion_acreditacion_3" />
-                                            {% if hitos.notificacion_acreditacion_3 and es_tecnico_comedor %}
+                                            {% if hitos.notificacion_acreditacion_3 and es_tecnico_comedor and acompanamiento_gestionable %}
                                                 <button type="submit" class="btn-restaurar">
                                                     <i class="fas fa-undo"></i>
                                                     Restaurar
@@ -512,7 +538,7 @@
                                         <form method="POST" action="{% url 'restaurar_hito' comedor.id %}">
                                             {% csrf_token %}
                                             <input type="hidden" name="campo" value="notificacion_acreditacion_4" />
-                                            {% if hitos.notificacion_acreditacion_4 and es_tecnico_comedor %}
+                                            {% if hitos.notificacion_acreditacion_4 and es_tecnico_comedor and acompanamiento_gestionable %}
                                                 <button type="submit" class="btn-restaurar">
                                                     <i class="fas fa-undo"></i>
                                                     Restaurar
@@ -547,7 +573,7 @@
                                         <form method="POST" action="{% url 'restaurar_hito' comedor.id %}">
                                             {% csrf_token %}
                                             <input type="hidden" name="campo" value="notificacion_acreditacion_5" />
-                                            {% if hitos.notificacion_acreditacion_5 and es_tecnico_comedor %}
+                                            {% if hitos.notificacion_acreditacion_5 and es_tecnico_comedor and acompanamiento_gestionable %}
                                                 <button type="submit" class="btn-restaurar">
                                                     <i class="fas fa-undo"></i>
                                                     Restaurar
@@ -582,7 +608,7 @@
                                         <form method="POST" action="{% url 'restaurar_hito' comedor.id %}">
                                             {% csrf_token %}
                                             <input type="hidden" name="campo" value="notificacion_acreditacion_6" />
-                                            {% if hitos.notificacion_acreditacion_6 and es_tecnico_comedor %}
+                                            {% if hitos.notificacion_acreditacion_6 and es_tecnico_comedor and acompanamiento_gestionable %}
                                                 <button type="submit" class="btn-restaurar">
                                                     <i class="fas fa-undo"></i>
                                                     Restaurar
@@ -617,7 +643,7 @@
                                         <form method="POST" action="{% url 'restaurar_hito' comedor.id %}">
                                             {% csrf_token %}
                                             <input type="hidden" name="campo" value="nomina_entregada_inicial" />
-                                            {% if hitos.nomina_entregada_inicial and es_tecnico_comedor %}
+                                            {% if hitos.nomina_entregada_inicial and es_tecnico_comedor and acompanamiento_gestionable %}
                                                 <button type="submit" class="btn-restaurar">
                                                     <i class="fas fa-undo"></i>
                                                     Restaurar
@@ -652,7 +678,7 @@
                                         <form method="POST" action="{% url 'restaurar_hito' comedor.id %}">
                                             {% csrf_token %}
                                             <input type="hidden" name="campo" value="nomina_alta_baja_2" />
-                                            {% if hitos.nomina_alta_baja_2 and es_tecnico_comedor %}
+                                            {% if hitos.nomina_alta_baja_2 and es_tecnico_comedor and acompanamiento_gestionable %}
                                                 <button type="submit" class="btn-restaurar">
                                                     <i class="fas fa-undo"></i>
                                                     Restaurar
@@ -687,7 +713,7 @@
                                         <form method="POST" action="{% url 'restaurar_hito' comedor.id %}">
                                             {% csrf_token %}
                                             <input type="hidden" name="campo" value="nomina_alta_baja_3" />
-                                            {% if hitos.nomina_alta_baja_3 and es_tecnico_comedor %}
+                                            {% if hitos.nomina_alta_baja_3 and es_tecnico_comedor and acompanamiento_gestionable %}
                                                 <button type="submit" class="btn-restaurar">
                                                     <i class="fas fa-undo"></i>
                                                     Restaurar
@@ -722,7 +748,7 @@
                                         <form method="POST" action="{% url 'restaurar_hito' comedor.id %}">
                                             {% csrf_token %}
                                             <input type="hidden" name="campo" value="nomina_alta_baja_4" />
-                                            {% if hitos.nomina_alta_baja_4 and es_tecnico_comedor %}
+                                            {% if hitos.nomina_alta_baja_4 and es_tecnico_comedor and acompanamiento_gestionable %}
                                                 <button type="submit" class="btn-restaurar">
                                                     <i class="fas fa-undo"></i>
                                                     Restaurar
@@ -757,7 +783,7 @@
                                         <form method="POST" action="{% url 'restaurar_hito' comedor.id %}">
                                             {% csrf_token %}
                                             <input type="hidden" name="campo" value="nomina_alta_baja_5" />
-                                            {% if hitos.nomina_alta_baja_5 and es_tecnico_comedor %}
+                                            {% if hitos.nomina_alta_baja_5 and es_tecnico_comedor and acompanamiento_gestionable %}
                                                 <button type="submit" class="btn-restaurar">
                                                     <i class="fas fa-undo"></i>
                                                     Restaurar
@@ -792,7 +818,7 @@
                                         <form method="POST" action="{% url 'restaurar_hito' comedor.id %}">
                                             {% csrf_token %}
                                             <input type="hidden" name="campo" value="nomina_alta_baja_6" />
-                                            {% if hitos.nomina_alta_baja_6 and es_tecnico_comedor %}
+                                            {% if hitos.nomina_alta_baja_6 and es_tecnico_comedor and acompanamiento_gestionable %}
                                                 <button type="submit" class="btn-restaurar">
                                                     <i class="fas fa-undo"></i>
                                                     Restaurar
@@ -827,7 +853,7 @@
                                         <form method="POST" action="{% url 'restaurar_hito' comedor.id %}">
                                             {% csrf_token %}
                                             <input type="hidden" name="campo" value="certificado_prestaciones_1" />
-                                            {% if hitos.certificado_prestaciones_1 and es_tecnico_comedor %}
+                                            {% if hitos.certificado_prestaciones_1 and es_tecnico_comedor and acompanamiento_gestionable %}
                                                 <button type="submit" class="btn-restaurar">
                                                     <i class="fas fa-undo"></i>
                                                     Restaurar
@@ -862,7 +888,7 @@
                                         <form method="POST" action="{% url 'restaurar_hito' comedor.id %}">
                                             {% csrf_token %}
                                             <input type="hidden" name="campo" value="certificado_prestaciones_2" />
-                                            {% if hitos.certificado_prestaciones_2 and es_tecnico_comedor %}
+                                            {% if hitos.certificado_prestaciones_2 and es_tecnico_comedor and acompanamiento_gestionable %}
                                                 <button type="submit" class="btn-restaurar">
                                                     <i class="fas fa-undo"></i>
                                                     Restaurar
@@ -897,7 +923,7 @@
                                         <form method="POST" action="{% url 'restaurar_hito' comedor.id %}">
                                             {% csrf_token %}
                                             <input type="hidden" name="campo" value="certificado_prestaciones_3" />
-                                            {% if hitos.certificado_prestaciones_3 and es_tecnico_comedor %}
+                                            {% if hitos.certificado_prestaciones_3 and es_tecnico_comedor and acompanamiento_gestionable %}
                                                 <button type="submit" class="btn-restaurar">
                                                     <i class="fas fa-undo"></i>
                                                     Restaurar
@@ -932,7 +958,7 @@
                                         <form method="POST" action="{% url 'restaurar_hito' comedor.id %}">
                                             {% csrf_token %}
                                             <input type="hidden" name="campo" value="certificado_prestaciones_4" />
-                                            {% if hitos.certificado_prestaciones_4 and es_tecnico_comedor %}
+                                            {% if hitos.certificado_prestaciones_4 and es_tecnico_comedor and acompanamiento_gestionable %}
                                                 <button type="submit" class="btn-restaurar">
                                                     <i class="fas fa-undo"></i>
                                                     Restaurar
@@ -967,7 +993,7 @@
                                         <form method="POST" action="{% url 'restaurar_hito' comedor.id %}">
                                             {% csrf_token %}
                                             <input type="hidden" name="campo" value="certificado_prestaciones_5" />
-                                            {% if hitos.certificado_prestaciones_5 and es_tecnico_comedor %}
+                                            {% if hitos.certificado_prestaciones_5 and es_tecnico_comedor and acompanamiento_gestionable %}
                                                 <button type="submit" class="btn-restaurar">
                                                     <i class="fas fa-undo"></i>
                                                     Restaurar
@@ -1002,7 +1028,7 @@
                                         <form method="POST" action="{% url 'restaurar_hito' comedor.id %}">
                                             {% csrf_token %}
                                             <input type="hidden" name="campo" value="certificado_prestaciones_6" />
-                                            {% if hitos.certificado_prestaciones_6 and es_tecnico_comedor %}
+                                            {% if hitos.certificado_prestaciones_6 and es_tecnico_comedor and acompanamiento_gestionable %}
                                                 <button type="submit" class="btn-restaurar">
                                                     <i class="fas fa-undo"></i>
                                                     Restaurar
@@ -1051,6 +1077,40 @@
             <i class="fas fa-arrow-left"></i>
         </a>
     </div>
+    {% if puede_finalizar_acompanamiento %}
+        <div class="modal fade"
+             id="finalizarAcompanamientoModal"
+             tabindex="-1"
+             aria-labelledby="finalizarAcompanamientoModalLabel"
+             aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <form method="POST"
+                          action="{% url 'finalizar_acompanamiento' comedor.id %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="admision_id" value="{{ admision_id_activa }}" />
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="finalizarAcompanamientoModalLabel">Finalizar Acompañamiento</h5>
+                            <button type="button"
+                                    class="btn-close"
+                                    data-bs-dismiss="modal"
+                                    aria-label="Cerrar"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="alert alert-warning mb-0">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                ¿Está seguro que desea finalizar el acompañamiento? Esta acción indica que finalizó el plazo de ejecución del convenio, por lo que ya no podrá operar con esta admisión en SISOC
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-danger">Confirmar finalización</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    {% endif %}
     <script nonce="{{ request.csp_nonce }}">
   document.addEventListener("DOMContentLoaded", function () {
     // Contar hitos completados y pendientes

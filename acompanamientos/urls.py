@@ -34,6 +34,13 @@ urlpatterns = [
         name="restaurar_hito",
     ),
     path(
+        "acompanamiento/<int:comedor_id>/finalizar/",
+        permissions_any_required(["acompanamientos.view_informacionrelevante"])(
+            views.finalizar_acompanamiento
+        ),
+        name="finalizar_acompanamiento",
+    ),
+    path(
         "acompanamiento/ajax/",
         permissions_any_required(["acompanamientos.view_informacionrelevante"])(
             views.comedores_acompanamiento_ajax

@@ -66,6 +66,18 @@ def restaurar_hito(request, comedor_id):
             target=request.META.get("HTTP_REFERER"),
         )
 
+    acompanamiento = hito.acompanamiento
+    if acompanamiento and not acompanamiento.es_gestionable:
+        messages.error(
+            request,
+            "El acompañamiento está finalizado o cerrado: no admite modificaciones.",
+        )
+        return safe_redirect(
+            request,
+            default=_build_detalle_acompanamiento_url(comedor_id, admision_id),
+            target=request.META.get("HTTP_REFERER"),
+        )
+
     # Verifica si el campo existe en el modelo
     if hasattr(hito, campo) and campo not in ["id", "acompanamiento", "fecha"]:
         setattr(hito, campo, False)  # Cambia el valor del campo a False (0)
@@ -77,6 +89,35 @@ def restaurar_hito(request, comedor_id):
         messages.error(request, f"El campo '{campo}' no existe en el modelo Hitos.")
 
     # Redirige a la página anterior
+    return safe_redirect(
+        request,
+        default=_build_detalle_acompanamiento_url(comedor_id, admision_id),
+        target=request.META.get("HTTP_REFERER"),
+    )
+
+
+@login_required
+@require_POST
+def finalizar_acompanamiento(request, comedor_id):
+    """Marca el acompañamiento del convenio seleccionado como finalizado."""
+    admision_id = _parse_admision_id(
+        request.POST.get("admision_id")
+    ) or _extract_admision_id_from_referer(request)
+    comedor = ComedorService.get_scoped_comedor_or_404(comedor_id, request.user)
+
+    _, error = AcompanamientoService.finalizar_acompanamiento(
+        comedor, admision_id, request.user
+    )
+
+    if error:
+        messages.error(request, error)
+    else:
+        messages.success(
+            request,
+            "El acompañamiento fue finalizado. Ya no es posible operar con esta "
+            "admisión en SISOC.",
+        )
+
     return safe_redirect(
         request,
         default=_build_detalle_acompanamiento_url(comedor_id, admision_id),
@@ -232,6 +273,16 @@ class AcompanamientoDetailView(LoginRequiredMixin, DetailView):
         )
         context["nro_convenio"] = (
             acompanamiento_obj.nro_convenio if acompanamiento_obj else ""
+        )
+        context["acompanamiento"] = acompanamiento_obj
+        context["acompanamiento_finalizado"] = bool(
+            acompanamiento_obj and acompanamiento_obj.finalizado
+        )
+        context["puede_finalizar_acompanamiento"] = bool(
+            acompanamiento_obj and acompanamiento_obj.puede_finalizarse
+        )
+        context["acompanamiento_gestionable"] = bool(
+            acompanamiento_obj and acompanamiento_obj.es_gestionable
         )
 
         prestaciones_detalle = AcompanamientoService.obtener_prestaciones_detalladas(

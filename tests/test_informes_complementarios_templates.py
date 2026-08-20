@@ -1,6 +1,7 @@
 """Regresiones de renderizado para accesos e informes complementarios."""
 
 import re
+from datetime import datetime
 from types import SimpleNamespace
 
 import pytest
@@ -205,8 +206,55 @@ def test_acompanamiento_renderiza_informe_en_columna_derecha():
 
     acciones = html[html.index('<div class="row justify-content-between">') :]
     assert re.search(
-        r'<div class="col-auto">\s*<a [^>]*>\s*<i [^>]*></i>Informe Técnico Complementario',
+        r'<div class="col-auto[^"]*">\s*<a [^>]*>\s*<i [^>]*></i>Informe Técnico Complementario',
         acciones,
     )
     assert "/base/70/" in acciones
     assert "admision_id=17" in acciones
+
+
+def _render_acompanamiento_detail(**contexto):
+    request = RequestFactory().get(
+        "/acompanamientos/acompanamiento/5/detalle/?admision_id=17"
+    )
+    request.csp_nonce = "test-nonce"
+    request.user = AnonymousUser()
+    return render_to_string(
+        "acompañamiento_detail.html",
+        {
+            "comedor": SimpleNamespace(id=5, nombre="Comedor prueba"),
+            "admision_id_activa": 17,
+            **contexto,
+        },
+        request=request,
+    )
+
+
+def test_acompanamiento_ofrece_finalizar_con_la_advertencia_pedida():
+    html = _render_acompanamiento_detail(puede_finalizar_acompanamiento=True)
+
+    assert "Finalizar Acompañamiento" in html
+    assert "/acompanamientos/acompanamiento/5/finalizar/" in html
+    assert (
+        "¿Está seguro que desea finalizar el acompañamiento? Esta acción indica "
+        "que finalizó el plazo de ejecución del convenio, por lo que ya no podrá "
+        "operar con esta admisión en SISOC" in html
+    )
+
+
+def test_acompanamiento_finalizado_no_ofrece_la_accion_ni_permite_restaurar_hitos():
+    html = _render_acompanamiento_detail(
+        puede_finalizar_acompanamiento=False,
+        acompanamiento_finalizado=True,
+        acompanamiento_gestionable=False,
+        es_tecnico_comedor=True,
+        acompanamiento=SimpleNamespace(
+            fecha_finalizado=datetime(2026, 8, 14),
+            finalizado_por="admin",
+        ),
+        hitos=SimpleNamespace(retiro_tarjeta=True),
+    )
+
+    assert "finalizarAcompanamientoModal" not in html
+    assert "Acompañamiento finalizado" in html
+    assert 'class="btn-restaurar disabled" disabled' in html
