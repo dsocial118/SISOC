@@ -46,7 +46,8 @@
                                         {% if custom_cells %}
                                             <!-- Modo personalizado - permite definir las celdas manualmente -->
                                             {% for cell in item.cells %}
-                                                <td {% if cell.class %}class="{{ cell.class }}"{% endif %} {% if cell.data_attr %}data-{{ cell.data_attr }}="{{ cell.data_value|default:cell.content }}"{% endif %}>
+                                                <td {% if cell.class %}class="{{ cell.class }}"{% endif %}
+                                                    {% if cell.data_attr %}data-{{ cell.data_attr }}="{{ cell.data_value|default:cell.content }}"{% endif %}>
                                                     {% if cell.link_url and not disable_links %}
                                                         <a href="{{ cell.link_url }}"
                                                            {% if cell.link_class %}class="{{ cell.link_class }}"{% endif %}
