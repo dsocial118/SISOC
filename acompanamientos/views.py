@@ -16,7 +16,7 @@ from acompanamientos.acompanamiento_service import AcompanamientoService
 from acompanamientos.services.filter_config import get_filters_ui_config
 from comedores.models import Comedor
 from comedores.services.comedor_service import ComedorService
-from admisiones.models.admisiones import InformeTecnico
+from admisiones.models.admisiones import Admision, InformeTecnico
 from core.services.column_preferences import build_columns_context_for_custom_cells
 from core.services.favorite_filters import SeccionesFiltrosFavoritos
 from core.services.list_ordering import build_ordering_header
@@ -298,17 +298,21 @@ class AcompanamientoDetailView(LoginRequiredMixin, DetailView):
         return context
 
 
+ACOMPANAMIENTOS_LIST_HEADERS_KEY = "acompanamientos_list"
+
+
 @method_decorator(ensure_csrf_cookie, name="dispatch")
-class ComedoresAcompanamientoListView(LoginRequiredMixin, ListView):
-    model = Comedor
+class AcompanamientosListView(LoginRequiredMixin, ListView):
+    """Listado con una fila por acompañamiento, incluyendo el histórico."""
+
+    model = Admision
     template_name = "lista_comedores.html"
     context_object_name = "comedores"
     paginate_by = 10
 
     def get_queryset(self):
-        user = self.request.user
-        return AcompanamientoService.obtener_comedores_acompanamiento(
-            user, self.request
+        return AcompanamientoService.obtener_acompanamientos(
+            self.request.user, self.request
         )
 
     def get_context_data(self, **kwargs):
@@ -319,27 +323,28 @@ class ComedoresAcompanamientoListView(LoginRequiredMixin, ListView):
         headers = [
             {"key": "id", "title": "ID"},
             build_ordering_header(self.request, key="nombre", title="Nombre"),
+            {"key": "convenio", "title": "Convenio"},
             {"key": "organizacion", "title": "Organización"},
             {"key": "expediente", "title": "N° Expediente"},
             {"key": "provincia", "title": "Provincia"},
             {"key": "dupla", "title": "Dupla"},
             {"key": "estado", "title": "Estado"},
+            {"key": "estado_acompanamiento", "title": "Estado del acompañamiento"},
             {"key": "modificado", "title": "Última Modificación"},
         ]
 
         # Usar modo personalizado para acceder a campos relacionados
         context["custom_cells"] = True
 
-        # Usar el servicio optimizado para preparar los datos
-        comedores_con_celdas = AcompanamientoService.preparar_datos_tabla_comedores(
+        filas = AcompanamientoService.preparar_datos_tabla_acompanamientos(
             context["comedores"]
         )
         context.update(
             build_columns_context_for_custom_cells(
                 self.request,
-                "acompanamientos_comedores_list",
+                ACOMPANAMIENTOS_LIST_HEADERS_KEY,
                 headers,
-                comedores_con_celdas,
+                filas,
                 items_key="comedores",
             )
         )
@@ -362,19 +367,19 @@ class ComedoresAcompanamientoListView(LoginRequiredMixin, ListView):
 @login_required
 def comedores_acompanamiento_ajax(request):
     """
-    Vista AJAX para búsqueda dinámica de comedores en acompañamiento
+    Vista AJAX para búsqueda dinámica de acompañamientos
     """
     busqueda = request.GET.get("busqueda", "").strip()
     page = request.GET.get("page", 1)
 
     user = request.user
-    comedores = AcompanamientoService.obtener_comedores_acompanamiento(
+    acompanamientos = AcompanamientoService.obtener_acompanamientos(
         user, busqueda.lower()
     )
 
     paginator = Paginator(
-        comedores, 10
-    )  # mismo paginate_by que ComedoresAcompanamientoListView
+        acompanamientos, 10
+    )  # mismo paginate_by que AcompanamientosListView
 
     try:
         page_obj = paginator.get_page(page)
@@ -383,7 +388,7 @@ def comedores_acompanamiento_ajax(request):
 
     table_html = render_to_string(
         "acompanamientos/partials/comedor_rows.html",
-        {"comedores": page_obj.object_list},
+        {"admisiones": page_obj.object_list},
         request=request,
     )
 

@@ -3,6 +3,18 @@ from django.db import models
 
 
 class Acompanamiento(models.Model):
+    ESTADO_ACTIVO = "activo"
+    ESTADO_CERRADO = "cerrado"
+    ESTADO_FINALIZADO = "finalizado"
+
+    # El cierre de la admisión gana sobre la finalización: si un acompañamiento
+    # finalizado luego recibe un forzar cierre, el cierre es el hecho posterior.
+    ESTADOS = [
+        (ESTADO_ACTIVO, "Activo"),
+        (ESTADO_CERRADO, "Cerrado"),
+        (ESTADO_FINALIZADO, "Finalizado"),
+    ]
+
     admision = models.OneToOneField(
         "admisiones.Admision",
         on_delete=models.CASCADE,
@@ -50,6 +62,19 @@ class Acompanamiento(models.Model):
     def es_gestionable(self):
         """False cuando el acompañamiento ya no admite operaciones en SISOC."""
         return self.admision.activa and not self.finalizado
+
+    @property
+    def estado(self):
+        """Estado del acompañamiento para etiquetas y filtros del listado."""
+        if self.cerrado:
+            return self.ESTADO_CERRADO
+        if self.finalizado:
+            return self.ESTADO_FINALIZADO
+        return self.ESTADO_ACTIVO
+
+    @property
+    def estado_display(self):
+        return dict(self.ESTADOS).get(self.estado, self.estado)
 
 
 class InformacionRelevante(models.Model):

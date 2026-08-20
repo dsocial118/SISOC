@@ -1,8 +1,9 @@
 import logging
 from datetime import datetime, date
-from django.db.models import Q, Exists, OuterRef, Prefetch, Subquery
+from django.db.models import Case, CharField, Exists, OuterRef, Q, Value, When
 from django.db import transaction
 from django.utils import timezone
+from django.utils.html import format_html
 from django.utils.timezone import localtime
 from admisiones.models.admisiones import (
     Admision,
@@ -629,10 +630,21 @@ class AcompanamientoService:
             raise
 
     @staticmethod
-    def obtener_comedores_acompanamiento(user, request_or_query=None):
-        """
-        Obtiene un queryset de objetos Comedor que cumplen con los criterios de acompañamiento,
-        filtrando según el usuario y una búsqueda opcional.
+    def obtener_acompanamientos(user, request_or_query=None):
+        """Obtiene el listado de acompañamientos, uno por convenio.
+
+        La base es ``Admision`` y no ``Comedor`` porque el listado tiene una fila
+        por acompañamiento: un comedor con varios convenios aparece varias veces.
+        Incluye los inactivos para poder revisar el histórico, etiquetando cada
+        fila como activo, cerrado o finalizado.
+
+        Args:
+            user: Usuario que consulta, para aplicar el scope de duplas.
+            request_or_query: HttpRequest (filtros avanzados y orden) o string de
+                búsqueda simple.
+
+        Returns:
+            QuerySet de Admision anotado con ``estado_acompanamiento``.
         """
         try:
             is_dupla = UserPermissionService.es_tecnico_o_abogado(user)
@@ -641,23 +653,14 @@ class AcompanamientoService:
             )
 
             dupla_abogado_subq = Dupla.objects.filter(
-                comedor=OuterRef("pk"), abogado=user
+                comedor=OuterRef("comedor_id"), abogado=user
             )
             dupla_tecnico_subq = Dupla.objects.filter(
-                comedor=OuterRef("pk"), tecnico=user
+                comedor=OuterRef("comedor_id"), tecnico=user
             )
 
-            admisiones_acompanamiento = Admision.objects.filter(
-                comedor=OuterRef("pk"),
-                enviado_acompaniamiento=True,
-                activa=True,
-            ).order_by("-id")
-            admisiones_prefetch = Prefetch(
-                "admision_set",
-                queryset=Admision.objects.filter(
-                    enviado_acompaniamiento=True, activa=True
-                )
-                .order_by("-id")
+            qs = (
+                Admision.objects.filter(enviado_acompaniamiento=True)
                 .select_related(
                     "comedor",
                     "comedor__provincia",
@@ -665,44 +668,27 @@ class AcompanamientoService:
                     "comedor__referente",
                     "comedor__organizacion",
                     "comedor__dupla",
-                    "estado",
+                    "acompanamiento",
                 )
-                .only(
-                    "id", "num_expediente", "estado__nombre", "modificado", "comedor_id"
-                ),
-                to_attr="admisiones_acompaniamiento",
-            )
-
-            qs = (
-                Comedor.objects.select_related(
-                    "referente",
-                    "tipocomedor",
-                    "provincia",
-                    "dupla",
-                    "dupla__abogado",
-                    "organizacion",
-                )
-                .prefetch_related(admisiones_prefetch, "dupla__tecnico")
-                .filter(Exists(admisiones_acompanamiento))
                 .annotate(
-                    acompanamiento_tipo_admision=Subquery(
-                        admisiones_acompanamiento.values("tipo")[:1]
-                    ),
-                    acompanamiento_num_expediente=Subquery(
-                        admisiones_acompanamiento.values("num_expediente")[:1]
-                    ),
-                    acompanamiento_estado_admision=Subquery(
-                        admisiones_acompanamiento.values("estado_admision")[:1]
-                    ),
-                    acompanamiento_fecha_modificado=Subquery(
-                        admisiones_acompanamiento.values("modificado")[:1]
-                    ),
+                    estado_acompanamiento=Case(
+                        When(
+                            activa=False,
+                            then=Value(Acompanamiento.ESTADO_CERRADO),
+                        ),
+                        When(
+                            acompanamiento__fecha_finalizado__isnull=False,
+                            then=Value(Acompanamiento.ESTADO_FINALIZADO),
+                        ),
+                        default=Value(Acompanamiento.ESTADO_ACTIVO),
+                        output_field=CharField(),
+                    )
                 )
             )
 
             if not user.is_superuser:
                 if is_coordinador:
-                    qs = qs.filter(dupla_id__in=duplas_ids or [])
+                    qs = qs.filter(comedor__dupla_id__in=duplas_ids or [])
                 elif is_dupla:
                     qs = qs.filter(
                         Exists(dupla_abogado_subq) | Exists(dupla_tecnico_subq)
@@ -718,100 +704,134 @@ class AcompanamientoService:
 
             if busqueda:
                 qs = qs.filter(
-                    Q(nombre__icontains=busqueda)
-                    | Q(provincia__nombre__icontains=busqueda)
-                    | Q(tipocomedor__nombre__icontains=busqueda)
-                    | Q(calle__icontains=busqueda)
-                    | Q(numero__icontains=busqueda)
-                    | Q(referente__nombre__icontains=busqueda)
-                    | Q(referente__apellido__icontains=busqueda)
-                    | Q(referente__celular__icontains=busqueda)
+                    Q(comedor__nombre__icontains=busqueda)
+                    | Q(comedor__provincia__nombre__icontains=busqueda)
+                    | Q(comedor__tipocomedor__nombre__icontains=busqueda)
+                    | Q(comedor__calle__icontains=busqueda)
+                    | Q(comedor__numero__icontains=busqueda)
+                    | Q(comedor__referente__nombre__icontains=busqueda)
+                    | Q(comedor__referente__apellido__icontains=busqueda)
+                    | Q(comedor__referente__celular__icontains=busqueda)
+                    | Q(num_expediente__icontains=busqueda)
+                    | Q(acompanamiento__nro_convenio__icontains=busqueda)
                 )
 
             return apply_allowed_ordering(
                 qs,
                 request_or_query,
-                {"nombre": "nombre"},
+                {"nombre": "comedor__nombre"},
                 default=("-id",),
             )
 
         except Exception:
             logger.exception(
-                f"Error en AcompanamientoService.obtener_comedores_acompanamiento para user: {user.pk}"
+                f"Error en AcompanamientoService.obtener_acompanamientos para user: {user.pk}"
             )
             raise
 
     @staticmethod
-    def preparar_datos_tabla_comedores(comedores_queryset):
-        """
-        Prepara los datos de comedores para la tabla, evitando consultas N+1.
+    def _etiqueta_estado_acompanamiento(estado):
+        """Devuelve el badge del estado para la celda del listado."""
+        clases = {
+            Acompanamiento.ESTADO_ACTIVO: "bg-primary",
+            Acompanamiento.ESTADO_CERRADO: "bg-secondary",
+            Acompanamiento.ESTADO_FINALIZADO: "bg-dark",
+        }
+        etiquetas = dict(Acompanamiento.ESTADOS)
+        return format_html(
+            '<span class="badge {}">{}</span>',
+            clases.get(estado, "bg-light"),
+            etiquetas.get(estado, "-"),
+        )
+
+    @staticmethod
+    def preparar_datos_tabla_acompanamientos(admisiones):
+        """Prepara las filas del listado de acompañamientos, una por convenio.
 
         Args:
-            comedores_queryset: QuerySet de comedores ya optimizado con prefetch_related
+            admisiones: iterable de Admision anotado con ``estado_acompanamiento``.
 
         Returns:
-            list: Lista de diccionarios con datos preparados para la tabla
+            list: filas con ``cells`` y ``actions`` para ``data_table``.
         """
         try:
-            comedores_con_celdas = []
+            filas = []
 
-            for comedor in comedores_queryset:
-                # Usar la caché creada con Prefetch
-                admision = (
-                    comedor.admisiones_acompaniamiento[0]
-                    if comedor.admisiones_acompaniamiento
-                    else None
+            for admision in admisiones:
+                comedor = admision.comedor
+                acompanamiento = getattr(admision, "acompanamiento", None)
+                estado = getattr(
+                    admision,
+                    "estado_acompanamiento",
+                    Acompanamiento.ESTADO_ACTIVO,
                 )
 
-                comedores_con_celdas.append(
+                if acompanamiento and acompanamiento.nro_convenio:
+                    convenio = acompanamiento.nro_convenio
+                else:
+                    convenio = f"Admisión #{admision.id}"
+
+                nombre_comedor = (comedor.nombre if comedor else None) or "-"
+
+                filas.append(
                     {
                         "cells": [
-                            {"content": comedor.id or "-"},
+                            {"content": (comedor.id if comedor else None) or "-"},
                             {
-                                "content": comedor.nombre or "-",
+                                "content": nombre_comedor,
                                 "data_attr": "nombre",
-                                "data_value": comedor.nombre or "",
+                                "data_value": nombre_comedor,
                             },
+                            {"content": convenio},
                             {
                                 "content": (
                                     comedor.organizacion.nombre
-                                    if comedor.organizacion
+                                    if comedor and comedor.organizacion
                                     else "-"
                                 )
                             },
-                            {
-                                "content": (
-                                    admision.num_expediente
-                                    if admision and admision.num_expediente
-                                    else "-"
-                                )
-                            },
+                            {"content": admision.num_expediente or "-"},
                             {
                                 "content": (
                                     comedor.provincia.nombre
-                                    if comedor.provincia
+                                    if comedor and comedor.provincia
                                     else "-"
                                 )
                             },
-                            {"content": str(comedor.dupla) if comedor.dupla else "-"},
+                            {
+                                "content": (
+                                    str(comedor.dupla)
+                                    if comedor and comedor.dupla
+                                    else "-"
+                                )
+                            },
                             {
                                 "content": (
                                     admision.get_estado_admision_display()
-                                    if admision and admision.estado_admision
+                                    if admision.estado_admision
                                     else "-"
+                                )
+                            },
+                            {
+                                "content": AcompanamientoService._etiqueta_estado_acompanamiento(
+                                    estado
                                 )
                             },
                             {
                                 "content": (
                                     admision.modificado.strftime("%d/%m/%Y")
-                                    if admision and admision.modificado
+                                    if admision.modificado
                                     else "-"
                                 )
                             },
                         ],
                         "actions": [
                             {
-                                "url": f"/acompanamientos/acompanamiento/{comedor.id}/detalle/?admision_id={admision.id if admision else ''}",
+                                "url": (
+                                    "/acompanamientos/acompanamiento/"
+                                    f"{comedor.id if comedor else ''}/detalle/"
+                                    f"?admision_id={admision.id}"
+                                ),
                                 "label": "Ver Acompañamiento",
                                 "type": "primary",
                             }
@@ -819,10 +839,10 @@ class AcompanamientoService:
                     }
                 )
 
-            return comedores_con_celdas
+            return filas
         except Exception:
             logger.exception(
-                "Error en AcompanamientoService.preparar_datos_tabla_comedores"
+                "Error en AcompanamientoService.preparar_datos_tabla_acompanamientos"
             )
             raise
 

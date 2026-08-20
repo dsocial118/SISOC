@@ -276,20 +276,21 @@ def debug_all_views():  # pylint: disable=too-many-locals,too-many-statements,to
     )
     results["CiudadanosDetailView"] = queries
 
-    # Debug ComedoresAcompanamientoListView (acompañamientos)
+    # Debug AcompanamientosListView (acompañamientos)
     # Debug Toolbar: 14 queries en 33.73ms
     logger.info("\n" + "=" * 50)
-    from acompanamientos.views import ComedoresAcompanamientoListView
+    from acompanamientos.views import AcompanamientosListView
+    from admisiones.models.admisiones import Admision
     from comedores.models import Comedor
 
     success, queries = debug_view_queries(
-        ComedoresAcompanamientoListView,
+        AcompanamientosListView,
         "/acompanamientos/acompanamiento/",
-        Comedor,
-        "ComedoresAcompanamientoListView (acompañamientos/list)",
+        Admision,
+        "AcompanamientosListView (acompañamientos/list)",
         pk=False,  # Es una ListView
     )
-    results["ComedoresAcompanamientoListView"] = queries
+    results["AcompanamientosListView"] = queries
 
     # Debug AcompanamientoDetailView
     logger.info("\n" + "=" * 50)

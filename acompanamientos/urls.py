@@ -15,7 +15,7 @@ urlpatterns = [
     path(
         "acompanamiento/",
         permissions_any_required(["acompanamientos.view_informacionrelevante"])(
-            views.ComedoresAcompanamientoListView.as_view()
+            views.AcompanamientosListView.as_view()
         ),
         name="lista_comedores_acompanamiento",
     ),

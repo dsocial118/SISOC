@@ -1,13 +1,20 @@
-{% for comedor in comedores %}
+{% for admision in admisiones %}
     <tr>
-        <td>{{ comedor.nombre }}</td>
+        <td>{{ admision.comedor.nombre|default:"-" }}</td>
         <td>
-            <a href="{% url 'detalle_acompanamiento' comedor.id %}"
+            {% if admision.acompanamiento.nro_convenio %}
+                {{ admision.acompanamiento.nro_convenio }}
+            {% else %}
+                Admisión #{{ admision.id }}
+            {% endif %}
+        </td>
+        <td>
+            <a href="{% url 'detalle_acompanamiento' admision.comedor_id %}?admision_id={{ admision.id }}"
                class="btn btn-primary btn-sm">Ver Acompañamiento</a>
         </td>
     </tr>
 {% empty %}
     <tr>
-        <td colspan="2" class="text-center">No se encontraron comedores.</td>
+        <td colspan="3" class="text-center">No se encontraron acompañamientos.</td>
     </tr>
 {% endfor %}
