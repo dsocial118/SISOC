@@ -1,0 +1,37 @@
+{% extends "includes/main.html" %}
+{% load crispy_forms_tags %}
+{% block title %}Editar datos de rendición{% endblock %}
+{% block breadcrumb %}
+    <ol class="breadcrumb float-sm-right">
+        <li class="breadcrumb-item">
+            <a href="{% url 'rendicioncuentasmensual_detail' form.instance.pk %}"
+               title="Volver al detalle de la rendición">Rendición {{ form.instance.numero_rendicion|default:form.instance.pk }}</a>
+        </li>
+        <li class="breadcrumb-item active">Editar datos</li>
+    </ol>
+{% endblock %}
+{% block content %}
+    <div class="container mt-4">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Editar datos de rendición</h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    {{ form.non_field_errors }}
+                    {{ form.convenio|as_crispy_field }}
+                    {{ form.numero_rendicion|as_crispy_field }}
+                    {{ form.periodo_inicio|as_crispy_field }}
+                    {{ form.periodo_fin|as_crispy_field }}
+                    {{ form.nombre|as_crispy_field }}
+                    <div class="mt-4 text-center">
+                        <button type="submit" class="btn btn-success">Guardar</button>
+                        <a href="{% url 'rendicioncuentasmensual_detail' form.instance.pk %}"
+                           class="btn btn-secondary">Cancelar</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock %}
