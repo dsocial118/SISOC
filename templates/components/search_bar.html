@@ -238,10 +238,19 @@ Layout (prototipo Figma "SISOC_ Versión UX", nodo 13501:32237):
 
             {% if additional_buttons %}
                 {% for button in additional_buttons %}
-                    <a href="{{ button.url }}"
-                       class="{{ button.class|default:'btn btn-primary btn-lg' }}"
-                       {% if button.id %}id="{{ button.id }}"{% endif %}
-                       {% if button.title %}title="{{ button.title }}"{% endif %}>{{ button.label }}</a>
+                    {% if button.modal_target %}
+                        <button type="button"
+                                class="{{ button.class|default:'btn btn-primary btn-lg' }}"
+                                data-bs-toggle="modal"
+                                data-bs-target="{{ button.modal_target }}"
+                                {% if button.id %}id="{{ button.id }}"{% endif %}
+                                {% if button.title %}title="{{ button.title }}"{% endif %}>{{ button.label }}</button>
+                    {% else %}
+                        <a href="{{ button.url }}"
+                           class="{{ button.class|default:'btn btn-primary btn-lg' }}"
+                           {% if button.id %}id="{{ button.id }}"{% endif %}
+                           {% if button.title %}title="{{ button.title }}"{% endif %}>{{ button.label }}</a>
+                    {% endif %}
                 {% endfor %}
             {% endif %}
         </div>

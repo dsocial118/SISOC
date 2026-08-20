@@ -50,6 +50,7 @@ def datos_validos(**overrides):
         "anos_trabajo_primera_infancia": "5",
         "tipo_contratacion": "relacion_dependencia",
         "carga_horaria_semanal": "40",
+        "email": "julia.mendez@example.com",
         "telefono": "4774-2015",
         "calle_contacto": "San Martín 1234",
         "grupo_pertenencia": ["ninguno"],
@@ -76,6 +77,7 @@ def test_alta_con_todos_los_campos_validos_guarda(catalogos, centro):
     assert trabajador.pk
     assert trabajador.nombre == "Julia"
     assert trabajador.cuit == "20445350304"
+    assert trabajador.sala_cdi == "2_anios"
 
 
 # --- TC51: no se guarda un legajo incompleto ---------------------------------
@@ -100,6 +102,7 @@ def test_alta_con_todos_los_campos_validos_guarda(catalogos, centro):
         "anos_trabajo_primera_infancia",
         "tipo_contratacion",
         "carga_horaria_semanal",
+        "email",
         "telefono",
         "calle_contacto",
         "grupo_pertenencia",
@@ -349,6 +352,56 @@ def test_subcomponente_egp_no_exige_campos_de_cdi(catalogos):
             funcion_cdi="",
             sala_cdi="",
         )
+    )
+
+    assert form.is_valid(), form.errors
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    ("subcomponente", "campo"),
+    [
+        ("pfpi", "funcion_pfpi"),
+        ("egp", "funcion_egp"),
+        ("cdi", "funcion_cdi"),
+        ("uaf", "funcion_uaf"),
+    ],
+)
+def test_subcomponente_exige_su_funcion(catalogos, subcomponente, campo):
+    form = TrabajadorCDIForm(
+        data=datos_validos(subcomponente=subcomponente, **{campo: ""})
+    )
+
+    assert not form.is_valid()
+    assert campo in form.errors
+
+
+@pytest.mark.django_db
+def test_subcomponente_cdi_exige_sala(catalogos):
+    form = TrabajadorCDIForm(data=datos_validos(sala_cdi=""))
+
+    assert not form.is_valid()
+    assert "sala_cdi" in form.errors
+
+
+@pytest.mark.django_db
+def test_alta_exige_email_para_generar_usuario(catalogos):
+    form = TrabajadorCDIForm(data=datos_validos(email=""))
+
+    assert not form.is_valid()
+    assert "email" in form.errors
+
+
+@pytest.mark.django_db
+def test_edicion_historica_permite_email_vacio(catalogos, centro):
+    trabajador = Trabajador.objects.create(
+        centro=centro,
+        nombre="Trabajadora",
+        apellido="Histórica",
+    )
+    form = TrabajadorCDIForm(
+        data=datos_validos(email=""),
+        instance=trabajador,
     )
 
     assert form.is_valid(), form.errors

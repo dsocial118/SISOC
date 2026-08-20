@@ -96,6 +96,16 @@ Reglas actuales para usuarios con acceso PWA creados desde web:
   - `must_change_password` pasa a `False`;
   - se limpia `temporary_password_plaintext`.
 
+### Recuperación PWA
+
+El reseteo PWA reemplaza el reseteo administrativo con contraseña temporal. La
+solicitud API requiere el par `username` + `email`; si identifica a un usuario
+PWA activo, envía un enlace de recuperación a la URL pública configurada en
+`PWA_BASE_URL`. La respuesta no confirma si la cuenta existe y el endpoint
+aplica rate limit por IP e identidad. Ver también
+`docs/implementaciones/pwa_backend.md` para el contrato de request/confirmación
+y `docs/operacion/integraciones.md` para la configuración por ambiente.
+
 ### Mi cuenta y confirmación de datos personales
 
 - La autogestión de datos vive en `/mi-cuenta/`; el usuario solo puede editar

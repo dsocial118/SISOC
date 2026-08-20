@@ -80,12 +80,14 @@
                         <p>Usuarios</p>
                     </a>
                 </li>
-                <li class="nav-item">
-                    <a href="{% url 'grupos' %}"
-                       class="nav-link nav-dot ms-2 {% if 'grupos' in pagina_actual %}active{% endif %}">
-                        <p>Grupos</p>
-                    </a>
-                </li>
+                {% if request.user|has_perm_code:"auth.view_group" %}
+                    <li class="nav-item">
+                        <a href="{% url 'grupos' %}"
+                           class="nav-link nav-dot ms-2 {% if 'grupos' in pagina_actual %}active{% endif %}">
+                            <p>Grupos</p>
+                        </a>
+                    </li>
+                {% endif %}
                 <li class="nav-item">
                     <a href="{% url 'programa_listar' %}"
                        class="nav-link nav-dot ms-2 {% if 'programas/' in pagina_actual %}active{% endif %}">

@@ -1462,6 +1462,7 @@ class RendicionMensualListSerializer(serializers.ModelSerializer):
             "proyecto",
             "proyecto_codigo",
             "convenio",
+            "nombre",
             "numero_rendicion",
             "mes",
             "anio",
@@ -1529,6 +1530,10 @@ class RendicionMensualDetailSerializer(RendicionMensualListSerializer):
 
     def get_documentacion(self, obj):
         grouped = RendicionCuentaMensualService.obtener_resumen_documentacion(obj)
+        solicitudes = {
+            item.categoria: item
+            for item in obj.solicitudes_documentos_faltantes.filter(activa=True)
+        }
         serializer_context = {"request": self.context.get("request")}
         payload = []
         for categoria in DocumentacionAdjunta.categorias_mobile(obj.linea_programatica):
@@ -1541,6 +1546,11 @@ class RendicionMensualDetailSerializer(RendicionMensualListSerializer):
                     "required": categoria["required"],
                     "multiple": categoria["multiple"],
                     "order": categoria["order"],
+                    "solicitud_faltante": (
+                        solicitudes[categoria["codigo"]].observaciones
+                        if categoria["codigo"] in solicitudes
+                        else None
+                    ),
                     "modelo": (
                         self._build_modelo_payload(obj, modelo) if modelo else None
                     ),
@@ -1556,8 +1566,9 @@ class RendicionMensualDetailSerializer(RendicionMensualListSerializer):
 
 class RendicionMensualCreateSerializer(NoSaveSerializer):
     proyecto_id = serializers.IntegerField(min_value=1, required=False, allow_null=True)
-    convenio = serializers.CharField(max_length=100)
-    numero_rendicion = serializers.IntegerField(min_value=1)
+    convenio = serializers.ChoiceField(choices=("P01", "P02", "P03"))
+    numero_rendicion = serializers.ChoiceField(choices=(1, 2, 3, 4, 5, 6))
+    nombre = serializers.CharField(max_length=255, required=False, allow_blank=True)
     periodo_inicio = serializers.DateField()
     periodo_fin = serializers.DateField()
     linea_programatica = serializers.ChoiceField(

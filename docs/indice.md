@@ -45,6 +45,8 @@
 - `docs/implementaciones/filtros_avanzados.md`: comportamiento y consideraciones de filtros avanzados.
 - `docs/implementaciones/preferencias_columnas.md`: preferencias de columnas en listados.
 - `docs/implementaciones/pwa_backend.md`: implementación backend de funcionalidades PWA.
+- `docs/implementaciones/admisiones_informes_tecnicos.md`: contrato de campos, templates dinámicos y publicación de Informes Técnicos.
+- `docs/implementaciones/comedores_certificaciones_prestaciones.md`: generación, fallback y descarga de certificaciones de prestaciones.
 - `docs/implementaciones/usuarios_perfil_iam.md`: implementación de Usuarios/Perfil + IAM por permisos Django y guía para extender nuevas features.
 - `docs/implementaciones/centrodeinfancia_nomina_renaper.md`: contrato de asistencia de nómina CDI, alcance y precarga RENAPER de trabajadores.
 - `docs/implementaciones/centrodefamilia_preinscriptos.md`: contrato del listado y exportación CSV de preinscriptos CDF, incluyendo columnas, ordenamiento y permisos.
@@ -56,6 +58,7 @@
 - `docs/flujos/consulta_renaper.md`: integración con RENAPER para la consulta de datos ciudadanos.
 - `docs/flujos/cambio_programa_comedor.md`: procedimiento para cambiar programas asignados a comedores.
 - `docs/flujos/derivar_nomina_centros.md`: flujo y reglas para derivar beneficiarios entre centros (comedores y CDI).
+- `docs/flujos/rendiciones_mensuales_proyectos.md`: estados de revisión, subsanaciones y asociación de rendiciones a proyectos.
 - `docs/integraciones/ticketera_api.md`: contrato server-to-server de la API Ticketera (5 endpoints, dirigido al desarrollador de la Ticketera).
 
 ### 6. IA, planes y registro spec-as-source

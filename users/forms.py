@@ -24,6 +24,7 @@ from users.services_pwa import (
     PWA_ASSIGNABLE_PERMISSION_CODES,
     PWA_USUARIOS_PERMISSION_CODE,
     deactivate_representante_accesses,
+    get_organizacion_ids,
     is_pwa_user,
     sync_representante_accesses,
 )
@@ -331,7 +332,10 @@ class PWAAccessMixin:
             required=False,
             widget=forms.SelectMultiple(attrs={"class": "select2"}),
             label="Organizaciones",
-            help_text="Seleccione una o más organizaciones registradas en el sistema.",
+            help_text=(
+                "Cada organización habilita automáticamente todos sus comedores "
+                "actuales y futuros."
+            ),
         )
         self.fields["comedores_pwa"] = forms.ModelMultipleChoiceField(
             queryset=obtener_queryset_formulario("comedores_pwa"),
@@ -349,7 +353,7 @@ class PWAAccessMixin:
             rol=AccesoComedorPWA.ROL_REPRESENTANTE,
             activo=True,
         )
-        organizacion_ids = list(
+        organizacion_ids = get_organizacion_ids(self.instance) or list(
             accesos.exclude(organizacion_id__isnull=True)
             .values_list("organizacion_id", flat=True)
             .distinct()
@@ -358,14 +362,22 @@ class PWAAccessMixin:
             {tipo for tipo in accesos.values_list("tipo_asociacion", flat=True) if tipo}
         )
         comedor_ids = list(accesos.values_list("comedor_id", flat=True))
-        self.fields["es_representante_pwa"].initial = bool(comedor_ids)
+        self.fields["es_representante_pwa"].initial = bool(
+            comedor_ids or organizacion_ids
+        )
         self.fields["puede_gestionar_rendiciones_mobile"].initial = (
             self.instance.has_perm(MOBILE_RENDICION_PERMISSION_CODE)
         )
         for field_name, (permission_code, _) in PWA_OPERATION_PERMISSION_FIELDS.items():
             self.fields[field_name].initial = self.instance.has_perm(permission_code)
         self.fields["tipo_asociacion_pwa"].initial = (
-            tipos_asociacion[0] if len(tipos_asociacion) == 1 else ""
+            tipos_asociacion[0]
+            if len(tipos_asociacion) == 1
+            else (
+                AccesoComedorPWA.TIPO_ASOCIACION_ORGANIZACION
+                if organizacion_ids and not tipos_asociacion
+                else ""
+            )
         )
         self.fields["organizaciones_pwa"].initial = organizacion_ids
         self.fields["comedores_pwa"].initial = comedor_ids
@@ -427,10 +439,11 @@ class PWAAccessMixin:
             organizaciones_pwa = cleaned["organizaciones_pwa"]
             comedores_pwa = cleaned["comedores_pwa"]
 
-        if es_representante_pwa and not comedores_pwa:
+        if es_representante_pwa and not (comedores_pwa or organizaciones_pwa):
             self.add_error(
                 "comedores_pwa",
-                "Debe seleccionar al menos un comedor para un representante PWA.",
+                "Debe seleccionar al menos una organización o un comedor para un "
+                "representante PWA.",
             )
         if not es_representante_pwa and (
             comedores_pwa or organizaciones_pwa or tipo_asociacion_pwa
@@ -462,8 +475,16 @@ class PWAAccessMixin:
             organization_ids = set(
                 self.cleaned_data["organizaciones_pwa"].values_list("id", flat=True)
             )
+            selected_by_id = {
+                comedor.id: comedor for comedor in self.cleaned_data["comedores_pwa"]
+            }
+            for comedor in self.fields["comedores_pwa"].queryset.filter(
+                organizacion_id__in=organization_ids
+            ):
+                selected_by_id[comedor.id] = comedor
+
             access_specs = []
-            for comedor in self.cleaned_data["comedores_pwa"]:
+            for comedor in sorted(selected_by_id.values(), key=lambda item: item.id):
                 association_type = (
                     AccesoComedorPWA.TIPO_ASOCIACION_ORGANIZACION
                     if comedor.organizacion_id in organization_ids
@@ -484,6 +505,7 @@ class PWAAccessMixin:
             sync_representante_accesses(
                 user=user,
                 access_specs=access_specs,
+                organizacion_ids=organization_ids,
                 actor=None,
             )
             return
@@ -1208,18 +1230,6 @@ class UserImportForm(forms.Form):
 #
 # El texto original de UX estaba redactado como aviso en segunda persona
 # ("comprometiéndote a..."), que no funciona como leyenda de un checkbox: al
-# tildarlo el usuario tiene que estar declarando algo en primera persona. Se
-# reformuló la persona gramatical sin tocar el alcance normativo, y la parte
-# instructiva ("revisá y completá tus datos") se movió al encabezado del modal,
-# que es donde corresponde: eso se lee, no se acepta.
-TEXTO_DECLARACION = (
-    "Acepto que la información contenida en el sistema será utilizada "
-    "exclusivamente para el cumplimiento de las funciones autorizadas y me "
-    "comprometo a preservar su confidencialidad, de conformidad con la "
-    "normativa vigente."
-)
-
-
 class MiCuentaForm(forms.ModelForm):
     """Edición de los datos personales del propio usuario.
 
@@ -1253,11 +1263,6 @@ class MiCuentaForm(forms.ModelForm):
         label="Correo institucional",
         help_text="Opcional.",
     )
-    declaracion_aceptada = forms.BooleanField(
-        required=True,
-        label=TEXTO_DECLARACION,
-        error_messages={"required": "Debe aceptar la declaración para continuar."},
-    )
 
     class Meta:
         model = User
@@ -1278,7 +1283,6 @@ class MiCuentaForm(forms.ModelForm):
             self.fields["dni"].initial = profile.dni
             self.fields["cuil"].initial = profile.cuil
             self.fields["correo_institucional"].initial = profile.correo_institucional
-            self.fields["declaracion_aceptada"].initial = profile.declaracion_aceptada
 
     def clean_dni(self):
         dni = solo_digitos(self.cleaned_data.get("dni"))
@@ -1303,7 +1307,6 @@ class MiCuentaForm(forms.ModelForm):
             profile.dni = self.cleaned_data["dni"]
             profile.cuil = self.cleaned_data["cuil"]
             profile.correo_institucional = self.cleaned_data["correo_institucional"]
-            profile.declaracion_aceptada = self.cleaned_data["declaracion_aceptada"]
             profile.needs_profile_confirmation = False
             profile.datos_confirmados_at = timezone.now()
             profile.save(
@@ -1311,7 +1314,6 @@ class MiCuentaForm(forms.ModelForm):
                     "dni",
                     "cuil",
                     "correo_institucional",
-                    "declaracion_aceptada",
                     "needs_profile_confirmation",
                     "datos_confirmados_at",
                 ]
