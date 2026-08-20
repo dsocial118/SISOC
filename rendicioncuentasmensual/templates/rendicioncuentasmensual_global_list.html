@@ -12,62 +12,124 @@
             <div class="col-12">
                 <div class="card comedor-table-card">
                     <div class="card-body">
-                        <details class="mb-3">
-                            <summary class="btn btn-outline-warning btn-sm">Configurar columnas</summary>
-                            <div class="d-flex flex-wrap gap-3 mt-3">
-                                {% for key, label in columnas_configurables %}
-                                    <label>
-                                        <input class="form-check-input js-rendicion-column"
-                                               type="checkbox"
-                                               value="{{ key }}"
-                                               checked />
-                                        {{ label }}
-                                    </label>
-                                {% endfor %}
+                        {{ column_config|json_script:column_config.script_id }}
+                        <div class="d-flex justify-content-start mb-2">
+                            <button type="button"
+                                    class="btn btn-outline-warning btn-sm"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#{{ column_config.modal_id }}">Configurar columnas</button>
+                        </div>
+                        <div class="modal fade"
+                             id="{{ column_config.modal_id }}"
+                             tabindex="-1"
+                             aria-hidden="true"
+                             data-column-config="true"
+                             data-config-id="{{ column_config.script_id }}">
+                            <div class="modal-dialog modal-dialog-centered modal-lg">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title">Columnas visibles</h5>
+                                        <button type="button"
+                                                class="btn-close"
+                                                data-bs-dismiss="modal"
+                                                aria-label="Cerrar"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <p class="text-muted mb-3">Seleccioná qué columnas mostrar y ordenalas con las flechas.</p>
+                                        <div class="list-group column-config-list">
+                                            {% for col in column_config.available %}
+                                                <div class="list-group-item d-flex flex-wrap align-items-center justify-content-between gap-2"
+                                                     data-column-key="{{ col.key }}">
+                                                    <div class="form-check">
+                                                        <input class="form-check-input column-config-checkbox"
+                                                               type="checkbox"
+                                                               id="{{ column_config.modal_id }}-{{ col.key }}"
+                                                               {% if col.active %}checked{% endif %}
+                                                               {% if col.required %}disabled{% endif %} />
+                                                        <label class="form-check-label"
+                                                               for="{{ column_config.modal_id }}-{{ col.key }}">
+                                                            {{ col.title }}
+                                                        </label>
+                                                        {% if col.required %}<span class="badge bg-secondary ms-2">Obligatoria</span>{% endif %}
+                                                    </div>
+                                                    <div class="btn-group btn-group-sm" role="group">
+                                                        <button type="button"
+                                                                class="btn btn-light column-move-up"
+                                                                title="Mover arriba">
+                                                            <i class="fas fa-arrow-up"></i>
+                                                        </button>
+                                                        <button type="button"
+                                                                class="btn btn-light column-move-down"
+                                                                title="Mover abajo">
+                                                            <i class="fas fa-arrow-down"></i>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            {% endfor %}
+                                        </div>
+                                        <div class="alert alert-danger d-none mt-3 column-config-error"></div>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-outline-secondary column-config-reset">Restablecer</button>
+                                        <button type="button" class="btn btn-primary column-config-save">Guardar</button>
+                                    </div>
+                                </div>
                             </div>
-                        </details>
+                        </div>
                         <div class="table-responsive-lg">
                             <table class="table table-comedor-moderno">
                                 <thead>
                                     <tr>
-                                        <th data-column="proyecto">Proyecto</th>
-                                        <th>Organización</th>
-                                        <th data-column="convenio">Convenio</th>
-                                        <th>Rendición</th>
-                                        <th>Período</th>
-                                        <th data-column="etapa">Etapa</th>
-                                        <th data-column="estado">Estado</th>
-                                        <th>Última modificación</th>
+                                        {% for column_key in active_columns %}
+                                            {% if column_key == "proyecto" %}<th>Proyecto</th>{% endif %}
+                                            {% if column_key == "organizacion" %}<th>Organización</th>{% endif %}
+                                            {% if column_key == "convenio" %}<th>Convenio</th>{% endif %}
+                                            {% if column_key == "numero_rendicion" %}<th>Rendición</th>{% endif %}
+                                            {% if column_key == "periodo" %}<th>Período</th>{% endif %}
+                                            {% if column_key == "etapa" %}<th>Etapa</th>{% endif %}
+                                            {% if column_key == "estado" %}<th>Estado</th>{% endif %}
+                                            {% if column_key == "ultima_modificacion" %}<th>Última modificación</th>{% endif %}
+                                        {% endfor %}
                                         <th>Acciones</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {% for rendicion in rendiciones_cuentas_mensuales %}
                                         <tr>
-                                            <td data-column="proyecto">{{ rendicion.comedor.codigo_de_proyecto|default:"Sin proyecto" }}</td>
-                                            <td>{{ rendicion.comedor.organizacion.nombre|default:"Sin organización" }}</td>
-                                            <td data-column="convenio">{{ rendicion.convenio|default:"-" }}</td>
-                                            <td>{{ rendicion.numero_rendicion|default:rendicion.id }}</td>
-                                            <td>
-                                                {% if rendicion.periodo_inicio and rendicion.periodo_fin %}
-                                                    {{ rendicion.periodo_inicio|date:"d/m/Y" }} - {{ rendicion.periodo_fin|date:"d/m/Y" }}
-                                                {% else %}
-                                                    {{ rendicion.mes }}/{{ rendicion.anio }}
+                                            {% for column_key in active_columns %}
+                                                {% if column_key == "proyecto" %}<td>{{ rendicion.comedor.codigo_de_proyecto|default:"Sin proyecto" }}</td>{% endif %}
+                                                {% if column_key == "organizacion" %}
+                                                    <td>{{ rendicion.comedor.organizacion.nombre|default:"Sin organización" }}</td>
                                                 {% endif %}
-                                            </td>
-                                            <td data-column="etapa">
-                                                <span class="badge bg-info text-dark">{{ rendicion.get_etapa_proceso_display }}</span>
-                                            </td>
-                                            <td data-column="estado">
-                                                {% if rendicion.subestado_proceso == 'finalizada' %}
-                                                    <span class="badge-validacion validado">{{ rendicion.estado_proceso_display }}</span>
-                                                {% elif rendicion.subestado_proceso == 'pendiente_correcciones' %}
-                                                    <span class="badge-validacion no-validado">{{ rendicion.estado_proceso_display }}</span>
-                                                {% else %}
-                                                    <span class="badge-validacion pendiente">{{ rendicion.estado_proceso_display }}</span>
+                                                {% if column_key == "convenio" %}<td>{{ rendicion.convenio|default:"-" }}</td>{% endif %}
+                                                {% if column_key == "numero_rendicion" %}<td>{{ rendicion.numero_rendicion|default:rendicion.id }}</td>{% endif %}
+                                                {% if column_key == "periodo" %}
+                                                    <td>
+                                                        {% if rendicion.periodo_inicio and rendicion.periodo_fin %}
+                                                            {{ rendicion.periodo_inicio|date:"d/m/Y" }} - {{ rendicion.periodo_fin|date:"d/m/Y" }}
+                                                        {% else %}
+                                                            {{ rendicion.mes }}/{{ rendicion.anio }}
+                                                        {% endif %}
+                                                    </td>
                                                 {% endif %}
-                                            </td>
-                                            <td>{{ rendicion.ultima_modificacion|date:"d/m/Y H:i" }}</td>
+                                                {% if column_key == "etapa" %}
+                                                    <td>
+                                                        <span class="badge etapa-badge {{ rendicion.etapa_badge_class }}">{{ rendicion.get_etapa_proceso_display }}</span>
+                                                    </td>
+                                                {% endif %}
+                                                {% if column_key == "estado" %}
+                                                    <td>
+                                                        {% if rendicion.subestado_proceso == 'finalizada' %}
+                                                            <span class="badge-validacion validado">{{ rendicion.estado_proceso_display }}</span>
+                                                        {% elif rendicion.subestado_proceso == 'pendiente_correcciones' %}
+                                                            <span class="badge-validacion no-validado">{{ rendicion.estado_proceso_display }}</span>
+                                                        {% else %}
+                                                            <span class="badge-validacion pendiente">{{ rendicion.estado_proceso_display }}</span>
+                                                        {% endif %}
+                                                    </td>
+                                                {% endif %}
+                                                {% if column_key == "ultima_modificacion" %}<td>{{ rendicion.ultima_modificacion|date:"d/m/Y H:i" }}</td>{% endif %}
+                                            {% endfor %}
                                             <td>
                                                 <div class="comedor-actions">
                                                     <a href="{% url 'rendicioncuentasmensual_detail' rendicion.id %}"
@@ -93,19 +155,8 @@
         </div>
         {% include 'components/pagination.html' with is_paginated=is_paginated page_obj=page_obj prev_text='Volver' next_text='Continuar' %}
     </div>
-    <script nonce="{{ request.csp_nonce }}">
-        (function () {
-            var key = "rendiciones-columnas-visibles";
-            var checks = Array.from(document.querySelectorAll(".js-rendicion-column"));
-            var saved = JSON.parse(localStorage.getItem(key) || "null");
-            function apply() {
-                var visible = checks.filter(function (item) { return item.checked; }).map(function (item) { return item.value; });
-                document.querySelectorAll("[data-column]").forEach(function (cell) { cell.classList.toggle("d-none", !visible.includes(cell.dataset.column)); });
-                localStorage.setItem(key, JSON.stringify(visible));
-            }
-            if (Array.isArray(saved)) checks.forEach(function (item) { item.checked = saved.includes(item.value); });
-            checks.forEach(function (item) { item.addEventListener("change", apply); });
-            apply();
-        })();
-    </script>
+{% endblock %}
+{% block customJS %}
+    <script src="{% static 'custom/js/column_config.js' %}"></script>
+    <script src="{% static 'custom/js/export_helper.js' %}"></script>
 {% endblock %}
