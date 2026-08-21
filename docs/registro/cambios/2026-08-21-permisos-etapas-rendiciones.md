@@ -29,9 +29,11 @@ cada etapa desde Usuarios > Grupos y asignarle únicamente el permiso de etapa
 correspondiente.
 
 Para pruebas locales se incorporó el comando idempotente
-`seed_rendicion_stage_examples`. Requiere `--comedor-id` y `--password`, crea
-cuatro usuarios/grupos QA aislados y cuatro rendiciones listas para iniciar cada
-etapa. No contiene credenciales predeterminadas.
+`seed_rendicion_stage_examples`. Requiere `--comedor-id`, solicita la contraseña
+de forma interactiva y crea cuatro usuarios/grupos QA aislados junto con cuatro
+rendiciones listas para iniciar cada etapa. El seed queda acotado al comedor
+indicado y reutiliza sus documentos QA activos en ejecuciones repetidas. No
+contiene credenciales predeterminadas.
 
 Solicitar un documento faltante ya no interrumpe inmediatamente la etapa de
 revisión. El equipo puede acumular solicitudes y continuar validando documentos;

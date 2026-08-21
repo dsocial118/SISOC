@@ -1,6 +1,7 @@
 """Crea escenarios locales para validar permisos y acciones por etapa."""
 
 from datetime import date
+from getpass import getpass
 from typing import NamedTuple
 
 from django.contrib.auth import get_user_model
@@ -76,11 +77,10 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument("--comedor-id", type=int, required=True)
-        parser.add_argument("--password", required=True)
 
     @transaction.atomic
     def handle(self, *args, **options):
-        password = options["password"]
+        password = getpass("Contraseña para los usuarios QA: ")
         if len(password) < 12:
             raise CommandError("La contraseña QA debe tener al menos 12 caracteres.")
 
@@ -106,9 +106,9 @@ class Command(BaseCommand):
             user.groups.set([group])
 
             rendicion, _ = RendicionCuentaMensual.objects.update_or_create(
+                comedor=comedor,
                 nombre=scenario.nombre,
                 defaults={
-                    "comedor": comedor,
                     "proyecto": comedor.proyecto,
                     "mes": scenario.numero,
                     "anio": 2026,
@@ -122,18 +122,18 @@ class Command(BaseCommand):
                     "linea_programatica": RendicionCuentaMensual.LINEA_TRADICIONAL,
                 },
             )
-            DocumentacionAdjunta.objects.filter(
-                rendicion_cuenta_mensual=rendicion,
-                nombre__startswith="[QA ETAPAS]",
-            ).delete()
             SolicitudDocumentoFaltante.objects.filter(rendicion=rendicion).delete()
             if scenario.etapa in {"revision_documentacion", "revision_auditoria"}:
-                DocumentacionAdjunta.objects.create(
+                DocumentacionAdjunta.objects.get_or_create(
                     rendicion_cuenta_mensual=rendicion,
                     nombre="[QA ETAPAS] Documento presentado",
-                    categoria=DocumentacionAdjunta.CATEGORIA_FORMULARIO_II,
-                    estado=DocumentacionAdjunta.ESTADO_PRESENTADO,
-                    archivo=ContentFile(b"Documento QA", name="documento_qa.txt"),
+                    defaults={
+                        "categoria": DocumentacionAdjunta.CATEGORIA_FORMULARIO_II,
+                        "estado": DocumentacionAdjunta.ESTADO_PRESENTADO,
+                        "archivo": ContentFile(
+                            b"Documento QA", name="documento_qa.txt"
+                        ),
+                    },
                 )
             self.stdout.write(
                 self.style.SUCCESS(

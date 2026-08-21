@@ -15,6 +15,9 @@ El filtro `Etapa` también se alineó con la columna: ahora incluye las cinco
 etapas del modelo, incorporando `Carga de documentación` y `Regularización`, que
 antes no estaban disponibles.
 
+El filtro compuesto de estado respeta tanto `es` como `no es`, por lo que la
+segunda opción excluye efectivamente la combinación de etapa y subestado elegida.
+
 Como prevención, los catálogos de `Etapa`, `Estado general` y `Línea
 programática` dejaron de duplicarse en la configuración de filtros y ahora se
 obtienen directamente de las opciones del modelo. La revisión del resto del

@@ -75,6 +75,46 @@ def test_global_list_filtra_por_el_estado_compuesto_mostrado_en_la_columna():
     assert list(view.get_queryset()) == [en_curso]
 
 
+@pytest.mark.django_db
+def test_global_list_excluye_estado_compuesto_con_operador_ne():
+    excluida = module.RendicionCuentaMensual.objects.create(
+        mes=4,
+        anio=2026,
+        estado=module.RendicionCuentaMensual.ESTADO_REVISION,
+        etapa_proceso=module.RendicionCuentaMensual.ETAPA_REVISION_DOCUMENTACION,
+        subestado_proceso=module.RendicionCuentaMensual.SUBESTADO_EN_CURSO,
+    )
+    incluida = module.RendicionCuentaMensual.objects.create(
+        mes=5,
+        anio=2026,
+        estado=module.RendicionCuentaMensual.ESTADO_REVISION,
+        etapa_proceso=module.RendicionCuentaMensual.ETAPA_REVISION_AUDITORIA,
+        subestado_proceso=module.RendicionCuentaMensual.SUBESTADO_EN_CURSO,
+    )
+    request = RequestFactory().get(
+        "/rendicioncuentasmensual/rendicioncuentasmensual/listado/",
+        {
+            "filters": json.dumps(
+                {
+                    "logic": "AND",
+                    "items": [
+                        {
+                            "field": "estado_proceso",
+                            "op": "ne",
+                            "value": "revision_documentacion:en_curso",
+                        }
+                    ],
+                }
+            )
+        },
+    )
+    view = module.RendicionCuentaMensualGlobalListView()
+    view.request = request
+
+    assert list(view.get_queryset()) == [incluida]
+    assert excluida not in view.get_queryset()
+
+
 @pytest.mark.parametrize(
     ("field_name", "model_choices"),
     [

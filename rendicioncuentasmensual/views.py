@@ -170,16 +170,16 @@ class RendicionCuentaMensualGlobalListView(
         except (TypeError, json.JSONDecodeError):
             return queryset
 
-        estados = {
-            str(item.get("value"))
-            for item in payload.get("items", [])
-            if isinstance(item, dict)
-            and item.get("field") == "estado_proceso"
-            and item.get("op") == "eq"
-        }
         estado_q = Q()
         tiene_estado_valido = False
-        for estado in estados:
+        for item in payload.get("items", []):
+            if (
+                not isinstance(item, dict)
+                or item.get("field") != "estado_proceso"
+                or item.get("op") not in {"eq", "ne"}
+            ):
+                continue
+            estado = str(item.get("value"))
             try:
                 etapa, subestado = estado.split(":", 1)
             except ValueError:
@@ -188,7 +188,8 @@ class RendicionCuentaMensualGlobalListView(
             subestados_validos = dict(RendicionCuentaMensual.SUBESTADO_PROCESO_CHOICES)
             if etapa not in etapas_validas or subestado not in subestados_validos:
                 continue
-            estado_q |= Q(etapa_proceso=etapa, subestado_proceso=subestado)
+            item_q = Q(etapa_proceso=etapa, subestado_proceso=subestado)
+            estado_q |= ~item_q if item["op"] == "ne" else item_q
             tiene_estado_valido = True
 
         return queryset.filter(estado_q) if tiene_estado_valido else queryset
