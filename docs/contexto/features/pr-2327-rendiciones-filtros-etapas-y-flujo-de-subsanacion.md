@@ -53,7 +53,7 @@
 - `static/custom/js/rendicioncuentasmensual_detail.js`
 - `templates/includes/base.html`
 - `templates/includes/sidebar/new_opciones.html`
-- ... y 4 archivo(s) adicional(es) relacionados.
+- ... y 5 archivo(s) adicional(es) relacionados.
 - Documentación sugerida para ampliar contexto:
 - `docs/indice.md`
 - `docs/ia/CONTEXT_HYGIENE.md`
