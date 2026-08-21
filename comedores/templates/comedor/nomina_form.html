@@ -96,7 +96,10 @@
                                                     data-bs-toggle="modal"
                                                     data-bs-target="#modalNomina"
                                                     data-ciudadano-id="{{ c.id }}"
-                                                    data-ciudadano-nombre="{{ c.apellido|default:'-' }}, {{ c.nombre|default:'-' }}">
+                                                    data-ciudadano-nombre="{{ c.apellido|default:'-' }}, {{ c.nombre|default:'-' }}"
+                                                    data-comunidad-indigena="{{ c.pertenece_comunidad_indigena|default_if_none:'' }}"
+                                                    data-situacion-calle="{{ c.en_situacion_de_calle|default_if_none:'' }}"
+                                                    data-persona-celiaquia="{{ c.persona_con_celiaquia|default_if_none:'' }}">
                                                 Agregar
                                             </button>
                                         {% endif %}
@@ -212,6 +215,9 @@
                                 <label for="observaciones" class="form-label">Observaciones</label>
                                 <textarea name="observaciones" id="observaciones" class="form-control" rows="3"></textarea>
                             </div>
+                            <div class="col-md-4 mt-3">{{ form_datos_ciudadano.pertenece_comunidad_indigena|as_crispy_field }}</div>
+                            <div class="col-md-4 mt-3">{{ form_datos_ciudadano.en_situacion_de_calle|as_crispy_field }}</div>
+                            <div class="col-md-4 mt-3">{{ form_datos_ciudadano.persona_con_celiaquia|as_crispy_field }}</div>
                             {% if mostrar_asistencia_pnud %}
                                 <div class="col-md-12 mt-4">
                                     <div class="border rounded p-3">
@@ -281,6 +287,7 @@
                 formularioSinDni.classList.toggle("d-none", !sinDni);
                 tituloCreacion.textContent = sinDni ? "Crear Ciudadano sin DNI" : "Crear Nuevo Ciudadano";
                 btnCambiarModo.textContent = sinDni ? "Con DNI" : "Sin DNI";
+                btnCambiarModo.classList.toggle("d-none", sinDni);
                 formularioConDni.querySelectorAll("input, select, textarea, button").forEach(function(control) {
                     control.disabled = sinDni;
                 });
@@ -307,6 +314,12 @@
                         "Ciudadano seleccionado: " + ciudadanoNombre;
                     document.getElementById("estado").value = "";
                     document.getElementById("observaciones").value = "";
+                    formNomina.elements["modal-pertenece_comunidad_indigena"].value =
+                        this.dataset.comunidadIndigena || "";
+                    formNomina.elements["modal-en_situacion_de_calle"].value =
+                        this.dataset.situacionCalle || "";
+                    formNomina.elements["modal-persona_con_celiaquia"].value =
+                        this.dataset.personaCeliaquia || "";
                     const asistenciaAlimentaria = document.getElementById("modal_asistencia_alimentaria");
                     const asistenciaActividades = document.getElementById("modal_asistencia_actividades");
                     if (asistenciaAlimentaria) {

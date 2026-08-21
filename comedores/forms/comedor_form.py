@@ -152,6 +152,40 @@ class CiudadanoFormParaNomina(forms.ModelForm):
         }
 
 
+class CiudadanoDatosComplementariosNominaForm(forms.ModelForm):
+    """Datos del ciudadano que se completan al incorporarlo a una nómina."""
+
+    class Meta:
+        model = Ciudadano
+        fields = [
+            "pertenece_comunidad_indigena",
+            "en_situacion_de_calle",
+            "persona_con_celiaquia",
+        ]
+
+    def clean(self):
+        cleaned_data = super().clean()
+        for field_name in self.Meta.fields:
+            if self.add_prefix(field_name) not in self.data:
+                cleaned_data[field_name] = getattr(self.instance, field_name)
+        return cleaned_data
+
+    def _get_validation_exclusions(self):
+        exclusions = super()._get_validation_exclusions()
+        exclusions.update(
+            field_name
+            for field_name in self.Meta.fields
+            if self.add_prefix(field_name) not in self.data
+        )
+        return exclusions
+
+    def save(self, commit=True):
+        ciudadano = super().save(commit=False)
+        if commit:
+            ciudadano.save(update_fields=list(self.Meta.fields))
+        return ciudadano
+
+
 class CiudadanoSinDniFormParaNomina(forms.ModelForm):
     """Alta manual para personas que no cuentan con DNI."""
 
