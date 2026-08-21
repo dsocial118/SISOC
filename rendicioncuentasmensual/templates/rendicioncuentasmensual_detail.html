@@ -141,7 +141,7 @@
             <div class="alert alert-warning">La rendición tiene documentación pendiente de correcciones.</div>
         {% endif %}
 
-        {% if puede_revision_territorial or puede_revision_auditoria %}
+        {% if puede_revision_territorial or puede_revision_auditoria or puede_auditoria or puede_regularizacion %}
             <div class="card mb-4">
                 <div class="card-body">
                     <h5>Acciones del proceso</h5>
@@ -184,7 +184,7 @@
                                 </form>
                             {% endif %}
                         {% endif %}
-                        {% if puede_revision_auditoria and rendicion.etapa_proceso == 'auditoria' and rendicion.subestado_proceso == 'pendiente' %}
+                        {% if puede_auditoria and rendicion.etapa_proceso == 'auditoria' and rendicion.subestado_proceso == 'pendiente' %}
                             <form method="post">
                                 {% csrf_token %}
                                 <input type="hidden" name="accion_proceso" value="iniciar_auditoria" />
@@ -193,7 +193,7 @@
                         {% endif %}
                     </div>
 
-                    {% if puede_revision_auditoria and rendicion.etapa_proceso == 'auditoria' and rendicion.subestado_proceso == 'en_curso' %}
+                    {% if puede_auditoria and rendicion.etapa_proceso == 'auditoria' and rendicion.subestado_proceso == 'en_curso' %}
                         <form method="post"
                               enctype="multipart/form-data"
                               class="mt-3"
@@ -221,13 +221,13 @@
                         </form>
                     {% endif %}
 
-                    {% if puede_revision_auditoria and rendicion.etapa_proceso == 'auditoria' and rendicion.subestado_proceso == 'finalizada_con_observaciones' %}
+                    {% if puede_regularizacion and rendicion.etapa_proceso == 'auditoria' and rendicion.subestado_proceso == 'finalizada_con_observaciones' %}
                         <form method="post" class="mt-3">
                             {% csrf_token %}
                             <input type="hidden" name="accion_proceso" value="iniciar_regularizacion" />
                             <button class="btn btn-primary">Iniciar regularización</button>
                         </form>
-                    {% elif puede_revision_auditoria and rendicion.etapa_proceso == 'regularizacion' and rendicion.subestado_proceso == 'en_curso' %}
+                    {% elif puede_regularizacion and rendicion.etapa_proceso == 'regularizacion' and rendicion.subestado_proceso == 'en_curso' %}
                         <form method="post" enctype="multipart/form-data" class="mt-3">
                             {% csrf_token %}
                             <input type="hidden" name="accion_proceso" value="finalizar_regularizacion" />
@@ -277,8 +277,12 @@
                                             <span class="categoria-documentos-meta">
                                                 {{ categoria.archivos|length }} archivo{{ categoria.archivos|length|pluralize }}
                                             </span>
+                                            <span id="solicitud-faltante-badge-{{ categoria.codigo }}"
+                                                  class="badge bg-danger {% if not categoria.solicitud_faltante %}d-none{% endif %}">Documento faltante solicitado</span>
                                             {% if puede_solicitar_faltantes %}
-                                                <form method="post" class="d-flex flex-wrap gap-2 align-items-center">
+                                                <form method="post"
+                                                      class="d-flex flex-wrap gap-2 align-items-center js-solicitud-faltante-form"
+                                                      data-categoria="{{ categoria.codigo }}">
                                                     {% csrf_token %}
                                                     <input type="hidden"
                                                            name="solicitar_categoria"
@@ -289,12 +293,25 @@
                                                            required
                                                            placeholder="Observaciones"
                                                            aria-label="Observaciones para documento faltante" />
-                                                    <button type="submit" class="btn btn-sm btn-outline-danger">Solicitar documento faltante</button>
+                                                    <button type="submit" class="btn btn-sm btn-outline-danger">
+                                                        <span class="js-submit-idle">Solicitar documento faltante</span>
+                                                        <span class="spinner-border spinner-border-sm d-none js-submit-spinner"
+                                                              role="status"
+                                                              aria-hidden="true"></span>
+                                                    </button>
                                                 </form>
                                             {% endif %}
                                         </div>
                                     </td>
                                 </tr>
+                                <tr id="solicitud-faltante-row-{{ categoria.codigo }}"
+                                    class="documento-detail-row {% if not categoria.solicitud_faltante %}d-none{% endif %}">
+                                        <td colspan="5" class="text-start pt-0 pb-2">
+                                            <div class="ps-3" id="solicitud-faltante-observacion-{{ categoria.codigo }}">
+                                                <strong>Observaciones:</strong> {{ categoria.solicitud_faltante.observaciones }}
+                                            </div>
+                                        </td>
+                                    </tr>
                                 {% if categoria.archivos %}
                                     {% for archivo in categoria.archivos %}
                                         <tr class="{% if archivo.observaciones or archivo.estado == 'presentado' and puede_revisar_documentos %}documento-row-with-details{% endif %}">
@@ -556,7 +573,7 @@
             </div>
         </div>
     </div>
-    <script src="{% static 'custom/js/rendicioncuentasmensual_detail.js' %}"></script>
+    <script src="{% static 'custom/js/rendicioncuentasmensual_detail.js' %}?v=20260821-1"></script>
     <script nonce="{{ request.csp_nonce }}">
         (function () {
             var resultado = document.getElementById("resultado-auditoria");
