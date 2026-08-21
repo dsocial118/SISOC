@@ -290,6 +290,56 @@ def test_nomina_create_post_ciudadano_existente(mocker):
     redir.assert_called_once_with("/ok")
 
 
+def test_nomina_directa_create_post_ciudadano_existente_pasa_datos_sociales(mocker):
+    view = module.NominaDirectaCreateView()
+    view.kwargs = {"pk": 5}
+    view.object = None
+
+    req = SimpleNamespace(POST={"ciudadano_id": "10"}, user="u")
+    view.request = req
+    comedor = SimpleNamespace(pk=5, id=5, programa_id=None, programa=None)
+    mocker.patch(
+        "comedores.views.nomina._get_comedor_directo_or_404",
+        return_value=comedor,
+    )
+    ciudadano = SimpleNamespace(requiere_revision_manual=False)
+    mocker.patch(
+        "comedores.views.nomina.Ciudadano.objects.get",
+        return_value=ciudadano,
+    )
+    mocker.patch("comedores.views.nomina._get_nomina_creada", return_value=None)
+    mocker.patch("comedores.views.nomina._sync_pnud_nomina_web")
+
+    form_nomina = SimpleNamespace(
+        is_valid=lambda: True, cleaned_data={"estado": "A", "observaciones": "o"}
+    )
+    mocker.patch("comedores.views.nomina.NominaExtraForm", return_value=form_nomina)
+    datos_sociales = {
+        "pertenece_comunidad_indigena": "True",
+        "en_situacion_de_calle": "False",
+        "persona_con_celiaquia": "True",
+    }
+    form_datos = SimpleNamespace(is_valid=lambda: True, cleaned_data=datos_sociales)
+    mocker.patch(
+        "comedores.views.nomina.CiudadanoDatosComplementariosNominaForm",
+        return_value=form_datos,
+    )
+    agregar = mocker.patch(
+        "comedores.views.nomina.ComedorService.agregar_ciudadano_a_nomina",
+        return_value=(True, "ok"),
+    )
+    mocker.patch("comedores.views.nomina.messages.success")
+    mocker.patch.object(view, "get_success_url", return_value="/ok")
+    redir = mocker.patch("comedores.views.nomina.redirect", return_value="redir")
+
+    out = view.post(req)
+
+    assert out == "redir"
+    assert agregar.call_args.kwargs["comedor_id"] == comedor.pk
+    assert agregar.call_args.kwargs["datos_complementarios"] == datos_sociales
+    redir.assert_called_once_with("/ok")
+
+
 def test_nomina_create_post_ciudadano_nuevo_success_and_error(mocker):
     view = module.NominaCreateView()
     view.kwargs = {"pk": 5, "admision_pk": 88}
