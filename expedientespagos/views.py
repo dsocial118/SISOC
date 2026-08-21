@@ -1,5 +1,6 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import Http404
+from django.shortcuts import redirect
 from django.views.generic import (
     ListView,
     DetailView,
@@ -10,18 +11,32 @@ from django.views.generic import (
 from django.urls import reverse_lazy, reverse
 from django.utils.decorators import method_decorator
 from django.utils.html import escape, format_html
+from django.utils.safestring import mark_safe
 from django.views.decorators.csrf import ensure_csrf_cookie
 from core.soft_delete.view_helpers import SoftDeleteDeleteViewMixin
 from core.services.column_preferences import build_columns_context_for_custom_cells
 from core.templatetags.custom_filters import monto_sin_decimales
 from expedientespagos.models import ExpedientePago
+from expedientespagos.filter_config import get_filters_ui_config
 from expedientespagos.forms import ExpedientePagoForm
-from expedientespagos.services import (
-    ExpedientesPagosService,
-    ordenar_expedientes_por_periodo_desc,
-)
+from expedientespagos.services import ExpedientesPagosService
 from comedores.models import Comedor
 from iam.services import user_has_any_permission_codes
+
+
+_BADGE_SIN_ADMISION = mark_safe(  # nosec B308 - literal sin datos de usuario
+    '<span class="badge bg-warning text-dark" '
+    'title="No se encontró una admisión con este expediente de convenio">'
+    '<i class="fas fa-exclamation-triangle me-1"></i>Sin admisión</span>'
+)
+
+
+def _celda_admision(expediente):
+    """Muestra la admisión vinculada o una alerta cuando quedó sin asignar."""
+    admision = expediente.admision
+    if admision is None:
+        return {"content": _BADGE_SIN_ADMISION}
+    return {"content": escape(admision.num_expediente or f"Admisión #{admision.id}")}
 
 
 def _build_expediente_pago_list_item(expediente):
@@ -32,6 +47,7 @@ def _build_expediente_pago_list_item(expediente):
             {"content": escape(expediente.ano or "-")},
             {"content": escape(expediente.expediente_pago or "-")},
             {"content": escape(expediente.expediente_convenio or "-")},
+            _celda_admision(expediente),
             {"content": format_html("${}", monto_sin_decimales(expediente.total))},
             {
                 "content": (
@@ -52,26 +68,46 @@ class ExpedientesPagosListView(LoginRequiredMixin, ListView):
     paginate_by = 10
 
     def get_queryset(self):
-        """Retorna expedientes ordenados para evitar warning de paginación"""
-        return ordenar_expedientes_por_periodo_desc(ExpedientePago.objects.all())
+        """Expedientes del comedor de la URL, filtrados y ordenados.
+
+        Antes devolvía ``ExpedientePago.objects.all()`` y el contexto lo pisaba
+        con los del comedor, así que el paginador contaba sobre el total del
+        sistema en lugar de sobre lo que se mostraba.
+        """
+        return ExpedientesPagosService.obtener_expedientes_pagos(
+            self.kwargs.get("pk"), self.request
+        )
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         comedor_id = self.kwargs.get("pk")
-        expedientes_pagos = ExpedientesPagosService.obtener_expedientes_pagos(
-            comedor_id
-        )
         context["expedientes_pagos"] = [
             _build_expediente_pago_list_item(expediente)
-            for expediente in expedientes_pagos
+            for expediente in context["object_list"]
         ]
         context["comedorid"] = comedor_id
+        context["sin_admision_count"] = ExpedientesPagosService.contar_sin_admision(
+            comedor_id
+        )
+        context.update(
+            {
+                "reset_url": reverse(
+                    "expedientespagos_list", kwargs={"pk": comedor_id}
+                ),
+                "filters_mode": True,
+                "filters_config": get_filters_ui_config(),
+                "filters_action": reverse(
+                    "expedientespagos_list", kwargs={"pk": comedor_id}
+                ),
+            }
+        )
 
         headers = [
             {"key": "mes_pago", "title": "Mes de Pago"},
             {"key": "ano", "title": "Año"},
             {"key": "expediente_pago", "title": "Expediente de Pago"},
             {"key": "expediente_convenio", "title": "Expediente del Convenio"},
+            {"key": "admision", "title": "Admisión"},
             {"key": "total", "title": "Total"},
             {"key": "fecha_creacion", "title": "Fecha de creación"},
         ]
@@ -145,6 +181,7 @@ class ExpedientesPagosCreateView(LoginRequiredMixin, CreateView):
             {
                 "es_area_legales": es_area_legales,
                 "es_tecnico_comedor": es_tecnico_comedor,
+                "comedor": Comedor.objects.filter(pk=self.kwargs.get("pk")).first(),
             }
         )
         return kwargs
@@ -158,7 +195,8 @@ class ExpedientesPagosCreateView(LoginRequiredMixin, CreateView):
         context = super().get_context_data(**kwargs)
         comedor_id = self.kwargs.get("pk")
         context["comedorid"] = comedor_id
-        context["form"] = ExpedientePagoForm()
+        # No se reemplaza context["form"]: pisarlo con un form nuevo descartaba
+        # los datos cargados y los errores de validación al reenviar.
         es_area_legales, es_tecnico_comedor = self._get_role_flags()
         context["es_area_legales"] = es_area_legales
         context["es_tecnico_comedor"] = es_tecnico_comedor
@@ -221,6 +259,7 @@ class ExpedientesPagosUpdateView(LoginRequiredMixin, UpdateView):
             {
                 "es_area_legales": es_area_legales,
                 "es_tecnico_comedor": es_tecnico_comedor,
+                "comedor": getattr(self.get_object(), "comedor", None),
             }
         )
         return kwargs
@@ -233,7 +272,11 @@ class ExpedientesPagosUpdateView(LoginRequiredMixin, UpdateView):
     def form_valid(self, form):
         # Mantén el mismo comedor que tenía originalmente
         form.instance.comedor = self.get_object().comedor
-        return super().form_valid(form)
+        ExpedientesPagosService.actualizar_expediente_pago(
+            form.instance, form.cleaned_data
+        )
+        self.object = form.instance
+        return redirect(self.get_success_url())
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

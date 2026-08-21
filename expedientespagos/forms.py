@@ -1,15 +1,71 @@
 from decimal import Decimal
 
 from django import forms
+from admisiones.models.admisiones import Admision
 from expedientespagos.models import ExpedientePago
 
 
+class AdmisionPorExpedienteChoiceField(forms.ModelChoiceField):
+    """Identifica las admisiones por su expediente y no por su nombre.
+
+    ``Admision.__str__`` devuelve el nombre, que no sirve para elegir el convenio
+    al que corresponde un pago.
+    """
+
+    def label_from_instance(self, obj):
+        etiqueta = obj.num_expediente or f"Admisión #{obj.id}"
+        convenio = getattr(getattr(obj, "acompanamiento", None), "nro_convenio", "")
+        if convenio:
+            etiqueta = f"{etiqueta} — Conv. {convenio}"
+        if not obj.activa:
+            etiqueta = f"{etiqueta} (cerrada)"
+        return etiqueta
+
+
 class ExpedientePagoForm(forms.ModelForm):
+    admision = AdmisionPorExpedienteChoiceField(
+        queryset=Admision.objects.none(),
+        required=False,
+        label="Admisión",
+        help_text=(
+            "Si se deja vacío, se intenta resolver automáticamente a partir del "
+            "expediente del convenio."
+        ),
+    )
+
     def __init__(self, *args, **kwargs):
         self._es_area_legales = kwargs.pop("es_area_legales", None)
         self._es_tecnico_comedor = kwargs.pop("es_tecnico_comedor", None)
+        self._comedor = kwargs.pop("comedor", None)
         super().__init__(*args, **kwargs)
         self._configure_required_fields()
+        self._configure_admision_field()
+
+    def _configure_admision_field(self):
+        """Acota el selector de admisión a las del comedor del expediente.
+
+        El expediente del convenio se cargaba a mano y a ciegas; el selector
+        permite elegir de las admisiones reales del comedor. Se deja opcional
+        para no bloquear la carga cuando la admisión todavía no está en SISOC.
+        """
+        campo = self.fields.get("admision")
+        if campo is None:
+            return
+
+        comedor = self._comedor or getattr(self.instance, "comedor", None)
+
+        if comedor is None:
+            campo.queryset = Admision.objects.none()
+        else:
+            campo.queryset = (
+                Admision.objects.filter(comedor=comedor)
+                .select_related("acompanamiento")
+                .order_by("-id")
+            )
+
+        campo.required = False
+        campo.empty_label = "Resolver automáticamente por número de expediente"
+        campo.widget.attrs.setdefault("class", "form-control")
 
     def _configure_required_fields(self):
         if self._es_area_legales is False:

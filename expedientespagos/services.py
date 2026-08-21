@@ -1,8 +1,24 @@
 import logging
-from django.db.models import Case, IntegerField, Value, When
+from django.db.models import Case, CharField, IntegerField, Value, When
+from core.services.advanced_filters import AdvancedFilterEngine
+from expedientespagos.filter_config import (
+    CHOICE_OPS,
+    FIELD_MAP,
+    FIELD_TYPES,
+    TEXT_OPS,
+    VINCULO_CON_ADMISION,
+    VINCULO_SIN_ADMISION,
+)
 from expedientespagos.models import ExpedientePago
+from expedientespagos.vinculacion import asignar_admision
 
 logger = logging.getLogger("django")
+
+EXPEDIENTES_PAGOS_ADVANCED_FILTER = AdvancedFilterEngine(
+    field_map=FIELD_MAP,
+    field_types=FIELD_TYPES,
+    allowed_ops={"text": TEXT_OPS, "choice": CHOICE_OPS},
+)
 
 
 _MES_PAGO_ALIASES = (
@@ -72,6 +88,8 @@ class ExpedientesPagosService:
                 monto_mensual_cena=data.get("monto_mensual_cena"),
                 comedor=comedor,
             )
+            asignar_admision(expediente_pago, data.get("admision"))
+            expediente_pago.save(update_fields=["admision"])
             return expediente_pago
         except Exception:
             logger.exception(
@@ -116,6 +134,7 @@ class ExpedientesPagosService:
             expediente_pago.monto_mensual_almuerzo = data.get("monto_mensual_almuerzo")
             expediente_pago.monto_mensual_merienda = data.get("monto_mensual_merienda")
             expediente_pago.monto_mensual_cena = data.get("monto_mensual_cena")
+            asignar_admision(expediente_pago, data.get("admision"))
             expediente_pago.save()
             return expediente_pago
         except Exception:
@@ -137,17 +156,58 @@ class ExpedientesPagosService:
             raise
 
     @staticmethod
-    def obtener_expedientes_pagos(comedor):
+    def obtener_expedientes_pagos(comedor, request_or_query=None):
+        """Expedientes de pago del comedor, con filtros combinables opcionales.
+
+        Args:
+            comedor: Comedor dueño de los expedientes.
+            request_or_query: HttpRequest con los filtros, o None.
+
+        Returns:
+            QuerySet de ExpedientePago anotado con ``vinculo_admision``.
+        """
         try:
-            return ordenar_expedientes_por_periodo_desc(
+            qs = (
                 ExpedientePago.objects.filter(comedor=comedor)
+                .select_related("admision")
+                .annotate(
+                    vinculo_admision=Case(
+                        When(
+                            admision__isnull=True,
+                            then=Value(VINCULO_SIN_ADMISION),
+                        ),
+                        default=Value(VINCULO_CON_ADMISION),
+                        output_field=CharField(),
+                    )
+                )
             )
+
+            if hasattr(request_or_query, "GET"):
+                qs = EXPEDIENTES_PAGOS_ADVANCED_FILTER.filter_queryset(
+                    qs, request_or_query
+                )
+
+            return ordenar_expedientes_por_periodo_desc(qs)
         except Exception:
             logger.exception(
                 "Error en ExpedientesPagosService.obtener_expedientes_pagos",
                 extra={"comedor_pk": getattr(comedor, "pk", None)},
             )
             raise
+
+    @staticmethod
+    def contar_sin_admision(comedor):
+        """Cuántos expedientes del comedor quedaron sin admisión asignada."""
+        try:
+            return ExpedientePago.objects.filter(
+                comedor=comedor, admision__isnull=True
+            ).count()
+        except Exception:
+            logger.exception(
+                "Error en ExpedientesPagosService.contar_sin_admision",
+                extra={"comedor_pk": getattr(comedor, "pk", None)},
+            )
+            return 0
 
     @staticmethod
     def obtener_expediente_pago(id_enviado):

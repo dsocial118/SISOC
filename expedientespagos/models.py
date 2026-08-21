@@ -42,6 +42,18 @@ class ExpedientePago(SoftDeleteModelMixin, models.Model):
         related_name="expedientes_pagos",
         null=True,
     )
+    admision = models.ForeignKey(
+        "admisiones.Admision",
+        on_delete=models.SET_NULL,
+        related_name="expedientes_pagos",
+        null=True,
+        blank=True,
+        verbose_name="Admisión",
+        help_text=(
+            "Si se deja vacío, se intenta resolver automáticamente a partir del "
+            "expediente del convenio."
+        ),
+    )
     fecha_creacion = models.DateTimeField(
         auto_now_add=True, verbose_name="Fecha de creación"
     )
