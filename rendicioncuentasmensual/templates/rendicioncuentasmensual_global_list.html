@@ -12,62 +12,21 @@
             <div class="col-12">
                 <div class="card comedor-table-card">
                     <div class="card-body">
-                        <details class="mb-3">
-                            <summary class="btn btn-outline-warning btn-sm">Configurar columnas</summary>
-                            <div class="d-flex flex-wrap gap-3 mt-3">
-                                {% for key, label in columnas_configurables %}
-                                    <label>
-                                        <input class="form-check-input js-rendicion-column"
-                                               type="checkbox"
-                                               value="{{ key }}"
-                                               checked />
-                                        {{ label }}
-                                    </label>
-                                {% endfor %}
-                            </div>
-                        </details>
+                        {% include "components/column_config_modal.html" %}
                         <div class="table-responsive-lg">
                             <table class="table table-comedor-moderno">
                                 <thead>
                                     <tr>
-                                        <th data-column="proyecto">Proyecto</th>
-                                        <th>Organización</th>
-                                        <th data-column="convenio">Convenio</th>
-                                        <th>Rendición</th>
-                                        <th>Período</th>
-                                        <th data-column="etapa">Etapa</th>
-                                        <th data-column="estado">Estado</th>
-                                        <th>Última modificación</th>
+                                        {% for header in table_headers %}<th>{{ header.title }}</th>{% endfor %}
                                         <th>Acciones</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {% for rendicion in rendiciones_cuentas_mensuales %}
                                         <tr>
-                                            <td data-column="proyecto">{{ rendicion.comedor.codigo_de_proyecto|default:"Sin proyecto" }}</td>
-                                            <td>{{ rendicion.comedor.organizacion.nombre|default:"Sin organización" }}</td>
-                                            <td data-column="convenio">{{ rendicion.convenio|default:"-" }}</td>
-                                            <td>{{ rendicion.numero_rendicion|default:rendicion.id }}</td>
-                                            <td>
-                                                {% if rendicion.periodo_inicio and rendicion.periodo_fin %}
-                                                    {{ rendicion.periodo_inicio|date:"d/m/Y" }} - {{ rendicion.periodo_fin|date:"d/m/Y" }}
-                                                {% else %}
-                                                    {{ rendicion.mes }}/{{ rendicion.anio }}
-                                                {% endif %}
-                                            </td>
-                                            <td data-column="etapa">
-                                                <span class="badge bg-info text-dark">{{ rendicion.get_etapa_proceso_display }}</span>
-                                            </td>
-                                            <td data-column="estado">
-                                                {% if rendicion.subestado_proceso == 'finalizada' %}
-                                                    <span class="badge-validacion validado">{{ rendicion.estado_proceso_display }}</span>
-                                                {% elif rendicion.subestado_proceso == 'pendiente_correcciones' %}
-                                                    <span class="badge-validacion no-validado">{{ rendicion.estado_proceso_display }}</span>
-                                                {% else %}
-                                                    <span class="badge-validacion pendiente">{{ rendicion.estado_proceso_display }}</span>
-                                                {% endif %}
-                                            </td>
-                                            <td>{{ rendicion.ultima_modificacion|date:"d/m/Y H:i" }}</td>
+                                            {% for column_key in active_columns %}
+                                                {% include "components/rendicion_global_list_cell.html" %}
+                                            {% endfor %}
                                             <td>
                                                 <div class="comedor-actions">
                                                     <a href="{% url 'rendicioncuentasmensual_detail' rendicion.id %}"
@@ -81,7 +40,7 @@
                                         </tr>
                                     {% empty %}
                                         <tr>
-                                            <td colspan="9">No hay rendiciones registradas.</td>
+                                            <td colspan="{{ active_columns|length|add:1 }}">No hay rendiciones registradas.</td>
                                         </tr>
                                     {% endfor %}
                                 </tbody>
@@ -93,19 +52,8 @@
         </div>
         {% include 'components/pagination.html' with is_paginated=is_paginated page_obj=page_obj prev_text='Volver' next_text='Continuar' %}
     </div>
-    <script nonce="{{ request.csp_nonce }}">
-        (function () {
-            var key = "rendiciones-columnas-visibles";
-            var checks = Array.from(document.querySelectorAll(".js-rendicion-column"));
-            var saved = JSON.parse(localStorage.getItem(key) || "null");
-            function apply() {
-                var visible = checks.filter(function (item) { return item.checked; }).map(function (item) { return item.value; });
-                document.querySelectorAll("[data-column]").forEach(function (cell) { cell.classList.toggle("d-none", !visible.includes(cell.dataset.column)); });
-                localStorage.setItem(key, JSON.stringify(visible));
-            }
-            if (Array.isArray(saved)) checks.forEach(function (item) { item.checked = saved.includes(item.value); });
-            checks.forEach(function (item) { item.addEventListener("change", apply); });
-            apply();
-        })();
-    </script>
+{% endblock %}
+{% block customJS %}
+    <script src="{% static 'custom/js/column_config.js' %}"></script>
+    <script src="{% static 'custom/js/export_helper.js' %}"></script>
 {% endblock %}

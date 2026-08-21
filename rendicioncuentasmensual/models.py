@@ -611,6 +611,16 @@ class RendicionCuentaMensual(SoftDeleteModelMixin, models.Model):
         }
 
     @property
+    def etapa_badge_class(self):
+        return {
+            self.ETAPA_CARGA_DOCUMENTACION: "etapa-carga",
+            self.ETAPA_REVISION_DOCUMENTACION: "etapa-territorial",
+            self.ETAPA_REVISION_AUDITORIA: "etapa-revision-auditoria",
+            self.ETAPA_AUDITORIA: "etapa-auditoria",
+            self.ETAPA_REGULARIZACION: "etapa-regularizacion",
+        }.get(self.etapa_proceso, "etapa-carga")
+
+    @property
     def validacion_auditoria_finalizada(self):
         return self.fecha_validacion_auditoria is not None or self.etapa_proceso in {
             self.ETAPA_AUDITORIA,

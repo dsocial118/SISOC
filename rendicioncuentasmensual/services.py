@@ -520,6 +520,9 @@ class RendicionCuentaMensualService:  # pylint: disable=too-many-public-methods
                 rendicion
             ).filter(categoria=categoria)
         )
+        if config["multiple"] and not documento_subsanado_id:
+            return {"config": config, "documento_subsanado": None}
+
         if (
             not documentos_categoria.exists()
             or rendicion.solicitudes_documentos_faltantes.filter(
