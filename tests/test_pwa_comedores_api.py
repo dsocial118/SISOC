@@ -1417,6 +1417,64 @@ def test_rendicion_en_subsanar_permite_agregar_historial_para_comprobantes(
     assert observado_payload["observaciones"] == "Subir una versión legible"
 
 
+@pytest.mark.django_db
+@override_settings(ROOT_URLCONF="tests.test_urls_pwa_comedores_api")
+def test_rendicion_en_subsanar_permite_agregar_documento_nuevo_en_categoria_multiple(
+    comedores, settings, tmp_path
+):
+    settings.MEDIA_ROOT = str(tmp_path)
+    comedor_1, _ = comedores
+    representante = _create_pwa_user(
+        comedor=comedor_1,
+        role=AccesoComedorPWA.ROL_REPRESENTANTE,
+        username="rep_subsanar_documento_nuevo",
+    )
+    _grant_mobile_rendicion_permission(representante)
+    client = _token_client(representante)
+
+    rendicion = RendicionCuentaMensual.objects.create(
+        comedor=comedor_1,
+        mes=6,
+        anio=2026,
+        estado=RendicionCuentaMensual.ESTADO_SUBSANAR,
+    )
+    existente = DocumentacionAdjunta.objects.create(
+        nombre="formulario-i-original.pdf",
+        categoria=DocumentacionAdjunta.CATEGORIA_FORMULARIO_I,
+        estado=DocumentacionAdjunta.ESTADO_VALIDADO,
+        rendicion_cuenta_mensual=rendicion,
+        archivo=SimpleUploadedFile(
+            "formulario-i-original.pdf",
+            b"%PDF-1.4 original",
+            content_type="application/pdf",
+        ),
+    )
+
+    response = client.post(
+        f"/api/comedores/{comedor_1.id}/rendiciones/{rendicion.id}/documentacion/",
+        {
+            "archivo": SimpleUploadedFile(
+                "formulario-i-nuevo.pdf",
+                b"%PDF-1.4 nuevo",
+                content_type="application/pdf",
+            ),
+            "categoria": DocumentacionAdjunta.CATEGORIA_FORMULARIO_I,
+        },
+        format="multipart",
+    )
+
+    assert response.status_code == 201
+    documentos = DocumentacionAdjunta.objects.filter(
+        rendicion_cuenta_mensual=rendicion,
+        categoria=DocumentacionAdjunta.CATEGORIA_FORMULARIO_I,
+    ).order_by("id")
+    assert documentos.count() == 2
+    nuevo = documentos.last()
+    assert nuevo.id != existente.id
+    assert nuevo.estado == DocumentacionAdjunta.ESTADO_PRESENTADO
+    assert nuevo.documento_subsanado_id is None
+
+
 def _comedor_alimentar_comunidad(*, username):
     provincia = Provincia.objects.create(nombre="Cordoba")
     programa = Programas.objects.create(nombre="Alimentar Comunidad")

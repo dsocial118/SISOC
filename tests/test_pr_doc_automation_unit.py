@@ -133,6 +133,36 @@ def test_parse_pr_body_metadata_extrae_campos_relevantes():
     assert metadata["pruebas_manuales"] == "No aplica"
 
 
+def test_parse_pr_body_metadata_acepta_etiquetas_sin_vineta():
+    """Conserva trazabilidad cuando el autor no usa la lista de la plantilla."""
+
+    body = """
+    Contexto funcional: Recuperación autoservicio de contraseña desde SISOC.
+    Tipo de cambio: Seguridad / corrección funcional.
+    Área principal: Usuarios y autenticación.
+    Resumen para changelog: Reset por usuario y email.
+    Impacto usuario: Recuperación sin intervención administrativa.
+    Riesgos / rollback: Revertir el commit correspondiente.
+    Pruebas Automáticas:
+    pytest tests/test_users_auth_flows.py
+    black --check users/forms.py
+
+    Prubeas Manuales:
+    Solicitar el enlace desde el login.
+    """
+
+    metadata = pr_doc_automation.parse_pr_body_metadata(body)
+
+    assert metadata["contexto_funcional"] == (
+        "Recuperación autoservicio de contraseña desde SISOC."
+    )
+    assert metadata["pruebas_automaticas"] == (
+        "pytest tests/test_users_auth_flows.py black --check users/forms.py"
+    )
+    assert metadata["pruebas_manuales"] == "Solicitar el enlace desde el login."
+    assert metadata["riesgos_rollback"] == "Revertir el commit correspondiente."
+
+
 def test_detect_affected_areas_resume_apps_y_capas_transversales():
     """Resume áreas afectadas a partir del diff del PR."""
 

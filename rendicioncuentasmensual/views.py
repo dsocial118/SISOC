@@ -1,3 +1,5 @@
+import re
+
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -18,6 +20,7 @@ from comedores.models import Comedor
 from core.services.advanced_filters import AdvancedFilterEngine
 from core.services.favorite_filters import SeccionesFiltrosFavoritos
 from core.mixins import CSVExportMixin
+from core.services.column_preferences import build_columns_context_from_fields
 from core.soft_delete.preview import build_delete_preview
 from core.soft_delete.view_helpers import (
     SoftDeleteDeleteViewMixin,
@@ -99,18 +102,40 @@ class RendicionCuentaMensualGlobalListView(
     context_object_name = "rendiciones_cuentas_mensuales"
     paginate_by = 25
     export_filename = "listado_rendiciones.csv"
+    COLUMN_LIST_KEY = "rendiciones_global_list"
+    COLUMN_DEFINITIONS = (
+        ("proyecto", "Proyecto", "comedor.codigo_de_proyecto"),
+        ("organizacion", "Organización", "comedor.organizacion.nombre"),
+        ("convenio", "Convenio", "convenio"),
+        ("numero_rendicion", "Rendición", "numero_rendicion"),
+        ("periodo", "Período", "periodo_exportacion"),
+        ("etapa", "Etapa", "get_etapa_proceso_display"),
+        ("estado", "Estado", "estado_proceso_display"),
+        ("ultima_modificacion", "Última modificación", "ultima_modificacion"),
+    )
+
+    def _get_columns_context(self):
+        return build_columns_context_from_fields(
+            self.request,
+            self.COLUMN_LIST_KEY,
+            [{"title": title} for _key, title, _field in self.COLUMN_DEFINITIONS],
+            [{"name": key} for key, _title, _field in self.COLUMN_DEFINITIONS],
+            required_keys=["proyecto"],
+        )
 
     def get_export_columns(self):
-        return [
-            ("Proyecto", "comedor.codigo_de_proyecto"),
-            ("Organización", "comedor.organizacion.nombre"),
-            ("Convenio", "convenio"),
-            ("Rendición", "numero_rendicion"),
-            ("Período inicio", "periodo_inicio"),
-            ("Período fin", "periodo_fin"),
-            ("Estado", "get_estado_display"),
-            ("Etapa", "get_etapa_proceso_display"),
-        ]
+        active_keys = self._get_columns_context()["column_active_keys"]
+        definitions = {
+            key: (title, field) for key, title, field in self.COLUMN_DEFINITIONS
+        }
+        return [definitions[key] for key in active_keys]
+
+    def resolve_field(self, obj, field_path):
+        if field_path == "periodo_exportacion":
+            if obj.periodo_inicio and obj.periodo_fin:
+                return f"{obj.periodo_inicio:%d/%m/%Y} - {obj.periodo_fin:%d/%m/%Y}"
+            return f"{obj.mes}/{obj.anio}"
+        return super().resolve_field(obj, field_path)
 
     def get(self, request, *args, **kwargs):
         if request.GET.get("export") == "csv":
@@ -151,12 +176,8 @@ class RendicionCuentaMensualGlobalListView(
         context["filters_config"] = get_filters_ui_config()
         context["filters_js"] = "custom/js/advanced_filters.js"
         context["seccion_filtros_favoritos"] = SeccionesFiltrosFavoritos.RENDICIONES
-        context["columnas_configurables"] = [
-            ("proyecto", "Proyecto"),
-            ("convenio", "Convenio"),
-            ("etapa", "Etapa"),
-            ("estado", "Estado"),
-        ]
+        context.update(self._get_columns_context())
+        context["active_columns"] = context["column_active_keys"]
         context["breadcrumb_items"] = [
             {"text": "Organizaciones", "url": reverse_lazy("organizaciones")},
             {"text": "Rendiciones", "active": True},
@@ -436,6 +457,50 @@ class RendicionCuentaMensualDetailView(LoginRequiredMixin, DetailView):
 
 class RendicionCuentaMensualDownloadPdfView(LoginRequiredMixin, DetailView):
     model = RendicionCuentaMensual
+    MESES_ARCHIVO = (
+        "",
+        "ENE",
+        "FEB",
+        "MAR",
+        "ABR",
+        "MAY",
+        "JUN",
+        "JUL",
+        "AGO",
+        "SEP",
+        "OCT",
+        "NOV",
+        "DIC",
+    )
+
+    @staticmethod
+    def _normalizar_parte_nombre(value, fallback):
+        value = str(value or "").strip()
+        normalizado = re.sub(r"[^A-Za-z0-9.]+", "_", value).strip("_.")
+        return normalizado or fallback
+
+    @classmethod
+    def construir_nombre_archivo(cls, rendicion):
+        if not hasattr(rendicion, "periodo_inicio") and not hasattr(rendicion, "anio"):
+            return f"rendicion-{rendicion.numero_rendicion or rendicion.id}.pdf"
+
+        proyecto = getattr(
+            getattr(rendicion, "proyecto", None), "codigo", ""
+        ) or getattr(getattr(rendicion, "comedor", None), "codigo_de_proyecto", "")
+        proyecto = cls._normalizar_parte_nombre(proyecto, "SIN_PROYECTO")
+        convenio = cls._normalizar_parte_nombre(
+            getattr(rendicion, "convenio", None), "SIN_CONVENIO"
+        )
+        numero = rendicion.numero_rendicion or rendicion.id
+        periodo_inicio = getattr(rendicion, "periodo_inicio", None)
+        mes = periodo_inicio.month if periodo_inicio else getattr(rendicion, "mes", 0)
+        anio = (
+            periodo_inicio.year
+            if periodo_inicio
+            else getattr(rendicion, "anio", "SIN-ANIO")
+        )
+        mes_archivo = cls.MESES_ARCHIVO[mes] if mes in range(1, 13) else "MES"
+        return f"{proyecto}-{convenio}-RENDICION_{numero}-{mes_archivo}{anio}.pdf"
 
     def get(self, request, *args, **kwargs):
         rendicion = RendicionCuentaMensualService.obtener_rendicion_cuenta_mensual(
@@ -454,27 +519,10 @@ class RendicionCuentaMensualDownloadPdfView(LoginRequiredMixin, DetailView):
                 reverse("rendicioncuentasmensual_detail", kwargs={"pk": rendicion.pk})
             )
 
-        proyecto = (
-            getattr(getattr(rendicion, "proyecto", None), "codigo", "")
-            or getattr(getattr(rendicion, "comedor", None), "codigo_de_proyecto", "")
-            or "sin-proyecto"
-        )
-        periodo_inicio = getattr(rendicion, "periodo_inicio", None)
-        anio = getattr(rendicion, "anio", "sin-anio")
-        mes = getattr(rendicion, "mes", 0)
-        periodo = (
-            periodo_inicio.strftime("%Y-%m") if periodo_inicio else f"{anio}-{mes:02d}"
-        )
-        if not hasattr(rendicion, "periodo_inicio") and not hasattr(rendicion, "anio"):
-            filename = f"rendicion-{rendicion.numero_rendicion or rendicion.id}.pdf"
-        else:
-            convenio = getattr(rendicion, "convenio", None) or "sin-convenio"
-            numero = rendicion.numero_rendicion or rendicion.id
-            filename = f"{proyecto}_{convenio}_rendicion-{numero}_{periodo}.pdf"
         return FileResponse(
             pdf_buffer,
             as_attachment=True,
-            filename=filename,
+            filename=self.construir_nombre_archivo(rendicion),
             content_type="application/pdf",
         )
 
@@ -522,7 +570,7 @@ class RendicionCuentaMensualCreateView(LoginRequiredMixin, CreateView):
 
 class RendicionCuentaMensualUpdateView(LoginRequiredMixin, UpdateView):
     model = RendicionCuentaMensual
-    template_name = "rendicioncuentasmensual_form.html"
+    template_name = "rendicioncuentasmensual_datos_form.html"
     form_class = RendicionDatosForm
 
     def dispatch(self, request, *args, **kwargs):
@@ -553,9 +601,9 @@ class RendicionCuentaMensualUpdateView(LoginRequiredMixin, UpdateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        comedor_id = self.object.comedor.id
-        context["comedorid"] = comedor_id
-        context["form"] = RendicionDatosForm(instance=self.object)
+        context["form"] = context.get("form") or RendicionDatosForm(
+            instance=self.object
+        )
         return context
 
 
