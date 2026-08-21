@@ -32,8 +32,11 @@
 - Empezar por `docs/registro/prs/PR-2322.md` para contexto resumido del PR.
 - Revisar primero estos archivos del diff:
 - `docs/contexto/features/pr-2322-recupero-pass.md`
+- `docs/plans/2026-08-21-pr-2322-review-fixes-design.md`
 - `docs/registro/cambios/2026-08-20-reset-password-issue-2236.md`
 - `docs/registro/prs/PR-2322.md`
+- `scripts/ci/pr_doc_automation.py`
+- `tests/test_pr_doc_automation_unit.py`
 - `tests/test_users_auth_flows.py`
 - `users/forms.py`
 - `users/templates/user/login.html`
@@ -44,6 +47,7 @@
 - `docs/ia/ARCHITECTURE.md`
 - `docs/ia/TESTING.md`
 - `docs/contexto/features/pr-2322-recupero-pass.md`
+- `docs/plans/2026-08-21-pr-2322-review-fixes-design.md`
 - `docs/registro/cambios/2026-08-20-reset-password-issue-2236.md`
 - `docs/registro/prs/PR-2322.md`
 
