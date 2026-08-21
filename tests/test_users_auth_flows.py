@@ -324,7 +324,7 @@ def test_web_password_reset_elige_un_usuario_aunque_compartan_email(client):
         reverse("password_reset"),
         {
             "username": "reset_web_objetivo",
-            "email": "compartido@example.com",
+            "email": "COMPARTIDO@example.COM",
         },
     )
 
@@ -363,7 +363,7 @@ def test_web_password_reset_no_envia_si_username_y_email_no_coinciden(client):
 
 @pytest.mark.django_db
 @override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
-def test_web_password_reset_no_envia_para_password_inutilizable(client):
+def test_web_password_reset_envia_para_password_inutilizable(client):
     user = User.objects.create_user(
         username="reset_web_sin_password",
         email="sin-password@example.com",
@@ -381,7 +381,8 @@ def test_web_password_reset_no_envia_para_password_inutilizable(client):
 
     assert response.status_code == 302
     assert response.url == reverse("password_reset_done")
-    assert len(mail.outbox) == 0
+    assert len(mail.outbox) == 1
+    assert mail.outbox[0].to == ["sin-password@example.com"]
 
 
 @pytest.mark.django_db

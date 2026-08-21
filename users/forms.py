@@ -47,7 +47,7 @@ class UsernameEmailPasswordResetForm(PasswordResetForm):
             return ()
 
         email_matches = (user.email or "").casefold() == (email or "").casefold()
-        if not email_matches or not user.has_usable_password():
+        if not email_matches:
             return ()
         return (user,)
 
