@@ -306,12 +306,13 @@
                                 </tr>
                                 <tr id="solicitud-faltante-row-{{ categoria.codigo }}"
                                     class="documento-detail-row {% if not categoria.solicitud_faltante %}d-none{% endif %}">
-                                        <td colspan="5" class="text-start pt-0 pb-2">
-                                            <div class="ps-3" id="solicitud-faltante-observacion-{{ categoria.codigo }}">
-                                                <strong>Observaciones:</strong> {{ categoria.solicitud_faltante.observaciones }}
-                                            </div>
-                                        </td>
-                                    </tr>
+                                    <td colspan="5" class="text-start pt-0 pb-2">
+                                        <div class="ps-3"
+                                             id="solicitud-faltante-observacion-{{ categoria.codigo }}">
+                                            <strong>Observaciones:</strong> {{ categoria.solicitud_faltante.observaciones }}
+                                        </div>
+                                    </td>
+                                </tr>
                                 {% if categoria.archivos %}
                                     {% for archivo in categoria.archivos %}
                                         <tr class="{% if archivo.observaciones or archivo.estado == 'presentado' and puede_revisar_documentos %}documento-row-with-details{% endif %}">
