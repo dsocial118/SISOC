@@ -9,7 +9,7 @@
 
 ## Contexto funcional
 
-- No informado explícitamente; inferir desde el título del PR y el diff.
+- Recuperación autoservicio de contraseña desde el login web de SISOC.
 
 ## Arquitectura tocada
 
@@ -17,10 +17,10 @@
 
 ## Decisiones y supuestos detectados
 
-- Tipo de cambio declarado: No informado
-- Área principal declarada: No informada
-- Impacto usuario declarado: No informado
-- Riesgos / rollback: No informado
+- Tipo de cambio declarado: Seguridad / corrección funcional.
+- Área principal declarada: Usuarios y autenticación.
+- Impacto usuario declarado: El usuario puede recuperar la contraseña sin intervención administrativa y sin afectar otras cuentas que compartan email.
+- Riesgos / rollback: Riesgo bajo y acotado al formulario web y a la generación de artefactos de PR. El rollback puede realizarse revirtiendo el commit correspondiente.
 
 ## Design system y UI
 
