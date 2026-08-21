@@ -308,8 +308,7 @@ class RendicionCuentaMensualDetailView(LoginRequiredMixin, DetailView):
         solicitar_categoria = (request.POST.get("solicitar_categoria") or "").strip()
         if solicitar_categoria:
             puede_solicitar = (
-                rendicion.subestado_proceso
-                == RendicionCuentaMensual.SUBESTADO_EN_CURSO
+                rendicion.subestado_proceso == RendicionCuentaMensual.SUBESTADO_EN_CURSO
                 and (
                     (
                         rendicion.etapa_proceso
@@ -496,8 +495,7 @@ class RendicionCuentaMensualDetailView(LoginRequiredMixin, DetailView):
             self.request.user, rendicion
         )
         context["puede_solicitar_faltantes"] = (
-            rendicion.subestado_proceso
-            == RendicionCuentaMensual.SUBESTADO_EN_CURSO
+            rendicion.subestado_proceso == RendicionCuentaMensual.SUBESTADO_EN_CURSO
             and (
                 (
                     rendicion.etapa_proceso
