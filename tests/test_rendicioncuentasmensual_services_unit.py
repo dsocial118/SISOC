@@ -6,7 +6,11 @@ import pytest
 from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
 
-from rendicioncuentasmensual.models import DocumentacionAdjunta, RendicionCuentaMensual
+from rendicioncuentasmensual.models import (
+    DocumentacionAdjunta,
+    RendicionCuentaMensual,
+    SolicitudDocumentoFaltante,
+)
 from rendicioncuentasmensual.services import (
     RendicionCuentaMensualService,
     RendicionProcesoService,
@@ -288,6 +292,27 @@ def test_obtener_documentacion_para_detalle_promueve_ultima_subsanacion_presenta
     assert archivo.get_estado_visual() == DocumentacionAdjunta.ESTADO_PRESENTADO
     assert archivo.get_estado_visual_display() == "Presentado"
     assert [item.id for item in archivo.subsanaciones_historial] == [observado.id]
+
+
+@pytest.mark.django_db
+def test_obtener_documentacion_para_detalle_expone_observacion_de_faltante():
+    rendicion = RendicionCuentaMensual.objects.create(mes=4, anio=2026)
+    solicitud = SolicitudDocumentoFaltante.objects.create(
+        rendicion=rendicion,
+        categoria=DocumentacionAdjunta.CATEGORIA_FORMULARIO_II,
+        observaciones="Falta firma de la autoridad.",
+    )
+
+    categorias = RendicionCuentaMensualService.obtener_documentacion_para_detalle(
+        rendicion
+    )
+    formulario_ii = next(
+        item
+        for item in categorias
+        if item["codigo"] == DocumentacionAdjunta.CATEGORIA_FORMULARIO_II
+    )
+
+    assert formulario_ii["solicitud_faltante"] == solicitud
 
 
 @pytest.mark.django_db

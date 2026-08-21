@@ -598,6 +598,19 @@ class RendicionCuentaMensual(SoftDeleteModelMixin, models.Model):
         permissions = [
             ("manage_mobile_rendicion", "Puede gestionar rendiciones mobile"),
             ("edit_rendicion_data", "Puede editar datos de rendición"),
+            (
+                "manage_territorial_stage",
+                "Puede gestionar la etapa Revisión Territorial",
+            ),
+            (
+                "manage_auditoria_review_stage",
+                "Puede gestionar la etapa Revisión de Auditoría",
+            ),
+            ("manage_auditoria_stage", "Puede gestionar la etapa Auditoría"),
+            (
+                "manage_regularizacion_stage",
+                "Puede gestionar la etapa Regularización",
+            ),
         ]
         verbose_name = "Rendición de Cuenta Mensual"
         verbose_name_plural = "Rendiciones de Cuenta Mensuales"

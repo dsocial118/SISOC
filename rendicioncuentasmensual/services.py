@@ -583,6 +583,12 @@ class RendicionCuentaMensualService:  # pylint: disable=too-many-public-methods
         grouped = RendicionCuentaMensualService._construir_documentacion_para_detalle(
             rendicion
         )
+        solicitudes_faltantes = {
+            solicitud.categoria: solicitud
+            for solicitud in rendicion.solicitudes_documentos_faltantes.filter(
+                activa=True
+            )
+        }
         categorias = []
         for categoria in DocumentacionAdjunta.categorias_mobile(
             getattr(rendicion, "linea_programatica", None)
@@ -591,6 +597,9 @@ class RendicionCuentaMensualService:  # pylint: disable=too-many-public-methods
                 {
                     **categoria,
                     "archivos": grouped.get(categoria["codigo"], []),
+                    "solicitud_faltante": solicitudes_faltantes.get(
+                        categoria["codigo"]
+                    ),
                 }
             )
         return categorias
@@ -855,13 +864,13 @@ class RendicionCuentaMensualService:  # pylint: disable=too-many-public-methods
             activa=True,
             defaults={"observaciones": observaciones, "usuario_creador": actor},
         )
-        rendicion.estado = RendicionCuentaMensual.ESTADO_SUBSANAR
-        rendicion.subestado_proceso = (
-            RendicionCuentaMensual.SUBESTADO_PENDIENTE_CORRECCIONES
+        RendicionCuentaMensualService._aplicar_usuario_ultima_modificacion(
+            rendicion, actor
         )
-        rendicion.save(
-            update_fields=["estado", "subestado_proceso", "ultima_modificacion"]
-        )
+        update_fields = ["ultima_modificacion"]
+        if getattr(actor, "is_authenticated", False):
+            update_fields.append("usuario_ultima_modificacion")
+        rendicion.save(update_fields=update_fields)
         RendicionCuentaMensualService._crear_notificacion_mobile_revision_documento(
             documento=solicitud, actor=actor
         )
@@ -888,7 +897,8 @@ class RendicionCuentaMensualService:  # pylint: disable=too-many-public-methods
     @staticmethod
     @transaction.atomic
     def presentar_rendicion_mobile(rendicion, actor=None):
-        RendicionCuentaMensualService.validar_documentacion_obligatoria(rendicion)
+        if rendicion.estado == RendicionCuentaMensual.ESTADO_ELABORACION:
+            RendicionCuentaMensualService.validar_documentacion_obligatoria(rendicion)
         RendicionCuentaMensualService._sincronizar_flag_documento_adjunto(rendicion)
         documentos_vigentes = list(
             RendicionCuentaMensualService._documentos_vigentes_queryset(rendicion)
@@ -1253,7 +1263,10 @@ class RendicionProcesoService:
             documentos_observados = (
                 RendicionProcesoService._documentos_observados_al_finalizar(rendicion)
             )
-            if documentos_observados:
+            tiene_documentos_faltantes = (
+                rendicion.solicitudes_documentos_faltantes.filter(activa=True).exists()
+            )
+            if documentos_observados or tiene_documentos_faltantes:
                 RendicionProcesoService._enviar_documentos_a_subsanacion(
                     rendicion, documentos_observados, actor
                 )
@@ -1296,7 +1309,10 @@ class RendicionProcesoService:
             documentos_observados = (
                 RendicionProcesoService._documentos_observados_al_finalizar(rendicion)
             )
-            if documentos_observados:
+            tiene_documentos_faltantes = (
+                rendicion.solicitudes_documentos_faltantes.filter(activa=True).exists()
+            )
+            if documentos_observados or tiene_documentos_faltantes:
                 RendicionProcesoService._enviar_documentos_a_subsanacion(
                     rendicion, documentos_observados, actor
                 )

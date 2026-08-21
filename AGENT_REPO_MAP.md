@@ -530,6 +530,7 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - listado y detalle del legajo: `organizaciones/views.py` y templates `organizacion_*`
 - proyectos editables: `OrganizacionForm.codigos_proyecto` mantiene el contrato CSV mediante un campo oculto
 - tests: `tests/test_rendicioncuentasmensual_services_unit.py` y `organizaciones/tests.py`
+- escenarios QA de permisos por etapa: `python manage.py seed_rendicion_stage_examples --comedor-id <id>` (solicita la contraseña de forma interactiva)
 - documentación canónica: `docs/flujos/rendiciones_mensuales_proyectos.md`
 
 ### Si necesitas cambiar OCR / procesamiento documental

@@ -58,7 +58,10 @@ from rendicioncuentasmensual.models import (
     RendicionCuentaMensual,
     SolicitudDocumentoFaltante,
 )
-from rendicioncuentasmensual.services import RendicionCuentaMensualService
+from rendicioncuentasmensual.services import (
+    RendicionCuentaMensualService,
+    RendicionProcesoService,
+)
 from users.models import AccesoComedorPWA, AccesoOrganizacionPWA
 
 
@@ -881,7 +884,20 @@ def test_solicitud_documento_faltante_se_cierra_al_adjuntar(
     )
     assert solicitud.activa is True
     rendicion.refresh_from_db()
+    assert rendicion.estado == RendicionCuentaMensual.ESTADO_REVISION
+    assert rendicion.subestado_proceso == RendicionCuentaMensual.SUBESTADO_EN_CURSO
+
+    RendicionProcesoService.ejecutar(
+        rendicion=rendicion,
+        accion=RendicionProcesoService.ACCION_FINALIZAR_TERRITORIAL,
+        datos={},
+    )
+    rendicion.refresh_from_db()
     assert rendicion.estado == RendicionCuentaMensual.ESTADO_SUBSANAR
+    assert (
+        rendicion.subestado_proceso
+        == RendicionCuentaMensual.SUBESTADO_PENDIENTE_CORRECCIONES
+    )
 
     RendicionCuentaMensualService.adjuntar_documentacion_mobile(
         rendicion=rendicion,
