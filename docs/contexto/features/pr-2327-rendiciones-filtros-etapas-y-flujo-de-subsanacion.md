@@ -34,8 +34,10 @@
 - Empezar por `docs/registro/prs/PR-2327.md` para contexto resumido del PR.
 - Revisar primero estos archivos del diff:
 - `AGENT_REPO_MAP.md`
+- `docs/contexto/features/pr-2327-rendiciones-filtros-etapas-y-flujo-de-subsanacion.md`
 - `docs/registro/cambios/2026-08-21-filtro-estado-rendiciones.md`
 - `docs/registro/cambios/2026-08-21-permisos-etapas-rendiciones.md`
+- `docs/registro/prs/PR-2327.md`
 - `rendicioncuentasmensual/filter_config.py`
 - `rendicioncuentasmensual/forms.py`
 - `rendicioncuentasmensual/management/__init__.py`
@@ -51,16 +53,16 @@
 - `static/custom/js/rendicioncuentasmensual_detail.js`
 - `templates/includes/base.html`
 - `templates/includes/sidebar/new_opciones.html`
-- `templates/includes/sidebar/opciones.html`
-- `tests/test_pwa_comedores_api.py`
-- ... y 2 archivo(s) adicional(es) relacionados.
+- ... y 4 archivo(s) adicional(es) relacionados.
 - Documentación sugerida para ampliar contexto:
 - `docs/indice.md`
 - `docs/ia/CONTEXT_HYGIENE.md`
 - `docs/ia/ARCHITECTURE.md`
 - `docs/ia/TESTING.md`
+- `docs/contexto/features/pr-2327-rendiciones-filtros-etapas-y-flujo-de-subsanacion.md`
 - `docs/registro/cambios/2026-08-21-filtro-estado-rendiciones.md`
 - `docs/registro/cambios/2026-08-21-permisos-etapas-rendiciones.md`
+- `docs/registro/prs/PR-2327.md`
 
 ## Trazabilidad
 
