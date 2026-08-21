@@ -20,6 +20,16 @@
                 </a>
             </div>
         {% endif %}
-        {% include 'components/data_table.html' with headers=table_headers items=expedientes_pagos show_actions=True actions=table_actions empty_message='No hay expedientes de pagos registrados para este comedor.' fields=table_fields %}
+        {% if sin_admision_count %}
+            <div class="alert alert-warning d-flex align-items-center" role="alert">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                <div>
+                    Hay <strong>{{ sin_admision_count }}</strong> expediente{{ sin_admision_count|pluralize }} sin admisión asignada.
+                    Se puede asignar a mano editando el expediente, o filtrar por "Vínculo con la admisión" para revisarlos.
+                </div>
+            </div>
+        {% endif %}
+        {% include 'components/search_bar.html' with titulo='Expedientes de Pagos' reset_url=reset_url filters_mode=filters_mode filters_config=filters_config filters_action=filters_action show_add_button=False %}
+        {% include 'components/data_table.html' with headers=table_headers items=expedientes_pagos show_actions=True actions=table_actions empty_message='No hay expedientes de pagos registrados para este comedor.' fields=table_fields include_pagination=True %}
     </div>
 {% endblock %}
