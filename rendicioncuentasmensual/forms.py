@@ -58,6 +58,16 @@ class RendicionDatosForm(forms.ModelForm):
     numero_rendicion = forms.ChoiceField(
         choices=((value, value) for value in range(1, 7))
     )
+    periodo_inicio = forms.DateField(
+        required=True,
+        widget=forms.DateInput(attrs={"type": "date"}),
+        error_messages={"required": "Ingresá la fecha de inicio del período."},
+    )
+    periodo_fin = forms.DateField(
+        required=True,
+        widget=forms.DateInput(attrs={"type": "date"}),
+        error_messages={"required": "Ingresá la fecha de fin del período."},
+    )
 
     class Meta:
         model = RendicionCuentaMensual
@@ -68,10 +78,6 @@ class RendicionDatosForm(forms.ModelForm):
             "periodo_fin",
             "nombre",
         )
-        widgets = {
-            "periodo_inicio": forms.DateInput(attrs={"type": "date"}),
-            "periodo_fin": forms.DateInput(attrs={"type": "date"}),
-        }
 
     def clean(self):
         cleaned = super().clean()

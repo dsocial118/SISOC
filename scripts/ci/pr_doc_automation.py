@@ -149,28 +149,50 @@ def clean_text(value: str) -> str:
 
 
 def parse_pr_body_metadata(body: str) -> dict[str, str]:
-    """Extrae metadata estructurada desde listas del body del PR."""
+    """Extrae metadata estructurada desde etiquetas del body del PR."""
 
     metadata: dict[str, str] = {}
+    active_key = ""
+    active_lines: list[str] = []
+
+    def save_active_value():
+        if active_key and active_lines and active_key not in metadata:
+            metadata[active_key] = clean_text(" ".join(active_lines))
+
     for raw_line in (body or "").splitlines():
         line = raw_line.strip()
         if not line:
-            continue
-        if not line.startswith("-"):
+            save_active_value()
+            active_key = ""
+            active_lines = []
             continue
         candidate = re.sub(r"^[\-\*\s]+", "", line)
         candidate = candidate.replace("**", "").replace("`", "")
-        if ":" not in candidate:
-            continue
-        raw_key, raw_value = candidate.split(":", 1)
-        normalized_key = normalize_key(raw_key)
-        value = clean_text(raw_value)
-        if not value:
-            continue
-        for canonical_key, aliases in BODY_FIELD_ALIASES.items():
-            if normalized_key in aliases and canonical_key not in metadata:
-                metadata[canonical_key] = value
-                break
+        if ":" in candidate:
+            raw_key, raw_value = candidate.split(":", 1)
+            normalized_key = normalize_key(raw_key)
+            canonical_key = next(
+                (
+                    key
+                    for key, aliases in BODY_FIELD_ALIASES.items()
+                    if normalized_key in aliases
+                ),
+                "",
+            )
+            if canonical_key:
+                save_active_value()
+                active_key = ""
+                active_lines = []
+                value = clean_text(raw_value)
+                if value and canonical_key not in metadata:
+                    metadata[canonical_key] = value
+                elif not value and canonical_key not in metadata:
+                    active_key = canonical_key
+                continue
+        if active_key:
+            active_lines.append(candidate)
+
+    save_active_value()
     return metadata
 
 

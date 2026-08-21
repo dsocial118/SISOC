@@ -41,11 +41,15 @@ class UsernameEmailPasswordResetForm(PasswordResetForm):
 
     def get_users(self, email):
         username = (self.cleaned_data.get("username") or "").strip()
-        return User.objects.filter(
-            username__iexact=username,
-            email__iexact=email,
-            is_active=True,
-        )
+        try:
+            user = User.objects.get(username=username, is_active=True)
+        except User.DoesNotExist:
+            return ()
+
+        email_matches = (user.email or "").casefold() == (email or "").casefold()
+        if not email_matches:
+            return ()
+        return (user,)
 
 
 MOBILE_RENDICION_PERMISSION_CODE = "rendicioncuentasmensual.manage_mobile_rendicion"
