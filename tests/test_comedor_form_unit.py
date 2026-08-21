@@ -5,6 +5,7 @@ from types import SimpleNamespace
 import pytest
 from django.core.exceptions import ValidationError
 
+from ciudadanos.models import Ciudadano
 from comedores.forms import comedor_form as module
 
 
@@ -78,6 +79,35 @@ def test_comedor_form_requires_explicit_caritas_selection():
     assert field.clean("False") is False
     with pytest.raises(ValidationError):
         field.clean("")
+
+
+def test_datos_complementarios_nomina_limita_los_campos_del_ciudadano():
+    assert list(module.CiudadanoDatosComplementariosNominaForm.base_fields) == [
+        "pertenece_comunidad_indigena",
+        "en_situacion_de_calle",
+        "persona_con_celiaquia",
+    ]
+
+
+def test_datos_complementarios_modal_usa_prefix_y_no_borra_valores_ausentes():
+    ciudadano = Ciudadano(
+        pertenece_comunidad_indigena="True",
+        en_situacion_de_calle="False",
+        persona_con_celiaquia="True",
+    )
+    form = module.CiudadanoDatosComplementariosNominaForm(
+        data={}, instance=ciudadano, prefix="modal"
+    )
+
+    assert form["pertenece_comunidad_indigena"].html_name == (
+        "modal-pertenece_comunidad_indigena"
+    )
+    assert form.is_valid()
+
+    ciudadano_actualizado = form.save(commit=False)
+    assert ciudadano_actualizado.pertenece_comunidad_indigena == "True"
+    assert ciudadano_actualizado.en_situacion_de_calle == "False"
+    assert ciudadano_actualizado.persona_con_celiaquia == "True"
 
 
 def test_imagen_comedor_form_rejects_files_over_3mb():
