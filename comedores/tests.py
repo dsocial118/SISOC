@@ -1373,6 +1373,48 @@ def test_agregar_ciudadano_a_nomina_caso_feliz(admision_fixture, ciudadano_fixtu
     ).exists()
 
 
+@pytest.mark.django_db(transaction=True)
+def test_agregar_ciudadano_revierte_nomina_si_falla_actualizacion_social(
+    admision_fixture, ciudadano_fixture, monkeypatch
+):
+    ciudadano_fixture.pertenece_comunidad_indigena = "False"
+    ciudadano_fixture.en_situacion_de_calle = "False"
+    ciudadano_fixture.persona_con_celiaquia = "False"
+    ciudadano_fixture.save(
+        update_fields=[
+            "pertenece_comunidad_indigena",
+            "en_situacion_de_calle",
+            "persona_con_celiaquia",
+        ]
+    )
+
+    def fallar_guardado(*_args, **_kwargs):
+        raise RuntimeError("falló la actualización social")
+
+    monkeypatch.setattr(Ciudadano, "save", fallar_guardado)
+
+    ok, _msg = ComedorService.agregar_ciudadano_a_nomina(
+        admision_id=admision_fixture.pk,
+        ciudadano_id=ciudadano_fixture.pk,
+        user=mock.Mock(),
+        estado=Nomina.ESTADO_ACTIVO,
+        datos_complementarios={
+            "pertenece_comunidad_indigena": "True",
+            "en_situacion_de_calle": "True",
+            "persona_con_celiaquia": "True",
+        },
+    )
+
+    assert ok is False
+    assert not Nomina.objects.filter(
+        admision=admision_fixture, ciudadano=ciudadano_fixture
+    ).exists()
+    ciudadano_fixture.refresh_from_db()
+    assert ciudadano_fixture.pertenece_comunidad_indigena == "False"
+    assert ciudadano_fixture.en_situacion_de_calle == "False"
+    assert ciudadano_fixture.persona_con_celiaquia == "False"
+
+
 @pytest.mark.django_db
 def test_agregar_ciudadano_ya_en_nomina(admision_fixture, ciudadano_fixture):
     """Retorna False si el ciudadano ya está en la nómina de esa admisión."""
