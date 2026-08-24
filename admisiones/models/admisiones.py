@@ -653,6 +653,12 @@ class InformeTecnico(models.Model):
         null=True,
         blank=True,
     )
+    if_it_complementario = models.CharField(
+        "IF IT Complementario",
+        max_length=255,
+        null=True,
+        blank=True,
+    )
     observaciones_subsanacion = models.TextField(
         "Observaciones de Subsanación",
         null=True,
