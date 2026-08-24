@@ -24,6 +24,12 @@ Documentar el estado actual de la API usada por la PWA, el modelo de acceso mobi
 
 Modelo: `users.AccesoComedorPWA`
 
+La membresía de un usuario mobile a una organización tiene una fuente de
+verdad separada: `users.AccesoOrganizacionPWA`. Las filas de
+`AccesoComedorPWA` con `tipo_asociacion='organizacion'` son la proyección de
+esa membresía sobre los comedores actuales; no deben usarse para inferir que
+la organización sigue asignada cuando quedó temporalmente sin comedores.
+
 - Campos principales:
   - `user`
   - `comedor`
@@ -44,7 +50,10 @@ Modelo: `users.AccesoComedorPWA`
   - `organizacion`: selecciona una o más organizaciones y luego los espacios visibles dentro de esas organizaciones.
   - `espacio`: selecciona directamente uno o más espacios.
 - Regla de negocio: un usuario mobile no puede quedar asociado simultáneamente por organización y por espacio.
-- Regla de negocio: un usuario mobile siempre debe tener al menos un espacio visible seleccionado.
+- El alta desde Web exige al menos un espacio visible seleccionado. Después del
+  alta, una membresía de organización puede quedar sin proyección mientras la
+  organización no tenga comedores; la membresía se conserva para que los
+  comedores futuros vuelvan a asignarse automáticamente.
 - Para usuarios mobile creados desde web:
   - la contraseña inicial se genera automáticamente;
   - el perfil queda marcado con `must_change_password=True`;
@@ -52,11 +61,26 @@ Modelo: `users.AccesoComedorPWA`
 
 ### Alcance efectivo por organización
 
-- Cuando `tipo_asociacion=organizacion`, el alcance final sigue resolviéndose por espacios.
-- Cada fila conserva:
-  - el espacio visible (`comedor_id`)
-  - la organización desde la que fue habilitado (`organizacion_id`)
-- Si un espacio deja de pertenecer a esa organización, deja automáticamente de ser visible en Mobile aunque exista una fila histórica activa.
+- Cuando `tipo_asociacion=organizacion`, el alcance final se resuelve por la
+  membresía activa y su proyección de espacios.
+- `comedores.signals` captura la organización anterior en `pre_save` y
+  reconcilia altas, cambios, baja lógica y restauraciones en `post_save`, dentro
+  de la transacción del comedor. Los envíos a GESTIONAR quedan para
+  `on_commit`.
+- Los cambios hechos con `queryset.update()` o `bulk_create()` no disparan
+  señales. Después de una carga de ese tipo debe ejecutarse el comando de
+  catch-up; no se debe asumir que la proyección quedó sincronizada.
+- La visibilidad final sigue respetando estado/programa mediante
+  `filter_pwa_visible_spaces`: asignado no significa necesariamente visible.
+
+#### Catch-up y reconciliación
+
+`python manage.py sincronizar_accesos_pwa_organizaciones` ejecuta un dry-run de
+solo lectura. Revisar los totales y luego repetir con `--apply`; se puede
+acotar con `--organizacion ID`. El comando procesa cada organización en su
+propia transacción y aplica el mismo contrato de totalidad que el formulario:
+una organización seleccionada incluye sus comedores actuales y futuros, sin
+exclusiones manuales.
 
 Servicios de dominio: `users/services_pwa.py`
 
@@ -67,6 +91,9 @@ Servicios de dominio: `users/services_pwa.py`
 - `list_operadores_for_comedor(comedor_id)`
 - `deactivate_operador(...)`
 - `get_pwa_context(user)`
+- `get_organizacion_ids(user)`
+- `sync_organizacion_accesses(organizacion_id=..., comedor_ids=..., actor=...)`
+- `apply_comedor_organizacion_change(...)`
 
 ## Endpoints PWA activos
 
@@ -203,7 +230,8 @@ Lectura y auditoria:
 
 - `TokenAuthentication` + `IsAuthenticated` en API PWA.
 - Scope por espacio:
-  - usuarios PWA: `AccesoComedorPWA.activo=True`.
+  - usuarios PWA: `AccesoComedorPWA.activo=True` y, para asociación por
+    organización, `AccesoOrganizacionPWA.activo=True`.
   - usuarios no PWA: filtros existentes de `ComedorService`.
 - Gestión de `/usuarios/` protegida con `IsPWARepresentativeForComedor`.
 - Usuarios PWA bloqueados en login web por `BackofficeAuthenticationForm`.
@@ -230,6 +258,7 @@ Modelo: `pwa.AuditoriaOperacionPWA`
 - `tests/test_users_api_login.py`
 - `tests/test_users_services_pwa.py`
 - `tests/test_users_pwa_forms.py`
+- `tests/test_pwa_accesos_organizacion.py`
 - `tests/test_pwa_comedores_api.py`
 
 Cobertura actual incluye auth, contexto, scope por comedor, gestión de operadores, nómina, rendiciones, documentos y prestación.
@@ -242,5 +271,7 @@ Cobertura actual incluye auth, contexto, scope por comedor, gestión de operador
   - colección `postman/PWA Smoke.postman_collection.json`
   - environment `postman/PWA Smoke.postman_environment.json`
   - runner `scripts/run_pwa_smoke_postman.sh`
+- Después de migrar `users.0046` y `users.0047`, ejecutar el dry-run del
+  comando de reconciliación y conservar su salida antes de aplicar cambios.
 
 
