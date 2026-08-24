@@ -34,11 +34,15 @@
 - Empezar por `docs/registro/prs/PR-2332.md` para contexto resumido del PR.
 - Revisar primero estos archivos del diff:
 - `AGENT_REPO_MAP.md`
+- `CHANGELOG.md`
 - `admisiones/services/informes_service/impl.py`
 - `admisiones/templates/admisiones/informe_tecnico_detalle.html`
 - `admisiones/urls/web_urls.py`
 - `admisiones/views/web_views.py`
+- `docs/contexto/features/pr-2332-feat-admisiones-agregar-descarga-docx-para-gde.md`
 - `docs/registro/cambios/2026-08-24-descarga-docx-para-gde.md`
+- `docs/registro/prs/PR-2332.md`
+- `docs/registro/releases/pending/2026-08-26-pr-2332.md`
 - `tests/test_admisiones_web_views_unit.py`
 - `tests/test_informes_service_unit.py`
 - Documentación sugerida para ampliar contexto:
@@ -46,7 +50,10 @@
 - `docs/ia/CONTEXT_HYGIENE.md`
 - `docs/ia/ARCHITECTURE.md`
 - `docs/ia/TESTING.md`
+- `docs/contexto/features/pr-2332-feat-admisiones-agregar-descarga-docx-para-gde.md`
 - `docs/registro/cambios/2026-08-24-descarga-docx-para-gde.md`
+- `docs/registro/prs/PR-2332.md`
+- `docs/registro/releases/pending/2026-08-26-pr-2332.md`
 
 ## Trazabilidad
 
