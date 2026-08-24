@@ -304,6 +304,11 @@ MENSAJE_ERROR_AGREGAR_NOMINA = (
     "Ocurrió un error al agregar a la nómina. "
     "Verificá los datos e intentá nuevamente."
 )
+CAMPOS_SOCIALES_CIUDADANO_NOMINA = (
+    "pertenece_comunidad_indigena",
+    "en_situacion_de_calle",
+    "persona_con_celiaquia",
+)
 
 
 def _ciudadano_puede_ingresar_a_nomina(ciudadano):
@@ -1645,6 +1650,7 @@ class ComedorService:
         observaciones=None,
         admision_id=None,
         comedor_id=None,
+        datos_complementarios=None,
     ):
         ciudadano = get_object_or_404(Ciudadano, pk=ciudadano_id)
 
@@ -1682,6 +1688,10 @@ class ComedorService:
                     estado=estado,
                     observaciones=observaciones,
                 )
+                if datos_complementarios is not None:
+                    for campo in CAMPOS_SOCIALES_CIUDADANO_NOMINA:
+                        setattr(ciudadano, campo, datos_complementarios.get(campo))
+                    ciudadano.save(update_fields=list(CAMPOS_SOCIALES_CIUDADANO_NOMINA))
 
             return True, "Persona añadida correctamente a la nómina."
         except IntegrityError:
