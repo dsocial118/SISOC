@@ -75,6 +75,49 @@ def resolver_admision(comedor, expediente_convenio):
     return None
 
 
+def revincular_expedientes_sueltos(comedor=None, expedientes=None, guardar=True):
+    """Reintenta vincular expedientes de pago que quedaron sin admisión.
+
+    Es el corazón de la fase 3 y sirve a tres usos: el signal que corre cuando se
+    crea o edita una admisión, el comando de re-matcheo masivo y la migración de
+    datos del histórico.
+
+    Solo toca los que están sin asignar: nunca pisa un vínculo existente, ni el
+    automático ni el que alguien eligió a mano.
+
+    Args:
+        comedor: Si se indica, limita el reintento a ese comedor.
+        expedientes: QuerySet explícito a procesar. Tiene prioridad sobre
+            ``comedor``.
+        guardar: Si es False, calcula sin escribir (para ``--dry-run``).
+
+    Returns:
+        dict: ``{"revisados": int, "vinculados": int}``
+    """
+    from expedientespagos.models import ExpedientePago
+
+    if expedientes is None:
+        expedientes = ExpedientePago.objects.filter(admision__isnull=True)
+        if comedor is not None:
+            expedientes = expedientes.filter(comedor=comedor)
+
+    revisados = 0
+    vinculados = 0
+
+    for expediente in expedientes.select_related("comedor"):
+        revisados += 1
+        admision = resolver_admision(expediente.comedor, expediente.expediente_convenio)
+        if admision is None:
+            continue
+
+        vinculados += 1
+        if guardar:
+            expediente.admision = admision
+            expediente.save(update_fields=["admision"])
+
+    return {"revisados": revisados, "vinculados": vinculados}
+
+
 def asignar_admision(expediente_pago, admision_elegida=None):
     """Define la admisión de un expediente de pago.
 
