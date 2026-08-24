@@ -137,7 +137,7 @@
             </ul>
         </li>
     {% endif %}
-    {% if not vat_sidebar_only and request.user|has_perm_code:"organizaciones.view_organizacion" or not vat_sidebar_only and request.user|has_perm_code:"auth.role_tecnico_comedor" or not vat_sidebar_only and request.user|has_perm_code:"auth.role_abogado_dupla" or not vat_sidebar_only and request.user|has_perm_code:"rendicioncuentasmensual.view_rendicioncuentamensual" %}
+    {% if not vat_sidebar_only and request.user|has_perm_code:"organizaciones.view_organizacion" or not vat_sidebar_only and request.user|has_perm_code:"auth.role_tecnico_comedor" or not vat_sidebar_only and request.user|has_perm_code:"auth.role_abogado_dupla" or not vat_sidebar_only and request.user|has_any_perm:"rendicioncuentasmensual.view_rendicioncuentamensual,rendicioncuentasmensual.manage_territorial_stage,rendicioncuentasmensual.manage_auditoria_review_stage,rendicioncuentasmensual.manage_auditoria_stage,rendicioncuentasmensual.manage_regularizacion_stage" %}
         <li class="nav-item {% if 'organizaciones' in pagina_actual or 'rendicioncuentasmensual' in pagina_actual %}menu-open{% endif %}"
             style="order: 2">
             <a href="#"
@@ -156,7 +156,7 @@
                         </a>
                     </li>
                 {% endif %}
-                {% if request.user|has_perm_code:"rendicioncuentasmensual.view_rendicioncuentamensual" %}
+                {% if request.user|has_any_perm:"rendicioncuentasmensual.view_rendicioncuentamensual,rendicioncuentasmensual.manage_territorial_stage,rendicioncuentasmensual.manage_auditoria_review_stage,rendicioncuentasmensual.manage_auditoria_stage,rendicioncuentasmensual.manage_regularizacion_stage" %}
                     <li class="nav-item">
                         <a href="{% url 'rendicioncuentasmensual_global_list' %}"
                            class="nav-link {% if 'rendicioncuentasmensual' in pagina_actual %}active{% endif %}">

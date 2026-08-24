@@ -78,6 +78,61 @@ footer.app-footer {
     padding-top: 10px;
 }
 
+.main-header .navbar-nav .circle-btn {
+    width: 35px;
+    height: 35px;
+    margin-left: 5px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #fff !important;
+    border: 2px solid #b4b4b4;
+    border-radius: 50%;
+    overflow: hidden;
+}
+
+.main-header .navbar-nav .circle-btn form,
+.main-header .navbar-nav .circle-btn .nav-link {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.main-header .nav-links .circle-btn {
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    border-radius: 50%;
+}
+
+.main-header .nav-links .circle-btn form {
+    width: 40px;
+    height: 40px;
+}
+
+.main-header .nav-links .circle-btn .nav-link-rounded {
+    width: 40px;
+    height: 40px;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #fff !important;
+    border-radius: 50%;
+}
+
+.main-header .nav-links .circle-btn .nav-link-rounded img {
+    width: 24px;
+    height: 24px;
+    margin: 0;
+}
+
 .main-header .nav-link.nav-link-rounded {
     background-color: #EDEDED;
     border-radius: 20px;
