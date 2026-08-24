@@ -30,7 +30,7 @@ def test_restaurar_hito_usa_admision_id_desde_referer(mocker):
     hito = SimpleNamespace(retiro_tarjeta=True, save=mocker.Mock())
 
     get_comedor = mocker.patch(
-        "acompanamientos.views.get_object_or_404",
+        "acompanamientos.views.ComedorService.get_scoped_comedor_or_404",
         return_value=comedor,
     )
     obtener_hitos = mocker.patch(
@@ -46,7 +46,7 @@ def test_restaurar_hito_usa_admision_id_desde_referer(mocker):
     resp = _call_restaurar_hito_unwrapped(req, comedor_id=5)
 
     assert resp == "redir"
-    get_comedor.assert_called_once_with(module.Comedor, pk=5)
+    get_comedor.assert_called_once_with(5, req.user)
     obtener_hitos.assert_called_once_with(comedor, admision_id=9)
     assert hito.retiro_tarjeta is False
     hito.save.assert_called_once()
@@ -64,7 +64,10 @@ def test_restaurar_hito_sin_hitos_redirige_con_error(mocker):
 
     comedor = SimpleNamespace(pk=5)
 
-    mocker.patch("acompanamientos.views.get_object_or_404", return_value=comedor)
+    mocker.patch(
+        "acompanamientos.views.ComedorService.get_scoped_comedor_or_404",
+        return_value=comedor,
+    )
     mocker.patch(
         "acompanamientos.views.AcompanamientoService.obtener_hitos",
         return_value=None,
@@ -80,6 +83,20 @@ def test_restaurar_hito_sin_hitos_redirige_con_error(mocker):
     assert resp == "redir"
     error.assert_called_once()
     safe_redirect.assert_called_once()
+
+
+def test_acompanamiento_detail_aplica_scope_del_usuario(mocker):
+    user = SimpleNamespace()
+    scoped_queryset = object()
+    get_scoped_queryset = mocker.patch(
+        "acompanamientos.views.ComedorService.get_scoped_comedor_queryset",
+        return_value=scoped_queryset,
+    )
+    view = module.AcompanamientoDetailView()
+    view.request = SimpleNamespace(user=user)
+
+    assert view.get_queryset() is scoped_queryset
+    get_scoped_queryset.assert_called_once_with(user)
 
 
 def test_acompanamiento_detail_view_normaliza_admision_id_y_reusa_el_mismo_scope(
@@ -99,7 +116,7 @@ def test_acompanamiento_detail_view_normaliza_admision_id_y_reusa_el_mismo_scope
         "django.views.generic.detail.DetailView.get_context_data",
         return_value={},
     )
-    mocker.patch("acompanamientos.views.user_has_permission_code", return_value=False)
+    mocker.patch("acompanamientos.views.user_has_permission_code", return_value=True)
     obtener_hitos = mocker.patch(
         "acompanamientos.views.AcompanamientoService.obtener_hitos",
         return_value="hitos",
@@ -135,6 +152,13 @@ def test_acompanamiento_detail_view_normaliza_admision_id_y_reusa_el_mismo_scope
             "dias_semana": [],
         },
     )
+    informe = SimpleNamespace(id=70, tipo="base")
+    informe_filter = mocker.patch(
+        "acompanamientos.views.InformeTecnico.objects.filter",
+        return_value=SimpleNamespace(
+            order_by=lambda *_args: SimpleNamespace(first=lambda: informe)
+        ),
+    )
 
     view = module.AcompanamientoDetailView()
     view.request = req
@@ -146,6 +170,11 @@ def test_acompanamiento_detail_view_normaliza_admision_id_y_reusa_el_mismo_scope
     obtener_hitos.assert_called_once_with(comedor, admision_id=7)
     assert ctx["admision_id_activa"] == 7
     assert ctx["nro_convenio"] == "CONV-7"
+    assert ctx["informe_tecnico_complementario"] == informe
+    informe_filter.assert_called_once_with(
+        admision=admision,
+        estado_formulario="finalizado",
+    )
 
 
 def test_acompanamiento_detail_view_toma_ultima_cerrada_si_no_hay_activa(mocker):

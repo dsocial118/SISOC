@@ -1,6 +1,7 @@
 # QA - Operaciones
 
-Estado: validado en `qa-old` el 2026-07-13.
+Estado: actualizado en `qa-old` el 2026-07-21, despues del retiro Stage 2
+del MySQL local.
 
 ## Fuente de verdad
 
@@ -9,10 +10,10 @@ Estado: validado en `qa-old` el 2026-07-13.
 - Branch: `development`.
 - Usuario operativo: `sisoc-deploy`.
 - AWS: fuera de alcance; conservar solo como referencia de migracion.
-- DB canonica: `10.80.9.18:3306`; el MySQL local es un remanente ya retirado de
-  servicio mediante Stage 1.
-- MySQL local ocupa 43 GB. Su rol y conexiones fueron clasificados; no borrar
-  `/var/lib/mysql` ni purgar paquetes antes del 2026-07-20 y sin aprobar Stage 2.
+- DB canonica: `10.80.9.18:3306`; no hay MySQL server local en el host de
+  aplicacion.
+- Stage 2 elimino el datadir heredado de 43 GB y los paquetes server locales.
+  No existe rollback local; la DB canonica remota no fue modificada.
 
 ## Estado rapido
 
@@ -21,8 +22,9 @@ Estado: validado en `qa-old` el 2026-07-13.
 /home/sisoc-deploy/bin/healthcheck_qa.sh
 systemctl is-active docker containerd nginx cron \
   actions.runner.dsocial118-SISOC.sisoc-qa
-systemctl is-active mysql    # esperado durante observacion: inactive
-systemctl is-enabled mysql   # esperado durante observacion: disabled
+systemctl show mysql -p LoadState --value || true # esperado: not-found
+command -v mysqld || true                         # esperado: sin salida
+ss -lntp 'sport = :3306'                           # esperado: sin listener
 ```
 
 El health actual prueba contenedores y HTTP. No demuestra por si solo una consulta
@@ -30,9 +32,9 @@ exitosa a la base de datos.
 
 ## Disco y mantenimiento Docker
 
-Estado posterior a la limpieza del 2026-07-13:
+Estado observado despues del retiro Stage 2 el 2026-07-21:
 
-- `/`: 97 GB totales, 71 GB usados, 22 GB libres, 77%.
+- `/`: 97 GB totales, 31 GB usados, 62 GB libres, 34%.
 - imagenes: 2, ambas activas;
 - volumenes Docker: 0;
 - build cache restante: 1.79 GB, preservado por la retencion.
@@ -94,27 +96,22 @@ Snapshot posterior con cron y scripts instalados:
 No pegar logs completos en tickets o chats: pueden contener PII, URLs o datos
 operativos.
 
-## MySQL local heredado
+## MySQL local heredado retirado
 
-Django usa `10.80.9.18`; el MySQL local conserva un datadir clonado de 43 GB.
-Stage 1 fue aplicado el 2026-07-13: servicio inactivo/deshabilitado, sin listener,
-datadir y paquetes intactos. Observar hasta 2026-07-20.
+Django usa `10.80.9.18`. Stage 1 dejo el MySQL local inactivo/deshabilitado
+el 2026-07-13; tras la observacion aprobada, Stage 2 del 2026-07-21 purgo
+`mysql-server`, `mysql-server-8.0` y `mysql-server-core-8.0` sin
+`autoremove`, y elimino `/var/lib/mysql`.
 
-```bash
-bash scripts/infra/retire_qa_local_mysql_stage1.sh
-```
+No queda unidad `mysql.service`, binario `mysqld`, listener local ni
+datadir. El backup root-only
+`/var/backups/sisoc/mysql-local-retirement/20260713_115645` se conserva
+solo como evidencia de Stage 1; no permite reactivar ni recuperar el clon
+local.
 
-Backup root-only:
-`/var/backups/sisoc/mysql-local-retirement/20260713_115645`.
-
-Durante la observacion verificar QA, DB remota y que MySQL local no se reactive:
-
-```bash
-systemctl is-active mysql || true
-systemctl is-enabled mysql || true
-ss -lntp 'sport = :3306'
-curl --max-time 8 -fsS http://127.0.0.1/health/
-```
+No ejecutar `retire_qa_local_mysql_stage1.sh` nuevamente: presupone un
+servicio y datadir que ya no existen. Si alguna vez se evaluara una nueva DB
+local, debe ser una decision de arquitectura separada, no un rollback.
 
 ## Restart y deploy
 

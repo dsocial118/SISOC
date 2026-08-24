@@ -1,0 +1,416 @@
+/* ============================================
+   PONCHO - Listados (fondo, tabla, acciones)
+   ============================================
+   Prototipo Figma "SISOC_ Version UX", nodo 13501:32237.
+
+   Alcance: se aplica SOLO en las paginas que renderizan el buscador nuevo,
+   via `:has(.poncho-search)`. Es deliberado: repintar toda la app (formularios,
+   detalles, dashboards) es un cambio de tema con otro riesgo, y dejar los
+   listados de un color y el resto de otro seria peor que no hacerlo.
+   `:has()` ya se usa en listModerno.css, asi que no incorpora una dependencia
+   nueva.
+
+   Este archivo lo carga components/search_bar.html DESPUES del listModerno.css
+   de cada listado, por eso puede reestilar sin recurrir a !important salvo
+   donde el original ya lo usa.
+   ============================================ */
+
+/* ---------- Fondo de pagina ---------- */
+.app-main:has(.poncho-search) {
+  background: var(--poncho-azul-secundario);
+}
+
+/* La tarjeta contenedora desaparece: en el prototipo la tabla apoya
+   directamente sobre el fondo. */
+.app-main:has(.poncho-search) .card,
+.app-main:has(.poncho-search) .card .card-body {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding: 0;
+}
+
+/* ---------- Encabezado de card y filtros extra ----------
+   De los 40 listados que usan el componente, ciudadanos es el UNICO que
+   envuelve la tabla en una card con header y agrega su propio formulario de
+   filtros (#province-filter-form). Sin estas reglas quedaba con la estetica
+   vieja (fondo gris azulado, selects con borde dorado) al lado del buscador
+   nuevo. Se cubre aca en vez de tocar ese template para no bifurcar estilos. */
+.app-main:has(.poncho-search) .card .card-header {
+  background: transparent;
+  border-bottom: 1px solid rgba(255, 255, 255, .25);
+  padding: 0 0 .75rem;
+  margin-bottom: 1rem;
+}
+
+.app-main:has(.poncho-search) .card .card-title {
+  color: var(--poncho-blanco);
+  font-family: var(--poncho-font-base);
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.app-main:has(.poncho-search) #province-filter-form label {
+  color: var(--poncho-blanco);
+  font-family: var(--poncho-font-base);
+  font-size: var(--poncho-text-sm);
+}
+
+.app-main:has(.poncho-search) #province-filter-form select,
+.app-main:has(.poncho-search) #province-filter-form .form-select {
+  background-color: var(--poncho-azul-principal);
+  border: 1px solid var(--poncho-blanco);
+  border-radius: var(--poncho-radio-base);
+  color: var(--poncho-blanco);
+  font-family: var(--poncho-font-base);
+}
+
+.app-main:has(.poncho-search) #province-filter-form .btn {
+  background: var(--poncho-verde);
+  border: 1px solid var(--poncho-verde);
+  border-radius: var(--poncho-radio-cta);
+  color: var(--poncho-blanco);
+  font-family: var(--poncho-font-base);
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.app-main:has(.poncho-search) #province-filter-form .btn:hover {
+  background: var(--poncho-verde-hover);
+  border-color: var(--poncho-verde-hover);
+}
+
+/* ---------- Tabla ---------- */
+/* Sin overflow:hidden. Lo usaba para respetar las esquinas redondeadas, pero
+   recorta el contenido en tablas anchas: estos listados usan columnas
+   configurables y pueden tener 9-10 columnas contra las 5 del prototipo.
+   El radio se aplica en las celdas de las esquinas (mas abajo). */
+.app-main:has(.poncho-search) .table,
+.app-main:has(.poncho-search) .projects {
+  margin-bottom: 0;
+  border-collapse: separate;
+  border-spacing: 0;
+  color: var(--poncho-blanco);
+  font-family: var(--poncho-font-base);
+  box-shadow: 0 20px 13.5px rgba(0, 0, 0, .1);
+}
+
+/* El contenedor scrollea en horizontal en vez de cortar.
+   Se incluye .card-body:has(> .table) porque hay listados (organizaciones,
+   importarexpediente) donde la tabla cuelga directo de la card, sin envoltorio
+   .table-responsive: ahi no habia nada que pudiera scrollear. */
+.app-main:has(.poncho-search) .table-responsive,
+.app-main:has(.poncho-search) .table-responsive-lg,
+.app-main:has(.poncho-search) .card-body:has(> .table),
+.app-main:has(.poncho-search) .card-body:has(> .projects) {
+  overflow-x: auto;
+  border-radius: var(--poncho-radio-buscador);
+}
+
+.app-main:has(.poncho-search) .table thead th:first-child,
+.app-main:has(.poncho-search) .projects thead th:first-child {
+  border-top-left-radius: var(--poncho-radio-buscador);
+}
+
+.app-main:has(.poncho-search) .table thead th:last-child,
+.app-main:has(.poncho-search) .projects thead th:last-child {
+  border-top-right-radius: var(--poncho-radio-buscador);
+}
+
+.app-main:has(.poncho-search) .table tbody tr:last-child td:first-child,
+.app-main:has(.poncho-search) .projects tbody tr:last-child td:first-child {
+  border-bottom-left-radius: var(--poncho-radio-buscador);
+}
+
+.app-main:has(.poncho-search) .table tbody tr:last-child td:last-child,
+.app-main:has(.poncho-search) .projects tbody tr:last-child td:last-child {
+  border-bottom-right-radius: var(--poncho-radio-buscador);
+}
+
+/* Encabezado teal, texto blanco en mixto (hoy: gris azulado + dorado + MAYUS) */
+.app-main:has(.poncho-search) .table thead,
+.app-main:has(.poncho-search) .projects thead {
+  background: var(--poncho-verde-azulado);
+  border-bottom: none;
+}
+
+.app-main:has(.poncho-search) .table thead th,
+.app-main:has(.poncho-search) .projects thead th {
+  background: var(--poncho-verde-azulado);
+  color: var(--poncho-blanco);
+  font-family: var(--poncho-font-base);
+  /* rem en vez de px: escala con el tamaño de fuente del navegador. El
+     prototipo pedia 20px sobre 5 columnas; estos listados llegan a 10, asi
+     que se achica el padding horizontal para que entren. */
+  font-size: 1.125rem;
+  font-weight: 700;
+  text-transform: none;
+  letter-spacing: -.03px;
+  padding: .8rem 1.15rem;
+  border: none;
+  border-bottom: 2px solid var(--poncho-blanco);
+}
+
+.app-main:has(.poncho-search) .table thead th:hover,
+.app-main:has(.poncho-search) .projects thead th:hover {
+  background: #34776f;
+  color: var(--poncho-blanco);
+}
+
+.app-main:has(.poncho-search) .table thead th .sort-icon,
+.app-main:has(.poncho-search) .projects thead th .sort-icon {
+  color: rgba(255, 255, 255, .7);
+}
+
+.app-main:has(.poncho-search) .table thead th:hover .sort-icon,
+.app-main:has(.poncho-search) .table thead th.sort-asc .sort-icon,
+.app-main:has(.poncho-search) .table thead th.sort-desc .sort-icon,
+.app-main:has(.poncho-search) .projects thead th:hover .sort-icon,
+.app-main:has(.poncho-search) .projects thead th.sort-asc .sort-icon,
+.app-main:has(.poncho-search) .projects thead th.sort-desc .sort-icon {
+  color: var(--poncho-blanco);
+}
+
+/* Filas: fondo azul principal, separador claro, sin cebra */
+.app-main:has(.poncho-search) .table tbody tr,
+.app-main:has(.poncho-search) .projects tbody tr {
+  background: var(--poncho-azul-principal);
+}
+
+/* El fondo va en las CELDAS, no solo en la fila: `.table-striped` de Bootstrap
+   pinta `> *` en las filas impares, asi que si solo pintabamos el <tr> quedaba
+   una fila con el color nuevo y la siguiente con el viejo. */
+.app-main:has(.poncho-search) .table tbody tr > *,
+.app-main:has(.poncho-search) .projects tbody tr > * {
+  --bs-table-accent-bg: transparent;
+  --bs-table-bg-type: transparent;
+  background-color: var(--poncho-azul-principal);
+}
+
+.app-main:has(.poncho-search) .table tbody tr:hover > *,
+.app-main:has(.poncho-search) .projects tbody tr:hover > * {
+  background: #2b3760;
+}
+
+.app-main:has(.poncho-search) .table tbody td,
+.app-main:has(.poncho-search) .projects tbody td {
+  padding: .9rem 1.15rem;
+  border: none;
+  border-bottom: 1px solid rgba(229, 231, 235, .25);
+  color: var(--poncho-blanco);
+  font-size: .95rem;
+  letter-spacing: -.024px;
+  vertical-align: middle;
+}
+
+.app-main:has(.poncho-search) .table tbody tr:last-child td,
+.app-main:has(.poncho-search) .projects tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.app-main:has(.poncho-search) .table tbody td a,
+.app-main:has(.poncho-search) .projects tbody td a {
+  color: var(--poncho-blanco);
+}
+
+/* Alineacion pareja entre encabezado y contenido.
+   Los th quedaban a la izquierda (prototipo) y los td al centro, porque
+   listModerno.css define `text-align: center` para las celdas del diseño
+   anterior. Se unifica en izquierda, salvo que el template pida otra cosa con
+   .text-center o .text-end (por ejemplo la columna Acciones). */
+.app-main:has(.poncho-search) .table thead th:not(.text-center):not(.text-end),
+.app-main:has(.poncho-search) .projects thead th:not(.text-center):not(.text-end),
+.app-main:has(.poncho-search) .table tbody td:not(.text-center):not(.text-end),
+.app-main:has(.poncho-search) .projects tbody td:not(.text-center):not(.text-end) {
+  text-align: left;
+}
+
+/* ---------- Botones de accion dentro de la tabla ----------
+   Radio 12px (border/border-radius/rounded-base del design system).
+   Ver = azul secundario, Editar = azul secundario, Borrar = rojo. */
+.app-main:has(.poncho-search) .table td .btn,
+.app-main:has(.poncho-search) .projects td .btn,
+.app-main:has(.poncho-search) .table td a.btn,
+.app-main:has(.poncho-search) .projects td a.btn,
+.app-main:has(.poncho-search) .table td button.btn,
+.app-main:has(.poncho-search) .projects td button.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--poncho-space-1-5);
+  padding: var(--poncho-space-1-5) var(--poncho-space-3);
+  border: none;
+  border-radius: var(--poncho-radio-base);
+  font-family: var(--poncho-font-base);
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: normal;
+  line-height: 20px;
+}
+
+/* Ver / Editar comparten el azul secundario. Los listados no usan solo las
+   clases de Bootstrap: VAT define .btn-editar y .btn-eliminar propias, por eso
+   van explicitas o quedaban con el color viejo. */
+.app-main:has(.poncho-search) .table td .btn-primary,
+.app-main:has(.poncho-search) .table td .btn-info,
+.app-main:has(.poncho-search) .table td .btn-secondary,
+.app-main:has(.poncho-search) .table td .btn-ver,
+.app-main:has(.poncho-search) .table td .btn-editar,
+.app-main:has(.poncho-search) .projects td .btn-primary,
+.app-main:has(.poncho-search) .projects td .btn-info,
+.app-main:has(.poncho-search) .projects td .btn-secondary,
+.app-main:has(.poncho-search) .projects td .btn-ver,
+.app-main:has(.poncho-search) .projects td .btn-editar {
+  background: var(--poncho-azul-secundario);
+  color: var(--poncho-blanco);
+}
+
+.app-main:has(.poncho-search) .table td .btn-danger,
+.app-main:has(.poncho-search) .table td .btn-eliminar,
+.app-main:has(.poncho-search) .projects td .btn-danger,
+.app-main:has(.poncho-search) .projects td .btn-eliminar {
+  background: var(--poncho-rojo);
+  color: var(--poncho-blanco);
+}
+
+.app-main:has(.poncho-search) .table td .btn-success,
+.app-main:has(.poncho-search) .projects td .btn-success {
+  background: var(--poncho-verde);
+  color: var(--poncho-blanco);
+}
+
+/* ---------- Paginacion ---------- */
+.app-main:has(.poncho-search) .pagination .page-link {
+  background: var(--poncho-azul-principal);
+  border: 1px solid var(--poncho-blanco);
+  color: var(--poncho-blanco);
+  font-family: var(--poncho-font-base);
+  font-size: var(--poncho-text-sm);
+}
+
+.app-main:has(.poncho-search) .pagination .page-item:first-child .page-link {
+  border-top-left-radius: var(--poncho-radio-base);
+  border-bottom-left-radius: var(--poncho-radio-base);
+}
+
+.app-main:has(.poncho-search) .pagination .page-item:last-child .page-link {
+  border-top-right-radius: var(--poncho-radio-base);
+  border-bottom-right-radius: var(--poncho-radio-base);
+}
+
+.app-main:has(.poncho-search) .pagination .page-item.active .page-link {
+  background: var(--poncho-azul-secundario);
+  border-color: var(--poncho-blanco);
+}
+
+/* Badges: NO se toca el fondo.
+   El color es informacion, no decoracion: estados de expediente, alertas,
+   tecnicos asignados, tipos. Antes se los aplanaba a texto plano
+   (background: transparent !important) imitando la columna "Estado" del
+   prototipo de CFP, y eso invisibilizaba las etiquetas de celiaquia,
+   comunicados, VAT, ciudadanos y otros 8 listados. Aca solo se alinean forma
+   y tipografia con el design system. */
+.app-main:has(.poncho-search) .table td .badge,
+.app-main:has(.poncho-search) .projects td .badge {
+  padding: .35em .7em;
+  border-radius: var(--poncho-radio-base);
+  font-family: var(--poncho-font-base);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+/* ---------- Afordancia de scroll horizontal ----------
+   Con 9-12 columnas la tabla scrollea, pero sin señal visual se lee como si
+   estuviera cortada. Las clases las pone poncho_scroll_tablas.js, que es quien
+   puede saber si el contenedor desborda: CSS no tiene forma de detectarlo.
+   La sombra va en un ::after del contenedor (pintado por encima de la tabla,
+   que tiene celdas opacas) y no intercepta clicks. */
+.app-main:has(.poncho-search) .poncho-scroll {
+  position: relative;
+}
+
+.app-main:has(.poncho-search) .poncho-scroll::before,
+.app-main:has(.poncho-search) .poncho-scroll::after {
+  content: "";
+  position: sticky;
+  top: 0;
+  display: block;
+  width: 42px;
+  height: 100%;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity .2s ease;
+}
+
+.app-main:has(.poncho-search) .poncho-scroll::before {
+  float: left;
+  left: 0;
+  margin-right: -42px;
+  background: linear-gradient(to right, rgba(0, 0, 0, .45), transparent);
+}
+
+.app-main:has(.poncho-search) .poncho-scroll::after {
+  float: right;
+  right: 0;
+  margin-left: -42px;
+  background: linear-gradient(to left, rgba(0, 0, 0, .45), transparent);
+}
+
+.app-main:has(.poncho-search) .poncho-scroll--izq::before,
+.app-main:has(.poncho-search) .poncho-scroll--der::after {
+  opacity: 1;
+}
+
+/* Barra de scroll visible y acorde a la paleta: parte del aviso es que se vea
+   que hay una barra para arrastrar. */
+.app-main:has(.poncho-search) .poncho-scroll {
+  scrollbar-color: var(--poncho-verde-azulado) transparent;
+  scrollbar-width: thin;
+}
+
+.app-main:has(.poncho-search) .poncho-scroll::-webkit-scrollbar {
+  height: 10px;
+}
+
+.app-main:has(.poncho-search) .poncho-scroll::-webkit-scrollbar-thumb {
+  background: var(--poncho-verde-azulado);
+  border-radius: 999px;
+}
+
+.app-main:has(.poncho-search) .poncho-scroll::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, .08);
+  border-radius: 999px;
+}
+
+/* Notebooks de 1280-1400px: estos listados usan columnas configurables y
+   llegan a 9-12 columnas contra las 5 del prototipo. Descontando el sidebar
+   quedan ~1000px utiles, asi que con el padding completo el contenido casi no
+   entra. Se comprime antes de que aparezca el scroll horizontal. */
+@media (max-width: 1399.98px) {
+  .app-main:has(.poncho-search) .table thead th,
+  .app-main:has(.poncho-search) .projects thead th {
+    font-size: 1rem;
+    padding: .65rem .75rem;
+  }
+
+  .app-main:has(.poncho-search) .table tbody td,
+  .app-main:has(.poncho-search) .projects tbody td {
+    font-size: .875rem;
+    padding: .7rem .75rem;
+  }
+}
+
+@media (max-width: 767.98px) {
+  .app-main:has(.poncho-search) .table thead th,
+  .app-main:has(.poncho-search) .projects thead th {
+    font-size: 1rem;
+    padding: .75rem .9rem;
+  }
+
+  .app-main:has(.poncho-search) .table tbody td,
+  .app-main:has(.poncho-search) .projects tbody td {
+    padding: .75rem .9rem;
+  }
+}

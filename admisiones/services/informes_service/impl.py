@@ -1,43 +1,75 @@
-from django.shortcuts import get_object_or_404
-from django.template.loader import render_to_string, get_template
-from datetime import date, datetime
-
-from django.utils import timezone
-from django.utils.text import slugify
-from django.utils.html import strip_tags
-from django.conf import settings
-from django.core.files.base import ContentFile
-from io import BytesIO
-from docx import Document
-from htmldocx import HtmlToDocx
-from ..docx_service import DocumentTemplateService, AdmisionesContextService
-from django.db import transaction
-from django.contrib import messages
 import logging
-import traceback
 import os
+import traceback
+from datetime import date, datetime
+from io import BytesIO
+from typing import Any
+
+from django.conf import settings
+from django.contrib import messages
+from django.core.files.base import ContentFile
+from django.db import transaction
+from django.shortcuts import get_object_or_404
+from django.template import Context, Engine, TemplateSyntaxError
+from django.template.loader import get_template, render_to_string
+from django.utils import timezone
+from django.utils.html import strip_tags
+from django.utils.text import slugify
+from docx import Document
+from docx.enum.table import WD_CELL_VERTICAL_ALIGNMENT, WD_TABLE_ALIGNMENT
+from docx.oxml import OxmlElement, parse_xml
+from docx.oxml.ns import nsdecls, qn
+from docx.shared import Mm, Pt
+from htmldocx import HtmlToDocx
 
 from ...utils import generar_texto_comidas
+from ..docx_service import AdmisionesContextService, DocumentTemplateService
+from admisiones.forms.admisiones_forms import (
+    InformeTecnicoBaseForm,
+    InformeTecnicoJuridicoForm,
+)
+from admisiones.models.admisiones import (
+    Admision,
+    CampoASubsanar,
+    InformeComplementario,
+    InformeComplementarioCampos,
+    InformeTecnico,
+    InformeTecnicoComplementarioPDF,
+    InformeTecnicoPDF,
+    ObservacionGeneralInforme,
+)
 
 logger = logging.getLogger("admisiones.services.informes")
 
-from admisiones.models.admisiones import (
-    InformeTecnico,
-    CampoASubsanar,
-    ObservacionGeneralInforme,
-    InformeTecnicoPDF,
-    Admision,
-    InformeComplementario,
-    InformeComplementarioCampos,
-    InformeTecnicoComplementarioPDF,
-)
-from admisiones.forms.admisiones_forms import (
-    InformeTecnicoJuridicoForm,
-    InformeTecnicoBaseForm,
+MATRICES_DE_PRESTACIONES = {
+    "Prestaciones aprobadas en el último convenio": (
+        "prestaciones_ultimo_convenio",
+        "aprobadas_ultimo_convenio",
+    ),
+    "Solicitudes": ("solicitudes", "solicitudes"),
+    "Prestaciones Aprobadas": ("prestaciones_aprobadas", "aprobadas"),
+}
+COMIDAS = ("desayuno", "almuerzo", "merienda", "cena")
+DIAS_SEMANA = (
+    "lunes",
+    "martes",
+    "miercoles",
+    "jueves",
+    "viernes",
+    "sabado",
+    "domingo",
 )
 
 
 class InformeService:
+    COLOR_BORDE_TABLA_TEMPLATE = "7A8EA1"
+    COLOR_ENCABEZADO_TABLA_TEMPLATE = "EAF3F2"
+    ANCHO_PAGINA_TEMPLATE_MM = 210
+    ALTO_PAGINA_TEMPLATE_MM = 297
+    MARGEN_PAGINA_TEMPLATE_MM = 20
+    FUENTE_BASE_TEMPLATE = "Times New Roman"
+    TAMANIO_FUENTE_BASE_TEMPLATE_PT = 12
+
     @staticmethod
     def _get_base_url():
         """Helper to get base URL for PDF generation"""
@@ -48,11 +80,19 @@ class InformeService:
         )
 
     @staticmethod
-    def _generate_docx_content(html_content, informe_pk=None):
+    def _generate_docx_content(
+        html_content,
+        informe_pk=None,
+        estilizar_tablas_templates=False,
+    ):
         """Helper to generate DOCX content with fallback"""
         try:
             doc = Document()
+            if estilizar_tablas_templates:
+                InformeService._configurar_documento_template(doc)
             HtmlToDocx().add_html_to_document(html_content, doc)
+            if estilizar_tablas_templates:
+                InformeService._aplicar_estilo_tablas_templates(doc)
             buffer = BytesIO()
             doc.save(buffer)
             buffer.seek(0)
@@ -66,6 +106,8 @@ class InformeService:
             )
             try:
                 fallback_doc = Document()
+                if estilizar_tablas_templates:
+                    InformeService._configurar_documento_template(fallback_doc)
                 fallback_text = strip_tags(html_content)
                 for line in filter(
                     None, (segment.strip() for segment in fallback_text.splitlines())
@@ -176,6 +218,123 @@ class InformeService:
             return []
 
     @staticmethod
+    def get_campos_agrupados_informe(informe) -> list[dict[str, Any]]:
+        """Agrupa campos visibles y conserva matrices de prestaciones por día."""
+        titulo_campos_especificos = {
+            "base": "Campos Específicos - Organización de Base",
+            "juridico": "Campos Específicos - Organización Jurídica",
+        }.get(getattr(informe, "tipo", None), "Campos Específicos")
+        grupos = {
+            "Datos de la Organización": [],
+            "Datos del Representante": [],
+            "Datos del Comedor/Merendero": [],
+            "Responsable de la Tarjeta": [],
+            "Prestaciones aprobadas en el último convenio": [],
+            "Solicitudes": [],
+            "Prestaciones Aprobadas": [],
+            "Información Adicional": [],
+            titulo_campos_especificos: [],
+            "Resolución de pago": [],
+        }
+        valores = dict(InformeService.get_campos_visibles_informe(informe))
+        es_renovacion = getattr(getattr(informe, "admision", None), "tipo", None) == (
+            "renovacion"
+        )
+        campos_especificos = {
+            "declaracion_jurada_recepcion_subsidios",
+            "constancia_inexistencia_percepcion_otros_subsidios",
+            "organizacion_avalista_1",
+            "organizacion_avalista_2",
+            "material_difusion_vinculado",
+            "if_relevamiento",
+            "validacion_registro_nacional",
+            "IF_relevamiento_territorial",
+        }
+        for field in informe._meta.fields:
+            nombre = str(field.verbose_name)
+            if nombre not in valores:
+                continue
+            es_campo_renovacion = field.name.startswith(
+                ("aprobadas_ultimo_convenio_", "resolucion_de_pago_", "monto_")
+            )
+            if es_campo_renovacion and not es_renovacion:
+                continue
+            if field.name in campos_especificos:
+                grupo = titulo_campos_especificos
+            elif field.name == "expediente_nro" or "organizacion" in field.name:
+                grupo = "Datos de la Organización"
+            elif field.name.startswith("representante_"):
+                grupo = "Datos del Representante"
+            elif field.name.startswith("responsable_tarjeta_"):
+                grupo = "Responsable de la Tarjeta"
+            elif field.name.startswith("aprobadas_ultimo_convenio_"):
+                grupo = "Prestaciones aprobadas en el último convenio"
+            elif field.name.startswith("solicitudes_"):
+                grupo = "Solicitudes"
+            elif field.name.startswith("aprobadas_"):
+                grupo = "Prestaciones Aprobadas"
+            elif field.name.startswith(("resolucion_de_pago_", "monto_")):
+                grupo = "Resolución de pago"
+            elif field.name.endswith("_espacio") or field.name in {
+                "tipo_espacio",
+                "nombre_espacio",
+                "barrio_espacio",
+            }:
+                grupo = "Datos del Comedor/Merendero"
+            else:
+                grupo = "Información Adicional"
+            grupos[grupo].append(
+                {
+                    "identificador": field.name,
+                    "nombre": nombre,
+                    "valor": valores[nombre],
+                }
+            )
+
+        secciones = []
+        for titulo, campos in grupos.items():
+            if not campos:
+                continue
+            matriz = MATRICES_DE_PRESTACIONES.get(titulo)
+            if not matriz:
+                secciones.append(
+                    {
+                        "titulo": titulo,
+                        "tipo": "campos",
+                        "campos": campos,
+                    }
+                )
+                continue
+
+            identificador, prefijo = matriz
+            campos_por_identificador = {
+                campo["identificador"]: campo for campo in campos
+            }
+            filas = []
+            for comida in COMIDAS:
+                campos_fila = [
+                    campos_por_identificador[f"{prefijo}_{comida}_{dia}"]
+                    for dia in DIAS_SEMANA
+                    if f"{prefijo}_{comida}_{dia}" in campos_por_identificador
+                ]
+                if campos_fila:
+                    filas.append(
+                        {
+                            "titulo": comida.capitalize(),
+                            "campos": campos_fila,
+                        }
+                    )
+            secciones.append(
+                {
+                    "titulo": titulo,
+                    "tipo": "matriz",
+                    "identificador": identificador,
+                    "filas": filas,
+                }
+            )
+        return secciones
+
+    @staticmethod
     def _formatear_valor_campo(informe, field):
         value = getattr(informe, field.name)
 
@@ -227,6 +386,115 @@ class InformeService:
                 extra={"tipo": tipo, "informe_pk": pk},
             )
             return None
+
+    @classmethod
+    def _configurar_documento_template(cls, documento):
+        """Configura la hoja base compartida por editor y DOCX dinámico."""
+
+        seccion = documento.sections[0]
+        seccion.page_width = Mm(cls.ANCHO_PAGINA_TEMPLATE_MM)
+        seccion.page_height = Mm(cls.ALTO_PAGINA_TEMPLATE_MM)
+        seccion.top_margin = Mm(cls.MARGEN_PAGINA_TEMPLATE_MM)
+        seccion.right_margin = Mm(cls.MARGEN_PAGINA_TEMPLATE_MM)
+        seccion.bottom_margin = Mm(cls.MARGEN_PAGINA_TEMPLATE_MM)
+        seccion.left_margin = Mm(cls.MARGEN_PAGINA_TEMPLATE_MM)
+
+        estilo_normal = documento.styles["Normal"]
+        estilo_normal.font.name = cls.FUENTE_BASE_TEMPLATE
+        estilo_normal.font.size = Pt(cls.TAMANIO_FUENTE_BASE_TEMPLATE_PT)
+
+    @classmethod
+    def _aplicar_estilo_tablas_templates(cls, documento):
+        """Aplica una grilla legible a las tablas de templates dinámicos.
+
+        htmldocx crea la estructura de la tabla pero no traslada los estilos CSS
+        del editor al documento Word. El formato se aplica sobre OOXML para que
+        el resultado no dependa de estilos HTML que el formulario no persiste.
+        """
+
+        for tabla in documento.tables:
+            tabla.alignment = WD_TABLE_ALIGNMENT.CENTER  # pylint: disable=no-member
+            cls._aplicar_bordes_tabla_template(tabla)
+            for indice_fila, fila in enumerate(tabla.rows):
+                es_encabezado = indice_fila == 0 and cls._fila_es_encabezado(fila)
+                for celda in fila.cells:
+                    celda.vertical_alignment = (  # pylint: disable=no-member
+                        WD_CELL_VERTICAL_ALIGNMENT.CENTER
+                    )
+                    cls._aplicar_margenes_celda_template(celda)
+                    for parrafo in celda.paragraphs:
+                        parrafo.paragraph_format.space_after = 0
+                        parrafo.paragraph_format.space_before = 0
+                    if es_encabezado:
+                        cls._aplicar_fondo_encabezado_template(celda)
+
+    @staticmethod
+    def _fila_es_encabezado(fila):
+        """Reconoce los <th> ya convertidos por htmldocx como texto en negrita."""
+
+        return all(
+            any(
+                run.bold
+                for parrafo in celda.paragraphs
+                for run in parrafo.runs
+                if run.text.strip()
+            )
+            for celda in fila.cells
+        )
+
+    @classmethod
+    def _aplicar_bordes_tabla_template(cls, tabla):
+        propiedades_tabla = tabla._tbl.tblPr  # pylint: disable=protected-access
+        bordes = propiedades_tabla.first_child_found_in("w:tblBorders")
+        if bordes is None:
+            bordes = OxmlElement("w:tblBorders")
+            propiedades_tabla.append(bordes)
+
+        for lado in ("top", "left", "bottom", "right", "insideH", "insideV"):
+            borde = bordes.find(qn(f"w:{lado}"))
+            if borde is None:
+                borde = OxmlElement(f"w:{lado}")
+                bordes.append(borde)
+            borde.set(qn("w:val"), "single")
+            borde.set(qn("w:sz"), "6")
+            borde.set(qn("w:space"), "0")
+            borde.set(qn("w:color"), cls.COLOR_BORDE_TABLA_TEMPLATE)
+
+    @staticmethod
+    def _aplicar_margenes_celda_template(celda):
+        propiedades_celda = (
+            celda._tc.get_or_add_tcPr()
+        )  # pylint: disable=protected-access
+        margenes = propiedades_celda.first_child_found_in("w:tcMar")
+        if margenes is None:
+            margenes = OxmlElement("w:tcMar")
+            propiedades_celda.append(margenes)
+
+        for lado, valor in (
+            ("top", "80"),
+            ("start", "110"),
+            ("bottom", "80"),
+            ("end", "110"),
+        ):
+            margen = margenes.find(qn(f"w:{lado}"))
+            if margen is None:
+                margen = OxmlElement(f"w:{lado}")
+                margenes.append(margen)
+            margen.set(qn("w:w"), valor)
+            margen.set(qn("w:type"), "dxa")
+
+    @classmethod
+    def _aplicar_fondo_encabezado_template(cls, celda):
+        propiedades_celda = (
+            celda._tc.get_or_add_tcPr()
+        )  # pylint: disable=protected-access
+        sombreado = propiedades_celda.find(qn("w:shd"))
+        if sombreado is None:
+            sombreado = OxmlElement("w:shd")
+            propiedades_celda.append(sombreado)
+        sombreado.set(qn("w:val"), "clear")
+        sombreado.set(qn("w:color"), "auto")
+        sombreado.set(qn("w:fill"), cls.COLOR_ENCABEZADO_TABLA_TEMPLATE)
 
     @staticmethod
     def actualizar_estado_informe(informe, nuevo_estado, tipo=None):
@@ -289,6 +557,83 @@ class InformeService:
                 "No se pudo procesar template DOCX para informe %s: %s",
                 getattr(informe, "pk", None),
                 str(e),
+            )
+            return None
+
+    @staticmethod
+    def generar_docx_con_version_publicada(informe, version):
+        """Renderiza una versión publicada del Gestor de templates a DOCX."""
+
+        try:
+            contexto = AdmisionesContextService.preparar_contexto_informe_tecnico(
+                informe
+            )
+            contexto.update(
+                {
+                    "admision": informe.admision,
+                    "comedor": getattr(informe.admision, "comedor", None),
+                }
+            )
+            engine = Engine(debug=False, builtins=[], libraries={})
+            contenido_renderizado = engine.from_string(version.contenido_html).render(
+                Context(contexto, autoescape=True)
+            )
+            return InformeService._generate_docx_content(
+                contenido_renderizado,
+                getattr(informe, "pk", None),
+                estilizar_tablas_templates=True,
+            )
+        except TemplateSyntaxError as error:
+            logger.warning(
+                "La versión de template %s tiene sintaxis inválida: %s",
+                getattr(version, "pk", None),
+                error,
+            )
+        except Exception:
+            logger.exception(
+                "No se pudo renderizar la versión de template %s",
+                getattr(version, "pk", None),
+            )
+        return None
+
+    @staticmethod
+    def generar_docx_vista_previa(informe, version):
+        """Genera un DOCX temporal con marca de agua sin persistirlo."""
+
+        docx_content = InformeService.generar_docx_con_version_publicada(
+            informe,
+            version,
+        )
+        if not docx_content:
+            return None
+        try:
+            docx_content.seek(0)
+            documento = Document(BytesIO(docx_content.read()))
+            marca_agua = (
+                "<w:pict {namespaces}>"
+                '<v:shape id="SISOCPreviewWatermark" '
+                'o:spid="_x0000_s1025" type="#_x0000_t136" '
+                'style="position:absolute;margin-left:0;margin-top:0;'
+                "width:468pt;height:117pt;rotation:315;z-index:-251654144;"
+                'mso-position-horizontal:center;mso-position-vertical:center" '
+                'fillcolor="#d9d9d9" stroked="f">'
+                '<v:textpath style="font-family:&quot;Calibri&quot;;font-size:1pt" '
+                'string="VISTA PREVIA — DOCUMENTO NO VÁLIDO"/>'
+                "</v:shape></w:pict>"
+            ).format(namespaces=nsdecls("w", "v", "o"))
+            for seccion in documento.sections:
+                seccion.header.is_linked_to_previous = False
+                parrafo = seccion.header.paragraphs[0]
+                parrafo._p.append(parse_xml(marca_agua))
+
+            buffer = BytesIO()
+            documento.save(buffer)
+            buffer.seek(0)
+            return ContentFile(buffer.getvalue(), name="vista-previa.docx")
+        except Exception:
+            logger.exception(
+                "No se pudo aplicar la marca de agua de vista previa",
+                extra={"informe_pk": getattr(informe, "pk", None)},
             )
             return None
 
@@ -479,6 +824,9 @@ class InformeService:
         """Guarda el informe técnico."""
         try:
             from ..admisiones_service import AdmisionService
+            from ..templates_informe_tecnico_service import (
+                PlantillaInformeTecnicoService,
+            )
 
             if (
                 action == "submit"
@@ -516,12 +864,28 @@ class InformeService:
                     form.instance._state.adding = False
                     es_creacion = False
 
+            publicacion = None
+            error_template = None
+            if action == "submit":
+                publicacion, error_template = (
+                    PlantillaInformeTecnicoService.resolver_publicacion_para_admision(
+                        admision
+                    )
+                )
+
+            accion_para_estado = "draft" if error_template else action
+
             if es_creacion:
                 InformeService.preparar_informe_para_creacion(
-                    form.instance, admision.id, action
+                    form.instance,
+                    admision.id,
+                    accion_para_estado,
                 )
             else:
-                InformeService.verificar_estado_para_revision(form.instance, action)
+                InformeService.verificar_estado_para_revision(
+                    form.instance,
+                    accion_para_estado,
+                )
 
             informe = form.save(commit=False)
             informe.admision = admision
@@ -540,8 +904,25 @@ class InformeService:
             if hasattr(form, "save_m2m"):
                 form.save_m2m()
 
+            if error_template:
+                if es_creacion:
+                    AdmisionService.actualizar_estado_admision(
+                        admision,
+                        "iniciar_informe_tecnico",
+                    )
+                return {
+                    "success": False,
+                    "error": (
+                        f"{error_template} Se guardó el Informe Técnico como borrador; "
+                        "puede corregir sus validaciones e intentar nuevamente."
+                    ),
+                }
+
             if action == "submit" and informe.estado_formulario == "finalizado":
-                resultado_docx = InformeService.generar_docx_borrador(informe)
+                resultado_docx = InformeService.generar_docx_borrador(
+                    informe,
+                    publicacion,
+                )
                 if resultado_docx:
                     # Solo actualizar estado si el DOCX se generó exitosamente
                     AdmisionService.congelar_documentacion_organizacional(
@@ -550,16 +931,21 @@ class InformeService:
                     admision.estado_admision = "informe_tecnico_finalizado"
                     admision.save()
                 else:
-                    raise Exception("No se pudo generar el DOCX borrador")
+                    transaction.set_rollback(True)
+                    return {
+                        "success": False,
+                        "error": "No se pudo generar el DOCX borrador. El Informe Técnico permanece editable.",
+                    }
 
             # Actualizar estado de admisión según la acción
-            if es_creacion and action != "submit":
+            if es_creacion and accion_para_estado != "submit":
                 AdmisionService.actualizar_estado_admision(
                     admision, "iniciar_informe_tecnico"
                 )
 
             return {"success": True, "informe": informe}
         except Exception as e:
+            transaction.set_rollback(True)
             logger.exception(
                 "Error en guardar_informe",
                 extra={"admision_pk": getattr(admision, "pk", None)},
@@ -789,45 +1175,20 @@ class InformeService:
             return None
 
     @staticmethod
-    def generar_docx_borrador(informe):
-        """Genera un DOCX borrador del informe técnico para edición del técnico"""
+    def generar_docx_borrador(informe, publicacion):
+        """Genera el DOCX borrador desde la versión publicada aplicable."""
         try:
-            # Generar DOCX con docxtpl
-            docx_content = None
-            try:
-                docx_buffer = InformeService.generar_docx_con_template(informe)
-                if docx_buffer:
-                    docx_content = ContentFile(docx_buffer.getvalue(), name="tmp.docx")
-                else:
-                    raise ValueError("Template DOCX retornó None")
-            except Exception as e:
-                logger.warning("Template DOCX falló: %s, usando fallback HTML", str(e))
-                # Fallback: generar desde HTML
-                context = {
-                    "informe": informe,
-                    "texto_comidas": generar_texto_comidas(informe),
-                }
-
-                admision_tipo = InformeService._normalizar_tipo_admision(
-                    informe.admision
+            if publicacion is None or not getattr(publicacion, "version", None):
+                logger.error(
+                    "No se puede generar el DOCX del informe %s sin una publicación aplicable.",
+                    getattr(informe, "pk", None),
                 )
-                informe_tipo_map = {
-                    "base": "base",
-                    "juridico": "juridico",
-                    "juridico eclesiastico": "juridico",
-                }
-                informe_tipo = informe_tipo_map.get(informe.tipo, "base")
-                docx_template = f"admisiones/docx/{admision_tipo}_docx_informe_tecnico_{informe_tipo}.html"
+                return None
 
-                try:
-                    html_docx = render_to_string(docx_template, context)
-                    docx_content = InformeService._generate_docx_content(
-                        html_docx, getattr(informe, "pk", None)
-                    )
-                except Exception:
-                    logger.error("Fallback DOCX generation también falló")
-                    return None
-
+            docx_content = InformeService.generar_docx_con_version_publicada(
+                informe,
+                publicacion.version,
+            )
             if not docx_content:
                 return None
 
@@ -846,6 +1207,8 @@ class InformeService:
                         "informe_id": informe.id,
                         "comedor": informe.admision.comedor,
                         "archivo_docx": docx_content,
+                        "plantilla_informe_tecnico": publicacion.plantilla,
+                        "version_plantilla_informe_tecnico": publicacion.version,
                     },
                 )
 

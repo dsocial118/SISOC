@@ -1,7 +1,9 @@
 from django.contrib import admin
 
+from centrodeinfancia.forms import NominaCentroInfanciaAdminForm
 from centrodeinfancia.models import (
     AccesoCDI,
+    AsistenciaNominaCentroInfancia,
     CentroDeInfancia,
     DepartamentoIpi,
     FormularioCDI,
@@ -51,9 +53,22 @@ class DepartamentoIpiAdmin(admin.ModelAdmin):
 
 @admin.register(NominaCentroInfancia)
 class NominaCentroInfanciaAdmin(admin.ModelAdmin):
+    form = NominaCentroInfanciaAdminForm
     list_display = ("id", "centro", "ciudadano", "estado", "fecha")
     list_filter = ("estado",)
     search_fields = ("centro__nombre", "ciudadano__apellido", "ciudadano__nombre")
+
+
+@admin.register(AsistenciaNominaCentroInfancia)
+class AsistenciaNominaCentroInfanciaAdmin(admin.ModelAdmin):
+    list_display = ("id", "nomina", "fecha", "presente", "registrado_por")
+    list_filter = ("fecha", "presente")
+    search_fields = (
+        "nomina__centro__nombre",
+        "nomina__ciudadano__apellido",
+        "nomina__ciudadano__nombre",
+    )
+    list_select_related = ("nomina", "registrado_por")
 
 
 @admin.register(Trabajador)

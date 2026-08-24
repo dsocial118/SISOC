@@ -1,5 +1,6 @@
 from django.contrib import admin
 
+from core.admin_import_export import BaseExportAdmin, BaseImportExportAdmin
 from comedores.models import (
     CapacitacionComedorCertificado,
     ComedorDatosConvenioPnud,
@@ -32,7 +33,7 @@ class ComedorAdmin(admin.ModelAdmin):
         "ultimo_estado__estado_general__estado_actividad",
     ]
     search_fields = ["nombre", "codigo_de_proyecto"]
-    readonly_fields = ["fecha_validado"]
+    readonly_fields = ["fecha_validado", "mes_ejecucion"]
 
 
 @admin.register(HistorialValidacion)
@@ -44,12 +45,31 @@ class HistorialValidacionAdmin(admin.ModelAdmin):
 
 
 admin.site.register(Observacion)
-admin.site.register(TipoDeComedor)
-admin.site.register(ValorComida)
-admin.site.register(Programas)
 admin.site.register(Nomina)
 admin.site.register(Referente)
 admin.site.register(ImagenComedor)
+
+
+@admin.register(TipoDeComedor)
+class TipoDeComedorAdmin(BaseImportExportAdmin):
+    list_display = ("id", "nombre")
+    search_fields = ("nombre",)
+
+
+# `Programas.usa_admision_para_nomina` cambia el flujo de nómina del comedor:
+# se exporta para consulta, pero el alta/edición sigue siendo manual.
+@admin.register(Programas)
+class ProgramasAdmin(BaseExportAdmin):
+    list_display = ("id", "nombre", "usa_admision_para_nomina")
+    list_filter = ("usa_admision_para_nomina",)
+    search_fields = ("nombre",)
+
+
+# Valores de comida: impacto económico directo, solo exportación.
+@admin.register(ValorComida)
+class ValorComidaAdmin(BaseExportAdmin):
+    list_display = ("id", "tipo", "valor", "fecha")
+    list_filter = ("tipo", "fecha")
 
 
 @admin.register(ComedorDatosConvenioPnud)

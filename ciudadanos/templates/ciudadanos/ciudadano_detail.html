@@ -1573,7 +1573,7 @@
               font-size: 0.75rem;
               margin-left: 0.5rem">Activo</span>
                             </h5>
-                            {% if expediente_actual %}
+                            {% if celiaquia_resumen.legajo_actual %}
                                 <div style="display: grid;
                                             grid-template-columns: 1fr 1fr;
                                             gap: 1rem;
@@ -1583,21 +1583,21 @@
                                         <div style="font-size: 0.95rem;
                                                     color: rgba(255,255,255,0.95);
                                                     margin-top: 0.25rem">
-                                            {{ expediente_actual.expediente.estado.nombre }}
+                                            {{ celiaquia_resumen.legajo_actual.estado_expediente }}
                                         </div>
                                     </div>
                                     <div>
                                         <small style="color: rgba(255,255,255,0.7);">Estado Legajo</small>
                                         <div style="font-size: 0.95rem;
                                                     color: rgba(255,255,255,0.95);
-                                                    margin-top: 0.25rem">{{ expediente_actual.estado.nombre }}</div>
+                                                    margin-top: 0.25rem">{{ celiaquia_resumen.legajo_actual.estado_legajo }}</div>
                                     </div>
                                     <div>
                                         <small style="color: rgba(255,255,255,0.7);">Resultado Cruce</small>
                                         <div style="font-size: 0.95rem;
                                                     color: rgba(255,255,255,0.95);
                                                     margin-top: 0.25rem">
-                                            {{ expediente_actual.get_resultado_sintys_display }}
+                                            {{ celiaquia_resumen.legajo_actual.resultado_cruce }}
                                         </div>
                                     </div>
                                     <div>
@@ -1605,7 +1605,7 @@
                                         <div style="font-size: 0.95rem;
                                                     color: rgba(255,255,255,0.95);
                                                     margin-top: 0.25rem">
-                                            {{ expediente_actual.get_estado_cupo_display }}
+                                            {{ celiaquia_resumen.legajo_actual.estado_cupo }}
                                         </div>
                                     </div>
                                     <div>
@@ -1613,7 +1613,7 @@
                                         <div style="font-size: 0.95rem;
                                                     color: rgba(255,255,255,0.95);
                                                     margin-top: 0.25rem">
-                                            {{ expediente_actual.es_titular_activo|yesno:"Si,No" }}
+                                            {{ celiaquia_resumen.legajo_actual.es_titular_activo|yesno:"Si,No" }}
                                         </div>
                                     </div>
                                     <div>
@@ -1621,11 +1621,11 @@
                                         <div style="font-size: 0.95rem;
                                                     color: rgba(255,255,255,0.95);
                                                     margin-top: 0.25rem">
-                                            {{ expediente_actual.get_revision_tecnico_display }}
+                                            {{ celiaquia_resumen.legajo_actual.revision_tecnica }}
                                         </div>
                                     </div>
                                 </div>
-                                {% if expedientes_celiaquia.count > 1 %}
+                                {% if celiaquia_resumen.historial|length > 1 %}
                                     <h6 style="margin-top: 1.5rem;
                                                margin-bottom: 1rem;
                                                border-top: 1px solid rgba(255,255,255,0.1);
@@ -1639,11 +1639,11 @@
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {% for exp in expedientes_celiaquia %}
+                                            {% for legajo in celiaquia_resumen.historial %}
                                                 <tr>
-                                                    <td>{{ exp.estado.nombre }}</td>
-                                                    <td>{{ exp.get_estado_cupo_display }}</td>
-                                                    <td>{{ exp.creado_en|date:"d/m/Y H:i" }}</td>
+                                                    <td>{{ legajo.estado_legajo }}</td>
+                                                    <td>{{ legajo.estado_cupo }}</td>
+                                                    <td>{{ legajo.creado_en|date:"d/m/Y H:i" }}</td>
                                                 </tr>
                                             {% endfor %}
                                         </tbody>

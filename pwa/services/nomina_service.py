@@ -1,4 +1,6 @@
+import logging
 import re
+import subprocess
 from datetime import date
 
 from django.core.exceptions import ValidationError
@@ -15,6 +17,7 @@ from pwa.models import (
     ActividadEspacioPWA,
     InscriptoActividadEspacioPWA,
     NominaEspacioPWA,
+    NominaDestinatariosDocumentoPWA,
     NominaObservacionPWA,
     RegistroAsistenciaNominaPWA,
 )
@@ -22,8 +25,10 @@ from pwa.services.auditoria_operacion_service import registrar_evento_operacion
 from pwa.services.nomina_destinatarios_pdf_service import (
     generar_nomina_destinatarios_pdf,
 )
+from pwa.services.nomina_queryset_service import get_nomina_queryset_for_comedor
 
 DNI_REGEX = re.compile(r"^\d{7,8}$")
+logger = logging.getLogger("django")
 
 
 def _nomina_comedor_id(nomina: Nomina):
@@ -86,13 +91,13 @@ def _snapshot_registro_asistencia(
 
 
 def _active_nomina_queryset(*, comedor_id: int):
-    return Nomina.objects.filter(
-        (
-            Q(admision__comedor_id=comedor_id)
-            | Q(comedor_id=comedor_id, admision__isnull=True)
-        ),
-        deleted_at__isnull=True,
-    ).exclude(estado=Nomina.ESTADO_BAJA)
+    return (
+        get_nomina_queryset_for_comedor(comedor_id)
+        .filter(
+            deleted_at__isnull=True,
+        )
+        .exclude(estado=Nomina.ESTADO_BAJA)
+    )
 
 
 def _programa_nombre_normalizado(comedor: Comedor | None) -> str:
@@ -1023,17 +1028,26 @@ def registrar_asistencia_nomina_mes_actual(*, nomina: Nomina, actor):
 
 @transaction.atomic
 def sync_asistencia_alimentaria_nomina_mes_actual(
-    *, comedor_id: int, actor, selected_nomina_ids: list[int]
+    *, comedor_id: int, actor, selected_nomina_ids: list[int], periodo_referencia: date
 ):
     validar_asistencia_nomina_habilitada()
-    periodo_referencia = get_periodo_mensual_actual()
     comedor = Comedor.objects.get(pk=comedor_id)
-    queryset = (
-        _active_nomina_queryset(comedor_id=comedor_id)
-        .select_related("perfil_pwa")
-        .filter(Q(perfil_pwa__asistencia_alimentaria=True) | Q(perfil_pwa__isnull=True))
-        .order_by("id")
+    if NominaDestinatariosDocumentoPWA.objects.filter(
+        comedor_id=comedor_id,
+        periodo_referencia=periodo_referencia,
+    ).exists():
+        raise ValidationError(
+            {"periodo": "Ya existe una nómina PDF generada para este período."}
+        )
+    queryset = _active_nomina_queryset(comedor_id=comedor_id).select_related(
+        "perfil_pwa"
     )
+    programa_nombre = str(getattr(comedor.programa, "nombre", "") or "").strip().lower()
+    if programa_nombre != "alimentar comunidad":
+        queryset = queryset.filter(
+            Q(perfil_pwa__asistencia_alimentaria=True) | Q(perfil_pwa__isnull=True)
+        )
+    queryset = queryset.order_by("id")
     valid_nomina_ids = set(queryset.values_list("id", flat=True))
     selected_ids = {int(nomina_id) for nomina_id in selected_nomina_ids}
     invalid_ids = sorted(selected_ids - valid_nomina_ids)
@@ -1106,12 +1120,21 @@ def sync_asistencia_alimentaria_nomina_mes_actual(
             },
         )
 
-    documento_nomina = generar_nomina_destinatarios_pdf(
-        comedor=comedor,
-        periodo_referencia=periodo_referencia,
-        actor=actor,
-        nomina_ids=sorted(selected_ids),
-    )
+    try:
+        documento_nomina = generar_nomina_destinatarios_pdf(
+            comedor=comedor,
+            periodo_referencia=periodo_referencia,
+            actor=actor,
+        )
+    except (OSError, RuntimeError, subprocess.SubprocessError) as exc:
+        logger.exception(
+            "No se pudo generar la nómina PDF del comedor %s para %s",
+            comedor_id,
+            periodo_referencia,
+        )
+        raise ValidationError(
+            {"documento": "No se pudo generar la nómina PDF. Intente nuevamente."}
+        ) from exc
 
     return {
         "periodo_referencia": periodo_referencia,

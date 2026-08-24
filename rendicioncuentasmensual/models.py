@@ -86,14 +86,15 @@ class DocumentacionAdjunta(SoftDeleteModelMixin, models.Model):
             "codigo": CATEGORIA_FORMULARIO_III_ALIMENTARIO,
             "label": "Formulario III - Desagregado por Facturas Prestación Alimentaria",
             "required": True,
-            "multiple": False,
+            "multiple": True,
             "order": 3,
         },
         {
             "codigo": CATEGORIA_FORMULARIO_III_SIPH,
             "label": "Formulario III - Desagregado por Facturas SIPH",
-            "required": True,
-            "multiple": False,
+            "description": "Este documento es obligatorio si presentó actividades para este Convenio",
+            "required": False,
+            "multiple": True,
             "order": 4,
         },
         {
@@ -113,7 +114,8 @@ class DocumentacionAdjunta(SoftDeleteModelMixin, models.Model):
         {
             "codigo": CATEGORIA_FORMULARIO_V_SIPH,
             "label": "Formulario V - Certificación de SIPH",
-            "required": True,
+            "description": "Este documento es obligatorio si presentó actividades para este Convenio",
+            "required": False,
             "multiple": False,
             "order": 7,
         },
@@ -134,7 +136,7 @@ class DocumentacionAdjunta(SoftDeleteModelMixin, models.Model):
         {
             "codigo": CATEGORIA_COMPROBANTES,
             "label": "Comprobante/s",
-            "required": True,
+            "required": False,
             "multiple": True,
             "order": 10,
         },
@@ -253,6 +255,12 @@ class DocumentacionAdjunta(SoftDeleteModelMixin, models.Model):
                 "label": "Formulario VI - Planilla de Pagos",
                 "filename": "FORM.VI.RMC.AF.1.xlsx",
                 "order": 8,
+            },
+            {
+                "codigo": CATEGORIA_PLANILLA_SEGUROS,
+                "label": "Planilla de Seguros",
+                "filename": "Planilla.II.Seguros.Actualizacion.-.Tradicional.docx",
+                "order": 9,
             },
         ),
     }
@@ -401,6 +409,39 @@ class RendicionCuentaMensual(SoftDeleteModelMixin, models.Model):
         (ESTADO_FINALIZADA, "Presentación finalizada"),
     ]
 
+    ETAPA_CARGA_DOCUMENTACION = "carga_documentacion"
+    ETAPA_REVISION_DOCUMENTACION = "revision_documentacion"
+    ETAPA_REVISION_AUDITORIA = "revision_auditoria"
+    ETAPA_AUDITORIA = "auditoria"
+    ETAPA_REGULARIZACION = "regularizacion"
+
+    ETAPA_PROCESO_CHOICES = [
+        (ETAPA_CARGA_DOCUMENTACION, "Carga de documentación"),
+        (ETAPA_REVISION_DOCUMENTACION, "Revisión Territorial"),
+        (ETAPA_REVISION_AUDITORIA, "Revisión de Auditoría"),
+        (ETAPA_AUDITORIA, "Auditoría"),
+        (ETAPA_REGULARIZACION, "Regularización"),
+    ]
+
+    SUBESTADO_PENDIENTE = "pendiente"
+    SUBESTADO_EN_CURSO = "en_curso"
+    SUBESTADO_PENDIENTE_CORRECCIONES = "pendiente_correcciones"
+    SUBESTADO_SUBSANADO = "subsanado"
+    SUBESTADO_FINALIZADA = "finalizada"
+    SUBESTADO_FINALIZADA_CON_OBSERVACIONES = "finalizada_con_observaciones"
+
+    SUBESTADO_PROCESO_CHOICES = [
+        (SUBESTADO_PENDIENTE, "Pendiente"),
+        (SUBESTADO_EN_CURSO, "En curso"),
+        (SUBESTADO_PENDIENTE_CORRECCIONES, "Pendiente de correcciones"),
+        (SUBESTADO_SUBSANADO, "Subsanado"),
+        (SUBESTADO_FINALIZADA, "Finalizada"),
+        (
+            SUBESTADO_FINALIZADA_CON_OBSERVACIONES,
+            "Finalizada con observaciones",
+        ),
+    ]
+
     LINEA_PROGRAMATICA_CHOICES = [
         (LINEA_SECOS, "Abordaje Comunitario - Linea Secos"),
         (LINEA_TRADICIONAL, "Abordaje Comunitario - Linea Tradicional"),
@@ -424,6 +465,13 @@ class RendicionCuentaMensual(SoftDeleteModelMixin, models.Model):
     comedor = models.ForeignKey(
         Comedor,
         on_delete=models.SET_NULL,
+        related_name="rendiciones_cuentas_mensuales",
+        null=True,
+        blank=True,
+    )
+    proyecto = models.ForeignKey(
+        "organizaciones.ProyectoOrganizacion",
+        on_delete=models.PROTECT,
         related_name="rendiciones_cuentas_mensuales",
         null=True,
         blank=True,
@@ -472,6 +520,42 @@ class RendicionCuentaMensual(SoftDeleteModelMixin, models.Model):
         blank=True,
         null=True,
     )
+    etapa_proceso = models.CharField(
+        max_length=30,
+        choices=ETAPA_PROCESO_CHOICES,
+        default=ETAPA_CARGA_DOCUMENTACION,
+        verbose_name="Etapa del proceso",
+    )
+    subestado_proceso = models.CharField(
+        max_length=35,
+        choices=SUBESTADO_PROCESO_CHOICES,
+        default=SUBESTADO_EN_CURSO,
+        verbose_name="Subestado del proceso",
+    )
+    monto_rendido = models.DecimalField(
+        max_digits=15,
+        decimal_places=2,
+        blank=True,
+        null=True,
+        verbose_name="Monto rendido",
+    )
+    fecha_validacion_territorial = models.DateTimeField(blank=True, null=True)
+    fecha_validacion_auditoria = models.DateTimeField(blank=True, null=True)
+    fecha_carga_auditoria = models.DateTimeField(blank=True, null=True)
+    fecha_auditada = models.DateTimeField(blank=True, null=True)
+    acta_auditoria = models.FileField(
+        upload_to="rendicioncuentasmensual/auditoria/actas/",
+        blank=True,
+        null=True,
+        verbose_name="PDF Acta de Auditoría",
+    )
+    fecha_regularizacion = models.DateTimeField(blank=True, null=True)
+    documento_regularizacion = models.FileField(
+        upload_to="rendicioncuentasmensual/auditoria/regularizaciones/",
+        blank=True,
+        null=True,
+        verbose_name="PDF Regularización",
+    )
     usuario_creador = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
@@ -503,6 +587,66 @@ class RendicionCuentaMensual(SoftDeleteModelMixin, models.Model):
         ]
         verbose_name = "Rendición de Cuenta Mensual"
         verbose_name_plural = "Rendiciones de Cuenta Mensuales"
+
+    @property
+    def validacion_territorial_finalizada(self):
+        return self.fecha_validacion_territorial is not None or self.etapa_proceso in {
+            self.ETAPA_REVISION_AUDITORIA,
+            self.ETAPA_AUDITORIA,
+            self.ETAPA_REGULARIZACION,
+        }
+
+    @property
+    def validacion_auditoria_finalizada(self):
+        return self.fecha_validacion_auditoria is not None or self.etapa_proceso in {
+            self.ETAPA_AUDITORIA,
+            self.ETAPA_REGULARIZACION,
+        }
+
+    @property
+    def cargada_para_auditoria(self):
+        return self.fecha_carga_auditoria is not None or self.etapa_proceso in {
+            self.ETAPA_AUDITORIA,
+            self.ETAPA_REGULARIZACION,
+        }
+
+    @property
+    def auditada(self):
+        return (
+            self.fecha_auditada is not None
+            or (
+                self.etapa_proceso == self.ETAPA_AUDITORIA
+                and self.subestado_proceso
+                in {
+                    self.SUBESTADO_FINALIZADA,
+                    self.SUBESTADO_FINALIZADA_CON_OBSERVACIONES,
+                }
+            )
+            or self.etapa_proceso == self.ETAPA_REGULARIZACION
+        )
+
+    @property
+    def regularizada(self):
+        return self.fecha_regularizacion is not None or (
+            self.etapa_proceso == self.ETAPA_REGULARIZACION
+            and self.subestado_proceso == self.SUBESTADO_FINALIZADA
+        )
+
+    @property
+    def estado_proceso_display(self):
+        if (
+            self.etapa_proceso == self.ETAPA_AUDITORIA
+            and self.subestado_proceso == self.SUBESTADO_FINALIZADA
+        ):
+            return "Auditoría finalizada sin observaciones"
+        if (
+            self.etapa_proceso == self.ETAPA_AUDITORIA
+            and self.subestado_proceso == self.SUBESTADO_FINALIZADA_CON_OBSERVACIONES
+        ):
+            return "Auditoría finalizada con observaciones"
+        if self.regularizada:
+            return "Rendición regularizada tras Auditoría"
+        return f"{self.get_etapa_proceso_display()} {self.get_subestado_proceso_display().lower()}"
 
     @property
     def arvhios_adjuntos(self):  # compat legacy (typo histórico)

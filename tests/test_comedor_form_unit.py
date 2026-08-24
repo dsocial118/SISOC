@@ -65,6 +65,21 @@ def test_referente_clean_mail_paths(mocker):
     validator.assert_called_once_with("a@b.com")
 
 
+def test_comedor_form_requires_explicit_caritas_selection():
+    field = module.ComedorForm.base_fields["es_caritas"]
+
+    assert field.required is True
+    assert list(field.widget.choices) == [
+        ("", "---------"),
+        ("True", "Sí"),
+        ("False", "No"),
+    ]
+    assert field.clean("True") is True
+    assert field.clean("False") is False
+    with pytest.raises(ValidationError):
+        field.clean("")
+
+
 def test_imagen_comedor_form_rejects_files_over_3mb():
     form = module.ImagenComedorForm.__new__(module.ImagenComedorForm)
 
@@ -166,6 +181,39 @@ def test_clean_validates_missing_and_mismatches(mocker):
     )
     form.clean()
     assert any(field == "motivo" for field, _ in errors)
+
+
+@pytest.mark.parametrize(
+    "programa_nombre,codigo_esperado",
+    [
+        # El form conserva el código tal como llega para los programas
+        # habilitados (no lo transforma): el input mockeado es SEC1234.
+        ("Abordaje Comunitario - Línea Secos", "SEC1234"),
+        ("Abordaje Comunitario - Línea Tradicional", "SEC1234"),
+        ("Alimentar Comunidad", None),
+        ("Otro programa", None),
+    ],
+)
+def test_clean_aplica_regla_codigo_de_proyecto(
+    mocker, programa_nombre, codigo_esperado
+):
+    form = _build_form_stub()
+    actividad = SimpleNamespace(id=1)
+    proceso = SimpleNamespace(id=2, estado_actividad_id=1)
+    mocker.patch(
+        "django.forms.models.BaseModelForm.clean",
+        return_value={
+            "programa": SimpleNamespace(nombre=programa_nombre),
+            "codigo_de_proyecto": "SEC1234",
+            "estado_general": actividad,
+            "subestado": proceso,
+            "motivo": None,
+        },
+    )
+
+    cleaned_data = form.clean()
+
+    assert cleaned_data["codigo_de_proyecto"] == codigo_esperado
 
 
 def test_restrict_estado_fields_for_pac_preserves_previous_initials():

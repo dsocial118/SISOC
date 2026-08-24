@@ -1,5 +1,4 @@
-# Modulo extenso de vistas del programa; orquesta helpers internos de
-# ComedorService y del modulo workflow (acceso protegido intencional).
+# Modulo extenso de vistas del programa y del modulo workflow.
 # pylint: disable=too-many-lines,protected-access
 import unicodedata
 from urllib.parse import quote_plus
@@ -22,7 +21,11 @@ from django.views.generic import (
     UpdateView,
 )
 
-from comedores.services.comedor_service import ComedorService
+from ciudadanos.api import (
+    consultar_ciudadano_renaper,
+    prevalidar_ciudadano_renaper,
+    resolver_ciudadano_renaper,
+)
 from core.mixins import CSVExportMixin
 from core.models import Provincia
 from core.soft_delete.view_helpers import SoftDeleteDeleteViewMixin
@@ -171,72 +174,12 @@ def _puede_exportar(user):
     return user_has_permission_code(user, "auth.role_exportar_a_csv")
 
 
-def _extraer_persona_ciudadano(ciudadano):
-    sexo_raw = str(ciudadano.sexo or "")
-    sexo_normalizado = _normalizar_sexo_renaper(sexo_raw)
-    fecha_nacimiento = ciudadano.fecha_nacimiento
-    return {
-        "dni": str(ciudadano.documento or ""),
-        "nombre": ciudadano.nombre or "",
-        "apellido": ciudadano.apellido or "",
-        "genero": _display_sexo_renaper(sexo_raw, sexo_normalizado),
-        "sexo": sexo_normalizado,
-        "fecha_nacimiento": (fecha_nacimiento.isoformat() if fecha_nacimiento else ""),
-        "edad": ciudadano.edad,
-        "telefono": ciudadano.telefono or "",
-        "ciudadano_id": ciudadano.pk,
-    }
-
-
 def _resolver_ciudadano_registro_vpsl(dni, sexo, user):
-    resultado = ComedorService.crear_ciudadano_desde_renaper(dni, user=user, sexo=sexo)
-    if not resultado.get("success"):
-        return {
-            "success": False,
-            "message": resultado.get("message", "No se pudo validar el ciudadano."),
-        }
-    ciudadano = resultado.get("ciudadano")
-    if not ciudadano:
-        return {
-            "success": False,
-            "message": "No se obtuvo el legajo ciudadano validado.",
-        }
-    return {
-        "success": True,
-        "message": resultado.get("message", "Ciudadano validado correctamente."),
-        "data": _extraer_persona_ciudadano(ciudadano),
-        "datos_api": resultado.get("datos_api"),
-        "ciudadano": ciudadano,
-        "created": bool(resultado.get("created")),
-    }
+    return resolver_ciudadano_renaper(dni, usuario=user, sexo=sexo)
 
 
 def _prevalidar_ciudadano_registro_vpsl(dni, sexo):
-    existente = ComedorService._buscar_ciudadano_existente_por_dni_renaper(dni)
-    if existente:
-        return {
-            "success": True,
-            "message": "Ciudadano existente validado.",
-            "data": _extraer_persona_ciudadano(existente),
-            "datos_api": None,
-            "created": False,
-            "pending_creation": False,
-        }
-
-    resultado = ComedorService.obtener_datos_ciudadano_desde_renaper(dni, sexo=sexo)
-    if not resultado.get("success"):
-        return {
-            "success": False,
-            "message": resultado.get("message", "No se encontraron datos en RENAPER."),
-        }
-    return {
-        "success": True,
-        "message": resultado.get("message", "Datos obtenidos desde RENAPER."),
-        "data": _extraer_persona_renaper(resultado.get("data") or {}),
-        "datos_api": resultado.get("datos_api"),
-        "created": False,
-        "pending_creation": True,
-    }
+    return prevalidar_ciudadano_renaper(dni, sexo=sexo)
 
 
 def _buscar_registro_duplicado_en_itinerario(jornada, dni, exclude_pk=None):
@@ -343,7 +286,7 @@ def consultar_renaper_vpsl(request):
             }
         )
 
-    resultado = ComedorService.obtener_datos_ciudadano_desde_renaper(dni, sexo=sexo)
+    resultado = consultar_ciudadano_renaper(dni, sexo=sexo)
     if not resultado.get("success"):
         return JsonResponse(
             {

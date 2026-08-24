@@ -25,9 +25,11 @@ from core.soft_delete.view_helpers import (
 from iam.services import user_has_permission_code
 from rendicioncuentasmensual.models import RendicionCuentaMensual, DocumentacionAdjunta
 from rendicioncuentasmensual.services import RendicionCuentaMensualService
+from rendicioncuentasmensual.services import RendicionProcesoService
 from rendicioncuentasmensual.forms import (
     RendicionCuentaMensualForm,
     DocumentacionAdjuntaForm,
+    RendicionProcesoForm,
 )
 from rendicioncuentasmensual.filter_config import (
     BOOL_OPS,
@@ -121,7 +123,7 @@ class RendicionCuentaMensualGlobalListView(LoginRequiredMixin, ListView):
         context["filters_js"] = "custom/js/advanced_filters.js"
         context["seccion_filtros_favoritos"] = SeccionesFiltrosFavoritos.RENDICIONES
         context["breadcrumb_items"] = [
-            {"text": "Comedores", "url": reverse_lazy("comedores")},
+            {"text": "Organizaciones", "url": reverse_lazy("organizaciones")},
             {"text": "Rendiciones", "active": True},
         ]
         return context
@@ -132,6 +134,9 @@ class RendicionCuentaMensualDetailView(LoginRequiredMixin, DetailView):
     template_name = "rendicioncuentasmensual_detail.html"
     context_object_name = "rendicion_cuenta_mensual"
     REVIEW_PERMISSION_CODE = "rendicioncuentasmensual.change_rendicioncuentamensual"
+    GRUPO_TERRITORIAL = "Rendición Territorial"
+    GRUPO_AUDITORIA = "Rendición Auditoría"
+    GRUPO_ADMIN_AUDITORIA = "Administrador Auditoría"
 
     @staticmethod
     def format_validation_error(error):
@@ -148,16 +153,88 @@ class RendicionCuentaMensualDetailView(LoginRequiredMixin, DetailView):
         return str(error)
 
     @classmethod
-    def _user_can_review_documentos(cls, user):
-        return user_has_permission_code(user, cls.REVIEW_PERMISSION_CODE)
+    def _user_can_review_documentos(cls, user, rendicion=None):
+        if not user_has_permission_code(user, cls.REVIEW_PERMISSION_CODE):
+            return False
+        if rendicion is None:
+            return True
+        if rendicion.subestado_proceso != RendicionCuentaMensual.SUBESTADO_EN_CURSO:
+            return False
+        if (
+            rendicion.etapa_proceso
+            == RendicionCuentaMensual.ETAPA_REVISION_DOCUMENTACION
+        ):
+            return cls._user_can_territorial(user)
+        if rendicion.etapa_proceso == RendicionCuentaMensual.ETAPA_REVISION_AUDITORIA:
+            return cls._user_can_auditoria(user)
+        return False
 
-    def post(self, request, *args, **kwargs):
+    @classmethod
+    def _user_can_territorial(cls, user):
+        return (
+            getattr(user, "is_superuser", False)
+            or getattr(user, "groups", None)
+            and user.groups.filter(
+                name__in=[cls.GRUPO_TERRITORIAL, cls.GRUPO_ADMIN_AUDITORIA]
+            ).exists()
+        )
+
+    @classmethod
+    def _user_can_auditoria(cls, user):
+        return (
+            getattr(user, "is_superuser", False)
+            or getattr(user, "groups", None)
+            and user.groups.filter(
+                name__in=[cls.GRUPO_AUDITORIA, cls.GRUPO_ADMIN_AUDITORIA]
+            ).exists()
+        )
+
+    def post(  # pylint: disable=too-many-return-statements,too-many-branches
+        self, request, *args, **kwargs
+    ):
         rendicion = self.get_object()
+        accion_proceso = (request.POST.get("accion_proceso") or "").strip()
+        if accion_proceso:
+            acciones_territoriales = {
+                RendicionProcesoService.ACCION_INICIAR_TERRITORIAL,
+                RendicionProcesoService.ACCION_FINALIZAR_TERRITORIAL,
+            }
+            permitido = (
+                self._user_can_territorial(request.user)
+                if accion_proceso in acciones_territoriales
+                else self._user_can_auditoria(request.user)
+            )
+            if not permitido:
+                raise PermissionDenied
+            form = RendicionProcesoForm(request.POST, request.FILES)
+            if form.is_valid():
+                try:
+                    RendicionProcesoService.ejecutar(
+                        rendicion=rendicion,
+                        accion=accion_proceso,
+                        datos=form.cleaned_data,
+                        actor=request.user,
+                    )
+                except ValidationError as exc:
+                    messages.error(request, self.format_validation_error(exc))
+                else:
+                    messages.success(request, "Estado de la rendición actualizado.")
+            else:
+                messages.error(
+                    request,
+                    " ".join(
+                        error for errores in form.errors.values() for error in errores
+                    ),
+                )
+            return HttpResponseRedirect(
+                reverse("rendicioncuentasmensual_detail", kwargs={"pk": rendicion.pk})
+            )
+
         documento_id = request.POST.get("documento_id")
         estado = (request.POST.get("estado") or "").strip()
         observaciones = request.POST.get("observaciones")
         is_ajax = request.headers.get("x-requested-with") == "XMLHttpRequest"
-        if not self._user_can_review_documentos(request.user):
+        if not self._user_can_review_documentos(request.user, rendicion):
             if is_ajax:
                 return JsonResponse(
                     {
@@ -261,8 +338,15 @@ class RendicionCuentaMensualDetailView(LoginRequiredMixin, DetailView):
             )
         )
         context["puede_revisar_documentos"] = self._user_can_review_documentos(
+            self.request.user, rendicion
+        )
+        context["puede_revision_territorial"] = self._user_can_territorial(
             self.request.user
         )
+        context["puede_revision_auditoria"] = self._user_can_auditoria(
+            self.request.user
+        )
+        context["proceso_form"] = RendicionProcesoForm()
         return context
 
 

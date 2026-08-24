@@ -122,6 +122,11 @@ def _safe_float_env(var_name: str, default: float) -> float:
         return default
 
 
+def _safe_positive_float_env(var_name: str, default: float) -> float:
+    value = _safe_float_env(var_name, default)
+    return value if value > 0 else default
+
+
 def _safe_bool_env(var_name: str, default: bool) -> bool:
     raw_value = os.getenv(var_name)
     if raw_value is None or raw_value.strip() == "":
@@ -136,6 +141,12 @@ def _safe_bool_env(var_name: str, default: bool) -> bool:
 
 
 CSRF_TRUSTED_ORIGINS = _build_csrf_trusted_origins()
+
+# CDI: funcionalidades suspendidas temporalmente por el issue #2182.
+# Se reactivan de forma independiente mediante las variables de entorno homónimas.
+CDI_ASISTENCIA_NOMINA_VISIBLE = _safe_bool_env("CDI_ASISTENCIA_NOMINA_VISIBLE", False)
+CDI_FORMULARIOS_VISIBLE = _safe_bool_env("CDI_FORMULARIOS_VISIBLE", False)
+CDI_INTERVENCIONES_VISIBLE = _safe_bool_env("CDI_INTERVENCIONES_VISIBLE", False)
 
 # Apps
 INSTALLED_APPS = [
@@ -153,7 +164,6 @@ INSTALLED_APPS = [
     "django_extensions",
     "formtools",
     "import_export",
-    "multiselectfield",
     "auditlog",
     "rest_framework",
     "rest_framework.authtoken",
@@ -164,7 +174,7 @@ INSTALLED_APPS = [
     "users",
     "core",
     "sentry.apps.SentryConfig",
-    "dashboard",
+    "dashboard.apps.DashboardConfig",
     "comedores",
     "organizaciones",
     "ciudadanos",
@@ -201,6 +211,7 @@ MIDDLEWARE = [
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "users.middleware.FirstLoginPasswordChangeMiddleware",
+    "users.middleware.ProfileConfirmationMiddleware",
     "sentry.middleware.SentryUserContextMiddleware",
     "auditlog.middleware.AuditlogMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
@@ -439,6 +450,7 @@ SPECTACULAR_SETTINGS = {
 
 # Dominios / Integraciones
 DOMINIO = os.environ.get("DOMINIO", "localhost:8001")
+PWA_BASE_URL = os.environ.get("PWA_BASE_URL", "")
 
 # Kill-switch de la API server-to-server con la Ticketera (/api/ticketera/).
 # Default True: los endpoints operan igual que hoy. En False responden 503 con
@@ -471,6 +483,10 @@ else:
 RENAPER_API_USERNAME = os.getenv("RENAPER_API_USERNAME")
 RENAPER_API_PASSWORD = os.getenv("RENAPER_API_PASSWORD")
 RENAPER_API_URL = "https://wsv2.secretarianaf.gob.ar/api"
+RENAPER_REQUEST_TIMEOUT_SECONDS = _safe_positive_float_env(
+    "RENAPER_REQUEST_TIMEOUT_SECONDS",
+    10.0,
+)
 RENAPER_VALIDACION_MAX_RETRIES = _safe_int_env(
     "RENAPER_VALIDACION_MAX_RETRIES",
     1,
@@ -689,6 +705,16 @@ CSP_ALLOW_UNSAFE_INLINE_SCRIPTS = (
     os.getenv("CSP_ALLOW_UNSAFE_INLINE_SCRIPTS", "false").lower() == "true"
 )
 CSP_ALLOW_UNSAFE_EVAL = os.getenv("CSP_ALLOW_UNSAFE_EVAL", "false").lower() == "true"
+
+# django-import-export (import/export Excel-CSV desde el admin)
+# Ver docs/registro/cambios/2026-07-27-import-export-admin.md
+IMPORT_EXPORT_USE_TRANSACTIONS = True
+# Preview obligatorio: la importación nunca se confirma en un solo paso.
+IMPORT_EXPORT_SKIP_ADMIN_CONFIRM = False
+IMPORT_EXPORT_IMPORT_PERMISSION_CODE = "change"
+IMPORT_EXPORT_EXPORT_PERMISSION_CODE = "view"
+# Neutraliza fórmulas en las celdas exportadas (CSV/formula injection).
+IMPORT_EXPORT_ESCAPE_FORMULAE_ON_EXPORT = True
 
 # Config propia (constantes)
 PROG_MILD = 24

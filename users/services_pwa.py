@@ -14,10 +14,6 @@ from django.db import IntegrityError, transaction
 from django.db.models import F, Q
 from django.utils import timezone
 
-from comedores.models import Comedor
-from comedores.services.capacitaciones_certificados_service import (
-    is_alimentar_comunidad_program,
-)
 from core.models import Provincia
 from users.models import (
     AccesoComedorPWA,
@@ -25,6 +21,7 @@ from users.models import (
     Profile,
     TerritorialComedorProvincia,
 )
+from users.pwa_comedores import es_comedor_alimentar_comunidad
 from users.profile_utils import get_profile_or_none
 from iam.services import get_effective_permission_codes
 
@@ -76,6 +73,28 @@ def get_access_rows(user):
             organizacion_id=F("comedor__organizacion_id"),
         )
     )
+
+
+def filter_pwa_visible_spaces(queryset, *, relation_prefix=""):
+    """Aplica las reglas de visibilidad PWA sobre un queryset de espacios."""
+    lookup_prefix = f"{relation_prefix}__" if relation_prefix else ""
+    alimentar_comunidad = Q(
+        **{f"{lookup_prefix}programa__nombre__iexact": "Alimentar Comunidad"}
+    )
+    activo_en_ejecucion = Q(
+        **{
+            f"{lookup_prefix}ultimo_estado__estado_general__estado_actividad__estado__iexact": "Activo",
+            f"{lookup_prefix}ultimo_estado__estado_general__estado_proceso__estado__iexact": "En ejecución",
+        }
+    )
+    return queryset.filter(**{f"{lookup_prefix}programa__isnull": False}).filter(
+        ~alimentar_comunidad | activo_en_ejecucion
+    )
+
+
+def get_visible_access_rows(user):
+    """Retorna accesos PWA activos cuyo comedor puede visualizarse."""
+    return filter_pwa_visible_spaces(get_access_rows(user), relation_prefix="comedor")
 
 
 def is_pwa_user(user) -> bool:
@@ -138,8 +157,8 @@ def get_territorial_comedor_users_for_provincia(provincia_id):
 
 
 def get_accessible_comedor_ids(user) -> list[int]:
-    """IDs de comedores activos accesibles por el usuario."""
-    return list(get_access_rows(user).values_list("comedor_id", flat=True))
+    """IDs de comedores PWA visibles y accesibles por el usuario."""
+    return list(get_visible_access_rows(user).values_list("comedor_id", flat=True))
 
 
 def is_representante(user, comedor_id: int) -> bool:
@@ -147,7 +166,7 @@ def is_representante(user, comedor_id: int) -> bool:
     if not comedor_id:
         return False
     return (
-        get_access_rows(user)
+        get_visible_access_rows(user)
         .filter(
             comedor_id=comedor_id,
             rol=AccesoComedorPWA.ROL_REPRESENTANTE,
@@ -160,7 +179,7 @@ def has_pwa_access_to_comedor(user, comedor_id: int) -> bool:
     """Indica si el usuario tiene acceso PWA activo al comedor."""
     if not comedor_id:
         return False
-    return get_access_rows(user).filter(comedor_id=comedor_id).exists()
+    return get_visible_access_rows(user).filter(comedor_id=comedor_id).exists()
 
 
 def get_pwa_context(user) -> dict:
@@ -246,19 +265,12 @@ def _resolve_permission_codes(permission_codes: Iterable[str]) -> list[Permissio
     return permissions
 
 
-def _is_alimentar_comunidad_comedor(comedor_id: int | None) -> bool:
-    if not comedor_id:
-        return False
-    comedor = Comedor.objects.select_related("programa").filter(pk=comedor_id).first()
-    return bool(comedor and is_alimentar_comunidad_program(comedor))
-
-
 def _filter_permission_codes_for_comedor_context(
     permission_codes: Iterable[str],
     comedor_id: int | None,
 ) -> list[str]:
     codes = {str(code).strip() for code in permission_codes or [] if str(code).strip()}
-    if _is_alimentar_comunidad_comedor(comedor_id):
+    if es_comedor_alimentar_comunidad(comedor_id):
         codes.discard(MOBILE_RENDICION_PERMISSION_CODE)
     return sorted(codes)
 

@@ -1,3 +1,63 @@
+<!-- AUTO-GENERATED RELEASE START: 2026-08-26 -->
+# Versión SISOC 26.08.2026
+
+## Corrección de Errores
+
+- [Centro de Infancia] Corrige permisos y validaciones urgentes del módulo CDI. (PR #2310)
+<!-- AUTO-GENERATED RELEASE END: 2026-08-26 -->
+
+<!-- AUTO-GENERATED RELEASE START: 2026-08-19 -->
+# Versión SISOC 19.08.2026
+
+## Actualizaciones
+
+- [sin-area] fix(admisiones): autorizar transferencias issue 2272. (PR #2296)
+- [sin-area] fix(users): quitar declaración de confirmación de datos. (PR #2300)
+- [sin-area] feat(centrodeinfancia): descargar nómina provincial de niños. (PR #2308)
+<!-- AUTO-GENERATED RELEASE END: 2026-08-19 -->
+
+<!-- AUTO-GENERATED RELEASE START: 2026-08-13 -->
+# Versión SISOC 13.08.2026
+
+## Actualizaciones
+
+- [release y plataforma transversal.] Promoción semanal con mejoras de Admisiones, Comedores, Usuarios/PWA, auditoría, APIs y operación. (PR #2289)
+<!-- AUTO-GENERATED RELEASE END: 2026-08-13 -->
+
+<!-- AUTO-GENERATED RELEASE START: 2026-07-30 -->
+# Versión SISOC 30.07.2026
+
+## Actualizaciones
+
+- [Centro de Infancia y despliegue productivo.] Restaura talla CDI como texto para evitar que la migración bloqueante detenga producción. (PR #2210)
+
+## Corrección de Errores
+
+- [CI/CD] Evita que el deploy de producción falle cuando el helper local del runner es anterior al contrato de revisión esperada. (PR #2199)
+- [CI/CD] Evita que el deploy de producción falle mientras finalizan las migraciones versionadas. (PR #2204)
+- [CI/CD] Agrega una recuperación transaccional para tallas legacy que bloquean el deploy de producción. (PR #2207)
+<!-- AUTO-GENERATED RELEASE END: 2026-07-30 -->
+
+<!-- AUTO-GENERATED RELEASE START: 2026-07-29 -->
+# Versión SISOC 29.07.2026
+
+## Corrección de Errores
+
+- [CI/CD] Corrige la interpretación de la respuesta del merge descendente y evita promover con evidencia de calidad incompleta. (PR #2192)
+<!-- AUTO-GENERATED RELEASE END: 2026-07-29 -->
+
+<!-- AUTO-GENERATED RELEASE START: 2026-07-22 -->
+# Versión SISOC 22.07.2026
+
+## Actualizaciones
+
+- [sin-area] fix(ci): evitar la autoaprobacion en sincronizacion descendente. (PR #2112)
+
+## Corrección de Errores
+
+- [predeploy] Promueve validaciones CDI, certificados de comedores, documentos PWA y saneamiento seguro de la migración ARCA. (PR #2136)
+<!-- AUTO-GENERATED RELEASE END: 2026-07-22 -->
+
 <!-- AUTO-GENERATED RELEASE START: 2026-07-15 -->
 # Versión SISOC 15.07.2026
 

@@ -14,7 +14,7 @@ footer.app-footer {
     border-top: 15px solid #e7ba61 !important;
     color: #ffffff !important;
     margin-top: auto;
-    z-index: 20;
+    z-index: 1041; /* Por encima del sidebar si ambas áreas llegan a tocarse. */
     display: flex;
 }
 
@@ -114,6 +114,7 @@ header.main-header {
     .sidebar-expand-lg.layout-fixed .app-sidebar {
         position: sticky;
         top: 76px !important;
+        bottom: auto;
         align-self: start;
         max-height: calc(100vh - 76px);
     }

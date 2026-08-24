@@ -396,6 +396,16 @@ TRABAJADOR_SUBCOMPONENTE_CHOICES = [
     ("uaf", "UAF"),
 ]
 
+TRABAJADOR_FUNCION_PFPI_CHOICES = [
+    ("direccion", "Dirección"),
+    ("simepi", "SIMEPI"),
+    ("auditoria", "Auditoría"),
+    ("administracion", "Administración"),
+    ("control", "Control"),
+    ("finanzas", "Finanzas"),
+    ("tecnico_primera_infancia", "Técnico de primera infancia"),
+]
+
 TRABAJADOR_FUNCION_EGP_CHOICES = [
     ("coordinacion_general", "Coordinación General"),
     ("ref_calidad_cdi", "Referente de Calidad de los CDI"),
@@ -403,7 +413,21 @@ TRABAJADOR_FUNCION_EGP_CHOICES = [
     ("ref_monitoreo", "Referente de Monitoreo"),
     ("ref_capacitacion", "Referente de capacitación"),
     ("apoyo_administrativo", "Apoyo administrativo"),
-    ("no_corresponde", "No corresponde"),
+]
+
+TRABAJADOR_FUNCION_UAF_CHOICES = [
+    ("coordinador_uaf", "Coordinador UAF"),
+    ("supervisor", "Supervisor/a"),
+    ("tutor", "Tutor/a"),
+    ("facilitador", "Facilitador/a"),
+    ("orientador", "Orientador/a"),
+    ("otro", "Otro"),
+]
+
+TRABAJADOR_REGISTRO_TIPO_CHOICES = [
+    ("alta", "Alta"),
+    ("baja", "Baja"),
+    ("edicion", "Edición"),
 ]
 
 TRABAJADOR_FUNCION_CDI_CHOICES = [
@@ -830,6 +854,13 @@ class Trabajador(SoftDeleteModelMixin, models.Model):
         null=True,
         verbose_name="Subcomponente",
     )
+    funcion_pfpi = models.CharField(
+        max_length=32,
+        choices=TRABAJADOR_FUNCION_PFPI_CHOICES,
+        blank=True,
+        null=True,
+        verbose_name="Función (PFPI)",
+    )
     funcion_egp = models.CharField(
         max_length=32,
         choices=TRABAJADOR_FUNCION_EGP_CHOICES,
@@ -850,6 +881,25 @@ class Trabajador(SoftDeleteModelMixin, models.Model):
         blank=True,
         null=True,
         verbose_name="Sala (CDI)",
+    )
+    funcion_uaf = models.CharField(
+        max_length=32,
+        choices=TRABAJADOR_FUNCION_UAF_CHOICES,
+        blank=True,
+        null=True,
+        verbose_name="Función (UAF)",
+    )
+    registro_tipo = models.CharField(
+        max_length=16,
+        choices=TRABAJADOR_REGISTRO_TIPO_CHOICES,
+        blank=True,
+        null=True,
+        verbose_name="Tipo de registro",
+    )
+    fecha_actualizacion = models.DateField(
+        blank=True,
+        null=True,
+        verbose_name="Fecha de actualización del personal",
     )
     fecha_nacimiento = models.DateField(
         blank=True, null=True, verbose_name="Fecha de nacimiento"
@@ -1003,7 +1053,7 @@ class Trabajador(SoftDeleteModelMixin, models.Model):
     )
     es_interprete = models.CharField(
         max_length=16,
-        choices=[("si", "Sí"), ("no", "No"), ("no_corresponde", "No corresponde")],
+        choices=[("si", "Sí"), ("no", "No")],
         blank=True,
         null=True,
         verbose_name="¿Es intérprete?",
@@ -1042,6 +1092,9 @@ class Trabajador(SoftDeleteModelMixin, models.Model):
         null=True,
         verbose_name="Número de CUD (ANSES)",
     )
+    # Campos que se precargaron desde RENAPER en el alta. En la edición esos campos
+    # se muestran bloqueados: no se corrigen datos verificados por el organismo.
+    campos_verificados_renaper = models.JSONField(default=list, blank=True)
 
     class Meta:
         verbose_name = "Trabajador"
@@ -1098,30 +1151,41 @@ class Trabajador(SoftDeleteModelMixin, models.Model):
         if invalid:
             raise ValidationError({field_name: "Seleccione opciones válidas."})
 
+    def _limpiar_campos_condicionales(self):
+        """Vacía los campos que no aplican según lo elegido en el formulario."""
+
+        # Cada subcomponente habilita su propia función; el resto se descarta.
+        funciones_por_subcomponente = {
+            "pfpi": ["funcion_pfpi"],
+            "egp": ["funcion_egp"],
+            "cdi": ["funcion_cdi", "sala_cdi"],
+            "uaf": ["funcion_uaf"],
+        }
+        for subcomponente, campos in funciones_por_subcomponente.items():
+            if self.subcomponente != subcomponente:
+                for campo in campos:
+                    setattr(self, campo, None)
+
+        if self.nivel_educativo not in _TRABAJADOR_NIVELES_HABILITAN_FORMACION:
+            self.formacion_academica = None
+
+        if "indigena" not in (self.grupo_pertenencia or []):
+            self.pueblo_originario = None
+
+        # El bloque de discapacidad (incluido "¿Tiene CUD?") solo aplica si hay
+        # discapacidad; el número de CUD, solo si además tiene CUD.
+        if self.tiene_discapacidad != "si":
+            self.tipo_discapacidad = []
+            self.recibe_apoyo_discapacidad = None
+            self.tiene_cud = None
+        if self.tiene_cud != "si":
+            self.numero_cud = None
+
     def clean(self):
         super().clean()
         errors = {}
 
-        # Limpiar función condicional por subcomponente
-        if self.subcomponente != "egp":
-            self.funcion_egp = None
-        if self.subcomponente != "cdi":
-            self.funcion_cdi = None
-
-        # Limpiar formacion_academica si nivel no la habilita
-        if self.nivel_educativo not in _TRABAJADOR_NIVELES_HABILITAN_FORMACION:
-            self.formacion_academica = None
-
-        # Limpiar pueblo_originario si no aplica
-        if "indigena" not in (self.grupo_pertenencia or []):
-            self.pueblo_originario = None
-
-        # Limpiar campos condicionales de discapacidad
-        if self.tiene_discapacidad != "si":
-            self.tipo_discapacidad = []
-            self.recibe_apoyo_discapacidad = None
-        if self.tiene_cud != "si":
-            self.numero_cud = None
+        self._limpiar_campos_condicionales()
 
         # Normalizar CUIT
         self.cuit = normalizar_cuit(self.cuit) or None
@@ -1230,6 +1294,8 @@ class NominaNacionalidad(models.Model):
 
 
 class NominaCentroInfancia(SoftDeleteModelMixin, models.Model):
+    SOFT_RESTORE_VALIDATOR = "centrodeinfancia.services.validar_restauracion_nomina_cdi"
+
     class RespuestaSiNoNsNc(models.TextChoices):
         SI = "si", "Si"
         NO = "no", "No"
@@ -1332,6 +1398,14 @@ class NominaCentroInfancia(SoftDeleteModelMixin, models.Model):
         blank=True,
         null=True,
         related_name="+",
+    )
+    departamento = models.ForeignKey(
+        DepartamentoIpi,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name="nominas_centros_infancia",
+        verbose_name="Departamento (jurisdicción)",
     )
     municipio_domicilio = models.ForeignKey(
         Municipio,
@@ -1696,6 +1770,12 @@ class NominaCentroInfancia(SoftDeleteModelMixin, models.Model):
         # ── Validar geografía domicilio ───────────────────────────────────────
         relation_rules = (
             (
+                "departamento",
+                "provincia_domicilio",
+                "provincia_id",
+                "El departamento no pertenece a la provincia indicada.",
+            ),
+            (
                 "municipio_domicilio",
                 "provincia_domicilio",
                 "provincia_id",
@@ -1740,6 +1820,52 @@ class NominaCentroInfancia(SoftDeleteModelMixin, models.Model):
     @property
     def alergias_alimentarias_display(self):
         return _trabajador_etiquetas(self.alergias_alimentarias, NOMINA_ALERGIA_CHOICES)
+
+
+class AsistenciaNominaCentroInfancia(models.Model):
+    """Registro de asistencia de una persona de nómina en una fecha."""
+
+    nomina = models.ForeignKey(
+        NominaCentroInfancia,
+        on_delete=models.CASCADE,
+        related_name="asistencias_nomina",
+        verbose_name="Nómina",
+    )
+    fecha = models.DateField(verbose_name="Fecha")
+    presente = models.BooleanField(default=False, verbose_name="Presente")
+    observaciones = models.TextField(
+        blank=True, null=True, verbose_name="Observaciones"
+    )
+    registrado_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="asistencias_nomina_cdi_registradas",
+        verbose_name="Registrado por",
+    )
+    fecha_registro = models.DateTimeField(
+        auto_now_add=True, verbose_name="Fecha de registro"
+    )
+
+    class Meta:
+        verbose_name = "Asistencia de nómina CDI"
+        verbose_name_plural = "Asistencias de nómina CDI"
+        ordering = ["-fecha"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["nomina", "fecha"],
+                name="uniq_cdi_asist_nomina_fecha",
+            )
+        ]
+        indexes = [
+            models.Index(
+                fields=["fecha", "presente"],
+                name="cdi_asist_nom_fecha_idx",
+            )
+        ]
+
+    def __str__(self):
+        estado = "Presente" if self.presente else "Ausente"
+        return f"{self.nomina} — {self.fecha} [{estado}]"
 
 
 class NominaCentroInfanciaDerivacion(models.Model):

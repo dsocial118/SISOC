@@ -10,6 +10,7 @@ pytestmark = pytest.mark.smoke
 _REGEX_NAMED_GROUP_RE = re.compile(r"\(\?P<[^>]+>")
 _ALLOWED_VIEWSET_ACTIONS = {"list", "retrieve"}
 _HTTP_METHODS = {"GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS", "TRACE"}
+_POST_ONLY_NAMES = {"logout"}
 _SKIP_NAMES = {"autocomplete", "api-root", "auditlog_logentry_add"}
 _SKIP_PATHS = {
     "/admin/autocomplete/",
@@ -156,13 +157,15 @@ def collect_url_tests():
 
 
 @pytest.mark.parametrize("path,name", collect_url_tests())
+@pytest.mark.django_db
 def test_urls_no_500(request, path, name):
     if path.startswith("/api/"):
         client = request.getfixturevalue("api_client")
     else:
         client = request.getfixturevalue("auth_client")
-    response = client.get(path)
+    method = "post" if name in _POST_ONLY_NAMES else "get"
+    response = getattr(client, method)(path)
 
     assert (
         response.status_code < 500
-    ), f"GET {path} ({name}) devolvio {response.status_code}"
+    ), f"{method.upper()} {path} ({name}) devolvio {response.status_code}"

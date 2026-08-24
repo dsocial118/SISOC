@@ -90,6 +90,7 @@
         {% comment %}
     <link rel="stylesheet" href="{% static 'custom/css/custom.css' %}" />
         {% endcomment %}
+        <link rel="stylesheet" href="{% static 'custom/css/poncho.css' %}" />
         <link rel="stylesheet" href="{% static 'custom/css/utils.css' %}" />
         <link rel="stylesheet" href="{% static 'custom/css/main.css' %}" />
         <link rel="stylesheet" href="{% static 'custom/css/select2_theme.css' %}" />
@@ -134,7 +135,10 @@
                             <p>¿Estás seguro de que deseas cerrar sesión?</p>
                         </div>
                         <div class="modal-footer justify-content-end">
-                            <a class="btn btn-danger" href="{% url 'logout' %}">Cerrar sesión</a>
+                            <form method="post" action="{% url 'logout' %}" class="d-inline">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-danger">Cerrar sesión</button>
+                            </form>
                             <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
                         </div>
                     </div>
@@ -152,8 +156,7 @@
                     });
                 });
             </script>
-            {% block customJS %}
-            {% endblock %}
+            {% block customJS %}{% endblock %}
             <!-- Bloque de modales - renderizado fuera de la estructura principal -->
             {% block modals %}{% endblock %}
         </div>

@@ -47,8 +47,8 @@
                     El archivo debe ser CSV o XLSX y contener las columnas <strong>ID</strong> y
                     <strong>Fecha de Acreditaci&oacute;n</strong>. La fecha debe cargarse con
                     formato <strong>DD/MM/AAAA</strong>. Todas las filas deben informar la
-                    misma fecha; se actualizar&aacute;n todos los expedientes importados en este
-                    lote.
+                    misma fecha; solo se actualizar&aacute;n los expedientes de los comedores
+                    informados en el archivo.
                 </div>
                 <form method="post" enctype="multipart/form-data">
                     {% csrf_token %}

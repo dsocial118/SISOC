@@ -157,7 +157,7 @@ function toggleVisible(el, show) {
     if (el) el.classList.toggle("d-none", !show);
 }
 
-function setContainerControlsEnabled(container, enabled, clearWhenDisabled) {
+function setContainerControlsEnabled(container, enabled, clearWhenDisabled, requiredWhenEnabled) {
     if (!container) return;
     container.querySelectorAll("input, select, textarea").forEach(function (control) {
         if (!enabled && clearWhenDisabled) {
@@ -168,6 +168,7 @@ function setContainerControlsEnabled(container, enabled, clearWhenDisabled) {
             }
         }
         control.disabled = !enabled;
+        control.required = Boolean(enabled && requiredWhenEnabled);
     });
 }
 
@@ -179,9 +180,11 @@ function getCheckedValues(containerId) {
 
 function initializeConditionalFields() {
     const subcomponenteSelect  = document.getElementById("id_subcomponente");
+    const rowFuncionPfpi       = document.getElementById("row-funcion-pfpi");
     const rowFuncionEgp        = document.getElementById("row-funcion-egp");
     const rowFuncionCdi        = document.getElementById("row-funcion-cdi");
     const rowSalaCdi           = document.getElementById("row-sala-cdi");
+    const rowFuncionUaf        = document.getElementById("row-funcion-uaf");
     const nivelEducativoSelect = document.getElementById("id_nivel_educativo");
     const rowFormacionAcad     = document.getElementById("row-formacion-academica");
     const tieneDiscapSelect    = document.getElementById("id_tiene_discapacidad");
@@ -192,12 +195,20 @@ function initializeConditionalFields() {
 
     function applyFunciones() {
         if (!subcomponenteSelect) return;
+        const esPfpi = subcomponenteSelect.value === "pfpi";
         const esCdi = subcomponenteSelect.value === "cdi";
         const esEgp = subcomponenteSelect.value === "egp";
+        const esUaf = subcomponenteSelect.value === "uaf";
+        toggleVisible(rowFuncionPfpi, esPfpi);
         toggleVisible(rowFuncionEgp, esEgp);
         toggleVisible(rowFuncionCdi, esCdi);
         toggleVisible(rowSalaCdi,    esCdi);
-        setContainerControlsEnabled(rowSalaCdi, esCdi, true);
+        toggleVisible(rowFuncionUaf, esUaf);
+        setContainerControlsEnabled(rowFuncionPfpi, esPfpi, true, true);
+        setContainerControlsEnabled(rowFuncionEgp, esEgp, true, true);
+        setContainerControlsEnabled(rowFuncionCdi, esCdi, true, true);
+        setContainerControlsEnabled(rowSalaCdi, esCdi, true, true);
+        setContainerControlsEnabled(rowFuncionUaf, esUaf, true, true);
     }
 
     function applyFormacion() {

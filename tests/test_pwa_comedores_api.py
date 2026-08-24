@@ -22,6 +22,10 @@ from admisiones.models.admisiones import (
 from comedores.models import (
     Comedor,
     ComedorDatosConvenioPnud,
+    EstadoActividad,
+    EstadoGeneral,
+    EstadoHistorial,
+    EstadoProceso,
     ImagenComedor,
     Nomina,
     PrestacionAlimentariaConformidad,
@@ -64,8 +68,17 @@ def _grant_pwa_permission(user, codename):
 @pytest.fixture
 def comedores(db):
     provincia = Provincia.objects.create(nombre="Cordoba")
-    comedor_1 = Comedor.objects.create(nombre="Comedor Uno", provincia=provincia)
-    comedor_2 = Comedor.objects.create(nombre="Comedor Dos", provincia=provincia)
+    programa = Programas.objects.create(nombre="Abordaje Comunitario")
+    comedor_1 = Comedor.objects.create(
+        nombre="Comedor Uno",
+        provincia=provincia,
+        programa=programa,
+    )
+    comedor_2 = Comedor.objects.create(
+        nombre="Comedor Dos",
+        provincia=provincia,
+        programa=programa,
+    )
     return comedor_1, comedor_2
 
 
@@ -101,6 +114,32 @@ def _token_client(user):
     client = APIClient()
     client.credentials(HTTP_AUTHORIZATION=f"Token {token.key}")
     return client
+
+
+def _marcar_activo_en_ejecucion(comedor):
+    estado_actividad, _ = EstadoActividad.objects.get_or_create(estado="Activo")
+    estado_proceso, _ = EstadoProceso.objects.get_or_create(
+        estado="En ejecución",
+        estado_actividad=estado_actividad,
+    )
+    estado_general, _ = EstadoGeneral.objects.get_or_create(
+        estado_actividad=estado_actividad,
+        estado_proceso=estado_proceso,
+    )
+    historial = EstadoHistorial.objects.create(
+        comedor=comedor,
+        estado_general=estado_general,
+    )
+    comedor.ultimo_estado = historial
+    comedor.save(update_fields=["ultimo_estado"])
+
+
+@pytest.fixture(autouse=True)
+def _mock_certificacion_prestaciones_pdf(mocker):
+    mocker.patch(
+        "comedores.api_views.generar_certificacion_prestaciones_pdf",
+        return_value=b"%PDF-1.4\n%%EOF",
+    )
 
 
 def _grant_mobile_rendicion_permission(user):
@@ -236,6 +275,8 @@ def test_pwa_spaces_selector_list_returns_metadata_and_sorted_names():
         programa=programa,
         codigo_de_proyecto="PROY-01",
     )
+    _marcar_activo_en_ejecucion(comedor_a)
+    _marcar_activo_en_ejecucion(comedor_b)
 
     representante = _create_pwa_user(
         comedor=comedor_b,
@@ -273,6 +314,45 @@ def test_pwa_spaces_selector_list_returns_metadata_and_sorted_names():
 
 
 @pytest.mark.django_db
+def test_pwa_oculta_comedor_sin_programa_y_lo_actualiza_al_asignarlo():
+    provincia = Provincia.objects.create(nombre="Buenos Aires")
+    comedor = Comedor.objects.create(
+        nombre="Espacio sin programa",
+        provincia=provincia,
+        programa=None,
+    )
+    representante = _create_pwa_user(
+        comedor=comedor,
+        role=AccesoComedorPWA.ROL_REPRESENTANTE,
+        username="rep_sin_programa",
+    )
+    client = _token_client(representante)
+
+    listado_sin_programa = client.get("/api/comedores/")
+    detalle_sin_programa = client.get(f"/api/comedores/{comedor.id}/")
+
+    assert listado_sin_programa.status_code == 200
+    assert listado_sin_programa.data["results"] == []
+    assert detalle_sin_programa.status_code == 404
+
+    comedor.programa = Programas.objects.create(nombre="Abordaje Comunitario")
+    comedor.save(update_fields=["programa"])
+
+    listado_con_programa = client.get("/api/comedores/")
+    detalle_con_programa = client.get(f"/api/comedores/{comedor.id}/")
+
+    assert listado_con_programa.status_code == 200
+    assert [item["id"] for item in listado_con_programa.data["results"]] == [comedor.id]
+    assert detalle_con_programa.status_code == 200
+
+    comedor.programa = None
+    comedor.save(update_fields=["programa"])
+
+    assert client.get("/api/comedores/").data["results"] == []
+    assert client.get(f"/api/comedores/{comedor.id}/").status_code == 404
+
+
+@pytest.mark.django_db
 def test_comedor_detail_includes_mobile_relevamiento_summary():
     provincia = Provincia.objects.create(nombre="Buenos Aires")
     municipio = Municipio.objects.create(nombre="La Plata", provincia=provincia)
@@ -281,12 +361,14 @@ def test_comedor_detail_includes_mobile_relevamiento_summary():
     organizacion = Organizacion.objects.create(nombre="Organización Central")
     comedor = Comedor.objects.create(
         nombre="Espacio Relevado",
+        es_caritas=True,
         provincia=provincia,
         municipio=municipio,
         localidad=localidad,
         organizacion=organizacion,
         programa=programa,
     )
+    _marcar_activo_en_ejecucion(comedor)
 
     modalidad = TipoModalidadPrestacion.objects.create(nombre="Viandas")
     tipo_agua = TipoAgua.objects.create(nombre="Red")
@@ -375,6 +457,12 @@ def test_comedor_detail_includes_mobile_relevamiento_summary():
     assert items["¿Cómo se abastece de agua?"] == "Red"
     assert items["¿En qué lugar realiza sus compras?"] == "Supermercado, Mayoristas"
     assert "Murga" in items["¿Qué tipo de actividades se realizan?"]
+    domicilio = next(
+        section
+        for section in response.data["relevamiento_actual_mobile"]["sections"]
+        if section["titulo"] == "Domicilio del Espacio"
+    )
+    assert not any("caritas" in item["pregunta"].lower() for item in domicilio["items"])
 
 
 @pytest.mark.django_db
@@ -455,6 +543,32 @@ def test_representante_can_list_and_create_operadores(comedores):
     assert create_response.status_code == 201
     assert create_response.data["username"] == "op_nuevo"
     assert create_response.data["rol"] == AccesoComedorPWA.ROL_OPERADOR
+
+
+@pytest.mark.django_db
+def test_usuarios_no_expone_comedores_sin_programa_en_asignables(comedores):
+    comedor_visible, comedor_sin_programa = comedores
+    representante = _create_pwa_user(
+        comedor=comedor_visible,
+        role=AccesoComedorPWA.ROL_REPRESENTANTE,
+        username="rep_asignables_programa",
+    )
+    AccesoComedorPWA.objects.create(
+        user=representante,
+        comedor=comedor_sin_programa,
+        rol=AccesoComedorPWA.ROL_REPRESENTANTE,
+        activo=True,
+    )
+    comedor_sin_programa.programa = None
+    comedor_sin_programa.save(update_fields=["programa"])
+    client = _token_client(representante)
+
+    response = client.get(f"/api/comedores/{comedor_visible.id}/usuarios/")
+
+    assert response.status_code == 200
+    assert [item["id"] for item in response.data["assignable_comedores"]] == [
+        comedor_visible.id
+    ]
 
 
 @pytest.mark.django_db
@@ -707,24 +821,28 @@ def test_crear_rendicion_mobile_rechaza_numero_repetido_y_periodo_solapado(comed
 @pytest.mark.django_db
 def test_rendiciones_mobile_scope_por_organizacion_y_proyecto():
     provincia = Provincia.objects.create(nombre="Santa Fe")
+    programa = Programas.objects.create(nombre="Abordaje Comunitario")
     organizacion_a = Organizacion.objects.create(nombre="Organización A")
     organizacion_b = Organizacion.objects.create(nombre="Organización B")
     comedor_a_1 = Comedor.objects.create(
         nombre="Espacio A1",
         provincia=provincia,
         organizacion=organizacion_a,
+        programa=programa,
         codigo_de_proyecto="PROY-COMPARTIDO",
     )
     comedor_a_2 = Comedor.objects.create(
         nombre="Espacio A2",
         provincia=provincia,
         organizacion=organizacion_a,
+        programa=programa,
         codigo_de_proyecto="PROY-COMPARTIDO",
     )
     comedor_b_1 = Comedor.objects.create(
         nombre="Espacio B1",
         provincia=provincia,
         organizacion=organizacion_b,
+        programa=programa,
         codigo_de_proyecto="PROY-COMPARTIDO",
     )
 
@@ -765,18 +883,21 @@ def test_rendiciones_mobile_scope_por_organizacion_y_proyecto():
 @pytest.mark.django_db
 def test_crear_rendicion_mobile_permite_mismo_proyecto_en_otra_organizacion():
     provincia = Provincia.objects.create(nombre="Entre Ríos")
+    programa = Programas.objects.create(nombre="Abordaje Comunitario")
     organizacion_a = Organizacion.objects.create(nombre="Organización Rendición A")
     organizacion_b = Organizacion.objects.create(nombre="Organización Rendición B")
     comedor_a = Comedor.objects.create(
         nombre="Espacio Rendición A",
         provincia=provincia,
         organizacion=organizacion_a,
+        programa=programa,
         codigo_de_proyecto="PROY-ORG-01",
     )
     comedor_b = Comedor.objects.create(
         nombre="Espacio Rendición B",
         provincia=provincia,
         organizacion=organizacion_b,
+        programa=programa,
         codigo_de_proyecto="PROY-ORG-01",
     )
 
@@ -839,16 +960,13 @@ def test_adjuntar_y_presentar_rendicion(comedores, settings, tmp_path):
     )
     assert present_without_docs_response.status_code == 400
 
-    # Formulario I es optativo; Formulario III/V se divide en variantes
-    # _ALIMENTARIO/_SIPH obligatorias para mobile.
+    # Formulario I es optativo; las variantes SIPH de Formulario III/V
+    # también lo son porque dependen de que se hayan presentado actividades.
     categorias_obligatorias = [
         DocumentacionAdjunta.CATEGORIA_FORMULARIO_II,
         DocumentacionAdjunta.CATEGORIA_FORMULARIO_III_ALIMENTARIO,
-        DocumentacionAdjunta.CATEGORIA_FORMULARIO_III_SIPH,
         DocumentacionAdjunta.CATEGORIA_FORMULARIO_V_ALIMENTARIO,
-        DocumentacionAdjunta.CATEGORIA_FORMULARIO_V_SIPH,
         DocumentacionAdjunta.CATEGORIA_EXTRACTO_BANCARIO,
-        DocumentacionAdjunta.CATEGORIA_COMPROBANTES,
     ]
     for categoria in categorias_obligatorias:
         archivo = SimpleUploadedFile(
@@ -862,6 +980,23 @@ def test_adjuntar_y_presentar_rendicion(comedores, settings, tmp_path):
             format="multipart",
         )
         assert upload_response.status_code == 201
+
+    for categoria in (
+        DocumentacionAdjunta.CATEGORIA_FORMULARIO_III_ALIMENTARIO,
+        DocumentacionAdjunta.CATEGORIA_FORMULARIO_III_SIPH,
+    ):
+        for indice in range(2):
+            archivo = SimpleUploadedFile(
+                f"{categoria}-{indice}.pdf",
+                b"%PDF-1.4 test content",
+                content_type="application/pdf",
+            )
+            upload_response = client.post(
+                f"/api/comedores/{comedor_1.id}/rendiciones/{rendicion.id}/documentacion/",
+                {"archivo": archivo, "categoria": categoria},
+                format="multipart",
+            )
+            assert upload_response.status_code == 201
 
     detail_response = client.get(
         f"/api/comedores/{comedor_1.id}/rendiciones/{rendicion.id}/",
@@ -877,6 +1012,51 @@ def test_adjuntar_y_presentar_rendicion(comedores, settings, tmp_path):
     )
     assert formulario_i["required"] is False
     assert formulario_i["archivos"] == []
+    comprobantes = next(
+        item
+        for item in detail_response.data["documentacion"]
+        if item["codigo"] == DocumentacionAdjunta.CATEGORIA_COMPROBANTES
+    )
+    assert comprobantes["required"] is False
+    assert comprobantes["archivos"] == []
+    for codigo_multiple in (
+        DocumentacionAdjunta.CATEGORIA_FORMULARIO_III_ALIMENTARIO,
+        DocumentacionAdjunta.CATEGORIA_FORMULARIO_III_SIPH,
+    ):
+        categoria_multiple = next(
+            item
+            for item in detail_response.data["documentacion"]
+            if item["codigo"] == codigo_multiple
+        )
+        assert categoria_multiple["multiple"] is True
+        assert len(categoria_multiple["archivos"]) >= 2
+    for codigo_siph in (
+        DocumentacionAdjunta.CATEGORIA_FORMULARIO_III_SIPH,
+        DocumentacionAdjunta.CATEGORIA_FORMULARIO_V_SIPH,
+    ):
+        categoria_siph = next(
+            item
+            for item in detail_response.data["documentacion"]
+            if item["codigo"] == codigo_siph
+        )
+        assert categoria_siph["required"] is False
+        assert categoria_siph["description"] == (
+            "Este documento es obligatorio si presentó actividades para este Convenio"
+        )
+    planilla_seguros = next(
+        item
+        for item in detail_response.data["documentacion"]
+        if item["codigo"] == DocumentacionAdjunta.CATEGORIA_PLANILLA_SEGUROS
+    )
+    assert planilla_seguros["modelo"]["filename"] == (
+        "Planilla.II.Seguros.Actualizacion.-.Tradicional.docx"
+    )
+    modelo_response = client.get(planilla_seguros["modelo"]["url"])
+    assert modelo_response.status_code == 200
+    assert "Planilla.II.Seguros.Actualizacion.-.Tradicional.docx" in (
+        modelo_response["Content-Disposition"]
+    )
+    modelo_response.close()
     categoria_extra = next(
         item
         for item in detail_response.data["documentacion"]
@@ -1162,6 +1342,9 @@ def _comedor_alimentar_comunidad(*, username):
         provincia=provincia,
         programa=programa,
     )
+    _marcar_activo_en_ejecucion(comedor)
+    admision = Admision.objects.create(comedor=comedor)
+    _create_informe_tecnico(admision)
     representante = _create_pwa_user(
         comedor=comedor,
         role=AccesoComedorPWA.ROL_REPRESENTANTE,
@@ -1180,11 +1363,74 @@ def test_prestacion_alimentaria_conformidad_crea_registro():
         format="json",
     )
 
-    assert response.status_code == 201
+    assert response.status_code == 201, response.data
     assert response.data["conforme"] is True
     conformidad = PrestacionAlimentariaConformidad.objects.get(comedor=comedor)
     assert conformidad.conforme is True
     assert conformidad.periodo == date(2035, 12, 1)
+
+
+@pytest.mark.django_db
+def test_prestacion_alimentaria_conformidad_sin_fuente_genera_pdf_fallback(
+    mocker, settings, tmp_path
+):
+    provincia = Provincia.objects.create(nombre="Cordoba sin informe")
+    programa = Programas.objects.create(nombre="Programa sin informe")
+    comedor = Comedor.objects.create(
+        nombre="Espacio sin informe", provincia=provincia, programa=programa
+    )
+    representante = _create_pwa_user(
+        comedor=comedor,
+        role=AccesoComedorPWA.ROL_REPRESENTANTE,
+        username="rep_conf_sin_informe",
+    )
+
+    settings.MEDIA_ROOT = str(tmp_path)
+    generador_pdf = mocker.patch(
+        "comedores.api_views.generar_certificacion_prestaciones_pdf",
+        return_value=b"%PDF-1.4\n%%EOF",
+    )
+    client = _token_client(representante)
+    response = client.post(
+        f"/api/comedores/{comedor.id}/prestacion-alimentaria/conformidad/",
+        {"conforme": True},
+        format="json",
+    )
+    detalle = client.get(f"/api/comedores/{comedor.id}/prestacion-alimentaria/")
+
+    assert response.status_code == 201
+    registro = PrestacionAlimentariaConformidad.objects.get(comedor=comedor)
+    assert registro.certificacion_pdf
+    assert response.data["certificacion_pdf_url"]
+    assert (
+        generador_pdf.call_args.kwargs["source"].datos_prestaciones_no_disponibles
+        is True
+    )
+    descarga = client.get(response.data["certificacion_pdf_url"])
+    assert descarga.status_code == 200
+    assert descarga["Content-Type"] == "application/pdf"
+    assert detalle.status_code == 200
+    assert detalle.data["conformidad_pendiente"] is False
+    assert detalle.data["periodo_pendiente"] is None
+    assert detalle.data["conformidad_actual"]["certificacion_pdf_url"]
+
+
+@pytest.mark.django_db
+def test_prestacion_alimentaria_error_pdf_devuelve_503(mocker):
+    comedor, client = _comedor_alimentar_comunidad(username="rep_conf_pdf_error")
+    mocker.patch(
+        "comedores.api_views.generar_certificacion_prestaciones_pdf",
+        side_effect=RuntimeError("LibreOffice no disponible"),
+    )
+
+    response = client.post(
+        f"/api/comedores/{comedor.id}/prestacion-alimentaria/conformidad/",
+        {"conforme": True, "periodo": "2035-10"},
+        format="json",
+    )
+
+    assert response.status_code == 503
+    assert not PrestacionAlimentariaConformidad.objects.filter(comedor=comedor).exists()
 
 
 @pytest.mark.django_db
@@ -1201,7 +1447,7 @@ def test_prestacion_alimentaria_conformidad_permite_repetir_periodo():
 
 
 @pytest.mark.django_db
-def test_prestacion_alimentaria_conformidad_repetida_mantiene_periodo_disponible():
+def test_prestacion_alimentaria_conformidad_realizada_elimina_advertencia():
     comedor, client = _comedor_alimentar_comunidad(username="rep_conf_repetida")
     url = f"/api/comedores/{comedor.id}/prestacion-alimentaria/conformidad/"
 
@@ -1210,10 +1456,9 @@ def test_prestacion_alimentaria_conformidad_repetida_mantiene_periodo_disponible
 
     assert primera.status_code == 201
     assert detalle.status_code == 200
-    assert detalle.data["conformidad_pendiente"] is True
-    assert detalle.data["periodo_pendiente"] == date.fromisoformat(
-        primera.data["periodo"]
-    )
+    assert detalle.data["conformidad_pendiente"] is False
+    assert detalle.data["periodo_pendiente"] is None
+    assert detalle.data["periodo_actual"] == date.fromisoformat(primera.data["periodo"])
 
 
 @pytest.mark.django_db
@@ -1239,6 +1484,8 @@ def test_prestacion_alimentaria_conformidad_disponible_para_todos_los_programas(
     comedores,
 ):
     comedor_1, _ = comedores
+    admision = Admision.objects.create(comedor=comedor_1)
+    _create_informe_tecnico(admision)
     representante = _create_pwa_user(
         comedor=comedor_1,
         role=AccesoComedorPWA.ROL_REPRESENTANTE,

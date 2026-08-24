@@ -22,8 +22,8 @@
     </div>
 {% endblock %}
 {% block content %}
-    <div class="row">
-        <div class="col-auto">
+    <div class="row justify-content-between">
+        <div class="col-auto d-flex flex-wrap gap-2">
             <a href="{% url 'comedor_intervencion_ver' comedor.id %}{% if admision_id_activa %}?admision_id={{ admision_id_activa }}{% endif %}"
                class="btn btn-primary mb-3">
                 <i class="fas fa-plus me-2"></i>Intervenciones
@@ -37,6 +37,14 @@
                 <i class="fas fa-plus me-2"></i>Seguimiento Mensual
             </a>
         </div>
+        {% if informe_tecnico_complementario %}
+            <div class="col-auto">
+                <a href="{% url 'informe_complementario_ver' tipo=informe_tecnico_complementario.tipo pk=informe_tecnico_complementario.id %}?origen=acompanamiento"
+                   class="btn btn-primary mb-3">
+                    <i class="fas fa-file-alt me-2"></i>Informe Técnico Complementario
+                </a>
+            </div>
+        {% endif %}
     </div>
     {% if admisiones_disponibles %}
         <div class="row mb-3">

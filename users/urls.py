@@ -13,8 +13,9 @@ from users.views import (
     UserDeleteView,
     GroupListView,
     GroupUpdateView,
+    ConfirmacionDatosView,
+    MiCuentaView,
     PasswordResetConfirmCustomView,
-    UserGenerateTemporaryPasswordView,
     UserListView,
     UserUpdateView,
     UsuariosLoginView,
@@ -24,6 +25,7 @@ from users.views_export import UserExportView, GroupExportView
 from users.views_user_import import (
     UserImportJobCreateView,
     UserImportJobDetailView,
+    UserImportJobDownloadCSVView,
     UserImportJobResumeView,
     UserImportTemplateView,
 )
@@ -36,6 +38,16 @@ urlpatterns = [
         "password/first-change/",
         FirstLoginPasswordChangeView.as_view(),
         name="password_change_required",
+    ),
+    path(
+        "mi-cuenta/",
+        MiCuentaView.as_view(),
+        name="mi_cuenta",
+    ),
+    path(
+        "mi-cuenta/confirmar/",
+        ConfirmacionDatosView.as_view(),
+        name="confirmar_datos_personales",
     ),
     path(
         "password/reset/confirm/<uidb64>/<token>/",
@@ -63,13 +75,6 @@ urlpatterns = [
         "usuarios/editar/<int:pk>/",
         permissions_any_required(["auth.change_user"])(UserUpdateView.as_view()),
         name="usuario_editar",
-    ),
-    path(
-        "usuarios/generar-password-temporal/<int:pk>/",
-        permissions_any_required(["auth.change_user"])(
-            UserGenerateTemporaryPasswordView.as_view()
-        ),
-        name="usuario_generar_password_temporal",
     ),
     path(
         "usuarios/credenciales-masivas/",
@@ -128,6 +133,13 @@ urlpatterns = [
         "usuarios/importar/lotes/<int:pk>/reanudar/",
         permissions_any_required(["auth.add_user"])(UserImportJobResumeView.as_view()),
         name="usuarios_importar_reanudar",
+    ),
+    path(
+        "usuarios/importar/lotes/<int:pk>/descargar-csv/",
+        permissions_any_required(["auth.add_user"])(
+            UserImportJobDownloadCSVView.as_view()
+        ),
+        name="usuarios_importar_descargar_csv",
     ),
     path(
         "grupos/",

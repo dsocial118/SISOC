@@ -1,0 +1,23 @@
+{% load crispy_forms_tags %}
+<div data-mi-cuenta-form>
+    {% if form.non_field_errors %}
+        <div class="alert alert-danger" role="alert">
+            {% for error in form.non_field_errors %}<div>{{ error }}</div>{% endfor %}
+        </div>
+    {% endif %}
+    <h6 class="text-uppercase text-muted mb-3">Datos personales</h6>
+    <div class="row">
+        <div class="col-md-6">{{ form.first_name|as_crispy_field }}</div>
+        <div class="col-md-6">{{ form.last_name|as_crispy_field }}</div>
+    </div>
+    <div class="row">
+        <div class="col-md-6">{{ form.dni|as_crispy_field }}</div>
+        <div class="col-md-6">{{ form.cuil|as_crispy_field }}</div>
+    </div>
+    <hr />
+    <h6 class="text-uppercase text-muted mb-3">Contacto</h6>
+    <div class="row">
+        <div class="col-md-6">{{ form.email|as_crispy_field }}</div>
+        <div class="col-md-6">{{ form.correo_institucional|as_crispy_field }}</div>
+    </div>
+</div>

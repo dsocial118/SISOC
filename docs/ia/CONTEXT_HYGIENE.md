@@ -28,7 +28,9 @@ Para cualquier tarea:
 ## Elegir una sola guia inicial
 
 - bugfix o feature web/API: `docs/ia/TESTING.md`
-- cambio de estructura o boundaries: `docs/ia/ARCHITECTURE.md`
+- nuevo modulo de dominio, dependencia interdominio o preparacion de extraccion:
+  `docs/ia/MODULAR_BOUNDARIES.md`
+- cambio de estructura o boundaries existente: `docs/ia/ARCHITECTURE.md`
 - cambio de estilo o templates: `docs/ia/STYLE_GUIDE.md`
 - auth, permisos, datos sensibles, uploads: `docs/ia/SECURITY_AI.md`
 - errores, fallbacks o logging: `docs/ia/ERRORS_LOGGING.md`

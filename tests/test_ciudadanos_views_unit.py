@@ -1,15 +1,18 @@
 """Tests unitarios para ciudadanos.views."""
 
+import json
 from contextlib import nullcontext
-from datetime import date
+from datetime import date, datetime
 from types import SimpleNamespace
 from unittest.mock import Mock, patch
 
 import pytest
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Permission
 from django.http import QueryDict
 from django.urls import reverse
 
+from celiaquia.api import LegajoResumenCiudadano, ResumenCiudadano
 from ciudadanos import views as module
 from ciudadanos import views_export as export_module
 
@@ -447,24 +450,55 @@ def test_ciudadanos_detail_helpers_contexts(mocker):
     ciudadano = SimpleNamespace(pk=7)
 
     mocker.patch(
-        "celiaquia.models.ExpedienteCiudadano.objects.filter",
-        side_effect=Exception("boom"),
+        "ciudadanos.views.obtener_resumen_ciudadano", side_effect=Exception("boom")
     )
     log_exc = mocker.patch("ciudadanos.views.logger.exception")
     out_err = module.CiudadanosDetailView().get_celiaquia_context(ciudadano)
-    assert out_err == {"expedientes_celiaquia": []}
+    assert out_err == {"celiaquia_resumen": None}
     assert log_exc.called
 
-    exped = SimpleNamespace(id=1)
-    qs = _ExpedientesList([exped])
-    mocker.patch(
-        "celiaquia.models.ExpedienteCiudadano.objects.filter",
-        return_value=SimpleNamespace(
-            select_related=lambda *a, **k: SimpleNamespace(order_by=lambda *x, **y: qs)
-        ),
+    resumen = SimpleNamespace(legajo_actual=SimpleNamespace())
+    obtener_resumen = mocker.patch(
+        "ciudadanos.views.obtener_resumen_ciudadano", return_value=resumen
     )
     out_ok = module.CiudadanosDetailView().get_celiaquia_context(ciudadano)
-    assert out_ok["expediente_actual"] is exped
+
+    assert out_ok == {"celiaquia_resumen": resumen}
+    obtener_resumen.assert_called_once_with(ciudadano.pk)
+
+
+@pytest.mark.django_db
+def test_ciudadano_detail_renderiza_resumen_publico_celiaquia(
+    client, superuser, mocker
+):
+    ciudadano = module.Ciudadano.objects.create(
+        apellido="Resumen",
+        nombre="Publico",
+        fecha_nacimiento=date(1990, 1, 1),
+        documento=30111222,
+    )
+    legajo = LegajoResumenCiudadano(
+        estado_expediente="Estado desde DTO",
+        estado_legajo="Legajo desde DTO",
+        resultado_cruce="Cruce desde DTO",
+        estado_cupo="Cupo desde DTO",
+        es_titular_activo=True,
+        revision_tecnica="Revision desde DTO",
+        creado_en=datetime(2026, 8, 7, 10, 30),
+    )
+    mocker.patch(
+        "ciudadanos.views.obtener_resumen_ciudadano",
+        return_value=ResumenCiudadano(legajo_actual=legajo, historial=(legajo,)),
+    )
+    client.force_login(superuser)
+
+    response = client.get(reverse("ciudadanos_ver", args=[ciudadano.pk]))
+
+    assert response.status_code == 200
+    content = response.content.decode()
+    assert "Estado desde DTO" in content
+    assert "Legajo desde DTO" in content
+    assert "Cruce desde DTO" in content
 
 
 def test_ciudadanos_create_busqueda_paths(mocker):
@@ -481,7 +515,7 @@ def test_ciudadanos_create_busqueda_paths(mocker):
         "ciudadanos.views.redirect", side_effect=lambda *a, **k: (a, k)
     )
     renaper = mocker.patch(
-        "ciudadanos.views.ComedorService.obtener_datos_ciudadano_desde_renaper",
+        "ciudadanos.views.obtener_datos_ciudadano_desde_renaper",
         return_value={"success": False, "message": "no"},
     )
 
@@ -543,7 +577,7 @@ def test_ciudadanos_create_busqueda_con_existente_no_estandar_precarga_renaper(m
         return_value=_OrderableResult([existente_no_estandar]),
     )
     renaper = mocker.patch(
-        "ciudadanos.views.ComedorService.obtener_datos_ciudadano_desde_renaper",
+        "ciudadanos.views.obtener_datos_ciudadano_desde_renaper",
         return_value={
             "success": True,
             "data": {"documento": 12345678, "nombre": "Ana"},
@@ -566,6 +600,14 @@ def test_ciudadanos_crear_permite_no_estandar_con_dni_de_estandar(client, monkey
     user = get_user_model().objects.create_user(
         username="ciudadanos_duplicados",
         password="test-pass",
+    )
+    user.user_permissions.add(
+        Permission.objects.get(
+            content_type__app_label="ciudadanos", codename="add_ciudadano"
+        ),
+        Permission.objects.get(
+            content_type__app_label="ciudadanos", codename="view_ciudadano"
+        ),
     )
     estandar = module.Ciudadano.objects.create(
         apellido="Gomez",
@@ -590,11 +632,7 @@ def test_ciudadanos_crear_permite_no_estandar_con_dni_de_estandar(client, monkey
             },
         }
 
-    monkeypatch.setattr(
-        module.ComedorService,
-        "obtener_datos_ciudadano_desde_renaper",
-        renaper_ok,
-    )
+    monkeypatch.setattr(module, "obtener_datos_ciudadano_desde_renaper", renaper_ok)
 
     url = reverse("ciudadanos_crear")
     get_response = client.get(url, {"dni": str(documento)})
@@ -977,3 +1015,121 @@ def test_ciudadanos_create_and_update_form_valid_and_context(mocker):
     assert ciudadano2.documento_unico_key is None
     assert ciudadano2.requiere_revision_manual is True
     assert ciudadano2.motivo_no_validacion_renaper is None
+
+
+@pytest.mark.django_db
+def test_ciudadanos_list_usa_filtros_combinables(client, superuser):
+    """El listado debe renderizar la misma barra de filtros que el resto."""
+
+    client.force_login(superuser)
+    respuesta = client.get(reverse("ciudadanos"))
+
+    assert respuesta.status_code == 200
+    contenido = respuesta.content.decode()
+    # Barra compartida en modo filtros
+    assert 'id="poncho-filters-rows"' in contenido
+    assert 'id="poncho-filter-row-template"' in contenido
+    assert "filters-config-json" in contenido
+    # Provincia paso a las filas; estado identidad y revision siguen en el
+    # formulario propio porque el segundo depende del primero.
+    assert 'id="province-filter-form"' in contenido
+    assert "estado-revision-group" in contenido
+
+
+@pytest.mark.django_db
+def test_ciudadanos_list_filtros_combinables_no_pisan_el_formulario(client, superuser):
+    """Aplicar la barra no debe perder estado identidad ni estado de revision."""
+
+    client.force_login(superuser)
+    respuesta = client.get(reverse("ciudadanos"))
+    contenido = respuesta.content.decode()
+
+    # Los hidden enganchados por form= arrastran lo del formulario propio
+    assert 'name="tipo_registro"' in contenido
+    assert 'name="estado_revision"' in contenido
+    assert 'form="filters-form"' in contenido
+
+
+# Necesita DB: get_filters_ui_config() pobla las provincias con
+# get_cached_provincia_filter_choices(), que consulta si el cache esta frio.
+@pytest.mark.django_db
+def test_ciudadanos_filter_config_no_expone_campos_condicionales():
+    """estado_revision y tipo_registro no pueden ser filtros de campo."""
+
+    from ciudadanos.ciudadanos_filter_config import FIELD_MAP, get_filters_ui_config
+
+    assert "estado_revision" not in FIELD_MAP
+    assert "tipo_registro_identidad" not in FIELD_MAP
+
+    config = get_filters_ui_config()
+    nombres = {campo["name"] for campo in config["fields"]}
+    assert nombres == {
+        "apellido",
+        "nombre",
+        "documento",
+        "identificador_interno",
+        "provincia",
+    }
+    # documento solo admite igualdad: un contains seria un scan completo
+    assert config["operators"]["number"] == ["eq"]
+
+
+@pytest.mark.django_db
+def test_ciudadanos_filtros_combinables_se_ejecutan_contra_la_base(client, superuser):
+    """Cada campo del filter_config tiene que producir un lookup valido.
+
+    Regresion: `provincia` estaba mapeada a `provincia_id` con tipo choice, y el
+    motor traduce choice+eq a `__iexact`, que Django rechaza sobre una FK
+    ("Unsupported lookup 'iexact' for ForeignKey"). Renderizar la pagina no
+    alcanzaba para detectarlo: hay que ejecutar el filtro.
+    """
+
+    from core.models import Provincia
+
+    provincia = Provincia.objects.create(nombre="Buenos Aires")
+    esperado = module.Ciudadano.objects.create(
+        apellido="Filtrable",
+        nombre="Ana",
+        fecha_nacimiento=date(1990, 1, 1),
+        tipo_documento=module.Ciudadano.DOCUMENTO_DNI,
+        documento=41222333,
+        provincia=provincia,
+    )
+    module.Ciudadano.objects.create(
+        apellido="Otro",
+        nombre="Luis",
+        fecha_nacimiento=date(1990, 1, 1),
+        tipo_documento=module.Ciudadano.DOCUMENTO_DNI,
+        documento=41222334,
+    )
+
+    client.force_login(superuser)
+    url = reverse("ciudadanos")
+
+    casos = [
+        ("provincia", "eq", "Buenos Aires"),
+        ("apellido", "contains", "Filtrable"),
+        ("nombre", "eq", "Ana"),
+        ("documento", "eq", "41222333"),
+        ("identificador_interno", "contains", "CIU"),
+    ]
+    for campo, operador, valor in casos:
+        payload = json.dumps(
+            {
+                "logic": "AND",
+                "items": [{"field": campo, "op": operador, "value": valor}],
+            }
+        )
+        respuesta = client.get(url, {"filters": payload})
+        assert respuesta.status_code == 200, f"{campo} rompio el queryset"
+
+    # Ademas de no romper, el filtro tiene que discriminar
+    payload = json.dumps(
+        {
+            "logic": "AND",
+            "items": [{"field": "provincia", "op": "eq", "value": "Buenos Aires"}],
+        }
+    )
+    respuesta = client.get(url, {"filters": payload})
+    ids = [c.pk for c in respuesta.context["ciudadanos"]]
+    assert ids == [esperado.pk]

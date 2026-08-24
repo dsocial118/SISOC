@@ -237,14 +237,72 @@ class Comedor(SoftDeleteModelMixin, models.Model):
         dupla (ForeignKey): Dúpla del Comedor/Merendero.
     """
 
-    nombre = models.CharField(
+    CATEGORIA_ESPACIO_ASOCIACION_CIVIL = "asociacion_civil"
+    CATEGORIA_ESPACIO_ASOCIACION_VECINAL = "asociacion_vecinal"
+    CATEGORIA_ESPACIO_COOPERATIVA_TRABAJO = "cooperativa_trabajo"
+    CATEGORIA_ESPACIO_FUNDACION = "fundacion"
+    CATEGORIA_ESPACIO_GRUPO_COMUNITARIO_BASE = "grupo_comunitario_base"
+    CATEGORIA_ESPACIO_CDI = "centro_desarrollo_infantil"
+    CATEGORIA_ESPACIO_CENTRO_JUBILADOS = "centro_jubilados"
+    CATEGORIA_ESPACIO_CLUB_SOCIAL_DEPORTIVO = "club_social_deportivo"
+    CATEGORIA_ESPACIO_HOGAR = "hogar"
+    CATEGORIA_ESPACIO_INSTITUCION_EDUCATIVA = "institucion_educativa"
+    CATEGORIA_ESPACIO_INSTITUCION_RELIGIOSA = "institucion_religiosa"
+    CATEGORIA_ESPACIO_MTD = "movimiento_trabajadores_desocupados"
+    CATEGORIA_ESPACIO_TECNICOS_PROFESIONALES = "tecnicos_profesionales"
+    CATEGORIA_ESPACIO_OTRA = "otra"
+
+    CATEGORIAS_ESPACIO_COMUNITARIO = [
+        (CATEGORIA_ESPACIO_ASOCIACION_CIVIL, "Asociación Civil"),
+        (
+            CATEGORIA_ESPACIO_ASOCIACION_VECINAL,
+            "Asociación Vecinal / Sociedad de Fomento",
+        ),
+        (CATEGORIA_ESPACIO_COOPERATIVA_TRABAJO, "Cooperativa de Trabajo"),
+        (CATEGORIA_ESPACIO_FUNDACION, "Fundación"),
+        (CATEGORIA_ESPACIO_GRUPO_COMUNITARIO_BASE, "Grupo Comunitario de Base"),
+        (CATEGORIA_ESPACIO_CDI, "Centro de Desarrollo Infantil"),
+        (CATEGORIA_ESPACIO_CENTRO_JUBILADOS, "Centro de Jubilados"),
+        (CATEGORIA_ESPACIO_CLUB_SOCIAL_DEPORTIVO, "Club Social y/o Deportivo"),
+        (CATEGORIA_ESPACIO_HOGAR, "Hogar"),
+        (CATEGORIA_ESPACIO_INSTITUCION_EDUCATIVA, "Institución Educativa"),
+        (CATEGORIA_ESPACIO_INSTITUCION_RELIGIOSA, "Institución Religiosa"),
+        (
+            CATEGORIA_ESPACIO_MTD,
+            "Movimiento de Trabajadores Desocupados",
+        ),
+        (
+            CATEGORIA_ESPACIO_TECNICOS_PROFESIONALES,
+            "Organización de Técnicos y Profesionales",
+        ),
+        (CATEGORIA_ESPACIO_OTRA, "Otra (especificar)"),
+    ]
+
+    nombre = models.CharField(max_length=255)
+    categoria_espacio_comunitario = models.CharField(
+        max_length=50,
+        choices=CATEGORIAS_ESPACIO_COMUNITARIO,
+        blank=True,
+        null=True,
+        verbose_name="Categorización de espacio comunitario",
+    )
+    categoria_espacio_comunitario_otra = models.CharField(
         max_length=255,
+        blank=True,
+        null=True,
+        verbose_name="Otra categorización de espacio comunitario",
     )
     organizacion = models.ForeignKey(
         to=Organizacion, blank=True, null=True, on_delete=models.PROTECT
     )
     programa = models.ForeignKey(
         to=Programas, blank=True, null=True, on_delete=models.PROTECT
+    )
+    mes_ejecucion = models.IntegerField(
+        verbose_name="Mes de ejecución",
+        blank=True,
+        null=True,
+        validators=[MinValueValidator(-2), MaxValueValidator(6)],
     )
     id_externo = models.IntegerField(
         verbose_name="Id Externo",
@@ -257,10 +315,22 @@ class Comedor(SoftDeleteModelMixin, models.Model):
         blank=True,
         null=True,
     )
+    proyecto = models.ForeignKey(
+        "organizaciones.ProyectoOrganizacion",
+        on_delete=models.PROTECT,
+        related_name="comedores",
+        blank=True,
+        null=True,
+    )
     es_judicializado = models.BooleanField(
         null=True,
         blank=True,
         verbose_name="¿Es judicializado?",
+    )
+    es_caritas = models.BooleanField(
+        null=True,
+        blank=True,
+        verbose_name="¿Es CARITAS?",
     )
     comienzo = models.IntegerField(
         validators=[
@@ -387,6 +457,20 @@ class Comedor(SoftDeleteModelMixin, models.Model):
     def __str__(self) -> str:
         return str(self.nombre)
 
+    def clean(self):
+        super().clean()
+        if (
+            self.categoria_espacio_comunitario == self.CATEGORIA_ESPACIO_OTRA
+            and not (self.categoria_espacio_comunitario_otra or "").strip()
+        ):
+            raise ValidationError(
+                {
+                    "categoria_espacio_comunitario_otra": (
+                        "Especifique la otra categoría de espacio comunitario."
+                    )
+                }
+            )
+
     def get_estado_general_display(self) -> str:
         """
         Devuelve el nombre del estado general (actividad) basado en el último historial registrado.
@@ -497,7 +581,23 @@ class ComedorDatosConvenioPnud(models.Model):
         null=True,
         blank=True,
     )
+    prestaciones_financiadas_diarias_desayuno = models.PositiveIntegerField(
+        null=True, blank=True
+    )
+    prestaciones_financiadas_diarias_almuerzo = models.PositiveIntegerField(
+        null=True, blank=True
+    )
+    prestaciones_financiadas_diarias_merienda = models.PositiveIntegerField(
+        null=True, blank=True
+    )
+    prestaciones_financiadas_diarias_merienda_reforzada = models.PositiveIntegerField(
+        null=True, blank=True
+    )
+    prestaciones_financiadas_diarias_cena = models.PositiveIntegerField(
+        null=True, blank=True
+    )
     personas_conveniadas = models.PositiveIntegerField(null=True, blank=True)
+    personas_declaradas_siph = models.PositiveIntegerField(null=True, blank=True)
     cantidad_modulos = models.PositiveIntegerField(null=True, blank=True)
     aprobadas_desayuno_lunes = models.IntegerField(
         default=0, validators=[MinValueValidator(0)]
@@ -560,6 +660,27 @@ class ComedorDatosConvenioPnud(models.Model):
         default=0, validators=[MinValueValidator(0)]
     )
     aprobadas_merienda_domingo = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_merienda_reforzada_lunes = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_merienda_reforzada_martes = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_merienda_reforzada_miercoles = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_merienda_reforzada_jueves = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_merienda_reforzada_viernes = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_merienda_reforzada_sabado = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)]
+    )
+    aprobadas_merienda_reforzada_domingo = models.IntegerField(
         default=0, validators=[MinValueValidator(0)]
     )
     aprobadas_cena_lunes = models.IntegerField(
@@ -818,6 +939,11 @@ class PrestacionAlimentariaConformidad(models.Model):
         related_name="conformidades_prestacion_alimentaria",
     )
     creado = models.DateTimeField(auto_now_add=True)
+    certificacion_pdf = models.FileField(
+        upload_to="comedores/certificaciones_prestaciones/",
+        null=True,
+        blank=True,
+    )
 
     class Meta:
         ordering = ["-periodo", "-creado"]

@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 from datetime import timedelta
 from typing import Optional
+from urllib.parse import urlencode
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -31,9 +32,23 @@ def get_user_by_uid(uidb64: str):
         return None
 
 
-def build_password_reset_link(*, user, request=None) -> str:
+def build_password_reset_link(*, user, request=None, front="sisoc") -> str:
     uid = urlsafe_base64_encode(force_bytes(user.pk))
     token = default_token_generator.make_token(user)
+    if front == "pwa":
+        query = urlencode({"uid": uid, "token": token})
+        configured_base = str(getattr(settings, "PWA_BASE_URL", "") or "").rstrip("/")
+        if configured_base:
+            return f"{configured_base}/password-reset-confirm?{query}"
+        request_origin = (
+            (request.META.get("HTTP_ORIGIN") or "").rstrip("/")
+            if request is not None and settings.DEBUG
+            else ""
+        )
+        if request_origin:
+            return f"{request_origin}/password-reset-confirm?{query}"
+        if request is not None:
+            return request.build_absolute_uri(f"/mobile/password-reset-confirm?{query}")
     path = reverse(
         "password_reset_confirm",
         kwargs={"uidb64": uid, "token": token},
@@ -114,6 +129,34 @@ def request_password_reset_for_username(*, username: str) -> None:
     profile.password_reset_requested_at = timezone.now()
     profile.save(update_fields=["password_reset_requested_at"])
     logger.info("Password reset mobile solicitado user_id=%s", user.id)
+
+
+def request_password_reset_for_identity(
+    *, username: str, email: str, request=None
+) -> None:
+    normalized_username = (username or "").strip()
+    normalized_email = (email or "").strip()
+    if not normalized_username or not normalized_email:
+        return
+
+    user = (
+        User.objects.filter(
+            username__iexact=normalized_username,
+            email__iexact=normalized_email,
+            is_active=True,
+        )
+        .order_by("id")
+        .first()
+    )
+    if not user or not is_pwa_user(user):
+        return
+
+    reset_link = build_password_reset_link(user=user, request=request, front="pwa")
+    try:
+        send_password_reset_link(user=user, reset_link=reset_link)
+        logger.info("Password reset PWA solicitado user_id=%s", user.id)
+    except Exception:  # pragma: no cover - depende de backend externo
+        logger.exception("Fallo enviando password reset PWA user_id=%s", user.id)
 
 
 def confirm_password_reset(

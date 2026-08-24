@@ -33,6 +33,7 @@ class TipoEntidad(models.Model):
 
 class SubtipoEntidad(models.Model):
     nombre = models.CharField(max_length=255, unique=True)
+    activo = models.BooleanField(default=True)
     tipo_entidad = models.ForeignKey(
         TipoEntidad,
         on_delete=models.CASCADE,
@@ -78,6 +79,13 @@ class Firmante(SoftDeleteModelMixin, models.Model):
         blank=True,
         null=True,
         validators=[MinValueValidator(0), MaxValueValidator(99999999999)],
+    )
+    programa = models.ForeignKey(
+        "comedores.Programas",
+        on_delete=models.PROTECT,
+        related_name="firmantes_organizacion",
+        blank=True,
+        null=True,
     )
 
     def __str__(self):
@@ -144,8 +152,9 @@ class Organizacion(SoftDeleteModelMixin, models.Model):
         null=True,
     )
     fecha_vencimiento = models.DateTimeField(
-        default=timezone.now, verbose_name="Fecha de vencimiento"
+        blank=True, null=True, verbose_name="Fecha de vencimiento"
     )
+    sin_vencimiento = models.BooleanField(default=False)
     fecha_creacion = models.DateTimeField(auto_now_add=True, null=True, blank=True)
 
     def __str__(self):
@@ -158,6 +167,31 @@ class Organizacion(SoftDeleteModelMixin, models.Model):
         indexes = [
             models.Index(fields=["telefono"], name="org_telefono_idx"),
         ]
+
+
+class ProyectoOrganizacion(models.Model):
+    organizacion = models.ForeignKey(
+        Organizacion,
+        on_delete=models.CASCADE,
+        related_name="proyectos",
+    )
+    codigo = models.CharField(max_length=255)
+    nombre = models.CharField(max_length=255, blank=True, null=True)
+    activo = models.BooleanField(default=True)
+
+    def __str__(self):
+        return self.nombre or self.codigo
+
+    class Meta:
+        ordering = ["codigo"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["organizacion", "codigo"],
+                name="uq_proyecto_organizacion_codigo",
+            )
+        ]
+        verbose_name = "Proyecto de organización"
+        verbose_name_plural = "Proyectos de organización"
 
 
 class DocumentacionOrganizacion(models.Model):

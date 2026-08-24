@@ -12,6 +12,7 @@ from admisiones.models.admisiones import Admision
 from ciudadanos.models import Ciudadano
 from comedores.forms.comedor_form import (
     CiudadanoFormParaNomina,
+    CiudadanoSinDniFormParaNomina,
     NominaExtraForm,
     NominaForm,
 )
@@ -19,9 +20,23 @@ from comedores.models import Nomina
 from comedores.services.comedor_service import ComedorService, normalize_nomina_tab
 from comedores.utils import comedor_usa_admision_para_nomina, is_pnud_comedor
 from core.soft_delete.view_helpers import SoftDeleteDeleteViewMixin
-from pwa.models import ActividadEspacioPWA, RegistroAsistenciaNominaPWA
+from pwa.models import (
+    ActividadEspacioPWA,
+    RegistroAsistenciaNominaPWA,
+)
+from pwa.services.nomina_destinatarios_pdf_service import (
+    get_latest_nomina_destinatarios_documents_by_period,
+)
 from pwa.services.nomina_service import sync_nomina_asistencia_actividades_web
 from pwa.utils import parse_periodo_referencia
+
+MODO_CREACION_SIN_DNI = "sin_dni"
+
+
+def _ciudadano_form_para_post(request):
+    if request.POST.get("modo_creacion") == MODO_CREACION_SIN_DNI:
+        return CiudadanoSinDniFormParaNomina(request.POST)
+    return CiudadanoFormParaNomina(request.POST)
 
 
 def _get_nomina_scoped_or_404(pk, user):
@@ -148,6 +163,14 @@ def _get_asistencia_nomina_context(request, *, admision_id=None, comedor_id=None
         .annotate(total_asistentes=Count("id"))
         .order_by("-periodo_referencia")
     )
+    documentos_por_periodo = get_latest_nomina_destinatarios_documents_by_period(
+        comedor_id=comedor_id,
+        periodos=[item["periodo_referencia"] for item in periodos],
+    )
+    for item in periodos:
+        item["documento_nomina"] = documentos_por_periodo.get(
+            item["periodo_referencia"]
+        )
     periodo_seleccionado = parse_periodo_referencia(request.GET.get("periodo"))
 
     asistentes = []
@@ -264,6 +287,7 @@ class NominaAsistenciaHistorialView(LoginRequiredMixin, TemplateView):
                 **_get_asistencia_nomina_context(
                     self.request,
                     admision_id=admision.pk,
+                    comedor_id=admision.comedor_id,
                 ),
             }
         )
@@ -294,6 +318,7 @@ class NominaCreateView(LoginRequiredMixin, CreateView):
         query = self.request.GET.get("query", "")
         query_clean = query.strip()
         form_ciudadano = kwargs.get("form_ciudadano")
+        form_ciudadano_sin_dni = kwargs.get("form_ciudadano_sin_dni")
         ciudadanos = []
         renaper_data = None
         if query:
@@ -329,7 +354,9 @@ class NominaCreateView(LoginRequiredMixin, CreateView):
             self.request.POST.get("origen_dato") == "renaper"
         )
         no_resultados = bool(query) and not ciudadanos
-        mostrar_form_ciudadano = bool(query) and (no_resultados or bool(renaper_data))
+        mostrar_form_ciudadano = (
+            bool(query) and (no_resultados or bool(renaper_data))
+        ) or self.request.method == "POST"
 
         context.update(
             {
@@ -337,6 +364,9 @@ class NominaCreateView(LoginRequiredMixin, CreateView):
                 "no_resultados": no_resultados,
                 "mostrar_form_ciudadano": mostrar_form_ciudadano,
                 "form_ciudadano": form_ciudadano,
+                "form_ciudadano_sin_dni": form_ciudadano_sin_dni
+                or CiudadanoSinDniFormParaNomina(),
+                "modo_creacion": self.request.POST.get("modo_creacion", "con_dni"),
                 "form_nomina_extra": kwargs.get("form_nomina_extra")
                 or NominaExtraForm(comedor=admision.comedor),
                 "estados": Nomina.ESTADO_CHOICES,
@@ -434,7 +464,8 @@ class NominaCreateView(LoginRequiredMixin, CreateView):
             return redirect(self.get_success_url())
         else:
             # Crear ciudadano nuevo
-            form_ciudadano = CiudadanoFormParaNomina(request.POST)
+            form_ciudadano = _ciudadano_form_para_post(request)
+            es_sin_dni = request.POST.get("modo_creacion") == MODO_CREACION_SIN_DNI
             form_nomina_extra = NominaExtraForm(request.POST, comedor=admision.comedor)
 
             if form_ciudadano.is_valid() and form_nomina_extra.is_valid():
@@ -444,23 +475,19 @@ class NominaCreateView(LoginRequiredMixin, CreateView):
                 if request.POST.get("origen_dato") == "renaper":
                     ciudadano_data["origen_dato"] = "renaper"
 
-                ok, msg = ComedorService.crear_ciudadano_y_agregar_a_nomina(
+                result = ComedorService.crear_ciudadano_y_agregar_a_nomina(
                     ciudadano_data=ciudadano_data,
                     admision_id=admision_id,
                     user=request.user,
                     estado=estado,
                     observaciones=observaciones,
+                    omitir_revision_manual=es_sin_dni,
+                    return_ciudadano=True,
                 )
+                ok, msg = result[:2]
+                ciudadano = result[2] if len(result) > 2 else None
 
                 if ok:
-                    ciudadano = (
-                        Ciudadano.objects.filter(
-                            documento=ciudadano_data.get("documento"),
-                            tipo_documento=ciudadano_data.get("tipo_documento"),
-                        )
-                        .order_by("-id")
-                        .first()
-                    )
                     nomina = (
                         _get_nomina_creada(
                             ciudadano_id=ciudadano.id,
@@ -483,7 +510,10 @@ class NominaCreateView(LoginRequiredMixin, CreateView):
                 messages.warning(request, "Errores en el formulario de ciudadano.")
 
             context = self.get_context_data(
-                form_ciudadano=form_ciudadano,
+                form_ciudadano=(
+                    CiudadanoFormParaNomina() if es_sin_dni else form_ciudadano
+                ),
+                form_ciudadano_sin_dni=(form_ciudadano if es_sin_dni else None),
                 form_nomina_extra=form_nomina_extra,
             )
             return self.render_to_response(context)
@@ -667,6 +697,7 @@ class NominaDirectaCreateView(LoginRequiredMixin, CreateView):
         query = self.request.GET.get("query", "")
         query_clean = query.strip()
         form_ciudadano = kwargs.get("form_ciudadano")
+        form_ciudadano_sin_dni = kwargs.get("form_ciudadano_sin_dni")
         ciudadanos = []
         renaper_data = None
         if query:
@@ -702,7 +733,9 @@ class NominaDirectaCreateView(LoginRequiredMixin, CreateView):
             self.request.POST.get("origen_dato") == "renaper"
         )
         no_resultados = bool(query) and not ciudadanos
-        mostrar_form_ciudadano = bool(query) and (no_resultados or bool(renaper_data))
+        mostrar_form_ciudadano = (
+            bool(query) and (no_resultados or bool(renaper_data))
+        ) or self.request.method == "POST"
 
         context.update(
             {
@@ -710,6 +743,9 @@ class NominaDirectaCreateView(LoginRequiredMixin, CreateView):
                 "no_resultados": no_resultados,
                 "mostrar_form_ciudadano": mostrar_form_ciudadano,
                 "form_ciudadano": form_ciudadano,
+                "form_ciudadano_sin_dni": form_ciudadano_sin_dni
+                or CiudadanoSinDniFormParaNomina(),
+                "modo_creacion": self.request.POST.get("modo_creacion", "con_dni"),
                 "form_nomina_extra": kwargs.get("form_nomina_extra")
                 or NominaExtraForm(comedor=comedor),
                 "estados": Nomina.ESTADO_CHOICES,
@@ -775,7 +811,8 @@ class NominaDirectaCreateView(LoginRequiredMixin, CreateView):
                 messages.warning(request, msg)
             return redirect(self.get_success_url())
         else:
-            form_ciudadano = CiudadanoFormParaNomina(request.POST)
+            form_ciudadano = _ciudadano_form_para_post(request)
+            es_sin_dni = request.POST.get("modo_creacion") == MODO_CREACION_SIN_DNI
             form_nomina_extra = NominaExtraForm(request.POST, comedor=comedor)
 
             if form_ciudadano.is_valid() and form_nomina_extra.is_valid():
@@ -785,22 +822,18 @@ class NominaDirectaCreateView(LoginRequiredMixin, CreateView):
                 if request.POST.get("origen_dato") == "renaper":
                     ciudadano_data["origen_dato"] = "renaper"
 
-                ok, msg = ComedorService.crear_ciudadano_y_agregar_a_nomina(
+                result = ComedorService.crear_ciudadano_y_agregar_a_nomina(
                     ciudadano_data=ciudadano_data,
                     user=request.user,
                     estado=estado,
                     observaciones=observaciones,
                     comedor_id=comedor_id,
+                    omitir_revision_manual=es_sin_dni,
+                    return_ciudadano=True,
                 )
+                ok, msg = result[:2]
+                ciudadano = result[2] if len(result) > 2 else None
                 if ok:
-                    ciudadano = (
-                        Ciudadano.objects.filter(
-                            documento=ciudadano_data.get("documento"),
-                            tipo_documento=ciudadano_data.get("tipo_documento"),
-                        )
-                        .order_by("-id")
-                        .first()
-                    )
                     nomina = (
                         _get_nomina_creada(
                             ciudadano_id=ciudadano.id,
@@ -823,7 +856,10 @@ class NominaDirectaCreateView(LoginRequiredMixin, CreateView):
                 messages.warning(request, "Errores en el formulario de ciudadano.")
 
             context = self.get_context_data(
-                form_ciudadano=form_ciudadano,
+                form_ciudadano=(
+                    CiudadanoFormParaNomina() if es_sin_dni else form_ciudadano
+                ),
+                form_ciudadano_sin_dni=(form_ciudadano if es_sin_dni else None),
                 form_nomina_extra=form_nomina_extra,
             )
             return self.render_to_response(context)
