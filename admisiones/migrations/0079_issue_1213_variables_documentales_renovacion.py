@@ -48,7 +48,9 @@ VARIABLES_DOCUMENTALES = (
 
 def registrar_variables(apps, schema_editor):
     Variable = apps.get_model("admisiones", "VariableTemplateInformeTecnico")
-    for orden, (codigo, nombre, categoria) in enumerate(VARIABLES_DOCUMENTALES, start=1):
+    for orden, (codigo, nombre, categoria) in enumerate(
+        VARIABLES_DOCUMENTALES, start=1
+    ):
         Variable.objects.update_or_create(
             codigo=codigo,
             defaults={
