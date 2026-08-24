@@ -30,7 +30,9 @@
 
 - Empezar por `docs/registro/prs/PR-2331.md` para contexto resumido del PR.
 - Revisar primero estos archivos del diff:
+- `docs/contexto/features/pr-2331-fix-rendiciones-resolver-observaciones-de-subsanacion.md`
 - `docs/registro/cambios/2026-08-19-issue-2305-rendiciones.md`
+- `docs/registro/prs/PR-2331.md`
 - `rendicioncuentasmensual/services.py`
 - `tests/test_pwa_comedores_api.py`
 - `tests/test_rendicioncuentasmensual_services_unit.py`
@@ -39,7 +41,9 @@
 - `docs/ia/CONTEXT_HYGIENE.md`
 - `docs/ia/ARCHITECTURE.md`
 - `docs/ia/TESTING.md`
+- `docs/contexto/features/pr-2331-fix-rendiciones-resolver-observaciones-de-subsanacion.md`
 - `docs/registro/cambios/2026-08-19-issue-2305-rendiciones.md`
+- `docs/registro/prs/PR-2331.md`
 
 ## Trazabilidad
 
