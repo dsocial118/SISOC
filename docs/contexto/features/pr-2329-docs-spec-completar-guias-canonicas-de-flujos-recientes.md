@@ -31,6 +31,7 @@
 - Empezar por `docs/registro/prs/PR-2329.md` para contexto resumido del PR.
 - Revisar primero estos archivos del diff:
 - `AGENT_REPO_MAP.md`
+- `docs/contexto/features/pr-2329-docs-spec-completar-guias-canonicas-de-flujos-recientes.md`
 - `docs/flujos/rendiciones_mensuales_proyectos.md`
 - `docs/implementaciones/centrodeinfancia_nomina_ninos_simepi.md`
 - `docs/implementaciones/comedores_nomina_ciudadanos.md`
@@ -39,11 +40,13 @@
 - `docs/indice.md`
 - `docs/operacion/comandos_administracion.md`
 - `docs/registro/cambios/2026-08-24-spec-as-source-backfill.md`
+- `docs/registro/prs/PR-2329.md`
 - Documentación sugerida para ampliar contexto:
 - `docs/indice.md`
 - `docs/ia/CONTEXT_HYGIENE.md`
 - `docs/ia/ARCHITECTURE.md`
 - `docs/ia/TESTING.md`
+- `docs/contexto/features/pr-2329-docs-spec-completar-guias-canonicas-de-flujos-recientes.md`
 - `docs/flujos/rendiciones_mensuales_proyectos.md`
 - `docs/implementaciones/centrodeinfancia_nomina_ninos_simepi.md`
 - `docs/implementaciones/comedores_nomina_ciudadanos.md`
@@ -51,6 +54,7 @@
 - `docs/implementaciones/usuarios_perfil_iam.md`
 - `docs/operacion/comandos_administracion.md`
 - `docs/registro/cambios/2026-08-24-spec-as-source-backfill.md`
+- `docs/registro/prs/PR-2329.md`
 
 ## Trazabilidad
 
