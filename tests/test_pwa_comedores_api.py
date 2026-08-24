@@ -32,7 +32,7 @@ from comedores.models import (
     Programas,
 )
 from core.models import Localidad, Municipio, Provincia
-from organizaciones.models import Organizacion
+from organizaciones.models import Organizacion, ProyectoOrganizacion
 from relevamientos.models import (
     Anexo,
     CantidadColaboradores,
@@ -831,6 +831,19 @@ def test_crear_rendicion_mobile_rechaza_numero_repetido_y_periodo_solapado(comed
     assert overlap_response.status_code == 400
     assert "periodo" in str(overlap_response.data["detail"])
 
+    overlap_otro_convenio_response = client.post(
+        f"/api/comedores/{comedor_1.id}/rendiciones/",
+        {
+            "convenio": "P03",
+            "numero_rendicion": 3,
+            "periodo_inicio": "2026-01-01",
+            "periodo_fin": "2026-01-31",
+        },
+        format="json",
+    )
+    assert overlap_otro_convenio_response.status_code == 400
+    assert "periodo" in str(overlap_otro_convenio_response.data["detail"])
+
     otro_mes_response = client.post(
         f"/api/comedores/{comedor_1.id}/rendiciones/",
         {
@@ -1027,6 +1040,74 @@ def test_crear_rendicion_mobile_permite_mismo_proyecto_en_otra_organizacion():
     assert response.status_code == 201
     assert response.data["convenio"] == "P03"
     assert response.data["numero_rendicion"] == 1
+
+
+@pytest.mark.django_db
+def test_rendicion_mobile_creada_para_otro_proyecto_del_espacio_permite_adjuntar(
+    settings, tmp_path
+):
+    settings.MEDIA_ROOT = str(tmp_path)
+    provincia = Provincia.objects.create(nombre="Mendoza")
+    programa = Programas.objects.create(nombre="Abordaje Comunitario")
+    organizacion = Organizacion.objects.create(nombre="Organización multiproyecto")
+    comedor = Comedor.objects.create(
+        nombre="Espacio representante multiproyecto",
+        provincia=provincia,
+        organizacion=organizacion,
+        programa=programa,
+        codigo_de_proyecto="PROY-BASE",
+    )
+    proyecto_base = ProyectoOrganizacion.objects.create(
+        organizacion=organizacion,
+        codigo="PROY-BASE",
+        nombre="Proyecto base",
+    )
+    proyecto_seleccionado = ProyectoOrganizacion.objects.create(
+        organizacion=organizacion,
+        codigo="PROY-OTRO",
+        nombre="Proyecto seleccionado",
+    )
+    comedor.proyecto = proyecto_base
+    comedor.save(update_fields=["proyecto"])
+    representante = _create_pwa_user(
+        comedor=comedor,
+        role=AccesoComedorPWA.ROL_REPRESENTANTE,
+        username="rep_rendicion_multiproyecto",
+    )
+    _grant_mobile_rendicion_permission(representante)
+    client = _token_client(representante)
+
+    create_response = client.post(
+        f"/api/comedores/{comedor.id}/rendiciones/",
+        {
+            "proyecto_id": proyecto_seleccionado.id,
+            "convenio": "P01",
+            "numero_rendicion": 1,
+            "periodo_inicio": "2026-08-01",
+            "periodo_fin": "2026-08-31",
+        },
+        format="json",
+    )
+    assert create_response.status_code == 201
+
+    upload_response = client.post(
+        f"/api/comedores/{comedor.id}/rendiciones/{create_response.data['id']}/documentacion/",
+        {
+            "archivo": SimpleUploadedFile(
+                "formulario-ii.pdf",
+                b"%PDF-1.4 multiproyecto",
+                content_type="application/pdf",
+            ),
+            "categoria": DocumentacionAdjunta.CATEGORIA_FORMULARIO_II,
+        },
+        format="multipart",
+    )
+
+    assert upload_response.status_code == 201
+    assert DocumentacionAdjunta.objects.filter(
+        rendicion_cuenta_mensual_id=create_response.data["id"],
+        categoria=DocumentacionAdjunta.CATEGORIA_FORMULARIO_II,
+    ).exists()
 
 
 @pytest.mark.django_db
