@@ -12,6 +12,7 @@ from admisiones.views.web_views import (
     actualizar_num_expediente,
     crear_documento_personalizado,
     previsualizar_informe_tecnico_template,
+    descargar_informe_tecnico_para_gde,
     reportar_configuracion_faltante_template,
     resync_convenio_admision,
     AdmisionesTecnicosListView,
@@ -208,6 +209,17 @@ urlpatterns = [
         "comedores/admision/informe_tecnico/<str:tipo>/<int:pk>/previsualizar/",
         previsualizar_informe_tecnico_template,
         name="informe_tecnico_previsualizar_template",
+    ),
+    path(
+        "comedores/admision/informe_tecnico/<str:tipo>/<int:pk>/descargar-para-gde/",
+        permissions_any_required(
+            [
+                "comedores.view_comedor",
+                "admisiones.view_admision",
+                "acompanamientos.view_informacionrelevante",
+            ]
+        )(descargar_informe_tecnico_para_gde),
+        name="informe_tecnico_descargar_para_gde",
     ),
     path(
         "comedores/admisiones/<int:pk>/templates/reportar-faltante/",

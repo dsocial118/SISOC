@@ -487,6 +487,10 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
   marca de agua y nunca se adjuntan a la admisión. Al crear un template, el
   tipo de convenio se limita al catálogo de Personerías o Organización Base,
   presentada funcionalmente como Asociación de hecho.
+- La descarga del Informe Técnico ofrece una copia transitoria "Descargar para
+  GDE": prioriza el DOCX editado y, si no existe, el borrador. Se normaliza la
+  geometría OOXML de sus tablas antes de responder, sin reemplazar archivos ni
+  modificar estados.
 - El Informe Tecnico Complementario se abre tanto desde Admision como desde el
   convenio seleccionado en `acompanamientos/views.py` y
   `acompanamientos/templates/acompañamiento_detail.html`.

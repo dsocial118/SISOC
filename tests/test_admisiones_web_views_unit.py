@@ -1,5 +1,6 @@
 """Tests for test admisiones web views unit."""
 
+from io import BytesIO
 from types import SimpleNamespace
 
 import pytest
@@ -975,6 +976,40 @@ def test_informe_tecnico_detail_context_muestra_revision_tecnico(mocker):
 
     assert context["k"] == "v"
     assert context["mostrar_revision_tecnico"] is True
+
+
+def test_descargar_informe_tecnico_para_gde_usa_el_docx_editado(mocker):
+    request = _Req(user=_user(superuser=True), method="GET")
+    informe = SimpleNamespace(
+        pk=44,
+        id=44,
+        admision=SimpleNamespace(pk=12),
+    )
+    archivo_borrador = SimpleNamespace(name="borrador.docx")
+    archivo_editado = SimpleNamespace(name="editado.docx")
+    documento_informe = SimpleNamespace(
+        archivo_docx=archivo_borrador,
+        archivo_docx_editado=archivo_editado,
+    )
+    mocker.patch("admisiones.views.web_views.get_object_or_404", return_value=informe)
+    mocker.patch(
+        "admisiones.views.web_views.InformeTecnicoPDF.objects.filter",
+        return_value=SimpleNamespace(first=lambda: documento_informe),
+    )
+    generar = mocker.patch(
+        "admisiones.views.web_views.GdeDocxService.generar",
+        return_value=BytesIO(b"contenido"),
+    )
+
+    response = module.descargar_informe_tecnico_para_gde(
+        request,
+        tipo="base",
+        pk=44,
+    )
+
+    assert response.status_code == 200
+    assert "informe-44-para-gde.docx" in response["Content-Disposition"]
+    generar.assert_called_once_with(archivo_editado, informe_pk=44)
 
 
 def test_informe_tecnico_detail_post_subir_docx_branches(mocker):

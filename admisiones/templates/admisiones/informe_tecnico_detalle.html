@@ -29,6 +29,10 @@
                                 data-bs-toggle="modal"
                                 data-bs-target="#subirDocxModal">📤 Subir DOCX Editado</button>
                     {% endif %}
+                    {% if docx_para_gde_disponible %}
+                        <a href="{% url 'informe_tecnico_descargar_para_gde' tipo object.pk %}"
+                           class="btn btn-outline-success mr-1">📄 Descargar para GDE</a>
+                    {% endif %}
                 {% endif %}
                 {% if request.user|has_any_perm:"comedores.view_comedor,admisiones.view_admision,acompanamientos.view_informacionrelevante" or request.user.is_superuser %}
                     {% if object.estado == "Docx editado" and pdf_borrador and pdf_borrador.archivo_docx_editado %}
