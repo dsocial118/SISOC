@@ -64,3 +64,26 @@ subsanación, exportación y edición con/sin permiso.
 - Suite focalizada de Rendiciones y API PWA: `88 passed`.
 - Suite completa del repositorio: `4068 passed`, `11 skipped`.
 - `black`, `djlint`, `pylint`, chequeo Django y control de migraciones: exitosos.
+
+## Correcciones del comentario del 24 de agosto
+
+- La confirmación de reenvío lista solo solicitudes de documentos faltantes y
+  versiones que continúan efectivamente a subsanar; una versión ya reemplazada
+  no vuelve a aparecer por conservar su estado histórico.
+- La progresividad y la prohibición de períodos repetidos se aplican a todo el
+  proyecto, incluso cuando las rendiciones usan convenios diferentes. La PWA
+  replica la validación antes de crear el registro offline.
+- El PDF consolidado incluye exclusivamente las versiones vigentes con estado
+  validado y excluye del exportable los documentos históricos subsanados.
+- Se conserva la carga de documentos nuevos en categorías múltiples durante una
+  subsanación sin exigir un documento observado para reemplazar.
+- Las consultas PWA reconocen las rendiciones creadas desde un espacio para
+  otro proyecto de la misma organización. Esto evita que el alta termine bien
+  pero las cargas posteriores reciban `Rendición no encontrada`.
+
+La PWA compiló correctamente con TypeScript y Vite. La suite focalizada de
+servicios de rendiciones y API PWA finalizó con `71 passed`.
+La regresión adicional de creación y carga multiproyecto finalizó correctamente
+junto con los casos de scope y períodos (`3 passed`).
+La suite completa posterior a las correcciones finalizó con `4096 passed` y
+`11 skipped`.

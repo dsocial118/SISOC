@@ -244,10 +244,13 @@ class RendicionCuentaMensualService:  # pylint: disable=too-many-public-methods
     @staticmethod
     def _get_project_queryset(comedor, proyecto=None):
         queryset = RendicionCuentaMensual.objects.filter(deleted_at__isnull=True)
+        proyecto_explicito = proyecto is not None
         if proyecto is None:
             proyecto = getattr(comedor, "proyecto", None)
         if proyecto is not None:
-            return queryset.filter(proyecto=proyecto)
+            if proyecto_explicito:
+                return queryset.filter(proyecto=proyecto)
+            return queryset.filter(Q(proyecto=proyecto) | Q(comedor=comedor)).distinct()
         proyecto_codigo = (getattr(comedor, "codigo_de_proyecto", "") or "").strip()
         if proyecto_codigo:
             filters = {"comedor__codigo_de_proyecto": proyecto_codigo}
@@ -354,7 +357,6 @@ class RendicionCuentaMensualService:  # pylint: disable=too-many-public-methods
         )
         ultimo_periodo = (
             queryset.filter(
-                convenio=convenio,
                 periodo_inicio__isnull=False,
             )
             .order_by("-periodo_inicio")
@@ -380,7 +382,6 @@ class RendicionCuentaMensualService:  # pylint: disable=too-many-public-methods
             )
 
         if queryset.filter(
-            convenio=convenio,
             periodo_inicio__lte=periodo_fin,
             periodo_fin__gte=periodo_inicio,
         ).exists():
@@ -625,8 +626,8 @@ class RendicionCuentaMensualService:  # pylint: disable=too-many-public-methods
             rendicion
         ):
             for archivo in categoria["archivos"]:
-                documentos.append(archivo)
-                documentos.extend(getattr(archivo, "subsanaciones_historial", []))
+                if archivo.estado == DocumentacionAdjunta.ESTADO_VALIDADO:
+                    documentos.append(archivo)
         return documentos
 
     @staticmethod
