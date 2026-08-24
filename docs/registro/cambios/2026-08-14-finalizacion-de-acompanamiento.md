@@ -53,6 +53,26 @@ permisos. Queda asentado el trade-off: es una acción irreversible gateada por u
 permiso de lectura, decisión tomada para cumplir el requisito de no ampliar
 permisos a los usuarios operativos.
 
+## Textos
+
+El requerimiento especificaba **un solo texto**, palabra por palabra: la
+advertencia del modal de confirmación. Ese está calcado.
+
+El resto del copy visible es propio, no salió del ticket:
+
+- La franja del detalle ("Acompañamiento finalizado el … por … Finalizó el plazo
+  de ejecución del convenio: ya no es posible operar con esta admisión en
+  SISOC").
+- El botón "Confirmar finalización" y el mensaje de éxito.
+- Los mensajes de bloqueo al restaurar un hito o cargar una intervención.
+
+Se agregaron porque el requerimiento pedía que el acompañamiento "no pueda
+gestionarse" pero no definía cómo comunicarlo: si el botón sólo desaparece, el
+usuario no distingue entre finalizado, cerrado o falta de permisos. La redacción
+sigue a propósito la del modal, para que la confirmación y el estado hablen
+igual. Es texto de template, sin lógica atada: cambiarlo es trivial si producto
+prefiere otra redacción.
+
 ## Bloqueo de operación
 
 Con el acompañamiento finalizado o cerrado (`es_gestionable == False`):
