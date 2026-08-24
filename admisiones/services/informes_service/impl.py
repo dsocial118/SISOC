@@ -61,6 +61,146 @@ DIAS_SEMANA = (
 )
 
 
+class GdeDocxService:
+    """Prepara copias transitorias de DOCX para su importación en GDE."""
+
+    @staticmethod
+    def seleccionar_ultimo_archivo(documento_informe):
+        """Devuelve el DOCX editado o, en su defecto, el borrador disponible."""
+
+        if documento_informe is None:
+            return None
+        archivo_editado = getattr(documento_informe, "archivo_docx_editado", None)
+        if getattr(archivo_editado, "name", ""):
+            return archivo_editado
+        archivo_borrador = getattr(documento_informe, "archivo_docx", None)
+        if getattr(archivo_borrador, "name", ""):
+            return archivo_borrador
+        return None
+
+    @classmethod
+    def generar(cls, archivo_docx, informe_pk=None):
+        """Genera una copia con tablas de ancho explícito para importar en GDE."""
+
+        if not archivo_docx:
+            return None
+
+        try:
+            if hasattr(archivo_docx, "open"):
+                archivo_docx.open("rb")
+            contenido = archivo_docx.read()
+            documento = Document(BytesIO(contenido))
+            ancho_disponible = cls._ancho_disponible_documento_dxa(documento)
+            for tabla in documento.tables:
+                cls._normalizar_tabla(tabla, ancho_disponible)
+
+            buffer = BytesIO()
+            documento.save(buffer)
+            return ContentFile(buffer.getvalue(), name="informe-para-gde.docx")
+        except Exception:
+            logger.exception(
+                "No se pudo preparar el DOCX para GDE",
+                extra={"informe_pk": informe_pk},
+            )
+            return None
+        finally:
+            if hasattr(archivo_docx, "close"):
+                archivo_docx.close()
+
+    @staticmethod
+    def _ancho_disponible_documento_dxa(documento):
+        seccion = documento.sections[0]
+        return (
+            seccion.page_width.twips
+            - seccion.left_margin.twips
+            - seccion.right_margin.twips
+        )
+
+    @classmethod
+    def _normalizar_tabla(cls, tabla, ancho_disponible):
+        """Fija grilla, celdas y ancho de una tabla sin cambiar su contenido."""
+
+        tabla_ooxml = tabla._tbl  # pylint: disable=protected-access
+        columnas = list(tabla_ooxml.tblGrid.gridCol_lst)
+        if not columnas:
+            return
+
+        anchos = cls._calcular_anchos_columnas(columnas, ancho_disponible)
+        propiedades_tabla = tabla_ooxml.tblPr
+        cls._asignar_ancho_dxa(propiedades_tabla, "w:tblW", ancho_disponible)
+        cls._fijar_layout_tabla(propiedades_tabla)
+        tabla.alignment = WD_TABLE_ALIGNMENT.CENTER  # pylint: disable=no-member
+        tabla.autofit = False
+        for columna, ancho in zip(columnas, anchos):
+            columna.set(qn("w:w"), str(ancho))
+        for fila in tabla_ooxml.tr_lst:
+            cls._normalizar_fila(fila, anchos)
+
+    @staticmethod
+    def _fijar_layout_tabla(propiedades_tabla):
+        layout = propiedades_tabla.first_child_found_in("w:tblLayout")
+        if layout is None:
+            layout = OxmlElement("w:tblLayout")
+            propiedades_tabla.append(layout)
+        layout.set(qn("w:type"), "fixed")
+
+        indentacion = propiedades_tabla.first_child_found_in("w:tblInd")
+        if indentacion is not None:
+            propiedades_tabla.remove(indentacion)
+
+    @classmethod
+    def _normalizar_fila(cls, fila, anchos):
+        columna_actual = cls._obtener_grid_before(fila)
+        for celda in fila.tc_lst:
+            propiedades_celda = celda.get_or_add_tcPr()
+            span = cls._obtener_grid_span(propiedades_celda)
+            ancho_celda = sum(anchos[columna_actual : columna_actual + span])
+            cls._asignar_ancho_dxa(propiedades_celda, "w:tcW", ancho_celda)
+            columna_actual += span
+
+    @staticmethod
+    def _calcular_anchos_columnas(columnas, ancho_disponible):
+        pesos = []
+        for columna in columnas:
+            try:
+                pesos.append(max(0, int(columna.get(qn("w:w")) or 0)))
+            except ValueError:
+                pesos.append(0)
+        if not any(pesos):
+            pesos = [1] * len(columnas)
+
+        total_pesos = sum(pesos)
+        anchos = [max(1, ancho_disponible * peso // total_pesos) for peso in pesos]
+        anchos[-1] += ancho_disponible - sum(anchos)
+        return anchos
+
+    @staticmethod
+    def _obtener_grid_before(fila):
+        propiedades_fila = fila.trPr
+        if propiedades_fila is None:
+            return 0
+        grid_before = propiedades_fila.first_child_found_in("w:gridBefore")
+        if grid_before is None:
+            return 0
+        return int(grid_before.get(qn("w:val")) or 0)
+
+    @staticmethod
+    def _obtener_grid_span(propiedades_celda):
+        grid_span = propiedades_celda.first_child_found_in("w:gridSpan")
+        if grid_span is None:
+            return 1
+        return int(grid_span.get(qn("w:val")) or 1)
+
+    @staticmethod
+    def _asignar_ancho_dxa(propiedades, etiqueta, ancho):
+        elemento = propiedades.first_child_found_in(etiqueta)
+        if elemento is None:
+            elemento = OxmlElement(etiqueta)
+            propiedades.append(elemento)
+        elemento.set(qn("w:w"), str(ancho))
+        elemento.set(qn("w:type"), "dxa")
+
+
 class InformeService:
     COLOR_BORDE_TABLA_TEMPLATE = "7A8EA1"
     COLOR_ENCABEZADO_TABLA_TEMPLATE = "EAF3F2"
@@ -971,6 +1111,7 @@ class InformeService:
                 and informe.estado != "Validado"
                 else None
             )
+            documento_docx = pdf_final or pdf_borrador
 
             return {
                 "tipo": tipo,
@@ -978,6 +1119,9 @@ class InformeService:
                 "campos": InformeService.get_campos_visibles_informe(informe),
                 "pdf": pdf_final,
                 "pdf_borrador": pdf_borrador,
+                "docx_para_gde_disponible": bool(
+                    GdeDocxService.seleccionar_ultimo_archivo(documento_docx)
+                ),
             }
         except Exception:
             logger.exception(

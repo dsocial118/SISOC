@@ -8,6 +8,7 @@ from zipfile import ZipFile
 import pytest
 from django.utils import timezone
 from docx import Document
+from docx.oxml.ns import qn
 from docx.shared import Mm, Pt
 
 from admisiones.services import informes_service as module
@@ -371,6 +372,64 @@ def test_generate_docx_content_estiliza_tablas_de_templates_dinamicos():
     assert abs(seccion.left_margin - Mm(20)) <= 635
     assert estilo_normal.font.name == "Times New Roman"
     assert estilo_normal.font.size == Pt(12)
+
+
+def test_generar_docx_para_gde_normaliza_tablas_y_prioriza_docx_editado():
+    documento = Document()
+    tabla = documento.add_table(rows=2, cols=3)
+    tabla.cell(0, 0).text = "Encabezado"
+    tabla.cell(0, 1).merge(tabla.cell(0, 2))
+    tabla.cell(1, 0).text = "A"
+    tabla.cell(1, 1).text = "B"
+    tabla.cell(1, 2).text = "C"
+    buffer = BytesIO()
+    documento.save(buffer)
+
+    original = BytesIO(buffer.getvalue())
+    original.name = "borrador.docx"
+    editado = BytesIO(buffer.getvalue())
+    editado.name = "editado.docx"
+    informe_pdf = SimpleNamespace(
+        archivo_docx=original,
+        archivo_docx_editado=editado,
+    )
+
+    archivo = module.GdeDocxService.seleccionar_ultimo_archivo(informe_pdf)
+    resultado = module.GdeDocxService.generar(archivo)
+
+    assert archivo is editado
+    assert resultado is not None
+    normalizado = Document(BytesIO(resultado.read()))
+    tabla_normalizada = normalizado.tables[0]
+    ancho_disponible = (
+        normalizado.sections[0].page_width.twips
+        - normalizado.sections[0].left_margin.twips
+        - normalizado.sections[0].right_margin.twips
+    )
+    columnas = list(tabla_normalizada._tbl.tblGrid.gridCol_lst)
+    anchos = [int(columna.get(qn("w:w"))) for columna in columnas]
+    propiedades = tabla_normalizada._tbl.tblPr.xml
+    ancho_tabla = tabla_normalizada._tbl.tblPr.first_child_found_in("w:tblW")
+
+    assert sum(anchos) == ancho_disponible
+    assert int(ancho_tabla.get(qn("w:w"))) == ancho_disponible
+    assert ancho_tabla.get(qn("w:type")) == "dxa"
+    assert 'w:tblLayout w:type="fixed"' in propiedades
+    assert "w:tblInd" not in propiedades
+
+    for fila in tabla_normalizada._tbl.tr_lst:
+        columna_actual = 0
+        for celda in fila.tc_lst:
+            propiedades_celda = celda.tcPr
+            span_elemento = propiedades_celda.first_child_found_in("w:gridSpan")
+            span = (
+                int(span_elemento.get(qn("w:val"))) if span_elemento is not None else 1
+            )
+            ancho_celda = propiedades_celda.first_child_found_in("w:tcW")
+            assert int(ancho_celda.get(qn("w:w"))) == sum(
+                anchos[columna_actual : columna_actual + span]
+            )
+            columna_actual += span
 
 
 def test_generar_y_guardar_pdf_and_context_helpers(mocker):
