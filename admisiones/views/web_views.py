@@ -34,6 +34,7 @@ from admisiones.models.admisiones import (
     ArchivoAdmision,
     InformeComplementario,
     InformeTecnico,
+    InformeTecnicoPDF,
 )
 from admisiones.services.admisiones_service import AdmisionService
 from admisiones.services.admisiones_filter_config import (
@@ -42,7 +43,7 @@ from admisiones.services.admisiones_filter_config import (
 from admisiones.services.legales_filter_config import (
     get_filters_ui_config as get_legales_filters_ui_config,
 )
-from admisiones.services.informes_service import InformeService
+from admisiones.services.informes_service import GdeDocxService, InformeService
 from admisiones.services.legales_service import LegalesService
 from core.services.column_preferences import build_columns_context_for_custom_cells
 from core.services.favorite_filters import SeccionesFiltrosFavoritos
@@ -308,6 +309,54 @@ def previsualizar_informe_tecnico_template(request, tipo, pk):
         docx_content,
         as_attachment=True,
         filename=f"vista-previa-informe-{informe.pk}.docx",
+        content_type=(
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        ),
+    )
+
+
+@login_required
+def descargar_informe_tecnico_para_gde(request, tipo, pk):
+    """Descarga el último DOCX del informe con tablas aptas para GDE."""
+
+    informe = get_object_or_404(
+        InformeTecnico.objects.select_related("admision", "admision__comedor"),
+        pk=pk,
+        tipo=tipo,
+    )
+    permisos = [
+        "comedores.view_comedor",
+        "admisiones.view_admision",
+        "acompanamientos.view_informacionrelevante",
+    ]
+    if not (
+        request.user.is_superuser
+        or user_has_any_permission_codes(request.user, permisos)
+    ):
+        return HttpResponse(status=403)
+
+    documento_informe = InformeTecnicoPDF.objects.filter(
+        admision=informe.admision,
+        tipo=tipo,
+        informe_id=informe.id,
+    ).first()
+    archivo_docx = GdeDocxService.seleccionar_ultimo_archivo(documento_informe)
+    if archivo_docx is None:
+        messages.error(request, "No hay un DOCX disponible para preparar para GDE.")
+        return redirect("informe_tecnico_ver", tipo=tipo, pk=informe.pk)
+
+    docx_content = GdeDocxService.generar(
+        archivo_docx,
+        informe_pk=informe.pk,
+    )
+    if docx_content is None:
+        messages.error(request, "No se pudo preparar el DOCX para GDE.")
+        return redirect("informe_tecnico_ver", tipo=tipo, pk=informe.pk)
+
+    return FileResponse(
+        docx_content,
+        as_attachment=True,
+        filename=f"informe-{informe.pk}-para-gde.docx",
         content_type=(
             "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
         ),

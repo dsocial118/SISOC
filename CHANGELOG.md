@@ -3,6 +3,7 @@
 
 ## Actualizaciones
 
+- [sin-area] feat(admisiones): agregar descarga DOCX para GDE. (PR #2332)
 - [sin-area] feat(admisiones): variables documentales para renovaciones. (PR #2330)
 
 ## Corrección de Errores
