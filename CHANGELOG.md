@@ -1,6 +1,10 @@
 <!-- AUTO-GENERATED RELEASE START: 2026-08-26 -->
 # Versión SISOC 26.08.2026
 
+## Actualizaciones
+
+- [sin-area] feat(admisiones): variables documentales para renovaciones. (PR #2330)
+
 ## Corrección de Errores
 
 - [Centro de Infancia] Corrige permisos y validaciones urgentes del módulo CDI. (PR #2310)
