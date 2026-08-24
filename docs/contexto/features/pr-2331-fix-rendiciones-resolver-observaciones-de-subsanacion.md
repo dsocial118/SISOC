@@ -3,7 +3,7 @@
 ## Resumen
 
 - PR: https://github.com/dsocial118/SISOC/pull/2331
-- Base: `development`
+- Base: `homologacion`
 - Rama origen: `Fixes-24-08`
 - Autor: `PabloCao1`
 
