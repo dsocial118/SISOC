@@ -88,16 +88,56 @@ ambiguos.
   `super().form_valid()`. Ahora pasa por el servicio, que es lo que permite
   revincular al editar.
 
+## Fase 3 — el histórico (2026-08-24)
+
+La distribución por año de los que no matchean cambió el diagnóstico:
+
+| Año | Total | Matchean | No matchean | % éxito |
+|---|---|---|---|---|
+| 2024 | 13 | 6 | 7 | 46% |
+| 2025 | 1.311 | 1.281 | 30 | **97,7%** |
+| 2026 | 1.940 | 875 | 1.065 | **45,1%** |
+| (basura) | 2 | 0 | 2 | — |
+
+**No es deuda histórica: el 96% del problema (1.065 de 1.104) es de 2026.** En
+2025 el circuito funcionaba casi perfecto, lo que confirma que la normalización,
+el matcheo por comedor y el modelo de datos son correctos. Algo cambió en 2026.
+
+La hipótesis más probable es de **tiempos**: el expediente de pago se carga antes
+de que la admisión exista en SISOC. La alternativa es un cambio en la oficina que
+genera el expediente (en las muestras, las admisiones recientes traen sufijo
+`APN-CGDNAYF` y los pagos `APN-DDNAYF`). No se puede distinguir desde los datos
+disponibles.
+
+El diseño se resolvió para que funcione bajo cualquiera de las dos:
+
+- **`post_save` en `Admision`** que reintenta vincular los expedientes sueltos de
+  ese comedor. Si el problema es de tiempos, cada admisión que se carga engancha
+  sola sus pagos huérfanos. Sin esto, una migración de una sola pasada los
+  dejaría en `null` para siempre. Un fallo del reintento no impide guardar la
+  admisión.
+- **Comando `revincular_expedientes_pago`** (`--dry-run`, `--comedor N`) para el
+  re-matcheo masivo.
+- **Migración `0004`**, que es la primera corrida de esa misma lógica sobre el
+  histórico.
+
+Los tres comparten la regla: solo tocan los que están sin asignar, nunca pisan un
+vínculo existente, y con cero o más de una coincidencia dejan sin asignar.
+
+La migración lleva su propia copia de la normalización, como corresponde a una
+data migration, y hay un test que verifica que no diverja de la del código vivo.
+Al correr con `TEST MIGRATE=False` la migración no se ejecuta en tests, así que se
+prueba su función directamente.
+
 ## Pendiente
 
-**Fase 3 — el histórico.** Los 1.090 que no existen en admisiones no los puede
-resolver ni la automatización ni el botón manual: no hay a qué asignarlos. Antes
-de escribir la data migration hace falta la distribución por año de esos casos
-(consulta enviada, sin respuesta). Si son de 2024/2025 es deuda histórica; si hay
-muchos de 2026 hay un agujero de proceso vigente. Eso define si el vínculo es
-opcional o si hay que cargar las admisiones faltantes.
+**Pregunta de producto, no técnica:** en 2026 más de la mitad de los expedientes
+de pago apunta a convenios que SISOC no tiene, cuando en 2025 pasaba en el 2% de
+los casos. Hay que entender qué cambió. Si son 1.065 admisiones que alguien tiene
+que cargar, es un proyecto en sí mismo.
 
-También queda pendiente decidir qué hacer con los 8 expedientes sin comedor.
+Queda también decidir qué hacer con los 8 expedientes sin comedor y con los 2
+registros basura (`#MCH#CONVENIO`).
 
 ## Validación
 
