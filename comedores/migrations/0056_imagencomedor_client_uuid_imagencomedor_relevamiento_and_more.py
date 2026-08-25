@@ -4,6 +4,49 @@ import django.db.models.deletion
 from django.db import migrations, models
 
 
+class AddFieldIfMissing(migrations.AddField):
+    """Agrega el campo sólo cuando no fue creado por la historia PWA previa."""
+
+    def database_forwards(self, app_label, schema_editor, from_state, to_state):
+        model = to_state.apps.get_model(app_label, self.model_name)
+        if self.allow_migrate_model(schema_editor.connection.alias, model):
+            with schema_editor.connection.cursor() as cursor:
+                columns = {
+                    column.name
+                    for column in schema_editor.connection.introspection.get_table_description(
+                        cursor, model._meta.db_table
+                    )
+                }
+            if model._meta.get_field(self.name).column in columns:
+                return
+        super().database_forwards(app_label, schema_editor, from_state, to_state)
+
+    def database_backwards(self, app_label, schema_editor, from_state, to_state):
+        # La columna puede provenir de la antigua cadena 0048-0050; al revertir
+        # no se puede determinar su procedencia sin riesgo de perder datos.
+        return
+
+
+class AddConstraintIfMissing(migrations.AddConstraint):
+    """Crea la restricción sólo cuando no existe con el nombre esperado."""
+
+    def database_forwards(self, app_label, schema_editor, from_state, to_state):
+        model = to_state.apps.get_model(app_label, self.model_name)
+        if self.allow_migrate_model(schema_editor.connection.alias, model):
+            with schema_editor.connection.cursor() as cursor:
+                constraints = schema_editor.connection.introspection.get_constraints(
+                    cursor, model._meta.db_table
+                )
+            if self.constraint.name in constraints:
+                return
+        super().database_forwards(app_label, schema_editor, from_state, to_state)
+
+    def database_backwards(self, app_label, schema_editor, from_state, to_state):
+        # Ver AddFieldIfMissing.database_backwards: prioriza rollback sin DDL
+        # destructivo para los entornos que ya tenían la historia anterior.
+        return
+
+
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -12,7 +55,7 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AddField(
+        AddFieldIfMissing(
             model_name="imagencomedor",
             name="client_uuid",
             field=models.CharField(
@@ -22,7 +65,7 @@ class Migration(migrations.Migration):
                 null=True,
             ),
         ),
-        migrations.AddField(
+        AddFieldIfMissing(
             model_name="imagencomedor",
             name="relevamiento",
             field=models.ForeignKey(
@@ -34,7 +77,7 @@ class Migration(migrations.Migration):
                 to="relevamientos.relevamiento",
             ),
         ),
-        migrations.AddConstraint(
+        AddConstraintIfMissing(
             model_name="imagencomedor",
             constraint=models.UniqueConstraint(
                 fields=("comedor", "client_uuid"),

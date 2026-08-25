@@ -20,7 +20,9 @@ class DocumentacionAdjunta(SoftDeleteModelMixin, models.Model):
     CATEGORIA_FORMULARIO_V_SIPH = "formulario_v_siph"
     CATEGORIA_FORMULARIO_VI = "formulario_vi"
     CATEGORIA_EXTRACTO_BANCARIO = "extracto_bancario"
-    CATEGORIA_COMPROBANTES = "comprobantes"
+    CATEGORIA_COMPROBANTES_ALIMENTARIO = "comprobantes_alimentario"
+    CATEGORIA_COMPROBANTES_SIPH = "comprobantes_siph"
+    CATEGORIA_COMPROBANTES = CATEGORIA_COMPROBANTES_ALIMENTARIO
     CATEGORIA_PLANILLA_SEGUROS = "planilla_seguros"
     CATEGORIA_OTROS = "otros"
     MODELO_FORMULARIO_I = CATEGORIA_FORMULARIO_I
@@ -56,7 +58,8 @@ class DocumentacionAdjunta(SoftDeleteModelMixin, models.Model):
         (CATEGORIA_FORMULARIO_V_SIPH, "Formulario V - Certificación de SIPH"),
         (CATEGORIA_FORMULARIO_VI, "Formulario VI - Planilla de Pagos"),
         (CATEGORIA_EXTRACTO_BANCARIO, "Extracto Bancario"),
-        (CATEGORIA_COMPROBANTES, "Comprobante/s"),
+        (CATEGORIA_COMPROBANTES_ALIMENTARIO, "Comprobantes Prestación Alimentaria"),
+        (CATEGORIA_COMPROBANTES_SIPH, "Comprobantes SIPH"),
         (CATEGORIA_PLANILLA_SEGUROS, "Planilla de Seguros"),
         (CATEGORIA_OTROS, "Documentación Adicional"),
     ]
@@ -72,7 +75,7 @@ class DocumentacionAdjunta(SoftDeleteModelMixin, models.Model):
             "codigo": CATEGORIA_FORMULARIO_I,
             "label": "Formulario I - Certificación de Cuenta Bancaria",
             "required": False,
-            "multiple": False,
+            "multiple": True,
             "order": 1,
         },
         {
@@ -108,7 +111,7 @@ class DocumentacionAdjunta(SoftDeleteModelMixin, models.Model):
             "codigo": CATEGORIA_FORMULARIO_V_ALIMENTARIO,
             "label": "Formulario V - Certificación de Prestaciones Alimentarias",
             "required": True,
-            "multiple": False,
+            "multiple": True,
             "order": 6,
         },
         {
@@ -116,29 +119,36 @@ class DocumentacionAdjunta(SoftDeleteModelMixin, models.Model):
             "label": "Formulario V - Certificación de SIPH",
             "description": "Este documento es obligatorio si presentó actividades para este Convenio",
             "required": False,
-            "multiple": False,
+            "multiple": True,
             "order": 7,
         },
         {
             "codigo": CATEGORIA_FORMULARIO_VI,
             "label": "Formulario VI - Planilla de Pagos",
             "required": False,
-            "multiple": False,
+            "multiple": True,
             "order": 8,
         },
         {
             "codigo": CATEGORIA_EXTRACTO_BANCARIO,
             "label": "Extracto Bancario",
             "required": True,
-            "multiple": False,
+            "multiple": True,
             "order": 9,
         },
         {
-            "codigo": CATEGORIA_COMPROBANTES,
-            "label": "Comprobante/s",
+            "codigo": CATEGORIA_COMPROBANTES_ALIMENTARIO,
+            "label": "Comprobantes Prestación Alimentaria",
             "required": False,
             "multiple": True,
             "order": 10,
+        },
+        {
+            "codigo": CATEGORIA_COMPROBANTES_SIPH,
+            "label": "Comprobantes SIPH",
+            "required": False,
+            "multiple": True,
+            "order": 12,
         },
         {
             "codigo": CATEGORIA_PLANILLA_SEGUROS,
@@ -152,7 +162,7 @@ class DocumentacionAdjunta(SoftDeleteModelMixin, models.Model):
             "label": "Documentación Adicional",
             "required": False,
             "multiple": True,
-            "order": 12,
+            "order": 13,
         },
     )
 
@@ -484,6 +494,9 @@ class RendicionCuentaMensual(SoftDeleteModelMixin, models.Model):
         blank=True,
         null=True,
     )
+    nombre = models.CharField(
+        max_length=255, blank=True, null=True, verbose_name="Nombre de Rendición"
+    )
     numero_rendicion = models.PositiveIntegerField(
         verbose_name="Número de Rendición",
         blank=True,
@@ -584,6 +597,20 @@ class RendicionCuentaMensual(SoftDeleteModelMixin, models.Model):
     class Meta:
         permissions = [
             ("manage_mobile_rendicion", "Puede gestionar rendiciones mobile"),
+            ("edit_rendicion_data", "Puede editar datos de rendición"),
+            (
+                "manage_territorial_stage",
+                "Puede gestionar la etapa Revisión Territorial",
+            ),
+            (
+                "manage_auditoria_review_stage",
+                "Puede gestionar la etapa Revisión de Auditoría",
+            ),
+            ("manage_auditoria_stage", "Puede gestionar la etapa Auditoría"),
+            (
+                "manage_regularizacion_stage",
+                "Puede gestionar la etapa Regularización",
+            ),
         ]
         verbose_name = "Rendición de Cuenta Mensual"
         verbose_name_plural = "Rendiciones de Cuenta Mensuales"
@@ -595,6 +622,16 @@ class RendicionCuentaMensual(SoftDeleteModelMixin, models.Model):
             self.ETAPA_AUDITORIA,
             self.ETAPA_REGULARIZACION,
         }
+
+    @property
+    def etapa_badge_class(self):
+        return {
+            self.ETAPA_CARGA_DOCUMENTACION: "etapa-carga",
+            self.ETAPA_REVISION_DOCUMENTACION: "etapa-territorial",
+            self.ETAPA_REVISION_AUDITORIA: "etapa-revision-auditoria",
+            self.ETAPA_AUDITORIA: "etapa-auditoria",
+            self.ETAPA_REGULARIZACION: "etapa-regularizacion",
+        }.get(self.etapa_proceso, "etapa-carga")
 
     @property
     def validacion_auditoria_finalizada(self):
@@ -651,3 +688,34 @@ class RendicionCuentaMensual(SoftDeleteModelMixin, models.Model):
     @property
     def arvhios_adjuntos(self):  # compat legacy (typo histórico)
         return getattr(self, "archivos_adjuntos")
+
+
+class SolicitudDocumentoFaltante(models.Model):
+    rendicion = models.ForeignKey(
+        RendicionCuentaMensual,
+        on_delete=models.CASCADE,
+        related_name="solicitudes_documentos_faltantes",
+    )
+    categoria = models.CharField(
+        max_length=40, choices=DocumentacionAdjunta.CATEGORIA_CHOICES
+    )
+    observaciones = models.TextField()
+    activa = models.BooleanField(default=True)
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    usuario_creador = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True
+    )
+
+    class Meta:
+        ordering = ("fecha_creacion", "id")
+
+    @property
+    def nombre(self):
+        return self.get_categoria_display()
+
+    @property
+    def rendicion_cuenta_mensual(self):
+        return self.rendicion
+
+    def get_estado_display(self):
+        return "Faltante solicitado"

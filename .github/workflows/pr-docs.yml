@@ -59,7 +59,9 @@ jobs:
 
     sync_pr_artifacts:
         needs: generate_pr_artifacts
-        if: always() && github.event.pull_request.head.ref != 'development' && github.event.pull_request.head.ref != 'homologacion' && github.event.pull_request.head.ref != 'main'
+        # Las ramas protegidas no se autoescriben, pero deben traer sus
+        # artefactos ya generados para que una promoción no saltee el gate.
+        if: always()
         runs-on: ubuntu-latest
 
         steps:
@@ -77,7 +79,7 @@ jobs:
                     git fetch --no-tags origin "+refs/pull/${{ github.event.pull_request.number }}/head:refs/remotes/origin/pr-head"
                   fi
 
-                  paths="$(git ls-tree -r --name-only refs/remotes/origin/pr-head -- docs/registro/prs docs/contexto/features)"
+                  paths="$(git ls-tree -r --name-only refs/remotes/origin/pr-head -- docs/registro/prs docs/contexto/features docs/registro/releases/pending CHANGELOG.md)"
                   record_path="docs/registro/prs/PR-${{ github.event.pull_request.number }}.md"
                   feature_pattern="^docs/contexto/features/pr-${{ github.event.pull_request.number }}-.*\\.md$"
                   missing=()
@@ -87,6 +89,15 @@ jobs:
                   fi
                   if ! grep -Eq "$feature_pattern" <<< "$paths"; then
                     missing+=("docs/contexto/features/pr-${{ github.event.pull_request.number }}-*.md")
+                  fi
+                  if [ "${{ github.event.pull_request.base.ref }}" = "main" ]; then
+                    release_pattern="^docs/registro/releases/pending/.*-pr-${{ github.event.pull_request.number }}\\.md$"
+                    if ! grep -Eq "$release_pattern" <<< "$paths"; then
+                      missing+=("docs/registro/releases/pending/*-pr-${{ github.event.pull_request.number }}.md")
+                    fi
+                    if ! grep -Fxq "CHANGELOG.md" <<< "$paths"; then
+                      missing+=("CHANGELOG.md")
+                    fi
                   fi
 
                   if [ "${#missing[@]}" -eq 0 ]; then

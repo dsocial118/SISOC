@@ -413,6 +413,55 @@ class AccesoComedorPWA(models.Model):
         return f"{self.user.username} - {self.comedor_id} - {self.rol}"
 
 
+class AccesoOrganizacionPWA(models.Model):
+    """Organizaciones asignadas a un usuario PWA.
+
+    Es la fuente de verdad de la relación usuario-organización: los accesos
+    por comedor (`AccesoComedorPWA` con `tipo_asociacion='organizacion'`) se
+    derivan de esta membresía y se reconcilian cuando cambia la organización
+    de un comedor.
+    """
+
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="accesos_organizacion_pwa",
+    )
+    organizacion = models.ForeignKey(
+        "organizaciones.Organizacion",
+        on_delete=models.PROTECT,
+        related_name="accesos_organizacion_pwa",
+    )
+    creado_por = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="accesos_organizacion_pwa_creados",
+    )
+    activo = models.BooleanField(default=True)
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    fecha_baja = models.DateTimeField(null=True, blank=True)
+    fecha_actualizacion = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Acceso PWA a organización"
+        verbose_name_plural = "Accesos PWA a organización"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user", "organizacion"],
+                name="unique_pwa_user_organizacion",
+            )
+        ]
+        indexes = [
+            models.Index(fields=["user", "activo"]),
+            models.Index(fields=["organizacion", "activo"]),
+        ]
+
+    def __str__(self):
+        return f"{self.user.username} - organización {self.organizacion_id}"
+
+
 class AuditAccesoComedorPWA(models.Model):
     ACCION_CREATE = "create"
     ACCION_REACTIVATE = "reactivate"

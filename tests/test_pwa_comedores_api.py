@@ -32,7 +32,7 @@ from comedores.models import (
     Programas,
 )
 from core.models import Localidad, Municipio, Provincia
-from organizaciones.models import Organizacion
+from organizaciones.models import Organizacion, ProyectoOrganizacion
 from relevamientos.models import (
     Anexo,
     CantidadColaboradores,
@@ -53,8 +53,16 @@ from relevamientos.models import (
     TipoRecurso,
     TipoTecnologia,
 )
-from rendicioncuentasmensual.models import DocumentacionAdjunta, RendicionCuentaMensual
-from users.models import AccesoComedorPWA
+from rendicioncuentasmensual.models import (
+    DocumentacionAdjunta,
+    RendicionCuentaMensual,
+    SolicitudDocumentoFaltante,
+)
+from rendicioncuentasmensual.services import (
+    RendicionCuentaMensualService,
+    RendicionProcesoService,
+)
+from users.models import AccesoComedorPWA, AccesoOrganizacionPWA
 
 
 def _grant_pwa_permission(user, codename):
@@ -282,6 +290,10 @@ def test_pwa_spaces_selector_list_returns_metadata_and_sorted_names():
         comedor=comedor_b,
         role=AccesoComedorPWA.ROL_REPRESENTANTE,
         username="rep_selector",
+    )
+    AccesoOrganizacionPWA.objects.create(
+        user=representante,
+        organizacion=organizacion,
     )
     AccesoComedorPWA.objects.filter(user=representante, comedor=comedor_b).update(
         tipo_asociacion=AccesoComedorPWA.TIPO_ASOCIACION_ORGANIZACION,
@@ -744,8 +756,9 @@ def test_crear_rendicion_mobile_con_datos_generales(comedores):
     response = client.post(
         f"/api/comedores/{comedor_1.id}/rendiciones/",
         {
-            "convenio": "CONV-2026-01",
+            "convenio": "P01",
             "numero_rendicion": 1,
+            "nombre": "Rendición enero",
             "periodo_inicio": "2026-01-01",
             "periodo_fin": "2026-01-31",
             "observaciones": "Primera presentación",
@@ -754,8 +767,9 @@ def test_crear_rendicion_mobile_con_datos_generales(comedores):
     )
 
     assert response.status_code == 201
-    assert response.data["convenio"] == "CONV-2026-01"
+    assert response.data["convenio"] == "P01"
     assert response.data["numero_rendicion"] == 1
+    assert response.data["nombre"] == "Rendición enero"
     assert response.data["estado"] == "elaboracion"
     assert response.data["periodo_inicio"] == "2026-01-01"
     assert response.data["periodo_fin"] == "2026-01-31"
@@ -785,7 +799,7 @@ def test_crear_rendicion_mobile_rechaza_numero_repetido_y_periodo_solapado(comed
         comedor=comedor_2,
         mes=1,
         anio=2026,
-        convenio="CONV-2026-02",
+        convenio="P02",
         numero_rendicion=2,
         periodo_inicio=date(2026, 1, 1),
         periodo_fin=date(2026, 1, 31),
@@ -794,7 +808,7 @@ def test_crear_rendicion_mobile_rechaza_numero_repetido_y_periodo_solapado(comed
     duplicate_number_response = client.post(
         f"/api/comedores/{comedor_1.id}/rendiciones/",
         {
-            "convenio": "CONV-2026-02",
+            "convenio": "P02",
             "numero_rendicion": 2,
             "periodo_inicio": "2026-02-01",
             "periodo_fin": "2026-02-28",
@@ -807,7 +821,7 @@ def test_crear_rendicion_mobile_rechaza_numero_repetido_y_periodo_solapado(comed
     overlap_response = client.post(
         f"/api/comedores/{comedor_1.id}/rendiciones/",
         {
-            "convenio": "CONV-2026-02",
+            "convenio": "P02",
             "numero_rendicion": 3,
             "periodo_inicio": "2026-01-15",
             "periodo_fin": "2026-02-15",
@@ -816,6 +830,99 @@ def test_crear_rendicion_mobile_rechaza_numero_repetido_y_periodo_solapado(comed
     )
     assert overlap_response.status_code == 400
     assert "periodo" in str(overlap_response.data["detail"])
+
+    overlap_otro_convenio_response = client.post(
+        f"/api/comedores/{comedor_1.id}/rendiciones/",
+        {
+            "convenio": "P03",
+            "numero_rendicion": 3,
+            "periodo_inicio": "2026-01-01",
+            "periodo_fin": "2026-01-31",
+        },
+        format="json",
+    )
+    assert overlap_otro_convenio_response.status_code == 400
+    assert "periodo" in str(overlap_otro_convenio_response.data["detail"])
+
+    otro_mes_response = client.post(
+        f"/api/comedores/{comedor_1.id}/rendiciones/",
+        {
+            "convenio": "P02",
+            "numero_rendicion": 3,
+            "periodo_inicio": "2026-03-15",
+            "periodo_fin": "2026-04-02",
+        },
+        format="json",
+    )
+    assert otro_mes_response.status_code == 400
+    assert "mismo período mensual" in str(otro_mes_response.data["detail"])
+
+    anterior_response = client.post(
+        f"/api/comedores/{comedor_1.id}/rendiciones/",
+        {
+            "convenio": "P02",
+            "numero_rendicion": 3,
+            "periodo_inicio": "2025-12-01",
+            "periodo_fin": "2025-12-31",
+        },
+        format="json",
+    )
+    assert anterior_response.status_code == 400
+    assert "anteriores" in str(anterior_response.data["detail"])
+
+
+@pytest.mark.django_db
+def test_solicitud_documento_faltante_se_cierra_al_adjuntar(
+    comedores, settings, tmp_path, mocker
+):
+    settings.MEDIA_ROOT = str(tmp_path)
+    comedor, _ = comedores
+    rendicion = RendicionCuentaMensual.objects.create(
+        comedor=comedor,
+        mes=5,
+        anio=2026,
+        estado=RendicionCuentaMensual.ESTADO_REVISION,
+        etapa_proceso=RendicionCuentaMensual.ETAPA_REVISION_DOCUMENTACION,
+        subestado_proceso=RendicionCuentaMensual.SUBESTADO_EN_CURSO,
+    )
+    mocker.patch.object(
+        RendicionCuentaMensualService,
+        "_crear_notificacion_mobile_revision_documento",
+    )
+
+    solicitud = RendicionCuentaMensualService.solicitar_documento_faltante(
+        rendicion=rendicion,
+        categoria=DocumentacionAdjunta.CATEGORIA_COMPROBANTES_SIPH,
+        observaciones="Adjuntar comprobante SIPH",
+    )
+    assert solicitud.activa is True
+    rendicion.refresh_from_db()
+    assert rendicion.estado == RendicionCuentaMensual.ESTADO_REVISION
+    assert rendicion.subestado_proceso == RendicionCuentaMensual.SUBESTADO_EN_CURSO
+
+    RendicionProcesoService.ejecutar(
+        rendicion=rendicion,
+        accion=RendicionProcesoService.ACCION_FINALIZAR_TERRITORIAL,
+        datos={},
+    )
+    rendicion.refresh_from_db()
+    assert rendicion.estado == RendicionCuentaMensual.ESTADO_SUBSANAR
+    assert (
+        rendicion.subestado_proceso
+        == RendicionCuentaMensual.SUBESTADO_PENDIENTE_CORRECCIONES
+    )
+
+    RendicionCuentaMensualService.adjuntar_documentacion_mobile(
+        rendicion=rendicion,
+        categoria=DocumentacionAdjunta.CATEGORIA_COMPROBANTES_SIPH,
+        documento_data={
+            "nombre": "siph.pdf",
+            "archivo": SimpleUploadedFile("siph.pdf", b"%PDF-1.4"),
+        },
+    )
+    assert not SolicitudDocumentoFaltante.objects.filter(
+        pk=solicitud.pk, activa=True
+    ).exists()
 
 
 @pytest.mark.django_db
@@ -913,8 +1020,8 @@ def test_crear_rendicion_mobile_permite_mismo_proyecto_en_otra_organizacion():
         comedor=comedor_b,
         mes=4,
         anio=2026,
-        convenio="CONV-ORG-01",
-        numero_rendicion=7,
+        convenio="P03",
+        numero_rendicion=1,
         periodo_inicio=date(2026, 4, 1),
         periodo_fin=date(2026, 4, 30),
     )
@@ -922,8 +1029,8 @@ def test_crear_rendicion_mobile_permite_mismo_proyecto_en_otra_organizacion():
     response = client.post(
         f"/api/comedores/{comedor_a.id}/rendiciones/",
         {
-            "convenio": "CONV-ORG-01",
-            "numero_rendicion": 7,
+            "convenio": "P03",
+            "numero_rendicion": 1,
             "periodo_inicio": "2026-04-01",
             "periodo_fin": "2026-04-30",
         },
@@ -931,8 +1038,76 @@ def test_crear_rendicion_mobile_permite_mismo_proyecto_en_otra_organizacion():
     )
 
     assert response.status_code == 201
-    assert response.data["convenio"] == "CONV-ORG-01"
-    assert response.data["numero_rendicion"] == 7
+    assert response.data["convenio"] == "P03"
+    assert response.data["numero_rendicion"] == 1
+
+
+@pytest.mark.django_db
+def test_rendicion_mobile_creada_para_otro_proyecto_del_espacio_permite_adjuntar(
+    settings, tmp_path
+):
+    settings.MEDIA_ROOT = str(tmp_path)
+    provincia = Provincia.objects.create(nombre="Mendoza")
+    programa = Programas.objects.create(nombre="Abordaje Comunitario")
+    organizacion = Organizacion.objects.create(nombre="Organización multiproyecto")
+    comedor = Comedor.objects.create(
+        nombre="Espacio representante multiproyecto",
+        provincia=provincia,
+        organizacion=organizacion,
+        programa=programa,
+        codigo_de_proyecto="PROY-BASE",
+    )
+    proyecto_base = ProyectoOrganizacion.objects.create(
+        organizacion=organizacion,
+        codigo="PROY-BASE",
+        nombre="Proyecto base",
+    )
+    proyecto_seleccionado = ProyectoOrganizacion.objects.create(
+        organizacion=organizacion,
+        codigo="PROY-OTRO",
+        nombre="Proyecto seleccionado",
+    )
+    comedor.proyecto = proyecto_base
+    comedor.save(update_fields=["proyecto"])
+    representante = _create_pwa_user(
+        comedor=comedor,
+        role=AccesoComedorPWA.ROL_REPRESENTANTE,
+        username="rep_rendicion_multiproyecto",
+    )
+    _grant_mobile_rendicion_permission(representante)
+    client = _token_client(representante)
+
+    create_response = client.post(
+        f"/api/comedores/{comedor.id}/rendiciones/",
+        {
+            "proyecto_id": proyecto_seleccionado.id,
+            "convenio": "P01",
+            "numero_rendicion": 1,
+            "periodo_inicio": "2026-08-01",
+            "periodo_fin": "2026-08-31",
+        },
+        format="json",
+    )
+    assert create_response.status_code == 201
+
+    upload_response = client.post(
+        f"/api/comedores/{comedor.id}/rendiciones/{create_response.data['id']}/documentacion/",
+        {
+            "archivo": SimpleUploadedFile(
+                "formulario-ii.pdf",
+                b"%PDF-1.4 multiproyecto",
+                content_type="application/pdf",
+            ),
+            "categoria": DocumentacionAdjunta.CATEGORIA_FORMULARIO_II,
+        },
+        format="multipart",
+    )
+
+    assert upload_response.status_code == 201
+    assert DocumentacionAdjunta.objects.filter(
+        rendicion_cuenta_mensual_id=create_response.data["id"],
+        categoria=DocumentacionAdjunta.CATEGORIA_FORMULARIO_II,
+    ).exists()
 
 
 @pytest.mark.django_db
@@ -1002,9 +1177,8 @@ def test_adjuntar_y_presentar_rendicion(comedores, settings, tmp_path):
         f"/api/comedores/{comedor_1.id}/rendiciones/{rendicion.id}/",
     )
     assert detail_response.status_code == 200
-    # CATEGORIAS_CONFIG ahora trae 12 items (Form I + III/V divididos +
-    # Form IV/VI + Extracto + Comprobantes + Planilla Seguros + Otros).
-    assert len(detail_response.data["documentacion"]) == 12
+    # CATEGORIAS_CONFIG trae 13 items al separar ambos tipos de comprobantes.
+    assert len(detail_response.data["documentacion"]) == 13
     formulario_i = next(
         item
         for item in detail_response.data["documentacion"]
@@ -1015,13 +1189,20 @@ def test_adjuntar_y_presentar_rendicion(comedores, settings, tmp_path):
     comprobantes = next(
         item
         for item in detail_response.data["documentacion"]
-        if item["codigo"] == DocumentacionAdjunta.CATEGORIA_COMPROBANTES
+        if item["codigo"] == DocumentacionAdjunta.CATEGORIA_COMPROBANTES_ALIMENTARIO
     )
     assert comprobantes["required"] is False
     assert comprobantes["archivos"] == []
     for codigo_multiple in (
+        DocumentacionAdjunta.CATEGORIA_FORMULARIO_I,
         DocumentacionAdjunta.CATEGORIA_FORMULARIO_III_ALIMENTARIO,
         DocumentacionAdjunta.CATEGORIA_FORMULARIO_III_SIPH,
+        DocumentacionAdjunta.CATEGORIA_FORMULARIO_V_ALIMENTARIO,
+        DocumentacionAdjunta.CATEGORIA_FORMULARIO_V_SIPH,
+        DocumentacionAdjunta.CATEGORIA_FORMULARIO_VI,
+        DocumentacionAdjunta.CATEGORIA_EXTRACTO_BANCARIO,
+        DocumentacionAdjunta.CATEGORIA_COMPROBANTES_ALIMENTARIO,
+        DocumentacionAdjunta.CATEGORIA_COMPROBANTES_SIPH,
     ):
         categoria_multiple = next(
             item
@@ -1029,7 +1210,6 @@ def test_adjuntar_y_presentar_rendicion(comedores, settings, tmp_path):
             if item["codigo"] == codigo_multiple
         )
         assert categoria_multiple["multiple"] is True
-        assert len(categoria_multiple["archivos"]) >= 2
     for codigo_siph in (
         DocumentacionAdjunta.CATEGORIA_FORMULARIO_III_SIPH,
         DocumentacionAdjunta.CATEGORIA_FORMULARIO_V_SIPH,
@@ -1332,6 +1512,64 @@ def test_rendicion_en_subsanar_permite_agregar_historial_para_comprobantes(
     assert observado_payload["estado_visual"] == DocumentacionAdjunta.ESTADO_SUBSANAR
     assert observado_payload["estado_label_visual"] == "A Subsanar"
     assert observado_payload["observaciones"] == "Subir una versión legible"
+
+
+@pytest.mark.django_db
+@override_settings(ROOT_URLCONF="tests.test_urls_pwa_comedores_api")
+def test_rendicion_en_subsanar_permite_agregar_documento_nuevo_en_categoria_multiple(
+    comedores, settings, tmp_path
+):
+    settings.MEDIA_ROOT = str(tmp_path)
+    comedor_1, _ = comedores
+    representante = _create_pwa_user(
+        comedor=comedor_1,
+        role=AccesoComedorPWA.ROL_REPRESENTANTE,
+        username="rep_subsanar_documento_nuevo",
+    )
+    _grant_mobile_rendicion_permission(representante)
+    client = _token_client(representante)
+
+    rendicion = RendicionCuentaMensual.objects.create(
+        comedor=comedor_1,
+        mes=6,
+        anio=2026,
+        estado=RendicionCuentaMensual.ESTADO_SUBSANAR,
+    )
+    existente = DocumentacionAdjunta.objects.create(
+        nombre="formulario-i-original.pdf",
+        categoria=DocumentacionAdjunta.CATEGORIA_FORMULARIO_I,
+        estado=DocumentacionAdjunta.ESTADO_VALIDADO,
+        rendicion_cuenta_mensual=rendicion,
+        archivo=SimpleUploadedFile(
+            "formulario-i-original.pdf",
+            b"%PDF-1.4 original",
+            content_type="application/pdf",
+        ),
+    )
+
+    response = client.post(
+        f"/api/comedores/{comedor_1.id}/rendiciones/{rendicion.id}/documentacion/",
+        {
+            "archivo": SimpleUploadedFile(
+                "formulario-i-nuevo.pdf",
+                b"%PDF-1.4 nuevo",
+                content_type="application/pdf",
+            ),
+            "categoria": DocumentacionAdjunta.CATEGORIA_FORMULARIO_I,
+        },
+        format="multipart",
+    )
+
+    assert response.status_code == 201
+    documentos = DocumentacionAdjunta.objects.filter(
+        rendicion_cuenta_mensual=rendicion,
+        categoria=DocumentacionAdjunta.CATEGORIA_FORMULARIO_I,
+    ).order_by("id")
+    assert documentos.count() == 2
+    nuevo = documentos.last()
+    assert nuevo.id != existente.id
+    assert nuevo.estado == DocumentacionAdjunta.ESTADO_PRESENTADO
+    assert nuevo.documento_subsanado_id is None
 
 
 def _comedor_alimentar_comunidad(*, username):
