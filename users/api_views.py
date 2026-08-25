@@ -33,7 +33,11 @@ from users.services_auth import (
     confirm_password_reset,
     request_password_reset_for_identity,
 )
-from users.services_pwa import get_access_rows, is_pwa_user
+from users.services_pwa import (
+    get_access_rows,
+    is_pwa_user,
+    is_territorial_comedor_user,
+)
 
 logger = logging.getLogger("django")
 
@@ -91,7 +95,7 @@ class UserLoginViewSet(viewsets.ViewSet):
             )
             return response
         user = serializer.validated_data["user"]
-        if not is_pwa_user(user):
+        if not is_pwa_user(user) and not is_territorial_comedor_user(user):
             detail = "Este usuario no tiene acceso PWA activo."
             response = Response(
                 {"detail": detail},

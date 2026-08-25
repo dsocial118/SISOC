@@ -83,6 +83,58 @@ def test_api_login_rejects_non_pwa_user():
 
 
 @pytest.mark.django_db
+def test_api_login_allows_territorial_user():
+    user_model = get_user_model()
+    user = user_model.objects.create_user(
+        username="territorial_login",
+        email="territorial_login@example.com",
+        password="testpass123",
+    )
+    user.profile.es_territorial_comedor = True
+    user.profile.save(update_fields=["es_territorial_comedor"])
+
+    client = APIClient()
+    response = client.post(
+        "/api/users/login/",
+        {"username": "territorial_login", "password": "testpass123"},
+        format="json",
+    )
+
+    assert response.status_code == 200
+    assert response.data["token_type"] == "Token"
+    assert Token.objects.filter(user=user, key=response.data["token"]).exists()
+
+
+@pytest.mark.django_db
+def test_users_me_includes_territorial_context():
+    provincia = Provincia.objects.create(nombre="Territorial Me Prov")
+    user_model = get_user_model()
+    user = user_model.objects.create_user(
+        username="territorial_me",
+        email="territorial_me@example.com",
+        password="testpass123",
+    )
+    user.profile.es_territorial_comedor = True
+    user.profile.save(update_fields=["es_territorial_comedor"])
+    from users.models import TerritorialComedorProvincia
+
+    TerritorialComedorProvincia.objects.create(
+        profile=user.profile, provincia=provincia
+    )
+    token, _ = Token.objects.get_or_create(user=user)
+    client = APIClient()
+    client.credentials(HTTP_AUTHORIZATION=f"Token {token.key}")
+
+    response = client.get("/api/users/me/")
+
+    assert response.status_code == 200
+    assert response.data["profile"]["es_territorial_comedor"] is True
+    assert response.data["profile"]["territorial_comedor_provincias"] == [
+        {"id": provincia.id, "nombre": "Territorial Me Prov"}
+    ]
+
+
+@pytest.mark.django_db
 def test_users_me_requires_authentication():
     client = APIClient()
     response = client.get("/api/users/me/")
