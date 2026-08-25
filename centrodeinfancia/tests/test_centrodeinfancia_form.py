@@ -108,6 +108,26 @@ def test_alta_con_todos_los_campos_validos_guarda(user, ubicacion, servicio):
     ]
 
 
+@pytest.mark.django_db
+def test_alta_admite_identificadores_opcionales_del_referente(
+    user, ubicacion, servicio
+):
+    form = construir_form(
+        datos_validos(
+            ubicacion,
+            servicio,
+            dni_referente="30.123.456",
+            cuil_referente="20-44535030-4",
+        ),
+        user=user,
+    )
+
+    assert form.is_valid(), form.errors
+    centro = form.save()
+    assert centro.dni_referente == "30123456"
+    assert centro.cuil_referente == "20445350304"
+
+
 # --- BUG-01 / BUG-02: campos obligatorios en el alta -------------------------
 
 
