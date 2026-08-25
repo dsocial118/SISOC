@@ -90,9 +90,7 @@ def test_territorial_comedores_items_lista_todos_los_relevamientos():
     finalizado = Relevamiento.objects.create(
         comedor=comedor, estado="Finalizado", fecha_visita=timezone.now()
     )
-    pendiente = Relevamiento.objects.create(
-        comedor=comedor, estado="Visita pendiente"
-    )
+    pendiente = Relevamiento.objects.create(comedor=comedor, estado="Visita pendiente")
 
     user = _make_territorial("terr_items", [prov])
     client = _auth_client(user)
@@ -270,9 +268,7 @@ def test_territorial_upload_image_scoped_to_relevamiento():
 
     assert resp.status_code == 201
     assert resp.data["imagenes"][0]["relevamiento"] == rel.id
-    assert (
-        ImagenComedor.objects.filter(comedor=comedor, relevamiento=rel).count() == 1
-    )
+    assert ImagenComedor.objects.filter(comedor=comedor, relevamiento=rel).count() == 1
 
 
 @pytest.mark.django_db

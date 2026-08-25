@@ -35,8 +35,6 @@ def test_patch_relevamiento_unknown_sisoc_id_returns_404():
     client = APIClient()
     client.credentials(HTTP_AUTHORIZATION=f"Token {token.key}")
 
-    response = client.patch(
-        "/api/relevamiento", {"sisoc_id": 999999}, format="json"
-    )
+    response = client.patch("/api/relevamiento", {"sisoc_id": 999999}, format="json")
 
     assert response.status_code == 404

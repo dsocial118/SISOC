@@ -206,7 +206,9 @@ class TerritorialComedorViewSet(
                 id=relevamiento_id, comedor=comedor
             ).exists():
                 return Response(
-                    {"detail": "El sisoc_id no corresponde a un relevamiento de este comedor."},
+                    {
+                        "detail": "El sisoc_id no corresponde a un relevamiento de este comedor."
+                    },
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
