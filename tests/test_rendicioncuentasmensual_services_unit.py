@@ -362,7 +362,9 @@ def test_obtener_documentacion_para_detalle_mantiene_vigente_reemplazo_categoria
 
 
 @pytest.mark.django_db
-def test_obtener_documentos_para_descarga_pdf_respeta_orden_visible(settings, tmp_path):
+def test_obtener_documentos_para_descarga_pdf_solo_incluye_vigentes_validados(
+    settings, tmp_path
+):
     settings.MEDIA_ROOT = str(tmp_path)
     rendicion = RendicionCuentaMensual.objects.create(
         mes=4,
@@ -411,7 +413,6 @@ def test_obtener_documentos_para_descarga_pdf_respeta_orden_visible(settings, tm
     assert [item.id for item in documentos] == [
         formulario.id,
         subsanacion.id,
-        comprobante.id,
     ]
 
 
