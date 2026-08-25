@@ -9,6 +9,7 @@ from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 
 from comedores.services.comedor_service import ComedorService
+from comedores.services.territorial_service import TerritorialService
 from users.services_pwa import get_territorial_comedor_users_for_provincia
 
 logger = logging.getLogger("django")
