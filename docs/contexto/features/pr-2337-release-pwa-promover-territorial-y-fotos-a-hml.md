@@ -9,7 +9,7 @@
 
 ## Contexto funcional
 
-- No informado explícitamente; inferir desde el título del PR y el diff.
+- Promoción a HML de la PWA territorial y el flujo de imágenes de comedor, incluyendo la migración compatible con el estado histórico de QA y producción.
 
 ## Arquitectura tocada
 
@@ -20,10 +20,10 @@
 
 ## Decisiones y supuestos detectados
 
-- Tipo de cambio declarado: No informado
-- Área principal declarada: No informada
-- Impacto usuario declarado: No informado
-- Riesgos / rollback: No informado
+- Tipo de cambio declarado: Release candidate; sin merge ni despliegue automático.
+- Área principal declarada: comedores, users y sus migraciones Django.
+- Impacto usuario declarado: Habilita validar en HML los cambios PWA aprobados en QA y no altera datos cuando las estructuras históricas ya existen.
+- Riesgos / rollback: La 0056 es idempotente solo hacia adelante. Ante reversión, restaurar el despliegue; no ejecutar una reversión destructiva de la migración con origen histórico incierto.
 
 ## Design system y UI
 
@@ -42,9 +42,11 @@
 - `comedores/views_territorial.py`
 - `config/urls.py`
 - `docs/contexto/features/pr-2335-release-pwa-promover-territorial-y-fotos-a-qa.md`
+- `docs/contexto/features/pr-2337-release-pwa-promover-territorial-y-fotos-a-hml.md`
 - `docs/registro/cambios/2026-07-17-usuario-territorial-comedor.md`
 - `docs/registro/cambios/2026-08-25-pwanueva-migraciones-pwa.md`
 - `docs/registro/prs/PR-2335.md`
+- `docs/registro/prs/PR-2337.md`
 - `relevamientos/views/api_views.py`
 - `tests/test_comedores_migration_0056.py`
 - `tests/test_relevamiento_api_patch.py`
@@ -52,18 +54,18 @@
 - `tests/test_users_api_login.py`
 - `tests/test_users_pwa_forms.py`
 - `users/api_permissions.py`
-- `users/api_serializers.py`
-- `users/api_views.py`
-- ... y 6 archivo(s) adicional(es) relacionados.
+- ... y 8 archivo(s) adicional(es) relacionados.
 - Documentación sugerida para ampliar contexto:
 - `docs/indice.md`
 - `docs/ia/CONTEXT_HYGIENE.md`
 - `docs/ia/ARCHITECTURE.md`
 - `docs/ia/TESTING.md`
 - `docs/contexto/features/pr-2335-release-pwa-promover-territorial-y-fotos-a-qa.md`
+- `docs/contexto/features/pr-2337-release-pwa-promover-territorial-y-fotos-a-hml.md`
 - `docs/registro/cambios/2026-07-17-usuario-territorial-comedor.md`
 - `docs/registro/cambios/2026-08-25-pwanueva-migraciones-pwa.md`
 - `docs/registro/prs/PR-2335.md`
+- `docs/registro/prs/PR-2337.md`
 
 ## Trazabilidad
 
