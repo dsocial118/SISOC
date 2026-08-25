@@ -42,9 +42,11 @@
 - `comedores/views_territorial.py`
 - `config/urls.py`
 - `docs/contexto/features/pr-2335-release-pwa-promover-territorial-y-fotos-a-qa.md`
+- `docs/contexto/features/pr-2337-release-pwa-promover-territorial-y-fotos-a-hml.md`
 - `docs/registro/cambios/2026-07-17-usuario-territorial-comedor.md`
 - `docs/registro/cambios/2026-08-25-pwanueva-migraciones-pwa.md`
 - `docs/registro/prs/PR-2335.md`
+- `docs/registro/prs/PR-2337.md`
 - `relevamientos/views/api_views.py`
 - `tests/test_comedores_migration_0056.py`
 - `tests/test_relevamiento_api_patch.py`
@@ -52,18 +54,18 @@
 - `tests/test_users_api_login.py`
 - `tests/test_users_pwa_forms.py`
 - `users/api_permissions.py`
-- `users/api_serializers.py`
-- `users/api_views.py`
-- ... y 6 archivo(s) adicional(es) relacionados.
+- ... y 8 archivo(s) adicional(es) relacionados.
 - Documentación sugerida para ampliar contexto:
 - `docs/indice.md`
 - `docs/ia/CONTEXT_HYGIENE.md`
 - `docs/ia/ARCHITECTURE.md`
 - `docs/ia/TESTING.md`
 - `docs/contexto/features/pr-2335-release-pwa-promover-territorial-y-fotos-a-qa.md`
+- `docs/contexto/features/pr-2337-release-pwa-promover-territorial-y-fotos-a-hml.md`
 - `docs/registro/cambios/2026-07-17-usuario-territorial-comedor.md`
 - `docs/registro/cambios/2026-08-25-pwanueva-migraciones-pwa.md`
 - `docs/registro/prs/PR-2335.md`
+- `docs/registro/prs/PR-2337.md`
 
 ## Trazabilidad
 
