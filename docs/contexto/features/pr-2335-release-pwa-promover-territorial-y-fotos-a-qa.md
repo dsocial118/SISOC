@@ -1,0 +1,72 @@
+# Contexto de feature PR #2335 - release(pwa): promover territorial y fotos a QA
+
+## Resumen
+
+- PR: https://github.com/dsocial118/SISOC/pull/2335
+- Base: `development`
+- Rama origen: `pwanueva`
+- Autor: `juanikitro`
+
+## Contexto funcional
+
+- No informado explícitamente; inferir desde el título del PR y el diff.
+
+## Arquitectura tocada
+
+- Hay cambios en capa API/DRF y conviene revisar contratos de request/response.
+- Hay cambios en vistas web y puede existir impacto en permisos o renderizado.
+- Se modifican templates, con posible impacto visual o de composición UI.
+- Existen cambios de persistencia o migraciones que requieren revisión de datos.
+
+## Decisiones y supuestos detectados
+
+- Tipo de cambio declarado: No informado
+- Área principal declarada: No informada
+- Impacto usuario declarado: No informado
+- Riesgos / rollback: No informado
+
+## Design system y UI
+
+- El PR toca piezas de UI y conviene revisar consistencia visual con el patrón existente.
+- Archivos visuales relevantes: users/templates/user/user_form.html
+
+## Memoria operativa para agentes
+
+- Empezar por `docs/registro/prs/PR-2335.md` para contexto resumido del PR.
+- Revisar primero estos archivos del diff:
+- `comedores/api_serializers.py`
+- `comedores/api_urls_territorial.py`
+- `comedores/api_views_territorial.py`
+- `comedores/migrations/0056_imagencomedor_client_uuid_imagencomedor_relevamiento_and_more.py`
+- `comedores/models.py`
+- `comedores/views_territorial.py`
+- `config/urls.py`
+- `docs/contexto/features/pr-2331-fix-rendiciones-resolver-observaciones-de-subsanacion.md`
+- `docs/registro/cambios/2026-07-17-usuario-territorial-comedor.md`
+- `docs/registro/cambios/2026-08-19-issue-2305-rendiciones.md`
+- `docs/registro/cambios/2026-08-25-pwanueva-migraciones-pwa.md`
+- `docs/registro/prs/PR-2331.md`
+- `relevamientos/views/api_views.py`
+- `rendicioncuentasmensual/services.py`
+- `tests/test_comedores_migration_0056.py`
+- `tests/test_pwa_comedores_api.py`
+- `tests/test_relevamiento_api_patch.py`
+- `tests/test_rendicioncuentasmensual_services_unit.py`
+- `tests/test_territorial_api.py`
+- `tests/test_users_api_login.py`
+- ... y 10 archivo(s) adicional(es) relacionados.
+- Documentación sugerida para ampliar contexto:
+- `docs/indice.md`
+- `docs/ia/CONTEXT_HYGIENE.md`
+- `docs/ia/ARCHITECTURE.md`
+- `docs/ia/TESTING.md`
+- `docs/contexto/features/pr-2331-fix-rendiciones-resolver-observaciones-de-subsanacion.md`
+- `docs/registro/cambios/2026-07-17-usuario-territorial-comedor.md`
+- `docs/registro/cambios/2026-08-19-issue-2305-rendiciones.md`
+- `docs/registro/cambios/2026-08-25-pwanueva-migraciones-pwa.md`
+- `docs/registro/prs/PR-2331.md`
+
+## Trazabilidad
+
+- Documento generado automáticamente desde el evento de `pull_request`.
+- Si este PR cambia de título, el archivo se renombrará para mantener el slug alineado.
