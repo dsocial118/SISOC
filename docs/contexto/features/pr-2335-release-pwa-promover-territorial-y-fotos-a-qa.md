@@ -43,18 +43,18 @@
 - `config/urls.py`
 - `docs/contexto/features/pr-2331-fix-rendiciones-resolver-observaciones-de-subsanacion.md`
 - `docs/contexto/features/pr-2335-release-pwa-promover-territorial-y-fotos-a-qa.md`
+- `docs/contexto/features/pr-2336-release-pwa-promover-territorial-y-fotos-a-hml.md`
 - `docs/registro/cambios/2026-07-17-usuario-territorial-comedor.md`
 - `docs/registro/cambios/2026-08-19-issue-2305-rendiciones.md`
 - `docs/registro/cambios/2026-08-25-pwanueva-migraciones-pwa.md`
 - `docs/registro/prs/PR-2331.md`
 - `docs/registro/prs/PR-2335.md`
+- `docs/registro/prs/PR-2336.md`
 - `relevamientos/views/api_views.py`
 - `rendicioncuentasmensual/services.py`
 - `tests/test_comedores_migration_0056.py`
 - `tests/test_pwa_comedores_api.py`
-- `tests/test_relevamiento_api_patch.py`
-- `tests/test_rendicioncuentasmensual_services_unit.py`
-- ... y 12 archivo(s) adicional(es) relacionados.
+- ... y 14 archivo(s) adicional(es) relacionados.
 - Documentación sugerida para ampliar contexto:
 - `docs/indice.md`
 - `docs/ia/CONTEXT_HYGIENE.md`
@@ -62,11 +62,13 @@
 - `docs/ia/TESTING.md`
 - `docs/contexto/features/pr-2331-fix-rendiciones-resolver-observaciones-de-subsanacion.md`
 - `docs/contexto/features/pr-2335-release-pwa-promover-territorial-y-fotos-a-qa.md`
+- `docs/contexto/features/pr-2336-release-pwa-promover-territorial-y-fotos-a-hml.md`
 - `docs/registro/cambios/2026-07-17-usuario-territorial-comedor.md`
 - `docs/registro/cambios/2026-08-19-issue-2305-rendiciones.md`
 - `docs/registro/cambios/2026-08-25-pwanueva-migraciones-pwa.md`
 - `docs/registro/prs/PR-2331.md`
 - `docs/registro/prs/PR-2335.md`
+- `docs/registro/prs/PR-2336.md`
 
 ## Trazabilidad
 
