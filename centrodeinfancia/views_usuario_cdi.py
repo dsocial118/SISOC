@@ -47,6 +47,8 @@ class GenerarUsuarioCDIView(LoginRequiredMixin, UserPassesTestMixin, FormView):
             "first_name": self.centro.nombre_referente or "",
             "last_name": self.centro.apellido_referente or "",
             "email": self.centro.email_referente or "",
+            "dni": self.centro.dni_referente or "",
+            "cuil": self.centro.cuil_referente or "",
         }
 
     def get_context_data(self, **kwargs):
@@ -63,6 +65,8 @@ class GenerarUsuarioCDIView(LoginRequiredMixin, UserPassesTestMixin, FormView):
             first_name=form.cleaned_data["first_name"],
             last_name=form.cleaned_data["last_name"],
             email=form.cleaned_data["email"],
+            dni=form.cleaned_data["dni"],
+            cuil=form.cleaned_data["cuil"],
         )
         try:
             resultado = generar_usuario_delegado(

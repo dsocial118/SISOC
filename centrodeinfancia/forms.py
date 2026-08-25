@@ -10,6 +10,7 @@ from django.core.validators import MaxLengthValidator
 
 from core.models import Localidad, Municipio, Provincia
 from core.validators import (
+    solo_digitos,
     validate_codigo_postal_ar,
     validate_cuit,
     validate_solo_letras,
@@ -482,6 +483,21 @@ class CentroDeInfanciaForm(forms.ModelForm):
     def clean_telefono_referente(self):
         return self._clean_telefono("telefono_referente")
 
+    def clean_dni_referente(self):
+        dni = solo_digitos(self.cleaned_data.get("dni_referente"))
+        if dni and len(dni) < 6:
+            raise forms.ValidationError("Ingrese un DNI válido (solo números).")
+        return dni or None
+
+    def clean_cuil_referente(self):
+        raw = (self.cleaned_data.get("cuil_referente") or "").strip()
+        if not raw:
+            return None
+        try:
+            return validate_cuit(raw)
+        except ValidationError as exc:
+            raise forms.ValidationError(exc.messages) from exc
+
     def _clean_coordenada(self, field_name, minimo, maximo, etiqueta):
         value = self.cleaned_data.get(field_name)
         if value in (None, ""):
@@ -583,6 +599,8 @@ class CentroDeInfanciaForm(forms.ModelForm):
             "apellido_referente",
             "email_referente",
             "telefono_referente",
+            "dni_referente",
+            "cuil_referente",
             "fecha_inicio",
         ]
         widgets = {
@@ -1707,6 +1725,10 @@ class NominaCentroInfanciaDestinatariosForm(NominaCentroInfanciaBaseForm):
 
     def _validar_condicionales_discapacidad(self, cleaned_data):
         if cleaned_data.get("tiene_discapacidad") == "si":
+            if not cleaned_data.get("tipo_discapacidad"):
+                self.add_error(
+                    "tipo_discapacidad", "Debe seleccionar al menos una opción."
+                )
             if cleaned_data.get("recibe_apoyo_discapacidad") is None:
                 self.add_error(
                     "recibe_apoyo_discapacidad", "Debe seleccionar una opción."
@@ -1903,6 +1925,7 @@ class TrabajadorCDIForm(forms.ModelForm):
         # El orden importa: _configurar_pais_nacionalidad reemplaza los campos, así que
         # los requeridos se aplican después.
         self._configurar_pais_nacionalidad()
+        self._configurar_departamento_contacto()
         self._aplicar_requeridos()
         self._aplicar_requeridos_condicionales()
         self._aplicar_email_requerido_en_alta()
@@ -2003,6 +2026,51 @@ class TrabajadorCDIForm(forms.ModelForm):
                 (n.nombre, n.nombre)
                 for n in NominaNacionalidad.objects.order_by("nombre")
             ],
+        )
+
+    def _configurar_departamento_contacto(self):
+        """Restringe el departamento al catálogo IPI de la provincia elegida.
+
+        El modelo histórico guarda el nombre como texto. Para no perder valores
+        heredados, permite conservar el que ya tenía el trabajador, pero nunca
+        aceptar un valor nuevo fuera del catálogo de su provincia.
+        """
+        provincia_id = None
+        if self.is_bound:
+            raw_provincia = self.data.get(self.add_prefix("provincia_contacto"))
+            if raw_provincia and str(raw_provincia).isdigit():
+                provincia_id = int(raw_provincia)
+        elif self.instance.provincia_contacto_id:
+            provincia_id = self.instance.provincia_contacto_id
+
+        departamentos = DepartamentoIpi.objects.none()
+        if provincia_id:
+            departamentos = DepartamentoIpi.objects.filter(
+                provincia_id=provincia_id
+            ).order_by("nombre")
+
+        choices = [("", "---------")] + [
+            (departamento.nombre, departamento.nombre) for departamento in departamentos
+        ]
+        valores_catalogo = {valor for valor, _etiqueta in choices}
+        heredado = (self.instance.departamento_contacto or "").strip()
+        valor_enviado = (
+            self.data.get(self.add_prefix("departamento_contacto"), "")
+            if self.is_bound
+            else heredado
+        )
+        if (
+            heredado
+            and heredado not in valores_catalogo
+            and (not self.is_bound or valor_enviado == heredado)
+        ):
+            choices.append((heredado, heredado))
+
+        anterior = self.fields["departamento_contacto"]
+        self.fields["departamento_contacto"] = forms.ChoiceField(
+            label=anterior.label,
+            required=anterior.required,
+            choices=choices,
         )
 
     def _aplicar_limites_fecha_nacimiento(self):
