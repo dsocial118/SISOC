@@ -42,6 +42,13 @@
 - `sincronizar_accesos_pwa_organizaciones`: previsualiza y reconcilia la totalidad de accesos PWA derivados de organizaciones. Sin flags es un dry-run de sólo lectura; `--apply` persiste por organización y `--organizacion ID` limita el alcance (repetible). Ejecutar primero `python manage.py sincronizar_accesos_pwa_organizaciones` y revisar totales antes de repetir con `--apply`. Evidencia: `comedores/management/commands/sincronizar_accesos_pwa_organizaciones.py`.
 - `sync_territoriales_cache`: sincroniza cache de territoriales, con opciones de stats, force y cleanup. Evidencia: `comedores/management/commands/sync_territoriales_cache.py`.
 
+## Rendiciones
+- `seed_rendicion_stage_examples`: crea escenarios QA idempotentes para las
+  cuatro etapas de rendiciones. Requiere `--comedor-id`, solicita la contraseña
+  de forma interactiva y no tiene credenciales predeterminadas. Usar solo en
+  QA/local; crea usuarios, grupos y rendiciones en el comedor indicado.
+  Evidencia: `rendicioncuentasmensual/management/commands/seed_rendicion_stage_examples.py`.
+
 ## Centro de familia
 - `cargar_legajos`: crea ciudadanos/participantes desde Excel. Evidencia: `centrodefamilia/management/commands/cargar_legajos.py`.
 - `reprocess_cabal`: reprocesa registros CABAL rechazados con confirmacion interactiva. Evidencia: `centrodefamilia/management/commands/reprocess_cabal.py`.

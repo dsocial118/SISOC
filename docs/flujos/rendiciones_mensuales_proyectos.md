@@ -28,6 +28,32 @@ coordinada cuando cambie este contrato.
 - Los documentos previamente validados conservan su estado al reenviar una
   subsanación.
 
+## Etapas, permisos y estados visibles
+
+El flujo tiene cinco etapas: `Carga de documentación`, `Revisión Territorial`,
+`Revisión de Auditoría`, `Auditoría` y `Regularización`. Las acciones se
+autorizan con permisos Django configurables por grupo:
+
+- `manage_territorial_stage`
+- `manage_auditoria_review_stage`
+- `manage_auditoria_stage`
+- `manage_regularizacion_stage`
+
+El permiso de etapa habilita listado, detalle, descarga y acciones de esa
+etapa, pero no concede por sí solo edición de datos generales, creación o
+eliminación. La interfaz y los POST aplican la misma comprobación de permisos.
+
+El filtro `Estado` combina `etapa_proceso` y `subestado_proceso`, y refleja el
+texto visible de la columna. `Estado general` mantiene el filtro histórico.
+`Etapa` incluye las cinco opciones del modelo. Los datos generales requieren
+fecha de inicio y fin del período, aunque esos campos sigan siendo anulables
+para preservar registros históricos.
+
+Una solicitud de documento faltante puede acumularse durante la revisión. La
+etapa deriva a subsanación al finalizar la revisión si queda alguna solicitud
+activa; al adjuntar un archivo nuevo se cierra la solicitud de su categoría.
+Las observaciones quedan visibles debajo de la categoría solicitada.
+
 ## Contrato de carga
 
 - Convenios admitidos: `P01`, `P02`, `P03`.
@@ -40,7 +66,17 @@ coordinada cuando cambie este contrato.
 
 ## Despliegue y validación
 
-Aplicar `rendicioncuentasmensual.0017` antes de usar las solicitudes de faltantes.
+Aplicar `rendicioncuentasmensual.0017` y luego `rendicioncuentasmensual.0018`
+antes de usar solicitudes de faltantes o permisos por etapa. Configurar los
+grupos desde Usuarios > Grupos y asignar únicamente los permisos de las etapas
+que correspondan.
+
+Para una prueba local aislada, usar
+`python manage.py seed_rendicion_stage_examples --comedor-id <id>`. El comando
+solicita de forma interactiva una contraseña de al menos 12 caracteres, crea
+cuatro usuarios/grupos QA y cuatro rendiciones en el comedor indicado, y es
+idempotente. No ejecutarlo sobre datos productivos: está destinado a QA local
+o de entorno controlado.
 Validar una rendición nueva con proyecto, una histórica con fallback, una
 subsanación de Territorial y otra de Auditoría antes de promover a producción.
 
