@@ -48,13 +48,13 @@
 - `admisiones/views/web_views.py`
 - `docs/contexto/features/pr-2330-feat-admisiones-variables-documentales-para-renovaciones.md`
 - `docs/contexto/features/pr-2332-feat-admisiones-agregar-descarga-docx-para-gde.md`
+- `docs/contexto/features/pr-2333-chore-sync-integrar-main-en-development.md`
 - `docs/plans/2026-08-24-variables-documentales-renovacion-design.md`
 - `docs/registro/cambios/2026-08-24-descarga-docx-para-gde.md`
 - `docs/registro/cambios/2026-08-24-issue-1213-variables-documentales-renovacion.md`
 - `docs/registro/prs/PR-2330.md`
 - `docs/registro/prs/PR-2332.md`
-- `docs/registro/releases/pending/2026-08-26-pr-2330.md`
-- ... y 3 archivo(s) adicional(es) relacionados.
+- ... y 5 archivo(s) adicional(es) relacionados.
 - Documentación sugerida para ampliar contexto:
 - `docs/indice.md`
 - `docs/ia/CONTEXT_HYGIENE.md`
@@ -62,11 +62,13 @@
 - `docs/ia/TESTING.md`
 - `docs/contexto/features/pr-2330-feat-admisiones-variables-documentales-para-renovaciones.md`
 - `docs/contexto/features/pr-2332-feat-admisiones-agregar-descarga-docx-para-gde.md`
+- `docs/contexto/features/pr-2333-chore-sync-integrar-main-en-development.md`
 - `docs/plans/2026-08-24-variables-documentales-renovacion-design.md`
 - `docs/registro/cambios/2026-08-24-descarga-docx-para-gde.md`
 - `docs/registro/cambios/2026-08-24-issue-1213-variables-documentales-renovacion.md`
 - `docs/registro/prs/PR-2330.md`
 - `docs/registro/prs/PR-2332.md`
+- `docs/registro/prs/PR-2333.md`
 - `docs/registro/releases/pending/2026-08-26-pr-2330.md`
 - `docs/registro/releases/pending/2026-08-26-pr-2332.md`
 
