@@ -66,10 +66,15 @@ Las observaciones quedan visibles debajo de la categoría solicitada.
 
 ## Despliegue y validación
 
-Aplicar `rendicioncuentasmensual.0017` y luego `rendicioncuentasmensual.0018`
-antes de usar solicitudes de faltantes o permisos por etapa. Configurar los
-grupos desde Usuarios > Grupos y asignar únicamente los permisos de las etapas
-que correspondan.
+Aplicar `rendicioncuentasmensual.0017`, luego
+`rendicioncuentasmensual.0018` y finalmente
+`rendicioncuentasmensual.0019_reconciliar_comprobantes_legacy` antes de usar
+solicitudes de faltantes o permisos por etapa. La última migración reconcilia
+la categoría legacy de comprobantes, también en registros con baja lógica.
+Antes de aplicarla en producción, tomar un backup recuperable y detener las
+instancias que aún puedan escribir `comprobantes`; validar después que no queden
+filas con esa categoría. Configurar los grupos desde Usuarios > Grupos y
+asignar únicamente los permisos de las etapas que correspondan.
 
 Para una prueba local aislada, usar
 `python manage.py seed_rendicion_stage_examples --comedor-id <id>`. El comando
