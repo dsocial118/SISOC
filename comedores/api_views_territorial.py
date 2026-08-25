@@ -17,7 +17,7 @@ from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from comedores.api_serializers import ComedorDetailSerializer
+from comedores.api_serializers import ComedorDetailSerializer, NoSaveSerializer
 from comedores.models import Comedor
 from comedores.services.comedor_service import ComedorService
 from relevamientos.models import Relevamiento
@@ -31,13 +31,13 @@ MAX_IMAGENES_COMEDOR = 15
 MAX_FIRMA_FILE_SIZE = 3 * 1024 * 1024  # 3 MB
 
 
-class TerritorialUltimoRelevamientoSerializer(serializers.Serializer):
+class TerritorialUltimoRelevamientoSerializer(NoSaveSerializer):
     id = serializers.IntegerField()
     estado = serializers.CharField(allow_null=True)
     fecha_visita = serializers.DateTimeField(allow_null=True)
 
 
-class TerritorialComedorSerializer(serializers.Serializer):
+class TerritorialComedorSerializer(NoSaveSerializer):
     id = serializers.IntegerField()
     nombre = serializers.CharField()
     provincia = serializers.SerializerMethodField()
