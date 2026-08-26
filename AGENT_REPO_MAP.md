@@ -488,6 +488,10 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
   marca de agua y nunca se adjuntan a la admisión. Al crear un template, el
   tipo de convenio se limita al catálogo de Personerías o Organización Base,
   presentada funcionalmente como Asociación de hecho.
+- La descarga del Informe Técnico ofrece una copia transitoria "Descargar para
+  GDE": prioriza el DOCX editado y, si no existe, el borrador. Se normaliza la
+  geometría OOXML de sus tablas antes de responder, sin reemplazar archivos ni
+  modificar estados.
 - El Informe Tecnico Complementario se abre tanto desde Admision como desde el
   convenio seleccionado en `acompanamientos/views.py` y
   `acompanamientos/templates/acompañamiento_detail.html`.
@@ -519,6 +523,8 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
   `centrodeinfancia/services_nomina_ninos_pdf.py` y pruebas
   `centrodeinfancia/tests/test_nomina_ninos_pdf.py`; exige grupo `SIMEPI - EGP`
   y un único alcance provincial completo, y entrega un JPEG por página
+- contrato canónico de esa descarga, privacidad y formularios CDI:
+  `docs/implementaciones/centrodeinfancia_nomina_ninos_simepi.md`
 - conversión e incrustación de Office en rendiciones: `rendicioncuentasmensual/service_helpers.py`
 - el runtime Django requiere LibreOffice Writer/Calc para convertir DOCX/XLSX a PDF
 
@@ -532,6 +538,13 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - tests: `tests/test_rendicioncuentasmensual_services_unit.py` y `organizaciones/tests.py`
 - escenarios QA de permisos por etapa: `python manage.py seed_rendicion_stage_examples --comedor-id <id>` (solicita la contraseña de forma interactiva)
 - documentación canónica: `docs/flujos/rendiciones_mensuales_proyectos.md`
+
+### Si necesitas cambiar altas de ciudadanos en nómina
+
+- `comedores/forms/comedor_form.py`, `comedores/views/nomina.py` y
+  `comedores/services/comedor_service/impl.py`
+- `tests/test_comedor_form_unit.py` y `tests/test_nomina_views_unit.py`
+- documentación canónica: `docs/implementaciones/comedores_nomina_ciudadanos.md`
 
 ### Si necesitas cambiar OCR / procesamiento documental
 

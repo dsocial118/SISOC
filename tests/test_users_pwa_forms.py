@@ -15,6 +15,7 @@ from users.models import (
     AccesoComedorPWA,
     AccesoOrganizacionPWA,
     AuditAccesoComedorPWA,
+    TerritorialComedorProvincia,
 )
 from users.services_pwa import get_access_rows
 
@@ -480,6 +481,104 @@ def test_user_creation_form_includes_all_org_spaces_plus_external_space(
             activo=True,
         ).exists()
         is True
+    )
+
+
+@pytest.mark.django_db
+def test_user_creation_form_creates_territorial_with_provincia():
+    provincia = Provincia.objects.create(nombre="Territorial Prov")
+    form = UserCreationForm(
+        data={
+            "username": "territorial_ok",
+            "email": "territorial_ok@example.com",
+            "password": "Sisoc12345!",
+            "tipo_usuario": "interno",
+            "es_territorial_comedor": True,
+            "provincias_territorial": [provincia.id],
+        }
+    )
+
+    assert form.is_valid(), form.errors
+    user = form.save()
+
+    assert user.profile.es_territorial_comedor is True
+    assert (
+        TerritorialComedorProvincia.objects.filter(
+            profile=user.profile,
+            provincia=provincia,
+        ).exists()
+        is True
+    )
+    # Flag simple: el territorial es un usuario normal, no un mobile-only.
+    assert user.check_password("Sisoc12345!") is True
+
+
+@pytest.mark.django_db
+def test_user_creation_form_territorial_requires_provincia():
+    form = UserCreationForm(
+        data={
+            "username": "territorial_sin_prov",
+            "email": "territorial_sin_prov@example.com",
+            "password": "Sisoc12345!",
+            "es_territorial_comedor": True,
+        }
+    )
+
+    assert form.is_valid() is False
+    assert "provincias_territorial" in form.errors
+
+
+@pytest.mark.django_db
+def test_user_creation_form_territorial_excludes_representante(comedor):
+    form = UserCreationForm(
+        data={
+            "username": "territorial_y_rep",
+            "email": "territorial_y_rep@example.com",
+            "es_representante_pwa": True,
+            "comedores_pwa": [comedor.id],
+            "es_territorial_comedor": True,
+            "provincias_territorial": [comedor.provincia_id],
+        }
+    )
+
+    assert form.is_valid() is False
+    assert "es_territorial_comedor" in form.errors
+
+
+@pytest.mark.django_db
+def test_custom_user_change_form_disables_territorial_clears_provincias():
+    provincia = Provincia.objects.create(nombre="Territorial Edit Prov")
+    create_form = UserCreationForm(
+        data={
+            "username": "territorial_edit",
+            "email": "territorial_edit@example.com",
+            "password": "Sisoc12345!",
+            "tipo_usuario": "interno",
+            "es_territorial_comedor": True,
+            "provincias_territorial": [provincia.id],
+        }
+    )
+    assert create_form.is_valid(), create_form.errors
+    user = create_form.save()
+
+    edit_form = CustomUserChangeForm(
+        instance=user,
+        data={
+            "username": user.username,
+            "email": user.email,
+            "password": "",
+            "tipo_usuario": "interno",
+            "es_territorial_comedor": False,
+        },
+    )
+    assert edit_form.is_valid(), edit_form.errors
+    edit_form.save()
+
+    user.profile.refresh_from_db()
+    assert user.profile.es_territorial_comedor is False
+    assert (
+        TerritorialComedorProvincia.objects.filter(profile=user.profile).exists()
+        is False
     )
 
 

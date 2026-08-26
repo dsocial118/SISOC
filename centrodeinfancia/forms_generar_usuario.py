@@ -1,5 +1,7 @@
 from django import forms
 
+from core.validators import solo_digitos, validate_cuit
+
 
 class GenerarUsuarioCDIForm(forms.Form):
     """Datos del usuario "CDI - Referente centro" a generar.
@@ -23,6 +25,16 @@ class GenerarUsuarioCDIForm(forms.Form):
         widget=forms.EmailInput(attrs={"class": "form-control"}),
         help_text="Se usará como usuario y para enviarle las credenciales.",
     )
+    dni = forms.CharField(
+        max_length=16,
+        label="DNI",
+        widget=forms.TextInput(attrs={"class": "form-control", "inputmode": "numeric"}),
+    )
+    cuil = forms.CharField(
+        max_length=16,
+        label="CUIL",
+        widget=forms.TextInput(attrs={"class": "form-control", "inputmode": "numeric"}),
+    )
 
     def clean_first_name(self):
         return (self.cleaned_data.get("first_name") or "").strip()
@@ -32,3 +44,12 @@ class GenerarUsuarioCDIForm(forms.Form):
 
     def clean_email(self):
         return (self.cleaned_data.get("email") or "").strip()
+
+    def clean_dni(self):
+        dni = solo_digitos(self.cleaned_data.get("dni"))
+        if len(dni) < 6:
+            raise forms.ValidationError("Ingrese un DNI válido (solo números).")
+        return dni
+
+    def clean_cuil(self):
+        return validate_cuit((self.cleaned_data.get("cuil") or "").strip())

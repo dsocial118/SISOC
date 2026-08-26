@@ -134,8 +134,9 @@ function checkSectionDomicilio() {
 }
 
 function checkSectionCultura() {
-    const checked = document.querySelectorAll("#id_grupo_pertenencia input[type=checkbox]:checked");
-    return checked.length > 0;
+    // Cultura e identidad es optativa: sin datos no debe presentarse como un
+    // bloqueo. Si se informa algún dato, también se considera completada.
+    return true;
 }
 
 function checkSectionDiscapacidad() {

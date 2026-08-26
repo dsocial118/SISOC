@@ -1285,12 +1285,42 @@ class ImagenComedor(models.Model):
     comedor = models.ForeignKey(
         Comedor, on_delete=models.CASCADE, related_name="imagenes"
     )
+    relevamiento = models.ForeignKey(
+        "relevamientos.Relevamiento",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+        help_text=(
+            "Relevamiento (visita) al que pertenece la foto. Opcional: si es null "
+            "la foto es a nivel comedor (compatibilidad)."
+        ),
+    )
     imagen = models.ImageField(upload_to="comedor/")
     origen = models.CharField(
         max_length=10,
         choices=ORIGEN_CHOICES,
         default=ORIGEN_WEB,
     )
+    client_uuid = models.CharField(
+        max_length=64,
+        null=True,
+        blank=True,
+        help_text=(
+            "Identificador estable generado por el cliente (PWA) para deduplicar "
+            "reintentos offline de subida."
+        ),
+    )
+
+    class Meta:
+        # Unique plano (sin condición) para que MySQL lo cree de verdad: los NULL
+        # se tratan como distintos, así que solo enforcea cuando hay client_uuid.
+        constraints = [
+            models.UniqueConstraint(
+                fields=["comedor", "client_uuid"],
+                name="uniq_imagencomedor_comedor_client_uuid",
+            ),
+        ]
 
     def __str__(self):
         return f"Imagen de {self.comedor.nombre}"
