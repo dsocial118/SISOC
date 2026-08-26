@@ -161,6 +161,12 @@ class CentroDeInfancia(SoftDeleteModelMixin, models.Model):
     apellido_referente = models.CharField(max_length=255, blank=True, null=True)
     email_referente = models.EmailField(blank=True, null=True)
     telefono_referente = models.CharField(max_length=50, blank=True, null=True)
+    dni_referente = models.CharField(
+        max_length=16, blank=True, null=True, verbose_name="DNI del referente"
+    )
+    cuil_referente = models.CharField(
+        max_length=16, blank=True, null=True, verbose_name="CUIL del referente"
+    )
     meses_funcionamiento = models.JSONField(default=list, blank=True)
     dias_funcionamiento = models.JSONField(default=list, blank=True)
     tipo_jornada = models.CharField(
@@ -779,6 +785,7 @@ NOMINA_ORIENTACION_MSAL_CHOICES = [
 ]
 
 NOMINA_ALERGIA_CHOICES = [
+    ("sin_alergias_alimentarias", "No tiene alergias alimentarias"),
     ("leche_vaca", "Leche de vaca"),
     ("tacc", "Trigo-Avena-Cebada-Centeno (TACC)"),
     ("huevo", "Huevo"),
