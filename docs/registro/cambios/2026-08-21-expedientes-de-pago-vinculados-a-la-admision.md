@@ -129,6 +129,39 @@ data migration, y hay un test que verifica que no diverja de la del código vivo
 Al correr con `TEST MIGRATE=False` la migración no se ejecuta en tests, así que se
 prueba su función directamente.
 
+## La vinculación vive en el modelo, no en el servicio (2026-08-26)
+
+Producto aclaró algo que cambia el diseño: **los expedientes de pago se cargan
+por CSV**, de a uno o de a muchos, y esa es la vía habitual. El formulario es la
+excepción, no la regla.
+
+La importación (`importarexpediente`) instancia el modelo y guarda directo
+(`ExpedientePago(**kwargs)` + `save()` en `importarexpediente/views.py`), sin
+pasar por `ExpedientesPagosService`. Se verificó reproduciendo esa vía: el
+expediente quedaba **sin vincular** aunque existiera la admisión que coincidía.
+
+La resolución se movió al `save()` del modelo. Es el único punto por el que pasan
+todas las puertas de entrada —formulario, importación por CSV, consola y lo que
+venga después—, así que la vinculación corre siempre sin tener que acordarse de
+llamarla en cada lugar. `asignar_admision` quedó sin uso y se eliminó.
+
+Sigue sin pisar una admisión ya asignada: dejar el campo vacío es justamente lo
+que significa "resolver automáticamente", y por eso vaciarlo en la edición pide
+que se resuelva de nuevo.
+
+Esto también corrige el peso relativo de una decisión anterior: el selector en el
+alta se justificó como forma de "atacar el error humano de raíz", pero si la
+carga real es por CSV, ese formulario casi no se usa. El selector sigue siendo
+útil para corregir y para los casos ambiguos, que es donde de verdad hace falta.
+
+## Etiquetas distinguibles en el selector
+
+Dos admisiones del mismo comedor pueden compartir número de expediente —es
+exactamente el caso ambiguo que el selector existe para resolver— y la etiqueta
+mostraba solo ese número, así que aparecían **dos opciones idénticas** y no había
+forma de elegir. Ahora la etiqueta suma el identificador de la admisión, el
+convenio si lo tiene y el estado.
+
 ## Pendiente
 
 **Pregunta de producto, no técnica:** en 2026 más de la mitad de los expedientes

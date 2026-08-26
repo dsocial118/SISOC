@@ -308,3 +308,97 @@ def test_el_formulario_conserva_los_datos_al_fallar_la_validacion(auth_client):
     assert form.errors
     assert form.data.get("expediente_convenio") == EXPEDIENTE
     assert ExpedientePago.objects.count() == 0
+
+
+# --- la vinculacion corre en cualquier via de creacion ---------------------
+
+
+def test_se_vincula_al_guardar_el_modelo_directo():
+    """La importacion por CSV instancia el modelo y guarda, sin pasar por el servicio."""
+    comedor, admision = _comedor_con_admision()
+
+    expediente = ExpedientePago(
+        comedor=comedor,
+        expediente_convenio=EXPEDIENTE,
+        prestaciones_mensuales_desayuno=0,
+        prestaciones_mensuales_almuerzo=0,
+        prestaciones_mensuales_merienda=0,
+        prestaciones_mensuales_cena=0,
+        monto_mensual_desayuno=0,
+        monto_mensual_almuerzo=0,
+        monto_mensual_merienda=0,
+        monto_mensual_cena=0,
+    )
+    expediente.save()
+
+    expediente.refresh_from_db()
+    assert expediente.admision == admision
+
+
+def test_el_save_no_pisa_una_admision_ya_asignada():
+    comedor, automatica = _comedor_con_admision()
+    elegida = Admision.objects.create(
+        comedor=comedor,
+        activa=True,
+        enviado_acompaniamiento=True,
+        estado_admision="iniciada",
+        num_expediente="EX-2026-88880000- -APN-X#Y",
+    )
+
+    expediente = ExpedientePago(
+        comedor=comedor,
+        expediente_convenio=EXPEDIENTE,
+        admision=elegida,
+        prestaciones_mensuales_desayuno=0,
+        prestaciones_mensuales_almuerzo=0,
+        prestaciones_mensuales_merienda=0,
+        prestaciones_mensuales_cena=0,
+        monto_mensual_desayuno=0,
+        monto_mensual_almuerzo=0,
+        monto_mensual_merienda=0,
+        monto_mensual_cena=0,
+    )
+    expediente.save()
+
+    expediente.refresh_from_db()
+    assert expediente.admision == elegida
+    assert expediente.admision != automatica
+
+
+def test_el_save_respeta_update_fields_acotado():
+    """Guardar solo un campo no debe perder la admision recien resuelta."""
+    comedor, admision = _comedor_con_admision()
+    expediente = ExpedientesPagosService.crear_expediente_pago(
+        comedor, _datos_minimos(expediente_convenio="EX-2026-00000000- -APN-X#Y")
+    )
+    assert expediente.admision is None
+
+    expediente.expediente_convenio = EXPEDIENTE
+    expediente.save(update_fields=["expediente_convenio"])
+
+    expediente.refresh_from_db()
+    assert expediente.admision == admision
+
+
+# --- el desplegable distingue las candidatas ------------------------------
+
+
+def test_el_selector_distingue_admisiones_con_el_mismo_expediente():
+    """El caso ambiguo es justo donde dos etiquetas iguales no sirven."""
+    from expedientespagos.forms import ExpedientePagoForm
+
+    comedor, primera = _comedor_con_admision()
+    segunda = Admision.objects.create(
+        comedor=comedor,
+        activa=True,
+        enviado_acompaniamiento=True,
+        estado_admision="iniciada",
+        num_expediente=EXPEDIENTE,
+    )
+
+    form = ExpedientePagoForm(comedor=comedor)
+    etiquetas = [str(etiqueta) for valor, etiqueta in form.fields["admision"].choices]
+
+    assert len(etiquetas) == len(set(etiquetas))
+    assert any(f"Admisión {primera.id}" in e for e in etiquetas)
+    assert any(f"Admisión {segunda.id}" in e for e in etiquetas)
