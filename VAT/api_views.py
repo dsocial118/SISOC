@@ -182,9 +182,9 @@ class CentroViewSet(SoftDeleteDestroyMixin, VATModelViewSet):
             Prefetch("horarios", queryset=horarios),
             Prefetch("sesiones", queryset=sesiones),
         )
-        parametria_voucher = VoucherParametria.objects.select_related("programa").order_by(
-            "programa_id", "id"
-        )
+        parametria_voucher = VoucherParametria.objects.select_related(
+            "programa"
+        ).order_by("programa_id", "id")
         cursos = Curso.objects.select_related(
             "plan_estudio",
             "plan_estudio__provincia",
@@ -215,25 +215,27 @@ class CentroViewSet(SoftDeleteDestroyMixin, VATModelViewSet):
             "localidad__municipio__provincia",
         ).order_by("rol_ubicacion", "id")
 
-        return Centro.objects.select_related(
-            "provincia", "municipio", "localidad"
-        ).prefetch_related(
-            Prefetch(
-                "identificadores_hist",
-                queryset=InstitucionIdentificadorHist.objects.select_related(
-                    "ubicacion"
-                ).order_by("-es_actual", "-vigencia_desde", "-id"),
-            ),
-            Prefetch(
-                "contactos_adicionales",
-                queryset=InstitucionContacto.objects.order_by(
-                    "-es_principal", "nombre_contacto", "rol_area"
+        return (
+            Centro.objects.select_related("provincia", "municipio", "localidad")
+            .prefetch_related(
+                Prefetch(
+                    "identificadores_hist",
+                    queryset=InstitucionIdentificadorHist.objects.select_related(
+                        "ubicacion"
+                    ).order_by("-es_actual", "-vigencia_desde", "-id"),
                 ),
-            ),
-            Prefetch("ubicaciones", queryset=ubicaciones),
-            Prefetch("cursos", queryset=cursos),
-            Prefetch("ofertas_institucionales", queryset=ofertas),
-        ).order_by("id")
+                Prefetch(
+                    "contactos_adicionales",
+                    queryset=InstitucionContacto.objects.order_by(
+                        "-es_principal", "nombre_contacto", "rol_area"
+                    ),
+                ),
+                Prefetch("ubicaciones", queryset=ubicaciones),
+                Prefetch("cursos", queryset=cursos),
+                Prefetch("ofertas_institucionales", queryset=ofertas),
+            )
+            .order_by("id")
+        )
 
     def get_serializer_class(self):
         if self._cue_consultado() is not None:
@@ -250,9 +252,7 @@ class CentroViewSet(SoftDeleteDestroyMixin, VATModelViewSet):
     def get_queryset(self):
         cue = self._cue_consultado()
         queryset = (
-            self._queryset_detalle_cue()
-            if cue is not None
-            else super().get_queryset()
+            self._queryset_detalle_cue() if cue is not None else super().get_queryset()
         )
         activo = self.request.query_params.get("activo")
         if activo is not None:

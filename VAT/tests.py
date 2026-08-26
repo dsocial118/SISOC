@@ -4678,7 +4678,10 @@ def test_api_vat_centros_busca_por_cue_historico_y_devuelve_ficha_ampliada(
     assert detalle["cursos"][0]["comisiones"][0]["id"] == comision_curso.id
     assert detalle["cursos"][0]["comisiones"][0]["sesiones"][0]["id"]
     assert detalle["ofertas_institucionales"][0]["id"] == oferta.id
-    assert detalle["ofertas_institucionales"][0]["comisiones"][0]["id"] == comision_oferta.id
+    assert (
+        detalle["ofertas_institucionales"][0]["comisiones"][0]["id"]
+        == comision_oferta.id
+    )
 
 
 @pytest.mark.django_db
@@ -4806,7 +4809,17 @@ def test_api_vat_centros_cue_sin_coincidencias_mantiene_paginacion(vat_api_clien
 def test_api_vat_centros_cue_requiere_api_key(vat_curso_base):
     response = APIClient().get("/api/vat/centros/?cue=060144900")
 
-    assert response.status_code == 403
+    assert response.status_code == 401
+
+
+@pytest.mark.django_db
+def test_api_vat_centros_cue_rechaza_api_key_invalida(vat_curso_base):
+    client = APIClient()
+    client.credentials(HTTP_AUTHORIZATION="Api-Key clave-invalida")
+
+    response = client.get("/api/vat/centros/?cue=060144900")
+
+    assert response.status_code == 401
 
 
 @pytest.mark.django_db

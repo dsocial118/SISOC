@@ -30,7 +30,8 @@ un CUE inexistente.
 - Compilación sintáctica de los módulos Python modificados válida.
 - Se añadieron tests focalizados de CUE vigente e histórico normalizado,
   compatibilidad por `Centro.codigo`, resultados duplicados paginados, error de
-  formato, resultado vacío, autenticación y exclusión del documento de contacto.
+  formato, resultado vacío, autenticación por API key ausente o inválida y
+  exclusión del documento de contacto.
 
 La ejecución de pytest local quedó bloqueada antes de descubrir los tests:
 el Python global no tiene `django-crispy-forms`, dependencia declarada por el

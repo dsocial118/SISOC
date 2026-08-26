@@ -40,6 +40,7 @@ documento de los contactos institucionales.
 
 - `400` para `cue` vacío, no numérico o de más de nueve dígitos.
 - `200` con `count: 0` cuando no hay coincidencias.
+- `401` cuando falta la API key o es inválida.
 - No se cambian modelos, migraciones, permisos ni los recursos CRUD existentes.
 
 ## Validación prevista

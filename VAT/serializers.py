@@ -486,7 +486,9 @@ class CentroCueHorarioSerializer(serializers.ModelSerializer):
 
 
 class CentroCueSesionSerializer(serializers.ModelSerializer):
-    dia_semana = serializers.IntegerField(source="horario.dia_semana_id", read_only=True)
+    dia_semana = serializers.IntegerField(
+        source="horario.dia_semana_id", read_only=True
+    )
     dia_nombre = serializers.CharField(
         source="horario.dia_semana.nombre", read_only=True
     )
@@ -546,7 +548,9 @@ class CentroCueCursoSerializer(serializers.ModelSerializer):
     modalidad_nombre = serializers.CharField(source="modalidad.nombre", read_only=True)
     programa = serializers.IntegerField(source="programa_id", read_only=True)
     programa_nombre = serializers.CharField(source="programa.nombre", read_only=True)
-    voucher_parametrias = CentroCueVoucherParametriaSerializer(many=True, read_only=True)
+    voucher_parametrias = CentroCueVoucherParametriaSerializer(
+        many=True, read_only=True
+    )
     comisiones = CentroCueComisionCursoSerializer(many=True, read_only=True)
 
     class Meta:
@@ -604,7 +608,9 @@ class CentroCueComisionSerializer(serializers.ModelSerializer):
 class CentroCueOfertaInstitucionalSerializer(serializers.ModelSerializer):
     plan_curricular = CentroCuePlanSerializer(read_only=True)
     programa_nombre = serializers.CharField(source="programa.nombre", read_only=True)
-    voucher_parametrias = CentroCueVoucherParametriaSerializer(many=True, read_only=True)
+    voucher_parametrias = CentroCueVoucherParametriaSerializer(
+        many=True, read_only=True
+    )
     comisiones = CentroCueComisionSerializer(many=True, read_only=True)
 
     class Meta:
@@ -653,7 +659,9 @@ class CentroCueContactoSerializer(serializers.ModelSerializer):
 
 class CentroCueUbicacionSerializer(serializers.ModelSerializer):
     localidad_nombre = serializers.CharField(source="localidad.nombre", read_only=True)
-    municipio = serializers.IntegerField(source="localidad.municipio_id", read_only=True)
+    municipio = serializers.IntegerField(
+        source="localidad.municipio_id", read_only=True
+    )
     municipio_nombre = serializers.CharField(
         source="localidad.municipio.nombre", read_only=True
     )
@@ -776,10 +784,7 @@ class CentroCueDetalleSerializer(serializers.ModelSerializer):
 
     def get_cue_actual(self, obj):
         for identificador in obj.identificadores_hist.all():
-            if (
-                identificador.tipo_identificador == "cue"
-                and identificador.es_actual
-            ):
+            if identificador.tipo_identificador == "cue" and identificador.es_actual:
                 return identificador.valor_identificador
         return obj.codigo
 
