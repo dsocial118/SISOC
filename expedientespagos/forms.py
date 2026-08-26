@@ -13,13 +13,21 @@ class AdmisionPorExpedienteChoiceField(forms.ModelChoiceField):
     """
 
     def label_from_instance(self, obj):
-        etiqueta = obj.num_expediente or f"Admisión #{obj.id}"
+        # Dos admisiones del mismo comedor pueden compartir numero de expediente
+        # —es el caso ambiguo que el selector existe para resolver—, asi que la
+        # etiqueta siempre lleva algo que las distinga.
+        partes = [obj.num_expediente or "Sin numero de expediente"]
+        partes.append(f"Admisión {obj.id}")
+
         convenio = getattr(getattr(obj, "acompanamiento", None), "nro_convenio", "")
         if convenio:
-            etiqueta = f"{etiqueta} — Conv. {convenio}"
+            partes.append(f"Conv. {convenio}")
+        if obj.estado_mostrar:
+            partes.append(obj.estado_mostrar)
         if not obj.activa:
-            etiqueta = f"{etiqueta} (cerrada)"
-        return etiqueta
+            partes.append("cerrada")
+
+        return " · ".join(partes)
 
 
 class ExpedientePagoForm(forms.ModelForm):
