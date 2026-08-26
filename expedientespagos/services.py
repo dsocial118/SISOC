@@ -10,7 +10,6 @@ from expedientespagos.filter_config import (
     VINCULO_SIN_ADMISION,
 )
 from expedientespagos.models import ExpedientePago
-from expedientespagos.vinculacion import asignar_admision
 
 logger = logging.getLogger("django")
 
@@ -87,9 +86,9 @@ class ExpedientesPagosService:
                 monto_mensual_merienda=data.get("monto_mensual_merienda"),
                 monto_mensual_cena=data.get("monto_mensual_cena"),
                 comedor=comedor,
+                # Si viene vacía, el save() del modelo la resuelve.
+                admision=data.get("admision"),
             )
-            asignar_admision(expediente_pago, data.get("admision"))
-            expediente_pago.save(update_fields=["admision"])
             return expediente_pago
         except Exception:
             logger.exception(
@@ -134,7 +133,8 @@ class ExpedientesPagosService:
             expediente_pago.monto_mensual_almuerzo = data.get("monto_mensual_almuerzo")
             expediente_pago.monto_mensual_merienda = data.get("monto_mensual_merienda")
             expediente_pago.monto_mensual_cena = data.get("monto_mensual_cena")
-            asignar_admision(expediente_pago, data.get("admision"))
+            # Vaciarla equivale a pedir que se resuelva de nuevo en el save().
+            expediente_pago.admision = data.get("admision")
             expediente_pago.save()
             return expediente_pago
         except Exception:

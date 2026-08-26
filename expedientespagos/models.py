@@ -125,6 +125,32 @@ class ExpedientePago(SoftDeleteModelMixin, models.Model):
         verbose_name="Monto mensual cena",
     )
 
+    def save(self, *args, **kwargs):
+        """Resuelve la admisión antes de guardar, si quedó sin asignar.
+
+        La resolución vive acá y no en el servicio porque los expedientes de pago
+        entran por varias puertas: el formulario de alta, la importación por CSV
+        (``importarexpediente``, que instancia el modelo y guarda directo) y la
+        consola. Todas terminan en ``save()``, así que es el único lugar donde la
+        vinculación corre siempre.
+
+        Nunca pisa una admisión ya asignada: dejar el campo vacío es justamente
+        lo que significa "resolver automáticamente".
+        """
+        if self.admision_id is None:
+            from expedientespagos.vinculacion import (  # pylint: disable=import-outside-toplevel
+                resolver_admision,
+            )
+
+            admision = resolver_admision(self.comedor, self.expediente_convenio)
+            if admision is not None:
+                self.admision = admision
+                update_fields = kwargs.get("update_fields")
+                if update_fields is not None:
+                    kwargs["update_fields"] = set(update_fields) | {"admision"}
+
+        super().save(*args, **kwargs)
+
     class Meta:
         verbose_name = "Expediente de Pago"
         verbose_name_plural = "Expedientes de Pago"

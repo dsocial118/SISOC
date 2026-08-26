@@ -116,26 +116,3 @@ def revincular_expedientes_sueltos(comedor=None, expedientes=None, guardar=True)
             expediente.save(update_fields=["admision"])
 
     return {"revisados": revisados, "vinculados": vinculados}
-
-
-def asignar_admision(expediente_pago, admision_elegida=None):
-    """Define la admisión de un expediente de pago.
-
-    La elección manual siempre gana; la resolución automática solo completa el
-    vacío.
-
-    Args:
-        expediente_pago: Instancia de ExpedientePago (aún sin guardar o guardada).
-        admision_elegida: Admisión seleccionada por el usuario, si eligió alguna.
-
-    Returns:
-        Admision | None: la admisión finalmente asignada.
-    """
-    if admision_elegida is not None:
-        expediente_pago.admision = admision_elegida
-        return admision_elegida
-
-    expediente_pago.admision = resolver_admision(
-        expediente_pago.comedor, expediente_pago.expediente_convenio
-    )
-    return expediente_pago.admision
