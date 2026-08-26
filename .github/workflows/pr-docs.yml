@@ -105,8 +105,20 @@ jobs:
                     exit 0
                   fi
 
+                  protected_source=false
+                  if [ "${{ github.event.pull_request.head.repo.full_name }}" = "${{ github.repository }}" ] && \
+                    { [ "${{ github.event.pull_request.head.ref }}" = "development" ] || \
+                      [ "${{ github.event.pull_request.head.ref }}" = "homologacion" ] || \
+                      [ "${{ github.event.pull_request.head.ref }}" = "main" ]; }; then
+                    protected_source=true
+                  fi
+
                   {
-                    echo "### Artefactos spec-as-source pendientes"
+                    if [ "$protected_source" = true ]; then
+                      echo "### Advertencia: artefactos spec-as-source pendientes"
+                    else
+                      echo "### Artefactos spec-as-source pendientes"
+                    fi
                     echo ""
                     echo "Faltan los siguientes paths en la rama origen:"
                     echo '```text'
@@ -114,6 +126,11 @@ jobs:
                     echo '```'
                     echo "Regenerá y commiteá los artefactos con \`python scripts/ci/pr_doc_automation.py --repository ${{ github.repository }} --pr ${{ github.event.pull_request.number }}\`."
                   } >> "$GITHUB_STEP_SUMMARY"
+
+                  if [ "$protected_source" = true ]; then
+                    echo "La rama origen está protegida; los artefactos faltantes no bloquean esta promoción."
+                    exit 0
+                  fi
 
                   echo "Faltan artefactos spec-as-source requeridos para mergear."
                   exit 1
