@@ -567,6 +567,19 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
   `VAT/services/tipo_alumno_service.py`, tests VAT y
   `docs/vat/VOUCHER_SETUP.md`.
 
+### Si necesitas cambiar la búsqueda de Centros VAT por CUE
+
+- API pública: `VAT/api_views.py:CentroViewSet` y
+  `VAT/serializers.py:CentroCueDetalleSerializer`.
+- El parámetro `cue` busca el valor vigente e histórico en
+  `InstitucionIdentificadorHist` y usa `Centro.codigo` como compatibilidad
+  legacy; la respuesta detallada sólo se activa cuando el parámetro está
+  presente.
+- Tests de contrato: `VAT/tests.py` con prefijo
+  `test_api_vat_centros_cue_`.
+- Request manual: `postman/SISOC APIs.postman_collection.json`, carpeta VAT /
+  Centros e institución.
+
 ### Si necesitas cambiar CI o reglas de calidad
 
 - `.github/workflows/tests.yml`

@@ -1,7 +1,7 @@
 # API Inventory — SISOC
 
 Todas las APIs (internas y externas) están documentadas en la colección única:
-**`SISOC APIs.postman_collection.json`** · 243 requests · 11 carpetas · entorno: `Local.postman_environment.json`
+**`SISOC APIs.postman_collection.json`** · 244 requests · 11 carpetas · entorno: `Local.postman_environment.json`
 
 ---
 
@@ -17,19 +17,19 @@ Todas las APIs (internas y externas) están documentadas en la colección única
 | Relevamientos | 2 | PATCH relevamiento + primer seguimiento (`/api/relevamiento`) |
 | PWA | 33 | Health, push, colaboradores, actividades, formación, mensajes, nómina (`/api/espacios/`) |
 | Ticketera | 3 | Alta usuario, verificar auth, cambiar password (`/api/ticketera/`) |
-| VAT | 147 | Cobertura completa del router público VAT; ver detalle abajo |
+| VAT | 148 | Cobertura completa del router público VAT; ver detalle abajo |
 | Integraciones Externas | 12 | GESTIONAR (AppSheet) + RENAPER API externa |
 | Docs | 2 | OpenAPI schema SISOC + VAT (`/api/schema/`) |
 
 ---
 
-## VAT (147 requests)
+## VAT (148 requests)
 
 | Subcarpeta | Requests | Endpoints principales |
 |-----------|----------|----------------------|
 | 0 - Guía de uso y autenticación | 0 | configuración, autenticación, encadenamiento de IDs y advertencias para escrituras |
 | 1 - API operativa - Geografía | 6 | provincias, municipios y localidades; list y retrieve |
-| 2 - API operativa - Centros e institución | 25 | centros, acción `activos`, contactos, identificadores y ubicaciones institucionales; CRUD completo |
+| 2 - API operativa - Centros e institución | 26 | centros, búsqueda por CUE vigente/histórico, acción `activos`, contactos, identificadores y ubicaciones institucionales; CRUD completo |
 | 3 - API operativa - Catálogos y planes | 36 | modalidades institucionales/de cursada, sectores, subsectores, títulos y planes curriculares; CRUD completo |
 | 4 - API operativa - Cursos y comisiones | 14 | cursos, `buscar`, `prioritarios` y comisiones de curso; CRUD completo |
 | 5 - API operativa - Oferta institucional | 18 | ofertas institucionales, comisiones legacy y horarios; CRUD completo |
@@ -41,6 +41,11 @@ La cobertura corresponde a los métodos de negocio registrados en
 `VAT/api_urls.py`: GET, POST, PUT, PATCH y DELETE según cada ViewSet, más sus
 acciones custom. No se duplican HEAD/OPTIONS generados automáticamente por DRF y
 no se incluyen vistas HTML ni AJAX internas de `VAT/urls.py`.
+
+La consulta `GET /api/vat/centros/?cue=<CUE>` mantiene la paginación habitual y
+devuelve la ficha institucional/formativa ampliada del Centro. Busca CUE vigente,
+histórico o código legacy, y excluye alumnos, inscripciones, evaluaciones,
+vouchers individuales y documentos de contactos.
 
 ---
 
@@ -71,6 +76,7 @@ no se incluyen vistas HTML ni AJAX internas de `VAT/urls.py`.
 | `authToken` | Token sesión Django — formato: `Token <valor>` |
 | `apiKey` | Api-Key DRF — formato header: `Api-Key <valor>` |
 | `allowVatMutations` | Guard del ambiente activo; `false` omite POST/PUT/PATCH/DELETE VAT |
+| `cue` | CUE para buscar un Centro VAT, vigente o histórico |
 
 ### IDs de entidades SISOC
 
