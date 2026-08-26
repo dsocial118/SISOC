@@ -1,6 +1,6 @@
 # Recuperación de contraseña SISOC por usuario y email
 
-Fecha: 2026-08-20  
+Fecha: 2026-08-20
 Issue: `#2236`
 
 ## Cambio
