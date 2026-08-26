@@ -1,7 +1,7 @@
 # API Inventory — SISOC
 
 Todas las APIs (internas y externas) están documentadas en la colección única:
-**`SISOC APIs.postman_collection.json`** · 170 requests · 11 carpetas · entorno: `Local.postman_environment.json`
+**`SISOC APIs.postman_collection.json`** · 243 requests · 11 carpetas · entorno: `Local.postman_environment.json`
 
 ---
 
@@ -17,20 +17,30 @@ Todas las APIs (internas y externas) están documentadas en la colección única
 | Relevamientos | 2 | PATCH relevamiento + primer seguimiento (`/api/relevamiento`) |
 | PWA | 33 | Health, push, colaboradores, actividades, formación, mensajes, nómina (`/api/espacios/`) |
 | Ticketera | 3 | Alta usuario, verificar auth, cambiar password (`/api/ticketera/`) |
-| VAT | 74 | Ver detalle abajo |
+| VAT | 147 | Cobertura completa del router público VAT; ver detalle abajo |
 | Integraciones Externas | 12 | GESTIONAR (AppSheet) + RENAPER API externa |
 | Docs | 2 | OpenAPI schema SISOC + VAT (`/api/schema/`) |
 
 ---
 
-## VAT (74 requests)
+## VAT (147 requests)
 
 | Subcarpeta | Requests | Endpoints principales |
 |-----------|----------|----------------------|
-| Operativo - Planes, Centros, Cursos, Comisiones | 38 | provincias, municipios, planes-curriculares, centros, cursos, comisiones-curso, sectores, subsectores, localidades, modalidades, titulos-referencia, institucion-contactos/identificadores/ubicaciones, ofertas-institucionales, comisiones, comision-horarios, inscripciones, inscripciones-oferta, inscripciones-curso, evaluaciones, resultado-evaluaciones, vouchers, web/ciudadanos |
-| Operativo - Cursos Busqueda y Prioritarios | 11 | `vat/cursos/buscar/`, `vat/cursos/prioritarios/` con casos de error |
-| Web - Mi Argentina Inscripcion | 6 | `vat/web/cursos/`, `vat/web/ciudadanos/voucher-estado/`, `vat/web/inscripciones/prevalidar/`, `vat/web/inscripciones/` |
-| Web - Sectores Subsectores Cursos | 19 | `vat/web/centros/`, `vat/web/titulos/`, `vat/web/cursos/`, `vat/inscripciones-curso/`, `vat/vouchers/por_ciudadano/` |
+| 0 - Guía de uso y autenticación | 0 | configuración, autenticación, encadenamiento de IDs y advertencias para escrituras |
+| 1 - API operativa - Geografía | 6 | provincias, municipios y localidades; list y retrieve |
+| 2 - API operativa - Centros e institución | 25 | centros, acción `activos`, contactos, identificadores y ubicaciones institucionales; CRUD completo |
+| 3 - API operativa - Catálogos y planes | 36 | modalidades institucionales/de cursada, sectores, subsectores, títulos y planes curriculares; CRUD completo |
+| 4 - API operativa - Cursos y comisiones | 14 | cursos, `buscar`, `prioritarios` y comisiones de curso; CRUD completo |
+| 5 - API operativa - Oferta institucional | 18 | ofertas institucionales, comisiones legacy y horarios; CRUD completo |
+| 6 - API operativa - Inscripciones y vouchers | 26 | inscripciones de oferta, vouchers, acciones `disponible`/`por_ciudadano`, inscripciones generales y de curso; CRUD completo |
+| 7 - API operativa - Evaluaciones | 12 | evaluaciones y resultados; CRUD completo |
+| 8 - API web | 10 | centros, títulos y cursos (list/retrieve), `voucher-estado`, listado/alta/prevalidación de inscripciones |
+
+La cobertura corresponde a los métodos de negocio registrados en
+`VAT/api_urls.py`: GET, POST, PUT, PATCH y DELETE según cada ViewSet, más sus
+acciones custom. No se duplican HEAD/OPTIONS generados automáticamente por DRF y
+no se incluyen vistas HTML ni AJAX internas de `VAT/urls.py`.
 
 ---
 
@@ -60,6 +70,7 @@ Todas las APIs (internas y externas) están documentadas en la colección única
 | `apiPrefix` | Prefijo REST (default: `/api`) |
 | `authToken` | Token sesión Django — formato: `Token <valor>` |
 | `apiKey` | Api-Key DRF — formato header: `Api-Key <valor>` |
+| `allowVatMutations` | Guard del ambiente activo; `false` omite POST/PUT/PATCH/DELETE VAT |
 
 ### IDs de entidades SISOC
 
@@ -81,16 +92,33 @@ Todas las APIs (internas y externas) están documentadas en la colección única
 |----------|---------|
 | `provincia_id` | Provincia |
 | `municipio_id` | Municipio |
+| `localidad_id` | Localidad |
 | `plan_id` | PlanCurricular |
 | `curso_id` | Curso |
 | `comision_curso_id` | ComisionCurso |
 | `sector_id` | Sector |
 | `subsector_id` | Subsector |
 | `titulo_id` | TituloReferencia |
-| `modalidad_id` | Modalidad |
+| `modalidad_id` | Modalidad (variable legacy) |
+| `modalidad_institucional_id` | ModalidadInstitucional |
+| `modalidad_cursada_id` | ModalidadCursada |
 | `programa_id` | Programa |
 | `ciudadano_id` | Ciudadano |
 | `voucher_id` | Voucher |
+| `institucion_contacto_id` | InstitucionContacto |
+| `institucion_identificador_id` | InstitucionIdentificadorHist |
+| `institucion_ubicacion_id` | InstitucionUbicacion |
+| `oferta_institucional_id` | OfertaInstitucional |
+| `comision_id` | Comisión de oferta institucional |
+| `comision_horario_id` | ComisionHorario |
+| `inscripcion_oferta_id` | InscripcionOferta |
+| `inscripcion_id` | Inscripcion general |
+| `inscripcion_curso_id` | Inscripción expuesta por `/inscripciones-curso/` |
+| `solicitud_inscripcion_id` | SolicitudInscripcionPublica devuelta por el alta web |
+| `evaluacion_id` | Evaluacion |
+| `resultado_evaluacion_id` | ResultadoEvaluacion |
+| `usuario_id` | Usuario que registra un resultado |
+| `dia_semana_id` | Día usado en un horario de comisión |
 | `documento` | DNI ciudadano (VAT Web) |
 | `cuil` | CUIL ciudadano (VAT Web) |
 
