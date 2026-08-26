@@ -408,6 +408,419 @@ class InstitucionUbicacionSerializer(serializers.ModelSerializer):
         ]
 
 
+class CentroCueTituloSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TituloReferencia
+        fields = ["id", "codigo_referencia", "nombre", "descripcion", "activo"]
+
+
+class CentroCuePlanSerializer(serializers.ModelSerializer):
+    provincia_nombre = serializers.CharField(source="provincia.nombre", read_only=True)
+    sector_nombre = serializers.CharField(source="sector.nombre", read_only=True)
+    subsector_nombre = serializers.CharField(source="subsector.nombre", read_only=True)
+    modalidad_cursada_nombre = serializers.CharField(
+        source="modalidad_cursada.nombre", read_only=True
+    )
+    titulos = CentroCueTituloSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = PlanVersionCurricular
+        fields = [
+            "id",
+            "nombre",
+            "provincia",
+            "provincia_nombre",
+            "sector",
+            "sector_nombre",
+            "subsector",
+            "subsector_nombre",
+            "modalidad_cursada",
+            "modalidad_cursada_nombre",
+            "normativa",
+            "horas_reloj",
+            "nivel_requerido",
+            "nivel_certifica",
+            "activo",
+            "titulos",
+        ]
+
+
+class CentroCueVoucherParametriaSerializer(serializers.ModelSerializer):
+    programa_nombre = serializers.CharField(source="programa.nombre", read_only=True)
+
+    class Meta:
+        model = VoucherParametria
+        fields = [
+            "id",
+            "nombre",
+            "descripcion",
+            "programa",
+            "programa_nombre",
+            "cantidad_inicial",
+            "fecha_vencimiento",
+            "renovacion_mensual",
+            "cantidad_renovacion",
+            "renovacion_tipo",
+            "inscripcion_unica_activa",
+            "activa",
+            "fecha_creacion",
+        ]
+
+
+class CentroCueHorarioSerializer(serializers.ModelSerializer):
+    dia_nombre = serializers.CharField(source="dia_semana.nombre", read_only=True)
+
+    class Meta:
+        model = ComisionHorario
+        fields = [
+            "id",
+            "dia_semana",
+            "dia_nombre",
+            "hora_desde",
+            "hora_hasta",
+            "aula_espacio",
+            "vigente",
+            "fecha_creacion",
+            "fecha_modificacion",
+        ]
+
+
+class CentroCueSesionSerializer(serializers.ModelSerializer):
+    dia_semana = serializers.IntegerField(source="horario.dia_semana_id", read_only=True)
+    dia_nombre = serializers.CharField(
+        source="horario.dia_semana.nombre", read_only=True
+    )
+    hora_desde = serializers.TimeField(source="horario.hora_desde", read_only=True)
+    hora_hasta = serializers.TimeField(source="horario.hora_hasta", read_only=True)
+    aula_espacio = serializers.CharField(source="horario.aula_espacio", read_only=True)
+
+    class Meta:
+        model = SesionComision
+        fields = [
+            "id",
+            "horario",
+            "numero_sesion",
+            "fecha",
+            "estado",
+            "observaciones",
+            "dia_semana",
+            "dia_nombre",
+            "hora_desde",
+            "hora_hasta",
+            "aula_espacio",
+            "fecha_creacion",
+        ]
+
+
+class CentroCueComisionCursoSerializer(serializers.ModelSerializer):
+    ubicacion_nombre = serializers.CharField(
+        source="ubicacion.nombre_ubicacion", read_only=True
+    )
+    horarios = CentroCueHorarioSerializer(many=True, read_only=True)
+    sesiones = CentroCueSesionSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = ComisionCurso
+        fields = [
+            "id",
+            "ubicacion",
+            "ubicacion_nombre",
+            "codigo_comision",
+            "nombre",
+            "cupo_total",
+            "acepta_lista_espera",
+            "cupo_lista_espera",
+            "fecha_inicio",
+            "fecha_fin",
+            "estado",
+            "horarios",
+            "sesiones",
+            "observaciones",
+            "fecha_creacion",
+            "fecha_modificacion",
+        ]
+
+
+class CentroCueCursoSerializer(serializers.ModelSerializer):
+    plan_estudio = CentroCuePlanSerializer(read_only=True)
+    modalidad_nombre = serializers.CharField(source="modalidad.nombre", read_only=True)
+    programa = serializers.IntegerField(source="programa_id", read_only=True)
+    programa_nombre = serializers.CharField(source="programa.nombre", read_only=True)
+    voucher_parametrias = CentroCueVoucherParametriaSerializer(many=True, read_only=True)
+    comisiones = CentroCueComisionCursoSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Curso
+        fields = [
+            "id",
+            "plan_estudio",
+            "nombre",
+            "tipo",
+            "prioritario",
+            "modalidad",
+            "modalidad_nombre",
+            "programa",
+            "programa_nombre",
+            "estado",
+            "usa_voucher",
+            "inscripcion_libre",
+            "voucher_parametrias",
+            "costo_creditos",
+            "comisiones",
+            "observaciones",
+            "fecha_creacion",
+            "fecha_modificacion",
+        ]
+
+
+class CentroCueComisionSerializer(serializers.ModelSerializer):
+    ubicacion_nombre = serializers.CharField(
+        source="ubicacion.nombre_ubicacion", read_only=True
+    )
+    horarios = CentroCueHorarioSerializer(many=True, read_only=True)
+    sesiones = CentroCueSesionSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Comision
+        fields = [
+            "id",
+            "ubicacion",
+            "ubicacion_nombre",
+            "codigo_comision",
+            "nombre",
+            "fecha_inicio",
+            "fecha_fin",
+            "cupo",
+            "acepta_lista_espera",
+            "estado",
+            "horarios",
+            "sesiones",
+            "observaciones",
+            "fecha_creacion",
+            "fecha_modificacion",
+        ]
+
+
+class CentroCueOfertaInstitucionalSerializer(serializers.ModelSerializer):
+    plan_curricular = CentroCuePlanSerializer(read_only=True)
+    programa_nombre = serializers.CharField(source="programa.nombre", read_only=True)
+    voucher_parametrias = CentroCueVoucherParametriaSerializer(many=True, read_only=True)
+    comisiones = CentroCueComisionSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = OfertaInstitucional
+        fields = [
+            "id",
+            "plan_curricular",
+            "programa",
+            "programa_nombre",
+            "nombre_local",
+            "ciclo_lectivo",
+            "plan_externo_id",
+            "estado",
+            "costo",
+            "usa_voucher",
+            "voucher_parametrias",
+            "fecha_publicacion",
+            "comisiones",
+            "observaciones",
+            "fecha_creacion",
+            "fecha_modificacion",
+        ]
+
+
+class CentroCueContactoSerializer(serializers.ModelSerializer):
+    """Contacto institucional sin el documento personal del referente."""
+
+    class Meta:
+        model = InstitucionContacto
+        fields = [
+            "id",
+            "nombre_contacto",
+            "rol_area",
+            "telefono_contacto",
+            "email_contacto",
+            "tipo",
+            "valor",
+            "es_principal",
+            "observaciones",
+            "vigencia_desde",
+            "vigencia_hasta",
+            "fecha_creacion",
+            "fecha_modificacion",
+        ]
+
+
+class CentroCueUbicacionSerializer(serializers.ModelSerializer):
+    localidad_nombre = serializers.CharField(source="localidad.nombre", read_only=True)
+    municipio = serializers.IntegerField(source="localidad.municipio_id", read_only=True)
+    municipio_nombre = serializers.CharField(
+        source="localidad.municipio.nombre", read_only=True
+    )
+    provincia = serializers.IntegerField(
+        source="localidad.municipio.provincia_id", read_only=True
+    )
+    provincia_nombre = serializers.CharField(
+        source="localidad.municipio.provincia.nombre", read_only=True
+    )
+
+    class Meta:
+        model = InstitucionUbicacion
+        fields = [
+            "id",
+            "localidad",
+            "localidad_nombre",
+            "municipio",
+            "municipio_nombre",
+            "provincia",
+            "provincia_nombre",
+            "rol_ubicacion",
+            "nombre_ubicacion",
+            "domicilio",
+            "es_principal",
+            "latitud",
+            "longitud",
+            "observaciones",
+            "vigencia_desde",
+            "vigencia_hasta",
+            "fecha_creacion",
+            "fecha_modificacion",
+        ]
+
+
+class CentroCueIdentificadorSerializer(serializers.ModelSerializer):
+    ubicacion_nombre = serializers.CharField(
+        source="ubicacion.nombre_ubicacion", read_only=True, allow_null=True
+    )
+
+    class Meta:
+        model = InstitucionIdentificadorHist
+        fields = [
+            "id",
+            "tipo_identificador",
+            "valor_identificador",
+            "rol_institucional",
+            "ubicacion",
+            "ubicacion_nombre",
+            "es_actual",
+            "vigencia_desde",
+            "vigencia_hasta",
+            "motivo",
+            "fecha_creacion",
+            "fecha_modificacion",
+        ]
+
+
+class CentroCueDetalleSerializer(serializers.ModelSerializer):
+    """Ficha institucional/formativa expuesta únicamente en búsquedas por CUE."""
+
+    cue_consultado = serializers.SerializerMethodField()
+    cue_actual = serializers.SerializerMethodField()
+    coincidencias_cue = serializers.SerializerMethodField()
+    provincia_nombre = serializers.CharField(source="provincia.nombre", read_only=True)
+    municipio_nombre = serializers.CharField(source="municipio.nombre", read_only=True)
+    localidad_nombre = serializers.CharField(source="localidad.nombre", read_only=True)
+    responsable = serializers.SerializerMethodField()
+    identificadores = CentroCueIdentificadorSerializer(
+        source="identificadores_hist", many=True, read_only=True
+    )
+    contactos_institucionales = CentroCueContactoSerializer(
+        source="contactos_adicionales", many=True, read_only=True
+    )
+    ubicaciones = CentroCueUbicacionSerializer(many=True, read_only=True)
+    cursos = CentroCueCursoSerializer(many=True, read_only=True)
+    ofertas_institucionales = CentroCueOfertaInstitucionalSerializer(
+        many=True, read_only=True
+    )
+
+    class Meta:
+        model = Centro
+        fields = [
+            "id",
+            "cue_consultado",
+            "cue_actual",
+            "coincidencias_cue",
+            "nombre",
+            "codigo",
+            "activo",
+            "provincia",
+            "provincia_nombre",
+            "municipio",
+            "municipio_nombre",
+            "localidad",
+            "localidad_nombre",
+            "calle",
+            "numero",
+            "domicilio_actividad",
+            "codigo_postal",
+            "lote",
+            "manzana",
+            "entre_calles",
+            "telefono",
+            "celular",
+            "correo",
+            "sitio_web",
+            "responsable",
+            "tipo_gestion",
+            "clase_institucion",
+            "situacion",
+            "identificadores",
+            "contactos_institucionales",
+            "ubicaciones",
+            "cursos",
+            "ofertas_institucionales",
+        ]
+
+    def get_cue_consultado(self, _obj):
+        return self.context.get("cue")
+
+    def get_cue_actual(self, obj):
+        for identificador in obj.identificadores_hist.all():
+            if (
+                identificador.tipo_identificador == "cue"
+                and identificador.es_actual
+            ):
+                return identificador.valor_identificador
+        return obj.codigo
+
+    def get_coincidencias_cue(self, obj):
+        cue = self.context.get("cue")
+        coincidencias = []
+        for identificador in obj.identificadores_hist.all():
+            if (
+                identificador.tipo_identificador == "cue"
+                and identificador.valor_identificador == cue
+            ):
+                coincidencias.append(
+                    {
+                        "origen": "identificador_institucional",
+                        "identificador_id": identificador.id,
+                        "es_actual": identificador.es_actual,
+                        "vigencia_desde": identificador.vigencia_desde,
+                        "vigencia_hasta": identificador.vigencia_hasta,
+                    }
+                )
+        if obj.codigo == cue:
+            coincidencias.append(
+                {
+                    "origen": "codigo_legacy",
+                    "identificador_id": None,
+                    "es_actual": obj.codigo == self.get_cue_actual(obj),
+                    "vigencia_desde": None,
+                    "vigencia_hasta": None,
+                }
+            )
+        return coincidencias
+
+    def get_responsable(self, obj):
+        return {
+            "nombre": obj.nombre_referente,
+            "apellido": obj.apellido_referente,
+            "telefono": obj.telefono_referente,
+            "correo": obj.correo_referente,
+        }
+
+
 # ============================================================================
 # CURSOS (CAPA OPERATIVA)
 # ============================================================================
