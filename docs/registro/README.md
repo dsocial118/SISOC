@@ -38,11 +38,12 @@ Cuando el destino es `main`, también debe incluir una nota en
 
 Para ramas internas no protegidas, `.github/workflows/pr-docs.yml` genera y
 pushea estos archivos. Las ramas protegidas (`development`, `homologacion` y
-`main`) no se autoescriben: el mismo workflow verifica los artefactos ya
-versionados y bloquea el merge si faltan.
+`main`) no se autoescriben: si faltan artefactos, el workflow los informa en
+su Summary sin bloquear la promoción.
 
-En una promoción o cuando el bot no puede escribir la rama, generar de forma
-explícita antes de abrir o actualizar el PR:
+Cuando se requiera conservar los artefactos de una promoción o el bot no pueda
+escribir la rama, generarlos de forma explícita antes de abrir o actualizar el
+PR:
 
 ```powershell
 $env:GITHUB_TOKEN = gh auth token
