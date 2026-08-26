@@ -255,6 +255,7 @@ function initializeConditionalFields() {
 
 function initializeGeography() {
     const provinciaSelect  = document.getElementById("id_provincia_contacto");
+    const departamentoSelect = document.getElementById("id_departamento_contacto");
     const municipioSelect  = document.getElementById("id_municipio_contacto");
     const localidadSelect  = document.getElementById("id_localidad_contacto");
     const initialMunicipio = municipioSelect ? municipioSelect.value : "";
@@ -271,6 +272,17 @@ function initializeGeography() {
         if (!sel) return;
         sel.innerHTML = "";
         sel.appendChild(buildEmptyOption(label));
+    }
+
+    function selectValue(sel, value) {
+        if (!sel || !value) return;
+        const exists = [...sel.options].some(function (option) {
+            return option.value === value;
+        });
+        if (!exists) {
+            sel.appendChild(new Option(value, value));
+        }
+        sel.value = value;
     }
 
     async function loadOptions(url, sel, emptyLabel) {
@@ -293,9 +305,14 @@ function initializeGeography() {
     if (provinciaSelect && municipioSelect) {
         provinciaSelect.addEventListener("change", async function () {
             try {
+                resetSelect(departamentoSelect, "Seleccionar departamento...");
                 resetSelect(municipioSelect, "Seleccionar municipio...");
                 resetSelect(localidadSelect, "Seleccionar localidad...");
                 if (!this.value) return;
+                await loadOptions(
+                    window.ajaxLoadDepartamentosIpiUrl + "?provincia_id=" + this.value,
+                    departamentoSelect, "Seleccionar departamento..."
+                );
                 await loadOptions(
                     window.ajaxLoadMunicipiosUrl + "?provincia_id=" + this.value,
                     municipioSelect, "Seleccionar municipio..."
@@ -318,17 +335,25 @@ function initializeGeography() {
     }
 
     if (provinciaSelect && provinciaSelect.value) {
-        loadOptions(
+        const initialDepartamento = departamentoSelect ? departamentoSelect.value : "";
+        Promise.all([
+            loadOptions(
+                window.ajaxLoadDepartamentosIpiUrl + "?provincia_id=" + provinciaSelect.value,
+                departamentoSelect, "Seleccionar departamento..."
+            ),
+            loadOptions(
             window.ajaxLoadMunicipiosUrl + "?provincia_id=" + provinciaSelect.value,
             municipioSelect, "Seleccionar municipio..."
-        ).then(function () {
-            if (initialMunicipio) municipioSelect.value = initialMunicipio;
+            ),
+        ]).then(function () {
+            selectValue(departamentoSelect, initialDepartamento);
+            selectValue(municipioSelect, initialMunicipio);
             if (municipioSelect && municipioSelect.value && localidadSelect) {
                 return loadOptions(
                     window.ajaxLoadLocalidadesUrl + "?municipio_id=" + municipioSelect.value,
                     localidadSelect, "Seleccionar localidad..."
                 ).then(function () {
-                    if (initialLocalidad) localidadSelect.value = initialLocalidad;
+                    selectValue(localidadSelect, initialLocalidad);
                 });
             }
         }).catch(function (e) { console.error("Error al precargar ubicación:", e); });

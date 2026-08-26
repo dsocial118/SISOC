@@ -2,9 +2,11 @@ from datetime import date
 
 import pytest
 
+from core.models import Provincia
 from centrodeinfancia.forms import TrabajadorCDIForm
 from centrodeinfancia.models import (
     CentroDeInfancia,
+    DepartamentoIpi,
     NominaNacionalidad,
     NominaPais,
     Trabajador,
@@ -78,6 +80,44 @@ def test_alta_con_todos_los_campos_validos_guarda(catalogos, centro):
     assert trabajador.nombre == "Julia"
     assert trabajador.cuit == "20445350304"
     assert trabajador.sala_cdi == "2_anios"
+
+
+@pytest.mark.django_db
+def test_departamento_contacto_usa_catalogo_de_la_provincia(catalogos):
+    provincia = Provincia.objects.create(nombre="Tierra del Fuego")
+    departamento = DepartamentoIpi.objects.create(
+        codigo_departamento="94001",
+        provincia=provincia,
+        nombre="Ushuaia",
+    )
+
+    form = TrabajadorCDIForm(
+        data=datos_validos(
+            provincia_contacto=str(provincia.pk), departamento_contacto="Ushuaia"
+        )
+    )
+
+    assert form.is_valid(), form.errors
+    assert form.cleaned_data["departamento_contacto"] == departamento.nombre
+
+
+@pytest.mark.django_db
+def test_departamento_contacto_rechaza_valor_fuera_del_catalogo(catalogos):
+    provincia = Provincia.objects.create(nombre="Neuquén")
+    DepartamentoIpi.objects.create(
+        codigo_departamento="58001",
+        provincia=provincia,
+        nombre="Confluencia",
+    )
+
+    form = TrabajadorCDIForm(
+        data=datos_validos(
+            provincia_contacto=str(provincia.pk), departamento_contacto="Inventado"
+        )
+    )
+
+    assert not form.is_valid()
+    assert "departamento_contacto" in form.errors
 
 
 # --- TC51: no se guarda un legajo incompleto ---------------------------------

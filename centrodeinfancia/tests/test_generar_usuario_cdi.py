@@ -61,7 +61,11 @@ def test_service_crea_usuario_grupo_acceso_y_password(settings):
     resultado = generar_usuario_delegado(
         actor=actor,
         datos=DatosUsuarioDelegado(
-            first_name="Ana", last_name="Gomez", email="ana@example.com"
+            first_name="Ana",
+            last_name="Gomez",
+            email="ana@example.com",
+            dni="30123456",
+            cuil="20445350304",
         ),
         grupo_nombre=GRUPO,
         vinculo_callback=_vinculo(centro, actor),
@@ -73,6 +77,8 @@ def test_service_crea_usuario_grupo_acceso_y_password(settings):
     assert AccesoCDI.objects.filter(user=nuevo, centro=centro, activo=True).exists()
     assert nuevo.profile.must_change_password is True
     assert nuevo.profile.temporary_password_plaintext == resultado["password"]
+    assert nuevo.profile.dni == "30123456"
+    assert nuevo.profile.cuil == "20445350304"
     assert resultado["email_enviado"] is True
     assert len(mail.outbox) == 1
     assert "ana@example.com" in mail.outbox[0].to
@@ -190,12 +196,20 @@ def test_vista_genera_usuario_y_muestra_credenciales(settings):
         nombre_referente="Lia",
         apellido_referente="Paz",
         email_referente="lia@example.com",
+        dni_referente="30123456",
+        cuil_referente="20445350304",
     )
     actor = _provincial("prov-vista", provincia)
 
     request = _post_request(
         f"/centrodeinfancia/{centro.pk}/generar-usuario/",
-        {"first_name": "Lia", "last_name": "Paz", "email": "lia@example.com"},
+        {
+            "first_name": "Lia",
+            "last_name": "Paz",
+            "email": "lia@example.com",
+            "dni": "30123456",
+            "cuil": "20-44535030-4",
+        },
         actor,
     )
     response = GenerarUsuarioCDIView.as_view()(request, pk=centro.pk)
@@ -209,6 +223,8 @@ def test_vista_genera_usuario_y_muestra_credenciales(settings):
     assert (
         response.context_data["password"] == nuevo.profile.temporary_password_plaintext
     )
+    assert nuevo.profile.dni == "30123456"
+    assert nuevo.profile.cuil == "20445350304"
 
 
 @pytest.mark.django_db
@@ -363,6 +379,8 @@ def test_initial_precarga_solo_el_primer_usuario():
         nombre_referente="Lia",
         apellido_referente="Paz",
         email_referente="lia@example.com",
+        dni_referente="30123456",
+        cuil_referente="20445350304",
     )
 
     primero = GenerarUsuarioCDIView()
@@ -371,6 +389,8 @@ def test_initial_precarga_solo_el_primer_usuario():
         "first_name": "Lia",
         "last_name": "Paz",
         "email": "lia@example.com",
+        "dni": "30123456",
+        "cuil": "20445350304",
     }
 
     usuario = User.objects.create_user(username="ref-existente")
