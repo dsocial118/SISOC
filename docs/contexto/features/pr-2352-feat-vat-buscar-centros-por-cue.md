@@ -35,8 +35,10 @@
 - `VAT/api_views.py`
 - `VAT/serializers.py`
 - `VAT/tests.py`
+- `docs/contexto/features/pr-2352-feat-vat-buscar-centros-por-cue.md`
 - `docs/plans/2026-08-26-vat-busqueda-centro-por-cue-design.md`
 - `docs/registro/cambios/2026-08-26-vat-busqueda-centro-por-cue.md`
+- `docs/registro/prs/PR-2352.md`
 - `postman/Local.postman_environment.json`
 - `postman/SISOC APIs.postman_collection.json`
 - `postman/api_inventory.md`
@@ -45,8 +47,10 @@
 - `docs/ia/CONTEXT_HYGIENE.md`
 - `docs/ia/ARCHITECTURE.md`
 - `docs/ia/TESTING.md`
+- `docs/contexto/features/pr-2352-feat-vat-buscar-centros-por-cue.md`
 - `docs/plans/2026-08-26-vat-busqueda-centro-por-cue-design.md`
 - `docs/registro/cambios/2026-08-26-vat-busqueda-centro-por-cue.md`
+- `docs/registro/prs/PR-2352.md`
 
 ## Trazabilidad
 
