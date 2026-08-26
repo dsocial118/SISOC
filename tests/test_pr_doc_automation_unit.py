@@ -45,6 +45,13 @@ def test_pr_docs_workflow_detecta_artefactos_nuevos_no_trackeados():
     assert "git ls-tree -r --name-only refs/remotes/origin/pr-head" in workflow
     assert "docs/registro/releases/pending" in workflow
     assert "github.event.pull_request.base.ref" in workflow
+    assert "protected_source=false" in workflow
+    assert "### Advertencia: artefactos spec-as-source pendientes" in workflow
+    assert (
+        "La rama origen está protegida; los artefactos faltantes no bloquean "
+        "esta promoción."
+    ) in workflow
+    assert 'if [ "$protected_source" = true ]; then' in workflow
     assert "Faltan artefactos spec-as-source requeridos para mergear." in workflow
     assert "exit 1" in workflow
 

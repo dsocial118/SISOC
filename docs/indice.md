@@ -49,6 +49,8 @@
 - `docs/implementaciones/comedores_certificaciones_prestaciones.md`: generación, fallback y descarga de certificaciones de prestaciones.
 - `docs/implementaciones/usuarios_perfil_iam.md`: implementación de Usuarios/Perfil + IAM por permisos Django y guía para extender nuevas features.
 - `docs/implementaciones/centrodeinfancia_nomina_renaper.md`: contrato de asistencia de nómina CDI, alcance y precarga RENAPER de trabajadores.
+- `docs/implementaciones/centrodeinfancia_nomina_ninos_simepi.md`: autorización, alcance provincial, privacidad y contrato del PDF de nómina infantil SIMEPI.
+- `docs/implementaciones/comedores_nomina_ciudadanos.md`: alta de ciudadanos con DNI/Sin DNI desde nómina y transacción de datos sociales.
 - `docs/implementaciones/centrodefamilia_preinscriptos.md`: contrato del listado y exportación CSV de preinscriptos CDF, incluyendo columnas, ordenamiento y permisos.
 - `docs/vat/`: guías funcionales, API, operación de vouchers y desarrollo del módulo VAT.
 
