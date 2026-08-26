@@ -17,13 +17,14 @@ from core.constants import UserGroups
 from core.models import Provincia
 from core.validators import solo_digitos, validate_cuit
 from users.form_catalogs import obtener_queryset_formulario
-from users.models import AccesoComedorPWA, Profile
+from users.models import AccesoComedorPWA, Profile, TerritorialComedorProvincia
 from users.profile_utils import get_profile_or_none
 from users.services_delegation import effective_delegatable_groups_qs
 from users.services_pwa import (
     PWA_ASSIGNABLE_PERMISSION_CODES,
     PWA_USUARIOS_PERMISSION_CODE,
     deactivate_representante_accesses,
+    get_organizacion_ids,
     is_pwa_user,
     sync_representante_accesses,
 )
@@ -40,11 +41,15 @@ class UsernameEmailPasswordResetForm(PasswordResetForm):
 
     def get_users(self, email):
         username = (self.cleaned_data.get("username") or "").strip()
-        return User.objects.filter(
-            username__iexact=username,
-            email__iexact=email,
-            is_active=True,
-        )
+        try:
+            user = User.objects.get(username=username, is_active=True)
+        except User.DoesNotExist:
+            return ()
+
+        email_matches = (user.email or "").casefold() == (email or "").casefold()
+        if not email_matches:
+            return ()
+        return (user,)
 
 
 MOBILE_RENDICION_PERMISSION_CODE = "rendicioncuentasmensual.manage_mobile_rendicion"
@@ -331,7 +336,10 @@ class PWAAccessMixin:
             required=False,
             widget=forms.SelectMultiple(attrs={"class": "select2"}),
             label="Organizaciones",
-            help_text="Seleccione una o más organizaciones registradas en el sistema.",
+            help_text=(
+                "Cada organización habilita automáticamente todos sus comedores "
+                "actuales y futuros."
+            ),
         )
         self.fields["comedores_pwa"] = forms.ModelMultipleChoiceField(
             queryset=obtener_queryset_formulario("comedores_pwa"),
@@ -349,7 +357,7 @@ class PWAAccessMixin:
             rol=AccesoComedorPWA.ROL_REPRESENTANTE,
             activo=True,
         )
-        organizacion_ids = list(
+        organizacion_ids = get_organizacion_ids(self.instance) or list(
             accesos.exclude(organizacion_id__isnull=True)
             .values_list("organizacion_id", flat=True)
             .distinct()
@@ -358,14 +366,22 @@ class PWAAccessMixin:
             {tipo for tipo in accesos.values_list("tipo_asociacion", flat=True) if tipo}
         )
         comedor_ids = list(accesos.values_list("comedor_id", flat=True))
-        self.fields["es_representante_pwa"].initial = bool(comedor_ids)
+        self.fields["es_representante_pwa"].initial = bool(
+            comedor_ids or organizacion_ids
+        )
         self.fields["puede_gestionar_rendiciones_mobile"].initial = (
             self.instance.has_perm(MOBILE_RENDICION_PERMISSION_CODE)
         )
         for field_name, (permission_code, _) in PWA_OPERATION_PERMISSION_FIELDS.items():
             self.fields[field_name].initial = self.instance.has_perm(permission_code)
         self.fields["tipo_asociacion_pwa"].initial = (
-            tipos_asociacion[0] if len(tipos_asociacion) == 1 else ""
+            tipos_asociacion[0]
+            if len(tipos_asociacion) == 1
+            else (
+                AccesoComedorPWA.TIPO_ASOCIACION_ORGANIZACION
+                if organizacion_ids and not tipos_asociacion
+                else ""
+            )
         )
         self.fields["organizaciones_pwa"].initial = organizacion_ids
         self.fields["comedores_pwa"].initial = comedor_ids
@@ -427,10 +443,11 @@ class PWAAccessMixin:
             organizaciones_pwa = cleaned["organizaciones_pwa"]
             comedores_pwa = cleaned["comedores_pwa"]
 
-        if es_representante_pwa and not comedores_pwa:
+        if es_representante_pwa and not (comedores_pwa or organizaciones_pwa):
             self.add_error(
                 "comedores_pwa",
-                "Debe seleccionar al menos un comedor para un representante PWA.",
+                "Debe seleccionar al menos una organización o un comedor para un "
+                "representante PWA.",
             )
         if not es_representante_pwa and (
             comedores_pwa or organizaciones_pwa or tipo_asociacion_pwa
@@ -462,8 +479,16 @@ class PWAAccessMixin:
             organization_ids = set(
                 self.cleaned_data["organizaciones_pwa"].values_list("id", flat=True)
             )
+            selected_by_id = {
+                comedor.id: comedor for comedor in self.cleaned_data["comedores_pwa"]
+            }
+            for comedor in self.fields["comedores_pwa"].queryset.filter(
+                organizacion_id__in=organization_ids
+            ):
+                selected_by_id[comedor.id] = comedor
+
             access_specs = []
-            for comedor in self.cleaned_data["comedores_pwa"]:
+            for comedor in sorted(selected_by_id.values(), key=lambda item: item.id):
                 association_type = (
                     AccesoComedorPWA.TIPO_ASOCIACION_ORGANIZACION
                     if comedor.organizacion_id in organization_ids
@@ -484,6 +509,7 @@ class PWAAccessMixin:
             sync_representante_accesses(
                 user=user,
                 access_specs=access_specs,
+                organizacion_ids=organization_ids,
                 actor=None,
             )
             return
@@ -701,9 +727,91 @@ class DelegationScopeMixin:
         user.user_permissions.set(list(final_permission_ids))
 
 
+class TerritorialComedorFormMixin:
+    """Campos del rol "Territorial comedor" (SISOC - Mobile).
+
+    Flag simple sobre ``Profile.es_territorial_comedor`` + alcance por provincia
+    en ``TerritorialComedorProvincia``. Es mutuamente excluyente con el
+    representante PWA (``es_representante_pwa``): un mismo usuario no puede ser
+    ambos. No arrastra la maquinaria del representante (auto-password, limpieza
+    de grupos, ocultamiento del backoffice): el territorial es un usuario normal
+    con una marca de rol y su alcance provincial.
+    """
+
+    def _setup_territorial_comedor_fields(self):
+        self.fields["es_territorial_comedor"] = forms.BooleanField(
+            required=False,
+            label="Habilitar acceso a SISOC - Mobile",
+        )
+        self.fields["provincias_territorial"] = forms.ModelMultipleChoiceField(
+            queryset=Provincia.objects.all().order_by("nombre"),
+            required=False,
+            widget=forms.SelectMultiple(attrs={"class": "select2"}),
+            label="Provincias",
+            help_text="Provincias que cubre este territorial en SISOC - Mobile.",
+        )
+
+    def _init_territorial_comedor_fields(self, profile):
+        if not profile:
+            return
+        self.fields["es_territorial_comedor"].initial = profile.es_territorial_comedor
+        self.fields["provincias_territorial"].initial = list(
+            profile.territorial_comedor_provincias.values_list(
+                "provincia_id", flat=True
+            )
+        )
+
+    def _clean_territorial_comedor_fields(self, cleaned):
+        es_territorial = cleaned.get("es_territorial_comedor", False)
+        es_representante_pwa = cleaned.get("es_representante_pwa", False)
+        provincias = cleaned.get("provincias_territorial")
+
+        if es_territorial and es_representante_pwa:
+            self.add_error(
+                "es_territorial_comedor",
+                "Un usuario territorial no puede tener acceso como representante "
+                "de SISOC - Mobile a la vez.",
+            )
+
+        if not es_territorial:
+            cleaned["provincias_territorial"] = Provincia.objects.none()
+            return cleaned
+
+        if not provincias:
+            self.add_error(
+                "provincias_territorial",
+                "Seleccione al menos una provincia para el territorial.",
+            )
+        return cleaned
+
+    def _sync_territorial_comedor_provincias(self, profile):
+        if not profile.es_territorial_comedor:
+            profile.territorial_comedor_provincias.all().delete()
+            return
+        selected_ids = {
+            provincia.id
+            for provincia in self.cleaned_data.get("provincias_territorial") or []
+        }
+        existing_ids = set(
+            profile.territorial_comedor_provincias.values_list(
+                "provincia_id", flat=True
+            )
+        )
+        to_delete = existing_ids - selected_ids
+        if to_delete:
+            profile.territorial_comedor_provincias.filter(
+                provincia_id__in=to_delete
+            ).delete()
+        for provincia_id in selected_ids - existing_ids:
+            TerritorialComedorProvincia.objects.create(
+                profile=profile, provincia_id=provincia_id
+            )
+
+
 class UserCreationForm(
     TerritorialScopeFormMixin,
     PWAAccessMixin,
+    TerritorialComedorFormMixin,
     DelegationScopeMixin,
     forms.ModelForm,
 ):
@@ -789,6 +897,7 @@ class UserCreationForm(
             "duplas_asignadas"
         )
         self._setup_pwa_fields()
+        self._setup_territorial_comedor_fields()
         self._setup_delegation_fields()
         self._scope_assignable_fields_for_actor()
         self.fields["email"].required = False
@@ -811,7 +920,8 @@ class UserCreationForm(
         if cleaned.get("es_coordinador") and not cleaned.get("duplas_asignadas"):
             self.add_error("duplas_asignadas", "Seleccione al menos una dupla.")
         self._validate_selected_within_allowed(cleaned)
-        return self._clean_pwa_fields(cleaned)
+        cleaned = self._clean_pwa_fields(cleaned)
+        return self._clean_territorial_comedor_fields(cleaned)
 
     def save(self, commit=True):
         with transaction.atomic():
@@ -855,6 +965,9 @@ class UserCreationForm(
         profile.tipo_usuario = self.cleaned_data["tipo_usuario"]
         profile.provincia = None
         profile.es_coordinador = self.cleaned_data.get("es_coordinador", False)
+        profile.es_territorial_comedor = self.cleaned_data.get(
+            "es_territorial_comedor", False
+        )
         profile.rol = self.cleaned_data.get("rol")
         profile.must_change_password = True
         profile.password_changed_at = None
@@ -863,6 +976,7 @@ class UserCreationForm(
         )
         profile.temporary_password_plaintext = self.generated_password
         profile.save()
+        self._sync_territorial_comedor_provincias(profile)
         sync_profile_territorial_scopes(
             profile,
             self.cleaned_data.get("territorial_scopes_data", []),
@@ -906,6 +1020,7 @@ class UserCreationForm(
 class CustomUserChangeForm(
     TerritorialScopeFormMixin,
     PWAAccessMixin,
+    TerritorialComedorFormMixin,
     DelegationScopeMixin,
     forms.ModelForm,
 ):
@@ -995,6 +1110,7 @@ class CustomUserChangeForm(
             "duplas_asignadas"
         )
         self._setup_pwa_fields()
+        self._setup_territorial_comedor_fields()
         self._setup_delegation_fields()
         self._scope_assignable_fields_for_actor()
         self.fields["email"].required = False
@@ -1008,6 +1124,7 @@ class CustomUserChangeForm(
             prof = None
 
         self._setup_territorial_scope_fields(prof)
+        self._init_territorial_comedor_fields(prof)
         if prof:
             self.fields["dni"].initial = prof.dni
             self.fields["cuil"].initial = prof.cuil
@@ -1028,7 +1145,8 @@ class CustomUserChangeForm(
         if cleaned.get("es_coordinador") and not cleaned.get("duplas_asignadas"):
             self.add_error("duplas_asignadas", "Seleccione al menos una dupla.")
         self._validate_selected_within_allowed(cleaned)
-        return self._clean_pwa_fields(cleaned)
+        cleaned = self._clean_pwa_fields(cleaned)
+        return self._clean_territorial_comedor_fields(cleaned)
 
     def save(self, commit=True):
         with transaction.atomic():
@@ -1085,6 +1203,9 @@ class CustomUserChangeForm(
             profile.tipo_usuario = self.cleaned_data["tipo_usuario"]
             profile.provincia = None
             profile.es_coordinador = self.cleaned_data.get("es_coordinador", False)
+            profile.es_territorial_comedor = self.cleaned_data.get(
+                "es_territorial_comedor", False
+            )
             profile.rol = self.cleaned_data.get("rol")
             if new_pwd:
                 self._set_initial_password_flags(
@@ -1105,6 +1226,7 @@ class CustomUserChangeForm(
                 )
                 profile.temporary_password_plaintext = None
             profile.save()
+            self._sync_territorial_comedor_provincias(profile)
             sync_profile_territorial_scopes(
                 profile,
                 self.cleaned_data.get("territorial_scopes_data", []),

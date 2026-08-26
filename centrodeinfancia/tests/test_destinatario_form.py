@@ -271,6 +271,17 @@ class TestNominaCentroInfanciaDestinatariosFormJsonFields:
         nomina.refresh_from_db()
         assert set(nomina.alergias_alimentarias) == {"leche_vaca", "tacc"}
 
+    def test_acepta_la_opcion_sin_alergias_alimentarias(self, centro):
+        form = NominaCentroInfanciaDestinatariosForm(
+            datos_validos(centro, alergias_alimentarias=["sin_alergias_alimentarias"]),
+            centro=centro,
+        )
+
+        assert form.is_valid(), form.errors
+        assert form.cleaned_data["alergias_alimentarias"] == [
+            "sin_alergias_alimentarias"
+        ]
+
     def test_grupo_pertenencia_se_guarda_como_lista(self, centro, ciudadano):
         data = datos_validos(centro, grupo_pertenencia=["africano", "asiatico"])
         form = NominaCentroInfanciaDestinatariosForm(data, centro=centro)
@@ -499,11 +510,23 @@ class TestValidacionesQA:
         assert not form.is_valid()
         assert "recibe_apoyo_discapacidad" in form.errors
 
+    def test_tipo_discapacidad_obligatorio_si_tiene_discapacidad(self, centro):
+        form = self._form(
+            centro,
+            tiene_discapacidad="si",
+            recibe_apoyo_discapacidad="false",
+            tipo_discapacidad=[],
+        )
+
+        assert not form.is_valid()
+        assert "tipo_discapacidad" in form.errors
+
     def test_acepta_sin_apoyo_si_tiene_discapacidad(self, centro):
         form = self._form(
             centro,
             tiene_discapacidad="si",
             recibe_apoyo_discapacidad="false",
+            tipo_discapacidad=["motora"],
         )
         assert form.is_valid(), form.errors
 

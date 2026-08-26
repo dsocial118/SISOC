@@ -96,13 +96,24 @@ Reglas actuales para usuarios con acceso PWA creados desde web:
   - `must_change_password` pasa a `False`;
   - se limpia `temporary_password_plaintext`.
 
+### Recuperación PWA
+
+El reseteo PWA reemplaza el reseteo administrativo con contraseña temporal. La
+solicitud API requiere el par `username` + `email`; si identifica a un usuario
+PWA activo, envía un enlace de recuperación a la URL pública configurada en
+`PWA_BASE_URL`. La respuesta no confirma si la cuenta existe y el endpoint
+aplica rate limit por IP e identidad. Ver también
+`docs/implementaciones/pwa_backend.md` para el contrato de request/confirmación
+y `docs/operacion/integraciones.md` para la configuración por ambiente.
+
 ### Mi cuenta y confirmación de datos personales
 
 - La autogestión de datos vive en `/mi-cuenta/`; el usuario solo puede editar
   su propio nombre, apellido, DNI, CUIL, mail y correo institucional.
 - `/mi-cuenta/confirmar/` es un gate de confirmación de una sola vez para los
-  perfiles históricos activos. DNI, CUIL y la declaración de confidencialidad
-  son obligatorios; el correo institucional es opcional.
+  perfiles históricos activos. DNI y CUIL son obligatorios; el correo
+  institucional es opcional. La declaración de confidencialidad se conserva
+  solo como dato histórico y ya no se muestra ni se exige desde este formulario.
 - `ProfileConfirmationMiddleware` se ejecuta después de
   `FirstLoginPasswordChangeMiddleware`: primero se exige el cambio de
   contraseña, si corresponde, y luego la confirmación de datos. Las rutas API
@@ -144,6 +155,13 @@ Reglas actuales para usuarios con acceso PWA creados desde web:
   - `users/rate_limits.py`
 - Templates UI SISOC:
   - `users/templates/user/password_reset_*.html`
+- El reset web selecciona una única cuenta por `username` exacto y usa el email
+  como verificación secundaria sin distinguir mayúsculas/minúsculas. Solo
+  envía el enlace si la cuenta está activa y ambos valores coinciden; una
+  contraseña inutilizable no bloquea el reset.
+- La respuesta de solicitud es genérica tanto para combinaciones válidas como
+  inválidas. Un email compartido nunca genera enlaces para varias cuentas, lo
+  que evita enumeración y resets ambiguos.
 
 ## 4) Migraciones aplicadas
 
@@ -165,10 +183,13 @@ Validaciones mínimas:
 - Un usuario con permiso puede ver/entrar al módulo.
 - Un usuario sin permiso no ve el ítem de sidebar y recibe `403` por URL directa.
 - Reset de contraseña web y API funcionan de punta a punta.
-- Tras desplegar las migraciones 0044/0045, un usuario web activo sin
-  confirmación debe ser redirigido a `/mi-cuenta/confirmar/`; completar el
-  formulario debe quitar el bloqueo. Verificar también que una llamada `/api/`
-  autenticada no sea redirigida.
+- Para perfiles históricos que aún requieran confirmación, un usuario web
+  activo debe ser redirigido a `/mi-cuenta/confirmar/`; completar DNI y CUIL
+  debe quitar el bloqueo sin pedir la declaración histórica. Verificar también
+  que una llamada `/api/` autenticada no sea redirigida.
+- Probar el reset web con usuario y email exactos, email con distinta
+  capitalización, email compartido, combinación inválida y contraseña
+  inutilizable; todos los casos deben conservar la respuesta genérica.
 
 ## Guía para nuevas features
 

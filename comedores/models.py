@@ -4,7 +4,7 @@ from io import BytesIO
 from django.conf import settings
 from django.core.validators import MaxValueValidator, MinValueValidator, RegexValidator
 from django.core.exceptions import ValidationError
-from django.db import models, transaction
+from django.db import models, router, transaction
 from django.core.files.base import ContentFile
 from django.utils import timezone
 from PIL import Image, ImageOps
@@ -456,6 +456,38 @@ class Comedor(SoftDeleteModelMixin, models.Model):
 
     def __str__(self) -> str:
         return str(self.nombre)
+
+    def save(self, *args, **kwargs):
+        """Persiste el comedor y sus side effects síncronos en una transacción."""
+        db_alias = kwargs.get("using") or router.db_for_write(type(self), instance=self)
+        with transaction.atomic(using=db_alias):
+            return super().save(*args, **kwargs)
+
+    def delete(  # pylint: disable=arguments-differ
+        self,
+        using=None,
+        keep_parents=False,
+        *,
+        user=None,
+        cascade=True,
+    ):
+        """Incluye los side effects del soft-delete en la misma transacción."""
+        db_alias = (
+            using or self._state.db or router.db_for_write(type(self), instance=self)
+        )
+        with transaction.atomic(using=db_alias):
+            return super().delete(
+                using=db_alias,
+                keep_parents=keep_parents,
+                user=user,
+                cascade=cascade,
+            )
+
+    def restore(self, *, user=None, cascade=True):
+        """Incluye los side effects del restore en la misma transacción."""
+        db_alias = self._state.db or router.db_for_write(type(self), instance=self)
+        with transaction.atomic(using=db_alias):
+            return super().restore(user=user, cascade=cascade)
 
     def clean(self):
         super().clean()
@@ -1253,12 +1285,42 @@ class ImagenComedor(models.Model):
     comedor = models.ForeignKey(
         Comedor, on_delete=models.CASCADE, related_name="imagenes"
     )
+    relevamiento = models.ForeignKey(
+        "relevamientos.Relevamiento",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+        help_text=(
+            "Relevamiento (visita) al que pertenece la foto. Opcional: si es null "
+            "la foto es a nivel comedor (compatibilidad)."
+        ),
+    )
     imagen = models.ImageField(upload_to="comedor/")
     origen = models.CharField(
         max_length=10,
         choices=ORIGEN_CHOICES,
         default=ORIGEN_WEB,
     )
+    client_uuid = models.CharField(
+        max_length=64,
+        null=True,
+        blank=True,
+        help_text=(
+            "Identificador estable generado por el cliente (PWA) para deduplicar "
+            "reintentos offline de subida."
+        ),
+    )
+
+    class Meta:
+        # Unique plano (sin condición) para que MySQL lo cree de verdad: los NULL
+        # se tratan como distintos, así que solo enforcea cuando hay client_uuid.
+        constraints = [
+            models.UniqueConstraint(
+                fields=["comedor", "client_uuid"],
+                name="uniq_imagencomedor_comedor_client_uuid",
+            ),
+        ]
 
     def __str__(self):
         return f"Imagen de {self.comedor.nombre}"

@@ -572,6 +572,7 @@
     <script nonce="{{ request.csp_nonce }}">
         window.ajaxLoadMunicipiosUrl  = "{% url 'ajax_load_municipios' %}";
         window.ajaxLoadLocalidadesUrl = "{% url 'ajax_load_localidades' %}";
+        window.ajaxLoadDepartamentosIpiUrl = "{% url 'centrodeinfancia_ajax_load_departamentos_ipi' %}";
     </script>
     <script src="{% static 'custom/js/trabajadorForm.js' %}"
             nonce="{{ request.csp_nonce }}"></script>

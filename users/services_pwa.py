@@ -1,5 +1,7 @@
 """Servicios de dominio para accesos PWA."""
 
+# pylint: disable=too-many-lines
+
 from __future__ import annotations
 
 from datetime import timedelta
@@ -11,10 +13,17 @@ from django.contrib.auth.models import Permission
 from django.contrib.auth import get_user_model
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import IntegrityError, transaction
-from django.db.models import F, Q
+from django.db.models import Exists, F, OuterRef, Q
 from django.utils import timezone
 
-from users.models import AccesoComedorPWA, AuditAccesoComedorPWA, Profile
+from core.models import Provincia
+from users.models import (
+    AccesoComedorPWA,
+    AccesoOrganizacionPWA,
+    AuditAccesoComedorPWA,
+    Profile,
+    TerritorialComedorProvincia,
+)
 from users.pwa_comedores import es_comedor_alimentar_comunidad
 from users.profile_utils import get_profile_or_none
 from iam.services import get_effective_permission_codes
@@ -56,15 +65,28 @@ def get_access_rows(user):
     """Retorna accesos PWA activos del usuario."""
     if not user or not getattr(user, "is_authenticated", False):
         return AccesoComedorPWA.objects.none()
-    queryset = AccesoComedorPWA.objects.filter(
-        user=user,
+    active_organization_membership = AccesoOrganizacionPWA.objects.filter(
+        user_id=OuterRef("user_id"),
+        organizacion_id=OuterRef("organizacion_id"),
         activo=True,
-    ).select_related("comedor", "creado_por", "organizacion")
+    )
+    queryset = (
+        AccesoComedorPWA.objects.filter(
+            user=user,
+            activo=True,
+            comedor__deleted_at__isnull=True,
+        )
+        .annotate(
+            has_active_organization_membership=Exists(active_organization_membership)
+        )
+        .select_related("comedor", "creado_por", "organizacion")
+    )
     return queryset.filter(
         Q(tipo_asociacion=AccesoComedorPWA.TIPO_ASOCIACION_ESPACIO)
         | Q(
             tipo_asociacion=AccesoComedorPWA.TIPO_ASOCIACION_ORGANIZACION,
             organizacion_id=F("comedor__organizacion_id"),
+            has_active_organization_membership=True,
         )
     )
 
@@ -94,6 +116,60 @@ def get_visible_access_rows(user):
 def is_pwa_user(user) -> bool:
     """Indica si el usuario tiene al menos un acceso PWA activo."""
     return get_access_rows(user).exists()
+
+
+def is_territorial_comedor_user(user) -> bool:
+    """Indica si el usuario es territorial de comedores (SISOC - Mobile).
+
+    Rol simple marcado con ``Profile.es_territorial_comedor``; no depende de
+    ``AccesoComedorPWA``. Habilita el login mobile del territorial.
+    """
+    if not user or not getattr(user, "is_authenticated", False):
+        return False
+    profile = get_profile_or_none(user)
+    return bool(getattr(profile, "es_territorial_comedor", False))
+
+
+def get_territorial_comedor_provincia_ids(user) -> list[int]:
+    """IDs de provincias de alcance de un usuario territorial de comedores."""
+    if not is_territorial_comedor_user(user):
+        return []
+    profile = get_profile_or_none(user)
+    if not profile:
+        return []
+    return list(
+        TerritorialComedorProvincia.objects.filter(profile=profile)
+        .values_list("provincia_id", flat=True)
+        .distinct()
+    )
+
+
+def get_territorial_comedor_provincias(user) -> list[dict]:
+    """Provincias de alcance del territorial como ``[{id, nombre}]`` (por nombre)."""
+    provincia_ids = get_territorial_comedor_provincia_ids(user)
+    if not provincia_ids:
+        return []
+    return [
+        {"id": provincia.id, "nombre": provincia.nombre}
+        for provincia in Provincia.objects.filter(id__in=provincia_ids).order_by(
+            "nombre"
+        )
+    ]
+
+
+def get_territorial_comedor_users_for_provincia(provincia_id):
+    """Usuarios territoriales de comedores con alcance en una provincia."""
+    if not provincia_id:
+        return User.objects.none()
+    return (
+        User.objects.filter(
+            is_active=True,
+            profile__es_territorial_comedor=True,
+            profile__territorial_comedor_provincias__provincia_id=provincia_id,
+        )
+        .distinct()
+        .order_by("first_name", "last_name", "username")
+    )
 
 
 def get_accessible_comedor_ids(user) -> list[int]:
@@ -543,18 +619,379 @@ def _get_representante_accesses_queryset(user):
     )
 
 
+def get_organizacion_ids(user) -> list[int]:
+    """Organizaciones vigentes asignadas al usuario PWA."""
+    if not user or not getattr(user, "pk", None):
+        return []
+    return list(
+        AccesoOrganizacionPWA.objects.filter(user=user, activo=True)
+        .order_by("organizacion_id")
+        .values_list("organizacion_id", flat=True)
+    )
+
+
+def _sync_organizacion_memberships(*, user, organizacion_ids, actor=None):
+    """Sincroniza las organizaciones asignadas a un usuario PWA."""
+    requested_ids = {int(organizacion_id) for organizacion_id in organizacion_ids or []}
+    now = timezone.now()
+    AccesoOrganizacionPWA.objects.filter(user=user, activo=True).exclude(
+        organizacion_id__in=requested_ids
+    ).update(activo=False, fecha_baja=now, fecha_actualizacion=now)
+
+    creador = actor if getattr(actor, "is_authenticated", False) else None
+    for organizacion_id in sorted(requested_ids):
+        membership, created = AccesoOrganizacionPWA.objects.get_or_create(
+            user=user,
+            organizacion_id=organizacion_id,
+            defaults={"creado_por": creador},
+        )
+        if created or membership.activo:
+            continue
+        membership.activo = True
+        membership.fecha_baja = None
+        membership.save(update_fields=["activo", "fecha_baja", "fecha_actualizacion"])
+
+
+def _deactivate_organizacion_comedor_accesses(
+    *,
+    comedor_id: int,
+    organizacion_id: int,
+    actor=None,
+    user_ids: Iterable[int] | None = None,
+    motivo: str = "comedor_fuera_de_organizacion",
+) -> int:
+    """Da de baja los accesos por organización de un comedor que dejó de pertenecer."""
+    accesos_qs = AccesoComedorPWA.objects.filter(
+        comedor_id=comedor_id,
+        organizacion_id=organizacion_id,
+        tipo_asociacion=AccesoComedorPWA.TIPO_ASOCIACION_ORGANIZACION,
+        activo=True,
+    )
+    if user_ids is not None:
+        accesos_qs = accesos_qs.filter(user_id__in=set(user_ids))
+    accesos = list(accesos_qs)
+    if not accesos:
+        return 0
+
+    now = timezone.now()
+    accesos_qs.update(activo=False, fecha_baja=now, fecha_actualizacion=now)
+    for acceso in accesos:
+        acceso.activo = False
+        acceso.fecha_baja = now
+        _registrar_auditoria_acceso(
+            acceso=acceso,
+            accion=AuditAccesoComedorPWA.ACCION_DEACTIVATE,
+            actor=actor,
+            metadata={
+                "rol": acceso.rol,
+                "motivo": motivo,
+                "organizacion_id": organizacion_id,
+            },
+        )
+    return len(accesos)
+
+
+def _get_organizacion_user_ids(
+    *, organizacion_id: int, lock_memberships: bool
+) -> tuple[int, ...]:
+    memberships = AccesoOrganizacionPWA.objects.filter(
+        organizacion_id=organizacion_id,
+        activo=True,
+    ).order_by("user_id")
+    if lock_memberships:
+        memberships = memberships.select_for_update()
+    return tuple(memberships.values_list("user_id", flat=True))
+
+
+def _grant_organizacion_comedor_access(
+    *,
+    comedor_id: int,
+    organizacion_id: int,
+    actor=None,
+    user_ids: Iterable[int] | None = None,
+) -> int:
+    """Habilita un comedor a los usuarios asignados a su organización."""
+    if user_ids is None:
+        user_ids = _get_organizacion_user_ids(
+            organizacion_id=organizacion_id,
+            lock_memberships=True,
+        )
+    user_ids = {int(user_id) for user_id in user_ids}
+    if not user_ids:
+        return 0
+
+    existentes = {
+        row.user_id: row
+        for row in AccesoComedorPWA.objects.filter(
+            comedor_id=comedor_id,
+            user_id__in=user_ids,
+        )
+    }
+    afectados = 0
+    for user_id in sorted(user_ids):
+        acceso = existentes.get(user_id)
+        if acceso is None:
+            acceso = AccesoComedorPWA.objects.create(
+                user_id=user_id,
+                comedor_id=comedor_id,
+                organizacion_id=organizacion_id,
+                rol=AccesoComedorPWA.ROL_REPRESENTANTE,
+                tipo_asociacion=AccesoComedorPWA.TIPO_ASOCIACION_ORGANIZACION,
+                activo=True,
+            )
+            _registrar_auditoria_acceso(
+                acceso=acceso,
+                accion=AuditAccesoComedorPWA.ACCION_CREATE,
+                actor=actor,
+                metadata={
+                    "rol": acceso.rol,
+                    "tipo_asociacion": acceso.tipo_asociacion,
+                    "motivo": "comedor_de_organizacion",
+                },
+            )
+            afectados += 1
+            continue
+
+        if acceso.rol == AccesoComedorPWA.ROL_OPERADOR:
+            # Los operadores dependen de su representante, no de la organización.
+            continue
+        if acceso.activo and (
+            acceso.tipo_asociacion == AccesoComedorPWA.TIPO_ASOCIACION_ESPACIO
+            or acceso.organizacion_id == organizacion_id
+        ):
+            continue
+
+        estaba_inactivo = not acceso.activo
+        acceso.rol = AccesoComedorPWA.ROL_REPRESENTANTE
+        acceso.tipo_asociacion = AccesoComedorPWA.TIPO_ASOCIACION_ORGANIZACION
+        acceso.organizacion_id = organizacion_id
+        acceso.activo = True
+        acceso.fecha_baja = None
+        acceso.save(
+            update_fields=[
+                "rol",
+                "tipo_asociacion",
+                "organizacion",
+                "activo",
+                "fecha_baja",
+                "fecha_actualizacion",
+            ]
+        )
+        _registrar_auditoria_acceso(
+            acceso=acceso,
+            accion=(
+                AuditAccesoComedorPWA.ACCION_REACTIVATE
+                if estaba_inactivo
+                else AuditAccesoComedorPWA.ACCION_CREATE
+            ),
+            actor=actor,
+            metadata={
+                "rol": acceso.rol,
+                "tipo_asociacion": acceso.tipo_asociacion,
+                "motivo": "comedor_de_organizacion",
+            },
+        )
+        afectados += 1
+    return afectados
+
+
+@transaction.atomic
+def apply_comedor_organizacion_change(
+    *,
+    comedor_id: int,
+    previous_organizacion_id: int | None,
+    new_organizacion_id: int | None,
+    actor=None,
+) -> dict:
+    """Propaga a los usuarios PWA un cambio de organización de un comedor.
+
+    Los usuarios asignados a la organización nueva reciben el comedor y los de
+    la organización anterior lo pierden. La visibilidad final sigue resolviéndose
+    con el estado del comedor en `filter_pwa_visible_spaces`.
+    """
+    if previous_organizacion_id == new_organizacion_id:
+        return {"altas": 0, "bajas": 0}
+
+    locked_user_ids_by_organization = {
+        organizacion_id: _get_organizacion_user_ids(
+            organizacion_id=organizacion_id,
+            lock_memberships=True,
+        )
+        for organizacion_id in sorted(
+            {
+                organizacion_id
+                for organizacion_id in (
+                    previous_organizacion_id,
+                    new_organizacion_id,
+                )
+                if organizacion_id
+            }
+        )
+    }
+    bajas = (
+        _deactivate_organizacion_comedor_accesses(
+            comedor_id=comedor_id,
+            organizacion_id=previous_organizacion_id,
+            actor=actor,
+        )
+        if previous_organizacion_id
+        else 0
+    )
+    altas = (
+        _grant_organizacion_comedor_access(
+            comedor_id=comedor_id,
+            organizacion_id=new_organizacion_id,
+            actor=actor,
+            user_ids=locked_user_ids_by_organization[new_organizacion_id],
+        )
+        if new_organizacion_id
+        else 0
+    )
+    return {"altas": altas, "bajas": bajas}
+
+
+def preview_organizacion_accesses(
+    *, organizacion_id: int, comedor_ids: Iterable[int]
+) -> dict[str, int]:
+    """Calcula una reconciliación de organización sin escribir ni bloquear filas."""
+    comedor_ids = {int(comedor_id) for comedor_id in comedor_ids or []}
+    user_ids = set(
+        _get_organizacion_user_ids(
+            organizacion_id=organizacion_id,
+            lock_memberships=False,
+        )
+    )
+
+    bajas = (
+        AccesoComedorPWA.objects.filter(
+            organizacion_id=organizacion_id,
+            tipo_asociacion=AccesoComedorPWA.TIPO_ASOCIACION_ORGANIZACION,
+            activo=True,
+        )
+        .exclude(
+            comedor_id__in=comedor_ids,
+            user_id__in=user_ids,
+        )
+        .count()
+    )
+    if not user_ids or not comedor_ids:
+        return {"altas": 0, "bajas": bajas}
+
+    accesos_sin_cambios = (
+        AccesoComedorPWA.objects.filter(
+            user_id__in=user_ids,
+            comedor_id__in=comedor_ids,
+        )
+        .filter(
+            Q(rol=AccesoComedorPWA.ROL_OPERADOR)
+            | Q(
+                activo=True,
+                tipo_asociacion=AccesoComedorPWA.TIPO_ASOCIACION_ESPACIO,
+            )
+            | Q(activo=True, organizacion_id=organizacion_id)
+        )
+        .count()
+    )
+    altas = len(user_ids) * len(comedor_ids) - accesos_sin_cambios
+    return {"altas": altas, "bajas": bajas}
+
+
+@transaction.atomic
+def sync_organizacion_accesses(
+    *,
+    organizacion_id: int,
+    comedor_ids: Iterable[int],
+    actor=None,
+) -> dict:
+    """Reconcilia los accesos por organización con sus comedores actuales."""
+    comedor_ids = {int(comedor_id) for comedor_id in comedor_ids or []}
+    user_ids = _get_organizacion_user_ids(
+        organizacion_id=organizacion_id,
+        lock_memberships=True,
+    )
+
+    accesos_obsoletos_qs = AccesoComedorPWA.objects.filter(
+        organizacion_id=organizacion_id,
+        tipo_asociacion=AccesoComedorPWA.TIPO_ASOCIACION_ORGANIZACION,
+        activo=True,
+    ).exclude(
+        comedor_id__in=comedor_ids,
+        user_id__in=user_ids,
+    )
+    usuarios_obsoletos_por_comedor = {}
+    for comedor_id, user_id in accesos_obsoletos_qs.values_list(
+        "comedor_id", "user_id"
+    ):
+        usuarios_obsoletos_por_comedor.setdefault(comedor_id, set()).add(user_id)
+
+    bajas = 0
+    for comedor_id, stale_user_ids in sorted(usuarios_obsoletos_por_comedor.items()):
+        bajas += _deactivate_organizacion_comedor_accesses(
+            comedor_id=comedor_id,
+            organizacion_id=organizacion_id,
+            actor=actor,
+            user_ids=stale_user_ids,
+            motivo="reconciliacion_organizacion",
+        )
+
+    altas = 0
+    for comedor_id in sorted(comedor_ids):
+        altas += _grant_organizacion_comedor_access(
+            comedor_id=comedor_id,
+            organizacion_id=organizacion_id,
+            actor=actor,
+            user_ids=user_ids,
+        )
+    return {"altas": altas, "bajas": bajas}
+
+
+def _deactivate_representante_accesses_outside(*, user, comedor_ids, actor=None):
+    """Da de baja los accesos representante que quedaron fuera de la selección."""
+    accesos_activos = _get_representante_accesses_queryset(user)
+    accesos_qs = (
+        accesos_activos.exclude(comedor_id__in=comedor_ids)
+        if comedor_ids
+        else accesos_activos
+    )
+    accesos = list(accesos_qs)
+    now = timezone.now()
+    accesos_qs.update(activo=False, fecha_baja=now, fecha_actualizacion=now)
+    for acceso in accesos:
+        acceso.activo = False
+        acceso.fecha_baja = now
+        _registrar_auditoria_acceso(
+            acceso=acceso,
+            accion=AuditAccesoComedorPWA.ACCION_DEACTIVATE,
+            actor=actor,
+            metadata={"rol": acceso.rol},
+        )
+
+
 @transaction.atomic
 def sync_representante_accesses(
     *,
     user,
     comedor_ids: Iterable[int] | None = None,
     access_specs: Iterable[dict] | None = None,
+    organizacion_ids: Iterable[int] | None = None,
     actor=None,
 ):
     """Sincroniza accesos representante activos con los comedores seleccionados."""
     normalized_specs = _normalize_representante_access_specs(
         comedor_ids=comedor_ids,
         access_specs=access_specs,
+    )
+
+    if organizacion_ids is None:
+        organizacion_ids = {
+            spec["organizacion_id"]
+            for spec in normalized_specs
+            if spec["organizacion_id"]
+        }
+    _sync_organizacion_memberships(
+        user=user,
+        organizacion_ids=organizacion_ids,
+        actor=actor,
     )
 
     comedor_ids = {spec["comedor_id"] for spec in normalized_specs}
@@ -570,28 +1007,11 @@ def sync_representante_accesses(
             "No se puede asignar rol representante a un usuario con rol operador activo."
         )
 
-    now = timezone.now()
-    accesos_representante_activos = _get_representante_accesses_queryset(user)
-    accesos_a_desactivar_qs = (
-        accesos_representante_activos.exclude(comedor_id__in=comedor_ids)
-        if comedor_ids
-        else accesos_representante_activos
+    _deactivate_representante_accesses_outside(
+        user=user,
+        comedor_ids=comedor_ids,
+        actor=actor,
     )
-    accesos_a_desactivar = list(accesos_a_desactivar_qs)
-    accesos_a_desactivar_qs.update(
-        activo=False,
-        fecha_baja=now,
-        fecha_actualizacion=now,
-    )
-    for acceso in accesos_a_desactivar:
-        acceso.activo = False
-        acceso.fecha_baja = now
-        _registrar_auditoria_acceso(
-            acceso=acceso,
-            accion=AuditAccesoComedorPWA.ACCION_DEACTIVATE,
-            actor=actor,
-            metadata={"rol": acceso.rol},
-        )
 
     existing_by_comedor = {
         row.comedor_id: row
@@ -661,6 +1081,7 @@ def sync_representante_accesses(
 @transaction.atomic
 def deactivate_representante_accesses(user):
     """Desactiva accesos representante activos del usuario."""
+    _sync_organizacion_memberships(user=user, organizacion_ids=[])
     accesos = list(
         AccesoComedorPWA.objects.filter(
             user=user,

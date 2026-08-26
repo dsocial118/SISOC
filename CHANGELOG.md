@@ -3,8 +3,9 @@
 
 ## Actualizaciones
 
-- [sin-area] feat(admisiones): agregar descarga DOCX para GDE. (PR #2332)
 - [sin-area] feat(admisiones): variables documentales para renovaciones. (PR #2330)
+- [sin-area] feat(admisiones): agregar descarga DOCX para GDE. (PR #2332)
+- [plataforma de release, CDI, Rendiciones, Usuarios/PWA y Comedores.] Promoción semanal con mejoras de CDI, rendiciones, permisos PWA, comedores y documentación VAT. (PR #2353)
 
 ## Corrección de Errores
 

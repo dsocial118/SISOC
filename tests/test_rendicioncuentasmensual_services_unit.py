@@ -6,7 +6,11 @@ import pytest
 from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
 
-from rendicioncuentasmensual.models import DocumentacionAdjunta, RendicionCuentaMensual
+from rendicioncuentasmensual.models import (
+    DocumentacionAdjunta,
+    RendicionCuentaMensual,
+    SolicitudDocumentoFaltante,
+)
 from rendicioncuentasmensual.services import (
     RendicionCuentaMensualService,
     RendicionProcesoService,
@@ -291,6 +295,27 @@ def test_obtener_documentacion_para_detalle_promueve_ultima_subsanacion_presenta
 
 
 @pytest.mark.django_db
+def test_obtener_documentacion_para_detalle_expone_observacion_de_faltante():
+    rendicion = RendicionCuentaMensual.objects.create(mes=4, anio=2026)
+    solicitud = SolicitudDocumentoFaltante.objects.create(
+        rendicion=rendicion,
+        categoria=DocumentacionAdjunta.CATEGORIA_FORMULARIO_II,
+        observaciones="Falta firma de la autoridad.",
+    )
+
+    categorias = RendicionCuentaMensualService.obtener_documentacion_para_detalle(
+        rendicion
+    )
+    formulario_ii = next(
+        item
+        for item in categorias
+        if item["codigo"] == DocumentacionAdjunta.CATEGORIA_FORMULARIO_II
+    )
+
+    assert formulario_ii["solicitud_faltante"] == solicitud
+
+
+@pytest.mark.django_db
 def test_obtener_documentacion_para_detalle_mantiene_vigente_reemplazo_categoria_unica(
     settings, tmp_path
 ):
@@ -337,7 +362,9 @@ def test_obtener_documentacion_para_detalle_mantiene_vigente_reemplazo_categoria
 
 
 @pytest.mark.django_db
-def test_obtener_documentos_para_descarga_pdf_respeta_orden_visible(settings, tmp_path):
+def test_obtener_documentos_para_descarga_pdf_solo_incluye_vigentes_validados(
+    settings, tmp_path
+):
     settings.MEDIA_ROOT = str(tmp_path)
     rendicion = RendicionCuentaMensual.objects.create(
         mes=4,
@@ -386,7 +413,6 @@ def test_obtener_documentos_para_descarga_pdf_respeta_orden_visible(settings, tm
     assert [item.id for item in documentos] == [
         formulario.id,
         subsanacion.id,
-        comprobante.id,
     ]
 
 

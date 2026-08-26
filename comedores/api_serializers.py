@@ -791,6 +791,25 @@ class ComedorDetailSerializer(serializers.ModelSerializer):
                 return str(value)
         return str(value)
 
+    def _raw_mobile_value(self, value):
+        """Valor crudo, JSON-safe, tal como lo guarda el modelo (para prefill).
+
+        Booleanos -> true/false/null; números -> número; fechas -> ISO; texto tal
+        cual. (Las FK se resuelven por nombre en el llamador.)
+        """
+        if value is None or value == "":
+            return None
+        if isinstance(value, bool):
+            return value
+        if isinstance(value, (int, float, str)):
+            return value
+        if hasattr(value, "isoformat"):
+            try:
+                return value.isoformat()
+            except TypeError:
+                return str(value)
+        return str(value)
+
     def _collect_model_items(self, instance):
         if not instance:
             return []
@@ -804,16 +823,23 @@ class ComedorDetailSerializer(serializers.ModelSerializer):
                 related_obj = value
                 if related_obj is None:
                     normalized_value = "Sin dato"
+                    raw_value = None
                 else:
-                    normalized_value = (
+                    raw_value = (
                         getattr(related_obj, "nombre", None)
                         or getattr(related_obj, "estado", None)
                         or str(related_obj)
                     )
+                    normalized_value = raw_value
             else:
                 normalized_value = self._normalize_mobile_value(value)
+                raw_value = self._raw_mobile_value(value)
             items.append(
                 {
+                    # `campo` = clave del campo del modelo (snake_case) y `valor` =
+                    # valor crudo, para que la PWA prellene el formulario 1:1.
+                    "campo": field.name,
+                    "valor": raw_value,
                     "pregunta": str(
                         getattr(field, "verbose_name", field.name)
                     ).capitalize(),
@@ -829,6 +855,8 @@ class ComedorDetailSerializer(serializers.ModelSerializer):
                 values = [str(item) for item in manager.all()]
             items.append(
                 {
+                    "campo": field.name,
+                    "valor": values,
                     "pregunta": str(
                         getattr(field, "verbose_name", field.name)
                     ).capitalize(),
@@ -959,6 +987,10 @@ class ComedorDetailSerializer(serializers.ModelSerializer):
                 "titulo": "Observación",
                 "items": [
                     {
+                        "campo": "observacion",
+                        "valor": self._raw_mobile_value(
+                            getattr(relevamiento, "observacion", None)
+                        ),
                         "pregunta": "Observación",
                         "respuesta": self._normalize_mobile_value(
                             getattr(relevamiento, "observacion", None)
@@ -1462,6 +1494,7 @@ class RendicionMensualListSerializer(serializers.ModelSerializer):
             "proyecto",
             "proyecto_codigo",
             "convenio",
+            "nombre",
             "numero_rendicion",
             "mes",
             "anio",
@@ -1529,6 +1562,10 @@ class RendicionMensualDetailSerializer(RendicionMensualListSerializer):
 
     def get_documentacion(self, obj):
         grouped = RendicionCuentaMensualService.obtener_resumen_documentacion(obj)
+        solicitudes = {
+            item.categoria: item
+            for item in obj.solicitudes_documentos_faltantes.filter(activa=True)
+        }
         serializer_context = {"request": self.context.get("request")}
         payload = []
         for categoria in DocumentacionAdjunta.categorias_mobile(obj.linea_programatica):
@@ -1541,6 +1578,11 @@ class RendicionMensualDetailSerializer(RendicionMensualListSerializer):
                     "required": categoria["required"],
                     "multiple": categoria["multiple"],
                     "order": categoria["order"],
+                    "solicitud_faltante": (
+                        solicitudes[categoria["codigo"]].observaciones
+                        if categoria["codigo"] in solicitudes
+                        else None
+                    ),
                     "modelo": (
                         self._build_modelo_payload(obj, modelo) if modelo else None
                     ),
@@ -1556,8 +1598,9 @@ class RendicionMensualDetailSerializer(RendicionMensualListSerializer):
 
 class RendicionMensualCreateSerializer(NoSaveSerializer):
     proyecto_id = serializers.IntegerField(min_value=1, required=False, allow_null=True)
-    convenio = serializers.CharField(max_length=100)
-    numero_rendicion = serializers.IntegerField(min_value=1)
+    convenio = serializers.ChoiceField(choices=("P01", "P02", "P03"))
+    numero_rendicion = serializers.ChoiceField(choices=(1, 2, 3, 4, 5, 6))
+    nombre = serializers.CharField(max_length=255, required=False, allow_blank=True)
     periodo_inicio = serializers.DateField()
     periodo_fin = serializers.DateField()
     linea_programatica = serializers.ChoiceField(

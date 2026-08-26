@@ -344,6 +344,42 @@
   font-size: 10px;
 }
 
+/* Etapas de rendición: paleta pastel independiente del estado semántico. */
+.etapa-badge {
+    border: 1px solid transparent;
+    font-weight: 600;
+}
+
+.etapa-badge.etapa-carga {
+    color: #2f3439;
+    background-color: #dee2e6;
+    border-color: #adb5bd;
+}
+
+.etapa-badge.etapa-territorial {
+    color: #073b82;
+    background-color: #b6d4fe;
+    border-color: #86b7fe;
+}
+
+.etapa-badge.etapa-revision-auditoria {
+    color: #3d2368;
+    background-color: #d2c1ed;
+    border-color: #b197db;
+}
+
+.etapa-badge.etapa-auditoria {
+    color: #743800;
+    background-color: #ffd7b5;
+    border-color: #ffb97a;
+}
+
+.etapa-badge.etapa-regularizacion {
+    color: #5f4700;
+    background-color: #ffe69c;
+    border-color: #ffd75e;
+}
+
 .fecha-validacion {
   display: block;
   margin-top: 4px;
