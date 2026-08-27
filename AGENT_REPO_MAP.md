@@ -289,7 +289,7 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 | `rendicioncuentasfinal/` | rendicion final | `models.py`, `views.py`, urls | Bajo |
 | `rendicioncuentasmensual/` | rendición mensual, revisión Territorial/Auditoría, subsanaciones y datos expuestos en Organizaciones | `models.py`, `services.py`, `views.py`, templates, urls | Alto |
 | `duplas/` | equipos tecnicos/duplas | `models.py`, `views.py` | Bajo-Medio |
-| `dispositivos/` | dominio de dispositivos | `models.py`, `views.py`, tests | Bajo |
+| `dispositivos/` | dominio de dispositivos; actor y catálogo territorial entran por contratos, con proyección local versionada | `boundary.py`, `ports.py`, `territorial_projection.py`, `adapters/`, `services.py`, `models.py`, `views.py`, tests | Medio |
 | `importarexpediente/` | flujo de importacion de expedientes | `views.py`, `models.py`, urls, tests | Medio |
 | `ocr/` | OCR y procesamiento asociado | `models.py`, `views.py`, urls, tests | Medio |
 | `ver_para_ser_libre/` | modulo de negocio independiente dentro del monolito | `models.py`, `views.py`, `services/workflow.py` | Medio |
@@ -322,6 +322,7 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - Los receivers de auditoría de Centro de Infancia viven en `centrodeinfancia.signals` y llaman `audittrail.api`; Audittrail no debe importar modelos CDI.
 - Los alcances de usuarios propios de un dominio se registran mediante `iam.services.register_user_queryset_scope`; Centro de Infancia registra el suyo desde `centrodeinfancia.apps` para que `users` no importe dominios.
 - Dispositivos, VAT y Ver para Ser Libre no exponen internals a otros dominios. La composición de rutas de preview de VAT se realiza desde `VAT.global_urls`.
+- Dispositivos recibe identidad, permisos y alcance territorial mediante `DispositivosActor`; mientras siga en el monolito, `dispositivos.adapters.monolith_session` es el único adaptador autorizado hacia `users`. El futuro gateway JWS debe emitir el mismo contrato.
 - Los efectos de backfill de soft delete se registran desde cada dominio en `core.soft_delete.registry`; `core.soft_delete.state_sync` no debe importar handlers de dominio.
 - Las restricciones de navegacion aportadas por dominios se registran en `core.services.sidebar_access`; el template tag global no debe importar reglas VAT.
 - El endpoint Select2 de organizaciones vive en `organizaciones.views` y `organizaciones.urls`, aunque conserva la ruta global `ajax/load-organizaciones/`.

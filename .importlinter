@@ -271,6 +271,26 @@ forbidden_modules =
     dispositivos.views
 ignore_imports =
 
+[importlinter:contract:dispositivos-domain-no-monolith]
+name = el dominio de Dispositivos solo accede al monolito mediante adaptadores
+type = forbidden
+allow_indirect_imports = True
+source_modules =
+    dispositivos.boundary
+    dispositivos.services
+    dispositivos.forms
+    dispositivos.views
+    dispositivos.favorite_filters
+    dispositivos.dispositivos_filter_config
+    dispositivos.models
+    dispositivos.territorial_projection
+    dispositivos.urls
+    dispositivos.apps
+forbidden_modules =
+    core
+    users
+ignore_imports =
+
 [importlinter:contract:vat-public-boundary]
 name = los dominios no importan internals de VAT
 type = forbidden

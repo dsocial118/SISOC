@@ -1,11 +1,6 @@
 from django.db.models import Q
 
-from users.territorial_scope import (
-    get_effective_scopes,
-    get_geography_scope_map,
-    is_territorial_user,
-)
-
+from .boundary import DispositivosActor, get_geography_scope_map
 from .models import Dispositivo
 
 
@@ -16,8 +11,8 @@ def get_dispositivos_queryset():
     )
 
 
-def apply_dispositivos_scope(queryset, user):
-    """Acota el queryset de dispositivos al alcance territorial del usuario.
+def apply_dispositivos_scope(queryset, actor: DispositivosActor):
+    """Acota el queryset de dispositivos al alcance territorial del actor.
 
     - Sin usuario autenticado: queryset vacío.
     - Superusuario o usuario sin alcance provincial: sin restricción.
@@ -27,19 +22,18 @@ def apply_dispositivos_scope(queryset, user):
     localidad se respeta hasta su municipio (la granularidad más fina posible).
     Un usuario provincial sin alcances configurados no ve ningún registro.
     """
-    if not user or not getattr(user, "is_authenticated", False):
+    if not actor.is_authenticated:
         return queryset.none()
-    if getattr(user, "is_superuser", False):
+    if actor.is_superuser:
         return queryset
-    if not is_territorial_user(user):
+    if not actor.is_territorial:
         return queryset
 
-    scopes = get_effective_scopes(user)
-    if not scopes:
+    if not actor.scopes:
         return queryset.none()
 
     scope_q = Q()
-    for scope in scopes:
+    for scope in actor.scopes:
         condiciones = {"provincia_id": scope.provincia_id}
         if scope.municipio_id:
             condiciones["municipio_id"] = scope.municipio_id
@@ -47,12 +41,12 @@ def apply_dispositivos_scope(queryset, user):
     return queryset.filter(scope_q).distinct()
 
 
-def get_dispositivos_geography_scope(user):
+def get_dispositivos_geography_scope(actor: DispositivosActor | None):
     """Mapa ``provincia_id -> set(municipio_id) | None`` para acotar el formulario.
 
     Devuelve ``None`` si el usuario no tiene restricción territorial.
     """
-    return get_geography_scope_map(user)
+    return get_geography_scope_map(actor)
 
 
 def save_dispositivo_from_form(form, *, instance=None):

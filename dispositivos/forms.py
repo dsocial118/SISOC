@@ -1,9 +1,10 @@
 from django import forms
 from django.core.exceptions import ValidationError
 
-from core.models import Municipio, Provincia
-
+from .adapters.monolith_session import actor_from_session_user
+from .adapters.monolith_territorial import CatalogoTerritorialMonolito
 from .models import Dispositivo
+from .ports import CatalogoTerritorial
 from .services import get_dispositivos_geography_scope
 from .validators import DOCUMENTACION_ACCEPT_ATTR, DOCUMENTACION_UPLOAD_FIELDS
 
@@ -470,7 +471,13 @@ class DispositivoForm(forms.ModelForm):
         ]
 
     def __init__(self, *args, **kwargs):
-        self._form_user = kwargs.pop("user", None)
+        self._form_actor = kwargs.pop("actor", None)
+        self._territorial_catalog: CatalogoTerritorial = kwargs.pop(
+            "territorial_catalog", CatalogoTerritorialMonolito()
+        )
+        legacy_user = kwargs.pop("user", None)
+        if self._form_actor is None and legacy_user is not None:
+            self._form_actor = actor_from_session_user(legacy_user)
         super().__init__(*args, **kwargs)
         self._configure_geography_fields()
         self._apply_field_texts()
@@ -538,36 +545,29 @@ class DispositivoForm(forms.ModelForm):
         def parse_pk(value):
             return int(value) if value and str(value).isdigit() else None
 
-        geo_scope = get_dispositivos_geography_scope(self._form_user)
+        geo_scope = get_dispositivos_geography_scope(self._form_actor)
 
-        provincia = Provincia.objects.filter(
-            pk=parse_pk(self.data.get(self.add_prefix("provincia")))
-        ).first() or getattr(self.instance, "provincia", None)
+        provincia = self._territorial_catalog.obtener_provincia(
+            parse_pk(self.data.get(self.add_prefix("provincia")))
+        ) or getattr(self.instance, "provincia", None)
 
-        provincia_qs = Provincia.objects.all().order_by("nombre")
-        if geo_scope is not None:
-            provincia_qs = provincia_qs.filter(pk__in=geo_scope.keys())
-        self.fields["provincia"].queryset = provincia_qs
+        self.fields["provincia"].queryset = (
+            self._territorial_catalog.provincias_disponibles(geo_scope)
+        )
 
         if provincia:
             self.fields["provincia"].initial = provincia
-            municipio_qs = Municipio.objects.filter(provincia=provincia).order_by(
-                "nombre"
+            self.fields["municipio"].queryset = (
+                self._territorial_catalog.municipios_disponibles(provincia, geo_scope)
             )
-            if geo_scope is not None:
-                if provincia.pk not in geo_scope:
-                    # Provincia fuera del alcance del usuario: sin municipios válidos.
-                    municipio_qs = Municipio.objects.none()
-                elif geo_scope[provincia.pk] is not None:
-                    # Alcance limitado a municipios específicos de la provincia.
-                    municipio_qs = municipio_qs.filter(pk__in=geo_scope[provincia.pk])
-            self.fields["municipio"].queryset = municipio_qs
         else:
-            self.fields["municipio"].queryset = Municipio.objects.none()
+            self.fields["municipio"].queryset = (
+                self._territorial_catalog.municipios_vacios()
+            )
 
-        municipio = Municipio.objects.filter(
-            pk=parse_pk(self.data.get(self.add_prefix("municipio")))
-        ).first() or getattr(self.instance, "municipio", None)
+        municipio = self._territorial_catalog.obtener_municipio(
+            parse_pk(self.data.get(self.add_prefix("municipio")))
+        ) or getattr(self.instance, "municipio", None)
 
         if municipio:
             self.fields["municipio"].initial = municipio

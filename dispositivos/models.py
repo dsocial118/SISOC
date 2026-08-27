@@ -2,9 +2,84 @@ from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator
 from django.db import models
 
-from core.models import Municipio, Provincia
-
 from .validators import DOCUMENTACION_FILE_VALIDATORS
+
+
+class VersionProyeccionTerritorial(models.Model):
+    """Snapshot inmutable del catálogo territorial recibido por el servicio."""
+
+    version = models.CharField(max_length=128, unique=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+
+class EstadoProyeccionTerritorial(models.Model):
+    """Puntero a la versión territorial vigente para Dispositivos."""
+
+    singleton = models.PositiveSmallIntegerField(
+        primary_key=True,
+        default=1,
+        editable=False,
+    )
+    version = models.ForeignKey(
+        VersionProyeccionTerritorial,
+        on_delete=models.PROTECT,
+        related_name="+",
+    )
+    actualizado_en = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "estado de proyección territorial"
+        verbose_name_plural = "estado de proyección territorial"
+
+
+class ProvinciaTerritorialProyectada(models.Model):
+    """Provincia de una versión local del catálogo territorial."""
+
+    version = models.ForeignKey(
+        VersionProyeccionTerritorial,
+        on_delete=models.PROTECT,
+        related_name="provincias",
+    )
+    source_id = models.PositiveIntegerField()
+    nombre = models.CharField(max_length=255)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["version", "source_id"],
+                name="provincia_proyectada_unica_por_version",
+            )
+        ]
+        ordering = ["nombre", "source_id"]
+
+
+class MunicipioTerritorialProyectado(models.Model):
+    """Municipio de una versión local del catálogo territorial."""
+
+    version = models.ForeignKey(
+        VersionProyeccionTerritorial,
+        on_delete=models.PROTECT,
+        related_name="municipios",
+    )
+    source_id = models.PositiveIntegerField()
+    provincia = models.ForeignKey(
+        ProvinciaTerritorialProyectada,
+        on_delete=models.PROTECT,
+        related_name="municipios",
+    )
+    nombre = models.CharField(max_length=255)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["version", "source_id"],
+                name="municipio_proyectado_unico_por_version",
+            )
+        ]
+        ordering = ["nombre", "source_id"]
 
 
 class Dispositivo(models.Model):
@@ -73,8 +148,8 @@ class Dispositivo(models.Model):
             )
         ],
     )
-    provincia = models.ForeignKey(Provincia, on_delete=models.PROTECT)
-    municipio = models.ForeignKey(Municipio, on_delete=models.PROTECT)
+    provincia = models.ForeignKey("core.Provincia", on_delete=models.PROTECT)
+    municipio = models.ForeignKey("core.Municipio", on_delete=models.PROTECT)
     calle = models.CharField(max_length=255, blank=True)
     altura = models.CharField(max_length=50, blank=True)
     telefono_prefijo = models.CharField(max_length=10, blank=True)
