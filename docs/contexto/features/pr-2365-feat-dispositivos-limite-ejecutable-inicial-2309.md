@@ -9,7 +9,7 @@
 
 ## Contexto funcional
 
-- desacoplar actor, permisos y territorio sin alterar el CRUD ni extraer todavía el runtime.
+- el paquete canónico y sus vistas se reubicaron; el monolito sigue atendiendo el CRUD mediante adaptadores configurados.
 
 ## Arquitectura tocada
 
@@ -22,7 +22,7 @@
 - Tipo de cambio declarado: boundary ejecutable, primer corte.
 - Área principal declarada: Dispositivos.
 - Impacto usuario declarado: se preservan rutas, permisos y alcance territorial.
-- Riesgos / rollback: una adaptación incorrecta podría cambiar permisos o alcance territorial; revertir el commit conserva rutas, tablas, FKs y escritor del monolito.
+- Riesgos / rollback: una adaptación incorrecta podría cambiar permisos, alcance o el registro de filtros; revertir este commit restaura el paquete en el monolito sin cambiar rutas, tablas, FKs ni escritor.
 
 ## Design system y UI
 
