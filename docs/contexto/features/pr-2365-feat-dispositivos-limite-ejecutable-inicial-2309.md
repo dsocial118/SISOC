@@ -51,13 +51,14 @@
 - `dispositivos/urls.py`
 - `dispositivos/views.py`
 - `docs/contexto/features/pr-2365-feat-dispositivos-limite-ejecutable-inicial-2309.md`
-- ... y 2 archivo(s) adicional(es) relacionados.
+- ... y 3 archivo(s) adicional(es) relacionados.
 - Documentación sugerida para ampliar contexto:
 - `docs/indice.md`
 - `docs/ia/CONTEXT_HYGIENE.md`
 - `docs/ia/ARCHITECTURE.md`
 - `docs/ia/TESTING.md`
 - `docs/contexto/features/pr-2365-feat-dispositivos-limite-ejecutable-inicial-2309.md`
+- `docs/plans/2026-08-27-issue-2309-dispositivos-relocation-design.md`
 - `docs/registro/decisiones/2026-08-21-dispositivos-actor-boundary.md`
 - `docs/registro/prs/PR-2365.md`
 
