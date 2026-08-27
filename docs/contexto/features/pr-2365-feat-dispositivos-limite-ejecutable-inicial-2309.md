@@ -9,7 +9,7 @@
 
 ## Contexto funcional
 
-- No informado explícitamente; inferir desde el título del PR y el diff.
+- desacoplar actor, permisos y territorio sin alterar el CRUD ni extraer todavía el runtime.
 
 ## Arquitectura tocada
 
@@ -18,10 +18,10 @@
 
 ## Decisiones y supuestos detectados
 
-- Tipo de cambio declarado: No informado
-- Área principal declarada: No informada
-- Impacto usuario declarado: No informado
-- Riesgos / rollback: No informado
+- Tipo de cambio declarado: boundary ejecutable, primer corte.
+- Área principal declarada: Dispositivos.
+- Impacto usuario declarado: se preservan rutas, permisos y alcance territorial.
+- Riesgos / rollback: una adaptación incorrecta podría cambiar permisos o alcance territorial; revertir el commit conserva rutas, tablas, FKs y escritor del monolito.
 
 ## Design system y UI
 
