@@ -9,7 +9,7 @@
 
 ## Contexto funcional
 
-- el paquete canónico y sus vistas se reubicaron; el monolito sigue atendiendo el CRUD mediante adaptadores configurados.
+- el movimiento físico inicial se replanifica para separar núcleo de servicio y compatibilidad Django del monolito, sin cambio observable de CRUD.
 
 ## Arquitectura tocada
 
@@ -22,7 +22,7 @@
 - Tipo de cambio declarado: boundary ejecutable, primer corte.
 - Área principal declarada: Dispositivos.
 - Impacto usuario declarado: se preservan rutas, permisos y alcance territorial.
-- Riesgos / rollback: una adaptación incorrecta podría cambiar permisos, alcance o el registro de filtros; revertir este commit restaura el paquete en el monolito sin cambiar rutas, tablas, FKs ni escritor.
+- Riesgos / rollback: el corte previo mantiene acceso legacy directo a Core; no se declara C1 cerrado hasta aislarlo. El rollback de la futura separación seguirá siendo sólo de código, sin cambios de datos.
 
 ## Design system y UI
 
@@ -40,6 +40,7 @@
 - `dispositivos/apps.py`
 - `dispositivos/favorite_filters.py`
 - `docs/contexto/features/pr-2365-feat-dispositivos-limite-ejecutable-inicial-2309.md`
+- `docs/plans/2026-08-27-issue-2309-c1-monorepo-boundary-design.md`
 - `docs/plans/2026-08-27-issue-2309-dispositivos-relocation-design.md`
 - `docs/registro/decisiones/2026-08-21-dispositivos-actor-boundary.md`
 - `docs/registro/prs/PR-2365.md`
@@ -52,14 +53,14 @@
 - `services/dispositivos/dispositivos/boundary.py`
 - `services/dispositivos/dispositivos/dispositivos_filter_config.py`
 - `services/dispositivos/dispositivos/favorite_filters.py`
-- `services/dispositivos/dispositivos/forms.py`
-- ... y 36 archivo(s) adicional(es) relacionados.
+- ... y 37 archivo(s) adicional(es) relacionados.
 - Documentación sugerida para ampliar contexto:
 - `docs/indice.md`
 - `docs/ia/CONTEXT_HYGIENE.md`
 - `docs/ia/ARCHITECTURE.md`
 - `docs/ia/TESTING.md`
 - `docs/contexto/features/pr-2365-feat-dispositivos-limite-ejecutable-inicial-2309.md`
+- `docs/plans/2026-08-27-issue-2309-c1-monorepo-boundary-design.md`
 - `docs/plans/2026-08-27-issue-2309-dispositivos-relocation-design.md`
 - `docs/registro/decisiones/2026-08-21-dispositivos-actor-boundary.md`
 - `docs/registro/prs/PR-2365.md`
