@@ -29,7 +29,10 @@
             {% csrf_token %}
 
             {% if form.errors %}
-                <div class="alert alert-danger" role="alert">No se pudo guardar el legajo. Revisá los campos marcados.</div>
+                <div class="alert alert-danger" role="alert">
+                    No se pudo guardar el legajo. Revisá los campos marcados.
+                    {% if form.non_field_errors %}<div class="mt-2">{{ form.non_field_errors }}</div>{% endif %}
+                </div>
             {% endif %}
 
             <div class="section-card mb-3">

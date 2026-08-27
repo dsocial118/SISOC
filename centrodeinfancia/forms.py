@@ -203,6 +203,12 @@ class CentroDeInfanciaForm(forms.ModelForm):
                 "required"
             ] = "Este campo es obligatorio."
 
+        if not self.instance.pk:
+            self.fields["cuil_referente"].required = True
+            self.fields["cuil_referente"].error_messages[
+                "required"
+            ] = "Este campo es obligatorio para dar de alta un CDI."
+
     def _configurar_campos_dinamicos_horarios(self):
         horarios_instancia = {}
         if getattr(self.instance, "pk", None):
@@ -498,6 +504,33 @@ class CentroDeInfanciaForm(forms.ModelForm):
         except ValidationError as exc:
             raise forms.ValidationError(exc.messages) from exc
 
+    def _validar_cdi_unico(self, cleaned_data):
+        provincia = cleaned_data.get("provincia")
+        cuit = cleaned_data.get("cuit_organizacion_gestiona")
+        cuil = cleaned_data.get("cuil_referente")
+        if not provincia or not cuit or not cuil:
+            return
+
+        existentes = CentroDeInfancia.objects.filter(
+            provincia=provincia,
+            cuit_organizacion_gestiona=cuit,
+            cuil_referente=cuil,
+        )
+        if self.instance.pk:
+            existentes = existentes.exclude(pk=self.instance.pk)
+
+        existente = existentes.order_by("pk").first()
+        if existente:
+            mensaje = (
+                f"Ya existe el CDI “{existente.nombre}” en la provincia seleccionada "
+                "con el mismo CUIT del organismo y CUIL del referente."
+            )
+            self.add_error(
+                "cuil_referente",
+                mensaje,
+            )
+            self.add_error(None, mensaje)
+
     def _clean_coordenada(self, field_name, minimo, maximo, etiqueta):
         value = self.cleaned_data.get(field_name)
         if value in (None, ""):
@@ -553,6 +586,7 @@ class CentroDeInfanciaForm(forms.ModelForm):
                     "hora_cierre": cierre,
                 }
         cleaned_data["horarios_funcionamiento_data"] = horarios
+        self._validar_cdi_unico(cleaned_data)
         return cleaned_data
 
     def save(self, commit=True):
