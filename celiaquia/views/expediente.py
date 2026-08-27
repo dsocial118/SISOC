@@ -5,7 +5,7 @@ import traceback
 
 from django.views import View
 from django.views.generic import ListView, CreateView, DetailView, UpdateView
-from django.urls import reverse_lazy
+from django.urls import reverse, reverse_lazy
 from django.shortcuts import get_object_or_404, redirect
 from django.http import (
     FileResponse,
@@ -61,12 +61,22 @@ from celiaquia.services.importacion_service import (
 from celiaquia.permissions import can_delete_legajo
 from celiaquia.services.cruce_service import CruceService
 from celiaquia.services.cupo_service import CupoService, CupoNoConfigurado
+from celiaquia.services.expediente_filter_config import (  # pylint: disable=no-name-in-module
+    CHOICE_OPS,
+    DATE_OPS,
+    FIELD_MAP as EXPEDIENTE_FILTER_MAP,
+    FIELD_TYPES as EXPEDIENTE_FILTER_TYPES,
+    NUM_OPS,
+    TEXT_OPS,
+    get_filters_ui_config,
+)
 from celiaquia.services.padron_final_service import (  # pylint: disable=no-name-in-module
     PadronFinalService,
 )
 from django.utils import timezone
 from django.db import transaction
 from core.models import Nacionalidad, Provincia, Localidad
+from core.services.advanced_filters import AdvancedFilterEngine
 from core.soft_delete.preview import build_delete_preview
 from core.soft_delete.view_helpers import is_soft_deletable_instance
 from users.territorial_scope import (
@@ -82,6 +92,17 @@ logger = logging.getLogger("django")
 ROLE_COORDINADOR_CELIAQUIA_PERMISSION = "auth.role_coordinadorceliaquia"
 ROLE_TECNICO_CELIAQUIA_PERMISSION = "auth.role_tecnicoceliaquia"
 ROLE_PROVINCIA_CELIAQUIA_PERMISSION = "auth.role_provinciaceliaquia"
+
+EXPEDIENTE_ADVANCED_FILTER = AdvancedFilterEngine(
+    field_map=EXPEDIENTE_FILTER_MAP,
+    field_types=EXPEDIENTE_FILTER_TYPES,
+    allowed_ops={
+        "text": TEXT_OPS,
+        "number": NUM_OPS,
+        "date": DATE_OPS,
+        "choice": CHOICE_OPS,
+    },
+)
 
 
 def _user_has_permission(user, permission_code: str) -> bool:
@@ -786,6 +807,14 @@ class ExpedienteListView(ListView):
                 | Q(asignaciones_tecnicos__tecnico__username__icontains=search_query)
             ).distinct()
 
+        # Filtros combinables (?filters=...). Se aplican sobre el queryset ya
+        # acotado por rol/territorio, así ningún filtro puede ampliar el alcance.
+        # El distinct() cubre el filtro por técnico, que atraviesa una relación
+        # multivalor y de otro modo repetiría el expediente por cada asignación.
+        filtros_q = EXPEDIENTE_ADVANCED_FILTER.build_q(self.request)
+        if filtros_q is not None:
+            qs = qs.filter(filtros_q).distinct()
+
         return qs
 
     def get_context_data(self, **kwargs):
@@ -813,8 +842,20 @@ class ExpedienteListView(ListView):
         else:
             ctx["titulo_listado"] = "Mis Expedientes"
 
+        # Filtros combinables. El campo "Técnico asignado" solo se ofrece a quien
+        # ve la columna de técnico; para el resto get_filters_ui_config lo omite
+        # al no recibir técnicos seleccionables.
+        tecnicos_filtrables = (
+            _tecnicos_queryset().order_by("last_name", "first_name")
+            if ctx["show_tecnico_column_celiaquia"]
+            else None
+        )
         if is_admin or is_coord:
-            ctx["tecnicos"] = _tecnicos_queryset().order_by("last_name", "first_name")
+            ctx["tecnicos"] = tecnicos_filtrables
+
+        ctx["filters_mode"] = True
+        ctx["filters_config"] = get_filters_ui_config(tecnicos=tecnicos_filtrables)
+        ctx["filters_action"] = reverse("expediente_list")
         return ctx
 
 
