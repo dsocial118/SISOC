@@ -14,6 +14,7 @@
 ## Arquitectura tocada
 
 - Hay cambios en vistas web y puede existir impacto en permisos o renderizado.
+- Se modifican templates, con posible impacto visual o de composición UI.
 - Existen cambios de persistencia o migraciones que requieren revisión de datos.
 
 ## Decisiones y supuestos detectados
@@ -25,7 +26,8 @@
 
 ## Design system y UI
 
-- Sin cambios visibles de UI o design system detectados en el diff.
+- El PR toca piezas de UI y conviene revisar consistencia visual con el patrón existente.
+- Archivos visuales relevantes: services/dispositivos/dispositivos/templates/dispositivos_confirm_delete.html, services/dispositivos/dispositivos/templates/dispositivos_detail.html, services/dispositivos/dispositivos/templates/dispositivos_form.html, services/dispositivos/dispositivos/templates/dispositivos_list.html
 
 ## Memoria operativa para agentes
 
@@ -33,25 +35,25 @@
 - Revisar primero estos archivos del diff:
 - `.importlinter`
 - `AGENT_REPO_MAP.md`
-- `dispositivos/adapters/__init__.py`
-- `dispositivos/adapters/monolith_filters.py`
-- `dispositivos/adapters/monolith_permissions.py`
-- `dispositivos/adapters/monolith_session.py`
-- `dispositivos/adapters/monolith_territorial.py`
-- `dispositivos/boundary.py`
+- `config/settings.py`
+- `config/urls.py`
+- `dispositivos/apps.py`
 - `dispositivos/favorite_filters.py`
-- `dispositivos/forms.py`
-- `dispositivos/migrations/0006_versionproyeccionterritorial_and_more.py`
-- `dispositivos/models.py`
-- `dispositivos/ports.py`
-- `dispositivos/services.py`
-- `dispositivos/territorial_projection.py`
-- `dispositivos/tests/test_dispositivos_services.py`
-- `dispositivos/tests/test_territorial_projection.py`
-- `dispositivos/urls.py`
-- `dispositivos/views.py`
 - `docs/contexto/features/pr-2365-feat-dispositivos-limite-ejecutable-inicial-2309.md`
-- ... y 3 archivo(s) adicional(es) relacionados.
+- `docs/plans/2026-08-27-issue-2309-dispositivos-relocation-design.md`
+- `docs/registro/decisiones/2026-08-21-dispositivos-actor-boundary.md`
+- `docs/registro/prs/PR-2365.md`
+- `services/__init__.py`
+- `services/dispositivos/__init__.py`
+- `services/dispositivos/dispositivos/__init__.py`
+- `services/dispositivos/dispositivos/adapters/__init__.py`
+- `services/dispositivos/dispositivos/admin.py`
+- `services/dispositivos/dispositivos/apps.py`
+- `services/dispositivos/dispositivos/boundary.py`
+- `services/dispositivos/dispositivos/dispositivos_filter_config.py`
+- `services/dispositivos/dispositivos/favorite_filters.py`
+- `services/dispositivos/dispositivos/forms.py`
+- ... y 36 archivo(s) adicional(es) relacionados.
 - Documentación sugerida para ampliar contexto:
 - `docs/indice.md`
 - `docs/ia/CONTEXT_HYGIENE.md`
