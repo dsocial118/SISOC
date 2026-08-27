@@ -4520,6 +4520,309 @@ def test_api_vat_centros_lista_con_api_key(vat_api_client, vat_curso_base):
 
 
 @pytest.mark.django_db
+def test_api_vat_centros_busca_por_cue_historico_y_devuelve_ficha_ampliada(
+    vat_api_client, vat_curso_base
+):
+    centro, ubicacion, modalidad = vat_curso_base
+    sector = Sector.objects.create(nombre="Tecnología")
+    plan = PlanVersionCurricular.objects.create(
+        provincia=centro.provincia,
+        nombre="Plan de prueba CUE",
+        sector=sector,
+        modalidad_cursada=modalidad,
+        normativa="Resolución 10/2026",
+        horas_reloj=120,
+        nivel_requerido="Primario completo",
+        nivel_certifica="Formación profesional",
+        activo=True,
+    )
+    titulo = TituloReferencia.objects.create(
+        codigo_referencia="T-001",
+        nombre="Título de prueba CUE",
+        plan_estudio=plan,
+        activo=True,
+    )
+    contacto = InstitucionContacto.objects.create(
+        centro=centro,
+        tipo="email",
+        valor="contacto-institucional@vat.test",
+        nombre_contacto="Contacto Institucional",
+        rol_area="Secretaría",
+        documento="30111222",
+        email_contacto="contacto-institucional@vat.test",
+        es_principal=True,
+    )
+    cue_actual = InstitucionIdentificadorHist.objects.create(
+        centro=centro,
+        tipo_identificador="cue",
+        valor_identificador="060144900",
+        rol_institucional="sede",
+        ubicacion=ubicacion,
+        es_actual=True,
+    )
+    cue_historico = InstitucionIdentificadorHist.objects.create(
+        centro=centro,
+        tipo_identificador="cue",
+        valor_identificador="060144899",
+        rol_institucional="sede",
+        ubicacion=ubicacion,
+        es_actual=False,
+        vigencia_hasta=date.today(),
+        motivo="Reasignación administrativa",
+    )
+    programa = Programa.objects.create(nombre="Programa CUE API")
+    usuario = User.objects.create_user(username="creador-parametria-cue")
+    parametria = VoucherParametria.objects.create(
+        nombre="Parametría CUE API",
+        programa=programa,
+        cantidad_inicial=3,
+        fecha_vencimiento=date.today() + timedelta(days=30),
+        creado_por=usuario,
+    )
+    curso = Curso.objects.create(
+        centro=centro,
+        plan_estudio=plan,
+        nombre="Curso asociado al CUE",
+        modalidad=modalidad,
+        usa_voucher=True,
+        costo_creditos=1,
+        estado="activo",
+    )
+    curso.voucher_parametrias.add(parametria)
+    comision_curso = ComisionCurso.objects.create(
+        curso=curso,
+        ubicacion=ubicacion,
+        codigo_comision="CUR-CUE-01",
+        nombre="Comisión de curso CUE",
+        cupo_total=20,
+        fecha_inicio=date.today(),
+        fecha_fin=date.today() + timedelta(days=30),
+        estado="activa",
+    )
+    horario_curso = ComisionHorario.objects.create(
+        comision_curso=comision_curso,
+        dia_semana=Dia.objects.create(nombre="Lunes"),
+        hora_desde=time(9, 0),
+        hora_hasta=time(11, 0),
+        aula_espacio="Aula 1",
+    )
+    SesionComision.objects.create(
+        comision_curso=comision_curso,
+        horario=horario_curso,
+        numero_sesion=1,
+        fecha=date.today(),
+        estado="programada",
+    )
+    oferta = OfertaInstitucional.objects.create(
+        centro=centro,
+        plan_curricular=plan,
+        programa=programa,
+        ciclo_lectivo=2026,
+        estado="publicada",
+    )
+    oferta.voucher_parametrias.add(parametria)
+    comision_oferta = Comision.objects.create(
+        oferta=oferta,
+        ubicacion=ubicacion,
+        codigo_comision="OFE-CUE-01",
+        nombre="Comisión de oferta CUE",
+        fecha_inicio=date.today(),
+        fecha_fin=date.today() + timedelta(days=30),
+        cupo=25,
+        estado="activa",
+    )
+    horario_oferta = ComisionHorario.objects.create(
+        comision=comision_oferta,
+        dia_semana=Dia.objects.create(nombre="Martes"),
+        hora_desde=time(14, 0),
+        hora_hasta=time(16, 0),
+        aula_espacio="Aula 2",
+    )
+    SesionComision.objects.create(
+        comision=comision_oferta,
+        horario=horario_oferta,
+        numero_sesion=1,
+        fecha=date.today(),
+        estado="programada",
+    )
+
+    response = vat_api_client.get("/api/vat/centros/?cue=60144899")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["count"] == 1
+    detalle = payload["results"][0]
+    assert detalle["id"] == centro.id
+    assert detalle["cue_consultado"] == cue_historico.valor_identificador
+    assert detalle["cue_actual"] == cue_actual.valor_identificador
+    assert detalle["coincidencias_cue"] == [
+        {
+            "origen": "identificador_institucional",
+            "identificador_id": cue_historico.id,
+            "es_actual": False,
+            "vigencia_desde": cue_historico.vigencia_desde.isoformat(),
+            "vigencia_hasta": cue_historico.vigencia_hasta.isoformat(),
+        }
+    ]
+    assert detalle["identificadores"][0]["id"] == cue_actual.id
+    assert detalle["contactos_institucionales"][0]["id"] == contacto.id
+    assert "documento" not in detalle["contactos_institucionales"][0]
+    assert "documento" not in json.dumps(detalle)
+    assert "autoridad_dni" not in detalle
+    assert "referente" not in detalle
+    assert "referentes" not in detalle
+    assert detalle["ubicaciones"][0]["id"] == ubicacion.id
+    assert detalle["cursos"][0]["id"] == curso.id
+    assert detalle["cursos"][0]["plan_estudio"]["titulos"][0]["id"] == titulo.id
+    assert detalle["cursos"][0]["voucher_parametrias"][0]["id"] == parametria.id
+    assert detalle["cursos"][0]["comisiones"][0]["id"] == comision_curso.id
+    assert detalle["cursos"][0]["comisiones"][0]["sesiones"][0]["id"]
+    assert detalle["ofertas_institucionales"][0]["id"] == oferta.id
+    assert (
+        detalle["ofertas_institucionales"][0]["comisiones"][0]["id"]
+        == comision_oferta.id
+    )
+
+
+@pytest.mark.django_db
+def test_api_vat_centros_busca_por_cue_vigente(vat_api_client, vat_curso_base):
+    centro, ubicacion, _ = vat_curso_base
+    cue_actual = InstitucionIdentificadorHist.objects.create(
+        centro=centro,
+        tipo_identificador="cue",
+        valor_identificador="060144900",
+        rol_institucional="sede",
+        ubicacion=ubicacion,
+        es_actual=True,
+    )
+
+    response = vat_api_client.get("/api/vat/centros/?cue=60144900")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["count"] == 1
+    detalle = payload["results"][0]
+    assert detalle["cue_actual"] == cue_actual.valor_identificador
+    assert detalle["coincidencias_cue"] == [
+        {
+            "origen": "identificador_institucional",
+            "identificador_id": cue_actual.id,
+            "es_actual": True,
+            "vigencia_desde": cue_actual.vigencia_desde.isoformat(),
+            "vigencia_hasta": None,
+        }
+    ]
+
+
+@pytest.mark.django_db
+def test_api_vat_centros_busca_por_codigo_legacy(vat_api_client, vat_curso_base):
+    centro, _, _ = vat_curso_base
+    centro.codigo = "060144901"
+    centro.save(update_fields=["codigo"])
+
+    response = vat_api_client.get("/api/vat/centros/?cue=60144901")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["count"] == 1
+    detalle = payload["results"][0]
+    assert detalle["cue_actual"] == centro.codigo
+    assert detalle["coincidencias_cue"] == [
+        {
+            "origen": "codigo_legacy",
+            "identificador_id": None,
+            "es_actual": True,
+            "vigencia_desde": None,
+            "vigencia_hasta": None,
+        }
+    ]
+
+
+@pytest.mark.django_db
+def test_api_vat_centros_cue_duplicado_mantiene_paginacion(
+    vat_api_client, vat_curso_base
+):
+    centro, ubicacion, _ = vat_curso_base
+    otro_centro = Centro.objects.create(
+        nombre="CFP 502",
+        codigo="CFP-502",
+        provincia=centro.provincia,
+        municipio=centro.municipio,
+        localidad=centro.localidad,
+        domicilio_actividad="Calle 9 N° 222",
+        telefono="221-2222222",
+        celular="221-2222223",
+        correo="cfp502@vat.test",
+        nombre_referente="Juan",
+        apellido_referente="Pérez",
+        telefono_referente="221-2222224",
+        correo_referente="juan@vat.test",
+    )
+    otra_ubicacion = InstitucionUbicacion.objects.create(
+        centro=otro_centro,
+        localidad=centro.localidad,
+        rol_ubicacion="sede_principal",
+        domicilio="Calle 9 N° 222",
+        es_principal=True,
+    )
+    for centro_cue, centro_ubicacion in [
+        (centro, ubicacion),
+        (otro_centro, otra_ubicacion),
+    ]:
+        InstitucionIdentificadorHist.objects.create(
+            centro=centro_cue,
+            tipo_identificador="cue",
+            valor_identificador="060144902",
+            rol_institucional="sede",
+            ubicacion=centro_ubicacion,
+            es_actual=True,
+        )
+
+    response = vat_api_client.get("/api/vat/centros/?cue=60144902&page_size=1")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["count"] == 2
+    assert len(payload["results"]) == 1
+    assert payload["next"]
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("cue", ["", "CUE-INVALIDO", "0601449000"])
+def test_api_vat_centros_cue_invalido_retorna_400(vat_api_client, cue):
+    response = vat_api_client.get(f"/api/vat/centros/?cue={cue}")
+
+    assert response.status_code == 400
+    assert "cue" in response.json()
+
+
+@pytest.mark.django_db
+def test_api_vat_centros_cue_sin_coincidencias_mantiene_paginacion(vat_api_client):
+    response = vat_api_client.get("/api/vat/centros/?cue=060199999")
+
+    assert response.status_code == 200
+    assert response.json()["count"] == 0
+    assert response.json()["results"] == []
+
+
+@pytest.mark.django_db
+def test_api_vat_centros_cue_requiere_api_key(vat_curso_base):
+    response = APIClient().get("/api/vat/centros/?cue=060144900")
+
+    assert response.status_code == 401
+
+
+@pytest.mark.django_db
+def test_api_vat_centros_cue_rechaza_api_key_invalida(vat_curso_base):
+    client = APIClient()
+    client.credentials(HTTP_AUTHORIZATION="Api-Key clave-invalida")
+
+    response = client.get("/api/vat/centros/?cue=060144900")
+
+    assert response.status_code == 401
+
+
+@pytest.mark.django_db
 def test_api_vat_cursos_lista_por_centro(vat_api_client, vat_curso_base):
     centro, _, modalidad = vat_curso_base
     curso = Curso.objects.create(
