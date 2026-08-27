@@ -1,12 +1,12 @@
 import pytest
 
-from dispositivos.models import (
+from services.dispositivos.dispositivos.models import (
     EstadoProyeccionTerritorial,
     MunicipioTerritorialProyectado,
     ProvinciaTerritorialProyectada,
     VersionProyeccionTerritorial,
 )
-from dispositivos.territorial_projection import (
+from services.dispositivos.dispositivos.territorial_projection import (
     MunicipioTerritorial,
     ProvinciaTerritorial,
     aplicar_proyeccion_territorial,

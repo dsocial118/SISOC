@@ -12,16 +12,16 @@ from django.views.generic import (
     ListView,
     UpdateView,
 )
-from .adapters.monolith_filters import (
-    aplicar_filtros_avanzados,
-    seccion_filtros_favoritos,
-)
-from .adapters.monolith_session import actor_from_session_user
 from .dispositivos_filter_config import (
     get_filters_ui_config,
 )
 from .forms import DispositivoForm
 from .models import Dispositivo
+from .runtime import (
+    actor_from_user,
+    apply_advanced_filters,
+    get_favorite_filters_section,
+)
 from .services import (
     apply_dispositivos_scope,
     delete_dispositivo,
@@ -61,9 +61,9 @@ class DispositivoListView(LoginRequiredMixin, ListView):
     def get_queryset(self):
         queryset = get_dispositivos_queryset()
         queryset = apply_dispositivos_scope(
-            queryset, actor_from_session_user(self.request.user)
+            queryset, actor_from_user(self.request.user)
         )
-        queryset = aplicar_filtros_avanzados(queryset, self.request)
+        queryset = apply_advanced_filters(queryset, self.request)
 
         query = (self.request.GET.get("busqueda") or "").strip()
         if query:
@@ -77,7 +77,7 @@ class DispositivoListView(LoginRequiredMixin, ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        actor = actor_from_session_user(self.request.user)
+        actor = actor_from_user(self.request.user)
         context["reset_url"] = reverse("dispositivos_listar")
         context["add_url"] = (
             reverse("dispositivos_crear")
@@ -87,7 +87,7 @@ class DispositivoListView(LoginRequiredMixin, ListView):
         context["filters_mode"] = True
         context["filters_config"] = get_filters_ui_config()
         context["filters_action"] = reverse("dispositivos_listar")
-        context["seccion_filtros_favoritos"] = seccion_filtros_favoritos()
+        context["seccion_filtros_favoritos"] = get_favorite_filters_section()
         context["titulo"] = "Buscar Dispositivos"
         return context
 
@@ -99,7 +99,7 @@ class DispositivoDetailView(LoginRequiredMixin, DetailView):
 
     def get_queryset(self):
         return apply_dispositivos_scope(
-            get_dispositivos_queryset(), actor_from_session_user(self.request.user)
+            get_dispositivos_queryset(), actor_from_user(self.request.user)
         )
 
     def get_context_data(self, **kwargs):
@@ -496,7 +496,7 @@ class DispositivoCreateView(LoginRequiredMixin, CreateView):
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
-        kwargs["actor"] = actor_from_session_user(self.request.user)
+        kwargs["actor"] = actor_from_user(self.request.user)
         return kwargs
 
     def get_context_data(self, **kwargs):
@@ -523,12 +523,12 @@ class DispositivoUpdateView(LoginRequiredMixin, UpdateView):
 
     def get_queryset(self):
         return apply_dispositivos_scope(
-            get_dispositivos_queryset(), actor_from_session_user(self.request.user)
+            get_dispositivos_queryset(), actor_from_user(self.request.user)
         )
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
-        kwargs["actor"] = actor_from_session_user(self.request.user)
+        kwargs["actor"] = actor_from_user(self.request.user)
         return kwargs
 
     def get_context_data(self, **kwargs):
@@ -559,7 +559,7 @@ class DispositivoDeleteView(LoginRequiredMixin, DeleteView):
 
     def get_queryset(self):
         return apply_dispositivos_scope(
-            get_dispositivos_queryset(), actor_from_session_user(self.request.user)
+            get_dispositivos_queryset(), actor_from_user(self.request.user)
         )
 
     def form_valid(self, form):

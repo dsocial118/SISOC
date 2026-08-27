@@ -34,3 +34,7 @@ class CatalogoTerritorialMonolito:
 
     def municipios_vacios(self):
         return Municipio.objects.none()
+
+
+def get_catalogo_territorial() -> CatalogoTerritorialMonolito:
+    return CatalogoTerritorialMonolito()

@@ -4,13 +4,13 @@ import pytest
 from django.utils import timezone
 
 from core.models import Municipio, Provincia
-from dispositivos.boundary import (
+from services.dispositivos.dispositivos.boundary import (
     DispositivosActor,
     TerritorialScope,
     get_geography_scope_map,
 )
-from dispositivos.models import Dispositivo
-from dispositivos.services import get_dispositivos_queryset
+from services.dispositivos.dispositivos.models import Dispositivo
+from services.dispositivos.dispositivos.services import get_dispositivos_queryset
 
 
 @pytest.mark.django_db

@@ -3,7 +3,7 @@ from unittest.mock import Mock
 
 
 migration_0005 = importlib.import_module(
-    "dispositivos.migrations.0005_remove_dispositivo_domicilio_institucion_and_more"
+    "services.dispositivos.dispositivos.migrations.0005_remove_dispositivo_domicilio_institucion_and_more"
 )
 
 

@@ -45,7 +45,7 @@ root_packages =
     comunicados
     centrodeinfancia
     ver_para_ser_libre
-    dispositivos
+    services
     pwa
     ticketera
     dashboard
@@ -81,7 +81,7 @@ forbidden_modules =
     comunicados
     centrodeinfancia
     ver_para_ser_libre
-    dispositivos
+    services.dispositivos.dispositivos
     pwa
     ticketera
     dashboard
@@ -122,7 +122,7 @@ source_modules =
     comunicados
     centrodeinfancia
     ver_para_ser_libre
-    dispositivos
+    services.dispositivos.dispositivos
     pwa
     ticketera
     dashboard
@@ -172,7 +172,7 @@ forbidden_modules =
     comunicados
     centrodeinfancia
     ver_para_ser_libre
-    dispositivos
+    services.dispositivos.dispositivos
     pwa
     ticketera
     dashboard
@@ -218,7 +218,7 @@ forbidden_modules =
     comunicados
     centrodeinfancia
     ver_para_ser_libre
-    dispositivos
+    services.dispositivos.dispositivos
     pwa
     ticketera
 ignore_imports =
@@ -258,17 +258,17 @@ source_modules =
     insumos
     ocr
 forbidden_modules =
-    dispositivos.admin
-    dispositivos.apps
-    dispositivos.dispositivos_filter_config
-    dispositivos.favorite_filters
-    dispositivos.forms
-    dispositivos.management
-    dispositivos.models
-    dispositivos.services
-    dispositivos.urls
-    dispositivos.validators
-    dispositivos.views
+    services.dispositivos.dispositivos.admin
+    services.dispositivos.dispositivos.apps
+    services.dispositivos.dispositivos.dispositivos_filter_config
+    services.dispositivos.dispositivos.favorite_filters
+    services.dispositivos.dispositivos.forms
+    services.dispositivos.dispositivos.management
+    services.dispositivos.dispositivos.models
+    services.dispositivos.dispositivos.services
+    services.dispositivos.dispositivos.urls
+    services.dispositivos.dispositivos.validators
+    services.dispositivos.dispositivos.views
 ignore_imports =
 
 [importlinter:contract:dispositivos-domain-no-monolith]
@@ -276,16 +276,16 @@ name = el dominio de Dispositivos solo accede al monolito mediante adaptadores
 type = forbidden
 allow_indirect_imports = True
 source_modules =
-    dispositivos.boundary
-    dispositivos.services
-    dispositivos.forms
-    dispositivos.views
-    dispositivos.favorite_filters
-    dispositivos.dispositivos_filter_config
-    dispositivos.models
-    dispositivos.territorial_projection
-    dispositivos.urls
-    dispositivos.apps
+    services.dispositivos.dispositivos.boundary
+    services.dispositivos.dispositivos.services
+    services.dispositivos.dispositivos.forms
+    services.dispositivos.dispositivos.views
+    services.dispositivos.dispositivos.favorite_filters
+    services.dispositivos.dispositivos.dispositivos_filter_config
+    services.dispositivos.dispositivos.models
+    services.dispositivos.dispositivos.territorial_projection
+    services.dispositivos.dispositivos.urls
+    services.dispositivos.dispositivos.apps
 forbidden_modules =
     core
     users
@@ -317,7 +317,7 @@ source_modules =
     comunicados
     centrodeinfancia
     ver_para_ser_libre
-    dispositivos
+    services.dispositivos.dispositivos
     pwa
     ticketera
     dashboard
@@ -369,7 +369,7 @@ source_modules =
     importarexpediente
     comunicados
     centrodeinfancia
-    dispositivos
+    services.dispositivos.dispositivos
     pwa
     ticketera
     dashboard
@@ -414,7 +414,7 @@ source_modules =
     comunicados
     centrodeinfancia
     ver_para_ser_libre
-    dispositivos
+    services.dispositivos.dispositivos
     pwa
     ticketera
     dashboard
@@ -463,7 +463,7 @@ source_modules =
     importarexpediente
     comunicados
     ver_para_ser_libre
-    dispositivos
+    services.dispositivos.dispositivos
     pwa
     ticketera
     dashboard
@@ -561,7 +561,7 @@ source_modules =
     celiaquia
     comunicados
     ver_para_ser_libre
-    dispositivos
+    services.dispositivos.dispositivos
     ticketera
     dashboard
     healthcheck

@@ -195,12 +195,33 @@ INSTALLED_APPS = [
     "comunicados",
     "centrodeinfancia",
     "ver_para_ser_libre",
-    "dispositivos",
+    "services.dispositivos.dispositivos.apps.DispositivosConfig",
     "insumos",
     "pwa",
     "ticketera",
     "ocr",
 ]
+
+# Puertos de Dispositivos: el monolito conserva el runtime durante este corte.
+DISPOSITIVOS_ACTOR_FROM_USER = (
+    "services.dispositivos.monolith_adapters.session.actor_from_session_user"
+)
+DISPOSITIVOS_TERRITORIAL_CATALOG = (
+    "services.dispositivos.monolith_adapters.territorial.get_catalogo_territorial"
+)
+DISPOSITIVOS_ADVANCED_FILTERS = (
+    "services.dispositivos.monolith_adapters.filters.aplicar_filtros_avanzados"
+)
+DISPOSITIVOS_FAVORITE_FILTERS_SECTION = (
+    "services.dispositivos.monolith_adapters.filters.seccion_filtros_favoritos"
+)
+DISPOSITIVOS_REGISTER_FAVORITE_FILTERS = (
+    "services.dispositivos.monolith_adapters.filters.registrar_filtros_favoritos"
+)
+DISPOSITIVOS_REQUIRED_PERMISSIONS = (
+    "services.dispositivos.monolith_adapters.permissions.permisos_requeridos"
+)
+DISPOSITIVOS_REGISTER_FAVORITES = True
 
 # Middleware (orden CORS correcto)
 MIDDLEWARE = [

@@ -15,10 +15,12 @@ privilegio de superusuario, permisos y alcances territoriales.
 `dispositivos.services` no conoce `User`, `Profile` ni
 `users.territorial_scope`.
 
-Mientras el monolito continúe atendiendo las rutas, el único adaptador permitido
-es `dispositivos.adapters.monolith_session.actor_from_session_user`. En la
-extracción, el gateway que valide la sesión y el JWS deberá producir el mismo
-contrato; no se trasladará ese adaptador al servicio.
+El paquete canónico vive en `services/dispositivos/dispositivos/`, conserva el
+label Django `dispositivos` y, por lo tanto, tablas, IDs y migraciones. Mientras
+el monolito continúe atendiendo las rutas, sus adaptadores viven fuera del
+paquete canónico, en `services.dispositivos.monolith_adapters`. En la extracción,
+el gateway que valide la sesión y el JWS deberá producir el mismo contrato; no
+se trasladará ese adaptador al servicio.
 
 `DispositivoForm(user=...)` sigue aceptándose como compatibilidad del monolito,
 pero internamente se traduce al mismo actor. Las vistas ya entregan el actor de
@@ -33,11 +35,17 @@ que el dominio consulte el ORM de `core`. El puntero evita depender de un índic
 único parcial, que no es portable a MySQL.
 
 Las FKs legacy hacia `core_provincia` y `core_municipio` se conservan por
-compatibilidad y no se escriben desde la proyección. Formularios, filtros y
-rutas acceden al monolito mediante adaptadores explícitos; el reemplazo de esas
-FKs exige una migración de datos y una ventana de corte aprobada. Tampoco se
-crea una API pública Python: no hay consumidores de negocio externos de
-Dispositivos.
+compatibilidad y no se escriben desde la proyección. El ejecutable independiente
+declara una proyección read-only de esas tablas para resolver las FKs sin
+importar el código de `core`. Formularios, filtros y rutas acceden al monolito
+mediante adaptadores explícitos; el reemplazo de esas FKs exige una migración de
+datos y una ventana de corte aprobada. Tampoco se crea una API pública Python:
+no hay consumidores de negocio externos de Dispositivos.
+
+El ejecutable `services/dispositivos/manage.py` puede iniciar y ejecutar
+chequeos aislados. Sus rutas devuelven 503 hasta que se agregue el proveedor JWS
+y los adaptadores de integración: el monolito sigue siendo el único receptor de
+tráfico y escritor durante esta etapa.
 
 ## Validación
 

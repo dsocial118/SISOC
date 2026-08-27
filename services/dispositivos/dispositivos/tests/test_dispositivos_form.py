@@ -3,8 +3,8 @@ from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
 
 from core.models import Municipio, Provincia
-from dispositivos.forms import DispositivoForm
-from dispositivos.models import Dispositivo
+from services.dispositivos.dispositivos.forms import DispositivoForm
+from services.dispositivos.dispositivos.models import Dispositivo
 
 
 def _base_data(provincia, municipio, **overrides):

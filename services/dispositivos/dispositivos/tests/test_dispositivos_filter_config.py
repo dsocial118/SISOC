@@ -1,4 +1,6 @@
-from dispositivos.dispositivos_filter_config import get_filters_ui_config
+from services.dispositivos.dispositivos.dispositivos_filter_config import (
+    get_filters_ui_config,
+)
 
 
 def _field(config, name):

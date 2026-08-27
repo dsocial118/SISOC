@@ -2,7 +2,7 @@
 
 from typing import Any, Dict
 
-from dispositivos.models import Dispositivo
+from .models import Dispositivo
 
 FIELD_MAP: Dict[str, str] = {
     "nombre_institucion": "nombre_institucion",

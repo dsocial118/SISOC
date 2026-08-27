@@ -1,10 +1,9 @@
 from django import forms
 from django.core.exceptions import ValidationError
 
-from .adapters.monolith_session import actor_from_session_user
-from .adapters.monolith_territorial import CatalogoTerritorialMonolito
 from .models import Dispositivo
 from .ports import CatalogoTerritorial
+from .runtime import actor_from_user, get_territorial_catalog
 from .services import get_dispositivos_geography_scope
 from .validators import DOCUMENTACION_ACCEPT_ATTR, DOCUMENTACION_UPLOAD_FIELDS
 
@@ -472,12 +471,14 @@ class DispositivoForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         self._form_actor = kwargs.pop("actor", None)
-        self._territorial_catalog: CatalogoTerritorial = kwargs.pop(
-            "territorial_catalog", CatalogoTerritorialMonolito()
+        self._territorial_catalog: CatalogoTerritorial | None = kwargs.pop(
+            "territorial_catalog", None
         )
+        if self._territorial_catalog is None:
+            self._territorial_catalog = get_territorial_catalog()
         legacy_user = kwargs.pop("user", None)
         if self._form_actor is None and legacy_user is not None:
-            self._form_actor = actor_from_session_user(legacy_user)
+            self._form_actor = actor_from_user(legacy_user)
         super().__init__(*args, **kwargs)
         self._configure_geography_fields()
         self._apply_field_texts()
