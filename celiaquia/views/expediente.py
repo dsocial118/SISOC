@@ -103,6 +103,24 @@ EXPEDIENTE_ADVANCED_FILTER = AdvancedFilterEngine(
         "choice": CHOICE_OPS,
     },
 )
+EXPEDIENTE_ADVANCED_FILTER_SIN_TECNICO = AdvancedFilterEngine(
+    field_map={
+        field: lookup
+        for field, lookup in EXPEDIENTE_FILTER_MAP.items()
+        if field != "tecnico"
+    },
+    field_types={
+        field: field_type
+        for field, field_type in EXPEDIENTE_FILTER_TYPES.items()
+        if field != "tecnico"
+    },
+    allowed_ops={
+        "text": TEXT_OPS,
+        "number": NUM_OPS,
+        "date": DATE_OPS,
+        "choice": CHOICE_OPS,
+    },
+)
 
 
 def _user_has_permission(user, permission_code: str) -> bool:
@@ -113,6 +131,14 @@ def _is_admin(user) -> bool:
     return bool(
         getattr(user, "is_authenticated", False)
         and getattr(user, "is_superuser", False)
+    )
+
+
+def _can_view_tecnico_column(user) -> bool:
+    return bool(
+        _is_admin(user)
+        or _user_has_permission(user, ROLE_COORDINADOR_CELIAQUIA_PERMISSION)
+        or _user_has_permission(user, ROLE_TECNICO_CELIAQUIA_PERMISSION)
     )
 
 
@@ -811,7 +837,12 @@ class ExpedienteListView(ListView):
         # acotado por rol/territorio, así ningún filtro puede ampliar el alcance.
         # El distinct() cubre el filtro por técnico, que atraviesa una relación
         # multivalor y de otro modo repetiría el expediente por cada asignación.
-        filtros_q = EXPEDIENTE_ADVANCED_FILTER.build_q(self.request)
+        advanced_filter = (
+            EXPEDIENTE_ADVANCED_FILTER
+            if _can_view_tecnico_column(user)
+            else EXPEDIENTE_ADVANCED_FILTER_SIN_TECNICO
+        )
+        filtros_q = advanced_filter.build_q(self.request)
         if filtros_q is not None:
             qs = qs.filter(filtros_q).distinct()
 
@@ -831,7 +862,7 @@ class ExpedienteListView(ListView):
         ctx["is_provincial_celiaquia"] = _is_provincial(user)
         ctx["can_manage_tecnicos_celiaquia"] = is_admin or is_coord
         ctx["can_manage_excel_masivo_audit"] = is_admin or is_coord
-        ctx["show_tecnico_column_celiaquia"] = is_admin or is_coord or is_tecnico
+        ctx["show_tecnico_column_celiaquia"] = _can_view_tecnico_column(user)
 
         # El titulo depende del rol y lo consume el componente de busqueda, que
         # lo recibe como parametro; armarlo aca evita repetir el include.

@@ -263,6 +263,38 @@ def test_config_oculta_el_campo_tecnico_para_usuarios_provinciales(client):
 
 
 @pytest.mark.django_db
+def test_usuario_provincial_no_puede_filtrar_por_tecnico_mediante_la_url(client):
+    """El campo oculto en la UI tampoco debe aceptarse en el backend."""
+    provincia = Provincia.objects.create(nombre="Buenos Aires")
+    estado = EstadoExpediente.objects.create(nombre="CREADO")
+
+    provincial = User.objects.create_user(username="prov", password="pass")
+    provincial.user_permissions.add(_permiso("celiaquia", "view_expediente"))
+    profile, _ = Profile.objects.get_or_create(user=provincial)
+    profile.es_usuario_provincial = True
+    profile.provincia = provincia
+    profile.save()
+
+    tecnico = User.objects.create_user(username="tecnico1", password="pass")
+    tecnico.user_permissions.add(_permiso("auth", "role_tecnicoceliaquia"))
+    asignado = _crear_expediente(
+        owner=provincial, estado=estado, provincia=provincia, documento="51000001"
+    )
+    sin_asignar = _crear_expediente(
+        owner=provincial, estado=estado, provincia=provincia, documento="51000002"
+    )
+    AsignacionTecnico.objects.create(expediente=asignado, tecnico=tecnico)
+
+    client.force_login(provincial)
+    response = client.get(
+        reverse("expediente_list"),
+        _filtros({"field": "tecnico", "op": "eq", "value": "tecnico1"}),
+    )
+
+    assert _ids_listados(response) == {asignado.pk, sin_asignar.pk}
+
+
+@pytest.mark.django_db
 def test_config_expone_el_campo_tecnico_al_coordinador(client):
     Provincia.objects.create(nombre="Buenos Aires")
     EstadoExpediente.objects.create(nombre="CREADO")

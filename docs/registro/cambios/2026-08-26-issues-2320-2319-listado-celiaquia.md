@@ -31,7 +31,9 @@
 - `estado` y `provincia` se ofrecen como desplegables poblados desde
   `EstadoExpediente` y `Provincia`; `tecnico` desde los usuarios con
   `role_tecnicoceliaquia`, y sólo para quienes ven la columna de técnico
-  (admin, coordinador y técnico).
+  (admin, coordinador y técnico). El backend también ignora el filtro
+  `tecnico` para el resto de los roles, incluso si se envía manualmente por
+  querystring.
 - El listado deja de renderizar el input de texto libre, que el componente reemplaza
   por las filas de filtros. El soporte de `?q=` se conserva en el backend para no
   romper enlaces existentes.
