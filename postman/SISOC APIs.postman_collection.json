@@ -3998,6 +3998,66 @@
                   "response": []
                 },
                 {
+                  "name": "Buscar centro por CUE (ficha completa)",
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Authorization",
+                        "value": "Api-Key {{apiKey}}",
+                        "type": "text",
+                        "description": "API key VAT."
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{vatBaseUrl}}{{apiPrefix}}/vat/centros/?cue={{cue}}",
+                      "host": [
+                        "{{vatBaseUrl}}{{apiPrefix}}"
+                      ],
+                      "path": [
+                        "vat",
+                        "centros",
+                        ""
+                      ],
+                      "query": [
+                        {
+                          "key": "cue",
+                          "value": "{{cue}}",
+                          "description": "CUE numérico de hasta nueve dígitos. Busca coincidencia exacta tanto en el CUE vigente como en el histórico; puede enviarse sin ceros iniciales.",
+                          "disabled": false
+                        },
+                        {
+                          "key": "activo",
+                          "value": "true",
+                          "description": "Filtro adicional opcional por estado del Centro.",
+                          "disabled": true
+                        }
+                      ]
+                    },
+                    "description": "Devuelve la ficha completa del Centro relacionado con el CUE, sin cambiar la paginación habitual. Incluye institución, identificadores, ubicaciones, contactos institucionales, cursos, comisiones, planes, títulos y oferta institucional. No expone alumnos, inscripciones, evaluaciones, vouchers individuales ni documentos de contactos.\n\nSi el CUE encontrado es histórico, `cue_actual` indica el vigente y `coincidencias_cue` explica la coincidencia."
+                  },
+                  "event": [
+                    {
+                      "listen": "test",
+                      "script": {
+                        "type": "text/javascript",
+                        "exec": [
+                          "pm.test('Status code 200', function () { pm.response.to.have.status(200); });",
+                          "const body = pm.response.json();",
+                          "const rows = body.results || [];",
+                          "pm.test('La respuesta mantiene la paginación', function () { pm.expect(Array.isArray(rows)).to.eql(true); });",
+                          "if (rows.length && rows[0].id !== undefined) {",
+                          "  const value = String(rows[0].id);",
+                          "  pm.collectionVariables.set('centro_id', value);",
+                          "  if (pm.environment && pm.environment.name) { pm.environment.set('centro_id', value); }",
+                          "}"
+                        ]
+                      }
+                    }
+                  ],
+                  "response": []
+                },
+                {
                   "name": "Crear centro",
                   "request": {
                     "method": "POST",
