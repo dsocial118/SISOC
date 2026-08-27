@@ -9,35 +9,19 @@
 
 ## Contexto funcional
 
-Primer corte de #2309 para preparar la extracción de Dispositivos sin cambiar
-su CRUD, permisos, rutas, datos ni autoridad de escritura. El objetivo es que
-la próxima reubicación física pueda sustituir los adaptadores del monolito sin
-reescribir las reglas de alcance territorial.
+- No informado explícitamente; inferir desde el título del PR y el diff.
 
 ## Arquitectura tocada
 
-- Actor, sesión, catálogo territorial, permisos y filtros se separan mediante
-  contratos/adaptadores.
-- La migración aditiva `0006` incorpora la proyección territorial local y
-  versionada; no migra registros existentes ni reemplaza las FKs legacy.
+- Hay cambios en vistas web y puede existir impacto en permisos o renderizado.
+- Existen cambios de persistencia o migraciones que requieren revisión de datos.
 
 ## Decisiones y supuestos detectados
 
-- Tipo de cambio declarado: boundary ejecutable, primer corte.
-- Área principal declarada: Dispositivos.
-- Impacto usuario declarado: no debe haber cambio observable.
-- Riesgos / rollback: un error en la adaptación puede alterar permisos o el
-  alcance territorial. El rollback es revertir este commit mientras el
-  monolito continúa siendo el único runtime y escritor.
-
-## Avance de Checkpoint 1
-
-- Hecho: contratos puros de actor/alcance, adaptadores de monolito, proyección
-  territorial versionada, migración aditiva y ratchet de imports.
-- Pendiente: proyecto `services/dispositivos/`, rutas desde el runtime
-  independiente, favoritos HTTP opcionales, imports bidireccionales y job de
-  migraciones separado.
-- Estado estimado: 35%. Actualizar esta sección y el body del PR en cada corte.
+- Tipo de cambio declarado: No informado
+- Área principal declarada: No informada
+- Impacto usuario declarado: No informado
+- Riesgos / rollback: No informado
 
 ## Design system y UI
 
@@ -66,13 +50,16 @@ reescribir las reglas de alcance territorial.
 - `dispositivos/tests/test_territorial_projection.py`
 - `dispositivos/urls.py`
 - `dispositivos/views.py`
-- `docs/registro/decisiones/2026-08-21-dispositivos-actor-boundary.md`
+- `docs/contexto/features/pr-2365-feat-dispositivos-limite-ejecutable-inicial-2309.md`
+- ... y 2 archivo(s) adicional(es) relacionados.
 - Documentación sugerida para ampliar contexto:
 - `docs/indice.md`
 - `docs/ia/CONTEXT_HYGIENE.md`
 - `docs/ia/ARCHITECTURE.md`
 - `docs/ia/TESTING.md`
+- `docs/contexto/features/pr-2365-feat-dispositivos-limite-ejecutable-inicial-2309.md`
 - `docs/registro/decisiones/2026-08-21-dispositivos-actor-boundary.md`
+- `docs/registro/prs/PR-2365.md`
 
 ## Trazabilidad
 
