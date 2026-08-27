@@ -1,5 +1,9 @@
 # #2309 — reubicación canónica de Dispositivos
 
+> **Supersedido el 2026-08-27.** La decisión confirmada para C1 separa el
+> núcleo canónico del servicio de la compatibilidad Django del monolito. Ver
+> `2026-08-27-issue-2309-c1-monorepo-boundary-design.md`.
+
 ## Objetivo del corte
 
 Mover el código canónico de Dispositivos a `services/dispositivos/` sin
