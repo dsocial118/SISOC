@@ -1,3 +1,11 @@
+<!-- AUTO-GENERATED RELEASE START: 2026-09-02 -->
+# Versión SISOC 02.09.2026
+
+## Actualizaciones
+
+- [sin-area] fix(comedores): revertir dropdown Territorial asignado a AppSheet (GESTIONAR). (PR #2361)
+<!-- AUTO-GENERATED RELEASE END: 2026-09-02 -->
+
 <!-- AUTO-GENERATED RELEASE START: 2026-08-26 -->
 # Versión SISOC 26.08.2026
 
