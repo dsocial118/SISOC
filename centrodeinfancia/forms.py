@@ -1568,7 +1568,11 @@ class NominaCentroInfanciaDestinatariosForm(NominaCentroInfanciaBaseForm):
             Nacionalidad.objects.order_by("nacionalidad").values_list(
                 "nacionalidad", flat=True
             )
-        ) + list(NominaNacionalidad.objects.order_by("nombre").values_list("nombre", flat=True)):
+        ) + list(
+            NominaNacionalidad.objects.order_by("nombre").values_list(
+                "nombre", flat=True
+            )
+        ):
             nombre = (nombre or "").strip()
             if nombre and nombre not in valores:
                 opciones.append((nombre, nombre))

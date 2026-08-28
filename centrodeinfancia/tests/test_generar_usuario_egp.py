@@ -63,7 +63,9 @@ def test_equipo_nacional_puede_crear_egp_con_scope_provincial(client):
 def test_equipo_nacional_puede_crear_egp_con_multiples_provincias(client):
     chaco = Provincia.objects.create(nombre="Chaco")
     formosa = Provincia.objects.create(nombre="Formosa")
-    actor = _usuario_con_grupo("equipo-nacional-multiple", UserGroups.SIMEPI_EQUIPO_NACIONAL)
+    actor = _usuario_con_grupo(
+        "equipo-nacional-multiple", UserGroups.SIMEPI_EQUIPO_NACIONAL
+    )
     client.force_login(actor)
 
     response = client.post(
