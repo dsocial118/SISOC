@@ -10,6 +10,8 @@ class DispositivosConfig(AppConfig):
     def ready(self):
         if not getattr(settings, "DISPOSITIVOS_REGISTER_FAVORITES", False):
             return
-        from .runtime import register_favorite_filters  # pylint: disable=import-outside-toplevel
+        from .runtime import (
+            register_favorite_filters,
+        )  # pylint: disable=import-outside-toplevel
 
         register_favorite_filters()

@@ -206,9 +206,7 @@ INSTALLED_APPS = [
 DISPOSITIVOS_ACTOR_FROM_USER = (
     "services.dispositivos.monolith_compat.adapters.session.actor_from_session_user"
 )
-DISPOSITIVOS_TERRITORIAL_CATALOG = (
-    "services.dispositivos.monolith_compat.adapters.territorial.get_catalogo_territorial"
-)
+DISPOSITIVOS_TERRITORIAL_CATALOG = "services.dispositivos.monolith_compat.adapters.territorial.get_catalogo_territorial"
 DISPOSITIVOS_ADVANCED_FILTERS = (
     "services.dispositivos.monolith_compat.adapters.filters.aplicar_filtros_avanzados"
 )

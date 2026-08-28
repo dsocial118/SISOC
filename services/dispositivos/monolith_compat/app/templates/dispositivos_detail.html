@@ -241,106 +241,106 @@
                                             <i class="fas fa-paperclip mr-1"></i>Archivos adjuntos
                                         </div>
                                         <div class="doc-cards-grid">
-                                        {% endif %}
-                                        {% with ext=item.value.name|slice:"-4:"|lower %}
-                                            <a href="{{ item.value.url }}"
-                                               target="_blank"
-                                               rel="noopener"
-                                               class="doc-card-ro"
-                                               title="{{ item.label }}">
-                                                <i class="doc-card-icon fas {% if ext == '.pdf' %}fa-file-pdf pdf{% else %}fa-file-image img{% endif %}"></i>
-                                                <span class="doc-card-name">{{ item.value.name }}</span>
-                                                <i class="fas fa-external-link-alt" style="font-size:10px; opacity:0.5;"></i>
-                                            </a>
-                                        {% endwith %}
-                                        {% if forloop.last %}</div>{% endif %}
-                                {% endif %}
-                            {% endfor %}
-                        {% endwith %}
+                                    {% endif %}
+                                    {% with ext=item.value.name|slice:"-4:"|lower %}
+                                        <a href="{{ item.value.url }}"
+                                           target="_blank"
+                                           rel="noopener"
+                                           class="doc-card-ro"
+                                           title="{{ item.label }}">
+                                            <i class="doc-card-icon fas {% if ext == '.pdf' %}fa-file-pdf pdf{% else %}fa-file-image img{% endif %}"></i>
+                                            <span class="doc-card-name">{{ item.value.name }}</span>
+                                            <i class="fas fa-external-link-alt" style="font-size:10px; opacity:0.5;"></i>
+                                        </a>
+                                    {% endwith %}
+                                    {% if forloop.last %}</div>{% endif %}
+                            {% endif %}
+                        {% endfor %}
+                    {% endwith %}
 
-                    </div>
                 </div>
-            {% endfor %}
-        </div>
+                </div>
+        {% endfor %}
+    </div>
     </div>
 
-    <!-- Secciones (detalle completo) -->
-    {% for seccion in detalle_secciones %}
-        <div class="section-card" style="margin-bottom: 16px;">
+<!-- Secciones (detalle completo) -->
+{% for seccion in detalle_secciones %}
+    <div class="section-card" style="margin-bottom: 16px;">
 
-            <div class="section-header" style="cursor: default;">
-                <div class="section-header-left">
-                    <div class="section-icon">
-                        <i class="{{ seccion.icono }}"></i>
-                    </div>
-                    <div class="section-title-group">
-                        <h3 class="section-title">{{ seccion.titulo }}</h3>
-                    </div>
+        <div class="section-header" style="cursor: default;">
+            <div class="section-header-left">
+                <div class="section-icon">
+                    <i class="{{ seccion.icono }}"></i>
                 </div>
-            </div>
-
-            <div class="section-body-detail">
-
-                <!-- Items de texto/lista -->
-                <div class="row">
-                    {% for item in seccion.items %}
-                        {% if item.kind != "file" %}
-                            <div class="{% if item.wide %}col-md-12{% elif item.kind == 'list' %}col-md-6{% else %}col-md-4{% endif %}">
-                                <div class="detail-item-label">{{ item.label }}</div>
-
-                                {% if item.kind == "list" %}
-                                    {% if item.value %}
-                                        <div class="chip-list">
-                                            {% for chip in item.value %}<span class="chip">{{ chip }}</span>{% endfor %}
-                                        </div>
-                                    {% else %}
-                                        <div class="detail-item-value empty">—</div>
-                                    {% endif %}
-
-                                {% else %}
-                                    <div class="detail-item-value {% if item.value == '-' %}empty{% endif %}">
-                                        {% if item.value == "-" %}
-                                            —
-                                        {% else %}
-                                            {{ item.value }}
-                                        {% endif %}
-                                    </div>
-                                {% endif %}
-                            </div>
-                        {% endif %}
-                    {% endfor %}
+                <div class="section-title-group">
+                    <h3 class="section-title">{{ seccion.titulo }}</h3>
                 </div>
-
-                <!-- Archivos adjuntos (solo si hay alguno con valor) -->
-                {% with file_items=seccion.items %}
-                    {% for item in file_items %}
-                        {% if item.kind == "file" and item.value %}
-                            {% if forloop.first %}
-                                <div class="docs-section-divider"></div>
-                                <div class="docs-section-label">
-                                    <i class="fas fa-paperclip mr-1"></i>Archivos adjuntos
-                                </div>
-                                <div class="doc-cards-grid">
-                                {% endif %}
-                                {% with ext=item.value.name|slice:"-4:"|lower %}
-                                    <a href="{{ item.value.url }}"
-                                       target="_blank"
-                                       rel="noopener"
-                                       class="doc-card-ro"
-                                       title="{{ item.label }}">
-                                        <i class="doc-card-icon fas {% if ext == '.pdf' %}fa-file-pdf pdf{% else %}fa-file-image img{% endif %}"></i>
-                                        <span class="doc-card-name">{{ item.value.name }}</span>
-                                        <i class="fas fa-external-link-alt" style="font-size:10px; opacity:0.5;"></i>
-                                    </a>
-                                {% endwith %}
-                                {% if forloop.last %}</div>{% endif %}
-                        {% endif %}
-                    {% endfor %}
-                {% endwith %}
-
             </div>
         </div>
-    {% endfor %}
+
+        <div class="section-body-detail">
+
+            <!-- Items de texto/lista -->
+            <div class="row">
+                {% for item in seccion.items %}
+                    {% if item.kind != "file" %}
+                        <div class="{% if item.wide %}col-md-12{% elif item.kind == 'list' %}col-md-6{% else %}col-md-4{% endif %}">
+                            <div class="detail-item-label">{{ item.label }}</div>
+
+                            {% if item.kind == "list" %}
+                                {% if item.value %}
+                                    <div class="chip-list">
+                                        {% for chip in item.value %}<span class="chip">{{ chip }}</span>{% endfor %}
+                                    </div>
+                                {% else %}
+                                    <div class="detail-item-value empty">—</div>
+                                {% endif %}
+
+                            {% else %}
+                                <div class="detail-item-value {% if item.value == '-' %}empty{% endif %}">
+                                    {% if item.value == "-" %}
+                                        —
+                                    {% else %}
+                                        {{ item.value }}
+                                    {% endif %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+
+            <!-- Archivos adjuntos (solo si hay alguno con valor) -->
+            {% with file_items=seccion.items %}
+                {% for item in file_items %}
+                    {% if item.kind == "file" and item.value %}
+                        {% if forloop.first %}
+                            <div class="docs-section-divider"></div>
+                            <div class="docs-section-label">
+                                <i class="fas fa-paperclip mr-1"></i>Archivos adjuntos
+                            </div>
+                            <div class="doc-cards-grid">
+                        {% endif %}
+                        {% with ext=item.value.name|slice:"-4:"|lower %}
+                            <a href="{{ item.value.url }}"
+                               target="_blank"
+                               rel="noopener"
+                               class="doc-card-ro"
+                               title="{{ item.label }}">
+                                <i class="doc-card-icon fas {% if ext == '.pdf' %}fa-file-pdf pdf{% else %}fa-file-image img{% endif %}"></i>
+                                <span class="doc-card-name">{{ item.value.name }}</span>
+                                <i class="fas fa-external-link-alt" style="font-size:10px; opacity:0.5;"></i>
+                            </a>
+                        {% endwith %}
+                        {% if forloop.last %}</div>{% endif %}
+                {% endif %}
+            {% endfor %}
+        {% endwith %}
+
+    </div>
+    </div>
+{% endfor %}
 
 {% endblock %}
 
