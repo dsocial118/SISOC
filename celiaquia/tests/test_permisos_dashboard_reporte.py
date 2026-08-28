@@ -3,6 +3,7 @@
 import importlib
 
 import pytest
+from django.apps import apps as django_apps
 from django.contrib.auth.models import Group, Permission, User
 from django.contrib.contenttypes.models import ContentType
 from django.urls import reverse
@@ -131,6 +132,24 @@ def test_regla_de_siembra_por_tipo_de_grupo():
     assert es_provincial_puro(mixto, "permissions") is False
     assert es_provincial_puro(nacion, "permissions") is False
     assert es_provincial_puro(visualizacion, "permissions") is False
+
+
+@pytest.mark.django_db
+def test_siembra_respeta_el_rol_provincial_heredado_por_usuario():
+    """Un permiso directo no debe ignorar el rol provincial heredado por grupo."""
+    migracion = importlib.import_module(
+        "celiaquia.migrations.0006_seed_permisos_dashboard_reporte"
+    )
+    provincial = Group.objects.create(name="ProvinciaCeliaquia")
+    provincial.permissions.add(_rol("role_provinciaceliaquia"))
+
+    user = _usuario("provincia_con_permiso_directo", "view_expediente")
+    user.groups.add(provincial)
+
+    migracion.asignar(django_apps, None)
+
+    assert user.user_permissions.filter(codename="view_reporte_provincias").exists()
+    assert not user.user_permissions.filter(codename="view_cupo_dashboard").exists()
 
 
 @pytest.mark.django_db

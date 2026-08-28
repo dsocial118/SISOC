@@ -50,6 +50,10 @@ def _content_type(apps):
 def _es_estrictamente_provincial(portador, campo):
     """True si el grupo/usuario es provincial y no tiene ningún rol de Nación."""
     codenames = set(getattr(portador, campo).values_list("codename", flat=True))
+    if campo == "user_permissions":
+        codenames.update(
+            portador.groups.values_list("permissions__codename", flat=True)
+        )
     return ROL_PROVINCIAL in codenames and not codenames.intersection(ROLES_NACION)
 
 
