@@ -228,9 +228,7 @@ class TestNominaCentroInfanciaDestinatariosFormValidation:
     def test_mayor_de_48_meses_queda_pendiente_salvo_admin_simepi(self, centro):
         actor = User.objects.create_user(username="operador-nomina")
         data = datos_validos(centro, fecha_nacimiento="2020-01-01")
-        form = NominaCentroInfanciaDestinatariosForm(
-            data, centro=centro, actor=actor
-        )
+        form = NominaCentroInfanciaDestinatariosForm(data, centro=centro, actor=actor)
 
         assert not form.is_valid()
         assert "estado" in form.errors
@@ -239,9 +237,7 @@ class TestNominaCentroInfanciaDestinatariosFormValidation:
             name=UserGroups.SIMEPI_ADMINISTRADOR
         )
         actor.groups.add(admin_group)
-        form = NominaCentroInfanciaDestinatariosForm(
-            data, centro=centro, actor=actor
-        )
+        form = NominaCentroInfanciaDestinatariosForm(data, centro=centro, actor=actor)
 
         assert form.is_valid(), form.errors
 

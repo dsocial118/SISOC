@@ -205,9 +205,7 @@ def test_trabajador_renaper_normaliza_id_de_nacionalidad_al_catalogo_central(
     assert response.status_code == 200
     form = response.context["form"]
     assert form.initial["nacionalidad_trabajador"] == "Argentina"
-    assert ("Argentina", "Argentina") in form.fields[
-        "nacionalidad_trabajador"
-    ].choices
+    assert ("Argentina", "Argentina") in form.fields["nacionalidad_trabajador"].choices
 
 
 @pytest.mark.django_db

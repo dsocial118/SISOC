@@ -1030,9 +1030,11 @@ class TrabajadorCentroInfanciaCreateView(
 
         nacionalidad = data.get("nacionalidad")
         if str(nacionalidad or "").isdigit():
-            nacionalidad = Nacionalidad.objects.filter(pk=nacionalidad).values_list(
-                "nacionalidad", flat=True
-            ).first()
+            nacionalidad = (
+                Nacionalidad.objects.filter(pk=nacionalidad)
+                .values_list("nacionalidad", flat=True)
+                .first()
+            )
 
         return {
             "nombre": data.get("nombre") or data.get("nombres") or "",
@@ -1043,9 +1045,7 @@ class TrabajadorCentroInfanciaCreateView(
             "fecha_nacimiento": fecha_nacimiento,
             "cuit": data.get("cuit") or datos_api.get("cuil") or "",
             "sexo_registral": sexo,
-            "nacionalidad_trabajador": nacionalidad
-            or datos_api.get("pais")
-            or "",
+            "nacionalidad_trabajador": nacionalidad or datos_api.get("pais") or "",
         }
 
     def get_success_url(self):
