@@ -36,6 +36,17 @@ docker compose -f compose.dispositivos.yml down
 El primer comando no ejecuta migraciones. El segundo aplica únicamente
 `migrate dispositivos --noinput` y se puede repetir sin cambios pendientes.
 
+Para comprobar la separación de procesos sin ejecutar el Compose global:
+
+```powershell
+docker compose -f compose.dispositivos.yml stop dispositivos-web
+docker compose -f compose.dispositivos.yml start dispositivos-web
+```
+
+El job `dispositivos_runtime` de CI reproduce el build, las dos migraciones,
+el arranque, stop/start y verifica que sólo se ejecuten `mysql` y
+`dispositivos-web`; no acepta el servicio `django` del Compose global.
+
 ## Fuera de alcance
 
 No expone gateway, JWS, routing público, health, credenciales de ambientes,

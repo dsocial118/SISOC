@@ -82,6 +82,10 @@ repositorio sigue siendo la integración opcional completa.
    servicio Django del monolito.
 3. Probar dos ejecuciones consecutivas del job de migración.
 
+Implementación: el job `dispositivos_runtime` de CI ejecuta esta secuencia con
+`compose.dispositivos.yml`. Su resultado verde es la evidencia pendiente para
+dar por validado C2.2; no sustituye el cierre completo de C2.3.
+
 ### C2.3 — Cierre de checkpoint
 
 1. Ejecutar las pruebas C2 en CI sin path filtering todavía.
