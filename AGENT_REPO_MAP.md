@@ -289,7 +289,7 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 | `rendicioncuentasfinal/` | rendicion final | `models.py`, `views.py`, urls | Bajo |
 | `rendicioncuentasmensual/` | rendición mensual, revisión Territorial/Auditoría, subsanaciones y datos expuestos en Organizaciones | `models.py`, `services.py`, `views.py`, templates, urls | Alto |
 | `duplas/` | equipos tecnicos/duplas | `models.py`, `views.py` | Bajo-Medio |
-| `services/dispositivos/` | núcleo de Dispositivos y compatibilidad Django transitoria dentro del monorepo | `application/contracts/v1/`, `monolith_compat/app/`, `monolith_compat/adapters/`, tests unitarios e integración | Medio |
+| `services/dispositivos/` | núcleo de Dispositivos, runtime C2 y compatibilidad Django transitoria dentro del monorepo | `application/contracts/v1/`, `runtime/`, `monolith_compat/app/`, `monolith_compat/adapters/`, tests unitarios e integración; `compose.dispositivos.yml` levanta el proceso selectivo | Medio |
 | `importarexpediente/` | flujo de importacion de expedientes | `views.py`, `models.py`, urls, tests | Medio |
 | `ocr/` | OCR y procesamiento asociado | `models.py`, `views.py`, urls, tests | Medio |
 | `ver_para_ser_libre/` | modulo de negocio independiente dentro del monolito | `models.py`, `views.py`, `services/workflow.py` | Medio |
