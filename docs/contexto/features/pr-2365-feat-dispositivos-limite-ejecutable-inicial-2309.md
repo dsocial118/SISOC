@@ -20,10 +20,10 @@
 
 ## Decisiones y supuestos detectados
 
-- Tipo de cambio declarado: boundary ejecutable, primer corte.
+- Tipo de cambio declarado: boundary ejecutable, C1.3.
 - Área principal declarada: Dispositivos.
-- Impacto usuario declarado: se preservan rutas, permisos y alcance territorial.
-- Riesgos / rollback: el acceso legacy a Core queda explícitamente acotado a monolith_compat; ownership y CI por grupos aún están pendientes. Revertir este corte sólo restaura ubicación de código, sin cambios de datos.
+- Impacto usuario declarado: No informado
+- Riesgos / rollback: el acceso legacy a Core y Users queda acotado a monolith_compat; revertir este corte sólo restaura ubicación y jobs, sin cambios de datos.
 
 ## Design system y UI
 
