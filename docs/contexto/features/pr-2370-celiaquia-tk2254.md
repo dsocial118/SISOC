@@ -39,14 +39,18 @@
 - `celiaquia/tests/test_permisos_dashboard_reporte.py`
 - `celiaquia/tests/test_reporter_provincias.py`
 - `celiaquia/urls.py`
+- `docs/contexto/features/pr-2370-celiaquia-tk2254.md`
 - `docs/registro/cambios/2026-08-27-issue-2254-permisos-dashboard-reporte-celiaquia.md`
+- `docs/registro/prs/PR-2370.md`
 - `templates/includes/sidebar/opciones.html`
 - Documentación sugerida para ampliar contexto:
 - `docs/indice.md`
 - `docs/ia/CONTEXT_HYGIENE.md`
 - `docs/ia/ARCHITECTURE.md`
 - `docs/ia/TESTING.md`
+- `docs/contexto/features/pr-2370-celiaquia-tk2254.md`
 - `docs/registro/cambios/2026-08-27-issue-2254-permisos-dashboard-reporte-celiaquia.md`
+- `docs/registro/prs/PR-2370.md`
 
 ## Trazabilidad
 
