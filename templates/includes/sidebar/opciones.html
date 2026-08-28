@@ -696,20 +696,27 @@
             {% endif %}
             {% if not vat_sidebar_only %}
                 <!-- CELIAQUÍA -->
-                {% if request.user|has_perm_code:"celiaquia.view_expediente" or request.user.is_superuser %}
+                {% comment %}
+                El menú se muestra con cualquiera de los tres permisos: un grupo
+                puede tener sólo el de Reporte (o sólo el de Dashboard) sin ver
+                expedientes, y aun así necesita llegar a su módulo.
+                {% endcomment %}
+                {% if request.user|has_perm_code:"celiaquia.view_expediente" or request.user|has_perm_code:"celiaquia.view_cupo_dashboard" or request.user|has_perm_code:"celiaquia.view_reporte_provincias" or request.user.is_superuser %}
                     <li class="nav-item">
                         <a href="#" class="nav-link nav-dot ms-2">
                             <p>Celiaquía</p>
                             <i class="nav-arrow bi bi-chevron-right"></i>
                         </a>
                         <ul class="nav nav-treeview">
-                            <li class="nav-item">
-                                <a href="{% url 'expediente_list' %}" class="nav-link ms-2">
-                                    <i class="nav-icon fas fa-folder-open"></i>
-                                    <p>Expedientes</p>
-                                </a>
-                            </li>
                             {% if request.user|has_perm_code:"celiaquia.view_expediente" %}
+                                <li class="nav-item">
+                                    <a href="{% url 'expediente_list' %}" class="nav-link ms-2">
+                                        <i class="nav-icon fas fa-folder-open"></i>
+                                        <p>Expedientes</p>
+                                    </a>
+                                </li>
+                            {% endif %}
+                            {% if request.user|has_perm_code:"celiaquia.view_cupo_dashboard" %}
                                 <li class="nav-item">
                                     <a href="{% url 'cupo_dashboard' %}" class="nav-link ms-2">
                                         <i class="nav-icon fas fa-chart-bar"></i>
@@ -717,7 +724,7 @@
                                     </a>
                                 </li>
                             {% endif %}
-                            {% if request.user|has_perm_code:"celiaquia.view_expediente" or request.user|has_perm_code:"celiaquia.view_expediente" %}
+                            {% if request.user|has_perm_code:"celiaquia.view_reporte_provincias" %}
                                 <li class="nav-item">
                                     <a href="{% url 'reporter_provincias' %}" class="nav-link ms-2">
                                         <i class="nav-icon fas fa-chart-pie"></i>
