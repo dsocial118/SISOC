@@ -8,7 +8,8 @@ from django.utils.text import slugify
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxLengthValidator
 
-from core.models import Localidad, Municipio, Provincia
+from core.models import Localidad, Municipio, Nacionalidad, Provincia
+from core.constants import UserGroups
 from core.validators import (
     solo_digitos,
     validate_codigo_postal_ar,
@@ -96,7 +97,7 @@ class CentroDeInfanciaForm(forms.ModelForm):
     LATITUD_MAXIMA = Decimal("-21")
     LONGITUD_MINIMA = Decimal("-74")
     LONGITUD_MAXIMA = Decimal("-53")
-    # `dias_funcionamiento`, los horarios y latitud/longitud siguen siendo optativos.
+    # Los horarios y latitud/longitud siguen siendo optativos.
     # (Latitud/longitud pasarían a obligatorias si se implementa la toma por GPS.)
     CAMPOS_OBLIGATORIOS = [
         "nombre",
@@ -114,6 +115,7 @@ class CentroDeInfanciaForm(forms.ModelForm):
         "calle",
         "numero",
         "meses_funcionamiento",
+        "dias_funcionamiento",
         "tipo_jornada",
         "oferta_servicios",
         "modalidad_gestion",
@@ -128,7 +130,7 @@ class CentroDeInfanciaForm(forms.ModelForm):
         widget=forms.CheckboxSelectMultiple,
     )
     dias_funcionamiento = forms.MultipleChoiceField(
-        required=False,
+        required=True,
         choices=CAMPOS_OPCIONES_MULTIPLES["dias_funcionamiento"],
         widget=forms.CheckboxSelectMultiple,
     )
@@ -842,7 +844,8 @@ class NominaCentroInfanciaBaseForm(forms.ModelForm):
             "observaciones": forms.Textarea(attrs={"rows": 3}),
         }
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, actor=None, **kwargs):
+        self.actor = actor
         super().__init__(*args, **kwargs)
         self._configure_sala_choices()
         self._configure_boolean_fields()
@@ -1159,6 +1162,22 @@ class NominaCentroInfanciaBaseForm(forms.ModelForm):
                 fecha_nacimiento=fecha_nacimiento
             ).edad
         self._validar_vigencia_unica_cdi(cleaned_data)
+        if (
+            self.actor
+            and fecha_nacimiento
+            and fecha_nacimiento < date.today().replace(year=date.today().year - 4)
+            and cleaned_data.get("estado") != NominaCentroInfancia.ESTADO_PENDIENTE
+            and not (
+                self.actor.is_superuser
+                or self.actor.groups.filter(
+                    name=UserGroups.SIMEPI_ADMINISTRADOR
+                ).exists()
+            )
+        ):
+            self.add_error(
+                "estado",
+                "Para niños y niñas mayores de 48 meses el estado debe ser Pendiente.",
+            )
         return cleaned_data
 
 
@@ -1526,9 +1545,7 @@ class NominaCentroInfanciaDestinatariosForm(NominaCentroInfanciaBaseForm):
         paises = [empty] + [
             (p.nombre, p.nombre) for p in NominaPais.objects.order_by("nombre")
         ]
-        nacionalidades = [empty] + [
-            (n.nombre, n.nombre) for n in NominaNacionalidad.objects.order_by("nombre")
-        ]
+        nacionalidades = self._opciones_nacionalidad()
         for fname in (
             "pais_nacimiento",
             "responsable_legal_1_pais_nacimiento",
@@ -1541,6 +1558,26 @@ class NominaCentroInfanciaDestinatariosForm(NominaCentroInfanciaBaseForm):
             "responsable_legal_2_nacionalidad",
         ):
             self.fields[fname].choices = nacionalidades
+
+    @staticmethod
+    def _opciones_nacionalidad():
+        """Acepta el catálogo central usado por RENAPER y valores históricos CDI."""
+        opciones = [("", "---------")]
+        valores = set()
+        for nombre in list(
+            Nacionalidad.objects.order_by("nacionalidad").values_list(
+                "nacionalidad", flat=True
+            )
+        ) + list(
+            NominaNacionalidad.objects.order_by("nombre").values_list(
+                "nombre", flat=True
+            )
+        ):
+            nombre = (nombre or "").strip()
+            if nombre and nombre not in valores:
+                opciones.append((nombre, nombre))
+                valores.add(nombre)
+        return opciones
 
     def _apply_required_flags(self):
         # Reemplaza la lista mínima del form base por la que pidió QA.
@@ -1573,8 +1610,8 @@ class NominaCentroInfanciaDestinatariosForm(NominaCentroInfanciaBaseForm):
                 {"min": str(minimo), "max": str(maximo), "step": "0.1"}
             )
 
-    def __init__(self, *args, centro=None, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, *args, centro=None, actor=None, **kwargs):
+        super().__init__(*args, actor=actor, **kwargs)
         self._ocultar_campos()
         self._configure_pais_nacionalidad_fields()
         self._aplicar_rangos_antropometria()
@@ -2047,19 +2084,14 @@ class TrabajadorCDIForm(forms.ModelForm):
 
     def _configurar_pais_nacionalidad(self):
         # Mismas listas que ya usa el legajo de Nómina, en vez de texto libre.
-        empty = ("", "---------")
         self.fields["pais_nacimiento"] = forms.ChoiceField(
             label=self.fields["pais_nacimiento"].label,
-            choices=[empty]
+            choices=[("", "---------")]
             + [(p.nombre, p.nombre) for p in NominaPais.objects.order_by("nombre")],
         )
         self.fields["nacionalidad_trabajador"] = forms.ChoiceField(
             label=self.fields["nacionalidad_trabajador"].label,
-            choices=[empty]
-            + [
-                (n.nombre, n.nombre)
-                for n in NominaNacionalidad.objects.order_by("nombre")
-            ],
+            choices=NominaCentroInfanciaDestinatariosForm._opciones_nacionalidad(),
         )
 
     def _configurar_departamento_contacto(self):

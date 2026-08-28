@@ -60,6 +60,32 @@ def test_equipo_nacional_puede_crear_egp_con_scope_provincial(client):
 
 
 @pytest.mark.django_db
+def test_equipo_nacional_puede_crear_egp_con_multiples_provincias(client):
+    chaco = Provincia.objects.create(nombre="Chaco")
+    formosa = Provincia.objects.create(nombre="Formosa")
+    actor = _usuario_con_grupo(
+        "equipo-nacional-multiple", UserGroups.SIMEPI_EQUIPO_NACIONAL
+    )
+    client.force_login(actor)
+
+    response = client.post(
+        URL,
+        {
+            **_datos_validos(chaco, "egp-multiple@example.com"),
+            "provincia": [chaco.pk, formosa.pk],
+        },
+    )
+
+    assert response.status_code == 200
+    nuevo = User.objects.get(email="egp-multiple@example.com")
+    assert set(
+        ProfileTerritorialScope.objects.filter(profile=nuevo.profile).values_list(
+            "provincia_id", flat=True
+        )
+    ) == {chaco.pk, formosa.pk}
+
+
+@pytest.mark.django_db
 def test_superuser_puede_crear_egp(client):
     provincia = Provincia.objects.create(nombre="Formosa")
     actor = User.objects.create_superuser(

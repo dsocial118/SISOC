@@ -6,6 +6,7 @@ from django.shortcuts import render
 from django.urls import reverse
 from django.views import View
 
+from core.services.csv_export import build_csv_response
 from users.forms import UserImportForm
 from users.models import UserImportJobRow
 from users.views import AdminRequiredMixin
@@ -129,13 +130,8 @@ class UserImportJobDownloadCSVView(AdminRequiredMixin, View):
         if not request.user.is_superuser and job.requested_by_id != request.user.id:
             raise Http404("No existe el lote solicitado.")
 
-        response = HttpResponse(
-            "\ufeff" + generate_user_import_job_csv(job),
-            content_type="text/csv; charset=utf-8",
-        )
-        response["Content-Disposition"] = (
-            f'attachment; filename="lote-usuarios-{job.pk}.csv"'
-        )
+        response = build_csv_response(f"lote-usuarios-{job.pk}.csv")
+        response.write(generate_user_import_job_csv(job))
         return response
 
 

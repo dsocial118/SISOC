@@ -9,7 +9,7 @@ from core.decorators import permissions_any_required
 urlpatterns = [
     path(
         "reporter-provincias/",
-        permissions_any_required(["celiaquia.view_expediente"])(
+        permissions_any_required(["celiaquia.view_reporte_provincias"])(
             ReporterProvinciasView.as_view()
         ),
         name="reporter_provincias",

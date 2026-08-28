@@ -192,7 +192,7 @@ class CentroDeInfancia(SoftDeleteModelMixin, models.Model):
         blank=True,
         null=True,
         verbose_name="Año de inicio de actividades del CDI",
-        validators=[MinValueValidator(date(1990, 1, 1))],
+        validators=[MinValueValidator(date(1900, 1, 1))],
     )
     fecha_creacion = models.DateTimeField(auto_now_add=True)
 
@@ -1306,7 +1306,7 @@ class NominaCentroInfancia(SoftDeleteModelMixin, models.Model):
     class RespuestaSiNoNsNc(models.TextChoices):
         SI = "si", "Si"
         NO = "no", "No"
-        NS_NC = "ns_nc", "Ns/Nc"
+        NS_NC = "ns_nc", "No sabe"
 
     class TipoDiscapacidad(models.TextChoices):
         MOTORA = "motora", "Motora"
@@ -1316,7 +1316,7 @@ class NominaCentroInfancia(SoftDeleteModelMixin, models.Model):
         MENTAL = "mental", "Mental"
         VISCERAL = "visceral", "Visceral"
         MULTIPLE = "multiple", "Múltiple"
-        NS_NC = "ns_nc", "Ns/Nc"
+        NS_NC = "ns_nc", "No sabe"
 
     class SexoChoices(models.TextChoices):
         FEMENINO = "Femenino", "Femenino"

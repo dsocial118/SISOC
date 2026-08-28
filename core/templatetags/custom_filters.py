@@ -90,6 +90,12 @@ def is_vat_sidebar_only(user):
 
 
 @register.filter
+def is_cdi_local_sidebar_only(user):
+    """Indica si el menú debe ocultar Comunicados para un usuario CDI local."""
+    return resolver_predicado_sidebar("cdi_local", user)
+
+
+@register.filter
 def endswith(value, suffix):
     try:
         return str(value).lower().endswith(str(suffix).lower())
