@@ -1,6 +1,17 @@
 # Exportar listados a CSV
 
-Este documento resume cómo reutilizar la infraestructura de exportación CSV existente (`core.mixins.CSVExportMixin` y `static/custom/js/export_helper.js`) en nuevas vistas.
+Este documento resume cómo reutilizar la infraestructura de exportación CSV existente (`core.mixins.CSVExportMixin`, `core.services.csv_export` y `static/custom/js/export_helper.js`) en nuevas vistas.
+
+## Contrato de codificación
+
+- Todo CSV descargable declara `Content-Type: text/csv; charset=utf-8`.
+- Todo CSV comienza con BOM UTF-8 para que Microsoft Excel detecte la
+  codificación al abrirlo directamente.
+- Las respuestas CSV no deben construir su `content_type` ni su BOM de forma
+  local: las vistas normales usan `build_csv_response()` y los streams usan
+  `prepend_utf8_bom()`, ambos en `core.services.csv_export`.
+- `CSVExportMixin` ya aplica este contrato. Una vista que hereda del mixin no
+  debe anteponer otro BOM.
 
 ## 1. Backend
 
@@ -9,7 +20,7 @@ Este documento resume cómo reutilizar la infraestructura de exportación CSV ex
    - Sobrescribir `get_export_columns()` para devolver una lista `[("Encabezado","campo.path"), …]`; podés usar `build_export_columns(catalog, active_keys)` para sincronizarla con el catálogo de columnas.
    - En `get()`, obtener el queryset filtrado (reutilizando los mismos filtros que el listado si hace falta) y retornar `self.export_csv(queryset)`.
 2. `CSVExportMixin.check_export_permission()` lanza `PermissionDenied` si el usuario no es superuser ni tiene `export_permission_code` (por defecto `auth.role_exportar_a_csv`; puede redefinirse).
-3. La respuesta streaming usa `StreamingHttpResponse` para evitar cargar todo el CSV en memoria; cada fila se genera con `resolve_field()` que maneja dicts, objetos y fechas.
+3. La respuesta streaming usa `StreamingHttpResponse` para evitar cargar todo el CSV en memoria; cada fila se genera con `resolve_field()` que maneja dicts, objetos y fechas. El mixin antepone exactamente un BOM UTF-8 y declara el charset.
 
 ## 2. Frontend
 

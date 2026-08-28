@@ -1,3 +1,4 @@
+import codecs
 import csv
 import json
 from datetime import date
@@ -130,7 +131,10 @@ def test_export_sin_filtro_incluye_todos_y_nombra_archivo_todos(
         == 'attachment; filename="beneficiarios_todos.csv"'
     )
 
-    content = b"".join(response.streaming_content).decode("utf-8-sig")
+    raw_content = b"".join(response.streaming_content)
+    assert raw_content.startswith(codecs.BOM_UTF8)
+    assert not raw_content[len(codecs.BOM_UTF8) :].startswith(codecs.BOM_UTF8)
+    content = raw_content.decode("utf-8-sig")
     reader = csv.DictReader(StringIO(content), delimiter=";")
     rows = list(reader)
 
