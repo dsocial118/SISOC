@@ -1028,6 +1028,12 @@ class TrabajadorCentroInfanciaCreateView(
         sexo_raw = data.get("sexo") or datos_api.get("sexo") or ""
         sexo = self._SEXO_RENAPER_MAP.get(sexo_raw, "")
 
+        nacionalidad = data.get("nacionalidad")
+        if str(nacionalidad or "").isdigit():
+            nacionalidad = Nacionalidad.objects.filter(pk=nacionalidad).values_list(
+                "nacionalidad", flat=True
+            ).first()
+
         return {
             "nombre": data.get("nombre") or data.get("nombres") or "",
             "apellido": data.get("apellido") or data.get("apellidos") or "",
@@ -1037,7 +1043,7 @@ class TrabajadorCentroInfanciaCreateView(
             "fecha_nacimiento": fecha_nacimiento,
             "cuit": data.get("cuit") or datos_api.get("cuil") or "",
             "sexo_registral": sexo,
-            "nacionalidad_trabajador": data.get("nacionalidad")
+            "nacionalidad_trabajador": nacionalidad
             or datos_api.get("pais")
             or "",
         }

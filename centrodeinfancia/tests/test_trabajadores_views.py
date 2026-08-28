@@ -9,7 +9,7 @@ from centrodeinfancia.models import (
     Trabajador,
 )
 from centrodeinfancia.tests.test_trabajador_form import datos_validos
-from core.models import Provincia
+from core.models import Nacionalidad, Provincia
 from users.models import Profile
 
 
@@ -175,6 +175,39 @@ def test_trabajador_create_persiste_y_bloquea_solo_prefill_renaper_servidor(
     assert trabajador.apellido == "Pérez"
     assert trabajador.dni == 30123456
     assert trabajador.campos_verificados_renaper == ["nombre", "apellido", "dni"]
+
+
+@pytest.mark.django_db
+def test_trabajador_renaper_normaliza_id_de_nacionalidad_al_catalogo_central(
+    client, monkeypatch
+):
+    user = _crear_usuario("super-trabajador-renaper-nacionalidad", superuser=True)
+    client.force_login(user)
+    centro = CentroDeInfancia.objects.create(nombre="CDI RENAPER nacionalidad")
+    Nacionalidad.objects.create(pk=7, nacionalidad="Argentina")
+    url = reverse("centrodeinfancia_trabajador_crear", kwargs={"pk": centro.pk})
+    monkeypatch.setattr(
+        "centrodeinfancia.views.obtener_datos_ciudadano_desde_renaper",
+        lambda _dni: {
+            "success": True,
+            "data": {
+                "nombre": "Juana",
+                "apellido": "Pérez",
+                "dni": "30123456",
+                "nacionalidad": 7,
+            },
+            "datos_api": {},
+        },
+    )
+
+    response = client.get(f"{url}?query=30123456")
+
+    assert response.status_code == 200
+    form = response.context["form"]
+    assert form.initial["nacionalidad_trabajador"] == "Argentina"
+    assert ("Argentina", "Argentina") in form.fields[
+        "nacionalidad_trabajador"
+    ].choices
 
 
 @pytest.mark.django_db

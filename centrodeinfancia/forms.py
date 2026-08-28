@@ -8,7 +8,7 @@ from django.utils.text import slugify
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxLengthValidator
 
-from core.models import Localidad, Municipio, Provincia
+from core.models import Localidad, Municipio, Nacionalidad, Provincia
 from core.constants import UserGroups
 from core.validators import (
     solo_digitos,
@@ -1545,9 +1545,7 @@ class NominaCentroInfanciaDestinatariosForm(NominaCentroInfanciaBaseForm):
         paises = [empty] + [
             (p.nombre, p.nombre) for p in NominaPais.objects.order_by("nombre")
         ]
-        nacionalidades = [empty] + [
-            (n.nombre, n.nombre) for n in NominaNacionalidad.objects.order_by("nombre")
-        ]
+        nacionalidades = self._opciones_nacionalidad()
         for fname in (
             "pais_nacimiento",
             "responsable_legal_1_pais_nacimiento",
@@ -1560,6 +1558,22 @@ class NominaCentroInfanciaDestinatariosForm(NominaCentroInfanciaBaseForm):
             "responsable_legal_2_nacionalidad",
         ):
             self.fields[fname].choices = nacionalidades
+
+    @staticmethod
+    def _opciones_nacionalidad():
+        """Acepta el catálogo central usado por RENAPER y valores históricos CDI."""
+        opciones = [("", "---------")]
+        valores = set()
+        for nombre in list(
+            Nacionalidad.objects.order_by("nacionalidad").values_list(
+                "nacionalidad", flat=True
+            )
+        ) + list(NominaNacionalidad.objects.order_by("nombre").values_list("nombre", flat=True)):
+            nombre = (nombre or "").strip()
+            if nombre and nombre not in valores:
+                opciones.append((nombre, nombre))
+                valores.add(nombre)
+        return opciones
 
     def _apply_required_flags(self):
         # Reemplaza la lista mínima del form base por la que pidió QA.
@@ -2066,19 +2080,14 @@ class TrabajadorCDIForm(forms.ModelForm):
 
     def _configurar_pais_nacionalidad(self):
         # Mismas listas que ya usa el legajo de Nómina, en vez de texto libre.
-        empty = ("", "---------")
         self.fields["pais_nacimiento"] = forms.ChoiceField(
             label=self.fields["pais_nacimiento"].label,
-            choices=[empty]
+            choices=[("", "---------")]
             + [(p.nombre, p.nombre) for p in NominaPais.objects.order_by("nombre")],
         )
         self.fields["nacionalidad_trabajador"] = forms.ChoiceField(
             label=self.fields["nacionalidad_trabajador"].label,
-            choices=[empty]
-            + [
-                (n.nombre, n.nombre)
-                for n in NominaNacionalidad.objects.order_by("nombre")
-            ],
+            choices=NominaCentroInfanciaDestinatariosForm._opciones_nacionalidad(),
         )
 
     def _configurar_departamento_contacto(self):
