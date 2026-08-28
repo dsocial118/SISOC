@@ -5,10 +5,14 @@ importación, cuáles solo exportan, y que la importación pase siempre por la
 pantalla de preview antes de tocar la base.
 """
 
+import codecs
+from io import BytesIO
+
 import pytest
 from django.contrib import admin as django_admin
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import NoReverseMatch, reverse
+from openpyxl import load_workbook
 
 from comedores.models import Programas
 from core.models import Nacionalidad
@@ -42,7 +46,7 @@ def test_formatos_limitados_a_xlsx_y_csv(nacionalidad_admin):
 
 @pytest.mark.django_db
 def test_export_csv_incluye_los_datos(auth_client, nacionalidad_admin):
-    Nacionalidad.objects.create(nacionalidad="Argentina")
+    Nacionalidad.objects.create(nacionalidad="Española · Córdoba")
 
     response = auth_client.post(
         reverse("admin:core_nacionalidad_export"),
@@ -50,15 +54,14 @@ def test_export_csv_incluye_los_datos(auth_client, nacionalidad_admin):
     )
 
     assert response.status_code == 200
-    assert response["Content-Type"].startswith("text/csv"), response.context[
-        "form"
-    ].errors
-    assert b"Argentina" in response.content
+    assert response["Content-Type"] == "text/csv; charset=utf-8"
+    assert response.content.startswith(codecs.BOM_UTF8)
+    assert "Española · Córdoba" in response.content.decode("utf-8-sig")
 
 
 @pytest.mark.django_db
 def test_export_xlsx_devuelve_un_archivo(auth_client, nacionalidad_admin):
-    Nacionalidad.objects.create(nacionalidad="Argentina")
+    Nacionalidad.objects.create(nacionalidad="Española · Córdoba")
 
     response = auth_client.post(
         reverse("admin:core_nacionalidad_export"),
@@ -69,6 +72,9 @@ def test_export_xlsx_devuelve_un_archivo(auth_client, nacionalidad_admin):
     assert "spreadsheetml" in response["Content-Type"], response.context["form"].errors
     # Firma de un archivo xlsx (zip).
     assert response.content[:2] == b"PK"
+    workbook = load_workbook(BytesIO(response.content), read_only=True)
+    values = [cell.value for row in workbook.active.iter_rows() for cell in row]
+    assert "Española · Córdoba" in values
 
 
 @pytest.mark.django_db
