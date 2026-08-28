@@ -35,6 +35,7 @@
 - Empezar por `docs/registro/prs/PR-2365.md` para contexto resumido del PR.
 - Revisar primero estos archivos del diff:
 - `.env.example`
+- `.github/workflows/dispositivos-build.yml`
 - `.github/workflows/tests.yml`
 - `.importlinter`
 - `AGENT_REPO_MAP.md`
@@ -53,8 +54,7 @@
 - `docs/registro/cambios/2026-08-28-dispositivos-c2-runtime-verificado.md`
 - `docs/registro/decisiones/2026-08-21-dispositivos-actor-boundary.md`
 - `docs/registro/decisiones/2026-08-28-dispositivos-ownership-transitorio-etapa-a.md`
-- `docs/registro/prs/PR-2365.md`
-- ... y 54 archivo(s) adicional(es) relacionados.
+- ... y 56 archivo(s) adicional(es) relacionados.
 - Documentación sugerida para ampliar contexto:
 - `docs/indice.md`
 - `docs/ia/CONTEXT_HYGIENE.md`
