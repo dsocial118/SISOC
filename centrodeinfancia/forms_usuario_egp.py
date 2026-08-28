@@ -21,11 +21,11 @@ class GenerarUsuarioEGPForm(forms.Form):
         widget=forms.EmailInput(attrs={"class": "form-control"}),
         help_text="Se usará como usuario y para enviarle las credenciales.",
     )
-    provincia = forms.ModelChoiceField(
+    provincia = forms.ModelMultipleChoiceField(
         queryset=Provincia.objects.all(),
         required=True,
-        label="Provincia",
-        widget=forms.Select(attrs={"class": "form-control"}),
+        label="Provincias",
+        widget=forms.SelectMultiple(attrs={"class": "form-control"}),
     )
 
     def clean_first_name(self):

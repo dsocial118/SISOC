@@ -149,6 +149,34 @@ def test_guardar_cdi_crea_referente_automaticamente(client):
 
 
 @pytest.mark.django_db
+def test_guardar_cdi_vincula_referente_con_email_existente(client):
+    actor = _actor()
+    existente = User.objects.create_user(
+        username="referente-existente",
+        email="lia.existente@example.com",
+        password="test1234",
+    )
+    client.force_login(actor)
+    centro = CentroDeInfancia.objects.create(
+        nombre="CDI Referente existente",
+        telefono="1122334455",
+        telefono_referente="1199887766",
+    )
+
+    response = _guardar_centro(
+        client,
+        centro,
+        nombre_referente="Lia",
+        apellido_referente="Paz",
+        email_referente=existente.email,
+    )
+
+    assert response.status_code == 302
+    assert AccesoCDI.objects.get(centro=centro).user == existente
+    assert existente.groups.filter(name=UserGroups.CDI_REFERENTE_CENTRO).exists()
+
+
+@pytest.mark.django_db
 def test_crear_cdi_con_referente_crea_usuario_automaticamente(client):
     actor = _actor()
     client.force_login(actor)
