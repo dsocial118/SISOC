@@ -1,5 +1,5 @@
 {% load static custom_filters dashboard_tags %}
-{% with pagina_actual=request.resolver_match.route vat_sidebar_only=request.user|is_vat_sidebar_only %}
+{% with pagina_actual=request.resolver_match.route vat_sidebar_only=request.user|is_vat_sidebar_only cdi_local_sidebar_only=request.user|is_cdi_local_sidebar_only %}
     <!-- INFORMACIÓN DE USUARIO -->
     <li class="nav-item user-info mb-2 mt-2">
         <div class="user-panel d-flex align-items-center p-3">
@@ -35,7 +35,7 @@
             <p>Inicio</p>
         </a>
     </li>
-    {% if not vat_sidebar_only %}
+    {% if not vat_sidebar_only and not cdi_local_sidebar_only %}
         <!-- COMUNICADOS -->
         <li class="nav-item nav-main-item {% if 'comunicados' in pagina_actual %}menu-open{% endif %}"
             style="order: 7;

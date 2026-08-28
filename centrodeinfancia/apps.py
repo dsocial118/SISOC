@@ -11,6 +11,9 @@ class CentrodeinfanciaConfig(AppConfig):
         from centrodeinfancia.access import (  # pylint: disable=import-outside-toplevel
             aplicar_scope_usuarios_cdi,
         )
+        from centrodeinfancia.sidebar_access import (  # pylint: disable=import-outside-toplevel
+            registrar_acceso_sidebar,
+        )
         from iam.services import (  # pylint: disable=import-outside-toplevel
             register_user_queryset_scope,
         )
@@ -19,3 +22,4 @@ class CentrodeinfanciaConfig(AppConfig):
             "centrodeinfancia",
             aplicar_scope_usuarios_cdi,
         )
+        registrar_acceso_sidebar()
