@@ -3,10 +3,11 @@
 ## Decisión aprobada
 
 Dispositivos tendrá un runtime Django propio dentro del monorepo. Durante la
-Etapa A, ese runtime carga únicamente los componentes de compatibilidad que
-necesita para operar la tabla legacy compartida; `core` y `users` actúan como
-proveedores transitorios de FKs, catálogo e identidad. El núcleo
-`services.dispositivos.application` continúa sin imports de esos dominios.
+Etapa A, ese runtime carga el cierre transitorio de apps legacy requerido por
+las FKs, señales y adaptadores de `monolith_compat`. No inicia el proceso web
+del monolito ni sus workers, aunque el grafo de código legacy siga siendo una
+dependencia temporal. El núcleo `services.dispositivos.application` continúa
+sin imports de esos dominios.
 
 El runtime no inicia procesos del monolito ni reutiliza su entrypoint. Web y
 migraciones se ejecutan como procesos separados. C2 no recibe tráfico público:
@@ -39,10 +40,10 @@ compose.dispositivos.yml
             └── entrypoint.py
 ```
 
-El Dockerfile de Dispositivos usa el repositorio como contexto de build para
-reutilizar los paquetes existentes, pero declara su propio comando y no invoca
-`docker/django/entrypoint.py`. La composición actual del repositorio sigue
-siendo la integración opcional completa.
+La imagen de Dispositivos reutiliza `docker/django/Dockerfile` como base para
+no duplicar dependencias, pero declara comandos, settings, URLs y entrypoint
+propios; nunca invoca `docker/django/entrypoint.py`. La composición actual del
+repositorio sigue siendo la integración opcional completa.
 
 ## Reglas de runtime
 
@@ -53,9 +54,9 @@ siendo la integración opcional completa.
   `python manage.py migrate dispositivos --noinput` con los settings del
   servicio. Repetirlo sin cambios debe terminar correctamente y sin migraciones
   pendientes.
-- Los settings del servicio instalan Django mínimo, la app de compatibilidad y
-  los proveedores temporales requeridos por sus FKs/adaptadores. No registran
-  rutas ni workers de otros verticales.
+- Los settings del servicio cargan temporalmente el cierre de apps legacy que
+  exige Django, pero sustituyen URLs, WSGI, entrypoint y proceso del monolito.
+  No registran rutas ni workers ajenos en su proceso web.
 - El Compose selectivo levanta MySQL y los procesos de Dispositivos, no el
   servicio `django`, OCR ni otros workers del Compose raíz.
 - Desarrollo local usa esa MySQL como dependencia. La guía declara que el
@@ -68,8 +69,9 @@ siendo la integración opcional completa.
 
 1. Crear el paquete `services/dispositivos/runtime` con settings, URL raíz,
    WSGI y entrypoint explícito por rol (`web` o `migrate`).
-2. Añadir Dockerfile y `compose.dispositivos.yml` sin modificar el Compose de
-   integración existente.
+2. Añadir una imagen nombrada de Dispositivos y `compose.dispositivos.yml`,
+   reutilizando el Dockerfile base sin modificar el Compose de integración
+   existente.
 3. Añadir una guía local con variables mínimas, puertos, dependencia MySQL y
    advertencia de writer único.
 
@@ -101,3 +103,11 @@ No se agregan gateway, rutas públicas, sesiones compartidas, JWS, health,
 observabilidad, path filtering, artefactos promovibles, despliegues, nuevos
 schemas, credenciales productivas, migraciones de datos ni cambios sobre
 QA/HML/PRD.
+
+## Validación de viabilidad
+
+Un registro Django con sólo `core`, `users` y Dispositivos falla los checks por
+relaciones y señales hacia `duplas`, `comedores`, `organizaciones`,
+`ciudadanos` e `intervenciones`. Por eso C2 no presenta ese subconjunto como
+runtime aislado: la independencia de proceso se demuestra ahora y la reducción
+del grafo de código queda explícitamente en C5.
