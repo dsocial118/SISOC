@@ -9,7 +9,7 @@
 
 ## Contexto funcional
 
-- el movimiento físico inicial se replanifica para separar núcleo de servicio y compatibilidad Django del monolito, sin cambio observable de CRUD.
+- contratos v1 puros en application; el ORM, CRUD y adaptadores legacy permanecen en monolith_compat, sin cambio observable de CRUD.
 
 ## Arquitectura tocada
 
@@ -22,12 +22,12 @@
 - Tipo de cambio declarado: boundary ejecutable, primer corte.
 - Área principal declarada: Dispositivos.
 - Impacto usuario declarado: se preservan rutas, permisos y alcance territorial.
-- Riesgos / rollback: el corte previo mantiene acceso legacy directo a Core; no se declara C1 cerrado hasta aislarlo. El rollback de la futura separación seguirá siendo sólo de código, sin cambios de datos.
+- Riesgos / rollback: el acceso legacy a Core queda explícitamente acotado a monolith_compat; ownership y CI por grupos aún están pendientes. Revertir este corte sólo restaura ubicación de código, sin cambios de datos.
 
 ## Design system y UI
 
 - El PR toca piezas de UI y conviene revisar consistencia visual con el patrón existente.
-- Archivos visuales relevantes: services/dispositivos/dispositivos/templates/dispositivos_confirm_delete.html, services/dispositivos/dispositivos/templates/dispositivos_detail.html, services/dispositivos/dispositivos/templates/dispositivos_form.html, services/dispositivos/dispositivos/templates/dispositivos_list.html
+- Archivos visuales relevantes: services/dispositivos/monolith_compat/app/templates/dispositivos_confirm_delete.html, services/dispositivos/monolith_compat/app/templates/dispositivos_detail.html, services/dispositivos/monolith_compat/app/templates/dispositivos_form.html, services/dispositivos/monolith_compat/app/templates/dispositivos_list.html
 
 ## Memoria operativa para agentes
 
@@ -46,14 +46,14 @@
 - `docs/registro/prs/PR-2365.md`
 - `services/__init__.py`
 - `services/dispositivos/__init__.py`
-- `services/dispositivos/dispositivos/__init__.py`
-- `services/dispositivos/dispositivos/adapters/__init__.py`
-- `services/dispositivos/dispositivos/admin.py`
-- `services/dispositivos/dispositivos/apps.py`
-- `services/dispositivos/dispositivos/boundary.py`
-- `services/dispositivos/dispositivos/dispositivos_filter_config.py`
-- `services/dispositivos/dispositivos/favorite_filters.py`
-- ... y 37 archivo(s) adicional(es) relacionados.
+- `services/dispositivos/application/__init__.py`
+- `services/dispositivos/application/contracts/__init__.py`
+- `services/dispositivos/application/contracts/v1/__init__.py`
+- `services/dispositivos/application/contracts/v1/catalog.py`
+- `services/dispositivos/application/contracts/v1/favorites.py`
+- `services/dispositivos/application/contracts/v1/identity.py`
+- `services/dispositivos/monolith_compat/__init__.py`
+- ... y 38 archivo(s) adicional(es) relacionados.
 - Documentación sugerida para ampliar contexto:
 - `docs/indice.md`
 - `docs/ia/CONTEXT_HYGIENE.md`
