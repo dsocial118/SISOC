@@ -45,6 +45,7 @@
 - `docs/contexto/features/pr-2365-feat-dispositivos-limite-ejecutable-inicial-2309.md`
 - `docs/plans/2026-08-27-issue-2309-c1-monorepo-boundary-design.md`
 - `docs/plans/2026-08-27-issue-2309-dispositivos-relocation-design.md`
+- `docs/plans/2026-08-28-issue-2309-c2-runtime-design.md`
 - `docs/registro/decisiones/2026-08-21-dispositivos-actor-boundary.md`
 - `docs/registro/decisiones/2026-08-28-dispositivos-ownership-transitorio-etapa-a.md`
 - `docs/registro/prs/PR-2365.md`
@@ -53,8 +54,7 @@
 - `services/dispositivos/application/__init__.py`
 - `services/dispositivos/application/contracts/__init__.py`
 - `services/dispositivos/application/contracts/v1/__init__.py`
-- `services/dispositivos/application/contracts/v1/catalog.py`
-- ... y 41 archivo(s) adicional(es) relacionados.
+- ... y 42 archivo(s) adicional(es) relacionados.
 - Documentación sugerida para ampliar contexto:
 - `docs/indice.md`
 - `docs/ia/CONTEXT_HYGIENE.md`
@@ -63,6 +63,7 @@
 - `docs/contexto/features/pr-2365-feat-dispositivos-limite-ejecutable-inicial-2309.md`
 - `docs/plans/2026-08-27-issue-2309-c1-monorepo-boundary-design.md`
 - `docs/plans/2026-08-27-issue-2309-dispositivos-relocation-design.md`
+- `docs/plans/2026-08-28-issue-2309-c2-runtime-design.md`
 - `docs/registro/decisiones/2026-08-21-dispositivos-actor-boundary.md`
 - `docs/registro/decisiones/2026-08-28-dispositivos-ownership-transitorio-etapa-a.md`
 - `docs/registro/prs/PR-2365.md`
