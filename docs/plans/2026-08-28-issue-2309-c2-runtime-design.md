@@ -82,15 +82,29 @@ repositorio sigue siendo la integración opcional completa.
    servicio Django del monolito.
 3. Probar dos ejecuciones consecutivas del job de migración.
 
-Implementación: el job `dispositivos_runtime` de CI ejecuta esta secuencia con
-`compose.dispositivos.yml`. Su resultado verde es la evidencia pendiente para
-dar por validado C2.2; no sustituye el cierre completo de C2.3.
+Implementación y evidencia: el job `dispositivos_runtime` de CI ejecuta esta
+secuencia con `compose.dispositivos.yml`. El run
+[`33186673178`](https://github.com/dsocial118/SISOC/actions/runs/33186673178)
+quedó verde para `e41be1a6aab2cdfd08b3313d2286129622524d6f`: construyó la
+imagen, ejecutó el rol de migración dos veces, inició web sin migraciones y
+verificó su stop/start sin iniciar el servicio `django` del Compose global.
 
 ### C2.3 — Cierre de checkpoint
 
 1. Ejecutar las pruebas C2 en CI sin path filtering todavía.
 2. Registrar los logs de build/arranque y límites transitorios.
 3. Confirmar que C3 hereda un artefacto y no una composición global.
+
+Completado: el mismo run dejó verdes `dispositivos_runtime`, contratos,
+integración Django, smoke, chequeo de migraciones, MySQL, `pytest` y
+`deploy_guard`. La evidencia operativa se registra en
+`docs/registro/cambios/2026-08-28-dispositivos-c2-runtime-verificado.md`.
+
+C3 no puede promover `sisoc-dispositivos:dev` ni reutilizar
+`compose.dispositivos.yml` como mecanismo de despliegue. Debe partir de este
+runtime para producir una imagen versionada por commit y digest, con pipeline,
+destino y rollback propios. Path filtering, secretos y despliegues continúan
+fuera de C2.
 
 ## Criterios de aceptación C2
 
