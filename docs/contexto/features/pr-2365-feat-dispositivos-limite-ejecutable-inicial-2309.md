@@ -49,12 +49,12 @@
 - `docs/plans/2026-08-27-issue-2309-c1-monorepo-boundary-design.md`
 - `docs/plans/2026-08-27-issue-2309-dispositivos-relocation-design.md`
 - `docs/plans/2026-08-28-issue-2309-c2-runtime-design.md`
+- `docs/plans/2026-08-28-issue-2309-c3-build-local-design.md`
 - `docs/registro/cambios/2026-08-28-dispositivos-c2-runtime-verificado.md`
 - `docs/registro/decisiones/2026-08-21-dispositivos-actor-boundary.md`
 - `docs/registro/decisiones/2026-08-28-dispositivos-ownership-transitorio-etapa-a.md`
 - `docs/registro/prs/PR-2365.md`
-- `services/__init__.py`
-- ... y 53 archivo(s) adicional(es) relacionados.
+- ... y 54 archivo(s) adicional(es) relacionados.
 - Documentación sugerida para ampliar contexto:
 - `docs/indice.md`
 - `docs/ia/CONTEXT_HYGIENE.md`
@@ -65,6 +65,7 @@
 - `docs/plans/2026-08-27-issue-2309-c1-monorepo-boundary-design.md`
 - `docs/plans/2026-08-27-issue-2309-dispositivos-relocation-design.md`
 - `docs/plans/2026-08-28-issue-2309-c2-runtime-design.md`
+- `docs/plans/2026-08-28-issue-2309-c3-build-local-design.md`
 - `docs/registro/cambios/2026-08-28-dispositivos-c2-runtime-verificado.md`
 - `docs/registro/decisiones/2026-08-21-dispositivos-actor-boundary.md`
 - `docs/registro/decisiones/2026-08-28-dispositivos-ownership-transitorio-etapa-a.md`
