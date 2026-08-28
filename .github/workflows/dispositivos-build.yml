@@ -110,7 +110,7 @@ jobs:
                       echo "[tessdata_best]"
                       sha256sum /usr/share/tessdata-best/spa.traineddata
                       echo "[system_packages]"
-                      dpkg-query -W -f="${Package}=${Version}\\n" | sort
+                      dpkg-query -W | sort
                       echo "[python_packages]"
                       python -m pip freeze | sort
                   ' > "$manifest_dir/runtime-inputs.txt"

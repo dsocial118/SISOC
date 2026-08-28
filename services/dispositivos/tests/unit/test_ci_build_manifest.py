@@ -39,6 +39,7 @@ class DispositivosBuildWorkflowTests(unittest.TestCase):
         self.assertIn("runtime-inputs.txt", self.workflow)
         self.assertIn("base_image_repo_digests", self.workflow)
         self.assertIn('docker pull "$base_image_ref"', self.workflow)
+        self.assertIn("dpkg-query -W | sort", self.workflow)
         self.assertNotIn("docker push", self.workflow)
         self.assertNotIn("docker login", self.workflow)
         self.assertNotIn("environment:", self.workflow)
