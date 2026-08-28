@@ -45,7 +45,9 @@ def wait_for_database() -> None:
         except Exception as exc:  # pragma: no cover - depende del driver/DB
             if attempt == attempts:
                 raise RuntimeError("Base de datos no disponible") from exc
-            logger.info("[wait] Base de datos no disponible (%s/%s).", attempt, attempts)
+            logger.info(
+                "[wait] Base de datos no disponible (%s/%s).", attempt, attempts
+            )
             time.sleep(5)
 
 
