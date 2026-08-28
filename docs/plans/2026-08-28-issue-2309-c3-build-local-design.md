@@ -47,6 +47,24 @@ ocultarla como si fuera una promoción por digest.
 - Si se requiere reproducibilidad binaria o promoción exacta, esta decisión se
   revisa y se adopta un artefacto OCI inmutable.
 
+## C3.1 — build selectivo y manifiesto de CI
+
+El primer corte implementable agrega un workflow independiente, activado sólo
+por cambios en Dispositivos, su Compose, Dockerfile, requirements o el propio
+workflow. Construye localmente y adjunta el manifiesto como artefacto de la
+ejecución; no hace login, push, despliegue ni toca Environments.
+
+El Dockerfile actual instala dependencias pero no copia el código de la
+aplicación: el Compose selectivo monta el checkout en `/sisoc`. Por eso el
+manifiesto identifica el runtime con dos piezas: SHA y hash del árbol fuente
+checkout, más el image ID local y sus inputs. Cambiar a una imagen que copie
+fuentes sería otro diseño de runtime y queda fuera de C3.1.
+
+El workflow nuevo no se agrega todavía a `deploy_guard`. Un check filtrado por
+paths no aparece en cambios ajenos; convertirlo en requisito global bloquearía
+PRs sin cambios de Dispositivos. C3.2 definirá la semántica de check requerido
+sin dejar huecos para cambios relevantes.
+
 ## Criterios de aceptación ajustados
 
 - Un cambio acotado dispara el pipeline de Dispositivos y deja un manifiesto de
