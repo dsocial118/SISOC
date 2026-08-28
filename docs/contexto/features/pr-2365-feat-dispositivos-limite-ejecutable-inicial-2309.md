@@ -34,15 +34,18 @@
 
 - Empezar por `docs/registro/prs/PR-2365.md` para contexto resumido del PR.
 - Revisar primero estos archivos del diff:
+- `.env.example`
 - `.github/workflows/tests.yml`
 - `.importlinter`
 - `AGENT_REPO_MAP.md`
+- `compose.dispositivos.yml`
 - `config/settings.py`
 - `config/urls.py`
 - `dispositivos/apps.py`
 - `dispositivos/favorite_filters.py`
 - `dispositivos/tests/test_dispositivo_form_assets.py`
 - `docs/contexto/features/pr-2365-feat-dispositivos-limite-ejecutable-inicial-2309.md`
+- `docs/operacion/dispositivos_runtime_local.md`
 - `docs/plans/2026-08-27-issue-2309-c1-monorepo-boundary-design.md`
 - `docs/plans/2026-08-27-issue-2309-dispositivos-relocation-design.md`
 - `docs/plans/2026-08-28-issue-2309-c2-runtime-design.md`
@@ -51,16 +54,14 @@
 - `docs/registro/prs/PR-2365.md`
 - `services/__init__.py`
 - `services/dispositivos/__init__.py`
-- `services/dispositivos/application/__init__.py`
-- `services/dispositivos/application/contracts/__init__.py`
-- `services/dispositivos/application/contracts/v1/__init__.py`
-- ... y 42 archivo(s) adicional(es) relacionados.
+- ... y 52 archivo(s) adicional(es) relacionados.
 - Documentación sugerida para ampliar contexto:
 - `docs/indice.md`
 - `docs/ia/CONTEXT_HYGIENE.md`
 - `docs/ia/ARCHITECTURE.md`
 - `docs/ia/TESTING.md`
 - `docs/contexto/features/pr-2365-feat-dispositivos-limite-ejecutable-inicial-2309.md`
+- `docs/operacion/dispositivos_runtime_local.md`
 - `docs/plans/2026-08-27-issue-2309-c1-monorepo-boundary-design.md`
 - `docs/plans/2026-08-27-issue-2309-dispositivos-relocation-design.md`
 - `docs/plans/2026-08-28-issue-2309-c2-runtime-design.md`
