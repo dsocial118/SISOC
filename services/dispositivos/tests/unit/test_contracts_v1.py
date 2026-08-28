@@ -1,6 +1,7 @@
 import unittest
 
 from services.dispositivos.application.contracts.v1 import (
+    ConfiguracionFavoritos,
     DispositivosActor,
     MunicipioCatalogo,
     ProvinciaCatalogo,
@@ -31,6 +32,18 @@ class IdentityContractV1Tests(unittest.TestCase):
 
         self.assertEqual(get_geography_scope_map(actor), {2: None})
 
+    def test_permissions_are_explicit_data_from_the_identity_provider(self):
+        actor = DispositivosActor(
+            actor_id=7,
+            is_authenticated=True,
+            is_superuser=False,
+            is_territorial=False,
+            permissions=frozenset({"dispositivos.view_dispositivo"}),
+        )
+
+        self.assertTrue(actor.has_permission("dispositivos.view_dispositivo"))
+        self.assertFalse(actor.has_permission("dispositivos.change_dispositivo"))
+
 
 class CatalogContractV1Tests(unittest.TestCase):
     def test_snapshot_keeps_external_ids_and_version_as_data(self):
@@ -48,3 +61,15 @@ class CatalogContractV1Tests(unittest.TestCase):
 
         self.assertEqual(snapshot.provincias[0].source_id, 2)
         self.assertEqual(snapshot.municipios[0].provincia_source_id, 2)
+
+
+class FavoritesContractV1Tests(unittest.TestCase):
+    def test_favorites_configuration_exposes_only_serializable_contract_data(self):
+        config = ConfiguracionFavoritos(
+            seccion="dispositivos",
+            tipos_campos={"provincia": "choice"},
+            operadores_permitidos={"provincia": ("exact", "in")},
+        )
+
+        self.assertEqual(config.seccion, "dispositivos")
+        self.assertEqual(config.operadores_permitidos["provincia"], ("exact", "in"))

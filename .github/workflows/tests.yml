@@ -17,6 +17,21 @@ on:
             - main
 
 jobs:
+    dispositivos_application_contracts:
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v6.0.2
+
+            - name: Set up Python
+              uses: actions/setup-python@v6.2.0
+              with:
+                  python-version: '3.11.15'
+
+            - name: Run Dispositivos application contract tests
+              run: python -m unittest discover -s services/dispositivos/tests/unit -p "test_*.py"
+
     smoke:
         runs-on: ubuntu-latest
 
@@ -129,6 +144,37 @@ jobs:
 
             - name: Run tests with coverage gate in one-off container
               run: docker compose run --build --rm --no-deps -T django pytest -n auto --cov=. --cov-report=term-missing --cov-fail-under=75
+
+    dispositivos_monolith_compat:
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v6.0.2
+
+            - name: Create .env for CI
+              run: |
+                  cat > .env <<'EOF'
+                  DJANGO_DEBUG=False
+                  DJANGO_SECRET_KEY=ci-secret-key
+                  DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1,testserver
+                  DATABASE_HOST=mysql
+                  DATABASE_PORT=3306
+                  DATABASE_USER=root
+                  DATABASE_PASSWORD=root1-password2
+                  DATABASE_NAME=sisoc-local
+                  WAIT_FOR_DB=true
+                  DOCKER_MYSQL_PORT_FORWARD=3307
+                  DOCKER_MYSQL_PORT=3306
+                  DOCKER_DJANGO_PORT_FORWARD=8000
+                  DOCKER_DJANGO_PORT=8000
+                  DOCKER_DEBUGGER_PORT_FORWARD=5678
+                  DOCKER_DEBUGGER_PORT=5678
+                  USE_SQLITE_FOR_TESTS=1
+                  EOF
+
+            - name: Run Dispositivos monolith compatibility tests
+              run: docker compose run --build --rm --no-deps -T django pytest services/dispositivos/tests/integration -q
 
     mysql_compat:
         if: github.event_name == 'pull_request'
@@ -268,9 +314,11 @@ jobs:
         if: ${{ always() && github.event_name == 'pull_request' }}
         runs-on: ubuntu-latest
         needs:
+            - dispositivos_application_contracts
             - smoke
             - migrations_check
             - pytest
+            - dispositivos_monolith_compat
             - mysql_compat
             - release_quality
         steps:
@@ -291,8 +339,10 @@ jobs:
                         "black",
                         "djlint",
                         "pylint",
+                        "dispositivos_application_contracts",
                         "smoke",
                         "pytest",
+                        "dispositivos_monolith_compat",
                         "migrations_check",
                         "mysql_compat",
                         "release_quality",
