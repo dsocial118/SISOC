@@ -206,7 +206,7 @@ jobs:
 
             - name: Verify selective runtime topology
               run: |
-                  services="$(docker compose -f compose.dispositivos.yml config --services | sort)"
+                  services="$(docker compose -f compose.dispositivos.yml --profile migrate config --services | sort)"
                   expected=$'dispositivos-migrate\ndispositivos-web\nmysql'
                   if [[ "$services" != "$expected" ]]; then
                       echo "Unexpected selective runtime services:"
