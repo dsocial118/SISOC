@@ -44,6 +44,6 @@ legacy continúa disponible como compatibilidad.
 ## Handoff a C3
 
 `compose.dispositivos.yml` sirve para desarrollo y evidencia de proceso, no
-para promoción. C3 debe producir una imagen inmutable por commit/digest y
-definir path filtering, secretos, destinos y rollback independientes antes de
-cualquier despliegue.
+para promoción. C3 debe definir path filtering, builds locales desde SHA y
+rollback independientes antes de cualquier despliegue. Por decisión explícita,
+no publicará ni promoverá imágenes por digest.

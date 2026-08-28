@@ -101,10 +101,11 @@ integración Django, smoke, chequeo de migraciones, MySQL, `pytest` y
 `docs/registro/cambios/2026-08-28-dispositivos-c2-runtime-verificado.md`.
 
 C3 no puede promover `sisoc-dispositivos:dev` ni reutilizar
-`compose.dispositivos.yml` como mecanismo de despliegue. Debe partir de este
-runtime para producir una imagen versionada por commit y digest, con pipeline,
-destino y rollback propios. Path filtering, secretos y despliegues continúan
-fuera de C2.
+`compose.dispositivos.yml` como mecanismo de despliegue. Parte de este runtime
+para construir localmente desde el SHA aprobado, registrar un manifiesto de
+inputs y volver al SHA anterior en un rollback. Por decisión posterior a C2,
+no publica ni promueve imágenes por digest; el diseño vive en
+`docs/plans/2026-08-28-issue-2309-c3-build-local-design.md`.
 
 ## Criterios de aceptación C2
 
