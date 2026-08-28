@@ -9,7 +9,7 @@
 
 ## Contexto funcional
 
-- contratos v1 puros en application; el ORM, CRUD y adaptadores legacy permanecen en monolith_compat, sin cambio observable de CRUD.
+- No informado explícitamente; inferir desde el título del PR y el diff.
 
 ## Arquitectura tocada
 
@@ -20,10 +20,10 @@
 
 ## Decisiones y supuestos detectados
 
-- Tipo de cambio declarado: boundary ejecutable, C1.3.
-- Área principal declarada: Dispositivos.
+- Tipo de cambio declarado: No informado
+- Área principal declarada: No informada
 - Impacto usuario declarado: No informado
-- Riesgos / rollback: el acceso legacy a Core y Users queda acotado a monolith_compat; revertir este corte sólo restaura ubicación y jobs, sin cambios de datos.
+- Riesgos / rollback: No informado
 
 ## Design system y UI
 
