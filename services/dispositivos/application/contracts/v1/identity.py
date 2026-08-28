@@ -1,9 +1,7 @@
-"""Contratos puros que Dispositivos necesita de identidad territorial.
+"""Contrato v1 de identidad y alcance territorial de Dispositivos.
 
-El dominio no conoce sesiones Django, ``User`` ni modelos de ``users``. Durante
-la convivencia con el monolito, esos datos se traducen en
-``adapters.monolith_session``. El futuro gateway JWS debe producir el mismo
-contrato.
+El núcleo no conoce sesiones Django, ``User`` ni modelos de ``users``. Los
+hosts convierten sus mecanismos de identidad a estos datos versionados.
 """
 
 from dataclasses import dataclass

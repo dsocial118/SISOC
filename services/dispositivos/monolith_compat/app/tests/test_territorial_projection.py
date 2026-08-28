@@ -1,12 +1,12 @@
 import pytest
 
-from services.dispositivos.dispositivos.models import (
+from services.dispositivos.monolith_compat.app.models import (
     EstadoProyeccionTerritorial,
     MunicipioTerritorialProyectado,
     ProvinciaTerritorialProyectada,
     VersionProyeccionTerritorial,
 )
-from services.dispositivos.dispositivos.territorial_projection import (
+from services.dispositivos.monolith_compat.app.territorial_projection import (
     MunicipioTerritorial,
     ProvinciaTerritorial,
     aplicar_proyeccion_territorial,

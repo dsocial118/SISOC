@@ -289,7 +289,7 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 | `rendicioncuentasfinal/` | rendicion final | `models.py`, `views.py`, urls | Bajo |
 | `rendicioncuentasmensual/` | rendición mensual, revisión Territorial/Auditoría, subsanaciones y datos expuestos en Organizaciones | `models.py`, `services.py`, `views.py`, templates, urls | Alto |
 | `duplas/` | equipos tecnicos/duplas | `models.py`, `views.py` | Bajo-Medio |
-| `services/dispositivos/` | dominio canónico de dispositivos; actor y catálogo territorial entran por contratos, con ejecutable independiente y adaptadores monolito separados | `dispositivos/boundary.py`, `dispositivos/ports.py`, `dispositivos/territorial_projection.py`, `monolith_adapters/`, `service_settings.py`, `manage.py`, tests | Medio |
+| `services/dispositivos/` | núcleo de Dispositivos y compatibilidad Django transitoria dentro del monorepo | `application/contracts/v1/`, `monolith_compat/app/`, `monolith_compat/adapters/`, tests unitarios e integración | Medio |
 | `importarexpediente/` | flujo de importacion de expedientes | `views.py`, `models.py`, urls, tests | Medio |
 | `ocr/` | OCR y procesamiento asociado | `models.py`, `views.py`, urls, tests | Medio |
 | `ver_para_ser_libre/` | modulo de negocio independiente dentro del monolito | `models.py`, `views.py`, `services/workflow.py` | Medio |
@@ -322,7 +322,7 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - Los receivers de auditoría de Centro de Infancia viven en `centrodeinfancia.signals` y llaman `audittrail.api`; Audittrail no debe importar modelos CDI.
 - Los alcances de usuarios propios de un dominio se registran mediante `iam.services.register_user_queryset_scope`; Centro de Infancia registra el suyo desde `centrodeinfancia.apps` para que `users` no importe dominios.
 - Dispositivos, VAT y Ver para Ser Libre no exponen internals a otros dominios. La composición de rutas de preview de VAT se realiza desde `VAT.global_urls`.
-- Dispositivos recibe identidad, permisos y alcance territorial mediante `DispositivosActor`; su paquete canónico es `services.dispositivos.dispositivos` y los adaptadores del monolito viven en `services.dispositivos.monolith_adapters`. El futuro gateway JWS debe emitir el mismo contrato. `services/dispositivos/manage.py` es verificable de forma aislada pero niega tráfico con 503 hasta completar ese gateway.
+- Dispositivos recibe identidad, permisos y alcance territorial mediante contratos `services.dispositivos.application.contracts.v1`; el CRUD Django legacy está en `services.dispositivos.monolith_compat.app` y sus adaptadores a Core/Users en `services.dispositivos.monolith_compat.adapters`. El futuro gateway JWS debe emitir esos contratos; C1 no instala aún un runtime ni recibe tráfico independiente.
 - Los efectos de backfill de soft delete se registran desde cada dominio en `core.soft_delete.registry`; `core.soft_delete.state_sync` no debe importar handlers de dominio.
 - Las restricciones de navegacion aportadas por dominios se registran en `core.services.sidebar_access`; el template tag global no debe importar reglas VAT.
 - El endpoint Select2 de organizaciones vive en `organizaciones.views` y `organizaciones.urls`, aunque conserva la ruta global `ajax/load-organizaciones/`.

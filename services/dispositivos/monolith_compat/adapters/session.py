@@ -1,6 +1,9 @@
 """Traduce la sesión Django del monolito al contrato de Dispositivos."""
 
-from services.dispositivos.dispositivos.boundary import DispositivosActor, TerritorialScope
+from services.dispositivos.application.contracts.v1.identity import (
+    DispositivosActor,
+    TerritorialScope,
+)
 from users.territorial_scope import get_effective_scopes, is_territorial_user
 
 

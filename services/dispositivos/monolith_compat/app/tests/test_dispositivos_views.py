@@ -4,8 +4,8 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
 
 from core.models import Localidad, Municipio, Provincia
-from services.dispositivos.dispositivos.forms import DispositivoForm
-from services.dispositivos.dispositivos.models import Dispositivo
+from services.dispositivos.monolith_compat.app.forms import DispositivoForm
+from services.dispositivos.monolith_compat.app.models import Dispositivo
 from users.models import Profile, ProfileTerritorialScope
 
 

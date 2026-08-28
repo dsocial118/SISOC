@@ -12,15 +12,16 @@ para un usuario territorial sin alcances.
 El dominio consume `DispositivosActor` y `TerritorialScope`, contratos puros
 que contienen únicamente el identificador del actor, estado de autenticación,
 privilegio de superusuario, permisos y alcances territoriales.
-`dispositivos.services` no conoce `User`, `Profile` ni
+`services.dispositivos.application` no conoce `User`, `Profile` ni
 `users.territorial_scope`.
 
-El paquete canónico vive en `services/dispositivos/dispositivos/`, conserva el
-label Django `dispositivos` y, por lo tanto, tablas, IDs y migraciones. Mientras
-el monolito continúe atendiendo las rutas, sus adaptadores viven fuera del
-paquete canónico, en `services.dispositivos.monolith_adapters`. En la extracción,
-el gateway que valide la sesión y el JWS deberá producir el mismo contrato; no
-se trasladará ese adaptador al servicio.
+El núcleo canónico vive en `services/dispositivos/application/contracts/v1/`.
+El paquete Django legacy —label `dispositivos`, tablas, IDs, migraciones,
+formularios, vistas y rutas— vive temporalmente en
+`services.dispositivos.monolith_compat.app`. Sus adaptadores a `core` y `users`
+viven en `services.dispositivos.monolith_compat.adapters`. En la extracción, el
+gateway que valide la sesión y el JWS deberá producir el mismo contrato; no se
+trasladará ese adaptador al servicio.
 
 `DispositivoForm(user=...)` sigue aceptándose como compatibilidad del monolito,
 pero internamente se traduce al mismo actor. Las vistas ya entregan el actor de
@@ -34,23 +35,17 @@ recibe DTOs puros; por eso puede ser alimentado por una fuente autorizada sin
 que el dominio consulte el ORM de `core`. El puntero evita depender de un índice
 único parcial, que no es portable a MySQL.
 
-Las FKs legacy hacia `core_provincia` y `core_municipio` se conservan por
-compatibilidad y no se escriben desde la proyección. El ejecutable independiente
-declara una proyección read-only de esas tablas para resolver las FKs sin
-importar el código de `core`. Formularios, filtros y rutas acceden al monolito
+Las FKs legacy hacia `core_provincia` y `core_municipio` se conservan sólo en
+la compatibilidad monolítica y no se escriben desde la proyección. El núcleo
+recibe snapshots de catálogo como DTOs versionados; no declara modelos espejo ni
+consulta tablas `core_*`. Formularios, filtros y rutas acceden al monolito
 mediante adaptadores explícitos; el reemplazo de esas FKs exige una migración de
 datos y una ventana de corte aprobada. Tampoco se crea una API pública Python:
 no hay consumidores de negocio externos de Dispositivos.
 
-El ejecutable `services/dispositivos/manage.py` puede iniciar y ejecutar
-chequeos aislados. Sus rutas devuelven 503 hasta que se agregue el proveedor JWS
-y los adaptadores de integración: el monolito sigue siendo el único receptor de
-tráfico y escritor durante esta etapa.
-
 ## Validación
 
-Se agrega un contrato `import-linter` que prohíbe a los módulos de dominio de
-Dispositivos importar `core` o `users` directamente. Las pruebas focalizadas
-cubren la conversión de alcances, la publicación e idempotencia de la
-proyección, y las regresiones de vista/formulario existentes cubren los
-adaptadores del monolito.
+Se agrega un contrato `import-linter` que prohíbe al núcleo de Dispositivos
+importar `core`, `users` o su capa de compatibilidad. Las pruebas unitarias de
+contratos v1 no requieren settings Django; las regresiones de vista/formulario
+continúan cubriendo la compatibilidad monolítica.

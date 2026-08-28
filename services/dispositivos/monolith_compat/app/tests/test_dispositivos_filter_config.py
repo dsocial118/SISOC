@@ -1,4 +1,4 @@
-from services.dispositivos.dispositivos.dispositivos_filter_config import (
+from services.dispositivos.monolith_compat.app.dispositivos_filter_config import (
     get_filters_ui_config,
 )
 

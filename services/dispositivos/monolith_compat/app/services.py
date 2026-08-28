@@ -1,6 +1,9 @@
 from django.db.models import Q
 
-from .boundary import DispositivosActor, get_geography_scope_map
+from ...application.contracts.v1.identity import (
+    DispositivosActor,
+    get_geography_scope_map,
+)
 from .models import Dispositivo
 
 

@@ -4,7 +4,7 @@ from django.conf import settings
 
 class DispositivosConfig(AppConfig):
     default_auto_field = "django.db.models.BigAutoField"
-    name = "services.dispositivos.dispositivos"
+    name = "services.dispositivos.monolith_compat.app"
     label = "dispositivos"
 
     def ready(self):

@@ -7,7 +7,7 @@ from core.services.favorite_filters import (
     registrar_configuracion_seccion,
 )
 
-from services.dispositivos.dispositivos.dispositivos_filter_config import (
+from services.dispositivos.monolith_compat.app.dispositivos_filter_config import (
     CHOICE_OPS,
     FIELD_MAP,
     FIELD_TYPES,
