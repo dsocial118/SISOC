@@ -49,6 +49,7 @@ from centrodeinfancia.access import (
     aplicar_scope_centros_cdi as _aplicar_scope_centros_cdi,
     es_auditor_simepi,
     es_egp_simepi,
+    get_provincias_completas_egp_ids,
     get_object_scoped_cdi_or_404,
     puede_generar_usuario_cdi,
     puede_ver_usuarios_cdi,
@@ -352,11 +353,16 @@ class CentroDeInfanciaListView(LoginRequiredMixin, ListView):
         elif es_egp_simepi(self.request.user):
             context["additional_buttons"] = [
                 {
-                    "url": reverse("centrodeinfancia_nomina_ninos_pdf"),
                     "label": "Descargar nómina de niños",
                     "class": "poncho-btn poncho-btn--descarga",
+                    "modal_target": "#nomina-ninos-provincia-modal",
                 }
             ]
+            provincia_ids = get_provincias_completas_egp_ids(self.request.user)
+            context["nomina_ninos_provincias"] = Provincia.objects.filter(
+                pk__in=provincia_ids
+            ).order_by("nombre")
+            context["mostrar_modal_nomina_ninos"] = True
         context["active_columns"] = columns_context.get("column_active_keys") or [
             field["name"] for field in CDI_LIST_FIELDS
         ]
@@ -1378,6 +1384,7 @@ class NominaCentroInfanciaEditView(
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
         kwargs["centro"] = self._get_centro()
+        kwargs["actor"] = self.request.user
         return kwargs
 
     def get_context_data(self, **kwargs):
@@ -1618,7 +1625,7 @@ class NominaCentroInfanciaCreateView(
     ):
         self.object = None
         centro = self._get_centro()
-        form = self.form_class(request.POST, centro=centro)
+        form = self.form_class(request.POST, centro=centro, actor=request.user)
         ciudadano_id = request.POST.get("ciudadano_id")
         origen_dato = request.POST.get("origen_dato") or "manual"
 

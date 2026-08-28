@@ -51,6 +51,18 @@ def get_provincia_completa_unica_egp_id(user):
     return scopes[0].provincia_id
 
 
+def get_provincias_completas_egp_ids(user):
+    """Devuelve los alcances provinciales completos de un EGP, sin duplicados."""
+    if not es_egp_simepi(user):
+        return []
+    provincia_ids = []
+    for scope in get_effective_scopes(user):
+        if not scope.is_full_province or scope.provincia_id in provincia_ids:
+            continue
+        provincia_ids.append(scope.provincia_id)
+    return provincia_ids
+
+
 def actor_puede_delegar_grupo_nombre(user, grupo_nombre):
     """Indica si el usuario puede delegar (asignar) un grupo por nombre.
 

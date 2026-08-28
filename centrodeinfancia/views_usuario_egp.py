@@ -29,7 +29,7 @@ class GenerarUsuarioEGPView(LoginRequiredMixin, UserPassesTestMixin, FormView):
         return reverse("usuarios")
 
     def form_valid(self, form):
-        provincia = form.cleaned_data["provincia"]
+        provincias = form.cleaned_data["provincia"]
         datos = DatosUsuarioDelegado(
             first_name=form.cleaned_data["first_name"],
             last_name=form.cleaned_data["last_name"],
@@ -37,7 +37,7 @@ class GenerarUsuarioEGPView(LoginRequiredMixin, UserPassesTestMixin, FormView):
         )
 
         def vincular_scope_provincial(nuevo_usuario):
-            vincular_scope_provincial_egp(nuevo_usuario, provincia)
+            vincular_scope_provincial_egp(nuevo_usuario, provincias)
 
         try:
             resultado = generar_usuario_delegado(
@@ -64,6 +64,6 @@ class GenerarUsuarioEGPView(LoginRequiredMixin, UserPassesTestMixin, FormView):
                 "usuario": usuario,
                 "password": resultado["password"],
                 "email_enviado": resultado["email_enviado"],
-                "provincia": provincia,
+                "provincias": provincias,
             },
         )
