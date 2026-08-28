@@ -70,6 +70,17 @@ jobs:
                   echo "source_sha=$source_sha" >> "$GITHUB_OUTPUT"
                   echo "source_tree_sha256=$source_tree_sha256" >> "$GITHUB_OUTPUT"
 
+            - name: Resolver la imagen base del Dockerfile
+              id: base
+              shell: bash
+              run: |
+                  set -euo pipefail
+                  base_image_ref="$(awk '$1 == "FROM" { print $2; exit }' docker/django/Dockerfile)"
+                  docker pull "$base_image_ref"
+                  echo "base_image_ref=$base_image_ref" >> "$GITHUB_OUTPUT"
+                  echo "base_image_id=$(docker image inspect "$base_image_ref" --format '{{.Id}}')" >> "$GITHUB_OUTPUT"
+                  echo "base_image_repo_digests=$(docker image inspect "$base_image_ref" --format '{{json .RepoDigests}}')" >> "$GITHUB_OUTPUT"
+
             - name: Construir imagen local sin publicar
               id: image
               shell: bash
@@ -94,10 +105,6 @@ jobs:
                           sha256sum "$file"
                       done | sha256sum | awk '{print $1}'
                   )"
-                  base_image_ref="$(awk '$1 == "FROM" { print $2; exit }' docker/django/Dockerfile)"
-                  base_image_id="$(docker image inspect "$base_image_ref" --format '{{.Id}}')"
-                  base_image_repo_digests="$(docker image inspect "$base_image_ref" --format '{{json .RepoDigests}}')"
-
                   docker run --rm --entrypoint sh "${{ steps.image.outputs.image_tag }}" -c '
                       set -eu
                       echo "[tessdata_best]"
@@ -113,9 +120,9 @@ jobs:
                       --arg source_tree_sha256 "${{ steps.source.outputs.source_tree_sha256 }}" \
                       --arg dockerfile_sha256 "$dockerfile_sha256" \
                       --arg requirements_sha256 "$requirements_sha256" \
-                      --arg base_image_ref "$base_image_ref" \
-                      --arg base_image_id "$base_image_id" \
-                      --argjson base_image_repo_digests "$base_image_repo_digests" \
+                      --arg base_image_ref "${{ steps.base.outputs.base_image_ref }}" \
+                      --arg base_image_id "${{ steps.base.outputs.base_image_id }}" \
+                      --argjson base_image_repo_digests '${{ steps.base.outputs.base_image_repo_digests }}' \
                       --arg image_id "${{ steps.image.outputs.image_id }}" \
                       --arg runner_os "$RUNNER_OS" \
                       --arg workflow_run_id "$GITHUB_RUN_ID" \

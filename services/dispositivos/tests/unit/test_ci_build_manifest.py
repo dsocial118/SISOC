@@ -38,6 +38,7 @@ class DispositivosBuildWorkflowTests(unittest.TestCase):
         self.assertIn("actions/upload-artifact@v7.0.1", self.workflow)
         self.assertIn("runtime-inputs.txt", self.workflow)
         self.assertIn("base_image_repo_digests", self.workflow)
+        self.assertIn('docker pull "$base_image_ref"', self.workflow)
         self.assertNotIn("docker push", self.workflow)
         self.assertNotIn("docker login", self.workflow)
         self.assertNotIn("environment:", self.workflow)
