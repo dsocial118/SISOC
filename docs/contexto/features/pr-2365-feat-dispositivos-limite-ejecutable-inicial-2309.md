@@ -16,6 +16,7 @@
 - Hay cambios en vistas web y puede existir impacto en permisos o renderizado.
 - Se modifican templates, con posible impacto visual o de composición UI.
 - Existen cambios de persistencia o migraciones que requieren revisión de datos.
+- El alcance incluye automatización o tooling de CI/CD.
 
 ## Decisiones y supuestos detectados
 
@@ -33,16 +34,19 @@
 
 - Empezar por `docs/registro/prs/PR-2365.md` para contexto resumido del PR.
 - Revisar primero estos archivos del diff:
+- `.github/workflows/tests.yml`
 - `.importlinter`
 - `AGENT_REPO_MAP.md`
 - `config/settings.py`
 - `config/urls.py`
 - `dispositivos/apps.py`
 - `dispositivos/favorite_filters.py`
+- `dispositivos/tests/test_dispositivo_form_assets.py`
 - `docs/contexto/features/pr-2365-feat-dispositivos-limite-ejecutable-inicial-2309.md`
 - `docs/plans/2026-08-27-issue-2309-c1-monorepo-boundary-design.md`
 - `docs/plans/2026-08-27-issue-2309-dispositivos-relocation-design.md`
 - `docs/registro/decisiones/2026-08-21-dispositivos-actor-boundary.md`
+- `docs/registro/decisiones/2026-08-28-dispositivos-ownership-transitorio-etapa-a.md`
 - `docs/registro/prs/PR-2365.md`
 - `services/__init__.py`
 - `services/dispositivos/__init__.py`
@@ -50,10 +54,7 @@
 - `services/dispositivos/application/contracts/__init__.py`
 - `services/dispositivos/application/contracts/v1/__init__.py`
 - `services/dispositivos/application/contracts/v1/catalog.py`
-- `services/dispositivos/application/contracts/v1/favorites.py`
-- `services/dispositivos/application/contracts/v1/identity.py`
-- `services/dispositivos/monolith_compat/__init__.py`
-- ... y 38 archivo(s) adicional(es) relacionados.
+- ... y 41 archivo(s) adicional(es) relacionados.
 - Documentación sugerida para ampliar contexto:
 - `docs/indice.md`
 - `docs/ia/CONTEXT_HYGIENE.md`
@@ -63,6 +64,7 @@
 - `docs/plans/2026-08-27-issue-2309-c1-monorepo-boundary-design.md`
 - `docs/plans/2026-08-27-issue-2309-dispositivos-relocation-design.md`
 - `docs/registro/decisiones/2026-08-21-dispositivos-actor-boundary.md`
+- `docs/registro/decisiones/2026-08-28-dispositivos-ownership-transitorio-etapa-a.md`
 - `docs/registro/prs/PR-2365.md`
 
 ## Trazabilidad
