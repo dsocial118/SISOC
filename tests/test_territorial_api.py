@@ -123,9 +123,7 @@ def test_territorial_comedores_items_exponen_territorial_user():
 
     assert response.status_code == 200
     row = next(r for r in response.data["results"] if r["id"] == comedor.id)
-    item = next(
-        it for it in row["relevamientos"]["items"] if it["id"] == rel.id
-    )
+    item = next(it for it in row["relevamientos"]["items"] if it["id"] == rel.id)
     assert item["territorial_user"] == user.id
 
 
