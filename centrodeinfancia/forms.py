@@ -1545,7 +1545,7 @@ class NominaCentroInfanciaDestinatariosForm(NominaCentroInfanciaBaseForm):
         paises = [empty] + [
             (p.nombre, p.nombre) for p in NominaPais.objects.order_by("nombre")
         ]
-        nacionalidades = self._opciones_nacionalidad()
+        nacionalidades = self.opciones_nacionalidad()
         for fname in (
             "pais_nacimiento",
             "responsable_legal_1_pais_nacimiento",
@@ -1560,7 +1560,7 @@ class NominaCentroInfanciaDestinatariosForm(NominaCentroInfanciaBaseForm):
             self.fields[fname].choices = nacionalidades
 
     @staticmethod
-    def _opciones_nacionalidad():
+    def opciones_nacionalidad():
         """Acepta el catálogo central usado por RENAPER y valores históricos CDI."""
         opciones = [("", "---------")]
         valores = set()
@@ -1610,8 +1610,8 @@ class NominaCentroInfanciaDestinatariosForm(NominaCentroInfanciaBaseForm):
                 {"min": str(minimo), "max": str(maximo), "step": "0.1"}
             )
 
-    def __init__(self, *args, centro=None, actor=None, **kwargs):
-        super().__init__(*args, actor=actor, **kwargs)
+    def __init__(self, *args, centro=None, **kwargs):
+        super().__init__(*args, **kwargs)
         self._ocultar_campos()
         self._configure_pais_nacionalidad_fields()
         self._aplicar_rangos_antropometria()
@@ -2091,7 +2091,7 @@ class TrabajadorCDIForm(forms.ModelForm):
         )
         self.fields["nacionalidad_trabajador"] = forms.ChoiceField(
             label=self.fields["nacionalidad_trabajador"].label,
-            choices=NominaCentroInfanciaDestinatariosForm._opciones_nacionalidad(),
+            choices=NominaCentroInfanciaDestinatariosForm.opciones_nacionalidad(),
         )
 
     def _configurar_departamento_contacto(self):
