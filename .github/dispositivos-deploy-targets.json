@@ -1,0 +1,38 @@
+{
+  "qa": {
+    "branch": "development",
+    "environment": "qa",
+    "runner_labels": ["self-hosted", "sisoc-qa"],
+    "app_root_variable": "DISPOSITIVOS_APP_ROOT",
+    "env_file_variable": "DISPOSITIVOS_ENV_FILE",
+    "rollback_state_variable": "DISPOSITIVOS_ROLLBACK_STATE",
+    "compose_file": "compose.dispositivos.yml",
+    "compose_project": "sisoc-dispositivos-qa",
+    "web_service": "dispositivos-web",
+    "migrate_service": "dispositivos-migrate"
+  },
+  "homologacion": {
+    "branch": "homologacion",
+    "environment": "homologacion",
+    "runner_labels": ["self-hosted", "sisoc-homologacion"],
+    "app_root_variable": "DISPOSITIVOS_APP_ROOT",
+    "env_file_variable": "DISPOSITIVOS_ENV_FILE",
+    "rollback_state_variable": "DISPOSITIVOS_ROLLBACK_STATE",
+    "compose_file": "compose.dispositivos.yml",
+    "compose_project": "sisoc-dispositivos-homologacion",
+    "web_service": "dispositivos-web",
+    "migrate_service": "dispositivos-migrate"
+  },
+  "production": {
+    "branch": "main",
+    "environment": "production",
+    "runner_labels": ["self-hosted", "sisoc-produccion"],
+    "app_root_variable": "DISPOSITIVOS_APP_ROOT",
+    "env_file_variable": "DISPOSITIVOS_ENV_FILE",
+    "rollback_state_variable": "DISPOSITIVOS_ROLLBACK_STATE",
+    "compose_file": "compose.dispositivos.yml",
+    "compose_project": "sisoc-dispositivos-production",
+    "web_service": "dispositivos-web",
+    "migrate_service": "dispositivos-migrate"
+  }
+}

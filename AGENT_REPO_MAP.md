@@ -602,6 +602,11 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
   clasificación testeable de paths; construye desde el SHA fuente y publica
   manifiesto sólo ante cambios relevantes. No publica imágenes ni despliega;
   `dispositivos_build_gate` es el check que exige `deploy_guard`.
+- `.github/workflows/dispositivos-deploy-preflight.yml` y
+  `.github/dispositivos-deploy-targets.json`: contrato declarativo de destinos
+  de Dispositivos para C3.3. Valida checkout/Compose/roles y referencias de
+  entorno sin usar runners self-hosted, Docker o Environments; no demuestra que
+  esa infraestructura exista hasta el preflight manual de C3.4.
 - `.github/scripts/sync_main_downstream.js`: crea y actualiza ramas técnicas
   `automation/sync-main-to-<destino>` para que los PRs descendentes cumplan
   checks estrictos sin mezclar QA/HML en `main`.

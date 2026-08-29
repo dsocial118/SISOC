@@ -34,6 +34,16 @@ test("clasifica los inputs del build como relevantes", () => {
 test("protege los archivos que definen el pipeline", () => {
   assert.equal(isRelevantPath(".github/workflows/dispositivos-build.yml"), true);
   assert.equal(isRelevantPath(".github/scripts/dispositivos_build_gate.js"), true);
+  assert.equal(
+    isRelevantPath(".github/workflows/dispositivos-deploy-preflight.yml"),
+    true,
+  );
+  assert.equal(isRelevantPath(".github/workflows/tests.yml"), true);
+  assert.equal(
+    isRelevantPath(".github/scripts/dispositivos_build_gate.test.js"),
+    true,
+  );
+  assert.equal(isRelevantPath(".github/dispositivos-deploy-targets.json"), true);
 });
 
 test("deja como N/A los cambios ajenos al vertical", () => {

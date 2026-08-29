@@ -445,6 +445,7 @@ jobs:
                         "dispositivos_monolith_compat",
                         "dispositivos_runtime",
                         "dispositivos_build_gate",
+                        "dispositivos_deploy_preflight",
                         "migrations_check",
                         "mysql_compat",
                         "release_quality",
