@@ -2,6 +2,7 @@ from datetime import date
 
 import pytest
 from django import forms
+from django.contrib.auth.models import Group, User
 from django.conf import settings
 
 from ciudadanos.models import Ciudadano
@@ -15,6 +16,7 @@ from centrodeinfancia.models import (
 )
 from centrodeinfancia.forms import NominaCentroInfanciaDestinatariosForm
 from core.models import Localidad, Municipio, Provincia
+from core.constants import UserGroups
 
 
 @pytest.fixture
@@ -202,10 +204,41 @@ class TestNominaCentroInfanciaDestinatariosFormValidation:
             form.fields["departamento"].queryset.values_list("provincia_id", flat=True)
         ) == {provincia.pk}
 
+    def test_departamento_bonaerense_id_16_es_valido_en_su_jurisdiccion(self, centro):
+        provincia, _, _, _ = _relacionados(centro)
+        departamento = DepartamentoIpi.objects.create(
+            pk=16,
+            codigo_departamento="06001",
+            provincia=provincia,
+            nombre="Adolfo Alsina",
+        )
+
+        form = NominaCentroInfanciaDestinatariosForm(
+            datos_validos(centro, departamento=str(departamento.pk)), centro=centro
+        )
+
+        assert form.is_valid(), form.errors
+
     def test_form_valido_con_datos_minimos(self, centro):
         form = NominaCentroInfanciaDestinatariosForm(
             datos_validos(centro), centro=centro
         )
+        assert form.is_valid(), form.errors
+
+    def test_mayor_de_48_meses_queda_pendiente_salvo_admin_simepi(self, centro):
+        actor = User.objects.create_user(username="operador-nomina")
+        data = datos_validos(centro, fecha_nacimiento="2020-01-01")
+        form = NominaCentroInfanciaDestinatariosForm(data, centro=centro, actor=actor)
+
+        assert not form.is_valid()
+        assert "estado" in form.errors
+
+        admin_group, _ = Group.objects.get_or_create(
+            name=UserGroups.SIMEPI_ADMINISTRADOR
+        )
+        actor.groups.add(admin_group)
+        form = NominaCentroInfanciaDestinatariosForm(data, centro=centro, actor=actor)
+
         assert form.is_valid(), form.errors
 
     def test_form_invalido_sin_apellido(self, centro):

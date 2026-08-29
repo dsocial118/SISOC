@@ -10,6 +10,7 @@ corre Python 3.14 con Django 4.2 y la instrumentación de templates del test
 client falla ahí (ver test_comision_detail_template_compartido.py).
 """
 
+import codecs
 import csv
 from datetime import time, timedelta
 from io import BytesIO
@@ -40,6 +41,7 @@ from VAT.services.reportes_inscripciones_asistencia import (
     ReporteFiltros,
     build_detalle_queryset,
     export_detalle_to_csv,
+    export_rows_to_csv,
 )
 from VAT.services.tipo_alumno_service import (
     TIPO_ALUMNO_SIN_PLAN,
@@ -47,6 +49,17 @@ from VAT.services.tipo_alumno_service import (
     anotar_tipo_alumno,
 )
 from VAT.views.curso import AsistenciaSesionCursoView, ComisionCursoDetailView
+
+
+def test_reporte_agrupado_csv_declara_utf8_e_incluye_bom_para_excel():
+    response = export_rows_to_csv(
+        [{"grupo": "Comisión Ñ · Córdoba", "inscripciones_total": 1}],
+        group_by="comision",
+    )
+
+    assert response["Content-Type"] == "text/csv; charset=utf-8"
+    assert response.content.startswith(codecs.BOM_UTF8)
+    assert "Comisión Ñ · Córdoba" in response.content.decode("utf-8-sig")
 
 
 def _crear_ciudadano(documento, apellido="Alumno"):

@@ -9,7 +9,7 @@ from django.views.generic import View
 
 from centrodeinfancia.access import (
     aplicar_scope_centros_cdi,
-    get_provincia_completa_unica_egp_id,
+    get_provincias_completas_egp_ids,
 )
 from centrodeinfancia.models import CentroDeInfancia
 from centrodeinfancia.services_nomina_ninos_pdf import (
@@ -120,12 +120,25 @@ class NominaNinosPDFView(LoginRequiredMixin, View):
                     content_type="text/plain; charset=utf-8",
                 )
         else:
-            provincia_id = get_provincia_completa_unica_egp_id(request.user)
+            provincia_id = request.GET.get("provincia", "")
+            provincia_ids_permitidos = get_provincias_completas_egp_ids(request.user)
+            if not provincia_ids_permitidos:
+                raise PermissionDenied(
+                    "La descarga requiere un alcance provincial completo."
+                )
+            if not provincia_id.isdecimal():
+                return HttpResponse(
+                    "Seleccione una provincia válida.",
+                    status=400,
+                    content_type="text/plain; charset=utf-8",
+                )
+            if int(provincia_id) not in provincia_ids_permitidos:
+                raise PermissionDenied("No tiene acceso a la provincia seleccionada.")
             provincia = Provincia.objects.filter(pk=provincia_id).first()
 
         if not provincia_id:
             raise PermissionDenied(
-                "La descarga requiere un único alcance provincial completo."
+                "La descarga requiere un alcance provincial completo."
             )
 
         if provincia is None:

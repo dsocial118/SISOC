@@ -45,6 +45,7 @@ from celiaquia.services.cupo_service import (
     CupoService,
     CupoNoConfigurado,
 )
+from core.services.csv_export import encode_csv_text
 
 logger = logging.getLogger("django")
 
@@ -586,7 +587,7 @@ class CruceService:
 
     @staticmethod
     def _generar_prd_csv(expediente: Expediente, resumen: dict) -> bytes:
-        buffer = BytesIO()
+        buffer = io.StringIO(newline="")
         writer = csv.writer(buffer)
         writer.writerow(["PRD - Resultado de Cruce por CUIT/DNI"])
 
@@ -624,7 +625,7 @@ class CruceService:
         for fila in resumen.get("detalle_fuera_cupo", []):
             writer.writerow([fila])
 
-        return buffer.getvalue()
+        return encode_csv_text(buffer.getvalue())
 
     @staticmethod
     @transaction.atomic

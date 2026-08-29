@@ -546,6 +546,15 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - `tests/test_comedor_form_unit.py` y `tests/test_nomina_views_unit.py`
 - documentación canónica: `docs/implementaciones/comedores_nomina_ciudadanos.md`
 
+### Si necesitas cambiar exportaciones CSV
+
+- Política UTF-8/BOM y helpers HTTP: `core/services/csv_export.py`.
+- Streaming reutilizable: `core/mixins.py:CSVExportMixin`.
+- Admin import/export: `core/admin_import_export.py`.
+- Guía y contrato: `docs/implementaciones/exportar_listados.md`.
+- Los productores CSV nuevos deben reutilizar la política central; el guard
+  vive en `tests/test_csv_export_architecture.py`.
+
 ### Si necesitas cambiar OCR / procesamiento documental
 
 - `ocr/`

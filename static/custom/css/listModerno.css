@@ -344,6 +344,15 @@
   font-size: 10px;
 }
 
+/* Celiaquía: los legajos subsanados usaban el mismo verde que el estado
+   "Cruce finalizado" del expediente, que se muestra en la misma celda del
+   listado. El violeta los separa sin invadir el amarillo de "a subsanar". */
+.badge-subsanado {
+  background-color: #6f42c1;
+  color: #fff;
+  border: 1px solid #59359a;
+}
+
 /* Etapas de rendición: paleta pastel independiente del estado semántico. */
 .etapa-badge {
     border: 1px solid transparent;

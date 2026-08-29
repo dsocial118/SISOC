@@ -2,6 +2,7 @@
 Tests for CSV export functionality
 """
 
+import codecs
 import csv
 from datetime import datetime, date
 from io import StringIO
@@ -123,7 +124,7 @@ class TestCSVExportMixin:
         response = view.export_csv(test_data)
 
         # Read response content
-        content = b"".join(response.streaming_content).decode("utf-8")
+        content = b"".join(response.streaming_content).decode("utf-8-sig")
 
         # Check that semicolons are used
         assert ";" in content
@@ -137,6 +138,33 @@ class TestCSVExportMixin:
         assert rows[0]["ID"] == "1"
         assert rows[0]["Name"] == "Test 1"
         assert rows[0]["Date"] == "2025-01-15 00:00:00"
+
+    def test_csv_declares_utf8_and_includes_excel_bom(self):
+        factory = RequestFactory()
+        request = factory.get("/export/")
+        request.user = User.objects.create_superuser(
+            username="utf8-export-admin",
+            password="test123",
+            email="utf8-export@example.test",
+        )
+        view = SimpleExportView()
+        view.request = request
+
+        response = view.export_csv(
+            [
+                {
+                    "id": 1,
+                    "name": "José Muñoz · Córdoba · Ñandú · acción",
+                    "created_at": date(2025, 1, 15),
+                }
+            ]
+        )
+        content = b"".join(response.streaming_content)
+
+        assert response["Content-Type"] == "text/csv; charset=utf-8"
+        assert content.startswith(codecs.BOM_UTF8)
+        decoded = content.decode("utf-8-sig")
+        assert "José Muñoz · Córdoba · Ñandú · acción" in decoded
 
     def test_permission_check(self):
         """Test that export requires proper permissions"""

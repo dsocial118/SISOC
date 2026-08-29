@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, timedelta
 
 import pytest
 
@@ -15,6 +15,10 @@ from centrodeinfancia.models import (
 )
 from core.models import Provincia, Sexo
 from users.models import Profile
+
+
+def _fecha_menor_48_meses():
+    return date.today() - timedelta(days=365 * 3)
 
 
 @pytest.fixture
@@ -35,7 +39,7 @@ def ciudadano():
     return Ciudadano.objects.create(
         apellido="Lopez",
         nombre="Ana",
-        fecha_nacimiento=date(2012, 5, 10),
+        fecha_nacimiento=_fecha_menor_48_meses(),
         documento=33333333,
     )
 
@@ -152,7 +156,7 @@ class TestNominaCentroInfanciaEditView:
             dni=nomina.dni,
             apellido="Lopez-Updated",
             nombre="Ana Maria",
-            fecha_nacimiento="2012-05-10",
+            fecha_nacimiento=nomina.fecha_nacimiento.isoformat(),
             sexo="Femenino",
         )
 

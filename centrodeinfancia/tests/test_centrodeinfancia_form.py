@@ -65,6 +65,7 @@ def datos_validos(ubicacion, servicio, **overrides):
         "calle": "San Martín",
         "numero": "1234",
         "meses_funcionamiento": ["enero", "febrero"],
+        "dias_funcionamiento": ["lunes", "martes"],
         "tipo_jornada": "simple_single_shift",
         "oferta_servicios": [str(servicio.pk)],
         "modalidad_gestion": "gobierno_municipal",
@@ -451,6 +452,16 @@ def test_acepta_anio_inicio_valido(user, ubicacion, servicio):
 
     assert form.is_valid(), form.errors
     assert form.cleaned_data["fecha_inicio"] == date(1995, 1, 1)
+
+
+@pytest.mark.django_db
+def test_acepta_anio_inicio_minimo_historico(user, ubicacion, servicio):
+    form = construir_form(
+        datos_validos(ubicacion, servicio, fecha_inicio="1900"), user=user
+    )
+
+    assert form.is_valid(), form.errors
+    assert form.cleaned_data["fecha_inicio"] == date(1900, 1, 1)
 
 
 @pytest.mark.django_db
