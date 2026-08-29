@@ -11,18 +11,26 @@ class DispositivosBuildWorkflowTests(unittest.TestCase):
             if (parent / ".github/workflows/dispositivos-build.yml").is_file()
         )
         cls.workflow = cls.workflow_path.read_text(encoding="utf-8")
+        cls.classifier = (
+            cls.workflow_path.parent.parent
+            / "scripts/dispositivos_build_gate.js"
+        ).read_text(encoding="utf-8")
 
-    def test_only_runs_for_dispositivos_runtime_build_inputs(self):
+    def test_classifies_dispositivos_runtime_build_inputs_before_building(self):
         for path in (
-            '"services/dispositivos/**"',
+            '"services/dispositivos/"',
             '"compose.dispositivos.yml"',
             '"config/settings.py"',
             '"docker/django/Dockerfile"',
             '"docker/django/entrypoint.py"',
             '"requirements.txt"',
-            '"requirements/**"',
+            '"requirements/"',
         ):
-            self.assertIn(path, self.workflow)
+            self.assertIn(path, self.classifier)
+
+        self.assertIn("classify_changes:", self.workflow)
+        self.assertIn("needs: classify_changes", self.workflow)
+        self.assertIn("dispositivos_build_gate:", self.workflow)
 
     def test_builds_the_exact_source_checkout_and_records_its_identity(self):
         self.assertIn(
