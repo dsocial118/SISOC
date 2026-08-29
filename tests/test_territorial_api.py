@@ -110,6 +110,24 @@ def test_territorial_comedores_items_lista_todos_los_relevamientos():
 
 
 @pytest.mark.django_db
+def test_territorial_comedores_items_exponen_territorial_user():
+    prov = Provincia.objects.create(nombre="Prov Asignacion")
+    comedor = Comedor.objects.create(nombre="Comedor Asig", provincia=prov)
+    user = _make_territorial("terr_asig", [prov])
+    rel = Relevamiento.objects.create(
+        comedor=comedor, estado="Visita pendiente", territorial_user=user
+    )
+
+    client = _auth_client(user)
+    response = client.get("/api/territorial/comedores/")
+
+    assert response.status_code == 200
+    row = next(r for r in response.data["results"] if r["id"] == comedor.id)
+    item = next(it for it in row["relevamientos"]["items"] if it["id"] == rel.id)
+    assert item["territorial_user"] == user.id
+
+
+@pytest.mark.django_db
 def test_territorial_comedores_expone_seguimientos_items():
     from relevamientos.models import PrimerSeguimiento
 

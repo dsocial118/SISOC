@@ -1,6 +1,7 @@
 # pylint: disable=too-many-lines
 from datetime import datetime
 
+from django.conf import settings
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models, transaction
 from django.forms import ValidationError
@@ -1031,6 +1032,17 @@ class Relevamiento(SoftDeleteModelMixin, models.Model):
     fecha_creacion = models.DateTimeField(auto_now_add=True, null=True, blank=True)
     territorial_nombre = models.CharField(max_length=255, blank=True, null=True)
     territorial_uid = models.CharField(max_length=255, blank=True, null=True)
+    territorial_user = models.ForeignKey(
+        to=settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="relevamientos_asignados",
+        help_text=(
+            "Territorial (usuario SISOC) asignado al relevamiento. Único y "
+            "reasignable; reemplaza la asignación por uid de AppSheet."
+        ),
+    )
     funcionamiento = models.OneToOneField(
         to=FuncionamientoPrestacion, on_delete=models.PROTECT, blank=True, null=True
     )
