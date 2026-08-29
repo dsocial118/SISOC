@@ -54,7 +54,7 @@
 - `docs/contexto/features/pr-2365-feat-dispositivos-limite-ejecutable-inicial-2309.md`
 - `docs/operacion/dispositivos_runtime_local.md`
 - `docs/plans/2026-08-27-issue-2309-c1-monorepo-boundary-design.md`
-- ... y 66 archivo(s) adicional(es) relacionados.
+- ... y 67 archivo(s) adicional(es) relacionados.
 - Documentación sugerida para ampliar contexto:
 - `docs/indice.md`
 - `docs/ia/CONTEXT_HYGIENE.md`
@@ -71,6 +71,7 @@
 - `docs/registro/cambios/2026-08-28-dispositivos-c2-runtime-verificado.md`
 - `docs/registro/cambios/2026-08-29-dispositivos-c3-2-gate-requerido.md`
 - `docs/registro/cambios/2026-08-29-dispositivos-c3-3-preflight-declarativo.md`
+- `docs/registro/cambios/2026-08-29-dispositivos-c3-4-qa-provisioning-preflight.md`
 - `docs/registro/decisiones/2026-08-21-dispositivos-actor-boundary.md`
 - `docs/registro/decisiones/2026-08-28-dispositivos-ownership-transitorio-etapa-a.md`
 - `docs/registro/prs/PR-2365.md`
