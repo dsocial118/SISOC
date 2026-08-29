@@ -7,18 +7,21 @@ const RELEVANT_PREFIXES = [
 
 const RELEVANT_PATHS = new Set([
   "compose.dispositivos.yml",
+  "compose.dispositivos.deploy.yml",
   "config/settings.py",
   "docker/django/Dockerfile",
   "docker/django/entrypoint.py",
   "requirements.txt",
   ".github/workflows/dispositivos-build.yml",
   ".github/workflows/dispositivos-deploy-preflight.yml",
+  ".github/workflows/dispositivos-deploy.yml",
   ".github/workflows/tests.yml",
   ".github/scripts/dispositivos_build_gate.js",
   ".github/scripts/dispositivos_build_gate.test.js",
   ".github/scripts/dispositivos_deploy_preflight.js",
   ".github/scripts/dispositivos_deploy_preflight.test.js",
   ".github/dispositivos-deploy-targets.json",
+  "scripts/operacion/deploy_dispositivos.sh",
 ]);
 
 function normalizePath(filePath) {

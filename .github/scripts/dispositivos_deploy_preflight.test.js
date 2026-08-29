@@ -65,3 +65,30 @@ test("el workflow sólo ejecuta validación declarativa y deploy_guard la exige"
   assert.doesNotMatch(workflow, /self-hosted|environment:|docker compose/i);
   assert.match(testsWorkflow, /"dispositivos_deploy_preflight",/);
 });
+
+test("el deploy aislado no reutiliza el Compose local ni se dispara por push", () => {
+  const deployCompose = fs.readFileSync(
+    path.join(__dirname, "..", "..", "compose.dispositivos.deploy.yml"),
+    "utf8",
+  );
+  const deployWorkflow = fs.readFileSync(
+    path.join(__dirname, "..", "workflows", "dispositivos-deploy.yml"),
+    "utf8",
+  );
+  const deployScript = fs.readFileSync(
+    path.join(__dirname, "..", "..", "scripts", "operacion", "deploy_dispositivos.sh"),
+    "utf8",
+  );
+
+  assert.match(deployCompose, /dispositivos-web:/);
+  assert.match(deployCompose, /dispositivos-migrate:/);
+  assert.match(deployCompose, /127\.0\.0\.1:\$\{DISPOSITIVOS_WEB_PORT_FORWARD:-8002\}:8000/);
+  assert.doesNotMatch(deployCompose, /mysql:|local-dump|\.:\/sisoc\/|volumes:/i);
+  assert.match(deployWorkflow, /^on:\s*\n\s+workflow_dispatch:/m);
+  assert.doesNotMatch(deployWorkflow, /^\s+(push|pull_request):/m);
+  assert.doesNotMatch(deployWorkflow, /deploy_refresh\.sh/);
+  assert.match(deployScript, /fetch origin --prune/);
+  assert.match(deployScript, /docker compose/);
+  assert.match(deployScript, /chmod 600 "\$ROLLBACK_STATE"/);
+  assert.doesNotMatch(deployScript, /deploy_refresh\.sh/);
+});

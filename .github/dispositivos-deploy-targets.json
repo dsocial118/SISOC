@@ -6,7 +6,7 @@
     "app_root_variable": "DISPOSITIVOS_APP_ROOT",
     "env_file_variable": "DISPOSITIVOS_ENV_FILE",
     "rollback_state_variable": "DISPOSITIVOS_ROLLBACK_STATE",
-    "compose_file": "compose.dispositivos.yml",
+    "compose_file": "compose.dispositivos.deploy.yml",
     "compose_project": "sisoc-dispositivos-qa",
     "web_service": "dispositivos-web",
     "migrate_service": "dispositivos-migrate"
@@ -18,7 +18,7 @@
     "app_root_variable": "DISPOSITIVOS_APP_ROOT",
     "env_file_variable": "DISPOSITIVOS_ENV_FILE",
     "rollback_state_variable": "DISPOSITIVOS_ROLLBACK_STATE",
-    "compose_file": "compose.dispositivos.yml",
+    "compose_file": "compose.dispositivos.deploy.yml",
     "compose_project": "sisoc-dispositivos-homologacion",
     "web_service": "dispositivos-web",
     "migrate_service": "dispositivos-migrate"
@@ -30,7 +30,7 @@
     "app_root_variable": "DISPOSITIVOS_APP_ROOT",
     "env_file_variable": "DISPOSITIVOS_ENV_FILE",
     "rollback_state_variable": "DISPOSITIVOS_ROLLBACK_STATE",
-    "compose_file": "compose.dispositivos.yml",
+    "compose_file": "compose.dispositivos.deploy.yml",
     "compose_project": "sisoc-dispositivos-production",
     "web_service": "dispositivos-web",
     "migrate_service": "dispositivos-migrate"

@@ -21,6 +21,7 @@ test("clasifica cambios del vertical y sus contratos como relevantes", () => {
 test("clasifica los inputs del build como relevantes", () => {
   for (const filePath of [
     "compose.dispositivos.yml",
+    "compose.dispositivos.deploy.yml",
     "config/settings.py",
     "docker/django/Dockerfile",
     "docker/django/entrypoint.py",
@@ -38,6 +39,8 @@ test("protege los archivos que definen el pipeline", () => {
     isRelevantPath(".github/workflows/dispositivos-deploy-preflight.yml"),
     true,
   );
+  assert.equal(isRelevantPath(".github/workflows/dispositivos-deploy.yml"), true);
+  assert.equal(isRelevantPath("scripts/operacion/deploy_dispositivos.sh"), true);
   assert.equal(isRelevantPath(".github/workflows/tests.yml"), true);
   assert.equal(
     isRelevantPath(".github/scripts/dispositivos_build_gate.test.js"),

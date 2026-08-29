@@ -1,0 +1,27 @@
+services:
+  dispositivos-web:
+    image: sisoc-dispositivos:${DISPOSITIVOS_SOURCE_SHA:?DISPOSITIVOS_SOURCE_SHA es obligatorio}
+    build:
+      context: .
+      dockerfile: ./docker/django/Dockerfile
+    command: ["python", "-m", "services.dispositivos.runtime.entrypoint", "web"]
+    environment:
+      DJANGO_SETTINGS_MODULE: services.dispositivos.runtime.settings
+      DISPOSITIVOS_WEB_PORT: "8000"
+    env_file:
+      - ${DISPOSITIVOS_ENV_FILE:?DISPOSITIVOS_ENV_FILE es obligatorio}
+    ports:
+      - "127.0.0.1:${DISPOSITIVOS_WEB_PORT_FORWARD:-8002}:8000"
+    restart: unless-stopped
+
+  dispositivos-migrate:
+    image: sisoc-dispositivos:${DISPOSITIVOS_SOURCE_SHA:?DISPOSITIVOS_SOURCE_SHA es obligatorio}
+    build:
+      context: .
+      dockerfile: ./docker/django/Dockerfile
+    command: ["python", "-m", "services.dispositivos.runtime.entrypoint", "migrate"]
+    env_file:
+      - ${DISPOSITIVOS_ENV_FILE:?DISPOSITIVOS_ENV_FILE es obligatorio}
+    profiles:
+      - migrate
+    restart: "no"

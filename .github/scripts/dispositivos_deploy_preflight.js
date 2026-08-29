@@ -93,8 +93,10 @@ function validateTarget(targetName, target, errors) {
     errors.push(`${targetName} debe usar variables separadas para root, entorno y rollback.`);
   }
 
-  if (target.compose_file !== "compose.dispositivos.yml") {
-    errors.push(`${targetName}.compose_file debe usar compose.dispositivos.yml.`);
+  if (target.compose_file !== "compose.dispositivos.deploy.yml") {
+    errors.push(
+      `${targetName}.compose_file debe usar compose.dispositivos.deploy.yml.`,
+    );
   }
   if (
     typeof target.compose_project !== "string"
