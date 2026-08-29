@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, timedelta
 
 import pytest
 from django.contrib.auth.models import Permission, User
@@ -10,6 +10,10 @@ from centrodeinfancia.models import CentroDeInfancia, NominaCentroInfancia
 from centrodeinfancia.tests.test_destinatario_form import datos_validos
 from core.models import Provincia
 from users.models import Profile
+
+
+def _fecha_menor_48_meses():
+    return date.today() - timedelta(days=365 * 3)
 
 
 # ─────────────────────────────────────────────────────────
@@ -32,7 +36,7 @@ def ciudadano():
     return Ciudadano.objects.create(
         apellido="Ramirez",
         nombre="Sofia",
-        fecha_nacimiento=date(2020, 3, 15),
+        fecha_nacimiento=_fecha_menor_48_meses(),
         documento=44555666,
     )
 
@@ -84,7 +88,7 @@ def _valid_post(centro, **overrides):
     defaults = {
         "apellido": "Ramirez",
         "nombre": "Sofia",
-        "fecha_nacimiento": "2020-03-15",
+        "fecha_nacimiento": _fecha_menor_48_meses().isoformat(),
         "dni": "44555666",
     }
     defaults.update(overrides)
