@@ -35,6 +35,9 @@ class TerritorialUltimoRelevamientoSerializer(NoSaveSerializer):
     id = serializers.IntegerField()
     estado = serializers.CharField(allow_null=True)
     fecha_visita = serializers.DateTimeField(allow_null=True)
+    territorial_user = serializers.IntegerField(
+        source="territorial_user_id", allow_null=True
+    )
 
 
 class TerritorialComedorSerializer(NoSaveSerializer):
