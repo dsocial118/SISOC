@@ -12,8 +12,7 @@ class DispositivosBuildWorkflowTests(unittest.TestCase):
         )
         cls.workflow = cls.workflow_path.read_text(encoding="utf-8")
         cls.classifier = (
-            cls.workflow_path.parent.parent
-            / "scripts/dispositivos_build_gate.js"
+            cls.workflow_path.parent.parent / "scripts/dispositivos_build_gate.js"
         ).read_text(encoding="utf-8")
 
     def test_classifies_dispositivos_runtime_build_inputs_before_building(self):
