@@ -5,6 +5,8 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group, Permission
 from django.urls import reverse
 
+from core.constants import UserGroups
+
 
 pytestmark = pytest.mark.django_db
 
@@ -181,3 +183,40 @@ def test_sidebar_ubica_ocr_entre_configuracion_y_comunicados(client):
     )
     assert re.search(r'style="order: 6">.*?<p>OCR</p>', content, re.S)
     assert re.search(r'style="order: 7;.*?<p>Comunicados</p>', content, re.S)
+
+
+def test_sidebar_oculta_comunicados_a_usuario_solo_cdi_local(client):
+    user_model = get_user_model()
+    user = user_model.objects.create_user(
+        username="sidebar-cdi-local",
+        password="testpass123",
+    )
+    grupo, _ = Group.objects.get_or_create(name=UserGroups.CDI_REFERENTE_CENTRO)
+    user.groups.add(grupo)
+    client.force_login(user)
+
+    response = client.get(reverse("inicio"))
+
+    assert response.status_code == 200
+    assert "<p>Comunicados</p>" not in response.content.decode()
+    assert client.get(reverse("comunicados")).status_code == 200
+
+
+def test_sidebar_muestra_comunicados_a_usuario_cdi_con_rol_simepi(client):
+    user_model = get_user_model()
+    user = user_model.objects.create_user(
+        username="sidebar-cdi-simepi",
+        password="testpass123",
+    )
+    for nombre in (
+        UserGroups.CDI_REFERENTE_CENTRO,
+        UserGroups.SIMEPI_EGP,
+    ):
+        grupo, _ = Group.objects.get_or_create(name=nombre)
+        user.groups.add(grupo)
+    client.force_login(user)
+
+    response = client.get(reverse("inicio"))
+
+    assert response.status_code == 200
+    assert "<p>Comunicados</p>" in response.content.decode()

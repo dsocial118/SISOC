@@ -49,6 +49,7 @@ def test_formulario_cdi_form_acepta_payload_minimo():
             "email_respondente": "ana@example.com",
             "nombre_cdi": centro.nombre,
             "codigo_cdi": centro.codigo_cdi,
+            "dias_funcionamiento": ["lunes"],
             "source_form_version": 1,
         }
     )
@@ -76,6 +77,7 @@ def test_formulario_cdi_acepta_telefonos_con_formato_flexible():
             "rol_respondente": "Coordinacion",
             "nombre_cdi": centro.nombre,
             "codigo_cdi": centro.codigo_cdi,
+            "dias_funcionamiento": ["lunes"],
             "telefono_cdi": "12345678",
             "telefono_referente_cdi": "11-2233-4455",
             "telefono_organizacion": "22334455",
@@ -312,6 +314,7 @@ def test_formulario_cdi_limpia_valores_de_campos_ocultos_por_skip_logic():
         data={
             "nombre_cdi": centro.nombre,
             "codigo_cdi": centro.codigo_cdi,
+            "dias_funcionamiento": ["lunes"],
             "tiene_espacio_cocina": "no",
             "combustible_cocinar": "gas_red",
             "tiene_espacio_exterior": "no",
@@ -335,6 +338,7 @@ def test_formulario_cdi_limpia_seguridad_electrica_si_no_tiene_electricidad():
         data={
             "nombre_cdi": centro.nombre,
             "codigo_cdi": centro.codigo_cdi,
+            "dias_funcionamiento": ["lunes"],
             "acceso_energia": "sin_electricidad",
             "seguridad_electrica": "cumple_y_revision_anual",
             "source_form_version": 1,
