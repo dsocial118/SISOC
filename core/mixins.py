@@ -4,6 +4,7 @@ from datetime import datetime
 from django.http import StreamingHttpResponse
 from django.core.exceptions import PermissionDenied
 from django.db.models import QuerySet
+from core.services.csv_export import CSV_CONTENT_TYPE, prepend_utf8_bom
 from iam.services import user_has_permission_code
 
 logger = logging.getLogger(__name__)
@@ -110,6 +111,9 @@ class CSVExportMixin:
                 row_data = [self.resolve_field(obj, field) for field in fields]
                 yield writer.writerow(row_data)
 
-        response = StreamingHttpResponse(stream_rows(), content_type="text/csv")
+        response = StreamingHttpResponse(
+            prepend_utf8_bom(stream_rows()),
+            content_type=CSV_CONTENT_TYPE,
+        )
         response["Content-Disposition"] = f'attachment; filename="{filename}"'
         return response

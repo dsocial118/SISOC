@@ -143,6 +143,19 @@ class Expediente(SoftDeleteModelMixin, models.Model):
             ),
             models.Index(fields=["fecha_creacion"], name="exp_fecha_idx"),
         ]
+        # El Dashboard de Cupos y el Reporte por provincias se habilitaban con
+        # `view_expediente`, así que dar acceso a uno daba acceso al otro. Cada
+        # módulo tiene ahora su propio permiso, asignable de forma independiente.
+        permissions = [
+            (
+                "view_cupo_dashboard",
+                "Puede ver el Dashboard de Cupos de Celiaquía",
+            ),
+            (
+                "view_reporte_provincias",
+                "Puede ver el Reporte por provincias de Celiaquía",
+            ),
+        ]
 
     def __str__(self):
         return f"{self.usuario_provincia.username}"
