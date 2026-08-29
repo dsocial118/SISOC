@@ -111,10 +111,10 @@ start_source() {
 if [[ "$ACTION" == "deploy" ]]; then
     previous_sha="$(git -C "$APP_ROOT" rev-parse HEAD)"
     prepare_deploy_source
-    start_source "$EXPECTED_REVISION"
     umask 077
     printf '%s\n' "$previous_sha" > "$ROLLBACK_STATE"
     chmod 600 "$ROLLBACK_STATE"
+    start_source "$EXPECTED_REVISION"
     echo "Deploy aislado de Dispositivos verificado en $EXPECTED_REVISION."
     exit 0
 fi

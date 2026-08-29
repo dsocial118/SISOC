@@ -90,5 +90,10 @@ test("el deploy aislado no reutiliza el Compose local ni se dispara por push", (
   assert.match(deployScript, /fetch origin --prune/);
   assert.match(deployScript, /docker compose/);
   assert.match(deployScript, /chmod 600 "\$ROLLBACK_STATE"/);
+  assert.ok(
+    deployScript.indexOf('printf \'%s\\n\' "$previous_sha" > "$ROLLBACK_STATE"')
+      < deployScript.indexOf('start_source "$EXPECTED_REVISION"'),
+    "el SHA previo debe persistirse antes de iniciar el runtime nuevo",
+  );
   assert.doesNotMatch(deployScript, /deploy_refresh\.sh/);
 });
