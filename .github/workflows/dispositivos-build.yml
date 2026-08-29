@@ -6,29 +6,11 @@ on:
             - development
             - homologacion
             - main
-        paths:
-            - "services/dispositivos/**"
-            - "compose.dispositivos.yml"
-            - "config/settings.py"
-            - "docker/django/Dockerfile"
-            - "docker/django/entrypoint.py"
-            - "requirements.txt"
-            - "requirements/**"
-            - ".github/workflows/dispositivos-build.yml"
     push:
         branches:
             - development
             - homologacion
             - main
-        paths:
-            - "services/dispositivos/**"
-            - "compose.dispositivos.yml"
-            - "config/settings.py"
-            - "docker/django/Dockerfile"
-            - "docker/django/entrypoint.py"
-            - "requirements.txt"
-            - "requirements/**"
-            - ".github/workflows/dispositivos-build.yml"
     workflow_dispatch:
 
 permissions:
@@ -39,7 +21,64 @@ concurrency:
     cancel-in-progress: true
 
 jobs:
+    classify_changes:
+        runs-on: ubuntu-latest
+        outputs:
+            relevant: ${{ steps.classify.outputs.relevant }}
+            matched_paths: ${{ steps.classify.outputs.matched_paths }}
+
+        steps:
+            - name: Checkout del SHA fuente exacto
+              uses: actions/checkout@v6.0.2
+              with:
+                  fetch-depth: 0
+                  ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+            - name: Probar el clasificador de paths
+              run: node --test .github/scripts/dispositivos_build_gate.test.js
+
+            - name: Clasificar cambios relevantes
+              id: classify
+              shell: bash
+              env:
+                  EVENT_NAME: ${{ github.event_name }}
+                  BASE_SHA: ${{ github.event.pull_request.base.sha }}
+                  HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+                  BEFORE_SHA: ${{ github.event.before }}
+              run: |
+                  set -euo pipefail
+                  changed_paths_file="$RUNNER_TEMP/dispositivos-changed-paths.txt"
+
+                  if [[ "$EVENT_NAME" == "pull_request" ]]; then
+                      git diff --name-only "${BASE_SHA}...${HEAD_SHA}" > "$changed_paths_file"
+                  elif [[ "$EVENT_NAME" == "push" && "$BEFORE_SHA" != "0000000000000000000000000000000000000000" ]]; then
+                      git diff --name-only "$BEFORE_SHA" "$HEAD_SHA" > "$changed_paths_file"
+                  else
+                      # workflow_dispatch y el primer push de una rama fuerzan un build seguro.
+                      printf '%s\n' ".github/workflows/dispositivos-build.yml" > "$changed_paths_file"
+                  fi
+
+                  classification="$(node .github/scripts/dispositivos_build_gate.js < "$changed_paths_file")"
+                  relevant="$(printf '%s' "$classification" | jq -r '.relevant')"
+                  matched_paths="$(printf '%s' "$classification" | jq -c '.matchingPaths')"
+
+                  if [[ "$relevant" != "true" && "$relevant" != "false" ]]; then
+                      echo "El clasificador no devolvió un booleano válido." >&2
+                      exit 1
+                  fi
+
+                  echo "relevant=$relevant" >> "$GITHUB_OUTPUT"
+                  echo "matched_paths=$matched_paths" >> "$GITHUB_OUTPUT"
+                  {
+                      echo "## Clasificación de Dispositivos"
+                      echo
+                      echo "- Cambios relevantes: \`$relevant\`"
+                      echo "- Paths relevantes: \`$matched_paths\`"
+                  } >> "$GITHUB_STEP_SUMMARY"
+
     build_manifest:
+        needs: classify_changes
+        if: ${{ needs.classify_changes.outputs.relevant == 'true' }}
         runs-on: ubuntu-latest
 
         steps:
@@ -167,3 +206,46 @@ jobs:
                   name: dispositivos-build-manifest
                   path: ${{ steps.manifest.outputs.manifest_dir }}
                   if-no-files-found: error
+
+    dispositivos_build_gate:
+        if: ${{ always() }}
+        needs:
+            - classify_changes
+            - build_manifest
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Validar semántica del gate
+              shell: bash
+              env:
+                  CLASSIFY_RESULT: ${{ needs.classify_changes.result }}
+                  BUILD_RESULT: ${{ needs.build_manifest.result }}
+                  RELEVANT: ${{ needs.classify_changes.outputs.relevant }}
+                  MATCHED_PATHS: ${{ needs.classify_changes.outputs.matched_paths }}
+              run: |
+                  set -euo pipefail
+
+                  if [[ "$CLASSIFY_RESULT" != "success" ]]; then
+                      echo "La clasificación de paths no terminó correctamente." >&2
+                      exit 1
+                  fi
+
+                  if [[ "$RELEVANT" == "true" ]]; then
+                      if [[ "$BUILD_RESULT" != "success" ]]; then
+                          echo "El build relevante de Dispositivos no terminó correctamente: $BUILD_RESULT." >&2
+                          exit 1
+                      fi
+                      outcome="build validado"
+                  elif [[ "$RELEVANT" == "false" ]]; then
+                      outcome="N/A: sin cambios relevantes"
+                  else
+                      echo "Resultado de clasificación inválido: $RELEVANT." >&2
+                      exit 1
+                  fi
+
+                  {
+                      echo "## Gate requerido de Dispositivos"
+                      echo
+                      echo "- Resultado: $outcome"
+                      echo "- Paths relevantes: \`$MATCHED_PATHS\`"
+                  } >> "$GITHUB_STEP_SUMMARY"

@@ -598,10 +598,10 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - `.github/workflows/release-sanity.yml`
 - `.github/workflows/release-orchestrator.yml`
 - `.github/workflows/sync-main-downstream.yml`
-- `.github/workflows/dispositivos-build.yml`: build selectivo de Dispositivos
-  desde el SHA fuente y manifiesto de inputs; no publica imágenes, no despliega
-  ni es requisito de `deploy_guard` hasta que C3.2 resuelva la semántica de
-  paths.
+- `.github/workflows/dispositivos-build.yml`: gate global de Dispositivos con
+  clasificación testeable de paths; construye desde el SHA fuente y publica
+  manifiesto sólo ante cambios relevantes. No publica imágenes ni despliega;
+  `dispositivos_build_gate` es el check que exige `deploy_guard`.
 - `.github/scripts/sync_main_downstream.js`: crea y actualiza ramas técnicas
   `automation/sync-main-to-<destino>` para que los PRs descendentes cumplan
   checks estrictos sin mezclar QA/HML en `main`.

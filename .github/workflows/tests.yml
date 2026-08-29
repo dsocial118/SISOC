@@ -444,6 +444,7 @@ jobs:
                         "pytest",
                         "dispositivos_monolith_compat",
                         "dispositivos_runtime",
+                        "dispositivos_build_gate",
                         "migrations_check",
                         "mysql_compat",
                         "release_quality",
