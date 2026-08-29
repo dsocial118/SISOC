@@ -42,9 +42,11 @@
 - `.github/scripts/dispositivos_deploy_preflight.test.js`
 - `.github/workflows/dispositivos-build.yml`
 - `.github/workflows/dispositivos-deploy-preflight.yml`
+- `.github/workflows/dispositivos-deploy.yml`
 - `.github/workflows/tests.yml`
 - `.importlinter`
 - `AGENT_REPO_MAP.md`
+- `compose.dispositivos.deploy.yml`
 - `compose.dispositivos.yml`
 - `config/settings.py`
 - `config/urls.py`
@@ -52,9 +54,7 @@
 - `dispositivos/favorite_filters.py`
 - `dispositivos/tests/test_dispositivo_form_assets.py`
 - `docs/contexto/features/pr-2365-feat-dispositivos-limite-ejecutable-inicial-2309.md`
-- `docs/operacion/dispositivos_runtime_local.md`
-- `docs/plans/2026-08-27-issue-2309-c1-monorepo-boundary-design.md`
-- ... y 67 archivo(s) adicional(es) relacionados.
+- ... y 71 archivo(s) adicional(es) relacionados.
 - Documentación sugerida para ampliar contexto:
 - `docs/indice.md`
 - `docs/ia/CONTEXT_HYGIENE.md`
@@ -68,6 +68,7 @@
 - `docs/plans/2026-08-28-issue-2309-c3-build-local-design.md`
 - `docs/plans/2026-08-29-issue-2309-c3-2-required-gate-design.md`
 - `docs/plans/2026-08-29-issue-2309-c3-3-deploy-preflight-design.md`
+- `docs/plans/2026-08-29-issue-2309-c3-5-qa-isolated-deploy-design.md`
 - `docs/registro/cambios/2026-08-28-dispositivos-c2-runtime-verificado.md`
 - `docs/registro/cambios/2026-08-29-dispositivos-c3-2-gate-requerido.md`
 - `docs/registro/cambios/2026-08-29-dispositivos-c3-3-preflight-declarativo.md`
