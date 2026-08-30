@@ -1,0 +1,118 @@
+{% extends "includes/main.html" %}
+{% block title %}Resultados: {{ encuesta.titulo }}{% endblock %}
+{% block content %}
+    <div class="container mt-4">
+        <div class="d-flex justify-content-between mb-3">
+            <h2>Resultados: {{ encuesta.titulo }}</h2>
+            <a href="{% url 'encuestas_listar' %}" class="btn btn-secondary">Volver</a>
+        </div>
+
+        {% if not rondas %}
+            <p class="text-muted">Esta encuesta todavía no tiene rondas.</p>
+        {% else %}
+            <form method="get" class="mb-4 d-flex align-items-center gap-2">
+                <label for="ronda" class="form-label mb-0">Ronda:</label>
+                <select name="ronda" id="ronda" class="form-select w-auto" onchange="this.form.submit()">
+                    {% for ronda in rondas %}
+                        <option value="{{ ronda.pk }}" {% if ronda_actual.pk == ronda.pk %}selected{% endif %}>
+                            Ronda {{ ronda.numero_ronda }} — {{ ronda.get_estado_display }} ({{ ronda.fecha_apertura|date:"d/m/Y" }})
+                        </option>
+                    {% endfor %}
+                </select>
+            </form>
+
+            {% if ronda_actual %}
+                <div class="row mb-4">
+                    <div class="col-md-4">
+                        <div class="custom-card card-violet">
+                            <div class="card-icon"><i class="fas fa-poll"></i></div>
+                            <div class="card-content">
+                                <div class="card-amount">{{ ronda_actual.respuestas.count }}</div>
+                                <div class="card-title">Respuestas recibidas</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="custom-card card-red">
+                            <div class="card-icon"><i class="fas fa-hourglass-half"></i></div>
+                            <div class="card-content">
+                                <div class="card-amount">{{ ronda_actual.get_estado_display }}</div>
+                                <div class="card-title">Estado de la ronda</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="custom-card card-green">
+                            <div class="card-icon"><i class="fas fa-calendar-check"></i></div>
+                            <div class="card-content">
+                                <div class="card-amount">{{ ronda_actual.fecha_cierre_programada|date:"d/m/Y" }}</div>
+                                <div class="card-title">Cierre programado</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-end gap-2 mb-3">
+                    <a href="{% url 'encuestas_resultados_exportar' encuesta.pk ronda_actual.pk %}?formato=csv"
+                       class="btn btn-outline-secondary">
+                        <i class="fas fa-file-csv"></i> Exportar CSV
+                    </a>
+                    <a href="{% url 'encuestas_resultados_exportar' encuesta.pk ronda_actual.pk %}?formato=xlsx"
+                       class="btn btn-outline-secondary">
+                        <i class="fas fa-file-excel"></i> Exportar Excel
+                    </a>
+                </div>
+
+                {% for resultado in resultados %}
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ resultado.texto }}</h5>
+                            <p class="text-muted mb-2">
+                                {{ resultado.total_respuestas }} respuesta{{ resultado.total_respuestas|pluralize }}
+                            </p>
+
+                            {% if resultado.opciones %}
+                                {% for opcion in resultado.opciones %}
+                                    <div class="mb-2">
+                                        <div class="d-flex justify-content-between">
+                                            <span>{{ opcion.texto }}</span>
+                                            <span>{{ opcion.cantidad }} ({{ opcion.porcentaje }}%)</span>
+                                        </div>
+                                        <div class="progress"
+                                             role="progressbar"
+                                             aria-valuenow="{{ opcion.porcentaje }}"
+                                             aria-valuemin="0"
+                                             aria-valuemax="100">
+                                            <div class="progress-bar" style="width: {{ opcion.porcentaje }}%"></div>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            {% elif resultado.promedio is not None %}
+                                <div class="row text-center">
+                                    <div class="col-4">
+                                        <div class="fw-bold">{{ resultado.promedio|floatformat:1 }}</div>
+                                        <div class="text-muted small">Promedio</div>
+                                    </div>
+                                    <div class="col-4">
+                                        <div class="fw-bold">{{ resultado.minimo|floatformat:0 }}</div>
+                                        <div class="text-muted small">Mínimo</div>
+                                    </div>
+                                    <div class="col-4">
+                                        <div class="fw-bold">{{ resultado.maximo|floatformat:0 }}</div>
+                                        <div class="text-muted small">Máximo</div>
+                                    </div>
+                                </div>
+                            {% elif resultado.respuestas_texto %}
+                                <ul class="list-group list-group-flush">
+                                    {% for texto in resultado.respuestas_texto %}<li class="list-group-item">{{ texto }}</li>{% endfor %}
+                                </ul>
+                            {% else %}
+                                <p class="text-muted mb-0">Sin respuestas todavía.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endif %}
+    </div>
+{% endblock %}

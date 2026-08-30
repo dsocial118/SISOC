@@ -1,0 +1,60 @@
+{% if pregunta.tipo == "texto_corto" %}
+    <input type="text"
+           class="form-control"
+           name="respuesta-{{ pregunta.pk }}"
+           {% if pregunta.obligatoria %}required{% endif %}>
+{% elif pregunta.tipo == "texto_largo" %}
+    <textarea class="form-control"
+              name="respuesta-{{ pregunta.pk }}"
+              rows="3"
+              {% if pregunta.obligatoria %}required{% endif %}></textarea>
+{% elif pregunta.tipo == "opcion_unica" %}
+    {% for opcion in pregunta.opciones.all %}
+        <div class="form-check">
+            <input class="form-check-input"
+                   type="radio"
+                   name="respuesta-{{ pregunta.pk }}"
+                   value="{{ opcion.valor }}"
+                   id="opcion-{{ opcion.pk }}"
+                   {% if pregunta.obligatoria %}required{% endif %}>
+            <label class="form-check-label" for="opcion-{{ opcion.pk }}">{{ opcion.texto }}</label>
+        </div>
+    {% endfor %}
+{% elif pregunta.tipo == "opcion_multiple" %}
+    {% for opcion in pregunta.opciones.all %}
+        <div class="form-check">
+            <input class="form-check-input"
+                   type="checkbox"
+                   name="respuesta-{{ pregunta.pk }}"
+                   value="{{ opcion.valor }}"
+                   id="opcion-{{ opcion.pk }}">
+            <label class="form-check-label" for="opcion-{{ opcion.pk }}">{{ opcion.texto }}</label>
+        </div>
+    {% endfor %}
+{% elif pregunta.tipo == "escala" %}
+    <input type="number"
+           class="form-control"
+           name="respuesta-{{ pregunta.pk }}"
+           min="1"
+           max="10"
+           {% if pregunta.obligatoria %}required{% endif %}>
+{% elif pregunta.tipo == "si_no" %}
+    <select class="form-select"
+            name="respuesta-{{ pregunta.pk }}"
+            {% if pregunta.obligatoria %}required{% endif %}>
+        <option value="">Seleccioná...</option>
+        <option value="si">Sí</option>
+        <option value="no">No</option>
+    </select>
+{% elif pregunta.tipo == "numerico" %}
+    <input type="number"
+           step="any"
+           class="form-control"
+           name="respuesta-{{ pregunta.pk }}"
+           {% if pregunta.obligatoria %}required{% endif %}>
+{% elif pregunta.tipo == "fecha" %}
+    <input type="date"
+           class="form-control"
+           name="respuesta-{{ pregunta.pk }}"
+           {% if pregunta.obligatoria %}required{% endif %}>
+{% endif %}

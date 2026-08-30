@@ -1,0 +1,109 @@
+from django.urls import path
+
+from core.decorators import permissions_any_required
+
+from .views import (
+    EncuestaCreateView,
+    EncuestaListView,
+    EncuestaPublicarView,
+    EncuestaResultadosExportarView,
+    EncuestaResultadosView,
+    EncuestaSegmentacionView,
+    EncuestaUpdateView,
+    PosponerRondaView,
+    ResponderRondaView,
+    RondaCerrarView,
+    SegmentacionAgregarDestinatarioView,
+    SegmentacionQuitarDestinatarioView,
+    SegmentacionTipoUpdateView,
+)
+
+urlpatterns = [
+    path(
+        "encuestas/",
+        permissions_any_required(
+            ["encuestas.view_encuesta", "encuestas.ver_resultados"]
+        )(EncuestaListView.as_view()),
+        name="encuestas_listar",
+    ),
+    path(
+        "encuestas/crear/",
+        permissions_any_required(["encuestas.add_encuesta"])(
+            EncuestaCreateView.as_view()
+        ),
+        name="encuestas_crear",
+    ),
+    path(
+        "encuestas/<int:pk>/editar/",
+        permissions_any_required(["encuestas.change_encuesta"])(
+            EncuestaUpdateView.as_view()
+        ),
+        name="encuestas_editar",
+    ),
+    path(
+        "encuestas/<int:pk>/publicar/",
+        permissions_any_required(["encuestas.change_encuesta"])(
+            EncuestaPublicarView.as_view()
+        ),
+        name="encuestas_publicar",
+    ),
+    path(
+        "encuestas/rondas/<int:pk>/cerrar/",
+        permissions_any_required(["encuestas.change_rondaencuesta"])(
+            RondaCerrarView.as_view()
+        ),
+        name="encuestas_ronda_cerrar",
+    ),
+    path(
+        "encuestas/responder/<int:pk>/",
+        ResponderRondaView.as_view(),
+        name="encuestas_responder",
+    ),
+    path(
+        "encuestas/responder/<int:pk>/mas-tarde/",
+        PosponerRondaView.as_view(),
+        name="encuestas_responder_mas_tarde",
+    ),
+    path(
+        "encuestas/<int:pk>/resultados/",
+        permissions_any_required(["encuestas.ver_resultados"])(
+            EncuestaResultadosView.as_view()
+        ),
+        name="encuestas_resultados",
+    ),
+    path(
+        "encuestas/<int:pk>/resultados/rondas/<int:ronda_pk>/exportar/",
+        permissions_any_required(["encuestas.ver_resultados"])(
+            EncuestaResultadosExportarView.as_view()
+        ),
+        name="encuestas_resultados_exportar",
+    ),
+    path(
+        "encuestas/<int:pk>/segmentacion/",
+        permissions_any_required(["encuestas.change_encuesta"])(
+            EncuestaSegmentacionView.as_view()
+        ),
+        name="encuestas_segmentacion",
+    ),
+    path(
+        "encuestas/<int:pk>/segmentacion/tipo/",
+        permissions_any_required(["encuestas.change_encuesta"])(
+            SegmentacionTipoUpdateView.as_view()
+        ),
+        name="encuestas_segmentacion_tipo",
+    ),
+    path(
+        "encuestas/<int:pk>/segmentacion/agregar/",
+        permissions_any_required(["encuestas.change_encuesta"])(
+            SegmentacionAgregarDestinatarioView.as_view()
+        ),
+        name="encuestas_segmentacion_agregar",
+    ),
+    path(
+        "encuestas/<int:pk>/segmentacion/<int:destinatario_pk>/quitar/",
+        permissions_any_required(["encuestas.change_encuesta"])(
+            SegmentacionQuitarDestinatarioView.as_view()
+        ),
+        name="encuestas_segmentacion_quitar",
+    ),
+]

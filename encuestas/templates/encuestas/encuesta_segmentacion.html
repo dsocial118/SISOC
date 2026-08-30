@@ -1,0 +1,120 @@
+{% extends "includes/main.html" %}
+{% block title %}Segmentación: {{ encuesta.titulo }}{% endblock %}
+{% block content %}
+    <div class="container mt-4">
+        <div class="d-flex justify-content-between mb-3">
+            <h2>Segmentación: {{ encuesta.titulo }}</h2>
+            <a href="{% url 'encuestas_listar' %}" class="btn btn-secondary">Volver</a>
+        </div>
+
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5 class="card-title">Tipo de segmentación</h5>
+                <form method="post"
+                      action="{% url 'encuestas_segmentacion_tipo' encuesta.pk %}"
+                      enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input"
+                                   type="radio"
+                                   name="tipo"
+                                   value="todos_los_usuarios"
+                                   id="tipo-todos"
+                                   {% if not segmentacion or segmentacion.tipo == "todos_los_usuarios" %}checked{% endif %}>
+                            <label class="form-check-label" for="tipo-todos">Todos los usuarios logueados</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input"
+                                   type="radio"
+                                   name="tipo"
+                                   value="listado_documentos"
+                                   id="tipo-listado"
+                                   {% if segmentacion.tipo == "listado_documentos" %}checked{% endif %}>
+                            <label class="form-check-label" for="tipo-listado">Listado de documentos (DNI/CUIT/CUIL)</label>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="archivo_listado">
+                            Reemplazar listado por archivo (Excel o CSV, opcional)
+                        </label>
+                        <input type="file"
+                               class="form-control"
+                               name="archivo_listado"
+                               id="archivo_listado"
+                               accept=".xlsx,.csv">
+                        <small class="text-muted">
+                            Columnas requeridas: tipo_documento, numero_documento. Si subís un
+                            archivo, reemplaza el listado actual completo.
+                        </small>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Guardar</button>
+                </form>
+            </div>
+        </div>
+
+        {% if segmentacion.tipo == "listado_documentos" %}
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">Agregar destinatario individual</h5>
+                    <form method="post"
+                          action="{% url 'encuestas_segmentacion_agregar' encuesta.pk %}"
+                          class="row g-2 align-items-end">
+                        {% csrf_token %}
+                        <div class="col-md-4">
+                            <label class="form-label">Tipo</label>
+                            <select name="tipo_documento" class="form-select">
+                                <option value="dni">DNI</option>
+                                <option value="cuit">CUIT</option>
+                                <option value="cuil">CUIL</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Número</label>
+                            <input type="text" name="numero_documento" class="form-control" required>
+                        </div>
+                        <div class="col-md-4">
+                            <button type="submit" class="btn btn-outline-primary">Agregar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Destinatarios actuales ({{ destinatarios|length }})</h5>
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Tipo</th>
+                                    <th>Número</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for destinatario in destinatarios %}
+                                    <tr>
+                                        <td>{{ destinatario.get_tipo_documento_display }}</td>
+                                        <td>{{ destinatario.numero_documento }}</td>
+                                        <td>
+                                            <form method="post"
+                                                  action="{% url 'encuestas_segmentacion_quitar' encuesta.pk destinatario.pk %}">
+                                                {% csrf_token %}
+                                                <button type="submit" class="btn btn-sm btn-outline-danger">Quitar</button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                {% empty %}
+                                    <tr>
+                                        <td colspan="3">No hay destinatarios cargados todavía.</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+{% endblock %}

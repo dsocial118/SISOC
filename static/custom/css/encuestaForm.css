@@ -1,0 +1,343 @@
+/* ============================================
+   ENCUESTA FORM - ESTILO EDITOR/COMPOSITOR
+   Mismo lenguaje visual que comunicadoForm.css
+   (paneles oscuros + acento dorado), como hoja
+   propia de encuestas para no acoplar los estáticos
+   de un módulo a otro.
+   Paleta: #1a2332, #2c3e50, #f39c12
+   ============================================ */
+
+.encuesta-editor {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+/* Paneles */
+.encuesta-editor .editor-panel {
+  background: #2c3e50;
+  border: 1px solid #374151;
+  border-radius: 10px;
+  margin-bottom: 20px;
+  overflow: hidden;
+}
+
+.encuesta-editor .panel-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 14px 20px;
+  border-bottom: 1px solid #374151;
+  color: #9ca3af;
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.encuesta-editor .panel-label .panel-label-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.encuesta-editor .panel-label i {
+  color: #f39c12;
+  font-size: 14px;
+}
+
+.encuesta-editor .panel-body {
+  padding: 20px;
+}
+
+/* Campos del formulario */
+.encuesta-editor .form-control,
+.encuesta-editor .form-select {
+  background-color: #1a2332;
+  color: #e5e7eb;
+  border: 1px solid #3d4f63;
+  border-radius: 6px;
+}
+
+.encuesta-editor .form-control:focus,
+.encuesta-editor .form-select:focus {
+  background-color: #1e2a3a;
+  border-color: #f39c12;
+  box-shadow: 0 0 0 0.2rem rgba(243, 156, 18, 0.15);
+  color: #e5e7eb;
+}
+
+.encuesta-editor .form-control::placeholder {
+  color: #6b7280;
+}
+
+/* Título - más grande, protagónico */
+.encuesta-editor #id_titulo {
+  font-size: 17px;
+  font-weight: 500;
+  padding: 10px 14px;
+}
+
+/* Labels */
+.encuesta-editor label {
+  color: #d1d5db;
+  font-weight: 500;
+  font-size: 13px;
+  margin-bottom: 6px;
+}
+
+.encuesta-editor .form-text,
+.encuesta-editor .help-text {
+  color: #6b7280;
+  font-size: 12px;
+}
+
+.encuesta-editor .invalid-feedback {
+  color: #f87171;
+  font-size: 12px;
+}
+
+/* Switches (Bootstrap 5 nativo, solo recoloreado) */
+.encuesta-editor .form-check-input {
+  background-color: #3d4f63;
+  border-color: #4b5563;
+}
+
+.encuesta-editor .form-check-input:checked {
+  background-color: #f39c12;
+  border-color: #f39c12;
+}
+
+.encuesta-editor .form-check-input:focus {
+  box-shadow: 0 0 0 0.2rem rgba(243, 156, 18, 0.15);
+}
+
+.encuesta-editor .form-check-label {
+  color: #d1d5db;
+  font-weight: 600;
+}
+
+.encuesta-editor .switch-help {
+  color: #6b7280;
+  font-size: 11.5px;
+  display: block;
+  margin-top: 2px;
+}
+
+/* Fila de switches (Anónima / Obligatoria / Recurrente) */
+.encuesta-editor .options-row {
+  display: flex;
+  gap: 18px;
+  flex-wrap: wrap;
+  padding-top: 16px;
+  margin-top: 4px;
+  border-top: 1px solid #374151;
+}
+
+.encuesta-editor .options-row > .option-item {
+  flex: 1;
+  min-width: 220px;
+}
+
+/* Campos numéricos condicionados a los switches de arriba */
+.encuesta-editor .subfields {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px dashed #374151;
+}
+
+.encuesta-editor .subfields > .field-col {
+  flex: 1;
+  min-width: 200px;
+}
+
+/* Barra de herramientas de preguntas */
+.encuesta-editor .preguntas-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.encuesta-editor .pregunta-count {
+  color: #9ca3af;
+  font-size: 12.5px;
+}
+
+/* Botón "Agregar pregunta" - mismo estilo que btn-add-files de comunicados */
+.encuesta-editor .btn-dashed {
+  background: rgba(243, 156, 18, 0.08);
+  border: 1.5px dashed rgba(243, 156, 18, 0.4);
+  color: #f39c12;
+  padding: 9px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.encuesta-editor .btn-dashed:hover {
+  background: rgba(243, 156, 18, 0.15);
+  border-color: #f39c12;
+  color: #f39c12;
+}
+
+/* Cada pregunta como mini-panel propio */
+.encuesta-editor .pregunta-row {
+  background: #1a2332;
+  border: 1px solid #374151;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 14px;
+}
+
+.encuesta-editor .pregunta-row:last-child {
+  margin-bottom: 0;
+}
+
+.encuesta-editor .pregunta-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.encuesta-editor .pregunta-numero {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(96, 165, 250, 0.12) !important;
+  color: #60a5fa !important;
+  border: 1px solid rgba(96, 165, 250, 0.25);
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 11.5px;
+  font-weight: 700;
+}
+
+.encuesta-editor .btn-quitar-pregunta {
+  background: transparent;
+  border: 1px solid #4b5563;
+  color: #6b7280;
+}
+
+.encuesta-editor .btn-quitar-pregunta:hover {
+  border-color: #e05656;
+  color: #e05656;
+  background: rgba(224, 86, 86, 0.12);
+}
+
+.encuesta-editor .pregunta-grid {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+
+.encuesta-editor .pregunta-grid > div {
+  flex: 1;
+  min-width: 180px;
+}
+
+.encuesta-editor .pregunta-obligatoria-wrap {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  padding-top: 22px;
+}
+
+/* Bloque de opciones y de condición: separados con línea punteada */
+.encuesta-editor .pregunta-opciones-wrap,
+.encuesta-editor .pregunta-condicion-wrap {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px dashed #374151;
+}
+
+.encuesta-editor .cond-label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: #9ca3af;
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+.encuesta-editor .cond-label i {
+  color: #f39c12;
+}
+
+.encuesta-editor .cond-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1.4fr;
+  gap: 10px;
+}
+
+/* Barra de acciones */
+.encuesta-editor .editor-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 0 0;
+  margin-top: 8px;
+}
+
+.encuesta-editor .btn-save {
+  background: #e7ba61;
+  border: none;
+  color: #1a2332;
+  font-weight: 600;
+  padding: 10px 28px;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+
+.encuesta-editor .btn-save:hover {
+  background: #e7ba61;
+  color: #1a2332;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(243, 156, 18, 0.3);
+}
+
+.encuesta-editor .btn-cancel {
+  background: transparent;
+  border: 1px solid #4b5563;
+  color: #9ca3af;
+  padding: 10px 20px;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+
+.encuesta-editor .btn-cancel:hover {
+  background: #374151;
+  color: #e5e7eb;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .encuesta-editor .cond-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .encuesta-editor .editor-actions {
+    flex-direction: column-reverse;
+    gap: 10px;
+  }
+
+  .encuesta-editor .editor-actions .btn-save,
+  .encuesta-editor .editor-actions .btn-cancel {
+    width: 100%;
+    text-align: center;
+  }
+
+  .encuesta-editor .preguntas-toolbar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
