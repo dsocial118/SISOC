@@ -2,6 +2,7 @@ import logging
 
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import transaction
+from django.db.models import Q
 from rest_framework import status
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
@@ -21,20 +22,26 @@ def _scope_relevamientos_for_authenticated_user(
     queryset,
     *,
     comedor_lookup="comedor",
+    territorial_user_lookup="territorial_user",
 ):
-    """Restringe solicitudes de usuario al alcance provincial territorial.
+    """Restringe solicitudes de usuario a lo que el territorial puede ver.
 
     Las API keys de integraci\u00f3n no autentican ``request.user`` y conservan el
     acceso global necesario para GESTIONAR. Un token DRF o una sesi\u00f3n web, en
-    cambio, solo puede resolver relevamientos de las provincias asignadas al
-    territorial; una lista vac\u00eda falla cerrada.
+    cambio, solo puede resolver relevamientos **asignados a \u00e9l**
+    (``territorial_user``) o de las provincias que tiene cargadas. Se incluye la
+    asignaci\u00f3n para que pueda finalizar/editar lo que la app le muestra aunque
+    el comedor sea de otra provincia; una lista vac\u00eda falla cerrada.
     """
     user = request.user
     if not user or not user.is_authenticated:
         return queryset
 
     provincia_ids = get_territorial_comedor_provincia_ids(user)
-    return queryset.filter(**{f"{comedor_lookup}__provincia_id__in": provincia_ids})
+    return queryset.filter(
+        Q(**{f"{comedor_lookup}__provincia_id__in": provincia_ids})
+        | Q(**{territorial_user_lookup: user})
+    )
 
 
 class RelevamientoApiView(APIView):
@@ -186,6 +193,7 @@ class PrimerSeguimientoApiView(APIView):
             request,
             PrimerSeguimiento.objects.select_related("id_relevamiento__comedor"),
             comedor_lookup="id_relevamiento__comedor",
+            territorial_user_lookup="id_relevamiento__territorial_user",
         )
         seguimiento, error_response = self._resolve_seguimiento(
             request.data,
