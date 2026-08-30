@@ -43,6 +43,7 @@
 - `relevamientos/models.py`
 - `relevamientos/service.py`
 - `relevamientos/templates/relevamiento_detail.html`
+- `relevamientos/tests.py`
 - `relevamientos/views/api_views.py`
 - `tests/test_create_groups_command.py`
 - `tests/test_relevamiento_api_patch.py`
