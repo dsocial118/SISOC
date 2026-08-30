@@ -22,10 +22,7 @@ from comedores.models import Comedor
 from comedores.services.comedor_service import ComedorService
 from relevamientos.models import Relevamiento
 from users.api_permissions import IsTerritorialComedorUser
-from users.services_pwa import (
-    get_territorial_comedor_provincia_ids,
-    get_territorial_comedor_provincias,
-)
+from users.services_pwa import get_territorial_comedor_provincias
 
 MAX_IMAGENES_COMEDOR = 15
 MAX_FIRMA_FILE_SIZE = 3 * 1024 * 1024  # 3 MB
@@ -130,18 +127,26 @@ class TerritorialComedorViewSet(
     permission_classes = [IsAuthenticated, IsTerritorialComedorUser]
 
     def get_queryset(self):
-        provincia_ids = get_territorial_comedor_provincia_ids(self.request.user)
-        if not provincia_ids:
-            return Comedor.objects.none()
+        # Visibilidad "solo asignados a mí": el territorial ve los comedores que
+        # tienen al menos un relevamiento asignado a él (``territorial_user``), y
+        # dentro de cada comedor solo sus relevamientos asignados. Reemplaza el
+        # scope por provincia (un territorial ve exactamente su trabajo asignado,
+        # aunque el comedor sea de otra provincia; la asignación se hace desde el
+        # backoffice).
+        user = self.request.user
+        relevamientos_asignados = (
+            Relevamiento.objects.filter(territorial_user=user)
+            .select_related("primer_seguimiento")
+            .order_by("-fecha_visita", "-id")
+        )
         return (
-            Comedor.objects.filter(provincia_id__in=provincia_ids)
+            Comedor.objects.filter(relevamiento__territorial_user=user)
+            .distinct()
             .select_related("provincia", "municipio", "localidad")
             .prefetch_related(
                 Prefetch(
                     "relevamiento_set",
-                    queryset=Relevamiento.objects.select_related(
-                        "primer_seguimiento"
-                    ).order_by("-fecha_visita", "-id"),
+                    queryset=relevamientos_asignados,
                     to_attr="relevamientos_territorial",
                 )
             )

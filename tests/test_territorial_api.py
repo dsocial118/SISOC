@@ -46,30 +46,42 @@ def _auth_client(user):
 
 
 @pytest.mark.django_db
-def test_territorial_comedores_scoped_by_provincia():
+def test_territorial_comedores_scoped_by_asignacion():
+    # Solo aparecen los comedores con un relevamiento asignado a mí; un comedor
+    # sin asignación (aunque sea de mi provincia) o asignado a otro no se ve.
     prov_a = Provincia.objects.create(nombre="Prov A")
     prov_b = Provincia.objects.create(nombre="Prov B")
-    comedor_a = Comedor.objects.create(nombre="Comedor A", provincia=prov_a)
-    Comedor.objects.create(nombre="Comedor B", provincia=prov_b)
+    comedor_asignado = Comedor.objects.create(nombre="Comedor A", provincia=prov_a)
+    comedor_sin_asignar = Comedor.objects.create(nombre="Comedor SA", provincia=prov_a)
+    comedor_de_otro = Comedor.objects.create(nombre="Comedor B", provincia=prov_b)
 
     user = _make_territorial("terr_scope", [prov_a])
+    otro = _make_territorial("terr_scope_otro", [prov_b])
+    Relevamiento.objects.create(
+        comedor=comedor_asignado, estado="Visita pendiente", territorial_user=user
+    )
+    Relevamiento.objects.create(comedor=comedor_sin_asignar, estado="Visita pendiente")
+    Relevamiento.objects.create(
+        comedor=comedor_de_otro, estado="Visita pendiente", territorial_user=otro
+    )
     client = _auth_client(user)
 
     response = client.get("/api/territorial/comedores/")
 
     assert response.status_code == 200
     ids = [row["id"] for row in response.data["results"]]
-    assert ids == [comedor_a.id]
-    assert [prov["nombre"] for prov in response.data["provincias"]] == ["Prov A"]
+    assert ids == [comedor_asignado.id]
 
 
 @pytest.mark.django_db
 def test_territorial_comedores_includes_relevamiento_summary():
     prov = Provincia.objects.create(nombre="Prov Rel")
     comedor = Comedor.objects.create(nombre="Comedor Rel", provincia=prov)
-    Relevamiento.objects.create(comedor=comedor, estado="Visita pendiente")
-
     user = _make_territorial("terr_rel", [prov])
+    Relevamiento.objects.create(
+        comedor=comedor, estado="Visita pendiente", territorial_user=user
+    )
+
     client = _auth_client(user)
 
     response = client.get("/api/territorial/comedores/")
@@ -86,13 +98,19 @@ def test_territorial_comedores_items_lista_todos_los_relevamientos():
 
     prov = Provincia.objects.create(nombre="Prov Items")
     comedor = Comedor.objects.create(nombre="Comedor Items", provincia=prov)
-    # Finalizado con fecha reciente + pendiente sin fecha (el caso del bug).
-    finalizado = Relevamiento.objects.create(
-        comedor=comedor, estado="Finalizado", fecha_visita=timezone.now()
-    )
-    pendiente = Relevamiento.objects.create(comedor=comedor, estado="Visita pendiente")
-
     user = _make_territorial("terr_items", [prov])
+    # Finalizado con fecha reciente + pendiente sin fecha (el caso del bug),
+    # ambos asignados a mí.
+    finalizado = Relevamiento.objects.create(
+        comedor=comedor,
+        estado="Finalizado",
+        fecha_visita=timezone.now(),
+        territorial_user=user,
+    )
+    pendiente = Relevamiento.objects.create(
+        comedor=comedor, estado="Visita pendiente", territorial_user=user
+    )
+
     client = _auth_client(user)
 
     response = client.get("/api/territorial/comedores/")
@@ -133,10 +151,12 @@ def test_territorial_comedores_expone_seguimientos_items():
 
     prov = Provincia.objects.create(nombre="Prov Seg")
     comedor = Comedor.objects.create(nombre="Comedor Seg", provincia=prov)
-    rel = Relevamiento.objects.create(comedor=comedor, estado="Visita pendiente")
+    user = _make_territorial("terr_seg", [prov])
+    rel = Relevamiento.objects.create(
+        comedor=comedor, estado="Visita pendiente", territorial_user=user
+    )
     seg = PrimerSeguimiento.objects.create(id_relevamiento=rel, estado="Asignado")
 
-    user = _make_territorial("terr_seg", [prov])
     client = _auth_client(user)
 
     response = client.get("/api/territorial/comedores/")
@@ -152,20 +172,23 @@ def test_territorial_comedores_expone_seguimientos_items():
 
 
 @pytest.mark.django_db
-def test_territorial_detail_scoped_by_provincia():
+def test_territorial_detail_scoped_by_asignacion():
     prov_a = Provincia.objects.create(nombre="Prov Det A")
-    prov_b = Provincia.objects.create(nombre="Prov Det B")
     comedor_a = Comedor.objects.create(nombre="Comedor Det A", provincia=prov_a)
-    comedor_b = Comedor.objects.create(nombre="Comedor Det B", provincia=prov_b)
+    comedor_sin = Comedor.objects.create(nombre="Comedor Det SA", provincia=prov_a)
 
     user = _make_territorial("terr_det", [prov_a])
+    Relevamiento.objects.create(
+        comedor=comedor_a, estado="Visita pendiente", territorial_user=user
+    )
     client = _auth_client(user)
 
     ok = client.get(f"/api/territorial/comedores/{comedor_a.id}/")
     assert ok.status_code == 200
     assert ok.data["id"] == comedor_a.id
 
-    fuera = client.get(f"/api/territorial/comedores/{comedor_b.id}/")
+    # Comedor de mi provincia pero sin relevamiento asignado a mí: fuera de scope.
+    fuera = client.get(f"/api/territorial/comedores/{comedor_sin.id}/")
     assert fuera.status_code == 404
 
 
@@ -173,11 +196,11 @@ def test_territorial_detail_scoped_by_provincia():
 def test_territorial_detail_includes_relevamiento_actual_mobile():
     prov = Provincia.objects.create(nombre="Prov Precarga")
     comedor = Comedor.objects.create(nombre="Comedor Precarga", provincia=prov)
+    user = _make_territorial("terr_precarga", [prov])
     relevamiento = Relevamiento.objects.create(
-        comedor=comedor, estado="Visita pendiente"
+        comedor=comedor, estado="Visita pendiente", territorial_user=user
     )
 
-    user = _make_territorial("terr_precarga", [prov])
     client = _auth_client(user)
 
     response = client.get(f"/api/territorial/comedores/{comedor.id}/")
@@ -208,6 +231,9 @@ def test_territorial_uploads_image_to_scoped_comedor():
     comedor = Comedor.objects.create(nombre="Comedor Img", provincia=prov)
 
     user = _make_territorial("terr_img", [prov])
+    Relevamiento.objects.create(
+        comedor=comedor, estado="Visita pendiente", territorial_user=user
+    )
     client = _auth_client(user)
 
     response = client.post(
@@ -228,6 +254,9 @@ def test_territorial_image_dedup_by_client_uuid():
     comedor = Comedor.objects.create(nombre="Comedor Dedup", provincia=prov)
 
     user = _make_territorial("terr_dedup", [prov])
+    Relevamiento.objects.create(
+        comedor=comedor, estado="Visita pendiente", territorial_user=user
+    )
     client = _auth_client(user)
     url = f"/api/territorial/comedores/{comedor.id}/imagenes/"
 
@@ -255,6 +284,9 @@ def test_territorial_uploads_firma_returns_url():
     comedor = Comedor.objects.create(nombre="Comedor Firma", provincia=prov)
 
     user = _make_territorial("terr_firma", [prov])
+    Relevamiento.objects.create(
+        comedor=comedor, estado="Visita pendiente", territorial_user=user
+    )
     client = _auth_client(user)
 
     response = client.post(
@@ -273,9 +305,11 @@ def test_territorial_uploads_firma_returns_url():
 def test_territorial_upload_image_scoped_to_relevamiento():
     prov = Provincia.objects.create(nombre="Prov ImgRel")
     comedor = Comedor.objects.create(nombre="Comedor ImgRel", provincia=prov)
-    rel = Relevamiento.objects.create(comedor=comedor, estado="Visita pendiente")
-
     user = _make_territorial("terr_imgrel", [prov])
+    rel = Relevamiento.objects.create(
+        comedor=comedor, estado="Visita pendiente", territorial_user=user
+    )
+
     client = _auth_client(user)
 
     resp = client.post(
@@ -298,6 +332,11 @@ def test_territorial_upload_image_rejects_relevamiento_de_otro_comedor():
     rel_b = Relevamiento.objects.create(comedor=comedor_b, estado="Visita pendiente")
 
     user = _make_territorial("terr_imginv", [prov_a])
+    # comedor_a debe estar en scope (relevamiento asignado a mí) para llegar a la
+    # validación del sisoc_id.
+    Relevamiento.objects.create(
+        comedor=comedor_a, estado="Visita pendiente", territorial_user=user
+    )
     client = _auth_client(user)
 
     resp = client.post(

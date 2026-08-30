@@ -104,6 +104,19 @@ LISTADO_DEFINED_GROUPS = (
     ),
     BootstrapGroupSeed(UserGroups.VALIDADOR_COMEDORES),
     BootstrapGroupSeed(
+        "Revisor Relevamientos",
+        (
+            "relevamientos.view_relevamiento",
+            "relevamientos.review_relevamiento",
+            "auth.role_comedores",
+            "auth.role_comedores_listar",
+            "auth.role_comedores_ver",
+            "comedores.view_comedor",
+            "auth.role_comedores_relevamiento_ver",
+            "auth.role_comedores_relevamiento_detalle",
+        ),
+    ),
+    BootstrapGroupSeed(
         "Area Legales",
         (
             "acompanamientos.view_informacionrelevante",
