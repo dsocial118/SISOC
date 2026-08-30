@@ -545,8 +545,8 @@ def test_update_territorial_rechaza_json_valido_no_objeto(mocker):
     starter.assert_not_called()
 
 
-def test_update_territorial_rechaza_estado_no_pendiente(mocker):
-    """update_territorial should reject assignments over non-pending records."""
+def test_update_territorial_rechaza_relevamiento_finalizado(mocker):
+    """La reasignación se permite salvo que el relevamiento esté finalizado."""
     rel = SimpleNamespace(
         id=4,
         territorial_nombre=None,
@@ -566,7 +566,7 @@ def test_update_territorial_rechaza_estado_no_pendiente(mocker):
 
     with pytest.raises(
         ValidationError,
-        match="Solo se puede asignar territorial a relevamientos pendientes.",
+        match="No se puede reasignar un relevamiento finalizado.",
     ):
         module.RelevamientoService.update_territorial(req)
 
@@ -574,6 +574,39 @@ def test_update_territorial_rechaza_estado_no_pendiente(mocker):
     assert rel.territorial_uid is None
     assert rel.territorial_nombre is None
     starter.assert_not_called()
+
+
+@pytest.mark.django_db
+def test_update_territorial_permite_reasignar_visita_pendiente(mocker):
+    """Un relevamiento en 'Visita pendiente' puede reasignarse a otro territorial."""
+    rel = SimpleNamespace(
+        id=6,
+        territorial_nombre="viejo",
+        territorial_uid="1",
+        territorial_user_id=1,
+        estado="Visita pendiente",
+        save=mocker.Mock(),
+    )
+    mocker.patch("relevamientos.service.Relevamiento.objects.get", return_value=rel)
+    mocker.patch(
+        "relevamientos.service.build_relevamiento_payload", return_value={"k": 1}
+    )
+    starter = mocker.patch("relevamientos.service.AsyncSendRelevamientoToGestionar")
+
+    req = SimpleNamespace(
+        POST={
+            "relevamiento_id": "6",
+            "territorial_editar": '{"gestionar_uid":"99","nombre":"Nuevo"}',
+        }
+    )
+    out = module.RelevamientoService.update_territorial(req)
+
+    assert out is rel
+    assert rel.territorial_uid == "99"
+    assert rel.territorial_nombre == "Nuevo"
+    assert rel.territorial_user_id == 99
+    assert rel.estado == "Visita pendiente"
+    assert starter.called
 
 
 def test_create_or_update_anexo_and_populate_helpers(mocker):
