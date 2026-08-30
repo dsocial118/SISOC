@@ -1,0 +1,24 @@
+name: Preflight declarativo de Dispositivos
+
+on:
+    pull_request:
+        branches:
+            - development
+            - homologacion
+            - main
+
+permissions:
+    contents: read
+
+jobs:
+    dispositivos_deploy_preflight:
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout del SHA fuente exacto
+              uses: actions/checkout@v6.0.2
+              with:
+                  ref: ${{ github.event.pull_request.head.sha }}
+
+            - name: Validar contrato de destinos sin efectos operativos
+              run: node --test .github/scripts/dispositivos_deploy_preflight.test.js

@@ -1,0 +1,65 @@
+services:
+  mysql:
+    image: mysql:8.4
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DATABASE_PASSWORD}
+      MYSQL_DATABASE: ${DATABASE_NAME}
+      DOCKER_MYSQL_PORT: ${DOCKER_MYSQL_PORT:-3306}
+    volumes:
+      - dispositivos_mysql_data:/var/lib/mysql
+      - ./docker/mysql/local-dump.sql:/docker-entrypoint-initdb.d/local-dump.sql
+    ports:
+      - ${DISPOSITIVOS_MYSQL_PORT_FORWARD:-3308}:${DOCKER_MYSQL_PORT:-3306}
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-P", "${DOCKER_MYSQL_PORT:-3306}"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+
+  dispositivos-web:
+    image: sisoc-dispositivos:dev
+    build:
+      context: .
+      dockerfile: ./docker/django/Dockerfile
+    command: ["python", "-m", "services.dispositivos.runtime.entrypoint", "web"]
+    environment:
+      DJANGO_SETTINGS_MODULE: services.dispositivos.runtime.settings
+      DATABASE_HOST: mysql
+      DATABASE_PORT: ${DOCKER_MYSQL_PORT:-3306}
+      DISPOSITIVOS_WEB_PORT: ${DOCKER_DJANGO_PORT:-8000}
+    env_file:
+      - .env
+    ports:
+      - ${DISPOSITIVOS_WEB_PORT_FORWARD:-8002}:${DOCKER_DJANGO_PORT:-8000}
+    volumes:
+      - .:/sisoc/
+    user: "${RUN_UID:-0}:${RUN_GID:-0}"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    restart: "no"
+
+  dispositivos-migrate:
+    image: sisoc-dispositivos:dev
+    build:
+      context: .
+      dockerfile: ./docker/django/Dockerfile
+    command: ["python", "-m", "services.dispositivos.runtime.entrypoint", "migrate"]
+    environment:
+      DJANGO_SETTINGS_MODULE: services.dispositivos.runtime.settings
+      DATABASE_HOST: mysql
+      DATABASE_PORT: ${DOCKER_MYSQL_PORT:-3306}
+    env_file:
+      - .env
+    volumes:
+      - .:/sisoc/
+    user: "${RUN_UID:-0}:${RUN_GID:-0}"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    profiles:
+      - migrate
+    restart: "no"
+
+volumes:
+  dispositivos_mysql_data:

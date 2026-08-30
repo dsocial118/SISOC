@@ -1,0 +1,110 @@
+name: Despliegue aislado de Dispositivos
+
+on:
+    workflow_dispatch:
+        inputs:
+            target:
+                description: Destino ya provisionado para Dispositivos
+                required: true
+                type: choice
+                options:
+                    - qa
+                    - homologacion
+                    - production
+            action:
+                description: Operación aislada autorizada
+                required: true
+                type: choice
+                default: deploy
+                options:
+                    - deploy
+                    - rollback
+
+permissions:
+    contents: read
+
+concurrency:
+    group: dispositivos-deploy-${{ inputs.target }}
+    cancel-in-progress: false
+
+jobs:
+    deploy-qa:
+        if: inputs.target == 'qa'
+        environment: qa
+        runs-on: [self-hosted, sisoc-qa]
+        steps:
+            - name: Ejecutar operación aislada de QA
+              shell: bash
+              env:
+                  ACTION: ${{ inputs.action }}
+                  EXPECTED_SHA: ${{ github.sha }}
+                  APP_ROOT: ${{ vars.DISPOSITIVOS_APP_ROOT }}
+                  ENV_FILE: ${{ vars.DISPOSITIVOS_ENV_FILE }}
+                  ROLLBACK_STATE: ${{ vars.DISPOSITIVOS_ROLLBACK_STATE }}
+              run: |
+                  set -Eeuo pipefail
+                  bash "$APP_ROOT/scripts/operacion/deploy_dispositivos.sh" \
+                    --action "$ACTION" \
+                    --expected-revision "$EXPECTED_SHA" \
+                    --branch development \
+                    --app-root "$APP_ROOT" \
+                    --env-file "$ENV_FILE" \
+                    --rollback-state "$ROLLBACK_STATE" \
+                    --compose-file "$APP_ROOT/compose.dispositivos.deploy.yml" \
+                    --compose-project sisoc-dispositivos-qa \
+                    --web-service dispositivos-web \
+                    --migrate-service dispositivos-migrate
+
+    deploy-homologacion:
+        if: inputs.target == 'homologacion'
+        environment: homologacion
+        runs-on: [self-hosted, sisoc-homologacion]
+        steps:
+            - name: Ejecutar operación aislada de homologación
+              shell: bash
+              env:
+                  ACTION: ${{ inputs.action }}
+                  EXPECTED_SHA: ${{ github.sha }}
+                  APP_ROOT: ${{ vars.DISPOSITIVOS_APP_ROOT }}
+                  ENV_FILE: ${{ vars.DISPOSITIVOS_ENV_FILE }}
+                  ROLLBACK_STATE: ${{ vars.DISPOSITIVOS_ROLLBACK_STATE }}
+              run: |
+                  set -Eeuo pipefail
+                  bash "$APP_ROOT/scripts/operacion/deploy_dispositivos.sh" \
+                    --action "$ACTION" \
+                    --expected-revision "$EXPECTED_SHA" \
+                    --branch homologacion \
+                    --app-root "$APP_ROOT" \
+                    --env-file "$ENV_FILE" \
+                    --rollback-state "$ROLLBACK_STATE" \
+                    --compose-file "$APP_ROOT/compose.dispositivos.deploy.yml" \
+                    --compose-project sisoc-dispositivos-homologacion \
+                    --web-service dispositivos-web \
+                    --migrate-service dispositivos-migrate
+
+    deploy-production:
+        if: inputs.target == 'production'
+        environment: production
+        runs-on: [self-hosted, sisoc-produccion]
+        steps:
+            - name: Ejecutar operación aislada de producción
+              shell: bash
+              env:
+                  ACTION: ${{ inputs.action }}
+                  EXPECTED_SHA: ${{ github.sha }}
+                  APP_ROOT: ${{ vars.DISPOSITIVOS_APP_ROOT }}
+                  ENV_FILE: ${{ vars.DISPOSITIVOS_ENV_FILE }}
+                  ROLLBACK_STATE: ${{ vars.DISPOSITIVOS_ROLLBACK_STATE }}
+              run: |
+                  set -Eeuo pipefail
+                  bash "$APP_ROOT/scripts/operacion/deploy_dispositivos.sh" \
+                    --action "$ACTION" \
+                    --expected-revision "$EXPECTED_SHA" \
+                    --branch main \
+                    --app-root "$APP_ROOT" \
+                    --env-file "$ENV_FILE" \
+                    --rollback-state "$ROLLBACK_STATE" \
+                    --compose-file "$APP_ROOT/compose.dispositivos.deploy.yml" \
+                    --compose-project sisoc-dispositivos-production \
+                    --web-service dispositivos-web \
+                    --migrate-service dispositivos-migrate

@@ -1,0 +1,251 @@
+name: Build de Dispositivos desde SHA
+
+on:
+    pull_request:
+        branches:
+            - development
+            - homologacion
+            - main
+    push:
+        branches:
+            - development
+            - homologacion
+            - main
+    workflow_dispatch:
+
+permissions:
+    contents: read
+
+concurrency:
+    group: dispositivos-build-${{ github.event.pull_request.number || github.ref }}
+    cancel-in-progress: true
+
+jobs:
+    classify_changes:
+        runs-on: ubuntu-latest
+        outputs:
+            relevant: ${{ steps.classify.outputs.relevant }}
+            matched_paths: ${{ steps.classify.outputs.matched_paths }}
+
+        steps:
+            - name: Checkout del SHA fuente exacto
+              uses: actions/checkout@v6.0.2
+              with:
+                  fetch-depth: 0
+                  ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+            - name: Probar el clasificador de paths
+              run: node --test .github/scripts/dispositivos_build_gate.test.js
+
+            - name: Clasificar cambios relevantes
+              id: classify
+              shell: bash
+              env:
+                  EVENT_NAME: ${{ github.event_name }}
+                  BASE_SHA: ${{ github.event.pull_request.base.sha }}
+                  HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+                  BEFORE_SHA: ${{ github.event.before }}
+              run: |
+                  set -euo pipefail
+                  changed_paths_file="$RUNNER_TEMP/dispositivos-changed-paths.txt"
+
+                  if [[ "$EVENT_NAME" == "pull_request" ]]; then
+                      git diff --name-only "${BASE_SHA}...${HEAD_SHA}" > "$changed_paths_file"
+                  elif [[ "$EVENT_NAME" == "push" && "$BEFORE_SHA" != "0000000000000000000000000000000000000000" ]]; then
+                      git diff --name-only "$BEFORE_SHA" "$HEAD_SHA" > "$changed_paths_file"
+                  else
+                      # workflow_dispatch y el primer push de una rama fuerzan un build seguro.
+                      printf '%s\n' ".github/workflows/dispositivos-build.yml" > "$changed_paths_file"
+                  fi
+
+                  classification="$(node .github/scripts/dispositivos_build_gate.js < "$changed_paths_file")"
+                  relevant="$(printf '%s' "$classification" | jq -r '.relevant')"
+                  matched_paths="$(printf '%s' "$classification" | jq -c '.matchingPaths')"
+
+                  if [[ "$relevant" != "true" && "$relevant" != "false" ]]; then
+                      echo "El clasificador no devolvió un booleano válido." >&2
+                      exit 1
+                  fi
+
+                  echo "relevant=$relevant" >> "$GITHUB_OUTPUT"
+                  echo "matched_paths=$matched_paths" >> "$GITHUB_OUTPUT"
+                  {
+                      echo "## Clasificación de Dispositivos"
+                      echo
+                      echo "- Cambios relevantes: \`$relevant\`"
+                      echo "- Paths relevantes: \`$matched_paths\`"
+                  } >> "$GITHUB_STEP_SUMMARY"
+
+    build_manifest:
+        needs: classify_changes
+        if: ${{ needs.classify_changes.outputs.relevant == 'true' }}
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout del SHA fuente exacto
+              uses: actions/checkout@v6.0.2
+              with:
+                  fetch-depth: 1
+                  ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+            - name: Verificar el checkout fuente
+              id: source
+              shell: bash
+              run: |
+                  set -euo pipefail
+                  source_sha="$(git rev-parse HEAD)"
+                  expected_sha="${{ github.event.pull_request.head.sha || github.sha }}"
+
+                  if [[ "$source_sha" != "$expected_sha" ]]; then
+                      echo "El checkout no coincide con el SHA autorizado." >&2
+                      exit 1
+                  fi
+                  if [[ -n "$(git status --porcelain)" ]]; then
+                      echo "El checkout fuente no está limpio." >&2
+                      exit 1
+                  fi
+
+                  source_tree_sha256="$(git archive --format=tar "$source_sha" | sha256sum | awk '{print $1}')"
+                  echo "source_sha=$source_sha" >> "$GITHUB_OUTPUT"
+                  echo "source_tree_sha256=$source_tree_sha256" >> "$GITHUB_OUTPUT"
+
+            - name: Resolver la imagen base del Dockerfile
+              id: base
+              shell: bash
+              run: |
+                  set -euo pipefail
+                  base_image_ref="$(awk '$1 == "FROM" { print $2; exit }' docker/django/Dockerfile)"
+                  docker pull "$base_image_ref"
+                  echo "base_image_ref=$base_image_ref" >> "$GITHUB_OUTPUT"
+                  echo "base_image_id=$(docker image inspect "$base_image_ref" --format '{{.Id}}')" >> "$GITHUB_OUTPUT"
+                  echo "base_image_repo_digests=$(docker image inspect "$base_image_ref" --format '{{json .RepoDigests}}')" >> "$GITHUB_OUTPUT"
+
+            - name: Construir imagen local sin publicar
+              id: image
+              shell: bash
+              run: |
+                  set -euo pipefail
+                  image_tag="sisoc-dispositivos:${{ steps.source.outputs.source_sha }}"
+                  docker build --file docker/django/Dockerfile --tag "$image_tag" .
+                  echo "image_tag=$image_tag" >> "$GITHUB_OUTPUT"
+                  echo "image_id=$(docker image inspect "$image_tag" --format '{{.Id}}')" >> "$GITHUB_OUTPUT"
+
+            - name: Crear manifiesto de build
+              id: manifest
+              shell: bash
+              run: |
+                  set -euo pipefail
+                  manifest_dir="$RUNNER_TEMP/dispositivos-build-manifest"
+                  mkdir -p "$manifest_dir"
+
+                  dockerfile_sha256="$(sha256sum docker/django/Dockerfile | awk '{print $1}')"
+                  requirements_sha256="$(
+                      for file in requirements.txt requirements/*.txt; do
+                          sha256sum "$file"
+                      done | sha256sum | awk '{print $1}'
+                  )"
+                  docker run --rm --entrypoint sh "${{ steps.image.outputs.image_tag }}" -c '
+                      set -eu
+                      echo "[tessdata_best]"
+                      sha256sum /usr/share/tessdata-best/spa.traineddata
+                      echo "[system_packages]"
+                      dpkg-query -W | sort
+                      echo "[python_packages]"
+                      python -m pip freeze | sort
+                  ' > "$manifest_dir/runtime-inputs.txt"
+
+                  jq -n \
+                      --arg source_sha "${{ steps.source.outputs.source_sha }}" \
+                      --arg source_tree_sha256 "${{ steps.source.outputs.source_tree_sha256 }}" \
+                      --arg dockerfile_sha256 "$dockerfile_sha256" \
+                      --arg requirements_sha256 "$requirements_sha256" \
+                      --arg base_image_ref "${{ steps.base.outputs.base_image_ref }}" \
+                      --arg base_image_id "${{ steps.base.outputs.base_image_id }}" \
+                      --argjson base_image_repo_digests '${{ steps.base.outputs.base_image_repo_digests }}' \
+                      --arg image_id "${{ steps.image.outputs.image_id }}" \
+                      --arg runner_os "$RUNNER_OS" \
+                      --arg workflow_run_id "$GITHUB_RUN_ID" \
+                      --arg created_at_utc "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+                      '{
+                          source: {
+                              sha: $source_sha,
+                              tree_sha256: $source_tree_sha256
+                          },
+                          build_inputs: {
+                              dockerfile_sha256: $dockerfile_sha256,
+                              requirements_sha256: $requirements_sha256,
+                              base_image: {
+                                  reference: $base_image_ref,
+                                  image_id: $base_image_id,
+                                  repo_digests: $base_image_repo_digests
+                              }
+                          },
+                          local_image: {
+                              image_id: $image_id
+                          },
+                          execution: {
+                              runner_os: $runner_os,
+                              workflow_run_id: $workflow_run_id,
+                              created_at_utc: $created_at_utc
+                          }
+                      }' > "$manifest_dir/manifest.json"
+
+                  echo "manifest_dir=$manifest_dir" >> "$GITHUB_OUTPUT"
+                  {
+                      echo "## Build de Dispositivos"
+                      echo
+                      echo "- SHA fuente: \`${{ steps.source.outputs.source_sha }}\`"
+                      echo "- Hash del árbol fuente: \`${{ steps.source.outputs.source_tree_sha256 }}\`"
+                      echo "- Image ID local: \`${{ steps.image.outputs.image_id }}\`"
+                      echo "- Artefacto: \`dispositivos-build-manifest\`"
+                  } >> "$GITHUB_STEP_SUMMARY"
+
+            - name: Publicar manifiesto de build
+              uses: actions/upload-artifact@v7.0.1
+              with:
+                  name: dispositivos-build-manifest
+                  path: ${{ steps.manifest.outputs.manifest_dir }}
+                  if-no-files-found: error
+
+    dispositivos_build_gate:
+        if: ${{ always() }}
+        needs:
+            - classify_changes
+            - build_manifest
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Validar semántica del gate
+              shell: bash
+              env:
+                  CLASSIFY_RESULT: ${{ needs.classify_changes.result }}
+                  BUILD_RESULT: ${{ needs.build_manifest.result }}
+                  RELEVANT: ${{ needs.classify_changes.outputs.relevant }}
+                  MATCHED_PATHS: ${{ needs.classify_changes.outputs.matched_paths }}
+              run: |
+                  set -euo pipefail
+
+                  if [[ "$CLASSIFY_RESULT" != "success" ]]; then
+                      echo "La clasificación de paths no terminó correctamente." >&2
+                      exit 1
+                  fi
+
+                  if [[ "$RELEVANT" == "true" ]]; then
+                      if [[ "$BUILD_RESULT" != "success" ]]; then
+                          echo "El build relevante de Dispositivos no terminó correctamente: $BUILD_RESULT." >&2
+                          exit 1
+                      fi
+                      outcome="build validado"
+                  elif [[ "$RELEVANT" == "false" ]]; then
+                      outcome="N/A: sin cambios relevantes"
+                  else
+                      echo "Resultado de clasificación inválido: $RELEVANT." >&2
+                      exit 1
+                  fi
+
+                  {
+                      echo "## Gate requerido de Dispositivos"
+                      echo
+                      echo "- Resultado: $outcome"
+                      echo "- Paths relevantes: \`$MATCHED_PATHS\`"
+                  } >> "$GITHUB_STEP_SUMMARY"

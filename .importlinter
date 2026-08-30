@@ -45,7 +45,7 @@ root_packages =
     comunicados
     centrodeinfancia
     ver_para_ser_libre
-    dispositivos
+    services
     pwa
     ticketera
     dashboard
@@ -81,7 +81,8 @@ forbidden_modules =
     comunicados
     centrodeinfancia
     ver_para_ser_libre
-    dispositivos
+    services.dispositivos.application
+    services.dispositivos.monolith_compat
     pwa
     ticketera
     dashboard
@@ -122,7 +123,7 @@ source_modules =
     comunicados
     centrodeinfancia
     ver_para_ser_libre
-    dispositivos
+    services.dispositivos.application
     pwa
     ticketera
     dashboard
@@ -172,7 +173,8 @@ forbidden_modules =
     comunicados
     centrodeinfancia
     ver_para_ser_libre
-    dispositivos
+    services.dispositivos.application
+    services.dispositivos.monolith_compat
     pwa
     ticketera
     dashboard
@@ -218,7 +220,8 @@ forbidden_modules =
     comunicados
     centrodeinfancia
     ver_para_ser_libre
-    dispositivos
+    services.dispositivos.application
+    services.dispositivos.monolith_compat
     pwa
     ticketera
 ignore_imports =
@@ -258,17 +261,19 @@ source_modules =
     insumos
     ocr
 forbidden_modules =
-    dispositivos.admin
-    dispositivos.apps
-    dispositivos.dispositivos_filter_config
-    dispositivos.favorite_filters
-    dispositivos.forms
-    dispositivos.management
-    dispositivos.models
-    dispositivos.services
-    dispositivos.urls
-    dispositivos.validators
-    dispositivos.views
+    services.dispositivos.monolith_compat
+ignore_imports =
+
+[importlinter:contract:dispositivos-application-no-cross-domain]
+name = el núcleo de Dispositivos no accede al monolito ni a otros verticales
+type = forbidden
+allow_indirect_imports = True
+source_modules =
+    services.dispositivos.application
+forbidden_modules =
+    core
+    users
+    services.dispositivos.monolith_compat
 ignore_imports =
 
 [importlinter:contract:vat-public-boundary]
@@ -297,7 +302,7 @@ source_modules =
     comunicados
     centrodeinfancia
     ver_para_ser_libre
-    dispositivos
+    services.dispositivos.application
     pwa
     ticketera
     dashboard
@@ -349,7 +354,7 @@ source_modules =
     importarexpediente
     comunicados
     centrodeinfancia
-    dispositivos
+    services.dispositivos.application
     pwa
     ticketera
     dashboard
@@ -394,7 +399,7 @@ source_modules =
     comunicados
     centrodeinfancia
     ver_para_ser_libre
-    dispositivos
+    services.dispositivos.application
     pwa
     ticketera
     dashboard
@@ -443,7 +448,7 @@ source_modules =
     importarexpediente
     comunicados
     ver_para_ser_libre
-    dispositivos
+    services.dispositivos.application
     pwa
     ticketera
     dashboard
@@ -541,7 +546,7 @@ source_modules =
     celiaquia
     comunicados
     ver_para_ser_libre
-    dispositivos
+    services.dispositivos.application
     ticketera
     dashboard
     healthcheck

@@ -289,7 +289,7 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 | `rendicioncuentasfinal/` | rendicion final | `models.py`, `views.py`, urls | Bajo |
 | `rendicioncuentasmensual/` | rendición mensual, revisión Territorial/Auditoría, subsanaciones y datos expuestos en Organizaciones | `models.py`, `services.py`, `views.py`, templates, urls | Alto |
 | `duplas/` | equipos tecnicos/duplas | `models.py`, `views.py` | Bajo-Medio |
-| `dispositivos/` | dominio de dispositivos | `models.py`, `views.py`, tests | Bajo |
+| `services/dispositivos/` | núcleo de Dispositivos, runtime C2 y compatibilidad Django transitoria dentro del monorepo | `application/contracts/v1/`, `runtime/`, `monolith_compat/app/`, `monolith_compat/adapters/`, tests unitarios e integración; `compose.dispositivos.yml` levanta el proceso selectivo | Medio |
 | `importarexpediente/` | flujo de importacion de expedientes | `views.py`, `models.py`, urls, tests | Medio |
 | `ocr/` | OCR y procesamiento asociado | `models.py`, `views.py`, urls, tests | Medio |
 | `ver_para_ser_libre/` | modulo de negocio independiente dentro del monolito | `models.py`, `views.py`, `services/workflow.py` | Medio |
@@ -322,6 +322,7 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - Los receivers de auditoría de Centro de Infancia viven en `centrodeinfancia.signals` y llaman `audittrail.api`; Audittrail no debe importar modelos CDI.
 - Los alcances de usuarios propios de un dominio se registran mediante `iam.services.register_user_queryset_scope`; Centro de Infancia registra el suyo desde `centrodeinfancia.apps` para que `users` no importe dominios.
 - Dispositivos, VAT y Ver para Ser Libre no exponen internals a otros dominios. La composición de rutas de preview de VAT se realiza desde `VAT.global_urls`.
+- Dispositivos recibe identidad, permisos y alcance territorial mediante contratos `services.dispositivos.application.contracts.v1`; el CRUD Django legacy está en `services.dispositivos.monolith_compat.app` y sus adaptadores a Core/Users en `services.dispositivos.monolith_compat.adapters`. C2 ejecuta un runtime propio por proceso mediante `compose.dispositivos.yml`, con grafo legacy transitorio; todavía no recibe tráfico independiente ni instala el futuro gateway JWS de C4.
 - Los efectos de backfill de soft delete se registran desde cada dominio en `core.soft_delete.registry`; `core.soft_delete.state_sync` no debe importar handlers de dominio.
 - Las restricciones de navegacion aportadas por dominios se registran en `core.services.sidebar_access`; el template tag global no debe importar reglas VAT.
 - El endpoint Select2 de organizaciones vive en `organizaciones.views` y `organizaciones.urls`, aunque conserva la ruta global `ajax/load-organizaciones/`.
@@ -597,6 +598,15 @@ La siguiente tabla mezcla hechos observados con inferencias explicitas cuando no
 - `.github/workflows/release-sanity.yml`
 - `.github/workflows/release-orchestrator.yml`
 - `.github/workflows/sync-main-downstream.yml`
+- `.github/workflows/dispositivos-build.yml`: gate global de Dispositivos con
+  clasificación testeable de paths; construye desde el SHA fuente y publica
+  manifiesto sólo ante cambios relevantes. No publica imágenes ni despliega;
+  `dispositivos_build_gate` es el check que exige `deploy_guard`.
+- `.github/workflows/dispositivos-deploy-preflight.yml` y
+  `.github/dispositivos-deploy-targets.json`: contrato declarativo de destinos
+  de Dispositivos para C3.3. Valida checkout/Compose/roles y referencias de
+  entorno sin usar runners self-hosted, Docker o Environments; no demuestra que
+  esa infraestructura exista hasta el preflight manual de C3.4.
 - `.github/scripts/sync_main_downstream.js`: crea y actualiza ramas técnicas
   `automation/sync-main-to-<destino>` para que los PRs descendentes cumplan
   checks estrictos sin mezclar QA/HML en `main`.
