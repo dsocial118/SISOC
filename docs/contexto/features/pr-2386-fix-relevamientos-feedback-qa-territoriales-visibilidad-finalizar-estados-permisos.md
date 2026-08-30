@@ -34,7 +34,11 @@
 
 - Empezar por `docs/registro/prs/PR-2386.md` para contexto resumido del PR.
 - Revisar primero estos archivos del diff:
+- `CHANGELOG.md`
 - `comedores/api_views_territorial.py`
+- `docs/contexto/features/pr-2386-fix-relevamientos-feedback-qa-territoriales-visibilidad-finalizar-estados-permisos.md`
+- `docs/registro/prs/PR-2386.md`
+- `docs/registro/releases/pending/2026-09-02-pr-2386.md`
 - `relevamientos/migrations/0013_alter_relevamiento_options.py`
 - `relevamientos/models.py`
 - `relevamientos/service.py`
@@ -50,6 +54,9 @@
 - `docs/ia/CONTEXT_HYGIENE.md`
 - `docs/ia/ARCHITECTURE.md`
 - `docs/ia/TESTING.md`
+- `docs/contexto/features/pr-2386-fix-relevamientos-feedback-qa-territoriales-visibilidad-finalizar-estados-permisos.md`
+- `docs/registro/prs/PR-2386.md`
+- `docs/registro/releases/pending/2026-09-02-pr-2386.md`
 
 ## Trazabilidad
 
