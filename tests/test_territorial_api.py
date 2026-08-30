@@ -74,6 +74,27 @@ def test_territorial_comedores_scoped_by_asignacion():
 
 
 @pytest.mark.django_db
+def test_territorial_comedor_con_solo_relevamiento_borrado_no_aparece():
+    # Si el único relevamiento asignado a mí en un comedor está soft-deleted, el
+    # comedor NO debe aparecer (el JOIN relevamiento__ no aplica el manager
+    # soft-delete, por eso se filtra deleted_at__isnull=True en el queryset).
+    prov = Provincia.objects.create(nombre="Prov Borrado")
+    comedor = Comedor.objects.create(nombre="Comedor Borrado", provincia=prov)
+    user = _make_territorial("terr_borrado", [prov])
+    rel = Relevamiento.objects.create(
+        comedor=comedor, estado="Visita pendiente", territorial_user=user
+    )
+    rel.delete()  # soft-delete
+
+    client = _auth_client(user)
+    response = client.get("/api/territorial/comedores/")
+
+    assert response.status_code == 200
+    ids = [row["id"] for row in response.data["results"]]
+    assert comedor.id not in ids
+
+
+@pytest.mark.django_db
 def test_territorial_comedores_includes_relevamiento_summary():
     prov = Provincia.objects.create(nombre="Prov Rel")
     comedor = Comedor.objects.create(nombre="Comedor Rel", provincia=prov)
