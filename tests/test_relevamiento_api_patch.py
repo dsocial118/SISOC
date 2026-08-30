@@ -90,6 +90,32 @@ def test_territorial_patch_relevamiento_inside_scope_is_allowed():
 
 
 @pytest.mark.django_db
+def test_territorial_puede_finalizar_relevamiento_asignado_fuera_de_su_provincia():
+    # El territorial ve (y por lo tanto puede finalizar) lo asignado a él aunque
+    # el comedor sea de una provincia que no tiene cargada. Antes esto devolvía
+    # 404 porque el scope del PATCH era solo por provincia ("no permite finalizar").
+    provincia_cargada = Provincia.objects.create(nombre="Provincia cargada")
+    provincia_del_comedor = Provincia.objects.create(nombre="Provincia del comedor")
+    comedor = Comedor.objects.create(
+        nombre="Comedor asignado", provincia=provincia_del_comedor
+    )
+    user = _make_territorial("territorial_asignado", [provincia_cargada])
+    relevamiento = Relevamiento.objects.create(
+        comedor=comedor, estado="Visita pendiente", territorial_user=user
+    )
+
+    response = _token_client(user).patch(
+        "/api/relevamiento",
+        {"sisoc_id": relevamiento.id, "estado": "Finalizado"},
+        format="json",
+    )
+
+    assert response.status_code == 200
+    relevamiento.refresh_from_db()
+    assert relevamiento.estado == "Finalizado"
+
+
+@pytest.mark.django_db
 def test_territorial_patch_relevamiento_outside_scope_returns_404_without_mutation():
     provincia_permitida = Provincia.objects.create(nombre="Provincia permitida")
     provincia_ajena = Provincia.objects.create(nombre="Provincia ajena")

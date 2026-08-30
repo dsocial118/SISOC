@@ -1125,6 +1125,9 @@ class Relevamiento(SoftDeleteModelMixin, models.Model):
         unique_together = [["comedor", "fecha_visita"]]
         verbose_name = "Relevamiento"
         verbose_name_plural = "Relevamientos"
+        permissions = [
+            ("review_relevamiento", "Puede revisar y finalizar relevamientos"),
+        ]
 
     def __str__(self):
         comedor = self.comedor.nombre if self.comedor else "Comedor sin nombre"
