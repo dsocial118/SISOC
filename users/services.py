@@ -5,6 +5,7 @@ from django.contrib.auth.models import Permission, User
 from django.db.models import Case, CharField, Count, F, Q, Value, When
 from django.urls import NoReverseMatch, reverse
 
+from core.constants import UserGroups
 from core.services.advanced_filters import AdvancedFilterEngine
 from core.services.column_preferences import build_columns_context
 from core.services.favorite_filters import SeccionesFiltrosFavoritos
@@ -49,6 +50,11 @@ def _reverse_optional(url_name):
 
 
 class UsuariosService:
+    USUARIOS_NACIONALES_CON_VISIBILIDAD_GLOBAL = (
+        UserGroups.SIMEPI_ADMINISTRADOR,
+        UserGroups.SIMEPI_EQUIPO_NACIONAL,
+    )
+
     @staticmethod
     def get_pending_mobile_password_reset_count() -> int:
         """Cantidad de usuarios con solicitud pendiente de reset mobile."""
@@ -83,9 +89,24 @@ class UsuariosService:
 
     @staticmethod
     def get_filtered_usuarios(request_or_get):
-        """Aplica filtros combinables sobre el listado de usuarios."""
+        """Filtra el listado visible; los grupos nacionales pueden verlo completo."""
         base_qs = UsuariosService.get_usuarios_queryset()
-        base_qs = UsuariosService._apply_actor_scope(base_qs, request_or_get)
+        actor = getattr(request_or_get, "user", None)
+        tiene_visibilidad_nacional = bool(
+            actor
+            and getattr(actor, "is_authenticated", False)
+            and actor.groups.filter(
+                name__in=UsuariosService.USUARIOS_NACIONALES_CON_VISIBILIDAD_GLOBAL
+            ).exists()
+        )
+        if not (getattr(actor, "is_superuser", False) or tiene_visibilidad_nacional):
+            base_qs = UsuariosService._apply_actor_scope(base_qs, request_or_get)
+        return BENEFICIARIO_ADVANCED_FILTER.filter_queryset(base_qs, request_or_get)
+
+    @staticmethod
+    def get_filtered_usuarios_en_alcance(request_or_get):
+        """Filtra usuarios administrables sin ampliar el alcance por visibilidad."""
+        base_qs = UsuariosService.get_usuarios_en_alcance(request_or_get)
         return BENEFICIARIO_ADVANCED_FILTER.filter_queryset(base_qs, request_or_get)
 
     @staticmethod

@@ -52,6 +52,8 @@ from centrodeinfancia.access import (
     get_provincias_completas_egp_ids,
     get_object_scoped_cdi_or_404,
     puede_generar_usuario_cdi,
+    puede_gestionar_referentes_cdi,
+    puede_ver_credenciales_cdi,
     puede_ver_usuarios_cdi,
     tiene_alcance_simepi_nacional,
 )
@@ -752,12 +754,18 @@ class CentroDeInfanciaDetailView(LoginRequiredMixin, DetailView):
         context["puede_generar_usuario_cdi"] = puede_generar_usuario_cdi(
             self.request.user, self.object
         )
+        context["puede_gestionar_referentes_cdi"] = puede_gestionar_referentes_cdi(
+            self.request.user, self.object
+        )
+        context["puede_ver_credenciales_cdi"] = puede_ver_credenciales_cdi(
+            self.request.user, self.object
+        )
         context["puede_ver_usuarios_cdi"] = puede_ver_usuarios_cdi(
             self.request.user, self.object
         )
         if context["puede_ver_usuarios_cdi"]:
             usuarios_cdi = AccesoCDI.objects.filter(centro=self.object)
-            if not getattr(self.request.user, "is_superuser", False):
+            if not context["puede_gestionar_referentes_cdi"]:
                 usuarios_cdi = usuarios_cdi.filter(
                     user=self.request.user,
                     activo=True,
@@ -765,6 +773,9 @@ class CentroDeInfanciaDetailView(LoginRequiredMixin, DetailView):
             context["usuarios_cdi"] = usuarios_cdi.select_related(
                 "user", "user__profile"
             ).order_by("-activo", "user__username")
+            context["usuarios_cdi_columnas"] = (
+                5 if context["puede_ver_credenciales_cdi"] else 4
+            )
         return context
 
 

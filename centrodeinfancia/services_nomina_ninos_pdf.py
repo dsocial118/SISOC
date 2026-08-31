@@ -3,9 +3,10 @@ from __future__ import annotations
 import logging
 import os
 import unicodedata
+from calendar import monthrange
 from collections import defaultdict
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import date, datetime
 from io import BytesIO
 from tempfile import TemporaryDirectory
 
@@ -41,6 +42,7 @@ TABLE_FONT_SIZE = 9
 FONT_REGULAR = "Helvetica"
 FONT_BOLD = "Helvetica-Bold"
 AGE_MEASURE_LABELS = {"meses": "Meses", "anios": "Años"}
+MAX_EXPORT_AGE_MONTHS = 48
 
 
 class NominaNinosPDFError(Exception):
@@ -226,10 +228,34 @@ def _deduplicate_registros(registros):
     return selected, duplicate_count
 
 
+def _exclude_overage_registros(
+    registros: list[NominaCentroInfancia], as_of: date
+) -> tuple[list[NominaCentroInfancia], int]:
+    """Omite nacimientos anteriores al corte inclusivo de 48 meses exactos."""
+    cutoff_month_index = as_of.year * 12 + as_of.month - 1 - MAX_EXPORT_AGE_MONTHS
+    cutoff_year, cutoff_month_index = divmod(cutoff_month_index, 12)
+    cutoff_month = cutoff_month_index + 1
+    cutoff_date = as_of.replace(
+        year=cutoff_year,
+        month=cutoff_month,
+        day=min(as_of.day, monthrange(cutoff_year, cutoff_month)[1]),
+    )
+    selected = []
+    excluded_count = 0
+    for registro in registros:
+        birth_date = _resolved_child_fields(registro)[3]
+        if birth_date and birth_date < cutoff_date:
+            excluded_count += 1
+            continue
+        selected.append(registro)
+    return selected, excluded_count
+
+
 def build_export_data(  # pylint: disable=too-many-locals
     *, user, provincia, generado_en=None
 ):
     generado_en = timezone.localtime(generado_en or timezone.now())
+    as_of = generado_en.date()
     registros = list(
         NominaCentroInfancia.objects.filter(
             centro__provincia=provincia,
@@ -249,6 +275,17 @@ def build_export_data(  # pylint: disable=too-many-locals
                 }
             },
         )
+    registros, overage_count = _exclude_overage_registros(registros, as_of)
+    if overage_count:
+        logger.info(
+            "Se omitieron de la nómina provincial fichas mayores de 48 meses",
+            extra={
+                "data": {
+                    "provincia_id": provincia.pk,
+                    "mayores_48_meses": overage_count,
+                }
+            },
+        )
 
     adult_documents = {
         str(registro.responsable_legal_1_dni)
@@ -259,8 +296,6 @@ def build_export_data(  # pylint: disable=too-many-locals
     centros = {registro.centro_id: registro.centro for registro in registros}
     referent_cuils = _build_referent_cuil_map(centros.values())
     rows_by_center = defaultdict(list)
-    as_of = generado_en.date()
-
     for registro in registros:
         apellido, nombre, dni, birth_date, sexo = _resolved_child_fields(registro)
         age = _calculate_age(birth_date, registro.edad_unidad, as_of)
