@@ -8,6 +8,9 @@ from comunicados.models import Comunicado
 
 
 MIGRATION = import_module("comunicados.migrations.0010_archive_importacion_nomina")
+CORRECTIVE_MIGRATION = import_module(
+    "comunicados.migrations.0011_rearchive_importacion_nomina"
+)
 
 
 @pytest.mark.django_db
@@ -60,3 +63,22 @@ def test_migracion_archiva_solo_comunicados_internos_publicados_del_titulo():
     assert externo.destacado is True
     assert no_coincidente.estado == "publicado"
     assert no_coincidente.destacado is True
+
+
+@pytest.mark.django_db
+def test_migracion_correctiva_archiva_objetivo_creado_despues_de_0010():
+    creador = User.objects.create_user(username="comunicados-correctivo")
+    objetivo = Comunicado.objects.create(
+        titulo="Importación de nómina (resultado del proceso)",
+        cuerpo="Contenido creado después de la migración original",
+        estado="publicado",
+        destacado=True,
+        tipo="interno",
+        usuario_creador=creador,
+    )
+
+    CORRECTIVE_MIGRATION.archivar_comunicado_importacion_nomina(apps, None)
+
+    objetivo.refresh_from_db()
+    assert objetivo.estado == "archivado"
+    assert objetivo.destacado is False
