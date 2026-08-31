@@ -98,18 +98,11 @@ def usuarios_cdi_restantes(centro):
     )
 
 
-def puede_generar_usuario_cdi(user, centro):
-    """Regla de negocio para habilitar el botón "Generar usuario" en un CDI.
-
-    - El usuario debe poder delegar el grupo "CDI - Referente centro".
-    - Debe ser de la misma provincia que el CDI (salvo superusuario).
-    - Debe quedar cupo respecto del máximo por CDI.
-    """
+def puede_gestionar_referentes_cdi(user, centro):
+    """Indica si el usuario gestiona referentes dentro del alcance del CDI."""
     if not user or not getattr(user, "is_authenticated", False):
         return False
     if not actor_puede_delegar_grupo_nombre(user, GRUPO_CDI_REFERENTE_CENTRO):
-        return False
-    if usuarios_cdi_restantes(centro) <= 0:
         return False
     if user.is_superuser:
         return True
@@ -124,12 +117,16 @@ def puede_generar_usuario_cdi(user, centro):
     )
 
 
-def puede_ver_usuarios_cdi(user, centro):
-    """Quién ve el listado de usuarios+credenciales de un CDI.
+def puede_generar_usuario_cdi(user, centro):
+    """Habilita el alta de referentes si el actor gestiona el CDI y hay cupo."""
+    return (
+        puede_gestionar_referentes_cdi(user, centro)
+        and usuarios_cdi_restantes(centro) > 0
+    )
 
-    Solo el referente del centro (usuario con `AccesoCDI` activo en ese CDI)
-    o un superusuario. El provincial que genera NO ve este panel.
-    """
+
+def puede_ver_credenciales_cdi(user, centro):
+    """Limita credenciales al propio referente asociado o al superusuario."""
     if not user or not getattr(user, "is_authenticated", False):
         return False
     if user.is_superuser:
@@ -138,6 +135,17 @@ def puede_ver_usuarios_cdi(user, centro):
     from centrodeinfancia.models import AccesoCDI  # noqa: PLC0415
 
     return AccesoCDI.objects.filter(centro=centro, user=user, activo=True).exists()
+
+
+def puede_ver_usuarios_cdi(user, centro):
+    """Quién ve los referentes asociados a un CDI.
+
+    Incluye a quien puede gestionarlos dentro de su alcance territorial y a
+    quien puede ver sus propias credenciales.
+    """
+    return puede_gestionar_referentes_cdi(user, centro) or puede_ver_credenciales_cdi(
+        user, centro
+    )
 
 
 def get_provincia_usuario(user):
