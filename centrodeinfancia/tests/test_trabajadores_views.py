@@ -1,14 +1,16 @@
 import pytest
-from django.contrib.auth.models import Permission, User
+from django.contrib.auth.models import Group, Permission, User
 from django.urls import reverse
 
 from centrodeinfancia.models import (
+    AccesoCDI,
     CentroDeInfancia,
     NominaNacionalidad,
     NominaPais,
     Trabajador,
 )
 from centrodeinfancia.tests.test_trabajador_form import datos_validos
+from core.constants import UserGroups
 from core.models import Nacionalidad, Provincia
 from users.models import Profile
 
@@ -90,6 +92,35 @@ def test_trabajador_create_post_crea_y_redirige(client):
     assert trabajador.subcomponente == "cdi"
     assert trabajador.sala_cdi == "2_anios"
     assert trabajador.campos_verificados_renaper == []
+
+
+@pytest.mark.django_db
+def test_referente_cdi_con_acceso_activo_puede_abrir_alta_trabajador(client):
+    provincia = Provincia.objects.create(nombre="Provincia referente trabajador")
+    centro = CentroDeInfancia.objects.create(
+        nombre="CDI alta por referente",
+        provincia=provincia,
+    )
+    referente = User.objects.create_user(
+        username="referente-alta-trabajador",
+        password="test1234",
+    )
+    grupo, _ = Group.objects.get_or_create(name=UserGroups.CDI_REFERENTE_CENTRO)
+    grupo.permissions.add(
+        Permission.objects.get(
+            content_type__app_label="centrodeinfancia",
+            codename="add_trabajador",
+        )
+    )
+    referente.groups.add(grupo)
+    AccesoCDI.objects.create(user=referente, centro=centro, activo=True)
+    client.force_login(referente)
+
+    response = client.get(
+        reverse("centrodeinfancia_trabajador_crear", kwargs={"pk": centro.pk})
+    )
+
+    assert response.status_code == 200
 
 
 @pytest.mark.django_db
