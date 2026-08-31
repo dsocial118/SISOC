@@ -27,7 +27,7 @@
 ## Design system y UI
 
 - El PR toca piezas de UI y conviene revisar consistencia visual con el patrón existente.
-- Archivos visuales relevantes: encuestas/templates/encuestas/encuesta_form.html, encuestas/templates/encuestas/encuesta_list.html, encuestas/templates/encuestas/encuesta_resultados.html, encuestas/templates/encuestas/encuesta_segmentacion.html, encuestas/templates/encuestas/partials/campo_pregunta.html, encuestas/templates/encuestas/partials/responder_modal.html, static/custom/css/encuestaForm.css, static/custom/js/encuestaPendienteModal.js
+- Archivos visuales relevantes: encuestas/templates/encuestas/encuesta_form.html, encuestas/templates/encuestas/encuesta_list.html, encuestas/templates/encuestas/encuesta_resultados.html, encuestas/templates/encuestas/encuesta_segmentacion.html, encuestas/templates/encuestas/partials/campo_pregunta.html, encuestas/templates/encuestas/partials/responder_modal.html, static/custom/css/encuestaForm.css, static/custom/css/encuestaResultados.css
 
 ## Memoria operativa para agentes
 
@@ -39,7 +39,9 @@
 - `config/urls.py`
 - `docker-compose.yml`
 - `docker/django/entrypoint.py`
+- `docs/contexto/features/pr-2392-feat-encuestas-nuevo-modulo-de-encuestas-periodicas-a-usuarios.md`
 - `docs/registro/analisis/2026-08-28-modulo-encuestas.md`
+- `docs/registro/prs/PR-2392.md`
 - `encuestas/__init__.py`
 - `encuestas/admin.py`
 - `encuestas/apps.py`
@@ -51,15 +53,15 @@
 - `encuestas/middleware.py`
 - `encuestas/migrations/0001_initial.py`
 - `encuestas/migrations/__init__.py`
-- `encuestas/models.py`
-- `encuestas/services.py`
-- ... y 30 archivo(s) adicional(es) relacionados.
+- ... y 33 archivo(s) adicional(es) relacionados.
 - Documentación sugerida para ampliar contexto:
 - `docs/indice.md`
 - `docs/ia/CONTEXT_HYGIENE.md`
 - `docs/ia/ARCHITECTURE.md`
 - `docs/ia/TESTING.md`
+- `docs/contexto/features/pr-2392-feat-encuestas-nuevo-modulo-de-encuestas-periodicas-a-usuarios.md`
 - `docs/registro/analisis/2026-08-28-modulo-encuestas.md`
+- `docs/registro/prs/PR-2392.md`
 
 ## Trazabilidad
 
