@@ -40,7 +40,9 @@
 - `docker-compose.yml`
 - `docker/django/entrypoint.py`
 - `docs/contexto/features/pr-2392-feat-encuestas-nuevo-modulo-de-encuestas-periodicas-a-usuarios.md`
+- `docs/plans/2026-08-31-pr-2392-review-fixes-design.md`
 - `docs/registro/analisis/2026-08-28-modulo-encuestas.md`
+- `docs/registro/cambios/2026-08-31-pr-2392-privacidad-y-validacion-encuestas.md`
 - `docs/registro/prs/PR-2392.md`
 - `encuestas/__init__.py`
 - `encuestas/admin.py`
@@ -51,16 +53,16 @@
 - `encuestas/management/commands/__init__.py`
 - `encuestas/management/commands/process_encuestas_rondas.py`
 - `encuestas/middleware.py`
-- `encuestas/migrations/0001_initial.py`
-- `encuestas/migrations/__init__.py`
-- ... y 33 archivo(s) adicional(es) relacionados.
+- ... y 35 archivo(s) adicional(es) relacionados.
 - Documentación sugerida para ampliar contexto:
 - `docs/indice.md`
 - `docs/ia/CONTEXT_HYGIENE.md`
 - `docs/ia/ARCHITECTURE.md`
 - `docs/ia/TESTING.md`
 - `docs/contexto/features/pr-2392-feat-encuestas-nuevo-modulo-de-encuestas-periodicas-a-usuarios.md`
+- `docs/plans/2026-08-31-pr-2392-review-fixes-design.md`
 - `docs/registro/analisis/2026-08-28-modulo-encuestas.md`
+- `docs/registro/cambios/2026-08-31-pr-2392-privacidad-y-validacion-encuestas.md`
 - `docs/registro/prs/PR-2392.md`
 
 ## Trazabilidad
