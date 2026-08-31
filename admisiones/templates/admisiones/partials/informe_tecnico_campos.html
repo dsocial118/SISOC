@@ -1,0 +1,712 @@
+{% load crispy_forms_tags %}
+{% comment %}
+Campos del Informe Técnico. Se reutiliza desde la página completa
+(informe_tecnico_form.html) y desde la sección inline de admisiones_tecnicos_form.html.
+Cada bloque es colapsable (Bootstrap collapse) y lo maneja
+static/custom/js/informeTecnicoSecciones.js.
+Contexto esperado: form, tipo, admision, informe_tecnico, campos_a_subsanar,
+observacion y las claves de _get_template_informe_context.
+{% endcomment %}
+<!-- Errores -->
+{% if form.non_field_errors %}
+    <div class="alert alert-danger">
+        {% for error in form.non_field_errors %}<p class="mb-0">{{ error }}</p>{% endfor %}
+    </div>
+{% endif %}
+
+{% if template_publicacion %}
+    <div class="alert alert-info">
+        Al finalizar se generará el DOCX con el template
+        <strong>{{ template_publicacion.plantilla.codigo }} · {{ template_publicacion.plantilla.nombre }}</strong>,
+        versión {{ template_publicacion.version.numero }}.
+        {% if informe_tecnico and informe_tecnico.estado_formulario != "finalizado" %}
+            <a href="{% url 'informe_tecnico_previsualizar_template' informe_tecnico.tipo informe_tecnico.pk %}"
+               class="btn btn-sm btn-outline-primary ms-2">
+                <i class="fas fa-eye"></i> Vista previa DOCX
+            </a>
+        {% endif %}
+    </div>
+{% elif template_error %}
+    <section class="alert shadow-sm mb-4"
+             role="alert"
+             style="background: #103a5d;
+                    border: 1px solid #3b82c4;
+                    color: #f8fbff">
+        <div class="d-flex align-items-start gap-3">
+            <span class="rounded-circle d-inline-flex align-items-center justify-content-center flex-shrink-0"
+                  style="width: 2.5rem;
+                         height: 2.5rem;
+                         background: #7dd3fc;
+                         color: #073655">
+                <i class="fas fa-cog" aria-hidden="true"></i>
+            </span>
+            <div class="flex-grow-1">
+                <h2 class="h5 fw-bold mb-2">Configuración pendiente</h2>
+                <p class="mb-2">Todavía no está configurado el template necesario para generar este Informe Técnico.</p>
+                <p class="mb-0">
+                    No podrá finalizar el informe hasta que exista una versión dinámica publicada. Notifique a los referentes del sistema para que completen la configuración.
+                </p>
+            </div>
+        </div>
+        {% if template_configuracion_faltante %}
+            <details class="mt-3">
+                <summary class="fw-semibold">Ver detalle para soporte</summary>
+                <textarea id="detalle-configuracion-faltante"
+                          class="form-control form-control-sm mt-2 font-monospace"
+                          rows="5"
+                          readonly>{{ template_detalle_copiable }}</textarea>
+            </details>
+            <button type="submit"
+                    formaction="{% url 'admisiones_reportar_configuracion_faltante_template' admision.pk %}"
+                    formmethod="post"
+                    formnovalidate
+                    name="informe_id"
+                    value="{% if informe_tecnico %}{{ informe_tecnico.pk }}{% endif %}"
+                    class="btn mt-3"
+                    style="background: #f6c453;
+                           border-color: #f6c453;
+                           color: #18212b">
+                <i class="fas fa-bell me-1" aria-hidden="true"></i> Notificar a referentes del sistema
+            </button>
+        {% endif %}
+    </section>
+{% endif %}
+
+<!-- Campos a subsanar -->
+{% if campos_a_subsanar %}
+    <div class="alert alert-danger">
+        <h5>Campos para subsanar</h5>
+    </div>
+{% endif %}
+
+<!-- Observaciones -->
+{% if observacion %}
+    <div class="alert alert-info">
+        <h6>Observaciones:</h6>
+        {{ observacion.texto }}
+    </div>
+{% endif %}
+
+<!-- Datos de la Organización -->
+<div class="card mb-4">
+    <div class="card-header p-0">
+        <button class="btn btn-link w-100 d-flex justify-content-between align-items-center text-decoration-none text-reset px-3 py-2 collapsed"
+                type="button"
+                data-bs-toggle="collapse"
+                data-bs-target="#informeSeccionOrganizacion"
+                aria-expanded="false"
+                aria-controls="informeSeccionOrganizacion">
+            <span class="h5 mb-0 text-start">Datos de la Organización</span>
+            <i class="fas fa-chevron-down informe-seccion-chevron"
+               aria-hidden="true"></i>
+        </button>
+    </div>
+    <div class="card-body collapse"
+         id="informeSeccionOrganizacion"
+         data-informe-seccion="1">
+        <div class="row">
+            <div class="col-md-6 mb-3{% if 'Número Expediente' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
+                {{ form.expediente_nro|as_crispy_field }}
+            </div>
+            <div class="col-md-6 mb-3{% if 'nombre_organizacion' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
+                {{ form.nombre_organizacion|as_crispy_field }}
+            </div>
+            <div class="col-md-6 mb-3{% if 'domicilio_organizacion' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
+                {{ form.domicilio_organizacion|as_crispy_field }}
+            </div>
+            <div class="col-md-6 mb-3{% if 'localidad_organizacion' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
+                {{ form.localidad_organizacion|as_crispy_field }}
+            </div>
+            <div class="col-md-6 mb-3{% if 'partido_organizacion' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
+                {{ form.partido_organizacion|as_crispy_field }}
+            </div>
+            <div class="col-md-6 mb-3{% if 'provincia_organizacion' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
+                {{ form.provincia_organizacion|as_crispy_field }}
+            </div>
+            <div class="col-md-6 mb-3{% if 'telefono_organizacion' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
+                {{ form.telefono_organizacion|as_crispy_field }}
+            </div>
+            <div class="col-md-6 mb-3{% if 'mail_organizacion' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
+                {{ form.mail_organizacion|as_crispy_field }}
+            </div>
+            <div class="col-md-6 mb-3{% if 'cuit_organizacion' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
+                {{ form.cuit_organizacion|as_crispy_field }}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Datos del Representante -->
+<div class="card mb-4">
+    <div class="card-header p-0">
+        <button class="btn btn-link w-100 d-flex justify-content-between align-items-center text-decoration-none text-reset px-3 py-2 collapsed"
+                type="button"
+                data-bs-toggle="collapse"
+                data-bs-target="#informeSeccionRepresentante"
+                aria-expanded="false"
+                aria-controls="informeSeccionRepresentante">
+            <span class="h5 mb-0 text-start">Datos del Representante</span>
+            <i class="fas fa-chevron-down informe-seccion-chevron"
+               aria-hidden="true"></i>
+        </button>
+    </div>
+    <div class="card-body collapse"
+         id="informeSeccionRepresentante"
+         data-informe-seccion="1">
+        <div class="row">
+            <div class="col-md-6 mb-3{% if 'representante_nombre' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
+                {{ form.representante_nombre|as_crispy_field }}
+            </div>
+            <div class="col-md-6 mb-3{% if 'representante_cargo' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
+                {{ form.representante_cargo|as_crispy_field }}
+            </div>
+            <div class="col-md-6 mb-3{% if 'representante_dni' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
+                {{ form.representante_dni|as_crispy_field }}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Datos del Espacio -->
+<div class="card mb-4">
+    <div class="card-header p-0">
+        <button class="btn btn-link w-100 d-flex justify-content-between align-items-center text-decoration-none text-reset px-3 py-2 collapsed"
+                type="button"
+                data-bs-toggle="collapse"
+                data-bs-target="#informeSeccionEspacio"
+                aria-expanded="false"
+                aria-controls="informeSeccionEspacio">
+            <span class="h5 mb-0 text-start">Datos del Comedor/Merendero</span>
+            <i class="fas fa-chevron-down informe-seccion-chevron"
+               aria-hidden="true"></i>
+        </button>
+    </div>
+    <div class="card-body collapse"
+         id="informeSeccionEspacio"
+         data-informe-seccion="1">
+        <div class="row">
+            <div class="col-md-6 mb-3{% if 'tipo_espacio' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
+                {{ form.tipo_espacio|as_crispy_field }}
+            </div>
+            <div class="col-md-6 mb-3{% if 'nombre_espacio' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
+                {{ form.nombre_espacio|as_crispy_field }}
+            </div>
+            <div class="col-md-6 mb-3{% if 'domicilio_espacio' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
+                {{ form.domicilio_espacio|as_crispy_field }}
+            </div>
+            <div class="col-md-6 mb-3{% if 'barrio_espacio' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
+                {{ form.barrio_espacio|as_crispy_field }}
+            </div>
+            <div class="col-md-6 mb-3{% if 'localidad_espacio' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
+                {{ form.localidad_espacio|as_crispy_field }}
+            </div>
+            <div class="col-md-6 mb-3{% if 'partido_espacio' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
+                {{ form.partido_espacio|as_crispy_field }}
+            </div>
+            <div class="col-md-6 mb-3{% if 'provincia_espacio' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
+                {{ form.provincia_espacio|as_crispy_field }}
+            </div>
+            <div class="col-md-6 mb-3{% if 'domicilio_electronico_espacio' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
+                {{ form.domicilio_electronico_espacio|as_crispy_field }}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Responsable de Tarjeta -->
+<div class="card mb-4">
+    <div class="card-header p-0">
+        <button class="btn btn-link w-100 d-flex justify-content-between align-items-center text-decoration-none text-reset px-3 py-2 collapsed"
+                type="button"
+                data-bs-toggle="collapse"
+                data-bs-target="#informeSeccionTarjeta"
+                aria-expanded="false"
+                aria-controls="informeSeccionTarjeta">
+            <span class="h5 mb-0 text-start">Responsable de la Tarjeta</span>
+            <i class="fas fa-chevron-down informe-seccion-chevron"
+               aria-hidden="true"></i>
+        </button>
+    </div>
+    <div class="card-body collapse"
+         id="informeSeccionTarjeta"
+         data-informe-seccion="1">
+        <div class="row">
+            <div class="col-md-6 mb-3{% if 'responsable_tarjeta_nombre' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
+                {{ form.responsable_tarjeta_nombre|as_crispy_field }}
+            </div>
+            <div class="col-md-6 mb-3{% if 'responsable_tarjeta_mail' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
+                {{ form.responsable_tarjeta_mail|as_crispy_field }}
+            </div>
+            <div class="col-md-6 mb-3{% if 'responsable_tarjeta_dni' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
+                {{ form.responsable_tarjeta_dni|as_crispy_field }}
+            </div>
+            <div class="col-md-6 mb-3{% if 'responsable_tarjeta_cuit' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
+                {{ form.responsable_tarjeta_cuit|as_crispy_field }}
+            </div>
+            <div class="col-md-6 mb-3{% if 'responsable_tarjeta_domicilio' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
+                {{ form.responsable_tarjeta_domicilio|as_crispy_field }}
+            </div>
+            <div class="col-md-6 mb-3{% if 'responsable_tarjeta_localidad' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
+                {{ form.responsable_tarjeta_localidad|as_crispy_field }}
+            </div>
+            <div class="col-md-6 mb-3{% if 'responsable_tarjeta_provincia' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
+                {{ form.responsable_tarjeta_provincia|as_crispy_field }}
+            </div>
+            <div class="col-md-6 mb-3{% if 'responsable_tarjeta_telefono' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
+                {{ form.responsable_tarjeta_telefono|as_crispy_field }}
+            </div>
+
+        </div>
+    </div>
+</div>
+
+{% if admision and admision.tipo == "renovacion" %}
+    <!-- Prestaciones aprobadas en el ultimo convenio -->
+    <div class="card mb-4">
+        <div class="card-header p-0">
+            <button class="btn btn-link w-100 d-flex justify-content-between align-items-center text-decoration-none text-reset px-3 py-2 collapsed"
+                    type="button"
+                    data-bs-toggle="collapse"
+                    data-bs-target="#informeSeccionAprobadasUltimoConvenio"
+                    aria-expanded="false"
+                    aria-controls="informeSeccionAprobadasUltimoConvenio">
+                <span class="h5 mb-0 text-start">Prestaciones aprobadas en el ultimo convenio</span>
+                <i class="fas fa-chevron-down informe-seccion-chevron"
+                   aria-hidden="true"></i>
+            </button>
+        </div>
+        <div class="card-body collapse"
+             id="informeSeccionAprobadasUltimoConvenio"
+             data-informe-seccion="1">
+            <div class="table-responsive">
+                <table class="table table-sm table-bordered align-middle text-center mb-0">
+                    <thead class="table-dark">
+                        <tr class="text-uppercase small">
+                            <th scope="col" class="fw-semibold">Comida</th>
+                            <th scope="col">Lun</th>
+                            <th scope="col">Mar</th>
+                            <th scope="col">Mie</th>
+                            <th scope="col">Jue</th>
+                            <th scope="col">Vie</th>
+                            <th scope="col">Sab</th>
+                            <th scope="col">Dom</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <th>Desayuno</th>
+                            <td class="p-1">{{ form.aprobadas_ultimo_convenio_desayuno_lunes }}</td>
+                            <td class="p-1">{{ form.aprobadas_ultimo_convenio_desayuno_martes }}</td>
+                            <td class="p-1">{{ form.aprobadas_ultimo_convenio_desayuno_miercoles }}</td>
+                            <td class="p-1">{{ form.aprobadas_ultimo_convenio_desayuno_jueves }}</td>
+                            <td class="p-1">{{ form.aprobadas_ultimo_convenio_desayuno_viernes }}</td>
+                            <td class="p-1">{{ form.aprobadas_ultimo_convenio_desayuno_sabado }}</td>
+                            <td class="p-1">{{ form.aprobadas_ultimo_convenio_desayuno_domingo }}</td>
+                        </tr>
+                        <tr>
+                            <th>Almuerzo</th>
+                            <td class="p-1">{{ form.aprobadas_ultimo_convenio_almuerzo_lunes }}</td>
+                            <td class="p-1">{{ form.aprobadas_ultimo_convenio_almuerzo_martes }}</td>
+                            <td class="p-1">{{ form.aprobadas_ultimo_convenio_almuerzo_miercoles }}</td>
+                            <td class="p-1">{{ form.aprobadas_ultimo_convenio_almuerzo_jueves }}</td>
+                            <td class="p-1">{{ form.aprobadas_ultimo_convenio_almuerzo_viernes }}</td>
+                            <td class="p-1">{{ form.aprobadas_ultimo_convenio_almuerzo_sabado }}</td>
+                            <td class="p-1">{{ form.aprobadas_ultimo_convenio_almuerzo_domingo }}</td>
+                        </tr>
+                        <tr>
+                            <th>Merienda</th>
+                            <td class="p-1">{{ form.aprobadas_ultimo_convenio_merienda_lunes }}</td>
+                            <td class="p-1">{{ form.aprobadas_ultimo_convenio_merienda_martes }}</td>
+                            <td class="p-1">{{ form.aprobadas_ultimo_convenio_merienda_miercoles }}</td>
+                            <td class="p-1">{{ form.aprobadas_ultimo_convenio_merienda_jueves }}</td>
+                            <td class="p-1">{{ form.aprobadas_ultimo_convenio_merienda_viernes }}</td>
+                            <td class="p-1">{{ form.aprobadas_ultimo_convenio_merienda_sabado }}</td>
+                            <td class="p-1">{{ form.aprobadas_ultimo_convenio_merienda_domingo }}</td>
+                        </tr>
+                        <tr>
+                            <th>Cena</th>
+                            <td class="p-1">{{ form.aprobadas_ultimo_convenio_cena_lunes }}</td>
+                            <td class="p-1">{{ form.aprobadas_ultimo_convenio_cena_martes }}</td>
+                            <td class="p-1">{{ form.aprobadas_ultimo_convenio_cena_miercoles }}</td>
+                            <td class="p-1">{{ form.aprobadas_ultimo_convenio_cena_jueves }}</td>
+                            <td class="p-1">{{ form.aprobadas_ultimo_convenio_cena_viernes }}</td>
+                            <td class="p-1">{{ form.aprobadas_ultimo_convenio_cena_sabado }}</td>
+                            <td class="p-1">{{ form.aprobadas_ultimo_convenio_cena_domingo }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+{% endif %}
+
+<!-- Solicitudes por Día -->
+<div class="card mb-4">
+    <div class="card-header p-0">
+        <button class="btn btn-link w-100 d-flex justify-content-between align-items-center text-decoration-none text-reset px-3 py-2 collapsed"
+                type="button"
+                data-bs-toggle="collapse"
+                data-bs-target="#informeSeccionSolicitudes"
+                aria-expanded="false"
+                aria-controls="informeSeccionSolicitudes">
+            <span class="h5 mb-0 text-start">Solicitudes</span>
+            <i class="fas fa-chevron-down informe-seccion-chevron"
+               aria-hidden="true"></i>
+        </button>
+    </div>
+    <div class="card-body collapse"
+         id="informeSeccionSolicitudes"
+         data-informe-seccion="1">
+        <div class="table-responsive">
+            <table class="table table-sm table-bordered align-middle text-center mb-0">
+                <thead class="table-dark">
+                    <tr class="text-uppercase small">
+                        <th scope="col" class="fw-semibold">Comida</th>
+                        <th scope="col">Lun</th>
+                        <th scope="col">Mar</th>
+                        <th scope="col">Mié</th>
+                        <th scope="col">Jue</th>
+                        <th scope="col">Vie</th>
+                        <th scope="col">Sáb</th>
+                        <th scope="col">Dom</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <th scope="row" class="text-nowrap fw-semibold">Desayuno</th>
+                        <td class="p-1">{{ form.solicitudes_desayuno_lunes }}</td>
+                        <td class="p-1">{{ form.solicitudes_desayuno_martes }}</td>
+                        <td class="p-1">{{ form.solicitudes_desayuno_miercoles }}</td>
+                        <td class="p-1">{{ form.solicitudes_desayuno_jueves }}</td>
+                        <td class="p-1">{{ form.solicitudes_desayuno_viernes }}</td>
+                        <td class="p-1">{{ form.solicitudes_desayuno_sabado }}</td>
+                        <td class="p-1">{{ form.solicitudes_desayuno_domingo }}</td>
+                    </tr>
+                    <tr>
+                        <th scope="row" class="text-nowrap fw-semibold">Almuerzo</th>
+                        <td class="p-1">{{ form.solicitudes_almuerzo_lunes }}</td>
+                        <td class="p-1">{{ form.solicitudes_almuerzo_martes }}</td>
+                        <td class="p-1">{{ form.solicitudes_almuerzo_miercoles }}</td>
+                        <td class="p-1">{{ form.solicitudes_almuerzo_jueves }}</td>
+                        <td class="p-1">{{ form.solicitudes_almuerzo_viernes }}</td>
+                        <td class="p-1">{{ form.solicitudes_almuerzo_sabado }}</td>
+                        <td class="p-1">{{ form.solicitudes_almuerzo_domingo }}</td>
+                    </tr>
+                    <tr>
+                        <th scope="row" class="text-nowrap fw-semibold">Merienda</th>
+                        <td class="p-1">{{ form.solicitudes_merienda_lunes }}</td>
+                        <td class="p-1">{{ form.solicitudes_merienda_martes }}</td>
+                        <td class="p-1">{{ form.solicitudes_merienda_miercoles }}</td>
+                        <td class="p-1">{{ form.solicitudes_merienda_jueves }}</td>
+                        <td class="p-1">{{ form.solicitudes_merienda_viernes }}</td>
+                        <td class="p-1">{{ form.solicitudes_merienda_sabado }}</td>
+                        <td class="p-1">{{ form.solicitudes_merienda_domingo }}</td>
+                    </tr>
+                    <tr>
+                        <th scope="row" class="text-nowrap fw-semibold">Cena</th>
+                        <td class="p-1">{{ form.solicitudes_cena_lunes }}</td>
+                        <td class="p-1">{{ form.solicitudes_cena_martes }}</td>
+                        <td class="p-1">{{ form.solicitudes_cena_miercoles }}</td>
+                        <td class="p-1">{{ form.solicitudes_cena_jueves }}</td>
+                        <td class="p-1">{{ form.solicitudes_cena_viernes }}</td>
+                        <td class="p-1">{{ form.solicitudes_cena_sabado }}</td>
+                        <td class="p-1">{{ form.solicitudes_cena_domingo }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Prestaciones Aprobadas -->
+<div class="card mb-4">
+    <div class="card-header p-0">
+        <button class="btn btn-link w-100 d-flex justify-content-between align-items-center text-decoration-none text-reset px-3 py-2 collapsed"
+                type="button"
+                data-bs-toggle="collapse"
+                data-bs-target="#informeSeccionAprobadas"
+                aria-expanded="false"
+                aria-controls="informeSeccionAprobadas">
+            <span class="h5 mb-0 text-start">Prestaciones Aprobadas</span>
+            <i class="fas fa-chevron-down informe-seccion-chevron"
+               aria-hidden="true"></i>
+        </button>
+    </div>
+    <div class="card-body collapse"
+         id="informeSeccionAprobadas"
+         data-informe-seccion="1">
+        <div class="table-responsive">
+            <table class="table table-sm table-bordered align-middle text-center mb-0">
+                <thead class="table-dark">
+                    <tr class="text-uppercase small">
+                        <th scope="col" class="fw-semibold">Comida</th>
+                        <th scope="col">Lun</th>
+                        <th scope="col">Mar</th>
+                        <th scope="col">Mié</th>
+                        <th scope="col">Jue</th>
+                        <th scope="col">Vie</th>
+                        <th scope="col">Sáb</th>
+                        <th scope="col">Dom</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <th>Desayuno</th>
+                        <td class="p-1">{{ form.aprobadas_desayuno_lunes }}</td>
+                        <td class="p-1">{{ form.aprobadas_desayuno_martes }}</td>
+                        <td class="p-1">{{ form.aprobadas_desayuno_miercoles }}</td>
+                        <td class="p-1">{{ form.aprobadas_desayuno_jueves }}</td>
+                        <td class="p-1">{{ form.aprobadas_desayuno_viernes }}</td>
+                        <td class="p-1">{{ form.aprobadas_desayuno_sabado }}</td>
+                        <td class="p-1">{{ form.aprobadas_desayuno_domingo }}</td>
+                    </tr>
+                    <tr>
+                        <th>Almuerzo</th>
+                        <td class="p-1">{{ form.aprobadas_almuerzo_lunes }}</td>
+                        <td class="p-1">{{ form.aprobadas_almuerzo_martes }}</td>
+                        <td class="p-1">{{ form.aprobadas_almuerzo_miercoles }}</td>
+                        <td class="p-1">{{ form.aprobadas_almuerzo_jueves }}</td>
+                        <td class="p-1">{{ form.aprobadas_almuerzo_viernes }}</td>
+                        <td class="p-1">{{ form.aprobadas_almuerzo_sabado }}</td>
+                        <td class="p-1">{{ form.aprobadas_almuerzo_domingo }}</td>
+                    </tr>
+                    <tr>
+                        <th>Merienda</th>
+                        <td class="p-1">{{ form.aprobadas_merienda_lunes }}</td>
+                        <td class="p-1">{{ form.aprobadas_merienda_martes }}</td>
+                        <td class="p-1">{{ form.aprobadas_merienda_miercoles }}</td>
+                        <td class="p-1">{{ form.aprobadas_merienda_jueves }}</td>
+                        <td class="p-1">{{ form.aprobadas_merienda_viernes }}</td>
+                        <td class="p-1">{{ form.aprobadas_merienda_sabado }}</td>
+                        <td class="p-1">{{ form.aprobadas_merienda_domingo }}</td>
+                    </tr>
+                    <tr>
+                        <th>Cena</th>
+                        <td class="p-1">{{ form.aprobadas_cena_lunes }}</td>
+                        <td class="p-1">{{ form.aprobadas_cena_martes }}</td>
+                        <td class="p-1">{{ form.aprobadas_cena_miercoles }}</td>
+                        <td class="p-1">{{ form.aprobadas_cena_jueves }}</td>
+                        <td class="p-1">{{ form.aprobadas_cena_viernes }}</td>
+                        <td class="p-1">{{ form.aprobadas_cena_sabado }}</td>
+                        <td class="p-1">{{ form.aprobadas_cena_domingo }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Información Adicional -->
+<div class="card mb-4">
+    <div class="card-header p-0">
+        <button class="btn btn-link w-100 d-flex justify-content-between align-items-center text-decoration-none text-reset px-3 py-2 collapsed"
+                type="button"
+                data-bs-toggle="collapse"
+                data-bs-target="#informeSeccionAdicional"
+                aria-expanded="false"
+                aria-controls="informeSeccionAdicional">
+            <span class="h5 mb-0 text-start">Información Adicional</span>
+            <i class="fas fa-chevron-down informe-seccion-chevron"
+               aria-hidden="true"></i>
+        </button>
+    </div>
+    <div class="card-body collapse"
+         id="informeSeccionAdicional"
+         data-informe-seccion="1">
+        <div class="row">
+            <div class="col-md-6 mb-3{% if 'total_acreditaciones' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
+                {{ form.total_acreditaciones|as_crispy_field }}
+            </div>
+            <div class="col-md-6 mb-3{% if 'plazo_ejecucion' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
+                {{ form.plazo_ejecucion|as_crispy_field }}
+            </div>
+            <div class="col-md-6 mb-3{% if 'nota_gde_if' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
+                {{ form.nota_gde_if|as_crispy_field }}
+            </div>
+            <div class="col-md-6 mb-3{% if 'constancia_subsidios_dnsa' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
+                {{ form.constancia_subsidios_dnsa|as_crispy_field }}
+            </div>
+            <div class="col-md-6 mb-3{% if 'constancia_subsidios_pnud' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
+                {{ form.constancia_subsidios_pnud|as_crispy_field }}
+            </div>
+            <div class="col-md-6 mb-3{% if 'partido_poblacion_destinataria' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
+                {{ form.partido_poblacion_destinataria|as_crispy_field }}
+            </div>
+            <div class="col-md-6 mb-3{% if 'provincia_poblacion_destinataria' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
+                {{ form.provincia_poblacion_destinataria|as_crispy_field }}
+            </div>
+
+            <div class="col-md-6 mb-3{% if 'fecha_vencimiento_mandatos' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
+                {{ form.fecha_vencimiento_mandatos|as_crispy_field }}
+                {% if form.permite_no_corresponde_fecha_vencimiento %}
+                    <div class="form-check mt-2">
+                        {{ form.no_corresponde_fecha_vencimiento }}
+                        <label class="form-check-label" for="no_corresponde_fecha_vencimiento">No corresponde</label>
+                    </div>
+                {% endif %}
+            </div>
+            <div class="col-md-6 mb-3{% if 'criterio_seleccionado' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
+                {{ form.criterio_seleccionado|as_crispy_field }}
+            </div>
+            {% if form.finalizacion_convenio_pnud_vigente %}
+                <div class="col-md-6 mb-3">{{ form.finalizacion_convenio_pnud_vigente|as_crispy_field }}</div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Campos específicos según tipo -->
+{% if tipo == 'base' %}
+    <div class="card mb-4">
+        <div class="card-header p-0">
+            <button class="btn btn-link w-100 d-flex justify-content-between align-items-center text-decoration-none text-reset px-3 py-2 collapsed"
+                    type="button"
+                    data-bs-toggle="collapse"
+                    data-bs-target="#informeSeccionEspecificosBase"
+                    aria-expanded="false"
+                    aria-controls="informeSeccionEspecificosBase">
+                <span class="h5 mb-0 text-start">Campos Específicos - Organización de Base</span>
+                <i class="fas fa-chevron-down informe-seccion-chevron"
+                   aria-hidden="true"></i>
+            </button>
+        </div>
+        <div class="card-body collapse"
+             id="informeSeccionEspecificosBase"
+             data-informe-seccion="1">
+            <div class="row">
+                <div class="col-md-6 mb-3{% if 'declaracion_jurada_recepcion_subsidios' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
+                    {{ form.declaracion_jurada_recepcion_subsidios|as_crispy_field }}
+                </div>
+                <div class="col-md-6 mb-3{% if 'constancia_inexistencia_percepcion_otros_subsidios' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
+                    {{ form.constancia_inexistencia_percepcion_otros_subsidios|as_crispy_field }}
+                </div>
+                <div class="col-md-6 mb-3{% if 'organizacion_avalista_1' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
+                    {{ form.organizacion_avalista_1|as_crispy_field }}
+                </div>
+                <div class="col-md-6 mb-3{% if 'organizacion_avalista_2' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
+                    {{ form.organizacion_avalista_2|as_crispy_field }}
+                </div>
+                <div class="col-md-6 mb-3{% if 'material_difusion_vinculado' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
+                    {{ form.material_difusion_vinculado|as_crispy_field }}
+                </div>
+                <div class="col-md-6 mb-3{% if 'if_relevamiento' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
+                    {{ form.if_relevamiento|as_crispy_field }}
+                </div>
+            </div>
+        </div>
+    </div>
+{% elif tipo == 'juridico' %}
+    <div class="card mb-4">
+        <div class="card-header p-0">
+            <button class="btn btn-link w-100 d-flex justify-content-between align-items-center text-decoration-none text-reset px-3 py-2 collapsed"
+                    type="button"
+                    data-bs-toggle="collapse"
+                    data-bs-target="#informeSeccionEspecificosJuridico"
+                    aria-expanded="false"
+                    aria-controls="informeSeccionEspecificosJuridico">
+                <span class="h5 mb-0 text-start">Campos Específicos - Organización Jurídica</span>
+                <i class="fas fa-chevron-down informe-seccion-chevron"
+                   aria-hidden="true"></i>
+            </button>
+        </div>
+        <div class="card-body collapse"
+             id="informeSeccionEspecificosJuridico"
+             data-informe-seccion="1">
+            <div class="row">
+                <div class="col-md-6 mb-3{% if 'validacion_registro_nacional' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
+                    {{ form.validacion_registro_nacional|as_crispy_field }}
+                </div>
+                <div class="col-md-6 mb-3{% if 'IF_relevamiento_territorial' in campos_a_subsanar %} border border-danger rounded p-2{% endif %}">
+                    {{ form.IF_relevamiento_territorial|as_crispy_field }}
+                </div>
+            </div>
+        </div>
+    </div>
+{% endif %}
+<!-- Campos específicos para Renovación -->
+{% if admision.tipo and admision.tipo == 'renovacion' %}
+    <div class="card mb-4">
+        <div class="card-header p-0">
+            <button class="btn btn-link w-100 d-flex justify-content-between align-items-center text-decoration-none text-reset px-3 py-2 collapsed"
+                    type="button"
+                    data-bs-toggle="collapse"
+                    data-bs-target="#informeSeccionReferenciaIncorporacion"
+                    aria-expanded="false"
+                    aria-controls="informeSeccionReferenciaIncorporacion">
+                <span class="h5 mb-0 text-start">Referencia a la Incorporaci&oacute;n</span>
+                <i class="fas fa-chevron-down informe-seccion-chevron"
+                   aria-hidden="true"></i>
+            </button>
+        </div>
+        <div class="card-body collapse"
+             id="informeSeccionReferenciaIncorporacion"
+             data-informe-seccion="1">
+            <div class="row">
+                <div class="col-md-6 mb-3">{{ form.expediente_incorporacion|as_crispy_field }}</div>
+                <div class="col-md-6 mb-3">{{ form.convenio_incorporacion|as_crispy_field }}</div>
+                {% if form.presentacion_avales %}
+                    <div class="col-12 mb-3">{{ form.presentacion_avales|as_crispy_field }}</div>
+                {% endif %}
+                {% if form.informe_tecnico_complementario_modificacion_prestaciones %}
+                    <div class="col-12 mb-3">{{ form.informe_tecnico_complementario_modificacion_prestaciones|as_crispy_field }}</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% if form.antecedentes_renovaciones_campos %}
+        <div class="card mb-4">
+            <div class="card-header p-0">
+                <button class="btn btn-link w-100 d-flex justify-content-between align-items-center text-decoration-none text-reset px-3 py-2 collapsed"
+                        type="button"
+                        data-bs-toggle="collapse"
+                        data-bs-target="#informeSeccionAntecedentes"
+                        aria-expanded="false"
+                        aria-controls="informeSeccionAntecedentes">
+                    <span class="h5 mb-0 text-start">Antecedentes de Renovaciones</span>
+                    <i class="fas fa-chevron-down informe-seccion-chevron"
+                       aria-hidden="true"></i>
+                </button>
+            </div>
+            <div class="card-body collapse"
+                 id="informeSeccionAntecedentes"
+                 data-informe-seccion="1">
+                {% for antecedente in form.antecedentes_renovaciones_campos %}
+                    <div class="border rounded p-3 mb-3">
+                        <strong class="d-block mb-2">Admisi&oacute;n #{{ antecedente.admision.pk }}</strong>
+                        <div class="row">
+                            <div class="col-md-4">{{ antecedente.resolucion|as_crispy_field }}</div>
+                            <div class="col-md-4">{{ antecedente.convenio|as_crispy_field }}</div>
+                            <div class="col-md-4">{{ antecedente.expediente|as_crispy_field }}</div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    {% endif %}
+    <div class="card mb-4">
+        <div class="card-header p-0">
+            <button class="btn btn-link w-100 d-flex justify-content-between align-items-center text-decoration-none text-reset px-3 py-2 collapsed"
+                    type="button"
+                    data-bs-toggle="collapse"
+                    data-bs-target="#informeSeccionResolucionPago"
+                    aria-expanded="false"
+                    aria-controls="informeSeccionResolucionPago">
+                <span class="h5 mb-0 text-start">Resolución de pago</span>
+                <i class="fas fa-chevron-down informe-seccion-chevron"
+                   aria-hidden="true"></i>
+            </button>
+        </div>
+        <div class="card-body collapse"
+             id="informeSeccionResolucionPago"
+             data-informe-seccion="1">
+            <div class="row">
+                {% if form.acreditaciones_ultimo_convenio %}
+                    <div class="col-md-6 mb-3">{{ form.acreditaciones_ultimo_convenio|as_crispy_field }}</div>
+                    <div class="col-md-6 mb-3">{{ form.monto_total_conveniado_informe|as_crispy_field }}</div>
+                {% else %}
+                    <div class="col-md-6 mb-3">{{ form.monto_total_conveniado|as_crispy_field }}</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+{% endif %}

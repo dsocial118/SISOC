@@ -1332,3 +1332,133 @@ def test_informe_complementario_detail_post_vuelve_a_acompanamiento(mocker):
 
     assert response.url == "/acompanamientos/acompanamiento/5/detalle/?admision_id=12"
     reverse.assert_called_once_with("detalle_acompanamiento", args=[5])
+
+
+def _view_informe_tecnico(mocker, admision):
+    view = module.AdmisionesTecnicosUpdateView()
+    view.get_object = lambda: admision
+    view.get_context_data = mocker.Mock(return_value={"base": "context"})
+    view.render_to_response = mocker.Mock(return_value="rendered")
+    return view
+
+
+def test_informe_tecnico_inline_sin_tipo_redirige_con_error(mocker):
+    admision = SimpleNamespace(pk=1, tipo_informe=None, num_expediente=None)
+    view = _view_informe_tecnico(mocker, admision)
+    request = _Req(
+        POST={"btnInformeTecnicoCaratula": "1", "action": "draft"},
+        FILES={},
+        user=_user(),
+        get_full_path=lambda: "/admisiones/1",
+    )
+    mocker.patch("admisiones.views.web_views.messages.error")
+    mocker.patch("admisiones.views.web_views.safe_redirect", return_value="redir")
+
+    assert view.post(request) == "redir"
+
+
+def test_informe_tecnico_inline_form_invalido_reenderiza_con_errores(mocker):
+    admision = SimpleNamespace(pk=1, tipo_informe="base", num_expediente="EX-1")
+    view = _view_informe_tecnico(mocker, admision)
+    invalid_form = mocker.Mock(is_valid=mocker.Mock(return_value=False))
+    mocker.patch(
+        "admisiones.views.web_views.InformeService.get_form_class_por_tipo",
+        return_value=mocker.Mock(return_value=invalid_form),
+    )
+    mocker.patch(
+        "admisiones.views.web_views._get_informe_tecnico_vigente", return_value=None
+    )
+    mocker.patch("admisiones.views.web_views._flash_informe_form_invalid_messages")
+    request = _Req(
+        POST={"btnInformeTecnicoCaratula": "1", "action": "submit"},
+        FILES={},
+        user=_user(),
+        get_full_path=lambda: "/admisiones/1",
+    )
+
+    assert view.post(request) == "rendered"
+    view.get_context_data.assert_called_once_with(
+        informe_form_con_errores=True,
+        informe_form=invalid_form,
+    )
+
+
+@pytest.mark.django_db
+def test_informe_tecnico_inline_guarda_caratula_e_informe(mocker):
+    admision = SimpleNamespace(pk=1, tipo_informe="base", num_expediente=None)
+    view = _view_informe_tecnico(mocker, admision)
+    valid_form = mocker.Mock(
+        is_valid=mocker.Mock(return_value=True),
+        instance=SimpleNamespace(pk=None, tipo=None),
+    )
+    mocker.patch(
+        "admisiones.views.web_views.InformeService.get_form_class_por_tipo",
+        return_value=mocker.Mock(return_value=valid_form),
+    )
+    mocker.patch(
+        "admisiones.views.web_views._get_informe_tecnico_vigente", return_value=None
+    )
+    guardar_caratulacion = mocker.patch(
+        "admisiones.views.web_views.AdmisionService.guardar_caratulacion",
+        return_value=(True, "ok", None),
+    )
+    guardar_informe = mocker.patch(
+        "admisiones.views.web_views.InformeService.guardar_informe",
+        return_value={"success": True, "informe": SimpleNamespace(pk=7)},
+    )
+    mocker.patch("admisiones.views.web_views.messages.success")
+    mocker.patch("admisiones.views.web_views.safe_redirect", return_value="redir")
+    request = _Req(
+        POST={"btnInformeTecnicoCaratula": "1", "action": "draft"},
+        FILES={},
+        user=_user(),
+        get_full_path=lambda: "/admisiones/1",
+    )
+
+    assert view.post(request) == "redir"
+    assert (
+        guardar_caratulacion.call_args.kwargs["prefix"] == module.CARATULA_FORM_PREFIX
+    )
+    assert guardar_informe.call_args.kwargs["action"] == "draft"
+    assert guardar_informe.call_args.kwargs["es_creacion"] is True
+    assert valid_form.instance.tipo == "base"
+
+
+@pytest.mark.django_db
+def test_informe_tecnico_inline_caratula_invalida_reenderiza_con_errores(mocker):
+    admision = SimpleNamespace(pk=1, tipo_informe="base", num_expediente=None)
+    view = _view_informe_tecnico(mocker, admision)
+    valid_form = mocker.Mock(
+        is_valid=mocker.Mock(return_value=True),
+        instance=SimpleNamespace(pk=None, tipo=None),
+    )
+    caratular_form = mocker.Mock()
+    mocker.patch(
+        "admisiones.views.web_views.InformeService.get_form_class_por_tipo",
+        return_value=mocker.Mock(return_value=valid_form),
+    )
+    mocker.patch(
+        "admisiones.views.web_views._get_informe_tecnico_vigente", return_value=None
+    )
+    mocker.patch(
+        "admisiones.views.web_views.AdmisionService.guardar_caratulacion",
+        return_value=(False, "Error al guardar la caratulación.", caratular_form),
+    )
+    guardar_informe = mocker.patch(
+        "admisiones.views.web_views.InformeService.guardar_informe"
+    )
+    mocker.patch("admisiones.views.web_views.messages.error")
+    request = _Req(
+        POST={"btnInformeTecnicoCaratula": "1", "action": "submit"},
+        FILES={},
+        user=_user(),
+        get_full_path=lambda: "/admisiones/1",
+    )
+
+    assert view.post(request) == "rendered"
+    guardar_informe.assert_not_called()
+    view.get_context_data.assert_called_once_with(
+        informe_form_con_errores=True,
+        informe_form=valid_form,
+        caratular_form_informe=caratular_form,
+    )

@@ -1120,21 +1120,35 @@ class AdmisionService:
         return True, "Carga de documentación finalizada correctamente."
 
     @staticmethod
-    def _procesar_post_caratulacion(request, admision):
+    def guardar_caratulacion(admision, data, prefix=None):
+        """Valida y guarda la caratulación del expediente.
+
+        Devuelve ``(success, mensaje, form)``. El ``form`` se devuelve para que
+        quien llame pueda volver a renderizarlo con sus errores; es ``None``
+        cuando la caratulación se rechaza antes de construirlo.
+        """
         if admision.estado_admision != "documentacion_carga_finalizada":
             return (
                 False,
                 "Debe finalizar la carga de documentación antes de caratular.",
+                None,
             )
 
-        form = CaratularForm(request.POST, instance=admision)
+        form = CaratularForm(data, instance=admision, prefix=prefix)
         if not form.is_valid():
-            return False, "Error al guardar la caratulación."
+            return False, "Error al guardar la caratulación.", form
 
         form.save()
         AdmisionService.actualizar_estado_admision(admision, "cargar_expediente")
         admision.refresh_from_db()
-        return True, "Caratulación del expediente guardado correctamente."
+        return True, "Caratulación del expediente guardado correctamente.", form
+
+    @staticmethod
+    def _procesar_post_caratulacion(request, admision):
+        success, message, _form = AdmisionService.guardar_caratulacion(
+            admision, request.POST
+        )
+        return success, message
 
     @staticmethod
     def _dispatch_post_update_action(request, admision):
